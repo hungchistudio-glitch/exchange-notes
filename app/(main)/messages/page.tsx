@@ -9,8 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import AuthGuard from "../components/AuthGuard";
-import LogoutButton from "../components/LogoutButton";
+import LogoutButton from "../../components/LogoutButton";
 
 type Message = {
   id: number;
@@ -204,7 +203,6 @@ export default function MessagesPage() {
   }
 
   return (
-    <AuthGuard>
       <main className="min-h-screen bg-[#f4f1ea] text-neutral-900">
         <div className="mx-auto flex min-h-screen max-w-xl flex-col">
           <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#f4f1ea]/95 px-4 py-4 backdrop-blur">
@@ -340,6 +338,5 @@ export default function MessagesPage() {
           </form>
         </div>
       </main>
-    </AuthGuard>
   );
 }

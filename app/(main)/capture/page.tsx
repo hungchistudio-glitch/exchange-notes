@@ -8,7 +8,6 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import AuthGuard from "../components/AuthGuard";
 
 type IdentificationResult = {
   englishName: string;
@@ -358,7 +357,6 @@ ${result.chineseExample}`;
   }
 
   return (
-    <AuthGuard>
       <main className="min-h-screen bg-[#f5f3ee] px-4 py-6 text-neutral-900">
         <div className="mx-auto max-w-xl">
           <header className="flex items-center justify-between">
@@ -586,6 +584,5 @@ ${result.chineseExample}`;
           />
         </div>
       </main>
-    </AuthGuard>
   );
 }
