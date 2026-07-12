@@ -140,29 +140,31 @@ export default function VocabularyPage() {
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
-        <header className="flex items-end justify-between gap-4">
-          <div>
+        <header className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-sm font-bold uppercase tracking-[0.2em]">
               Your library
             </p>
-            <h1 className="mt-2 text-5xl font-black">Vocabulary</h1>
+            <h1 className="mt-2 text-3xl font-black sm:text-4xl">
+              Vocabulary
+            </h1>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex shrink-0 gap-2">
             <Link
               href="/vocabulary/quiz"
               aria-label="Flashcard quiz"
-              className="rounded-full bg-white p-4 text-black"
+              className="rounded-full bg-white p-3 text-black"
             >
-              <Zap size={24} />
+              <Zap size={20} />
             </Link>
 
             <Link
               href="/capture"
               aria-label="Discover a new word"
-              className="rounded-full bg-black p-4 text-white"
+              className="rounded-full bg-black p-3 text-white"
             >
-              <Plus size={24} />
+              <Plus size={20} />
             </Link>
           </div>
         </header>
@@ -263,13 +265,13 @@ export default function VocabularyPage() {
 
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h2
                           className={
                             wordIsTarget
-                              ? "text-4xl font-black"
-                              : "text-xl text-neutral-500"
+                              ? "break-words text-3xl font-black sm:text-4xl"
+                              : "break-words text-lg text-neutral-500 sm:text-xl"
                           }
                         >
                           {item.word}
@@ -283,7 +285,7 @@ export default function VocabularyPage() {
                               toPinyin(item.word) ? "zh-TW" : "en-US"
                             )
                           }
-                          className="rounded-full bg-[#f1eee7] p-2 text-black"
+                          className="shrink-0 rounded-full bg-[#f1eee7] p-2 text-black"
                         >
                           <Volume2 size={16} />
                         </button>
@@ -294,12 +296,12 @@ export default function VocabularyPage() {
                         </p>
                       )}
 
-                      <div className="mt-1 flex items-center gap-2">
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <p
                           className={
                             wordIsTarget
-                              ? "text-lg text-neutral-500"
-                              : "text-4xl font-black"
+                              ? "break-words text-base text-neutral-500 sm:text-lg"
+                              : "break-words text-3xl font-black sm:text-4xl"
                           }
                         >
                           {item.translation}
@@ -313,7 +315,7 @@ export default function VocabularyPage() {
                               toPinyin(item.translation) ? "zh-TW" : "en-US"
                             )
                           }
-                          className="rounded-full bg-[#f1eee7] p-1.5 text-black"
+                          className="shrink-0 rounded-full bg-[#f1eee7] p-1.5 text-black"
                         >
                           <Volume2 size={14} />
                         </button>
@@ -334,7 +336,7 @@ export default function VocabularyPage() {
                     </div>
 
                     {item.status === "mastered" && (
-                      <span className="rounded-full bg-green-100 p-2 text-green-700">
+                      <span className="shrink-0 rounded-full bg-green-100 p-2 text-green-700">
                         <Check size={18} />
                       </span>
                     )}
@@ -342,7 +344,7 @@ export default function VocabularyPage() {
 
                   {(item.example_sentence || item.translated_example) && (
                     <div className="mt-5 border-t border-neutral-100 pt-3">
-                      <p className="leading-7">
+                      <p className="break-words leading-7">
                         {wordIsTarget
                           ? item.translated_example
                           : item.example_sentence}
@@ -350,7 +352,7 @@ export default function VocabularyPage() {
                       {(wordIsTarget
                         ? item.example_sentence
                         : item.translated_example) && (
-                        <p className="mt-1 text-sm leading-6 text-neutral-400">
+                        <p className="mt-1 break-words text-sm leading-6 text-neutral-400">
                           {wordIsTarget
                             ? item.example_sentence
                             : item.translated_example}
@@ -367,7 +369,7 @@ export default function VocabularyPage() {
                           type="button"
                           disabled={updatingId === item.id}
                           onClick={() => void changeStatus(item, status)}
-                          className={`rounded-[16px] px-2 py-3 text-xs font-black disabled:opacity-40 ${
+                          className={`whitespace-nowrap rounded-[16px] px-2 py-3 text-xs font-black disabled:opacity-40 ${
                             item.status === status
                               ? "bg-black text-white"
                               : "bg-[#f1eee7] text-black"
