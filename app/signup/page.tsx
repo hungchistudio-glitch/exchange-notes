@@ -42,6 +42,7 @@ export default function SignupPage() {
           id: user.id,
           display_name: name,
           exchange_id: exchangeId.toLowerCase(),
+          email: email,
         });
 
       if (profileError) {
