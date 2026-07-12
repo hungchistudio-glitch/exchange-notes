@@ -248,9 +248,7 @@ export default function VocabularyPage() {
                           onClick={() =>
                             speak(
                               item.word,
-                              item.language === "traditional-chinese"
-                                ? "zh-TW"
-                                : "en-US"
+                              toPinyin(item.word) ? "zh-TW" : "en-US"
                             )
                           }
                           className="rounded-full bg-[#f1eee7] p-2 text-black"
@@ -263,7 +261,28 @@ export default function VocabularyPage() {
                           {toPinyin(item.word)}
                         </p>
                       )}
-                      <p className="mt-1 text-xl">{item.translation}</p>
+
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-xl">{item.translation}</p>
+                        <button
+                          type="button"
+                          aria-label={`Pronounce ${item.translation}`}
+                          onClick={() =>
+                            speak(
+                              item.translation,
+                              toPinyin(item.translation) ? "zh-TW" : "en-US"
+                            )
+                          }
+                          className="rounded-full bg-[#f1eee7] p-1.5 text-black"
+                        >
+                          <Volume2 size={14} />
+                        </button>
+                      </div>
+                      {toPinyin(item.translation) && (
+                        <p className="mt-1 text-sm font-bold text-neutral-400">
+                          {toPinyin(item.translation)}
+                        </p>
+                      )}
                       {item.part_of_speech && (
                         <p className="mt-2 text-sm font-bold uppercase tracking-[0.14em] text-neutral-400">
                           {item.part_of_speech}

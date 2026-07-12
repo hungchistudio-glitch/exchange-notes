@@ -209,11 +209,12 @@ export default function VocabularyQuizPage() {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
+                  const textToSpeak = revealed
+                    ? current.translation
+                    : current.word;
                   speak(
-                    current.word,
-                    current.language === "traditional-chinese"
-                      ? "zh-TW"
-                      : "en-US"
+                    textToSpeak,
+                    toPinyin(textToSpeak) ? "zh-TW" : "en-US"
                   );
                 }}
                 aria-label={`Pronounce ${current.word}`}
