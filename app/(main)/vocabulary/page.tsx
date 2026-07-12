@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import type {
+  AppLanguage,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
@@ -29,6 +30,8 @@ const STATUS_LABELS: Record<VocabularyStatus, string> = {
 
 export default function VocabularyPage() {
   const [items, setItems] = useState<VocabularyItem[]>([]);
+  const [learningLanguage, setLearningLanguage] =
+    useState<AppLanguage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -47,6 +50,16 @@ export default function VocabularyPage() {
 
         if (!user) {
           throw new Error("Please log in to view your vocabulary.");
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("learning_language")
+          .eq("id", user.id)
+          .single();
+
+        if (active && profile?.learning_language) {
+          setLearningLanguage(profile.learning_language as AppLanguage);
         }
 
         const { data, error: fetchError } = await supabase
@@ -224,7 +237,15 @@ export default function VocabularyPage() {
         ) : (
           <section className="mt-6 space-y-4">
             {visibleItems.map((item) => {
-              const wordIsChinese = toPinyin(item.word) !== null;
+              // item.language is the language of item.word; the other
+              // field (item.translation) is the opposite language.
+              // The field matching the account's learning_language is the
+              // one the person is actively studying, so it gets the
+              // prominent, larger treatment. Fall back to "is this field
+              // Chinese" if we haven't loaded the profile yet.
+              const wordIsTarget = learningLanguage
+                ? item.language === learningLanguage
+                : toPinyin(item.word) !== null;
 
               return (
               <article
@@ -246,7 +267,7 @@ export default function VocabularyPage() {
                       <div className="flex items-center gap-2">
                         <h2
                           className={
-                            wordIsChinese
+                            wordIsTarget
                               ? "text-4xl font-black"
                               : "text-xl text-neutral-500"
                           }
@@ -268,7 +289,7 @@ export default function VocabularyPage() {
                         </button>
                       </div>
                       {toPinyin(item.word) && (
-                        <p className="mt-1 text-sm font-bold text-neutral-400">
+                        <p className="mt-1 text-sm text-neutral-400">
                           {toPinyin(item.word)}
                         </p>
                       )}
@@ -276,8 +297,8 @@ export default function VocabularyPage() {
                       <div className="mt-1 flex items-center gap-2">
                         <p
                           className={
-                            wordIsChinese
-                              ? "text-xl text-neutral-500"
+                            wordIsTarget
+                              ? "text-lg text-neutral-500"
                               : "text-4xl font-black"
                           }
                         >
@@ -297,16 +318,19 @@ export default function VocabularyPage() {
                           <Volume2 size={14} />
                         </button>
                       </div>
-                      {toPinyin(item.translation) && (
-                        <p className="mt-1 text-sm font-bold text-neutral-400">
-                          {toPinyin(item.translation)}
-                        </p>
-                      )}
-                      {item.part_of_speech && (
-                        <p className="mt-2 text-sm font-bold uppercase tracking-[0.14em] text-neutral-400">
-                          {item.part_of_speech}
-                        </p>
-                      )}
+
+                      <div className="mt-1 flex items-center gap-1.5">
+                        {toPinyin(item.translation) && (
+                          <p className="text-sm text-neutral-400">
+                            {toPinyin(item.translation)}
+                          </p>
+                        )}
+                        {item.part_of_speech && (
+                          <span className="text-[11px] text-neutral-300">
+                            · {item.part_of_speech}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {item.status === "mastered" && (
@@ -316,12 +340,20 @@ export default function VocabularyPage() {
                     )}
                   </div>
 
-                  {item.example_sentence && (
-                    <div className="mt-5 border-t border-neutral-100 pt-4">
-                      <p className="leading-7">{item.example_sentence}</p>
-                      {item.translated_example && (
-                        <p className="mt-1 leading-7 text-neutral-500">
-                          {item.translated_example}
+                  {(item.example_sentence || item.translated_example) && (
+                    <div className="mt-5 border-t border-neutral-100 pt-3">
+                      <p className="leading-7">
+                        {wordIsTarget
+                          ? item.translated_example
+                          : item.example_sentence}
+                      </p>
+                      {(wordIsTarget
+                        ? item.example_sentence
+                        : item.translated_example) && (
+                        <p className="mt-1 text-sm leading-6 text-neutral-400">
+                          {wordIsTarget
+                            ? item.example_sentence
+                            : item.translated_example}
                         </p>
                       )}
                     </div>
