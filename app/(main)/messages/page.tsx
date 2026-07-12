@@ -20,8 +20,6 @@ type Message = {
 };
 
 export default function MessagesPage() {
-  const supabase = createClient();
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
     useState<string | null>(null);
@@ -45,6 +43,7 @@ export default function MessagesPage() {
   useEffect(() => {
     async function initializeChat() {
       setErrorMessage("");
+      const supabase = createClient();
 
       const {
         data: { user },
@@ -109,12 +108,14 @@ export default function MessagesPage() {
     }
 
     initializeChat();
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     if (!conversationId) {
       return;
     }
+
+    const supabase = createClient();
 
     const channel = supabase
       .channel(`messages:${conversationId}`)
@@ -159,7 +160,7 @@ export default function MessagesPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, supabase]);
+  }, [conversationId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -183,6 +184,8 @@ export default function MessagesPage() {
 
     setSending(true);
     setErrorMessage("");
+
+    const supabase = createClient();
 
     const { error } = await supabase
       .from("messages")

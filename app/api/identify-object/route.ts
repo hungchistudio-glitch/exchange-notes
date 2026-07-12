@@ -1,139 +1,252 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
-type ObjectResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
+type GeminiResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+  }>;
+  promptFeedback?: {
+    blockReason?: string;
+  };
+  error?: {
+    message?: string;
+  };
 };
 
-function extractJson(text: string): ObjectResult {
-  const cleaned = text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+type PartOfSpeech = "noun" | "verb" | "adjective" | "other";
+type Confidence = "high" | "medium" | "low";
 
-  return JSON.parse(cleaned) as ObjectResult;
+type GeminiIdentifyResult = {
+  englishName: string;
+  traditionalChineseName: string;
+  partOfSpeech: PartOfSpeech;
+  englishExample: string;
+  traditionalChineseExample: string;
+  confidence: Confidence;
+};
+
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_ENDPOINT =
+  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+const SUPPORTED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
+
+const MAX_BASE64_LENGTH = 20_000_000;
+const REQUEST_TIMEOUT_MS = 20_000;
+
+const PROMPT = `
+Identify the main object in this image for a language-learning app.
+
+Return only valid JSON in this exact format:
+{
+  "englishName": "string",
+  "traditionalChineseName": "string",
+  "partOfSpeech": "noun | verb | adjective | other",
+  "englishExample": "string",
+  "traditionalChineseExample": "string",
+  "confidence": "high | medium | low"
 }
 
-export async function POST(request: Request) {
-  try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+Use natural English and Traditional Chinese.
+Do not include markdown or extra explanation.
+`;
 
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY is missing." },
-        { status: 500 }
-      );
-    }
+function isGeminiIdentifyResult(
+  value: unknown
+): value is GeminiIdentifyResult {
+  if (typeof value !== "object" || value === null) return false;
 
-    const body = (await request.json()) as {
-      image?: string;
-    };
+  const result = value as Record<string, unknown>;
 
-    if (
-      typeof body.image !== "string" ||
-      !body.image.startsWith("data:image/")
-    ) {
-      return NextResponse.json(
-        { error: "Please provide a valid image." },
-        { status: 400 }
-      );
-    }
+  return (
+    typeof result.englishName === "string" &&
+    typeof result.traditionalChineseName === "string" &&
+    typeof result.partOfSpeech === "string" &&
+    typeof result.englishExample === "string" &&
+    typeof result.traditionalChineseExample === "string" &&
+    typeof result.confidence === "string"
+  );
+}
 
-    const imageMatch = body.image.match(
-      /^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/
+export async function POST(request: NextRequest) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "GEMINI_API_KEY is missing." },
+      { status: 500 }
     );
+  }
 
-    if (!imageMatch) {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Request body must be valid JSON." },
+      { status: 400 }
+    );
+  }
+
+  const { image } = (body ?? {}) as {
+    image?: unknown;
+  };
+
+  if (typeof image !== "string" || image.length === 0) {
+    return NextResponse.json(
+      { error: "Image data is missing." },
+      { status: 400 }
+    );
+  }
+
+  const match = image.match(
+      /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/
+  );
+
+  if (!match) {
+    return NextResponse.json(
+      { error: "Invalid image format." },
+      { status: 400 }
+    );
+  }
+
+  const mimeType = match[1];
+  const imageBase64 = match[2];
+
+  if (!SUPPORTED_MIME_TYPES.has(mimeType)) {
+    return NextResponse.json(
+      { error: `Unsupported image format: ${mimeType}` },
+      { status: 400 }
+    );
+  }
+
+  if (imageBase64.length > MAX_BASE64_LENGTH) {
+    return NextResponse.json(
+      { error: "Image is too large." },
+      { status: 413 }
+    );
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    REQUEST_TIMEOUT_MS
+  );
+
+  try {
+    const response = await fetch(GEMINI_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: PROMPT },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: imageBase64,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+        },
+      }),
+      signal: controller.signal,
+    });
+
+    const data = (await response.json()) as GeminiResponse;
+
+    if (!response.ok) {
       return NextResponse.json(
         {
           error:
-            "Only JPEG, PNG, WEBP, and GIF images are supported.",
+            data.error?.message ??
+            "Gemini request failed.",
         },
-        { status: 400 }
+        { status: response.status }
       );
     }
 
-    const mediaType = imageMatch[1] as
-      | "image/jpeg"
-      | "image/png"
-      | "image/webp"
-      | "image/gif";
-
-    const imageBase64 = imageMatch[2];
-
-    const anthropic = new Anthropic({ apiKey });
-
-    const response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 500,
-      messages: [
+    if (data.promptFeedback?.blockReason) {
+      return NextResponse.json(
         {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: `
-Identify the main physical object in this image for an English and Traditional Chinese language-learning app.
-
-Return only valid JSON, with no markdown:
-
-{
-  "englishName": "the most natural everyday English name",
-  "chineseName": "the natural Traditional Chinese name used in Taiwan",
-  "partOfSpeech": "noun, verb, adjective, phrase, or other",
-  "englishExample": "one short natural English sentence",
-  "chineseExample": "the Traditional Chinese translation of that sentence",
-  "confidence": "high, medium, or low"
-}
-
-Rules:
-- Use Traditional Chinese, never Simplified Chinese.
-- Do not identify a person.
-- If there are several objects, choose the most visually prominent one.
-- If uncertain, choose a broad general name and use low confidence.
-              `.trim(),
-            },
-          ],
+          error:
+            `Image was blocked: ${data.promptFeedback.blockReason}`,
         },
-      ],
-    });
-
-    const textBlock = response.content.find(
-      (item) => item.type === "text"
-    );
-
-    if (!textBlock || textBlock.type !== "text") {
-      throw new Error("Claude returned no text.");
+        { status: 422 }
+      );
     }
 
-    const result = extractJson(textBlock.text);
+    const text =
+      data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    return NextResponse.json(result);
+    if (!text) {
+      return NextResponse.json(
+        { error: "Gemini returned no result." },
+        { status: 502 }
+      );
+    }
+
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return NextResponse.json(
+        { error: "Gemini returned malformed data." },
+        { status: 502 }
+      );
+    }
+
+    if (!isGeminiIdentifyResult(parsed)) {
+      return NextResponse.json(
+        {
+          error:
+            "Gemini returned data in an unexpected shape.",
+        },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({
+      englishName: parsed.englishName,
+      chineseName: parsed.traditionalChineseName,
+      partOfSpeech: parsed.partOfSpeech,
+      englishExample: parsed.englishExample,
+      chineseExample: parsed.traditionalChineseExample,
+      confidence: parsed.confidence,
+    });
   } catch (error) {
-    console.error("Object identification failed:", error);
+    const isAbort =
+      error instanceof Error &&
+      error.name === "AbortError";
 
     return NextResponse.json(
       {
-        error:
-          "The image could not be identified. Please try another photo.",
+        error: isAbort
+          ? "Request to Gemini timed out."
+          : "Could not reach Gemini.",
       },
-      { status: 500 }
+      { status: isAbort ? 504 : 502 }
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }

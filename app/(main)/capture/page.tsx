@@ -9,6 +9,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { createClient } from "@/lib/supabase/client";
+import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
+
 type IdentificationResult = {
   englishName: string;
   chineseName: string;
@@ -46,6 +49,8 @@ export default function CameraPage() {
 
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   function stopCamera() {
     streamRef.current
@@ -302,39 +307,73 @@ ${result.englishExample}
 ${result.chineseExample}`;
   }
 
-  function saveToNotes() {
-    if (!result) return;
+  async function saveToVocabulary() {
+    if (!result || !imageData || saving) return;
 
-    const storageKey = "exchange-notes";
-    const saved = localStorage.getItem(storageKey);
-
-    let currentNotes: unknown[] = [];
+    setSaving(true);
+    setError("");
 
     try {
-      currentNotes = saved
-        ? (JSON.parse(saved) as unknown[])
-        : [];
-    } catch {
-      currentNotes = [];
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Please log in before saving a word.");
+      }
+
+      const imageBlob = dataUrlToBlob(imageData);
+      const extension = safeImageExtension(imageBlob.type);
+      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("vocabulary-images")
+        .upload(imagePath, imageBlob, {
+          contentType: imageBlob.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicImage } = supabase.storage
+        .from("vocabulary-images")
+        .getPublicUrl(imagePath);
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: user.id,
+          word: result.englishName.trim(),
+          translation: result.chineseName.trim(),
+          language: "english",
+          part_of_speech: result.partOfSpeech.trim() || null,
+          example_sentence: result.englishExample.trim() || null,
+          translated_example: result.chineseExample.trim() || null,
+          image_url: publicImage.publicUrl,
+          confidence: result.confidence,
+          status: "new",
+        });
+
+      if (insertError) {
+        await supabase.storage
+          .from("vocabulary-images")
+          .remove([imagePath]);
+        throw insertError;
+      }
+
+      setSaved(true);
+      router.push("/vocabulary");
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save this word."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    const newNote = {
-      id: Date.now(),
-      language: "english",
-      text: createShareText(),
-      time: new Date().toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-      replies: 0,
-    };
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify([newNote, ...currentNotes])
-    );
-
-    router.push("/");
   }
 
   function sendToPartner() {
@@ -354,6 +393,7 @@ ${result.chineseExample}`;
     setFileName("");
     setResult(null);
     setError("");
+    setSaved(false);
   }
 
   return (
@@ -400,7 +440,7 @@ ${result.chineseExample}`;
                 <button
                   type="button"
                   onClick={startCamera}
-                  className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white"
+                  className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white disabled:opacity-40"
                 >
                   Open Camera
                 </button>
@@ -544,10 +584,11 @@ ${result.chineseExample}`;
               <div className="mt-7 space-y-3">
                 <button
                   type="button"
-                  onClick={saveToNotes}
+                  onClick={saveToVocabulary}
+                  disabled={saving || saved}
                   className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white"
                 >
-                  Save to Notes
+                  {saving ? "Saving..." : saved ? "Saved" : "Save to Vocabulary"}
                 </button>
 
                 <button

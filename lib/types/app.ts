@@ -13,16 +13,22 @@ export type Profile = {
   discoverable: boolean;
 };
 
+export type VocabularyStatus = "new" | "learning" | "mastered";
+
 export type VocabularyItem = {
   id: string;
+  user_id: string;
   word: string;
   translation: string;
   language: AppLanguage;
   part_of_speech: string | null;
   example_sentence: string | null;
+  translated_example: string | null;
   image_url: string | null;
-  status: "new" | "learning" | "mastered";
+  confidence: "high" | "medium" | "low" | null;
+  status: VocabularyStatus;
   created_at: string;
+  updated_at: string;
 };
 
 export type MessageType =
