@@ -141,7 +141,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="safe-bottom min-h-screen bg-[#f5f2eb] px-5 pt-8 text-black">
+    <main className="min-h-screen bg-[#f5f2eb] px-5 pt-8 pb-32 text-black">
       <div className="mx-auto max-w-xl">
         <header className="flex items-start justify-between">
           <div>
