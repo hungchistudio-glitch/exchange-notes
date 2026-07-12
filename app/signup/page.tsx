@@ -38,7 +38,7 @@ export default function SignupPage() {
     if (user) {
       const { error: profileError } = await supabase
         .from("profiles")
-        .insert({
+        .upsert({
           id: user.id,
           display_name: name,
           exchange_id: exchangeId.toLowerCase(),
