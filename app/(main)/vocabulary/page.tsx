@@ -7,11 +7,15 @@ import {
   LoaderCircle,
   Plus,
   Search,
+  Volume2,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { toPinyin } from "@/lib/pinyin";
+import { speak } from "@/lib/speech";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -131,13 +135,23 @@ export default function VocabularyPage() {
             <h1 className="mt-2 text-5xl font-black">Vocabulary</h1>
           </div>
 
-          <Link
-            href="/capture"
-            aria-label="Discover a new word"
-            className="rounded-full bg-black p-4 text-white"
-          >
-            <Plus size={24} />
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/vocabulary/quiz"
+              aria-label="Flashcard quiz"
+              className="rounded-full bg-white p-4 text-black"
+            >
+              <Zap size={24} />
+            </Link>
+
+            <Link
+              href="/capture"
+              aria-label="Discover a new word"
+              className="rounded-full bg-black p-4 text-white"
+            >
+              <Plus size={24} />
+            </Link>
+          </div>
         </header>
 
         <div className="relative mt-7">
@@ -226,7 +240,29 @@ export default function VocabularyPage() {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-3xl font-black">{item.word}</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-3xl font-black">{item.word}</h2>
+                        <button
+                          type="button"
+                          aria-label={`Pronounce ${item.word}`}
+                          onClick={() =>
+                            speak(
+                              item.word,
+                              item.language === "traditional-chinese"
+                                ? "zh-TW"
+                                : "en-US"
+                            )
+                          }
+                          className="rounded-full bg-[#f1eee7] p-2 text-black"
+                        >
+                          <Volume2 size={16} />
+                        </button>
+                      </div>
+                      {toPinyin(item.word) && (
+                        <p className="mt-1 text-sm font-bold text-neutral-400">
+                          {toPinyin(item.word)}
+                        </p>
+                      )}
                       <p className="mt-1 text-xl">{item.translation}</p>
                       {item.part_of_speech && (
                         <p className="mt-2 text-sm font-bold uppercase tracking-[0.14em] text-neutral-400">
