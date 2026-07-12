@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   ChangeEvent,
+  RefObject,
   useEffect,
   useRef,
   useState,
@@ -24,6 +25,35 @@ type IdentificationResult = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_DIMENSION = 1600;
 const JPEG_QUALITY = 0.82;
+
+function DebugInfo({
+  videoRef,
+  streamRef,
+}: {
+  videoRef: RefObject<HTMLVideoElement | null>;
+  streamRef: RefObject<MediaStream | null>;
+}) {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 500);
+    return () => clearInterval(id);
+  }, []);
+
+  const video = videoRef.current;
+  const stream = streamRef.current;
+  const track = stream?.getVideoTracks()[0];
+
+  return (
+    <span>
+      tick:{tick} | videoWidth:{video?.videoWidth ?? "—"} | videoHeight:
+      {video?.videoHeight ?? "—"} | readyState:{video?.readyState ?? "—"} |
+      paused:{String(video?.paused)} | trackState:{track?.readyState ?? "—"} |
+      trackMuted:{String(track?.muted)} | trackEnabled:
+      {String(track?.enabled)} | trackLabel:{track?.label ?? "—"}
+    </span>
+  );
+}
 
 export default function CameraPage() {
   const router = useRouter();
@@ -460,10 +490,14 @@ ${result.chineseExample}`;
                 autoPlay
                 muted
                 playsInline
-                // @ts-expect-error -- legacy Safari-specific attribute, not in React's DOM types
                 webkit-playsinline="true"
                 className="h-full w-full object-cover"
               />
+
+              {/* TEMP DEBUG — remove after diagnosing */}
+              <div className="absolute inset-x-0 top-0 z-10 bg-black/70 p-2 text-[10px] leading-tight text-lime-400">
+                <DebugInfo videoRef={videoRef} streamRef={streamRef} />
+              </div>
             </div>
 
             <div className="mt-5 flex items-center justify-center gap-8">
