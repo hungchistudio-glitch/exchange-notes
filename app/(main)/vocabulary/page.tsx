@@ -223,7 +223,10 @@ export default function VocabularyPage() {
           </section>
         ) : (
           <section className="mt-6 space-y-4">
-            {visibleItems.map((item) => (
+            {visibleItems.map((item) => {
+              const wordIsChinese = toPinyin(item.word) !== null;
+
+              return (
               <article
                 key={item.id}
                 className="overflow-hidden rounded-[28px] bg-white"
@@ -241,7 +244,15 @@ export default function VocabularyPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-3xl font-black">{item.word}</h2>
+                        <h2
+                          className={
+                            wordIsChinese
+                              ? "text-4xl font-black"
+                              : "text-xl text-neutral-500"
+                          }
+                        >
+                          {item.word}
+                        </h2>
                         <button
                           type="button"
                           aria-label={`Pronounce ${item.word}`}
@@ -263,7 +274,15 @@ export default function VocabularyPage() {
                       )}
 
                       <div className="mt-1 flex items-center gap-2">
-                        <p className="text-xl">{item.translation}</p>
+                        <p
+                          className={
+                            wordIsChinese
+                              ? "text-xl text-neutral-500"
+                              : "text-4xl font-black"
+                          }
+                        >
+                          {item.translation}
+                        </p>
                         <button
                           type="button"
                           aria-label={`Pronounce ${item.translation}`}
@@ -329,7 +348,8 @@ export default function VocabularyPage() {
                   </div>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </section>
         )}
       </div>
