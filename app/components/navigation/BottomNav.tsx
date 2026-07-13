@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   MessageCircle,
+  Newspaper,
   Search,
   UserRound,
 } from "lucide-react";
@@ -19,6 +20,12 @@ const items = [
     href: "/messages",
     label: "Messages",
     icon: MessageCircle,
+  },
+  {
+    href: "/discover",
+    label: "",
+    icon: Newspaper,
+    compact: true,
   },
   {
     href: "/friends",
@@ -36,7 +43,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-3 bottom-3 z-50 mx-auto grid max-w-md grid-cols-4 rounded-[26px] border border-black/10 bg-white p-2 shadow-lg">
+    <nav className="fixed inset-x-3 bottom-3 z-50 mx-auto grid max-w-md grid-cols-5 rounded-[26px] border border-black/10 bg-white p-2 shadow-lg">
       {items.map((item) => {
         const Icon = item.icon;
         const active = pathname.startsWith(item.href);
@@ -45,14 +52,17 @@ export default function BottomNav() {
           <Link
             key={item.href}
             href={item.href}
+            aria-label={item.label || "Discover"}
             className={`flex min-h-14 flex-col items-center justify-center rounded-[18px] px-2 text-xs font-bold ${
-              active
-                ? "bg-black text-white"
-                : "text-black"
+              active ? "bg-black text-white" : "text-black"
             }`}
           >
-            <Icon size={20} strokeWidth={2.2} />
-            <span className="mt-1">{item.label}</span>
+            <Icon
+              size={item.compact ? 16 : 20}
+              strokeWidth={2.2}
+              className={item.compact ? "opacity-70" : undefined}
+            />
+            {item.label && <span className="mt-1">{item.label}</span>}
           </Link>
         );
       })}
