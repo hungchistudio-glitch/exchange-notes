@@ -74,6 +74,13 @@ export default function CameraPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(true);
+
+  // Check camera support only on the client, after mount, to avoid
+  // touching `navigator` during server rendering.
+  useEffect(() => {
+    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
+  }, []);
 
   // ---- Camera lifecycle -----------------------------------------------
 
@@ -99,9 +106,8 @@ export default function CameraPage() {
     setImageData(null);
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError(
-        "This browser does not support camera access. Try Take Photo or Choose Image instead."
-      );
+      setCameraSupported(false);
+      takePhotoInputRef.current?.click();
       return;
     }
 
@@ -127,8 +133,8 @@ export default function CameraPage() {
 
       setError(
         isDenied
-          ? "Camera permission was denied. Enable camera access in your browser settings, or try Take Photo or Choose Image instead."
-          : "Camera access is unavailable. Try Take Photo or Choose Image instead."
+          ? "Camera permission was denied. Enable camera access in your browser settings, or choose an image instead."
+          : "Camera access is unavailable. Try choosing an image instead."
       );
     } finally {
       setCameraStarting(false);
@@ -148,9 +154,7 @@ export default function CameraPage() {
     const handleLoadedMetadata = () => {
       void video.play().catch((playError) => {
         console.error("video.play() failed:", playError);
-        setError(
-          "Could not start the camera preview. Try Take Photo instead."
-        );
+        setError("Could not start the camera preview. Try again.");
       });
     };
 
@@ -439,46 +443,101 @@ ${result.chineseExample}`;
         </header>
 
         {!cameraActive && !imageData && (
-          <section className="mt-24 text-center">
+          <section className="mt-28 flex flex-col items-center text-center">
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-neutral-400">
               English × 繁體中文
             </p>
 
-            <h2 className="mt-4 text-4xl font-bold tracking-tight">
+            <h2 className="mt-4 text-3xl font-bold tracking-tight">
               Discover a word
             </h2>
 
-            <p className="mx-auto mt-4 max-w-sm leading-7 text-neutral-500">
-              Photograph an object or choose an image to learn its name in
-              English and Traditional Chinese.
-            </p>
-
-            <div className="mt-10 space-y-3">
+            <div className="mt-16 flex items-center justify-center gap-16">
               <button
                 type="button"
                 onClick={startCamera}
                 disabled={cameraStarting}
-                className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white disabled:opacity-40"
+                aria-label="Open Camera"
+                className="flex flex-col items-center gap-3 disabled:opacity-40"
               >
-                {cameraStarting ? "Starting Camera..." : "Open Camera"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => takePhotoInputRef.current?.click()}
-                className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
-              >
-                Take Photo
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-900 text-white transition-transform active:scale-95">
+                  {cameraStarting ? (
+                    <svg
+                      className="h-7 w-7 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-7 w-7"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 8.5A1.5 1.5 0 015.5 7h2l1-1.5h7L16.5 7h2A1.5 1.5 0 0120 8.5V17a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 17V8.5z"
+                      />
+                      <circle cx="12" cy="12.5" r="3.2" />
+                    </svg>
+                  )}
+                </span>
+                <span className="text-xs font-semibold text-neutral-500">
+                  Camera
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => chooseImageInputRef.current?.click()}
-                className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
+                aria-label="Choose Image"
+                className="flex flex-col items-center gap-3"
               >
-                Choose Image
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm transition-transform active:scale-95">
+                  <svg
+                    className="h-7 w-7"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+                    <circle cx="8.5" cy="9.5" r="1.5" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 16l4.5-4.5a2 2 0 012.8 0L15 15l1-1a2 2 0 012.8 0L20 15.5"
+                    />
+                  </svg>
+                </span>
+                <span className="text-xs font-semibold text-neutral-500">
+                  Choose Image
+                </span>
               </button>
             </div>
+
+            {!cameraSupported && (
+              <p className="mt-10 max-w-xs text-xs text-neutral-400">
+                Camera access isn&apos;t supported in this browser — tap
+                Camera to take a photo instead.
+              </p>
+            )}
           </section>
         )}
 
