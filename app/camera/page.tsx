@@ -8,7 +8,9 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import AuthGuard from "../components/AuthGuard";
+
+import { createClient } from "@/lib/supabase/client";
+import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
 
 type IdentificationResult = {
   englishName: string;
@@ -20,6 +22,36 @@ type IdentificationResult = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_DIMENSION = 1600;
+const JPEG_QUALITY = 0.82;
+
+function SpeakerIcon({ speaking }: { speaking: boolean }) {
+  return (
+    <svg
+      className={speaking ? "h-3.5 w-3.5 animate-pulse" : "h-3.5 w-3.5"}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 8.5a5 5 0 010 7"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M18.5 6a8.5 8.5 0 010 12"
+      />
+    </svg>
+  );
+}
 
 export default function CameraPage() {
   const router = useRouter();
@@ -28,32 +60,78 @@ export default function CameraPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const takePhotoInputRef =
-    useRef<HTMLInputElement | null>(null);
+  const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
 
-  const chooseImageInputRef =
-    useRef<HTMLInputElement | null>(null);
-
-  const [cameraActive, setCameraActive] =
-    useState(false);
-
-  const [imageData, setImageData] =
-    useState<string | null>(null);
-
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
-
-  const [result, setResult] =
-    useState<IdentificationResult | null>(null);
-
+  const [result, setResult] = useState<IdentificationResult | null>(null);
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
+
+  useEffect(() => {
+    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
+    setSpeechSupported(
+      typeof window !== "undefined" && "speechSynthesis" in window
+    );
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [result]);
+
+  function speak(text: string, lang: "en" | "zh") {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (!text.trim()) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === "en" ? "en-US" : "zh-TW";
+    utterance.rate = 0.95;
+
+    utterance.onstart = () => setSpeakingLang(lang);
+    utterance.onend = () => setSpeakingLang(null);
+    utterance.onerror = () => setSpeakingLang(null);
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function speakEnglish() {
+    if (!result) return;
+    const text = [result.englishName, result.englishExample]
+      .filter(Boolean)
+      .join(". ");
+    speak(text, "en");
+  }
+
+  function speakChinese() {
+    if (!result) return;
+    const text = [result.chineseName, result.chineseExample]
+      .filter(Boolean)
+      .join("。");
+    speak(text, "zh");
+  }
 
   function stopCamera() {
-    streamRef.current
-      ?.getTracks()
-      .forEach((track) => track.stop());
-
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     setCameraActive(false);
   }
 
@@ -66,36 +144,87 @@ export default function CameraPage() {
     setResult(null);
     setImageData(null);
 
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraSupported(false);
+      takePhotoInputRef.current?.click();
+      return;
+    }
+
+    setCameraStarting(true);
+
     try {
-      const stream =
-        await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: {
-              ideal: "environment",
-            },
-          },
-          audio: false,
-        });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+        },
+        audio: false,
+      });
 
       streamRef.current = stream;
       setCameraActive(true);
+    } catch (mediaError) {
+      console.error("getUserMedia failed:", mediaError);
 
-      window.setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play();
-        }
-      }, 0);
-    } catch {
+      const isDenied =
+        mediaError instanceof DOMException &&
+        (mediaError.name === "NotAllowedError" ||
+          mediaError.name === "PermissionDeniedError");
+
       setError(
-        "Camera access is unavailable. Try Take Photo or Choose Image instead."
+        isDenied
+          ? "Camera permission was denied. Enable camera access in your browser settings, or choose an image instead."
+          : "Camera access is unavailable. Try choosing an image instead."
       );
+    } finally {
+      setCameraStarting(false);
     }
   }
 
-  function compressImage(
-    file: File
-  ): Promise<string> {
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!cameraActive || !video || !stream) return;
+
+    video.srcObject = stream;
+
+    const handleLoadedMetadata = () => {
+      void video.play().catch((playError) => {
+        console.error("video.play() failed:", playError);
+        setError("Could not start the camera preview. Try again.");
+      });
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
+  }, [cameraActive]);
+
+  function drawToDataUrl(
+    source: CanvasImageSource,
+    sourceWidth: number,
+    sourceHeight: number
+  ): string | null {
+    const canvas = canvasRef.current ?? document.createElement("canvas");
+
+    const scale = Math.min(
+      1,
+      MAX_DIMENSION / Math.max(sourceWidth, sourceHeight)
+    );
+
+    canvas.width = Math.round(sourceWidth * scale);
+    canvas.height = Math.round(sourceHeight * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  }
+
+  function compressImage(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
 
@@ -114,40 +243,14 @@ export default function CameraPage() {
           reject(new Error("Could not open this image."));
 
         image.onload = () => {
-          const maxDimension = 1600;
-          const scale = Math.min(
-            1,
-            maxDimension /
-              Math.max(image.width, image.height)
-          );
+          const dataUrl = drawToDataUrl(image, image.width, image.height);
 
-          const width = Math.round(image.width * scale);
-          const height = Math.round(image.height * scale);
-
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-
-          const context = canvas.getContext("2d");
-
-          if (!context) {
-            reject(
-              new Error("Could not process this image.")
-            );
+          if (!dataUrl) {
+            reject(new Error("Could not process this image."));
             return;
           }
 
-          context.drawImage(
-            image,
-            0,
-            0,
-            width,
-            height
-          );
-
-          resolve(
-            canvas.toDataURL("image/jpeg", 0.82)
-          );
+          resolve(dataUrl);
         };
 
         image.src = reader.result;
@@ -157,9 +260,7 @@ export default function CameraPage() {
     });
   }
 
-  async function handleSelectedFile(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
+  async function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -174,9 +275,7 @@ export default function CameraPage() {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError(
-        "Please choose an image smaller than 10 MB."
-      );
+      setError("Please choose an image smaller than 10 MB.");
       return;
     }
 
@@ -197,52 +296,20 @@ export default function CameraPage() {
 
   function capturePhoto() {
     const video = videoRef.current;
-    const canvas = canvasRef.current;
 
-    if (
-      !video ||
-      !canvas ||
-      !video.videoWidth ||
-      !video.videoHeight
-    ) {
+    if (!video || !video.videoWidth || !video.videoHeight) {
       setError("The camera is not ready yet.");
       return;
     }
 
-    const maxDimension = 1600;
-    const scale = Math.min(
-      1,
-      maxDimension /
-        Math.max(video.videoWidth, video.videoHeight)
-    );
+    const dataUrl = drawToDataUrl(video, video.videoWidth, video.videoHeight);
 
-    canvas.width = Math.round(
-      video.videoWidth * scale
-    );
-
-    canvas.height = Math.round(
-      video.videoHeight * scale
-    );
-
-    const context = canvas.getContext("2d");
-
-    if (!context) {
+    if (!dataUrl) {
       setError("Could not capture the image.");
       return;
     }
 
-    context.drawImage(
-      video,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    setImageData(
-      canvas.toDataURL("image/jpeg", 0.82)
-    );
-
+    setImageData(dataUrl);
     setFileName("camera-photo.jpg");
     setResult(null);
     stopCamera();
@@ -256,18 +323,11 @@ export default function CameraPage() {
     setResult(null);
 
     try {
-      const response = await fetch(
-        "/api/identify-object",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            image: imageData,
-          }),
-        }
-      );
+      const response = await fetch("/api/identify-object", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData }),
+      });
 
       const data = (await response.json()) as
         | IdentificationResult
@@ -275,9 +335,7 @@ export default function CameraPage() {
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data
-            ? data.error
-            : "Could not identify this image."
+          "error" in data ? data.error : "Could not identify this image."
         );
       }
 
@@ -303,289 +361,389 @@ ${result.englishExample}
 ${result.chineseExample}`;
   }
 
-  function saveToNotes() {
-    if (!result) return;
+  async function saveToVocabulary() {
+    if (!result || !imageData || saving) return;
 
-    const storageKey = "exchange-notes";
-    const saved = localStorage.getItem(storageKey);
-
-    let currentNotes: unknown[] = [];
+    setSaving(true);
+    setError("");
 
     try {
-      currentNotes = saved
-        ? (JSON.parse(saved) as unknown[])
-        : [];
-    } catch {
-      currentNotes = [];
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Please log in before saving a word.");
+      }
+
+      const imageBlob = dataUrlToBlob(imageData);
+      const extension = safeImageExtension(imageBlob.type);
+      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("vocabulary-images")
+        .upload(imagePath, imageBlob, {
+          contentType: imageBlob.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicImage } = supabase.storage
+        .from("vocabulary-images")
+        .getPublicUrl(imagePath);
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: user.id,
+          word: result.englishName.trim(),
+          translation: result.chineseName.trim(),
+          language: "english",
+          part_of_speech: result.partOfSpeech.trim() || null,
+          example_sentence: result.englishExample.trim() || null,
+          translated_example: result.chineseExample.trim() || null,
+          image_url: publicImage.publicUrl,
+          confidence: result.confidence,
+          status: "new",
+        });
+
+      if (insertError) {
+        await supabase.storage.from("vocabulary-images").remove([imagePath]);
+        throw insertError;
+      }
+
+      setSaved(true);
+      router.push("/vocabulary");
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save this word."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    const newNote = {
-      id: Date.now(),
-      language: "english",
-      text: createShareText(),
-      time: new Date().toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-      replies: 0,
-    };
-
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify([newNote, ...currentNotes])
-    );
-
-    router.push("/");
   }
 
   function sendToPartner() {
     if (!result) return;
 
-    sessionStorage.setItem(
-      "exchange-notes-draft-message",
-      createShareText()
-    );
+    sessionStorage.setItem("exchange-notes-draft-message", createShareText());
 
     router.push("/messages");
   }
 
   function reset() {
     stopCamera();
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setImageData(null);
     setFileName("");
     setResult(null);
     setError("");
+    setSaved(false);
   }
 
   return (
-    <AuthGuard>
-      <main className="min-h-screen bg-[#f5f3ee] px-4 py-6 text-neutral-900">
-        <div className="mx-auto max-w-xl">
-          <header className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="text-sm font-semibold text-neutral-500"
-            >
-              Cancel
-            </Link>
+    <main className="flex min-h-screen flex-col bg-[#f5f3ee] px-4 text-neutral-900">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
+        <header className="flex h-11 shrink-0 items-center justify-between">
+          <Link href="/" className="text-xs font-semibold text-neutral-500">
+            Cancel
+          </Link>
 
-            <h1 className="font-semibold">
-              Discover
-            </h1>
+          <h1 className="text-sm font-semibold">Discover</h1>
 
-            <button
-              type="button"
-              onClick={reset}
-              className="text-sm font-semibold text-neutral-500"
-            >
-              Reset
-            </button>
-          </header>
+          <button
+            type="button"
+            onClick={reset}
+            className="text-xs font-semibold text-neutral-500"
+          >
+            Reset
+          </button>
+        </header>
 
-          {!cameraActive && !imageData && (
-            <section className="mt-24 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-neutral-400">
-                English × 繁體中文
-              </p>
-
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
-                Discover a word
-              </h2>
-
-              <p className="mx-auto mt-4 max-w-sm leading-7 text-neutral-500">
-                Photograph an object or choose an image
-                to learn its name in English and
-                Traditional Chinese.
-              </p>
-
-              <div className="mt-10 space-y-3">
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white"
-                >
-                  Open Camera
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    takePhotoInputRef.current?.click()
-                  }
-                  className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
-                >
-                  Take Photo
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    chooseImageInputRef.current?.click()
-                  }
-                  className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
-                >
-                  Choose Image
-                </button>
-              </div>
-            </section>
-          )}
-
-          {cameraActive && !imageData && (
-            <section className="mt-6">
-              <div className="aspect-[3/4] overflow-hidden rounded-3xl bg-black">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="mt-5 flex items-center justify-center gap-8">
-                <button
-                  type="button"
-                  onClick={stopCamera}
-                  className="text-sm font-semibold text-neutral-500"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={capturePhoto}
-                  aria-label="Capture photo"
-                  className="h-20 w-20 rounded-full border-[6px] border-white bg-neutral-900 shadow-md"
-                />
-              </div>
-            </section>
-          )}
-
-          {imageData && (
-            <section className="mt-6">
-              <div className="overflow-hidden rounded-3xl bg-neutral-900">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imageData}
-                  alt="Selected object"
-                  className="max-h-[52vh] w-full object-contain"
-                />
-              </div>
-
-              {fileName && (
-                <p className="mt-3 truncate text-center text-xs text-neutral-400">
-                  {fileName}
-                </p>
-              )}
-
-              {!result && (
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="rounded-2xl bg-white px-4 py-4 font-semibold shadow-sm"
-                  >
-                    Choose another
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={identifyImage}
-                    disabled={analyzing}
-                    className="rounded-2xl bg-neutral-900 px-4 py-4 font-semibold text-white disabled:opacity-40"
-                  >
-                    {analyzing
-                      ? "Identifying..."
-                      : "Identify"}
-                  </button>
-                </div>
-              )}
-            </section>
-          )}
-
-          {error && (
-            <p className="mt-5 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
-              {error}
+        {!cameraActive && !imageData && (
+          <section className="flex flex-1 flex-col items-center justify-center text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+              English × 繁體中文
             </p>
-          )}
 
-          {result && (
-            <section className="mt-5 rounded-3xl bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
-                  Identified
-                </span>
+            <h2 className="mt-2 text-xl font-bold tracking-tight">
+              Discover a word
+            </h2>
 
-                <span className="text-xs text-neutral-400">
-                  {result.confidence}
+            <div className="mt-8 flex items-center justify-center gap-10">
+              <button
+                type="button"
+                onClick={startCamera}
+                disabled={cameraStarting}
+                aria-label="Open Camera"
+                className="flex flex-col items-center gap-2 disabled:opacity-40"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-900 text-white transition-transform active:scale-95">
+                  {cameraStarting ? (
+                    <svg
+                      className="h-5 w-5 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 8.5A1.5 1.5 0 015.5 7h2l1-1.5h7L16.5 7h2A1.5 1.5 0 0120 8.5V17a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 17V8.5z"
+                      />
+                      <circle cx="12" cy="12.5" r="3.2" />
+                    </svg>
+                  )}
                 </span>
+                <span className="text-[11px] font-semibold text-neutral-500">
+                  Camera
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => chooseImageInputRef.current?.click()}
+                aria-label="Choose Image"
+                className="flex flex-col items-center gap-2"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full border border-neutral-200 bg-white transition-transform active:scale-95">
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+                    <circle cx="8.5" cy="9.5" r="1.5" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 16l4.5-4.5a2 2 0 012.8 0L15 15l1-1a2 2 0 012.8 0L20 15.5"
+                    />
+                  </svg>
+                </span>
+                <span className="text-[11px] font-semibold text-neutral-500">
+                  Choose Image
+                </span>
+              </button>
+            </div>
+
+            {!cameraSupported && (
+              <p className="mt-6 max-w-xs text-[11px] text-neutral-400">
+                Camera access isn&apos;t supported in this browser — tap
+                Camera to take a photo instead.
+              </p>
+            )}
+          </section>
+        )}
+
+        {cameraActive && !imageData && (
+          <section className="mt-4 flex flex-1 flex-col">
+            <div className="relative flex-1 overflow-hidden rounded-2xl bg-black">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                webkit-playsinline="true"
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-6">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="text-xs font-semibold text-neutral-500"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={capturePhoto}
+                aria-label="Capture photo"
+                className="h-14 w-14 rounded-full border-[5px] border-white bg-neutral-900 shadow-md"
+              />
+            </div>
+          </section>
+        )}
+
+        {imageData && (
+          <section className="mt-4 flex flex-1 flex-col">
+            <div className="overflow-hidden rounded-[20px] bg-neutral-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageData}
+                alt="Selected object"
+                className="max-h-[42vh] w-full object-contain"
+              />
+            </div>
+
+            {fileName && !result && (
+              <p className="mt-2 truncate text-center text-[11px] text-neutral-400">
+                {fileName}
+              </p>
+            )}
+
+            {!result && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="h-11 rounded-[14px] border border-neutral-200 bg-white text-sm font-semibold transition-all duration-150 active:scale-[0.98]"
+                >
+                  Choose another
+                </button>
+
+                <button
+                  type="button"
+                  onClick={identifyImage}
+                  disabled={analyzing}
+                  className="h-11 rounded-[14px] bg-neutral-900 text-sm font-semibold text-white transition-all duration-150 active:scale-[0.98] disabled:opacity-40"
+                >
+                  {analyzing ? "Identifying..." : "Identify"}
+                </button>
               </div>
+            )}
+          </section>
+        )}
 
-              <h2 className="mt-4 text-4xl font-bold tracking-tight">
+        {error && (
+          <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+            {error}
+          </p>
+        )}
+
+        {result && (
+          <section className="mt-4 flex flex-1 flex-col">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">
+                Identified
+              </span>
+
+              <span className="text-[10px] text-neutral-400">
+                {result.confidence}
+              </span>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <h2 className="text-[30px] font-bold tracking-[-0.02em]">
                 {result.englishName}
               </h2>
 
-              <p className="mt-2 text-2xl">
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={speakEnglish}
+                  aria-label="Play English pronunciation"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition-transform active:scale-90"
+                >
+                  <SpeakerIcon speaking={speakingLang === "en"} />
+                </button>
+              )}
+            </div>
+
+            <div className="mt-1 flex items-center gap-2">
+              <p className="text-lg font-medium text-neutral-700">
                 {result.chineseName}
               </p>
 
-              <p className="mt-2 text-sm text-neutral-400">
-                {result.partOfSpeech}
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={speakChinese}
+                  aria-label="播放中文發音"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition-transform active:scale-90"
+                >
+                  <SpeakerIcon speaking={speakingLang === "zh"} />
+                </button>
+              )}
+            </div>
+
+            <p className="mt-1 text-xs text-neutral-400">
+              {result.partOfSpeech}
+            </p>
+
+            <div className="mt-4 border-t border-neutral-200 pt-4">
+              <p className="line-clamp-2 text-sm leading-6">
+                {result.englishExample}
               </p>
 
-              <div className="mt-6 border-t border-neutral-100 pt-5">
-                <p className="leading-7">
-                  {result.englishExample}
-                </p>
+              <p className="mt-1 line-clamp-2 text-sm leading-6 text-neutral-500">
+                {result.chineseExample}
+              </p>
+            </div>
 
-                <p className="mt-2 leading-7 text-neutral-500">
-                  {result.chineseExample}
-                </p>
-              </div>
+            <div className="mt-6 space-y-2">
+              <button
+                type="button"
+                onClick={saveToVocabulary}
+                disabled={saving || saved}
+                className="h-11 w-full rounded-[14px] bg-neutral-900 text-sm font-semibold text-white transition-all duration-150 hover:bg-black active:scale-[0.98] disabled:opacity-40"
+              >
+                {saving ? "Saving..." : saved ? "Saved" : "Save to Vocabulary"}
+              </button>
 
-              <div className="mt-7 space-y-3">
-                <button
-                  type="button"
-                  onClick={saveToNotes}
-                  className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white"
-                >
-                  Save to Notes
-                </button>
+              <button
+                type="button"
+                onClick={sendToPartner}
+                className="h-11 w-full rounded-[14px] border border-neutral-200 bg-white text-sm font-semibold transition-all duration-150 active:scale-[0.98]"
+              >
+                Send to Partner
+              </button>
+            </div>
+          </section>
+        )}
 
-                <button
-                  type="button"
-                  onClick={sendToPartner}
-                  className="w-full rounded-2xl bg-[#f1eee7] px-5 py-4 font-semibold"
-                >
-                  Send to Partner
-                </button>
-              </div>
-            </section>
-          )}
+        <canvas ref={canvasRef} className="hidden" />
 
-          <canvas
-            ref={canvasRef}
-            className="hidden"
-          />
+        <input
+          ref={takePhotoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleSelectedFile}
+          className="hidden"
+        />
 
-          <input
-            ref={takePhotoInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleSelectedFile}
-            className="hidden"
-          />
-
-          <input
-            ref={chooseImageInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleSelectedFile}
-            className="hidden"
-          />
-        </div>
-      </main>
-    </AuthGuard>
+        <input
+          ref={chooseImageInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={handleSelectedFile}
+          className="hidden"
+        />
+      </div>
+    </main>
   );
 }
