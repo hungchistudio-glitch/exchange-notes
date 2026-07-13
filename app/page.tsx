@@ -1,726 +1,553 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type TouchEvent,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import AuthGuard from "./components/AuthGuard";
+import DailyNews from "./components/DailyNews";
 import LogoutButton from "./components/LogoutButton";
-import { createClient } from "@/lib/supabase/client";
 
-type Language = "english" | "traditional-chinese";
-type ActiveTab = "notes" | "news";
+type HomeTab = "news" | "notes";
 
-type Note = {
-  id: number;
-  language: Language;
-  text: string;
-  time: string;
-  replies: number;
+type SavedNote = {
+  id: string;
+  english: string;
+  chinese: string;
+  createdAt: string;
 };
 
-type NewsArticle = {
-  id: number;
-  category: string;
-  englishTitle: string;
-  chineseTitle: string;
-  summary: string;
-  vocabulary: string[];
-};
+const NOTES_STORAGE_KEY = "exchange-notes-home-notes";
 
-const starterNotes: Note[] = [
-  {
-    id: 1,
-    language: "english",
-    text: 'I heard someone say "hang in there" today.',
-    time: "3:42 PM",
-    replies: 1,
-  },
-  {
-    id: 2,
-    language: "traditional-chinese",
-    text: "今天學到：「見招拆招」",
-    time: "8:15 PM",
-    replies: 2,
-  },
-];
-
-const starterNews: NewsArticle[] = [
-  {
-    id: 1,
-    category: "Technology",
-    englishTitle:
-      "Cities explore new ways to use artificial intelligence",
-    chineseTitle: "城市探索人工智慧的新應用方式",
-    summary:
-      "Local governments are testing AI tools to improve transportation, public services, and communication.",
-    vocabulary: [
-      "explore",
-      "artificial intelligence",
-      "public services",
-    ],
-  },
-  {
-    id: 2,
-    category: "Culture",
-    englishTitle:
-      "Museums create more interactive exhibitions",
-    chineseTitle: "博物館推出更多互動式展覽",
-    summary:
-      "Museums are using digital displays and immersive experiences to attract younger visitors.",
-    vocabulary: ["interactive", "exhibition", "immersive"],
-  },
-  {
-    id: 3,
-    category: "Life",
-    englishTitle:
-      "More people choose bicycles for short daily trips",
-    chineseTitle: "更多人選擇騎自行車進行短程通勤",
-    summary:
-      "Cities are adding protected bike lanes as more residents choose cycling for transportation.",
-    vocabulary: [
-      "daily trips",
-      "protected bike lanes",
-      "residents",
-    ],
-  },
-];
-
-function getCurrentTime() {
-  return new Date().toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+function NewsIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 4.5h11.5A2.5 2.5 0 0119 7v12.5H7.5A2.5 2.5 0 015 17V4.5z"
+      />
+      <path
+        strokeLinecap="round"
+        d="M8.5 8h7M8.5 11.5h7M8.5 15h4"
+      />
+      {active && (
+        <circle
+          cx="18.5"
+          cy="5.5"
+          r="2.25"
+          fill="currentColor"
+          stroke="none"
+        />
+      )}
+    </svg>
+  );
 }
 
-function getGreeting() {
-  const hour = new Date().getHours();
+function NotesIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 4.5h9.5L19 8v11.5H6V4.5z"
+      />
+      <path strokeLinecap="round" d="M9 10h7M9 13.5h7M9 17h4" />
+      {active && (
+        <circle
+          cx="18.5"
+          cy="5.5"
+          r="2.25"
+          fill="currentColor"
+          stroke="none"
+        />
+      )}
+    </svg>
+  );
+}
 
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+function CameraIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 8.5A1.5 1.5 0 015.5 7h2l1-1.5h7L16.5 7h2A1.5 1.5 0 0120 8.5V17a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 17V8.5z"
+      />
+      <circle cx="12" cy="12.5" r="3.2" />
+    </svg>
+  );
+}
+
+function MessageIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 5.5h14v10H9l-4 3v-13z"
+      />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="3" />
+      <path
+        strokeLinecap="round"
+        d="M5.5 19a6.5 6.5 0 0113 0"
+      />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 7h14M9 7V4.5h6V7M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13"
+      />
+    </svg>
+  );
+}
+
+function readStoredNotes(): SavedNote[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(NOTES_STORAGE_KEY);
+
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue) as unknown;
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return parsedValue.filter(
+      (item): item is SavedNote =>
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as SavedNote).id === "string" &&
+        typeof (item as SavedNote).english === "string" &&
+        typeof (item as SavedNote).chinese === "string" &&
+        typeof (item as SavedNote).createdAt === "string"
+    );
+  } catch {
+    return [];
+  }
+}
+
+function formatNoteDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 export default function HomePage() {
-  const router = useRouter();
-
-  const [notes, setNotes] = useState<Note[]>(starterNotes);
-  const [newNote, setNewNote] = useState("");
-  const [language, setLanguage] =
-    useState<Language>("english");
-  const [activeTab, setActiveTab] =
-    useState<ActiveTab>("notes");
-  const [loaded, setLoaded] = useState(false);
-  const [touchStartX, setTouchStartX] =
-    useState<number | null>(null);
-  const [displayName, setDisplayName] =
-    useState("Welcome back");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(
-    null
-  );
+  const [activeTab, setActiveTab] = useState<HomeTab>("news");
+  const [notes, setNotes] = useState<SavedNote[]>([]);
+  const [englishDraft, setEnglishDraft] = useState("");
+  const [chineseDraft, setChineseDraft] = useState("");
+  const [showNoteComposer, setShowNoteComposer] = useState(false);
 
   useEffect(() => {
-    const savedNotes = localStorage.getItem("exchange-notes");
-
-    if (savedNotes) {
-      try {
-        setNotes(JSON.parse(savedNotes) as Note[]);
-      } catch {
-        console.error("Could not load saved notes.");
-      }
-    }
-
-    setLoaded(true);
+    setNotes(readStoredNotes());
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-
-    localStorage.setItem(
-      "exchange-notes",
+    window.localStorage.setItem(
+      NOTES_STORAGE_KEY,
       JSON.stringify(notes)
     );
-  }, [notes, loaded]);
-
-  useEffect(() => {
-    async function loadUserName() {
-      try {
-        const supabase = createClient();
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return;
-
-        const metadataName =
-          typeof user.user_metadata?.display_name === "string"
-            ? user.user_metadata.display_name.trim()
-            : "";
-
-        if (metadataName) {
-          setDisplayName(metadataName);
-          return;
-        }
-
-        const emailName = user.email?.split("@")[0];
-
-        if (emailName) {
-          setDisplayName(emailName);
-        }
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_url, display_name")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.display_name) {
-          setDisplayName(profile.display_name);
-        }
-
-        if (profile?.avatar_url) {
-          setAvatarUrl(profile.avatar_url);
-        }
-      } catch {
-        setDisplayName("Welcome back");
-      }
-    }
-
-    loadUserName();
-  }, []);
-
-  const totalReplies = useMemo(
-    () =>
-      notes.reduce(
-        (sum, note) => sum + note.replies,
-        0
-      ),
-    [notes]
-  );
-
-  const totalWords = useMemo(() => {
-    return notes.reduce((sum, note) => {
-      return (
-        sum +
-        note.text
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean).length
-      );
-    }, 0);
   }, [notes]);
 
-  function addNote() {
-    const text = newNote.trim();
+  const canSaveNote = useMemo(
+    () => Boolean(englishDraft.trim() || chineseDraft.trim()),
+    [englishDraft, chineseDraft]
+  );
 
-    if (!text) return;
-
-    const note: Note = {
-      id: Date.now(),
-      language,
-      text,
-      time: getCurrentTime(),
-      replies: 0,
-    };
-
-    setNotes((currentNotes) => [
-      note,
-      ...currentNotes,
-    ]);
-
-    setNewNote("");
-  }
-
-  function saveNewsToNotes(article: NewsArticle) {
-    const note: Note = {
-      id: Date.now(),
-      language: "english",
-      text: `${article.englishTitle}
-
-${article.chineseTitle}
-
-Vocabulary:
-${article.vocabulary.join(", ")}`,
-      time: getCurrentTime(),
-      replies: 0,
-    };
-
-    setNotes((currentNotes) => [
-      note,
-      ...currentNotes,
-    ]);
-
-    setActiveTab("notes");
-  }
-
-  function handleTouchStart(
-    event: TouchEvent<HTMLElement>
-  ) {
-    setTouchStartX(
-      event.changedTouches[0]?.clientX ?? null
-    );
-  }
-
-  function handleTouchEnd(
-    event: TouchEvent<HTMLElement>
-  ) {
-    if (touchStartX === null) return;
-
-    const endX =
-      event.changedTouches[0]?.clientX ?? touchStartX;
-
-    const swipeDistance = touchStartX - endX;
-
-    if (swipeDistance > 90) {
-      router.push("/camera");
+  function saveNote() {
+    if (!canSaveNote) {
+      return;
     }
 
-    setTouchStartX(null);
+    const newNote: SavedNote = {
+      id: crypto.randomUUID(),
+      english: englishDraft.trim(),
+      chinese: chineseDraft.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setNotes((currentNotes) => [newNote, ...currentNotes]);
+    setEnglishDraft("");
+    setChineseDraft("");
+    setShowNoteComposer(false);
+  }
+
+  function deleteNote(noteId: string) {
+    setNotes((currentNotes) =>
+      currentNotes.filter((note) => note.id !== noteId)
+    );
   }
 
   return (
     <AuthGuard>
-      <main
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="min-h-screen bg-[#f4f1ea] px-4 pb-28 pt-6 text-black sm:px-6 sm:pb-12 sm:pt-10"
-      >
-        <div className="mx-auto max-w-2xl">
-          <header>
-            <div className="flex items-start justify-between gap-4">
+      <main className="min-h-[100dvh] bg-[#f5f3ed] text-neutral-950">
+        <div className="mx-auto min-h-[100dvh] w-full max-w-xl pb-28">
+          <header
+            className="sticky top-0 z-30 border-b border-black/[0.05] bg-[#f5f3ed]/90 px-4 backdrop-blur-xl"
+            style={{
+              paddingTop: "env(safe-area-inset-top)",
+            }}
+          >
+            <div className="flex h-16 items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-black">
-                  {getGreeting()}
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                  Exchange Notes
                 </p>
 
-                <h1 className="mt-1 break-words text-4xl font-bold tracking-tight text-black sm:text-5xl">
-                  {displayName}
+                <h1 className="mt-0.5 text-xl font-bold tracking-[-0.025em]">
+                  Learn from the world
                 </h1>
-
-                <p className="mt-3 font-semibold text-black">
-                  English × 繁體中文
-                </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/profile"
-                  className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-300 bg-white text-lg font-bold text-black"
-                >
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Your profile photo"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    displayName.charAt(0).toUpperCase()
-                  )}
-                </Link>
-
-                <LogoutButton />
-              </div>
+              <LogoutButton />
             </div>
-
-            <p className="mt-5 text-lg leading-7 text-black">
-              Keep one useful word, sentence, or
-              question from today.
-            </p>
           </header>
 
-          <section className="mt-8 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("notes");
-                document
-                  .getElementById("new-note")
-                  ?.scrollIntoView({
-                    behavior: "smooth",
-                  });
-              }}
-              className="rounded-3xl bg-black p-5 text-left text-white shadow-sm"
-            >
-              <span className="text-2xl">＋</span>
-
-              <p className="mt-6 text-lg font-bold">
-                Add Note
-              </p>
-
-              <p className="mt-1 text-sm text-white">
-                Save what you learned
-              </p>
-            </button>
-
-            <Link
-              href="/camera"
-              className="rounded-3xl bg-white p-5 text-left text-black shadow-sm"
-            >
-              <span className="text-2xl">◉</span>
-
-              <p className="mt-6 text-lg font-bold">
-                Camera
-              </p>
-
-              <p className="mt-1 text-sm text-black">
-                Discover a word
-              </p>
-            </Link>
-
-            <Link
-              href="/friends"
-              className="rounded-3xl bg-white p-5 text-left text-black shadow-sm"
-            >
-              <span className="text-2xl">◎</span>
-
-              <p className="mt-6 text-lg font-bold">
-                Friends
-              </p>
-
-              <p className="mt-1 text-sm text-black">
-                Add a learning partner
-              </p>
-            </Link>
-
-            <Link
-              href="/messages"
-              className="rounded-3xl bg-white p-5 text-left text-black shadow-sm"
-            >
-              <span className="text-2xl">◌</span>
-
-              <p className="mt-6 text-lg font-bold">
-                Messages
-              </p>
-
-              <p className="mt-1 text-sm text-black">
-                Continue a conversation
-              </p>
-            </Link>
-          </section>
-
-          <section className="mt-7 rounded-3xl bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-black">
-                  Today
-                </p>
-
-                <h2 className="mt-2 text-2xl font-bold text-black">
-                  Your learning snapshot
-                </h2>
-              </div>
-
-              <span className="text-2xl">↗</span>
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              <div className="rounded-2xl bg-[#f4f1ea] p-4">
-                <p className="text-2xl font-bold text-black">
-                  {notes.length}
-                </p>
-
-                <p className="mt-1 text-sm font-semibold text-black">
-                  Notes
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f4f1ea] p-4">
-                <p className="text-2xl font-bold text-black">
-                  {totalWords}
-                </p>
-
-                <p className="mt-1 text-sm font-semibold text-black">
-                  Words
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f4f1ea] p-4">
-                <p className="text-2xl font-bold text-black">
-                  {totalReplies}
-                </p>
-
-                <p className="mt-1 text-sm font-semibold text-black">
-                  Replies
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="mt-7 rounded-3xl bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-black">
-                  Learning partner
-                </p>
-
-                <h2 className="mt-2 text-2xl font-bold text-black">
-                  Learning is better together
-                </h2>
-
-                <p className="mt-2 leading-7 text-black">
-                  Add a friend by Exchange ID, email,
-                  or QR code.
-                </p>
-              </div>
-            </div>
-
-            <Link
-              href="/friends"
-              className="mt-5 block rounded-2xl bg-black px-5 py-4 text-center font-bold text-white"
-            >
-              Add Your First Friend
-            </Link>
-          </section>
-
-          <nav className="mt-7 grid grid-cols-2 rounded-3xl bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setActiveTab("notes")}
-              className={`rounded-2xl px-4 py-4 font-bold transition ${
-                activeTab === "notes"
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
-              }`}
-            >
-              Notes
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("news")}
-              className={`rounded-2xl px-4 py-4 font-bold transition ${
-                activeTab === "news"
-                  ? "bg-black text-white"
-                  : "bg-white text-black"
-              }`}
-            >
-              Daily News
-            </button>
-          </nav>
-
-          {activeTab === "notes" && (
-            <>
-              <section
-                id="new-note"
-                className="mt-7 scroll-mt-6 rounded-3xl bg-white p-5 shadow-sm sm:p-7"
-              >
-                <h2 className="text-2xl font-bold text-black">
-                  What did you learn?
-                </h2>
-
-                <p className="mt-2 leading-7 text-black">
-                  Save a word, sentence, question, or
-                  expression.
-                </p>
-
-                <textarea
-                  value={newNote}
-                  onChange={(event) =>
-                    setNewNote(event.target.value)
-                  }
-                  placeholder="Write something useful from today..."
-                  rows={5}
-                  maxLength={2000}
-                  className="mt-5 w-full resize-none rounded-2xl border border-neutral-500 bg-white p-4 text-lg text-black placeholder:text-neutral-600 outline-none transition focus:border-black"
-                />
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLanguage("english")
-                    }
-                    className={`rounded-2xl border px-4 py-4 font-bold ${
-                      language === "english"
-                        ? "border-black bg-black text-white"
-                        : "border-neutral-400 bg-white text-black"
-                    }`}
-                  >
-                    English
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setLanguage(
-                        "traditional-chinese"
-                      )
-                    }
-                    className={`rounded-2xl border px-4 py-4 font-bold ${
-                      language ===
-                      "traditional-chinese"
-                        ? "border-black bg-black text-white"
-                        : "border-neutral-400 bg-white text-black"
-                    }`}
-                  >
-                    繁體中文
-                  </button>
+          <section className="px-4 pt-5">
+            <div className="rounded-[24px] border border-black/[0.05] bg-white p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#dbead6] text-sm font-bold text-[#2f6c38]">
+                  LP
                 </div>
 
-                <button
-                  type="button"
-                  onClick={addNote}
-                  disabled={!newNote.trim()}
-                  className="mt-4 w-full rounded-2xl bg-orange-500 px-5 py-4 font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Save Note
-                </button>
-              </section>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-neutral-400">
+                    Learning Partner
+                  </p>
 
-              <section className="mt-9">
+                  <p className="mt-0.5 truncate text-sm font-semibold">
+                    Practice together every day
+                  </p>
+                </div>
+
+                <Link
+                  href="/messages"
+                  className="rounded-full bg-neutral-950 px-4 py-2 text-xs font-semibold text-white transition-transform active:scale-95"
+                >
+                  Message
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <div className="px-4 pt-6">
+            <div className="grid grid-cols-2 rounded-2xl bg-black/[0.04] p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("news")}
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === "news"
+                    ? "bg-white text-neutral-950 shadow-sm"
+                    : "text-neutral-500"
+                }`}
+              >
+                <NewsIcon active={activeTab === "news"} />
+                Daily News
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("notes")}
+                className={`flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === "notes"
+                    ? "bg-white text-neutral-950 shadow-sm"
+                    : "text-neutral-500"
+                }`}
+              >
+                <NotesIcon active={activeTab === "notes"} />
+                Notes
+              </button>
+            </div>
+          </div>
+
+          <div className="px-4">
+            {activeTab === "news" && <DailyNews />}
+
+            {activeTab === "notes" && (
+              <section className="mt-8">
                 <div className="flex items-end justify-between gap-4">
                   <div>
-                    <h2 className="text-3xl font-bold text-black">
-                      Shared Notes
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                      Personal learning space
+                    </p>
+
+                    <h2 className="mt-1 text-[28px] font-bold tracking-[-0.035em]">
+                      Notes
                     </h2>
 
-                    <p className="mt-1 font-semibold text-black">
-                      {notes.length} saved{" "}
-                      {notes.length === 1
-                        ? "note"
-                        : "notes"}
+                    <p className="mt-1 text-sm text-neutral-500">
+                      Save useful words, sentences, and ideas.
                     </p>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowNoteComposer((currentValue) => !currentValue)
+                    }
+                    className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-4 text-xs font-semibold text-neutral-700 transition-transform active:scale-95"
+                  >
+                    <PlusIcon />
+                    New note
+                  </button>
                 </div>
 
-                <div className="mt-5 space-y-4">
+                {showNoteComposer && (
+                  <div className="mt-5 rounded-[24px] border border-black/[0.06] bg-white p-4">
+                    <label className="block">
+                      <span className="text-xs font-semibold text-neutral-500">
+                        English
+                      </span>
+
+                      <textarea
+                        value={englishDraft}
+                        onChange={(event) =>
+                          setEnglishDraft(event.target.value)
+                        }
+                        rows={3}
+                        maxLength={1000}
+                        placeholder="Write a word, sentence, or thought..."
+                        className="mt-2 w-full resize-none rounded-2xl bg-[#f5f3ed] px-4 py-3 text-sm leading-6 outline-none placeholder:text-neutral-400"
+                      />
+                    </label>
+
+                    <label className="mt-4 block">
+                      <span className="text-xs font-semibold text-neutral-500">
+                        繁體中文
+                      </span>
+
+                      <textarea
+                        value={chineseDraft}
+                        onChange={(event) =>
+                          setChineseDraft(event.target.value)
+                        }
+                        rows={3}
+                        maxLength={1000}
+                        placeholder="寫下翻譯、想法或補充..."
+                        className="mt-2 w-full resize-none rounded-2xl bg-[#f5f3ed] px-4 py-3 text-sm leading-6 outline-none placeholder:text-neutral-400"
+                      />
+                    </label>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNoteComposer(false);
+                          setEnglishDraft("");
+                          setChineseDraft("");
+                        }}
+                        className="h-11 rounded-2xl border border-black/[0.06] bg-white text-sm font-semibold"
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={saveNote}
+                        disabled={!canSaveNote}
+                        className="h-11 rounded-2xl bg-neutral-950 text-sm font-semibold text-white disabled:opacity-30"
+                      >
+                        Save note
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-5 space-y-3">
+                  {notes.length === 0 && (
+                    <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
+                      <p className="text-sm font-semibold">
+                        No notes yet
+                      </p>
+
+                      <p className="mt-1 text-sm leading-6 text-neutral-500">
+                        Save a new word or idea from today&apos;s learning.
+                      </p>
+                    </div>
+                  )}
+
                   {notes.map((note) => (
                     <article
                       key={note.id}
-                      className="rounded-3xl bg-white p-5 shadow-sm sm:p-6"
+                      className="rounded-[24px] border border-black/[0.06] bg-white p-5"
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="rounded-full bg-[#f4f1ea] px-3 py-1 text-sm font-bold text-black">
-                          {note.language === "english"
-                            ? "English"
-                            : "繁體中文"}
-                        </span>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          {note.english && (
+                            <p className="whitespace-pre-wrap break-words text-[15px] font-medium leading-7">
+                              {note.english}
+                            </p>
+                          )}
 
-                        <span className="text-sm font-semibold text-black">
-                          {note.time}
-                        </span>
-                      </div>
+                          {note.chinese && (
+                            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-500">
+                              {note.chinese}
+                            </p>
+                          )}
 
-                      <p className="mt-5 whitespace-pre-wrap break-words text-lg leading-8 text-black">
-                        {note.text}
-                      </p>
+                          <p className="mt-4 text-[10px] text-neutral-400">
+                            {formatNoteDate(note.createdAt)}
+                          </p>
+                        </div>
 
-                      <div className="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4 text-sm text-black">
-                        <span className="font-semibold">
-                          {note.replies}{" "}
-                          {note.replies === 1
-                            ? "reply"
-                            : "replies"}
-                        </span>
-
-                        <Link
-                          href="/messages"
-                          className="font-bold text-black underline"
+                        <button
+                          type="button"
+                          onClick={() => deleteNote(note.id)}
+                          aria-label="Delete note"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         >
-                          Discuss
-                        </Link>
+                          <TrashIcon />
+                        </button>
                       </div>
                     </article>
                   ))}
                 </div>
               </section>
-            </>
-          )}
+            )}
+          </div>
 
-          {activeTab === "news" && (
-            <section className="mt-7">
-              <h2 className="text-3xl font-bold text-black">
-                Daily News
-              </h2>
+          <nav
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-[#f5f3ed]/95 backdrop-blur-xl"
+            style={{
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            <div className="mx-auto grid h-16 max-w-xl grid-cols-4 px-2">
+              <Link
+                href="/capture"
+                className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-neutral-500"
+              >
+                <CameraIcon />
+                Capture
+              </Link>
 
-              <p className="mt-2 leading-7 text-black">
-                Learn through simple current topics.
-              </p>
+              <Link
+                href="/messages"
+                className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-neutral-500"
+              >
+                <MessageIcon />
+                Messages
+              </Link>
 
-              <div className="mt-5 space-y-4">
-                {starterNews.map((article) => (
-                  <article
-                    key={article.id}
-                    className="rounded-3xl bg-white p-5 shadow-sm sm:p-7"
-                  >
-                    <span className="inline-block rounded-full bg-[#f4f1ea] px-3 py-1 text-sm font-bold text-black">
-                      {article.category}
-                    </span>
+              <Link
+                href="/friends"
+                className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-neutral-500"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <circle cx="9" cy="8" r="3" />
+                  <circle cx="16" cy="9" r="2.5" />
+                  <path
+                    strokeLinecap="round"
+                    d="M3.5 19a5.5 5.5 0 0111 0M13 18.5a4.5 4.5 0 018 0"
+                  />
+                </svg>
+                Friends
+              </Link>
 
-                    <h3 className="mt-5 text-2xl font-bold leading-8 text-black">
-                      {article.englishTitle}
-                    </h3>
-
-                    <p className="mt-3 text-lg font-bold text-black">
-                      {article.chineseTitle}
-                    </p>
-
-                    <p className="mt-5 leading-7 text-black">
-                      {article.summary}
-                    </p>
-
-                    <div className="mt-6 flex flex-wrap gap-2">
-                      {article.vocabulary.map((word) => (
-                        <span
-                          key={word}
-                          className="rounded-full bg-[#f4f1ea] px-3 py-2 text-sm font-semibold text-black"
-                        >
-                          {word}
-                        </span>
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        saveNewsToNotes(article)
-                      }
-                      className="mt-6 w-full rounded-2xl border border-black bg-white px-4 py-4 font-bold text-black"
-                    >
-                      Save to Notes
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
+              <Link
+                href="/profile"
+                className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-neutral-500"
+              >
+                <ProfileIcon />
+                Profile
+              </Link>
+            </div>
+          </nav>
         </div>
-
-        <nav className="fixed inset-x-3 bottom-3 z-50 mx-auto grid max-w-md grid-cols-4 rounded-3xl border border-neutral-200 bg-white p-2 shadow-lg sm:hidden">
-          <Link
-            href="/"
-            className="rounded-2xl bg-black px-2 py-3 text-center text-xs font-bold text-white"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/friends"
-            className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-          >
-            Friends
-          </Link>
-
-          <Link
-            href="/camera"
-            className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-          >
-            Camera
-          </Link>
-
-          <Link
-            href="/messages"
-            className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-          >
-            Messages
-          </Link>
-        </nav>
       </main>
     </AuthGuard>
   );
