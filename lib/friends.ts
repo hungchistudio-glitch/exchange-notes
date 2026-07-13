@@ -297,15 +297,13 @@ export async function getOrCreateConversationWithFriend(
     }
   }
 
-  const { data: newConversation, error: createError } = await supabase
+  const conversationId = crypto.randomUUID();
+
+  const { error: createError } = await supabase
     .from("conversations")
-    .insert({})
-    .select("id")
-    .single();
+    .insert({ id: conversationId });
 
   if (createError) throw createError;
-
-  const conversationId = newConversation.id as string;
 
   const { error: selfError } = await supabase.from("conversation_members").insert({
     conversation_id: conversationId,
