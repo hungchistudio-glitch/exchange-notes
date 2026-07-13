@@ -100,7 +100,6 @@ export async function sendFriendRequest(
   if (existing) {
     if (existing.status === "pending") return { status: "already-pending" };
 
-    // A prior request exists but isn't pending (e.g. declined) — reopen it.
     const { error: reopenError } = await supabase
       .from("friend_requests")
       .update({
@@ -236,7 +235,6 @@ export async function respondToRequest(
 
   if (friendshipError) throw friendshipError;
 
-  // 好友一接受，立刻打通私訊：自動建立（或找到已存在的）conversation
   await getOrCreateConversationWithFriend(
     supabase,
     request.sender_id,
@@ -256,8 +254,6 @@ export async function cancelRequest(
   if (error) throw error;
 }
 
-// ---- Conversations ------------------------------------------------------
-
 /**
  * Finds the existing conversation between two friends, or creates one.
  * IMPORTANT: inserts the current user's own membership row first, then the
@@ -271,3 +267,52 @@ export async function getOrCreateConversationWithFriend(
 ): Promise<string> {
   const { data: myMemberships, error: myError } = await supabase
     .from("conversation_members")
+    .select("conversation_id")
+    .eq("user_id", currentUserId);
+
+  if (myError) throw myError;
+
+  const myConversationIds = (myMemberships ?? []).map(
+    (row) => row.conversation_id
+  );
+
+  if (myConversationIds.length > 0) {
+    const { data: sharedMember, error: sharedError } = await supabase
+      .from("conversation_members")
+      .select("conversation_id")
+      .eq("user_id", friendId)
+      .in("conversation_id", myConversationIds)
+      .maybeSingle();
+
+    if (sharedError) throw sharedError;
+    if (sharedMember) {
+      return sharedMember.conversation_id;
+    }
+  }
+
+  const { data: newConversation, error: createError } = await supabase
+    .from("conversations")
+    .insert({})
+    .select("id")
+    .single();
+
+  if (createError) throw createError;
+
+  const conversationId = newConversation.id as string;
+
+  const { error: selfError } = await supabase.from("conversation_members").insert({
+    conversation_id: conversationId,
+    user_id: currentUserId,
+  });
+
+  if (selfError) throw selfError;
+
+  const { error: friendError } = await supabase.from("conversation_members").insert({
+    conversation_id: conversationId,
+    user_id: friendId,
+  });
+
+  if (friendError) throw friendError;
+
+  return conversationId;
+}

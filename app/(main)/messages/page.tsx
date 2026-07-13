@@ -207,7 +207,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
       const { data: friend, error: friendError } = await supabase
         .from("profiles")
-        .select("id, exchange_id, display_name")
+        .select("id, exchange_id, display_name, avatar_url")
         .eq("id", friendId)
         .maybeSingle();
 
@@ -224,6 +224,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           id: friend.id,
           exchangeId: friend.exchange_id,
           displayName: friend.display_name,
+          avatarUrl: friend.avatar_url,
         });
       }
 
