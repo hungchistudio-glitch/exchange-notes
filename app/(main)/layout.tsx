@@ -8,7 +8,13 @@ export default function MainLayout({
 }) {
   return (
     <AuthGuard>
-      {children}
+      <div
+        style={{
+          paddingBottom: "calc(88px + env(safe-area-inset-bottom))",
+        }}
+      >
+        {children}
+      </div>
       <BottomNav />
     </AuthGuard>
   );
