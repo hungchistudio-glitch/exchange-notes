@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 
+import { createClient } from "@/lib/supabase/client";
+
 type VocabularyItem = {
   word: string;
   translation: string;
@@ -46,13 +48,15 @@ type StoredNote = {
   createdAt: string;
 };
 
+type SpeechRate = 0.75 | 1 | 1.25;
+
 const SEEN_NEWS_STORAGE_KEY =
   "exchange-notes-seen-news";
 
 const NOTES_STORAGE_KEY =
   "exchange-notes-home-notes";
 
-const MAX_SEEN_NEWS_ITEMS = 30;
+const MAX_SEEN_NEWS_ITEMS = 40;
 
 function RefreshIcon({
   spinning,
@@ -209,6 +213,15 @@ function BrainIcon() {
   );
 }
 
+function Spinner() {
+  return (
+    <span
+      className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      aria-hidden="true"
+    />
+  );
+}
+
 function LoadingCard() {
   return (
     <div className="rounded-[26px] border border-black/[0.05] bg-white p-5">
@@ -236,15 +249,17 @@ function LoadingCard() {
 
 function readSeenNews(): SeenNewsItem[] {
   try {
-    const rawValue = window.localStorage.getItem(
-      SEEN_NEWS_STORAGE_KEY
-    );
+    const rawValue =
+      window.localStorage.getItem(
+        SEEN_NEWS_STORAGE_KEY
+      );
 
     if (!rawValue) {
       return [];
     }
 
-    const parsedValue = JSON.parse(rawValue) as unknown;
+    const parsedValue =
+      JSON.parse(rawValue) as unknown;
 
     if (!Array.isArray(parsedValue)) {
       return [];
@@ -254,17 +269,19 @@ function readSeenNews(): SeenNewsItem[] {
       (item): item is SeenNewsItem =>
         typeof item === "object" &&
         item !== null &&
-        typeof (item as SeenNewsItem).id ===
-          "string" &&
-        typeof (item as SeenNewsItem).title ===
-          "string"
+        typeof (item as SeenNewsItem)
+          .id === "string" &&
+        typeof (item as SeenNewsItem)
+          .title === "string"
     );
   } catch {
     return [];
   }
 }
 
-function storeSeenNews(items: SeenNewsItem[]) {
+function storeSeenNews(
+  items: SeenNewsItem[]
+) {
   try {
     const uniqueItems = Array.from(
       new Map(
@@ -284,21 +301,23 @@ function storeSeenNews(items: SeenNewsItem[]) {
       )
     );
   } catch {
-    return;
+    // The feed still works when storage is unavailable.
   }
 }
 
 function readStoredNotes(): StoredNote[] {
   try {
-    const rawValue = window.localStorage.getItem(
-      NOTES_STORAGE_KEY
-    );
+    const rawValue =
+      window.localStorage.getItem(
+        NOTES_STORAGE_KEY
+      );
 
     if (!rawValue) {
       return [];
     }
 
-    const parsedValue = JSON.parse(rawValue) as unknown;
+    const parsedValue =
+      JSON.parse(rawValue) as unknown;
 
     if (!Array.isArray(parsedValue)) {
       return [];
@@ -308,33 +327,43 @@ function readStoredNotes(): StoredNote[] {
       (item): item is StoredNote =>
         typeof item === "object" &&
         item !== null &&
-        typeof (item as StoredNote).id ===
-          "string" &&
-        typeof (item as StoredNote).english ===
-          "string" &&
-        typeof (item as StoredNote).chinese ===
-          "string" &&
-        typeof (item as StoredNote).createdAt ===
-          "string"
+        typeof (item as StoredNote)
+          .id === "string" &&
+        typeof (item as StoredNote)
+          .english === "string" &&
+        typeof (item as StoredNote)
+          .chinese === "string" &&
+        typeof (item as StoredNote)
+          .createdAt === "string"
     );
   } catch {
     return [];
   }
 }
 
-function formatPublishedTime(value: string) {
-  const publishedDate = new Date(value);
+function formatPublishedTime(
+  value: string
+) {
+  const publishedDate =
+    new Date(value);
 
-  if (Number.isNaN(publishedDate.getTime())) {
+  if (
+    Number.isNaN(
+      publishedDate.getTime()
+    )
+  ) {
     return "Recently";
   }
 
   const difference =
-    Date.now() - publishedDate.getTime();
+    Date.now() -
+    publishedDate.getTime();
 
   const minutes = Math.max(
     0,
-    Math.floor(difference / 60_000)
+    Math.floor(
+      difference / 60_000
+    )
   );
 
   if (minutes < 1) {
@@ -345,32 +374,40 @@ function formatPublishedTime(value: string) {
     return `${minutes}m ago`;
   }
 
-  const hours = Math.floor(minutes / 60);
+  const hours =
+    Math.floor(minutes / 60);
 
   if (hours < 24) {
     return `${hours}h ago`;
   }
 
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-  }).format(publishedDate);
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      month: "short",
+      day: "numeric",
+    }
+  ).format(publishedDate);
 }
 
-function createNoteContent(card: DailyNewsCard) {
-  const englishVocabulary = card.vocabulary
-    .map(
-      (item) =>
-        `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`
-    )
-    .join("\n");
+function createNoteContent(
+  card: DailyNewsCard
+) {
+  const englishVocabulary =
+    card.vocabulary
+      .map(
+        (item) =>
+          `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`
+      )
+      .join("\n");
 
-  const chineseVocabulary = card.vocabulary
-    .map(
-      (item) =>
-        `• ${item.word}：${item.translation}\n  ${item.chineseExample}`
-    )
-    .join("\n");
+  const chineseVocabulary =
+    card.vocabulary
+      .map(
+        (item) =>
+          `• ${item.word}：${item.translation}\n  ${item.chineseExample}`
+      )
+      .join("\n");
 
   const english = `📰 ${card.englishTitle}
 
@@ -395,13 +432,16 @@ ${chineseVocabulary}`;
   };
 }
 
-function createPartnerMessage(card: DailyNewsCard) {
-  const vocabulary = card.vocabulary
-    .map(
-      (item) =>
-        `• ${item.word} — ${item.translation}`
-    )
-    .join("\n");
+function createPartnerMessage(
+  card: DailyNewsCard
+) {
+  const vocabulary =
+    card.vocabulary
+      .map(
+        (item) =>
+          `• ${item.word} — ${item.translation}`
+      )
+      .join("\n");
 
   return `📰 ${card.englishTitle}
 
@@ -421,28 +461,56 @@ ${card.sourceUrl}`;
 export default function DailyNews() {
   const router = useRouter();
 
-  const [cards, setCards] = useState<
-    DailyNewsCard[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  const [cards, setCards] =
+    useState<DailyNewsCard[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
   const [refreshing, setRefreshing] =
     useState(false);
-  const [error, setError] = useState("");
-  const [speakingKey, setSpeakingKey] =
-    useState<string | null>(null);
-  const [savedCardIds, setSavedCardIds] =
-    useState<Set<string>>(new Set());
+
+  const [error, setError] =
+    useState("");
+
+  const [
+    speakingKey,
+    setSpeakingKey,
+  ] = useState<string | null>(null);
+
+  const [
+    savedCardIds,
+    setSavedCardIds,
+  ] = useState<Set<string>>(
+    new Set()
+  );
+
+  const [
+    savingCardId,
+    setSavingCardId,
+  ] = useState<string | null>(null);
+
+  const [
+    speechRate,
+    setSpeechRate,
+  ] = useState<SpeechRate>(1);
 
   const requestControllerRef =
-    useRef<AbortController | null>(null);
+    useRef<AbortController | null>(
+      null
+    );
 
   const loadNews = useCallback(
-    async (isRefresh = false) => {
+    async (
+      isRefresh = false
+    ) => {
       requestControllerRef.current?.abort();
 
-      const controller = new AbortController();
+      const controller =
+        new AbortController();
 
-      requestControllerRef.current = controller;
+      requestControllerRef.current =
+        controller;
 
       if (isRefresh) {
         setRefreshing(true);
@@ -453,40 +521,56 @@ export default function DailyNews() {
       setError("");
 
       try {
-        const seenNews = readSeenNews();
+        const seenNews =
+          readSeenNews();
 
-        const seenTitles = seenNews
-          .slice(-15)
-          .map((item) =>
-            encodeURIComponent(item.title)
-          )
-          .join("||");
+        const seenTitles =
+          seenNews
+            .slice(-20)
+            .map((item) =>
+              encodeURIComponent(
+                item.title
+              )
+            )
+            .join("||");
 
-        const parameters = new URLSearchParams({
-          nonce: crypto.randomUUID(),
-        });
+        const parameters =
+          new URLSearchParams({
+            nonce:
+              crypto.randomUUID(),
+          });
 
         if (seenTitles) {
-          parameters.set("seen", seenTitles);
+          parameters.set(
+            "seen",
+            seenTitles
+          );
         }
 
-        const response = await fetch(
-          `/api/daily-news?${parameters.toString()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            signal: controller.signal,
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
+        const response =
+          await fetch(
+            `/api/daily-news?${parameters.toString()}`,
+            {
+              method: "GET",
+              cache: "no-store",
+              signal:
+                controller.signal,
+              headers: {
+                Accept:
+                  "application/json",
+              },
+            }
+          );
 
-        const payload = (await response.json()) as
-          | DailyNewsResponse
-          | { error: string };
+        const payload =
+          (await response.json()) as
+            | DailyNewsResponse
+            | { error: string };
 
-        if (!response.ok || "error" in payload) {
+        if (
+          !response.ok ||
+          "error" in payload
+        ) {
           throw new Error(
             "error" in payload
               ? payload.error
@@ -498,21 +582,27 @@ export default function DailyNews() {
 
         storeSeenNews([
           ...seenNews,
-          ...payload.cards.map((card) => ({
-            id: card.id,
-            title: card.englishTitle,
-          })),
+          ...payload.cards.map(
+            (card) => ({
+              id: card.id,
+              title:
+                card.englishTitle,
+            })
+          ),
         ]);
       } catch (requestError) {
         if (
-          requestError instanceof DOMException &&
-          requestError.name === "AbortError"
+          requestError instanceof
+            DOMException &&
+          requestError.name ===
+            "AbortError"
         ) {
           return;
         }
 
         setError(
-          requestError instanceof Error
+          requestError instanceof
+            Error
             ? requestError.message
             : "Daily news is temporarily unavailable."
         );
@@ -536,11 +626,17 @@ export default function DailyNews() {
   function speak(
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language:
+      | "en-US"
+      | "zh-TW"
   ) {
     if (
-      typeof window === "undefined" ||
-      !("speechSynthesis" in window) ||
+      typeof window ===
+        "undefined" ||
+      !(
+        "speechSynthesis" in
+        window
+      ) ||
       !text.trim()
     ) {
       return;
@@ -554,11 +650,19 @@ export default function DailyNews() {
     }
 
     const utterance =
-      new SpeechSynthesisUtterance(text);
+      new SpeechSynthesisUtterance(
+        text
+      );
 
     utterance.lang = language;
+
     utterance.rate =
-      language === "zh-TW" ? 0.9 : 0.94;
+      speechRate *
+      (language === "zh-TW"
+        ? 0.92
+        : 1);
+
+    utterance.pitch = 1;
 
     utterance.onstart = () => {
       setSpeakingKey(key);
@@ -572,49 +676,138 @@ export default function DailyNews() {
       setSpeakingKey(null);
     };
 
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(
+      utterance
+    );
   }
 
-  function saveToNotes(card: DailyNewsCard) {
-    const existingNotes = readStoredNotes();
-    const noteContent = createNoteContent(card);
-
-    const alreadySaved = existingNotes.some(
-      (note) =>
-        note.english.includes(card.sourceUrl)
-    );
-
-    if (!alreadySaved) {
-      const note: StoredNote = {
-        id: crypto.randomUUID(),
-        english: noteContent.english,
-        chinese: noteContent.chinese,
-        createdAt: new Date().toISOString(),
-      };
-
-      window.localStorage.setItem(
-        NOTES_STORAGE_KEY,
-        JSON.stringify([
-          note,
-          ...existingNotes,
-        ])
-      );
+  async function saveToNotes(
+    card: DailyNewsCard
+  ) {
+    if (savingCardId) {
+      return;
     }
 
-    setSavedCardIds((currentIds) => {
-      const nextIds = new Set(currentIds);
-      nextIds.add(card.id);
-      return nextIds;
-    });
+    setSavingCardId(card.id);
+    setError("");
 
-    window.dispatchEvent(
-      new CustomEvent(
-        "exchange-notes-notes-updated"
-      )
-    );
+    const noteContent =
+      createNoteContent(card);
+
+    try {
+      const supabase =
+        createClient();
+
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      /*
+       * This attempts a Supabase save using common note columns.
+       * If your notes table has a different schema, it safely
+       * falls back to the existing localStorage Notes system.
+       */
+      if (user) {
+        const { error: insertError } =
+          await supabase
+            .from("notes")
+            .insert({
+              user_id: user.id,
+              english:
+                noteContent.english,
+              chinese:
+                noteContent.chinese,
+              source_name:
+                card.sourceName,
+              source_url:
+                card.sourceUrl,
+            });
+
+        if (insertError) {
+          console.warn(
+            "Supabase note save failed; using local fallback:",
+            insertError.message
+          );
+        } else {
+          setSavedCardIds(
+            (currentIds) => {
+              const nextIds =
+                new Set(currentIds);
+
+              nextIds.add(card.id);
+
+              return nextIds;
+            }
+          );
+
+          return;
+        }
+      }
+
+      const existingNotes =
+        readStoredNotes();
+
+      const alreadySaved =
+        existingNotes.some((note) =>
+          note.english.includes(
+            card.sourceUrl
+          )
+        );
+
+      if (!alreadySaved) {
+        const note: StoredNote = {
+          id: crypto.randomUUID(),
+          english:
+            noteContent.english,
+          chinese:
+            noteContent.chinese,
+          createdAt:
+            new Date().toISOString(),
+        };
+
+        window.localStorage.setItem(
+          NOTES_STORAGE_KEY,
+          JSON.stringify([
+            note,
+            ...existingNotes,
+          ])
+        );
+      }
+
+      setSavedCardIds(
+        (currentIds) => {
+          const nextIds =
+            new Set(currentIds);
+
+          nextIds.add(card.id);
+
+          return nextIds;
+        }
+      );
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "exchange-notes-notes-updated"
+        )
+      );
+    } catch (saveError) {
+      console.error(
+        "Save note error:",
+        saveError
+      );
+
+      setError(
+        "This story could not be saved. Please try again."
+      );
+    } finally {
+      setSavingCardId(null);
+    }
   }
 
-  function sendToPartner(card: DailyNewsCard) {
+  function sendToPartner(
+    card: DailyNewsCard
+  ) {
     window.sessionStorage.setItem(
       "exchange-notes-draft-message",
       createPartnerMessage(card)
@@ -654,22 +847,60 @@ export default function DailyNews() {
           </h2>
 
           <p className="mt-1 text-sm leading-6 text-neutral-500">
-            Learn English from today&apos;s major stories.
+            Learn English from
+            today&apos;s major stories.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => void loadNews(true)}
+          onClick={() =>
+            void loadNews(true)
+          }
           disabled={refreshing}
           className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-4 text-xs font-semibold text-neutral-700 transition-transform active:scale-95 disabled:opacity-50"
         >
-          <RefreshIcon spinning={refreshing} />
+          <RefreshIcon
+            spinning={refreshing}
+          />
 
           <span>
-            {refreshing ? "Loading" : "New stories"}
+            {refreshing
+              ? "Loading"
+              : "New stories"}
           </span>
         </button>
+      </div>
+
+      <div className="mb-4 flex items-center justify-between rounded-2xl bg-black/[0.035] px-3 py-2">
+        <span className="text-[11px] font-medium text-neutral-500">
+          Speech speed
+        </span>
+
+        <div className="flex gap-1">
+          {(
+            [
+              0.75,
+              1,
+              1.25,
+            ] as SpeechRate[]
+          ).map((rate) => (
+            <button
+              key={rate}
+              type="button"
+              onClick={() =>
+                setSpeechRate(rate)
+              }
+              className={`h-7 rounded-full px-3 text-[10px] font-semibold ${
+                speechRate === rate
+                  ? "bg-neutral-950 text-white"
+                  : "bg-white text-neutral-500"
+              }`}
+            >
+              {rate}×
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
@@ -681,7 +912,9 @@ export default function DailyNews() {
 
           <button
             type="button"
-            onClick={() => void loadNews(true)}
+            onClick={() =>
+              void loadNews(true)
+            }
             className="mt-2 font-semibold underline underline-offset-4"
           >
             Try again
@@ -689,22 +922,28 @@ export default function DailyNews() {
         </div>
       )}
 
-      {!error && cards.length === 0 && (
-        <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
-          <p className="text-sm font-semibold">
-            No news is available right now
-          </p>
+      {!error &&
+        cards.length === 0 && (
+          <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
+            <p className="text-sm font-semibold">
+              No news is available
+              right now
+            </p>
 
-          <p className="mt-1 text-sm leading-6 text-neutral-500">
-            Please try again in a few minutes.
-          </p>
-        </div>
-      )}
+            <p className="mt-1 text-sm leading-6 text-neutral-500">
+              Please try again in a
+              few minutes.
+            </p>
+          </div>
+        )}
 
       <div className="space-y-4">
         {cards.map((card) => {
           const isSaved =
             savedCardIds.has(card.id);
+
+          const isSaving =
+            savingCardId === card.id;
 
           return (
             <article
@@ -815,12 +1054,16 @@ export default function DailyNews() {
                                   </span>
 
                                   <span className="text-[10px] text-neutral-400">
-                                    {item.partOfSpeech}
+                                    {
+                                      item.partOfSpeech
+                                    }
                                   </span>
                                 </div>
 
                                 <p className="mt-0.5 text-sm text-neutral-500">
-                                  {item.translation}
+                                  {
+                                    item.translation
+                                  }
                                 </p>
                               </div>
 
@@ -832,12 +1075,16 @@ export default function DailyNews() {
                             <div className="border-t border-black/[0.05] px-4 py-3">
                               <div className="flex items-start gap-2">
                                 <p className="min-w-0 flex-1 text-sm leading-6 text-neutral-700">
-                                  {item.englishExample}
+                                  {
+                                    item.englishExample
+                                  }
                                 </p>
 
                                 <button
                                   type="button"
-                                  onClick={(event) => {
+                                  onClick={(
+                                    event
+                                  ) => {
                                     event.preventDefault();
 
                                     speak(
@@ -860,12 +1107,16 @@ export default function DailyNews() {
 
                               <div className="mt-2 flex items-start gap-2">
                                 <p className="min-w-0 flex-1 text-sm leading-6 text-neutral-500">
-                                  {item.chineseExample}
+                                  {
+                                    item.chineseExample
+                                  }
                                 </p>
 
                                 <button
                                   type="button"
-                                  onClick={(event) => {
+                                  onClick={(
+                                    event
+                                  ) => {
                                     event.preventDefault();
 
                                     speak(
@@ -897,22 +1148,32 @@ export default function DailyNews() {
                   <button
                     type="button"
                     onClick={() =>
-                      saveToNotes(card)
+                      void saveToNotes(card)
                     }
-                    className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-semibold transition-transform active:scale-[0.98] ${
+                    disabled={
+                      isSaving ||
+                      isSaved
+                    }
+                    className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-semibold transition-transform active:scale-[0.98] disabled:opacity-70 ${
                       isSaved
                         ? "bg-emerald-50 text-emerald-700"
                         : "border border-black/[0.07] bg-white text-neutral-800"
                     }`}
                   >
-                    <BookmarkIcon
-                      filled={isSaved}
-                    />
+                    {isSaving ? (
+                      <Spinner />
+                    ) : (
+                      <BookmarkIcon
+                        filled={isSaved}
+                      />
+                    )}
 
                     <span>
-                      {isSaved
-                        ? "Saved"
-                        : "Save to Notes"}
+                      {isSaving
+                        ? "Saving"
+                        : isSaved
+                          ? "Saved"
+                          : "Save to Notes"}
                     </span>
                   </button>
 
@@ -925,7 +1186,9 @@ export default function DailyNews() {
                   >
                     <SendIcon />
 
-                    <span>Send to Partner</span>
+                    <span>
+                      Send to Partner
+                    </span>
                   </button>
                 </div>
 
@@ -938,14 +1201,16 @@ export default function DailyNews() {
                   >
                     <BrainIcon />
 
-                    <span>Quiz · Soon</span>
+                    <span>
+                      Quiz · Soon
+                    </span>
                   </button>
 
                   <a
                     href={card.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-black/[0.07] bg-white text-xs font-semibold text-neutral-800 transition-transform active:scale-[0.98]"
+                    className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-black/[0.07] bg-white px-3 text-xs font-semibold text-neutral-800 transition-transform active:scale-[0.98]"
                   >
                     <span className="truncate">
                       {card.sourceName}
