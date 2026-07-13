@@ -91,6 +91,17 @@ export default function CameraPage() {
     };
   }, [result]);
 
+  // 相機全螢幕時，鎖住背景頁面捲動，避免 iOS Safari 的地址列跳動影響版面
+  useEffect(() => {
+    if (cameraActive) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = original;
+      };
+    }
+  }, [cameraActive]);
+
   function speak(text: string, lang: "en" | "zh") {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     if (!text.trim()) return;
@@ -451,21 +462,24 @@ ${result.chineseExample}`;
   return (
     <main className="flex min-h-screen flex-col bg-[#f5f3ee] px-4 text-neutral-900">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
-        <header className="flex h-11 shrink-0 items-center justify-between">
-          <Link href="/" className="text-xs font-semibold text-neutral-500">
-            Cancel
-          </Link>
+        {/* 相機全螢幕時隱藏這個 header，因為全螢幕相機有自己的關閉按鈕 */}
+        {!cameraActive && (
+          <header className="flex h-11 shrink-0 items-center justify-between">
+            <Link href="/" className="text-xs font-semibold text-neutral-500">
+              Cancel
+            </Link>
 
-          <h1 className="text-sm font-semibold">Discover</h1>
+            <h1 className="text-sm font-semibold">Discover</h1>
 
-          <button
-            type="button"
-            onClick={reset}
-            className="text-xs font-semibold text-neutral-500"
-          >
-            Reset
-          </button>
-        </header>
+            <button
+              type="button"
+              onClick={reset}
+              className="text-xs font-semibold text-neutral-500"
+            >
+              Reset
+            </button>
+          </header>
+        )}
 
         {!cameraActive && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center text-center">
@@ -566,33 +580,53 @@ ${result.chineseExample}`;
           </section>
         )}
 
+        {/* ── 全螢幕相機浮層 ── */}
         {cameraActive && !imageData && (
-          <section className="mt-4 flex flex-1 flex-col">
-            <div className="relative flex-1 overflow-hidden rounded-2xl bg-black">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                webkit-playsinline="true"
-                className="h-full w-full object-cover"
-              />
-            </div>
+          <section className="fixed inset-0 z-50 flex flex-col bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              webkit-playsinline="true"
+              className="h-full w-full object-cover"
+            />
 
-            <div className="mt-4 flex items-center justify-center gap-6">
+            {/* 上方浮動關閉按鈕 */}
+            <div
+              className="absolute inset-x-0 top-0 flex items-center justify-between p-4"
+              style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}
+            >
               <button
                 type="button"
                 onClick={stopCamera}
-                className="text-xs font-semibold text-neutral-500"
+                aria-label="Close camera"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-transform active:scale-90"
               >
-                Cancel
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-5 w-5"
+                >
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </button>
+            </div>
 
+            {/* 下方浮動拍照按鈕，永遠貼齊畫面安全區域底部 */}
+            <div
+              className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/70 to-transparent pt-10"
+              style={{
+                paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+              }}
+            >
               <button
                 type="button"
                 onClick={capturePhoto}
                 aria-label="Capture photo"
-                className="h-14 w-14 rounded-full border-[5px] border-white bg-neutral-900 shadow-md"
+                className="h-16 w-16 rounded-full border-[4px] border-white bg-white/10 shadow-lg transition-transform active:scale-95"
               />
             </div>
           </section>
