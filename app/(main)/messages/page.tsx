@@ -559,6 +559,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
                   {message.attachment_url && !isImageAttachment && (
                     
+                      <a
                       href={message.attachment_url}
                       target="_blank"
                       rel="noopener noreferrer"
