@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import jsQR from "jsqr";
+import { CheckCircle2, Info, XCircle } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -35,6 +36,7 @@ export default function FriendsPage() {
   const [value, setValue] = useState("");
   const [sending, setSending] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
+  const [bannerShow, setBannerShow] = useState(false);
 
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [incoming, setIncoming] = useState<IncomingRequest[]>([]);
@@ -133,18 +135,36 @@ export default function FriendsPage() {
       .catch((qrError) => console.error("QR generation failed:", qrError));
   }, [myExchangeId]);
 
+  // ---- Banner enter/auto-dismiss animation --------------------------------
+
+  useEffect(() => {
+    if (!banner) return;
+
+    setBannerShow(false);
+    const enterTimer = setTimeout(() => setBannerShow(true), 10);
+    const dismissDelay = banner.tone === "error" ? 6000 : 3500;
+    const dismissTimer = setTimeout(() => setBannerShow(false), dismissDelay);
+    const clearTimer = setTimeout(() => setBanner(null), dismissDelay + 300);
+
+    return () => {
+      clearTimeout(enterTimer);
+      clearTimeout(dismissTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [banner]);
+
   // ---- Send a request --------------------------------------------------
 
   async function handleSendRequest(rawValue?: string) {
     if (!userId) {
-      setBanner({ tone: "error", text: "Log in to add friends." });
+      setBanner({ tone: "error", text: "Log in first, then you can start adding friends." });
       return;
     }
 
     const cleanValue = (rawValue ?? value).trim();
 
     if (!cleanValue) {
-      setBanner({ tone: "error", text: "Enter an Exchange ID first." });
+      setBanner({ tone: "error", text: "Enter a friend's Exchange ID to send a request." });
       return;
     }
 
@@ -157,7 +177,7 @@ export default function FriendsPage() {
       if (!target) {
         setBanner({
           tone: "error",
-          text: `No one found with the Exchange ID "${cleanValue.replace(/^@/, "")}". Double check the spelling.`,
+          text: `Couldn't find "@${cleanValue.replace(/^@/, "")}". Exchange IDs are lowercase, no spaces. Double check with your friend.`,
         });
         return;
       }
@@ -165,7 +185,7 @@ export default function FriendsPage() {
       const result = await sendFriendRequest(supabase, userId, target.id);
 
       if (result.status === "self") {
-        setBanner({ tone: "error", text: "That's your own Exchange ID." });
+        setBanner({ tone: "info", text: "That's your own Exchange ID. Try a friend's instead." });
         return;
       }
 
@@ -180,14 +200,14 @@ export default function FriendsPage() {
       if (result.status === "already-pending") {
         setBanner({
           tone: "info",
-          text: `A request with @${target.exchangeId} is already pending.`,
+          text: `Already sent. Waiting on @${target.exchangeId} to accept.`,
         });
         return;
       }
 
       setBanner({
         tone: "success",
-        text: `Friend request sent to @${target.exchangeId}.`,
+        text: `Request sent to @${target.exchangeId}. They'll see it next time they open Friends.`,
       });
       setValue("");
       refreshLists();
@@ -195,7 +215,7 @@ export default function FriendsPage() {
       console.error("Send friend request failed:", requestError);
       setBanner({
         tone: "error",
-        text: "Couldn't send that request. Try again in a moment.",
+        text: "Something went wrong sending that request. Try again in a moment.",
       });
     } finally {
       setSending(false);
@@ -470,8 +490,10 @@ export default function FriendsPage() {
           )}
 
           {banner && (
-            <p
-              className={`mt-4 rounded-2xl p-4 font-semibold ${
+            <div
+              className={`mt-4 flex items-start gap-3 rounded-2xl p-4 font-semibold transition-all duration-300 ease-out ${
+                bannerShow ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"
+              } ${
                 banner.tone === "success"
                   ? "bg-green-50 text-green-800"
                   : banner.tone === "error"
@@ -479,8 +501,13 @@ export default function FriendsPage() {
                     : "bg-[#f4f1ea] text-black"
               }`}
             >
-              {banner.text}
-            </p>
+              {banner.tone === "success" && (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+              )}
+              {banner.tone === "error" && <XCircle className="mt-0.5 h-5 w-5 shrink-0" />}
+              {banner.tone === "info" && <Info className="mt-0.5 h-5 w-5 shrink-0" />}
+              <p>{banner.text}</p>
+            </div>
           )}
         </section>
 

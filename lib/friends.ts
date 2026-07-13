@@ -100,16 +100,23 @@ export async function sendFriendRequest(
   if (existing) {
     if (existing.status === "pending") return { status: "already-pending" };
 
-    const { error: reopenError } = await supabase
+    // Old request is accepted/declined. UPDATE would be blocked by RLS
+    // unless we happen to be the receiver of that old row, so instead we
+    // delete it (either party may delete) and insert a fresh one.
+    const { error: deleteError } = await supabase
       .from("friend_requests")
-      .update({
-        status: "pending",
-        sender_id: currentUserId,
-        receiver_id: targetUserId,
-      })
+      .delete()
       .eq("id", existing.id);
 
-    if (reopenError) throw reopenError;
+    if (deleteError) throw deleteError;
+
+    const { error: reinsertError } = await supabase.from("friend_requests").insert({
+      sender_id: currentUserId,
+      receiver_id: targetUserId,
+      status: "pending",
+    });
+
+    if (reinsertError) throw reinsertError;
     return { status: "sent" };
   }
 
