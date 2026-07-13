@@ -17,6 +17,8 @@ import {
   getOrCreateConversationWithFriend,
   listFriends,
 } from "@/lib/friends";
+import { consumePendingSharedArticle } from "@/lib/newsDraft";
+import type { DailyNewsCard } from "@/lib/types/dailyNews";
 import LogoutButton from "../../components/LogoutButton";
 
 type Message = {
@@ -28,10 +30,11 @@ type Message = {
   attachment_url: string | null;
   attachment_type: string | null;
   attachment_name: string | null;
+  shared_article: DailyNewsCard | null;
 };
 
 const MESSAGE_COLUMNS =
-  "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name";
+  "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name, shared_article";
 
 function detectLanguage(text: string): "traditional-chinese" | "english" {
   return /[\u4e00-\u9fff]/.test(text) ? "traditional-chinese" : "english";
@@ -291,6 +294,18 @@ function ChatRoom({ friendId }: { friendId: string }) {
       if (!cancelled) {
         setMessages((existingMessages ?? []) as Message[]);
         setLoading(false);
+
+        // If the user tapped "Share" on a Daily News card, the article
+        // is waiting in sessionStorage — send it as a card message now.
+        const pendingArticle = consumePendingSharedArticle();
+        if (pendingArticle) {
+          void supabase.from("messages").insert({
+            conversation_id: roomId,
+            sender_id: user.id,
+            body: "",
+            shared_article: pendingArticle,
+          });
+        }
       }
     }
 
@@ -558,7 +573,6 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {message.attachment_url && !isImageAttachment && (
-                    
                       <a
                       href={message.attachment_url}
                       target="_blank"
@@ -571,6 +585,46 @@ function ChatRoom({ friendId }: { friendId: string }) {
                       <span className="truncate">
                         {message.attachment_name ?? "File"}
                       </span>
+                    </a>
+                  )}
+
+                  {message.shared_article && (
+                    <a
+                      href={message.shared_article.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`mb-2 block overflow-hidden rounded-2xl ${
+                        isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+                      }`}
+                    >
+                      {message.shared_article.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={message.shared_article.imageUrl}
+                          alt={message.shared_article.chineseTitle}
+                          className="h-32 w-full object-cover"
+                        />
+                      )}
+                      <div className="p-3">
+                        <p
+                          className={`text-xs font-semibold uppercase tracking-wide ${
+                            isMine ? "text-white/60" : "text-neutral-400"
+                          }`}
+                        >
+                          {message.shared_article.category} ・{" "}
+                          {message.shared_article.sourceName}
+                        </p>
+                        <p className="mt-1 font-bold leading-5">
+                          {message.shared_article.chineseTitle}
+                        </p>
+                        <p
+                          className={`mt-1 line-clamp-2 text-sm leading-5 ${
+                            isMine ? "text-white/70" : "text-neutral-500"
+                          }`}
+                        >
+                          {message.shared_article.chineseSummary}
+                        </p>
+                      </div>
                     </a>
                   )}
 
