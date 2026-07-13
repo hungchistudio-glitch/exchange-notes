@@ -11,7 +11,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { speak } from "@/lib/speech";
@@ -170,8 +170,11 @@ export default function DiscoverPage() {
     void loadStories(false);
   }, [loadStories]);
 
+  const friendsRequestedRef = useRef(false);
+
   useEffect(() => {
-    if (!friendPickerCard || friends.length > 0 || friendsLoading) return;
+    if (!friendPickerCard || friendsRequestedRef.current) return;
+    friendsRequestedRef.current = true;
 
     let cancelled = false;
 
@@ -188,6 +191,7 @@ export default function DiscoverPage() {
         if (!cancelled) {
           setFriendsError("You are not logged in.");
           setFriendsLoading(false);
+          friendsRequestedRef.current = false;
         }
         return;
       }
@@ -197,7 +201,10 @@ export default function DiscoverPage() {
         if (!cancelled) setFriends(friendsData);
       } catch (loadError) {
         console.error("Failed to load friends:", loadError);
-        if (!cancelled) setFriendsError("Couldn't load your friends.");
+        if (!cancelled) {
+          setFriendsError("Couldn't load your friends.");
+          friendsRequestedRef.current = false;
+        }
       } finally {
         if (!cancelled) setFriendsLoading(false);
       }
@@ -207,7 +214,7 @@ export default function DiscoverPage() {
     return () => {
       cancelled = true;
     };
-  }, [friendPickerCard, friends.length, friendsLoading]);
+  }, [friendPickerCard]);
 
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
