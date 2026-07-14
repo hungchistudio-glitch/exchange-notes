@@ -149,6 +149,7 @@ export default function VocabularyPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
+  const [lookupCopied, setLookupCopied] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [rankedIds, setRankedIds] = useState<string[]>([]);
   const [rankingLoading, setRankingLoading] = useState(false);
@@ -517,6 +518,95 @@ export default function VocabularyPage() {
     setLookupResult(null);
     setLookupError("");
     setLookupStatus("idle");
+  }
+
+
+  function getLookupShareText() {
+    if (!lookupResult) return "";
+
+    const pinyin = toPinyin(lookupResult.chineseName);
+    const meta = [pinyin, lookupResult.partOfSpeech?.toLowerCase()]
+      .filter(Boolean)
+      .join(" · ");
+
+    return [
+      lookupResult.englishName,
+      lookupResult.chineseName,
+      meta,
+      "",
+      lookupResult.englishExample,
+      lookupResult.chineseExample,
+    ]
+      .filter((line, index, array) => {
+        if (line !== "") return true;
+        return index > 0 && index < array.length - 1;
+      })
+      .join("\n");
+  }
+
+  async function shareLookupResult() {
+    if (!lookupResult) return;
+
+    const shareText = getLookupShareText();
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: lookupResult.englishName,
+          text: shareText,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareText);
+      setLookupCopied(true);
+      window.setTimeout(() => setLookupCopied(false), 1800);
+    } catch (shareError) {
+      if (
+        shareError instanceof DOMException &&
+        shareError.name === "AbortError"
+      ) {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(shareText);
+        setLookupCopied(true);
+        window.setTimeout(() => setLookupCopied(false), 1800);
+      } catch {
+        console.error("Could not share lookup result:", shareError);
+      }
+    }
+  }
+
+  async function sendLookupToPartner() {
+    if (!lookupResult) return;
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const now = new Date().toISOString();
+
+    const item: VocabularyItem = {
+      id: `ai-search-${crypto.randomUUID()}`,
+      user_id: user?.id ?? "",
+      word: lookupResult.englishName,
+      translation: lookupResult.chineseName,
+      language: "english",
+      part_of_speech: lookupResult.partOfSpeech || null,
+      example_sentence: lookupResult.englishExample || null,
+      translated_example: lookupResult.chineseExample || null,
+      confidence: lookupResult.confidence,
+      category: lookupResult.category,
+      status: "new",
+      image_url: null,
+      created_at: now,
+      updated_at: now,
+    };
+
+    handleSendToPartner(item);
   }
 
   async function lookupWord() {
@@ -941,18 +1031,24 @@ export default function VocabularyPage() {
                           {lookupResult.chineseName}
                         </p>
 
-                        <p className="mt-2 text-[11px] uppercase tracking-[0.15em] text-neutral-400">
-                          {lookupResult.partOfSpeech || "word"}
+                        <p className="mt-1 text-[12px] text-neutral-400">
+                          {[
+                            toPinyin(lookupResult.chineseName),
+                            lookupResult.partOfSpeech?.toLowerCase(),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </p>
                       </div>
 
-                      <div className="flex shrink-0 gap-1.5">
+                      <div className="grid shrink-0 grid-cols-2 gap-1.5">
                         <button
                           type="button"
                           onClick={() =>
                             speak(lookupResult.englishName, "en-US")
                           }
                           aria-label="Play English pronunciation"
+                          title="English pronunciation"
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
                         >
                           <Volume2 size={15} />
@@ -964,9 +1060,34 @@ export default function VocabularyPage() {
                             speak(lookupResult.chineseName, "zh-TW")
                           }
                           aria-label="Play Chinese pronunciation"
+                          title="Chinese pronunciation"
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
                         >
                           <Volume2 size={15} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void shareLookupResult()}
+                          aria-label="Share this word"
+                          title="Share"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
+                        >
+                          {lookupCopied ? (
+                            <Check size={15} />
+                          ) : (
+                            <Share size={15} />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void sendLookupToPartner()}
+                          aria-label="Send this word to a partner"
+                          title="Send to Partner"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
+                        >
+                          <Send size={15} />
                         </button>
                       </div>
                     </div>
