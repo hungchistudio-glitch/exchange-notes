@@ -1204,7 +1204,7 @@ function SortBottomSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[130] flex items-end bg-black/20 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[300] flex items-end bg-black/20 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <section
@@ -1298,7 +1298,7 @@ function VocabularyFilterPanel({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[120] overflow-y-auto bg-white text-black">
+    <div className="fixed inset-0 z-[300] overflow-y-auto bg-white text-black">
       <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
         <div className="flex items-center justify-between px-5 py-5">
           <button
@@ -1418,7 +1418,7 @@ function FriendPickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[300] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
