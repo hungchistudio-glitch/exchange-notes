@@ -12,7 +12,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 
 import { speak } from "@/lib/speech";
@@ -304,8 +304,11 @@ function FriendPickerModal({
   onRetry: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
     }
@@ -313,12 +316,15 @@ function FriendPickerModal({
     document.addEventListener("keydown", handleKeyDown);
     dialogRef.current?.focus();
 
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [onClose]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
       onClick={onClose}
     >
       <div
@@ -328,35 +334,46 @@ function FriendPickerModal({
         aria-labelledby="send-to-partner-title"
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-xl rounded-t-[30px] bg-white p-6 outline-none transition-transform duration-200 sm:rounded-[30px]"
+        className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
+          mounted ? "translate-y-0" : "translate-y-full sm:translate-y-4 sm:opacity-0"
+        }`}
+        style={{
+          maxHeight: "min(78vh, 640px)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
+        }}
       >
-        <div className="flex items-center justify-between">
-          <h2 id="send-to-partner-title" className="text-xl font-black">
-            Send to Partner
+        <div className="mx-auto mt-3 h-1 w-9 shrink-0 rounded-full bg-black/15 sm:hidden" />
+
+        <div className="flex shrink-0 items-center justify-between px-6 pb-3 pt-3">
+          <h2
+            id="send-to-partner-title"
+            className="text-base font-semibold tracking-tight text-black/90"
+          >
+            傳送給夥伴
           </h2>
 
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full border border-black/10 p-2 transition-colors hover:bg-black/5"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
-        <div className="mt-4 max-h-[60vh] space-y-2 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 pb-2">
           {loading && (
-            <div className="space-y-2 py-2">
+            <div className="space-y-1.5 px-2 py-2">
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="flex animate-pulse items-center gap-3 rounded-2xl bg-[#f5f2eb] p-3"
+                  className="flex animate-pulse items-center gap-3 rounded-2xl bg-black/[0.03] p-3"
                 >
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-[#ece8de]" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-24 rounded-full bg-[#ece8de]" />
-                    <div className="h-3 w-16 rounded-full bg-[#ece8de]" />
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-black/10" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2.5 w-24 rounded-full bg-black/10" />
+                    <div className="h-2.5 w-16 rounded-full bg-black/10" />
                   </div>
                 </div>
               ))}
@@ -364,21 +381,21 @@ function FriendPickerModal({
           )}
 
           {!loading && errorMessage && (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <p className="text-red-600">{errorMessage}</p>
+            <div className="flex flex-col items-center gap-3 px-2 py-8 text-center">
+              <p className="text-sm text-red-600">{errorMessage}</p>
               <button
                 type="button"
                 onClick={onRetry}
-                className="rounded-full border border-black/10 px-4 py-2 text-sm font-black transition-colors hover:bg-black/5"
+                className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-black/5"
               >
-                Try Again
+                重試
               </button>
             </div>
           )}
 
           {!loading && !errorMessage && friends.length === 0 && (
-            <p className="py-6 text-center text-[#8a8a8a]">
-              No friends yet — add one to share this article.
+            <p className="px-2 py-8 text-center text-sm text-black/40">
+              還沒有朋友——先加一位才能分享文章。
             </p>
           )}
 
@@ -394,25 +411,25 @@ function FriendPickerModal({
                   type="button"
                   onClick={() => onPick(friend.id)}
                   disabled={isDisabled}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-black/5 bg-[#f5f2eb] p-3 text-left transition-colors hover:bg-[#efeade] disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white font-black">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
                     {(friend.displayName ?? friend.exchangeId)
                       .slice(0, 1)
                       .toUpperCase()}
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">
+                    <p className="truncate text-sm font-medium text-black/85">
                       {friend.displayName ?? `@${friend.exchangeId}`}
                     </p>
-                    <p className="truncate text-sm text-[#8a8a8a]">
+                    <p className="truncate text-xs text-black/40">
                       @{friend.exchangeId}
                     </p>
                   </div>
 
                   {isSending && (
-                    <LoaderCircle size={18} className="shrink-0 animate-spin" />
+                    <LoaderCircle size={16} className="shrink-0 animate-spin text-black/40" />
                   )}
                 </button>
               );
@@ -495,7 +512,7 @@ type SelectionState = { text: string; top: number; left: number };
 /** Tracks the current text selection *inside* a given container, exposing
  * its bounding position (relative to the container) so a toolbar can be
  * positioned right above it — mirrors the iOS native selection popover. */
-function useTextSelection(containerRef: React.RefObject<HTMLDivElement | null>) {
+function useTextSelection(containerRef: RefObject<HTMLDivElement | null>) {
   const [selection, setSelection] = useState<SelectionState | null>(null);
 
   useEffect(() => {
@@ -556,7 +573,7 @@ function SelectionToolbar({
 
   return (
     <div
-      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full bg-black/70 p-1.5 text-white shadow-xl ring-1 ring-white/10 backdrop-blur-md"
+      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full border border-white/20 bg-black/40 p-1.5 text-white shadow-xl backdrop-blur-xl"
       style={{ top: selection.top - 12, left: selection.left }}
     >
       <button
