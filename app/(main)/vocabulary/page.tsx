@@ -1,604 +1,1580 @@
 "use client";
 
+import {
+  BookmarkPlus,
+  BookOpen,
+  Camera,
+  Check,
+  LoaderCircle,
+  Plus,
+  Search,
+  Send,
+  Share,
+  Volume2,
+  X,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
 import {
-  ChangeEvent,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
-import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
+import { toPinyin } from "@/lib/pinyin";
+import { speak } from "@/lib/speech";
+import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
+import { listFriends, type FriendProfile } from "@/lib/friends";
+import type {
+  AppLanguage,
+  VocabularyCategory,
+  VocabularyItem,
+  VocabularyStatus,
+} from "@/lib/types/app";
 
-type IdentificationResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
+const STATUS_LABELS: Record<VocabularyStatus, string> = {
+  new: "New",
+  learning: "Learning",
+  mastered: "Mastered",
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_DIMENSION = 1600;
-const JPEG_QUALITY = 0.82;
+type SortMode = "new" | "for-you" | "trending";
 
-export default function CameraPage() {
-  const router = useRouter();
+const SORT_LABELS: Record<SortMode, string> = {
+  new: "New Words",
+  "for-you": "For You",
+  trending: "Trending",
+};
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+const INTERACTION_STORAGE_KEY = "vocabulary-interactions-v1";
 
-  const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
-  const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
+type InteractionType =
+  | "view"
+  | "search"
+  | "speak"
+  | "share"
+  | "send"
+  | "status";
 
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraStarting, setCameraStarting] = useState(false);
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [fileName, setFileName] = useState("");
-  const [result, setResult] = useState<IdentificationResult | null>(null);
-  const [error, setError] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+type InteractionRecord = {
+  word: string;
+  translation: string;
+  view: number;
+  search: number;
+  speak: number;
+  share: number;
+  send: number;
+  status: number;
+  lastInteractedAt: string;
+};
 
-  // ---- Camera lifecycle -----------------------------------------------
+type InteractionMap = Record<string, InteractionRecord>;
 
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+function readInteractionMap(): InteractionMap {
+  if (typeof window === "undefined") return {};
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    setCameraActive(false);
+  try {
+    const raw = window.localStorage.getItem(INTERACTION_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    return parsed && typeof parsed === "object" ? (parsed as InteractionMap) : {};
+  } catch {
+    return {};
   }
+}
 
-  // Stop the camera on unmount so the browser releases the hardware.
-  useEffect(() => {
-    return () => stopCamera();
+function recordInteraction(item: VocabularyItem, type: InteractionType) {
+  if (typeof window === "undefined") return;
+
+  try {
+    const map = readInteractionMap();
+    const current = map[item.id] ?? {
+      word: item.word,
+      translation: item.translation,
+      view: 0,
+      search: 0,
+      speak: 0,
+      share: 0,
+      send: 0,
+      status: 0,
+      lastInteractedAt: new Date(0).toISOString(),
+    };
+
+    map[item.id] = {
+      ...current,
+      word: item.word,
+      translation: item.translation,
+      [type]: current[type] + 1,
+      lastInteractedAt: new Date().toISOString(),
+    };
+
+    window.localStorage.setItem(INTERACTION_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // Private browsing or storage quota can block localStorage.
+  }
+}
+
+function normalizeVocabularyText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
+
+function getVocabularyKey(
+  word: string | null | undefined,
+  translation: string | null | undefined,
+) {
+  return `${normalizeVocabularyText(word)}::${normalizeVocabularyText(
+    translation,
+  )}`;
+}
+
+export default function VocabularyPage() {
+  const router = useRouter();
+  const [items, setItems] = useState<VocabularyItem[]>([]);
+  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("new");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [rankedIds, setRankedIds] = useState<string[]>([]);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingError, setRankingError] = useState("");
+
+  const [lookupStatus, setLookupStatus] = useState<
+    "idle" | "loading" | "error" | "result"
+  >("idle");
+  const [lookupResult, setLookupResult] = useState<{
+    englishName: string;
+    chineseName: string;
+    partOfSpeech: string;
+    englishExample: string;
+    chineseExample: string;
+    confidence: "high" | "medium" | "low";
+    category: VocabularyCategory;
+  } | null>(null);
+  const [lookupError, setLookupError] = useState("");
+  const [savingLookup, setSavingLookup] = useState(false);
+
+  const [friendPickerItem, setFriendPickerItem] =
+    useState<VocabularyItem | null>(null);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [friendsError, setFriendsError] = useState("");
+  const [sendingFriendId, setSendingFriendId] = useState<string | null>(null);
+  const friendsRequestedRef = useRef(false);
+
+  const handleSendToPartner = useCallback((item: VocabularyItem) => {
+    recordInteraction(item, "send");
+    setFriendPickerItem(item);
   }, []);
 
-  async function startCamera() {
-    setError("");
-    setResult(null);
-    setImageData(null);
+  const loadFriends = useCallback(async () => {
+    friendsRequestedRef.current = true;
+    setFriendsLoading(true);
+    setFriendsError("");
 
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setError(
-        "This browser does not support camera access. Try Take Photo or Choose Image instead."
-      );
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setFriendsError("You're not logged in. Log in to share with a partner.");
+      setFriendsLoading(false);
+      friendsRequestedRef.current = false;
       return;
     }
 
-    setCameraStarting(true);
-
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      setCameraActive(true);
-    } catch (mediaError) {
-      console.error("getUserMedia failed:", mediaError);
-
-      const isDenied =
-        mediaError instanceof DOMException &&
-        (mediaError.name === "NotAllowedError" ||
-          mediaError.name === "PermissionDeniedError");
-
-      setError(
-        isDenied
-          ? "Camera permission was denied. Enable camera access in your browser settings, or try Take Photo or Choose Image instead."
-          : "Camera access is unavailable. Try Take Photo or Choose Image instead."
-      );
+      const friendsData = await listFriends(supabase, user.id);
+      setFriends(friendsData);
+    } catch (loadError) {
+      console.error("Failed to load friends:", loadError);
+      setFriendsError("Couldn't load your friends. Try again.");
+      friendsRequestedRef.current = false;
     } finally {
-      setCameraStarting(false);
+      setFriendsLoading(false);
     }
-  }
+  }, []);
 
-  // Attach the stream once the <video> element is actually mounted
-  // (cameraActive === true), rather than guessing with a timeout.
   useEffect(() => {
-    const video = videoRef.current;
-    const stream = streamRef.current;
+    if (!friendPickerItem || friendsRequestedRef.current) return;
+    void loadFriends();
+  }, [friendPickerItem, loadFriends]);
 
-    if (!cameraActive || !video || !stream) return;
+  const handleClosePicker = useCallback(() => {
+    setFriendPickerItem(null);
+    setSendingFriendId(null);
+  }, []);
 
-    video.srcObject = stream;
+  const handlePickFriend = useCallback(
+    (friendId: string) => {
+      if (!friendPickerItem || sendingFriendId) return;
 
-    const handleLoadedMetadata = () => {
-      void video.play().catch((playError) => {
-        console.error("video.play() failed:", playError);
-        setError(
-          "Could not start the camera preview. Try Take Photo instead."
-        );
-      });
-    };
+      setSendingFriendId(friendId);
+      setPendingSharedVocabulary(friendPickerItem);
+      router.push(`/messages?with=${friendId}`);
+    },
+    [friendPickerItem, router, sendingFriendId],
+  );
 
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+  useEffect(() => {
+    let active = true;
 
-    return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
-  }, [cameraActive]);
+    async function loadVocabulary() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-  // ---- Image processing --------------------------------------------------
-
-  function drawToDataUrl(
-    source: CanvasImageSource,
-    sourceWidth: number,
-    sourceHeight: number
-  ): string | null {
-    const canvas = canvasRef.current ?? document.createElement("canvas");
-
-    const scale = Math.min(
-      1,
-      MAX_DIMENSION / Math.max(sourceWidth, sourceHeight)
-    );
-
-    canvas.width = Math.round(sourceWidth * scale);
-    canvas.height = Math.round(sourceHeight * scale);
-
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-
-    context.drawImage(source, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-  }
-
-  function compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onerror = () =>
-        reject(new Error("Could not read this image."));
-
-      reader.onload = () => {
-        if (typeof reader.result !== "string") {
-          reject(new Error("Could not read this image."));
-          return;
+        if (!user) {
+          throw new Error("Please log in to view your vocabulary.");
         }
 
-        const image = new Image();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("learning_language")
+          .eq("id", user.id)
+          .single();
 
-        image.onerror = () =>
-          reject(new Error("Could not open this image."));
+        if (active && profile?.learning_language) {
+          setLearningLanguage(profile.learning_language as AppLanguage);
+        }
 
-        image.onload = () => {
-          const dataUrl = drawToDataUrl(
-            image,
-            image.width,
-            image.height
+        const { data, error: fetchError } = await supabase
+          .from("vocabulary_items")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (fetchError) throw fetchError;
+        if (active) setItems((data ?? []) as VocabularyItem[]);
+      } catch (loadError) {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Could not load your vocabulary.",
           );
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
 
-          if (!dataUrl) {
-            reject(new Error("Could not process this image."));
-            return;
+    void loadVocabulary();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setLookupStatus("idle");
+    setLookupResult(null);
+    setLookupError("");
+  }, [query]);
+
+  const uniqueItems = useMemo(() => {
+    const seen = new Set<string>();
+
+    // Items are loaded newest first, so the newest copy is retained.
+    return items.filter((item) => {
+      const key = getVocabularyKey(item.word, item.translation);
+
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+  }, [items]);
+
+  useEffect(() => {
+    if (sortMode === "new" || uniqueItems.length === 0) {
+      setRankedIds([]);
+      setRankingError("");
+      setRankingLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadAiRanking() {
+      setRankingLoading(true);
+      setRankingError("");
+
+      try {
+        let newsContext = "";
+
+        if (sortMode === "trending") {
+          try {
+            const newsResponse = await fetch("/api/daily-news", {
+              signal: controller.signal,
+              cache: "no-store",
+            });
+
+            if (newsResponse.ok) {
+              const newsData = await newsResponse.json();
+              newsContext = JSON.stringify(newsData).slice(0, 14000);
+            }
+          } catch (newsError) {
+            if ((newsError as Error).name !== "AbortError") {
+              console.warn("Could not load news context:", newsError);
+            }
           }
+        }
 
-          resolve(dataUrl);
+        const response = await fetch("/api/vocabulary-rank", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            mode: sortMode,
+            items: uniqueItems.map((item) => ({
+              id: item.id,
+              word: item.word,
+              translation: item.translation,
+              status: item.status,
+              createdAt: item.created_at,
+              partOfSpeech: item.part_of_speech,
+              example: item.example_sentence,
+            })),
+            interactions: readInteractionMap(),
+            currentSearch: query.trim(),
+            newsContext,
+          }),
+        });
+
+        const data = (await response.json()) as {
+          orderedIds?: string[];
+          error?: string;
         };
 
-        image.src = reader.result;
-      };
+        if (!response.ok || !Array.isArray(data.orderedIds)) {
+          throw new Error(data.error || "Could not rank vocabulary.");
+        }
 
-      reader.readAsDataURL(file);
+        setRankedIds(data.orderedIds);
+      } catch (rankingFailure) {
+        if ((rankingFailure as Error).name === "AbortError") return;
+
+        console.error("AI ranking failed:", rankingFailure);
+        setRankingError("AI ranking is temporarily unavailable. Using smart fallback.");
+        setRankedIds([]);
+      } finally {
+        if (!controller.signal.aborted) setRankingLoading(false);
+      }
+    }
+
+    void loadAiRanking();
+
+    return () => controller.abort();
+  }, [query, sortMode, uniqueItems]);
+
+  useEffect(() => {
+    const normalizedQuery = normalizeVocabularyText(query);
+    if (!normalizedQuery) return;
+
+    const timer = window.setTimeout(() => {
+      uniqueItems.forEach((item) => {
+        const matches =
+          normalizeVocabularyText(item.word).includes(normalizedQuery) ||
+          normalizeVocabularyText(item.translation).includes(normalizedQuery);
+
+        if (matches) recordInteraction(item, "search");
+      });
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [query, uniqueItems]);
+
+  const visibleItems = useMemo(() => {
+    const normalizedQuery = normalizeVocabularyText(query);
+    const filtered = uniqueItems.filter((item) => {
+      if (!normalizedQuery) return true;
+
+      return (
+        normalizeVocabularyText(item.word).includes(normalizedQuery) ||
+        normalizeVocabularyText(item.translation).includes(normalizedQuery)
+      );
     });
-  }
 
-  async function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
-    if (!file) return;
-
-    setError("");
-    setResult(null);
-
-    if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      setError("Please choose an image smaller than 10 MB.");
-      return;
-    }
-
-    try {
-      const compressed = await compressImage(file);
-
-      stopCamera();
-      setImageData(compressed);
-      setFileName(file.name);
-    } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Could not process this image."
+    if (sortMode === "new") {
+      return [...filtered].sort(
+        (a, b) =>
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime(),
       );
     }
-  }
 
-  function capturePhoto() {
-    const video = videoRef.current;
+    const rankIndex = new Map(rankedIds.map((id, index) => [id, index]));
 
-    if (!video || !video.videoWidth || !video.videoHeight) {
-      setError("The camera is not ready yet.");
-      return;
-    }
+    return [...filtered].sort((a, b) => {
+      const aRank = rankIndex.get(a.id);
+      const bRank = rankIndex.get(b.id);
 
-    const dataUrl = drawToDataUrl(
-      video,
-      video.videoWidth,
-      video.videoHeight
-    );
+      if (aRank !== undefined && bRank !== undefined) return aRank - bRank;
+      if (aRank !== undefined) return -1;
+      if (bRank !== undefined) return 1;
 
-    if (!dataUrl) {
-      setError("Could not capture the image.");
-      return;
-    }
+      // Smart fallback while Gemini is loading or unavailable.
+      const statusScore: Record<VocabularyStatus, number> = {
+        learning: 3,
+        new: 2,
+        mastered: 1,
+      };
+      const interactions = readInteractionMap();
+      const aInteraction = interactions[a.id];
+      const bInteraction = interactions[b.id];
+      const score = (record: InteractionRecord | undefined) =>
+        record
+          ? record.search * 5 +
+            record.send * 5 +
+            record.share * 4 +
+            record.speak * 3 +
+            record.view +
+            record.status * 2
+          : 0;
 
-    setImageData(dataUrl);
-    setFileName("camera-photo.jpg");
-    setResult(null);
-    stopCamera();
-  }
+      const scoreDifference =
+        score(bInteraction) + statusScore[b.status] * 10 -
+        (score(aInteraction) + statusScore[a.status] * 10);
 
-  // ---- Identify / save --------------------------------------------------
+      if (scoreDifference !== 0) return scoreDifference;
 
-  async function identifyImage() {
-    if (!imageData || analyzing) return;
+      return (
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime()
+      );
+    });
+  }, [query, rankedIds, sortMode, uniqueItems]);
 
-    setAnalyzing(true);
+  const alphabetizedItems = useMemo(() => {
+    const normalizedSearch = normalizeVocabularyText(filterSearch);
+
+    return [...uniqueItems]
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+
+        return (
+          normalizeVocabularyText(item.word).includes(normalizedSearch) ||
+          normalizeVocabularyText(item.translation).includes(normalizedSearch)
+        );
+      })
+      .sort((a, b) =>
+        a.word.localeCompare(b.word, "en", { sensitivity: "base" }),
+      );
+  }, [filterSearch, uniqueItems]);
+
+  async function changeStatus(item: VocabularyItem, status: VocabularyStatus) {
+    if (item.status === status || updatingId) return;
+
+    setUpdatingId(item.id);
     setError("");
-    setResult(null);
 
     try {
-      const response = await fetch("/api/identify-object", {
+      const supabase = createClient();
+      const { error: updateError } = await supabase
+        .from("vocabulary_items")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", item.id);
+
+      if (updateError) throw updateError;
+
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === item.id ? { ...currentItem, status } : currentItem,
+        ),
+      );
+      recordInteraction(item, "status");
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Could not update this word.",
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function lookupWord() {
+    const cleanQuery = query.trim();
+    if (!cleanQuery || lookupStatus === "loading") return;
+
+    setLookupStatus("loading");
+    setLookupError("");
+
+    try {
+      const response = await fetch("/api/classify-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageData }),
+        body: JSON.stringify({ text: cleanQuery }),
       });
 
-      const data = (await response.json()) as
-        | IdentificationResult
-        | { error: string };
+      const data = await response.json();
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data ? data.error : "Could not identify this image."
+          "error" in data ? data.error : "Couldn't look up that word.",
         );
       }
 
-      setResult(data);
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Could not identify this image."
+      setLookupResult(data);
+      setLookupStatus("result");
+    } catch (lookupErrorValue) {
+      setLookupError(
+        lookupErrorValue instanceof Error
+          ? lookupErrorValue.message
+          : "Couldn't look up that word.",
       );
-    } finally {
-      setAnalyzing(false);
+      setLookupStatus("error");
     }
   }
 
-  function createShareText() {
-    if (!result) return "";
+  async function saveLookupResult() {
+    if (!lookupResult || savingLookup) return;
 
-    return `${result.englishName}
-${result.chineseName}
-
-${result.englishExample}
-${result.chineseExample}`;
-  }
-
-  async function saveToVocabulary() {
-    if (!result || !imageData || saving) return;
-
-    setSaving(true);
+    setSavingLookup(true);
     setError("");
 
     try {
       const supabase = createClient();
       const {
         data: { user },
-        error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError || !user) {
+      if (!user) {
         throw new Error("Please log in before saving a word.");
       }
 
-      const imageBlob = dataUrlToBlob(imageData);
-      const extension = safeImageExtension(imageBlob.type);
-      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      const word = lookupResult.englishName.trim();
+      const translation = lookupResult.chineseName.trim();
+      const candidateKey = getVocabularyKey(word, translation);
 
-      const { error: uploadError } = await supabase.storage
-        .from("vocabulary-images")
-        .upload(imagePath, imageBlob, {
-          contentType: imageBlob.type,
-          upsert: false,
-        });
+      const duplicate = items.find(
+        (item) =>
+          getVocabularyKey(item.word, item.translation) === candidateKey,
+      );
 
-      if (uploadError) throw uploadError;
+      if (duplicate) {
+        setError("This word is already in your vocabulary.");
+        setLookupStatus("idle");
+        setLookupResult(null);
+        setQuery("");
+        return;
+      }
 
-      const { data: publicImage } = supabase.storage
-        .from("vocabulary-images")
-        .getPublicUrl(imagePath);
-
-      const { error: insertError } = await supabase
+      const { data: inserted, error: insertError } = await supabase
         .from("vocabulary_items")
         .insert({
           user_id: user.id,
-          word: result.englishName.trim(),
-          translation: result.chineseName.trim(),
+          word,
+          translation,
           language: "english",
-          part_of_speech: result.partOfSpeech.trim() || null,
-          example_sentence: result.englishExample.trim() || null,
-          translated_example: result.chineseExample.trim() || null,
-          image_url: publicImage.publicUrl,
-          confidence: result.confidence,
+          part_of_speech: lookupResult.partOfSpeech.trim() || null,
+          example_sentence: lookupResult.englishExample.trim() || null,
+          translated_example: lookupResult.chineseExample.trim() || null,
+          confidence: lookupResult.confidence,
+          category: lookupResult.category,
           status: "new",
-        });
+        })
+        .select()
+        .single();
 
-      if (insertError) {
-        await supabase.storage.from("vocabulary-images").remove([imagePath]);
-        throw insertError;
-      }
+      if (insertError) throw insertError;
 
-      setSaved(true);
-      router.push("/vocabulary");
+      setItems((current) => [inserted as VocabularyItem, ...current]);
+      setLookupStatus("idle");
+      setLookupResult(null);
+      setQuery("");
     } catch (saveError) {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Could not save this word."
+          : "Could not save this word.",
       );
     } finally {
-      setSaving(false);
+      setSavingLookup(false);
     }
   }
 
-  function sendToPartner() {
-    if (!result) return;
-
-    sessionStorage.setItem(
-      "exchange-notes-draft-message",
-      createShareText()
-    );
-
-    router.push("/messages");
-  }
-
-  function reset() {
-    stopCamera();
-    setImageData(null);
-    setFileName("");
-    setResult(null);
-    setError("");
-    setSaved(false);
-  }
-
   return (
-    <main className="min-h-screen bg-[#f5f3ee] px-4 py-6 text-neutral-900">
+    <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
-        <header className="flex items-center justify-between">
-          <Link href="/" className="text-sm font-semibold text-neutral-500">
-            Cancel
-          </Link>
+        <header className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold uppercase tracking-[0.2em]">
+              Your library
+            </p>
+            <h1 className="mt-2 text-3xl font-black sm:text-4xl">Vocabulary</h1>
+          </div>
 
-          <h1 className="font-semibold">Discover</h1>
+          <div className="flex shrink-0 gap-2">
+            <Link
+              href="/vocabulary/quiz"
+              aria-label="Flashcard quiz"
+              className="rounded-full bg-white p-3 text-black"
+            >
+              <Zap size={20} />
+            </Link>
+
+            <Link
+              href="/capture"
+              aria-label="Discover a new word"
+              className="rounded-full bg-black p-3 text-white"
+            >
+              <Plus size={20} />
+            </Link>
+          </div>
+        </header>
+
+        <div className="mt-7 grid grid-cols-2 border-y border-black/10 bg-white">
+          <button
+            type="button"
+            onClick={() => setSortOpen(true)}
+            className="flex h-12 items-center justify-center border-r border-black/10 text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
+          >
+            Sort By
+          </button>
 
           <button
             type="button"
-            onClick={reset}
-            className="text-sm font-semibold text-neutral-500"
+            onClick={() => setFiltersOpen(true)}
+            className="flex h-12 items-center justify-center text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
           >
-            Reset
+            Filters
           </button>
-        </header>
+        </div>
 
-        {!cameraActive && !imageData && (
-          <section className="mt-24 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-neutral-400">
-              English × 繁體中文
-            </p>
-
-            <h2 className="mt-4 text-4xl font-bold tracking-tight">
-              Discover a word
-            </h2>
-
-            <p className="mx-auto mt-4 max-w-sm leading-7 text-neutral-500">
-              Photograph an object or choose an image to learn its name in
-              English and Traditional Chinese.
-            </p>
-
-            <div className="mt-10 space-y-3">
-              <button
-                type="button"
-                onClick={startCamera}
-                disabled={cameraStarting}
-                className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white disabled:opacity-40"
-              >
-                {cameraStarting ? "Starting Camera..." : "Open Camera"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => takePhotoInputRef.current?.click()}
-                className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
-              >
-                Take Photo
-              </button>
-
-              <button
-                type="button"
-                onClick={() => chooseImageInputRef.current?.click()}
-                className="w-full rounded-2xl bg-white px-5 py-4 font-semibold shadow-sm"
-              >
-                Choose Image
-              </button>
-            </div>
-          </section>
-        )}
-
-        {cameraActive && !imageData && (
-          <section className="mt-6">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-3xl bg-black">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-              />
-            </div>
-
-            <div className="mt-5 flex items-center justify-center gap-8">
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="text-sm font-semibold text-neutral-500"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={capturePhoto}
-                aria-label="Capture photo"
-                className="h-20 w-20 rounded-full border-[6px] border-white bg-neutral-900 shadow-md"
-              />
-            </div>
-          </section>
-        )}
-
-        {imageData && (
-          <section className="mt-6">
-            <div className="overflow-hidden rounded-3xl bg-neutral-900">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageData}
-                alt="Selected object"
-                className="max-h-[52vh] w-full object-contain"
-              />
-            </div>
-
-            {fileName && (
-              <p className="mt-3 truncate text-center text-xs text-neutral-400">
-                {fileName}
-              </p>
-            )}
-
-            {!result && (
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="rounded-2xl bg-white px-4 py-4 font-semibold shadow-sm"
-                >
-                  Choose another
-                </button>
-
-                <button
-                  type="button"
-                  onClick={identifyImage}
-                  disabled={analyzing}
-                  className="rounded-2xl bg-neutral-900 px-4 py-4 font-semibold text-white disabled:opacity-40"
-                >
-                  {analyzing ? "Identifying..." : "Identify"}
-                </button>
-              </div>
-            )}
-          </section>
+        {sortMode !== "new" && (rankingLoading || rankingError) && (
+          <div className="mt-3 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.12em] text-neutral-400">
+            <span>{rankingLoading ? `Personalizing ${SORT_LABELS[sortMode]}…` : rankingError}</span>
+            {rankingLoading && <LoaderCircle size={14} className="shrink-0 animate-spin" />}
+          </div>
         )}
 
         {error && (
-          <p className="mt-5 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+          <p className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700">
             {error}
           </p>
         )}
 
-        {result && (
-          <section className="mt-5 rounded-3xl bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-400">
-                Identified
-              </span>
-
-              <span className="text-xs text-neutral-400">
-                {result.confidence}
-              </span>
-            </div>
-
-            <h2 className="mt-4 text-4xl font-bold tracking-tight">
-              {result.englishName}
+        {loading ? (
+          <section className="mt-8 flex items-center justify-center rounded-[30px] bg-white p-10">
+            <LoaderCircle className="animate-spin" size={28} />
+          </section>
+        ) : items.length === 0 ? (
+          <section className="mt-8 rounded-[30px] bg-white p-7 text-center">
+            <Camera className="mx-auto" size={30} />
+            <h2 className="mt-5 text-2xl font-black">
+              Your first word begins outside
             </h2>
-
-            <p className="mt-2 text-2xl">{result.chineseName}</p>
-
-            <p className="mt-2 text-sm text-neutral-400">
-              {result.partOfSpeech}
+            <p className="mt-3 leading-7">
+              Photograph something from daily life and save its English and
+              Traditional Chinese meaning.
             </p>
+            <Link
+              href="/capture"
+              className="mt-6 block rounded-[20px] bg-black px-5 py-4 font-black text-white"
+            >
+              Discover a Word
+            </Link>
+          </section>
+        ) : visibleItems.length === 0 ? (
+          <section className="mt-8 rounded-[30px] bg-white p-8 text-center">
+            {lookupStatus === "result" && lookupResult ? (
+              <>
+                <BookmarkPlus className="mx-auto" size={30} />
+                <h2 className="mt-4 text-2xl font-black">
+                  {lookupResult.englishName}
+                </h2>
+                <p className="mt-1 text-2xl">{lookupResult.chineseName}</p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {lookupResult.partOfSpeech}
+                </p>
+                <div className="mt-4 rounded-2xl bg-[#f5f2eb] p-4 text-left">
+                  <p className="leading-6">{lookupResult.englishExample}</p>
+                  <p className="mt-1 leading-6 text-neutral-500">
+                    {lookupResult.chineseExample}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={saveLookupResult}
+                  disabled={savingLookup}
+                  className="mt-6 w-full rounded-[20px] bg-black px-5 py-4 font-black text-white disabled:opacity-50"
+                >
+                  {savingLookup ? "Saving..." : "Add to Vocabulary"}
+                </button>
+              </>
+            ) : (
+              <>
+                <BookOpen className="mx-auto" size={30} />
+                <h2 className="mt-4 text-xl font-black">No matching words</h2>
+                <p className="mt-2 text-neutral-600">
+                  {query.trim()
+                    ? "Not saved yet — look it up and add it."
+                    : "Try another search or learning status."}
+                </p>
 
-            <div className="mt-6 border-t border-neutral-100 pt-5">
-              <p className="leading-7">{result.englishExample}</p>
+                {query.trim() && (
+                  <button
+                    type="button"
+                    onClick={lookupWord}
+                    disabled={lookupStatus === "loading"}
+                    className="mt-6 w-full rounded-[20px] bg-black px-5 py-4 font-black text-white disabled:opacity-50"
+                  >
+                    {lookupStatus === "loading"
+                      ? "Looking up..."
+                      : `Look up "${query.trim()}"`}
+                  </button>
+                )}
 
-              <p className="mt-2 leading-7 text-neutral-500">
-                {result.chineseExample}
-              </p>
-            </div>
+                {lookupStatus === "error" && (
+                  <p className="mt-3 rounded-[16px] bg-red-50 p-3 text-sm font-bold text-red-700">
+                    {lookupError}
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+        ) : (
+          <section className="mt-6 space-y-4">
+            {visibleItems.map((item) => {
+              const wordIsTarget = learningLanguage
+                ? item.language === learningLanguage
+                : toPinyin(item.word) !== null;
 
-            <div className="mt-7 space-y-3">
-              <button
-                type="button"
-                onClick={saveToVocabulary}
-                disabled={saving || saved}
-                className="w-full rounded-2xl bg-neutral-900 px-5 py-4 font-semibold text-white"
-              >
-                {saving ? "Saving..." : saved ? "Saved" : "Save to Vocabulary"}
-              </button>
-
-              <button
-                type="button"
-                onClick={sendToPartner}
-                className="w-full rounded-2xl bg-[#f1eee7] px-5 py-4 font-semibold"
-              >
-                Send to Partner
-              </button>
-            </div>
+              return (
+                <VocabularyCard
+                  key={item.id}
+                  item={item}
+                  wordIsTarget={wordIsTarget}
+                  updating={updatingId === item.id}
+                  onChangeStatus={(status) => void changeStatus(item, status)}
+                  onSendToPartner={() => handleSendToPartner(item)}
+                  onInteract={(type) => recordInteraction(item, type)}
+                  onItemAdded={(newItem) =>
+                    setItems((current) => [newItem, ...current])
+                  }
+                />
+              );
+            })}
           </section>
         )}
-
-        <canvas ref={canvasRef} className="hidden" />
-
-        <input
-          ref={takePhotoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
-
-        <input
-          ref={chooseImageInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
       </div>
+
+
+      {sortOpen && (
+        <SortBottomSheet
+          value={sortMode}
+          onClose={() => setSortOpen(false)}
+          onChange={(mode) => {
+            setSortMode(mode);
+            setSortOpen(false);
+          }}
+        />
+      )}
+
+      {filtersOpen && (
+        <VocabularyFilterPanel
+          items={alphabetizedItems}
+          search={filterSearch}
+          onSearchChange={setFilterSearch}
+          onClose={() => {
+            setFiltersOpen(false);
+            setFilterSearch("");
+          }}
+          onSelect={(item) => {
+            setQuery(item.word);
+            setFiltersOpen(false);
+            setFilterSearch("");
+          }}
+        />
+      )}
+
+      {friendPickerItem && (
+        <FriendPickerModal
+          friends={friends}
+          loading={friendsLoading}
+          errorMessage={friendsError}
+          sendingFriendId={sendingFriendId}
+          onClose={handleClosePicker}
+          onPick={handlePickFriend}
+          onRetry={() => {
+            friendsRequestedRef.current = false;
+            void loadFriends();
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+
+function SortBottomSheet({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: SortMode;
+  onChange: (mode: SortMode) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-end bg-black/20 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sort vocabulary"
+        className="w-full rounded-t-[24px] bg-white px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 text-black shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-black/15" />
+
+        <div className="mx-auto max-w-xl">
+          <div className="flex items-center justify-between border-b border-black/10 pb-4">
+            <p className="text-xs font-medium uppercase tracking-[0.14em]">Sort By</p>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close sort menu"
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div>
+            {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onChange(mode)}
+                className="flex w-full items-center border-b border-black/10 py-4 text-left last:border-b-0"
+              >
+                <span className="w-8 text-lg">{value === mode ? "—" : ""}</span>
+                <span className="text-xl uppercase tracking-[-0.02em]">
+                  {SORT_LABELS[mode]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function VocabularyFilterPanel({
+  items,
+  search,
+  onSearchChange,
+  onClose,
+  onSelect,
+}: {
+  items: VocabularyItem[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  onClose: () => void;
+  onSelect: (item: VocabularyItem) => void;
+}) {
+  const letters = useMemo(() => {
+    const groups = new Map<string, VocabularyItem[]>();
+
+    for (const item of items) {
+      const firstCharacter = item.word.trim().charAt(0).toUpperCase();
+      const letter = /^[A-Z]$/.test(firstCharacter) ? firstCharacter : "#";
+      const group = groups.get(letter) ?? [];
+      group.push(item);
+      groups.set(letter, group);
+    }
+
+    return [...groups.entries()].sort(([a], [b]) => {
+      if (a === "#") return 1;
+      if (b === "#") return -1;
+      return a.localeCompare(b);
+    });
+  }, [items]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[120] overflow-y-auto bg-white text-black">
+      <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
+        <div className="flex items-center justify-between px-5 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm uppercase tracking-[0.08em]"
+          >
+            Cancel
+          </button>
+          <p className="text-sm uppercase tracking-[0.08em]">Vocabulary</p>
+          <button
+            type="button"
+            onClick={() => onSearchChange("")}
+            className="text-sm uppercase tracking-[0.08em]"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="relative border-t border-black/10 px-5 py-4">
+          <Search
+            size={18}
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400"
+          />
+          <input
+            autoFocus
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search saved words"
+            className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
+          />
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-xl grid-cols-[72px_1fr] gap-5 px-5 py-8">
+        <aside className="text-xs uppercase leading-5 text-neutral-500">
+          <p>{String(items.length).padStart(2, "0")}</p>
+          <p>Words</p>
+        </aside>
+
+        <div className="space-y-10">
+          {letters.length === 0 ? (
+            <p className="text-neutral-400">No matching words.</p>
+          ) : (
+            letters.map(([letter, group]) => (
+              <section key={letter} id={`letter-${letter}`}>
+                <h2 className="mb-5 text-2xl font-medium">{letter}</h2>
+                <div className="space-y-5">
+                  {group.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onSelect(item)}
+                      className="block w-full text-left"
+                    >
+                      <span className="block text-2xl leading-tight">
+                        {item.word}
+                      </span>
+                      <span className="mt-1 block text-sm text-neutral-400">
+                        {item.translation} · {STATUS_LABELS[item.status]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+      </div>
+
+      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-neutral-400 sm:flex">
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
+          <a key={letter} href={`#letter-${letter}`}>
+            {letter}
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function FriendPickerModal({
+  friends,
+  loading,
+  errorMessage,
+  sendingFriendId,
+  onClose,
+  onPick,
+  onRetry,
+}: {
+  friends: FriendProfile[];
+  loading: boolean;
+  errorMessage: string;
+  sendingFriendId: string | null;
+  onClose: () => void;
+  onPick: (friendId: string) => void;
+  onRetry: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    dialogRef.current?.focus();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="send-to-partner-title"
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+        className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
+          mounted
+            ? "translate-y-0"
+            : "translate-y-full sm:translate-y-4 sm:opacity-0"
+        }`}
+        style={{
+          maxHeight: "min(78vh, 640px)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
+        }}
+      >
+        <div className="mx-auto mt-3 h-1 w-9 shrink-0 rounded-full bg-black/15 sm:hidden" />
+
+        <div className="flex shrink-0 items-center justify-between px-6 pb-3 pt-3">
+          <h2
+            id="send-to-partner-title"
+            className="text-base font-semibold tracking-tight text-black/90"
+          >
+            傳送給夥伴
+          </h2>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 pb-2">
+          {loading && (
+            <div className="space-y-1.5 px-2 py-2">
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className="flex animate-pulse items-center gap-3 rounded-2xl bg-black/[0.03] p-3"
+                >
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-black/10" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-2.5 w-24 rounded-full bg-black/10" />
+                    <div className="h-2.5 w-16 rounded-full bg-black/10" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && errorMessage && (
+            <div className="flex flex-col items-center gap-3 px-2 py-8 text-center">
+              <p className="text-sm text-red-600">{errorMessage}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-black/5"
+              >
+                重試
+              </button>
+            </div>
+          )}
+
+          {!loading && !errorMessage && friends.length === 0 && (
+            <p className="px-2 py-8 text-center text-sm text-black/40">
+              還沒有朋友——先加一位才能分享單字。
+            </p>
+          )}
+
+          {!loading &&
+            !errorMessage &&
+            friends.map((friend) => {
+              const isSending = sendingFriendId === friend.id;
+              const isDisabled = sendingFriendId !== null;
+
+              return (
+                <button
+                  key={friend.id}
+                  type="button"
+                  onClick={() => onPick(friend.id)}
+                  disabled={isDisabled}
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
+                    {(friend.displayName ?? friend.exchangeId)
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-black/85">
+                      {friend.displayName ?? `@${friend.exchangeId}`}
+                    </p>
+                    <p className="truncate text-xs text-black/40">
+                      @{friend.exchangeId}
+                    </p>
+                  </div>
+
+                  {isSending && (
+                    <LoaderCircle
+                      size={16}
+                      className="shrink-0 animate-spin text-black/40"
+                    />
+                  )}
+                </button>
+              );
+            })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type SelectionState = { text: string; top: number; left: number };
+
+function useTextSelection(containerRef: RefObject<HTMLDivElement | null>) {
+  const [selection, setSelection] = useState<SelectionState | null>(null);
+
+  useEffect(() => {
+    function handleSelectionChange() {
+      const sel = window.getSelection();
+      const container = containerRef.current;
+
+      if (!sel || sel.isCollapsed || !container) {
+        setSelection(null);
+        return;
+      }
+
+      const anchorNode = sel.anchorNode;
+      if (!anchorNode || !container.contains(anchorNode)) {
+        setSelection(null);
+        return;
+      }
+
+      const text = sel.toString().trim();
+      if (!text) {
+        setSelection(null);
+        return;
+      }
+
+      const range = sel.getRangeAt(0);
+      const rangeRect = range.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      setSelection({
+        text,
+        top: rangeRect.top - containerRect.top,
+        left: rangeRect.left - containerRect.left + rangeRect.width / 2,
+      });
+    }
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () =>
+      document.removeEventListener("selectionchange", handleSelectionChange);
+  }, [containerRef]);
+
+  return [selection, setSelection] as const;
+}
+
+function SelectionToolbar({
+  selection,
+  addingWord,
+  addedWord,
+  onAddWord,
+  onSendToPartner,
+}: {
+  selection: SelectionState | null;
+  addingWord: boolean;
+  addedWord: boolean;
+  onAddWord: () => void;
+  onSendToPartner: () => void;
+}) {
+  if (!selection) return null;
+
+  return (
+    <div
+      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full border border-white/20 bg-black/40 p-1.5 text-white shadow-xl backdrop-blur-xl"
+      style={{ top: selection.top - 12, left: selection.left }}
+    >
+      <button
+        type="button"
+        onClick={onAddWord}
+        disabled={addingWord}
+        aria-label={addedWord ? "已加入單字本" : "加入單字本"}
+        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15 disabled:opacity-60"
+      >
+        {addingWord ? (
+          <LoaderCircle size={16} className="animate-spin" />
+        ) : addedWord ? (
+          <Check size={16} />
+        ) : (
+          <BookmarkPlus size={16} />
+        )}
+      </button>
+
+      <span className="h-4 w-px bg-white/20" />
+
+      <button
+        type="button"
+        onClick={onSendToPartner}
+        aria-label="傳送給夥伴"
+        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
+      >
+        <Send size={16} />
+      </button>
+    </div>
+  );
+}
+
+function VocabularyCard({
+  item,
+  wordIsTarget,
+  updating,
+  onChangeStatus,
+  onSendToPartner,
+  onInteract,
+  onItemAdded,
+}: {
+  item: VocabularyItem;
+  wordIsTarget: boolean;
+  updating: boolean;
+  onChangeStatus: (status: VocabularyStatus) => void;
+  onSendToPartner: () => void;
+  onInteract: (type: InteractionType) => void;
+  onItemAdded: (item: VocabularyItem) => void;
+}) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [selection, setSelection] = useTextSelection(contentRef);
+  const [addingWord, setAddingWord] = useState(false);
+  const [addedWord, setAddedWord] = useState(false);
+
+  useEffect(() => {
+    onInteract("view");
+    // Count one view when the card is mounted in the current ordering.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id]);
+
+  async function handleAddSelectionToVocabulary() {
+    if (!selection || addingWord) return;
+    const text = selection.text;
+    setAddingWord(true);
+
+    try {
+      const response = await fetch("/api/classify-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data ? data.error : "Couldn't look up that word.",
+        );
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Please log in before saving a word.");
+      }
+
+      const word = (data.englishName ?? text).trim();
+      const translation = (data.chineseName ?? "").trim();
+      const candidateKey = getVocabularyKey(word, translation);
+
+      const { data: existingItems, error: duplicateCheckError } = await supabase
+        .from("vocabulary_items")
+        .select("id, word, translation")
+        .eq("user_id", user.id);
+
+      if (duplicateCheckError) throw duplicateCheckError;
+
+      const duplicate = (existingItems ?? []).some(
+        (existingItem) =>
+          getVocabularyKey(existingItem.word, existingItem.translation) ===
+          candidateKey,
+      );
+
+      if (!duplicate) {
+        const { data: inserted, error: insertError } = await supabase
+          .from("vocabulary_items")
+          .insert({
+            user_id: user.id,
+            word,
+            translation,
+            language: "english",
+            part_of_speech: data.partOfSpeech?.trim() || null,
+            example_sentence: data.englishExample?.trim() || null,
+            translated_example: data.chineseExample?.trim() || null,
+            confidence: data.confidence ?? "medium",
+            category: (data.category ?? "other") as VocabularyCategory,
+            status: "new",
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        onItemAdded(inserted as VocabularyItem);
+      }
+
+      setAddedWord(true);
+      window.getSelection()?.removeAllRanges();
+      setTimeout(() => {
+        setSelection(null);
+        setAddedWord(false);
+      }, 1100);
+    } catch (addError) {
+      console.error("Failed to add word:", addError);
+      setSelection(null);
+    } finally {
+      setAddingWord(false);
+    }
+  }
+
+  function handleSelectionSendToPartner() {
+    window.getSelection()?.removeAllRanges();
+    setSelection(null);
+    onSendToPartner();
+  }
+
+  async function handleShare() {
+    onInteract("share");
+    const shareData = {
+      title: item.word,
+      text: `${item.word} — ${item.translation}`,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User cancelled or share failed — no action needed.
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareData.text);
+    } catch {
+      // Clipboard can fail without permission; safe to ignore.
+    }
+  }
+
+  return (
+    <article className="overflow-hidden rounded-[28px] bg-white">
+      {item.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.image_url}
+          alt={item.word}
+          className="h-48 w-full object-cover"
+        />
+      )}
+
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div ref={contentRef} className="relative min-w-0 flex-1">
+            <SelectionToolbar
+              selection={selection}
+              addingWord={addingWord}
+              addedWord={addedWord}
+              onAddWord={() => void handleAddSelectionToVocabulary()}
+              onSendToPartner={handleSelectionSendToPartner}
+            />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <h2
+                className={
+                  wordIsTarget
+                    ? "break-words text-3xl font-black sm:text-4xl"
+                    : "break-words text-lg text-neutral-500 sm:text-xl"
+                }
+              >
+                {item.word}
+              </h2>
+              <button
+                type="button"
+                aria-label={`Pronounce ${item.word}`}
+                onClick={() => {
+                  onInteract("speak");
+                  speak(item.word, toPinyin(item.word) ? "zh-TW" : "en-US");
+                }}
+                className="shrink-0 rounded-full bg-[#f1eee7] p-2 text-black"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
+            {toPinyin(item.word) && (
+              <p className="mt-1 text-sm text-neutral-400">
+                {toPinyin(item.word)}
+              </p>
+            )}
+
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p
+                className={
+                  wordIsTarget
+                    ? "break-words text-base text-neutral-500 sm:text-lg"
+                    : "break-words text-3xl font-black sm:text-4xl"
+                }
+              >
+                {item.translation}
+              </p>
+              <button
+                type="button"
+                aria-label={`Pronounce ${item.translation}`}
+                onClick={() => {
+                  onInteract("speak");
+                  speak(
+                    item.translation,
+                    toPinyin(item.translation) ? "zh-TW" : "en-US",
+                  );
+                }}
+                className="shrink-0 rounded-full bg-[#f1eee7] p-1.5 text-black"
+              >
+                <Volume2 size={14} />
+              </button>
+            </div>
+
+            <div className="mt-1 flex items-center gap-1.5">
+              {toPinyin(item.translation) && (
+                <p className="text-sm text-neutral-400">
+                  {toPinyin(item.translation)}
+                </p>
+              )}
+              {item.part_of_speech && (
+                <span className="text-[11px] text-neutral-300">
+                  · {item.part_of_speech}
+                </span>
+              )}
+            </div>
+
+            {(item.example_sentence || item.translated_example) && (
+              <div className="mt-5 border-t border-neutral-100 pt-3">
+                <p className="break-words leading-7">
+                  {wordIsTarget
+                    ? item.translated_example
+                    : item.example_sentence}
+                </p>
+                {(wordIsTarget
+                  ? item.example_sentence
+                  : item.translated_example) && (
+                  <p className="mt-1 break-words text-sm leading-6 text-neutral-400">
+                    {wordIsTarget
+                      ? item.example_sentence
+                      : item.translated_example}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-col gap-2">
+            {item.status === "mastered" && (
+              <span className="rounded-full bg-green-100 p-2 text-green-700">
+                <Check size={16} />
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onSendToPartner}
+              aria-label="Send to Partner"
+              className="rounded-full bg-[#f1eee7] p-2 text-black transition-colors hover:bg-[#e9e4d8]"
+            >
+              <Send size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              aria-label="Share"
+              className="rounded-full bg-[#f1eee7] p-2 text-black transition-colors hover:bg-[#e9e4d8]"
+            >
+              <Share size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {(["new", "learning", "mastered"] as const).map((status) => (
+            <button
+              key={status}
+              type="button"
+              disabled={updating}
+              onClick={() => onChangeStatus(status)}
+              className={`whitespace-nowrap rounded-[16px] px-2 py-3 text-xs font-black disabled:opacity-40 ${
+                item.status === status
+                  ? "bg-black text-white"
+                  : "bg-[#f1eee7] text-black"
+              }`}
+            >
+              {STATUS_LABELS[status]}
+            </button>
+          ))}
+        </div>
+      </div>
+    </article>
   );
 }
