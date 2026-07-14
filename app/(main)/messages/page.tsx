@@ -19,6 +19,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import {
   getOrCreateConversationWithFriend,
@@ -42,10 +43,74 @@ type Message = {
   shared_article: DailyNewsCard | null;
 };
 
+type AttachmentIdentificationResult = {
+  englishName: string;
+  chineseName: string;
+  partOfSpeech: string;
+  englishExample: string;
+  chineseExample: string;
+  confidence: "high" | "medium" | "low";
+  category: "people" | "objects" | "actions" | "other";
+};
+
 const MESSAGE_COLUMNS =
   "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name, shared_article";
 
 const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
+
+const AI_IMAGE_MAX_DIMENSION = 1600;
+const AI_IMAGE_JPEG_QUALITY = 0.82;
+
+function imageFileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(new Error("Could not read this photo."));
+    };
+
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("Could not read this photo."));
+        return;
+      }
+
+      const image = new Image();
+
+      image.onerror = () => {
+        reject(new Error("Could not open this photo."));
+      };
+
+      image.onload = () => {
+        const scale = Math.min(
+          1,
+          AI_IMAGE_MAX_DIMENSION / Math.max(image.width, image.height),
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          reject(new Error("Could not prepare this photo for AI."));
+          return;
+        }
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        resolve(
+          canvas.toDataURL("image/jpeg", AI_IMAGE_JPEG_QUALITY),
+        );
+      };
+
+      image.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
 
 function IconLogoutButton() {
   const [loggingOut, setLoggingOut] = useState(false);
@@ -502,43 +567,145 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
   // ---- attachments (photo / file) ----
 
+  async function identifyPhoto(
+    file: File,
+  ): Promise<AttachmentIdentificationResult> {
+    const image = await imageFileToDataUrl(file);
+
+    const response = await fetch("/api/identify-object", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ image }),
+    });
+
+    const data = (await response.json()) as
+      | AttachmentIdentificationResult
+      | { error: string };
+
+    if (!response.ok || "error" in data) {
+      throw new Error(
+        "error" in data
+          ? data.error
+          : "Gemini could not identify this photo.",
+      );
+    }
+
+    return data;
+  }
+
   async function handleAttachmentSelected(file: File | undefined) {
     if (!file || !conversationId || !currentUserId || uploading) return;
+
+    const isImage = file.type.startsWith("image/");
+
+    if (file.size > 15 * 1024 * 1024) {
+      setErrorMessage("Files must be smaller than 15 MB.");
+      return;
+    }
 
     setUploading(true);
     setErrorMessage("");
 
+    const supabase = createClient();
+    let uploadedPath: string | null = null;
+
     try {
-      const supabase = createClient();
-      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-      const path = `${conversationId}/${crypto.randomUUID()}-${safeName}`;
+      let identification: AttachmentIdentificationResult | null = null;
+
+      // Analyze the image before creating the message.
+      if (isImage) {
+        identification = await identifyPhoto(file);
+      }
+
+      const safeName =
+        file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_") || "attachment";
+
+      uploadedPath =
+        `${conversationId}/${crypto.randomUUID()}-${safeName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("message-attachments")
-        .upload(path, file, { contentType: file.type });
+        .upload(uploadedPath, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+          cacheControl: "3600",
+        });
 
       if (uploadError) throw uploadError;
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from("message-attachments").getPublicUrl(path);
+      } = supabase.storage
+        .from("message-attachments")
+        .getPublicUrl(uploadedPath);
 
-      const { error: insertError } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: currentUserId,
-        body: "",
-        attachment_url: publicUrl,
-        attachment_type: file.type,
-        attachment_name: file.name,
-      });
+      if (isImage && identification) {
+        const now = new Date().toISOString();
 
-      if (insertError) throw insertError;
+        const sharedItem: VocabularyItem = {
+          id: `shared-photo-${crypto.randomUUID()}`,
+          user_id: currentUserId,
+          word: identification.englishName.trim(),
+          translation: identification.chineseName.trim(),
+          language: "english",
+          part_of_speech:
+            identification.partOfSpeech.trim() || null,
+          example_sentence:
+            identification.englishExample.trim() || null,
+          translated_example:
+            identification.chineseExample.trim() || null,
+          image_url: publicUrl,
+          confidence: identification.confidence,
+          category: identification.category,
+          status: "new",
+          created_at: now,
+          updated_at: now,
+        };
+
+        const { error: insertError } = await supabase
+          .from("messages")
+          .insert({
+            conversation_id: conversationId,
+            sender_id: currentUserId,
+            body: encodeSharedVocabulary(sharedItem),
+            attachment_url: publicUrl,
+            attachment_type: file.type || "image/jpeg",
+            attachment_name: file.name,
+            shared_article: null,
+          });
+
+        if (insertError) throw insertError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("messages")
+          .insert({
+            conversation_id: conversationId,
+            sender_id: currentUserId,
+            body: "",
+            attachment_url: publicUrl,
+            attachment_type:
+              file.type || "application/octet-stream",
+            attachment_name: file.name,
+            shared_article: null,
+          });
+
+        if (insertError) throw insertError;
+      }
     } catch (uploadError) {
-      console.error("Attachment upload failed:", uploadError);
+      console.error("Attachment processing failed:", uploadError);
+
+      if (uploadedPath) {
+        await supabase.storage
+          .from("message-attachments")
+          .remove([uploadedPath]);
+      }
+
       setErrorMessage(
         uploadError instanceof Error
           ? uploadError.message
-          : "Couldn't upload that file."
+          : "Could not send that attachment.",
       );
     } finally {
       setUploading(false);
@@ -819,13 +986,13 @@ function ChatRoom({ friendId }: { friendId: string }) {
                             {sharedVocabulary.translation}
                           </p>
 
-                          {sharedVocabulary.part_of_speech && (
+                          {sharedVocabulary.translation && (
                             <p
-                              className={`mt-3 text-[10px] uppercase tracking-[0.14em] ${
-                                isMine ? "text-white/35" : "text-black/30"
+                              className={`mt-3 text-[11px] font-normal tracking-[0.04em] ${
+                                isMine ? "text-white/38" : "text-black/35"
                               }`}
                             >
-                              {sharedVocabulary.part_of_speech}
+                              {toPinyin(sharedVocabulary.translation)}
                             </p>
                           )}
                         </div>
@@ -944,7 +1111,11 @@ function ChatRoom({ friendId }: { friendId: string }) {
               value={newMessage}
               onChange={(event) => setNewMessage(event.target.value)}
               maxLength={2000}
-              placeholder={uploading ? "Uploading..." : "Write a message"}
+              placeholder={
+                uploading
+                  ? "Analyzing and sending…"
+                  : "Write a message"
+              }
               className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
             />
 
