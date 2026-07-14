@@ -1,12 +1,86 @@
+"use client";
+
 import Link from "next/link";
 import {
   Camera,
   ChevronRight,
   ImagePlus,
   MessageCircle,
+  Newspaper,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { createClient } from "@/lib/supabase/client";
+
+type RecentNote = {
+  articleId: string;
+  title: string;
+  category: string;
+};
 
 export default function HomePage() {
+  const [wordsToday, setWordsToday] = useState(0);
+  const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadHomeData() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (active) setLoading(false);
+          return;
+        }
+
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const [{ count }, { data: notesData }] = await Promise.all([
+          supabase
+            .from("vocabulary_items")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .gte("created_at", startOfToday.toISOString()),
+          supabase
+            .from("saved_news_articles")
+            .select("article_id, english_title, chinese_title, category")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(3),
+        ]);
+
+        if (!active) return;
+
+        setWordsToday(count ?? 0);
+        setRecentNotes(
+          (notesData ?? []).map((row) => ({
+            articleId: row.article_id as string,
+            title:
+              (row.chinese_title as string | null) ||
+              (row.english_title as string),
+            category: row.category as string,
+          }))
+        );
+      } catch (loadError) {
+        console.error("Failed to load home data:", loadError);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadHomeData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -69,7 +143,9 @@ export default function HomePage() {
             href="/vocabulary"
             className="rounded-[28px] bg-white p-5"
           >
-            <p className="text-3xl font-black">0</p>
+            <p className="text-3xl font-black">
+              {loading ? "…" : wordsToday}
+            </p>
             <p className="mt-6 font-black">
               Words Today
             </p>
@@ -91,6 +167,42 @@ export default function HomePage() {
             </p>
           </Link>
         </section>
+
+        {recentNotes.length > 0 && (
+          <section className="mt-6 rounded-[30px] bg-white p-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl font-black">Recent Notes</h2>
+              <Link
+                href="/discover"
+                aria-label="See all notes"
+                className="rounded-full border border-black p-2"
+              >
+                <ChevronRight size={18} />
+              </Link>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {recentNotes.map((note) => (
+                <div
+                  key={note.articleId}
+                  className="flex items-start gap-3 rounded-[20px] bg-[#f5f2eb] p-4"
+                >
+                  <span className="mt-0.5 shrink-0 rounded-full bg-white p-2">
+                    <Newspaper size={16} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#8a8a8a]">
+                      {note.category}
+                    </p>
+                    <p className="mt-1 truncate font-bold leading-6">
+                      {note.title}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-6 rounded-[30px] bg-white p-6">
           <div className="flex items-start justify-between gap-4">

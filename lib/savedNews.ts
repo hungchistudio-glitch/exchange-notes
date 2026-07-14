@@ -76,10 +76,75 @@ function saveToFallback(card: DailyNewsCard): void {
 }
 
 /**
+ * Adds the article's vocabulary words to the user's Vocabulary library
+ * (vocabulary_items table) so they show up on the Words page. Skips
+ * words that are already saved for this user (matched by exact word
+ * text) so re-saving the same article — or saving two articles that
+ * happen to share a word — doesn't create duplicates.
+ *
+ * Failures here are logged but never thrown: a vocabulary sync problem
+ * shouldn't block the article itself from being saved to Notes.
+ */
+async function syncVocabularyToLibrary(
+  userId: string,
+  vocabulary: DailyNewsCard["vocabulary"]
+): Promise<void> {
+  if (vocabulary.length === 0) return;
+
+  try {
+    const supabase = createClient();
+
+    const words = vocabulary.map((item) => item.word);
+
+    const { data: existingRows, error: existingError } = await supabase
+      .from("vocabulary_items")
+      .select("word")
+      .eq("user_id", userId)
+      .in("word", words);
+
+    if (existingError) throw existingError;
+
+    const existingWords = new Set(
+      (existingRows ?? []).map((row: { word: string }) =>
+        row.word.toLowerCase()
+      )
+    );
+
+    const newItems = vocabulary
+      .filter((item) => !existingWords.has(item.word.toLowerCase()))
+      .map((item) => ({
+        user_id: userId,
+        word: item.word,
+        translation: item.translation,
+        language: "english" as const,
+        part_of_speech: item.partOfSpeech || null,
+        example_sentence: item.englishExample || null,
+        translated_example: item.chineseExample || null,
+        image_url: null,
+        confidence: null,
+        status: "new" as const,
+      }));
+
+    if (newItems.length === 0) return;
+
+    const { error: insertError } = await supabase
+      .from("vocabulary_items")
+      .insert(newItems);
+
+    if (insertError) throw insertError;
+  } catch (syncError) {
+    console.error("Failed to sync vocabulary to library:", syncError);
+  }
+}
+
+/**
  * Saves a Daily News story to Notes. Tries Supabase first (so it syncs
  * across devices); if the table isn't set up yet or the request fails
  * for any reason, it falls back to saving locally so the action never
  * silently does nothing for the user.
+ *
+ * On a successful Supabase save, also copies the article's vocabulary
+ * words into the user's Vocabulary library.
  */
 export async function saveNewsArticle(
   card: DailyNewsCard
@@ -116,6 +181,8 @@ export async function saveNewsArticle(
     if (error) {
       throw error;
     }
+
+    await syncVocabularyToLibrary(user.id, card.vocabulary);
 
     return { savedVia: "supabase" };
   } catch {
