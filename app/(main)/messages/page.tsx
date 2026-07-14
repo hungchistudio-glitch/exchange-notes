@@ -371,18 +371,52 @@ function ChatRoom({ friendId }: { friendId: string }) {
         }
 
         const pendingVocabulary = consumePendingSharedVocabulary();
+
         if (pendingVocabulary) {
-          const { error: vocabularyShareError } = await supabase
+          const {
+            data: insertedVocabularyMessage,
+            error: vocabularyShareError,
+          } = await supabase
             .from("messages")
             .insert({
               conversation_id: roomId,
               sender_id: user.id,
               body: encodeSharedVocabulary(pendingVocabulary),
-            });
+              attachment_url: null,
+              attachment_type: null,
+              attachment_name: null,
+              shared_article: null,
+            })
+            .select(MESSAGE_COLUMNS)
+            .single();
 
           if (vocabularyShareError) {
-            console.error("Failed to share vocabulary:", vocabularyShareError);
-            setErrorMessage("Couldn't share that word. Try again.");
+            console.error(
+              "Failed to share vocabulary:",
+              vocabularyShareError,
+            );
+            setErrorMessage(
+              `Couldn't share that word: ${vocabularyShareError.message}`,
+            );
+          } else if (insertedVocabularyMessage && !cancelled) {
+            const newMessage = insertedVocabularyMessage as Message;
+
+            setMessages((currentMessages) => {
+              const alreadyExists = currentMessages.some(
+                (message) => message.id === newMessage.id,
+              );
+
+              if (alreadyExists) return currentMessages;
+
+              return [...currentMessages, newMessage];
+            });
+
+            window.setTimeout(() => {
+              bottomRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "end",
+              });
+            }, 80);
           }
         }
       }
