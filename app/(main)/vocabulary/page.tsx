@@ -148,6 +148,7 @@ export default function VocabularyPage() {
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
+  const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [rankedIds, setRankedIds] = useState<string[]>([]);
   const [rankingLoading, setRankingLoading] = useState(false);
@@ -502,6 +503,22 @@ export default function VocabularyPage() {
     }
   }
 
+  function openAiSearch() {
+    setQuery("");
+    setLookupResult(null);
+    setLookupError("");
+    setLookupStatus("idle");
+    setAiSearchOpen(true);
+  }
+
+  function closeAiSearch() {
+    setAiSearchOpen(false);
+    setQuery("");
+    setLookupResult(null);
+    setLookupError("");
+    setLookupStatus("idle");
+  }
+
   async function lookupWord() {
     const cleanQuery = query.trim();
     if (!cleanQuery || lookupStatus === "loading") return;
@@ -592,6 +609,7 @@ export default function VocabularyPage() {
       setLookupStatus("idle");
       setLookupResult(null);
       setQuery("");
+      setAiSearchOpen(false);
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -615,6 +633,16 @@ export default function VocabularyPage() {
           </div>
 
           <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={openAiSearch}
+              aria-label="Search any word with Gemini AI"
+              title="AI Word Search"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black transition-transform active:scale-95"
+            >
+              <Search size={19} strokeWidth={2} />
+            </button>
+
             <Link
               href="/vocabulary/quiz"
               aria-label="Flashcard quiz"
@@ -769,6 +797,215 @@ export default function VocabularyPage() {
         )}
       </div>
 
+
+
+      {aiSearchOpen && (
+        <div
+          className="fixed inset-0 z-[160] flex items-end justify-center bg-black/25 backdrop-blur-[3px] sm:items-center"
+          onClick={closeAiSearch}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-search-title"
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+            style={{
+              paddingBottom: "max(env(safe-area-inset-bottom), 18px)",
+            }}
+          >
+            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+
+            <header className="flex items-center justify-between border-b border-black/10 px-5 pb-4 pt-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                  Gemini AI
+                </p>
+
+                <h2
+                  id="ai-search-title"
+                  className="mt-1 text-xl font-semibold tracking-[-0.025em]"
+                >
+                  Search any word
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeAiSearch}
+                aria-label="Close word search"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
+              >
+                <X size={17} />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void lookupWord();
+                }}
+              >
+                <div className="flex h-12 items-center gap-3 rounded-full border border-black/10 bg-[#f5f2eb] px-4">
+                  <Search
+                    size={17}
+                    strokeWidth={2}
+                    className="shrink-0 text-neutral-500"
+                  />
+
+                  <input
+                    autoFocus
+                    type="search"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+
+                      if (lookupStatus !== "idle") {
+                        setLookupStatus("idle");
+                        setLookupResult(null);
+                        setLookupError("");
+                      }
+                    }}
+                    placeholder="English or 繁體中文"
+                    className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-neutral-400"
+                  />
+
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setLookupStatus("idle");
+                        setLookupResult(null);
+                        setLookupError("");
+                      }}
+                      aria-label="Clear search"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/5"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!query.trim() || lookupStatus === "loading"}
+                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-30"
+                >
+                  {lookupStatus === "loading" ? (
+                    <>
+                      <LoaderCircle size={16} className="animate-spin" />
+                      Searching
+                    </>
+                  ) : (
+                    <>
+                      <Search size={15} />
+                      Search with Gemini
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {lookupStatus === "idle" && (
+                <div className="py-12 text-center">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f5f2eb]">
+                    <Zap size={21} strokeWidth={1.8} />
+                  </div>
+
+                  <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-neutral-500">
+                    Search any English or Traditional Chinese word. Gemini will
+                    generate its translation, part of speech and natural examples.
+                  </p>
+                </div>
+              )}
+
+              {lookupStatus === "error" && (
+                <div className="mt-5 rounded-[20px] bg-red-50 p-4">
+                  <p className="text-[13px] leading-5 text-red-700">
+                    {lookupError || "Could not search that word."}
+                  </p>
+                </div>
+              )}
+
+              {lookupStatus === "result" && lookupResult && (
+                <article className="mt-5 overflow-hidden rounded-[24px] border border-black/10 bg-white">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="break-words text-2xl font-semibold tracking-[-0.03em]">
+                          {lookupResult.englishName}
+                        </p>
+
+                        <p className="mt-1 break-words text-xl text-neutral-700">
+                          {lookupResult.chineseName}
+                        </p>
+
+                        <p className="mt-2 text-[11px] uppercase tracking-[0.15em] text-neutral-400">
+                          {lookupResult.partOfSpeech || "word"}
+                        </p>
+                      </div>
+
+                      <div className="flex shrink-0 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            speak(lookupResult.englishName, "en-US")
+                          }
+                          aria-label="Play English pronunciation"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
+                        >
+                          <Volume2 size={15} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            speak(lookupResult.chineseName, "zh-TW")
+                          }
+                          aria-label="Play Chinese pronunciation"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
+                        >
+                          <Volume2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 border-t border-black/10 pt-5">
+                      <p className="text-[14px] leading-6">
+                        {lookupResult.englishExample}
+                      </p>
+
+                      <p className="mt-2 text-[13px] leading-6 text-neutral-500">
+                        {lookupResult.chineseExample}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void saveLookupResult()}
+                      disabled={savingLookup}
+                      className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-30"
+                    >
+                      {savingLookup ? (
+                        <>
+                          <LoaderCircle size={15} className="animate-spin" />
+                          Saving
+                        </>
+                      ) : (
+                        <>
+                          <BookmarkPlus size={16} />
+                          Add to Vocabulary
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </article>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
       {sortOpen && (
         <SortBottomSheet
