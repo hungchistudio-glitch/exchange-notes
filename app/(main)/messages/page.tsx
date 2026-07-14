@@ -585,7 +585,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {message.attachment_url && !isImageAttachment && (
-                      
+                    <a
                       href={message.attachment_url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -601,7 +601,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {message.shared_article && (
-                    
+                    <a
                       href={message.shared_article.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
