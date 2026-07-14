@@ -2,13 +2,51 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  MessageCircle,
-  Newspaper,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { BookOpen, MessageCircle, Search, UserRound } from "lucide-react";
+
+function AppLogoIcon({
+  size = 20,
+  className,
+}: {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 400 400"
+      fill="none"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M 300,70 Q 110,70 100,180"
+        stroke="currentColor"
+        strokeWidth="52"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M 100,180 Q 110,320 300,320"
+        stroke="currentColor"
+        strokeWidth="52"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M 100,180 L 250,180"
+        stroke="currentColor"
+        strokeWidth="52"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="285" cy="180" r="40" fill="none" stroke="currentColor" strokeWidth="12" />
+      <circle cx="294" cy="172" r="14" fill="currentColor" />
+    </svg>
+  );
+}
 
 const items = [
   {
@@ -24,7 +62,7 @@ const items = [
   {
     href: "/discover",
     label: "",
-    icon: Newspaper,
+    icon: AppLogoIcon,
     compact: true,
   },
   {

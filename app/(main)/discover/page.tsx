@@ -556,23 +556,23 @@ function SelectionToolbar({
 
   return (
     <div
-      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 whitespace-nowrap rounded-full bg-black px-1.5 py-1.5 text-white shadow-lg"
-      style={{ top: selection.top - 10, left: selection.left }}
+      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full bg-black/70 p-1.5 text-white shadow-xl ring-1 ring-white/10 backdrop-blur-md"
+      style={{ top: selection.top - 12, left: selection.left }}
     >
       <button
         type="button"
         onClick={onAddWord}
         disabled={addingWord}
-        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10 disabled:opacity-60"
+        aria-label={addedWord ? "已加入單字本" : "加入單字本"}
+        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15 disabled:opacity-60"
       >
         {addingWord ? (
-          <LoaderCircle size={13} className="animate-spin" />
+          <LoaderCircle size={16} className="animate-spin" />
         ) : addedWord ? (
-          <Check size={13} />
+          <Check size={16} />
         ) : (
-          <BookmarkPlus size={13} />
+          <BookmarkPlus size={16} />
         )}
-        {addedWord ? "已加入" : "加入單字本"}
       </button>
 
       <span className="h-4 w-px bg-white/20" />
@@ -580,10 +580,10 @@ function SelectionToolbar({
       <button
         type="button"
         onClick={onSendToPartner}
-        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
+        aria-label="傳送給夥伴"
+        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
       >
-        <Send size={13} />
-        傳送
+        <Send size={16} />
       </button>
     </div>
   );
