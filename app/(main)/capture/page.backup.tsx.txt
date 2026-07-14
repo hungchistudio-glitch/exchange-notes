@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import {
   ChangeEvent,
   RefObject,
@@ -437,9 +436,13 @@ ${result.chineseExample}`;
 
           <h1 className="font-semibold">Discover</h1>
 
-          <Link href="/vocabulary" aria-label="Back to Words" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+          <button
+            type="button"
+            onClick={reset}
+            className="text-sm font-semibold text-neutral-500"
+          >
             Reset
-          </Link>
+          </button>
         </header>
 
         {!cameraActive && !imageData && (
