@@ -297,40 +297,25 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
         // If the user tapped "Share" on a Daily News card, the article
         // is waiting in sessionStorage — send it as a card message now.
-        //
-        // NOTE: we await this insert (instead of firing-and-forgetting)
-        // and manually push the result into local state. The Realtime
-        // subscription lives in a separate effect and may not finish
-        // subscribing before this insert lands in the database — if we
-        // rely on Realtime alone, the event can be missed entirely and
-        // the shared card silently never appears until a page refresh.
         const pendingArticle = consumePendingSharedArticle();
         if (pendingArticle) {
-          const { data: insertedMessage, error: shareError } = await supabase
+          const shareBody =
+            pendingArticle.chineseTitle?.trim() ||
+            pendingArticle.englishTitle?.trim() ||
+            "分享了一篇新聞";
+
+          const { error: shareError } = await supabase
             .from("messages")
             .insert({
               conversation_id: roomId,
               sender_id: user.id,
-              body: "",
+              body: `📰 ${shareBody}`,
               shared_article: pendingArticle,
-            })
-            .select(MESSAGE_COLUMNS)
-            .single();
+            });
 
           if (shareError) {
             console.error("Failed to share article:", shareError);
-            if (!cancelled) {
-              setErrorMessage("Couldn't share that article. Try again.");
-            }
-          } else if (insertedMessage && !cancelled) {
-            setMessages((current) => {
-              const alreadyExists = current.some(
-                (message) => message.id === insertedMessage.id
-              );
-              return alreadyExists
-                ? current
-                : [...current, insertedMessage as Message];
-            });
+            setErrorMessage("Couldn't share that article. Try again.");
           }
         }
       }
@@ -600,7 +585,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {message.attachment_url && !isImageAttachment && (
-                      <a
+                      
                       href={message.attachment_url}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -616,7 +601,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {message.shared_article && (
-                    <a
+                    
                       href={message.shared_article.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
