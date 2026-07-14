@@ -297,7 +297,13 @@ export default function FriendsPage() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
+    if (
+      !video ||
+      !canvas ||
+      video.readyState < video.HAVE_CURRENT_DATA ||
+      video.videoWidth === 0 ||
+      video.videoHeight === 0
+    ) {
       scanFrameRef.current = requestAnimationFrame(tickScan);
       return;
     }
@@ -322,31 +328,115 @@ export default function FriendsPage() {
 
   async function startScanning() {
     setScanError("");
+    stopScanning();
+
+    if (!window.isSecureContext) {
+      setScanError(
+        "Camera access requires HTTPS or localhost. Open the secure version of this app.",
+      );
+      return;
+    }
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setScanError("Camera scanning isn't supported in this browser.");
       return;
     }
 
+    setScanning(true);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
+      let stream: MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { exact: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
+          audio: false,
+        });
+      }
 
       streamRef.current = stream;
-      setScanning(true);
 
-      requestAnimationFrame(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          void videoRef.current.play();
+      let video: HTMLVideoElement | null = null;
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        video = videoRef.current;
+
+        if (video) break;
+
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+      }
+
+      if (!video) {
+        throw new Error("Camera preview could not be initialized.");
+      }
+
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+
+      await new Promise<void>((resolve, reject) => {
+        if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+          resolve();
+          return;
         }
-        scanFrameRef.current = requestAnimationFrame(tickScan);
+
+        const timeout = window.setTimeout(() => {
+          reject(new Error("Camera preview timed out."));
+        }, 8000);
+
+        video.onloadedmetadata = () => {
+          window.clearTimeout(timeout);
+          resolve();
+        };
+
+        video.onerror = () => {
+          window.clearTimeout(timeout);
+          reject(new Error("Camera preview failed."));
+        };
       });
+
+      await video.play();
+
+      scanFrameRef.current = requestAnimationFrame(tickScan);
     } catch (scanStartError) {
       console.error("Could not start scanner:", scanStartError);
-      setScanError("Camera access was denied. Enable it in your browser settings.");
+      stopScanning();
+
+      const errorName =
+        scanStartError instanceof DOMException ? scanStartError.name : "";
+
+      if (errorName === "NotAllowedError") {
+        setScanError(
+          "Camera permission was denied. Enable Camera access in Safari or Chrome settings, then try again.",
+        );
+      } else if (errorName === "NotFoundError") {
+        setScanError("No camera was found on this device.");
+      } else if (errorName === "NotReadableError") {
+        setScanError(
+          "The camera is already being used by another app. Close it and try again.",
+        );
+      } else {
+        setScanError(
+          scanStartError instanceof Error
+            ? scanStartError.message
+            : "Could not open the camera.",
+        );
+      }
     }
   }
 
@@ -467,7 +557,9 @@ export default function FriendsPage() {
                     autoPlay
                     muted
                     playsInline
+                    disablePictureInPicture
                     className="h-full w-full object-cover"
+                    style={{ WebkitTransform: "translateZ(0)" }}
                   />
                   <div className="pointer-events-none absolute inset-8 rounded-2xl border-2 border-white/70" />
 

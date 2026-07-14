@@ -1,7 +1,13 @@
 "use client";
 
-import { Camera, UserRound } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { Camera, LoaderCircle, UserRound, X } from "lucide-react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
 import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
@@ -40,6 +46,9 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,7 +65,7 @@ export default function ProfilePage() {
       const { data, error: fetchError } = await supabase
         .from("profiles")
         .select(
-          "display_name, exchange_id, native_language, learning_language, email"
+          "display_name, exchange_id, native_language, learning_language, email, avatar_url"
         )
         .eq("id", user.id)
         .single();
@@ -79,6 +88,7 @@ export default function ProfilePage() {
             (data.learning_language as AppLanguage) ?? "english",
         });
         setEmail(data.email ?? user.email ?? "");
+        setAvatarUrl(data.avatar_url ?? null);
       }
 
       setLoading(false);
@@ -90,6 +100,123 @@ export default function ProfilePage() {
       isMounted = false;
     };
   }, []);
+
+
+  async function handlePhotoSelected(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || uploadingPhoto) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Profile photos must be smaller than 5 MB.");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("You must be logged in to upload a profile photo.");
+      }
+
+      const extension =
+        file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+        "jpg";
+
+      const storagePath = `${user.id}/profile.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, {
+          upsert: true,
+          cacheControl: "3600",
+          contentType: file.type,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(storagePath);
+
+      const avatarWithVersion = `${publicUrl}?v=${Date.now()}`;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: avatarWithVersion,
+        })
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
+
+      setAvatarUrl(avatarWithVersion);
+      setMessage("Profile photo updated!");
+    } catch (uploadError) {
+      console.error("Profile photo upload failed:", uploadError);
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Could not upload your profile photo.",
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function removeProfilePhoto() {
+    if (uploadingPhoto) return;
+
+    setUploadingPhoto(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("You must be logged in.");
+      }
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(null);
+      setMessage("Profile photo removed.");
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Could not remove your profile photo.",
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -161,8 +288,23 @@ export default function ProfilePage() {
 
         <section className="mt-7 rounded-[30px] bg-white p-6">
           <div className="flex items-center gap-5">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-white">
-              <UserRound size={38} />
+            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <UserRound size={38} />
+              )}
+
+              {uploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                  <LoaderCircle size={22} className="animate-spin" />
+                </div>
+              )}
             </div>
 
             <div className="min-w-0">
@@ -176,13 +318,42 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[20px] border border-black px-5 py-4 font-black"
-          >
-            <Camera size={20} />
-            Add Profile Photo
-          </button>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            className="hidden"
+            onChange={(event) => void handlePhotoSelected(event)}
+          />
+
+          <div className="mt-6 flex gap-2">
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-[20px] border border-black px-4 py-4 font-black disabled:opacity-40"
+            >
+              {uploadingPhoto ? (
+                <LoaderCircle size={19} className="animate-spin" />
+              ) : (
+                <Camera size={19} />
+              )}
+
+              {avatarUrl ? "Change Photo" : "Add Profile Photo"}
+            </button>
+
+            {avatarUrl && (
+              <button
+                type="button"
+                onClick={() => void removeProfilePhoto()}
+                disabled={uploadingPhoto}
+                aria-label="Remove profile photo"
+                className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px] border border-black/15 disabled:opacity-40"
+              >
+                <X size={19} />
+              </button>
+            )}
+          </div>
         </section>
 
         {loading ? (
