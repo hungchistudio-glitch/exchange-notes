@@ -13,7 +13,7 @@ export function speak(text: string, lang: "zh-TW" | "en-US") {
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = 0.9;
+  utterance.rate = 0.75;
 
   window.speechSynthesis.speak(utterance);
 }
