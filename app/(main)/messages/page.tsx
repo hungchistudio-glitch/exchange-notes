@@ -481,19 +481,52 @@ function ChatRoom({ friendId }: { friendId: string }) {
     setSavingSelection(true);
     setErrorMessage("");
 
+    const selectedText = selectionPopup.text;
+
     try {
+      const classifyResponse = await fetch("/api/classify-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: selectedText }),
+      });
+
+      const classifyData = (await classifyResponse.json()) as
+        | {
+            englishName: string;
+            chineseName: string;
+            partOfSpeech: string;
+            englishExample: string;
+            chineseExample: string;
+            confidence: "high" | "medium" | "low";
+            category: "people" | "objects" | "actions" | "other";
+          }
+        | { error: string };
+
+      if (!classifyResponse.ok || "error" in classifyData) {
+        throw new Error(
+          "error" in classifyData
+            ? classifyData.error
+            : "Couldn't identify that word."
+        );
+      }
+
       const supabase = createClient();
       const { error } = await supabase.from("vocabulary_items").insert({
         user_id: currentUserId,
-        word: selectionPopup.text,
-        translation: "",
-        language: detectLanguage(selectionPopup.text),
+        word: classifyData.englishName.trim(),
+        translation: classifyData.chineseName.trim(),
+        language: "english",
+        part_of_speech: classifyData.partOfSpeech.trim() || null,
+        example_sentence: classifyData.englishExample.trim() || null,
+        translated_example: classifyData.chineseExample.trim() || null,
+        confidence: classifyData.confidence,
+        category: classifyData.category,
         status: "new",
       });
 
       if (error) throw error;
 
-      setSavedToast(`已加入單字本：${selectionPopup.text}`);
+      setSavedToast(`已加入單字本：${classifyData.englishName}`);
       setTimeout(() => setSavedToast(""), 2000);
     } catch (saveError) {
       console.error("Failed to save vocabulary item:", saveError);
