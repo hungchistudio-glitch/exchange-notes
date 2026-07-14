@@ -10,12 +10,12 @@ import {
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Paperclip, ImagePlus, BookmarkPlus, X, FileText } from "lucide-react";
+import { Paperclip, ImagePlus, BookmarkPlus, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  FriendProfile,
   getOrCreateConversationWithFriend,
   listFriends,
+  type FriendProfile,
 } from "@/lib/friends";
 import { consumePendingSharedArticle } from "@/lib/newsDraft";
 import { consumePendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -37,10 +37,6 @@ type Message = {
 
 const MESSAGE_COLUMNS =
   "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name, shared_article";
-
-function detectLanguage(text: string): "traditional-chinese" | "english" {
-  return /[\u4e00-\u9fff]/.test(text) ? "traditional-chinese" : "english";
-}
 
 const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 

@@ -283,11 +283,6 @@ export default function VocabularyPage() {
     };
   }, []);
 
-  useEffect(() => {
-    setLookupStatus("idle");
-    setLookupResult(null);
-    setLookupError("");
-  }, [query]);
 
   const uniqueItems = useMemo(() => {
     const seen = new Set<string>();
@@ -304,12 +299,7 @@ export default function VocabularyPage() {
   }, [items]);
 
   useEffect(() => {
-    if (sortMode === "new" || uniqueItems.length === 0) {
-      setRankedIds([]);
-      setRankingError("");
-      setRankingLoading(false);
-      return;
-    }
+    if (sortMode === "new" || uniqueItems.length === 0) return;
 
     const controller = new AbortController();
 
@@ -801,6 +791,9 @@ export default function VocabularyPage() {
             setFilterSearch("");
           }}
           onSelect={(item) => {
+            setLookupStatus("idle");
+            setLookupResult(null);
+            setLookupError("");
             setQuery(item.word);
             setFiltersOpen(false);
             setFilterSearch("");
