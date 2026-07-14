@@ -10,7 +10,13 @@ import {
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Paperclip, ImagePlus, BookmarkPlus, FileText } from "lucide-react";
+import {
+  Paperclip,
+  ImagePlus,
+  BookmarkPlus,
+  FileText,
+  LogOut,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   getOrCreateConversationWithFriend,
@@ -21,7 +27,6 @@ import { consumePendingSharedArticle } from "@/lib/newsDraft";
 import { consumePendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { DailyNewsCard } from "@/lib/types/dailyNews";
-import LogoutButton from "../../components/LogoutButton";
 
 type Message = {
   id: number;
@@ -39,6 +44,38 @@ const MESSAGE_COLUMNS =
   "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name, shared_article";
 
 const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
+
+function IconLogoutButton() {
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.assign("/login");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handleLogout()}
+      disabled={loggingOut}
+      aria-label="Log out"
+      title="Log out"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-40"
+    >
+      <LogOut size={15} strokeWidth={1.8} />
+    </button>
+  );
+}
+
 
 function encodeSharedVocabulary(item: VocabularyItem) {
   return `${VOCABULARY_MESSAGE_PREFIX}${JSON.stringify(item)}`;
@@ -122,15 +159,15 @@ function ConversationList() {
   return (
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] max-w-xl flex-col">
-        <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#f4f1ea]/95 px-4 py-4 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-black/10 bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <Link href="/" className="text-sm font-semibold text-neutral-500">
+              <Link href="/" className="text-[11px] font-medium uppercase tracking-[0.12em] text-neutral-500">
                 ← Exchange Notes
               </Link>
-              <h1 className="mt-1 text-2xl font-bold">Messages</h1>
+              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]">Messages</h1>
             </div>
-            <LogoutButton />
+            <IconLogoutButton />
           </div>
         </header>
 
@@ -575,21 +612,21 @@ function ChatRoom({ friendId }: { friendId: string }) {
   return (
     <main className="flex min-h-[100dvh] flex-col bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-neutral-200 bg-[#f4f1ea]/95 px-4 py-4 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-black/10 bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <Link href="/messages" className="text-sm font-semibold text-neutral-500">
+              <Link href="/messages" className="text-[11px] font-medium uppercase tracking-[0.12em] text-neutral-500">
                 ← Messages
               </Link>
 
-              <h1 className="mt-1 text-2xl font-bold">
+              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]">
                 {friendProfile
                   ? friendProfile.displayName ?? `@${friendProfile.exchangeId}`
                   : "Chat"}
               </h1>
             </div>
 
-            <LogoutButton />
+            <IconLogoutButton />
           </div>
         </header>
 
@@ -597,7 +634,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           ref={messagesSectionRef}
           onMouseUp={handleSelectionChange}
           onTouchEnd={handleSelectionChange}
-          className="relative flex-1 space-y-3 overflow-y-auto px-4 pb-[200px] pt-6"
+          className="relative flex-1 space-y-2.5 overflow-y-auto px-4 pb-[150px] pt-4"
         >
           {loading && (
             <p className="text-center text-neutral-500">
@@ -633,7 +670,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 className={`flex ${isMine ? "justify-end" : "justify-start"}`}
               >
                 <article
-                  className={`max-w-[82%] rounded-3xl px-4 py-3 ${
+                  className={`max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
                     isMine
                       ? "rounded-br-md bg-neutral-900 text-white"
                       : "rounded-bl-md bg-white shadow-sm"
@@ -706,7 +743,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
                   {sharedVocabulary && (
                     <div
-                      className={`mb-1 min-w-[220px] rounded-2xl p-4 ${
+                      className={`mb-0.5 min-w-0 rounded-[18px] p-3 ${
                         isMine ? "bg-white/10" : "bg-[#f4f1ea]"
                       }`}
                     >
@@ -717,13 +754,13 @@ function ChatRoom({ friendId }: { friendId: string }) {
                       >
                         Shared word
                       </p>
-                      <div className="mt-3 flex items-start justify-between gap-3">
+                      <div className="mt-2 flex items-start justify-between gap-2.5">
                         <div className="min-w-0">
-                          <p className="break-words text-2xl font-bold leading-tight">
+                          <p className="break-words text-lg font-semibold leading-tight tracking-[-0.02em]">
                             {sharedVocabulary.word}
                           </p>
                           <p
-                            className={`mt-1 break-words text-lg ${
+                            className={`mt-0.5 break-words text-[14px] ${
                               isMine ? "text-white/75" : "text-neutral-600"
                             }`}
                           >
@@ -817,9 +854,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
         <form
           onSubmit={sendMessage}
-          className="fixed inset-x-0 bottom-[140px] z-40 mx-auto max-w-xl border-t border-neutral-200 bg-[#f4f1ea] p-4"
+          className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/10 bg-[#f4f1ea]/95 px-3 py-2.5 backdrop-blur-xl"
         >
-          <div className="flex items-end gap-2 rounded-3xl bg-white p-2 shadow-sm">
+          <div className="flex h-12 items-center gap-1 rounded-full border border-black/10 bg-white px-1.5 shadow-sm">
             <input
               ref={fileInputRef}
               type="file"
@@ -845,7 +882,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
               aria-label="Attach photo"
               disabled={uploading || !conversationId}
               onClick={() => photoInputRef.current?.click()}
-              className="shrink-0 rounded-full p-3 text-neutral-500 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 disabled:opacity-40"
             >
               <ImagePlus size={20} />
             </button>
@@ -855,30 +892,24 @@ function ChatRoom({ friendId }: { friendId: string }) {
               aria-label="Attach file"
               disabled={uploading || !conversationId}
               onClick={() => fileInputRef.current?.click()}
-              className="shrink-0 rounded-full p-3 text-neutral-500 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 disabled:opacity-40"
             >
               <Paperclip size={20} />
             </button>
 
-            <textarea
+            <input
+              type="text"
               value={newMessage}
               onChange={(event) => setNewMessage(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  event.currentTarget.form?.requestSubmit();
-                }
-              }}
-              rows={1}
               maxLength={2000}
-              placeholder={uploading ? "Uploading..." : "Write a message..."}
-              className="max-h-32 min-h-12 flex-1 resize-none bg-transparent px-3 py-3 outline-none"
+              placeholder={uploading ? "Uploading..." : "Write a message"}
+              className="h-10 min-w-0 flex-1 truncate bg-transparent px-2 text-[13px] outline-none placeholder:text-neutral-400"
             />
 
             <button
               type="submit"
               disabled={sending || !newMessage.trim() || !conversationId}
-              className="rounded-full bg-orange-500 px-5 py-3 font-semibold text-white disabled:opacity-40"
+              className="h-9 shrink-0 rounded-full bg-black px-4 text-[12px] font-semibold text-white disabled:opacity-30"
             >
               {sending ? "..." : "Send"}
             </button>

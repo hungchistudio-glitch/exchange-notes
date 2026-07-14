@@ -757,7 +757,7 @@ export default function VocabularyPage() {
                   wordIsTarget={wordIsTarget}
                   updating={updatingId === item.id}
                   onChangeStatus={(status) => void changeStatus(item, status)}
-                  onSendToPartner={() => handleSendToPartner(item)}
+                  onSendToPartner={(sharedItem) => handleSendToPartner(sharedItem ?? item)}
                   onInteract={(type) => recordInteraction(item, type)}
                   onItemAdded={(newItem) =>
                     setItems((current) => [newItem, ...current])
@@ -1238,7 +1238,7 @@ function SelectionToolbar({
   addingWord: boolean;
   addedWord: boolean;
   onAddWord: () => void;
-  onSendToPartner: () => void;
+  onSendToPartner: (sharedItem?: VocabularyItem) => void;
 }) {
   if (!selection) return null;
 
@@ -1267,7 +1267,7 @@ function SelectionToolbar({
 
       <button
         type="button"
-        onClick={onSendToPartner}
+        onClick={() => onSendToPartner()}
         aria-label="傳送給夥伴"
         className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
       >
@@ -1290,7 +1290,7 @@ function VocabularyCard({
   wordIsTarget: boolean;
   updating: boolean;
   onChangeStatus: (status: VocabularyStatus) => void;
-  onSendToPartner: () => void;
+  onSendToPartner: (sharedItem?: VocabularyItem) => void;
   onInteract: (type: InteractionType) => void;
   onItemAdded: (item: VocabularyItem) => void;
 }) {
@@ -1387,10 +1387,58 @@ function VocabularyCard({
     }
   }
 
-  function handleSelectionSendToPartner() {
-    window.getSelection()?.removeAllRanges();
-    setSelection(null);
-    onSendToPartner();
+  async function handleSelectionSendToPartner() {
+    if (!selection || addingWord) return;
+
+    const selectedText = selection.text.trim();
+    if (!selectedText) return;
+
+    setAddingWord(true);
+
+    try {
+      const response = await fetch("/api/classify-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: selectedText }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data
+            ? data.error
+            : "Couldn't create a word card from that selection.",
+        );
+      }
+
+      const now = new Date().toISOString();
+
+      const selectedVocabulary: VocabularyItem = {
+        ...item,
+        id: `selection-${crypto.randomUUID()}`,
+        word: (data.englishName ?? selectedText).trim(),
+        translation: (data.chineseName ?? "").trim(),
+        language: "english",
+        part_of_speech: data.partOfSpeech?.trim() || null,
+        example_sentence: data.englishExample?.trim() || null,
+        translated_example: data.chineseExample?.trim() || null,
+        confidence: data.confidence ?? "medium",
+        category: data.category ?? "other",
+        status: "new",
+        image_url: null,
+        created_at: now,
+        updated_at: now,
+      };
+
+      window.getSelection()?.removeAllRanges();
+      setSelection(null);
+      onSendToPartner(selectedVocabulary);
+    } catch (selectionError) {
+      console.error("Failed to prepare selected vocabulary:", selectionError);
+    } finally {
+      setAddingWord(false);
+    }
   }
 
   async function handleShare() {
@@ -1533,7 +1581,7 @@ function VocabularyCard({
             )}
             <button
               type="button"
-              onClick={onSendToPartner}
+              onClick={() => onSendToPartner()}
               aria-label="Send to Partner"
               className="rounded-full bg-[#f1eee7] p-2 text-black transition-colors hover:bg-[#e9e4d8]"
             >

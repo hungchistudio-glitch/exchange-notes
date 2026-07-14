@@ -17,8 +17,12 @@ import { useRouter } from "next/navigation";
 
 import { speak } from "@/lib/speech";
 import { setPendingSharedArticle } from "@/lib/newsDraft";
+import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
-import type { VocabularyCategory } from "@/lib/types/app";
+import type {
+  VocabularyCategory,
+  VocabularyItem as AppVocabularyItem,
+} from "@/lib/types/app";
 import { createClient } from "@/lib/supabase/client";
 import { FriendProfile, listFriends } from "@/lib/friends";
 
@@ -84,6 +88,8 @@ export default function DiscoverPage() {
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
   const [friendPickerCard, setFriendPickerCard] =
     useState<DailyNewsCard | null>(null);
+  const [friendPickerVocabulary, setFriendPickerVocabulary] =
+    useState<AppVocabularyItem | null>(null);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [friendsError, setFriendsError] = useState("");
@@ -125,24 +131,44 @@ export default function DiscoverPage() {
   }, []);
 
   useEffect(() => {
-    if (!friendPickerCard || friendsRequestedRef.current) return;
+    if (
+      (!friendPickerCard && !friendPickerVocabulary) ||
+      friendsRequestedRef.current
+    ) {
+      return;
+    }
+
     void loadFriends();
-  }, [friendPickerCard, loadFriends]);
+  }, [friendPickerCard, friendPickerVocabulary, loadFriends]);
 
   const handleClosePicker = useCallback(() => {
     setFriendPickerCard(null);
+    setFriendPickerVocabulary(null);
     setSendingFriendId(null);
   }, []);
 
   const handlePickFriend = useCallback(
     (friendId: string) => {
-      if (!friendPickerCard || sendingFriendId) return;
+      if ((!friendPickerCard && !friendPickerVocabulary) || sendingFriendId) {
+        return;
+      }
 
       setSendingFriendId(friendId);
-      setPendingSharedArticle(friendPickerCard);
+
+      if (friendPickerVocabulary) {
+        setPendingSharedVocabulary(friendPickerVocabulary);
+      } else if (friendPickerCard) {
+        setPendingSharedArticle(friendPickerCard);
+      }
+
       router.push(`/messages?with=${friendId}`);
     },
-    [friendPickerCard, router, sendingFriendId]
+    [
+      friendPickerCard,
+      friendPickerVocabulary,
+      router,
+      sendingFriendId,
+    ],
   );
 
   const loadStories = useCallback(async (isRefresh: boolean) => {
@@ -252,6 +278,10 @@ export default function DiscoverPage() {
                   })
                 }
                 onSendToPartner={() => handleSendToPartner(card)}
+                onSendVocabularyToPartner={(item) => {
+                  setFriendPickerCard(null);
+                  setFriendPickerVocabulary(item);
+                }}
               />
             ))}
 
@@ -268,7 +298,7 @@ export default function DiscoverPage() {
         </div>
       </div>
 
-      {friendPickerCard && (
+      {(friendPickerCard || friendPickerVocabulary) && (
         <FriendPickerModal
           friends={friends}
           loading={friendsLoading}
@@ -613,6 +643,7 @@ function NewsCard({
   imageBroken,
   onImageError,
   onSendToPartner,
+  onSendVocabularyToPartner,
 }: {
   card: DailyNewsCard;
   expanded: boolean;
@@ -620,6 +651,7 @@ function NewsCard({
   imageBroken: boolean;
   onImageError: () => void;
   onSendToPartner: () => void;
+  onSendVocabularyToPartner: (item: AppVocabularyItem) => void;
 }) {
   const hasChinese = Boolean(card.chineseTitle && card.chineseSummary);
   const hasVocabulary = card.vocabulary.length > 0;
@@ -690,10 +722,58 @@ function NewsCard({
     }
   }
 
-  function handleSelectionSendToPartner() {
-    window.getSelection()?.removeAllRanges();
-    setSelection(null);
-    onSendToPartner();
+  async function handleSelectionSendToPartner() {
+    if (!selection || addingWord) return;
+
+    const selectedText = selection.text.trim();
+    if (!selectedText) return;
+
+    setAddingWord(true);
+
+    try {
+      const response = await fetch("/api/classify-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: selectedText }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data
+            ? data.error
+            : "Couldn't create a word card from that selection.",
+        );
+      }
+
+      const now = new Date().toISOString();
+
+      const selectedVocabulary = {
+        id: `selection-${crypto.randomUUID()}`,
+        user_id: "",
+        word: (data.englishName ?? selectedText).trim(),
+        translation: (data.chineseName ?? "").trim(),
+        language: "english",
+        part_of_speech: data.partOfSpeech?.trim() || null,
+        example_sentence: data.englishExample?.trim() || null,
+        translated_example: data.chineseExample?.trim() || null,
+        confidence: data.confidence ?? "medium",
+        category: data.category ?? "other",
+        status: "new",
+        image_url: null,
+        created_at: now,
+        updated_at: now,
+      } as AppVocabularyItem;
+
+      window.getSelection()?.removeAllRanges();
+      setSelection(null);
+      onSendVocabularyToPartner(selectedVocabulary);
+    } catch (selectionError) {
+      console.error("Failed to prepare selected vocabulary:", selectionError);
+    } finally {
+      setAddingWord(false);
+    }
   }
 
   async function handleShare() {
