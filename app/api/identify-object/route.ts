@@ -16,12 +16,7 @@ type GeminiResponse = {
 
 type PartOfSpeech = "noun" | "verb" | "adjective" | "other";
 type Confidence = "high" | "medium" | "low";
-type VocabularyCategory =
-  | "food"
-  | "transportation"
-  | "daily_objects"
-  | "animals"
-  | "other";
+type VocabularyCategory = "people" | "objects" | "actions" | "other";
 
 type GeminiIdentifyResult = {
   englishName: string;
@@ -46,10 +41,9 @@ const SUPPORTED_MIME_TYPES = new Set([
 ]);
 
 const VALID_CATEGORIES = new Set<VocabularyCategory>([
-  "food",
-  "transportation",
-  "daily_objects",
-  "animals",
+  "people",
+  "objects",
+  "actions",
   "other",
 ]);
 
@@ -59,8 +53,11 @@ const REQUEST_TIMEOUT_MS = 20_000;
 const PROMPT = `
 Identify the main object in this image for a language-learning app.
 
-Also classify it into exactly one of these categories: "food", "transportation", "daily_objects", "animals", "other".
-Use "other" only if none of the first four clearly fit.
+Also classify it into exactly one of these categories:
+- "people": people, relationships, roles, or identities (e.g. father, patron, friend)
+- "objects": physical items, places, or things (e.g. laptop, nail clipper, scene)
+- "actions": verbs, events, or abstract concepts (e.g. escape, investigation, connection)
+- "other": use only if none of the above clearly fit
 
 Return only valid JSON in this exact format:
 {
@@ -70,7 +67,7 @@ Return only valid JSON in this exact format:
   "englishExample": "string",
   "traditionalChineseExample": "string",
   "confidence": "high | medium | low",
-  "category": "food | transportation | daily_objects | animals | other"
+  "category": "people | objects | actions | other"
 }
 
 Use natural English and Traditional Chinese.

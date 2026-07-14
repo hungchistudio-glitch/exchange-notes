@@ -30,10 +30,9 @@ const STATUS_LABELS: Record<VocabularyStatus, string> = {
 };
 
 const CATEGORY_LABELS: Record<VocabularyCategory, string> = {
-  food: "Food",
-  transportation: "Transportation",
-  daily_objects: "Daily Objects",
-  animals: "Animals",
+  people: "People",
+  objects: "Objects",
+  actions: "Actions",
   other: "Other",
 };
 
@@ -192,7 +191,7 @@ export default function VocabularyPage() {
         </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {(["all", "food", "transportation", "daily_objects", "animals", "other"] as const).map(
+          {(["all", "people", "objects", "actions", "other"] as const).map(
             (category) => (
               <button
                 key={category}

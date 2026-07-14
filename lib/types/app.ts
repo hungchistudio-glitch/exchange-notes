@@ -16,10 +16,9 @@ export type Profile = {
 export type VocabularyStatus = "new" | "learning" | "mastered";
 
 export type VocabularyCategory =
-  | "food"
-  | "transportation"
-  | "daily_objects"
-  | "animals"
+  | "people"
+  | "objects"
+  | "actions"
   | "other";
 
 export type VocabularyItem = {
