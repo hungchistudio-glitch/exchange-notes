@@ -11,13 +11,15 @@ import {
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  Paperclip,
-  ImagePlus,
+  ArrowLeft,
   BookmarkPlus,
   FileText,
   LogOut,
+  Paperclip,
+  Volume2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { speak } from "@/lib/speech";
 import {
   getOrCreateConversationWithFriend,
   listFriends,
@@ -69,9 +71,9 @@ function IconLogoutButton() {
       disabled={loggingOut}
       aria-label="Log out"
       title="Log out"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-700 transition-colors hover:bg-neutral-50 disabled:opacity-40"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white/70 text-black/60 shadow-[0_1px_4px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-colors hover:bg-white disabled:opacity-40"
     >
-      <LogOut size={15} strokeWidth={1.8} />
+      <LogOut size={14} strokeWidth={1.7} />
     </button>
   );
 }
@@ -254,7 +256,6 @@ function ChatRoom({ friendId }: { friendId: string }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesSectionRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -646,21 +647,34 @@ function ChatRoom({ friendId }: { friendId: string }) {
   return (
     <main className="flex min-h-[100dvh] flex-col bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-black/10 bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <Link href="/messages" className="text-[11px] font-medium uppercase tracking-[0.12em] text-neutral-500">
-                ← Messages
-              </Link>
+        <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
+          <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
+            <Link
+              href="/messages"
+              aria-label="Back to Messages"
+              title="Back to Messages"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
+            >
+              <ArrowLeft size={18} strokeWidth={1.7} />
+            </Link>
 
-              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]">
+            <div className="min-w-0 px-3 text-center">
+              <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">
                 {friendProfile
                   ? friendProfile.displayName ?? `@${friendProfile.exchangeId}`
                   : "Chat"}
-              </h1>
+              </p>
+
+              {friendProfile?.exchangeId && (
+                <p className="mt-0.5 truncate text-[10px] tracking-[0.08em] text-black/35">
+                  @{friendProfile.exchangeId}
+                </p>
+              )}
             </div>
 
-            <IconLogoutButton />
+            <div className="justify-self-end">
+              <IconLogoutButton />
+            </div>
           </div>
         </header>
 
@@ -777,33 +791,38 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
                   {sharedVocabulary && (
                     <div
-                      className={`mb-0.5 min-w-0 rounded-[18px] p-3 ${
-                        isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+                      className={`mb-0.5 min-w-[210px] overflow-hidden rounded-[18px] border p-4 backdrop-blur-xl ${
+                        isMine
+                          ? "border-white/[0.08] bg-white/[0.08]"
+                          : "border-black/[0.06] bg-white/55"
                       }`}
                     >
                       <p
-                        className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                          isMine ? "text-white/50" : "text-neutral-400"
+                        className={`text-[9px] font-medium uppercase tracking-[0.2em] ${
+                          isMine ? "text-white/40" : "text-black/35"
                         }`}
                       >
                         Shared word
                       </p>
-                      <div className="mt-2 flex items-start justify-between gap-2.5">
-                        <div className="min-w-0">
-                          <p className="break-words text-lg font-semibold leading-tight tracking-[-0.02em]">
+
+                      <div className="mt-3 flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words text-[20px] font-semibold leading-none tracking-[-0.03em]">
                             {sharedVocabulary.word}
                           </p>
+
                           <p
-                            className={`mt-0.5 break-words text-[14px] ${
-                              isMine ? "text-white/75" : "text-neutral-600"
+                            className={`mt-2 break-words text-[16px] leading-none ${
+                              isMine ? "text-white/72" : "text-black/65"
                             }`}
                           >
                             {sharedVocabulary.translation}
                           </p>
+
                           {sharedVocabulary.part_of_speech && (
                             <p
-                              className={`mt-2 text-xs ${
-                                isMine ? "text-white/45" : "text-neutral-400"
+                              className={`mt-3 text-[10px] uppercase tracking-[0.14em] ${
+                                isMine ? "text-white/35" : "text-black/30"
                               }`}
                             >
                               {sharedVocabulary.part_of_speech}
@@ -811,33 +830,40 @@ function ChatRoom({ friendId }: { friendId: string }) {
                           )}
                         </div>
 
-                        <button
-                          type="button"
-                          aria-label={`Pronounce ${sharedVocabulary.word}`}
-                          onClick={() =>
-                            window.speechSynthesis.speak(
-                              new SpeechSynthesisUtterance(sharedVocabulary.word)
-                            )
-                          }
-                          className={`shrink-0 rounded-full p-2 ${
-                            isMine ? "bg-white/10" : "bg-white"
-                          }`}
-                        >
-                          🔊
-                        </button>
-                      </div>
+                        <div className="flex shrink-0 flex-col gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(sharedVocabulary.word, "en-US")
+                            }
+                            aria-label={`Play English pronunciation for ${sharedVocabulary.word}`}
+                            title="English pronunciation"
+                            className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+                              isMine
+                                ? "border-white/[0.08] bg-white/[0.08] text-white/75 hover:bg-white/[0.14]"
+                                : "border-black/[0.05] bg-white/70 text-black/65 hover:bg-white"
+                            }`}
+                          >
+                            <Volume2 size={13} strokeWidth={1.8} />
+                          </button>
 
-                      {sharedVocabulary.example_sentence && (
-                        <p
-                          className={`mt-3 border-t pt-3 text-sm leading-5 ${
-                            isMine
-                              ? "border-white/10 text-white/70"
-                              : "border-black/10 text-neutral-600"
-                          }`}
-                        >
-                          {sharedVocabulary.example_sentence}
-                        </p>
-                      )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(sharedVocabulary.translation, "zh-TW")
+                            }
+                            aria-label={`Play Chinese pronunciation for ${sharedVocabulary.translation}`}
+                            title="Chinese pronunciation"
+                            className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
+                              isMine
+                                ? "border-white/[0.08] bg-white/[0.08] text-white/75 hover:bg-white/[0.14]"
+                                : "border-black/[0.05] bg-white/70 text-black/65 hover:bg-white"
+                            }`}
+                          >
+                            <Volume2 size={13} strokeWidth={1.8} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -888,22 +914,13 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
         <form
           onSubmit={sendMessage}
-          className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/10 bg-[#f4f1ea]/95 px-3 py-2.5 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.06] bg-[#f4f1ea]/90 px-3 py-2.5 backdrop-blur-2xl"
         >
-          <div className="flex h-12 items-center gap-1 rounded-full border border-black/10 bg-white px-1.5 shadow-sm">
+          <div className="flex h-12 items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/85 px-2 shadow-[0_4px_18px_rgba(0,0,0,0.05)] backdrop-blur-xl">
             <input
               ref={fileInputRef}
               type="file"
-              className="hidden"
-              onChange={(event) => {
-                void handleAttachmentSelected(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
+              accept="image/*,.pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
               className="hidden"
               onChange={(event) => {
                 void handleAttachmentSelected(event.target.files?.[0]);
@@ -913,22 +930,13 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
             <button
               type="button"
-              aria-label="Attach photo"
-              disabled={uploading || !conversationId}
-              onClick={() => photoInputRef.current?.click()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 disabled:opacity-40"
-            >
-              <ImagePlus size={20} />
-            </button>
-
-            <button
-              type="button"
-              aria-label="Attach file"
+              aria-label="Add photo or file"
+              title="Add photo or file"
               disabled={uploading || !conversationId}
               onClick={() => fileInputRef.current?.click()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/[0.04] hover:text-black/70 disabled:opacity-30"
             >
-              <Paperclip size={20} />
+              <Paperclip size={18} strokeWidth={1.8} />
             </button>
 
             <input
@@ -937,13 +945,13 @@ function ChatRoom({ friendId }: { friendId: string }) {
               onChange={(event) => setNewMessage(event.target.value)}
               maxLength={2000}
               placeholder={uploading ? "Uploading..." : "Write a message"}
-              className="h-10 min-w-0 flex-1 truncate bg-transparent px-2 text-[13px] outline-none placeholder:text-neutral-400"
+              className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
             />
 
             <button
               type="submit"
               disabled={sending || !newMessage.trim() || !conversationId}
-              className="h-9 shrink-0 rounded-full bg-black px-4 text-[12px] font-semibold text-white disabled:opacity-30"
+              className="h-9 shrink-0 rounded-full bg-black px-4 text-[11px] font-semibold tracking-[-0.01em] text-white transition-transform active:scale-95 disabled:bg-black/20 disabled:text-white disabled:opacity-100"
             >
               {sending ? "..." : "Send"}
             </button>
