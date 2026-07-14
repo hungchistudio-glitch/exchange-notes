@@ -50,6 +50,23 @@ const CATEGORY_LABELS: Record<VocabularyCategory, string> = {
   other: "Other",
 };
 
+function normalizeVocabularyText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
+
+function getVocabularyKey(
+  word: string | null | undefined,
+  translation: string | null | undefined
+) {
+  return `${normalizeVocabularyText(word)}::${normalizeVocabularyText(
+    translation
+  )}`;
+}
+
 export default function VocabularyPage() {
   const router = useRouter();
   const [items, setItems] = useState<VocabularyItem[]>([]);
@@ -194,19 +211,33 @@ export default function VocabularyPage() {
     setLookupError("");
   }, [query]);
 
-  const visibleItems = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  const uniqueItems = useMemo(() => {
+    const seen = new Set<string>();
 
+    // Items are loaded newest first, so the newest copy is retained.
     return items.filter((item) => {
+      const key = getVocabularyKey(item.word, item.translation);
+
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
+  }, [items]);
+
+  const visibleItems = useMemo(() => {
+    const normalizedQuery = normalizeVocabularyText(query);
+
+    return uniqueItems.filter((item) => {
       const matchesFilter = filter === "all" || item.category === filter;
       const matchesQuery =
         !normalizedQuery ||
-        item.word.toLowerCase().includes(normalizedQuery) ||
-        item.translation.toLowerCase().includes(normalizedQuery);
+        normalizeVocabularyText(item.word).includes(normalizedQuery) ||
+        normalizeVocabularyText(item.translation).includes(normalizedQuery);
 
       return matchesFilter && matchesQuery;
     });
-  }, [filter, items, query]);
+  }, [filter, query, uniqueItems]);
 
   async function changeStatus(item: VocabularyItem, status: VocabularyStatus) {
     if (item.status === status || updatingId) return;
@@ -291,12 +322,29 @@ export default function VocabularyPage() {
         throw new Error("Please log in before saving a word.");
       }
 
+      const word = lookupResult.englishName.trim();
+      const translation = lookupResult.chineseName.trim();
+      const candidateKey = getVocabularyKey(word, translation);
+
+      const duplicate = items.find(
+        (item) =>
+          getVocabularyKey(item.word, item.translation) === candidateKey
+      );
+
+      if (duplicate) {
+        setError("This word is already in your vocabulary.");
+        setLookupStatus("idle");
+        setLookupResult(null);
+        setQuery("");
+        return;
+      }
+
       const { data: inserted, error: insertError } = await supabase
         .from("vocabulary_items")
         .insert({
           user_id: user.id,
-          word: lookupResult.englishName.trim(),
-          translation: lookupResult.chineseName.trim(),
+          word,
+          translation,
           language: "english",
           part_of_speech: lookupResult.partOfSpeech.trim() || null,
           example_sentence: lookupResult.englishExample.trim() || null,
@@ -489,6 +537,9 @@ export default function VocabularyPage() {
                   updating={updatingId === item.id}
                   onChangeStatus={(status) => void changeStatus(item, status)}
                   onSendToPartner={() => handleSendToPartner(item)}
+                  onItemAdded={(newItem) =>
+                    setItems((current) => [newItem, ...current])
+                  }
                 />
               );
             })}
@@ -770,12 +821,14 @@ function VocabularyCard({
   updating,
   onChangeStatus,
   onSendToPartner,
+  onItemAdded,
 }: {
   item: VocabularyItem;
   wordIsTarget: boolean;
   updating: boolean;
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: () => void;
+  onItemAdded: (item: VocabularyItem) => void;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useTextSelection(contentRef);
@@ -811,22 +864,44 @@ function VocabularyCard({
         throw new Error("Please log in before saving a word.");
       }
 
-      const { error: insertError } = await supabase
-        .from("vocabulary_items")
-        .insert({
-          user_id: user.id,
-          word: (data.englishName ?? text).trim(),
-          translation: (data.chineseName ?? "").trim(),
-          language: "english",
-          part_of_speech: data.partOfSpeech?.trim() || null,
-          example_sentence: data.englishExample?.trim() || null,
-          translated_example: data.chineseExample?.trim() || null,
-          confidence: data.confidence ?? "medium",
-          category: (data.category ?? "other") as VocabularyCategory,
-          status: "new",
-        });
+      const word = (data.englishName ?? text).trim();
+      const translation = (data.chineseName ?? "").trim();
+      const candidateKey = getVocabularyKey(word, translation);
 
-      if (insertError) throw insertError;
+      const { data: existingItems, error: duplicateCheckError } = await supabase
+        .from("vocabulary_items")
+        .select("id, word, translation")
+        .eq("user_id", user.id);
+
+      if (duplicateCheckError) throw duplicateCheckError;
+
+      const duplicate = (existingItems ?? []).some(
+        (existingItem) =>
+          getVocabularyKey(existingItem.word, existingItem.translation) ===
+          candidateKey
+      );
+
+      if (!duplicate) {
+        const { data: inserted, error: insertError } = await supabase
+          .from("vocabulary_items")
+          .insert({
+            user_id: user.id,
+            word,
+            translation,
+            language: "english",
+            part_of_speech: data.partOfSpeech?.trim() || null,
+            example_sentence: data.englishExample?.trim() || null,
+            translated_example: data.chineseExample?.trim() || null,
+            confidence: data.confidence ?? "medium",
+            category: (data.category ?? "other") as VocabularyCategory,
+            status: "new",
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        onItemAdded(inserted as VocabularyItem);
+      }
 
       setAddedWord(true);
       window.getSelection()?.removeAllRanges();
