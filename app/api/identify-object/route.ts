@@ -16,6 +16,12 @@ type GeminiResponse = {
 
 type PartOfSpeech = "noun" | "verb" | "adjective" | "other";
 type Confidence = "high" | "medium" | "low";
+type VocabularyCategory =
+  | "food"
+  | "transportation"
+  | "daily_objects"
+  | "animals"
+  | "other";
 
 type GeminiIdentifyResult = {
   englishName: string;
@@ -24,6 +30,7 @@ type GeminiIdentifyResult = {
   englishExample: string;
   traditionalChineseExample: string;
   confidence: Confidence;
+  category: VocabularyCategory;
 };
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
@@ -38,11 +45,22 @@ const SUPPORTED_MIME_TYPES = new Set([
   "image/heif",
 ]);
 
+const VALID_CATEGORIES = new Set<VocabularyCategory>([
+  "food",
+  "transportation",
+  "daily_objects",
+  "animals",
+  "other",
+]);
+
 const MAX_BASE64_LENGTH = 20_000_000;
 const REQUEST_TIMEOUT_MS = 20_000;
 
 const PROMPT = `
 Identify the main object in this image for a language-learning app.
+
+Also classify it into exactly one of these categories: "food", "transportation", "daily_objects", "animals", "other".
+Use "other" only if none of the first four clearly fit.
 
 Return only valid JSON in this exact format:
 {
@@ -51,7 +69,8 @@ Return only valid JSON in this exact format:
   "partOfSpeech": "noun | verb | adjective | other",
   "englishExample": "string",
   "traditionalChineseExample": "string",
-  "confidence": "high | medium | low"
+  "confidence": "high | medium | low",
+  "category": "food | transportation | daily_objects | animals | other"
 }
 
 Use natural English and Traditional Chinese.
@@ -71,8 +90,14 @@ function isGeminiIdentifyResult(
     typeof result.partOfSpeech === "string" &&
     typeof result.englishExample === "string" &&
     typeof result.traditionalChineseExample === "string" &&
-    typeof result.confidence === "string"
+    typeof result.confidence === "string" &&
+    typeof result.category === "string"
   );
+}
+
+function normalizeCategory(value: string): VocabularyCategory {
+  const lowered = value.toLowerCase().trim() as VocabularyCategory;
+  return VALID_CATEGORIES.has(lowered) ? lowered : "other";
 }
 
 export async function POST(request: NextRequest) {
@@ -232,6 +257,7 @@ export async function POST(request: NextRequest) {
       englishExample: parsed.englishExample,
       chineseExample: parsed.traditionalChineseExample,
       confidence: parsed.confidence,
+      category: normalizeCategory(parsed.category),
     });
   } catch (error) {
     const isAbort =

@@ -18,6 +18,7 @@ import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import type {
   AppLanguage,
+  VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
@@ -28,6 +29,14 @@ const STATUS_LABELS: Record<VocabularyStatus, string> = {
   mastered: "Mastered",
 };
 
+const CATEGORY_LABELS: Record<VocabularyCategory, string> = {
+  food: "Food",
+  transportation: "Transportation",
+  daily_objects: "Daily Objects",
+  animals: "Animals",
+  other: "Other",
+};
+
 export default function VocabularyPage() {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [learningLanguage, setLearningLanguage] =
@@ -35,7 +44,7 @@ export default function VocabularyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | VocabularyStatus>("all");
+  const [filter, setFilter] = useState<"all" | VocabularyCategory>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,7 +103,7 @@ export default function VocabularyPage() {
     const normalizedQuery = query.trim().toLowerCase();
 
     return items.filter((item) => {
-      const matchesFilter = filter === "all" || item.status === filter;
+      const matchesFilter = filter === "all" || item.category === filter;
       const matchesQuery =
         !normalizedQuery ||
         item.word.toLowerCase().includes(normalizedQuery) ||
@@ -183,19 +192,19 @@ export default function VocabularyPage() {
         </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {(["all", "new", "learning", "mastered"] as const).map(
-            (status) => (
+          {(["all", "food", "transportation", "daily_objects", "animals", "other"] as const).map(
+            (category) => (
               <button
-                key={status}
+                key={category}
                 type="button"
-                onClick={() => setFilter(status)}
+                onClick={() => setFilter(category)}
                 className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black ${
-                  filter === status
+                  filter === category
                     ? "bg-black text-white"
                     : "bg-white text-black"
                 }`}
               >
-                {status === "all" ? "All" : STATUS_LABELS[status]}
+                {category === "all" ? "All" : CATEGORY_LABELS[category]}
               </button>
             )
           )}

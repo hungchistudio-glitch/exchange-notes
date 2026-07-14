@@ -15,12 +15,20 @@ export type Profile = {
 
 export type VocabularyStatus = "new" | "learning" | "mastered";
 
+export type VocabularyCategory =
+  | "food"
+  | "transportation"
+  | "daily_objects"
+  | "animals"
+  | "other";
+
 export type VocabularyItem = {
   id: string;
   user_id: string;
   word: string;
   translation: string;
   language: AppLanguage;
+  category: VocabularyCategory;
   part_of_speech: string | null;
   example_sentence: string | null;
   translated_example: string | null;

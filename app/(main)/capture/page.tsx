@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
+import type { VocabularyCategory } from "@/lib/types/app";
 
 type IdentificationResult = {
   englishName: string;
@@ -20,6 +21,7 @@ type IdentificationResult = {
   englishExample: string;
   chineseExample: string;
   confidence: "high" | "medium" | "low";
+  category: VocabularyCategory;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -382,6 +384,7 @@ ${result.chineseExample}`;
           translated_example: result.chineseExample.trim() || null,
           image_url: publicImage.publicUrl,
           confidence: result.confidence,
+          category: result.category,
           status: "new",
         });
 
