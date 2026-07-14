@@ -4,6 +4,7 @@ import { Camera, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
+import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -152,7 +153,10 @@ export default function ProfilePage() {
             <h1 className="mt-2 text-5xl font-black">Profile</h1>
           </div>
 
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <SpeechSettingsButton />
+            <LogoutButton />
+          </div>
         </header>
 
         <section className="mt-7 rounded-[30px] bg-white p-6">
