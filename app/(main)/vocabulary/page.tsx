@@ -78,6 +78,7 @@ export default function VocabularyPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("new");
+  const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterSearch, setFilterSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -456,44 +457,22 @@ export default function VocabularyPage() {
           </div>
         </header>
 
-        <div className="mt-8 border-y border-black/10 bg-white">
-          <div className="grid grid-cols-2 divide-x divide-black/10">
-            <button
-              type="button"
-              onClick={() => setSortMode((current) => current)}
-              className="px-5 py-4 text-left text-sm uppercase tracking-[0.08em]"
-            >
-              <span className="text-neutral-400">Sort by</span>
-              <span className="ml-2 font-medium text-black">
-                {SORT_LABELS[sortMode]}
-              </span>
-            </button>
+        <div className="mt-7 grid grid-cols-2 border-y border-black/10 bg-white">
+          <button
+            type="button"
+            onClick={() => setSortOpen(true)}
+            className="flex h-12 items-center justify-center border-r border-black/10 text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
+          >
+            Sort By
+          </button>
 
-            <button
-              type="button"
-              onClick={() => setFiltersOpen(true)}
-              className="px-5 py-4 text-center text-sm uppercase tracking-[0.08em]"
-            >
-              Filters
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 border-t border-black/10">
-            {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setSortMode(mode)}
-                className={`border-r border-black/10 px-2 py-3 text-xs uppercase tracking-[0.08em] last:border-r-0 ${
-                  sortMode === mode
-                    ? "bg-black text-white"
-                    : "bg-white text-black"
-                }`}
-              >
-                {SORT_LABELS[mode]}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="flex h-12 items-center justify-center text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
+          >
+            Filters
+          </button>
         </div>
 
         {error && (
@@ -606,6 +585,18 @@ export default function VocabularyPage() {
         )}
       </div>
 
+
+      {sortOpen && (
+        <SortBottomSheet
+          value={sortMode}
+          onClose={() => setSortOpen(false)}
+          onChange={(mode) => {
+            setSortMode(mode);
+            setSortOpen(false);
+          }}
+        />
+      )}
+
       {filtersOpen && (
         <VocabularyFilterPanel
           items={alphabetizedItems}
@@ -638,6 +629,79 @@ export default function VocabularyPage() {
         />
       )}
     </main>
+  );
+}
+
+
+function SortBottomSheet({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: SortMode;
+  onChange: (mode: SortMode) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[130] flex items-end bg-black/20 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sort vocabulary"
+        className="w-full rounded-t-[24px] bg-white px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 text-black shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-black/15" />
+
+        <div className="mx-auto max-w-xl">
+          <div className="flex items-center justify-between border-b border-black/10 pb-4">
+            <p className="text-xs font-medium uppercase tracking-[0.14em]">Sort By</p>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close sort menu"
+              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-black/5"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div>
+            {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onChange(mode)}
+                className="flex w-full items-center border-b border-black/10 py-4 text-left last:border-b-0"
+              >
+                <span className="w-8 text-lg">{value === mode ? "—" : ""}</span>
+                <span className="text-xl uppercase tracking-[-0.02em]">
+                  {SORT_LABELS[mode]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 

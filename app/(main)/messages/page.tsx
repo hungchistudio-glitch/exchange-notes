@@ -18,6 +18,8 @@ import {
   listFriends,
 } from "@/lib/friends";
 import { consumePendingSharedArticle } from "@/lib/newsDraft";
+import { consumePendingSharedVocabulary } from "@/lib/vocabularyDraft";
+import type { VocabularyItem } from "@/lib/types/app";
 import type { DailyNewsCard } from "@/lib/types/dailyNews";
 import LogoutButton from "../../components/LogoutButton";
 
@@ -38,6 +40,22 @@ const MESSAGE_COLUMNS =
 
 function detectLanguage(text: string): "traditional-chinese" | "english" {
   return /[\u4e00-\u9fff]/.test(text) ? "traditional-chinese" : "english";
+}
+
+const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
+
+function encodeSharedVocabulary(item: VocabularyItem) {
+  return `${VOCABULARY_MESSAGE_PREFIX}${JSON.stringify(item)}`;
+}
+
+function decodeSharedVocabulary(body: string): VocabularyItem | null {
+  if (!body.startsWith(VOCABULARY_MESSAGE_PREFIX)) return null;
+
+  try {
+    return JSON.parse(body.slice(VOCABULARY_MESSAGE_PREFIX.length)) as VocabularyItem;
+  } catch {
+    return null;
+  }
 }
 
 export default function MessagesPage() {
@@ -318,6 +336,22 @@ function ChatRoom({ friendId }: { friendId: string }) {
             setErrorMessage("Couldn't share that article. Try again.");
           }
         }
+
+        const pendingVocabulary = consumePendingSharedVocabulary();
+        if (pendingVocabulary) {
+          const { error: vocabularyShareError } = await supabase
+            .from("messages")
+            .insert({
+              conversation_id: roomId,
+              sender_id: user.id,
+              body: encodeSharedVocabulary(pendingVocabulary),
+            });
+
+          if (vocabularyShareError) {
+            console.error("Failed to share vocabulary:", vocabularyShareError);
+            setErrorMessage("Couldn't share that word. Try again.");
+          }
+        }
       }
     }
 
@@ -595,6 +629,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
             const isImageAttachment = message.attachment_type?.startsWith(
               "image/"
             );
+            const sharedVocabulary = decodeSharedVocabulary(message.body);
 
             return (
               <div
@@ -673,7 +708,73 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     </a>
                   )}
 
-                  {message.body && (
+                  {sharedVocabulary && (
+                    <div
+                      className={`mb-1 min-w-[220px] rounded-2xl p-4 ${
+                        isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+                      }`}
+                    >
+                      <p
+                        className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                          isMine ? "text-white/50" : "text-neutral-400"
+                        }`}
+                      >
+                        Shared word
+                      </p>
+                      <div className="mt-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="break-words text-2xl font-bold leading-tight">
+                            {sharedVocabulary.word}
+                          </p>
+                          <p
+                            className={`mt-1 break-words text-lg ${
+                              isMine ? "text-white/75" : "text-neutral-600"
+                            }`}
+                          >
+                            {sharedVocabulary.translation}
+                          </p>
+                          {sharedVocabulary.part_of_speech && (
+                            <p
+                              className={`mt-2 text-xs ${
+                                isMine ? "text-white/45" : "text-neutral-400"
+                              }`}
+                            >
+                              {sharedVocabulary.part_of_speech}
+                            </p>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          aria-label={`Pronounce ${sharedVocabulary.word}`}
+                          onClick={() =>
+                            window.speechSynthesis.speak(
+                              new SpeechSynthesisUtterance(sharedVocabulary.word)
+                            )
+                          }
+                          className={`shrink-0 rounded-full p-2 ${
+                            isMine ? "bg-white/10" : "bg-white"
+                          }`}
+                        >
+                          🔊
+                        </button>
+                      </div>
+
+                      {sharedVocabulary.example_sentence && (
+                        <p
+                          className={`mt-3 border-t pt-3 text-sm leading-5 ${
+                            isMine
+                              ? "border-white/10 text-white/70"
+                              : "border-black/10 text-neutral-600"
+                          }`}
+                        >
+                          {sharedVocabulary.example_sentence}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {message.body && !sharedVocabulary && (
                     <p className="whitespace-pre-wrap break-words leading-6">
                       {message.body}
                     </p>
