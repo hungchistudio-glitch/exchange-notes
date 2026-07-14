@@ -430,16 +430,26 @@ ${result.chineseExample}`;
   return (
     <main className="min-h-screen bg-[#f5f3ee] px-4 py-6 text-neutral-900">
       <div className="mx-auto max-w-xl">
-        <header className="flex items-center justify-between">
-          <Link href="/" className="text-sm font-semibold text-neutral-500">
-            Cancel
+        <header className="grid grid-cols-[44px_1fr_44px] items-center">
+          <Link
+            href="/vocabulary"
+            aria-label="Back to Words"
+            title="Back to Words"
+            onClick={stopCamera}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/[0.04] active:scale-95"
+          >
+            <ArrowLeft size={20} strokeWidth={1.9} />
           </Link>
 
-          <h1 className="font-semibold">Discover</h1>
+          <h1 className="text-center font-semibold">Discover</h1>
 
-          <Link href="/vocabulary" aria-label="Back to Words" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+          <button
+            type="button"
+            onClick={reset}
+            className="justify-self-end text-sm font-semibold text-neutral-500"
+          >
             Reset
-          </Link>
+          </button>
         </header>
 
         {!cameraActive && !imageData && (
