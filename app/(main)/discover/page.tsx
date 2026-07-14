@@ -1,13 +1,14 @@
 "use client";
 
 import {
-  Bookmark,
-  BookmarkCheck,
+  BookmarkPlus,
+  Check,
   ChevronDown,
   ExternalLink,
   LoaderCircle,
   RefreshCw,
   Send,
+  Share,
   Volume2,
   X,
 } from "lucide-react";
@@ -15,9 +16,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { speak } from "@/lib/speech";
-import { saveNewsArticle, getSavedArticleIds } from "@/lib/savedNews";
 import { setPendingSharedArticle } from "@/lib/newsDraft";
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
+import type { VocabularyCategory } from "@/lib/types/app";
 import { createClient } from "@/lib/supabase/client";
 import { FriendProfile, listFriends } from "@/lib/friends";
 
@@ -81,8 +82,6 @@ export default function DiscoverPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [expandedVocabId, setExpandedVocabId] = useState<string | null>(null);
   const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [friendPickerCard, setFriendPickerCard] =
     useState<DailyNewsCard | null>(null);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
@@ -146,21 +145,6 @@ export default function DiscoverPage() {
     [friendPickerCard, router, sendingFriendId]
   );
 
-  const handleSave = useCallback(async (card: DailyNewsCard) => {
-    setSavingIds((current) => new Set(current).add(card.id));
-
-    try {
-      await saveNewsArticle(card);
-      setSavedIds((current) => new Set(current).add(card.id));
-    } finally {
-      setSavingIds((current) => {
-        const next = new Set(current);
-        next.delete(card.id);
-        return next;
-      });
-    }
-  }, []);
-
   const loadStories = useCallback(async (isRefresh: boolean) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -193,9 +177,6 @@ export default function DiscoverPage() {
       setCards(data.cards);
       setBrokenImageIds(new Set());
       writeSeenIds([...seenIds, ...data.cards.map((card) => card.id)]);
-
-      const ids = data.cards.map((card) => card.id);
-      getSavedArticleIds(ids).then(setSavedIds);
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -215,35 +196,40 @@ export default function DiscoverPage() {
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.2em]">
-              Exchange Notes
-            </p>
+        <button
+          type="button"
+          onClick={() => void loadStories(true)}
+          disabled={refreshing || loading}
+          aria-label="Load new stories"
+          className="w-full text-left transition-opacity disabled:opacity-60"
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.2em]">
+            Exchange Notes
+          </p>
 
-            <h1 className="mt-3 text-5xl font-black">Discover</h1>
+          <h1 className="mt-3 flex items-center gap-3 text-5xl font-black">
+            Discover
+            <RefreshCw
+              size={22}
+              className={`text-[#8a8a8a] ${
+                refreshing ? "animate-spin" : "opacity-0"
+              }`}
+            />
+          </h1>
 
-            <p className="mt-3 max-w-md text-lg leading-7 text-[#4f4f4f]">
-              Real news, rewritten as a daily English lesson.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => void loadStories(true)}
-            disabled={refreshing || loading}
-            aria-label="Load new stories"
-            className="mt-1 flex min-h-14 min-w-14 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95 disabled:opacity-40"
-          >
-            <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
-          </button>
-        </div>
+          <p className="mt-3 max-w-md text-lg leading-7 text-[#4f4f4f]">
+            Real news, rewritten as a daily English lesson.
+          </p>
+        </button>
 
         <div className="mt-8 space-y-5">
           {loading && <StoryListSkeleton />}
 
           {!loading && errorMessage && cards.length === 0 && (
-            <ErrorState message={errorMessage} onRetry={() => void loadStories(false)} />
+            <ErrorState
+              message={errorMessage}
+              onRetry={() => void loadStories(false)}
+            />
           )}
 
           {!loading &&
@@ -265,9 +251,6 @@ export default function DiscoverPage() {
                     return next;
                   })
                 }
-                saved={savedIds.has(card.id)}
-                saving={savingIds.has(card.id)}
-                onSave={() => void handleSave(card)}
                 onSendToPartner={() => handleSendToPartner(card)}
               />
             ))}
@@ -507,15 +490,111 @@ function SpeakButton({
   );
 }
 
+type SelectionState = { text: string; top: number; left: number };
+
+/** Tracks the current text selection *inside* a given container, exposing
+ * its bounding position (relative to the container) so a toolbar can be
+ * positioned right above it — mirrors the iOS native selection popover. */
+function useTextSelection(containerRef: React.RefObject<HTMLDivElement | null>) {
+  const [selection, setSelection] = useState<SelectionState | null>(null);
+
+  useEffect(() => {
+    function handleSelectionChange() {
+      const sel = window.getSelection();
+      const container = containerRef.current;
+
+      if (!sel || sel.isCollapsed || !container) {
+        setSelection(null);
+        return;
+      }
+
+      const anchorNode = sel.anchorNode;
+      if (!anchorNode || !container.contains(anchorNode)) {
+        setSelection(null);
+        return;
+      }
+
+      const text = sel.toString().trim();
+      if (!text) {
+        setSelection(null);
+        return;
+      }
+
+      const range = sel.getRangeAt(0);
+      const rangeRect = range.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      setSelection({
+        text,
+        top: rangeRect.top - containerRect.top,
+        left: rangeRect.left - containerRect.left + rangeRect.width / 2,
+      });
+    }
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () =>
+      document.removeEventListener("selectionchange", handleSelectionChange);
+  }, [containerRef]);
+
+  return [selection, setSelection] as const;
+}
+
+function SelectionToolbar({
+  selection,
+  addingWord,
+  addedWord,
+  onAddWord,
+  onSendToPartner,
+}: {
+  selection: SelectionState | null;
+  addingWord: boolean;
+  addedWord: boolean;
+  onAddWord: () => void;
+  onSendToPartner: () => void;
+}) {
+  if (!selection) return null;
+
+  return (
+    <div
+      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 whitespace-nowrap rounded-full bg-black px-1.5 py-1.5 text-white shadow-lg"
+      style={{ top: selection.top - 10, left: selection.left }}
+    >
+      <button
+        type="button"
+        onClick={onAddWord}
+        disabled={addingWord}
+        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10 disabled:opacity-60"
+      >
+        {addingWord ? (
+          <LoaderCircle size={13} className="animate-spin" />
+        ) : addedWord ? (
+          <Check size={13} />
+        ) : (
+          <BookmarkPlus size={13} />
+        )}
+        {addedWord ? "已加入" : "加入單字本"}
+      </button>
+
+      <span className="h-4 w-px bg-white/20" />
+
+      <button
+        type="button"
+        onClick={onSendToPartner}
+        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition-colors hover:bg-white/10"
+      >
+        <Send size={13} />
+        傳送
+      </button>
+    </div>
+  );
+}
+
 function NewsCard({
   card,
   expanded,
   onToggleVocabulary,
   imageBroken,
   onImageError,
-  saved,
-  saving,
-  onSave,
   onSendToPartner,
 }: {
   card: DailyNewsCard;
@@ -523,26 +602,120 @@ function NewsCard({
   onToggleVocabulary: () => void;
   imageBroken: boolean;
   onImageError: () => void;
-  saved: boolean;
-  saving: boolean;
-  onSave: () => void;
   onSendToPartner: () => void;
 }) {
   const hasChinese = Boolean(card.chineseTitle && card.chineseSummary);
   const hasVocabulary = card.vocabulary.length > 0;
   const showImage = Boolean(card.imageUrl) && !imageBroken;
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [selection, setSelection] = useTextSelection(contentRef);
+  const [addingWord, setAddingWord] = useState(false);
+  const [addedWord, setAddedWord] = useState(false);
+
+  async function handleAddSelectionToVocabulary() {
+    if (!selection || addingWord) return;
+    const text = selection.text;
+    setAddingWord(true);
+
+    try {
+      const response = await fetch("/api/classify-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data ? data.error : "Couldn't look up that word."
+        );
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Please log in before saving a word.");
+      }
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: user.id,
+          word: (data.englishName ?? text).trim(),
+          translation: (data.chineseName ?? "").trim(),
+          language: "english",
+          part_of_speech: data.partOfSpeech?.trim() || null,
+          example_sentence: data.englishExample?.trim() || null,
+          translated_example: data.chineseExample?.trim() || null,
+          confidence: data.confidence ?? "medium",
+          category: (data.category ?? "other") as VocabularyCategory,
+          status: "new",
+        });
+
+      if (insertError) throw insertError;
+
+      setAddedWord(true);
+      window.getSelection()?.removeAllRanges();
+      setTimeout(() => {
+        setSelection(null);
+        setAddedWord(false);
+      }, 1100);
+    } catch (addError) {
+      console.error("Failed to add word:", addError);
+      setSelection(null);
+    } finally {
+      setAddingWord(false);
+    }
+  }
+
+  function handleSelectionSendToPartner() {
+    window.getSelection()?.removeAllRanges();
+    setSelection(null);
+    onSendToPartner();
+  }
+
+  async function handleShare() {
+    const shareData = {
+      title: card.englishTitle,
+      text: card.englishSummary,
+      url: card.sourceUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User cancelled or share failed — no action needed.
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(card.sourceUrl);
+    } catch {
+      // Clipboard can fail without permission; safe to ignore.
+    }
+  }
+
   return (
     <article className="overflow-hidden rounded-[30px] border border-black/5 bg-white transition-shadow hover:shadow-sm">
       {showImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={card.imageUrl ?? undefined}
-          alt=""
-          loading="lazy"
-          onError={onImageError}
-          className="h-48 w-full object-cover"
-        />
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={card.imageUrl ?? undefined}
+            alt=""
+            loading="lazy"
+            onError={onImageError}
+            className="h-64 w-full object-cover sm:h-72"
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent" />
+        </div>
       )}
 
       <div className="p-6">
@@ -556,50 +729,64 @@ function NewsCard({
           </span>
         </div>
 
-        <div className="mt-4 flex items-start gap-2">
-          <h2 className="flex-1 text-2xl font-black leading-tight">
-            {card.englishTitle}
-          </h2>
-
-          <SpeakButton
-            text={card.englishTitle}
-            lang="en-US"
-            label="Listen to headline in English"
+        <div ref={contentRef} className="relative">
+          <SelectionToolbar
+            selection={selection}
+            addingWord={addingWord}
+            addedWord={addedWord}
+            onAddWord={() => void handleAddSelectionToVocabulary()}
+            onSendToPartner={handleSelectionSendToPartner}
           />
-        </div>
 
-        {hasChinese && (
-          <div className="mt-2 flex items-start gap-2">
-            <p className="flex-1 leading-7 text-[#5f5f5f]">{card.chineseTitle}</p>
+          <div className="mt-4 flex items-start gap-2">
+            <h2 className="flex-1 text-2xl font-black leading-tight">
+              {card.englishTitle}
+            </h2>
+
             <SpeakButton
-              text={card.chineseTitle}
-              lang="zh-TW"
-              label="聆聽中文標題"
-              size={14}
+              text={card.englishTitle}
+              lang="en-US"
+              label="Listen to headline in English"
             />
           </div>
-        )}
 
-        <div className="mt-5 flex items-start gap-2">
-          <p className="flex-1 leading-7">{card.englishSummary}</p>
-          <SpeakButton
-            text={card.englishSummary}
-            lang="en-US"
-            label="Listen to summary in English"
-          />
-        </div>
+          {hasChinese && (
+            <div className="mt-2 flex items-start gap-2">
+              <p className="flex-1 leading-7 text-[#5f5f5f]">
+                {card.chineseTitle}
+              </p>
+              <SpeakButton
+                text={card.chineseTitle}
+                lang="zh-TW"
+                label="聆聽中文標題"
+                size={14}
+              />
+            </div>
+          )}
 
-        {hasChinese && (
-          <div className="mt-3 flex items-start gap-2">
-            <p className="flex-1 leading-7 text-[#5f5f5f]">{card.chineseSummary}</p>
+          <div className="mt-5 flex items-start gap-2">
+            <p className="flex-1 leading-7">{card.englishSummary}</p>
             <SpeakButton
-              text={card.chineseSummary}
-              lang="zh-TW"
-              label="聆聽中文摘要"
-              size={14}
+              text={card.englishSummary}
+              lang="en-US"
+              label="Listen to summary in English"
             />
           </div>
-        )}
+
+          {hasChinese && (
+            <div className="mt-3 flex items-start gap-2">
+              <p className="flex-1 leading-7 text-[#5f5f5f]">
+                {card.chineseSummary}
+              </p>
+              <SpeakButton
+                text={card.chineseSummary}
+                lang="zh-TW"
+                label="聆聽中文摘要"
+                size={14}
+              />
+            </div>
+          )}
+        </div>
 
         {hasVocabulary && (
           <div className="mt-6 border-t border-black/5 pt-5">
@@ -615,7 +802,9 @@ function NewsCard({
 
               <ChevronDown
                 size={18}
-                className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+                className={`transition-transform ${
+                  expanded ? "rotate-180" : ""
+                }`}
               />
             </button>
 
@@ -629,48 +818,38 @@ function NewsCard({
           </div>
         )}
 
-        <div className="mt-6 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saved || saving}
-            aria-label={saved ? "Saved to Notes" : "Save to Notes"}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-center font-black transition-colors ${
-              saved
-                ? "bg-[#f5f2eb] text-[#8a8a8a]"
-                : "border border-black/10 bg-white text-black hover:bg-black/[0.03]"
-            } disabled:opacity-100`}
-          >
-            {saving ? (
-              <LoaderCircle size={16} className="animate-spin" />
-            ) : saved ? (
-              <BookmarkCheck size={16} />
-            ) : (
-              <Bookmark size={16} />
-            )}
-            {saving ? "Saving..." : saved ? "Saved" : "Save to Notes"}
-          </button>
-
+        <div className="mt-6 grid grid-cols-3 gap-2">
           <a
             href={card.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-black py-3.5 text-center font-black text-white transition-transform active:scale-95"
+            aria-label="Original Source"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-black py-3 text-white transition-transform active:scale-95"
           >
-            Original Source
-            <ExternalLink size={16} />
+            <ExternalLink size={17} />
+            <span className="text-[11px] font-bold">Source</span>
           </a>
-        </div>
 
-        <button
-          type="button"
-          onClick={onSendToPartner}
-          aria-label="Send to Partner"
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white py-3.5 text-center font-black text-black transition-colors hover:bg-black/[0.03]"
-        >
-          <Send size={16} />
-          Send to Partner
-        </button>
+          <button
+            type="button"
+            onClick={onSendToPartner}
+            aria-label="Send to Partner"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
+          >
+            <Send size={17} />
+            <span className="text-[11px] font-bold">Partner</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleShare()}
+            aria-label="Share"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
+          >
+            <Share size={17} />
+            <span className="text-[11px] font-bold">Share</span>
+          </button>
+        </div>
       </div>
     </article>
   );
