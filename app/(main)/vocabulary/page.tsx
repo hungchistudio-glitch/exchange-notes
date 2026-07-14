@@ -43,11 +43,12 @@ const STATUS_LABELS: Record<VocabularyStatus, string> = {
   mastered: "Mastered",
 };
 
-const CATEGORY_LABELS: Record<VocabularyCategory, string> = {
-  people: "People",
-  objects: "Objects",
-  actions: "Actions",
-  other: "Other",
+type SortMode = "new" | "for-you" | "trending";
+
+const SORT_LABELS: Record<SortMode, string> = {
+  new: "New Words",
+  "for-you": "For You",
+  trending: "Trending",
 };
 
 function normalizeVocabularyText(value: string | null | undefined) {
@@ -60,25 +61,30 @@ function normalizeVocabularyText(value: string | null | undefined) {
 
 function getVocabularyKey(
   word: string | null | undefined,
-  translation: string | null | undefined
+  translation: string | null | undefined,
 ) {
   return `${normalizeVocabularyText(word)}::${normalizeVocabularyText(
-    translation
+    translation,
   )}`;
 }
 
 export default function VocabularyPage() {
   const router = useRouter();
   const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [learningLanguage, setLearningLanguage] =
-    useState<AppLanguage | null>(null);
+  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | VocabularyCategory>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("new");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const [lookupStatus, setLookupStatus] = useState<"idle" | "loading" | "error" | "result">("idle");
+  const [lookupStatus, setLookupStatus] = useState<
+    "idle" | "loading" | "error" | "result"
+  >("idle");
   const [lookupResult, setLookupResult] = useState<{
     englishName: string;
     chineseName: string;
@@ -150,7 +156,7 @@ export default function VocabularyPage() {
       setPendingSharedVocabulary(friendPickerItem);
       router.push(`/messages?with=${friendId}`);
     },
-    [friendPickerItem, router, sendingFriendId]
+    [friendPickerItem, router, sendingFriendId],
   );
 
   useEffect(() => {
@@ -190,7 +196,7 @@ export default function VocabularyPage() {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Could not load your vocabulary."
+              : "Could not load your vocabulary.",
           );
         }
       } finally {
@@ -227,17 +233,66 @@ export default function VocabularyPage() {
 
   const visibleItems = useMemo(() => {
     const normalizedQuery = normalizeVocabularyText(query);
+    const statusPriority: Record<VocabularyStatus, number> = {
+      learning: 0,
+      new: 1,
+      mastered: 2,
+    };
 
-    return uniqueItems.filter((item) => {
-      const matchesFilter = filter === "all" || item.category === filter;
-      const matchesQuery =
-        !normalizedQuery ||
+    const filtered = uniqueItems.filter((item) => {
+      if (!normalizedQuery) return true;
+
+      return (
         normalizeVocabularyText(item.word).includes(normalizedQuery) ||
-        normalizeVocabularyText(item.translation).includes(normalizedQuery);
-
-      return matchesFilter && matchesQuery;
+        normalizeVocabularyText(item.translation).includes(normalizedQuery)
+      );
     });
-  }, [filter, query, uniqueItems]);
+
+    return [...filtered].sort((a, b) => {
+      const aCreated = new Date(a.created_at ?? 0).getTime();
+      const bCreated = new Date(b.created_at ?? 0).getTime();
+
+      if (sortMode === "new") {
+        return bCreated - aCreated;
+      }
+
+      if (sortMode === "for-you") {
+        const statusDifference =
+          statusPriority[a.status] - statusPriority[b.status];
+
+        if (statusDifference !== 0) return statusDifference;
+        return bCreated - aCreated;
+      }
+
+      const aTrendingScore =
+        (a.status === "learning" ? 3 : a.status === "new" ? 2 : 1) *
+          1_000_000_000_000 +
+        aCreated;
+      const bTrendingScore =
+        (b.status === "learning" ? 3 : b.status === "new" ? 2 : 1) *
+          1_000_000_000_000 +
+        bCreated;
+
+      return bTrendingScore - aTrendingScore;
+    });
+  }, [query, sortMode, uniqueItems]);
+
+  const alphabetizedItems = useMemo(() => {
+    const normalizedSearch = normalizeVocabularyText(filterSearch);
+
+    return [...uniqueItems]
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+
+        return (
+          normalizeVocabularyText(item.word).includes(normalizedSearch) ||
+          normalizeVocabularyText(item.translation).includes(normalizedSearch)
+        );
+      })
+      .sort((a, b) =>
+        a.word.localeCompare(b.word, "en", { sensitivity: "base" }),
+      );
+  }, [filterSearch, uniqueItems]);
 
   async function changeStatus(item: VocabularyItem, status: VocabularyStatus) {
     if (item.status === status || updatingId) return;
@@ -256,16 +311,14 @@ export default function VocabularyPage() {
 
       setItems((current) =>
         current.map((currentItem) =>
-          currentItem.id === item.id
-            ? { ...currentItem, status }
-            : currentItem
-        )
+          currentItem.id === item.id ? { ...currentItem, status } : currentItem,
+        ),
       );
     } catch (updateError) {
       setError(
         updateError instanceof Error
           ? updateError.message
-          : "Could not update this word."
+          : "Could not update this word.",
       );
     } finally {
       setUpdatingId(null);
@@ -290,7 +343,7 @@ export default function VocabularyPage() {
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data ? data.error : "Couldn't look up that word."
+          "error" in data ? data.error : "Couldn't look up that word.",
         );
       }
 
@@ -300,7 +353,7 @@ export default function VocabularyPage() {
       setLookupError(
         lookupErrorValue instanceof Error
           ? lookupErrorValue.message
-          : "Couldn't look up that word."
+          : "Couldn't look up that word.",
       );
       setLookupStatus("error");
     }
@@ -328,7 +381,7 @@ export default function VocabularyPage() {
 
       const duplicate = items.find(
         (item) =>
-          getVocabularyKey(item.word, item.translation) === candidateKey
+          getVocabularyKey(item.word, item.translation) === candidateKey,
       );
 
       if (duplicate) {
@@ -366,7 +419,7 @@ export default function VocabularyPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Could not save this word."
+          : "Could not save this word.",
       );
     } finally {
       setSavingLookup(false);
@@ -381,9 +434,7 @@ export default function VocabularyPage() {
             <p className="text-sm font-bold uppercase tracking-[0.2em]">
               Your library
             </p>
-            <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-              Vocabulary
-            </h1>
+            <h1 className="mt-2 text-3xl font-black sm:text-4xl">Vocabulary</h1>
           </div>
 
           <div className="flex shrink-0 gap-2">
@@ -405,36 +456,44 @@ export default function VocabularyPage() {
           </div>
         </header>
 
-        <div className="relative mt-7">
-          <Search
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
-          />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search English or 中文"
-            className="w-full rounded-[20px] border border-transparent bg-white py-4 pl-12 pr-4 outline-none focus:border-black"
-          />
-        </div>
+        <div className="mt-8 border-y border-black/10 bg-white">
+          <div className="grid grid-cols-2 divide-x divide-black/10">
+            <button
+              type="button"
+              onClick={() => setSortMode((current) => current)}
+              className="px-5 py-4 text-left text-sm uppercase tracking-[0.08em]"
+            >
+              <span className="text-neutral-400">Sort by</span>
+              <span className="ml-2 font-medium text-black">
+                {SORT_LABELS[sortMode]}
+              </span>
+            </button>
 
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {(["all", "people", "objects", "actions", "other"] as const).map(
-            (category) => (
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              className="px-5 py-4 text-center text-sm uppercase tracking-[0.08em]"
+            >
+              Filters
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 border-t border-black/10">
+            {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
               <button
-                key={category}
+                key={mode}
                 type="button"
-                onClick={() => setFilter(category)}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black ${
-                  filter === category
+                onClick={() => setSortMode(mode)}
+                className={`border-r border-black/10 px-2 py-3 text-xs uppercase tracking-[0.08em] last:border-r-0 ${
+                  sortMode === mode
                     ? "bg-black text-white"
                     : "bg-white text-black"
                 }`}
               >
-                {category === "all" ? "All" : CATEGORY_LABELS[category]}
+                {SORT_LABELS[mode]}
               </button>
-            )
-          )}
+            ))}
+          </div>
         </div>
 
         {error && (
@@ -547,6 +606,23 @@ export default function VocabularyPage() {
         )}
       </div>
 
+      {filtersOpen && (
+        <VocabularyFilterPanel
+          items={alphabetizedItems}
+          search={filterSearch}
+          onSearchChange={setFilterSearch}
+          onClose={() => {
+            setFiltersOpen(false);
+            setFilterSearch("");
+          }}
+          onSelect={(item) => {
+            setQuery(item.word);
+            setFiltersOpen(false);
+            setFilterSearch("");
+          }}
+        />
+      )}
+
       {friendPickerItem && (
         <FriendPickerModal
           friends={friends}
@@ -562,6 +638,136 @@ export default function VocabularyPage() {
         />
       )}
     </main>
+  );
+}
+
+function VocabularyFilterPanel({
+  items,
+  search,
+  onSearchChange,
+  onClose,
+  onSelect,
+}: {
+  items: VocabularyItem[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  onClose: () => void;
+  onSelect: (item: VocabularyItem) => void;
+}) {
+  const letters = useMemo(() => {
+    const groups = new Map<string, VocabularyItem[]>();
+
+    for (const item of items) {
+      const firstCharacter = item.word.trim().charAt(0).toUpperCase();
+      const letter = /^[A-Z]$/.test(firstCharacter) ? firstCharacter : "#";
+      const group = groups.get(letter) ?? [];
+      group.push(item);
+      groups.set(letter, group);
+    }
+
+    return [...groups.entries()].sort(([a], [b]) => {
+      if (a === "#") return 1;
+      if (b === "#") return -1;
+      return a.localeCompare(b);
+    });
+  }, [items]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[120] overflow-y-auto bg-white text-black">
+      <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
+        <div className="flex items-center justify-between px-5 py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-sm uppercase tracking-[0.08em]"
+          >
+            Cancel
+          </button>
+          <p className="text-sm uppercase tracking-[0.08em]">Vocabulary</p>
+          <button
+            type="button"
+            onClick={() => onSearchChange("")}
+            className="text-sm uppercase tracking-[0.08em]"
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="relative border-t border-black/10 px-5 py-4">
+          <Search
+            size={18}
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400"
+          />
+          <input
+            autoFocus
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search saved words"
+            className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
+          />
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-xl grid-cols-[72px_1fr] gap-5 px-5 py-8">
+        <aside className="text-xs uppercase leading-5 text-neutral-500">
+          <p>{String(items.length).padStart(2, "0")}</p>
+          <p>Words</p>
+        </aside>
+
+        <div className="space-y-10">
+          {letters.length === 0 ? (
+            <p className="text-neutral-400">No matching words.</p>
+          ) : (
+            letters.map(([letter, group]) => (
+              <section key={letter} id={`letter-${letter}`}>
+                <h2 className="mb-5 text-2xl font-medium">{letter}</h2>
+                <div className="space-y-5">
+                  {group.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onSelect(item)}
+                      className="block w-full text-left"
+                    >
+                      <span className="block text-2xl leading-tight">
+                        {item.word}
+                      </span>
+                      <span className="mt-1 block text-sm text-neutral-400">
+                        {item.translation} · {STATUS_LABELS[item.status]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
+        </div>
+      </div>
+
+      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-neutral-400 sm:flex">
+        {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
+          <a key={letter} href={`#letter-${letter}`}>
+            {letter}
+          </a>
+        ))}
+      </nav>
+    </div>
   );
 }
 
@@ -614,7 +820,9 @@ function FriendPickerModal({
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
         className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
-          mounted ? "translate-y-0" : "translate-y-full sm:translate-y-4 sm:opacity-0"
+          mounted
+            ? "translate-y-0"
+            : "translate-y-full sm:translate-y-4 sm:opacity-0"
         }`}
         style={{
           maxHeight: "min(78vh, 640px)",
@@ -708,7 +916,10 @@ function FriendPickerModal({
                   </div>
 
                   {isSending && (
-                    <LoaderCircle size={16} className="shrink-0 animate-spin text-black/40" />
+                    <LoaderCircle
+                      size={16}
+                      className="shrink-0 animate-spin text-black/40"
+                    />
                   )}
                 </button>
               );
@@ -851,7 +1062,7 @@ function VocabularyCard({
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data ? data.error : "Couldn't look up that word."
+          "error" in data ? data.error : "Couldn't look up that word.",
         );
       }
 
@@ -878,7 +1089,7 @@ function VocabularyCard({
       const duplicate = (existingItems ?? []).some(
         (existingItem) =>
           getVocabularyKey(existingItem.word, existingItem.translation) ===
-          candidateKey
+          candidateKey,
       );
 
       if (!duplicate) {
@@ -1010,7 +1221,7 @@ function VocabularyCard({
                 onClick={() =>
                   speak(
                     item.translation,
-                    toPinyin(item.translation) ? "zh-TW" : "en-US"
+                    toPinyin(item.translation) ? "zh-TW" : "en-US",
                   )
                 }
                 className="shrink-0 rounded-full bg-[#f1eee7] p-1.5 text-black"
