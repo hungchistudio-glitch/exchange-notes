@@ -1,6 +1,6 @@
 "use client";
 
-import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
+import WordCard from "@/components/learning/WordCard";
 import SwipeableConversationCard from "@/components/messages/SwipeableConversationCard";
 import {
   FormEvent,
@@ -21,8 +21,6 @@ import {
   Paperclip,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { toPinyin } from "@/lib/pinyin";
-import { getLocalEnglishPronunciation } from "@/lib/localPronunciation";
 import { speak } from "@/lib/speech";
 import {
   getOrCreateConversationWithFriend,
@@ -76,16 +74,7 @@ function SharedVocabularyMessage({
 }) {
   const [learningLanguage, setLearningLanguage] =
     useState<AppLanguage>("english");
-
-  const [pronunciation, setPronunciation] = useState<{
-    englishPronunciation: string;
-    zhuyin: string;
-  } | null>(null);
-
-  const [pronunciationError, setPronunciationError] = useState("");
-
   const [savingSharedWord, setSavingSharedWord] = useState(false);
-
   const [sharedWordSaved, setSharedWordSaved] = useState(false);
 
   useEffect(() => {
@@ -117,59 +106,14 @@ function SharedVocabularyMessage({
 
     void loadLearningLanguage();
 
-    const chinesePinyin = toPinyin(item.translation?.trim() || "");
-
-    const englishPronunciation = getLocalEnglishPronunciation(
-      item.word?.trim() || "",
-    );
-
     return () => {
       active = false;
     };
   }, []);
 
-  const learningChinese = learningLanguage === "traditional-chinese";
-
   const englishText = item.word?.trim() || "";
   const chineseText = item.translation?.trim() || "";
-
-  const englishPronunciation =
-  getLocalEnglishPronunciation(englishText);
-
-  const chineseZhuyin = "";
-
-  const chinesePinyin = toPinyin(chineseText)?.trim() || "";
-
-  const primaryText = learningChinese ? chineseText : englishText;
-
-  const secondaryText = learningChinese ? englishText : chineseText;
-
-  const primaryLanguage = learningChinese ? "zh-TW" : "en-US";
-
-  const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
-
-  const primaryPronunciation = learningChinese
-    ? chineseZhuyin || chinesePinyin
-    : englishPronunciation;
-
-  const secondaryPronunciation = learningChinese
-    ? englishPronunciation
-    : chineseZhuyin || chinesePinyin;
-
-  const primaryPronunciationLabel = learningChinese
-    ? chineseZhuyin
-      ? "注音"
-      : "拼音"
-    : "EN";
-
-  const secondaryPronunciationLabel = learningChinese
-    ? "EN"
-    : chineseZhuyin
-      ? "注音"
-      : "拼音";
-
   const englishExample = item.example_sentence?.trim() || "";
-
   const chineseExample = item.translated_example?.trim() || "";
 
   async function saveSharedWordToVocabulary() {
@@ -177,10 +121,7 @@ function SharedVocabularyMessage({
       return;
     }
 
-    const englishWord = item.word?.trim() || "";
-    const chineseWord = item.translation?.trim() || "";
-
-    if (!englishWord || !chineseWord) return;
+    if (!englishText || !chineseText) return;
 
     setSavingSharedWord(true);
 
@@ -191,8 +132,8 @@ function SharedVocabularyMessage({
         .from("vocabulary_items")
         .select("id")
         .eq("user_id", currentUserId)
-        .ilike("word", englishWord)
-        .ilike("translation", chineseWord)
+        .ilike("word", englishText)
+        .ilike("translation", chineseText)
         .limit(1);
 
       if (lookupError) throw lookupError;
@@ -206,8 +147,8 @@ function SharedVocabularyMessage({
         .from("vocabulary_items")
         .insert({
           user_id: currentUserId,
-          word: englishWord,
-          translation: chineseWord,
+          word: englishText,
+          translation: chineseText,
           language: item.language || "english",
           part_of_speech: item.part_of_speech || null,
           example_sentence: item.example_sentence || null,
@@ -229,48 +170,16 @@ function SharedVocabularyMessage({
   }
 
   return (
-    <AdaptiveWordCard
+    <WordCard
+      english={englishText}
+      chinese={chineseText}
+      englishExample={englishExample}
+      chineseExample={chineseExample}
+      partOfSpeech={item.part_of_speech}
       imageUrl={item.image_url}
-      imageAlt={englishText}
+      learningLanguage={learningLanguage}
       headerLabel="Shared word"
       statusLabel="Shared"
-      primary={{
-        label: learningChinese ? "Traditional Chinese" : "English",
-        text: primaryText,
-        pronunciationLabel: primaryPronunciationLabel,
-        pronunciation: primaryPronunciation,
-        language: primaryLanguage,
-      }}
-      secondary={{
-        label: learningChinese ? "English" : "Traditional Chinese",
-        text: secondaryText,
-        pronunciationLabel: secondaryPronunciationLabel,
-        pronunciation: secondaryPronunciation,
-        language: secondaryLanguage,
-      }}
-      englishExample={
-        englishExample
-          ? {
-              label: "English example",
-              text: englishExample,
-              language: "en-US",
-            }
-          : null
-      }
-      chineseExample={
-        chineseExample
-          ? {
-              label: "中文例句",
-              text: chineseExample,
-              language: "zh-TW",
-            }
-          : null
-      }
-      partOfSpeech={item.part_of_speech}
-      pronunciationLoading={false}
-      pronunciationError=""
-      onRetryPronunciation={() => undefined}
-      onSpeak={speak}
       actions={
         <div className="flex justify-end">
           <button
