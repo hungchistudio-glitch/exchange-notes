@@ -53,7 +53,7 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 
 const PRONUNCIATION_CACHE_KEY =
-  "exchange-notes-pronunciation-cache-v1";
+  "exchange-notes-pronunciation-cache-v2";
 
 type WordPronunciation = {
   englishPronunciation: string;
@@ -1750,8 +1750,13 @@ function VocabularyCard({
 
     const cached = readPronunciationCache()[cacheKey];
 
-    if (cached) {
+    if (
+      cached &&
+      (cached.englishPronunciation.trim() ||
+        cached.zhuyin.trim())
+    ) {
       setPronunciation(cached);
+
       return () => {
         active = false;
       };
@@ -1789,6 +1794,15 @@ function VocabularyCard({
             data.englishPronunciation?.trim() ?? "",
           zhuyin: data.zhuyin?.trim() ?? "",
         };
+
+        if (
+          !nextPronunciation.englishPronunciation &&
+          !nextPronunciation.zhuyin
+        ) {
+          throw new Error(
+            "Pronunciation API returned an empty result.",
+          );
+        }
 
         if (!active) return;
 
