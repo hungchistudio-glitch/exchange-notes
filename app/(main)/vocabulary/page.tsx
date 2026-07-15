@@ -11,6 +11,7 @@ import {
   Search,
   Send,
   Share,
+  Trash2,
   Volume2,
   X,
   Zap,
@@ -699,6 +700,40 @@ export default function VocabularyPage() {
     }
   }
 
+  async function deleteVocabularyItem(item: VocabularyItem) {
+    const confirmed = window.confirm(
+      `Delete "${item.word}" from your vocabulary?`,
+    );
+
+    if (!confirmed) return;
+
+    setUpdatingId(item.id);
+    setError("");
+
+    try {
+      const supabase = createClient();
+
+      const { error: deleteError } = await supabase
+        .from("vocabulary_items")
+        .delete()
+        .eq("id", item.id);
+
+      if (deleteError) throw deleteError;
+
+      setItems((current) =>
+        current.filter((currentItem) => currentItem.id !== item.id),
+      );
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete this word.",
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   function openAiSearch() {
     setQuery("");
     setLookupResult(null);
@@ -1084,6 +1119,7 @@ export default function VocabularyPage() {
                   onSendToPartner={(sharedItem) =>
                     handleSendToPartner(sharedItem ?? item)
                   }
+                  onDelete={() => void deleteVocabularyItem(item)}
                   onInteract={(type) => recordInteraction(item, type)}
                   onItemAdded={(newItem) =>
                     setItems((current) => [newItem, ...current])
@@ -1853,6 +1889,7 @@ function VocabularyCard({
   onRetryPronunciation,
   onChangeStatus,
   onSendToPartner,
+  onDelete,
   onInteract,
   onItemAdded,
 }: {
@@ -1865,6 +1902,7 @@ function VocabularyCard({
   onRetryPronunciation: () => void;
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
+  onDelete: () => void;
   onInteract: (type: InteractionType) => void;
   onItemAdded: (item: VocabularyItem) => void;
 }) {
@@ -2157,6 +2195,16 @@ function VocabularyCard({
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-black/65 transition-transform active:scale-95"
             >
               <Share size={16} strokeWidth={1.8} />
+            </button>
+
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label="Delete vocabulary item"
+              title="Delete vocabulary item"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-red-500 transition-transform active:scale-95"
+            >
+              <Trash2 size={16} strokeWidth={1.8} />
             </button>
           </div>
         }
