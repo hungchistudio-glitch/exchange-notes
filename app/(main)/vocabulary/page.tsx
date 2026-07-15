@@ -53,7 +53,7 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 
 const PRONUNCIATION_CACHE_KEY =
-  "exchange-notes-pronunciation-cache-v2";
+  "exchange-notes-pronunciation-cache-v4";
 
 type WordPronunciation = {
   englishPronunciation: string;
@@ -1716,6 +1716,8 @@ function VocabularyCard({
     useState<WordPronunciation | null>(null);
   const [pronunciationLoading, setPronunciationLoading] =
     useState(false);
+  const [pronunciationError, setPronunciationError] =
+    useState("");
 
   const learningChinese =
     learningLanguage === "traditional-chinese";
@@ -1764,6 +1766,7 @@ function VocabularyCard({
 
     async function loadPronunciation() {
       setPronunciationLoading(true);
+      setPronunciationError("");
 
       try {
         const response = await fetch("/api/word-pronunciation", {
@@ -1781,12 +1784,21 @@ function VocabularyCard({
           | WordPronunciation
           | { error?: string };
 
+        if (!response.ok) {
+          throw new Error(
+            "error" in data && data.error
+              ? data.error
+              : `Pronunciation request failed (${response.status}).`,
+          );
+        }
+
         if (
-          !response.ok ||
           !("englishPronunciation" in data) ||
           !("zhuyin" in data)
         ) {
-          return;
+          throw new Error(
+            "Pronunciation API returned an invalid result.",
+          );
         }
 
         const nextPronunciation: WordPronunciation = {
@@ -1808,11 +1820,20 @@ function VocabularyCard({
 
         setPronunciation(nextPronunciation);
         writePronunciationCache(cacheKey, nextPronunciation);
-      } catch (pronunciationError) {
+      } catch (pronunciationFailure) {
+        const message =
+          pronunciationFailure instanceof Error
+            ? pronunciationFailure.message
+            : "Could not load pronunciation.";
+
         console.warn(
           "Could not load word pronunciation:",
-          pronunciationError,
+          pronunciationFailure,
         );
+
+        if (active) {
+          setPronunciationError(message);
+        }
       } finally {
         if (active) setPronunciationLoading(false);
       }
@@ -2069,8 +2090,39 @@ function VocabularyCard({
                     size={11}
                     className="animate-spin"
                   />
-                  Pronunciation
+                  Loading pronunciation
                 </span>
+              ) : pronunciationError ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPronunciationError("");
+                    setPronunciation(null);
+
+                    const cacheKey = getPronunciationCacheKey(
+                      item.word,
+                      item.translation,
+                    );
+
+                    try {
+                      const cache = readPronunciationCache();
+                      delete cache[cacheKey];
+
+                      window.localStorage.setItem(
+                        PRONUNCIATION_CACHE_KEY,
+                        JSON.stringify(cache),
+                      );
+                    } catch {
+                      // Ignore storage errors.
+                    }
+
+                    window.location.reload();
+                  }}
+                  className="text-[11px] text-red-500 underline underline-offset-2"
+                  title={pronunciationError}
+                >
+                  Pronunciation unavailable · Retry
+                </button>
               ) : null}
 
               {item.part_of_speech && (

@@ -143,7 +143,11 @@ Do not include markdown.
         content?: {
           parts?: Array<{ text?: string }>;
         };
+        finishReason?: string;
       }>;
+      promptFeedback?: {
+        blockReason?: string;
+      };
       error?: {
         message?: string;
       };
@@ -160,7 +164,19 @@ Do not include markdown.
       geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!responseText) {
-      throw new Error("Gemini returned an empty pronunciation.");
+      console.error("word-pronunciation empty response:", {
+        finishReason: geminiData.candidates?.[0]?.finishReason,
+        blockReason: geminiData.promptFeedback?.blockReason,
+        english,
+        chinese,
+      });
+
+      throw new Error(
+        geminiData.promptFeedback?.blockReason === "SAFETY" ||
+        geminiData.candidates?.[0]?.finishReason === "RECITATION"
+          ? "This word could not be processed (content filter)."
+          : "Gemini returned an empty pronunciation.",
+      );
     }
 
     const result = normalizeResult(
