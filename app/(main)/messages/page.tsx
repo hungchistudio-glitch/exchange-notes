@@ -628,6 +628,7 @@ function ConversationList() {
           {friends.map((friend) => (
             <SwipeableConversationCard
               key={friend.id}
+              disabled={deletingFriendId === friend.id}
               onDelete={() => void removeFriend(friend)}
             >
               <Link
