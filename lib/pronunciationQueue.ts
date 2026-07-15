@@ -9,7 +9,9 @@ const MAX_CONCURRENT = 1;
 const MIN_INTERVAL_MS = 3200; // ~18 requests/minute, safely under the 20/min cap
 
 let activeCount = 0;
-let lastStartedAt = 0;
+// Predicted start time of the next task, used to space tasks out
+// even when many are enqueued synchronously in the same tick.
+let nextAvailableAt = 0;
 const queue: Array<() => void> = [];
 
 function processQueue() {
@@ -17,14 +19,18 @@ function processQueue() {
   const next = queue.shift();
   if (!next) return;
 
-  const now = Date.now();
-  const wait = Math.max(0, lastStartedAt + MIN_INTERVAL_MS - now);
+  // Reserve the concurrency slot AND the time slot synchronously,
+  // before any setTimeout fires. This is what actually prevents
+  // a burst of synchronous enqueue() calls from all slipping
+  // through the activeCount check at once.
+  activeCount += 1;
 
-  setTimeout(() => {
-    lastStartedAt = Date.now();
-    activeCount += 1;
-    next();
-  }, wait);
+  const now = Date.now();
+  const startAt = Math.max(now, nextAvailableAt);
+  const wait = startAt - now;
+  nextAvailableAt = startAt + MIN_INTERVAL_MS;
+
+  setTimeout(next, wait);
 }
 
 export function enqueuePronunciationTask<T>(
