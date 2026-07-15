@@ -17,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import type { AppLanguage } from "@/lib/types/app";
 
 type RecentNote = {
   articleId: string;
@@ -31,6 +32,8 @@ export default function HomePage() {
 
   const [wordsToday, setWordsToday] = useState(0);
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
+  const [learningLanguage, setLearningLanguage] =
+    useState<AppLanguage>("english");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,7 +54,11 @@ export default function HomePage() {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
-        const [{ count }, { data: notesData }] = await Promise.all([
+        const [
+          { count },
+          { data: notesData },
+          { data: profileData },
+        ] = await Promise.all([
           supabase
             .from("vocabulary_items")
             .select("id", { count: "exact", head: true })
@@ -63,11 +70,23 @@ export default function HomePage() {
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(3),
+          supabase
+            .from("profiles")
+            .select("learning_language")
+            .eq("id", user.id)
+            .single(),
         ]);
 
         if (!active) return;
 
         setWordsToday(count ?? 0);
+
+        if (profileData?.learning_language) {
+          setLearningLanguage(
+            profileData.learning_language as AppLanguage,
+          );
+        }
+
         setRecentNotes(
           (notesData ?? []).map((row) => ({
             articleId: row.article_id as string,
@@ -236,15 +255,25 @@ export default function HomePage() {
           </Link>
 
           <Link
-            href="/grammar"
-            className="rounded-[28px] bg-white p-5"
+            href="/pronunciation"
+            className="rounded-[28px] bg-white p-5 transition-transform active:scale-[0.98]"
           >
-            <p className="text-3xl font-black">0</p>
-            <p className="mt-6 font-black">
-              Grammar Notes
+            <p className="text-3xl font-black">
+              {learningLanguage === "traditional-chinese"
+                ? "ㄅ"
+                : "/æ/"}
             </p>
+
+            <p className="mt-6 font-black">
+              {learningLanguage === "traditional-chinese"
+                ? "注音基礎"
+                : "English Sounds"}
+            </p>
+
             <p className="mt-1 text-sm text-[#4f4f4f]">
-              Use words in context
+              {learningLanguage === "traditional-chinese"
+                ? "學習ㄅㄆㄇㄈ與聲調"
+                : "Learn essential IPA sounds"}
             </p>
           </Link>
         </section>
