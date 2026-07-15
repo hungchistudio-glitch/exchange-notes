@@ -1,10 +1,12 @@
 "use client";
 
+import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
 import {
   BookmarkPlus,
   BookOpen,
   Camera,
   Check,
+  House,
   LoaderCircle,
   Plus,
   Search,
@@ -906,6 +908,15 @@ export default function VocabularyPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
+      <Link
+        href="/home"
+        aria-label="Back to Home"
+        title="Back to Home"
+        className="fixed left-4 top-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.055] bg-white/90 text-black/65 shadow-[0_6px_22px_rgba(0,0,0,0.07)] backdrop-blur-xl transition-transform active:scale-95"
+      >
+        <House size={18} strokeWidth={1.8} />
+      </Link>
+
       <div className="mx-auto max-w-xl">
         <header className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -2055,252 +2066,132 @@ function VocabularyCard({
   }
 
   const englishExample = item.example_sentence?.trim() || "";
+
   const chineseExample = item.translated_example?.trim() || "";
 
+  const primaryPronunciation = learningChinese
+    ? chineseZhuyin || chinesePinyin
+    : englishPronunciation;
+
+  const secondaryPronunciation = learningChinese
+    ? englishPronunciation
+    : chineseZhuyin || chinesePinyin;
+
+  const primaryPronunciationLabel = learningChinese
+    ? chineseZhuyin
+      ? "注音"
+      : "拼音"
+    : "EN";
+
+  const secondaryPronunciationLabel = learningChinese
+    ? "EN"
+    : chineseZhuyin
+      ? "注音"
+      : "拼音";
+
+  function handleSpeak(value: string, language: "en-US" | "zh-TW") {
+    onInteract("speak");
+    speak(value, language);
+  }
+
   return (
-    <article className="overflow-hidden rounded-[30px] border border-black/[0.055] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.055)]">
-      {item.image_url && (
-        <div className="relative aspect-[16/10] overflow-hidden bg-[#ebe7de]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image_url}
-            alt={item.word}
-            className="h-full w-full object-cover"
-          />
+    <div ref={contentRef} className="relative">
+      <SelectionToolbar
+        selection={selection}
+        addingWord={addingWord}
+        addedWord={addedWord}
+        onAddWord={() => void handleAddSelectionToVocabulary()}
+        onSendToPartner={handleSelectionSendToPartner}
+      />
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
+      <AdaptiveWordCard
+        imageUrl={item.image_url}
+        imageAlt={item.word}
+        headerLabel="Vocabulary"
+        statusLabel={STATUS_LABELS[item.status]}
+        primary={{
+          label: learningChinese ? "Traditional Chinese" : "English",
+          text: primaryText,
+          pronunciationLabel: primaryPronunciationLabel,
+          pronunciation: primaryPronunciation,
+          language: primaryLanguage,
+        }}
+        secondary={{
+          label: learningChinese ? "English" : "Traditional Chinese",
+          text: secondaryText,
+          pronunciationLabel: secondaryPronunciationLabel,
+          pronunciation: secondaryPronunciation,
+          language: secondaryLanguage,
+        }}
+        englishExample={
+          englishExample
+            ? {
+                label: "English example",
+                text: englishExample,
+                language: "en-US",
+              }
+            : null
+        }
+        chineseExample={
+          chineseExample
+            ? {
+                label: "中文例句",
+                text: chineseExample,
+                language: "zh-TW",
+              }
+            : null
+        }
+        partOfSpeech={item.part_of_speech}
+        pronunciationLoading={pronunciationLoading}
+        pronunciationError={pronunciationError}
+        onRetryPronunciation={onRetryPronunciation}
+        onSpeak={handleSpeak}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onSendToPartner()}
+              aria-label="Send to Partner"
+              title="Send to Partner"
+              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-black px-4 text-[12px] font-semibold text-white transition-transform active:scale-[0.99]"
+            >
+              <Send size={15} strokeWidth={1.8} />
+              Send
+            </button>
 
-          <span className="absolute bottom-4 left-4 rounded-full border border-white/30 bg-white/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-black/55 backdrop-blur-xl">
-            {STATUS_LABELS[item.status]}
-          </span>
-        </div>
-      )}
-
-      <div className="p-5 sm:p-6">
-        <div ref={contentRef} className="relative">
-          <SelectionToolbar
-            selection={selection}
-            addingWord={addingWord}
-            addedWord={addedWord}
-            onAddWord={() => void handleAddSelectionToVocabulary()}
-            onSendToPartner={handleSelectionSendToPartner}
-          />
-
-          {!item.image_url && (
-            <div className="mb-6 flex items-center justify-between">
-              <span className="rounded-full bg-[#f5f2eb] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-black/40">
-                {STATUS_LABELS[item.status]}
-              </span>
-
-              {item.status === "mastered" && (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf6ee] text-[#47724c]">
-                  <Check size={15} strokeWidth={2} />
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
-                <h2 className="min-w-0 break-words text-[36px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[42px]">
-                  {primaryText}
-                </h2>
-
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              aria-label="Share"
+              title="Share"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-black/65 transition-transform active:scale-95"
+            >
+              <Share size={16} strokeWidth={1.8} />
+            </button>
+          </div>
+        }
+        footer={
+          <div className="rounded-[20px] bg-[#f5f2eb] p-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
+              {(["new", "learning", "mastered"] as const).map((status) => (
                 <button
+                  key={status}
                   type="button"
-                  aria-label={`Pronounce ${primaryText}`}
-                  onClick={() => {
-                    onInteract("speak");
-                    speak(primaryText, primaryLanguage);
-                  }}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
+                  disabled={updating}
+                  onClick={() => onChangeStatus(status)}
+                  className={`min-h-[42px] whitespace-nowrap rounded-[15px] px-2 text-[11px] font-semibold transition-all disabled:opacity-40 ${
+                    item.status === status
+                      ? "bg-black text-white shadow-sm"
+                      : "text-black/45 hover:bg-white/60 hover:text-black"
+                  }`}
                 >
-                  <Volume2 size={17} strokeWidth={1.8} />
+                  {STATUS_LABELS[status]}
                 </button>
-              </div>
-
-              <div className="mt-5 flex items-center gap-3">
-                <p className="min-w-0 break-words text-[25px] font-medium leading-none tracking-[-0.03em] text-black/72">
-                  {secondaryText}
-                </p>
-
-                <button
-                  type="button"
-                  aria-label={`Pronounce ${secondaryText}`}
-                  onClick={() => {
-                    onInteract("speak");
-                    speak(secondaryText, secondaryLanguage);
-                  }}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/60 transition-transform active:scale-95"
-                >
-                  <Volume2 size={15} strokeWidth={1.8} />
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-2">
-                <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
-                  <span className="min-w-[38px] font-semibold uppercase tracking-[0.12em] text-black/28">
-                    EN
-                  </span>
-
-                  {englishPronunciation ? (
-                    <span className="text-black/48">
-                      {englishPronunciation}
-                    </span>
-                  ) : pronunciationLoading ? (
-                    <span className="inline-flex items-center gap-1.5 text-black/25">
-                      <LoaderCircle size={11} className="animate-spin" />
-                      Loading
-                    </span>
-                  ) : (
-                    <span className="text-black/28">
-                      Listen with the speaker
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
-                  <span className="min-w-[38px] font-semibold tracking-[0.08em] text-black/28">
-                    {chineseZhuyin ? "注音" : "拼音"}
-                  </span>
-
-                  <span
-                    className="text-black/48"
-                    style={{
-                      fontFamily:
-                        '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
-                    }}
-                  >
-                    {chineseZhuyin || chinesePinyin || "—"}
-                  </span>
-                </div>
-
-                <div className="flex min-h-5 flex-wrap items-center gap-2 pt-0.5 text-[11px]">
-                  {item.part_of_speech && (
-                    <span className="capitalize text-black/32">
-                      {item.part_of_speech}
-                    </span>
-                  )}
-
-                  {pronunciationError && (
-                    <>
-                      {item.part_of_speech && (
-                        <span className="text-black/15">•</span>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={onRetryPronunciation}
-                        className="text-black/28 underline decoration-black/15 underline-offset-4 transition-colors hover:text-black/55"
-                        title={pronunciationError}
-                      >
-                        Refresh pronunciation
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => onSendToPartner()}
-                aria-label="Send to Partner"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
-              >
-                <Send size={16} strokeWidth={1.8} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => void handleShare()}
-                aria-label="Share"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
-              >
-                <Share size={16} strokeWidth={1.8} />
-              </button>
+              ))}
             </div>
           </div>
-
-          {(englishExample || chineseExample) && (
-            <div className="mt-7 space-y-3">
-              {englishExample && (
-                <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
-                      English example
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onInteract("speak");
-                        speak(englishExample, "en-US");
-                      }}
-                      aria-label="Play English example sentence"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
-                    >
-                      <Volume2 size={15} strokeWidth={1.8} />
-                    </button>
-                  </div>
-
-                  <p className="mt-2 break-words text-[16px] leading-7 tracking-[-0.012em] text-black/82">
-                    {englishExample}
-                  </p>
-                </div>
-              )}
-
-              {chineseExample && (
-                <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
-                      中文例句
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onInteract("speak");
-                        speak(chineseExample, "zh-TW");
-                      }}
-                      aria-label="播放中文例句"
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
-                    >
-                      <Volume2 size={15} strokeWidth={1.8} />
-                    </button>
-                  </div>
-
-                  <p className="mt-2 break-words text-[15px] leading-7 tracking-[-0.01em] text-black/55">
-                    {chineseExample}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6 rounded-[20px] bg-[#f5f2eb] p-1.5">
-          <div className="grid grid-cols-3 gap-1.5">
-            {(["new", "learning", "mastered"] as const).map((status) => (
-              <button
-                key={status}
-                type="button"
-                disabled={updating}
-                onClick={() => onChangeStatus(status)}
-                className={`min-h-[42px] whitespace-nowrap rounded-[15px] px-2 text-[11px] font-semibold transition-all disabled:opacity-40 ${
-                  item.status === status
-                    ? "bg-black text-white shadow-sm"
-                    : "text-black/45 hover:bg-white/60 hover:text-black"
-                }`}
-              >
-                {STATUS_LABELS[status]}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </article>
+        }
+      />
+    </div>
   );
 }
