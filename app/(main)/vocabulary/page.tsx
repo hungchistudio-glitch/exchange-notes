@@ -1882,9 +1882,12 @@ function VocabularyCard({
 
   const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
 
-  const pronunciationGuide = learningChinese
-    ? pronunciation?.zhuyin
-    : pronunciation?.englishPronunciation;
+  const englishPronunciation =
+    pronunciation?.englishPronunciation?.trim() || "";
+
+  const chineseZhuyin = pronunciation?.zhuyin?.trim() || "";
+
+  const chinesePinyin = toPinyin(item.translation)?.trim() || "";
 
   useEffect(() => {
     onInteract("view");
@@ -2135,43 +2138,68 @@ function VocabularyCard({
                 </button>
               </div>
 
-              <div className="mt-4 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/36">
-                {pronunciationGuide ? (
+              <div className="mt-5 space-y-2">
+                <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+                  <span className="min-w-[38px] font-semibold uppercase tracking-[0.12em] text-black/28">
+                    EN
+                  </span>
+
+                  {englishPronunciation ? (
+                    <span className="text-black/48">
+                      {englishPronunciation}
+                    </span>
+                  ) : pronunciationLoading ? (
+                    <span className="inline-flex items-center gap-1.5 text-black/25">
+                      <LoaderCircle size={11} className="animate-spin" />
+                      Loading
+                    </span>
+                  ) : (
+                    <span className="text-black/28">
+                      Listen with the speaker
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex min-h-5 flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+                  <span className="min-w-[38px] font-semibold tracking-[0.08em] text-black/28">
+                    {chineseZhuyin ? "注音" : "拼音"}
+                  </span>
+
                   <span
-                    style={
-                      learningChinese
-                        ? {
-                            fontFamily:
-                              '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
-                          }
-                        : undefined
-                    }
+                    className="text-black/48"
+                    style={{
+                      fontFamily:
+                        '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
+                    }}
                   >
-                    {pronunciationGuide}
+                    {chineseZhuyin || chinesePinyin || "—"}
                   </span>
-                ) : pronunciationLoading ? (
-                  <span className="inline-flex items-center gap-1.5 text-black/25">
-                    <LoaderCircle size={11} className="animate-spin" />
-                    Loading pronunciation
-                  </span>
-                ) : pronunciationError ? (
-                  <button
-                    type="button"
-                    onClick={onRetryPronunciation}
-                    className="text-black/28 transition-colors hover:text-black/55"
-                    title={pronunciationError}
-                  >
-                    Retry pronunciation
-                  </button>
-                ) : null}
+                </div>
 
-                {pronunciationGuide && item.part_of_speech && (
-                  <span className="text-black/18">•</span>
-                )}
+                <div className="flex min-h-5 flex-wrap items-center gap-2 pt-0.5 text-[11px]">
+                  {item.part_of_speech && (
+                    <span className="capitalize text-black/32">
+                      {item.part_of_speech}
+                    </span>
+                  )}
 
-                {item.part_of_speech && (
-                  <span className="capitalize">{item.part_of_speech}</span>
-                )}
+                  {pronunciationError && (
+                    <>
+                      {item.part_of_speech && (
+                        <span className="text-black/15">•</span>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={onRetryPronunciation}
+                        className="text-black/28 underline decoration-black/15 underline-offset-4 transition-colors hover:text-black/55"
+                        title={pronunciationError}
+                      >
+                        Refresh pronunciation
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 

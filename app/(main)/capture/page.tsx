@@ -19,7 +19,11 @@ import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
-import type { VocabularyCategory, VocabularyItem } from "@/lib/types/app";
+import type {
+  AppLanguage,
+  VocabularyCategory,
+  VocabularyItem,
+} from "@/lib/types/app";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 
@@ -36,6 +40,11 @@ type IdentificationResult = {
 type CaptureDraft = {
   imageData?: string;
   fileName?: string;
+};
+
+type WordPronunciation = {
+  englishPronunciation: string;
+  zhuyin: string;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -72,6 +81,14 @@ export default function CameraPage() {
   const [imageData, setImageData] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<IdentificationResult | null>(null);
+  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+    null,
+  );
+  const [pronunciation, setPronunciation] = useState<WordPronunciation | null>(
+    null,
+  );
+  const [pronunciationLoading, setPronunciationLoading] = useState(false);
+  const [pronunciationError, setPronunciationError] = useState("");
 
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -88,6 +105,40 @@ export default function CameraPage() {
 
   useEffect(() => {
     setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLearningLanguage() {
+      try {
+        const supabase = createClient();
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const { data } = await supabase
+          .from("profiles")
+          .select("learning_language")
+          .eq("id", user.id)
+          .single();
+
+        if (active && data?.learning_language) {
+          setLearningLanguage(data.learning_language as AppLanguage);
+        }
+      } catch (profileError) {
+        console.warn("Could not load learning language:", profileError);
+      }
+    }
+
+    void loadLearningLanguage();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -395,6 +446,79 @@ export default function CameraPage() {
     }
   }
 
+  useEffect(() => {
+    if (!result) {
+      setPronunciation(null);
+      setPronunciationError("");
+      setPronunciationLoading(false);
+      return;
+    }
+
+    const currentResult = result;
+    const controller = new AbortController();
+
+    async function loadPronunciation() {
+      setPronunciationLoading(true);
+      setPronunciationError("");
+
+      try {
+        const response = await fetch("/api/word-pronunciation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            english: currentResult.englishName,
+            chinese: currentResult.chineseName,
+          }),
+        });
+
+        const data = (await response.json()) as Partial<WordPronunciation> & {
+          error?: string;
+        };
+
+        if (!response.ok || "error" in data) {
+          throw new Error(
+            "error" in data && data.error
+              ? data.error
+              : "Could not load pronunciation.",
+          );
+        }
+
+        setPronunciation({
+          englishPronunciation: data.englishPronunciation?.trim() || "",
+          zhuyin: data.zhuyin?.trim() || "",
+        });
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        console.warn("Could not load capture pronunciation:", requestError);
+
+        setPronunciationError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Could not load pronunciation.",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setPronunciationLoading(false);
+        }
+      }
+    }
+
+    void loadPronunciation();
+
+    return () => {
+      controller.abort();
+    };
+  }, [result]);
+
   async function saveToVocabulary() {
     if (!result || !imageData || saving || saved) return;
 
@@ -600,7 +724,51 @@ export default function CameraPage() {
     setPartnerPickerOpen(false);
   }
 
-  const pinyin = result ? toPinyin(result.chineseName) : null;
+  const learningChinese = learningLanguage === "traditional-chinese";
+
+  const englishPronunciation =
+    pronunciation?.englishPronunciation?.trim() || "";
+
+  const chineseZhuyin = pronunciation?.zhuyin?.trim() || "";
+
+  const chinesePinyin = result
+    ? toPinyin(result.chineseName)?.trim() || ""
+    : "";
+
+  const primaryText = result
+    ? learningChinese
+      ? result.chineseName
+      : result.englishName
+    : "";
+
+  const secondaryText = result
+    ? learningChinese
+      ? result.englishName
+      : result.chineseName
+    : "";
+
+  const primaryLanguage = learningChinese ? "zh-TW" : "en-US";
+  const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
+
+  const primaryPronunciation = learningChinese
+    ? chineseZhuyin || chinesePinyin
+    : englishPronunciation;
+
+  const secondaryPronunciation = learningChinese
+    ? englishPronunciation
+    : chineseZhuyin || chinesePinyin;
+
+  const primaryPronunciationLabel = learningChinese
+    ? chineseZhuyin
+      ? "注音"
+      : "拼音"
+    : "EN";
+
+  const secondaryPronunciationLabel = learningChinese
+    ? "EN"
+    : chineseZhuyin
+      ? "注音"
+      : "拼音";
 
   return (
     <main
@@ -797,49 +965,111 @@ export default function CameraPage() {
               <div className="mt-7">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h2 className="min-w-0 break-words text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[44px]">
-                        {result.englishName}
-                      </h2>
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-3">
+                          <h2 className="min-w-0 break-words text-[40px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[46px]">
+                            {primaryText}
+                          </h2>
 
-                      <button
-                        type="button"
-                        onClick={() => speak(result.englishName, "en-US")}
-                        aria-label="Play English pronunciation"
-                        title="English pronunciation"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
-                      >
-                        <Volume2 size={17} strokeWidth={1.8} />
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => speak(primaryText, primaryLanguage)}
+                            aria-label={`Play ${primaryText}`}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
+                          >
+                            <Volume2 size={17} strokeWidth={1.8} />
+                          </button>
+                        </div>
+
+                        <div className="mt-3 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/40">
+                          <span className="font-semibold uppercase tracking-[0.1em] text-black/25">
+                            {primaryPronunciationLabel}
+                          </span>
+
+                          {primaryPronunciation ? (
+                            <span>{primaryPronunciation}</span>
+                          ) : pronunciationLoading ? (
+                            <span className="inline-flex items-center gap-1.5 text-black/25">
+                              <LoaderCircle
+                                size={11}
+                                className="animate-spin"
+                              />
+                              Loading
+                            </span>
+                          ) : (
+                            <span className="text-black/25">
+                              Listen with speaker
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="mt-5 flex items-center gap-3">
-                      <p className="min-w-0 break-words text-[28px] font-medium leading-none tracking-[-0.035em]">
-                        {result.chineseName}
-                      </p>
+                    <div className="mt-6">
+                      <div className="flex items-center gap-3">
+                        <p className="min-w-0 break-words text-[26px] font-medium leading-none tracking-[-0.035em] text-black/72">
+                          {secondaryText}
+                        </p>
 
-                      <button
-                        type="button"
-                        onClick={() => speak(result.chineseName, "zh-TW")}
-                        aria-label="Play Chinese pronunciation"
-                        title="Chinese pronunciation"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
-                      >
-                        <Volume2 size={15} strokeWidth={1.8} />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            speak(secondaryText, secondaryLanguage)
+                          }
+                          aria-label={`Play ${secondaryText}`}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/60 transition-transform active:scale-95"
+                        >
+                          <Volume2 size={15} strokeWidth={1.8} />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/38">
+                        <span className="font-semibold uppercase tracking-[0.1em] text-black/25">
+                          {secondaryPronunciationLabel}
+                        </span>
+
+                        {secondaryPronunciation ? (
+                          <span>{secondaryPronunciation}</span>
+                        ) : pronunciationLoading ? (
+                          <span className="inline-flex items-center gap-1.5 text-black/25">
+                            <LoaderCircle size={11} className="animate-spin" />
+                            Loading
+                          </span>
+                        ) : (
+                          <span className="text-black/25">
+                            Listen with speaker
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-black/38">
-                      {pinyin && <span>{pinyin}</span>}
-
-                      {pinyin && result.partOfSpeech && (
-                        <span className="text-black/20">•</span>
-                      )}
-
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-black/32">
                       {result.partOfSpeech && (
                         <span className="capitalize">
                           {result.partOfSpeech.toLowerCase()}
                         </span>
+                      )}
+
+                      {pronunciationError && (
+                        <>
+                          {result.partOfSpeech && (
+                            <span className="text-black/15">•</span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPronunciation(null);
+                              setPronunciationError("");
+                              setResult({ ...result });
+                            }}
+                            className="underline decoration-black/15 underline-offset-4"
+                            title={pronunciationError}
+                          >
+                            Refresh pronunciation
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
