@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import jsQR from "jsqr";
-import { CheckCircle2, Info, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, XCircle } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -446,8 +446,12 @@ export default function FriendsPage() {
     <main className="min-h-screen bg-[#f4f1ea] px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
       <div className="mx-auto max-w-2xl">
         <header>
-          <Link href="/" className="text-sm font-bold text-black">
-            ← Home
+          <Link
+            href="/"
+            aria-label="Back to home"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-black transition-colors hover:bg-black/5 active:bg-black/10"
+          >
+            <ArrowLeft className="h-6 w-6" strokeWidth={2} />
           </Link>
 
           <p className="mt-8 text-sm font-bold uppercase tracking-[0.2em] text-neutral-500">
