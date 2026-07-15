@@ -16,7 +16,6 @@ import {
   BookmarkPlus,
   Check,
   FileText,
-  House,
   LogOut,
   Paperclip,
 } from "lucide-react";
@@ -528,7 +527,7 @@ function ConversationList() {
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] max-w-xl flex-col">
         <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
-          <div className="grid grid-cols-[40px_minmax(0,1fr)_76px] items-center">
+          <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
             <Link
               href="/"
               aria-label="Back to Exchange Notes"
@@ -542,16 +541,7 @@ function ConversationList() {
               Messages
             </h1>
 
-            <div className="flex items-center justify-self-end gap-1">
-              <Link
-                href="/home"
-                aria-label="Back to Home"
-                title="Back to Home"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition-colors hover:bg-black/[0.04] active:scale-95"
-              >
-                <House size={17} strokeWidth={1.8} />
-              </Link>
-
+            <div className="justify-self-end">
               <IconLogoutButton />
             </div>
           </div>
