@@ -13,28 +13,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ChangeEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
-import {
-  listFriends,
-  type FriendProfile,
-} from "@/lib/friends";
+import { listFriends, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
-import type {
-  VocabularyCategory,
-  VocabularyItem,
-} from "@/lib/types/app";
-import {
-  dataUrlToBlob,
-  safeImageExtension,
-} from "@/lib/vocabulary";
+import type { VocabularyCategory, VocabularyItem } from "@/lib/types/app";
+import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 
 type IdentificationResult = {
@@ -201,9 +187,7 @@ export default function CameraPage() {
       } else if (errorName === "NotFoundError") {
         setError("No camera was found on this device.");
       } else if (errorName === "NotReadableError") {
-        setError(
-          "The camera is already being used by another application.",
-        );
+        setError("The camera is already being used by another application.");
       } else {
         setError(
           "Camera access is unavailable. Try choosing an image instead.",
@@ -309,9 +293,7 @@ export default function CameraPage() {
     });
   }
 
-  async function handleSelectedFile(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  async function handleSelectedFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -359,11 +341,7 @@ export default function CameraPage() {
       return;
     }
 
-    const captured = drawToDataUrl(
-      video,
-      video.videoWidth,
-      video.videoHeight,
-    );
+    const captured = drawToDataUrl(video, video.videoWidth, video.videoHeight);
 
     if (!captured) {
       setError("Could not capture the image.");
@@ -397,14 +375,11 @@ export default function CameraPage() {
       });
 
       const data = (await response.json()) as
-        | IdentificationResult
-        | { error: string };
+        IdentificationResult | { error: string };
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data
-            ? data.error
-            : "Could not identify this image.",
+          "error" in data ? data.error : "Could not identify this image.",
         );
       }
 
@@ -442,20 +417,17 @@ export default function CameraPage() {
       const translation = result.chineseName.trim();
       const candidateKey = getVocabularyKey(word, translation);
 
-      const { data: existingItems, error: duplicateError } =
-        await supabase
-          .from("vocabulary_items")
-          .select("id, word, translation")
-          .eq("user_id", user.id);
+      const { data: existingItems, error: duplicateError } = await supabase
+        .from("vocabulary_items")
+        .select("id, word, translation")
+        .eq("user_id", user.id);
 
       if (duplicateError) throw duplicateError;
 
       const duplicate = (existingItems ?? []).some(
         (item) =>
-          getVocabularyKey(
-            item.word as string,
-            item.translation as string,
-          ) === candidateKey,
+          getVocabularyKey(item.word as string, item.translation as string) ===
+          candidateKey,
       );
 
       if (duplicate) {
@@ -498,9 +470,7 @@ export default function CameraPage() {
         });
 
       if (insertError) {
-        await supabase.storage
-          .from("vocabulary-images")
-          .remove([imagePath]);
+        await supabase.storage.from("vocabulary-images").remove([imagePath]);
 
         throw insertError;
       }
@@ -601,9 +571,7 @@ export default function CameraPage() {
       setPendingSharedVocabulary(sharedItem);
       setPartnerPickerOpen(false);
 
-      router.push(
-        `/messages?with=${encodeURIComponent(friendId)}`,
-      );
+      router.push(`/messages?with=${encodeURIComponent(friendId)}`);
     } catch (sendError) {
       console.error("Could not prepare shared word:", sendError);
 
@@ -638,8 +606,7 @@ export default function CameraPage() {
     <main
       className="min-h-screen bg-[#f5f2eb] px-4 pt-5 text-black"
       style={{
-        paddingBottom:
-          "calc(11.5rem + env(safe-area-inset-bottom))",
+        paddingBottom: "calc(11.5rem + env(safe-area-inset-bottom))",
       }}
     >
       <div className="mx-auto max-w-xl">
@@ -678,8 +645,8 @@ export default function CameraPage() {
             </h2>
 
             <p className="mt-4 max-w-xs text-[14px] leading-6 text-black/45">
-              Photograph something from everyday life and turn it
-              into a word you can remember.
+              Photograph something from everyday life and turn it into a word
+              you can remember.
             </p>
 
             <div className="mt-12 flex items-start justify-center gap-12">
@@ -692,10 +659,7 @@ export default function CameraPage() {
               >
                 <span className="flex h-20 w-20 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95">
                   {cameraStarting ? (
-                    <LoaderCircle
-                      size={25}
-                      className="animate-spin"
-                    />
+                    <LoaderCircle size={25} className="animate-spin" />
                   ) : (
                     <Camera size={26} strokeWidth={1.7} />
                   )}
@@ -708,9 +672,7 @@ export default function CameraPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  chooseImageInputRef.current?.click()
-                }
+                onClick={() => chooseImageInputRef.current?.click()}
                 aria-label="Choose Image"
                 className="flex w-24 flex-col items-center gap-3"
               >
@@ -726,8 +688,8 @@ export default function CameraPage() {
 
             {!cameraSupported && (
               <p className="mt-8 max-w-xs text-[12px] leading-5 text-black/35">
-                Live camera preview is not supported in this browser.
-                Tap Camera to use your device camera instead.
+                Live camera preview is not supported in this browser. Tap Camera
+                to use your device camera instead.
               </p>
             )}
           </section>
@@ -803,10 +765,7 @@ export default function CameraPage() {
                   className="flex h-12 items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-35"
                 >
                   {analyzing && (
-                    <LoaderCircle
-                      size={15}
-                      className="animate-spin"
-                    />
+                    <LoaderCircle size={15} className="animate-spin" />
                   )}
 
                   {analyzing ? "Identifying" : "Identify"}
@@ -823,85 +782,132 @@ export default function CameraPage() {
         )}
 
         {result && (
-          <section className="mt-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-xl">
-            <div className="p-5 sm:p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
+          <section className="mt-5 overflow-hidden rounded-[32px] border border-black/[0.055] bg-white shadow-[0_16px_50px_rgba(0,0,0,0.07)]">
+            <div className="px-5 pb-6 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
                   Identified word
                 </p>
 
-                <p className="text-[10px] uppercase tracking-[0.12em] text-black/30">
+                <span className="rounded-full bg-[#f5f2eb] px-3 py-1.5 text-[10px] font-medium capitalize tracking-[0.02em] text-black/40">
                   {result.confidence} confidence
-                </p>
+                </span>
               </div>
 
-              <div className="mt-5 flex items-start justify-between gap-5">
-                <div className="min-w-0 flex-1">
-                  <h2 className="break-words text-[34px] font-semibold leading-none tracking-[-0.045em]">
-                    {result.englishName}
-                  </h2>
+              <div className="mt-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <h2 className="min-w-0 break-words text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[44px]">
+                        {result.englishName}
+                      </h2>
 
-                  <p className="mt-4 break-words text-[27px] font-medium leading-none tracking-[-0.03em]">
-                    {result.chineseName}
-                  </p>
+                      <button
+                        type="button"
+                        onClick={() => speak(result.englishName, "en-US")}
+                        aria-label="Play English pronunciation"
+                        title="English pronunciation"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
+                      >
+                        <Volume2 size={17} strokeWidth={1.8} />
+                      </button>
+                    </div>
 
-                  <p className="mt-3 text-[12px] text-black/35">
-                    {[pinyin, result.partOfSpeech?.toLowerCase()]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
+                    <div className="mt-5 flex items-center gap-3">
+                      <p className="min-w-0 break-words text-[28px] font-medium leading-none tracking-[-0.035em]">
+                        {result.chineseName}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => speak(result.chineseName, "zh-TW")}
+                        aria-label="Play Chinese pronunciation"
+                        title="Chinese pronunciation"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
+                      >
+                        <Volume2 size={15} strokeWidth={1.8} />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-black/38">
+                      {pinyin && <span>{pinyin}</span>}
+
+                      {pinyin && result.partOfSpeech && (
+                        <span className="text-black/20">•</span>
+                      )}
+
+                      {result.partOfSpeech && (
+                        <span className="capitalize">
+                          {result.partOfSpeech.toLowerCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex shrink-0 flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      speak(result.englishName, "en-US")
-                    }
-                    aria-label="Play English pronunciation"
-                    title="English pronunciation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black transition-transform active:scale-95"
-                  >
-                    <Volume2 size={16} strokeWidth={1.8} />
-                  </button>
+              {(result.englishExample || result.chineseExample) && (
+                <div className="mt-7 space-y-3">
+                  {result.englishExample && (
+                    <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/32">
+                          English example
+                        </p>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      speak(result.chineseName, "zh-TW")
-                    }
-                    aria-label="Play Chinese pronunciation"
-                    title="Chinese pronunciation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black transition-transform active:scale-95"
-                  >
-                    <Volume2 size={16} strokeWidth={1.8} />
-                  </button>
+                        <button
+                          type="button"
+                          onClick={() => speak(result.englishExample, "en-US")}
+                          aria-label="Play English example sentence"
+                          title="English example sentence"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
+                        >
+                          <Volume2 size={15} strokeWidth={1.8} />
+                        </button>
+                      </div>
+
+                      <p className="mt-2 break-words text-[16px] leading-7 tracking-[-0.012em] text-black/85">
+                        {result.englishExample}
+                      </p>
+                    </div>
+                  )}
+
+                  {result.chineseExample && (
+                    <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/32">
+                          中文例句
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => speak(result.chineseExample, "zh-TW")}
+                          aria-label="播放中文例句"
+                          title="播放中文例句"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
+                        >
+                          <Volume2 size={15} strokeWidth={1.8} />
+                        </button>
+                      </div>
+
+                      <p className="mt-2 break-words text-[15px] leading-7 tracking-[-0.01em] text-black/58">
+                        {result.chineseExample}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div className="mt-6 border-t border-black/[0.07] pt-5">
-                <p className="text-[15px] leading-7 tracking-[-0.01em]">
-                  {result.englishExample}
-                </p>
-
-                <p className="mt-2 text-[14px] leading-7 text-black/40">
-                  {result.chineseExample}
-                </p>
-              </div>
+              )}
 
               <div className="mt-6 grid gap-2.5">
                 <button
                   type="button"
                   onClick={() => void saveToVocabulary()}
                   disabled={saving || saved}
-                  className="flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-4 text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-50"
+                  className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-50"
                 >
                   {saving ? (
                     <>
-                      <LoaderCircle
-                        size={15}
-                        className="animate-spin"
-                      />
+                      <LoaderCircle size={15} className="animate-spin" />
                       Saving
                     </>
                   ) : saved ? (
@@ -918,26 +924,20 @@ export default function CameraPage() {
                   type="button"
                   onClick={() => void openPartnerPicker()}
                   disabled={sending || loadingPartners}
-                  className="flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 py-4 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
+                  className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
                 >
                   {loadingPartners ? (
-                    <LoaderCircle
-                      size={15}
-                      className="animate-spin"
-                    />
+                    <LoaderCircle size={15} className="animate-spin" />
                   ) : (
                     <Send size={15} strokeWidth={1.8} />
                   )}
 
-                  {loadingPartners
-                    ? "Loading Partners"
-                    : "Send to Partner"}
+                  {loadingPartners ? "Loading Partners" : "Send to Partner"}
                 </button>
               </div>
             </div>
           </section>
         )}
-
 
         {partnerPickerOpen && (
           <div
@@ -955,8 +955,7 @@ export default function CameraPage() {
               onClick={(event) => event.stopPropagation()}
               className="w-full max-w-xl overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
               style={{
-                paddingBottom:
-                  "max(env(safe-area-inset-bottom), 18px)",
+                paddingBottom: "max(env(safe-area-inset-bottom), 18px)",
               }}
             >
               <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
@@ -990,20 +989,16 @@ export default function CameraPage() {
                 <div className="space-y-2">
                   {partners.map((partner) => {
                     const partnerName =
-                      partner.displayName ||
-                      `@${partner.exchangeId}`;
+                      partner.displayName || `@${partner.exchangeId}`;
 
-                    const isSelected =
-                      selectedPartnerId === partner.id;
+                    const isSelected = selectedPartnerId === partner.id;
 
                     return (
                       <button
                         key={partner.id}
                         type="button"
                         disabled={sending}
-                        onClick={() =>
-                          void sendToSelectedPartner(partner.id)
-                        }
+                        onClick={() => void sendToSelectedPartner(partner.id)}
                         className="flex w-full items-center gap-3 rounded-[20px] border border-black/[0.06] bg-[#f8f6f1] px-4 py-3.5 text-left transition-transform active:scale-[0.99] disabled:opacity-50"
                       >
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white">
@@ -1015,10 +1010,7 @@ export default function CameraPage() {
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <UserRound
-                              size={19}
-                              strokeWidth={1.8}
-                            />
+                            <UserRound size={19} strokeWidth={1.8} />
                           )}
                         </span>
 
@@ -1033,10 +1025,7 @@ export default function CameraPage() {
                         </span>
 
                         {isSelected && sending ? (
-                          <LoaderCircle
-                            size={17}
-                            className="animate-spin"
-                          />
+                          <LoaderCircle size={17} className="animate-spin" />
                         ) : (
                           <Send
                             size={16}

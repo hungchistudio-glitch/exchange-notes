@@ -52,8 +52,7 @@ const SORT_LABELS: Record<SortMode, string> = {
   trending: "Trending",
 };
 
-const PRONUNCIATION_CACHE_KEY =
-  "exchange-notes-pronunciation-cache-v5";
+const PRONUNCIATION_CACHE_KEY = "exchange-notes-pronunciation-cache-v5";
 
 type WordPronunciation = {
   englishPronunciation: string;
@@ -62,10 +61,7 @@ type WordPronunciation = {
 
 type PronunciationCache = Record<string, WordPronunciation>;
 
-function getPronunciationCacheKey(
-  english: string,
-  chinese: string,
-) {
+function getPronunciationCacheKey(english: string, chinese: string) {
   return `${normalizeVocabularyText(english)}::${normalizeVocabularyText(
     chinese,
   )}`;
@@ -75,9 +71,7 @@ function readPronunciationCache(): PronunciationCache {
   if (typeof window === "undefined") return {};
 
   try {
-    const raw = window.localStorage.getItem(
-      PRONUNCIATION_CACHE_KEY,
-    );
+    const raw = window.localStorage.getItem(PRONUNCIATION_CACHE_KEY);
 
     if (!raw) return {};
 
@@ -101,10 +95,7 @@ function writePronunciationCache(
     const cache = readPronunciationCache();
     cache[key] = pronunciation;
 
-    window.localStorage.setItem(
-      PRONUNCIATION_CACHE_KEY,
-      JSON.stringify(cache),
-    );
+    window.localStorage.setItem(PRONUNCIATION_CACHE_KEY, JSON.stringify(cache));
   } catch {
     // Private browsing or storage limits can block localStorage.
   }
@@ -113,12 +104,7 @@ function writePronunciationCache(
 const INTERACTION_STORAGE_KEY = "vocabulary-interactions-v1";
 
 type InteractionType =
-  | "view"
-  | "search"
-  | "speak"
-  | "share"
-  | "send"
-  | "status";
+  "view" | "search" | "speak" | "share" | "send" | "status";
 
 type InteractionRecord = {
   word: string;
@@ -140,7 +126,9 @@ function readInteractionMap(): InteractionMap {
   try {
     const raw = window.localStorage.getItem(INTERACTION_STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as unknown) : {};
-    return parsed && typeof parsed === "object" ? (parsed as InteractionMap) : {};
+    return parsed && typeof parsed === "object"
+      ? (parsed as InteractionMap)
+      : {};
   } catch {
     return {};
   }
@@ -344,7 +332,6 @@ export default function VocabularyPage() {
     };
   }, []);
 
-
   const uniqueItems = useMemo(() => {
     const seen = new Set<string>();
 
@@ -359,8 +346,12 @@ export default function VocabularyPage() {
     });
   }, [items]);
 
-  const [pronunciations, setPronunciations] = useState<Record<string, WordPronunciation>>({});
-  const [pronunciationErrors, setPronunciationErrors] = useState<Record<string, string>>({});
+  const [pronunciations, setPronunciations] = useState<
+    Record<string, WordPronunciation>
+  >({});
+  const [pronunciationErrors, setPronunciationErrors] = useState<
+    Record<string, string>
+  >({});
   const [pronunciationLoading, setPronunciationLoading] = useState(false);
   const attemptedPronunciationKeysRef = useRef<Set<string>>(new Set());
 
@@ -374,7 +365,10 @@ export default function VocabularyPage() {
         const cacheKey = getPronunciationCacheKey(item.word, item.translation);
         const cached = readPronunciationCache()[cacheKey];
 
-        if (cached && (cached.englishPronunciation.trim() || cached.zhuyin.trim())) {
+        if (
+          cached &&
+          (cached.englishPronunciation.trim() || cached.zhuyin.trim())
+        ) {
           cacheHits[cacheKey] = cached;
           attemptedPronunciationKeysRef.current.add(cacheKey);
           return;
@@ -385,7 +379,11 @@ export default function VocabularyPage() {
         }
 
         attemptedPronunciationKeysRef.current.add(cacheKey);
-        toFetch.push({ key: cacheKey, english: item.word, chinese: item.translation });
+        toFetch.push({
+          key: cacheKey,
+          english: item.word,
+          chinese: item.translation,
+        });
       });
 
       if (Object.keys(cacheHits).length > 0) {
@@ -428,7 +426,10 @@ export default function VocabularyPage() {
         uniqueToFetch.forEach(({ key }) => {
           const result = data.results?.[key];
 
-          if (result && (result.englishPronunciation.trim() || result.zhuyin.trim())) {
+          if (
+            result &&
+            (result.englishPronunciation.trim() || result.zhuyin.trim())
+          ) {
             nextPronunciations[key] = result;
             writePronunciationCache(key, result);
           } else {
@@ -442,7 +443,9 @@ export default function VocabularyPage() {
         console.warn("Could not load pronunciation batch:", batchError);
 
         const message =
-          batchError instanceof Error ? batchError.message : "Could not load pronunciation.";
+          batchError instanceof Error
+            ? batchError.message
+            : "Could not load pronunciation.";
 
         const nextErrors: Record<string, string> = {};
         uniqueToFetch.forEach(({ key }) => {
@@ -469,7 +472,10 @@ export default function VocabularyPage() {
       try {
         const cache = readPronunciationCache();
         delete cache[cacheKey];
-        window.localStorage.setItem(PRONUNCIATION_CACHE_KEY, JSON.stringify(cache));
+        window.localStorage.setItem(
+          PRONUNCIATION_CACHE_KEY,
+          JSON.stringify(cache),
+        );
       } catch {
         // Ignore storage errors.
       }
@@ -550,7 +556,9 @@ export default function VocabularyPage() {
         if ((rankingFailure as Error).name === "AbortError") return;
 
         console.error("AI ranking failed:", rankingFailure);
-        setRankingError("AI ranking is temporarily unavailable. Using smart fallback.");
+        setRankingError(
+          "AI ranking is temporarily unavailable. Using smart fallback.",
+        );
         setRankedIds([]);
       } finally {
         if (!controller.signal.aborted) setRankingLoading(false);
@@ -628,7 +636,8 @@ export default function VocabularyPage() {
           : 0;
 
       const scoreDifference =
-        score(bInteraction) + statusScore[b.status] * 10 -
+        score(bInteraction) +
+        statusScore[b.status] * 10 -
         (score(aInteraction) + statusScore[a.status] * 10);
 
       if (scoreDifference !== 0) return scoreDifference;
@@ -704,7 +713,6 @@ export default function VocabularyPage() {
     setLookupError("");
     setLookupStatus("idle");
   }
-
 
   function getLookupShareText() {
     if (!lookupResult) return "";
@@ -950,8 +958,14 @@ export default function VocabularyPage() {
 
         {sortMode !== "new" && (rankingLoading || rankingError) && (
           <div className="mt-3 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.12em] text-neutral-400">
-            <span>{rankingLoading ? `Personalizing ${SORT_LABELS[sortMode]}…` : rankingError}</span>
-            {rankingLoading && <LoaderCircle size={14} className="shrink-0 animate-spin" />}
+            <span>
+              {rankingLoading
+                ? `Personalizing ${SORT_LABELS[sortMode]}…`
+                : rankingError}
+            </span>
+            {rankingLoading && (
+              <LoaderCircle size={14} className="shrink-0 animate-spin" />
+            )}
           </div>
         )}
 
@@ -1043,11 +1057,17 @@ export default function VocabularyPage() {
         ) : (
           <section className="mt-6 space-y-4">
             {visibleItems.map((item) => {
-              const cacheKey = getPronunciationCacheKey(item.word, item.translation);
+              const cacheKey = getPronunciationCacheKey(
+                item.word,
+                item.translation,
+              );
               const cardPronunciation = pronunciations[cacheKey] ?? null;
-              const cardPronunciationError = pronunciationErrors[cacheKey] ?? "";
+              const cardPronunciationError =
+                pronunciationErrors[cacheKey] ?? "";
               const cardPronunciationLoading =
-                !cardPronunciation && !cardPronunciationError && pronunciationLoading;
+                !cardPronunciation &&
+                !cardPronunciationError &&
+                pronunciationLoading;
 
               return (
                 <VocabularyCard
@@ -1060,7 +1080,9 @@ export default function VocabularyPage() {
                   pronunciationError={cardPronunciationError}
                   onRetryPronunciation={() => retryPronunciation(item)}
                   onChangeStatus={(status) => void changeStatus(item, status)}
-                  onSendToPartner={(sharedItem) => handleSendToPartner(sharedItem ?? item)}
+                  onSendToPartner={(sharedItem) =>
+                    handleSendToPartner(sharedItem ?? item)
+                  }
                   onInteract={(type) => recordInteraction(item, type)}
                   onItemAdded={(newItem) =>
                     setItems((current) => [newItem, ...current])
@@ -1071,8 +1093,6 @@ export default function VocabularyPage() {
           </section>
         )}
       </div>
-
-
 
       {aiSearchOpen && (
         <div
@@ -1190,7 +1210,8 @@ export default function VocabularyPage() {
 
                   <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-neutral-500">
                     Search any English or Traditional Chinese word. Gemini will
-                    generate its translation, part of speech and natural examples.
+                    generate its translation, part of speech and natural
+                    examples.
                   </p>
                 </div>
               )}
@@ -1362,7 +1383,6 @@ export default function VocabularyPage() {
   );
 }
 
-
 function SortBottomSheet({
   value,
   onChange,
@@ -1403,7 +1423,9 @@ function SortBottomSheet({
 
         <div className="mx-auto max-w-xl">
           <div className="flex items-center justify-between border-b border-black/10 pb-4">
-            <p className="text-xs font-medium uppercase tracking-[0.14em]">Sort By</p>
+            <p className="text-xs font-medium uppercase tracking-[0.14em]">
+              Sort By
+            </p>
             <button
               type="button"
               onClick={onClose}
@@ -1850,24 +1872,15 @@ function VocabularyCard({
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
 
-  const learningChinese =
-    learningLanguage === "traditional-chinese";
+  const learningChinese = learningLanguage === "traditional-chinese";
 
-  const primaryText = learningChinese
-    ? item.translation
-    : item.word;
+  const primaryText = learningChinese ? item.translation : item.word;
 
-  const secondaryText = learningChinese
-    ? item.word
-    : item.translation;
+  const secondaryText = learningChinese ? item.word : item.translation;
 
-  const primaryLanguage = learningChinese
-    ? "zh-TW"
-    : "en-US";
+  const primaryLanguage = learningChinese ? "zh-TW" : "en-US";
 
-  const secondaryLanguage = learningChinese
-    ? "en-US"
-    : "zh-TW";
+  const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
 
   const pronunciationGuide = learningChinese
     ? pronunciation?.zhuyin
@@ -2038,167 +2051,226 @@ function VocabularyCard({
     }
   }
 
+  const englishExample = item.example_sentence?.trim() || "";
+  const chineseExample = item.translated_example?.trim() || "";
+
   return (
-    <article className="overflow-hidden rounded-[28px] bg-white">
+    <article className="overflow-hidden rounded-[30px] border border-black/[0.055] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.055)]">
       {item.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.image_url}
-          alt={item.word}
-          className="h-48 w-full object-cover"
-        />
+        <div className="relative aspect-[16/10] overflow-hidden bg-[#ebe7de]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.image_url}
+            alt={item.word}
+            className="h-full w-full object-cover"
+          />
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
+
+          <span className="absolute bottom-4 left-4 rounded-full border border-white/30 bg-white/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-black/55 backdrop-blur-xl">
+            {STATUS_LABELS[item.status]}
+          </span>
+        </div>
       )}
 
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div ref={contentRef} className="relative min-w-0 flex-1">
-            <SelectionToolbar
-              selection={selection}
-              addingWord={addingWord}
-              addedWord={addedWord}
-              onAddWord={() => void handleAddSelectionToVocabulary()}
-              onSendToPartner={handleSelectionSendToPartner}
-            />
+      <div className="p-5 sm:p-6">
+        <div ref={contentRef} className="relative">
+          <SelectionToolbar
+            selection={selection}
+            addingWord={addingWord}
+            addedWord={addedWord}
+            onAddWord={() => void handleAddSelectionToVocabulary()}
+            onSendToPartner={handleSelectionSendToPartner}
+          />
 
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="break-words text-3xl font-black sm:text-4xl">
-                {primaryText}
-              </h2>
+          {!item.image_url && (
+            <div className="mb-6 flex items-center justify-between">
+              <span className="rounded-full bg-[#f5f2eb] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-black/40">
+                {STATUS_LABELS[item.status]}
+              </span>
 
-              <button
-                type="button"
-                aria-label={`Pronounce ${primaryText}`}
-                onClick={() => {
-                  onInteract("speak");
-                  speak(primaryText, primaryLanguage);
-                }}
-                className="shrink-0 rounded-full bg-[#f1eee7] p-2 text-black"
-              >
-                <Volume2 size={16} />
-              </button>
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <p className="break-words text-base text-neutral-500 sm:text-lg">
-                {secondaryText}
-              </p>
-
-              <button
-                type="button"
-                aria-label={`Pronounce ${secondaryText}`}
-                onClick={() => {
-                  onInteract("speak");
-                  speak(secondaryText, secondaryLanguage);
-                }}
-                className="shrink-0 rounded-full bg-[#f1eee7] p-1.5 text-black"
-              >
-                <Volume2 size={14} />
-              </button>
-            </div>
-
-            <div className="mt-2 flex min-h-5 flex-wrap items-center gap-1.5">
-              {pronunciationGuide ? (
-                <p
-                  className="text-sm text-neutral-400"
-                  style={
-                    learningChinese
-                      ? {
-                          fontFamily:
-                            '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
-                        }
-                      : undefined
-                  }
-                >
-                  {pronunciationGuide}
-                </p>
-              ) : pronunciationLoading ? (
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-neutral-300">
-                  <LoaderCircle
-                    size={11}
-                    className="animate-spin"
-                  />
-                  Loading pronunciation
-                </span>
-              ) : pronunciationError ? (
-                <button
-                  type="button"
-                  onClick={onRetryPronunciation}
-                  className="text-[11px] text-red-500 underline underline-offset-2"
-                  title={pronunciationError}
-                >
-                  Pronunciation unavailable · Retry
-                </button>
-              ) : null}
-
-              {item.part_of_speech && (
-                <span className="text-[11px] text-neutral-300">
-                  {pronunciationGuide ? "· " : ""}
-                  {item.part_of_speech}
+              {item.status === "mastered" && (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf6ee] text-[#47724c]">
+                  <Check size={15} strokeWidth={2} />
                 </span>
               )}
             </div>
+          )}
 
-            {(item.example_sentence || item.translated_example) && (
-              <div className="mt-5 border-t border-neutral-100 pt-3">
-                <p className="break-words leading-7">
-                  {learningChinese
-                    ? item.translated_example
-                    : item.example_sentence}
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="min-w-0 break-words text-[36px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[42px]">
+                  {primaryText}
+                </h2>
+
+                <button
+                  type="button"
+                  aria-label={`Pronounce ${primaryText}`}
+                  onClick={() => {
+                    onInteract("speak");
+                    speak(primaryText, primaryLanguage);
+                  }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
+                >
+                  <Volume2 size={17} strokeWidth={1.8} />
+                </button>
+              </div>
+
+              <div className="mt-5 flex items-center gap-3">
+                <p className="min-w-0 break-words text-[25px] font-medium leading-none tracking-[-0.03em] text-black/72">
+                  {secondaryText}
                 </p>
-                {(learningChinese
-                  ? item.example_sentence
-                  : item.translated_example) && (
-                  <p className="mt-1 break-words text-sm leading-6 text-neutral-400">
-                    {learningChinese
-                      ? item.example_sentence
-                      : item.translated_example}
-                  </p>
+
+                <button
+                  type="button"
+                  aria-label={`Pronounce ${secondaryText}`}
+                  onClick={() => {
+                    onInteract("speak");
+                    speak(secondaryText, secondaryLanguage);
+                  }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/60 transition-transform active:scale-95"
+                >
+                  <Volume2 size={15} strokeWidth={1.8} />
+                </button>
+              </div>
+
+              <div className="mt-4 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/36">
+                {pronunciationGuide ? (
+                  <span
+                    style={
+                      learningChinese
+                        ? {
+                            fontFamily:
+                              '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
+                          }
+                        : undefined
+                    }
+                  >
+                    {pronunciationGuide}
+                  </span>
+                ) : pronunciationLoading ? (
+                  <span className="inline-flex items-center gap-1.5 text-black/25">
+                    <LoaderCircle size={11} className="animate-spin" />
+                    Loading pronunciation
+                  </span>
+                ) : pronunciationError ? (
+                  <button
+                    type="button"
+                    onClick={onRetryPronunciation}
+                    className="text-black/28 transition-colors hover:text-black/55"
+                    title={pronunciationError}
+                  >
+                    Retry pronunciation
+                  </button>
+                ) : null}
+
+                {pronunciationGuide && item.part_of_speech && (
+                  <span className="text-black/18">•</span>
+                )}
+
+                {item.part_of_speech && (
+                  <span className="capitalize">{item.part_of_speech}</span>
                 )}
               </div>
-            )}
+            </div>
+
+            <div className="flex shrink-0 flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => onSendToPartner()}
+                aria-label="Send to Partner"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
+              >
+                <Send size={16} strokeWidth={1.8} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                aria-label="Share"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95"
+              >
+                <Share size={16} strokeWidth={1.8} />
+              </button>
+            </div>
           </div>
 
-          <div className="flex shrink-0 flex-col gap-2">
-            {item.status === "mastered" && (
-              <span className="rounded-full bg-green-100 p-2 text-green-700">
-                <Check size={16} />
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => onSendToPartner()}
-              aria-label="Send to Partner"
-              className="rounded-full bg-[#f1eee7] p-2 text-black transition-colors hover:bg-[#e9e4d8]"
-            >
-              <Send size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleShare()}
-              aria-label="Share"
-              className="rounded-full bg-[#f1eee7] p-2 text-black transition-colors hover:bg-[#e9e4d8]"
-            >
-              <Share size={16} />
-            </button>
-          </div>
+          {(englishExample || chineseExample) && (
+            <div className="mt-7 space-y-3">
+              {englishExample && (
+                <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
+                      English example
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onInteract("speak");
+                        speak(englishExample, "en-US");
+                      }}
+                      aria-label="Play English example sentence"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
+                    >
+                      <Volume2 size={15} strokeWidth={1.8} />
+                    </button>
+                  </div>
+
+                  <p className="mt-2 break-words text-[16px] leading-7 tracking-[-0.012em] text-black/82">
+                    {englishExample}
+                  </p>
+                </div>
+              )}
+
+              {chineseExample && (
+                <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
+                      中文例句
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onInteract("speak");
+                        speak(chineseExample, "zh-TW");
+                      }}
+                      aria-label="播放中文例句"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
+                    >
+                      <Volume2 size={15} strokeWidth={1.8} />
+                    </button>
+                  </div>
+
+                  <p className="mt-2 break-words text-[15px] leading-7 tracking-[-0.01em] text-black/55">
+                    {chineseExample}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          {(["new", "learning", "mastered"] as const).map((status) => (
-            <button
-              key={status}
-              type="button"
-              disabled={updating}
-              onClick={() => onChangeStatus(status)}
-              className={`whitespace-nowrap rounded-[16px] px-2 py-3 text-xs font-black disabled:opacity-40 ${
-                item.status === status
-                  ? "bg-black text-white"
-                  : "bg-[#f1eee7] text-black"
-              }`}
-            >
-              {STATUS_LABELS[status]}
-            </button>
-          ))}
+        <div className="mt-6 rounded-[20px] bg-[#f5f2eb] p-1.5">
+          <div className="grid grid-cols-3 gap-1.5">
+            {(["new", "learning", "mastered"] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                disabled={updating}
+                onClick={() => onChangeStatus(status)}
+                className={`min-h-[42px] whitespace-nowrap rounded-[15px] px-2 text-[11px] font-semibold transition-all disabled:opacity-40 ${
+                  item.status === status
+                    ? "bg-black text-white shadow-sm"
+                    : "text-black/45 hover:bg-white/60 hover:text-black"
+                }`}
+              >
+                {STATUS_LABELS[status]}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </article>
