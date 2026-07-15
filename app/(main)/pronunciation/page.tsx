@@ -49,6 +49,27 @@ const ENGLISH_CONSONANTS: EnglishSound[] = [
   { symbol: "/r/", example: "red", cue: "English r" },
 ];
 
+const IPA_SOUND_TEXT: Record<string, string> = {
+  "/iː/": "ee",
+  "/ɪ/": "ih",
+  "/e/": "eh",
+  "/æ/": "aah",
+  "/ɑː/": "ah",
+  "/ʌ/": "uh",
+  "/ɔː/": "aw",
+  "/ʊ/": "short oo",
+  "/uː/": "long oo",
+  "/ə/": "uh",
+  "/θ/": "th",
+  "/ð/": "the",
+  "/ʃ/": "sh",
+  "/ʒ/": "zh",
+  "/tʃ/": "ch",
+  "/dʒ/": "j",
+  "/ŋ/": "ng",
+  "/r/": "rr",
+};
+
 const ZHUYIN_INITIALS: ZhuyinSound[] = [
   { symbol: "ㄅ", example: "八", reading: "ㄅㄚ" },
   { symbol: "ㄆ", example: "怕", reading: "ㄆㄚˋ" },
@@ -259,31 +280,57 @@ function EnglishSoundCard({
 }: {
   sound: EnglishSound;
 }) {
+  const isolatedSound =
+    IPA_SOUND_TEXT[sound.symbol] || sound.example;
+
   return (
-    <button
-      type="button"
-      onClick={() => speak(sound.example, "en-US")}
-      className="group flex min-h-[145px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5 text-left transition-transform active:scale-[0.98]"
-    >
+    <article className="flex min-h-[178px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <span className="text-[28px] font-semibold tracking-[-0.04em]">
           {sound.symbol}
         </span>
 
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]">
+        <button
+          type="button"
+          onClick={() => speak(isolatedSound, "en-US")}
+          aria-label={`Play the ${sound.symbol} sound`}
+          title="Play sound"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+        >
           <Volume2 size={15} strokeWidth={1.8} />
-        </span>
+        </button>
       </div>
 
-      <div>
+      <div className="mt-6">
         <p className="text-[18px] font-semibold">
           {sound.example}
         </p>
+
         <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-black/35">
           {sound.cue}
         </p>
       </div>
-    </button>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => speak(isolatedSound, "en-US")}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#f5f2eb] text-[10px] font-semibold uppercase tracking-[0.1em]"
+        >
+          <Volume2 size={13} strokeWidth={1.8} />
+          Sound
+        </button>
+
+        <button
+          type="button"
+          onClick={() => speak(sound.example, "en-US")}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-black text-[10px] font-semibold uppercase tracking-[0.1em] text-white"
+        >
+          <Volume2 size={13} strokeWidth={1.8} />
+          Word
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -376,30 +423,53 @@ function ZhuyinSoundCard({
   sound: ZhuyinSound;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => speak(sound.example, "zh-TW")}
-      className="flex min-h-[145px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5 text-left transition-transform active:scale-[0.98]"
-    >
+    <article className="flex min-h-[178px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <span className="text-[34px] font-semibold leading-none">
           {sound.symbol}
         </span>
 
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]">
+        <button
+          type="button"
+          onClick={() => speak(sound.reading, "zh-TW")}
+          aria-label={`播放注音 ${sound.reading}`}
+          title="播放注音"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+        >
           <Volume2 size={15} strokeWidth={1.8} />
-        </span>
+        </button>
       </div>
 
-      <div>
+      <div className="mt-6">
         <p className="text-[20px] font-semibold">
           {sound.example}
         </p>
+
         <p className="mt-1 text-[13px] text-black/35">
           {sound.reading}
         </p>
       </div>
-    </button>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => speak(sound.reading, "zh-TW")}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#f5f2eb] text-[11px] font-semibold"
+        >
+          <Volume2 size={13} strokeWidth={1.8} />
+          注音
+        </button>
+
+        <button
+          type="button"
+          onClick={() => speak(sound.example, "zh-TW")}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-black text-[11px] font-semibold text-white"
+        >
+          <Volume2 size={13} strokeWidth={1.8} />
+          單字
+        </button>
+      </div>
+    </article>
   );
 }
 
