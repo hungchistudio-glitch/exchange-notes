@@ -30,10 +30,10 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
-import { pinyinToZhuyin } from "@/lib/zhuyin";
 import { speak } from "@/lib/speech";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { listFriends, type FriendProfile } from "@/lib/friends";
+import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import type {
   AppLanguage,
   VocabularyCategory,
@@ -947,10 +947,6 @@ export default function VocabularyPage() {
     ? (toPinyin(lookupChineseText) ?? "").trim()
     : "";
 
-  const lookupChineseZhuyin = lookupChinesePinyin
-    ? pinyinToZhuyin(lookupChinesePinyin)
-    : "";
-
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -1324,21 +1320,12 @@ export default function VocabularyPage() {
                         </div>
 
                         <div className="mt-3 rounded-[18px] bg-[#f7f4ee] px-4 py-3">
-                          <p className="text-[12px] leading-6 text-neutral-500">
-                            <span className="mr-3 font-semibold text-neutral-700">
-                              拼音
-                            </span>
-                            {lookupChinesePinyin || "—"}
-                          </p>
+                          <PronunciationBlock
+                            english={lookupResult.englishName}
+                            chinese={lookupResult.chineseName}
+                          />
 
-                          <p className="text-[12px] leading-6 text-neutral-500">
-                            <span className="mr-3 font-semibold text-neutral-700">
-                              注音
-                            </span>
-                            {lookupChineseZhuyin || "—"}
-                          </p>
-
-                          <p className="mt-1 text-[11px] capitalize tracking-[0.04em] text-neutral-400">
+                          <p className="mt-2 text-[11px] capitalize tracking-[0.04em] text-neutral-400">
                             {lookupResult.partOfSpeech}
                           </p>
                         </div>
