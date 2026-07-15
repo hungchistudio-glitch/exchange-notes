@@ -1,7 +1,6 @@
 "use client";
 
 import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
-import { getPronunciationData } from "@/lib/pronunciation";
 import SwipeableConversationCard from "@/components/messages/SwipeableConversationCard";
 import {
   FormEvent,
@@ -22,6 +21,8 @@ import {
   Paperclip,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { toPinyin } from "@/lib/pinyin";
+import { getLocalEnglishPronunciation } from "@/lib/localPronunciation";
 import { speak } from "@/lib/speech";
 import {
   getOrCreateConversationWithFriend,
@@ -75,7 +76,16 @@ function SharedVocabularyMessage({
 }) {
   const [learningLanguage, setLearningLanguage] =
     useState<AppLanguage>("english");
+
+  const [pronunciation, setPronunciation] = useState<{
+    englishPronunciation: string;
+    zhuyin: string;
+  } | null>(null);
+
+  const [pronunciationError, setPronunciationError] = useState("");
+
   const [savingSharedWord, setSavingSharedWord] = useState(false);
+
   const [sharedWordSaved, setSharedWordSaved] = useState(false);
 
   useEffect(() => {
@@ -107,23 +117,28 @@ function SharedVocabularyMessage({
 
     void loadLearningLanguage();
 
+    const chinesePinyin = toPinyin(item.translation?.trim() || "");
+
+    const englishPronunciation = getLocalEnglishPronunciation(
+      item.word?.trim() || "",
+    );
+
     return () => {
       active = false;
     };
   }, []);
 
-  const englishText = item.word?.trim() || "";
-  const chineseText = item.translation?.trim() || "";
   const learningChinese = learningLanguage === "traditional-chinese";
 
-  const pronunciation = getPronunciationData({
-    english: englishText,
-    chinese: chineseText,
-  });
+  const englishText = item.word?.trim() || "";
+  const chineseText = item.translation?.trim() || "";
 
-  const chinesePronunciation = [pronunciation.pinyin, pronunciation.zhuyin]
-    .filter(Boolean)
-    .join(" · ");
+  const englishPronunciation =
+  getLocalEnglishPronunciation(englishText);
+
+  const chineseZhuyin = "";
+
+  const chinesePinyin = toPinyin(chineseText)?.trim() || "";
 
   const primaryText = learningChinese ? chineseText : englishText;
 
@@ -134,12 +149,24 @@ function SharedVocabularyMessage({
   const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
 
   const primaryPronunciation = learningChinese
-    ? chinesePronunciation
-    : pronunciation.english;
+    ? chineseZhuyin || chinesePinyin
+    : englishPronunciation;
 
   const secondaryPronunciation = learningChinese
-    ? pronunciation.english
-    : chinesePronunciation;
+    ? englishPronunciation
+    : chineseZhuyin || chinesePinyin;
+
+  const primaryPronunciationLabel = learningChinese
+    ? chineseZhuyin
+      ? "注音"
+      : "拼音"
+    : "EN";
+
+  const secondaryPronunciationLabel = learningChinese
+    ? "EN"
+    : chineseZhuyin
+      ? "注音"
+      : "拼音";
 
   const englishExample = item.example_sentence?.trim() || "";
 
@@ -150,7 +177,10 @@ function SharedVocabularyMessage({
       return;
     }
 
-    if (!englishText || !chineseText) return;
+    const englishWord = item.word?.trim() || "";
+    const chineseWord = item.translation?.trim() || "";
+
+    if (!englishWord || !chineseWord) return;
 
     setSavingSharedWord(true);
 
@@ -161,8 +191,8 @@ function SharedVocabularyMessage({
         .from("vocabulary_items")
         .select("id")
         .eq("user_id", currentUserId)
-        .ilike("word", englishText)
-        .ilike("translation", chineseText)
+        .ilike("word", englishWord)
+        .ilike("translation", chineseWord)
         .limit(1);
 
       if (lookupError) throw lookupError;
@@ -176,8 +206,8 @@ function SharedVocabularyMessage({
         .from("vocabulary_items")
         .insert({
           user_id: currentUserId,
-          word: englishText,
-          translation: chineseText,
+          word: englishWord,
+          translation: chineseWord,
           language: item.language || "english",
           part_of_speech: item.part_of_speech || null,
           example_sentence: item.example_sentence || null,
@@ -207,14 +237,14 @@ function SharedVocabularyMessage({
       primary={{
         label: learningChinese ? "Traditional Chinese" : "English",
         text: primaryText,
-        pronunciationLabel: "",
+        pronunciationLabel: primaryPronunciationLabel,
         pronunciation: primaryPronunciation,
         language: primaryLanguage,
       }}
       secondary={{
         label: learningChinese ? "English" : "Traditional Chinese",
         text: secondaryText,
-        pronunciationLabel: "",
+        pronunciationLabel: secondaryPronunciationLabel,
         pronunciation: secondaryPronunciation,
         language: secondaryLanguage,
       }}

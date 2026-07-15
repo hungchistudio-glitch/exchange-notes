@@ -15,8 +15,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
-import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
+import { getPronunciationData } from "@/lib/pronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -40,11 +40,6 @@ type IdentificationResult = {
 type CaptureDraft = {
   imageData?: string;
   fileName?: string;
-};
-
-type WordPronunciation = {
-  englishPronunciation: string;
-  zhuyin: string;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -84,11 +79,6 @@ export default function CameraPage() {
   const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
     null,
   );
-  const [pronunciation, setPronunciation] = useState<WordPronunciation | null>(
-    null,
-  );
-  const [pronunciationLoading, setPronunciationLoading] = useState(false);
-  const [pronunciationError, setPronunciationError] = useState("");
 
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -446,79 +436,6 @@ export default function CameraPage() {
     }
   }
 
-  useEffect(() => {
-    if (!result) {
-      setPronunciation(null);
-      setPronunciationError("");
-      setPronunciationLoading(false);
-      return;
-    }
-
-    const currentResult = result;
-    const controller = new AbortController();
-
-    async function loadPronunciation() {
-      setPronunciationLoading(true);
-      setPronunciationError("");
-
-      try {
-        const response = await fetch("/api/word-pronunciation", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-          body: JSON.stringify({
-            english: currentResult.englishName,
-            chinese: currentResult.chineseName,
-          }),
-        });
-
-        const data = (await response.json()) as Partial<WordPronunciation> & {
-          error?: string;
-        };
-
-        if (!response.ok || "error" in data) {
-          throw new Error(
-            "error" in data && data.error
-              ? data.error
-              : "Could not load pronunciation.",
-          );
-        }
-
-        setPronunciation({
-          englishPronunciation: data.englishPronunciation?.trim() || "",
-          zhuyin: data.zhuyin?.trim() || "",
-        });
-      } catch (requestError) {
-        if (
-          requestError instanceof DOMException &&
-          requestError.name === "AbortError"
-        ) {
-          return;
-        }
-
-        console.warn("Could not load capture pronunciation:", requestError);
-
-        setPronunciationError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Could not load pronunciation.",
-        );
-      } finally {
-        if (!controller.signal.aborted) {
-          setPronunciationLoading(false);
-        }
-      }
-    }
-
-    void loadPronunciation();
-
-    return () => {
-      controller.abort();
-    };
-  }, [result]);
-
   async function saveToVocabulary() {
     if (!result || !imageData || saving || saved) return;
 
@@ -733,14 +650,22 @@ export default function CameraPage() {
 
   const learningChinese = learningLanguage === "traditional-chinese";
 
-  const englishPronunciation =
-    pronunciation?.englishPronunciation?.trim() || "";
+  const localPronunciation = result
+    ? getPronunciationData({
+        english: result.englishName,
+        chinese: result.chineseName,
+      })
+    : null;
 
-  const chineseZhuyin = pronunciation?.zhuyin?.trim() || "";
+  const englishPronunciation = localPronunciation?.english?.trim() || "";
 
-  const chinesePinyin = result
-    ? toPinyin(result.chineseName)?.trim() || ""
-    : "";
+  const chinesePinyin = localPronunciation?.pinyin?.trim() || "";
+
+  const chineseZhuyin = localPronunciation?.zhuyin?.trim() || "";
+
+  const chinesePronunciation = [chinesePinyin, chineseZhuyin]
+    .filter(Boolean)
+    .join(" · ");
 
   const primaryText = result
     ? learningChinese
@@ -758,12 +683,12 @@ export default function CameraPage() {
   const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
 
   const primaryPronunciation = learningChinese
-    ? chineseZhuyin || chinesePinyin
+    ? chinesePronunciation
     : englishPronunciation;
 
   const secondaryPronunciation = learningChinese
     ? englishPronunciation
-    : chineseZhuyin || chinesePinyin;
+    : chinesePronunciation;
 
   const primaryPronunciationLabel = learningChinese
     ? chineseZhuyin
@@ -994,14 +919,10 @@ export default function CameraPage() {
                   : null
               }
               partOfSpeech={result.partOfSpeech?.toLowerCase()}
-              pronunciationLoading={pronunciationLoading}
-              pronunciationError={pronunciationError}
+              pronunciationLoading={false}
+              pronunciationError=""
               onSpeak={speak}
-              onRetryPronunciation={() => {
-                setPronunciation(null);
-                setPronunciationError("");
-                setResult({ ...result });
-              }}
+              onRetryPronunciation={() => undefined}
               actions={
                 <div className="grid gap-2.5">
                   <button

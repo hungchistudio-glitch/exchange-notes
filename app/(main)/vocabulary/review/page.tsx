@@ -58,7 +58,6 @@ export default function ReviewPage() {
           ]);
 
         if (queueError) throw queueError;
-
         if (!active) return;
 
         setItems((queueData ?? []) as VocabularyItem[]);
@@ -77,9 +76,7 @@ export default function ReviewPage() {
             : "Could not load today's review.",
         );
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
@@ -115,13 +112,12 @@ export default function ReviewPage() {
           <Link
             href="/vocabulary"
             aria-label="Back to Vocabulary"
-            title="Back to Vocabulary"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_5px_18px_rgba(0,0,0,0.05)] transition-transform active:scale-95"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_5px_18px_rgba(0,0,0,0.05)]"
           >
             <ArrowLeft size={18} strokeWidth={1.8} />
           </Link>
 
-          <div className="min-w-0 text-center">
+          <div className="text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
               Learning
             </p>
@@ -150,16 +146,8 @@ export default function ReviewPage() {
         )}
 
         {!loading && error && (
-          <section className="mt-10 rounded-[28px] bg-white p-6 shadow-[0_12px_38px_rgba(0,0,0,0.05)]">
+          <section className="mt-10 rounded-[28px] bg-white p-6">
             <p className="text-[13px] leading-6 text-red-600">{error}</p>
-
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-5 min-h-[48px] w-full rounded-full bg-black px-5 text-[13px] font-semibold text-white"
-            >
-              Try Again
-            </button>
           </section>
         )}
 
@@ -169,17 +157,9 @@ export default function ReviewPage() {
               <CheckCircle2 size={25} strokeWidth={1.8} />
             </span>
 
-            <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
-              Review complete
-            </p>
-
-            <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.045em]">
+            <h2 className="mt-6 text-[30px] font-semibold">
               You&apos;re all caught up.
             </h2>
-
-            <p className="mx-auto mt-3 max-w-xs text-[14px] leading-6 text-black/45">
-              There are no vocabulary cards due for review right now.
-            </p>
 
             <Link
               href="/vocabulary"
@@ -191,64 +171,40 @@ export default function ReviewPage() {
         )}
 
         {!loading && !error && firstItem && (
-          <>
-            <section className="mt-8 flex items-center justify-between px-1">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
-                  Review queue
-                </p>
-
-                <p className="mt-1 text-[15px] font-semibold">
-                  {items.length} {items.length === 1 ? "word" : "words"} ready
-                </p>
+          <section className="mt-8 overflow-hidden rounded-[34px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.07)]">
+            {firstItem.image_url && (
+              <div className="aspect-[16/10] overflow-hidden bg-[#ebe7de]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={firstItem.image_url}
+                  alt={firstItem.word}
+                  className="h-full w-full object-cover"
+                />
               </div>
+            )}
 
-              <span className="rounded-full bg-white px-3.5 py-2 text-[11px] font-semibold text-black/45 shadow-[0_5px_18px_rgba(0,0,0,0.04)]">
-                1 / {items.length}
-              </span>
-            </section>
+            <div className="px-6 pb-7 pt-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">
+                Review queue · {items.length}
+              </p>
 
-            <section className="mt-5 overflow-hidden rounded-[34px] bg-white shadow-[0_18px_55px_rgba(0,0,0,0.07)]">
-              {firstItem.image_url && (
-                <div className="aspect-[16/10] overflow-hidden bg-[#ebe7de]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={firstItem.image_url}
-                    alt={firstItem.word}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
+              <h2 className="mt-7 break-words text-[44px] font-semibold leading-[0.95]">
+                {primaryText}
+              </h2>
 
-              <div className="px-6 pb-7 pt-6 sm:px-8">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">
-                  Front
-                </p>
+              <p className="mt-5 text-[22px] font-medium text-black/45">
+                {secondaryText}
+              </p>
 
-                <h2 className="mt-7 break-words text-[44px] font-semibold leading-[0.95] tracking-[-0.055em]">
-                  {primaryText}
-                </h2>
-
-                <p className="mt-5 break-words text-[22px] font-medium leading-tight tracking-[-0.025em] text-black/45">
-                  {secondaryText}
-                </p>
-
-                {firstItem.part_of_speech && (
-                  <p className="mt-5 text-[11px] capitalize text-black/30">
-                    {firstItem.part_of_speech}
-                  </p>
-                )}
-
-                <Link
-                  href={`/vocabulary/review/session`}
-                  className="mt-8 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[13px] font-semibold text-white transition-transform active:scale-[0.99]"
-                >
-                  Start Review
-                  <ArrowRight size={16} strokeWidth={1.8} />
-                </Link>
-              </div>
-            </section>
-          </>
+              <Link
+                href="/vocabulary/review/session"
+                className="mt-8 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[13px] font-semibold text-white"
+              >
+                Start Review
+                <ArrowRight size={16} strokeWidth={1.8} />
+              </Link>
+            </div>
+          </section>
         )}
       </div>
     </main>
