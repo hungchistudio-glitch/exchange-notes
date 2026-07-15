@@ -226,15 +226,24 @@ function ConversationList() {
   return (
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] max-w-xl flex-col">
-        <header className="sticky top-0 z-10 border-b border-black/10 bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <Link href="/" className="text-[11px] font-medium uppercase tracking-[0.12em] text-neutral-500">
-                ← Exchange Notes
-              </Link>
-              <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]">Messages</h1>
+        <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
+          <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
+            <Link
+              href="/"
+              aria-label="Back to Exchange Notes"
+              title="Back"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition-colors hover:bg-black/[0.04] active:scale-95"
+            >
+              <ArrowLeft size={18} strokeWidth={1.7} />
+            </Link>
+
+            <h1 className="min-w-0 truncate px-3 text-center text-[17px] font-semibold tracking-[-0.02em] text-black">
+              Messages
+            </h1>
+
+            <div className="justify-self-end">
+              <IconLogoutButton />
             </div>
-            <IconLogoutButton />
           </div>
         </header>
 
