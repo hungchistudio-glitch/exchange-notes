@@ -17,12 +17,9 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
-import {
-  getOrCreateConversationWithFriend,
-  listFriends,
-  type FriendProfile,
-} from "@/lib/friends";
+import { listFriends, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import type {
   AppLanguage,
   VocabularyCategory,
@@ -690,34 +687,22 @@ export default function CameraPage() {
         confidence: result.confidence,
         category: result.category,
         status: "new",
-        image_url: imageData,
+
+        // Privacy-first sharing:
+        // the original photo stays only on the Capture screen.
+        image_url: null,
+
         created_at: now,
         updated_at: now,
       };
 
-      const conversationId = await getOrCreateConversationWithFriend(
-        supabase,
-        user.id,
-        friendId,
-      );
-
-      const { error: messageError } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        body: `__SHARED_VOCABULARY__:${JSON.stringify(sharedItem)}`,
-        attachment_url: null,
-        attachment_type: null,
-        attachment_name: null,
-        shared_article: null,
-      });
-
-      if (messageError) throw messageError;
+      setPendingSharedVocabulary(sharedItem);
 
       setPartnerPickerOpen(false);
       setSending(false);
       setSelectedPartnerId(null);
 
-      router.push(`/messages?with=${encodeURIComponent(friendId)}`);
+      window.location.assign(`/messages?with=${encodeURIComponent(friendId)}`);
     } catch (sendError) {
       console.error("Could not prepare shared word:", sendError);
 
