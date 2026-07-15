@@ -26,6 +26,10 @@ type ZhuyinSound = {
   example: string;
   translation: string;
   reading: string;
+
+  // Browser speech engines cannot reliably pronounce raw Zhuyin.
+  // This uses a real Mandarin syllable with the intended sound.
+  soundAudio: string;
 };
 
 type ToneItem = {
@@ -188,46 +192,268 @@ const ENGLISH_CONSONANTS: EnglishSound[] = [
 ];
 
 const ZHUYIN_INITIALS: ZhuyinSound[] = [
-  { symbol: "ㄅ", example: "八", translation: "eight", reading: "ㄅㄚ" },
-  { symbol: "ㄆ", example: "怕", translation: "afraid", reading: "ㄆㄚˋ" },
-  { symbol: "ㄇ", example: "媽", translation: "mother", reading: "ㄇㄚ" },
-  { symbol: "ㄈ", example: "發", translation: "send / issue", reading: "ㄈㄚ" },
-  { symbol: "ㄉ", example: "大", translation: "big", reading: "ㄉㄚˋ" },
-  { symbol: "ㄊ", example: "他", translation: "he", reading: "ㄊㄚ" },
-  { symbol: "ㄋ", example: "你", translation: "you", reading: "ㄋㄧˇ" },
-  { symbol: "ㄌ", example: "來", translation: "come", reading: "ㄌㄞˊ" },
-  { symbol: "ㄍ", example: "高", translation: "tall", reading: "ㄍㄠ" },
-  { symbol: "ㄎ", example: "看", translation: "look", reading: "ㄎㄢˋ" },
-  { symbol: "ㄏ", example: "好", translation: "good", reading: "ㄏㄠˇ" },
-  { symbol: "ㄐ", example: "家", translation: "home", reading: "ㄐㄧㄚ" },
-  { symbol: "ㄑ", example: "去", translation: "go", reading: "ㄑㄩˋ" },
-  { symbol: "ㄒ", example: "小", translation: "small", reading: "ㄒㄧㄠˇ" },
-  { symbol: "ㄓ", example: "中", translation: "middle", reading: "ㄓㄨㄥ" },
-  { symbol: "ㄔ", example: "吃", translation: "eat", reading: "ㄔ" },
-  { symbol: "ㄕ", example: "是", translation: "to be", reading: "ㄕˋ" },
-  { symbol: "ㄖ", example: "日", translation: "day", reading: "ㄖˋ" },
-  { symbol: "ㄗ", example: "早", translation: "early", reading: "ㄗㄠˇ" },
-  { symbol: "ㄘ", example: "菜", translation: "vegetable", reading: "ㄘㄞˋ" },
-  { symbol: "ㄙ", example: "三", translation: "three", reading: "ㄙㄢ" },
+  {
+    symbol: "ㄅ",
+    example: "八",
+    translation: "eight",
+    reading: "ㄅㄚ",
+    soundAudio: "波",
+  },
+  {
+    symbol: "ㄆ",
+    example: "怕",
+    translation: "afraid",
+    reading: "ㄆㄚˋ",
+    soundAudio: "坡",
+  },
+  {
+    symbol: "ㄇ",
+    example: "媽",
+    translation: "mother",
+    reading: "ㄇㄚ",
+    soundAudio: "摸",
+  },
+  {
+    symbol: "ㄈ",
+    example: "發",
+    translation: "send / issue",
+    reading: "ㄈㄚ",
+    soundAudio: "佛",
+  },
+  {
+    symbol: "ㄉ",
+    example: "大",
+    translation: "big",
+    reading: "ㄉㄚˋ",
+    soundAudio: "得",
+  },
+  {
+    symbol: "ㄊ",
+    example: "他",
+    translation: "he",
+    reading: "ㄊㄚ",
+    soundAudio: "特",
+  },
+  {
+    symbol: "ㄋ",
+    example: "你",
+    translation: "you",
+    reading: "ㄋㄧˇ",
+    soundAudio: "呢",
+  },
+  {
+    symbol: "ㄌ",
+    example: "來",
+    translation: "come",
+    reading: "ㄌㄞˊ",
+    soundAudio: "勒",
+  },
+  {
+    symbol: "ㄍ",
+    example: "高",
+    translation: "tall",
+    reading: "ㄍㄠ",
+    soundAudio: "哥",
+  },
+  {
+    symbol: "ㄎ",
+    example: "看",
+    translation: "look",
+    reading: "ㄎㄢˋ",
+    soundAudio: "科",
+  },
+  {
+    symbol: "ㄏ",
+    example: "好",
+    translation: "good",
+    reading: "ㄏㄠˇ",
+    soundAudio: "喝",
+  },
+  {
+    symbol: "ㄐ",
+    example: "家",
+    translation: "home",
+    reading: "ㄐㄧㄚ",
+    soundAudio: "基",
+  },
+  {
+    symbol: "ㄑ",
+    example: "去",
+    translation: "go",
+    reading: "ㄑㄩˋ",
+    soundAudio: "七",
+  },
+  {
+    symbol: "ㄒ",
+    example: "小",
+    translation: "small",
+    reading: "ㄒㄧㄠˇ",
+    soundAudio: "西",
+  },
+  {
+    symbol: "ㄓ",
+    example: "中",
+    translation: "middle",
+    reading: "ㄓㄨㄥ",
+    soundAudio: "知",
+  },
+  {
+    symbol: "ㄔ",
+    example: "吃",
+    translation: "eat",
+    reading: "ㄔ",
+    soundAudio: "吃",
+  },
+  {
+    symbol: "ㄕ",
+    example: "是",
+    translation: "to be",
+    reading: "ㄕˋ",
+    soundAudio: "詩",
+  },
+  {
+    symbol: "ㄖ",
+    example: "日",
+    translation: "day",
+    reading: "ㄖˋ",
+    soundAudio: "日",
+  },
+  {
+    symbol: "ㄗ",
+    example: "早",
+    translation: "early",
+    reading: "ㄗㄠˇ",
+    soundAudio: "資",
+  },
+  {
+    symbol: "ㄘ",
+    example: "菜",
+    translation: "vegetable",
+    reading: "ㄘㄞˋ",
+    soundAudio: "疵",
+  },
+  {
+    symbol: "ㄙ",
+    example: "三",
+    translation: "three",
+    reading: "ㄙㄢ",
+    soundAudio: "思",
+  },
 ];
 
 const ZHUYIN_FINALS: ZhuyinSound[] = [
-  { symbol: "ㄚ", example: "啊", translation: "ah", reading: "ㄚ" },
-  { symbol: "ㄛ", example: "喔", translation: "oh", reading: "ㄛ" },
-  { symbol: "ㄜ", example: "餓", translation: "hungry", reading: "ㄜˋ" },
-  { symbol: "ㄝ", example: "也", translation: "also", reading: "ㄧㄝˇ" },
-  { symbol: "ㄞ", example: "愛", translation: "love", reading: "ㄞˋ" },
-  { symbol: "ㄟ", example: "黑", translation: "black", reading: "ㄏㄟ" },
-  { symbol: "ㄠ", example: "好", translation: "good", reading: "ㄏㄠˇ" },
-  { symbol: "ㄡ", example: "口", translation: "mouth", reading: "ㄎㄡˇ" },
-  { symbol: "ㄢ", example: "安", translation: "peace", reading: "ㄢ" },
-  { symbol: "ㄣ", example: "很", translation: "very", reading: "ㄏㄣˇ" },
-  { symbol: "ㄤ", example: "忙", translation: "busy", reading: "ㄇㄤˊ" },
-  { symbol: "ㄥ", example: "冷", translation: "cold", reading: "ㄌㄥˇ" },
-  { symbol: "ㄦ", example: "二", translation: "two", reading: "ㄦˋ" },
-  { symbol: "ㄧ", example: "一", translation: "one", reading: "ㄧ" },
-  { symbol: "ㄨ", example: "五", translation: "five", reading: "ㄨˇ" },
-  { symbol: "ㄩ", example: "雨", translation: "rain", reading: "ㄩˇ" },
+  {
+    symbol: "ㄚ",
+    example: "啊",
+    translation: "ah",
+    reading: "ㄚ",
+    soundAudio: "啊",
+  },
+  {
+    symbol: "ㄛ",
+    example: "喔",
+    translation: "oh",
+    reading: "ㄛ",
+    soundAudio: "喔",
+  },
+  {
+    symbol: "ㄜ",
+    example: "餓",
+    translation: "hungry",
+    reading: "ㄜˋ",
+    soundAudio: "鵝",
+  },
+  {
+    symbol: "ㄝ",
+    example: "也",
+    translation: "also",
+    reading: "ㄧㄝˇ",
+    soundAudio: "耶",
+  },
+  {
+    symbol: "ㄞ",
+    example: "愛",
+    translation: "love",
+    reading: "ㄞˋ",
+    soundAudio: "哀",
+  },
+  {
+    symbol: "ㄟ",
+    example: "黑",
+    translation: "black",
+    reading: "ㄏㄟ",
+    soundAudio: "欸",
+  },
+  {
+    symbol: "ㄠ",
+    example: "好",
+    translation: "good",
+    reading: "ㄏㄠˇ",
+    soundAudio: "凹",
+  },
+  {
+    symbol: "ㄡ",
+    example: "口",
+    translation: "mouth",
+    reading: "ㄎㄡˇ",
+    soundAudio: "歐",
+  },
+  {
+    symbol: "ㄢ",
+    example: "安",
+    translation: "peace",
+    reading: "ㄢ",
+    soundAudio: "安",
+  },
+  {
+    symbol: "ㄣ",
+    example: "很",
+    translation: "very",
+    reading: "ㄏㄣˇ",
+    soundAudio: "恩",
+  },
+  {
+    symbol: "ㄤ",
+    example: "忙",
+    translation: "busy",
+    reading: "ㄇㄤˊ",
+    soundAudio: "昂",
+  },
+  {
+    symbol: "ㄥ",
+    example: "冷",
+    translation: "cold",
+    reading: "ㄌㄥˇ",
+    soundAudio: "鞥",
+  },
+  {
+    symbol: "ㄦ",
+    example: "二",
+    translation: "two",
+    reading: "ㄦˋ",
+    soundAudio: "兒",
+  },
+  {
+    symbol: "ㄧ",
+    example: "一",
+    translation: "one",
+    reading: "ㄧ",
+    soundAudio: "一",
+  },
+  {
+    symbol: "ㄨ",
+    example: "五",
+    translation: "five",
+    reading: "ㄨˇ",
+    soundAudio: "屋",
+  },
+  {
+    symbol: "ㄩ",
+    example: "雨",
+    translation: "rain",
+    reading: "ㄩˇ",
+    soundAudio: "迂",
+  },
 ];
 
 const TONES: ToneItem[] = [
@@ -566,14 +792,20 @@ function ZhuyinSoundCard({
   return (
     <article className="flex min-h-[220px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="text-[38px] font-semibold leading-none">
+        <span
+          className="text-[38px] font-semibold leading-none"
+          style={{
+            fontFamily:
+              '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
+          }}
+        >
           {sound.symbol}
         </span>
 
         <button
           type="button"
-          onClick={() => speak(sound.reading, "zh-TW")}
-          aria-label={`播放注音 ${sound.reading}`}
+          onClick={() => speak(sound.soundAudio, "zh-TW")}
+          aria-label={`播放注音 ${sound.symbol} 的發音`}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
         >
           <Volume2 size={16} strokeWidth={1.8} />
@@ -603,7 +835,13 @@ function ZhuyinSoundCard({
         </div>
 
         <div className="mt-4 border-t border-black/[0.06] pt-3">
-          <p className="text-[13px] text-black/35">
+          <p
+            className="text-[13px] text-black/35"
+            style={{
+              fontFamily:
+                '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
+            }}
+          >
             {sound.reading}
           </p>
         </div>
@@ -621,8 +859,8 @@ function ToneCard({
     <article className="flex items-center gap-4 rounded-[23px] border border-black/[0.06] bg-white px-5 py-4">
       <button
         type="button"
-        onClick={() => speak(tone.reading, "zh-TW")}
-        aria-label={`播放 ${tone.chineseLabel}`}
+        onClick={() => speak(tone.example, "zh-TW")}
+        aria-label={`播放 ${tone.chineseLabel} 的聲調`}
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-[21px] text-white transition-transform active:scale-95"
       >
         {tone.symbol}
