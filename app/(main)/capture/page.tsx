@@ -7,7 +7,9 @@ import {
   ImagePlus,
   LoaderCircle,
   Send,
+  UserRound,
   Volume2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +22,10 @@ import {
 
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
+import {
+  listFriends,
+  type FriendProfile,
+} from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import type {
   VocabularyCategory,
@@ -86,6 +92,13 @@ export default function CameraPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [sending, setSending] = useState(false);
+
+  const [partnerPickerOpen, setPartnerPickerOpen] = useState(false);
+  const [partners, setPartners] = useState<FriendProfile[]>([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
@@ -508,10 +521,50 @@ export default function CameraPage() {
     }
   }
 
-  async function sendToPartner() {
+  async function openPartnerPicker() {
+    if (!result || loadingPartners) return;
+
+    setError("");
+    setLoadingPartners(true);
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Please log in before sharing a word.");
+      }
+
+      const friends = await listFriends(supabase, user.id);
+
+      if (friends.length === 0) {
+        throw new Error(
+          "You don't have any learning partners yet. Add a friend first.",
+        );
+      }
+
+      setPartners(friends);
+      setPartnerPickerOpen(true);
+    } catch (partnerError) {
+      setError(
+        partnerError instanceof Error
+          ? partnerError.message
+          : "Could not load your learning partners.",
+      );
+    } finally {
+      setLoadingPartners(false);
+    }
+  }
+
+  async function sendToSelectedPartner(friendId: string) {
     if (!result || sending) return;
 
     setSending(true);
+    setSelectedPartnerId(friendId);
     setError("");
 
     try {
@@ -519,13 +572,18 @@ export default function CameraPage() {
 
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Please log in before sharing a word.");
+      }
 
       const now = new Date().toISOString();
 
       const sharedItem: VocabularyItem = {
         id: `capture-${crypto.randomUUID()}`,
-        user_id: user?.id ?? "",
+        user_id: user.id,
         word: result.englishName.trim(),
         translation: result.chineseName.trim(),
         language: "english",
@@ -541,7 +599,11 @@ export default function CameraPage() {
       };
 
       setPendingSharedVocabulary(sharedItem);
-      router.push("/messages");
+      setPartnerPickerOpen(false);
+
+      router.push(
+        `/messages?with=${encodeURIComponent(friendId)}`,
+      );
     } catch (sendError) {
       console.error("Could not prepare shared word:", sendError);
 
@@ -552,6 +614,7 @@ export default function CameraPage() {
       );
 
       setSending(false);
+      setSelectedPartnerId(null);
     }
   }
 
@@ -565,6 +628,8 @@ export default function CameraPage() {
     setAnalyzing(false);
     setSaving(false);
     setSending(false);
+    setSelectedPartnerId(null);
+    setPartnerPickerOpen(false);
   }
 
   const pinyin = result ? toPinyin(result.chineseName) : null;
@@ -851,11 +916,11 @@ export default function CameraPage() {
 
                 <button
                   type="button"
-                  onClick={() => void sendToPartner()}
-                  disabled={sending}
+                  onClick={() => void openPartnerPicker()}
+                  disabled={sending || loadingPartners}
                   className="flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 py-4 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
                 >
-                  {sending ? (
+                  {loadingPartners ? (
                     <LoaderCircle
                       size={15}
                       className="animate-spin"
@@ -864,11 +929,128 @@ export default function CameraPage() {
                     <Send size={15} strokeWidth={1.8} />
                   )}
 
-                  Send to Partner
+                  {loadingPartners
+                    ? "Loading Partners"
+                    : "Send to Partner"}
                 </button>
               </div>
             </div>
           </section>
+        )}
+
+
+        {partnerPickerOpen && (
+          <div
+            className="fixed inset-0 z-[180] flex items-end justify-center bg-black/25 backdrop-blur-[3px] sm:items-center"
+            onClick={() => {
+              if (!sending) {
+                setPartnerPickerOpen(false);
+              }
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="partner-picker-title"
+              onClick={(event) => event.stopPropagation()}
+              className="w-full max-w-xl overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+              style={{
+                paddingBottom:
+                  "max(env(safe-area-inset-bottom), 18px)",
+              }}
+            >
+              <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+
+              <header className="flex items-center justify-between border-b border-black/[0.07] px-5 pb-4 pt-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
+                    Learning partners
+                  </p>
+
+                  <h2
+                    id="partner-picker-title"
+                    className="mt-1 text-xl font-semibold tracking-[-0.025em]"
+                  >
+                    Send this word to
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPartnerPickerOpen(false)}
+                  disabled={sending}
+                  aria-label="Close partner picker"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb] disabled:opacity-40"
+                >
+                  <X size={16} strokeWidth={1.8} />
+                </button>
+              </header>
+
+              <div className="max-h-[55dvh] overflow-y-auto px-4 py-4">
+                <div className="space-y-2">
+                  {partners.map((partner) => {
+                    const partnerName =
+                      partner.displayName ||
+                      `@${partner.exchangeId}`;
+
+                    const isSelected =
+                      selectedPartnerId === partner.id;
+
+                    return (
+                      <button
+                        key={partner.id}
+                        type="button"
+                        disabled={sending}
+                        onClick={() =>
+                          void sendToSelectedPartner(partner.id)
+                        }
+                        className="flex w-full items-center gap-3 rounded-[20px] border border-black/[0.06] bg-[#f8f6f1] px-4 py-3.5 text-left transition-transform active:scale-[0.99] disabled:opacity-50"
+                      >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white">
+                          {partner.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={partner.avatarUrl}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <UserRound
+                              size={19}
+                              strokeWidth={1.8}
+                            />
+                          )}
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold tracking-[-0.015em]">
+                            {partnerName}
+                          </span>
+
+                          <span className="mt-0.5 block truncate text-[11px] text-black/40">
+                            @{partner.exchangeId}
+                          </span>
+                        </span>
+
+                        {isSelected && sending ? (
+                          <LoaderCircle
+                            size={17}
+                            className="animate-spin"
+                          />
+                        ) : (
+                          <Send
+                            size={16}
+                            strokeWidth={1.7}
+                            className="text-black/40"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          </div>
         )}
 
         <canvas ref={canvasRef} className="hidden" />
