@@ -52,6 +52,64 @@ const SORT_LABELS: Record<SortMode, string> = {
   trending: "Trending",
 };
 
+const PRONUNCIATION_CACHE_KEY =
+  "exchange-notes-pronunciation-cache-v1";
+
+type WordPronunciation = {
+  englishPronunciation: string;
+  zhuyin: string;
+};
+
+type PronunciationCache = Record<string, WordPronunciation>;
+
+function getPronunciationCacheKey(
+  english: string,
+  chinese: string,
+) {
+  return `${normalizeVocabularyText(english)}::${normalizeVocabularyText(
+    chinese,
+  )}`;
+}
+
+function readPronunciationCache(): PronunciationCache {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const raw = window.localStorage.getItem(
+      PRONUNCIATION_CACHE_KEY,
+    );
+
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw) as unknown;
+
+    return parsed && typeof parsed === "object"
+      ? (parsed as PronunciationCache)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function writePronunciationCache(
+  key: string,
+  pronunciation: WordPronunciation,
+) {
+  if (typeof window === "undefined") return;
+
+  try {
+    const cache = readPronunciationCache();
+    cache[key] = pronunciation;
+
+    window.localStorage.setItem(
+      PRONUNCIATION_CACHE_KEY,
+      JSON.stringify(cache),
+    );
+  } catch {
+    // Private browsing or storage limits can block localStorage.
+  }
+}
+
 const INTERACTION_STORAGE_KEY = "vocabulary-interactions-v1";
 
 type InteractionType =
@@ -867,6 +925,7 @@ export default function VocabularyPage() {
                 <VocabularyCard
                   key={item.id}
                   item={item}
+                  learningLanguage={learningLanguage}
                   wordIsTarget={wordIsTarget}
                   updating={updatingId === item.id}
                   onChangeStatus={(status) => void changeStatus(item, status)}
@@ -1632,6 +1691,7 @@ function SelectionToolbar({
 
 function VocabularyCard({
   item,
+  learningLanguage,
   wordIsTarget,
   updating,
   onChangeStatus,
@@ -1640,6 +1700,7 @@ function VocabularyCard({
   onItemAdded,
 }: {
   item: VocabularyItem;
+  learningLanguage: AppLanguage | null;
   wordIsTarget: boolean;
   updating: boolean;
   onChangeStatus: (status: VocabularyStatus) => void;
@@ -1651,6 +1712,104 @@ function VocabularyCard({
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
+  const [pronunciation, setPronunciation] =
+    useState<WordPronunciation | null>(null);
+  const [pronunciationLoading, setPronunciationLoading] =
+    useState(false);
+
+  const learningChinese =
+    learningLanguage === "traditional-chinese";
+
+  const primaryText = learningChinese
+    ? item.translation
+    : item.word;
+
+  const secondaryText = learningChinese
+    ? item.word
+    : item.translation;
+
+  const primaryLanguage = learningChinese
+    ? "zh-TW"
+    : "en-US";
+
+  const secondaryLanguage = learningChinese
+    ? "en-US"
+    : "zh-TW";
+
+  const pronunciationGuide = learningChinese
+    ? pronunciation?.zhuyin
+    : pronunciation?.englishPronunciation;
+
+  useEffect(() => {
+    let active = true;
+
+    const cacheKey = getPronunciationCacheKey(
+      item.word,
+      item.translation,
+    );
+
+    const cached = readPronunciationCache()[cacheKey];
+
+    if (cached) {
+      setPronunciation(cached);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadPronunciation() {
+      setPronunciationLoading(true);
+
+      try {
+        const response = await fetch("/api/word-pronunciation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            english: item.word,
+            chinese: item.translation,
+          }),
+        });
+
+        const data = (await response.json()) as
+          | WordPronunciation
+          | { error?: string };
+
+        if (
+          !response.ok ||
+          !("englishPronunciation" in data) ||
+          !("zhuyin" in data)
+        ) {
+          return;
+        }
+
+        const nextPronunciation: WordPronunciation = {
+          englishPronunciation:
+            data.englishPronunciation?.trim() ?? "",
+          zhuyin: data.zhuyin?.trim() ?? "",
+        };
+
+        if (!active) return;
+
+        setPronunciation(nextPronunciation);
+        writePronunciationCache(cacheKey, nextPronunciation);
+      } catch (pronunciationError) {
+        console.warn(
+          "Could not load word pronunciation:",
+          pronunciationError,
+        );
+      } finally {
+        if (active) setPronunciationLoading(false);
+      }
+    }
+
+    void loadPronunciation();
+
+    return () => {
+      active = false;
+    };
+  }, [item.translation, item.word]);
 
   useEffect(() => {
     onInteract("view");
@@ -1840,52 +1999,34 @@ function VocabularyCard({
             />
 
             <div className="flex flex-wrap items-center gap-2">
-              <h2
-                className={
-                  wordIsTarget
-                    ? "break-words text-3xl font-black sm:text-4xl"
-                    : "break-words text-lg text-neutral-500 sm:text-xl"
-                }
-              >
-                {item.word}
+              <h2 className="break-words text-3xl font-black sm:text-4xl">
+                {primaryText}
               </h2>
+
               <button
                 type="button"
-                aria-label={`Pronounce ${item.word}`}
+                aria-label={`Pronounce ${primaryText}`}
                 onClick={() => {
                   onInteract("speak");
-                  speak(item.word, toPinyin(item.word) ? "zh-TW" : "en-US");
+                  speak(primaryText, primaryLanguage);
                 }}
                 className="shrink-0 rounded-full bg-[#f1eee7] p-2 text-black"
               >
                 <Volume2 size={16} />
               </button>
             </div>
-            {toPinyin(item.word) && (
-              <p className="mt-1 text-sm text-neutral-400">
-                {toPinyin(item.word)}
-              </p>
-            )}
 
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p
-                className={
-                  wordIsTarget
-                    ? "break-words text-base text-neutral-500 sm:text-lg"
-                    : "break-words text-3xl font-black sm:text-4xl"
-                }
-              >
-                {item.translation}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="break-words text-base text-neutral-500 sm:text-lg">
+                {secondaryText}
               </p>
+
               <button
                 type="button"
-                aria-label={`Pronounce ${item.translation}`}
+                aria-label={`Pronounce ${secondaryText}`}
                 onClick={() => {
                   onInteract("speak");
-                  speak(
-                    item.translation,
-                    toPinyin(item.translation) ? "zh-TW" : "en-US",
-                  );
+                  speak(secondaryText, secondaryLanguage);
                 }}
                 className="shrink-0 rounded-full bg-[#f1eee7] p-1.5 text-black"
               >
@@ -1893,15 +2034,35 @@ function VocabularyCard({
               </button>
             </div>
 
-            <div className="mt-1 flex items-center gap-1.5">
-              {toPinyin(item.translation) && (
-                <p className="text-sm text-neutral-400">
-                  {toPinyin(item.translation)}
+            <div className="mt-2 flex min-h-5 flex-wrap items-center gap-1.5">
+              {pronunciationGuide ? (
+                <p
+                  className="text-sm text-neutral-400"
+                  style={
+                    learningChinese
+                      ? {
+                          fontFamily:
+                            '"PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif',
+                        }
+                      : undefined
+                  }
+                >
+                  {pronunciationGuide}
                 </p>
-              )}
+              ) : pronunciationLoading ? (
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-neutral-300">
+                  <LoaderCircle
+                    size={11}
+                    className="animate-spin"
+                  />
+                  Pronunciation
+                </span>
+              ) : null}
+
               {item.part_of_speech && (
                 <span className="text-[11px] text-neutral-300">
-                  · {item.part_of_speech}
+                  {pronunciationGuide ? "· " : ""}
+                  {item.part_of_speech}
                 </span>
               )}
             </div>
@@ -1909,15 +2070,15 @@ function VocabularyCard({
             {(item.example_sentence || item.translated_example) && (
               <div className="mt-5 border-t border-neutral-100 pt-3">
                 <p className="break-words leading-7">
-                  {wordIsTarget
+                  {learningChinese
                     ? item.translated_example
                     : item.example_sentence}
                 </p>
-                {(wordIsTarget
+                {(learningChinese
                   ? item.example_sentence
                   : item.translated_example) && (
                   <p className="mt-1 break-words text-sm leading-6 text-neutral-400">
-                    {wordIsTarget
+                    {learningChinese
                       ? item.example_sentence
                       : item.translated_example}
                   </p>
