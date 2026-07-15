@@ -8,7 +8,13 @@ import {
   MessageCircle,
   Newspaper,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  ChangeEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,6 +25,10 @@ type RecentNote = {
 };
 
 export default function HomePage() {
+  const router = useRouter();
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const libraryInputRef = useRef<HTMLInputElement | null>(null);
+
   const [wordsToday, setWordsToday] = useState(0);
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +91,58 @@ export default function HomePage() {
     };
   }, []);
 
+  async function handlePhotoSelected(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      window.alert("Please choose an image smaller than 10 MB.");
+      return;
+    }
+
+    try {
+      const reader = new FileReader();
+
+      const imageData = await new Promise<string>((resolve, reject) => {
+        reader.onerror = () =>
+          reject(new Error("Could not read this image."));
+
+        reader.onload = () => {
+          if (typeof reader.result !== "string") {
+            reject(new Error("Could not read this image."));
+            return;
+          }
+
+          resolve(reader.result);
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+      sessionStorage.setItem(
+        "exchange-notes-capture-draft",
+        JSON.stringify({
+          imageData,
+          fileName: file.name || "photo.jpg",
+        }),
+      );
+
+      router.push("/capture");
+    } catch (error) {
+      console.error("Could not prepare selected photo:", error);
+      window.alert("Could not open this image. Please try another one.");
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -115,26 +177,45 @@ export default function HomePage() {
             word you can remember.
           </p>
 
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(event) => void handlePhotoSelected(event)}
+          />
+
+          <input
+            ref={libraryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            className="hidden"
+            onChange={(event) => void handlePhotoSelected(event)}
+          />
+
           <div className="mt-7 grid grid-cols-2 gap-3">
-            <Link
-              href="/capture?source=camera"
-              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-black"
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-left text-black transition-transform active:scale-[0.98]"
             >
               <Camera size={25} />
               <span className="font-black">
                 Take Photo
               </span>
-            </Link>
+            </button>
 
-            <Link
-              href="/capture?source=library"
-              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-black"
+            <button
+              type="button"
+              onClick={() => libraryInputRef.current?.click()}
+              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-left text-black transition-transform active:scale-[0.98]"
             >
               <ImagePlus size={25} />
               <span className="font-black">
                 Choose Photo
               </span>
-            </Link>
+            </button>
           </div>
         </section>
 

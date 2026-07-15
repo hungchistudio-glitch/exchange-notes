@@ -85,6 +85,34 @@ export default function CameraPage() {
     setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
   }, []);
 
+  // Read a photo selected directly from the Home page.
+  useEffect(() => {
+    const rawDraft = sessionStorage.getItem(
+      "exchange-notes-capture-draft",
+    );
+
+    if (!rawDraft) return;
+
+    sessionStorage.removeItem("exchange-notes-capture-draft");
+
+    try {
+      const draft = JSON.parse(rawDraft) as {
+        imageData?: string;
+        fileName?: string;
+      };
+
+      if (!draft.imageData) return;
+
+      setImageData(draft.imageData);
+      setFileName(draft.fileName || "photo.jpg");
+      setResult(null);
+      setError("");
+    } catch (draftError) {
+      console.error("Could not restore capture draft:", draftError);
+      setError("Could not open the selected image.");
+    }
+  }, []);
+
   // ---- Camera lifecycle -----------------------------------------------
 
   function stopCamera() {
