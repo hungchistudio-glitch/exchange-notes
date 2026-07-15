@@ -53,7 +53,7 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 
 const PRONUNCIATION_CACHE_KEY =
-  "exchange-notes-pronunciation-cache-v5";
+  "exchange-notes-pronunciation-cache-v1";
 
 type WordPronunciation = {
   englishPronunciation: string;
@@ -358,132 +358,6 @@ export default function VocabularyPage() {
       return true;
     });
   }, [items]);
-
-  const [pronunciations, setPronunciations] = useState<Record<string, WordPronunciation>>({});
-  const [pronunciationErrors, setPronunciationErrors] = useState<Record<string, string>>({});
-  const [pronunciationLoading, setPronunciationLoading] = useState(false);
-  const attemptedPronunciationKeysRef = useRef<Set<string>>(new Set());
-
-  const loadPronunciations = useCallback(
-    async (targetItems: VocabularyItem[], options?: { force?: boolean }) => {
-      const force = options?.force ?? false;
-      const toFetch: { key: string; english: string; chinese: string }[] = [];
-      const cacheHits: Record<string, WordPronunciation> = {};
-
-      targetItems.forEach((item) => {
-        const cacheKey = getPronunciationCacheKey(item.word, item.translation);
-        const cached = readPronunciationCache()[cacheKey];
-
-        if (cached && (cached.englishPronunciation.trim() || cached.zhuyin.trim())) {
-          cacheHits[cacheKey] = cached;
-          attemptedPronunciationKeysRef.current.add(cacheKey);
-          return;
-        }
-
-        if (!force && attemptedPronunciationKeysRef.current.has(cacheKey)) {
-          return;
-        }
-
-        attemptedPronunciationKeysRef.current.add(cacheKey);
-        toFetch.push({ key: cacheKey, english: item.word, chinese: item.translation });
-      });
-
-      if (Object.keys(cacheHits).length > 0) {
-        setPronunciations((current) => ({ ...current, ...cacheHits }));
-      }
-
-      const uniqueToFetch = Array.from(
-        new Map(toFetch.map((entry) => [entry.key, entry])).values(),
-      );
-
-      if (uniqueToFetch.length === 0) return;
-
-      setPronunciationLoading(true);
-
-      setPronunciationErrors((current) => {
-        const next = { ...current };
-        uniqueToFetch.forEach(({ key }) => delete next[key]);
-        return next;
-      });
-
-      try {
-        const response = await fetch("/api/pronunciation-batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: uniqueToFetch }),
-        });
-
-        const data = (await response.json()) as {
-          results?: Record<string, WordPronunciation>;
-          error?: string;
-        };
-
-        if (!response.ok || !data.results) {
-          throw new Error(data.error || "Could not load pronunciations.");
-        }
-
-        const nextPronunciations: Record<string, WordPronunciation> = {};
-        const nextErrors: Record<string, string> = {};
-
-        uniqueToFetch.forEach(({ key }) => {
-          const result = data.results?.[key];
-
-          if (result && (result.englishPronunciation.trim() || result.zhuyin.trim())) {
-            nextPronunciations[key] = result;
-            writePronunciationCache(key, result);
-          } else {
-            nextErrors[key] = "Pronunciation unavailable.";
-          }
-        });
-
-        setPronunciations((current) => ({ ...current, ...nextPronunciations }));
-        setPronunciationErrors((current) => ({ ...current, ...nextErrors }));
-      } catch (batchError) {
-        console.warn("Could not load pronunciation batch:", batchError);
-
-        const message =
-          batchError instanceof Error ? batchError.message : "Could not load pronunciation.";
-
-        const nextErrors: Record<string, string> = {};
-        uniqueToFetch.forEach(({ key }) => {
-          nextErrors[key] = message;
-        });
-        setPronunciationErrors((current) => ({ ...current, ...nextErrors }));
-      } finally {
-        setPronunciationLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (uniqueItems.length === 0) return;
-    void loadPronunciations(uniqueItems);
-  }, [uniqueItems, loadPronunciations]);
-
-  const retryPronunciation = useCallback(
-    (item: VocabularyItem) => {
-      const cacheKey = getPronunciationCacheKey(item.word, item.translation);
-      attemptedPronunciationKeysRef.current.delete(cacheKey);
-
-      try {
-        const cache = readPronunciationCache();
-        delete cache[cacheKey];
-        window.localStorage.setItem(PRONUNCIATION_CACHE_KEY, JSON.stringify(cache));
-      } catch {
-        // Ignore storage errors.
-      }
-
-      setPronunciationErrors((current) => {
-        const next = { ...current };
-        delete next[cacheKey];
-        return next;
-      });
-
-      void loadPronunciations([item], { force: true });
-    },
-    [loadPronunciations],
-  );
 
   useEffect(() => {
     if (sortMode === "new" || uniqueItems.length === 0) return;
@@ -1043,22 +917,17 @@ export default function VocabularyPage() {
         ) : (
           <section className="mt-6 space-y-4">
             {visibleItems.map((item) => {
-              const cacheKey = getPronunciationCacheKey(item.word, item.translation);
-              const cardPronunciation = pronunciations[cacheKey] ?? null;
-              const cardPronunciationError = pronunciationErrors[cacheKey] ?? "";
-              const cardPronunciationLoading =
-                !cardPronunciation && !cardPronunciationError && pronunciationLoading;
+              const wordIsTarget = learningLanguage
+                ? item.language === learningLanguage
+                : toPinyin(item.word) !== null;
 
               return (
                 <VocabularyCard
                   key={item.id}
                   item={item}
                   learningLanguage={learningLanguage}
+                  wordIsTarget={wordIsTarget}
                   updating={updatingId === item.id}
-                  pronunciation={cardPronunciation}
-                  pronunciationLoading={cardPronunciationLoading}
-                  pronunciationError={cardPronunciationError}
-                  onRetryPronunciation={() => retryPronunciation(item)}
                   onChangeStatus={(status) => void changeStatus(item, status)}
                   onSendToPartner={(sharedItem) => handleSendToPartner(sharedItem ?? item)}
                   onInteract={(type) => recordInteraction(item, type)}
@@ -1823,11 +1692,8 @@ function SelectionToolbar({
 function VocabularyCard({
   item,
   learningLanguage,
+  wordIsTarget,
   updating,
-  pronunciation,
-  pronunciationLoading,
-  pronunciationError,
-  onRetryPronunciation,
   onChangeStatus,
   onSendToPartner,
   onInteract,
@@ -1835,11 +1701,8 @@ function VocabularyCard({
 }: {
   item: VocabularyItem;
   learningLanguage: AppLanguage | null;
+  wordIsTarget: boolean;
   updating: boolean;
-  pronunciation: WordPronunciation | null;
-  pronunciationLoading: boolean;
-  pronunciationError: string;
-  onRetryPronunciation: () => void;
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
   onInteract: (type: InteractionType) => void;
@@ -1849,6 +1712,10 @@ function VocabularyCard({
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
+  const [pronunciation, setPronunciation] =
+    useState<WordPronunciation | null>(null);
+  const [pronunciationLoading, setPronunciationLoading] =
+    useState(false);
 
   const learningChinese =
     learningLanguage === "traditional-chinese";
@@ -1872,6 +1739,77 @@ function VocabularyCard({
   const pronunciationGuide = learningChinese
     ? pronunciation?.zhuyin
     : pronunciation?.englishPronunciation;
+
+  useEffect(() => {
+    let active = true;
+
+    const cacheKey = getPronunciationCacheKey(
+      item.word,
+      item.translation,
+    );
+
+    const cached = readPronunciationCache()[cacheKey];
+
+    if (cached) {
+      setPronunciation(cached);
+      return () => {
+        active = false;
+      };
+    }
+
+    async function loadPronunciation() {
+      setPronunciationLoading(true);
+
+      try {
+        const response = await fetch("/api/word-pronunciation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            english: item.word,
+            chinese: item.translation,
+          }),
+        });
+
+        const data = (await response.json()) as
+          | WordPronunciation
+          | { error?: string };
+
+        if (
+          !response.ok ||
+          !("englishPronunciation" in data) ||
+          !("zhuyin" in data)
+        ) {
+          return;
+        }
+
+        const nextPronunciation: WordPronunciation = {
+          englishPronunciation:
+            data.englishPronunciation?.trim() ?? "",
+          zhuyin: data.zhuyin?.trim() ?? "",
+        };
+
+        if (!active) return;
+
+        setPronunciation(nextPronunciation);
+        writePronunciationCache(cacheKey, nextPronunciation);
+      } catch (pronunciationError) {
+        console.warn(
+          "Could not load word pronunciation:",
+          pronunciationError,
+        );
+      } finally {
+        if (active) setPronunciationLoading(false);
+      }
+    }
+
+    void loadPronunciation();
+
+    return () => {
+      active = false;
+    };
+  }, [item.translation, item.word]);
 
   useEffect(() => {
     onInteract("view");
@@ -2117,17 +2055,8 @@ function VocabularyCard({
                     size={11}
                     className="animate-spin"
                   />
-                  Loading pronunciation
+                  Pronunciation
                 </span>
-              ) : pronunciationError ? (
-                <button
-                  type="button"
-                  onClick={onRetryPronunciation}
-                  className="text-[11px] text-red-500 underline underline-offset-2"
-                  title={pronunciationError}
-                >
-                  Pronunciation unavailable · Retry
-                </button>
               ) : null}
 
               {item.part_of_speech && (

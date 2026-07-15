@@ -1,0 +1,895 @@
+"use client";
+
+import {
+  ArrowLeft,
+  Camera,
+  Check,
+  ImagePlus,
+  LoaderCircle,
+  Send,
+  Volume2,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ChangeEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { toPinyin } from "@/lib/pinyin";
+import { speak } from "@/lib/speech";
+import { createClient } from "@/lib/supabase/client";
+import type {
+  VocabularyCategory,
+  VocabularyItem,
+} from "@/lib/types/app";
+import {
+  dataUrlToBlob,
+  safeImageExtension,
+} from "@/lib/vocabulary";
+import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
+
+type IdentificationResult = {
+  englishName: string;
+  chineseName: string;
+  partOfSpeech: string;
+  englishExample: string;
+  chineseExample: string;
+  confidence: "high" | "medium" | "low";
+  category: VocabularyCategory;
+};
+
+type CaptureDraft = {
+  imageData?: string;
+  fileName?: string;
+};
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_DIMENSION = 1600;
+const JPEG_QUALITY = 0.82;
+const CAPTURE_DRAFT_KEY = "exchange-notes-capture-draft";
+
+function normalizeText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
+}
+
+function getVocabularyKey(word: string, translation: string) {
+  return `${normalizeText(word)}::${normalizeText(translation)}`;
+}
+
+export default function CameraPage() {
+  const router = useRouter();
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraSupported, setCameraSupported] = useState(true);
+
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [fileName, setFileName] = useState("");
+  const [result, setResult] = useState<IdentificationResult | null>(null);
+
+  const [error, setError] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
+  }, []);
+
+  useEffect(() => {
+    const rawDraft = sessionStorage.getItem(CAPTURE_DRAFT_KEY);
+
+    if (!rawDraft) return;
+
+    sessionStorage.removeItem(CAPTURE_DRAFT_KEY);
+
+    try {
+      const draft = JSON.parse(rawDraft) as CaptureDraft;
+
+      if (!draft.imageData) return;
+
+      setImageData(draft.imageData);
+      setFileName(draft.fileName || "photo.jpg");
+      setResult(null);
+      setError("");
+    } catch (draftError) {
+      console.error("Could not restore capture draft:", draftError);
+      setError("Could not open the selected image.");
+    }
+  }, []);
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((track) => {
+      track.stop();
+    });
+
+    streamRef.current = null;
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraActive(false);
+  }
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => {
+        track.stop();
+      });
+    };
+  }, []);
+
+  async function startCamera() {
+    setError("");
+    setResult(null);
+    setImageData(null);
+    setSaved(false);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraSupported(false);
+      takePhotoInputRef.current?.click();
+      return;
+    }
+
+    setCameraStarting(true);
+
+    try {
+      let stream: MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { exact: "environment" },
+            width: { ideal: 1600 },
+            height: { ideal: 1600 },
+          },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1600 },
+            height: { ideal: 1600 },
+          },
+          audio: false,
+        });
+      }
+
+      streamRef.current = stream;
+      setCameraActive(true);
+    } catch (mediaError) {
+      console.error("getUserMedia failed:", mediaError);
+
+      const errorName =
+        mediaError instanceof DOMException ? mediaError.name : "";
+
+      if (errorName === "NotAllowedError") {
+        setError(
+          "Camera permission was denied. Enable camera access in your browser settings, or choose an image instead.",
+        );
+      } else if (errorName === "NotFoundError") {
+        setError("No camera was found on this device.");
+      } else if (errorName === "NotReadableError") {
+        setError(
+          "The camera is already being used by another application.",
+        );
+      } else {
+        setError(
+          "Camera access is unavailable. Try choosing an image instead.",
+        );
+      }
+    } finally {
+      setCameraStarting(false);
+    }
+  }
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+
+    if (!cameraActive || !video || !stream) return;
+
+    video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+
+    const handleLoadedMetadata = () => {
+      void video.play().catch((playError) => {
+        console.error("video.play() failed:", playError);
+        setError("Could not start the camera preview. Try again.");
+      });
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      handleLoadedMetadata();
+    }
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
+  }, [cameraActive]);
+
+  function drawToDataUrl(
+    source: CanvasImageSource,
+    sourceWidth: number,
+    sourceHeight: number,
+  ): string | null {
+    const canvas = canvasRef.current ?? document.createElement("canvas");
+
+    const scale = Math.min(
+      1,
+      MAX_DIMENSION / Math.max(sourceWidth, sourceHeight),
+    );
+
+    canvas.width = Math.round(sourceWidth * scale);
+    canvas.height = Math.round(sourceHeight * scale);
+
+    const context = canvas.getContext("2d");
+
+    if (!context) return null;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  }
+
+  function compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onerror = () => {
+        reject(new Error("Could not read this image."));
+      };
+
+      reader.onload = () => {
+        if (typeof reader.result !== "string") {
+          reject(new Error("Could not read this image."));
+          return;
+        }
+
+        const image = new Image();
+
+        image.onerror = () => {
+          reject(new Error("Could not open this image."));
+        };
+
+        image.onload = () => {
+          const compressed = drawToDataUrl(
+            image,
+            image.naturalWidth || image.width,
+            image.naturalHeight || image.height,
+          );
+
+          if (!compressed) {
+            reject(new Error("Could not process this image."));
+            return;
+          }
+
+          resolve(compressed);
+        };
+
+        image.src = reader.result;
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleSelectedFile(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setError("");
+    setResult(null);
+    setSaved(false);
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError("Please choose an image smaller than 10 MB.");
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file);
+
+      stopCamera();
+      setImageData(compressed);
+      setFileName(file.name || "image.jpg");
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "Could not process this image.",
+      );
+    }
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current;
+
+    if (
+      !video ||
+      video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+      !video.videoWidth ||
+      !video.videoHeight
+    ) {
+      setError("The camera is not ready yet.");
+      return;
+    }
+
+    const captured = drawToDataUrl(
+      video,
+      video.videoWidth,
+      video.videoHeight,
+    );
+
+    if (!captured) {
+      setError("Could not capture the image.");
+      return;
+    }
+
+    setImageData(captured);
+    setFileName("camera-photo.jpg");
+    setResult(null);
+    setSaved(false);
+    stopCamera();
+  }
+
+  async function identifyImage() {
+    if (!imageData || analyzing) return;
+
+    setAnalyzing(true);
+    setError("");
+    setResult(null);
+    setSaved(false);
+
+    try {
+      const response = await fetch("/api/identify-object", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image: imageData,
+        }),
+      });
+
+      const data = (await response.json()) as
+        | IdentificationResult
+        | { error: string };
+
+      if (!response.ok || "error" in data) {
+        throw new Error(
+          "error" in data
+            ? data.error
+            : "Could not identify this image.",
+        );
+      }
+
+      setResult(data);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not identify this image.",
+      );
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  async function saveToVocabulary() {
+    if (!result || !imageData || saving || saved) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Please log in before saving a word.");
+      }
+
+      const word = result.englishName.trim();
+      const translation = result.chineseName.trim();
+      const candidateKey = getVocabularyKey(word, translation);
+
+      const { data: existingItems, error: duplicateError } =
+        await supabase
+          .from("vocabulary_items")
+          .select("id, word, translation")
+          .eq("user_id", user.id);
+
+      if (duplicateError) throw duplicateError;
+
+      const duplicate = (existingItems ?? []).some(
+        (item) =>
+          getVocabularyKey(
+            item.word as string,
+            item.translation as string,
+          ) === candidateKey,
+      );
+
+      if (duplicate) {
+        setSaved(true);
+        setError("This word is already in your vocabulary.");
+        return;
+      }
+
+      const imageBlob = dataUrlToBlob(imageData);
+      const extension = safeImageExtension(imageBlob.type);
+      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("vocabulary-images")
+        .upload(imagePath, imageBlob, {
+          contentType: imageBlob.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicImage } = supabase.storage
+        .from("vocabulary-images")
+        .getPublicUrl(imagePath);
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: user.id,
+          word,
+          translation,
+          language: "english",
+          part_of_speech: result.partOfSpeech.trim() || null,
+          example_sentence: result.englishExample.trim() || null,
+          translated_example: result.chineseExample.trim() || null,
+          image_url: publicImage.publicUrl,
+          confidence: result.confidence,
+          category: result.category,
+          status: "new",
+        });
+
+      if (insertError) {
+        await supabase.storage
+          .from("vocabulary-images")
+          .remove([imagePath]);
+
+        throw insertError;
+      }
+
+      setSaved(true);
+
+      window.setTimeout(() => {
+        router.push("/vocabulary");
+      }, 500);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Could not save this word.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function sendToPartner() {
+    if (!result || sending) return;
+
+    setSending(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const now = new Date().toISOString();
+
+      const sharedItem: VocabularyItem = {
+        id: `capture-${crypto.randomUUID()}`,
+        user_id: user?.id ?? "",
+        word: result.englishName.trim(),
+        translation: result.chineseName.trim(),
+        language: "english",
+        part_of_speech: result.partOfSpeech.trim() || null,
+        example_sentence: result.englishExample.trim() || null,
+        translated_example: result.chineseExample.trim() || null,
+        confidence: result.confidence,
+        category: result.category,
+        status: "new",
+        image_url: imageData,
+        created_at: now,
+        updated_at: now,
+      };
+
+      setPendingSharedVocabulary(sharedItem);
+      router.push("/messages");
+    } catch (sendError) {
+      console.error("Could not prepare shared word:", sendError);
+
+      setError(
+        sendError instanceof Error
+          ? sendError.message
+          : "Could not send this word.",
+      );
+
+      setSending(false);
+    }
+  }
+
+  function reset() {
+    stopCamera();
+    setImageData(null);
+    setFileName("");
+    setResult(null);
+    setError("");
+    setSaved(false);
+    setAnalyzing(false);
+    setSaving(false);
+    setSending(false);
+  }
+
+  const pinyin = result ? toPinyin(result.chineseName) : null;
+
+  return (
+    <main
+      className="min-h-screen bg-[#f5f2eb] px-4 pt-5 text-black"
+      style={{
+        paddingBottom:
+          "calc(11.5rem + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div className="mx-auto max-w-xl">
+        <header className="grid grid-cols-[44px_1fr_64px] items-center">
+          <Link
+            href="/vocabulary"
+            aria-label="Back to Words"
+            title="Back to Words"
+            onClick={stopCamera}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-black/60 transition-colors hover:bg-black/[0.04] active:scale-95"
+          >
+            <ArrowLeft size={21} strokeWidth={1.8} />
+          </Link>
+
+          <h1 className="text-center text-[17px] font-semibold tracking-[-0.02em]">
+            Discover
+          </h1>
+
+          <button
+            type="button"
+            onClick={reset}
+            className="justify-self-end text-[14px] font-medium text-black/45 transition-colors hover:text-black"
+          >
+            Reset
+          </button>
+        </header>
+
+        {!cameraActive && !imageData && (
+          <section className="flex min-h-[68dvh] flex-col items-center justify-center pb-20 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-black/35">
+              English × 繁體中文
+            </p>
+
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.045em]">
+              Discover a word
+            </h2>
+
+            <p className="mt-4 max-w-xs text-[14px] leading-6 text-black/45">
+              Photograph something from everyday life and turn it
+              into a word you can remember.
+            </p>
+
+            <div className="mt-12 flex items-start justify-center gap-12">
+              <button
+                type="button"
+                onClick={() => void startCamera()}
+                disabled={cameraStarting}
+                aria-label="Open Camera"
+                className="flex w-24 flex-col items-center gap-3 disabled:opacity-40"
+              >
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95">
+                  {cameraStarting ? (
+                    <LoaderCircle
+                      size={25}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Camera size={26} strokeWidth={1.7} />
+                  )}
+                </span>
+
+                <span className="text-[12px] font-semibold text-black/50">
+                  Camera
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  chooseImageInputRef.current?.click()
+                }
+                aria-label="Choose Image"
+                className="flex w-24 flex-col items-center gap-3"
+              >
+                <span className="flex h-20 w-20 items-center justify-center rounded-full border border-black/[0.05] bg-white shadow-[0_5px_18px_rgba(0,0,0,0.06)] transition-transform active:scale-95">
+                  <ImagePlus size={26} strokeWidth={1.7} />
+                </span>
+
+                <span className="text-[12px] font-semibold text-black/50">
+                  Choose Image
+                </span>
+              </button>
+            </div>
+
+            {!cameraSupported && (
+              <p className="mt-8 max-w-xs text-[12px] leading-5 text-black/35">
+                Live camera preview is not supported in this browser.
+                Tap Camera to use your device camera instead.
+              </p>
+            )}
+          </section>
+        )}
+
+        {cameraActive && !imageData && (
+          <section className="mt-5">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-[28px] bg-black">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                disablePictureInPicture
+                className="h-full w-full object-cover"
+              />
+
+              <div className="pointer-events-none absolute inset-5 rounded-[22px] border border-white/45" />
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-10">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="text-[13px] font-medium text-black/45"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={capturePhoto}
+                aria-label="Capture photo"
+                className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[5px] border-white bg-black shadow-[0_5px_20px_rgba(0,0,0,0.18)] transition-transform active:scale-95"
+              >
+                <span className="h-[56px] w-[56px] rounded-full border border-white/30" />
+              </button>
+            </div>
+          </section>
+        )}
+
+        {imageData && (
+          <section className="mt-5">
+            <div className="overflow-hidden rounded-[28px] bg-black">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageData}
+                alt="Selected object"
+                className="max-h-[48dvh] w-full object-contain"
+              />
+            </div>
+
+            {fileName && (
+              <p className="mt-3 truncate text-center text-[11px] text-black/30">
+                {fileName}
+              </p>
+            )}
+
+            {!result && (
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="h-12 rounded-full border border-black/[0.08] bg-white text-[13px] font-semibold"
+                >
+                  Choose another
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void identifyImage()}
+                  disabled={analyzing}
+                  className="flex h-12 items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-35"
+                >
+                  {analyzing && (
+                    <LoaderCircle
+                      size={15}
+                      className="animate-spin"
+                    />
+                  )}
+
+                  {analyzing ? "Identifying" : "Identify"}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {error && (
+          <p className="mt-5 rounded-[18px] bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-700">
+            {error}
+          </p>
+        )}
+
+        {result && (
+          <section className="mt-5 overflow-hidden rounded-[28px] border border-black/[0.06] bg-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.05)] backdrop-blur-xl">
+            <div className="p-5 sm:p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
+                  Identified word
+                </p>
+
+                <p className="text-[10px] uppercase tracking-[0.12em] text-black/30">
+                  {result.confidence} confidence
+                </p>
+              </div>
+
+              <div className="mt-5 flex items-start justify-between gap-5">
+                <div className="min-w-0 flex-1">
+                  <h2 className="break-words text-[34px] font-semibold leading-none tracking-[-0.045em]">
+                    {result.englishName}
+                  </h2>
+
+                  <p className="mt-4 break-words text-[27px] font-medium leading-none tracking-[-0.03em]">
+                    {result.chineseName}
+                  </p>
+
+                  <p className="mt-3 text-[12px] text-black/35">
+                    {[pinyin, result.partOfSpeech?.toLowerCase()]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      speak(result.englishName, "en-US")
+                    }
+                    aria-label="Play English pronunciation"
+                    title="English pronunciation"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black transition-transform active:scale-95"
+                  >
+                    <Volume2 size={16} strokeWidth={1.8} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      speak(result.chineseName, "zh-TW")
+                    }
+                    aria-label="Play Chinese pronunciation"
+                    title="Chinese pronunciation"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] text-black transition-transform active:scale-95"
+                  >
+                    <Volume2 size={16} strokeWidth={1.8} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 border-t border-black/[0.07] pt-5">
+                <p className="text-[15px] leading-7 tracking-[-0.01em]">
+                  {result.englishExample}
+                </p>
+
+                <p className="mt-2 text-[14px] leading-7 text-black/40">
+                  {result.chineseExample}
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => void saveToVocabulary()}
+                  disabled={saving || saved}
+                  className="flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-4 text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <LoaderCircle
+                        size={15}
+                        className="animate-spin"
+                      />
+                      Saving
+                    </>
+                  ) : saved ? (
+                    <>
+                      <Check size={15} />
+                      Saved
+                    </>
+                  ) : (
+                    "Save to Vocabulary"
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void sendToPartner()}
+                  disabled={sending}
+                  className="flex min-h-13 w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 py-4 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
+                >
+                  {sending ? (
+                    <LoaderCircle
+                      size={15}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Send size={15} strokeWidth={1.8} />
+                  )}
+
+                  Send to Partner
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <canvas ref={canvasRef} className="hidden" />
+
+        <input
+          ref={takePhotoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(event) => void handleSelectedFile(event)}
+          className="hidden"
+        />
+
+        <input
+          ref={chooseImageInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          onChange={(event) => void handleSelectedFile(event)}
+          className="hidden"
+        />
+      </div>
+    </main>
+  );
+}

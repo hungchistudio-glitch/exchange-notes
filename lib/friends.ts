@@ -145,11 +145,21 @@ export async function listIncomingRequests(
 
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    requestId: row.id,
-    createdAt: row.created_at,
-    sender: toFriendProfile(row.sender as ProfileRow),
-  }));
+  const rows = data ?? [];
+
+  return rows.map((row) => {
+    const sender = row.sender[0];
+
+    if (!sender) {
+      throw new Error("Incoming friend request is missing its sender profile.");
+    }
+
+    return {
+      requestId: row.id,
+      createdAt: row.created_at,
+      sender: toFriendProfile(sender),
+    };
+  });
 }
 
 export async function listOutgoingRequests(
@@ -167,11 +177,21 @@ export async function listOutgoingRequests(
 
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => ({
-    requestId: row.id,
-    createdAt: row.created_at,
-    receiver: toFriendProfile(row.receiver as ProfileRow),
-  }));
+  const rows = data ?? [];
+
+  return rows.map((row) => {
+    const receiver = row.receiver[0];
+
+    if (!receiver) {
+      throw new Error("Outgoing friend request is missing its receiver profile.");
+    }
+
+    return {
+      requestId: row.id,
+      createdAt: row.created_at,
+      receiver: toFriendProfile(receiver),
+    };
+  });
 }
 
 export async function listFriends(
