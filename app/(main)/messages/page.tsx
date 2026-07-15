@@ -14,6 +14,7 @@ import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BookmarkPlus,
+  Check,
   FileText,
   House,
   LogOut,
@@ -62,7 +63,13 @@ const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 const AI_IMAGE_MAX_DIMENSION = 1600;
 const AI_IMAGE_JPEG_QUALITY = 0.82;
 
-function SharedVocabularyMessage({ item }: { item: VocabularyItem }) {
+function SharedVocabularyMessage({
+  item,
+  currentUserId,
+}: {
+  item: VocabularyItem;
+  currentUserId: string | null;
+}) {
   const [learningLanguage, setLearningLanguage] =
     useState<AppLanguage>("english");
 
@@ -74,6 +81,10 @@ function SharedVocabularyMessage({ item }: { item: VocabularyItem }) {
   const [pronunciationLoading, setPronunciationLoading] = useState(false);
 
   const [pronunciationError, setPronunciationError] = useState("");
+
+  const [savingSharedWord, setSavingSharedWord] = useState(false);
+
+  const [sharedWordSaved, setSharedWordSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -218,6 +229,62 @@ function SharedVocabularyMessage({ item }: { item: VocabularyItem }) {
 
   const chineseExample = item.translated_example?.trim() || "";
 
+  async function saveSharedWordToVocabulary() {
+    if (!currentUserId || savingSharedWord || sharedWordSaved) {
+      return;
+    }
+
+    const englishWord = item.word?.trim() || "";
+    const chineseWord = item.translation?.trim() || "";
+
+    if (!englishWord || !chineseWord) return;
+
+    setSavingSharedWord(true);
+
+    try {
+      const supabase = createClient();
+
+      const { data: existingItems, error: lookupError } = await supabase
+        .from("vocabulary_items")
+        .select("id")
+        .eq("user_id", currentUserId)
+        .ilike("word", englishWord)
+        .ilike("translation", chineseWord)
+        .limit(1);
+
+      if (lookupError) throw lookupError;
+
+      if (existingItems && existingItems.length > 0) {
+        setSharedWordSaved(true);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: currentUserId,
+          word: englishWord,
+          translation: chineseWord,
+          language: item.language || "english",
+          part_of_speech: item.part_of_speech || null,
+          example_sentence: item.example_sentence || null,
+          translated_example: item.translated_example || null,
+          confidence: item.confidence || null,
+          category: item.category || "other",
+          status: "new",
+          image_url: item.image_url || null,
+        });
+
+      if (insertError) throw insertError;
+
+      setSharedWordSaved(true);
+    } catch (error) {
+      console.error("Could not save shared word to vocabulary:", error);
+    } finally {
+      setSavingSharedWord(false);
+    }
+  }
+
   return (
     <AdaptiveWordCard
       imageUrl={item.image_url}
@@ -264,6 +331,34 @@ function SharedVocabularyMessage({ item }: { item: VocabularyItem }) {
         setPronunciationError("");
       }}
       onSpeak={speak}
+      actions={
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => void saveSharedWordToVocabulary()}
+            disabled={!currentUserId || savingSharedWord || sharedWordSaved}
+            aria-label={
+              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+            }
+            title={
+              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+            }
+            className={`flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95 disabled:cursor-default ${
+              sharedWordSaved
+                ? "bg-black text-white"
+                : "bg-[#f1eee7] text-black/65 hover:bg-[#e7e2d8]"
+            }`}
+          >
+            {savingSharedWord ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            ) : sharedWordSaved ? (
+              <Check size={18} strokeWidth={2} />
+            ) : (
+              <BookmarkPlus size={18} strokeWidth={1.8} />
+            )}
+          </button>
+        </div>
+      }
     />
   );
 }
@@ -805,9 +900,15 @@ function ChatRoom({ friendId }: { friendId: string }) {
     const data = (await response.json()) as
       AttachmentIdentificationResult | { error: string };
 
+    if (response.status === 429) {
+      throw new Error(
+        "AI usage limit reached. Please wait about one minute and try again.",
+      );
+    }
+
     if (!response.ok || "error" in data) {
       throw new Error(
-        "error" in data ? data.error : "Gemini could not identify this photo.",
+        "error" in data ? data.error : "AI could not identify this photo.",
       );
     }
 
@@ -1169,7 +1270,10 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {sharedVocabulary && (
-                    <SharedVocabularyMessage item={sharedVocabulary} />
+                    <SharedVocabularyMessage
+                      item={sharedVocabulary}
+                      currentUserId={currentUserId}
+                    />
                   )}
 
                   {message.body && !sharedVocabulary && (
