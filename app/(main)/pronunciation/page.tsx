@@ -3,7 +3,6 @@
 import {
   ArrowLeft,
   BookOpen,
-  ChevronRight,
   Volume2,
 } from "lucide-react";
 import Link from "next/link";
@@ -16,109 +15,262 @@ import type { AppLanguage } from "@/lib/types/app";
 type EnglishSound = {
   symbol: string;
   example: string;
+  translation: string;
   cue: string;
+  cueChinese: string;
+  soundText: string;
 };
 
 type ZhuyinSound = {
   symbol: string;
   example: string;
+  translation: string;
+  reading: string;
+};
+
+type ToneItem = {
+  symbol: string;
+  chineseLabel: string;
+  englishLabel: string;
+  example: string;
+  translation: string;
   reading: string;
 };
 
 const ENGLISH_VOWELS: EnglishSound[] = [
-  { symbol: "/iː/", example: "see", cue: "long ee" },
-  { symbol: "/ɪ/", example: "sit", cue: "short i" },
-  { symbol: "/e/", example: "bed", cue: "short e" },
-  { symbol: "/æ/", example: "cat", cue: "wide a" },
-  { symbol: "/ɑː/", example: "father", cue: "long ah" },
-  { symbol: "/ʌ/", example: "cup", cue: "short uh" },
-  { symbol: "/ɔː/", example: "law", cue: "long aw" },
-  { symbol: "/ʊ/", example: "book", cue: "short oo" },
-  { symbol: "/uː/", example: "food", cue: "long oo" },
-  { symbol: "/ə/", example: "about", cue: "schwa" },
+  {
+    symbol: "/iː/",
+    example: "see",
+    translation: "看見",
+    cue: "long ee",
+    cueChinese: "長母音 ee",
+    soundText: "ee",
+  },
+  {
+    symbol: "/ɪ/",
+    example: "sit",
+    translation: "坐",
+    cue: "short i",
+    cueChinese: "短母音 i",
+    soundText: "ih",
+  },
+  {
+    symbol: "/e/",
+    example: "bed",
+    translation: "床",
+    cue: "short e",
+    cueChinese: "短母音 e",
+    soundText: "eh",
+  },
+  {
+    symbol: "/æ/",
+    example: "cat",
+    translation: "貓",
+    cue: "wide a",
+    cueChinese: "嘴型較開的 a",
+    soundText: "aah",
+  },
+  {
+    symbol: "/ɑː/",
+    example: "father",
+    translation: "父親",
+    cue: "long ah",
+    cueChinese: "長母音 ah",
+    soundText: "ah",
+  },
+  {
+    symbol: "/ʌ/",
+    example: "cup",
+    translation: "杯子",
+    cue: "short uh",
+    cueChinese: "短母音 uh",
+    soundText: "uh",
+  },
+  {
+    symbol: "/ɔː/",
+    example: "law",
+    translation: "法律",
+    cue: "long aw",
+    cueChinese: "長母音 aw",
+    soundText: "aw",
+  },
+  {
+    symbol: "/ʊ/",
+    example: "book",
+    translation: "書",
+    cue: "short oo",
+    cueChinese: "短母音 oo",
+    soundText: "short oo",
+  },
+  {
+    symbol: "/uː/",
+    example: "food",
+    translation: "食物",
+    cue: "long oo",
+    cueChinese: "長母音 oo",
+    soundText: "long oo",
+  },
+  {
+    symbol: "/ə/",
+    example: "about",
+    translation: "關於",
+    cue: "schwa",
+    cueChinese: "弱母音",
+    soundText: "uh",
+  },
 ];
 
 const ENGLISH_CONSONANTS: EnglishSound[] = [
-  { symbol: "/θ/", example: "think", cue: "unvoiced th" },
-  { symbol: "/ð/", example: "this", cue: "voiced th" },
-  { symbol: "/ʃ/", example: "shoe", cue: "sh" },
-  { symbol: "/ʒ/", example: "vision", cue: "soft zh" },
-  { symbol: "/tʃ/", example: "chair", cue: "ch" },
-  { symbol: "/dʒ/", example: "job", cue: "j" },
-  { symbol: "/ŋ/", example: "sing", cue: "ng" },
-  { symbol: "/r/", example: "red", cue: "English r" },
+  {
+    symbol: "/θ/",
+    example: "think",
+    translation: "思考",
+    cue: "unvoiced th",
+    cueChinese: "無聲 th",
+    soundText: "th",
+  },
+  {
+    symbol: "/ð/",
+    example: "this",
+    translation: "這個",
+    cue: "voiced th",
+    cueChinese: "有聲 th",
+    soundText: "the",
+  },
+  {
+    symbol: "/ʃ/",
+    example: "shoe",
+    translation: "鞋子",
+    cue: "sh",
+    cueChinese: "sh 音",
+    soundText: "sh",
+  },
+  {
+    symbol: "/ʒ/",
+    example: "vision",
+    translation: "視覺",
+    cue: "soft zh",
+    cueChinese: "柔和 zh 音",
+    soundText: "zh",
+  },
+  {
+    symbol: "/tʃ/",
+    example: "chair",
+    translation: "椅子",
+    cue: "ch",
+    cueChinese: "ch 音",
+    soundText: "ch",
+  },
+  {
+    symbol: "/dʒ/",
+    example: "job",
+    translation: "工作",
+    cue: "j",
+    cueChinese: "j 音",
+    soundText: "j",
+  },
+  {
+    symbol: "/ŋ/",
+    example: "sing",
+    translation: "唱歌",
+    cue: "ng",
+    cueChinese: "鼻音 ng",
+    soundText: "ng",
+  },
+  {
+    symbol: "/r/",
+    example: "red",
+    translation: "紅色",
+    cue: "English r",
+    cueChinese: "英文 r 音",
+    soundText: "rr",
+  },
 ];
 
-const IPA_SOUND_TEXT: Record<string, string> = {
-  "/iː/": "ee",
-  "/ɪ/": "ih",
-  "/e/": "eh",
-  "/æ/": "aah",
-  "/ɑː/": "ah",
-  "/ʌ/": "uh",
-  "/ɔː/": "aw",
-  "/ʊ/": "short oo",
-  "/uː/": "long oo",
-  "/ə/": "uh",
-  "/θ/": "th",
-  "/ð/": "the",
-  "/ʃ/": "sh",
-  "/ʒ/": "zh",
-  "/tʃ/": "ch",
-  "/dʒ/": "j",
-  "/ŋ/": "ng",
-  "/r/": "rr",
-};
-
 const ZHUYIN_INITIALS: ZhuyinSound[] = [
-  { symbol: "ㄅ", example: "八", reading: "ㄅㄚ" },
-  { symbol: "ㄆ", example: "怕", reading: "ㄆㄚˋ" },
-  { symbol: "ㄇ", example: "媽", reading: "ㄇㄚ" },
-  { symbol: "ㄈ", example: "發", reading: "ㄈㄚ" },
-  { symbol: "ㄉ", example: "大", reading: "ㄉㄚˋ" },
-  { symbol: "ㄊ", example: "他", reading: "ㄊㄚ" },
-  { symbol: "ㄋ", example: "你", reading: "ㄋㄧˇ" },
-  { symbol: "ㄌ", example: "來", reading: "ㄌㄞˊ" },
-  { symbol: "ㄍ", example: "高", reading: "ㄍㄠ" },
-  { symbol: "ㄎ", example: "看", reading: "ㄎㄢˋ" },
-  { symbol: "ㄏ", example: "好", reading: "ㄏㄠˇ" },
-  { symbol: "ㄐ", example: "家", reading: "ㄐㄧㄚ" },
-  { symbol: "ㄑ", example: "去", reading: "ㄑㄩˋ" },
-  { symbol: "ㄒ", example: "小", reading: "ㄒㄧㄠˇ" },
-  { symbol: "ㄓ", example: "中", reading: "ㄓㄨㄥ" },
-  { symbol: "ㄔ", example: "吃", reading: "ㄔ" },
-  { symbol: "ㄕ", example: "是", reading: "ㄕˋ" },
-  { symbol: "ㄖ", example: "日", reading: "ㄖˋ" },
-  { symbol: "ㄗ", example: "早", reading: "ㄗㄠˇ" },
-  { symbol: "ㄘ", example: "菜", reading: "ㄘㄞˋ" },
-  { symbol: "ㄙ", example: "三", reading: "ㄙㄢ" },
+  { symbol: "ㄅ", example: "八", translation: "eight", reading: "ㄅㄚ" },
+  { symbol: "ㄆ", example: "怕", translation: "afraid", reading: "ㄆㄚˋ" },
+  { symbol: "ㄇ", example: "媽", translation: "mother", reading: "ㄇㄚ" },
+  { symbol: "ㄈ", example: "發", translation: "send / issue", reading: "ㄈㄚ" },
+  { symbol: "ㄉ", example: "大", translation: "big", reading: "ㄉㄚˋ" },
+  { symbol: "ㄊ", example: "他", translation: "he", reading: "ㄊㄚ" },
+  { symbol: "ㄋ", example: "你", translation: "you", reading: "ㄋㄧˇ" },
+  { symbol: "ㄌ", example: "來", translation: "come", reading: "ㄌㄞˊ" },
+  { symbol: "ㄍ", example: "高", translation: "tall", reading: "ㄍㄠ" },
+  { symbol: "ㄎ", example: "看", translation: "look", reading: "ㄎㄢˋ" },
+  { symbol: "ㄏ", example: "好", translation: "good", reading: "ㄏㄠˇ" },
+  { symbol: "ㄐ", example: "家", translation: "home", reading: "ㄐㄧㄚ" },
+  { symbol: "ㄑ", example: "去", translation: "go", reading: "ㄑㄩˋ" },
+  { symbol: "ㄒ", example: "小", translation: "small", reading: "ㄒㄧㄠˇ" },
+  { symbol: "ㄓ", example: "中", translation: "middle", reading: "ㄓㄨㄥ" },
+  { symbol: "ㄔ", example: "吃", translation: "eat", reading: "ㄔ" },
+  { symbol: "ㄕ", example: "是", translation: "to be", reading: "ㄕˋ" },
+  { symbol: "ㄖ", example: "日", translation: "day", reading: "ㄖˋ" },
+  { symbol: "ㄗ", example: "早", translation: "early", reading: "ㄗㄠˇ" },
+  { symbol: "ㄘ", example: "菜", translation: "vegetable", reading: "ㄘㄞˋ" },
+  { symbol: "ㄙ", example: "三", translation: "three", reading: "ㄙㄢ" },
 ];
 
 const ZHUYIN_FINALS: ZhuyinSound[] = [
-  { symbol: "ㄚ", example: "啊", reading: "ㄚ" },
-  { symbol: "ㄛ", example: "喔", reading: "ㄛ" },
-  { symbol: "ㄜ", example: "餓", reading: "ㄜˋ" },
-  { symbol: "ㄝ", example: "也", reading: "ㄧㄝˇ" },
-  { symbol: "ㄞ", example: "愛", reading: "ㄞˋ" },
-  { symbol: "ㄟ", example: "黑", reading: "ㄏㄟ" },
-  { symbol: "ㄠ", example: "好", reading: "ㄏㄠˇ" },
-  { symbol: "ㄡ", example: "口", reading: "ㄎㄡˇ" },
-  { symbol: "ㄢ", example: "安", reading: "ㄢ" },
-  { symbol: "ㄣ", example: "很", reading: "ㄏㄣˇ" },
-  { symbol: "ㄤ", example: "忙", reading: "ㄇㄤˊ" },
-  { symbol: "ㄥ", example: "冷", reading: "ㄌㄥˇ" },
-  { symbol: "ㄦ", example: "二", reading: "ㄦˋ" },
-  { symbol: "ㄧ", example: "一", reading: "ㄧ" },
-  { symbol: "ㄨ", example: "五", reading: "ㄨˇ" },
-  { symbol: "ㄩ", example: "雨", reading: "ㄩˇ" },
+  { symbol: "ㄚ", example: "啊", translation: "ah", reading: "ㄚ" },
+  { symbol: "ㄛ", example: "喔", translation: "oh", reading: "ㄛ" },
+  { symbol: "ㄜ", example: "餓", translation: "hungry", reading: "ㄜˋ" },
+  { symbol: "ㄝ", example: "也", translation: "also", reading: "ㄧㄝˇ" },
+  { symbol: "ㄞ", example: "愛", translation: "love", reading: "ㄞˋ" },
+  { symbol: "ㄟ", example: "黑", translation: "black", reading: "ㄏㄟ" },
+  { symbol: "ㄠ", example: "好", translation: "good", reading: "ㄏㄠˇ" },
+  { symbol: "ㄡ", example: "口", translation: "mouth", reading: "ㄎㄡˇ" },
+  { symbol: "ㄢ", example: "安", translation: "peace", reading: "ㄢ" },
+  { symbol: "ㄣ", example: "很", translation: "very", reading: "ㄏㄣˇ" },
+  { symbol: "ㄤ", example: "忙", translation: "busy", reading: "ㄇㄤˊ" },
+  { symbol: "ㄥ", example: "冷", translation: "cold", reading: "ㄌㄥˇ" },
+  { symbol: "ㄦ", example: "二", translation: "two", reading: "ㄦˋ" },
+  { symbol: "ㄧ", example: "一", translation: "one", reading: "ㄧ" },
+  { symbol: "ㄨ", example: "五", translation: "five", reading: "ㄨˇ" },
+  { symbol: "ㄩ", example: "雨", translation: "rain", reading: "ㄩˇ" },
 ];
 
-const TONES = [
-  { symbol: "ˉ", label: "第一聲", example: "媽 ㄇㄚ" },
-  { symbol: "ˊ", label: "第二聲", example: "麻 ㄇㄚˊ" },
-  { symbol: "ˇ", label: "第三聲", example: "馬 ㄇㄚˇ" },
-  { symbol: "ˋ", label: "第四聲", example: "罵 ㄇㄚˋ" },
-  { symbol: "˙", label: "輕聲", example: "嗎 ㄇㄚ˙" },
+const TONES: ToneItem[] = [
+  {
+    symbol: "ˉ",
+    chineseLabel: "第一聲",
+    englishLabel: "First tone",
+    example: "媽",
+    translation: "mother",
+    reading: "ㄇㄚ",
+  },
+  {
+    symbol: "ˊ",
+    chineseLabel: "第二聲",
+    englishLabel: "Second tone",
+    example: "麻",
+    translation: "hemp",
+    reading: "ㄇㄚˊ",
+  },
+  {
+    symbol: "ˇ",
+    chineseLabel: "第三聲",
+    englishLabel: "Third tone",
+    example: "馬",
+    translation: "horse",
+    reading: "ㄇㄚˇ",
+  },
+  {
+    symbol: "ˋ",
+    chineseLabel: "第四聲",
+    englishLabel: "Fourth tone",
+    example: "罵",
+    translation: "scold",
+    reading: "ㄇㄚˋ",
+  },
+  {
+    symbol: "˙",
+    chineseLabel: "輕聲",
+    englishLabel: "Neutral tone",
+    example: "嗎",
+    translation: "question particle",
+    reading: "ㄇㄚ˙",
+  },
 ];
 
 export default function PronunciationPage() {
@@ -167,16 +319,22 @@ export default function PronunciationPage() {
     () =>
       learningChinese
         ? {
-            eyebrow: "繁體中文發音",
+            eyebrow: "Traditional Chinese pronunciation",
             title: "注音基礎",
+            subtitle: "Zhuyin Basics",
             description:
-              "從ㄅㄆㄇㄈ、韻母與聲調開始，建立正確的繁體中文發音基礎。",
+              "從聲母、韻母與聲調開始，建立正確的繁體中文發音基礎。",
+            descriptionSecondary:
+              "Build a strong Traditional Chinese pronunciation foundation through initials, finals, and tones.",
           }
         : {
             eyebrow: "English pronunciation",
             title: "English Sounds",
+            subtitle: "英文發音基礎",
             description:
               "Learn the most useful English IPA symbols through familiar everyday words.",
+            descriptionSecondary:
+              "透過熟悉的生活單字，學習最實用的英文 IPA 發音符號。",
           },
     [learningChinese],
   );
@@ -186,7 +344,7 @@ export default function PronunciationPage() {
       className="min-h-screen bg-[#f5f2eb] px-5 pt-6 text-black"
       style={{
         paddingBottom:
-          "calc(9rem + env(safe-area-inset-bottom))",
+          "calc(11rem + env(safe-area-inset-bottom))",
       }}
     >
       <div className="mx-auto max-w-xl">
@@ -215,8 +373,16 @@ export default function PronunciationPage() {
             {loading ? "Loading…" : pageCopy.title}
           </h1>
 
-          <p className="mt-5 max-w-md text-[16px] leading-7 text-black/55">
+          <p className="mt-2 text-[15px] font-medium text-black/35">
+            {pageCopy.subtitle}
+          </p>
+
+          <p className="mt-5 max-w-md text-[16px] leading-7 text-black/60">
             {pageCopy.description}
+          </p>
+
+          <p className="mt-2 max-w-md text-[13px] leading-6 text-black/35">
+            {pageCopy.descriptionSecondary}
           </p>
         </section>
 
@@ -232,11 +398,13 @@ export default function PronunciationPage() {
 
 function EnglishPronunciationLesson() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       <LessonIntro
         number="01"
         title="Vowel sounds"
-        description="English spelling can change, but the IPA symbol consistently represents the sound."
+        translatedTitle="母音"
+        description="English spelling can change, but each IPA symbol consistently represents a sound."
+        translatedDescription="英文拼字可能不同，但每一個 IPA 符號都代表相對固定的聲音。"
       />
 
       <SoundGrid>
@@ -248,7 +416,9 @@ function EnglishPronunciationLesson() {
       <LessonIntro
         number="02"
         title="Special consonants"
-        description="These sounds are often difficult because their spelling does not clearly show the pronunciation."
+        translatedTitle="特殊子音"
+        description="These sounds are often difficult because spelling does not always clearly show their pronunciation."
+        translatedDescription="這些聲音較難掌握，因為英文拼字不一定能直接反映實際發音。"
       />
 
       <SoundGrid>
@@ -257,20 +427,16 @@ function EnglishPronunciationLesson() {
         ))}
       </SoundGrid>
 
-      <section className="rounded-[26px] bg-black p-6 text-white">
-        <BookOpen size={22} strokeWidth={1.7} />
-
-        <h2 className="mt-8 text-[25px] font-semibold tracking-[-0.035em]">
-          How to practise
-        </h2>
-
-        <div className="mt-5 space-y-4 text-[14px] leading-6 text-white/70">
-          <p>1. Listen once without repeating.</p>
-          <p>2. Listen again and copy the mouth movement.</p>
-          <p>3. Say the example word slowly, then naturally.</p>
-          <p>4. Compare similar sounds such as /iː/ and /ɪ/.</p>
-        </div>
-      </section>
+      <PracticeCard
+        title="How to practise"
+        translatedTitle="如何練習英文發音"
+        lines={[
+          ["1. Listen once without repeating.", "先聽一次，不要立刻跟讀。"],
+          ["2. Listen again and copy the mouth movement.", "再聽一次，模仿嘴型與舌頭位置。"],
+          ["3. Say the example slowly, then naturally.", "先慢速念範例，再用自然速度朗讀。"],
+          ["4. Compare similar sounds.", "比較容易混淆的相似音，例如 /iː/ 和 /ɪ/。"],
+        ]}
+      />
     </div>
   );
 }
@@ -280,55 +446,54 @@ function EnglishSoundCard({
 }: {
   sound: EnglishSound;
 }) {
-  const isolatedSound =
-    IPA_SOUND_TEXT[sound.symbol] || sound.example;
-
   return (
-    <article className="flex min-h-[178px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
+    <article className="flex min-h-[220px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="text-[28px] font-semibold tracking-[-0.04em]">
+        <span className="text-[29px] font-semibold tracking-[-0.04em]">
           {sound.symbol}
         </span>
 
         <button
           type="button"
-          onClick={() => speak(isolatedSound, "en-US")}
+          onClick={() => speak(sound.soundText, "en-US")}
           aria-label={`Play the ${sound.symbol} sound`}
-          title="Play sound"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
         >
-          <Volume2 size={15} strokeWidth={1.8} />
+          <Volume2 size={16} strokeWidth={1.8} />
         </button>
       </div>
 
       <div className="mt-6">
-        <p className="text-[18px] font-semibold">
-          {sound.example}
-        </p>
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <p className="text-[19px] font-semibold">
+              {sound.example}
+            </p>
 
-        <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-black/35">
-          {sound.cue}
-        </p>
-      </div>
+            <p className="mt-1 text-[13px] text-black/42">
+              {sound.translation}
+            </p>
+          </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => speak(isolatedSound, "en-US")}
-          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#f5f2eb] text-[10px] font-semibold uppercase tracking-[0.1em]"
-        >
-          <Volume2 size={13} strokeWidth={1.8} />
-          Sound
-        </button>
+          <button
+            type="button"
+            onClick={() => speak(sound.example, "en-US")}
+            aria-label={`Play ${sound.example}`}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.07]"
+          >
+            <Volume2 size={14} strokeWidth={1.8} />
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => speak(sound.example, "en-US")}
-          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-black text-[10px] font-semibold uppercase tracking-[0.1em] text-white"
-        >
-          <Volume2 size={13} strokeWidth={1.8} />
-          Word
-        </button>
+        <div className="mt-4 border-t border-black/[0.06] pt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/38">
+            {sound.cue}
+          </p>
+
+          <p className="mt-1 text-[12px] text-black/30">
+            {sound.cueChinese}
+          </p>
+        </div>
       </div>
     </article>
   );
@@ -336,11 +501,13 @@ function EnglishSoundCard({
 
 function ChinesePronunciationLesson() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       <LessonIntro
         number="01"
         title="聲母"
+        translatedTitle="Initials"
         description="聲母通常位於一個音節的開頭，例如「媽」的ㄇ。"
+        translatedDescription="An initial usually appears at the beginning of a syllable, such as ㄇ in 媽."
       />
 
       <SoundGrid>
@@ -352,7 +519,9 @@ function ChinesePronunciationLesson() {
       <LessonIntro
         number="02"
         title="韻母"
+        translatedTitle="Finals"
         description="韻母是音節的主要聲音，可以單獨出現，也可以接在聲母後面。"
+        translatedDescription="A final is the main sound of a syllable. It may appear alone or after an initial."
       />
 
       <SoundGrid>
@@ -364,55 +533,27 @@ function ChinesePronunciationLesson() {
       <LessonIntro
         number="03"
         title="聲調"
+        translatedTitle="Tones"
         description="繁體中文的聲調會改變一個字的意思，練習時必須一起記住。"
+        translatedDescription="Tones can change the meaning of a Chinese word, so they must be learned together with each syllable."
       />
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {TONES.map((tone) => (
-          <button
-            key={tone.label}
-            type="button"
-            onClick={() =>
-              speak(tone.example.split(" ")[0], "zh-TW")
-            }
-            className="flex w-full items-center gap-4 rounded-[22px] border border-black/[0.06] bg-white px-5 py-4 text-left transition-transform active:scale-[0.99]"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-[21px] text-white">
-              {tone.symbol}
-            </span>
-
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-semibold">
-                {tone.label}
-              </span>
-              <span className="mt-1 block text-[13px] text-black/40">
-                {tone.example}
-              </span>
-            </span>
-
-            <Volume2
-              size={16}
-              strokeWidth={1.8}
-              className="text-black/40"
-            />
-          </button>
+          <ToneCard key={tone.englishLabel} tone={tone} />
         ))}
       </div>
 
-      <section className="rounded-[26px] bg-black p-6 text-white">
-        <BookOpen size={22} strokeWidth={1.7} />
-
-        <h2 className="mt-8 text-[25px] font-semibold tracking-[-0.035em]">
-          如何練習注音
-        </h2>
-
-        <div className="mt-5 space-y-4 text-[14px] leading-6 text-white/70">
-          <p>1. 先認識聲母，再學習韻母。</p>
-          <p>2. 將聲母與韻母慢慢拼合。</p>
-          <p>3. 最後加入聲調，完整念出整個音節。</p>
-          <p>4. 每次練習都搭配真正的中文字。</p>
-        </div>
-      </section>
+      <PracticeCard
+        title="如何練習注音"
+        translatedTitle="How to practise Zhuyin"
+        lines={[
+          ["1. 先認識聲母，再學習韻母。", "Learn the initials first, followed by the finals."],
+          ["2. 將聲母與韻母慢慢拼合。", "Slowly combine the initial and final."],
+          ["3. 最後加入聲調，完整念出整個音節。", "Add the tone and pronounce the complete syllable."],
+          ["4. 每次練習都搭配真正的中文字。", "Always practise with a real Chinese character."],
+        ]}
+      />
     </div>
   );
 }
@@ -423,9 +564,9 @@ function ZhuyinSoundCard({
   sound: ZhuyinSound;
 }) {
   return (
-    <article className="flex min-h-[178px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
+    <article className="flex min-h-[220px] flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="text-[34px] font-semibold leading-none">
+        <span className="text-[38px] font-semibold leading-none">
           {sound.symbol}
         </span>
 
@@ -433,42 +574,82 @@ function ZhuyinSoundCard({
           type="button"
           onClick={() => speak(sound.reading, "zh-TW")}
           aria-label={`播放注音 ${sound.reading}`}
-          title="播放注音"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
         >
-          <Volume2 size={15} strokeWidth={1.8} />
+          <Volume2 size={16} strokeWidth={1.8} />
         </button>
       </div>
 
       <div className="mt-6">
-        <p className="text-[20px] font-semibold">
-          {sound.example}
+        <div className="flex items-end justify-between gap-2">
+          <div>
+            <p className="text-[21px] font-semibold">
+              {sound.example}
+            </p>
+
+            <p className="mt-1 text-[13px] text-black/42">
+              {sound.translation}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => speak(sound.example, "zh-TW")}
+            aria-label={`播放 ${sound.example}`}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.07]"
+          >
+            <Volume2 size={14} strokeWidth={1.8} />
+          </button>
+        </div>
+
+        <div className="mt-4 border-t border-black/[0.06] pt-3">
+          <p className="text-[13px] text-black/35">
+            {sound.reading}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ToneCard({
+  tone,
+}: {
+  tone: ToneItem;
+}) {
+  return (
+    <article className="flex items-center gap-4 rounded-[23px] border border-black/[0.06] bg-white px-5 py-4">
+      <button
+        type="button"
+        onClick={() => speak(tone.reading, "zh-TW")}
+        aria-label={`播放 ${tone.chineseLabel}`}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-[21px] text-white transition-transform active:scale-95"
+      >
+        {tone.symbol}
+      </button>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-[16px] font-semibold">
+          {tone.chineseLabel}
         </p>
 
-        <p className="mt-1 text-[13px] text-black/35">
-          {sound.reading}
+        <p className="mt-0.5 text-[12px] text-black/35">
+          {tone.englishLabel}
+        </p>
+
+        <p className="mt-2 text-[13px] text-black/48">
+          {tone.example} · {tone.translation} · {tone.reading}
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => speak(sound.reading, "zh-TW")}
-          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-[#f5f2eb] text-[11px] font-semibold"
-        >
-          <Volume2 size={13} strokeWidth={1.8} />
-          注音
-        </button>
-
-        <button
-          type="button"
-          onClick={() => speak(sound.example, "zh-TW")}
-          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-black text-[11px] font-semibold text-white"
-        >
-          <Volume2 size={13} strokeWidth={1.8} />
-          單字
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => speak(tone.example, "zh-TW")}
+        aria-label={`播放單字 ${tone.example}`}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb]"
+      >
+        <Volume2 size={15} strokeWidth={1.8} />
+      </button>
     </article>
   );
 }
@@ -476,11 +657,15 @@ function ZhuyinSoundCard({
 function LessonIntro({
   number,
   title,
+  translatedTitle,
   description,
+  translatedDescription,
 }: {
   number: string;
   title: string;
+  translatedTitle: string;
   description: string;
+  translatedDescription: string;
 }) {
   return (
     <section className="pt-4">
@@ -488,21 +673,58 @@ function LessonIntro({
         Lesson {number}
       </p>
 
-      <div className="mt-2 flex items-end justify-between gap-4">
-        <div>
-          <h2 className="text-[27px] font-semibold tracking-[-0.04em]">
-            {title}
-          </h2>
-          <p className="mt-2 max-w-md text-[13px] leading-6 text-black/45">
-            {description}
-          </p>
-        </div>
+      <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.04em]">
+        {title}
+      </h2>
 
-        <ChevronRight
-          size={18}
-          strokeWidth={1.7}
-          className="mb-1 shrink-0 text-black/25"
-        />
+      <p className="mt-1 text-[14px] font-medium text-black/35">
+        {translatedTitle}
+      </p>
+
+      <p className="mt-4 max-w-md text-[14px] leading-6 text-black/52">
+        {description}
+      </p>
+
+      <p className="mt-2 max-w-md text-[12px] leading-5 text-black/30">
+        {translatedDescription}
+      </p>
+    </section>
+  );
+}
+
+function PracticeCard({
+  title,
+  translatedTitle,
+  lines,
+}: {
+  title: string;
+  translatedTitle: string;
+  lines: Array<[string, string]>;
+}) {
+  return (
+    <section className="rounded-[28px] bg-black p-6 text-white">
+      <BookOpen size={22} strokeWidth={1.7} />
+
+      <h2 className="mt-8 text-[27px] font-semibold tracking-[-0.035em]">
+        {title}
+      </h2>
+
+      <p className="mt-1 text-[13px] text-white/42">
+        {translatedTitle}
+      </p>
+
+      <div className="mt-6 space-y-5">
+        {lines.map(([primary, secondary]) => (
+          <div key={primary}>
+            <p className="text-[14px] leading-6 text-white/82">
+              {primary}
+            </p>
+
+            <p className="mt-1 text-[12px] leading-5 text-white/40">
+              {secondary}
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   );
