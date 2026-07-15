@@ -1,5 +1,6 @@
 "use client";
 
+import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
 import {
   ArrowLeft,
   Camera,
@@ -8,7 +9,6 @@ import {
   LoaderCircle,
   Send,
   UserRound,
-  Volume2,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -950,223 +950,92 @@ export default function CameraPage() {
         )}
 
         {result && (
-          <section className="mt-5 overflow-hidden rounded-[32px] border border-black/[0.055] bg-white shadow-[0_16px_50px_rgba(0,0,0,0.07)]">
-            <div className="px-5 pb-6 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
-                  Identified word
-                </p>
+          <div className="mt-5">
+            <AdaptiveWordCard
+              headerLabel="Identified word"
+              confidence={`${result.confidence} confidence`}
+              primary={{
+                label: learningChinese ? "Traditional Chinese" : "English",
+                text: primaryText,
+                pronunciationLabel: primaryPronunciationLabel,
+                pronunciation: primaryPronunciation,
+                language: primaryLanguage,
+              }}
+              secondary={{
+                label: learningChinese ? "English" : "Traditional Chinese",
+                text: secondaryText,
+                pronunciationLabel: secondaryPronunciationLabel,
+                pronunciation: secondaryPronunciation,
+                language: secondaryLanguage,
+              }}
+              englishExample={
+                result.englishExample
+                  ? {
+                      label: "English example",
+                      text: result.englishExample,
+                      language: "en-US",
+                    }
+                  : null
+              }
+              chineseExample={
+                result.chineseExample
+                  ? {
+                      label: "中文例句",
+                      text: result.chineseExample,
+                      language: "zh-TW",
+                    }
+                  : null
+              }
+              partOfSpeech={result.partOfSpeech?.toLowerCase()}
+              pronunciationLoading={pronunciationLoading}
+              pronunciationError={pronunciationError}
+              onSpeak={speak}
+              onRetryPronunciation={() => {
+                setPronunciation(null);
+                setPronunciationError("");
+                setResult({ ...result });
+              }}
+              actions={
+                <div className="grid gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => void saveToVocabulary()}
+                    disabled={saving || saved}
+                    className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <LoaderCircle size={15} className="animate-spin" />
+                        Saving
+                      </>
+                    ) : saved ? (
+                      <>
+                        <Check size={15} />
+                        Saved
+                      </>
+                    ) : (
+                      "Save to Vocabulary"
+                    )}
+                  </button>
 
-                <span className="rounded-full bg-[#f5f2eb] px-3 py-1.5 text-[10px] font-medium capitalize tracking-[0.02em] text-black/40">
-                  {result.confidence} confidence
-                </span>
-              </div>
-
-              <div className="mt-7">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                          <h2 className="min-w-0 break-words text-[40px] font-semibold leading-[0.98] tracking-[-0.05em] sm:text-[46px]">
-                            {primaryText}
-                          </h2>
-
-                          <button
-                            type="button"
-                            onClick={() => speak(primaryText, primaryLanguage)}
-                            aria-label={`Play ${primaryText}`}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/70 transition-transform active:scale-95"
-                          >
-                            <Volume2 size={17} strokeWidth={1.8} />
-                          </button>
-                        </div>
-
-                        <div className="mt-3 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/40">
-                          <span className="font-semibold uppercase tracking-[0.1em] text-black/25">
-                            {primaryPronunciationLabel}
-                          </span>
-
-                          {primaryPronunciation ? (
-                            <span>{primaryPronunciation}</span>
-                          ) : pronunciationLoading ? (
-                            <span className="inline-flex items-center gap-1.5 text-black/25">
-                              <LoaderCircle
-                                size={11}
-                                className="animate-spin"
-                              />
-                              Loading
-                            </span>
-                          ) : (
-                            <span className="text-black/25">
-                              Listen with speaker
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-6">
-                      <div className="flex items-center gap-3">
-                        <p className="min-w-0 break-words text-[26px] font-medium leading-none tracking-[-0.035em] text-black/72">
-                          {secondaryText}
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            speak(secondaryText, secondaryLanguage)
-                          }
-                          aria-label={`Play ${secondaryText}`}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/60 transition-transform active:scale-95"
-                        >
-                          <Volume2 size={15} strokeWidth={1.8} />
-                        </button>
-                      </div>
-
-                      <div className="mt-3 flex min-h-5 flex-wrap items-center gap-2 text-[12px] text-black/38">
-                        <span className="font-semibold uppercase tracking-[0.1em] text-black/25">
-                          {secondaryPronunciationLabel}
-                        </span>
-
-                        {secondaryPronunciation ? (
-                          <span>{secondaryPronunciation}</span>
-                        ) : pronunciationLoading ? (
-                          <span className="inline-flex items-center gap-1.5 text-black/25">
-                            <LoaderCircle size={11} className="animate-spin" />
-                            Loading
-                          </span>
-                        ) : (
-                          <span className="text-black/25">
-                            Listen with speaker
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-black/32">
-                      {result.partOfSpeech && (
-                        <span className="capitalize">
-                          {result.partOfSpeech.toLowerCase()}
-                        </span>
-                      )}
-
-                      {pronunciationError && (
-                        <>
-                          {result.partOfSpeech && (
-                            <span className="text-black/15">•</span>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPronunciation(null);
-                              setPronunciationError("");
-                              setResult({ ...result });
-                            }}
-                            className="underline decoration-black/15 underline-offset-4"
-                            title={pronunciationError}
-                          >
-                            Refresh pronunciation
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {(result.englishExample || result.chineseExample) && (
-                <div className="mt-7 space-y-3">
-                  {result.englishExample && (
-                    <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/32">
-                          English example
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => speak(result.englishExample, "en-US")}
-                          aria-label="Play English example sentence"
-                          title="English example sentence"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
-                        >
-                          <Volume2 size={15} strokeWidth={1.8} />
-                        </button>
-                      </div>
-
-                      <p className="mt-2 break-words text-[16px] leading-7 tracking-[-0.012em] text-black/85">
-                        {result.englishExample}
-                      </p>
-                    </div>
-                  )}
-
-                  {result.chineseExample && (
-                    <div className="rounded-[22px] bg-[#f8f6f1] px-4 py-4 sm:px-5">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/32">
-                          中文例句
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => speak(result.chineseExample, "zh-TW")}
-                          aria-label="播放中文例句"
-                          title="播放中文例句"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/65 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-transform active:scale-95"
-                        >
-                          <Volume2 size={15} strokeWidth={1.8} />
-                        </button>
-                      </div>
-
-                      <p className="mt-2 break-words text-[15px] leading-7 tracking-[-0.01em] text-black/58">
-                        {result.chineseExample}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="mt-6 grid gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => void saveToVocabulary()}
-                  disabled={saving || saved}
-                  className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>
+                  <button
+                    type="button"
+                    onClick={() => void openPartnerPicker()}
+                    disabled={sending || loadingPartners}
+                    className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
+                  >
+                    {loadingPartners ? (
                       <LoaderCircle size={15} className="animate-spin" />
-                      Saving
-                    </>
-                  ) : saved ? (
-                    <>
-                      <Check size={15} />
-                      Saved
-                    </>
-                  ) : (
-                    "Save to Vocabulary"
-                  )}
-                </button>
+                    ) : (
+                      <Send size={15} strokeWidth={1.8} />
+                    )}
 
-                <button
-                  type="button"
-                  onClick={() => void openPartnerPicker()}
-                  disabled={sending || loadingPartners}
-                  className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#f1eee7] px-5 text-[13px] font-semibold text-black transition-transform active:scale-[0.99] disabled:opacity-40"
-                >
-                  {loadingPartners ? (
-                    <LoaderCircle size={15} className="animate-spin" />
-                  ) : (
-                    <Send size={15} strokeWidth={1.8} />
-                  )}
-
-                  {loadingPartners ? "Loading Partners" : "Send to Partner"}
-                </button>
-              </div>
-            </div>
-          </section>
+                    {loadingPartners ? "Loading Partners" : "Send to Partner"}
+                  </button>
+                </div>
+              }
+            />
+          </div>
         )}
 
         {partnerPickerOpen && (
