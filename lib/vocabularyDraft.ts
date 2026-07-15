@@ -16,7 +16,7 @@ export function setPendingSharedVocabulary(item: VocabularyItem): boolean {
   }
 }
 
-export function consumePendingSharedVocabulary(): VocabularyItem | null {
+export function getPendingSharedVocabulary(): VocabularyItem | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -24,12 +24,33 @@ export function consumePendingSharedVocabulary(): VocabularyItem | null {
 
     if (!raw) return null;
 
-    window.sessionStorage.removeItem(STORAGE_KEY);
-
     return JSON.parse(raw) as VocabularyItem;
   } catch (storageError) {
-    console.error("Could not consume pending vocabulary:", storageError);
+    console.error("Could not read pending vocabulary:", storageError);
 
     return null;
   }
+}
+
+export function clearPendingSharedVocabulary() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(STORAGE_KEY);
+  } catch (storageError) {
+    console.error("Could not clear pending vocabulary:", storageError);
+  }
+}
+
+/**
+ * Kept for compatibility with older code.
+ */
+export function consumePendingSharedVocabulary(): VocabularyItem | null {
+  const item = getPendingSharedVocabulary();
+
+  if (item) {
+    clearPendingSharedVocabulary();
+  }
+
+  return item;
 }

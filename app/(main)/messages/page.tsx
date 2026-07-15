@@ -28,7 +28,10 @@ import {
   type FriendProfile,
 } from "@/lib/friends";
 import { consumePendingSharedArticle } from "@/lib/newsDraft";
-import { consumePendingSharedVocabulary } from "@/lib/vocabularyDraft";
+import {
+  clearPendingSharedVocabulary,
+  getPendingSharedVocabulary,
+} from "@/lib/vocabularyDraft";
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import type { DailyNewsCard } from "@/lib/types/dailyNews";
 
@@ -741,7 +744,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           }
         }
 
-        const pendingVocabulary = consumePendingSharedVocabulary();
+        const pendingVocabulary = getPendingSharedVocabulary();
 
         if (pendingVocabulary) {
           const {
@@ -772,6 +775,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
               `Couldn't share that word: ${vocabularyShareError.message}`,
             );
           } else if (insertedVocabularyMessage && !cancelled) {
+            clearPendingSharedVocabulary();
+
             const newMessage = insertedVocabularyMessage as Message;
 
             setMessages((currentMessages) => {
