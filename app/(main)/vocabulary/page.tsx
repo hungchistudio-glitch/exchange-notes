@@ -6,7 +6,6 @@ import {
   BookOpen,
   Camera,
   Check,
-  House,
   LoaderCircle,
   Plus,
   Search,
@@ -908,15 +907,6 @@ export default function VocabularyPage() {
 
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
-      <Link
-        href="/home"
-        aria-label="Back to Home"
-        title="Back to Home"
-        className="fixed left-4 top-5 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.055] bg-white/90 text-black/65 shadow-[0_6px_22px_rgba(0,0,0,0.07)] backdrop-blur-xl transition-transform active:scale-95"
-      >
-        <House size={18} strokeWidth={1.8} />
-      </Link>
-
       <div className="mx-auto max-w-xl">
         <header className="flex items-center justify-between gap-3">
           <div className="min-w-0">

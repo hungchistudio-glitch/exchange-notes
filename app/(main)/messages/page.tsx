@@ -1,5 +1,6 @@
 "use client";
 
+import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
 import {
   FormEvent,
   Suspense,
@@ -13,10 +14,10 @@ import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BookmarkPlus,
+  Check,
   FileText,
   LogOut,
   Paperclip,
-  Volume2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -28,7 +29,7 @@ import {
 } from "@/lib/friends";
 import { consumePendingSharedArticle } from "@/lib/newsDraft";
 import { consumePendingSharedVocabulary } from "@/lib/vocabularyDraft";
-import type { VocabularyItem } from "@/lib/types/app";
+import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import type { DailyNewsCard } from "@/lib/types/dailyNews";
 
 type Message = {
@@ -60,6 +61,306 @@ const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 
 const AI_IMAGE_MAX_DIMENSION = 1600;
 const AI_IMAGE_JPEG_QUALITY = 0.82;
+
+function SharedVocabularyMessage({
+  item,
+  currentUserId,
+}: {
+  item: VocabularyItem;
+  currentUserId: string | null;
+}) {
+  const [learningLanguage, setLearningLanguage] =
+    useState<AppLanguage>("english");
+
+  const [pronunciation, setPronunciation] = useState<{
+    englishPronunciation: string;
+    zhuyin: string;
+  } | null>(null);
+
+  const [pronunciationLoading, setPronunciationLoading] = useState(false);
+
+  const [pronunciationError, setPronunciationError] = useState("");
+
+  const [savingSharedWord, setSavingSharedWord] = useState(false);
+
+  const [sharedWordSaved, setSharedWordSaved] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLearningLanguage() {
+      try {
+        const supabase = createClient();
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const { data } = await supabase
+          .from("profiles")
+          .select("learning_language")
+          .eq("id", user.id)
+          .single();
+
+        if (active && data?.learning_language) {
+          setLearningLanguage(data.learning_language as AppLanguage);
+        }
+      } catch (error) {
+        console.warn("Could not load message learning language:", error);
+      }
+    }
+
+    void loadLearningLanguage();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const english = item.word?.trim() || "";
+    const chinese = item.translation?.trim() || "";
+
+    if (!english && !chinese) return;
+
+    const controller = new AbortController();
+
+    async function loadPronunciation() {
+      setPronunciationLoading(true);
+      setPronunciationError("");
+
+      try {
+        const response = await fetch("/api/word-pronunciation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            english,
+            chinese,
+          }),
+        });
+
+        const data: unknown = await response.json();
+
+        if (
+          !response.ok ||
+          !data ||
+          typeof data !== "object" ||
+          !("englishPronunciation" in data) ||
+          !("zhuyin" in data)
+        ) {
+          throw new Error("Could not load pronunciation.");
+        }
+
+        setPronunciation({
+          englishPronunciation:
+            typeof data.englishPronunciation === "string"
+              ? data.englishPronunciation.trim()
+              : "",
+          zhuyin: typeof data.zhuyin === "string" ? data.zhuyin.trim() : "",
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        console.warn("Could not load shared pronunciation:", error);
+
+        setPronunciationError("Pronunciation unavailable.");
+      } finally {
+        if (!controller.signal.aborted) {
+          setPronunciationLoading(false);
+        }
+      }
+    }
+
+    void loadPronunciation();
+
+    return () => {
+      controller.abort();
+    };
+  }, [item.word, item.translation]);
+
+  const learningChinese = learningLanguage === "traditional-chinese";
+
+  const englishText = item.word?.trim() || "";
+  const chineseText = item.translation?.trim() || "";
+
+  const englishPronunciation = pronunciation?.englishPronunciation || "";
+
+  const chineseZhuyin = pronunciation?.zhuyin || "";
+
+  const chinesePinyin = toPinyin(chineseText)?.trim() || "";
+
+  const primaryText = learningChinese ? chineseText : englishText;
+
+  const secondaryText = learningChinese ? englishText : chineseText;
+
+  const primaryLanguage = learningChinese ? "zh-TW" : "en-US";
+
+  const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
+
+  const primaryPronunciation = learningChinese
+    ? chineseZhuyin || chinesePinyin
+    : englishPronunciation;
+
+  const secondaryPronunciation = learningChinese
+    ? englishPronunciation
+    : chineseZhuyin || chinesePinyin;
+
+  const primaryPronunciationLabel = learningChinese
+    ? chineseZhuyin
+      ? "注音"
+      : "拼音"
+    : "EN";
+
+  const secondaryPronunciationLabel = learningChinese
+    ? "EN"
+    : chineseZhuyin
+      ? "注音"
+      : "拼音";
+
+  const englishExample = item.example_sentence?.trim() || "";
+
+  const chineseExample = item.translated_example?.trim() || "";
+
+  async function saveSharedWordToVocabulary() {
+    if (!currentUserId || savingSharedWord || sharedWordSaved) {
+      return;
+    }
+
+    const englishWord = item.word?.trim() || "";
+    const chineseWord = item.translation?.trim() || "";
+
+    if (!englishWord || !chineseWord) return;
+
+    setSavingSharedWord(true);
+
+    try {
+      const supabase = createClient();
+
+      const { data: existingItems, error: lookupError } = await supabase
+        .from("vocabulary_items")
+        .select("id")
+        .eq("user_id", currentUserId)
+        .ilike("word", englishWord)
+        .ilike("translation", chineseWord)
+        .limit(1);
+
+      if (lookupError) throw lookupError;
+
+      if (existingItems && existingItems.length > 0) {
+        setSharedWordSaved(true);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from("vocabulary_items")
+        .insert({
+          user_id: currentUserId,
+          word: englishWord,
+          translation: chineseWord,
+          language: item.language || "english",
+          part_of_speech: item.part_of_speech || null,
+          example_sentence: item.example_sentence || null,
+          translated_example: item.translated_example || null,
+          confidence: item.confidence || null,
+          category: item.category || "other",
+          status: "new",
+          image_url: item.image_url || null,
+        });
+
+      if (insertError) throw insertError;
+
+      setSharedWordSaved(true);
+    } catch (error) {
+      console.error("Could not save shared word to vocabulary:", error);
+    } finally {
+      setSavingSharedWord(false);
+    }
+  }
+
+  return (
+    <AdaptiveWordCard
+      imageUrl={item.image_url}
+      imageAlt={englishText}
+      headerLabel="Shared word"
+      statusLabel="Shared"
+      primary={{
+        label: learningChinese ? "Traditional Chinese" : "English",
+        text: primaryText,
+        pronunciationLabel: primaryPronunciationLabel,
+        pronunciation: primaryPronunciation,
+        language: primaryLanguage,
+      }}
+      secondary={{
+        label: learningChinese ? "English" : "Traditional Chinese",
+        text: secondaryText,
+        pronunciationLabel: secondaryPronunciationLabel,
+        pronunciation: secondaryPronunciation,
+        language: secondaryLanguage,
+      }}
+      englishExample={
+        englishExample
+          ? {
+              label: "English example",
+              text: englishExample,
+              language: "en-US",
+            }
+          : null
+      }
+      chineseExample={
+        chineseExample
+          ? {
+              label: "中文例句",
+              text: chineseExample,
+              language: "zh-TW",
+            }
+          : null
+      }
+      partOfSpeech={item.part_of_speech}
+      pronunciationLoading={pronunciationLoading}
+      pronunciationError={pronunciationError}
+      onRetryPronunciation={() => {
+        setPronunciation(null);
+        setPronunciationError("");
+      }}
+      onSpeak={speak}
+      actions={
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => void saveSharedWordToVocabulary()}
+            disabled={!currentUserId || savingSharedWord || sharedWordSaved}
+            aria-label={
+              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+            }
+            title={
+              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+            }
+            className={`flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95 disabled:cursor-default ${
+              sharedWordSaved
+                ? "bg-black text-white"
+                : "bg-[#f1eee7] text-black/65 hover:bg-[#e7e2d8]"
+            }`}
+          >
+            {savingSharedWord ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            ) : sharedWordSaved ? (
+              <Check size={18} strokeWidth={2} />
+            ) : (
+              <BookmarkPlus size={18} strokeWidth={1.8} />
+            )}
+          </button>
+        </div>
+      }
+    />
+  );
+}
 
 function imageFileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -100,9 +401,7 @@ function imageFileToDataUrl(file: File): Promise<string> {
 
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-        resolve(
-          canvas.toDataURL("image/jpeg", AI_IMAGE_JPEG_QUALITY),
-        );
+        resolve(canvas.toDataURL("image/jpeg", AI_IMAGE_JPEG_QUALITY));
       };
 
       image.src = reader.result;
@@ -143,7 +442,6 @@ function IconLogoutButton() {
   );
 }
 
-
 function encodeSharedVocabulary(item: VocabularyItem) {
   return `${VOCABULARY_MESSAGE_PREFIX}${JSON.stringify(item)}`;
 }
@@ -152,7 +450,9 @@ function decodeSharedVocabulary(body: string): VocabularyItem | null {
   if (!body.startsWith(VOCABULARY_MESSAGE_PREFIX)) return null;
 
   try {
-    return JSON.parse(body.slice(VOCABULARY_MESSAGE_PREFIX.length)) as VocabularyItem;
+    return JSON.parse(
+      body.slice(VOCABULARY_MESSAGE_PREFIX.length),
+    ) as VocabularyItem;
   } catch {
     return null;
   }
@@ -248,9 +548,7 @@ function ConversationList() {
         </header>
 
         <section className="flex-1 space-y-3 px-4 py-6">
-          {loading && (
-            <p className="text-center text-neutral-500">Loading…</p>
-          )}
+          {loading && <p className="text-center text-neutral-500">Loading…</p>}
 
           {errorMessage && (
             <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">
@@ -307,7 +605,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(
-    null
+    null,
   );
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -386,12 +684,12 @@ function ChatRoom({ friendId }: { friendId: string }) {
         roomId = await getOrCreateConversationWithFriend(
           supabase,
           user.id,
-          friendId
+          friendId,
         );
       } catch (conversationError) {
         console.error(
           "Failed to get or create conversation:",
-          conversationError
+          conversationError,
         );
         if (!cancelled) {
           setErrorMessage("Couldn't open this conversation.");
@@ -430,14 +728,12 @@ function ChatRoom({ friendId }: { friendId: string }) {
             pendingArticle.englishTitle?.trim() ||
             "分享了一篇新聞";
 
-          const { error: shareError } = await supabase
-            .from("messages")
-            .insert({
-              conversation_id: roomId,
-              sender_id: user.id,
-              body: `📰 ${shareBody}`,
-              shared_article: pendingArticle,
-            });
+          const { error: shareError } = await supabase.from("messages").insert({
+            conversation_id: roomId,
+            sender_id: user.id,
+            body: `📰 ${shareBody}`,
+            shared_article: pendingArticle,
+          });
 
           if (shareError) {
             console.error("Failed to share article:", shareError);
@@ -466,10 +762,12 @@ function ChatRoom({ friendId }: { friendId: string }) {
             .single();
 
           if (vocabularyShareError) {
-            console.error(
-              "Failed to share vocabulary:",
-              vocabularyShareError,
-            );
+            console.error("Failed to share vocabulary:", {
+              message: vocabularyShareError.message,
+              code: vocabularyShareError.code,
+              details: vocabularyShareError.details,
+              hint: vocabularyShareError.hint,
+            });
             setErrorMessage(
               `Couldn't share that word: ${vocabularyShareError.message}`,
             );
@@ -523,12 +821,12 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
           setMessages((currentMessages) => {
             const alreadyExists = currentMessages.some(
-              (message) => message.id === incomingMessage.id
+              (message) => message.id === incomingMessage.id,
             );
             if (alreadyExists) return currentMessages;
             return [...currentMessages, incomingMessage];
           });
-        }
+        },
       )
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR") {
@@ -590,14 +888,17 @@ function ChatRoom({ friendId }: { friendId: string }) {
     });
 
     const data = (await response.json()) as
-      | AttachmentIdentificationResult
-      | { error: string };
+      AttachmentIdentificationResult | { error: string };
+
+    if (response.status === 429) {
+      throw new Error(
+        "AI usage limit reached. Please wait about one minute and try again.",
+      );
+    }
 
     if (!response.ok || "error" in data) {
       throw new Error(
-        "error" in data
-          ? data.error
-          : "Gemini could not identify this photo.",
+        "error" in data ? data.error : "AI could not identify this photo.",
       );
     }
 
@@ -631,8 +932,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
       const safeName =
         file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_") || "attachment";
 
-      uploadedPath =
-        `${conversationId}/${crypto.randomUUID()}-${safeName}`;
+      uploadedPath = `${conversationId}/${crypto.randomUUID()}-${safeName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("message-attachments")
@@ -659,12 +959,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
           word: identification.englishName.trim(),
           translation: identification.chineseName.trim(),
           language: "english",
-          part_of_speech:
-            identification.partOfSpeech.trim() || null,
-          example_sentence:
-            identification.englishExample.trim() || null,
-          translated_example:
-            identification.chineseExample.trim() || null,
+          part_of_speech: identification.partOfSpeech.trim() || null,
+          example_sentence: identification.englishExample.trim() || null,
+          translated_example: identification.chineseExample.trim() || null,
           image_url: publicUrl,
           confidence: identification.confidence,
           category: identification.category,
@@ -673,32 +970,27 @@ function ChatRoom({ friendId }: { friendId: string }) {
           updated_at: now,
         };
 
-        const { error: insertError } = await supabase
-          .from("messages")
-          .insert({
-            conversation_id: conversationId,
-            sender_id: currentUserId,
-            body: encodeSharedVocabulary(sharedItem),
-            attachment_url: publicUrl,
-            attachment_type: file.type || "image/jpeg",
-            attachment_name: file.name,
-            shared_article: null,
-          });
+        const { error: insertError } = await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          body: encodeSharedVocabulary(sharedItem),
+          attachment_url: publicUrl,
+          attachment_type: file.type || "image/jpeg",
+          attachment_name: file.name,
+          shared_article: null,
+        });
 
         if (insertError) throw insertError;
       } else {
-        const { error: insertError } = await supabase
-          .from("messages")
-          .insert({
-            conversation_id: conversationId,
-            sender_id: currentUserId,
-            body: "",
-            attachment_url: publicUrl,
-            attachment_type:
-              file.type || "application/octet-stream",
-            attachment_name: file.name,
-            shared_article: null,
-          });
+        const { error: insertError } = await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: currentUserId,
+          body: "",
+          attachment_url: publicUrl,
+          attachment_type: file.type || "application/octet-stream",
+          attachment_name: file.name,
+          shared_article: null,
+        });
 
         if (insertError) throw insertError;
       }
@@ -784,7 +1076,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
         throw new Error(
           "error" in classifyData
             ? classifyData.error
-            : "Couldn't identify that word."
+            : "Couldn't identify that word.",
         );
       }
 
@@ -811,7 +1103,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
       setErrorMessage(
         saveError instanceof Error
           ? saveError.message
-          : "Couldn't save that word."
+          : "Couldn't save that word.",
       );
     } finally {
       setSavingSelection(false);
@@ -837,7 +1129,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
             <div className="min-w-0 px-3 text-center">
               <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">
                 {friendProfile
-                  ? friendProfile.displayName ?? `@${friendProfile.exchangeId}`
+                  ? (friendProfile.displayName ??
+                    `@${friendProfile.exchangeId}`)
                   : "Chat"}
               </p>
 
@@ -861,9 +1154,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           className="relative flex-1 space-y-2.5 overflow-y-auto px-4 pb-[150px] pt-4"
         >
           {loading && (
-            <p className="text-center text-neutral-500">
-              Loading messages...
-            </p>
+            <p className="text-center text-neutral-500">Loading messages...</p>
           )}
 
           {errorMessage && (
@@ -883,9 +1174,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
           {messages.map((message) => {
             const isMine = message.sender_id === currentUserId;
-            const isImageAttachment = message.attachment_type?.startsWith(
-              "image/"
-            );
+            const isImageAttachment =
+              message.attachment_type?.startsWith("image/");
             const sharedVocabulary = decodeSharedVocabulary(message.body);
 
             return (
@@ -894,11 +1184,15 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 className={`flex ${isMine ? "justify-end" : "justify-start"}`}
               >
                 <article
-                  className={`max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
-                    isMine
-                      ? "rounded-br-md bg-neutral-900 text-white"
-                      : "rounded-bl-md bg-white shadow-sm"
-                  }`}
+                  className={
+                    sharedVocabulary
+                      ? "w-[94%] max-w-xl"
+                      : `max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
+                          isMine
+                            ? "rounded-br-md bg-neutral-900 text-white"
+                            : "rounded-bl-md bg-white shadow-sm"
+                        }`
+                  }
                 >
                   {message.attachment_url && isImageAttachment && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -966,81 +1260,10 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   )}
 
                   {sharedVocabulary && (
-                    <div
-                      className={`mb-0.5 min-w-[210px] overflow-hidden rounded-[18px] border p-4 backdrop-blur-xl ${
-                        isMine
-                          ? "border-white/[0.08] bg-white/[0.08]"
-                          : "border-black/[0.06] bg-white/55"
-                      }`}
-                    >
-                      <p
-                        className={`text-[9px] font-medium uppercase tracking-[0.2em] ${
-                          isMine ? "text-white/40" : "text-black/35"
-                        }`}
-                      >
-                        Shared word
-                      </p>
-
-                      <div className="mt-3 flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <p className="break-words text-[20px] font-semibold leading-none tracking-[-0.03em]">
-                            {sharedVocabulary.word}
-                          </p>
-
-                          <p
-                            className={`mt-2 break-words text-[16px] leading-none ${
-                              isMine ? "text-white/72" : "text-black/65"
-                            }`}
-                          >
-                            {sharedVocabulary.translation}
-                          </p>
-
-                          {sharedVocabulary.translation && (
-                            <p
-                              className={`mt-3 text-[11px] font-normal tracking-[0.04em] ${
-                                isMine ? "text-white/38" : "text-black/35"
-                              }`}
-                            >
-                              {toPinyin(sharedVocabulary.translation)}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex shrink-0 flex-col gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              speak(sharedVocabulary.word, "en-US")
-                            }
-                            aria-label={`Play English pronunciation for ${sharedVocabulary.word}`}
-                            title="English pronunciation"
-                            className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
-                              isMine
-                                ? "border-white/[0.08] bg-white/[0.08] text-white/75 hover:bg-white/[0.14]"
-                                : "border-black/[0.05] bg-white/70 text-black/65 hover:bg-white"
-                            }`}
-                          >
-                            <Volume2 size={13} strokeWidth={1.8} />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              speak(sharedVocabulary.translation, "zh-TW")
-                            }
-                            aria-label={`Play Chinese pronunciation for ${sharedVocabulary.translation}`}
-                            title="Chinese pronunciation"
-                            className={`flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${
-                              isMine
-                                ? "border-white/[0.08] bg-white/[0.08] text-white/75 hover:bg-white/[0.14]"
-                                : "border-black/[0.05] bg-white/70 text-black/65 hover:bg-white"
-                            }`}
-                          >
-                            <Volume2 size={13} strokeWidth={1.8} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <SharedVocabularyMessage
+                      item={sharedVocabulary}
+                      currentUserId={currentUserId}
+                    />
                   )}
 
                   {message.body && !sharedVocabulary && (
@@ -1121,9 +1344,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
               onChange={(event) => setNewMessage(event.target.value)}
               maxLength={2000}
               placeholder={
-                uploading
-                  ? "Analyzing and sending…"
-                  : "Write a message"
+                uploading ? "Analyzing and sending…" : "Write a message"
               }
               className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
             />
