@@ -17,7 +17,11 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
-import { listFriends, type FriendProfile } from "@/lib/friends";
+import {
+  getOrCreateConversationWithFriend,
+  listFriends,
+  type FriendProfile,
+} from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import type {
   AppLanguage,
@@ -25,7 +29,6 @@ import type {
   VocabularyItem,
 } from "@/lib/types/app";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
-import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 
 type IdentificationResult = {
   englishName: string;
@@ -692,8 +695,27 @@ export default function CameraPage() {
         updated_at: now,
       };
 
-      setPendingSharedVocabulary(sharedItem);
+      const conversationId = await getOrCreateConversationWithFriend(
+        supabase,
+        user.id,
+        friendId,
+      );
+
+      const { error: messageError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        body: `__SHARED_VOCABULARY__:${JSON.stringify(sharedItem)}`,
+        attachment_url: null,
+        attachment_type: null,
+        attachment_name: null,
+        shared_article: null,
+      });
+
+      if (messageError) throw messageError;
+
       setPartnerPickerOpen(false);
+      setSending(false);
+      setSelectedPartnerId(null);
 
       router.push(`/messages?with=${encodeURIComponent(friendId)}`);
     } catch (sendError) {
