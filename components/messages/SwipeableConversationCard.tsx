@@ -9,8 +9,8 @@ type Props = {
   disabled?: boolean;
 };
 
-const REVEAL_WIDTH = 88;
-const DELETE_THRESHOLD = 56;
+const ACTION_WIDTH = 82;
+const OPEN_THRESHOLD = 42;
 
 export default function SwipeableConversationCard({
   children,
@@ -25,27 +25,32 @@ export default function SwipeableConversationCard({
   const pointerIdRef = useRef<number | null>(null);
   const movedRef = useRef(false);
 
+  const isOpen = offsetX < -4;
+
   useEffect(() => {
-    function closeOtherCards() {
+    function closeCard() {
       if (!dragging) {
         setOffsetX(0);
       }
     }
 
-    window.addEventListener("conversation-swipe-open", closeOtherCards);
+    window.addEventListener("conversation-swipe-close-all", closeCard);
 
     return () => {
-      window.removeEventListener("conversation-swipe-open", closeOtherCards);
+      window.removeEventListener("conversation-swipe-close-all", closeCard);
     };
   }, [dragging]);
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (disabled) return;
 
+    window.dispatchEvent(new Event("conversation-swipe-close-all"));
+
     pointerIdRef.current = event.pointerId;
     startXRef.current = event.clientX;
     startOffsetRef.current = offsetX;
     movedRef.current = false;
+
     setDragging(true);
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -58,12 +63,12 @@ export default function SwipeableConversationCard({
 
     const deltaX = event.clientX - startXRef.current;
 
-    if (Math.abs(deltaX) > 5) {
+    if (Math.abs(deltaX) > 4) {
       movedRef.current = true;
     }
 
     const nextOffset = Math.max(
-      -REVEAL_WIDTH,
+      -ACTION_WIDTH,
       Math.min(0, startOffsetRef.current + deltaX),
     );
 
@@ -75,28 +80,18 @@ export default function SwipeableConversationCard({
       return;
     }
 
-    const shouldOpen = offsetX <= -DELETE_THRESHOLD;
+    const shouldOpen = offsetX <= -OPEN_THRESHOLD;
 
-    setOffsetX(shouldOpen ? -REVEAL_WIDTH : 0);
+    setOffsetX(shouldOpen ? -ACTION_WIDTH : 0);
+
     setDragging(false);
     pointerIdRef.current = null;
-
-    if (shouldOpen) {
-      window.dispatchEvent(new Event("conversation-swipe-open"));
-
-      setOffsetX(-REVEAL_WIDTH);
-    }
 
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {
       // Pointer capture may already be released.
     }
-  }
-
-  function handleDelete() {
-    setOffsetX(0);
-    onDelete();
   }
 
   function handleContentClick(event: React.MouseEvent<HTMLDivElement>) {
@@ -114,18 +109,30 @@ export default function SwipeableConversationCard({
     }
   }
 
+  function handleDelete() {
+    setOffsetX(0);
+    onDelete();
+  }
+
   return (
-    <div className="relative overflow-hidden rounded-3xl">
-      <button
-        type="button"
-        onClick={handleDelete}
-        aria-label="Remove friend"
-        title="Remove friend"
-        disabled={disabled}
-        className="absolute inset-y-0 right-0 flex w-[88px] items-center justify-center bg-red-500 text-white disabled:opacity-50"
+    <div className="relative">
+      <div
+        aria-hidden={!isOpen}
+        className={`absolute inset-y-1 right-1 flex w-[74px] items-center justify-center rounded-[22px] bg-red-500 transition-opacity duration-150 ${
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
       >
-        <Trash2 size={22} strokeWidth={1.8} />
-      </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          aria-label="Remove friend"
+          title="Remove friend"
+          disabled={disabled}
+          className="flex h-full w-full items-center justify-center rounded-[22px] text-white transition-transform active:scale-95 disabled:opacity-40"
+        >
+          <Trash2 size={21} strokeWidth={1.8} />
+        </button>
+      </div>
 
       <div
         onPointerDown={handlePointerDown}
@@ -137,10 +144,10 @@ export default function SwipeableConversationCard({
           transform: `translateX(${offsetX}px)`,
           transition: dragging
             ? "none"
-            : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+            : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
           touchAction: "pan-y",
         }}
-        className="relative z-10 select-none will-change-transform"
+        className="relative z-10 select-none rounded-3xl bg-white shadow-sm will-change-transform"
       >
         {children}
       </div>

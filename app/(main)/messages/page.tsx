@@ -633,7 +633,7 @@ function ConversationList() {
             >
               <Link
                 href={`/messages?with=${friend.id}`}
-                className={`relative z-10 flex items-center gap-3 rounded-3xl bg-white p-4 shadow-sm transition-opacity ${
+                className={`relative z-10 flex items-center gap-3 rounded-3xl bg-white p-4 transition-opacity ${
                   deletingFriendId === friend.id
                     ? "pointer-events-none opacity-45"
                     : ""
