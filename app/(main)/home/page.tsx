@@ -1,21 +1,15 @@
 "use client";
 
+import type { ChangeEvent } from "react";
 import Link from "next/link";
-import {
-  Camera,
-  ChevronRight,
-  ImagePlus,
-  MessageCircle,
-  Newspaper,
-} from "lucide-react";
-import {
-  ChangeEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
+import HomeHeader from "@/components/home/HomeHeader";
+import ProgressCard from "@/components/home/ProgressCard";
+import QuickCaptureCard from "@/components/home/QuickCaptureCard";
+import RecentLearningCard from "@/components/home/RecentLearningCard";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -24,6 +18,14 @@ type RecentNote = {
   title: string;
   category: string;
 };
+
+function getGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -42,6 +44,7 @@ export default function HomePage() {
     async function loadHomeData() {
       try {
         const supabase = createClient();
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -54,37 +57,32 @@ export default function HomePage() {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
-        const [
-          { count },
-          { data: notesData },
-          { data: profileData },
-        ] = await Promise.all([
-          supabase
-            .from("vocabulary_items")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .gte("created_at", startOfToday.toISOString()),
-          supabase
-            .from("saved_news_articles")
-            .select("article_id, english_title, chinese_title, category")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(3),
-          supabase
-            .from("profiles")
-            .select("learning_language")
-            .eq("id", user.id)
-            .single(),
-        ]);
+        const [{ count }, { data: notesData }, { data: profileData }] =
+          await Promise.all([
+            supabase
+              .from("vocabulary_items")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", user.id)
+              .gte("created_at", startOfToday.toISOString()),
+            supabase
+              .from("saved_news_articles")
+              .select("article_id, english_title, chinese_title, category")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(3),
+            supabase
+              .from("profiles")
+              .select("learning_language")
+              .eq("id", user.id)
+              .single(),
+          ]);
 
         if (!active) return;
 
         setWordsToday(count ?? 0);
 
         if (profileData?.learning_language) {
-          setLearningLanguage(
-            profileData.learning_language as AppLanguage,
-          );
+          setLearningLanguage(profileData.learning_language as AppLanguage);
         }
 
         setRecentNotes(
@@ -94,7 +92,7 @@ export default function HomePage() {
               (row.chinese_title as string | null) ||
               (row.english_title as string),
             category: row.category as string,
-          }))
+          })),
         );
       } catch (loadError) {
         console.error("Failed to load home data:", loadError);
@@ -110,9 +108,7 @@ export default function HomePage() {
     };
   }, []);
 
-  async function handlePhotoSelected(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  async function handlePhotoSelected(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -132,8 +128,7 @@ export default function HomePage() {
       const reader = new FileReader();
 
       const imageData = await new Promise<string>((resolve, reject) => {
-        reader.onerror = () =>
-          reject(new Error("Could not read this image."));
+        reader.onerror = () => reject(new Error("Could not read this image."));
 
         reader.onload = () => {
           if (typeof reader.result !== "string") {
@@ -165,180 +160,83 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
-        <header>
-          <p className="text-sm font-bold uppercase tracking-[0.2em]">
-            English × 繁體中文
-          </p>
+        <HomeHeader greeting={getGreeting()} streakDays={0} />
 
-          <h1 className="mt-3 text-5xl font-black tracking-tight">
-            Exchange Notes
-          </h1>
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(event) => void handlePhotoSelected(event)}
+        />
 
-          <p className="mt-4 max-w-md text-lg leading-8">
-            Learn one useful word from real life,
-            then share it with someone who speaks
-            the language.
-          </p>
-        </header>
+        <input
+          ref={libraryInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          className="hidden"
+          onChange={(event) => void handlePhotoSelected(event)}
+        />
 
-        <section className="mt-9 rounded-[32px] bg-black p-6 text-white">
-          <p className="text-sm font-bold uppercase tracking-[0.18em]">
-            Start here
-          </p>
+        <div className="mt-9 space-y-4">
+          <ProgressCard current={loading ? 0 : wordsToday} goal={10} />
 
-          <h2 className="mt-3 text-3xl font-black">
-            What is this called?
-          </h2>
-
-          <p className="mt-3 leading-7 text-white">
-            Take a photo or choose one from your
-            library. Turn something you see into a
-            word you can remember.
-          </p>
-
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(event) => void handlePhotoSelected(event)}
+          <QuickCaptureCard
+            cameraInputRef={cameraInputRef}
+            libraryInputRef={libraryInputRef}
           />
-
-          <input
-            ref={libraryInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            className="hidden"
-            onChange={(event) => void handlePhotoSelected(event)}
-          />
-
-          <div className="mt-7 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-left text-black transition-transform active:scale-[0.98]"
-            >
-              <Camera size={25} />
-              <span className="font-black">
-                Take Photo
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => libraryInputRef.current?.click()}
-              className="flex min-h-28 flex-col justify-between rounded-[24px] bg-white p-4 text-left text-black transition-transform active:scale-[0.98]"
-            >
-              <ImagePlus size={25} />
-              <span className="font-black">
-                Choose Photo
-              </span>
-            </button>
-          </div>
-        </section>
-
-        <section className="mt-6 grid grid-cols-2 gap-3">
-          <Link
-            href="/vocabulary"
-            className="rounded-[28px] bg-white p-5"
-          >
-            <p className="text-3xl font-black">
-              {loading ? "…" : wordsToday}
-            </p>
-            <p className="mt-6 font-black">
-              Words Today
-            </p>
-            <p className="mt-1 text-sm text-[#4f4f4f]">
-              Build your vocabulary
-            </p>
-          </Link>
 
           <Link
             href="/pronunciation"
-            className="rounded-[28px] bg-white p-5 transition-transform active:scale-[0.98]"
+            className="flex items-center justify-between rounded-[26px] bg-black p-5 text-white transition-transform active:scale-[0.99]"
           >
-            <p className="text-3xl font-black">
-              {learningLanguage === "traditional-chinese"
-                ? "ㄅ"
-                : "/æ/"}
-            </p>
-
-            <p className="mt-6 font-black">
-              {learningLanguage === "traditional-chinese"
-                ? "注音基礎"
-                : "English Sounds"}
-            </p>
-
-            <p className="mt-1 text-sm text-[#4f4f4f]">
-              {learningLanguage === "traditional-chinese"
-                ? "學習ㄅㄆㄇㄈ與聲調"
-                : "Learn essential IPA sounds"}
-            </p>
-          </Link>
-        </section>
-
-        {recentNotes.length > 0 && (
-          <section className="mt-6 rounded-[30px] bg-white p-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-black">Recent Notes</h2>
-              <Link
-                href="/discover"
-                aria-label="See all notes"
-                className="rounded-full border border-black p-2"
-              >
-                <ChevronRight size={18} />
-              </Link>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {recentNotes.map((note) => (
-                <div
-                  key={note.articleId}
-                  className="flex items-start gap-3 rounded-[20px] bg-[#f5f2eb] p-4"
-                >
-                  <span className="mt-0.5 shrink-0 rounded-full bg-white p-2">
-                    <Newspaper size={16} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#8a8a8a]">
-                      {note.category}
-                    </p>
-                    <p className="mt-1 truncate font-bold leading-6">
-                      {note.title}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="mt-6 rounded-[30px] bg-white p-6">
-          <div className="flex items-start justify-between gap-4">
             <div>
-              <MessageCircle size={24} />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                Continue learning
+              </p>
 
-              <h2 className="mt-5 text-2xl font-black">
-                Learn with a friend
-              </h2>
+              <p className="mt-2 text-[20px] font-semibold tracking-[-0.025em]">
+                {learningLanguage === "traditional-chinese"
+                  ? "注音基礎"
+                  : "English Sounds"}
+              </p>
 
-              <p className="mt-2 leading-7">
-                Send a real-life photo. Your friend
-                explains it in their native language,
-                and you reply in yours.
+              <p className="mt-1 text-[13px] text-white/55">
+                {learningLanguage === "traditional-chinese"
+                  ? "學習ㄅㄆㄇㄈ與聲調"
+                  : "Practice essential pronunciation"}
               </p>
             </div>
 
-            <Link
-              href="/messages"
-              aria-label="Open messages"
-              className="rounded-full border border-black p-2"
-            >
-              <ChevronRight size={20} />
-            </Link>
-          </div>
-        </section>
+            <ArrowRight size={19} strokeWidth={1.8} />
+          </Link>
+
+          <RecentLearningCard items={recentNotes} />
+
+          <Link
+            href="/messages"
+            className="flex items-center justify-between rounded-[26px] bg-white p-5 shadow-[0_10px_35px_rgba(0,0,0,0.045)] transition-transform active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f2eb]">
+                <MessageCircle size={19} strokeWidth={1.8} />
+              </span>
+
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                  Community
+                </p>
+
+                <p className="mt-1 text-[17px] font-semibold">
+                  Practice together
+                </p>
+              </div>
+            </div>
+
+            <ArrowRight size={17} className="text-black/40" />
+          </Link>
+        </div>
       </div>
     </main>
   );
