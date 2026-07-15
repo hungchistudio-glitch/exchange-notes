@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
+import { pinyinToZhuyin } from "@/lib/zhuyin";
 import { speak } from "@/lib/speech";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { listFriends, type FriendProfile } from "@/lib/friends";
@@ -940,6 +941,16 @@ export default function VocabularyPage() {
     }
   }
 
+  const lookupChineseText = lookupResult?.chineseName?.trim() ?? "";
+
+  const lookupChinesePinyin = lookupChineseText
+    ? (toPinyin(lookupChineseText) ?? "").trim()
+    : "";
+
+  const lookupChineseZhuyin = lookupChinesePinyin
+    ? pinyinToZhuyin(lookupChinesePinyin)
+    : "";
+
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -1262,94 +1273,163 @@ export default function VocabularyPage() {
               )}
 
               {lookupStatus === "result" && lookupResult && (
-                <article className="mt-5 overflow-hidden rounded-[24px] border border-black/10 bg-white">
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="break-words text-2xl font-semibold tracking-[-0.03em]">
-                          {lookupResult.englishName}
+                <article className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+                  <div className="p-5 sm:p-6">
+                    <div className="space-y-6">
+                      <section>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                          English
                         </p>
 
-                        <p className="mt-1 break-words text-xl text-neutral-700">
-                          {lookupResult.chineseName}
+                        <div className="mt-2 flex items-center gap-3">
+                          <p className="min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em]">
+                            {lookupResult.englishName}
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.englishName, "en-US")
+                            }
+                            aria-label="Play English word"
+                            title="Play English word"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
+                      </section>
+
+                      <section>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                          繁體中文
                         </p>
 
-                        <p className="mt-1 text-[12px] text-neutral-400">
-                          {[
-                            toPinyin(lookupResult.chineseName),
-                            lookupResult.partOfSpeech?.toLowerCase(),
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                      </div>
+                        <div className="mt-2 flex items-center gap-3">
+                          <p className="min-w-0 flex-1 break-words text-[26px] font-semibold tracking-[-0.025em] text-neutral-800">
+                            {lookupResult.chineseName}
+                          </p>
 
-                      <div className="grid shrink-0 grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            speak(lookupResult.englishName, "en-US")
-                          }
-                          aria-label="Play English pronunciation"
-                          title="English pronunciation"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
-                        >
-                          <Volume2 size={15} />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.chineseName, "zh-TW")
+                            }
+                            aria-label="播放中文單字"
+                            title="播放中文單字"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            speak(lookupResult.chineseName, "zh-TW")
-                          }
-                          aria-label="Play Chinese pronunciation"
-                          title="Chinese pronunciation"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
-                        >
-                          <Volume2 size={15} />
-                        </button>
+                        <div className="mt-3 rounded-[18px] bg-[#f7f4ee] px-4 py-3">
+                          <p className="text-[12px] leading-6 text-neutral-500">
+                            <span className="mr-3 font-semibold text-neutral-700">
+                              拼音
+                            </span>
+                            {lookupChinesePinyin || "—"}
+                          </p>
 
-                        <button
-                          type="button"
-                          onClick={() => void shareLookupResult()}
-                          aria-label="Share this word"
-                          title="Share"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
-                        >
-                          {lookupCopied ? (
-                            <Check size={15} />
-                          ) : (
-                            <Share size={15} />
-                          )}
-                        </button>
+                          <p className="text-[12px] leading-6 text-neutral-500">
+                            <span className="mr-3 font-semibold text-neutral-700">
+                              注音
+                            </span>
+                            {lookupChineseZhuyin || "—"}
+                          </p>
 
-                        <button
-                          type="button"
-                          onClick={() => void sendLookupToPartner()}
-                          aria-label="Send this word to a partner"
-                          title="Send to Partner"
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f5f2eb]"
-                        >
-                          <Send size={15} />
-                        </button>
-                      </div>
+                          <p className="mt-1 text-[11px] capitalize tracking-[0.04em] text-neutral-400">
+                            {lookupResult.partOfSpeech}
+                          </p>
+                        </div>
+                      </section>
                     </div>
 
-                    <div className="mt-5 border-t border-black/10 pt-5">
-                      <p className="text-[14px] leading-6">
-                        {lookupResult.englishExample}
-                      </p>
+                    <div className="mt-6 space-y-3 border-t border-black/[0.08] pt-5">
+                      <section className="rounded-[20px] bg-[#f5f2eb] p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                              English example
+                            </p>
 
-                      <p className="mt-2 text-[13px] leading-6 text-neutral-500">
-                        {lookupResult.chineseExample}
-                      </p>
+                            <p className="mt-3 text-[14px] leading-6">
+                              {lookupResult.englishExample}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.englishExample, "en-US")
+                            }
+                            aria-label="Play English example"
+                            title="Play English example"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+                          >
+                            <Volume2 size={15} />
+                          </button>
+                        </div>
+                      </section>
+
+                      <section className="rounded-[20px] bg-[#f5f2eb] p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold tracking-[0.16em] text-black/35">
+                              中文例句
+                            </p>
+
+                            <p className="mt-3 text-[14px] leading-6 text-neutral-600">
+                              {lookupResult.chineseExample}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.chineseExample, "zh-TW")
+                            }
+                            aria-label="播放中文例句"
+                            title="播放中文例句"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+                          >
+                            <Volume2 size={15} />
+                          </button>
+                        </div>
+                      </section>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void shareLookupResult()}
+                        aria-label="Share this word"
+                        className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f5f2eb] text-[12px] font-semibold transition-transform active:scale-[0.98]"
+                      >
+                        {lookupCopied ? (
+                          <Check size={15} />
+                        ) : (
+                          <Share size={15} />
+                        )}
+                        Share
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => void sendLookupToPartner()}
+                        aria-label="Send this word to a partner"
+                        className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f5f2eb] text-[12px] font-semibold transition-transform active:scale-[0.98]"
+                      >
+                        <Send size={15} />
+                        Send
+                      </button>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => void saveLookupResult()}
                       disabled={savingLookup}
-                      className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-30"
+                      className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-30"
                     >
                       {savingLookup ? (
                         <>
