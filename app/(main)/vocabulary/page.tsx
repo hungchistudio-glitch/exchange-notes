@@ -53,7 +53,7 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 
 const PRONUNCIATION_CACHE_KEY =
-  "exchange-notes-pronunciation-cache-v4";
+  "exchange-notes-pronunciation-cache-v5";
 
 type WordPronunciation = {
   englishPronunciation: string;
@@ -1819,6 +1819,7 @@ function VocabularyCard({
         if (!active) return;
 
         setPronunciation(nextPronunciation);
+        setPronunciationError("");
         writePronunciationCache(cacheKey, nextPronunciation);
       } catch (pronunciationFailure) {
         const message =
