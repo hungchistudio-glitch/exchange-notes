@@ -13,6 +13,7 @@ import {
   Volume2,
   X,
   Zap,
+  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -751,21 +752,15 @@ export default function VocabularyPage() {
           </div>
         </header>
 
-        <div className="mt-7 grid grid-cols-2 border-y border-black/10 bg-white">
-          <button
-            type="button"
-            onClick={() => setSortOpen(true)}
-            className="flex h-12 items-center justify-center border-r border-black/10 text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
-          >
-            Sort By
-          </button>
-
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            className="flex h-12 items-center justify-center text-xs font-medium uppercase tracking-[0.14em] transition-colors hover:bg-black/[0.03]"
+            aria-label="Open vocabulary filters"
+            title="Filters"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-all hover:bg-black/[0.02] active:scale-95"
           >
-            Filters
+            <SlidersHorizontal size={18} strokeWidth={1.8} />
           </button>
         </div>
 
