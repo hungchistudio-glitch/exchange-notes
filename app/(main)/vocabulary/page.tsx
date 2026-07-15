@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
+import { enqueuePronunciationTask } from "@/lib/pronunciationQueue";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import type {
   AppLanguage,
@@ -1769,16 +1770,18 @@ function VocabularyCard({
       setPronunciationError("");
 
       try {
-        const response = await fetch("/api/word-pronunciation", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            english: item.word,
-            chinese: item.translation,
+        const response = await enqueuePronunciationTask(() =>
+          fetch("/api/word-pronunciation", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              english: item.word,
+              chinese: item.translation,
+            }),
           }),
-        });
+        );
 
         const data = (await response.json()) as
           | WordPronunciation
