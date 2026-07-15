@@ -1,6 +1,4 @@
-export type AppLanguage =
-  | "english"
-  | "traditional-chinese";
+export type AppLanguage = "english" | "traditional-chinese";
 
 export type Profile = {
   id: string;
@@ -15,11 +13,7 @@ export type Profile = {
 
 export type VocabularyStatus = "new" | "learning" | "mastered";
 
-export type VocabularyCategory =
-  | "people"
-  | "objects"
-  | "actions"
-  | "other";
+export type VocabularyCategory = "people" | "objects" | "actions" | "other";
 
 export type VocabularyItem = {
   id: string;
@@ -34,12 +28,13 @@ export type VocabularyItem = {
   image_url: string | null;
   confidence: "high" | "medium" | "low" | null;
   status: VocabularyStatus;
+  next_review_at?: string | null;
+  last_reviewed_at?: string | null;
+  review_count?: number;
+  ease_factor?: number;
+  interval_days?: number;
   created_at: string;
   updated_at: string;
 };
 
-export type MessageType =
-  | "text"
-  | "image"
-  | "vocabulary"
-  | "grammar";
+export type MessageType = "text" | "image" | "vocabulary" | "grammar";
