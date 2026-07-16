@@ -42,7 +42,14 @@ function AppLogoIcon({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="285" cy="180" r="40" fill="none" stroke="currentColor" strokeWidth="12" />
+      <circle
+        cx="285"
+        cy="180"
+        r="40"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="12"
+      />
       <circle cx="294" cy="172" r="14" fill="currentColor" />
     </svg>
   );
@@ -91,7 +98,13 @@ export default function BottomNav() {
             key={item.href}
             href={item.href}
             aria-label={item.label || "Discover"}
-            className={`flex min-h-14 flex-col items-center justify-center rounded-[18px] px-2 text-xs font-bold ${
+            onClick={(event) => {
+              if (item.href !== "/messages") return;
+
+              event.preventDefault();
+              window.location.assign("/messages");
+            }}
+            className={`flex min-h-14 flex-col items-center justify-center rounded-[18px] px-2 text-xs font-bold transition-transform active:scale-[0.96] ${
               active ? "bg-black text-white" : "text-black"
             }`}
           >
