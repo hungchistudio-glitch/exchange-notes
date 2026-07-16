@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   BookmarkPlus,
   Check,
+  ChevronDown,
   FileText,
   LogOut,
   Paperclip,
@@ -63,6 +64,7 @@ const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 
 const AI_IMAGE_MAX_DIMENSION = 1600;
 const AI_IMAGE_JPEG_QUALITY = 0.82;
+const MESSAGE_BOTTOM_THRESHOLD = 80;
 
 function getMessageDateKey(value: string) {
   const date = new Date(value);
@@ -568,6 +570,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   // ---- select-text-to-vocabulary state ----
   const [selectionPopup, setSelectionPopup] = useState<{
     text: string;
@@ -581,14 +586,44 @@ function ChatRoom({ friendId }: { friendId: string }) {
   const messagesSectionRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  const previousMessageCountRef = useRef(0);
+  const initialMessagesLoadedRef = useRef(false);
+
+  const scrollToBottom = useCallback((smooth = true) => {
+    bottomRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "end",
+    });
+
+    setUnreadCount(0);
+    setIsAtBottom(true);
+  }, []);
+
+  const updateBottomState = useCallback(() => {
+    const container = messagesSectionRef.current;
+    if (!container) return;
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    const nextIsAtBottom = distanceFromBottom <= MESSAGE_BOTTOM_THRESHOLD;
+
+    setIsAtBottom(nextIsAtBottom);
+
+    if (nextIsAtBottom) {
+      setUnreadCount(0);
+    }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     async function initializeChat() {
+      setUnreadCount(0);
+      setIsAtBottom(true);
+      previousMessageCountRef.current = 0;
+      initialMessagesLoadedRef.current = false;
+
       setErrorMessage("");
       setLoading(true);
       const supabase = createClient();
@@ -794,8 +829,47 @@ function ChatRoom({ friendId }: { friendId: string }) {
   }, [conversationId]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    const currentCount = messages.length;
+    const previousCount = previousMessageCountRef.current;
+
+    if (!initialMessagesLoadedRef.current) {
+      if (loading) return;
+
+      initialMessagesLoadedRef.current = true;
+      previousMessageCountRef.current = currentCount;
+
+      window.requestAnimationFrame(() => {
+        scrollToBottom(false);
+      });
+
+      return;
+    }
+
+    if (currentCount <= previousCount) {
+      previousMessageCountRef.current = currentCount;
+      return;
+    }
+
+    const newMessages = messages.slice(previousCount);
+
+    const containsOwnMessage = newMessages.some(
+      (message) => message.sender_id === currentUserId,
+    );
+
+    const incomingMessageCount = newMessages.filter(
+      (message) => message.sender_id !== currentUserId,
+    ).length;
+
+    if (isAtBottom || containsOwnMessage) {
+      window.requestAnimationFrame(() => {
+        scrollToBottom(true);
+      });
+    } else if (incomingMessageCount > 0) {
+      setUnreadCount((current) => current + incomingMessageCount);
+    }
+
+    previousMessageCountRef.current = currentCount;
+  }, [messages, currentUserId, isAtBottom, loading, scrollToBottom]);
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1108,6 +1182,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
         <section
           ref={messagesSectionRef}
+          onScroll={updateBottomState}
           onMouseUp={handleSelectionChange}
           onTouchEnd={handleSelectionChange}
           className="relative flex-1 space-y-2.5 overflow-y-auto px-4 pb-[150px] pt-4"
@@ -1271,6 +1346,25 @@ function ChatRoom({ friendId }: { friendId: string }) {
           })}
 
           <div ref={bottomRef} />
+
+          {unreadCount > 0 && !isAtBottom && (
+            <div className="pointer-events-none sticky bottom-3 z-20 flex justify-center">
+              <button
+                type="button"
+                onClick={() => scrollToBottom(true)}
+                aria-label={`Jump to ${unreadCount} new ${
+                  unreadCount === 1 ? "message" : "messages"
+                }`}
+                className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/10 bg-white/95 px-3.5 py-2 text-xs font-semibold text-black shadow-[0_8px_28px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all active:scale-95"
+              >
+                {unreadCount === 1
+                  ? "1 new message"
+                  : `${unreadCount} new messages`}
+
+                <ChevronDown size={15} strokeWidth={2} />
+              </button>
+            </div>
+          )}
 
           {selectionPopup && (
             <button
