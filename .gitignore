@@ -50,3 +50,7 @@ next-env.d.ts
 !.env.example
 legacy-app-*/
 supabase/.temp/
+
+# Local audit artifacts
+_audit/
+exchange-notes-audit.zip
