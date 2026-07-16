@@ -1,153 +1,186 @@
 "use client";
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { PointerEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-type Props = {
-  children: ReactNode;
-  onDelete: () => void;
-  disabled?: boolean;
-};
+const DELETE_WIDTH = 92;
+const OPEN_THRESHOLD = 44;
+const SWIPE_VELOCITY_THRESHOLD = 0.45;
 
-const ACTION_WIDTH = 82;
-const OPEN_THRESHOLD = 42;
+type SwipeableConversationCardProps = {
+  children: ReactNode;
+  disabled?: boolean;
+  onOpen: () => void;
+  onDelete: () => void | Promise<void>;
+};
 
 export default function SwipeableConversationCard({
   children,
-  onDelete,
   disabled = false,
-}: Props) {
-  const [offsetX, setOffsetX] = useState(0);
+  onOpen,
+  onDelete,
+}: SwipeableConversationCardProps) {
+  const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const startXRef = useRef(0);
   const startOffsetRef = useRef(0);
-  const pointerIdRef = useRef<number | null>(null);
+  const startTimeRef = useRef(0);
   const movedRef = useRef(false);
-
-  const isOpen = offsetX < -4;
+  const pointerIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    function closeCard() {
-      if (!dragging) {
-        setOffsetX(0);
-      }
+    if (disabled) {
+      setOffset(0);
+      setDragging(false);
     }
+  }, [disabled]);
 
-    window.addEventListener("conversation-swipe-close-all", closeCard);
+  function clampOffset(value: number) {
+    return Math.max(-DELETE_WIDTH, Math.min(0, value));
+  }
 
-    return () => {
-      window.removeEventListener("conversation-swipe-close-all", closeCard);
-    };
-  }, [dragging]);
-
-  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if (disabled) return;
-
-    window.dispatchEvent(new Event("conversation-swipe-close-all"));
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (disabled || deleting) return;
 
     pointerIdRef.current = event.pointerId;
     startXRef.current = event.clientX;
-    startOffsetRef.current = offsetX;
+    startOffsetRef.current = offset;
+    startTimeRef.current = performance.now();
     movedRef.current = false;
 
-    setDragging(true);
-
     event.currentTarget.setPointerCapture(event.pointerId);
+    setDragging(true);
   }
 
-  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (disabled || pointerIdRef.current !== event.pointerId) {
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (disabled || deleting || pointerIdRef.current !== event.pointerId) {
       return;
     }
 
     const deltaX = event.clientX - startXRef.current;
 
-    if (Math.abs(deltaX) > 4) {
+    if (Math.abs(deltaX) > 5) {
       movedRef.current = true;
     }
 
-    const nextOffset = Math.max(
-      -ACTION_WIDTH,
-      Math.min(0, startOffsetRef.current + deltaX),
-    );
+    // Only horizontal movement affects the card.
+    const nextOffset = clampOffset(startOffsetRef.current + deltaX);
 
-    setOffsetX(nextOffset);
+    setOffset(nextOffset);
   }
 
-  function finishDrag(event: React.PointerEvent<HTMLDivElement>) {
-    if (pointerIdRef.current !== event.pointerId) {
-      return;
-    }
+  function finishPointer(event: PointerEvent<HTMLDivElement>) {
+    if (pointerIdRef.current !== event.pointerId) return;
 
-    const shouldOpen = offsetX <= -OPEN_THRESHOLD;
+    const elapsed = Math.max(performance.now() - startTimeRef.current, 1);
 
-    setOffsetX(shouldOpen ? -ACTION_WIDTH : 0);
+    const travelled = event.clientX - startXRef.current;
 
+    const velocity = travelled / elapsed;
+
+    const shouldOpen =
+      offset <= -OPEN_THRESHOLD || velocity <= -SWIPE_VELOCITY_THRESHOLD;
+
+    setOffset(shouldOpen ? -DELETE_WIDTH : 0);
     setDragging(false);
-    pointerIdRef.current = null;
 
-    try {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
-    } catch {
-      // Pointer capture may already be released.
     }
+
+    pointerIdRef.current = null;
   }
 
-  function handleContentClick(event: React.MouseEvent<HTMLDivElement>) {
+  function handleCardClick() {
+    if (disabled || deleting) return;
+
     if (movedRef.current) {
-      event.preventDefault();
-      event.stopPropagation();
       movedRef.current = false;
       return;
     }
 
-    if (offsetX < 0) {
-      event.preventDefault();
-      event.stopPropagation();
-      setOffsetX(0);
+    if (offset < 0) {
+      setOffset(0);
+      return;
+    }
+
+    onOpen();
+  }
+
+  async function handleDelete() {
+    if (disabled || deleting) return;
+
+    setDeleting(true);
+
+    try {
+      await onDelete();
+      setOffset(0);
+    } finally {
+      setDeleting(false);
     }
   }
 
-  function handleDelete() {
-    setOffsetX(0);
-    onDelete();
-  }
+  const revealProgress = Math.min(Math.abs(offset) / DELETE_WIDTH, 1);
 
   return (
-    <div className="relative">
-      <div
-        aria-hidden={!isOpen}
-        className={`absolute inset-y-1 right-1 flex w-[74px] items-center justify-center rounded-[22px] bg-red-500 transition-opacity duration-150 ${
-          isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={handleDelete}
-          aria-label="Remove friend"
-          title="Remove friend"
-          disabled={disabled}
-          className="flex h-full w-full items-center justify-center rounded-[22px] text-white transition-transform active:scale-95 disabled:opacity-40"
-        >
-          <Trash2 size={21} strokeWidth={1.8} />
-        </button>
-      </div>
-
-      <div
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
-        onClickCapture={handleContentClick}
+    <div className="relative overflow-hidden rounded-3xl bg-transparent">
+      <button
+        type="button"
+        onClick={() => void handleDelete()}
+        disabled={disabled || deleting || offset === 0}
+        aria-label="Delete friend"
+        aria-hidden={offset === 0}
+        tabIndex={offset === 0 ? -1 : 0}
+        className="absolute inset-y-0 right-0 flex w-[92px] items-center justify-center bg-red-500 text-white disabled:pointer-events-none"
         style={{
-          transform: `translateX(${offsetX}px)`,
+          opacity: revealProgress,
+          visibility: offset === 0 ? "hidden" : "visible",
+          pointerEvents: offset === 0 ? "none" : "auto",
+          transform: `translateX(${
+            (1 - revealProgress) * 18
+          }px) scale(${0.9 + revealProgress * 0.1})`,
           transition: dragging
             ? "none"
-            : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
-          touchAction: "pan-y",
+            : "opacity 180ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 180ms",
         }}
-        className="relative z-10 select-none rounded-3xl bg-white shadow-sm will-change-transform"
+      >
+        {deleting ? (
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/45 border-t-white" />
+        ) : (
+          <div className="flex flex-col items-center gap-1">
+            <Trash2 size={21} strokeWidth={1.9} />
+            <span className="text-[11px] font-semibold">Delete</span>
+          </div>
+        )}
+      </button>
+
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-disabled={disabled}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishPointer}
+        onPointerCancel={finishPointer}
+        onClick={handleCardClick}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleCardClick();
+          }
+        }}
+        className={[
+          "relative z-10 touch-pan-y select-none",
+          disabled ? "pointer-events-none opacity-45" : "cursor-pointer",
+          dragging
+            ? ""
+            : "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        ].join(" ")}
+        style={{
+          transform: `translate3d(${offset}px, 0, 0)`,
+        }}
       >
         {children}
       </div>
