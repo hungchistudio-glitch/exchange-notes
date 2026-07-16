@@ -64,6 +64,47 @@ const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 const AI_IMAGE_MAX_DIMENSION = 1600;
 const AI_IMAGE_JPEG_QUALITY = 0.82;
 
+function getMessageDateKey(value: string) {
+  const date = new Date(value);
+
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function formatMessageDate(value: string) {
+  const messageDate = new Date(value);
+  const today = new Date();
+
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  const startOfMessageDate = new Date(
+    messageDate.getFullYear(),
+    messageDate.getMonth(),
+    messageDate.getDate(),
+  );
+
+  const differenceInDays = Math.round(
+    (startOfToday.getTime() - startOfMessageDate.getTime()) / 86_400_000,
+  );
+
+  if (differenceInDays === 0) return "Today";
+  if (differenceInDays === 1) return "Yesterday";
+
+  return messageDate.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year:
+      messageDate.getFullYear() === today.getFullYear() ? undefined : "numeric",
+  });
+}
+
 function SharedVocabularyMessage({
   item,
   currentUserId,
@@ -1054,9 +1095,14 @@ function ChatRoom({ friendId }: { friendId: string }) {
               )}
             </div>
 
-            <div className="justify-self-end">
-              <IconLogoutButton />
-            </div>
+            <button
+              type="button"
+              aria-label="Conversation details"
+              title="Conversation details"
+              className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full text-black/55 transition-all hover:bg-black/[0.04] active:scale-95"
+            >
+              <span className="text-lg leading-none">•••</span>
+            </button>
           </div>
         </header>
 
@@ -1085,113 +1131,141 @@ function ChatRoom({ friendId }: { friendId: string }) {
             </div>
           )}
 
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             const isMine = message.sender_id === currentUserId;
             const isImageAttachment =
               message.attachment_type?.startsWith("image/");
             const sharedVocabulary = decodeSharedVocabulary(message.body);
 
+            const previousMessage = index > 0 ? messages[index - 1] : null;
+
+            const showDateDivider =
+              !previousMessage ||
+              getMessageDateKey(previousMessage.created_at) !==
+                getMessageDateKey(message.created_at);
+
             return (
-              <div
-                key={message.id}
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              >
-                <article
-                  className={
-                    sharedVocabulary
-                      ? "w-[94%] max-w-xl"
-                      : `max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
-                          isMine
-                            ? "rounded-br-md bg-neutral-900 text-white"
-                            : "rounded-bl-md bg-white shadow-sm"
-                        }`
-                  }
+              <div key={message.id}>
+                {showDateDivider && (
+                  <div className="my-5 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-black/[0.07]" />
+
+                    <time
+                      dateTime={message.created_at}
+                      className="shrink-0 rounded-full bg-black/[0.045] px-3 py-1 text-[10px] font-semibold tracking-[0.06em] text-black/40"
+                    >
+                      {formatMessageDate(message.created_at)}
+                    </time>
+
+                    <span className="h-px flex-1 bg-black/[0.07]" />
+                  </div>
+                )}
+
+                <div
+                  className={`message-bubble-enter flex ${
+                    isMine ? "justify-end" : "justify-start"
+                  }`}
+                  style={{
+                    animationDelay: `${Math.min(index * 18, 180)}ms`,
+                  }}
                 >
-                  {message.attachment_url && isImageAttachment && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={message.attachment_url}
-                      alt={message.attachment_name ?? "attachment"}
-                      className="mb-2 max-h-72 w-full rounded-2xl object-cover"
-                    />
-                  )}
+                  <article
+                    className={
+                      sharedVocabulary
+                        ? "w-[94%] max-w-xl"
+                        : `max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
+                            isMine
+                              ? "rounded-br-md bg-neutral-900 text-white"
+                              : "rounded-bl-md bg-white shadow-sm"
+                          }`
+                    }
+                  >
+                    {message.attachment_url && isImageAttachment && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={message.attachment_url}
+                        alt={message.attachment_name ?? "attachment"}
+                        className="mb-2 max-h-72 w-full rounded-2xl object-cover"
+                      />
+                    )}
 
-                  {message.attachment_url && !isImageAttachment && (
-                    <a
-                      href={message.attachment_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`mb-2 flex items-center gap-2 rounded-2xl px-3 py-2 text-sm underline ${
-                        isMine ? "bg-white/10" : "bg-[#f4f1ea]"
-                      }`}
-                    >
-                      <FileText size={16} />
-                      <span className="truncate">
-                        {message.attachment_name ?? "File"}
-                      </span>
-                    </a>
-                  )}
+                    {message.attachment_url && !isImageAttachment && (
+                      <a
+                        href={message.attachment_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`mb-2 flex items-center gap-2 rounded-2xl px-3 py-2 text-sm underline ${
+                          isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+                        }`}
+                      >
+                        <FileText size={16} />
+                        <span className="truncate">
+                          {message.attachment_name ?? "File"}
+                        </span>
+                      </a>
+                    )}
 
-                  {message.shared_article && (
-                    <a
-                      href={message.shared_article.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`mb-2 block overflow-hidden rounded-2xl ${
-                        isMine ? "bg-white/10" : "bg-[#f4f1ea]"
-                      }`}
-                    >
-                      {message.shared_article.imageUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={message.shared_article.imageUrl}
-                          alt={message.shared_article.chineseTitle}
-                          className="h-32 w-full object-cover"
-                        />
-                      )}
-                      <div className="p-3">
-                        <p
-                          className={`text-xs font-semibold uppercase tracking-wide ${
-                            isMine ? "text-white/60" : "text-neutral-400"
-                          }`}
-                        >
-                          {message.shared_article.category} ・{" "}
-                          {message.shared_article.sourceName}
-                        </p>
-                        <p className="mt-1 font-bold leading-5">
-                          {message.shared_article.chineseTitle}
-                        </p>
-                        <p
-                          className={`mt-1 line-clamp-2 text-sm leading-5 ${
-                            isMine ? "text-white/70" : "text-neutral-500"
-                          }`}
-                        >
-                          {message.shared_article.chineseSummary}
-                        </p>
-                      </div>
-                    </a>
-                  )}
+                    {message.shared_article && (
+                      <a
+                        href={message.shared_article.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`mb-2 block overflow-hidden rounded-2xl ${
+                          isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+                        }`}
+                      >
+                        {message.shared_article.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={message.shared_article.imageUrl}
+                            alt={message.shared_article.chineseTitle}
+                            className="h-32 w-full object-cover"
+                          />
+                        )}
+                        <div className="p-3">
+                          <p
+                            className={`text-xs font-semibold uppercase tracking-wide ${
+                              isMine ? "text-white/60" : "text-neutral-400"
+                            }`}
+                          >
+                            {message.shared_article.category} ・{" "}
+                            {message.shared_article.sourceName}
+                          </p>
+                          <p className="mt-1 font-bold leading-5">
+                            {message.shared_article.chineseTitle}
+                          </p>
+                          <p
+                            className={`mt-1 line-clamp-2 text-sm leading-5 ${
+                              isMine ? "text-white/70" : "text-neutral-500"
+                            }`}
+                          >
+                            {message.shared_article.chineseSummary}
+                          </p>
+                        </div>
+                      </a>
+                    )}
 
-                  {sharedVocabulary && (
-                    <SharedVocabularyMessage
-                      item={sharedVocabulary}
-                      currentUserId={currentUserId}
-                    />
-                  )}
+                    {sharedVocabulary && (
+                      <SharedVocabularyMessage
+                        item={sharedVocabulary}
+                        currentUserId={currentUserId}
+                      />
+                    )}
 
-                  {message.body && !sharedVocabulary && (
-                    <p className="whitespace-pre-wrap break-words leading-6">
-                      {message.body}
+                    {message.body && !sharedVocabulary && (
+                      <p className="whitespace-pre-wrap break-words leading-6">
+                        {message.body}
+                      </p>
+                    )}
+
+                    <p className="mt-2 text-xs text-neutral-400">
+                      {new Date(message.created_at).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </p>
-                  )}
-
-                  <p className="mt-2 text-xs text-neutral-400">
-                    {new Date(message.created_at).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </article>
+                  </article>
+                </div>
               </div>
             );
           })}
