@@ -1,44 +1,44 @@
 import { dictionary } from "cmu-pronouncing-dictionary";
 
-type Dictionary = Record<string, string>;
+type PronunciationDictionary = Record<string, string>;
 
-const cmuDictionary = dictionary as Dictionary;
+const pronunciationDictionary = dictionary as PronunciationDictionary;
 
-const PHONEME_MAP: Record<string, string> = {
+const ARPABET_TO_READABLE: Record<string, string> = {
   AA: "ah",
   AE: "a",
   AH: "uh",
   AO: "aw",
   AW: "ow",
   AY: "eye",
+  EH: "eh",
+  ER: "er",
+  EY: "ay",
+  IH: "ih",
+  IY: "ee",
+  OW: "oh",
+  OY: "oy",
+  UH: "oo",
+  UW: "oo",
   B: "b",
   CH: "ch",
   D: "d",
   DH: "th",
-  EH: "eh",
-  ER: "er",
-  EY: "ay",
   F: "f",
   G: "g",
   HH: "h",
-  IH: "ih",
-  IY: "ee",
   JH: "j",
   K: "k",
   L: "l",
   M: "m",
   N: "n",
   NG: "ng",
-  OW: "oh",
-  OY: "oy",
   P: "p",
   R: "r",
   S: "s",
   SH: "sh",
   T: "t",
   TH: "th",
-  UH: "oo",
-  UW: "oo",
   V: "v",
   W: "w",
   Y: "y",
@@ -46,44 +46,48 @@ const PHONEME_MAP: Record<string, string> = {
   ZH: "zh",
 };
 
-function normalizeDictionaryKey(word: string) {
-  return word
+function convertArpabet(value: string) {
+  return value
     .trim()
-    .toLowerCase()
-    .replace(/[’']/g, "")
-    .replace(/[^a-z-]/g, "");
+    .split(/\s+/)
+    .map((phoneme) => {
+      const stressMatch = phoneme.match(/([A-Z]+)([0-2])?/);
+      if (!stressMatch) return phoneme.toLowerCase();
+
+      const [, base, stress] = stressMatch;
+      const readable = ARPABET_TO_READABLE[base] ?? base.toLowerCase();
+
+      return stress === "1" ? readable.toUpperCase() : readable;
+    })
+    .join("-");
 }
 
-function phonemeToReadable(phoneme: string) {
-  const stress = phoneme.match(/\d/)?.[0];
-  const base = phoneme.replace(/\d/g, "");
-  const readable = PHONEME_MAP[base] ?? base.toLowerCase();
-
-  return stress === "1" ? readable.toUpperCase() : readable;
+function normalizeWord(value: string) {
+  return value.toLowerCase().replace(/^[^a-z']+|[^a-z']+$/g, "");
 }
 
-export function getLocalEnglishPronunciation(word: string): string {
-  const key = normalizeDictionaryKey(word);
+function getSingleWordPronunciation(word: string) {
+  const normalized = normalizeWord(word);
 
-  if (!key) return "";
+  if (!normalized) return "";
 
-  const direct = cmuDictionary[key];
+  const pronunciation =
+    pronunciationDictionary[normalized.toUpperCase()] ??
+    pronunciationDictionary[normalized];
 
-  if (direct) {
-    return direct.split(/\s+/).map(phonemeToReadable).join("-");
-  }
+  if (!pronunciation) return normalized;
 
-  const parts = key.split("-").filter(Boolean);
+  return convertArpabet(pronunciation);
+}
 
-  if (parts.length > 1) {
-    const pronunciations = parts.map((part) => cmuDictionary[part]);
+export function getLocalEnglishPronunciation(value: string) {
+  const text = value.trim();
 
-    if (pronunciations.every(Boolean)) {
-      return pronunciations
-        .map((value) => value.split(/\s+/).map(phonemeToReadable).join("-"))
-        .join(" ");
-    }
-  }
+  if (!text) return "";
 
-  return word.trim();
+  return text
+    .split(/\s+/)
+    .map(getSingleWordPronunciation)
+    .filter(Boolean)
+    .join(" ");
 }
