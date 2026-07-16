@@ -21,7 +21,6 @@ import {
   Paperclip,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { speak } from "@/lib/speech";
 import {
   getOrCreateConversationWithFriend,
   listFriends,

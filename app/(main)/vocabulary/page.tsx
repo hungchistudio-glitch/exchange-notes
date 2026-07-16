@@ -943,10 +943,6 @@ export default function VocabularyPage() {
 
   const lookupChineseText = lookupResult?.chineseName?.trim() ?? "";
 
-  const lookupChinesePinyin = lookupChineseText
-    ? (toPinyin(lookupChineseText) ?? "").trim()
-    : "";
-
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -1951,8 +1947,6 @@ function VocabularyCard({
   learningLanguage,
   updating,
   pronunciation,
-  pronunciationLoading,
-  pronunciationError,
   onRetryPronunciation,
   onChangeStatus,
   onSendToPartner,
@@ -2237,8 +2231,8 @@ function VocabularyCard({
             : null
         }
         partOfSpeech={item.part_of_speech}
-        pronunciationLoading={pronunciationLoading}
-        pronunciationError={pronunciationError}
+        pronunciationLoading={false}
+        pronunciationError=""
         onRetryPronunciation={onRetryPronunciation}
         onSpeak={handleSpeak}
         actions={
