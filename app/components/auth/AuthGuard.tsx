@@ -4,7 +4,6 @@ import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import AppSplash from "@/components/ui/AppSplash";
-import LogoLoader from "@/components/ui/LogoLoader";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthGuardProps = {
@@ -57,7 +56,15 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }, [router]);
 
   if (checking) {
-    return <LogoLoader label="Checking your account" fullScreen />;
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea]">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-black"
+          role="status"
+          aria-label="Checking your account"
+        />
+      </main>
+    );
   }
 
   if (!authenticated) {
