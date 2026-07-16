@@ -1,6 +1,5 @@
 "use client";
 
-import SelectionToolbar from "@/components/vocabulary/SelectionToolbar";
 import VocabularyCard from "@/components/vocabulary/VocabularyCard";
 import {
   BookmarkPlus,
@@ -26,9 +25,6 @@ import { toPinyin } from "@/lib/pinyin";
 import { speak } from "@/lib/speech";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { listFriends, type FriendProfile } from "@/lib/friends";
-import useTextSelection, {
-  type SelectionState,
-} from "@/hooks/useTextSelection";
 
 import {
   getVocabularyKey,
