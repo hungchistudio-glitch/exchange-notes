@@ -8,6 +8,10 @@ import { speak } from "@/lib/speech";
 
 type WordCardLanguage = "english" | "traditional-chinese";
 
+function isZhuyin(value: string) {
+  return /[ㄅ-ㄩˉˊˇˋ˙]/u.test(value);
+}
+
 type WordCardProps = {
   english: string;
   chinese: string;
@@ -163,7 +167,12 @@ export default function WordCard({
               {primary.pronunciation.length > 0 && (
                 <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
                   {primary.pronunciation.map((value, index) => (
-                    <p key={`${value}-${index}`}>{value}</p>
+                    <p
+                      key={`${value}-${index}`}
+                      className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                    >
+                      {value}
+                    </p>
                   ))}
                 </div>
               )}
@@ -193,7 +202,12 @@ export default function WordCard({
               {secondary.pronunciation.length > 0 && (
                 <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
                   {secondary.pronunciation.map((value, index) => (
-                    <p key={`${value}-${index}`}>{value}</p>
+                    <p
+                      key={`${value}-${index}`}
+                      className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                    >
+                      {value}
+                    </p>
                   ))}
                 </div>
               )}

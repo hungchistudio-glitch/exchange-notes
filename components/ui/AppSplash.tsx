@@ -3,26 +3,12 @@
 import { useEffect, useState } from "react";
 import styles from "./AppSplash.module.css";
 
-const SPLASH_SESSION_KEY = "exchange-notes-splash-seen";
-
 type SplashPhase = "hidden" | "active" | "leaving";
 
 export default function AppSplash() {
   const [phase, setPhase] = useState<SplashPhase>("hidden");
 
   useEffect(() => {
-    const forceReplay = new URLSearchParams(window.location.search).has(
-      "intro",
-    );
-
-    const alreadySeen =
-      window.sessionStorage.getItem(SPLASH_SESSION_KEY) === "true";
-
-    if (alreadySeen && !forceReplay) {
-      setPhase("hidden");
-      return;
-    }
-
     setPhase("active");
 
     const leaveTimer = window.setTimeout(() => {
@@ -30,7 +16,6 @@ export default function AppSplash() {
     }, 2300);
 
     const removeTimer = window.setTimeout(() => {
-      window.sessionStorage.setItem(SPLASH_SESSION_KEY, "true");
       setPhase("hidden");
     }, 3000);
 

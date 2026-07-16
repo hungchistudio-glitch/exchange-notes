@@ -40,3 +40,13 @@ a {
   color: #666666;
   opacity: 1;
 }
+
+/* Use a Traditional Chinese font for clear Bopomofo rendering. */
+.font-zhuyin {
+  font-family:
+    "PingFang TC", "Heiti TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  font-feature-settings: normal;
+  font-variant-ligatures: none;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
