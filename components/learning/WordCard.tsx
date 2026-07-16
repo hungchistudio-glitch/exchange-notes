@@ -79,9 +79,9 @@ export default function WordCard({
   const learningChinese = learningLanguage === "traditional-chinese";
 
   const chinesePronunciation = [
-    pronunciation.pinyin,
-    pronunciation.zhuyin,
-  ].filter(Boolean);
+    pronunciation.pinyin || "—",
+    pronunciation.zhuyin || "—",
+  ];
 
   const englishPronunciation = pronunciation.english
     ? [pronunciation.english]
