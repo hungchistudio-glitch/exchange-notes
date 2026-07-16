@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import styles from "./AppSplash.module.css";
 
-export default function AppSplash() {
-  const [visible, setVisible] = useState(true);
+type AppSplashProps = {
+  onComplete?: () => void;
+};
 
-  if (!visible) return null;
-
+export default function AppSplash({ onComplete }: AppSplashProps) {
   return (
     <div
       className={styles.splash}
       role="status"
       aria-label="Opening Exchange Notes"
       onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget) {
-          setVisible(false);
-        }
+        if (event.target !== event.currentTarget) return;
+
+        onComplete?.();
       }}
     >
       <div className={styles.logoWrap}>

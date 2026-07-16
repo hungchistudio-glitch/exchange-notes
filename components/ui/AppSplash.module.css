@@ -53,12 +53,8 @@
 
 @keyframes splashLifecycle {
   0% {
-    opacity: 0;
-    visibility: visible;
-  }
-
-  10% {
     opacity: 1;
+    visibility: visible;
   }
 
   76.666% {

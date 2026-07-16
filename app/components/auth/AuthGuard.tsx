@@ -6,14 +6,18 @@ import { useRouter } from "next/navigation";
 import AppSplash from "@/components/ui/AppSplash";
 import { createClient } from "@/lib/supabase/client";
 
+const LOGIN_SPLASH_KEY = "exchange-notes:show-login-splash";
+
 type AuthGuardProps = {
   children: ReactNode;
 };
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
+
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -28,10 +32,15 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
       if (!user) {
         setAuthenticated(false);
+        setChecking(false);
         router.replace("/login");
         return;
       }
 
+      const shouldShowSplash =
+        window.sessionStorage.getItem(LOGIN_SPLASH_KEY) === "1";
+
+      setShowSplash(shouldShowSplash);
       setAuthenticated(true);
       setChecking(false);
     }
@@ -45,6 +54,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
       if (!session) {
         setAuthenticated(false);
+        setShowSplash(false);
         router.replace("/login");
       }
     });
@@ -57,7 +67,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea]">
+      <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea]">
         <div
           className="h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-black"
           role="status"
@@ -71,10 +81,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return null;
   }
 
-  return (
-    <>
-      <AppSplash />
-      {children}
-    </>
-  );
+  if (showSplash) {
+    return (
+      <AppSplash
+        onComplete={() => {
+          window.sessionStorage.removeItem(LOGIN_SPLASH_KEY);
+          setShowSplash(false);
+        }}
+      />
+    );
+  }
+
+  return children;
 }

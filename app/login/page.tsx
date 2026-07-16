@@ -14,9 +14,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogIn(
-    event: FormEvent<HTMLFormElement>
-  ) {
+  async function handleLogIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setLoading(true);
@@ -25,16 +23,17 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
 
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
-          password,
-        });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
       if (error) {
         setMessage(error.message);
         return;
       }
+
+      window.sessionStorage.setItem("exchange-notes:show-login-splash", "1");
 
       router.replace("/");
       router.refresh();
@@ -60,10 +59,7 @@ export default function LoginPage() {
           Log in to your private learning space.
         </p>
 
-        <form
-          onSubmit={handleLogIn}
-          className="mt-8 space-y-5"
-        >
+        <form onSubmit={handleLogIn} className="mt-8 space-y-5">
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-black">
               Email
@@ -73,9 +69,7 @@ export default function LoginPage() {
               type="email"
               required
               value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
               className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
@@ -92,9 +86,7 @@ export default function LoginPage() {
               required
               minLength={6}
               value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="At least 6 characters"
               autoComplete="current-password"
               className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
