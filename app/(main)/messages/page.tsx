@@ -1,7 +1,6 @@
 "use client";
 
 import WordCard from "@/components/learning/WordCard";
-import SwipeableConversationCard from "@/components/messages/SwipeableConversationCard";
 import {
   FormEvent,
   Suspense,
@@ -330,8 +329,6 @@ function MessagesPageContent() {
 
 function ConversationList() {
   const [friends, setFriends] = useState<FriendProfile[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -354,7 +351,6 @@ function ConversationList() {
       }
 
       if (!cancelled) {
-        setCurrentUserId(user.id);
       }
 
       try {
@@ -377,50 +373,6 @@ function ConversationList() {
       cancelled = true;
     };
   }, []);
-
-  async function removeFriend(friend: FriendProfile) {
-    if (!currentUserId || deletingFriendId) return;
-
-    const confirmed = window.confirm(
-      `Remove ${
-        friend.displayName ?? `@${friend.exchangeId}`
-      } from your friends?`,
-    );
-
-    if (!confirmed) return;
-
-    setDeletingFriendId(friend.id);
-    setErrorMessage("");
-
-    try {
-      const supabase = createClient();
-
-      const [userOneId, userTwoId] =
-        currentUserId < friend.id
-          ? [currentUserId, friend.id]
-          : [friend.id, currentUserId];
-
-      const { error } = await supabase
-        .from("friendships")
-        .delete()
-        .eq("user_one_id", userOneId)
-        .eq("user_two_id", userTwoId);
-
-      if (error) throw error;
-
-      setFriends((current) => current.filter((item) => item.id !== friend.id));
-    } catch (removeError) {
-      console.error("Could not remove friend:", removeError);
-
-      setErrorMessage(
-        removeError instanceof Error
-          ? removeError.message
-          : "Could not remove this friend.",
-      );
-    } finally {
-      setDeletingFriendId(null);
-    }
-  }
 
   return (
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
@@ -471,35 +423,34 @@ function ConversationList() {
           )}
 
           {friends.map((friend) => (
-            <SwipeableConversationCard
+            <button
               key={friend.id}
-              disabled={deletingFriendId === friend.id}
-              onDelete={() => void removeFriend(friend)}
+              type="button"
+              onClick={() => {
+                window.location.assign(
+                  `/messages?with=${encodeURIComponent(friend.id)}`,
+                );
+              }}
+              className={`flex w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-sm transition-all active:scale-[0.99]`}
+              aria-label={`Open conversation with ${
+                friend.displayName ?? friend.exchangeId
+              }`}
             >
-              <Link
-                href={`/messages?with=${friend.id}`}
-                className={`relative z-10 flex items-center gap-3 rounded-3xl bg-white p-4 transition-opacity ${
-                  deletingFriendId === friend.id
-                    ? "pointer-events-none opacity-45"
-                    : ""
-                }`}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f4f1ea] font-bold text-black">
-                  {(friend.displayName ?? friend.exchangeId)
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f4f1ea] font-bold text-black">
+                {(friend.displayName ?? friend.exchangeId)
+                  .slice(0, 1)
+                  .toUpperCase()}
+              </span>
 
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-black">
-                    {friend.displayName ?? `@${friend.exchangeId}`}
-                  </p>
-                  <p className="truncate text-sm text-neutral-500">
-                    @{friend.exchangeId}
-                  </p>
-                </div>
-              </Link>
-            </SwipeableConversationCard>
+              <div className="min-w-0">
+                <p className="truncate font-bold text-black">
+                  {friend.displayName ?? `@${friend.exchangeId}`}
+                </p>
+                <p className="truncate text-sm text-neutral-500">
+                  @{friend.exchangeId}
+                </p>
+              </div>
+            </button>
           ))}
         </section>
       </div>
