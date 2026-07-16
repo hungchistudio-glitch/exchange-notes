@@ -1,39 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "./AppSplash.module.css";
 
-type SplashPhase = "hidden" | "active" | "leaving";
-
 export default function AppSplash() {
-  const [phase, setPhase] = useState<SplashPhase>("hidden");
+  const [visible, setVisible] = useState(true);
 
-  useEffect(() => {
-    setPhase("active");
-
-    const leaveTimer = window.setTimeout(() => {
-      setPhase("leaving");
-    }, 2300);
-
-    const removeTimer = window.setTimeout(() => {
-      setPhase("hidden");
-    }, 3000);
-
-    return () => {
-      window.clearTimeout(leaveTimer);
-      window.clearTimeout(removeTimer);
-    };
-  }, []);
-
-  if (phase === "hidden") return null;
+  if (!visible) return null;
 
   return (
     <div
-      className={[styles.splash, phase === "leaving" ? styles.leaving : ""]
-        .filter(Boolean)
-        .join(" ")}
+      className={styles.splash}
       role="status"
       aria-label="Opening Exchange Notes"
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget) {
+          setVisible(false);
+        }
+      }}
     >
       <div className={styles.logoWrap}>
         <svg
@@ -81,7 +65,6 @@ export default function AppSplash() {
           <g className={styles.eye}>
             <g className={styles.pupil}>
               <circle cx="294" cy="172" r="14" fill="currentColor" />
-
               <circle cx="300" cy="166" r="5" className={styles.eyeHighlight} />
             </g>
           </g>

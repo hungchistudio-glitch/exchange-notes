@@ -1,5 +1,6 @@
 import AuthGuard from "@/app/components/auth/AuthGuard";
 import BottomNav from "@/app/components/navigation/BottomNav";
+import AppSplash from "@/components/ui/AppSplash";
 
 export default function MainLayout({
   children,
@@ -8,6 +9,8 @@ export default function MainLayout({
 }) {
   return (
     <AuthGuard>
+      <AppSplash />
+
       <div
         style={{
           paddingBottom: "calc(88px + env(safe-area-inset-bottom))",
@@ -15,6 +18,7 @@ export default function MainLayout({
       >
         {children}
       </div>
+
       <BottomNav />
     </AuthGuard>
   );

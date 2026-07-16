@@ -20,7 +20,7 @@ export function getPronunciationData({
 
   const pinyin = chineseText ? (toPinyin(chineseText) ?? "").trim() : "";
 
-  const zhuyin = pinyin ? pinyinToZhuyin(pinyin).trim() : "";
+  const zhuyin = pinyin ? pinyinToZhuyin(pinyin).replace(/\s+/g, "") : "";
 
   return {
     english: englishText ? getLocalEnglishPronunciation(englishText) : "",
