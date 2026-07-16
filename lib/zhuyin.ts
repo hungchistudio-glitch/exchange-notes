@@ -72,22 +72,27 @@ const TONE_MARKS: Record<string, [string, number]> = {
   á: ["a", 2],
   ǎ: ["a", 3],
   à: ["a", 4],
+
   ē: ["e", 1],
   é: ["e", 2],
   ě: ["e", 3],
   è: ["e", 4],
+
   ī: ["i", 1],
   í: ["i", 2],
   ǐ: ["i", 3],
   ì: ["i", 4],
+
   ō: ["o", 1],
   ó: ["o", 2],
   ǒ: ["o", 3],
   ò: ["o", 4],
+
   ū: ["u", 1],
   ú: ["u", 2],
   ǔ: ["u", 3],
   ù: ["u", 4],
+
   ǖ: ["ü", 1],
   ǘ: ["ü", 2],
   ǚ: ["ü", 3],
@@ -99,12 +104,16 @@ const ZHUYIN_TONES: Record<number, string> = {
   2: "ˊ",
   3: "ˇ",
   4: "ˋ",
-  5: "˙",
 };
+
+const APICAL_I_INITIALS = new Set(["zh", "ch", "sh", "r", "z", "c", "s"]);
 
 function normalizeSyllable(value: string) {
   let tone = 1;
-  let syllable = value.toLowerCase();
+
+  // NFC ensures accented vowels such as a + combining acute
+  // become the composed character á.
+  let syllable = value.trim().toLowerCase().normalize("NFC");
 
   syllable = syllable.replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, (character) => {
     const replacement = TONE_MARKS[character];
@@ -122,60 +131,95 @@ function normalizeSyllable(value: string) {
     syllable = syllable.slice(0, -1);
   }
 
-  syllable = syllable.replace(/u:/g, "ü");
+  syllable = syllable.replace(/u:/g, "ü").replace(/v/g, "ü");
 
-  return { syllable, tone };
+  return {
+    syllable,
+    tone,
+  };
+}
+
+function normalizeZeroInitialSyllable(syllable: string) {
+  if (syllable === "yi") return "i";
+  if (syllable.startsWith("yi")) return syllable.replace(/^yi/, "i");
+
+  if (syllable === "you") return "iu";
+  if (syllable.startsWith("y")) return syllable.replace(/^y/, "i");
+
+  if (syllable === "wu") return "u";
+  if (syllable.startsWith("w")) return syllable.replace(/^w/, "u");
+
+  return syllable;
+}
+
+function normalizeYuSyllable(syllable: string) {
+  if (syllable === "yu") return "ü";
+  if (syllable === "yue") return "üe";
+  if (syllable === "yuan") return "üan";
+  if (syllable === "yun") return "ün";
+
+  return syllable;
 }
 
 function convertSyllable(value: string) {
-  const { syllable: rawSyllable, tone } = normalizeSyllable(value);
+  const normalized = normalizeSyllable(value);
+  const rawSyllable = normalized.syllable;
+  const tone = normalized.tone;
 
   if (!rawSyllable) return "";
 
-  let syllable = rawSyllable;
-  let initial = "";
+  let syllable = normalizeYuSyllable(rawSyllable);
+  let initialPinyin = "";
+  let initialZhuyin = "";
 
   for (const [pinyin, zhuyin] of INITIALS) {
     if (syllable.startsWith(pinyin)) {
-      initial = zhuyin;
+      initialPinyin = pinyin;
+      initialZhuyin = zhuyin;
       syllable = syllable.slice(pinyin.length);
       break;
     }
   }
 
-  if (["j", "q", "x"].some((value) => rawSyllable.startsWith(value))) {
-    syllable = syllable
-      .replace(/^u/, "ü")
-      .replace(/^uan/, "üan")
-      .replace(/^un/, "ün");
+  if (!initialPinyin) {
+    syllable = normalizeZeroInitialSyllable(syllable);
   }
 
-  if (!initial) {
-    if (syllable.startsWith("yi")) {
-      syllable = syllable.replace(/^yi/, "i");
-    } else if (syllable.startsWith("y")) {
-      syllable = syllable.replace(/^y/, "i");
-    } else if (syllable.startsWith("wu")) {
-      syllable = syllable.replace(/^wu/, "u");
-    } else if (syllable.startsWith("w")) {
-      syllable = syllable.replace(/^w/, "u");
-    } else if (syllable.startsWith("yu")) {
-      syllable = syllable.replace(/^yu/, "ü");
-    }
+  // j, q, x use ü sounds even though standard pinyin writes u.
+  if (["j", "q", "x"].includes(initialPinyin)) {
+    if (syllable === "u") syllable = "ü";
+    if (syllable === "ue") syllable = "üe";
+    if (syllable === "uan") syllable = "üan";
+    if (syllable === "un") syllable = "ün";
   }
 
-  const final = FINALS[syllable];
+  // zhi, chi, shi, ri, zi, ci, si do not contain ㄧ in Zhuyin.
+  if (syllable === "i" && APICAL_I_INITIALS.has(initialPinyin)) {
+    syllable = "";
+  }
 
-  if (!final) {
+  const finalZhuyin = syllable ? FINALS[syllable] : "";
+
+  if (syllable && !finalZhuyin) {
     return value;
   }
 
-  return `${initial}${final}${ZHUYIN_TONES[tone] ?? ""}`;
+  const base = `${initialZhuyin}${finalZhuyin}`;
+
+  if (!base) return value;
+
+  // Neutral tone dot is written before the syllable.
+  if (tone === 5) {
+    return `˙${base}`;
+  }
+
+  return `${base}${ZHUYIN_TONES[tone] ?? ""}`;
 }
 
 export function pinyinToZhuyin(pinyin: string) {
   return pinyin
     .trim()
+    .normalize("NFC")
     .split(/\s+/)
     .map(convertSyllable)
     .filter(Boolean)
