@@ -1,6 +1,6 @@
 "use client";
 
-import AdaptiveWordCard from "@/components/learning/AdaptiveWordCard";
+import WordCard from "@/components/learning/WordCard";
 import {
   BookmarkPlus,
   BookOpen,
@@ -54,55 +54,6 @@ const SORT_LABELS: Record<SortMode, string> = {
   "for-you": "For You",
   trending: "Trending",
 };
-
-const PRONUNCIATION_CACHE_KEY = "exchange-notes-pronunciation-cache-v5";
-
-type WordPronunciation = {
-  englishPronunciation: string;
-  zhuyin: string;
-};
-
-type PronunciationCache = Record<string, WordPronunciation>;
-
-function getPronunciationCacheKey(english: string, chinese: string) {
-  return `${normalizeVocabularyText(english)}::${normalizeVocabularyText(
-    chinese,
-  )}`;
-}
-
-function readPronunciationCache(): PronunciationCache {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const raw = window.localStorage.getItem(PRONUNCIATION_CACHE_KEY);
-
-    if (!raw) return {};
-
-    const parsed = JSON.parse(raw) as unknown;
-
-    return parsed && typeof parsed === "object"
-      ? (parsed as PronunciationCache)
-      : {};
-  } catch {
-    return {};
-  }
-}
-
-function writePronunciationCache(
-  key: string,
-  pronunciation: WordPronunciation,
-) {
-  if (typeof window === "undefined") return;
-
-  try {
-    const cache = readPronunciationCache();
-    cache[key] = pronunciation;
-
-    window.localStorage.setItem(PRONUNCIATION_CACHE_KEY, JSON.stringify(cache));
-  } catch {
-    // Private browsing or storage limits can block localStorage.
-  }
-}
 
 const INTERACTION_STORAGE_KEY = "vocabulary-interactions-v1";
 
@@ -348,151 +299,6 @@ export default function VocabularyPage() {
       return true;
     });
   }, [items]);
-
-  const [pronunciations, setPronunciations] = useState<
-    Record<string, WordPronunciation>
-  >({});
-  const [pronunciationErrors, setPronunciationErrors] = useState<
-    Record<string, string>
-  >({});
-  const [pronunciationLoading, setPronunciationLoading] = useState(false);
-  const attemptedPronunciationKeysRef = useRef<Set<string>>(new Set());
-
-  const loadPronunciations = useCallback(
-    async (targetItems: VocabularyItem[], options?: { force?: boolean }) => {
-      const force = options?.force ?? false;
-      const toFetch: { key: string; english: string; chinese: string }[] = [];
-      const cacheHits: Record<string, WordPronunciation> = {};
-
-      targetItems.forEach((item) => {
-        const cacheKey = getPronunciationCacheKey(item.word, item.translation);
-        const cached = readPronunciationCache()[cacheKey];
-
-        if (
-          cached &&
-          (cached.englishPronunciation.trim() || cached.zhuyin.trim())
-        ) {
-          cacheHits[cacheKey] = cached;
-          attemptedPronunciationKeysRef.current.add(cacheKey);
-          return;
-        }
-
-        if (!force && attemptedPronunciationKeysRef.current.has(cacheKey)) {
-          return;
-        }
-
-        attemptedPronunciationKeysRef.current.add(cacheKey);
-        toFetch.push({
-          key: cacheKey,
-          english: item.word,
-          chinese: item.translation,
-        });
-      });
-
-      if (Object.keys(cacheHits).length > 0) {
-        setPronunciations((current) => ({ ...current, ...cacheHits }));
-      }
-
-      const uniqueToFetch = Array.from(
-        new Map(toFetch.map((entry) => [entry.key, entry])).values(),
-      );
-
-      if (uniqueToFetch.length === 0) return;
-
-      setPronunciationLoading(true);
-
-      setPronunciationErrors((current) => {
-        const next = { ...current };
-        uniqueToFetch.forEach(({ key }) => delete next[key]);
-        return next;
-      });
-
-      try {
-        const response = await fetch("/api/pronunciation-batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: uniqueToFetch }),
-        });
-
-        const data = (await response.json()) as {
-          results?: Record<string, WordPronunciation>;
-          error?: string;
-        };
-
-        if (!response.ok || !data.results) {
-          throw new Error(data.error || "Could not load pronunciations.");
-        }
-
-        const nextPronunciations: Record<string, WordPronunciation> = {};
-        const nextErrors: Record<string, string> = {};
-
-        uniqueToFetch.forEach(({ key }) => {
-          const result = data.results?.[key];
-
-          if (
-            result &&
-            (result.englishPronunciation.trim() || result.zhuyin.trim())
-          ) {
-            nextPronunciations[key] = result;
-            writePronunciationCache(key, result);
-          } else {
-            nextErrors[key] = "Pronunciation unavailable.";
-          }
-        });
-
-        setPronunciations((current) => ({ ...current, ...nextPronunciations }));
-        setPronunciationErrors((current) => ({ ...current, ...nextErrors }));
-      } catch (batchError) {
-        console.warn("Could not load pronunciation batch:", batchError);
-
-        const message =
-          batchError instanceof Error
-            ? batchError.message
-            : "Could not load pronunciation.";
-
-        const nextErrors: Record<string, string> = {};
-        uniqueToFetch.forEach(({ key }) => {
-          nextErrors[key] = message;
-        });
-        setPronunciationErrors((current) => ({ ...current, ...nextErrors }));
-      } finally {
-        setPronunciationLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (uniqueItems.length === 0) return;
-    void loadPronunciations(uniqueItems);
-  }, [uniqueItems, loadPronunciations]);
-
-  const retryPronunciation = useCallback(
-    (item: VocabularyItem) => {
-      const cacheKey = getPronunciationCacheKey(item.word, item.translation);
-      attemptedPronunciationKeysRef.current.delete(cacheKey);
-
-      try {
-        const cache = readPronunciationCache();
-        delete cache[cacheKey];
-        window.localStorage.setItem(
-          PRONUNCIATION_CACHE_KEY,
-          JSON.stringify(cache),
-        );
-      } catch {
-        // Ignore storage errors.
-      }
-
-      setPronunciationErrors((current) => {
-        const next = { ...current };
-        delete next[cacheKey];
-        return next;
-      });
-
-      void loadPronunciations([item], { force: true });
-    },
-    [loadPronunciations],
-  );
 
   useEffect(() => {
     if (sortMode === "new" || uniqueItems.length === 0) return;
@@ -941,8 +747,6 @@ export default function VocabularyPage() {
     }
   }
 
-  const lookupChineseText = lookupResult?.chineseName?.trim() ?? "";
-
   return (
     <main className="min-h-screen bg-[#f5f2eb] px-5 pb-28 pt-8 text-black">
       <div className="mx-auto max-w-xl">
@@ -1096,28 +900,12 @@ export default function VocabularyPage() {
         ) : (
           <section className="mt-6 space-y-4">
             {visibleItems.map((item) => {
-              const cacheKey = getPronunciationCacheKey(
-                item.word,
-                item.translation,
-              );
-              const cardPronunciation = pronunciations[cacheKey] ?? null;
-              const cardPronunciationError =
-                pronunciationErrors[cacheKey] ?? "";
-              const cardPronunciationLoading =
-                !cardPronunciation &&
-                !cardPronunciationError &&
-                pronunciationLoading;
-
               return (
                 <VocabularyCard
                   key={item.id}
                   item={item}
                   learningLanguage={learningLanguage}
                   updating={updatingId === item.id}
-                  pronunciation={cardPronunciation}
-                  pronunciationLoading={cardPronunciationLoading}
-                  pronunciationError={cardPronunciationError}
-                  onRetryPronunciation={() => retryPronunciation(item)}
                   onChangeStatus={(status) => void changeStatus(item, status)}
                   onSendToPartner={(sharedItem) =>
                     handleSendToPartner(sharedItem ?? item)
@@ -1946,8 +1734,6 @@ function VocabularyCard({
   item,
   learningLanguage,
   updating,
-  pronunciation,
-  onRetryPronunciation,
   onChangeStatus,
   onSendToPartner,
   onDelete,
@@ -1957,10 +1743,6 @@ function VocabularyCard({
   item: VocabularyItem;
   learningLanguage: AppLanguage | null;
   updating: boolean;
-  pronunciation: WordPronunciation | null;
-  pronunciationLoading: boolean;
-  pronunciationError: string;
-  onRetryPronunciation: () => void;
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
   onDelete: () => void;
@@ -1971,23 +1753,6 @@ function VocabularyCard({
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
-
-  const learningChinese = learningLanguage === "traditional-chinese";
-
-  const primaryText = learningChinese ? item.translation : item.word;
-
-  const secondaryText = learningChinese ? item.word : item.translation;
-
-  const primaryLanguage = learningChinese ? "zh-TW" : "en-US";
-
-  const secondaryLanguage = learningChinese ? "en-US" : "zh-TW";
-
-  const englishPronunciation =
-    pronunciation?.englishPronunciation?.trim() || "";
-
-  const chineseZhuyin = pronunciation?.zhuyin?.trim() || "";
-
-  const chinesePinyin = toPinyin(item.translation)?.trim() || "";
 
   useEffect(() => {
     onInteract("view");
@@ -2158,31 +1923,6 @@ function VocabularyCard({
 
   const chineseExample = item.translated_example?.trim() || "";
 
-  const primaryPronunciation = learningChinese
-    ? chineseZhuyin || chinesePinyin
-    : englishPronunciation;
-
-  const secondaryPronunciation = learningChinese
-    ? englishPronunciation
-    : chineseZhuyin || chinesePinyin;
-
-  const primaryPronunciationLabel = learningChinese
-    ? chineseZhuyin
-      ? "注音"
-      : "拼音"
-    : "EN";
-
-  const secondaryPronunciationLabel = learningChinese
-    ? "EN"
-    : chineseZhuyin
-      ? "注音"
-      : "拼音";
-
-  function handleSpeak(value: string, language: "en-US" | "zh-TW") {
-    onInteract("speak");
-    speak(value, language);
-  }
-
   return (
     <div ref={contentRef} className="relative">
       <SelectionToolbar
@@ -2193,100 +1933,69 @@ function VocabularyCard({
         onSendToPartner={handleSelectionSendToPartner}
       />
 
-      <AdaptiveWordCard
+      <WordCard
+        english={item.word}
+        chinese={item.translation}
+        englishExample={englishExample}
+        chineseExample={chineseExample}
+        partOfSpeech={item.part_of_speech}
         imageUrl={item.image_url}
-        imageAlt={item.word}
+        learningLanguage={learningLanguage ?? "english"}
         headerLabel="Vocabulary"
         statusLabel={STATUS_LABELS[item.status]}
-        primary={{
-          label: learningChinese ? "Traditional Chinese" : "English",
-          text: primaryText,
-          pronunciationLabel: primaryPronunciationLabel,
-          pronunciation: primaryPronunciation,
-          language: primaryLanguage,
-        }}
-        secondary={{
-          label: learningChinese ? "English" : "Traditional Chinese",
-          text: secondaryText,
-          pronunciationLabel: secondaryPronunciationLabel,
-          pronunciation: secondaryPronunciation,
-          language: secondaryLanguage,
-        }}
-        englishExample={
-          englishExample
-            ? {
-                label: "English example",
-                text: englishExample,
-                language: "en-US",
-              }
-            : null
-        }
-        chineseExample={
-          chineseExample
-            ? {
-                label: "中文例句",
-                text: chineseExample,
-                language: "zh-TW",
-              }
-            : null
-        }
-        partOfSpeech={item.part_of_speech}
-        pronunciationLoading={false}
-        pronunciationError=""
-        onRetryPronunciation={onRetryPronunciation}
-        onSpeak={handleSpeak}
         actions={
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onSendToPartner()}
-              aria-label="Send to Partner"
-              title="Send to Partner"
-              className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-black px-4 text-[12px] font-semibold text-white transition-transform active:scale-[0.99]"
-            >
-              <Send size={15} strokeWidth={1.8} />
-              Send
-            </button>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onSendToPartner()}
+                aria-label="Send to Partner"
+                title="Send to Partner"
+                className="flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-black px-4 text-[12px] font-semibold text-white transition-transform active:scale-[0.99]"
+              >
+                <Send size={15} strokeWidth={1.8} />
+                Send
+              </button>
 
-            <button
-              type="button"
-              onClick={() => void handleShare()}
-              aria-label="Share"
-              title="Share"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-black/65 transition-transform active:scale-95"
-            >
-              <Share size={16} strokeWidth={1.8} />
-            </button>
+              <button
+                type="button"
+                onClick={() => void handleShare()}
+                aria-label="Share"
+                title="Share"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-black/65 transition-transform active:scale-95"
+              >
+                <Share size={16} strokeWidth={1.8} />
+              </button>
 
-            <button
-              type="button"
-              onClick={onDelete}
-              aria-label="Delete vocabulary item"
-              title="Delete vocabulary item"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-red-500 transition-transform active:scale-95"
-            >
-              <Trash2 size={16} strokeWidth={1.8} />
-            </button>
-          </div>
-        }
-        footer={
-          <div className="rounded-[20px] bg-[#f5f2eb] p-1.5">
-            <div className="grid grid-cols-3 gap-1.5">
-              {(["new", "learning", "mastered"] as const).map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  disabled={updating}
-                  onClick={() => onChangeStatus(status)}
-                  className={`min-h-[42px] whitespace-nowrap rounded-[15px] px-2 text-[11px] font-semibold transition-all disabled:opacity-40 ${
-                    item.status === status
-                      ? "bg-black text-white shadow-sm"
-                      : "text-black/45 hover:bg-white/60 hover:text-black"
-                  }`}
-                >
-                  {STATUS_LABELS[status]}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label="Delete vocabulary item"
+                title="Delete vocabulary item"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f1eee7] text-red-500 transition-transform active:scale-95"
+              >
+                <Trash2 size={16} strokeWidth={1.8} />
+              </button>
+            </div>
+
+            <div className="rounded-[20px] bg-[#f5f2eb] p-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
+                {(["new", "learning", "mastered"] as const).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onChangeStatus(status)}
+                    className={`min-h-[42px] whitespace-nowrap rounded-[15px] px-2 text-[11px] font-semibold transition-all disabled:opacity-40 ${
+                      item.status === status
+                        ? "bg-black text-white shadow-sm"
+                        : "text-black/45 hover:bg-white/60 hover:text-black"
+                    }`}
+                  >
+                    {STATUS_LABELS[status]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         }
