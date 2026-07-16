@@ -1,3 +1,4 @@
+import { getChinesePronunciationOverride } from "@/lib/chineseDictionary";
 import { getLocalEnglishPronunciation } from "@/lib/localPronunciation";
 import { toPinyin } from "@/lib/pinyin";
 import { pinyinToZhuyin } from "@/lib/zhuyin";
@@ -8,6 +9,10 @@ export type PronunciationData = {
   zhuyin: string;
 };
 
+function normalizePronunciation(value?: string | null) {
+  return value?.trim() ?? "";
+}
+
 export function getPronunciationData({
   english,
   chinese,
@@ -15,12 +20,20 @@ export function getPronunciationData({
   english?: string | null;
   chinese?: string | null;
 }): PronunciationData {
-  const englishText = english?.trim() ?? "";
-  const chineseText = chinese?.trim() ?? "";
+  const englishText = normalizePronunciation(english);
+  const chineseText = normalizePronunciation(chinese);
 
-  const pinyin = chineseText ? (toPinyin(chineseText) ?? "").trim() : "";
+  const override = chineseText
+    ? getChinesePronunciationOverride(chineseText)
+    : null;
 
-  const zhuyin = pinyin ? pinyinToZhuyin(pinyin).replace(/\s+/g, "") : "";
+  const pinyin =
+    override?.pinyin ??
+    (chineseText ? normalizePronunciation(toPinyin(chineseText)) : "");
+
+  const zhuyin =
+    override?.zhuyin ??
+    (pinyin ? pinyinToZhuyin(pinyin).replace(/\s+/g, "") : "");
 
   return {
     english: englishText ? getLocalEnglishPronunciation(englishText) : "",
