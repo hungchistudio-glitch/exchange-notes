@@ -247,7 +247,7 @@ export default function VocabularyCard({
         <button
           type="button"
           onClick={openDetails}
-          className="block w-full text-left"
+          className="group block w-full text-left transition"
           aria-label={`Open ${item.word} details`}
         >
           {item.image_url && (
@@ -259,7 +259,7 @@ export default function VocabularyCard({
             />
           )}
 
-          <div className="p-5">
+          <div className="px-6 py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -271,10 +271,10 @@ export default function VocabularyCard({
                   )}
                 </div>
 
-                <h2 className="mt-4 break-words text-[28px] font-semibold leading-none tracking-[-0.045em]">
+                <h2 className="mt-5 break-words text-[34px] font-bold leading-[1.05] tracking-[-0.055em] text-neutral-950">
                   {primaryWord}
                 </h2>
-                <p className="mt-2 break-words text-[18px] leading-tight text-black/52">
+                <p className="mt-2 text-[18px] font-medium leading-7 text-neutral-500">
                   {secondaryWord}
                 </p>
 
@@ -282,18 +282,18 @@ export default function VocabularyCard({
                   english={item.word}
                   chinese={item.translation}
                   showEnglish
-                  className="mt-3"
+                  className="mt-5"
                 />
               </div>
 
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/[0.045] text-black/45">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-neutral-200">
                 <ArrowUpRight size={17} />
               </span>
             </div>
 
             {example && (
-              <div className="mt-4 rounded-[18px] bg-[#f5f2eb] px-4 py-3">
-                <p className="line-clamp-2 text-[14px] leading-6 text-black/62">
+              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4">
+                <p className="line-clamp-3 text-[15px] leading-7 text-neutral-600">
                   {example}
                 </p>
               </div>
