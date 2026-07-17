@@ -1,8 +1,8 @@
 import ReviewSession from "@/components/vocabulary/ReviewSession";
-import { getVocabulary } from "@/lib/vocabulary/getVocabulary";
+import { getTodaysReview } from "@/lib/review/getTodaysReview";
 
 export default async function ReviewPage() {
-  const words = await getVocabulary();
+  const words = await getTodaysReview();
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">
