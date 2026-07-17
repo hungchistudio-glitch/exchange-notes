@@ -1,27 +1,9 @@
 import ReviewSession from "@/components/vocabulary/ReviewSession";
+import { getVocabulary } from "@/lib/vocabulary/getVocabulary";
 
-const sampleWords = [
-  {
-    id: "1",
-    english: "Apple",
-    chinese: "蘋果",
-    example: "I eat an apple every morning.",
-  },
-  {
-    id: "2",
-    english: "Mountain",
-    chinese: "山",
-    example: "The mountain is beautiful.",
-  },
-  {
-    id: "3",
-    english: "Journey",
-    chinese: "旅程",
-    example: "Every journey starts with one step.",
-  },
-];
+export default async function ReviewPage() {
+  const words = await getVocabulary();
 
-export default function ReviewPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">
 
@@ -35,7 +17,7 @@ export default function ReviewPage() {
         </p>
       </div>
 
-      <ReviewSession words={sampleWords} />
+      <ReviewSession words={words} />
 
     </main>
   );
