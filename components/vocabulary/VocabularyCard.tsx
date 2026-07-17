@@ -8,6 +8,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import AppBadge from "@/components/ui/AppBadge";
 import CollectionPickerSheet from "@/components/collections/CollectionPickerSheet";
@@ -60,6 +61,7 @@ export default function VocabularyCard({
   onInteract: (type: InteractionType) => void;
   onItemAdded: (item: VocabularyItem) => void;
 }) {
+  const router = useRouter();
   const contentRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
@@ -225,7 +227,7 @@ export default function VocabularyCard({
 
   function openDetails() {
     onInteract("view");
-    setDetailOpen(true);
+    router.push(`/vocabulary/${item.id}`);
   }
 
   const isChinesePrimary = learningLanguage === "traditional-chinese";
