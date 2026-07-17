@@ -1,36 +1,49 @@
 import type { VocabularyStats } from "@/types/vocabulary";
 
+const REVIEW_INTERVALS_IN_DAYS = [
+  0,
+  1,
+  3,
+  7,
+  14,
+  30,
+  60,
+  120,
+];
+
 export function scheduleNextReview(
   stats: VocabularyStats
 ): Date {
-
   const now = new Date();
 
-  if (stats.reviewCount === 0) {
+  if (
+    stats.reviewCount === 0 ||
+    !stats.lastReviewedAt
+  ) {
     return now;
   }
 
-  const intervals = [
-    0,
-    1,
-    3,
-    7,
-    14,
-    30,
-    60,
-    120,
-  ];
+  const lastReviewedAt = new Date(
+    stats.lastReviewedAt
+  );
 
-  const index = Math.min(
+  if (Number.isNaN(lastReviewedAt.getTime())) {
+    return now;
+  }
+
+  const intervalIndex = Math.min(
     stats.reviewCount,
-    intervals.length - 1
+    REVIEW_INTERVALS_IN_DAYS.length - 1
   );
 
-  const next = new Date(now);
-
-  next.setDate(
-    next.getDate() + intervals[index]
+  const nextReviewAt = new Date(
+    lastReviewedAt
   );
 
-  return next;
+  nextReviewAt.setDate(
+    nextReviewAt.getDate() +
+      REVIEW_INTERVALS_IN_DAYS[intervalIndex]
+  );
+
+  return nextReviewAt;
 }
