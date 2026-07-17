@@ -3,6 +3,7 @@
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularyHeader from "@/components/vocabulary/VocabularyHeader";
+import VocabularyDashboard from "@/components/vocabulary/VocabularyDashboard";
 import VocabularySearch from "@/components/vocabulary/VocabularySearch";
 import AppPage from "@/components/ui/AppPage";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -694,7 +695,14 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      <VocabularyHeader todayProgress={dailyProgress} todayGoal={dailyGoal} />
+      
+      <VocabularyDashboard
+        total={visibleItems.length}
+        learning={visibleItems.filter(item => item.status === "learning").length}
+        mastered={visibleItems.filter(item => item.status === "mastered").length}
+      />
+
+<VocabularyHeader todayProgress={dailyProgress} todayGoal={dailyGoal} />
 
       <div className="mt-7">
         <SectionHeader
