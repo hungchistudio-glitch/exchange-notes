@@ -1,90 +1,13 @@
+import { calculateReview } from "@/lib/review/algorithm";
 import { createClient } from "@/lib/supabase/client";
 import type { ReviewGrade } from "@/types/vocabulary";
 
-type ReviewState = {
+type DatabaseReviewState = {
   review_count: number | null;
   correct_count: number | null;
   review_interval: number | null;
   review_ease: number | null;
 };
-
-function getNextReviewState(
-  current: ReviewState,
-  grade: ReviewGrade,
-) {
-  const previousInterval = Number(
-    current.review_interval ?? 0,
-  );
-
-  const previousEase = Number(
-    current.review_ease ?? 2.5,
-  );
-
-  let interval: number;
-  let ease: number;
-
-  switch (grade) {
-    case "again":
-      interval = 0;
-      ease = Math.max(1.3, previousEase - 0.2);
-      break;
-
-    case "hard":
-      interval = Math.max(
-        1,
-        Math.round(previousInterval * 1.2),
-      );
-      ease = Math.max(1.3, previousEase - 0.15);
-      break;
-
-    case "good":
-      interval =
-        previousInterval <= 0
-          ? 3
-          : Math.max(
-              3,
-              Math.round(
-                previousInterval * previousEase,
-              ),
-            );
-      ease = previousEase;
-      break;
-
-    case "easy":
-      interval =
-        previousInterval <= 0
-          ? 7
-          : Math.max(
-              7,
-              Math.round(
-                previousInterval *
-                  previousEase *
-                  1.3,
-              ),
-            );
-      ease = previousEase + 0.15;
-      break;
-  }
-
-  const now = new Date();
-  const nextReviewAt = new Date(now);
-
-  nextReviewAt.setDate(
-    nextReviewAt.getDate() + interval,
-  );
-
-  return {
-    reviewCount:
-      Number(current.review_count ?? 0) + 1,
-    correctCount:
-      Number(current.correct_count ?? 0) +
-      (grade === "again" ? 0 : 1),
-    interval,
-    ease,
-    now,
-    nextReviewAt,
-  };
-}
 
 export async function saveReviewResult(
   id: string,
@@ -119,8 +42,28 @@ export async function saveReviewResult(
     throw readError;
   }
 
-  const next = getNextReviewState(
-    current as ReviewState,
+  if (!current) {
+    throw new Error("Vocabulary item not found.");
+  }
+
+  const reviewState =
+    current as DatabaseReviewState;
+
+  const next = calculateReview(
+    {
+      reviewCount: Number(
+        reviewState.review_count ?? 0,
+      ),
+      correctCount: Number(
+        reviewState.correct_count ?? 0,
+      ),
+      interval: Number(
+        reviewState.review_interval ?? 0,
+      ),
+      ease: Number(
+        reviewState.review_ease ?? 2.5,
+      ),
+    },
     grade,
   );
 
@@ -131,9 +74,8 @@ export async function saveReviewResult(
       correct_count: next.correctCount,
       review_interval: next.interval,
       review_ease: next.ease,
-      last_reviewed_at: next.now.toISOString(),
-      next_review_at:
-        next.nextReviewAt.toISOString(),
+      last_reviewed_at: new Date().toISOString(),
+      next_review_at: next.nextReviewAt,
     })
     .eq("id", id)
     .eq("user_id", user.id);
@@ -141,4 +83,6 @@ export async function saveReviewResult(
   if (updateError) {
     throw updateError;
   }
+
+  return next;
 }
