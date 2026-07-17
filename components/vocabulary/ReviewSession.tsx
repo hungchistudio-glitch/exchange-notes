@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import ReviewCard from "./ReviewCard";
-import { defaultVocabularyStats } from "@/types/vocabulary";
-import { updateVocabularyStats } from "@/lib/review/updateVocabularyStats";
+import type { ReviewGrade } from "@/types/vocabulary";
 
-type ReviewWord = {
+export type ReviewWord = {
   id: string;
   english: string;
   chinese: string;
@@ -20,58 +19,93 @@ export default function ReviewSession({
   words,
 }: Props) {
   const [queue, setQueue] = useState(words);
+  const [reviewedCount, setReviewedCount] = useState(0);
 
-  if (words.length === 0) {
-    return (
-      <div className="rounded-2xl border p-8 text-center">
-        🎉 No words to review today.
-      </div>
-    );
-  }
+  const totalCount = words.length;
+  const currentWord = queue[0];
 
-  if (queue.length === 0) {
-    return (
-      <div className="rounded-2xl border p-8 text-center">
-        ✅ Today's Review Complete!
-      </div>
-    );
-  }
+  function handleGrade(grade: ReviewGrade) {
+    setQueue((currentQueue) => {
+      if (currentQueue.length === 0) {
+        return currentQueue;
+      }
 
-  const word = queue[0];
+      const [firstWord, ...remainingWords] = currentQueue;
 
-  function handleCorrect() {
-    console.log(
-      updateVocabularyStats(
-        defaultVocabularyStats,
-        true
-      )
-    );
+      if (grade === "again") {
+        return [...remainingWords, firstWord];
+      }
 
-    setQueue((q) => q.slice(1));
-  }
-
-  function handleIncorrect() {
-    console.log(
-      updateVocabularyStats(
-        defaultVocabularyStats,
-        false
-      )
-    );
-
-    setQueue((q) => {
-      if (q.length === 0) return q;
-      return [...q.slice(1), q[0]];
+      return remainingWords;
     });
+
+    setReviewedCount((count) => count + 1);
+  }
+
+  if (!currentWord) {
+    return (
+      <section className="rounded-3xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
+        <div className="text-4xl">✓</div>
+
+        <h2 className="mt-4 text-2xl font-bold">
+          Review complete
+        </h2>
+
+        <p className="mt-2 text-neutral-500">
+          You reviewed {reviewedCount} card
+          {reviewedCount === 1 ? "" : "s"} today.
+        </p>
+      </section>
+    );
   }
 
   return (
-    <ReviewCard
-      key={word.id}
-      english={word.english}
-      chinese={word.chinese}
-      example={word.example}
-      onCorrect={handleCorrect}
-      onIncorrect={handleIncorrect}
-    />
+    <section className="space-y-4">
+      <div className="flex items-center justify-between text-sm text-neutral-500">
+        <span>
+          {queue.length} remaining
+        </span>
+
+        <span>
+          {totalCount === 0
+            ? 0
+            : Math.min(
+                100,
+                Math.round(
+                  ((totalCount - queue.length) /
+                    totalCount) *
+                    100,
+                ),
+              )}
+          %
+        </span>
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+        <div
+          className="h-full rounded-full bg-black transition-all"
+          style={{
+            width: `${
+              totalCount === 0
+                ? 0
+                : Math.min(
+                    100,
+                    ((totalCount - queue.length) /
+                      totalCount) *
+                      100,
+                  )
+            }%`,
+          }}
+        />
+      </div>
+
+      <ReviewCard
+        key={`${currentWord.id}-${reviewedCount}`}
+        english={currentWord.english}
+        chinese={currentWord.chinese}
+        example={currentWord.example}
+        onGrade={handleGrade}
+      />
+    </section>
   );
 }

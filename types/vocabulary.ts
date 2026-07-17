@@ -1,3 +1,9 @@
+export type ReviewGrade =
+  | "again"
+  | "hard"
+  | "good"
+  | "easy";
+
 export type VocabularyDifficulty =
   | "new"
   | "learning"
