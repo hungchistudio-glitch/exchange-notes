@@ -19,7 +19,7 @@ export default function ReviewSession({
 }: Props) {
   const [queue, setQueue] = useState(words);
 
-  if (queue.length === 0) {
+  if (words.length === 0) {
     return (
       <div className="rounded-2xl border p-8 text-center">
         🎉 No words to review today.
