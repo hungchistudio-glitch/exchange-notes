@@ -4,6 +4,7 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularyHeader from "@/components/vocabulary/VocabularyHeader";
 import VocabularyDashboard from "@/components/vocabulary/VocabularyDashboard";
+import SmartLearningInsights from "@/components/vocabulary/SmartLearningInsights";
 import LearningCoach from "@/components/vocabulary/LearningCoach";
 import VocabularyQuickActions from "@/components/vocabulary/VocabularyQuickActions";
 import VocabularySearch from "@/components/vocabulary/VocabularySearch";
@@ -712,6 +713,10 @@ export default function VocabularyPage() {
               )
         }
       />
+
+      <SmartLearningInsights />
+
+
 
 <VocabularyHeader todayProgress={dailyProgress} todayGoal={dailyGoal} />
 
