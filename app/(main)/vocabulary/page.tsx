@@ -700,6 +700,15 @@ export default function VocabularyPage() {
         total={visibleItems.length}
         learning={visibleItems.filter(item => item.status === "learning").length}
         mastered={visibleItems.filter(item => item.status === "mastered").length}
+        progress={
+          visibleItems.length === 0
+            ? 0
+            : Math.round(
+                visibleItems.filter(item => item.status === "mastered").length /
+                  visibleItems.length *
+                  100
+              )
+        }
       />
 
 <VocabularyHeader todayProgress={dailyProgress} todayGoal={dailyGoal} />
