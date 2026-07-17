@@ -1,6 +1,6 @@
 import type { VocabularyStats } from "@/types/vocabulary";
 
-const REVIEW_INTERVALS_IN_DAYS = [
+const INTERVALS = [
   0,
   1,
   3,
@@ -14,36 +14,31 @@ const REVIEW_INTERVALS_IN_DAYS = [
 export function scheduleNextReview(
   stats: VocabularyStats
 ): Date {
-  const now = new Date();
-
   if (
     stats.reviewCount === 0 ||
     !stats.lastReviewedAt
   ) {
-    return now;
+    return new Date();
   }
 
-  const lastReviewedAt = new Date(
-    stats.lastReviewedAt
-  );
+  const last = new Date(stats.lastReviewedAt);
 
-  if (Number.isNaN(lastReviewedAt.getTime())) {
-    return now;
+  if (Number.isNaN(last.getTime())) {
+    return new Date();
   }
 
-  const intervalIndex = Math.min(
-    stats.reviewCount,
-    REVIEW_INTERVALS_IN_DAYS.length - 1
+  const interval = INTERVALS[
+    Math.min(
+      stats.reviewCount,
+      INTERVALS.length - 1
+    )
+  ];
+
+  const next = new Date(last);
+
+  next.setDate(
+    next.getDate() + interval
   );
 
-  const nextReviewAt = new Date(
-    lastReviewedAt
-  );
-
-  nextReviewAt.setDate(
-    nextReviewAt.getDate() +
-      REVIEW_INTERVALS_IN_DAYS[intervalIndex]
-  );
-
-  return nextReviewAt;
+  return next;
 }
