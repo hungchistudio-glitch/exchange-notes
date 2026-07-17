@@ -30,9 +30,9 @@ import type {
 } from "@/lib/types/app";
 
 const STATUS_LABELS: Record<VocabularyStatus, string> = {
-  new: "New",
-  learning: "Learning",
-  mastered: "Mastered",
+  new: "＋ New",
+  learning: "● Learning",
+  mastered: "✓ Mastered",
 };
 
 function statusTone(status: VocabularyStatus) {
@@ -243,11 +243,11 @@ export default function VocabularyCard({
         onSendToPartner={handleSelectionSendToPartner}
       />
 
-      <article className="overflow-hidden rounded-[26px] border border-black/[0.07] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.045)]">
+      <article className="overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.11] hover:shadow-[0_18px_50px_rgba(16,16,15,0.08)]">
         <button
           type="button"
           onClick={openDetails}
-          className="group block w-full text-left transition"
+          className="group block w-full text-left transition active:scale-[0.995]"
           aria-label={`Open ${item.word} details`}
         >
           {item.image_url && (
@@ -262,7 +262,7 @@ export default function VocabularyCard({
           <div className="px-6 py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <AppBadge tone={statusTone(item.status)}>
                     {STATUS_LABELS[item.status]}
                   </AppBadge>
@@ -301,7 +301,7 @@ export default function VocabularyCard({
           </div>
         </button>
 
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 border-t border-black/[0.055] p-3">
+        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 border-t border-black/[0.055] bg-black/[0.012] p-3">
           <AppButton
             variant={item.status === "mastered" ? "secondary" : "primary"}
             size="md"
