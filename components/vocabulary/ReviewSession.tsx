@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import ReviewCard from "./ReviewCard";
+import { defaultVocabularyStats } from "@/types/vocabulary";
+import { updateVocabularyStats } from "@/lib/review/updateVocabularyStats";
 
 type ReviewWord = {
   id: string;
@@ -38,10 +40,24 @@ export default function ReviewSession({
   const word = queue[0];
 
   function handleCorrect() {
+    console.log(
+      updateVocabularyStats(
+        defaultVocabularyStats,
+        true
+      )
+    );
+
     setQueue((q) => q.slice(1));
   }
 
   function handleIncorrect() {
+    console.log(
+      updateVocabularyStats(
+        defaultVocabularyStats,
+        false
+      )
+    );
+
     setQueue((q) => {
       if (q.length === 0) return q;
       return [...q.slice(1), q[0]];
