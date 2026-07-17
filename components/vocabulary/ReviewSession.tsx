@@ -43,6 +43,7 @@ export default function ReviewSession({
 
   return (
     <ReviewCard
+      key={word.id}
       english={word.english}
       chinese={word.chinese}
       example={word.example}
