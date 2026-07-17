@@ -304,6 +304,7 @@ export default function VocabularyCard({
         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 border-t border-black/[0.055] bg-black/[0.012] p-3">
           <AppButton
             variant={item.status === "mastered" ? "secondary" : "primary"}
+            className="rounded-xl shadow-sm"
             size="md"
             disabled={updating}
             onClick={() =>
@@ -319,6 +320,7 @@ export default function VocabularyCard({
           <AppButton
             variant="ghost"
             size="icon"
+            className="rounded-xl hover:bg-neutral-200 transition-colors"
             onClick={() =>
               speak(
                 isChinesePrimary ? item.translation : item.word,
@@ -333,6 +335,7 @@ export default function VocabularyCard({
           <AppButton
             variant="ghost"
             size="icon"
+            className="rounded-xl hover:bg-neutral-200 transition-colors"
             onClick={() => onSendToPartner()}
             aria-label="Send to partner"
           >
