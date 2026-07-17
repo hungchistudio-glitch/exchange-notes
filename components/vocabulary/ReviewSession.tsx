@@ -17,9 +17,9 @@ type Props = {
 export default function ReviewSession({
   words,
 }: Props) {
-  const [index, setIndex] = useState(0);
+  const [queue, setQueue] = useState(words);
 
-  if (words.length === 0) {
+  if (queue.length === 0) {
     return (
       <div className="rounded-2xl border p-8 text-center">
         🎉 No words to review today.
@@ -27,7 +27,7 @@ export default function ReviewSession({
     );
   }
 
-  if (index >= words.length) {
+  if (queue.length === 0) {
     return (
       <div className="rounded-2xl border p-8 text-center">
         ✅ Today's Review Complete!
@@ -35,10 +35,17 @@ export default function ReviewSession({
     );
   }
 
-  const word = words[index];
+  const word = queue[0];
 
-  function nextCard() {
-    setIndex((i) => i + 1);
+  function handleCorrect() {
+    setQueue((q) => q.slice(1));
+  }
+
+  function handleIncorrect() {
+    setQueue((q) => {
+      if (q.length === 0) return q;
+      return [...q.slice(1), q[0]];
+    });
   }
 
   return (
@@ -47,8 +54,8 @@ export default function ReviewSession({
       english={word.english}
       chinese={word.chinese}
       example={word.example}
-      onCorrect={nextCard}
-      onIncorrect={nextCard}
+      onCorrect={handleCorrect}
+      onIncorrect={handleIncorrect}
     />
   );
 }
