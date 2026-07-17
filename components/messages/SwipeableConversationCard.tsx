@@ -11,14 +11,14 @@ type SwipeableConversationCardProps = {
   children: ReactNode;
   disabled?: boolean;
   onOpen: () => void;
-  onDelete: () => void | Promise<void>;
+  onRemove?: () => void | Promise<void>;
 };
 
 export default function SwipeableConversationCard({
   children,
   disabled = false,
   onOpen,
-  onDelete,
+  onRemove,
 }: SwipeableConversationCardProps) {
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -115,7 +115,7 @@ export default function SwipeableConversationCard({
     setDeleting(true);
 
     try {
-      await onDelete();
+      await onRemove?.();
       setOffset(0);
     } finally {
       setDeleting(false);

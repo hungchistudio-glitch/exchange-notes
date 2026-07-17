@@ -522,7 +522,7 @@ function ConversationList() {
                   `/messages?with=${encodeURIComponent(friend.id)}`,
                 );
               }}
-              onDelete={() => removeFriend(friend)}
+              onRemove={() => removeFriend(friend)}
             >
               <div
                 className="flex w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-sm"
@@ -581,6 +581,15 @@ function ChatRoom({ friendId }: { friendId: string }) {
   } | null>(null);
   const [savingSelection, setSavingSelection] = useState(false);
   const [savedToast, setSavedToast] = useState("");
+
+  // ---- message selection state ----
+  const [conversationMenuOpen, setConversationMenuOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [deletingMessages, setDeletingMessages] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesSectionRef = useRef<HTMLElement | null>(null);
@@ -1140,51 +1149,220 @@ function ChatRoom({ friendId }: { friendId: string }) {
     }
   }
 
+  function enterSelectionMode() {
+    setConversationMenuOpen(false);
+    setSelectionMode(true);
+    setSelectedMessageIds(new Set());
+    setSelectionPopup(null);
+    window.getSelection()?.removeAllRanges();
+  }
+
+  function exitSelectionMode() {
+    setSelectionMode(false);
+    setSelectedMessageIds(new Set());
+    setDeleteConfirmationOpen(false);
+  }
+
+  function toggleMessageSelection(messageId: number) {
+    const message = messages.find((item) => item.id === messageId);
+
+    if (!message || message.sender_id !== currentUserId) {
+      return;
+    }
+
+    setSelectedMessageIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+
+      return next;
+    });
+  }
+
+  function selectAllMessages() {
+    setSelectedMessageIds(
+      new Set(
+        messages
+          .filter((message) => message.sender_id === currentUserId)
+          .map((message) => message.id),
+      ),
+    );
+  }
+
+  function handleDeleteSelectedPreview() {
+    if (selectedMessageIds.size === 0) return;
+    setDeleteConfirmationOpen(true);
+  }
+
+  async function deleteSelectedMessages() {
+    if (!currentUserId || selectedMessageIds.size === 0 || deletingMessages) {
+      return;
+    }
+
+    const selectedIds = Array.from(selectedMessageIds);
+
+    setDeletingMessages(true);
+    setErrorMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const { data: deletedMessages, error } = await supabase
+        .from("messages")
+        .delete()
+        .in("id", selectedIds)
+        .eq("sender_id", currentUserId)
+        .select("id");
+
+      if (error) {
+        throw error;
+      }
+
+      const deletedIds = new Set(
+        (deletedMessages ?? []).map((message) => message.id),
+      );
+
+      if (deletedIds.size === 0) {
+        throw new Error(
+          "No messages were deleted. You can only delete messages you sent.",
+        );
+      }
+
+      setMessages((current) =>
+        current.filter((message) => !deletedIds.has(message.id)),
+      );
+
+      setDeleteConfirmationOpen(false);
+      setSelectionMode(false);
+      setSelectedMessageIds(new Set());
+
+      if (deletedIds.size !== selectedIds.length) {
+        setErrorMessage(
+          "Some messages could not be deleted. You can only delete messages you sent.",
+        );
+      }
+    } catch (deleteError) {
+      console.error("Could not delete messages:", deleteError);
+
+      setErrorMessage(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Could not delete the selected messages.",
+      );
+
+      setDeleteConfirmationOpen(false);
+    } finally {
+      setDeletingMessages(false);
+    }
+  }
+
   return (
     <main className="flex min-h-[100dvh] flex-col bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
-          <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
-            <Link
-              href="/messages"
-              aria-label="Back to Messages"
-              title="Back to Messages"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
-            >
-              <ArrowLeft size={18} strokeWidth={1.7} />
-            </Link>
+          {selectionMode ? (
+            <div className="grid grid-cols-[72px_minmax(0,1fr)_72px] items-center">
+              <button
+                type="button"
+                onClick={exitSelectionMode}
+                className="justify-self-start text-sm font-semibold text-black/65 transition-opacity active:opacity-50"
+              >
+                Cancel
+              </button>
 
-            <div className="min-w-0 px-3 text-center">
-              <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">
-                {friendProfile
-                  ? (friendProfile.displayName ??
-                    `@${friendProfile.exchangeId}`)
-                  : "Chat"}
+              <p className="truncate px-2 text-center text-[15px] font-semibold tracking-[-0.015em] text-black">
+                {selectedMessageIds.size} Selected
               </p>
 
-              {friendProfile?.exchangeId && (
-                <p className="mt-0.5 truncate text-[10px] tracking-[0.08em] text-black/35">
-                  @{friendProfile.exchangeId}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={selectAllMessages}
+                disabled={
+                  messages.filter(
+                    (message) => message.sender_id === currentUserId,
+                  ).length === 0 ||
+                  selectedMessageIds.size ===
+                    messages.filter(
+                      (message) => message.sender_id === currentUserId,
+                    ).length
+                }
+                className="justify-self-end text-sm font-semibold text-black/65 transition-opacity disabled:opacity-30 active:opacity-50"
+              >
+                Select All
+              </button>
             </div>
+          ) : (
+            <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
+              <Link
+                href="/messages"
+                aria-label="Back to Messages"
+                title="Back to Messages"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
+              >
+                <ArrowLeft size={18} strokeWidth={1.7} />
+              </Link>
 
-            <button
-              type="button"
-              aria-label="Conversation details"
-              title="Conversation details"
-              className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full text-black/55 transition-all hover:bg-black/[0.04] active:scale-95"
-            >
-              <span className="text-lg leading-none">•••</span>
-            </button>
-          </div>
+              <div className="min-w-0 px-3 text-center">
+                <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">
+                  {friendProfile
+                    ? (friendProfile.displayName ??
+                      `@${friendProfile.exchangeId}`)
+                    : "Chat"}
+                </p>
+
+                {friendProfile?.exchangeId && (
+                  <p className="mt-0.5 truncate text-[10px] tracking-[0.08em] text-black/35">
+                    @{friendProfile.exchangeId}
+                  </p>
+                )}
+              </div>
+
+              <div className="relative justify-self-end">
+                <button
+                  type="button"
+                  onClick={() => setConversationMenuOpen((current) => !current)}
+                  aria-label="Conversation details"
+                  aria-expanded={conversationMenuOpen}
+                  title="Conversation details"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-black/55 transition-all hover:bg-black/[0.04] active:scale-95"
+                >
+                  <span className="text-lg leading-none">•••</span>
+                </button>
+
+                {conversationMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Close conversation menu"
+                      onClick={() => setConversationMenuOpen(false)}
+                      className="fixed inset-0 z-40 cursor-default"
+                    />
+
+                    <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl border border-black/[0.08] bg-white/95 p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+                      <button
+                        type="button"
+                        onClick={enterSelectionMode}
+                        className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-black transition-colors hover:bg-black/[0.045] active:bg-black/[0.08]"
+                      >
+                        Select Messages
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </header>
 
         <section
           ref={messagesSectionRef}
           onScroll={updateBottomState}
-          onMouseUp={handleSelectionChange}
-          onTouchEnd={handleSelectionChange}
+          onMouseUp={selectionMode ? undefined : handleSelectionChange}
+          onTouchEnd={selectionMode ? undefined : handleSelectionChange}
           className="relative flex-1 space-y-2.5 overflow-y-auto px-4 pb-[150px] pt-4"
         >
           {loading && (
@@ -1208,6 +1386,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
           {messages.map((message, index) => {
             const isMine = message.sender_id === currentUserId;
+            const canDelete = isMine;
+            const isSelected = selectedMessageIds.has(message.id);
             const isImageAttachment =
               message.attachment_type?.startsWith("image/");
             const sharedVocabulary = decodeSharedVocabulary(message.body);
@@ -1237,21 +1417,66 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 )}
 
                 <div
-                  className={`message-bubble-enter flex ${
+                  role={selectionMode && canDelete ? "button" : undefined}
+                  tabIndex={selectionMode && canDelete ? 0 : undefined}
+                  aria-pressed={
+                    selectionMode && canDelete ? isSelected : undefined
+                  }
+                  onClick={
+                    selectionMode && canDelete
+                      ? () => toggleMessageSelection(message.id)
+                      : undefined
+                  }
+                  onKeyDown={
+                    selectionMode && canDelete
+                      ? (event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            toggleMessageSelection(message.id);
+                          }
+                        }
+                      : undefined
+                  }
+                  className={`message-bubble-enter group flex items-center gap-2 transition-all ${
                     isMine ? "justify-end" : "justify-start"
+                  } ${
+                    selectionMode
+                      ? canDelete
+                        ? "cursor-pointer select-none"
+                        : "cursor-not-allowed select-none opacity-55"
+                      : ""
                   }`}
                   style={{
                     animationDelay: `${Math.min(index * 18, 180)}ms`,
                   }}
                 >
+                  {selectionMode && canDelete && (
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
+                        isSelected
+                          ? "border-black bg-black text-white"
+                          : "border-black/20 bg-white/60 text-transparent"
+                      } ${isMine ? "order-2" : "order-none"}`}
+                    >
+                      <Check size={14} strokeWidth={2.5} />
+                    </span>
+                  )}
+
                   <article
                     className={
                       sharedVocabulary
-                        ? "w-[94%] max-w-xl"
-                        : `max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] ${
+                        ? `w-[94%] max-w-xl transition-all ${
+                            isSelected ? "scale-[0.985] opacity-75" : ""
+                          }`
+                        : `max-w-[78%] rounded-[22px] px-3.5 py-2.5 text-[13px] leading-[1.45] transition-all ${
                             isMine
                               ? "rounded-br-md bg-neutral-900 text-white"
                               : "rounded-bl-md bg-white shadow-sm"
+                          } ${
+                            isSelected
+                              ? "scale-[0.985] ring-2 ring-black/20 ring-offset-2 ring-offset-[#f4f1ea]"
+                              : ""
                           }`
                     }
                   >
@@ -1392,53 +1617,133 @@ function ChatRoom({ friendId }: { friendId: string }) {
           )}
         </section>
 
-        <form
-          onSubmit={sendMessage}
-          className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.06] bg-[#f4f1ea]/90 px-3 py-2.5 backdrop-blur-2xl"
-        >
-          <div className="flex h-12 items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/85 px-2 shadow-[0_4px_18px_rgba(0,0,0,0.05)] backdrop-blur-xl">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,.pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
-              className="hidden"
-              onChange={(event) => {
-                void handleAttachmentSelected(event.target.files?.[0]);
-                event.target.value = "";
-              }}
-            />
+        {!selectionMode && (
+          <form
+            onSubmit={sendMessage}
+            className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.06] bg-[#f4f1ea]/90 px-3 py-2.5 backdrop-blur-2xl"
+          >
+            <div className="flex h-12 items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/85 px-2 shadow-[0_4px_18px_rgba(0,0,0,0.05)] backdrop-blur-xl">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.txt,.rtf,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+                className="hidden"
+                onChange={(event) => {
+                  void handleAttachmentSelected(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
 
+              <button
+                type="button"
+                aria-label="Add photo or file"
+                title="Add photo or file"
+                disabled={uploading || !conversationId}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/[0.04] hover:text-black/70 disabled:opacity-30"
+              >
+                <Paperclip size={18} strokeWidth={1.8} />
+              </button>
+
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(event) => setNewMessage(event.target.value)}
+                maxLength={2000}
+                placeholder={
+                  uploading ? "Analyzing and sending…" : "Write a message"
+                }
+                className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
+              />
+
+              <button
+                type="submit"
+                disabled={sending || !newMessage.trim() || !conversationId}
+                className="h-9 shrink-0 rounded-full bg-black px-4 text-[11px] font-semibold tracking-[-0.01em] text-white transition-transform active:scale-95 disabled:bg-black/20 disabled:text-white disabled:opacity-100"
+              >
+                {sending ? "..." : "Send"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {selectionMode && (
+          <div className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.07] bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-2xl">
             <button
               type="button"
-              aria-label="Add photo or file"
-              title="Add photo or file"
-              disabled={uploading || !conversationId}
-              onClick={() => fileInputRef.current?.click()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/[0.04] hover:text-black/70 disabled:opacity-30"
+              onClick={handleDeleteSelectedPreview}
+              disabled={selectedMessageIds.size === 0}
+              className="flex h-12 w-full items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:bg-black/[0.08] disabled:text-black/25 active:scale-[0.985]"
             >
-              <Paperclip size={18} strokeWidth={1.8} />
-            </button>
-
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(event) => setNewMessage(event.target.value)}
-              maxLength={2000}
-              placeholder={
-                uploading ? "Analyzing and sending…" : "Write a message"
-              }
-              className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
-            />
-
-            <button
-              type="submit"
-              disabled={sending || !newMessage.trim() || !conversationId}
-              className="h-9 shrink-0 rounded-full bg-black px-4 text-[11px] font-semibold tracking-[-0.01em] text-white transition-transform active:scale-95 disabled:bg-black/20 disabled:text-white disabled:opacity-100"
-            >
-              {sending ? "..." : "Send"}
+              {selectedMessageIds.size > 0
+                ? `Delete ${selectedMessageIds.size} ${
+                    selectedMessageIds.size === 1 ? "Message" : "Messages"
+                  }`
+                : "Delete"}
             </button>
           </div>
-        </form>
+        )}
+
+        {deleteConfirmationOpen && (
+          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/30 px-4 pb-6 backdrop-blur-sm sm:items-center sm:pb-0">
+            <button
+              type="button"
+              aria-label="Close delete confirmation"
+              onClick={() => setDeleteConfirmationOpen(false)}
+              className="absolute inset-0 cursor-default"
+            />
+
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-message-title"
+              className="relative z-10 w-full max-w-sm rounded-[28px] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
+            >
+              <h2
+                id="delete-message-title"
+                className="text-center text-lg font-bold tracking-[-0.02em] text-black"
+              >
+                Delete {selectedMessageIds.size}{" "}
+                {selectedMessageIds.size === 1 ? "message" : "messages"}?
+              </h2>
+
+              <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-5 text-black/50">
+                These messages will disappear from this screen. Database
+                deletion will be connected in a later update.
+              </p>
+
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmationOpen(false)}
+                  disabled={deletingMessages}
+                  className="h-11 rounded-full bg-black/[0.055] text-sm font-bold text-black transition-all disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessages((current) =>
+                      current.filter(
+                        (message) => !selectedMessageIds.has(message.id),
+                      ),
+                    );
+
+                    setDeleteConfirmationOpen(false);
+                    setSelectionMode(false);
+                    setSelectedMessageIds(new Set());
+                  }}
+                  disabled={deletingMessages}
+                  className="h-11 rounded-full bg-red-600 text-sm font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {deletingMessages ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
