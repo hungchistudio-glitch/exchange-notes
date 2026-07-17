@@ -7,7 +7,7 @@ type ReviewWord = {
   id: string;
   english: string;
   chinese: string;
-  example?: string;
+  example?: string | null;
 };
 
 type Props = {
