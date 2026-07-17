@@ -11,20 +11,10 @@ export async function getVocabulary(): Promise<VocabularyItem[]> {
   const supabase = createClient();
 
   const {
-    data: {
-      user,
-    },
-    error: authError,
+    data: { user },
   } = await supabase.auth.getUser();
 
-  if (authError) {
-    console.error("Could not load review user:", authError);
-    return [];
-  }
-
-  if (!user) {
-    return [];
-  }
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from("vocabulary_items")
@@ -35,12 +25,10 @@ export async function getVocabulary(): Promise<VocabularyItem[]> {
       example:example_sentence
     `)
     .eq("user_id", user.id)
-    .order("created_at", {
-      ascending: false,
-    });
+    .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Could not load review vocabulary:", error);
+    console.error(error);
     return [];
   }
 

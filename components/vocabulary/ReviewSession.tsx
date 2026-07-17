@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ReviewCard from "./ReviewCard";
+import { saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 
 export type ReviewWord = {
@@ -19,27 +20,62 @@ export default function ReviewSession({
   words,
 }: Props) {
   const [queue, setQueue] = useState(words);
-  const [reviewedCount, setReviewedCount] = useState(0);
+  const [reviewedCount, setReviewedCount] =
+    useState(0);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const totalCount = words.length;
   const currentWord = queue[0];
 
-  function handleGrade(grade: ReviewGrade) {
-    setQueue((currentQueue) => {
-      if (currentQueue.length === 0) {
-        return currentQueue;
-      }
+  async function handleGrade(
+    grade: ReviewGrade,
+  ) {
+    if (!currentWord || saving) {
+      return;
+    }
 
-      const [firstWord, ...remainingWords] = currentQueue;
+    setSaving(true);
+    setError("");
 
-      if (grade === "again") {
-        return [...remainingWords, firstWord];
-      }
+    try {
+      await saveReviewResult(
+        currentWord.id,
+        grade,
+      );
 
-      return remainingWords;
-    });
+      setQueue((currentQueue) => {
+        if (currentQueue.length === 0) {
+          return currentQueue;
+        }
 
-    setReviewedCount((count) => count + 1);
+        const [firstWord, ...remainingWords] =
+          currentQueue;
+
+        if (grade === "again") {
+          return [
+            ...remainingWords,
+            firstWord,
+          ];
+        }
+
+        return remainingWords;
+      });
+
+      setReviewedCount(
+        (count) => count + 1,
+      );
+    } catch (reviewError) {
+      console.error(reviewError);
+
+      setError(
+        reviewError instanceof Error
+          ? reviewError.message
+          : "Unable to save this review.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!currentWord) {
@@ -52,52 +88,50 @@ export default function ReviewSession({
         </h2>
 
         <p className="mt-2 text-neutral-500">
-          You reviewed {reviewedCount} card
-          {reviewedCount === 1 ? "" : "s"} today.
+          You completed {reviewedCount} review
+          {reviewedCount === 1 ? "" : "s"}.
         </p>
       </section>
     );
   }
 
+  const completedCount = Math.max(
+    0,
+    totalCount - queue.length,
+  );
+
+  const progress =
+    totalCount === 0
+      ? 0
+      : Math.min(
+          100,
+          Math.round(
+            (completedCount / totalCount) * 100,
+          ),
+        );
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between text-sm text-neutral-500">
-        <span>
-          {queue.length} remaining
-        </span>
-
-        <span>
-          {totalCount === 0
-            ? 0
-            : Math.min(
-                100,
-                Math.round(
-                  ((totalCount - queue.length) /
-                    totalCount) *
-                    100,
-                ),
-              )}
-          %
-        </span>
+        <span>{queue.length} remaining</span>
+        <span>{progress}%</span>
       </div>
 
       <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
         <div
           className="h-full rounded-full bg-black transition-all"
-          style={{
-            width: `${
-              totalCount === 0
-                ? 0
-                : Math.min(
-                    100,
-                    ((totalCount - queue.length) /
-                      totalCount) *
-                      100,
-                  )
-            }%`,
-          }}
+          style={{ width: `${progress}%` }}
         />
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {error}
+        </div>
+      )}
 
       <ReviewCard
         key={`${currentWord.id}-${reviewedCount}`}
@@ -105,7 +139,14 @@ export default function ReviewSession({
         chinese={currentWord.chinese}
         example={currentWord.example}
         onGrade={handleGrade}
+        disabled={saving}
       />
+
+      {saving && (
+        <p className="text-center text-sm text-neutral-500">
+          Saving review…
+        </p>
+      )}
     </section>
   );
 }
