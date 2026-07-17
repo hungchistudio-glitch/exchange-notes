@@ -468,7 +468,7 @@ function ConversationList() {
   return (
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] max-w-xl flex-col">
-        <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
+        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
           <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
             <Link
               href="/"
@@ -1263,7 +1263,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
   return (
     <main className="flex min-h-[100dvh] flex-col bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
+        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
           {selectionMode ? (
             <div className="grid grid-cols-[72px_minmax(0,1fr)_72px] items-center">
               <button
