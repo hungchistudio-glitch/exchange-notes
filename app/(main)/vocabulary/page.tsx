@@ -4,6 +4,7 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularyHeader from "@/components/vocabulary/VocabularyHeader";
 import VocabularyDashboard from "@/components/vocabulary/VocabularyDashboard";
+import VocabularyQuickActions from "@/components/vocabulary/VocabularyQuickActions";
 import VocabularySearch from "@/components/vocabulary/VocabularySearch";
 import AppPage from "@/components/ui/AppPage";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -719,7 +720,9 @@ export default function VocabularyPage() {
           description={`${totalWords} saved · ${learningWords} learning · ${masteredWords} mastered`}
         />
       </div>
-      <VocabularySearch
+            <VocabularyQuickActions />
+
+<VocabularySearch
         query={query}
         quickFilter={quickFilter}
         quickFilters={quickFilters}
