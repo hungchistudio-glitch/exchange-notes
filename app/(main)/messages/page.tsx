@@ -1003,6 +1003,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           confidence: identification.confidence,
           category: identification.category,
           status: "new",
+          favorite: false,
           created_at: now,
           updated_at: now,
         };

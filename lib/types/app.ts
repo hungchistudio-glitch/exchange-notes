@@ -33,6 +33,7 @@ export type VocabularyItem = {
   translation: string;
   language: AppLanguage;
   category: VocabularyCategory;
+  favorite: boolean;
   part_of_speech: string | null;
   example_sentence: string | null;
   translated_example: string | null;

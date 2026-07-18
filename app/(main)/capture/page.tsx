@@ -612,6 +612,7 @@ export default function CameraPage() {
         confidence: result.confidence,
         category: result.category,
         status: "new",
+        favorite: false,
 
         // Privacy-first sharing:
         // the original photo stays only on the Capture screen.

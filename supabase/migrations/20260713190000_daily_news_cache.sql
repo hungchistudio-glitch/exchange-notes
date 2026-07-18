@@ -7,5 +7,4 @@ create table if not exists public.daily_news_cache (
   updated_at timestamptz not null default now(),
   constraint daily_news_cache_single_row check (id = 1)
 );
-
 alter table public.daily_news_cache enable row level security;

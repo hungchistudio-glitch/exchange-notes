@@ -30,21 +30,17 @@ create table if not exists public.ai_lessons (
   updated_at timestamptz not null default now(),
   completed_at timestamptz
 );
-
 create index if not exists
   ai_lessons_user_created_at_idx
 on public.ai_lessons (
   user_id,
   created_at desc
 );
-
 alter table public.ai_lessons
 enable row level security;
-
 drop policy if exists
   "Users can read their own AI lessons"
 on public.ai_lessons;
-
 create policy
   "Users can read their own AI lessons"
 on public.ai_lessons
@@ -53,11 +49,9 @@ to authenticated
 using (
   auth.uid() = user_id
 );
-
 drop policy if exists
   "Users can create their own AI lessons"
 on public.ai_lessons;
-
 create policy
   "Users can create their own AI lessons"
 on public.ai_lessons
@@ -66,11 +60,9 @@ to authenticated
 with check (
   auth.uid() = user_id
 );
-
 drop policy if exists
   "Users can update their own AI lessons"
 on public.ai_lessons;
-
 create policy
   "Users can update their own AI lessons"
 on public.ai_lessons
@@ -82,11 +74,9 @@ using (
 with check (
   auth.uid() = user_id
 );
-
 drop policy if exists
   "Users can delete their own AI lessons"
 on public.ai_lessons;
-
 create policy
   "Users can delete their own AI lessons"
 on public.ai_lessons

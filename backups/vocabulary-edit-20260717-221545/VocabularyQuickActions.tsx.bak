@@ -1,0 +1,192 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Volume2,
+  Brain,
+  Pencil,
+  Share2,
+  LoaderCircle,
+  Check,
+} from "lucide-react";
+
+import AppButton from "@/components/ui/AppButton";
+import SectionCard from "@/components/design/SectionCard";
+
+type Props = {
+  english: string;
+  chinese?: string | null;
+  onEdit: () => void | Promise<void>;
+};
+
+export default function VocabularyQuickActions({
+  english,
+  chinese,
+  onEdit,
+}: Props) {
+  const [speaking, setSpeaking] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  function handleSpeak() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!("speechSynthesis" in window)) {
+      alert("Speech is not supported on this browser.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(english);
+    utterance.lang = "en-US";
+    utterance.rate = 0.85;
+
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function handleReview() {
+    const reviewSection =
+      document.getElementById("review-this-word");
+
+    if (!reviewSection) return;
+
+    reviewSection.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    reviewSection.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.015)" },
+        { transform: "scale(1)" },
+      ],
+      {
+        duration: 500,
+        easing: "ease-out",
+      },
+    );
+  }
+
+  async function handleEdit() {
+    try {
+      setEditing(true);
+      await onEdit();
+    } finally {
+      setEditing(false);
+    }
+  }
+
+  async function handleShare() {
+    const shareData = {
+      title: english,
+      text: chinese
+        ? `${english} — ${chinese}`
+        : english,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+
+      await navigator.clipboard.writeText(
+        `${shareData.text}\n${shareData.url}`,
+      );
+
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1800);
+    } catch (error) {
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
+        return;
+      }
+
+      console.error("Could not share this word:", error);
+    }
+  }
+
+  return (
+    <SectionCard>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <AppButton
+          type="button"
+          variant="secondary"
+          className="flex items-center justify-center gap-2 py-3"
+          onClick={handleSpeak}
+        >
+          {speaking ? (
+            <LoaderCircle
+              size={18}
+              className="animate-spin"
+            />
+          ) : (
+            <Volume2 size={18} />
+          )}
+
+          <span>
+            {speaking ? "Speaking..." : "Speak"}
+          </span>
+        </AppButton>
+
+        <AppButton
+          type="button"
+          variant="secondary"
+          className="flex items-center justify-center gap-2 py-3"
+          onClick={handleReview}
+        >
+          <Brain size={18} />
+          <span>Review</span>
+        </AppButton>
+
+        <AppButton
+          type="button"
+          variant="secondary"
+          className="flex items-center justify-center gap-2 py-3"
+          onClick={() => void handleEdit()}
+          disabled={editing}
+        >
+          {editing ? (
+            <LoaderCircle
+              size={18}
+              className="animate-spin"
+            />
+          ) : (
+            <Pencil size={18} />
+          )}
+
+          <span>{editing ? "Saving..." : "Edit"}</span>
+        </AppButton>
+
+        <AppButton
+          type="button"
+          variant="secondary"
+          className="flex items-center justify-center gap-2 py-3"
+          onClick={() => void handleShare()}
+        >
+          {copied ? (
+            <Check size={18} />
+          ) : (
+            <Share2 size={18} />
+          )}
+
+          <span>{copied ? "Copied" : "Share"}</span>
+        </AppButton>
+      </div>
+    </SectionCard>
+  );
+}

@@ -3,13 +3,10 @@
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularyHeader from "@/components/vocabulary/VocabularyHeader";
-import VocabularyDashboard from "@/components/vocabulary/VocabularyDashboard";
-import SmartLearningInsights from "@/components/vocabulary/SmartLearningInsights";
+import VocabularyDashboardSection from "@/components/vocabulary/sections/VocabularyDashboardSection";
+import VocabularySearchSection from "@/components/vocabulary/sections/VocabularySearchSection";
 import LearningCoach from "@/components/vocabulary/LearningCoach";
-import VocabularyQuickActions from "@/components/vocabulary/VocabularyQuickActions";
-import VocabularySearch from "@/components/vocabulary/VocabularySearch";
 import AppPage from "@/components/ui/AppPage";
-import SectionHeader from "@/components/ui/SectionHeader";
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 import SortBottomSheet, {
   SORT_LABELS,
@@ -28,6 +25,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import useVocabulary from "@/hooks/useVocabulary";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -44,20 +42,22 @@ import {
 } from "@/lib/vocabulary/helpers";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import type {
-  AppLanguage,
   VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
+  const {
+    items,
+    setItems,
+    learningLanguage,
+    loading,
+    error,
+    setError,
+  } = useVocabulary();
+
   const router = useRouter();
-  const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<"all" | VocabularyStatus>(
     "all",
@@ -150,58 +150,6 @@ export default function VocabularyPage() {
     },
     [friendPickerItem, router, sendingFriendId],
   );
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadVocabulary() {
-      try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          throw new Error("Please log in to view your vocabulary.");
-        }
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("learning_language")
-          .eq("id", user.id)
-          .single();
-
-        if (active && profile?.learning_language) {
-          setLearningLanguage(profile.learning_language as AppLanguage);
-        }
-
-        const { data, error: fetchError } = await supabase
-          .from("vocabulary_items")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (fetchError) throw fetchError;
-        if (active) setItems((data ?? []) as VocabularyItem[]);
-      } catch (loadError) {
-        if (active) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Could not load your vocabulary.",
-          );
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    void loadVocabulary();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const uniqueItems = useMemo(() => {
     const seen = new Set<string>();
@@ -699,41 +647,46 @@ export default function VocabularyPage() {
   return (
     <AppPage width="default">
       
-      <VocabularyDashboard
+      <VocabularyDashboardSection
         total={visibleItems.length}
-        learning={visibleItems.filter(item => item.status === "learning").length}
-        mastered={visibleItems.filter(item => item.status === "mastered").length}
+        learning={
+          visibleItems.filter(
+            item => item.status === "learning"
+          ).length
+        }
+        mastered={
+          visibleItems.filter(
+            item => item.status === "mastered"
+          ).length
+        }
         progress={
           visibleItems.length === 0
             ? 0
             : Math.round(
-                visibleItems.filter(item => item.status === "mastered").length /
-                  visibleItems.length *
-                  100
+                visibleItems.filter(
+                  item => item.status === "mastered"
+                ).length /
+                visibleItems.length *
+                100
               )
         }
       />
-
-      <SmartLearningInsights />
 
 
 
 <VocabularyHeader todayProgress={dailyProgress} todayGoal={dailyGoal} />
 
-      <div className="mt-7">
-        <SectionHeader
-          title="Your words"
-          description={`${totalWords} saved · ${learningWords} learning · ${masteredWords} mastered`}
-        />
-      </div>
-            <VocabularyQuickActions />
-
-<VocabularySearch
+      <VocabularySearchSection
+        totalWords={totalWords}
+        learningWords={learningWords}
+        masteredWords={masteredWords}
         query={query}
         quickFilter={quickFilter}
         quickFilters={quickFilters}
         visibleCount={visibleItems.length}
         sortMode={sortMode}
+        rankingLoading={rankingLoading}
+        rankingError={rankingError}
         onQueryChange={(value) => {
           setQuery(value);
           setLookupStatus("idle");
@@ -751,19 +704,6 @@ export default function VocabularyPage() {
         onOpenSort={() => setSortOpen(true)}
         onOpenLibrary={() => setFiltersOpen(true)}
       />
-
-      {sortMode !== "new" && (rankingLoading || rankingError) && (
-        <div className="mt-3 flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.12em] text-neutral-400">
-          <span>
-            {rankingLoading
-              ? `Personalizing ${SORT_LABELS[sortMode]}…`
-              : rankingError}
-          </span>
-          {rankingLoading && (
-            <LoaderCircle size={14} className="shrink-0 animate-spin" />
-          )}
-        </div>
-      )}
 
       {error && (
         <p className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700">
