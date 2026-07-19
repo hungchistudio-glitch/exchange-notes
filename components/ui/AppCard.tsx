@@ -1,26 +1,42 @@
-import type { ElementType, HTMLAttributes, ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-type AppCardProps = HTMLAttributes<HTMLElement> & {
-  children: ReactNode;
-  as?: ElementType;
-  tone?: "surface" | "soft" | "dark";
-  padding?: "none" | "sm" | "md" | "lg";
+type Padding =
+  | "none"
+  | "sm"
+  | "md"
+  | "lg";
+
+type Props = {
+  children: React.ReactNode;
+  className?: string;
+  padding?: Padding;
+};
+
+const paddingClasses: Record<Padding, string> = {
+  none: "",
+  sm: "p-4",
+  md: "p-6",
+  lg: "p-8",
 };
 
 export default function AppCard({
   children,
-  as: Component = "section",
-  tone = "surface",
+  className,
   padding = "md",
-  className = "",
-  ...props
-}: AppCardProps) {
+}: Props) {
   return (
-    <Component
-      className={`app-card app-card--${tone} app-card--${padding} ${className}`}
-      {...props}
+    <section
+      className={cn(
+        "overflow-hidden",
+        "rounded-[28px]",
+        "border border-black/[0.06]",
+        "bg-white",
+        "shadow-[0_8px_30px_rgba(0,0,0,.05)]",
+        paddingClasses[padding],
+        className,
+      )}
     >
       {children}
-    </Component>
+    </section>
   );
 }

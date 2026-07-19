@@ -48,7 +48,6 @@ type VocabularyListProps = {
   onSendToPartner: (item: VocabularyItem) => void;
   onDelete: (item: VocabularyItem) => void | Promise<void>;
   onInteract: (item: VocabularyItem, type: CardInteraction) => void;
-  onItemAdded: (item: VocabularyItem) => void;
 };
 
 export default function VocabularyList({
@@ -68,7 +67,6 @@ export default function VocabularyList({
   onSendToPartner,
   onDelete,
   onInteract,
-  onItemAdded,
 }: VocabularyListProps) {
   if (loading) {
     return (
@@ -204,7 +202,6 @@ export default function VocabularyList({
             void onDelete(item);
           }}
           onInteract={(type) => onInteract(item, type)}
-          onItemAdded={onItemAdded}
         />
       ))}
     </section>

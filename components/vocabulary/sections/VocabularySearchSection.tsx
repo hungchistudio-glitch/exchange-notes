@@ -68,7 +68,7 @@ export default function VocabularySearchSection({
         />
       </div>
 
-      <VocabularyQuickActions />
+      <VocabularyQuickActions onAddWord={onOpenAI} />
 
       <VocabularySearch
         query={query}
@@ -78,7 +78,6 @@ export default function VocabularySearchSection({
         sortMode={sortMode}
         onQueryChange={onQueryChange}
         onClear={onClear}
-        onOpenAI={onOpenAI}
         onQuickFilterChange={onQuickFilterChange}
         onOpenSort={onOpenSort}
         onOpenLibrary={onOpenLibrary}

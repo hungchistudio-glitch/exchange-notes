@@ -1,28 +1,21 @@
-import type { ReactNode } from "react";
-
-import AppCard from "@/components/ui/AppCard";
-
-type EmptyStateProps = {
-  icon: ReactNode;
+type Props = {
   title: string;
   description: string;
-  action?: ReactNode;
-  className?: string;
 };
 
 export default function EmptyState({
-  icon,
   title,
   description,
-  action,
-  className = "",
-}: EmptyStateProps) {
+}: Props) {
   return (
-    <AppCard className={`app-empty-state ${className}`} padding="lg">
-      <div className="app-empty-state__icon">{icon}</div>
-      <h2 className="app-empty-state__title">{title}</h2>
-      <p className="app-empty-state__description">{description}</p>
-      {action ? <div className="mt-6">{action}</div> : null}
-    </AppCard>
+    <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-8 py-14 text-center">
+      <h3 className="text-xl font-semibold">
+        {title}
+      </h3>
+
+      <p className="mt-3 text-sm text-neutral-500">
+        {description}
+      </p>
+    </div>
   );
 }

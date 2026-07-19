@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Brain,
   Check,
-  Languages,
-  LoaderCircle,
   Pencil,
   Share2,
-  Volume2,
 } from "lucide-react";
 
-import AppButton from "@/components/ui/AppButton";
 import SectionCard from "@/components/design/SectionCard";
-
-type SpeakingLanguage = "english" | "chinese";
+import AppButton from "@/components/ui/AppButton";
 
 type Props = {
   english: string;
@@ -27,46 +22,10 @@ export default function VocabularyQuickActions({
   chinese,
   onEdit,
 }: Props) {
-  const [speaking, setSpeaking] =
-    useState<SpeakingLanguage | null>(null);
+
   const [copied, setCopied] = useState(false);
+  const sharingRef = useRef(false);
 
-  function speak(
-    text: string,
-    language: SpeakingLanguage,
-  ) {
-    if (typeof window === "undefined") return;
-
-    if (!("speechSynthesis" in window)) {
-      alert("Speech is not supported on this browser.");
-      return;
-    }
-
-    if (!text.trim()) {
-      alert(
-        language === "english"
-          ? "No English text is available."
-          : "No Chinese translation is available.",
-      );
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    utterance.lang =
-      language === "english" ? "en-US" : "zh-TW";
-
-    utterance.rate =
-      language === "english" ? 0.85 : 0.78;
-
-    utterance.onstart = () => setSpeaking(language);
-    utterance.onend = () => setSpeaking(null);
-    utterance.onerror = () => setSpeaking(null);
-
-    window.speechSynthesis.speak(utterance);
-  }
 
   function handleReview() {
     const reviewSection =
@@ -93,6 +52,9 @@ export default function VocabularyQuickActions({
   }
 
   async function handleShare() {
+    if (sharingRef.current) return;
+
+    sharingRef.current = true;
     const shareData = {
       title: english,
       text: chinese
@@ -125,6 +87,8 @@ export default function VocabularyQuickActions({
       }
 
       console.error("Could not share this word:", error);
+    } finally {
+      sharingRef.current = false;
     }
   }
 
@@ -133,55 +97,7 @@ export default function VocabularyQuickActions({
 
   return (
     <SectionCard>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <AppButton
-          type="button"
-          variant="secondary"
-          className={actionClassName}
-          onClick={() => speak(english, "english")}
-          disabled={speaking !== null}
-        >
-          {speaking === "english" ? (
-            <LoaderCircle
-              size={18}
-              className="animate-spin"
-            />
-          ) : (
-            <Volume2 size={18} />
-          )}
-
-          <span>
-            {speaking === "english"
-              ? "Speaking..."
-              : "English"}
-          </span>
-        </AppButton>
-
-        <AppButton
-          type="button"
-          variant="secondary"
-          className={actionClassName}
-          onClick={() =>
-            speak(chinese ?? "", "chinese")
-          }
-          disabled={speaking !== null || !chinese}
-        >
-          {speaking === "chinese" ? (
-            <LoaderCircle
-              size={18}
-              className="animate-spin"
-            />
-          ) : (
-            <Languages size={18} />
-          )}
-
-          <span>
-            {speaking === "chinese"
-              ? "播放中..."
-              : "中文"}
-          </span>
-        </AppButton>
-
+      <div className="grid grid-cols-3 gap-3">
         <AppButton
           type="button"
           variant="secondary"
@@ -205,7 +121,7 @@ export default function VocabularyQuickActions({
         <AppButton
           type="button"
           variant="secondary"
-          className={`${actionClassName} col-span-2 sm:col-span-1`}
+          className={actionClassName}
           onClick={() => void handleShare()}
         >
           {copied ? (

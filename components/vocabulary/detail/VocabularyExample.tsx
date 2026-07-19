@@ -1,4 +1,5 @@
 import SectionCard from "@/components/design/SectionCard";
+import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExampleBlock";
 import type { VocabularyItem } from "./types";
 
 type VocabularyExampleProps = {
@@ -10,16 +11,10 @@ export default function VocabularyExample({
 }: VocabularyExampleProps) {
   return (
     <SectionCard title="Example">
-      <p className="text-lg leading-8 text-neutral-950">
-        {item.example_sentence ||
-          "No example sentence yet."}
-      </p>
-
-      {item.translated_example ? (
-        <p className="mt-3 leading-7 text-neutral-500">
-          {item.translated_example}
-        </p>
-      ) : null}
+      <VocabularyExampleBlock
+        english={item.example_sentence}
+        chinese={item.translated_example}
+      />
     </SectionCard>
   );
 }

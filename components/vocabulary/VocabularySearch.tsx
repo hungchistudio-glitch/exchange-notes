@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Search, SlidersHorizontal, X, Zap } from "lucide-react";
+import { BookOpen, Search, SlidersHorizontal, X } from "lucide-react";
 
 import {
   SORT_LABELS,
@@ -22,7 +22,6 @@ type VocabularySearchProps = {
   sortMode: SortMode;
   onQueryChange: (value: string) => void;
   onClear: () => void;
-  onOpenAI: () => void;
   onQuickFilterChange: (value: "all" | VocabularyStatus) => void;
   onOpenSort: () => void;
   onOpenLibrary: () => void;
@@ -36,15 +35,14 @@ export default function VocabularySearch({
   sortMode,
   onQueryChange,
   onClear,
-  onOpenAI,
   onQuickFilterChange,
   onOpenSort,
   onOpenLibrary,
 }: VocabularySearchProps) {
   return (
     <section className="mt-5">
-      <div className="flex items-center gap-2">
-        <label className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full border border-black/[0.06] bg-white px-4 shadow-[0_3px_16px_rgba(0,0,0,0.035)]">
+      <div className="flex items-center">
+        <label className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full border border-black/[0.06] bg-white px-5 shadow-[0_3px_16px_rgba(0,0,0,0.035)]">
           <Search
             size={17}
             strokeWidth={1.8}
@@ -72,15 +70,6 @@ export default function VocabularySearch({
           )}
         </label>
 
-        <button
-          type="button"
-          onClick={onOpenAI}
-          aria-label="Search any word with Gemini AI"
-          title="AI Word Search"
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-[0_8px_24px_rgba(0,0,0,0.14)] transition-transform active:scale-95"
-        >
-          <Zap size={17} strokeWidth={1.9} />
-        </button>
       </div>
 
       <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

@@ -165,9 +165,6 @@ export default function CollectionDetailPage() {
               onSendToPartner={() => undefined}
               onDelete={() => void deleteItem(item)}
               onInteract={() => undefined}
-              onItemAdded={(added) =>
-                setItems((current) => [added, ...current])
-              }
             />
           ))}
         </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
@@ -22,6 +22,7 @@ import type { VocabularyItem } from "@/components/vocabulary/detail/types";
 export default function VocabularyDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const router = useRouter();
 
   const [word, setWord] =
     useState<VocabularyItem | null>(null);
@@ -132,6 +133,38 @@ export default function VocabularyDetailPage() {
     setWord(data as VocabularyItem);
   }
 
+
+  async function handleDelete() {
+    if (!word) return;
+
+    const confirmed = window.confirm(
+      `Delete "${word.word}" from your vocabulary?`
+    );
+
+    if (!confirmed) return;
+
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("vocabulary_items")
+      .delete()
+      .eq("id", word.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    router.push("/vocabulary");
+  }
+
   async function handleReview(
     rating: "again" | "hard" | "good" | "easy",
   ) {
@@ -219,6 +252,15 @@ export default function VocabularyDetailPage() {
             chinese={word.translation}
             onEdit={() => setEditOpen(true)}
           />
+
+          <div className="flex justify-end">
+            <button
+              onClick={() => void handleDelete()}
+              className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              Delete Word
+            </button>
+          </div>
 
           <VocabularyExample item={word} />
 

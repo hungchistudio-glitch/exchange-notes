@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  ArrowUpRight,
-  Check,
-  MoreHorizontal,
-  Send,
-  Volume2,
-} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,9 +9,14 @@ import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import SelectionToolbar from "@/components/vocabulary/SelectionToolbar";
 import VocabularyDetailSheet from "@/components/vocabulary/VocabularyDetailSheet";
+import VocabularyCardHeader from "@/components/vocabulary/card/VocabularyCardHeader";
+import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardActions";
+import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExampleBlock";
 import useTextSelection from "@/hooks/useTextSelection";
-import { createClient } from "@/lib/supabase/client";
-import { speak } from "@/lib/speech";
+import { classifyText } from "@/lib/vocabulary/classify";
+import { saveClassifiedVocabulary } from "@/lib/vocabulary/service";
+import { useVocabulary } from "@/contexts/VocabularyContext";
+
 import {
   getVocabularyKey,
   type InteractionType,
@@ -50,7 +48,6 @@ export default function VocabularyCard({
   onSendToPartner,
   onDelete,
   onInteract,
-  onItemAdded,
 }: {
   item: VocabularyItem;
   learningLanguage: AppLanguage | null;
@@ -58,10 +55,9 @@ export default function VocabularyCard({
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
   onDelete: () => void;
-  onInteract: (type: InteractionType) => void;
-  onItemAdded: (item: VocabularyItem) => void;
-}) {
+  onInteract: (type: InteractionType) => void;}) {
   const router = useRouter();
+  const { addItem } = useVocabulary();
   const contentRef = useRef<HTMLDivElement>(null);
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
@@ -80,62 +76,15 @@ export default function VocabularyCard({
     setAddingWord(true);
 
     try {
-      const response = await fetch("/api/classify-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const data = await response.json();
+      const data = await classifyText(text);
 
-      if (!response.ok || "error" in data) {
-        throw new Error(
-          "error" in data ? data.error : "Couldn't look up that word.",
-        );
-      }
-
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) throw new Error("Please log in before saving a word.");
-
-      const word = (data.englishName ?? text).trim();
-      const translation = (data.chineseName ?? "").trim();
-      const candidateKey = getVocabularyKey(word, translation);
-      const { data: existingItems, error: duplicateCheckError } = await supabase
-        .from("vocabulary_items")
-        .select("id, word, translation")
-        .eq("user_id", user.id);
-
-      if (duplicateCheckError) throw duplicateCheckError;
-
-      const duplicate = (existingItems ?? []).some(
-        (existingItem) =>
-          getVocabularyKey(existingItem.word, existingItem.translation) ===
-          candidateKey,
+      const result = await saveClassifiedVocabulary(
+        data,
+        text,
       );
 
-      if (!duplicate) {
-        const { data: inserted, error: insertError } = await supabase
-          .from("vocabulary_items")
-          .insert({
-            user_id: user.id,
-            word,
-            translation,
-            language: "english",
-            part_of_speech: data.partOfSpeech?.trim() || null,
-            example_sentence: data.englishExample?.trim() || null,
-            translated_example: data.chineseExample?.trim() || null,
-            confidence: data.confidence ?? "medium",
-            category: (data.category ?? "other") as VocabularyCategory,
-            status: "new",
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        onItemAdded(inserted as VocabularyItem);
+      if (result.item) {
+        addItem(result.item);
       }
 
       setAddedWord(true);
@@ -159,20 +108,7 @@ export default function VocabularyCard({
     setAddingWord(true);
 
     try {
-      const response = await fetch("/api/classify-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: selectedText }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || "error" in data) {
-        throw new Error(
-          "error" in data
-            ? data.error
-            : "Couldn't create a word card from that selection.",
-        );
-      }
+      const data = await classifyText(selectedText);
 
       const now = new Date().toISOString();
       const selectedVocabulary: VocabularyItem = {
@@ -230,11 +166,6 @@ export default function VocabularyCard({
     router.push(`/vocabulary/${item.id}`);
   }
 
-  const isChinesePrimary = learningLanguage === "traditional-chinese";
-  const primaryWord = isChinesePrimary ? item.translation : item.word;
-  const secondaryWord = isChinesePrimary ? item.word : item.translation;
-  const example = item.example_sentence?.trim() || "";
-
   return (
     <div ref={contentRef} className="relative">
       <SelectionToolbar
@@ -245,12 +176,10 @@ export default function VocabularyCard({
         onSendToPartner={handleSelectionSendToPartner}
       />
 
-      <article className="overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.11] hover:shadow-[0_18px_50px_rgba(16,16,15,0.08)]">
-        <button
-          type="button"
+      <article className="overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_12px_42px_rgba(15,23,42,.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.11] hover:shadow-[0_22px_60px_rgba(15,23,42,.09)]">
+        <div
           onClick={openDetails}
-          className="group block w-full text-left transition active:scale-[0.995]"
-          aria-label={`Open ${item.word} details`}
+          className="group block w-full cursor-pointer text-left transition active:scale-[0.995]"
         >
           {item.image_url && (
             <div
@@ -262,97 +191,29 @@ export default function VocabularyCard({
           )}
 
           <div className="px-6 py-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <AppBadge tone={statusTone(item.status)}>
-                    {STATUS_LABELS[item.status]}
-                  </AppBadge>
-                  {item.part_of_speech && (
-                    <AppBadge>{item.part_of_speech}</AppBadge>
-                  )}
-                </div>
+            <VocabularyCardHeader item={item} />
 
-                <h2 className="mt-5 break-words text-[34px] font-bold leading-[1.05] tracking-[-0.055em] text-neutral-950">
-                  {primaryWord}
-                </h2>
-                <p className="mt-2 text-[18px] font-medium leading-7 text-neutral-500">
-                  {secondaryWord}
-                </p>
-
-                <PronunciationBlock
-                  english={item.word}
-                  chinese={item.translation}
-                  showEnglish
-                  className="mt-5"
-                />
-              </div>
-
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors group-hover:bg-neutral-200">
-                <ArrowUpRight size={17} />
-              </span>
-            </div>
-
-            {example && (
-              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4">
-                <p className="line-clamp-3 text-[15px] leading-7 text-neutral-600">
-                  {example}
-                </p>
-              </div>
-            )}
+            <VocabularyExampleBlock
+              english={item.example_sentence}
+              chinese={item.translated_example}
+              className="mt-7"
+            />
           </div>
-        </button>
-
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 border-t border-black/[0.055] bg-black/[0.012] p-3">
-          <AppButton
-            variant={item.status === "mastered" ? "secondary" : "primary"}
-            className="rounded-xl shadow-sm"
-            size="md"
-            disabled={updating}
-            onClick={() =>
-              onChangeStatus(
-                item.status === "mastered" ? "learning" : "mastered",
-              )
-            }
-          >
-            <Check size={15} />
-            {item.status === "mastered" ? "Learning" : "Mastered"}
-          </AppButton>
-
-          <AppButton
-            variant="ghost"
-            size="icon"
-            className="rounded-xl hover:bg-neutral-200 transition-colors"
-            onClick={() =>
-              speak(
-                isChinesePrimary ? item.translation : item.word,
-                isChinesePrimary ? "zh-TW" : "en-US",
-              )
-            }
-            aria-label="Play pronunciation"
-          >
-            <Volume2 size={16} />
-          </AppButton>
-
-          <AppButton
-            variant="ghost"
-            size="icon"
-            className="rounded-xl hover:bg-neutral-200 transition-colors"
-            onClick={() => onSendToPartner()}
-            aria-label="Send to partner"
-          >
-            <Send size={16} />
-          </AppButton>
-
-          <AppButton
-            variant="ghost"
-            size="icon"
-            onClick={openDetails}
-            aria-label="More actions"
-          >
-            <MoreHorizontal size={17} />
-          </AppButton>
         </div>
+
+        <VocabularyCardActions
+          mastered={item.status === "mastered"}
+          updating={updating}
+          onToggleMastered={() =>
+            onChangeStatus(
+              item.status === "mastered"
+                ? "learning"
+                : "mastered",
+            )
+          }
+          onSend={onSendToPartner}
+          onOpen={openDetails}
+        />
       </article>
 
       <VocabularyDetailSheet
