@@ -7,13 +7,9 @@ type Props = {
 export default function TodayReviewCard({ due }: Props) {
   return (
     <section className="rounded-3xl bg-black p-8 text-white">
-      <p className="text-neutral-400 text-sm">
-        Today's Review
-      </p>
+      <p className="text-neutral-400 text-sm">Today&apos;s Review</p>
 
-      <h2 className="mt-2 text-5xl font-bold">
-        {due}
-      </h2>
+      <h2 className="mt-2 text-5xl font-bold">{due}</h2>
 
       <p className="mt-2 text-neutral-300">
         {due === 1 ? "word due" : "words due"}

@@ -2,11 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Languages,
-  Volume2,
-} from "lucide-react";
+import { ArrowLeft, Languages, Volume2 } from "lucide-react";
 
 import {
   englishSounds,
@@ -16,20 +12,10 @@ import {
   zhuyinSounds,
   type ZhuyinSound,
 } from "@/lib/pronunciation/zhuyinSounds";
-import {
-  playAudio,
-  speakText,
-  stopSpeech,
-} from "@/lib/pronunciation/playback";
+import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
 
 type LabMode = "english" | "zhuyin";
-type Category =
-  | "all"
-  | "vowel"
-  | "consonant"
-  | "initial"
-  | "medial"
-  | "final";
+type Category = "all" | "vowel" | "consonant" | "initial" | "medial" | "final";
 
 const englishFilters: Array<{
   id: Category;
@@ -76,11 +62,7 @@ function SpeakerButton({
   );
 }
 
-function EnglishCard({
-  sound,
-}: {
-  sound: EnglishSound;
-}) {
+function EnglishCard({ sound }: { sound: EnglishSound }) {
   return (
     <article className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -94,9 +76,7 @@ function EnglishCard({
               {sound.category}
             </p>
 
-            <h2 className="mt-1 text-lg font-semibold">
-              {sound.title}
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold">{sound.title}</h2>
 
             <p className="mt-1 font-mono text-sm text-neutral-500">
               {sound.ipa}
@@ -108,9 +88,7 @@ function EnglishCard({
             跟下方例字的發音是不同的內容，不會混淆。 */}
         <SpeakerButton
           label={`Play the ${sound.symbol} sound`}
-          onClick={() =>
-            speakText(sound.soundText, "en-US")
-          }
+          onClick={() => speakText(sound.soundText, "en-US")}
         />
       </div>
 
@@ -119,9 +97,7 @@ function EnglishCard({
           How to say it
         </p>
 
-        <p className="mt-2 text-sm leading-6 text-neutral-700">
-          {sound.tip}
-        </p>
+        <p className="mt-2 text-sm leading-6 text-neutral-700">{sound.tip}</p>
       </div>
 
       <div className="mt-4 space-y-2">
@@ -130,15 +106,11 @@ function EnglishCard({
             key={`${sound.id}-${example}`}
             className="flex items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3"
           >
-            <span className="font-medium">
-              {example}
-            </span>
+            <span className="font-medium">{example}</span>
 
             <SpeakerButton
               label={`Play ${example}`}
-              onClick={() =>
-                speakText(example, "en-US")
-              }
+              onClick={() => speakText(example, "en-US")}
             />
           </div>
         ))}
@@ -147,11 +119,7 @@ function EnglishCard({
   );
 }
 
-function ZhuyinCard({
-  sound,
-}: {
-  sound: ZhuyinSound;
-}) {
+function ZhuyinCard({ sound }: { sound: ZhuyinSound }) {
   const categoryLabel =
     sound.category === "initial"
       ? "聲母"
@@ -172,9 +140,7 @@ function ZhuyinCard({
               {categoryLabel}
             </p>
 
-            <h2 className="mt-1 text-lg font-semibold">
-              {sound.title}
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold">{sound.title}</h2>
           </div>
         </div>
 
@@ -182,9 +148,7 @@ function ZhuyinCard({
             跟下方例字的發音是不同的內容，不會混淆。 */}
         <SpeakerButton
           label={`播放注音 ${sound.symbol}`}
-          onClick={() =>
-            speakText(sound.soundText, "zh-TW")
-          }
+          onClick={() => speakText(sound.soundText, "zh-TW")}
         />
       </div>
 
@@ -193,9 +157,7 @@ function ZhuyinCard({
           發音方式
         </p>
 
-        <p className="mt-2 text-sm leading-6 text-neutral-700">
-          {sound.tip}
-        </p>
+        <p className="mt-2 text-sm leading-6 text-neutral-700">{sound.tip}</p>
       </div>
 
       <div className="mt-4 space-y-2">
@@ -205,20 +167,14 @@ function ZhuyinCard({
             className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 px-4 py-3"
           >
             <div>
-              <p className="font-medium">
-                {example.word}
-              </p>
+              <p className="font-medium">{example.word}</p>
 
-              <p className="mt-1 text-sm text-neutral-500">
-                {example.zhuyin}
-              </p>
+              <p className="mt-1 text-sm text-neutral-500">{example.zhuyin}</p>
             </div>
 
             <SpeakerButton
               label={`播放${example.word}`}
-              onClick={() =>
-                speakText(example.word, "zh-TW")
-              }
+              onClick={() => speakText(example.word, "zh-TW")}
             />
           </div>
         ))}
@@ -236,9 +192,7 @@ function ZhuyinCard({
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-white/10 p-3">
-              <p className="text-xs text-neutral-400">
-                正確：{sound.symbol}
-              </p>
+              <p className="text-xs text-neutral-400">正確：{sound.symbol}</p>
 
               <div className="mt-1 flex items-center justify-between gap-2">
                 <div>
@@ -255,10 +209,7 @@ function ZhuyinCard({
                   variant="dark"
                   label={`播放${sound.commonMistake.pair.correct.word}`}
                   onClick={() =>
-                    speakText(
-                      sound.commonMistake!.pair.correct.word,
-                      "zh-TW",
-                    )
+                    speakText(sound.commonMistake!.pair.correct.word, "zh-TW")
                   }
                 />
               </div>
@@ -284,10 +235,7 @@ function ZhuyinCard({
                   variant="dark"
                   label={`播放${sound.commonMistake.pair.confused.word}`}
                   onClick={() =>
-                    speakText(
-                      sound.commonMistake!.pair.confused.word,
-                      "zh-TW",
-                    )
+                    speakText(sound.commonMistake!.pair.confused.word, "zh-TW")
                   }
                 />
               </div>
@@ -300,11 +248,9 @@ function ZhuyinCard({
 }
 
 export default function PronunciationPage() {
-  const [mode, setMode] =
-    useState<LabMode>("english");
+  const [mode, setMode] = useState<LabMode>("english");
 
-  const [category, setCategory] =
-    useState<Category>("all");
+  const [category, setCategory] = useState<Category>("all");
 
   useEffect(() => {
     return () => {
@@ -317,9 +263,7 @@ export default function PronunciationPage() {
       return englishSounds;
     }
 
-    return englishSounds.filter(
-      (sound) => sound.category === category,
-    );
+    return englishSounds.filter((sound) => sound.category === category);
   }, [category]);
 
   const zhuyinResults = useMemo(() => {
@@ -327,9 +271,7 @@ export default function PronunciationPage() {
       return zhuyinSounds;
     }
 
-    return zhuyinSounds.filter(
-      (sound) => sound.category === category,
-    );
+    return zhuyinSounds.filter((sound) => sound.category === category);
   }, [category]);
 
   function changeMode(nextMode: LabMode) {
@@ -391,41 +333,34 @@ export default function PronunciationPage() {
 
         <section className="mt-5">
           <div className="flex gap-2 overflow-x-auto pb-2">
-            {(mode === "english"
-              ? englishFilters
-              : zhuyinFilters
-            ).map((filter) => (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => {
-                  stopSpeech();
-                  setCategory(filter.id);
-                }}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
-                  category === filter.id
-                    ? "bg-black text-white"
-                    : "border border-neutral-200 bg-white text-neutral-600"
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+            {(mode === "english" ? englishFilters : zhuyinFilters).map(
+              (filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => {
+                    stopSpeech();
+                    setCategory(filter.id);
+                  }}
+                  className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                    category === filter.id
+                      ? "bg-black text-white"
+                      : "border border-neutral-200 bg-white text-neutral-600"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ),
+            )}
           </div>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {mode === "english"
               ? englishResults.map((sound) => (
-                  <EnglishCard
-                    key={sound.id}
-                    sound={sound}
-                  />
+                  <EnglishCard key={sound.id} sound={sound} />
                 ))
               : zhuyinResults.map((sound) => (
-                  <ZhuyinCard
-                    key={sound.id}
-                    sound={sound}
-                  />
+                  <ZhuyinCard key={sound.id} sound={sound} />
                 ))}
           </div>
         </section>

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  LoaderCircle,
-  Send,
-  UserRound,
-  X,
-} from "lucide-react";
+import { ArrowLeft, LoaderCircle, Send, UserRound, X } from "lucide-react";
 import Link from "next/link";
 
 import CaptureProgress from "@/components/capture/CaptureProgress";
@@ -69,6 +63,9 @@ export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const identifyImageRef = useRef<(imageOverride?: string) => void>(
+    () => undefined,
+  );
 
   const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
@@ -80,9 +77,7 @@ export default function CameraPage() {
   const [imageData, setImageData] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<IdentificationResult | null>(null);
-  const [, setLearningLanguage] = useState<AppLanguage | null>(
-    null,
-  );
+  const [, setLearningLanguage] = useState<AppLanguage | null>(null);
 
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -151,7 +146,7 @@ export default function CameraPage() {
       setFileName(draft.fileName || "photo.jpg");
       setResult(null);
       setError("");
-      window.setTimeout(() => void identifyImage(draft.imageData), 0);
+      window.setTimeout(() => identifyImageRef.current(draft.imageData), 0);
     } catch (draftError) {
       console.error("Could not restore capture draft:", draftError);
       setError("Could not open the selected image.");
@@ -444,6 +439,8 @@ export default function CameraPage() {
     }
   }
 
+  identifyImageRef.current = identifyImage;
+
   async function saveToVocabulary() {
     if (!result || !imageData || saving || saved) return;
 
@@ -673,12 +670,6 @@ export default function CameraPage() {
   const chinesePronunciation = [chinesePinyin, chineseZhuyin]
     .filter(Boolean)
     .join(" · ");
-
-
-
-
-
-
 
   const progressStep = saved
     ? "save"

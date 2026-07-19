@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import AppBadge from "@/components/ui/AppBadge";
 import CollectionPickerSheet from "@/components/collections/CollectionPickerSheet";
-import AppButton from "@/components/ui/AppButton";
-import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import SelectionToolbar from "@/components/vocabulary/SelectionToolbar";
 import VocabularyDetailSheet from "@/components/vocabulary/VocabularyDetailSheet";
 import VocabularyCardHeader from "@/components/vocabulary/card/VocabularyCardHeader";
@@ -17,32 +14,15 @@ import { classifyText } from "@/lib/vocabulary/classify";
 import { saveClassifiedVocabulary } from "@/lib/vocabulary/service";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 
-import {
-  getVocabularyKey,
-  type InteractionType,
-} from "@/lib/vocabulary/helpers";
+import type { InteractionType } from "@/lib/vocabulary/helpers";
 import type {
   AppLanguage,
-  VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
 
-const STATUS_LABELS: Record<VocabularyStatus, string> = {
-  new: "＋ New",
-  learning: "● Learning",
-  mastered: "✓ Mastered",
-};
-
-function statusTone(status: VocabularyStatus) {
-  if (status === "mastered") return "success" as const;
-  if (status === "learning") return "warning" as const;
-  return "neutral" as const;
-}
-
 export default function VocabularyCard({
   item,
-  learningLanguage,
   updating,
   onChangeStatus,
   onSendToPartner,
@@ -55,7 +35,8 @@ export default function VocabularyCard({
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
   onDelete: () => void;
-  onInteract: (type: InteractionType) => void;}) {
+  onInteract: (type: InteractionType) => void;
+}) {
   const router = useRouter();
   const { addItem } = useVocabulary();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -78,10 +59,7 @@ export default function VocabularyCard({
     try {
       const data = await classifyText(text);
 
-      const result = await saveClassifiedVocabulary(
-        data,
-        text,
-      );
+      const result = await saveClassifiedVocabulary(data, text);
 
       if (result.item) {
         addItem(result.item);
@@ -205,11 +183,7 @@ export default function VocabularyCard({
           mastered={item.status === "mastered"}
           updating={updating}
           onToggleMastered={() =>
-            onChangeStatus(
-              item.status === "mastered"
-                ? "learning"
-                : "mastered",
-            )
+            onChangeStatus(item.status === "mastered" ? "learning" : "mastered")
           }
           onSend={onSendToPartner}
           onOpen={openDetails}

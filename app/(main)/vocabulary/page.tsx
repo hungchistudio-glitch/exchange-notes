@@ -5,31 +5,17 @@ import VocabularyLookupModal from "@/components/vocabulary/modals/VocabularyLook
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularySearchSection from "@/components/vocabulary/sections/VocabularySearchSection";
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
-import LearningCoach from "@/components/vocabulary/LearningCoach";
 import AppPage from "@/components/ui/AppPage";
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 import SortBottomSheet, {
-  SORT_LABELS,
   type SortMode,
 } from "@/components/vocabulary/SortBottomSheet";
-import {
-  BookmarkPlus,
-  Check,
-  LoaderCircle,
-  Search,
-  Send,
-  Share,
-  Volume2,
-  X,
-  Zap,
-} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useVocabulary from "@/hooks/useVocabulary";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
-import { speak } from "@/lib/speech";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import {
   changeVocabularyStatus,
@@ -44,7 +30,6 @@ import {
   recordInteraction,
   type InteractionRecord,
 } from "@/lib/vocabulary/helpers";
-import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import type {
   VocabularyCategory,
   VocabularyItem,
@@ -52,14 +37,8 @@ import type {
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
-  const {
-    items,
-    setItems,
-    learningLanguage,
-    loading,
-    error,
-    setError,
-  } = useVocabulary();
+  const { items, setItems, learningLanguage, loading, error, setError } =
+    useVocabulary();
 
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -359,9 +338,7 @@ export default function VocabularyPage() {
     // Update the UI immediately.
     setItems((current) =>
       current.map((currentItem) =>
-        currentItem.id === item.id
-          ? { ...currentItem, status }
-          : currentItem,
+        currentItem.id === item.id ? { ...currentItem, status } : currentItem,
       ),
     );
 
@@ -651,13 +628,7 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      
-
-
-      <VocabularyHero
-        todayProgress={dailyProgress}
-        todayGoal={dailyGoal}
-      />
+      <VocabularyHero todayProgress={dailyProgress} todayGoal={dailyGoal} />
 
       <VocabularySearchSection
         totalWords={totalWords}
@@ -733,7 +704,7 @@ export default function VocabularyPage() {
         onSend={() => void sendLookupToPartner()}
       />
 
-{sortOpen && (
+      {sortOpen && (
         <SortBottomSheet
           value={sortMode}
           onClose={() => setSortOpen(false)}
