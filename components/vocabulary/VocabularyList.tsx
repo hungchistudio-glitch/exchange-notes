@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import { memo, type ComponentProps } from "react";
 import {
   BookmarkPlus,
   BookOpen,
@@ -57,7 +57,7 @@ type VocabularyListProps = {
   onInteract: (item: VocabularyItem, type: CardInteraction) => void;
 };
 
-export default function VocabularyList({
+function VocabularyList({
   loading,
   totalItemCount,
   items,
@@ -250,3 +250,5 @@ export default function VocabularyList({
     </section>
   );
 }
+
+export default memo(VocabularyList);
