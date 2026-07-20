@@ -159,11 +159,9 @@ export default function CollectionDetailPage() {
             <VocabularyCard
               key={item.id}
               item={item}
-              learningLanguage={null}
               updating={updatingId === item.id}
               onChangeStatus={changeStatus}
               onSendToPartner={() => undefined}
-              onDelete={deleteItem}
               onInteract={() => undefined}
             />
           ))}

@@ -10,7 +10,6 @@ import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExample
 
 import type { InteractionType } from "@/lib/vocabulary/helpers";
 import type {
-  AppLanguage,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
@@ -20,18 +19,15 @@ function VocabularyCard({
   updating,
   onChangeStatus,
   onSendToPartner,
-  onDelete,
   onInteract,
 }: {
   item: VocabularyItem;
-  learningLanguage: AppLanguage | null;
   updating: boolean;
   onChangeStatus: (
     item: VocabularyItem,
     status: VocabularyStatus,
   ) => void | Promise<void>;
   onSendToPartner: (item: VocabularyItem) => void;
-  onDelete: (item: VocabularyItem) => void | Promise<void>;
   onInteract: (
     item: VocabularyItem,
     type: InteractionType,

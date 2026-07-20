@@ -219,7 +219,6 @@ function SharedVocabularyMessage({
       chineseExample={chineseExample}
       partOfSpeech={item.part_of_speech}
       imageUrl={item.image_url}
-      learningLanguage={learningLanguage}
       headerLabel="Shared word"
       statusLabel="Shared"
       actions={

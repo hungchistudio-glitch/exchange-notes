@@ -239,11 +239,9 @@ function VocabularyList({
         <VocabularyCard
           key={item.id}
           item={item}
-          learningLanguage={learningLanguage}
           updating={updatingId === item.id}
           onChangeStatus={onChangeStatus}
           onSendToPartner={onSendToPartner}
-          onDelete={onDelete}
           onInteract={onInteract}
         />
       ))}
