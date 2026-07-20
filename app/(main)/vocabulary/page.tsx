@@ -157,7 +157,13 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      <VocabularyHero todayProgress={dailyProgress} todayGoal={dailyGoal} />
+      <VocabularyHero
+        todayProgress={dailyProgress}
+        todayGoal={dailyGoal}
+        totalWords={totalWords}
+        learningWords={learningWords}
+        masteredWords={masteredWords}
+      />
 
       <VocabularyMainContent
         error={error}

@@ -1,19 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Brain, FolderOpen } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 type Props = {
   todayProgress: number;
   todayGoal: number;
+  totalWords: number;
+  learningWords: number;
+  masteredWords: number;
 };
+
+type MetricProps = {
+  label: string;
+  value: string | number;
+};
+
+function Metric({
+  label,
+  value,
+}: MetricProps) {
+  return (
+    <div className="border-t border-white/10 py-3">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
+          {label}
+        </span>
+
+        <span className="text-sm font-semibold tracking-tight text-white">
+          {value}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function VocabularyHero({
   todayProgress,
   todayGoal,
+  totalWords,
+  learningWords,
+  masteredWords,
 }: Props) {
   const percent =
-    todayGoal === 0
+    todayGoal <= 0
       ? 0
       : Math.min(
           100,
@@ -21,91 +51,115 @@ export default function VocabularyHero({
         );
 
   const remaining = Math.max(todayGoal - todayProgress, 0);
-  const goalCompleted = todayProgress >= todayGoal;
+  const goalCompleted =
+    todayGoal > 0 && todayProgress >= todayGoal;
 
   return (
-    <section className="overflow-hidden rounded-[28px] bg-black px-5 py-5 text-white shadow-[0_12px_32px_rgba(0,0,0,0.12)] sm:px-6 sm:py-6">
+    <section className="overflow-hidden rounded-[22px] bg-black px-5 py-5 text-white sm:px-6 sm:py-6">
       <div className="flex items-start justify-between gap-5">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
-            Today&apos;s progress
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
+            Vocabulary
           </p>
 
-          <div className="mt-2 flex items-end gap-2">
-            <h1 className="text-[42px] font-semibold leading-none tracking-[-0.055em]">
+          <div className="mt-5 flex items-baseline gap-2">
+            <h1 className="text-[44px] font-semibold leading-none tracking-[-0.055em]">
               {todayProgress}
             </h1>
 
-            <span className="pb-1 text-sm font-medium text-white/40">
-              of {todayGoal} words
+            <span className="text-sm font-medium text-white/35">
+              / {todayGoal}
             </span>
           </div>
 
-          <p className="mt-3 text-sm leading-5 text-white/55">
-            {goalCompleted
-              ? "Daily goal complete. Keep the momentum going."
-              : `${remaining} ${
-                  remaining === 1 ? "word" : "words"
-                } left to reach your goal.`}
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
+            Today&apos;s review
           </p>
         </div>
 
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.07]">
-          <span className="text-sm font-semibold">{percent}%</span>
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+            Completion
+          </p>
+
+          <p className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
+            {percent}%
+          </p>
         </div>
       </div>
 
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-6 h-px bg-white/10">
         <div
-          className="h-full rounded-full bg-white transition-[width] duration-500 ease-out"
+          className="h-px bg-white transition-[width] duration-500 ease-out"
           style={{ width: `${percent}%` }}
         />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-2.5">
+      <p className="mt-4 text-xs leading-5 text-white/45">
+        {goalCompleted
+          ? "Daily target completed."
+          : `${remaining} ${
+              remaining === 1 ? "word" : "words"
+            } remaining.`}
+      </p>
+
+      <div className="mt-6">
+        <Metric
+          label="Total Words"
+          value={totalWords}
+        />
+
+        <Metric
+          label="Learning"
+          value={learningWords}
+        />
+
+        <Metric
+          label="Mastered"
+          value={masteredWords}
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 border-y border-white/10">
         <Link
           href="/vocabulary/collections"
-          className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-white/10 bg-white/[0.06] px-3.5 py-3 transition hover:bg-white/[0.1] active:scale-[0.99]"
+          className="group flex min-w-0 items-center justify-between border-r border-white/10 py-4 pr-4"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">
-            <FolderOpen size={17} strokeWidth={1.8} />
-          </span>
-
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold">
-              Collections
+          <span>
+            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+              Library
             </span>
-            <span className="mt-0.5 block truncate text-[11px] text-white/40">
-              Organize words
+
+            <span className="mt-1 block text-sm font-medium">
+              Collections
             </span>
           </span>
 
           <ArrowUpRight
-            size={14}
-            className="shrink-0 text-white/25 transition group-hover:text-white/55"
+            size={15}
+            strokeWidth={1.6}
+            className="text-white/35 transition group-hover:text-white"
           />
         </Link>
 
         <Link
           href="/vocabulary/quiz"
-          className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-white/10 bg-white/[0.06] px-3.5 py-3 transition hover:bg-white/[0.1] active:scale-[0.99]"
+          className="group flex min-w-0 items-center justify-between py-4 pl-4"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">
-            <Brain size={17} strokeWidth={1.8} />
-          </span>
-
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold">
-              Quick Quiz
+          <span>
+            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+              Practice
             </span>
-            <span className="mt-0.5 block truncate text-[11px] text-white/40">
-              Review now
+
+            <span className="mt-1 block text-sm font-medium">
+              Quick Quiz
             </span>
           </span>
 
           <ArrowUpRight
-            size={14}
-            className="shrink-0 text-white/25 transition group-hover:text-white/55"
+            size={15}
+            strokeWidth={1.6}
+            className="text-white/35 transition group-hover:text-white"
           />
         </Link>
       </div>
