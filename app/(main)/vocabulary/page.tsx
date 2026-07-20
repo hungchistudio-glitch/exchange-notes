@@ -156,6 +156,23 @@ export default function VocabularyPage() {
     quickFilters,
   } = useVocabularyStats(uniqueItems);
 
+  const listProps = {
+    loading,
+    totalItemCount: totalWords,
+    items: visibleItems,
+    query,
+    updatingId,
+    lookupStatus,
+    lookupResult,
+    lookupError,
+    savingLookup,
+    onLookupWord: lookupWord,
+    onSaveLookupResult: saveLookupResult,
+    onChangeStatus: changeStatus,
+    onSendToPartner: handleSendToPartner,
+    onInteract: recordInteraction,
+  };
+
   return (
     <AppPage width="default">
       <VocabularyHero todayProgress={dailyProgress} todayGoal={dailyGoal} />
@@ -186,22 +203,7 @@ export default function VocabularyPage() {
           onOpenSort: () => setSortOpen(true),
           onOpenLibrary: () => setFiltersOpen(true),
         }}
-        listProps={{
-          loading,
-          totalItemCount: totalWords,
-          items: visibleItems,
-          query,
-          updatingId,
-          lookupStatus,
-          lookupResult,
-          lookupError,
-          savingLookup,
-          onLookupWord: lookupWord,
-          onSaveLookupResult: saveLookupResult,
-          onChangeStatus: changeStatus,
-          onSendToPartner: handleSendToPartner,
-          onInteract: recordInteraction,
-        }}
+        listProps={listProps}
       />
 
       <VocabularyOverlays
