@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CollectionPickerSheet from "@/components/collections/CollectionPickerSheet";
@@ -21,7 +21,7 @@ import type {
   VocabularyStatus,
 } from "@/lib/types/app";
 
-export default function VocabularyCard({
+function VocabularyCard({
   item,
   updating,
   onChangeStatus,
@@ -226,3 +226,5 @@ export default function VocabularyCard({
     </div>
   );
 }
+
+export default memo(VocabularyCard);
