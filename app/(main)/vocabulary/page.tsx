@@ -20,6 +20,7 @@ import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularyShare from "@/hooks/useVocabularyShare";
+import useVocabularyLookup from "@/hooks/useVocabularyLookup";
 
 import { createClient } from "@/lib/supabase/client";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -38,10 +39,6 @@ import type {
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
-import type {
-  VocabularyLookupResult,
-  VocabularyLookupStatus,
-} from "@/lib/types/vocabularyLookup";
 
 export default function VocabularyPage() {
   const { items, setItems, learningLanguage, loading, error, setError } =
@@ -58,11 +55,13 @@ export default function VocabularyPage() {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const [lookupStatus, setLookupStatus] =
-    useState<VocabularyLookupStatus>("idle");
-  const [lookupResult, setLookupResult] =
-    useState<VocabularyLookupResult | null>(null);
-  const [lookupError, setLookupError] = useState("");
+  const {
+    lookupStatus,
+    lookupResult,
+    lookupError,
+    lookupWord,
+    resetLookup,
+  } = useVocabularyLookup(query);
   const [savingLookup, setSavingLookup] = useState(false);
 
   const [friendPickerItem, setFriendPickerItem] =
@@ -223,18 +222,14 @@ export default function VocabularyPage() {
 
   function openAiSearch() {
     setQuery("");
-    setLookupResult(null);
-    setLookupError("");
-    setLookupStatus("idle");
+    resetLookup();
     setAiSearchOpen(true);
   }
 
   function closeAiSearch() {
     setAiSearchOpen(false);
     setQuery("");
-    setLookupResult(null);
-    setLookupError("");
-    setLookupStatus("idle");
+    resetLookup();
   }
 
   const {
@@ -273,40 +268,6 @@ export default function VocabularyPage() {
     handleSendToPartner(item);
   }
 
-  async function lookupWord() {
-    const cleanQuery = query.trim();
-    if (!cleanQuery || lookupStatus === "loading") return;
-
-    setLookupStatus("loading");
-    setLookupError("");
-
-    try {
-      const response = await fetch("/api/classify-text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: cleanQuery }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || "error" in data) {
-        throw new Error(
-          "error" in data ? data.error : "Couldn't look up that word.",
-        );
-      }
-
-      setLookupResult(data);
-      setLookupStatus("result");
-    } catch (lookupErrorValue) {
-      setLookupError(
-        lookupErrorValue instanceof Error
-          ? lookupErrorValue.message
-          : "Couldn't look up that word.",
-      );
-      setLookupStatus("error");
-    }
-  }
-
   async function saveLookupResult() {
     if (!lookupResult || savingLookup) return;
 
@@ -334,8 +295,7 @@ export default function VocabularyPage() {
 
       if (duplicate) {
         setError("This word is already in your vocabulary.");
-        setLookupStatus("idle");
-        setLookupResult(null);
+        resetLookup();
         setQuery("");
         return;
       }
@@ -360,8 +320,7 @@ export default function VocabularyPage() {
       if (insertError) throw insertError;
 
       setItems((current) => [inserted as VocabularyItem, ...current]);
-      setLookupStatus("idle");
-      setLookupResult(null);
+      resetLookup();
       setQuery("");
       setAiSearchOpen(false);
     } catch (saveError) {
@@ -401,15 +360,11 @@ export default function VocabularyPage() {
         rankingError={rankingError}
         onQueryChange={(value) => {
           setQuery(value);
-          setLookupStatus("idle");
-          setLookupResult(null);
-          setLookupError("");
+          resetLookup();
         }}
         onClear={() => {
           setQuery("");
-          setLookupStatus("idle");
-          setLookupResult(null);
-          setLookupError("");
+          resetLookup();
         }}
         onOpenAI={openAiSearch}
         onQuickFilterChange={setQuickFilter}
@@ -483,9 +438,7 @@ export default function VocabularyPage() {
             clearFilterSearch();
           }}
           onSelect={(item) => {
-            setLookupStatus("idle");
-            setLookupResult(null);
-            setLookupError("");
+            resetLookup();
             setQuery(item.word);
             setFiltersOpen(false);
             clearFilterSearch();
