@@ -46,5 +46,20 @@ export async function saveReviewResult(
     throw updateError;
   }
 
+  const { error: eventError } = await supabase
+    .from("review_events")
+    .insert({
+      user_id: user.id,
+      vocabulary_item_id: id,
+      grade,
+      interval_days: next.review_interval ?? 0,
+      ease_factor: next.review_ease ?? 2.5,
+      response_time_ms: null,
+    });
+
+  if (eventError) {
+    console.error("Failed to save review event:", eventError);
+  }
+
   return next;
 }
