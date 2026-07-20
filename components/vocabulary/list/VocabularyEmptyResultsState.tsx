@@ -1,12 +1,14 @@
 import { BookOpen, LoaderCircle, SearchX } from "lucide-react";
 
 import { EmptyState } from "@/components/foundation";
+import type {
+  VocabularyLookupStatus,
+} from "@/lib/types/vocabularyLookup";
 
-type LookupStatus = "idle" | "loading" | "error" | "result";
 
 type VocabularyEmptyResultsStateProps = {
   query: string;
-  lookupStatus: LookupStatus;
+  lookupStatus: VocabularyLookupStatus;
   lookupError: string;
   onLookupWord: () => void;
 };

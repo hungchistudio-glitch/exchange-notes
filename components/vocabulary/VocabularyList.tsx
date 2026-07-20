@@ -13,22 +13,16 @@ import Link from "next/link";
 import { EmptyState } from "@/components/foundation";
 import VocabularyCard from "@/components/vocabulary/VocabularyCard";
 import type {
+  VocabularyLookupResult,
+  VocabularyLookupStatus,
+} from "@/lib/types/vocabularyLookup";
+import type {
   VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
 
-type LookupStatus = "idle" | "loading" | "error" | "result";
 
-type LookupResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
-  category: VocabularyCategory;
-};
 
 type CardInteraction = Parameters<
   NonNullable<ComponentProps<typeof VocabularyCard>["onInteract"]>
@@ -40,8 +34,8 @@ type VocabularyListProps = {
   items: VocabularyItem[];
   query: string;
   updatingId: string | null;
-  lookupStatus: LookupStatus;
-  lookupResult: LookupResult | null;
+  lookupStatus: VocabularyLookupStatus;
+  lookupResult: VocabularyLookupResult | null;
   lookupError: string;
   savingLookup: boolean;
   onLookupWord: () => void;

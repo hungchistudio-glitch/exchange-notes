@@ -1,16 +1,10 @@
 import { BookmarkPlus, LoaderCircle } from "lucide-react";
 
 import type { VocabularyCategory } from "@/lib/types/app";
+import type {
+  VocabularyLookupResult,
+} from "@/lib/types/vocabularyLookup";
 
-export type VocabularyLookupResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
-  category: VocabularyCategory;
-};
 
 type VocabularyLookupResultStateProps = {
   result: VocabularyLookupResult;

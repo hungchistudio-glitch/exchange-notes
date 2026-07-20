@@ -3,6 +3,10 @@
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import type { VocabularyCategory } from "@/lib/types/app";
 import { speak } from "@/lib/speech";
+import type {
+  VocabularyLookupResult,
+  VocabularyLookupStatus,
+} from "@/lib/types/vocabularyLookup";
 import {
   BookmarkPlus,
   Check,
@@ -15,17 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 
-type LookupStatus = "idle" | "loading" | "error" | "result";
 
-type LookupResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
-  category: VocabularyCategory;
-};
 
 export type VocabularyLookupModalProps = {
   open: boolean;
@@ -34,8 +28,8 @@ export type VocabularyLookupModalProps = {
   query: string;
   setQuery: (value: string) => void;
 
-  lookupStatus: LookupStatus;
-  lookupResult: LookupResult | null;
+  lookupStatus: VocabularyLookupStatus;
+  lookupResult: VocabularyLookupResult | null;
   lookupError: string;
 
   savingLookup: boolean;
