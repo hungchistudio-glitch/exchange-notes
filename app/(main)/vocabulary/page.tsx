@@ -12,7 +12,6 @@ import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
-import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 
 
 import {
@@ -66,6 +65,9 @@ export default function VocabularyPage() {
     lookupCopied,
     shareLookupResult,
     sendLookupToPartner,
+    updatingId,
+    changeStatus,
+    deleteVocabularyItem,
   } = useVocabularyController();
 
   const uniqueItems = useUniqueVocabulary(items);
@@ -97,15 +99,6 @@ export default function VocabularyPage() {
     clearFilterSearch,
   } = useVocabularyLibrary(uniqueItems);
 
-  const {
-    updatingId,
-    changeStatus,
-    deleteVocabularyItem,
-  } = useVocabularyMutations({
-    items,
-    setItems,
-    setError,
-  });
 
   function openAiSearch() {
     setQuery("");
