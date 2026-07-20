@@ -2,13 +2,10 @@
 
 import { useVocabularyPage } from "@/hooks/useVocabularyPage";
 
-import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
-import VocabularyLookupModal from "@/components/vocabulary/modals/VocabularyLookupModal";
-import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
+import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
-import SortBottomSheet from "@/components/vocabulary/SortBottomSheet";
 import { useState } from "react";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
@@ -207,66 +204,58 @@ export default function VocabularyPage() {
         }}
       />
 
-      <VocabularyLookupModal
-        open={aiSearchOpen}
-        onClose={closeAiSearch}
-
-        query={query}
-        setQuery={setQuery}
-
-        lookupStatus={lookupStatus}
-        lookupResult={lookupResult}
-        lookupError={lookupError}
-
-        savingLookup={savingLookup}
-        lookupCopied={lookupCopied}
-
-        onLookupWord={() => void lookupWord()}
-        onSave={() => void saveLookupResult()}
-        onShare={() => void shareLookupResult()}
-        onSend={() => void sendLookupToPartner()}
-      />
-
-      {sortOpen && (
-        <SortBottomSheet
-          value={sortMode}
-          onClose={() => setSortOpen(false)}
-          onChange={(mode) => {
+      <VocabularyOverlays
+        lookupProps={{
+          open: aiSearchOpen,
+          onClose: closeAiSearch,
+          query,
+          setQuery,
+          lookupStatus,
+          lookupResult,
+          lookupError,
+          savingLookup,
+          lookupCopied,
+          onLookupWord: () => void lookupWord(),
+          onSave: () => void saveLookupResult(),
+          onShare: () => void shareLookupResult(),
+          onSend: () => void sendLookupToPartner(),
+        }}
+        sortOpen={sortOpen}
+        sortProps={{
+          value: sortMode,
+          onClose: () => setSortOpen(false),
+          onChange: (mode) => {
             setSortMode(mode);
             setSortOpen(false);
-          }}
-        />
-      )}
-
-      {filtersOpen && (
-        <VocabularyFilterPanel
-          items={alphabetizedItems}
-          search={filterSearch}
-          onSearchChange={setFilterSearch}
-          onClose={() => {
+          },
+        }}
+        filtersOpen={filtersOpen}
+        filterProps={{
+          items: alphabetizedItems,
+          search: filterSearch,
+          onSearchChange: setFilterSearch,
+          onClose: () => {
             setFiltersOpen(false);
             clearFilterSearch();
-          }}
-          onSelect={(item) => {
+          },
+          onSelect: (item) => {
             resetLookup();
             setQuery(item.word);
             setFiltersOpen(false);
             clearFilterSearch();
-          }}
-        />
-      )}
-
-      {friendPickerItem && (
-        <FriendPickerModal
-          friends={friends}
-          loading={friendsLoading}
-          errorMessage={friendsError}
-          sendingFriendId={sendingFriendId}
-          onClose={handleClosePicker}
-          onPick={handlePickFriend}
-          onRetry={retryFriends}
-        />
-      )}
+          },
+        }}
+        friendPickerOpen={Boolean(friendPickerItem)}
+        friendPickerProps={{
+          friends,
+          loading: friendsLoading,
+          errorMessage: friendsError,
+          sendingFriendId,
+          onClose: handleClosePicker,
+          onPick: handlePickFriend,
+          onRetry: retryFriends,
+        }}
+      />
     </AppPage>
   );
 }
