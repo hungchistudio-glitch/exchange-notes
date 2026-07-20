@@ -10,8 +10,7 @@ import VocabularyList from "@/components/vocabulary/VocabularyList";
 import SortBottomSheet, {
   type SortMode,
 } from "@/components/vocabulary/SortBottomSheet";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
@@ -23,14 +22,12 @@ import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
 import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
 import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
+import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 
-import { createClient } from "@/lib/supabase/client";
-import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import {
   changeVocabularyStatus,
   removeVocabularyItem,
 } from "@/lib/vocabulary/service";
-import { listFriends, type FriendProfile } from "@/lib/friends";
 
 import {
   normalizeVocabularyText,
@@ -45,7 +42,6 @@ export default function VocabularyPage() {
   const { items, setItems, learningLanguage, loading, error, setError } =
     useVocabulary();
 
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [quickFilter, setQuickFilter] = useState<"all" | VocabularyStatus>(
     "all",
@@ -77,68 +73,18 @@ export default function VocabularyPage() {
     resetLookup,
   });
 
-  const [friendPickerItem, setFriendPickerItem] =
-    useState<VocabularyItem | null>(null);
-  const [friends, setFriends] = useState<FriendProfile[]>([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
-  const [friendsError, setFriendsError] = useState("");
-  const [sendingFriendId, setSendingFriendId] = useState<string | null>(null);
-  const friendsRequestedRef = useRef(false);
-
-  const handleSendToPartner = useCallback((item: VocabularyItem) => {
-    recordInteraction(item, "send");
-    setFriendPickerItem(item);
-  }, []);
-
-  const loadFriends = useCallback(async () => {
-    friendsRequestedRef.current = true;
-    setFriendsLoading(true);
-    setFriendsError("");
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setFriendsError("You're not logged in. Log in to share with a partner.");
-      setFriendsLoading(false);
-      friendsRequestedRef.current = false;
-      return;
-    }
-
-    try {
-      const friendsData = await listFriends(supabase, user.id);
-      setFriends(friendsData);
-    } catch (loadError) {
-      console.error("Failed to load friends:", loadError);
-      setFriendsError("Couldn't load your friends. Try again.");
-      friendsRequestedRef.current = false;
-    } finally {
-      setFriendsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!friendPickerItem || friendsRequestedRef.current) return;
-    void loadFriends();
-  }, [friendPickerItem, loadFriends]);
-
-  const handleClosePicker = useCallback(() => {
-    setFriendPickerItem(null);
-    setSendingFriendId(null);
-  }, []);
-
-  const handlePickFriend = useCallback(
-    (friendId: string) => {
-      if (!friendPickerItem || sendingFriendId) return;
-
-      setSendingFriendId(friendId);
-      setPendingSharedVocabulary(friendPickerItem);
-      router.push(`/messages?with=${friendId}`);
-    },
-    [friendPickerItem, router, sendingFriendId],
-  );
+  const {
+    friendPickerItem,
+    friends,
+    friendsLoading,
+    friendsError,
+    sendingFriendId,
+    handleSendToPartner,
+    loadFriends,
+    retryFriends,
+    handleClosePicker,
+    handlePickFriend,
+  } = useVocabularyFriendPicker();
 
   const uniqueItems = useUniqueVocabulary(items);
 
@@ -377,10 +323,7 @@ export default function VocabularyPage() {
           sendingFriendId={sendingFriendId}
           onClose={handleClosePicker}
           onPick={handlePickFriend}
-          onRetry={() => {
-            friendsRequestedRef.current = false;
-            void loadFriends();
-          }}
+          onRetry={retryFriends}
         />
       )}
     </AppPage>
