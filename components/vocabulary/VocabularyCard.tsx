@@ -32,10 +32,16 @@ export default function VocabularyCard({
   item: VocabularyItem;
   learningLanguage: AppLanguage | null;
   updating: boolean;
-  onChangeStatus: (status: VocabularyStatus) => void;
-  onSendToPartner: (sharedItem?: VocabularyItem) => void;
-  onDelete: () => void;
-  onInteract: (type: InteractionType) => void;
+  onChangeStatus: (
+    item: VocabularyItem,
+    status: VocabularyStatus,
+  ) => void | Promise<void>;
+  onSendToPartner: (item: VocabularyItem) => void;
+  onDelete: (item: VocabularyItem) => void | Promise<void>;
+  onInteract: (
+    item: VocabularyItem,
+    type: InteractionType,
+  ) => void;
 }) {
   const router = useRouter();
   const { addItem } = useVocabulary();
@@ -47,7 +53,7 @@ export default function VocabularyCard({
   const [collectionsOpen, setCollectionsOpen] = useState(false);
 
   useEffect(() => {
-    onInteract("view");
+    onInteract(item, "view");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id]);
 
@@ -117,7 +123,7 @@ export default function VocabularyCard({
   }
 
   async function handleShare() {
-    onInteract("share");
+    onInteract(item, "share");
     const shareData = {
       title: item.word,
       text: `${item.word} — ${item.translation}`,
@@ -140,7 +146,7 @@ export default function VocabularyCard({
   }
 
   function openDetails() {
-    onInteract("view");
+    onInteract(item, "view");
     router.push(`/vocabulary/${item.id}`);
   }
 
@@ -183,9 +189,12 @@ export default function VocabularyCard({
           mastered={item.status === "mastered"}
           updating={updating}
           onToggleMastered={() =>
-            onChangeStatus(item.status === "mastered" ? "learning" : "mastered")
+            void onChangeStatus(
+              item,
+              item.status === "mastered" ? "learning" : "mastered",
+            )
           }
-          onSend={onSendToPartner}
+          onSend={() => onSendToPartner(item)}
           onOpen={openDetails}
         />
       </article>
@@ -195,10 +204,14 @@ export default function VocabularyCard({
         open={detailOpen}
         updating={updating}
         onClose={() => setDetailOpen(false)}
-        onChangeStatus={onChangeStatus}
-        onSendToPartner={() => onSendToPartner()}
+        onChangeStatus={(status) => {
+          void onChangeStatus(item, status);
+        }}
+        onSendToPartner={() => onSendToPartner(item)}
         onShare={() => void handleShare()}
-        onDelete={onDelete}
+        onDelete={() => {
+          void onDelete(item);
+        }}
         onOpenCollections={() => {
           setDetailOpen(false);
           setCollectionsOpen(true);

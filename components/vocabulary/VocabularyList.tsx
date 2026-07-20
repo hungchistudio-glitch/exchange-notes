@@ -33,7 +33,7 @@ type LookupResult = {
 
 type CardInteraction = Parameters<
   NonNullable<ComponentProps<typeof VocabularyCard>["onInteract"]>
->[0];
+>[1];
 
 type VocabularyListProps = {
   loading: boolean;
@@ -241,16 +241,10 @@ export default function VocabularyList({
           item={item}
           learningLanguage={learningLanguage}
           updating={updatingId === item.id}
-          onChangeStatus={(status) => {
-            void onChangeStatus(item, status);
-          }}
-          onSendToPartner={(sharedItem) => {
-            onSendToPartner(sharedItem ?? item);
-          }}
-          onDelete={() => {
-            void onDelete(item);
-          }}
-          onInteract={(type) => onInteract(item, type)}
+          onChangeStatus={onChangeStatus}
+          onSendToPartner={onSendToPartner}
+          onDelete={onDelete}
+          onInteract={onInteract}
         />
       ))}
     </section>

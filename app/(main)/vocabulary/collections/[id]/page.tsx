@@ -161,9 +161,9 @@ export default function CollectionDetailPage() {
               item={item}
               learningLanguage={null}
               updating={updatingId === item.id}
-              onChangeStatus={(status) => void changeStatus(item, status)}
+              onChangeStatus={changeStatus}
               onSendToPartner={() => undefined}
-              onDelete={() => void deleteItem(item)}
+              onDelete={deleteItem}
               onInteract={() => undefined}
             />
           ))}
