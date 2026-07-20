@@ -1,6 +1,6 @@
 "use client";
 
-import useVocabularyController from "@/hooks/useVocabularyController";
+import useVocabularyController from "@/hooks/controllers/useVocabularyController";
 
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
