@@ -70,6 +70,7 @@ export default function VocabularyPage() {
     masteredWords,
     dailyGoal,
     dailyProgress,
+    reviewStats,
     quickFilters,
     uniqueItems,
     filterSearch,
@@ -163,6 +164,10 @@ export default function VocabularyPage() {
         totalWords={totalWords}
         learningWords={learningWords}
         masteredWords={masteredWords}
+        dueToday={reviewStats.due}
+        accuracy={reviewStats.accuracy}
+        retention={reviewStats.retention}
+        weakWords={reviewStats.weak}
       />
 
       <VocabularyMainContent

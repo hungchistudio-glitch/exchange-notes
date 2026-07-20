@@ -9,6 +9,10 @@ type Props = {
   totalWords: number;
   learningWords: number;
   masteredWords: number;
+  dueToday: number;
+  accuracy: number;
+  retention: number;
+  weakWords: number;
 };
 
 type MetricProps = {
@@ -16,21 +20,16 @@ type MetricProps = {
   value: string | number;
 };
 
-function Metric({
-  label,
-  value,
-}: MetricProps) {
+function Metric({ label, value }: MetricProps) {
   return (
-    <div className="border-t border-white/10 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
-          {label}
-        </span>
+    <div className="flex items-center justify-between border-t border-white/10 py-3">
+      <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
+        {label}
+      </span>
 
-        <span className="text-sm font-semibold tracking-tight text-white">
-          {value}
-        </span>
-      </div>
+      <span className="text-sm font-semibold tracking-tight text-white">
+        {value}
+      </span>
     </div>
   );
 }
@@ -41,6 +40,10 @@ export default function VocabularyHero({
   totalWords,
   learningWords,
   masteredWords,
+  dueToday,
+  accuracy,
+  retention,
+  weakWords,
 }: Props) {
   const percent =
     todayGoal <= 0
@@ -73,7 +76,7 @@ export default function VocabularyHero({
           </div>
 
           <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
-            Today&apos;s review
+            Today&apos;s progress
           </p>
         </div>
 
@@ -104,34 +107,27 @@ export default function VocabularyHero({
       </p>
 
       <div className="mt-6">
-        <Metric
-          label="Total Words"
-          value={totalWords}
-        />
-
-        <Metric
-          label="Learning"
-          value={learningWords}
-        />
-
-        <Metric
-          label="Mastered"
-          value={masteredWords}
-        />
+        <Metric label="Due Today" value={dueToday} />
+        <Metric label="Retention" value={`${retention}%`} />
+        <Metric label="Accuracy" value={`${accuracy}%`} />
+        <Metric label="Weak Words" value={weakWords} />
+        <Metric label="Total Words" value={totalWords} />
+        <Metric label="Learning" value={learningWords} />
+        <Metric label="Mastered" value={masteredWords} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 border-y border-white/10">
         <Link
-          href="/vocabulary/collections"
+          href="/review"
           className="group flex min-w-0 items-center justify-between border-r border-white/10 py-4 pr-4"
         >
           <span>
             <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
-              Library
+              Today
             </span>
 
             <span className="mt-1 block text-sm font-medium">
-              Collections
+              Start Review
             </span>
           </span>
 
@@ -143,16 +139,16 @@ export default function VocabularyHero({
         </Link>
 
         <Link
-          href="/vocabulary/quiz"
+          href="/vocabulary/collections"
           className="group flex min-w-0 items-center justify-between py-4 pl-4"
         >
           <span>
             <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
-              Practice
+              Library
             </span>
 
             <span className="mt-1 block text-sm font-medium">
-              Quick Quiz
+              Collections
             </span>
           </span>
 
