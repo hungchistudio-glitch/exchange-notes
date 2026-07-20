@@ -1,10 +1,31 @@
 "use client";
 
-import { Camera, LoaderCircle, UserRound, X } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  Languages,
+  LoaderCircle,
+  LogOut,
+  X,
+} from "lucide-react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
 
-import LogoutButton from "@/app/components/auth/LogoutButton";
 import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
+import {
+  AppHeader,
+  AppInput,
+  AppSelect,
+  Avatar,
+  FormField,
+  SettingsRow,
+  StatusMessage,
+} from "@/components/foundation";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -29,6 +50,7 @@ function normalizeExchangeId(value: string) {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
@@ -212,6 +234,21 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleLogout() {
+    const confirmed = window.confirm(
+      "Are you sure you want to log out?",
+    );
+
+    if (!confirmed) return;
+
+    const supabase = createClient();
+
+    await supabase.auth.signOut();
+
+    router.replace("/login");
+    router.refresh();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -263,207 +300,261 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="app-page">
-      <div className="app-page__content max-w-xl">
-        <header className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.2em]">
-              Your account
-            </p>
+    <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col">
+        <AppHeader
+          title="Settings"
+          backHref="/home"
+          backLabel="Back to home"
+        />
 
-            <h1 className="mt-2 text-5xl font-black">Settings</h1>
-          </div>
+        <div className="flex-1 space-y-5 px-4 pb-32 pt-5">
+          <section className="rounded-[26px] border border-black/[0.06] bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.035)]">
+            <div className="flex items-center gap-4">
+              <Avatar
+                src={avatarUrl}
+                fallback={form.display_name}
+                size="xl"
+                loading={uploadingPhoto}
+              />
 
-          <div className="flex items-center gap-2">
-            <SpeechSettingsButton />
-            <LogoutButton />
-          </div>
-        </header>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-xl font-semibold tracking-[-0.025em] text-black">
+                  {loading
+                    ? "Loading…"
+                    : form.display_name || "Language learner"}
+                </h2>
 
-        <section className="mt-7 rounded-[30px] bg-white p-6">
-          <div className="flex items-center gap-5">
-            <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt="Profile"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <UserRound size={38} />
-              )}
+                <p className="mt-1 truncate text-sm text-black/45">
+                  {email || "Exchange Notes account"}
+                </p>
 
-              {uploadingPhoto && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                  <LoaderCircle size={22} className="animate-spin" />
-                </div>
-              )}
+                {!loading && form.exchange_id && (
+                  <p className="mt-1 truncate text-xs font-medium text-black/30">
+                    @{form.exchange_id}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="min-w-0">
-              <h2 className="break-words text-2xl font-black">
-                {loading ? "Loading…" : form.display_name || "Language learner"}
-              </h2>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              className="hidden"
+              onChange={(event) => void handlePhotoSelected(event)}
+            />
 
-              <p className="mt-1 break-words text-sm">{email}</p>
-            </div>
-          </div>
-
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            className="hidden"
-            onChange={(event) => void handlePhotoSelected(event)}
-          />
-
-          <div className="mt-6 flex gap-2">
-            <button
-              type="button"
-              onClick={() => photoInputRef.current?.click()}
-              disabled={uploadingPhoto}
-              className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-[20px] border border-black px-4 py-4 font-black disabled:opacity-40"
-            >
-              {uploadingPhoto ? (
-                <LoaderCircle size={19} className="animate-spin" />
-              ) : (
-                <Camera size={19} />
-              )}
-
-              {avatarUrl ? "Change Photo" : "Add Profile Photo"}
-            </button>
-
-            {avatarUrl && (
+            <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                onClick={() => void removeProfilePhoto()}
+                onClick={() => photoInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                aria-label="Remove profile photo"
-                className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-[20px] border border-black/15 disabled:opacity-40"
+                className="flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-4 text-xs font-semibold text-black transition-all disabled:opacity-40 active:scale-[0.985]"
               >
-                <X size={19} />
+                {uploadingPhoto ? (
+                  <LoaderCircle size={15} className="animate-spin" />
+                ) : (
+                  <Camera size={15} strokeWidth={1.8} />
+                )}
+
+                {avatarUrl ? "Change photo" : "Add photo"}
               </button>
-            )}
-          </div>
-        </section>
 
-        {loading ? (
-          <section className="mt-5 rounded-[30px] bg-white p-6">
-            <p className="font-bold">Loading your profile…</p>
+              {avatarUrl && (
+                <button
+                  type="button"
+                  onClick={() => void removeProfilePhoto()}
+                  disabled={uploadingPhoto}
+                  aria-label="Remove profile photo"
+                  title="Remove profile photo"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 transition-all disabled:opacity-40 active:scale-95"
+                >
+                  <X size={15} strokeWidth={1.8} />
+                </button>
+              )}
+            </div>
           </section>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="mt-5 space-y-5 rounded-[30px] bg-white p-6"
-          >
-            <label className="block">
-              <span className="font-black">Your name</span>
 
-              <input
-                required
-                value={form.display_name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    display_name: event.target.value,
-                  }))
-                }
-                placeholder="First name"
-                className="mt-2 w-full rounded-[20px] border border-[#bbb] px-5 py-4 text-lg outline-none focus:border-black"
-              />
-            </label>
+          {error && (
+            <StatusMessage tone="danger">{error}</StatusMessage>
+          )}
 
-            <label className="block">
-              <span className="font-black">Exchange ID</span>
+          {message && (
+            <StatusMessage tone="success">{message}</StatusMessage>
+          )}
 
-              <div className="mt-2 flex rounded-[20px] border border-[#bbb] bg-white focus-within:border-black">
-                <span className="px-5 py-4 text-2xl font-black">@</span>
+          {loading ? (
+            <section className="rounded-[26px] border border-black/[0.06] bg-white p-5">
+              <div className="flex items-center gap-3 text-sm font-medium text-black/45">
+                <LoaderCircle size={17} className="animate-spin" />
+                Loading your profile…
+              </div>
+            </section>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5 rounded-[26px] border border-black/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
+            >
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                  Profile
+                </p>
 
-                <input
+                <h3 className="mt-1.5 text-lg font-semibold tracking-[-0.02em] text-black">
+                  Account details
+                </h3>
+              </div>
+
+              <FormField
+                label="Your name"
+                htmlFor="settings-display-name"
+              >
+                <AppInput
+                  id="settings-display-name"
+                  required
+                  autoComplete="name"
+                  value={form.display_name}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      display_name: event.target.value,
+                    }))
+                  }
+                  placeholder="Your name"
+                />
+              </FormField>
+
+              <FormField
+                label="Exchange ID"
+                htmlFor="settings-exchange-id"
+                description="3–24 lowercase letters, numbers, or underscores."
+              >
+                <AppInput
+                  id="settings-exchange-id"
                   required
                   value={form.exchange_id}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      exchange_id: normalizeExchangeId(event.target.value),
+                      exchange_id: normalizeExchangeId(
+                        event.target.value,
+                      ),
                     }))
                   }
                   placeholder="yourname"
-                  className="min-w-0 flex-1 rounded-r-[20px] bg-white py-4 pr-5 text-lg outline-none"
+                  leading={
+                    <span className="text-sm font-semibold">@</span>
+                  }
                 />
-              </div>
+              </FormField>
 
-              <p className="mt-2 text-sm text-[#555]">
-                3–24 lowercase letters, numbers, or underscores.
-              </p>
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="font-black">Native language</span>
-
-                <select
+              <FormField
+                label="Native language"
+                htmlFor="settings-native-language"
+              >
+                <AppSelect
+                  id="settings-native-language"
                   value={form.native_language}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      native_language: event.target.value as AppLanguage,
+                      native_language:
+                        event.target.value as AppLanguage,
                     }))
                   }
-                  className="mt-2 w-full rounded-[20px] border border-[#bbb] bg-white px-4 py-4 text-base outline-none focus:border-black"
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
                       {option.label}
                     </option>
                   ))}
-                </select>
-              </label>
+                </AppSelect>
+              </FormField>
 
-              <label className="block">
-                <span className="font-black">Learning language</span>
-
-                <select
+              <FormField
+                label="Learning language"
+                htmlFor="settings-learning-language"
+              >
+                <AppSelect
+                  id="settings-learning-language"
                   value={form.learning_language}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      learning_language: event.target.value as AppLanguage,
+                      learning_language:
+                        event.target.value as AppLanguage,
                     }))
                   }
-                  className="mt-2 w-full rounded-[20px] border border-[#bbb] bg-white px-4 py-4 text-base outline-none focus:border-black"
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
                       {option.label}
                     </option>
                   ))}
-                </select>
-              </label>
+                </AppSelect>
+              </FormField>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all disabled:opacity-35 active:scale-[0.985]"
+              >
+                {saving && (
+                  <LoaderCircle
+                    size={16}
+                    className="animate-spin"
+                  />
+                )}
+
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </form>
+          )}
+
+          <section>
+            <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+              Preferences
+            </p>
+
+            <div className="divide-y divide-black/[0.06] overflow-hidden rounded-[26px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <SpeechSettingsButton variant="row" />
+
+              <SettingsRow
+                title="Languages"
+                description="Your native and learning languages"
+                value={`${form.native_language === "english" ? "English" : "繁體中文"} → ${
+                  form.learning_language === "english"
+                    ? "English"
+                    : "繁體中文"
+                }`}
+                icon={<Languages size={17} strokeWidth={1.8} />}
+              />
             </div>
+          </section>
 
-            {error && (
-              <p className="rounded-[20px] bg-red-50 p-4 font-bold text-red-900">
-                {error}
-              </p>
-            )}
+          <section>
+            <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+              Account
+            </p>
 
-            {message && (
-              <p className="rounded-[20px] bg-green-50 p-4 font-bold text-green-900">
-                {message}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full rounded-[20px] bg-black px-5 py-4 text-lg font-black text-white disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save Changes"}
-            </button>
-          </form>
-        )}
+            <div className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <SettingsRow
+                title="Log out"
+                description="Sign out of this device"
+                icon={<LogOut size={17} strokeWidth={1.8} />}
+                danger
+                onClick={() => void handleLogout()}
+              />
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
