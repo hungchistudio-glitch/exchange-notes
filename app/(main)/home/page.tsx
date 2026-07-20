@@ -203,24 +203,28 @@ export default function HomePage() {
 
           <div className="mt-3 grid grid-cols-2 gap-3">
             <DashboardCard
+              compact
               title="Accuracy"
               value={loading ? "—" : `${stats?.accuracy ?? 0}%`}
               subtitle={`${stats?.reviewed ?? 0} total reviews`}
             />
 
             <DashboardCard
+              compact
               title="Retention"
               value={loading ? "—" : `${stats?.retention ?? 100}%`}
               subtitle="Memory strength"
             />
 
             <DashboardCard
+              compact
               title="Mastered"
               value={loading ? "—" : stats?.mastered ?? 0}
               subtitle="Words completed"
             />
 
             <DashboardCard
+              compact
               title="Practice"
               value={loading ? "—" : stats?.weak ?? 0}
               subtitle="Words to revisit"
