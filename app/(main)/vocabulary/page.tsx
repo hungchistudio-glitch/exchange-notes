@@ -199,7 +199,7 @@ export default function VocabularyPage() {
           onChangeStatus: changeStatus,
           onSendToPartner: handleSendToPartner,
           onDelete: deleteVocabularyItem,
-          onInteract: (item, type) => recordInteraction(item, type),
+          onInteract: recordInteraction,
         }}
       />
 
