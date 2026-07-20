@@ -19,9 +19,9 @@ import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
+import useVocabularyShare from "@/hooks/useVocabularyShare";
 
 import { createClient } from "@/lib/supabase/client";
-import { toPinyin } from "@/lib/pinyin";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import {
   changeVocabularyStatus,
@@ -56,7 +56,6 @@ export default function VocabularyPage() {
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
-  const [lookupCopied, setLookupCopied] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [lookupStatus, setLookupStatus] =
@@ -238,63 +237,10 @@ export default function VocabularyPage() {
     setLookupStatus("idle");
   }
 
-  function getLookupShareText() {
-    if (!lookupResult) return "";
-
-    const pinyin = toPinyin(lookupResult.chineseName);
-    const meta = [pinyin, lookupResult.partOfSpeech?.toLowerCase()]
-      .filter(Boolean)
-      .join(" · ");
-
-    return [
-      lookupResult.englishName,
-      lookupResult.chineseName,
-      meta,
-      "",
-      lookupResult.englishExample,
-      lookupResult.chineseExample,
-    ]
-      .filter((line, index, array) => {
-        if (line !== "") return true;
-        return index > 0 && index < array.length - 1;
-      })
-      .join("\n");
-  }
-
-  async function shareLookupResult() {
-    if (!lookupResult) return;
-
-    const shareText = getLookupShareText();
-
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: lookupResult.englishName,
-          text: shareText,
-        });
-        return;
-      }
-
-      await navigator.clipboard.writeText(shareText);
-      setLookupCopied(true);
-      window.setTimeout(() => setLookupCopied(false), 1800);
-    } catch (shareError) {
-      if (
-        shareError instanceof DOMException &&
-        shareError.name === "AbortError"
-      ) {
-        return;
-      }
-
-      try {
-        await navigator.clipboard.writeText(shareText);
-        setLookupCopied(true);
-        window.setTimeout(() => setLookupCopied(false), 1800);
-      } catch {
-        console.error("Could not share lookup result:", shareError);
-      }
-    }
-  }
+  const {
+    lookupCopied,
+    shareLookupResult,
+  } = useVocabularyShare(lookupResult);
 
   async function sendLookupToPartner() {
     if (!lookupResult) return;
