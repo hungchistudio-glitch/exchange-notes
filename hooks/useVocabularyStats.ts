@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 
+import { buildReviewAnalytics } from "@/lib/review/analytics";
+
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -34,6 +36,8 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
     const dailyGoal = 10;
     const dailyProgress = Math.min(todayAdded, dailyGoal);
 
+    const reviewStats = buildReviewAnalytics(items);
+
     const quickFilters: VocabularyQuickFilter[] = [
       { value: "all", label: "All", count: totalWords },
       { value: "new", label: "New", count: newWords },
@@ -50,6 +54,7 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       dailyGoal,
       dailyProgress,
       quickFilters,
+      reviewStats,
     };
   }, [items]);
 }
