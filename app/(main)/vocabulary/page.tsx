@@ -8,9 +8,7 @@ import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import AppPage from "@/components/ui/AppPage";
-import SortBottomSheet, {
-  type SortMode,
-} from "@/components/vocabulary/SortBottomSheet";
+import SortBottomSheet from "@/components/vocabulary/SortBottomSheet";
 import { useState } from "react";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
@@ -37,7 +35,16 @@ import type {
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
-  const vocabularyPage = useVocabularyPage();
+  const {
+    sortMode,
+    setSortMode,
+    sortOpen,
+    setSortOpen,
+    filtersOpen,
+    setFiltersOpen,
+    aiSearchOpen,
+    setAiSearchOpen,
+  } = useVocabularyPage();
   const { items, setItems, learningLanguage, loading, error, setError } =
     useVocabulary();
 
@@ -45,10 +52,6 @@ export default function VocabularyPage() {
   const [quickFilter, setQuickFilter] = useState<"all" | VocabularyStatus>(
     "all",
   );
-  const [sortMode, setSortMode] = useState<SortMode>("new");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [aiSearchOpen, setAiSearchOpen] = useState(false);
 
   const {
     lookupStatus,
