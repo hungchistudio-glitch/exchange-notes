@@ -6,7 +6,6 @@ import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
-import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
@@ -68,6 +67,12 @@ export default function VocabularyPage() {
     updatingId,
     changeStatus,
     deleteVocabularyItem,
+    totalWords,
+    learningWords,
+    masteredWords,
+    dailyGoal,
+    dailyProgress,
+    quickFilters,
   } = useVocabularyController();
 
   const uniqueItems = useUniqueVocabulary(items);
@@ -111,16 +116,6 @@ export default function VocabularyPage() {
     setQuery("");
     resetLookup();
   }
-
-
-  const {
-    totalWords,
-    learningWords,
-    masteredWords,
-    dailyGoal,
-    dailyProgress,
-    quickFilters,
-  } = useVocabularyStats(uniqueItems);
 
   const searchProps = {
     totalWords,
