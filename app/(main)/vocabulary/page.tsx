@@ -3,10 +3,9 @@
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyLookupModal from "@/components/vocabulary/modals/VocabularyLookupModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
-import VocabularySearchSection from "@/components/vocabulary/sections/VocabularySearchSection";
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
+import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import AppPage from "@/components/ui/AppPage";
-import VocabularyList from "@/components/vocabulary/VocabularyList";
 import SortBottomSheet, {
   type SortMode,
 } from "@/components/vocabulary/SortBottomSheet";
@@ -158,54 +157,50 @@ export default function VocabularyPage() {
     <AppPage width="default">
       <VocabularyHero todayProgress={dailyProgress} todayGoal={dailyGoal} />
 
-      <VocabularySearchSection
-        totalWords={totalWords}
-        learningWords={learningWords}
-        masteredWords={masteredWords}
-        query={query}
-        quickFilter={quickFilter}
-        quickFilters={quickFilters}
-        visibleCount={visibleItems.length}
-        sortMode={sortMode}
-        rankingLoading={rankingLoading}
-        rankingError={rankingError}
-        onQueryChange={(value) => {
-          setQuery(value);
-          resetLookup();
+      <VocabularyMainContent
+        error={error}
+        searchProps={{
+          totalWords,
+          learningWords,
+          masteredWords,
+          query,
+          quickFilter,
+          quickFilters,
+          visibleCount: visibleItems.length,
+          sortMode,
+          rankingLoading,
+          rankingError,
+          onQueryChange: (value) => {
+            setQuery(value);
+            resetLookup();
+          },
+          onClear: () => {
+            setQuery("");
+            resetLookup();
+          },
+          onOpenAI: openAiSearch,
+          onQuickFilterChange: setQuickFilter,
+          onOpenSort: () => setSortOpen(true),
+          onOpenLibrary: () => setFiltersOpen(true),
         }}
-        onClear={() => {
-          setQuery("");
-          resetLookup();
+        listProps={{
+          loading,
+          totalItemCount: totalWords,
+          items: visibleItems,
+          query,
+          learningLanguage,
+          updatingId,
+          lookupStatus,
+          lookupResult,
+          lookupError,
+          savingLookup,
+          onLookupWord: () => void lookupWord(),
+          onSaveLookupResult: () => void saveLookupResult(),
+          onChangeStatus: changeStatus,
+          onSendToPartner: handleSendToPartner,
+          onDelete: deleteVocabularyItem,
+          onInteract: (item, type) => recordInteraction(item, type),
         }}
-        onOpenAI={openAiSearch}
-        onQuickFilterChange={setQuickFilter}
-        onOpenSort={() => setSortOpen(true)}
-        onOpenLibrary={() => setFiltersOpen(true)}
-      />
-
-      {error && (
-        <p className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700">
-          {error}
-        </p>
-      )}
-
-      <VocabularyList
-        loading={loading}
-        totalItemCount={totalWords}
-        items={visibleItems}
-        query={query}
-        learningLanguage={learningLanguage}
-        updatingId={updatingId}
-        lookupStatus={lookupStatus}
-        lookupResult={lookupResult}
-        lookupError={lookupError}
-        savingLookup={savingLookup}
-        onLookupWord={() => void lookupWord()}
-        onSaveLookupResult={() => void saveLookupResult()}
-        onChangeStatus={changeStatus}
-        onSendToPartner={handleSendToPartner}
-        onDelete={deleteVocabularyItem}
-        onInteract={(item, type) => recordInteraction(item, type)}
       />
 
       <VocabularyLookupModal
