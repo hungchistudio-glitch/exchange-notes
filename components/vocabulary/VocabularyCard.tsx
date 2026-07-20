@@ -63,27 +63,27 @@ function VocabularyCard({
         item={item}
         onSendToPartner={onSendToPartner}
       >
-        <article className="overflow-hidden rounded-[28px] border border-black/[0.07] bg-white shadow-[0_12px_42px_rgba(15,23,42,.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.11] hover:shadow-[0_22px_60px_rgba(15,23,42,.09)]">
+        <article className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.10] hover:shadow-[0_14px_36px_rgba(0,0,0,0.075)]">
         <div
           onClick={openDetails}
           className="group block w-full cursor-pointer text-left transition active:scale-[0.995]"
         >
           {item.image_url && (
             <div
-              className="aspect-[16/8] w-full bg-cover bg-center"
+              className="aspect-[16/9] w-full bg-cover bg-center"
               style={{ backgroundImage: `url(${item.image_url})` }}
               role="img"
               aria-label={item.word}
             />
           )}
 
-          <div className="px-6 py-6">
+          <div className="px-5 py-5">
             <VocabularyCardHeader item={item} />
 
             <VocabularyExampleBlock
               english={item.example_sentence}
               chinese={item.translated_example}
-              className="mt-7"
+              className="mt-5"
             />
           </div>
         </div>

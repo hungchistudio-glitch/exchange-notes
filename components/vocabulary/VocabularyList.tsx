@@ -71,7 +71,7 @@ function VocabularyList({
       <section
         aria-label="Loading vocabulary"
         aria-live="polite"
-        className="mt-8 flex min-h-40 items-center justify-center rounded-[28px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.035)]"
+        className="mt-6 flex min-h-40 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
       >
         <div className="flex flex-col items-center gap-3 text-black/40">
           <LoaderCircle
@@ -90,7 +90,7 @@ function VocabularyList({
   if (totalItemCount === 0) {
     return (
       <EmptyState
-        className="mt-8 rounded-[28px] py-9 shadow-[0_4px_20px_rgba(0,0,0,0.035)]"
+        className="mt-6 rounded-[24px] py-8 shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
         icon={<Camera size={23} strokeWidth={1.7} />}
         title="Your first word begins outside"
         description="Photograph something from daily life and save its English and Traditional Chinese meaning."
@@ -109,7 +109,7 @@ function VocabularyList({
   if (items.length === 0) {
     if (lookupStatus === "result" && lookupResult) {
       return (
-        <section className="mt-8 rounded-[28px] bg-white p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.035)]">
+        <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f1ea] text-black/60">
             <BookmarkPlus size={22} strokeWidth={1.7} />
           </div>
@@ -163,9 +163,9 @@ function VocabularyList({
     }
 
     return (
-      <div className="mt-8">
+      <div className="mt-6">
         <EmptyState
-          className="rounded-[28px] py-9 shadow-[0_4px_20px_rgba(0,0,0,0.035)]"
+          className="rounded-[24px] py-8 shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
           icon={
             trimmedQuery ? (
               <SearchX size={22} strokeWidth={1.7} />
@@ -222,7 +222,7 @@ function VocabularyList({
   return (
     <section
       aria-label="Saved vocabulary"
-      className="mt-6 space-y-4"
+      className="mt-5 space-y-3"
     >
       {items.map((item) => (
         <VocabularyCard
