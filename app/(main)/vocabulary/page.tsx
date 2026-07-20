@@ -21,6 +21,7 @@ import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
+import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
 
 import { createClient } from "@/lib/supabase/client";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -31,7 +32,6 @@ import {
 import { listFriends, type FriendProfile } from "@/lib/friends";
 
 import {
-  getVocabularyKey,
   normalizeVocabularyText,
   recordInteraction,
 } from "@/lib/vocabulary/helpers";
@@ -62,7 +62,19 @@ export default function VocabularyPage() {
     lookupWord,
     resetLookup,
   } = useVocabularyLookup(query);
-  const [savingLookup, setSavingLookup] = useState(false);
+
+  const {
+    savingLookup,
+    saveLookupResult,
+  } = useVocabularyLookupSave({
+    items,
+    lookupResult,
+    setItems,
+    setError,
+    setQuery,
+    setAiSearchOpen,
+    resetLookup,
+  });
 
   const [friendPickerItem, setFriendPickerItem] =
     useState<VocabularyItem | null>(null);
@@ -266,72 +278,6 @@ export default function VocabularyPage() {
     };
 
     handleSendToPartner(item);
-  }
-
-  async function saveLookupResult() {
-    if (!lookupResult || savingLookup) return;
-
-    setSavingLookup(true);
-    setError("");
-
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        throw new Error("Please log in before saving a word.");
-      }
-
-      const word = lookupResult.englishName.trim();
-      const translation = lookupResult.chineseName.trim();
-      const candidateKey = getVocabularyKey(word, translation);
-
-      const duplicate = items.find(
-        (item) =>
-          getVocabularyKey(item.word, item.translation) === candidateKey,
-      );
-
-      if (duplicate) {
-        setError("This word is already in your vocabulary.");
-        resetLookup();
-        setQuery("");
-        return;
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("vocabulary_items")
-        .insert({
-          user_id: user.id,
-          word,
-          translation,
-          language: "english",
-          part_of_speech: lookupResult.partOfSpeech.trim() || null,
-          example_sentence: lookupResult.englishExample.trim() || null,
-          translated_example: lookupResult.chineseExample.trim() || null,
-          confidence: lookupResult.confidence,
-          category: lookupResult.category,
-          status: "new",
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      setItems((current) => [inserted as VocabularyItem, ...current]);
-      resetLookup();
-      setQuery("");
-      setAiSearchOpen(false);
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Could not save this word.",
-      );
-    } finally {
-      setSavingLookup(false);
-    }
   }
 
   const {
