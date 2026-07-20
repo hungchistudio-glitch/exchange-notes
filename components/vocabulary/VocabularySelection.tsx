@@ -2,6 +2,7 @@
 
 import {
   type ReactNode,
+  useCallback,
   useRef,
   useState,
 } from "react";
@@ -30,7 +31,7 @@ export default function VocabularySelection({
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
 
-  async function handleAddSelectionToVocabulary() {
+  const handleAddSelectionToVocabulary = useCallback(async () => {
     if (!selection || addingWord) return;
 
     const text = selection.text;
@@ -57,9 +58,14 @@ export default function VocabularySelection({
     } finally {
       setAddingWord(false);
     }
-  }
+  }, [
+    addItem,
+    addingWord,
+    selection,
+    setSelection,
+  ]);
 
-  async function handleSelectionSendToPartner() {
+  const handleSelectionSendToPartner = useCallback(async () => {
     if (!selection || addingWord) return;
 
     const selectedText = selection.text.trim();
@@ -99,7 +105,13 @@ export default function VocabularySelection({
     } finally {
       setAddingWord(false);
     }
-  }
+  }, [
+    addingWord,
+    item,
+    onSendToPartner,
+    selection,
+    setSelection,
+  ]);
 
   return (
     <div ref={contentRef} className="relative">
@@ -107,12 +119,8 @@ export default function VocabularySelection({
         selection={selection}
         addingWord={addingWord}
         addedWord={addedWord}
-        onAddWord={() => {
-          void handleAddSelectionToVocabulary();
-        }}
-        onSendToPartner={() => {
-          void handleSelectionSendToPartner();
-        }}
+        onAddWord={handleAddSelectionToVocabulary}
+        onSendToPartner={handleSelectionSendToPartner}
       />
 
       {children}
