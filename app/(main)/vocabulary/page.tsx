@@ -17,6 +17,7 @@ import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
+import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -217,22 +218,7 @@ export default function VocabularyPage() {
     return () => controller.abort();
   }, [query, sortMode, uniqueItems]);
 
-  useEffect(() => {
-    const normalizedQuery = normalizeVocabularyText(query);
-    if (!normalizedQuery) return;
-
-    const timer = window.setTimeout(() => {
-      uniqueItems.forEach((item) => {
-        const matches =
-          normalizeVocabularyText(item.word).includes(normalizedQuery) ||
-          normalizeVocabularyText(item.translation).includes(normalizedQuery);
-
-        if (matches) recordInteraction(item, "search");
-      });
-    }, 500);
-
-    return () => window.clearTimeout(timer);
-  }, [query, uniqueItems]);
+  useVocabularySearchTracking(uniqueItems, query);
 
   const visibleItems = useVisibleVocabularyItems({
     items: uniqueItems,
