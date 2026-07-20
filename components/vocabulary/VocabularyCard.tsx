@@ -118,29 +118,6 @@ function VocabularyCard({
     }
   }
 
-  async function handleShare() {
-    onInteract(item, "share");
-    const shareData = {
-      title: item.word,
-      text: `${item.word} — ${item.translation}`,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch {
-        return;
-      }
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareData.text);
-    } catch {
-      // Clipboard permission can fail without affecting the app.
-    }
-  }
-
   function openDetails() {
     onInteract(item, "view");
     router.push(`/vocabulary/${item.id}`);
