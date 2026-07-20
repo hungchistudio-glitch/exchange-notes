@@ -22,6 +22,7 @@ import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
 import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
+import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
 
 import { createClient } from "@/lib/supabase/client";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -249,36 +250,12 @@ export default function VocabularyPage() {
     shareLookupResult,
   } = useVocabularyShare(lookupResult);
 
-  async function sendLookupToPartner() {
-    if (!lookupResult) return;
-
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    const now = new Date().toISOString();
-
-    const item: VocabularyItem = {
-      id: `ai-search-${crypto.randomUUID()}`,
-      user_id: user?.id ?? "",
-      word: lookupResult.englishName,
-      translation: lookupResult.chineseName,
-      language: "english",
-      part_of_speech: lookupResult.partOfSpeech || null,
-      example_sentence: lookupResult.englishExample || null,
-      translated_example: lookupResult.chineseExample || null,
-      confidence: lookupResult.confidence,
-      category: lookupResult.category,
-      status: "new",
-      favorite: false,
-      image_url: null,
-      created_at: now,
-      updated_at: now,
-    };
-
-    handleSendToPartner(item);
-  }
+  const {
+    sendLookupToPartner,
+  } = useVocabularyLookupPartnerShare({
+    lookupResult,
+    onSendToPartner: handleSendToPartner,
+  });
 
   const {
     totalWords,
