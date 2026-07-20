@@ -25,30 +25,32 @@ function VocabularyCardActions({
       <AppButton
         variant={mastered ? "secondary" : "primary"}
         size="md"
-        className="rounded-full h-11 shadow-[0_4px_12px_rgba(0,0,0,.06)]"
+        className="rounded-full h-11 text-[14px] font-semibold tracking-[-0.01em] shadow-[0_4px_12px_rgba(0,0,0,.06)]"
         disabled={updating}
         onClick={onToggleMastered}
       >
-        <Check size={15} />
-        {mastered ? "Learning" : "Mastered"}
+        <span className="flex items-center justify-center gap-2">
+          <Check size={18} strokeWidth={2.4} />
+          <span>{mastered ? "Learning" : "Mastered"}</span>
+        </span>
       </AppButton>
 
       <AppButton
         variant="ghost"
         size="icon"
-        className="rounded-full h-11 w-11 hover:bg-black/[0.04]"
+        className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onSend}
       >
-        <Send size={16} />
+        <Send size={18} />
       </AppButton>
 
       <AppButton
         variant="ghost"
         size="icon"
-        className="rounded-full h-11 w-11 hover:bg-black/[0.04]"
+        className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onOpen}
       >
-        <MoreHorizontal size={17} />
+        <MoreHorizontal size={18} />
       </AppButton>
 
     </div>
