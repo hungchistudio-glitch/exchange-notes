@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { BookmarkPlus, Check, LoaderCircle, Send } from "lucide-react";
 
 import type { SelectionState } from "@/hooks/useTextSelection";
@@ -13,7 +14,7 @@ type SelectionToolbarProps = {
   onSendToPartner: (sharedItem?: VocabularyItem) => void;
 };
 
-export default function SelectionToolbar({
+function SelectionToolbar({
   selection,
   addingWord,
   addedWord,
@@ -59,3 +60,5 @@ export default function SelectionToolbar({
     </div>
   );
 }
+
+export default memo(SelectionToolbar);
