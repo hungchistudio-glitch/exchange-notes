@@ -188,7 +188,6 @@ export default function VocabularyPage() {
           totalItemCount: totalWords,
           items: visibleItems,
           query,
-          learningLanguage,
           updatingId,
           lookupStatus,
           lookupResult,
@@ -198,7 +197,6 @@ export default function VocabularyPage() {
           onSaveLookupResult: saveLookupResult,
           onChangeStatus: changeStatus,
           onSendToPartner: handleSendToPartner,
-          onDelete: deleteVocabularyItem,
           onInteract: recordInteraction,
         }}
       />

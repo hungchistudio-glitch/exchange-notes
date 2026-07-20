@@ -13,7 +13,6 @@ import Link from "next/link";
 import { EmptyState } from "@/components/foundation";
 import VocabularyCard from "@/components/vocabulary/VocabularyCard";
 import type {
-  AppLanguage,
   VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
@@ -40,7 +39,6 @@ type VocabularyListProps = {
   totalItemCount: number;
   items: VocabularyItem[];
   query: string;
-  learningLanguage: AppLanguage | null;
   updatingId: string | null;
   lookupStatus: LookupStatus;
   lookupResult: LookupResult | null;
@@ -53,7 +51,6 @@ type VocabularyListProps = {
     status: VocabularyStatus,
   ) => void | Promise<void>;
   onSendToPartner: (item: VocabularyItem) => void;
-  onDelete: (item: VocabularyItem) => void | Promise<void>;
   onInteract: (item: VocabularyItem, type: CardInteraction) => void;
 };
 
@@ -62,7 +59,6 @@ function VocabularyList({
   totalItemCount,
   items,
   query,
-  learningLanguage,
   updatingId,
   lookupStatus,
   lookupResult,
@@ -72,7 +68,6 @@ function VocabularyList({
   onSaveLookupResult,
   onChangeStatus,
   onSendToPartner,
-  onDelete,
   onInteract,
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
