@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import DashboardCard from "@/components/dashboard/DashboardCard";
+import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
 import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 import {
@@ -127,6 +128,28 @@ export default function HomePage() {
             {error}
           </StatusMessage>
         ) : null}
+
+        <section aria-labelledby="daily-focus-title">
+          <div className="mb-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+              Today
+            </p>
+
+            <h2
+              id="daily-focus-title"
+              className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+            >
+              Your daily focus
+            </h2>
+          </div>
+
+          <DailyFocusCard
+            due={stats?.due ?? 0}
+            retention={stats?.retention ?? 100}
+            accuracy={stats?.accuracy ?? 0}
+            loading={loading}
+          />
+        </section>
 
         <section aria-labelledby="today-word-title">
           <div className="mb-3 flex items-end justify-between gap-4">
