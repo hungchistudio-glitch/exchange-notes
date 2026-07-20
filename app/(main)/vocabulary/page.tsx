@@ -35,10 +35,13 @@ import {
   recordInteraction,
 } from "@/lib/vocabulary/helpers";
 import type {
-  VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
+import type {
+  VocabularyLookupResult,
+  VocabularyLookupStatus,
+} from "@/lib/types/vocabularyLookup";
 
 export default function VocabularyPage() {
   const { items, setItems, learningLanguage, loading, error, setError } =
@@ -56,18 +59,10 @@ export default function VocabularyPage() {
   const [lookupCopied, setLookupCopied] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const [lookupStatus, setLookupStatus] = useState<
-    "idle" | "loading" | "error" | "result"
-  >("idle");
-  const [lookupResult, setLookupResult] = useState<{
-    englishName: string;
-    chineseName: string;
-    partOfSpeech: string;
-    englishExample: string;
-    chineseExample: string;
-    confidence: "high" | "medium" | "low";
-    category: VocabularyCategory;
-  } | null>(null);
+  const [lookupStatus, setLookupStatus] =
+    useState<VocabularyLookupStatus>("idle");
+  const [lookupResult, setLookupResult] =
+    useState<VocabularyLookupResult | null>(null);
   const [lookupError, setLookupError] = useState("");
   const [savingLookup, setSavingLookup] = useState(false);
 
