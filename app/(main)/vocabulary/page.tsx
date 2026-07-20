@@ -3,7 +3,7 @@
 import useVocabularyController from "@/hooks/controllers/useVocabularyController";
 
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
-import DashboardRollup from "@/components/dashboard/DashboardRollup";
+import DashboardSheet from "@/components/dashboard/DashboardSheet";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
@@ -159,7 +159,7 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      <DashboardRollup title="Dashboard">
+      <DashboardSheet title="Dashboard">
         <VocabularyHero
           todayProgress={dailyProgress}
           todayGoal={dailyGoal}
@@ -171,7 +171,7 @@ export default function VocabularyPage() {
           retention={reviewStats.retention}
           weakWords={reviewStats.weak}
         />
-      </DashboardRollup>
+      </DashboardSheet>
 
       <VocabularyMainContent
         error={error}
