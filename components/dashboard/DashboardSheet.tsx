@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import {
   type ReactNode,
   useEffect,
+  useLayoutEffect,
   useId,
   useRef,
   useState,
@@ -27,6 +28,7 @@ export default function DashboardSheet({
 
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [ready, setReady] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -47,10 +49,16 @@ export default function DashboardSheet({
     );
   }, [expanded, ready]);
 
-  const contentHeight =
-    expanded && contentRef.current
-      ? contentRef.current.scrollHeight
-      : 0;
+  
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+
+    if (expanded) {
+      setContentHeight(contentRef.current.scrollHeight);
+    } else {
+      setContentHeight(0);
+    }
+  }, [expanded, children]);
 
   return (
     <section className="mb-8">

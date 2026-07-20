@@ -34,7 +34,7 @@ export default function PronunciationBlock({
 
   return (
     <div
-      className={`space-y-1 text-[12px] leading-5 text-neutral-500 ${className}`}
+      className={`space-y-1 font-sans text-[12px] font-normal leading-[1.55] tracking-[-0.01em] text-black/45 ${className}`}
     >
       {showEnglish && pronunciation.english && <p>{pronunciation.english}</p>}
 

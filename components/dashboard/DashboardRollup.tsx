@@ -1,12 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import {
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 type Props = {
   title?: string;
@@ -23,10 +18,11 @@ export default function DashboardRollup({
 }: Props) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [ready, setReady] = useState(false);
+  const [height, setHeight] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
 
     if (saved !== null) {
       setExpanded(saved === "true");
@@ -38,111 +34,64 @@ export default function DashboardRollup({
   useEffect(() => {
     if (!ready) return;
 
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      String(expanded),
-    );
+    localStorage.setItem(STORAGE_KEY, String(expanded));
   }, [expanded, ready]);
 
-  const contentHeight =
-    expanded && contentRef.current
-      ? contentRef.current.scrollHeight
-      : 0;
+  
+  useLayoutEffect(() => {
+    if (!contentRef.current) return;
+
+    if (expanded) {
+      setHeight(contentRef.current.scrollHeight);
+    } else {
+      setHeight(0);
+    }
+  }, [expanded, children]);
 
   return (
-    <section className="mb-7">
-      <div className="relative overflow-hidden rounded-[18px] border border-black/15 bg-[#d8d8d3] shadow-[0_14px_34px_rgba(0,0,0,0.12)]">
+    <section className="mb-8">
+      <div className="overflow-hidden rounded-[30px] bg-[#DADAD7] shadow-[0_8px_24px_rgba(0,0,0,.06)]">
+
         <button
           type="button"
+          onClick={() => setExpanded(v => !v)}
           aria-expanded={expanded}
-          aria-controls="vocabulary-dashboard-panel"
-          onClick={() => setExpanded((value) => !value)}
-          className="group relative flex w-full items-center justify-between overflow-hidden px-5 py-[18px] text-left outline-none transition active:scale-[0.997] focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+          className="flex w-full items-center justify-between px-8 py-7 text-left transition hover:bg-black/[0.02]"
         >
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 opacity-70"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(180deg, rgba(255,255,255,0.34) 0px, rgba(255,255,255,0.34) 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 3px)",
-            }}
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.36em] text-black/35">
+              Learning System
+            </div>
+
+            <div className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-black">
+              {title}
+            </div>
+          </div>
+
+          <ChevronDown
+            size={26}
+            strokeWidth={1.7}
+            className={`transition-transform duration-500 ${
+              expanded ? "rotate-180" : ""
+            }`}
           />
-
-          <span
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-px bg-white/80"
-          />
-
-          <span
-            aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 h-px bg-black/20"
-          />
-
-          <span className="relative flex items-center gap-4">
-            <span className="flex h-3 w-3 items-center justify-center rounded-full border border-black/35 bg-[#b9b9b4] shadow-[inset_0_1px_1px_rgba(255,255,255,0.75)]">
-              <span className="h-1 w-1 rounded-full bg-black/45" />
-            </span>
-
-            <span>
-              <span className="block text-[9px] font-semibold uppercase tracking-[0.32em] text-black/45">
-                Learning System
-              </span>
-
-              <span className="mt-1 block text-[12px] font-bold uppercase tracking-[0.29em] text-black">
-                {title}
-              </span>
-            </span>
-          </span>
-
-          <span className="relative flex items-center gap-4">
-            <span className="hidden text-[9px] font-semibold uppercase tracking-[0.22em] text-black/40 sm:block">
-              {expanded ? "Retract" : "Release"}
-            </span>
-
-            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-black/25 bg-[#c7c7c2] shadow-[inset_0_1px_1px_rgba(255,255,255,0.85),0_1px_2px_rgba(0,0,0,0.15)]">
-              <ChevronDown
-                size={15}
-                strokeWidth={1.8}
-                className={`transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  expanded ? "rotate-180" : "rotate-0"
-                }`}
-              />
-            </span>
-          </span>
         </button>
 
         <div
-          id="vocabulary-dashboard-panel"
-          aria-hidden={!expanded}
-          className="overflow-hidden transition-[height,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{
-            height: ready ? `${contentHeight}px` : "0px",
+            height: ready ? `${height}px` : "0px",
             opacity: expanded ? 1 : 0,
           }}
+          className="overflow-hidden transition-all duration-500"
         >
-          <div ref={contentRef}>
-            <div className="h-3 border-y border-black/15 bg-[#aaa9a4] shadow-[inset_0_2px_3px_rgba(0,0,0,0.15)]">
-              <div
-                className="h-full opacity-35"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(90deg, transparent 0px, transparent 11px, rgba(0,0,0,0.16) 11px, rgba(0,0,0,0.16) 12px)",
-                }}
-              />
-            </div>
-
-            <div className="bg-[#efefec] p-3 sm:p-4">
-              {children}
-            </div>
+          <div
+            ref={contentRef}
+            className="border-t border-black/8 bg-white p-5"
+          >
+            {children}
           </div>
         </div>
 
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-5 bottom-0 h-3 rounded-b-full bg-black/15 blur-md transition-opacity duration-500 ${
-            expanded ? "opacity-0" : "opacity-70"
-          }`}
-        />
       </div>
     </section>
   );

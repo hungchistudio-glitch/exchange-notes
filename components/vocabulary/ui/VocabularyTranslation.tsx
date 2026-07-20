@@ -29,17 +29,17 @@ export default function VocabularyTranslation({
           min-w-0
           flex-1
           break-words
-          text-[22px]
+          text-[20px]
           font-medium
-          leading-[1.35]
-          tracking-[-0.025em]
-          text-neutral-800
+          leading-[1.4]
+          tracking-[-0.02em]
+          text-black/80
         "
       >
         {normalizedText}
       </Title>
 
-      <div className="shrink-0 pt-0.5">
+      <div className="shrink-0">
         <VocabularySpeechButton
           text={normalizedText}
           language="zh-TW"

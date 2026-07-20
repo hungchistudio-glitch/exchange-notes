@@ -25,18 +25,18 @@ export default function VocabularyWord({
           min-w-0
           flex-1
           break-words
-          text-[34px]
+          text-[30px]
           font-semibold
-          leading-[1.04]
-          tracking-[-0.055em]
-          text-neutral-950
-          sm:text-[38px]
+          leading-[1.08]
+          tracking-[-0.04em]
+          text-black
+          sm:text-[34px]
         "
       >
         {normalizedWord}
       </Display>
 
-      <div className="shrink-0 pt-0.5">
+      <div className="shrink-0">
         <VocabularySpeechButton
           text={normalizedWord}
           language="en-US"

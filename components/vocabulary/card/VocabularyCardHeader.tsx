@@ -27,34 +27,34 @@ export default function VocabularyCardHeader({
 
   return (
     <header className="min-w-0">
-      <div className="space-y-2">
-        <p className="text-[10px] uppercase tracking-[0.28em] text-neutral-500">
+      <div className="space-y-1.5">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/45">
           {STATUS_LABELS[item.status]}
         </p>
 
         {item.part_of_speech?.trim() ? (
-          <p className="text-[10px] uppercase tracking-[0.28em] text-neutral-400">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/30">
             {item.part_of_speech.trim()}
           </p>
         ) : null}
       </div>
 
       <VocabularyWord
-        word={item.word.toUpperCase()}
-        className="mt-8 tracking-[0.08em]"
+        word={item.word}
+        className="mt-6"
       />
 
       <PronunciationBlock
         english={item.word}
         chinese={translation}
         showEnglish
-        className="mt-5"
+        className="mt-4"
       />
 
       {translation ? (
         <VocabularyTranslation
           text={translation}
-          className="mt-6 border-t border-black/10 pt-6"
+          className="mt-5 border-t border-black/[0.06] pt-5"
         />
       ) : null}
 
