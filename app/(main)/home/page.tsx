@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UserRoundPlus } from "lucide-react";
 
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
@@ -50,6 +51,45 @@ export default function HomePage() {
           {error}
         </div>
       )}
+
+
+      <section>
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
+              Community
+            </p>
+            <h2 className="mt-1 text-xl font-bold tracking-[-0.02em] text-black">
+              Learning partners
+            </h2>
+          </div>
+        </div>
+
+        <Link
+          href="/friends"
+          className="group flex items-center justify-between rounded-3xl border border-black/[0.07] bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-[0.99]"
+        >
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black text-white">
+              <UserRoundPlus size={21} strokeWidth={2} />
+            </span>
+
+            <div className="min-w-0">
+              <p className="font-bold text-black">Find Friends</p>
+              <p className="mt-1 text-sm leading-5 text-neutral-500">
+                Add friends by Exchange ID or scan their QR code.
+              </p>
+            </div>
+          </div>
+
+          <span
+            aria-hidden="true"
+            className="ml-3 shrink-0 text-xl text-black/30 transition-transform group-hover:translate-x-0.5"
+          >
+            ›
+          </span>
+        </Link>
+      </section>
 
       <TodayWordCard />
 

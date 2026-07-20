@@ -463,7 +463,7 @@ export default function FriendsPage() {
       <div className="mx-auto max-w-2xl">
         <header>
           <Link
-            href="/"
+            href="/home"
             aria-label="Back to home"
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-black transition-colors hover:bg-black/5 active:bg-black/10"
           >
@@ -801,33 +801,6 @@ export default function FriendsPage() {
       </div>
 
       <canvas ref={canvasRef} className="hidden" />
-
-      <nav className="fixed inset-x-3 bottom-3 z-50 mx-auto grid max-w-md grid-cols-4 rounded-3xl border border-neutral-200 bg-white p-2 shadow-lg sm:hidden">
-        <Link
-          href="/"
-          className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-        >
-          Home
-        </Link>
-        <Link
-          href="/friends"
-          className="rounded-2xl bg-black px-2 py-3 text-center text-xs font-bold text-white"
-        >
-          Friends
-        </Link>
-        <Link
-          href="/camera"
-          className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-        >
-          Camera
-        </Link>
-        <Link
-          href="/messages"
-          className="rounded-2xl px-2 py-3 text-center text-xs font-bold text-black"
-        >
-          Messages
-        </Link>
-      </nav>
     </main>
   );
 }
