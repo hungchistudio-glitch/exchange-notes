@@ -1,5 +1,7 @@
 "use client";
 
+import { useVocabularyPage } from "@/hooks/useVocabularyPage";
+
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyLookupModal from "@/components/vocabulary/modals/VocabularyLookupModal";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
@@ -35,6 +37,7 @@ import type {
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
+  const vocabularyPage = useVocabularyPage();
   const { items, setItems, learningLanguage, loading, error, setError } =
     useVocabulary();
 
