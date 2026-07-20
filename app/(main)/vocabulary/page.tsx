@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
+import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -49,7 +50,6 @@ export default function VocabularyPage() {
   const [sortMode, setSortMode] = useState<SortMode>("new");
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filterSearch, setFilterSearch] = useState("");
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [lookupCopied, setLookupCopied] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -311,22 +311,12 @@ export default function VocabularyPage() {
     });
   }, [query, quickFilter, rankedIds, sortMode, uniqueItems]);
 
-  const alphabetizedItems = useMemo(() => {
-    const normalizedSearch = normalizeVocabularyText(filterSearch);
-
-    return [...uniqueItems]
-      .filter((item) => {
-        if (!normalizedSearch) return true;
-
-        return (
-          normalizeVocabularyText(item.word).includes(normalizedSearch) ||
-          normalizeVocabularyText(item.translation).includes(normalizedSearch)
-        );
-      })
-      .sort((a, b) =>
-        a.word.localeCompare(b.word, "en", { sensitivity: "base" }),
-      );
-  }, [filterSearch, uniqueItems]);
+  const {
+    filterSearch,
+    setFilterSearch,
+    alphabetizedItems,
+    clearFilterSearch,
+  } = useVocabularyLibrary(uniqueItems);
 
   async function changeStatus(item: VocabularyItem, status: VocabularyStatus) {
     if (item.status === status || updatingId) return;
@@ -704,7 +694,7 @@ export default function VocabularyPage() {
           onSearchChange={setFilterSearch}
           onClose={() => {
             setFiltersOpen(false);
-            setFilterSearch("");
+            clearFilterSearch();
           }}
           onSelect={(item) => {
             setLookupStatus("idle");
@@ -712,7 +702,7 @@ export default function VocabularyPage() {
             setLookupError("");
             setQuery(item.word);
             setFiltersOpen(false);
-            setFilterSearch("");
+            clearFilterSearch();
           }}
         />
       )}
