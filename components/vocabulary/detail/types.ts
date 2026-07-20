@@ -1,24 +1,9 @@
-export type VocabularyItem = {
-  id: string;
-  user_id: string;
-  word: string;
-  translation: string;
-  example_sentence: string | null;
-  translated_example: string | null;
-  part_of_speech: string | null;
-  category: string | null;
-  status: string | null;
-  review_count: number | null;
-  correct_count: number | null;
-  review_interval: number | null;
-  review_ease: number | null;
-  last_reviewed_at: string | null;
-  next_review_at: string | null;
-  created_at: string;
-};
+import type { VocabularyItem } from "@/lib/types/app";
+
+export type { VocabularyItem };
 
 export function formatVocabularyDate(
-  value: string | null,
+  value: string | null | undefined,
   fallback = "Ready to review",
 ) {
   if (!value) return fallback;

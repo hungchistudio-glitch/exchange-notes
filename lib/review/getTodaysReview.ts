@@ -5,6 +5,18 @@ export type ReviewWord = {
   english: string;
   chinese: string;
   example?: string | null;
+
+  status: "new" | "learning" | "mastered";
+
+  review_count: number;
+
+  difficulty: number | null;
+
+  retention_score: number | null;
+
+  review_lapses: number;
+
+  next_review_at: string | null;
 };
 
 export async function getTodaysReview(): Promise<ReviewWord[]> {
@@ -24,7 +36,13 @@ export async function getTodaysReview(): Promise<ReviewWord[]> {
       id,
       english:word,
       chinese:translation,
-      example:example_sentence
+      example:example_sentence,
+      status,
+      review_count,
+      difficulty,
+      retention_score,
+      review_lapses,
+      next_review_at
     `)
     .eq("user_id", user.id)
     .lte("next_review_at", now)

@@ -1,9 +1,9 @@
 "use client";
 
-import AppBadge from "@/components/ui/AppBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
+import VocabularyLearningStats from "@/components/vocabulary/card/VocabularyLearningStats";
 
 import type {
   VocabularyItem,
@@ -16,12 +16,6 @@ const STATUS_LABELS: Record<VocabularyStatus, string> = {
   mastered: "Mastered",
 };
 
-function statusTone(status: VocabularyStatus) {
-  if (status === "mastered") return "success" as const;
-  if (status === "learning") return "warning" as const;
-  return "neutral" as const;
-}
-
 type Props = {
   item: VocabularyItem;
 };
@@ -33,36 +27,38 @@ export default function VocabularyCardHeader({
 
   return (
     <header className="min-w-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <AppBadge tone={statusTone(item.status)}>
+      <div className="space-y-2">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-neutral-500">
           {STATUS_LABELS[item.status]}
-        </AppBadge>
+        </p>
 
         {item.part_of_speech?.trim() ? (
-          <AppBadge>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-neutral-400">
             {item.part_of_speech.trim()}
-          </AppBadge>
+          </p>
         ) : null}
       </div>
 
       <VocabularyWord
-        word={item.word}
-        className="mt-6"
+        word={item.word.toUpperCase()}
+        className="mt-8 tracking-[0.08em]"
       />
 
       <PronunciationBlock
         english={item.word}
         chinese={translation}
         showEnglish
-        className="mt-3"
+        className="mt-5"
       />
 
       {translation ? (
         <VocabularyTranslation
           text={translation}
-          className="mt-6 border-t border-black/[0.055] pt-5"
+          className="mt-6 border-t border-black/10 pt-6"
         />
       ) : null}
+
+      <VocabularyLearningStats item={item} />
     </header>
   );
 }
