@@ -18,6 +18,7 @@ import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
+import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -31,7 +32,6 @@ import { listFriends, type FriendProfile } from "@/lib/friends";
 import {
   getVocabularyKey,
   normalizeVocabularyText,
-  readInteractionMap,
   recordInteraction,
 } from "@/lib/vocabulary/helpers";
 import type {
@@ -55,9 +55,6 @@ export default function VocabularyPage() {
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
   const [lookupCopied, setLookupCopied] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [rankedIds, setRankedIds] = useState<string[]>([]);
-  const [rankingLoading, setRankingLoading] = useState(false);
-  const [rankingError, setRankingError] = useState("");
 
   const [lookupStatus, setLookupStatus] = useState<
     "idle" | "loading" | "error" | "result"
@@ -139,84 +136,15 @@ export default function VocabularyPage() {
 
   const uniqueItems = useUniqueVocabulary(items);
 
-  useEffect(() => {
-    if (sortMode === "new" || uniqueItems.length === 0) return;
-
-    const controller = new AbortController();
-
-    async function loadAiRanking() {
-      setRankingLoading(true);
-      setRankingError("");
-
-      try {
-        let newsContext = "";
-
-        if (sortMode === "trending") {
-          try {
-            const newsResponse = await fetch("/api/daily-news", {
-              signal: controller.signal,
-              cache: "no-store",
-            });
-
-            if (newsResponse.ok) {
-              const newsData = await newsResponse.json();
-              newsContext = JSON.stringify(newsData).slice(0, 14000);
-            }
-          } catch (newsError) {
-            if ((newsError as Error).name !== "AbortError") {
-              console.warn("Could not load news context:", newsError);
-            }
-          }
-        }
-
-        const response = await fetch("/api/vocabulary-rank", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            mode: sortMode,
-            items: uniqueItems.map((item) => ({
-              id: item.id,
-              word: item.word,
-              translation: item.translation,
-              status: item.status,
-              createdAt: item.created_at,
-              partOfSpeech: item.part_of_speech,
-              example: item.example_sentence,
-            })),
-            interactions: readInteractionMap(),
-            currentSearch: query.trim(),
-            newsContext,
-          }),
-        });
-
-        const data = (await response.json()) as {
-          orderedIds?: string[];
-          error?: string;
-        };
-
-        if (!response.ok || !Array.isArray(data.orderedIds)) {
-          throw new Error(data.error || "Could not rank vocabulary.");
-        }
-
-        setRankedIds(data.orderedIds);
-      } catch (rankingFailure) {
-        if ((rankingFailure as Error).name === "AbortError") return;
-
-        console.error("AI ranking failed:", rankingFailure);
-        setRankingError(
-          "AI ranking is temporarily unavailable. Using smart fallback.",
-        );
-        setRankedIds([]);
-      } finally {
-        if (!controller.signal.aborted) setRankingLoading(false);
-      }
-    }
-
-    void loadAiRanking();
-
-    return () => controller.abort();
-  }, [query, sortMode, uniqueItems]);
+  const {
+    rankedIds,
+    rankingLoading,
+    rankingError,
+  } = useVocabularyRanking({
+    items: uniqueItems,
+    query,
+    sortMode,
+  });
 
   useVocabularySearchTracking(uniqueItems, query);
 
