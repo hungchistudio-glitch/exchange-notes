@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect } from "react";
+import { memo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import VocabularySelection from "@/components/vocabulary/VocabularySelection";
@@ -43,10 +43,21 @@ function VocabularyCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id]);
 
-  function openDetails() {
+  const openDetails = useCallback(() => {
     onInteract(item, "view");
     router.push(`/vocabulary/${item.id}`);
-  }
+  }, [item, onInteract, router]);
+
+  const handleToggleMastered = useCallback(() => {
+    void onChangeStatus(
+      item,
+      item.status === "mastered" ? "learning" : "mastered",
+    );
+  }, [item, onChangeStatus]);
+
+  const handleSendToPartner = useCallback(() => {
+    onSendToPartner(item);
+  }, [item, onSendToPartner]);
 
   return (
     <div className="relative">
@@ -82,13 +93,8 @@ function VocabularyCard({
         <VocabularyCardActions
           mastered={item.status === "mastered"}
           updating={updating}
-          onToggleMastered={() =>
-            void onChangeStatus(
-              item,
-              item.status === "mastered" ? "learning" : "mastered",
-            )
-          }
-          onSend={() => onSendToPartner(item)}
+          onToggleMastered={handleToggleMastered}
+          onSend={handleSendToPartner}
           onOpen={openDetails}
         />
         </article>
