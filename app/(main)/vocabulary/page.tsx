@@ -13,6 +13,7 @@ import SortBottomSheet, {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useVocabulary from "@/hooks/useVocabulary";
+import useVocabularyStats from "@/hooks/useVocabularyStats";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -598,33 +599,14 @@ export default function VocabularyPage() {
     }
   }
 
-  const totalWords = uniqueItems.length;
-  const newWords = uniqueItems.filter((item) => item.status === "new").length;
-  const learningWords = uniqueItems.filter(
-    (item) => item.status === "learning",
-  ).length;
-  const masteredWords = uniqueItems.filter(
-    (item) => item.status === "mastered",
-  ).length;
-
-  const todayKey = new Date().toDateString();
-  const todayAdded = uniqueItems.filter((item) => {
-    if (!item.created_at) return false;
-    return new Date(item.created_at).toDateString() === todayKey;
-  }).length;
-
-  const dailyGoal = 10;
-  const dailyProgress = Math.min(todayAdded, dailyGoal);
-  const quickFilters: Array<{
-    value: "all" | VocabularyStatus;
-    label: string;
-    count: number;
-  }> = [
-    { value: "all", label: "All", count: totalWords },
-    { value: "new", label: "New", count: newWords },
-    { value: "learning", label: "Learning", count: learningWords },
-    { value: "mastered", label: "Mastered", count: masteredWords },
-  ];
+  const {
+    totalWords,
+    learningWords,
+    masteredWords,
+    dailyGoal,
+    dailyProgress,
+    quickFilters,
+  } = useVocabularyStats(uniqueItems);
 
   return (
     <AppPage width="default">
