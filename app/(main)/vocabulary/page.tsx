@@ -6,8 +6,6 @@ import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
-import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
-import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
@@ -73,9 +71,13 @@ export default function VocabularyPage() {
     dailyGoal,
     dailyProgress,
     quickFilters,
+    uniqueItems,
+    filterSearch,
+    setFilterSearch,
+    alphabetizedItems,
+    clearFilterSearch,
   } = useVocabularyController();
 
-  const uniqueItems = useUniqueVocabulary(items);
 
   const {
     rankedIds,
@@ -97,12 +99,6 @@ export default function VocabularyPage() {
     rankedIds,
   });
 
-  const {
-    filterSearch,
-    setFilterSearch,
-    alphabetizedItems,
-    clearFilterSearch,
-  } = useVocabularyLibrary(uniqueItems);
 
 
   function openAiSearch() {

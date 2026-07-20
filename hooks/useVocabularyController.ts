@@ -6,6 +6,8 @@ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyLookupController from "@/hooks/useVocabularyLookupController";
 import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
+import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
+import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 
 export default function useVocabularyController() {
   const page = useVocabularyPage();
@@ -28,7 +30,9 @@ export default function useVocabularyController() {
     setError: vocabulary.setError,
   });
 
-  const stats = useVocabularyStats(vocabulary.items);
+  const uniqueItems = useUniqueVocabulary(vocabulary.items);
+  const library = useVocabularyLibrary(uniqueItems);
+  const stats = useVocabularyStats(uniqueItems);
 
   return {
     ...page,
@@ -37,5 +41,7 @@ export default function useVocabularyController() {
     ...lookup,
     ...mutations,
     ...stats,
+    uniqueItems,
+    ...library,
   };
 }
