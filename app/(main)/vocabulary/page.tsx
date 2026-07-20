@@ -156,6 +156,31 @@ export default function VocabularyPage() {
     quickFilters,
   } = useVocabularyStats(uniqueItems);
 
+  const searchProps = {
+    totalWords,
+    learningWords,
+    masteredWords,
+    query,
+    quickFilter,
+    quickFilters,
+    visibleCount: visibleItems.length,
+    sortMode,
+    rankingLoading,
+    rankingError,
+    onQueryChange: (value: string) => {
+      setQuery(value);
+      resetLookup();
+    },
+    onClear: () => {
+      setQuery("");
+      resetLookup();
+    },
+    onOpenAI: openAiSearch,
+    onQuickFilterChange: setQuickFilter,
+    onOpenSort: () => setSortOpen(true),
+    onOpenLibrary: () => setFiltersOpen(true),
+  };
+
   const listProps = {
     loading,
     totalItemCount: totalWords,
@@ -179,30 +204,7 @@ export default function VocabularyPage() {
 
       <VocabularyMainContent
         error={error}
-        searchProps={{
-          totalWords,
-          learningWords,
-          masteredWords,
-          query,
-          quickFilter,
-          quickFilters,
-          visibleCount: visibleItems.length,
-          sortMode,
-          rankingLoading,
-          rankingError,
-          onQueryChange: (value) => {
-            setQuery(value);
-            resetLookup();
-          },
-          onClear: () => {
-            setQuery("");
-            resetLookup();
-          },
-          onOpenAI: openAiSearch,
-          onQuickFilterChange: setQuickFilter,
-          onOpenSort: () => setSortOpen(true),
-          onOpenLibrary: () => setFiltersOpen(true),
-        }}
+        searchProps={searchProps}
         listProps={listProps}
       />
 
