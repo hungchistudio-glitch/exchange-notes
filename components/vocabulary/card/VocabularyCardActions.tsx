@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Check, MoreHorizontal, Send } from "lucide-react";
 import AppButton from "@/components/ui/AppButton";
 
@@ -11,7 +12,7 @@ type Props = {
   onOpen: () => void;
 };
 
-export default function VocabularyCardActions({
+function VocabularyCardActions({
   mastered,
   updating,
   onToggleMastered,
@@ -53,3 +54,5 @@ export default function VocabularyCardActions({
     </div>
   );
 }
+
+export default memo(VocabularyCardActions);
