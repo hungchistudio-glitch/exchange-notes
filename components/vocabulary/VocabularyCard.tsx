@@ -3,9 +3,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import CollectionPickerSheet from "@/components/collections/CollectionPickerSheet";
 import SelectionToolbar from "@/components/vocabulary/SelectionToolbar";
-import VocabularyDetailSheet from "@/components/vocabulary/VocabularyDetailSheet";
 import VocabularyCardHeader from "@/components/vocabulary/card/VocabularyCardHeader";
 import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardActions";
 import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExampleBlock";
@@ -49,8 +47,6 @@ function VocabularyCard({
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [collectionsOpen, setCollectionsOpen] = useState(false);
 
   useEffect(() => {
     onInteract(item, "view");
@@ -199,30 +195,6 @@ function VocabularyCard({
         />
       </article>
 
-      <VocabularyDetailSheet
-        item={item}
-        open={detailOpen}
-        updating={updating}
-        onClose={() => setDetailOpen(false)}
-        onChangeStatus={(status) => {
-          void onChangeStatus(item, status);
-        }}
-        onSendToPartner={() => onSendToPartner(item)}
-        onShare={() => void handleShare()}
-        onDelete={() => {
-          void onDelete(item);
-        }}
-        onOpenCollections={() => {
-          setDetailOpen(false);
-          setCollectionsOpen(true);
-        }}
-      />
-
-      <CollectionPickerSheet
-        item={item}
-        open={collectionsOpen}
-        onClose={() => setCollectionsOpen(false)}
-      />
     </div>
   );
 }
