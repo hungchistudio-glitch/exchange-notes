@@ -23,11 +23,8 @@ import useVocabularyLookup from "@/hooks/useVocabularyLookup";
 import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
 import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
+import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 
-import {
-  changeVocabularyStatus,
-  removeVocabularyItem,
-} from "@/lib/vocabulary/service";
 
 import {
   normalizeVocabularyText,
@@ -50,7 +47,6 @@ export default function VocabularyPage() {
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [aiSearchOpen, setAiSearchOpen] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const {
     lookupStatus,
@@ -115,69 +111,15 @@ export default function VocabularyPage() {
     clearFilterSearch,
   } = useVocabularyLibrary(uniqueItems);
 
-  async function changeStatus(item: VocabularyItem, status: VocabularyStatus) {
-    if (item.status === status || updatingId) return;
-
-    const previousItems = items;
-
-    setUpdatingId(item.id);
-    setError("");
-
-    // Update the UI immediately.
-    setItems((current) =>
-      current.map((currentItem) =>
-        currentItem.id === item.id ? { ...currentItem, status } : currentItem,
-      ),
-    );
-
-    try {
-      await changeVocabularyStatus(item, status);
-    } catch (updateError) {
-      // Restore the previous state if the request fails.
-      setItems(previousItems);
-
-      setError(
-        updateError instanceof Error
-          ? updateError.message
-          : "Could not update this word.",
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  }
-
-  async function deleteVocabularyItem(item: VocabularyItem) {
-    const confirmed = window.confirm(
-      `Delete "${item.word}" from your vocabulary?`,
-    );
-
-    if (!confirmed || updatingId) return;
-
-    const previousItems = items;
-
-    setUpdatingId(item.id);
-    setError("");
-
-    // Remove the item from the UI immediately.
-    setItems((current) =>
-      current.filter((currentItem) => currentItem.id !== item.id),
-    );
-
-    try {
-      await removeVocabularyItem(item);
-    } catch (deleteError) {
-      // Restore the item if deletion fails.
-      setItems(previousItems);
-
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Could not delete this word.",
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  }
+  const {
+    updatingId,
+    changeStatus,
+    deleteVocabularyItem,
+  } = useVocabularyMutations({
+    items,
+    setItems,
+    setError,
+  });
 
   function openAiSearch() {
     setQuery("");
