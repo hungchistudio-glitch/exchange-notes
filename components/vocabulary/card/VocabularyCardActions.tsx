@@ -20,12 +20,12 @@ function VocabularyCardActions({
   onOpen,
 }: Props) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-neutral-200/70 bg-white px-4 py-3">
+    <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-black/[0.06] bg-white px-5 py-4">
 
       <AppButton
         variant={mastered ? "secondary" : "primary"}
         size="md"
-        className="rounded-xl shadow-sm"
+        className="rounded-full h-11 shadow-[0_4px_12px_rgba(0,0,0,.06)]"
         disabled={updating}
         onClick={onToggleMastered}
       >
@@ -36,7 +36,7 @@ function VocabularyCardActions({
       <AppButton
         variant="ghost"
         size="icon"
-        className="rounded-xl hover:bg-neutral-100"
+        className="rounded-full h-11 w-11 hover:bg-black/[0.04]"
         onClick={onSend}
       >
         <Send size={16} />
@@ -45,7 +45,7 @@ function VocabularyCardActions({
       <AppButton
         variant="ghost"
         size="icon"
-        className="rounded-xl hover:bg-neutral-100"
+        className="rounded-full h-11 w-11 hover:bg-black/[0.04]"
         onClick={onOpen}
       >
         <MoreHorizontal size={17} />

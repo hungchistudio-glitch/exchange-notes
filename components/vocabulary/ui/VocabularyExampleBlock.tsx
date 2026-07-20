@@ -18,12 +18,12 @@ export default function VocabularyExampleBlock({
 
   return (
     <section
-      className={`mt-6 overflow-hidden rounded-3xl bg-neutral-50/70 ${className}`}
+      className={`mt-6 overflow-hidden rounded-[24px] bg-[#F8F8F6] ${className}`}
     >
       {english?.trim() && (
-        <div className="flex items-start gap-4 px-6 py-5">
+        <div className="flex items-start gap-3 px-5 py-5">
 
-          <p className="flex-1 text-[15px] leading-7 text-neutral-700">
+          <p className="flex-1 text-[15px] leading-6 text-neutral-700">
             {english}
           </p>
 
@@ -38,9 +38,9 @@ export default function VocabularyExampleBlock({
       )}
 
       {chinese?.trim() && (
-        <div className="flex items-start gap-4 border-t border-neutral-200/60 px-6 py-5">
+        <div className="flex items-start gap-3 border-t border-black/[0.05] px-5 py-5">
 
-          <p className="flex-1 text-[15px] leading-7 text-neutral-500">
+          <p className="flex-1 text-[15px] leading-6 text-neutral-500">
             {chinese}
           </p>
 
