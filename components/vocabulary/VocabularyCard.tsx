@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { Card } from "@/components/design-system";
 import VocabularySelection from "@/components/vocabulary/VocabularySelection";
 import VocabularyCardHeader from "@/components/vocabulary/card/VocabularyCardHeader";
 import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardActions";
@@ -63,7 +64,11 @@ function VocabularyCard({
         item={item}
         onSendToPartner={onSendToPartner}
       >
-        <article className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.045)] transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.10] hover:shadow-[0_14px_36px_rgba(0,0,0,0.075)]">
+        <Card
+          interactive
+          padding="none"
+          className="overflow-hidden"
+        >
         <div
           onClick={openDetails}
           className="group block w-full cursor-pointer text-left transition active:scale-[0.995]"
@@ -95,7 +100,7 @@ function VocabularyCard({
           onSend={handleSendToPartner}
           onOpen={openDetails}
         />
-        </article>
+        </Card>
       </VocabularySelection>
 
     </div>

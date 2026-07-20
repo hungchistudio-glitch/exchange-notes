@@ -2,6 +2,8 @@
 
 import { BookOpen, Search, SlidersHorizontal, X } from "lucide-react";
 
+import { Pill } from "@/components/design-system";
+
 import {
   SORT_LABELS,
   type SortMode,
@@ -77,21 +79,16 @@ export default function VocabularySearch({
           const selected = quickFilter === filter.value;
 
           return (
-            <button
+            <Pill
               key={filter.value}
-              type="button"
+              selected={selected}
               onClick={() => onQuickFilterChange(filter.value)}
-              className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 font-sans text-[12px] font-medium tracking-[-0.01em] transition-all active:scale-[0.98] ${
-                selected
-                  ? "bg-black text-white"
-                  : "border border-black/[0.06] bg-white text-black/50"
-              }`}
             >
               <span>{filter.label}</span>
               <span className={selected ? "text-white/50" : "text-black/25"}>
                 {filter.count}
               </span>
-            </button>
+            </Pill>
           );
         })}
       </div>
