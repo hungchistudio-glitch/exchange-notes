@@ -62,9 +62,11 @@ export default function ReviewSession({
         return remainingWords;
       });
 
-      setReviewedCount(
-        (count) => count + 1,
-      );
+      if (grade !== "again") {
+        setReviewedCount(
+          (count) => count + 1,
+        );
+      }
     } catch (reviewError) {
       console.error(reviewError);
 
