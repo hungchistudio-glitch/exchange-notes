@@ -1,20 +1,17 @@
 "use client";
 
-import { useVocabularyPage } from "@/hooks/useVocabularyPage";
+import useVocabularyController from "@/hooks/useVocabularyController";
 
 import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
-import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
-import useVocabularyLookupController from "@/hooks/useVocabularyLookupController";
-import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 
 
@@ -27,6 +24,7 @@ import type {
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
+
   const {
     query,
     setQuery,
@@ -40,24 +38,24 @@ export default function VocabularyPage() {
     setFiltersOpen,
     aiSearchOpen,
     setAiSearchOpen,
-  } = useVocabularyPage();
-  const { items, setItems, learningLanguage, loading, error, setError } =
-    useVocabulary();
 
-  const {
+    items,
+    setItems,
+    learningLanguage,
+    loading,
+    error,
+    setError,
+
     friendPickerItem,
     friends,
     friendsLoading,
     friendsError,
     sendingFriendId,
     handleSendToPartner,
-    loadFriends,
     retryFriends,
     handleClosePicker,
     handlePickFriend,
-  } = useVocabularyFriendPicker();
 
-  const {
     lookupStatus,
     lookupResult,
     lookupError,
@@ -68,15 +66,7 @@ export default function VocabularyPage() {
     lookupCopied,
     shareLookupResult,
     sendLookupToPartner,
-  } = useVocabularyLookupController({
-    query,
-    items,
-    setItems,
-    setError,
-    setQuery,
-    setAiSearchOpen,
-    onSendToPartner: handleSendToPartner,
-  });
+  } = useVocabularyController();
 
   const uniqueItems = useUniqueVocabulary(items);
 
