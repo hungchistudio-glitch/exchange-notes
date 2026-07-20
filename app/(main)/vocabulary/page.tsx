@@ -10,12 +10,13 @@ import VocabularyList from "@/components/vocabulary/VocabularyList";
 import SortBottomSheet, {
   type SortMode,
 } from "@/components/vocabulary/SortBottomSheet";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
+import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -31,7 +32,6 @@ import {
   normalizeVocabularyText,
   readInteractionMap,
   recordInteraction,
-  type InteractionRecord,
 } from "@/lib/vocabulary/helpers";
 import type {
   VocabularyCategory,
@@ -234,71 +234,13 @@ export default function VocabularyPage() {
     return () => window.clearTimeout(timer);
   }, [query, uniqueItems]);
 
-  const visibleItems = useMemo(() => {
-    const normalizedQuery = normalizeVocabularyText(query);
-    const filtered = uniqueItems.filter((item) => {
-      if (quickFilter !== "all" && item.status !== quickFilter) {
-        return false;
-      }
-
-      if (!normalizedQuery) return true;
-
-      return (
-        normalizeVocabularyText(item.word).includes(normalizedQuery) ||
-        normalizeVocabularyText(item.translation).includes(normalizedQuery)
-      );
-    });
-
-    if (sortMode === "new") {
-      return [...filtered].sort(
-        (a, b) =>
-          new Date(b.created_at ?? 0).getTime() -
-          new Date(a.created_at ?? 0).getTime(),
-      );
-    }
-
-    const rankIndex = new Map(rankedIds.map((id, index) => [id, index]));
-
-    return [...filtered].sort((a, b) => {
-      const aRank = rankIndex.get(a.id);
-      const bRank = rankIndex.get(b.id);
-
-      if (aRank !== undefined && bRank !== undefined) return aRank - bRank;
-      if (aRank !== undefined) return -1;
-      if (bRank !== undefined) return 1;
-
-      // Smart fallback while Gemini is loading or unavailable.
-      const statusScore: Record<VocabularyStatus, number> = {
-        learning: 3,
-        new: 2,
-        mastered: 1,
-      };
-      const interactions = readInteractionMap();
-      const aInteraction = interactions[a.id];
-      const bInteraction = interactions[b.id];
-      const score = (record: InteractionRecord | undefined) =>
-        record
-          ? record.search * 5 +
-            record.send * 5 +
-            record.share * 4 +
-            record.speak * 3 +
-            record.view +
-            record.status * 2
-          : 0;
-
-      const scoreDifference =
-        score(bInteraction) +
-        statusScore[b.status] * 10 -
-        (score(aInteraction) + statusScore[a.status] * 10);
-
-      if (scoreDifference !== 0) return scoreDifference;
-
-      return (
-        new Date(b.created_at ?? 0).getTime() -
-        new Date(a.created_at ?? 0).getTime()
-      );
-    });
-  }, [query, quickFilter, rankedIds, sortMode, uniqueItems]);
+  const visibleItems = useVisibleVocabularyItems({
+    items: uniqueItems,
+    query,
+    quickFilter,
+    sortMode,
+    rankedIds,
+  });
 
   const {
     filterSearch,
