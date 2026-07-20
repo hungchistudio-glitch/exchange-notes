@@ -14,10 +14,7 @@ import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
-import useVocabularyShare from "@/hooks/useVocabularyShare";
-import useVocabularyLookup from "@/hooks/useVocabularyLookup";
-import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
-import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
+import useVocabularyLookupController from "@/hooks/useVocabularyLookupController";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 
@@ -51,27 +48,6 @@ export default function VocabularyPage() {
   );
 
   const {
-    lookupStatus,
-    lookupResult,
-    lookupError,
-    lookupWord,
-    resetLookup,
-  } = useVocabularyLookup(query);
-
-  const {
-    savingLookup,
-    saveLookupResult,
-  } = useVocabularyLookupSave({
-    items,
-    lookupResult,
-    setItems,
-    setError,
-    setQuery,
-    setAiSearchOpen,
-    resetLookup,
-  });
-
-  const {
     friendPickerItem,
     friends,
     friendsLoading,
@@ -83,6 +59,27 @@ export default function VocabularyPage() {
     handleClosePicker,
     handlePickFriend,
   } = useVocabularyFriendPicker();
+
+  const {
+    lookupStatus,
+    lookupResult,
+    lookupError,
+    lookupWord,
+    resetLookup,
+    savingLookup,
+    saveLookupResult,
+    lookupCopied,
+    shareLookupResult,
+    sendLookupToPartner,
+  } = useVocabularyLookupController({
+    query,
+    items,
+    setItems,
+    setError,
+    setQuery,
+    setAiSearchOpen,
+    onSendToPartner: handleSendToPartner,
+  });
 
   const uniqueItems = useUniqueVocabulary(items);
 
@@ -135,17 +132,6 @@ export default function VocabularyPage() {
     resetLookup();
   }
 
-  const {
-    lookupCopied,
-    shareLookupResult,
-  } = useVocabularyShare(lookupResult);
-
-  const {
-    sendLookupToPartner,
-  } = useVocabularyLookupPartnerShare({
-    lookupResult,
-    onSendToPartner: handleSendToPartner,
-  });
 
   const {
     totalWords,
