@@ -14,13 +14,7 @@ import type {
   VocabularyStatus,
 } from "@/lib/types/app";
 
-function VocabularyCard({
-  item,
-  updating,
-  onChangeStatus,
-  onSendToPartner,
-  onInteract,
-}: {
+type VocabularyCardProps = {
   item: VocabularyItem;
   updating: boolean;
   onChangeStatus: (
@@ -32,7 +26,15 @@ function VocabularyCard({
     item: VocabularyItem,
     type: InteractionType,
   ) => void;
-}) {
+};
+
+function VocabularyCard({
+  item,
+  updating,
+  onChangeStatus,
+  onSendToPartner,
+  onInteract,
+}: VocabularyCardProps) {
   const router = useRouter();
   useEffect(() => {
     onInteract(item, "view");
