@@ -1,6 +1,7 @@
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
+import type { ReviewGrade } from "@/types/vocabulary";
 
-export type ReviewGrade = "again" | "hard" | "good" | "easy";
+export type { ReviewGrade } from "@/types/vocabulary";
 
 export type ReviewUpdate = {
   status: VocabularyStatus;
