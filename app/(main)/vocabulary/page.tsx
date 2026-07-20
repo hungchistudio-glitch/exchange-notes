@@ -6,7 +6,6 @@ import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import AppPage from "@/components/ui/AppPage";
-import { useState } from "react";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
@@ -25,11 +24,14 @@ import {
 } from "@/lib/vocabulary/helpers";
 import type {
   VocabularyItem,
-  VocabularyStatus,
 } from "@/lib/types/app";
 
 export default function VocabularyPage() {
   const {
+    query,
+    setQuery,
+    quickFilter,
+    setQuickFilter,
     sortMode,
     setSortMode,
     sortOpen,
@@ -41,11 +43,6 @@ export default function VocabularyPage() {
   } = useVocabularyPage();
   const { items, setItems, learningLanguage, loading, error, setError } =
     useVocabulary();
-
-  const [query, setQuery] = useState("");
-  const [quickFilter, setQuickFilter] = useState<"all" | VocabularyStatus>(
-    "all",
-  );
 
   const {
     friendPickerItem,
