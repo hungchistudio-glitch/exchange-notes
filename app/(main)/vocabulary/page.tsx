@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
+import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 
 import { createClient } from "@/lib/supabase/client";
 import { toPinyin } from "@/lib/pinyin";
@@ -135,19 +136,7 @@ export default function VocabularyPage() {
     [friendPickerItem, router, sendingFriendId],
   );
 
-  const uniqueItems = useMemo(() => {
-    const seen = new Set<string>();
-
-    // Items are loaded newest first, so the newest copy is retained.
-    return items.filter((item) => {
-      const key = getVocabularyKey(item.word, item.translation);
-
-      if (seen.has(key)) return false;
-
-      seen.add(key);
-      return true;
-    });
-  }, [items]);
+  const uniqueItems = useUniqueVocabulary(items);
 
   useEffect(() => {
     if (sortMode === "new" || uniqueItems.length === 0) return;
