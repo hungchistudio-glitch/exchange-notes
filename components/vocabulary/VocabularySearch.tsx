@@ -2,7 +2,7 @@
 
 import { BookOpen, Search, SlidersHorizontal, X } from "lucide-react";
 
-import { Pill } from "@/components/design-system";
+import { Pill } from "@/components/foundation";
 
 import {
   SORT_LABELS,

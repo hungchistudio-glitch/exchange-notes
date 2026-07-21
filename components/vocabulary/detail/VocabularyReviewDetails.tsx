@@ -1,4 +1,4 @@
-import SectionCard from "@/components/design/SectionCard";
+import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 import type { VocabularyItem } from "./types";
 import { formatVocabularyDate } from "./types";
 

@@ -1,7 +1,6 @@
 "use client";
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
-import type { VocabularyCategory } from "@/lib/types/app";
 import { speak } from "@/lib/speech";
 import type {
   VocabularyLookupResult,

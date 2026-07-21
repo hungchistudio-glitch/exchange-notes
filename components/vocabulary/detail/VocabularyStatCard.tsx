@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type StatCardProps = {
+type VocabularyStatCardProps = {
   icon?: ReactNode;
   label: string;
   value: string | number;
@@ -8,13 +8,13 @@ type StatCardProps = {
   onClick?: () => void;
 };
 
-export default function StatCard({
+export default function VocabularyStatCard({
   icon,
   label,
   value,
   description,
   onClick,
-}: StatCardProps) {
+}: VocabularyStatCardProps) {
   const content = (
     <>
       <div className="flex items-center justify-between gap-3">

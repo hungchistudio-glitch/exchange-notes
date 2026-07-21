@@ -114,7 +114,7 @@ function SharedVocabularyMessage({
   item: VocabularyItem;
   currentUserId: string | null;
 }) {
-  const [learningLanguage, setLearningLanguage] =
+  const [, setLearningLanguage] =
     useState<AppLanguage>("english");
   const [savingSharedWord, setSavingSharedWord] = useState(false);
   const [sharedWordSaved, setSharedWordSaved] = useState(false);

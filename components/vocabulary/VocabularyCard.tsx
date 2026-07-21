@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import { Card } from "@/components/design-system";
+import { Card } from "@/components/foundation";
 import VocabularySelection from "@/components/vocabulary/VocabularySelection";
 import VocabularyCardHeader from "@/components/vocabulary/card/VocabularyCardHeader";
 import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardActions";

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-type SectionCardProps = {
+type VocabularySectionProps = {
   title?: string;
   description?: string;
   action?: ReactNode;
@@ -8,13 +8,13 @@ type SectionCardProps = {
   className?: string;
 };
 
-export default function SectionCard({
+export default function VocabularySection({
   title,
   description,
   action,
   children,
   className = "",
-}: SectionCardProps) {
+}: VocabularySectionProps) {
   return (
     <section
       className={`overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}

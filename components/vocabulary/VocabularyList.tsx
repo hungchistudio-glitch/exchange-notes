@@ -17,7 +17,6 @@ import type {
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
 import type {
-  VocabularyCategory,
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";

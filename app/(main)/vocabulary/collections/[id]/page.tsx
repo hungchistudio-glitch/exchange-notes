@@ -94,22 +94,6 @@ export default function CollectionDetailPage() {
     }
   }
 
-  async function deleteItem(item: VocabularyItem) {
-    if (!window.confirm(`Delete “${item.word}” from your vocabulary?`)) return;
-    const supabase = createClient();
-    const { error: deleteError } = await supabase
-      .from("vocabulary_items")
-      .delete()
-      .eq("id", item.id);
-    if (deleteError) {
-      setError(deleteError.message);
-      return;
-    }
-    setItems((current) =>
-      current.filter((currentItem) => currentItem.id !== item.id),
-    );
-  }
-
   return (
     <AppPage>
       <PageHeader

@@ -1,6 +1,5 @@
 import { BookmarkPlus, LoaderCircle } from "lucide-react";
 
-import type { VocabularyCategory } from "@/lib/types/app";
 import type {
   VocabularyLookupResult,
 } from "@/lib/types/vocabularyLookup";

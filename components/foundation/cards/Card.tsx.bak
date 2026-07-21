@@ -11,7 +11,6 @@ type CardProps<T extends ElementType = "div"> = {
   children: ReactNode;
   className?: string;
   padding?: CardPadding;
-  interactive?: boolean;
 } & Omit<
   ComponentPropsWithoutRef<T>,
   "as" | "children" | "className"
@@ -29,7 +28,6 @@ export default function Card<T extends ElementType = "div">({
   children,
   className = "",
   padding = "md",
-  interactive = false,
   ...props
 }: CardProps<T>) {
   const Component = as ?? "div";
@@ -42,9 +40,6 @@ export default function Card<T extends ElementType = "div">({
         "bg-white",
         "shadow-[0_8px_22px_rgba(0,0,0,0.045)]",
         paddingClasses[padding],
-        interactive
-          ? "transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.10] hover:shadow-[0_12px_30px_rgba(0,0,0,0.07)]"
-          : "",
         className,
       ]
         .filter(Boolean)

@@ -8,7 +8,7 @@ import {
   Share2,
 } from "lucide-react";
 
-import SectionCard from "@/components/design/SectionCard";
+import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 import AppButton from "@/components/ui/AppButton";
 
 type Props = {

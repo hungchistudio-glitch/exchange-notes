@@ -3,7 +3,7 @@
 import { RotateCcw, Frown, Smile, PartyPopper } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
-import SectionCard from "@/components/design/SectionCard";
+import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 
 type Props = {
   onRate?: (rating: "again" | "hard" | "good" | "easy") => void;

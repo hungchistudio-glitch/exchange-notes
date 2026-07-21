@@ -1,4 +1,4 @@
-import StatCard from "@/components/design/StatCard";
+import StatCard from "@/components/vocabulary/detail/VocabularyStatCard";
 import type { VocabularyItem } from "./types";
 import { formatVocabularyDate } from "./types";
 
