@@ -37,6 +37,7 @@ import {
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useMessageSelection from "@/hooks/messages/useMessageSelection";
+import useMessageVisibility from "@/hooks/messages/useMessageVisibility";
 import type {
   AttachmentIdentificationResult,
   Message,
@@ -525,6 +526,11 @@ function ChatRoom({ friendId }: { friendId: string }) {
     messageIds: selectableMessageIds,
   });
 
+  const {
+    loadHiddenMessageIds,
+    hideMessagesForUser,
+  } = useMessageVisibility();
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesSectionRef = useRef<HTMLElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -649,8 +655,16 @@ function ChatRoom({ friendId }: { friendId: string }) {
         return;
       }
 
+      const loadedHiddenMessageIds = await loadHiddenMessageIds(user.id);
+
       if (!cancelled) {
-        setMessages((existingMessages ?? []) as Message[]);
+        const loadedMessages = (existingMessages ?? []) as Message[];
+
+        setMessages(
+          loadedMessages.filter(
+            (message) => !loadedHiddenMessageIds.has(message.id),
+          ),
+        );
         setLoading(false);
 
         // If the user tapped "Share" on a Daily News card, the article
@@ -735,7 +749,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [friendId]);
+  }, [friendId, loadHiddenMessageIds]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -1111,69 +1125,37 @@ function ChatRoom({ friendId }: { friendId: string }) {
     }
 
     const selectedIds = Array.from(selectedMessageIds);
+    const selectedIdSet = new Set(selectedIds);
 
-    console.info("[messages/delete] request", {
+    console.info("[messages/delete-for-me] request", {
       currentUserId,
       selectedIds,
-      selectedMessages: messages
-        .filter((message) => selectedIds.includes(message.id))
-        .map((message) => ({
-          id: message.id,
-          senderId: message.sender_id,
-        })),
     });
 
     setDeletingMessages(true);
     setErrorMessage("");
 
     try {
-      const supabase = createClient();
-
-      const { data: deletedMessages, error } = await supabase
-        .from("messages")
-        .delete()
-        .in("id", selectedIds)
-        .eq("sender_id", currentUserId)
-        .select("id");
-
-      console.info("[messages/delete] response", {
-        deletedMessages,
-        error,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      const deletedIds = new Set(
-        (deletedMessages ?? []).map((message) => message.id),
-      );
-
-      if (deletedIds.size === 0) {
-        throw new Error(
-          "No messages were deleted. You can only delete messages you sent.",
-        );
-      }
+      await hideMessagesForUser(currentUserId, selectedIds);
 
       setMessages((current) =>
-        current.filter((message) => !deletedIds.has(message.id)),
+        current.filter((message) => !selectedIdSet.has(message.id)),
       );
 
       setDeleteConfirmationOpen(false);
       stopSelectionMode();
 
-      if (deletedIds.size !== selectedIds.length) {
-        setErrorMessage(
-          "Some messages could not be deleted. You can only delete messages you sent.",
-        );
-      }
+      console.info("[messages/delete-for-me] complete", {
+        currentUserId,
+        hiddenMessageCount: selectedIds.length,
+      });
     } catch (deleteError) {
-      console.error("Could not delete messages:", deleteError);
+      console.error("Could not hide messages:", deleteError);
 
       setErrorMessage(
         deleteError instanceof Error
           ? deleteError.message
-          : "Could not delete the selected messages.",
+          : "Could not remove the selected messages for you.",
       );
 
       setDeleteConfirmationOpen(false);
