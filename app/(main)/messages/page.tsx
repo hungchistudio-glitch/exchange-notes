@@ -37,7 +37,6 @@ import {
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useMessageSelection from "@/hooks/messages/useMessageSelection";
-import useMessageVisibility from "@/hooks/messages/useMessageVisibility";
 import type {
   AttachmentIdentificationResult,
   Message,
@@ -514,11 +513,6 @@ function ChatRoom({ friendId }: { friendId: string }) {
   const selectableMessageIds = messages.map((message) => message.id);
 
   const {
-    loadHiddenMessageIds,
-    hideMessagesForUser,
-  } = useMessageVisibility();
-
-  const {
     selectionMode,
     selectedMessageIds,
     selectedCount,
@@ -655,14 +649,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
         return;
       }
 
-      const hiddenIds = await loadHiddenMessageIds(user.id);
-
       if (!cancelled) {
-        const visibleMessages = ((existingMessages ?? []) as Message[]).filter(
-          (message) => !hiddenIds.has(message.id),
-        );
-
-        setMessages(visibleMessages);
+        setMessages((existingMessages ?? []) as Message[]);
         setLoading(false);
 
         // If the user tapped "Share" on a Daily News card, the article
@@ -747,7 +735,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [friendId, loadHiddenMessageIds]);
+  }, [friendId]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -1123,32 +1111,69 @@ function ChatRoom({ friendId }: { friendId: string }) {
     }
 
     const selectedIds = Array.from(selectedMessageIds);
-    const selectedIdSet = new Set(selectedIds);
+
+    console.info("[messages/delete] request", {
+      currentUserId,
+      selectedIds,
+      selectedMessages: messages
+        .filter((message) => selectedIds.includes(message.id))
+        .map((message) => ({
+          id: message.id,
+          senderId: message.sender_id,
+        })),
+    });
 
     setDeletingMessages(true);
     setErrorMessage("");
 
     try {
-      await hideMessagesForUser(currentUserId, selectedIds);
+      const supabase = createClient();
 
-      setMessages((currentMessages) =>
-        currentMessages.filter(
-          (message) => !selectedIdSet.has(message.id),
-        ),
+      const { data: deletedMessages, error } = await supabase
+        .from("messages")
+        .delete()
+        .in("id", selectedIds)
+        .eq("sender_id", currentUserId)
+        .select("id");
+
+      console.info("[messages/delete] response", {
+        deletedMessages,
+        error,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const deletedIds = new Set(
+        (deletedMessages ?? []).map((message) => message.id),
+      );
+
+      if (deletedIds.size === 0) {
+        throw new Error(
+          "No messages were deleted. You can only delete messages you sent.",
+        );
+      }
+
+      setMessages((current) =>
+        current.filter((message) => !deletedIds.has(message.id)),
       );
 
       setDeleteConfirmationOpen(false);
       stopSelectionMode();
+
+      if (deletedIds.size !== selectedIds.length) {
+        setErrorMessage(
+          "Some messages could not be deleted. You can only delete messages you sent.",
+        );
+      }
     } catch (deleteError) {
-      console.error(
-        "Could not hide selected messages for this user:",
-        deleteError,
-      );
+      console.error("Could not delete messages:", deleteError);
 
       setErrorMessage(
         deleteError instanceof Error
           ? deleteError.message
-          : t.messages.errors.deleteSelected,
+          : "Could not delete the selected messages.",
       );
 
       setDeleteConfirmationOpen(false);
@@ -1284,7 +1309,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
           {messages.map((message, index) => {
             const isMine = message.sender_id === currentUserId;
-            const canHide = true;
+            const canDelete = isMine;
             const isSelected = selectedMessageIds.has(message.id);
             const isImageAttachment =
               message.attachment_type?.startsWith("image/");
@@ -1320,18 +1345,18 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 )}
 
                 <div
-                  role={selectionMode && canHide ? "button" : undefined}
-                  tabIndex={selectionMode && canHide ? 0 : undefined}
+                  role={selectionMode && canDelete ? "button" : undefined}
+                  tabIndex={selectionMode && canDelete ? 0 : undefined}
                   aria-pressed={
-                    selectionMode && canHide ? isSelected : undefined
+                    selectionMode && canDelete ? isSelected : undefined
                   }
                   onClick={
-                    selectionMode && canHide
+                    selectionMode && canDelete
                       ? () => toggleMessageSelection(message.id)
                       : undefined
                   }
                   onKeyDown={
-                    selectionMode && canHide
+                    selectionMode && canDelete
                       ? (event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
@@ -1344,7 +1369,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     isMine ? "justify-end" : "justify-start"
                   } ${
                     selectionMode
-                      ? canHide
+                      ? canDelete
                         ? "cursor-pointer select-none"
                         : "cursor-not-allowed select-none opacity-55"
                       : ""
@@ -1353,7 +1378,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     animationDelay: `${Math.min(index * 18, 180)}ms`,
                   }}
                 >
-                  {selectionMode && canHide && (
+                  {selectionMode && canDelete && (
                     <span
                       aria-hidden="true"
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
