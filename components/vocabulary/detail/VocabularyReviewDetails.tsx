@@ -1,4 +1,7 @@
+"use client";
+
 import SectionCard from "@/components/vocabulary/detail/VocabularySection";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
 import { formatVocabularyDate } from "./types";
 
@@ -9,37 +12,46 @@ type VocabularyReviewDetailsProps = {
 export default function VocabularyReviewDetails({
   item,
 }: VocabularyReviewDetailsProps) {
+  const { t } = useTranslation();
+  const reviewDetails = t.vocabulary.detail.reviewDetails;
+
+  const interval = item.review_interval ?? 0;
+  const intervalUnit =
+    interval === 1
+      ? reviewDetails.day
+      : reviewDetails.days;
+
   return (
-    <SectionCard title="Review details">
+    <SectionCard title={reviewDetails.title}>
       <dl className="space-y-3 text-sm">
         <div className="flex justify-between gap-6">
           <dt className="text-neutral-500">
-            Last reviewed
+            {reviewDetails.lastReviewed}
           </dt>
 
           <dd className="text-right font-medium">
             {item.last_reviewed_at
               ? formatVocabularyDate(
                   item.last_reviewed_at,
-                  "Never",
+                  reviewDetails.never,
                 )
-              : "Never"}
+              : reviewDetails.never}
           </dd>
         </div>
 
         <div className="flex justify-between gap-6">
           <dt className="text-neutral-500">
-            Interval
+            {reviewDetails.interval}
           </dt>
 
           <dd className="font-medium">
-            {item.review_interval ?? 0} days
+            {interval} {intervalUnit}
           </dd>
         </div>
 
         <div className="flex justify-between gap-6">
           <dt className="text-neutral-500">
-            Ease
+            {reviewDetails.ease}
           </dt>
 
           <dd className="font-medium">

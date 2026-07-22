@@ -35,30 +35,17 @@ import {
   getPendingSharedVocabulary,
 } from "@/lib/vocabularyDraft";
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
-import type { DailyNewsCard } from "@/lib/types/dailyNews";
 import useTranslation from "@/hooks/i18n/useTranslation";
-
-type Message = {
-  id: number;
-  conversation_id: string;
-  sender_id: string;
-  body: string;
-  created_at: string;
-  attachment_url: string | null;
-  attachment_type: string | null;
-  attachment_name: string | null;
-  shared_article: DailyNewsCard | null;
-};
-
-type AttachmentIdentificationResult = {
-  englishName: string;
-  chineseName: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-  confidence: "high" | "medium" | "low";
-  category: "people" | "objects" | "actions" | "other";
-};
+import useMessageSelection from "@/hooks/messages/useMessageSelection";
+import useMessageVisibility from "@/hooks/messages/useMessageVisibility";
+import type {
+  AttachmentIdentificationResult,
+  Message,
+} from "@/lib/messages/types";
+import {
+  formatMessageDate,
+  getMessageDateKey,
+} from "@/lib/messages/date";
 
 const MESSAGE_COLUMNS =
   "id, conversation_id, sender_id, body, created_at, attachment_url, attachment_type, attachment_name, shared_article";
@@ -68,47 +55,6 @@ const VOCABULARY_MESSAGE_PREFIX = "__SHARED_VOCABULARY__:";
 const AI_IMAGE_MAX_DIMENSION = 1600;
 const AI_IMAGE_JPEG_QUALITY = 0.82;
 const MESSAGE_BOTTOM_THRESHOLD = 80;
-
-function getMessageDateKey(value: string) {
-  const date = new Date(value);
-
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function formatMessageDate(value: string) {
-  const messageDate = new Date(value);
-  const today = new Date();
-
-  const startOfToday = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-
-  const startOfMessageDate = new Date(
-    messageDate.getFullYear(),
-    messageDate.getMonth(),
-    messageDate.getDate(),
-  );
-
-  const differenceInDays = Math.round(
-    (startOfToday.getTime() - startOfMessageDate.getTime()) / 86_400_000,
-  );
-
-  if (differenceInDays === 0) return "Today";
-  if (differenceInDays === 1) return "Yesterday";
-
-  return messageDate.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year:
-      messageDate.getFullYear() === today.getFullYear() ? undefined : "numeric",
-  });
-}
 
 function SharedVocabularyMessage({
   item,
@@ -154,6 +100,8 @@ function SharedVocabularyMessage({
       active = false;
     };
   }, []);
+
+  const { t } = useTranslation();
 
   const englishText = item.word?.trim() || "";
   const chineseText = item.translation?.trim() || "";
@@ -221,8 +169,7 @@ function SharedVocabularyMessage({
       chineseExample={chineseExample}
       partOfSpeech={item.part_of_speech}
       imageUrl={item.image_url}
-      headerLabel="Shared word"
-      statusLabel="Shared"
+      statusLabel={t.vocabulary.lookup.share}
       actions={
         <div className="flex justify-end">
           <button
@@ -230,10 +177,10 @@ function SharedVocabularyMessage({
             onClick={() => void saveSharedWordToVocabulary()}
             disabled={!currentUserId || savingSharedWord || sharedWordSaved}
             aria-label={
-              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+              sharedWordSaved ? t.capture.result.saved : t.capture.result.saveToVocabulary
             }
             title={
-              sharedWordSaved ? "Saved to vocabulary" : "Save to vocabulary"
+              sharedWordSaved ? t.capture.result.saved : t.capture.result.saveToVocabulary
             }
             className={`flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95 disabled:cursor-default ${
               sharedWordSaved
@@ -418,13 +365,30 @@ function ConversationList() {
           ? [currentUserId, friend.id]
           : [friend.id, currentUserId];
 
-      const { error } = await supabase
+      console.info("[friendships/delete] request", {
+        currentUserId,
+        friendId: friend.id,
+        userOneId,
+        userTwoId,
+      });
+
+      const { data: deletedFriendships, error } = await supabase
         .from("friendships")
         .delete()
         .eq("user_one_id", userOneId)
-        .eq("user_two_id", userTwoId);
+        .eq("user_two_id", userTwoId)
+        .select("id");
+
+      console.info("[friendships/delete] response", {
+        deletedFriendships,
+        error,
+      });
 
       if (error) throw error;
+
+      if (!deletedFriendships || deletedFriendships.length === 0) {
+        throw new Error("No friendship record was deleted.");
+      }
 
       setFriends((current) => current.filter((item) => item.id !== friend.id));
     } catch (removeError) {
@@ -513,7 +477,8 @@ function ConversationList() {
 // ---- Chat room (?with={friendId}) ------------------------------------------
 
 function ChatRoom({ friendId }: { friendId: string }) {
-  const { t } = useTranslation();
+  const { t, isTraditionalChinese } = useTranslation();
+  const messageLocale = isTraditionalChinese ? "zh-TW" : "en-US";
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -543,12 +508,28 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
   // ---- message selection state ----
   const [conversationMenuOpen, setConversationMenuOpen] = useState(false);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<number>>(
-    () => new Set(),
-  );
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [deletingMessages, setDeletingMessages] = useState(false);
+
+  const selectableMessageIds = messages.map((message) => message.id);
+
+  const {
+    loadHiddenMessageIds,
+    hideMessagesForUser,
+  } = useMessageVisibility();
+
+  const {
+    selectionMode,
+    selectedMessageIds,
+    selectedCount,
+    allSelected,
+    enterSelectionMode: startSelectionMode,
+    exitSelectionMode: stopSelectionMode,
+    toggleMessageSelection,
+    selectAllMessages,
+  } = useMessageSelection({
+    messageIds: selectableMessageIds,
+  });
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesSectionRef = useRef<HTMLElement | null>(null);
@@ -674,8 +655,14 @@ function ChatRoom({ friendId }: { friendId: string }) {
         return;
       }
 
+      const hiddenIds = await loadHiddenMessageIds(user.id);
+
       if (!cancelled) {
-        setMessages((existingMessages ?? []) as Message[]);
+        const visibleMessages = ((existingMessages ?? []) as Message[]).filter(
+          (message) => !hiddenIds.has(message.id),
+        );
+
+        setMessages(visibleMessages);
         setLoading(false);
 
         // If the user tapped "Share" on a Daily News card, the article
@@ -760,7 +747,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [friendId]);
+  }, [friendId, loadHiddenMessageIds]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -1115,107 +1102,53 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
   function enterSelectionMode() {
     setConversationMenuOpen(false);
-    setSelectionMode(true);
-    setSelectedMessageIds(new Set());
     setSelectionPopup(null);
     window.getSelection()?.removeAllRanges();
+    startSelectionMode();
   }
 
   function exitSelectionMode() {
-    setSelectionMode(false);
-    setSelectedMessageIds(new Set());
     setDeleteConfirmationOpen(false);
-  }
-
-  function toggleMessageSelection(messageId: number) {
-    const message = messages.find((item) => item.id === messageId);
-
-    if (!message || message.sender_id !== currentUserId) {
-      return;
-    }
-
-    setSelectedMessageIds((current) => {
-      const next = new Set(current);
-
-      if (next.has(messageId)) {
-        next.delete(messageId);
-      } else {
-        next.add(messageId);
-      }
-
-      return next;
-    });
-  }
-
-  function selectAllMessages() {
-    setSelectedMessageIds(
-      new Set(
-        messages
-          .filter((message) => message.sender_id === currentUserId)
-          .map((message) => message.id),
-      ),
-    );
+    stopSelectionMode();
   }
 
   function handleDeleteSelectedPreview() {
-    if (selectedMessageIds.size === 0) return;
+    if (selectedCount === 0) return;
     setDeleteConfirmationOpen(true);
   }
 
   async function deleteSelectedMessages() {
-    if (!currentUserId || selectedMessageIds.size === 0 || deletingMessages) {
+    if (!currentUserId || selectedCount === 0 || deletingMessages) {
       return;
     }
 
     const selectedIds = Array.from(selectedMessageIds);
+    const selectedIdSet = new Set(selectedIds);
 
     setDeletingMessages(true);
     setErrorMessage("");
 
     try {
-      const supabase = createClient();
+      await hideMessagesForUser(currentUserId, selectedIds);
 
-      const { data: deletedMessages, error } = await supabase
-        .from("messages")
-        .delete()
-        .in("id", selectedIds)
-        .eq("sender_id", currentUserId)
-        .select("id");
-
-      if (error) {
-        throw error;
-      }
-
-      const deletedIds = new Set(
-        (deletedMessages ?? []).map((message) => message.id),
-      );
-
-      if (deletedIds.size === 0) {
-        throw new Error(
-          "No messages were deleted. You can only delete messages you sent.",
-        );
-      }
-
-      setMessages((current) =>
-        current.filter((message) => !deletedIds.has(message.id)),
+      setMessages((currentMessages) =>
+        currentMessages.filter(
+          (message) => !selectedIdSet.has(message.id),
+        ),
       );
 
       setDeleteConfirmationOpen(false);
-      setSelectionMode(false);
-      setSelectedMessageIds(new Set());
-
-      if (deletedIds.size !== selectedIds.length) {
-        setErrorMessage(
-          "Some messages could not be deleted. You can only delete messages you sent.",
-        );
-      }
+      stopSelectionMode();
     } catch (deleteError) {
-      console.error("Could not delete messages:", deleteError);
+      console.error(
+        "Could not hide selected messages for this user:",
+        deleteError,
+      );
 
       setErrorMessage(
         deleteError instanceof Error
           ? deleteError.message
-          : "Could not delete the selected messages.",
+          : t.messages.errors.deleteSelected,
       );
 
       setDeleteConfirmationOpen(false);
@@ -1235,36 +1168,33 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 onClick={exitSelectionMode}
                 className="justify-self-start text-sm font-semibold text-black/65 transition-opacity active:opacity-50"
               >
-                Cancel
+                {t.messages.cancel}
               </button>
 
               <p className="truncate px-2 text-center text-[15px] font-semibold tracking-[-0.015em] text-black">
-                {selectedMessageIds.size} Selected
+                {t.messages.selectedCount.replace(
+                  "{count}",
+                  String(selectedCount),
+                )}
               </p>
 
               <button
                 type="button"
                 onClick={selectAllMessages}
                 disabled={
-                  messages.filter(
-                    (message) => message.sender_id === currentUserId,
-                  ).length === 0 ||
-                  selectedMessageIds.size ===
-                    messages.filter(
-                      (message) => message.sender_id === currentUserId,
-                    ).length
+                  selectableMessageIds.length === 0 || allSelected
                 }
                 className="justify-self-end text-sm font-semibold text-black/65 transition-opacity disabled:opacity-30 active:opacity-50"
               >
-                Select All
+                {t.messages.selectAll}
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
               <Link
                 href="/messages"
-                aria-label="Back to Messages"
-                title="Back to Messages"
+                aria-label={t.messages.backToMessages}
+                title={t.messages.backToMessages}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
               >
                 <ArrowLeft size={18} strokeWidth={1.7} />
@@ -1330,7 +1260,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
           className="relative flex-1 space-y-2.5 overflow-y-auto px-4 pb-[150px] pt-4"
         >
           {loading && (
-            <p className="text-center text-neutral-500">Loading messages...</p>
+            <p className="text-center text-neutral-500">
+              {t.messages.loadingMessages}
+            </p>
           )}
 
           {errorMessage && (
@@ -1341,16 +1273,18 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
           {!loading && !errorMessage && messages.length === 0 && (
             <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
-              <p className="font-semibold">Start your first conversation</p>
+              <p className="font-semibold">
+                {t.messages.startConversationTitle}
+              </p>
               <p className="mt-2 text-sm text-neutral-500">
-                Share a new word, sentence, or question with your partner.
+                {t.messages.startConversationDescription}
               </p>
             </div>
           )}
 
           {messages.map((message, index) => {
             const isMine = message.sender_id === currentUserId;
-            const canDelete = isMine;
+            const canHide = true;
             const isSelected = selectedMessageIds.has(message.id);
             const isImageAttachment =
               message.attachment_type?.startsWith("image/");
@@ -1373,7 +1307,12 @@ function ChatRoom({ friendId }: { friendId: string }) {
                       dateTime={message.created_at}
                       className="shrink-0 rounded-full bg-black/[0.045] px-3 py-1 text-[10px] font-semibold tracking-[0.06em] text-black/40"
                     >
-                      {formatMessageDate(message.created_at)}
+                      {formatMessageDate(
+                        message.created_at,
+                        messageLocale,
+                        t.messages.today,
+                        t.messages.yesterday,
+                      )}
                     </time>
 
                     <span className="h-px flex-1 bg-black/[0.07]" />
@@ -1381,18 +1320,18 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 )}
 
                 <div
-                  role={selectionMode && canDelete ? "button" : undefined}
-                  tabIndex={selectionMode && canDelete ? 0 : undefined}
+                  role={selectionMode && canHide ? "button" : undefined}
+                  tabIndex={selectionMode && canHide ? 0 : undefined}
                   aria-pressed={
-                    selectionMode && canDelete ? isSelected : undefined
+                    selectionMode && canHide ? isSelected : undefined
                   }
                   onClick={
-                    selectionMode && canDelete
+                    selectionMode && canHide
                       ? () => toggleMessageSelection(message.id)
                       : undefined
                   }
                   onKeyDown={
-                    selectionMode && canDelete
+                    selectionMode && canHide
                       ? (event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
@@ -1405,7 +1344,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     isMine ? "justify-end" : "justify-start"
                   } ${
                     selectionMode
-                      ? canDelete
+                      ? canHide
                         ? "cursor-pointer select-none"
                         : "cursor-not-allowed select-none opacity-55"
                       : ""
@@ -1414,7 +1353,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     animationDelay: `${Math.min(index * 18, 180)}ms`,
                   }}
                 >
-                  {selectionMode && canDelete && (
+                  {selectionMode && canHide && (
                     <span
                       aria-hidden="true"
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
@@ -1523,7 +1462,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
                     )}
 
                     <p className="mt-2 text-xs text-neutral-400">
-                      {new Date(message.created_at).toLocaleTimeString([], {
+                      {new Date(message.created_at).toLocaleTimeString(
+                        messageLocale,
+                        {
                         hour: "numeric",
                         minute: "2-digit",
                       })}
@@ -1638,14 +1579,16 @@ function ChatRoom({ friendId }: { friendId: string }) {
             <button
               type="button"
               onClick={handleDeleteSelectedPreview}
-              disabled={selectedMessageIds.size === 0}
+              disabled={selectedCount === 0}
               className="flex h-12 w-full items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:bg-black/[0.08] disabled:text-black/25 active:scale-[0.985]"
             >
-              {selectedMessageIds.size > 0
-                ? `Delete ${selectedMessageIds.size} ${
-                    selectedMessageIds.size === 1 ? "Message" : "Messages"
-                  }`
-                : "Delete"}
+              {selectedCount > 0
+                ? (
+                    selectedCount === 1
+                      ? t.messages.deleteSelectedMessage
+                      : t.messages.deleteSelectedMessages
+                  ).replace("{count}", String(selectedCount))
+                : t.messages.delete}
             </button>
           </div>
         )}
@@ -1654,7 +1597,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
           <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/30 px-4 pb-6 backdrop-blur-sm sm:items-center sm:pb-0">
             <button
               type="button"
-              aria-label="Close delete confirmation"
+              aria-label={t.messages.closeDeleteConfirmation}
               onClick={() => setDeleteConfirmationOpen(false)}
               className="absolute inset-0 cursor-default"
             />
@@ -1669,13 +1612,15 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 id="delete-message-title"
                 className="text-center text-lg font-bold tracking-[-0.02em] text-black"
               >
-                Delete {selectedMessageIds.size}{" "}
-                {selectedMessageIds.size === 1 ? "message" : "messages"}?
+                {(
+                  selectedCount === 1
+                    ? t.messages.deleteDialogMessage
+                    : t.messages.deleteDialogMessages
+                ).replace("{count}", String(selectedCount))}
               </h2>
 
               <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-5 text-black/50">
-                These messages will disappear from this screen. Database
-                deletion will be connected in a later update.
+                {t.messages.deleteDialogDescription}
               </p>
 
               <div className="mt-5 grid grid-cols-2 gap-2">
@@ -1685,7 +1630,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   disabled={deletingMessages}
                   className="h-11 rounded-full bg-black/[0.055] text-sm font-bold text-black transition-all disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
                 >
-                  Cancel
+                  {t.messages.cancel}
                 </button>
 
                 <button
@@ -1696,7 +1641,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
                   disabled={deletingMessages}
                   className="h-11 rounded-full bg-red-600 text-sm font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {deletingMessages ? "Deleting..." : "Delete"}
+                  {deletingMessages
+                    ? t.messages.deleting
+                    : t.messages.delete}
                 </button>
               </div>
             </div>

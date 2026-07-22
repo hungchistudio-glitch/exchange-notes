@@ -1,6 +1,7 @@
 import { BookOpen, LoaderCircle, SearchX } from "lucide-react";
 
 import { EmptyState } from "@/components/foundation";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type {
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
@@ -20,6 +21,8 @@ export default function VocabularyEmptyResultsState({
   onLookupWord,
 }: VocabularyEmptyResultsStateProps) {
   const trimmedQuery = query.trim();
+  const { t } = useTranslation();
+  const lookup = t.vocabulary.lookup;
 
   return (
     <div className="mt-8">
@@ -34,13 +37,13 @@ export default function VocabularyEmptyResultsState({
         }
         title={
           trimmedQuery
-            ? "This word is not saved yet"
-            : "No matching words"
+            ? lookup.unsavedTitle
+            : lookup.noMatchingTitle
         }
         description={
           trimmedQuery
-            ? "Look it up to find its meaning, examples, and save it to your vocabulary."
-            : "Try another search or choose a different learning status."
+            ? lookup.unsavedDescription
+            : lookup.noMatchingDescription
         }
         action={
           trimmedQuery ? (
@@ -59,7 +62,7 @@ export default function VocabularyEmptyResultsState({
                   Looking up
                 </>
               ) : (
-                `Look up "${trimmedQuery}"`
+                lookup.lookUpWord.replace("{word}", trimmedQuery)
               )}
             </button>
           ) : undefined

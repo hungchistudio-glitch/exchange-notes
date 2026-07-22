@@ -288,15 +288,46 @@ const english: TranslationDictionary = {
     title: "Messages",
     searchPlaceholder: "Search conversations",
     loadingConversations: "Loading…",
+    loadingMessages: "Loading messages…",
+    today: "Today",
+    yesterday: "Yesterday",
     removeFriendConfirm: "Remove {name} from your friends?",
     inputPlaceholder: "Write a message",
+    backToMessages: "Back to Messages",
+    chatFallback: "Chat",
+    selectedCount: "{count} selected",
+    selectAll: "Select All",
+    startConversationTitle: "Start your first conversation",
+    startConversationDescription:
+      "Share a new word, sentence, or question with your partner.",
+    deleteSelectedMessage: "Delete {count} Message",
+    deleteSelectedMessages: "Delete {count} Messages",
+    deleteDialogMessage: "Delete {count} message?",
+    deleteDialogMessages: "Delete {count} messages?",
+    deleteDialogDescription:
+      "These messages will be removed only from your view. Other people in the conversation will still see them.",
+    closeDeleteConfirmation: "Close delete confirmation",
     analyzingAndSending: "Analyzing and sending…",
     send: "Send",
     selectMessages: "Select Messages",
+    delete: "Delete",
+    deleting: "Deleting…",
+    cancel: "Cancel",
+    deleteFriend: "Delete friend",
+    deleteMessage: "Delete message",
+    deleteMessages: "Delete messages",
+    english: "English",
+    traditionalChinese: "Traditional Chinese",
+
     errors: {
       notLoggedIn: "You are not logged in.",
       loadConversations: "Couldn't load your conversations.",
       removeFriend: "Could not remove this friend.",
+      noMessagesDeleted:
+        "No messages were deleted. You can only delete messages you sent.",
+      partialDelete:
+        "Some messages could not be deleted. You can only delete messages you sent.",
+      deleteSelected: "Could not delete the selected messages.",
     },
   },
   friends: {
@@ -432,6 +463,14 @@ const english: TranslationDictionary = {
       send: "Send",
       saving: "Saving",
       addToVocabulary: "Add to Vocabulary",
+      unsavedTitle: "This word is not saved yet",
+      noMatchingTitle: "No matching words",
+      unsavedDescription:
+        "Look it up to find its meaning, examples, and save it to your vocabulary.",
+      noMatchingDescription:
+        "Try another search or choose a different learning status.",
+      lookingUp: "Looking up",
+      lookUpWord: 'Look up "{word}"',
     },
 
     collections: {
@@ -527,6 +566,26 @@ const english: TranslationDictionary = {
         ease: "Ease",
       },
 
+      edit: {
+        title: "Edit vocabulary",
+        subtitle: "Update the word and examples.",
+        english: "English",
+        traditionalChinese: "Traditional Chinese",
+        englishPlaceholder: "English word or phrase",
+        chinesePlaceholder: "Traditional Chinese translation",
+        englishExample: "English example",
+        chineseExample: "Traditional Chinese example",
+        englishExamplePlaceholder: "Use the word in an English sentence.",
+        chineseExamplePlaceholder: "Write a Traditional Chinese example.",
+        close: "Close edit vocabulary",
+        cancel: "Cancel",
+        save: "Save changes",
+        saving: "Saving...",
+        englishRequired: "English word cannot be empty.",
+        chineseRequired: "Traditional Chinese translation cannot be empty.",
+        saveFailed: "Could not save your changes.",
+      },
+
       actions: {
         edit: "Edit vocabulary",
         share: "Share vocabulary",
@@ -562,6 +621,7 @@ const english: TranslationDictionary = {
       noMatchingWords: "No matching words.",
 
       statuses: {
+        all: "All",
         new: "New",
         learning: "Learning",
         mastered: "Mastered",

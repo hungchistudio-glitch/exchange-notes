@@ -282,15 +282,44 @@ const traditionalChinese: TranslationDictionary = {
     title: "訊息",
     searchPlaceholder: "搜尋對話",
     loadingConversations: "載入中…",
+    loadingMessages: "正在載入訊息…",
+    today: "今天",
+    yesterday: "昨天",
     removeFriendConfirm: "要將 {name} 從好友中移除嗎？",
     inputPlaceholder: "寫訊息…",
+    backToMessages: "返回訊息",
+    chatFallback: "對話",
+    selectedCount: "已選擇 {count} 則",
+    selectAll: "全選",
+    startConversationTitle: "開始第一段對話",
+    startConversationDescription:
+      "與學習夥伴分享新單字、句子或問題。",
+    deleteSelectedMessage: "刪除 {count} 則訊息",
+    deleteSelectedMessages: "刪除 {count} 則訊息",
+    deleteDialogMessage: "刪除 {count} 則訊息？",
+    deleteDialogMessages: "刪除 {count} 則訊息？",
+    deleteDialogDescription:
+      "這些訊息只會從你的畫面移除，對話中的其他人仍然看得到。",
+    closeDeleteConfirmation: "關閉刪除確認視窗",
     analyzingAndSending: "分析並傳送中…",
     send: "傳送",
     selectMessages: "選擇訊息",
+    delete: "刪除",
+    deleting: "刪除中…",
+    cancel: "取消",
+    deleteFriend: "刪除好友",
+    deleteMessage: "刪除訊息",
+    deleteMessages: "刪除訊息",
+    english: "英文",
+    traditionalChinese: "繁體中文",
+
     errors: {
       notLoggedIn: "你尚未登入。",
       loadConversations: "無法載入你的對話。",
       removeFriend: "無法移除此好友。",
+      noMessagesDeleted: "沒有刪除任何訊息。你只能刪除自己傳送的訊息。",
+      partialDelete: "部分訊息無法刪除。你只能刪除自己傳送的訊息。",
+      deleteSelected: "無法刪除所選訊息。",
     },
   },
   friends: {
@@ -424,6 +453,14 @@ const traditionalChinese: TranslationDictionary = {
       send: "傳送",
       saving: "儲存中",
       addToVocabulary: "加入單字庫",
+      unsavedTitle: "這個單字尚未儲存",
+      noMatchingTitle: "找不到符合的單字",
+      unsavedDescription:
+        "搜尋這個單字以查看意思與例句，並將它加入你的單字庫。",
+      noMatchingDescription:
+        "請嘗試其他搜尋或切換不同的學習狀態。",
+      lookingUp: "搜尋中",
+      lookUpWord: "搜尋「{word}」",
     },
 
     collections: {
@@ -519,6 +556,26 @@ const traditionalChinese: TranslationDictionary = {
         ease: "熟悉係數",
       },
 
+      edit: {
+        title: "編輯單字",
+        subtitle: "更新單字與例句。",
+        english: "英文",
+        traditionalChinese: "繁體中文",
+        englishPlaceholder: "英文單字或片語",
+        chinesePlaceholder: "繁體中文翻譯",
+        englishExample: "英文例句",
+        chineseExample: "中文例句",
+        englishExamplePlaceholder: "輸入英文例句",
+        chineseExamplePlaceholder: "輸入繁體中文例句",
+        close: "關閉編輯單字",
+        cancel: "取消",
+        save: "儲存變更",
+        saving: "儲存中...",
+        englishRequired: "英文不可空白。",
+        chineseRequired: "繁體中文翻譯不可空白。",
+        saveFailed: "儲存失敗。",
+      },
+
       actions: {
         edit: "編輯單字",
         share: "分享單字",
@@ -553,6 +610,7 @@ const traditionalChinese: TranslationDictionary = {
       noMatchingWords: "找不到符合的單字。",
 
       statuses: {
+        all: "全部",
         new: "新單字",
         learning: "學習中",
         mastered: "已掌握",

@@ -4,6 +4,8 @@ import { useMemo } from "react";
 
 import { buildReviewAnalytics } from "@/lib/review/analytics";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
+
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -16,6 +18,8 @@ export type VocabularyQuickFilter = {
 };
 
 export default function useVocabularyStats(items: VocabularyItem[]) {
+  const { t } = useTranslation();
+  const search = t.vocabulary.search;
   return useMemo(() => {
     const totalWords = items.length;
     const newWords = items.filter((item) => item.status === "new").length;
@@ -39,10 +43,26 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
     const reviewStats = buildReviewAnalytics(items);
 
     const quickFilters: VocabularyQuickFilter[] = [
-      { value: "all", label: "All", count: totalWords },
-      { value: "new", label: "New", count: newWords },
-      { value: "learning", label: "Learning", count: learningWords },
-      { value: "mastered", label: "Mastered", count: masteredWords },
+      {
+        value: "all",
+        label: search.statuses.all,
+        count: totalWords,
+      },
+      {
+        value: "new",
+        label: search.statuses.new,
+        count: newWords,
+      },
+      {
+        value: "learning",
+        label: search.statuses.learning,
+        count: learningWords,
+      },
+      {
+        value: "mastered",
+        label: search.statuses.mastered,
+        count: masteredWords,
+      },
     ];
 
     return {
@@ -56,5 +76,5 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       quickFilters,
       reviewStats,
     };
-  }, [items]);
+  }, [items, search]);
 }

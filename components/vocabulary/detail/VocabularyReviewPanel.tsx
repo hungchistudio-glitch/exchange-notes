@@ -4,6 +4,7 @@ import { Frown, PartyPopper, RotateCcw, Smile } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
 import SectionCard from "@/components/vocabulary/detail/VocabularySection";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Rating = "again" | "hard" | "good" | "easy";
 
@@ -12,33 +13,36 @@ type Props = {
 };
 
 export default function VocabularyReviewPanel({ onRate }: Props) {
+  const { t } = useTranslation();
+  const reviewPanel = t.vocabulary.detail.reviewPanel;
+
   const buttons = [
     {
       key: "again",
-      label: "Again",
+      label: reviewPanel.again,
       icon: RotateCcw,
     },
     {
       key: "hard",
-      label: "Hard",
+      label: reviewPanel.hard,
       icon: Frown,
     },
     {
       key: "good",
-      label: "Good",
+      label: reviewPanel.good,
       icon: Smile,
     },
     {
       key: "easy",
-      label: "Easy",
+      label: reviewPanel.easy,
       icon: PartyPopper,
     },
   ] as const;
 
   return (
     <SectionCard
-      title="Review this word"
-      description="How well did you remember it?"
+      title={reviewPanel.title}
+      description={reviewPanel.description}
     >
       <div className="grid grid-cols-4 gap-3">
         {buttons.map((button) => {

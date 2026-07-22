@@ -16,6 +16,7 @@ import type {
   VocabularyLookupResult,
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -64,6 +65,8 @@ function VocabularyList({
   onInteract,
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
+  const { t } = useTranslation();
+  const lookup = t.vocabulary.lookup;
 
   if (loading) {
     return (
@@ -154,7 +157,7 @@ function VocabularyList({
                 Saving
               </>
             ) : (
-              "Add to vocabulary"
+              lookup.addToVocabulary
             )}
           </button>
         </section>
@@ -174,13 +177,13 @@ function VocabularyList({
           }
           title={
             trimmedQuery
-              ? "This word is not saved yet"
-              : "No matching words"
+              ? lookup.unsavedTitle
+              : lookup.noMatchingTitle
           }
           description={
             trimmedQuery
-              ? "Look it up to find its meaning, examples, and save it to your vocabulary."
-              : "Try another search or choose a different learning status."
+              ? lookup.unsavedDescription
+              : lookup.noMatchingDescription
           }
           action={
             trimmedQuery ? (
@@ -199,7 +202,7 @@ function VocabularyList({
                     Looking up
                   </>
                 ) : (
-                  `Look up "${trimmedQuery}"`
+                  lookup.lookUpWord.replace("{word}", trimmedQuery)
                 )}
               </button>
             ) : undefined

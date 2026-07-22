@@ -59,7 +59,7 @@ export default function VocabularySearch({
           />
 
           <input
-            type="search"
+            type="text"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={search.searchPlaceholder}

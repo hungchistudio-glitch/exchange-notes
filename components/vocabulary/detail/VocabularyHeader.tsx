@@ -1,15 +1,37 @@
+"use client";
+
 import AppBadge from "@/components/ui/AppBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
 
 type VocabularyHeaderProps = {
   item: VocabularyItem;
 };
 
+type LearningLevelKey =
+  | "new"
+  | "learning"
+  | "familiar"
+  | "strong"
+  | "mastered";
+
 type LearningLevel = {
   stars: number;
-  label: string;
+  key: LearningLevelKey;
 };
+
+type PartOfSpeechKey =
+  | "noun"
+  | "verb"
+  | "adjective"
+  | "adverb"
+  | "pronoun"
+  | "preposition"
+  | "conjunction"
+  | "interjection"
+  | "phrase"
+  | "other";
 
 function getLearningLevel(
   reviewCount: number,
@@ -19,47 +41,75 @@ function getLearningLevel(
   if (status?.toLowerCase() === "mastered") {
     return {
       stars: 5,
-      label: "Mastered",
+      key: "mastered",
     };
   }
 
   if (reviewCount === 0) {
     return {
       stars: 1,
-      label: "New",
+      key: "new",
     };
   }
 
   if (reviewCount >= 12 && accuracy >= 90) {
     return {
       stars: 5,
-      label: "Mastered",
+      key: "mastered",
     };
   }
 
   if (reviewCount >= 8 && accuracy >= 80) {
     return {
       stars: 4,
-      label: "Strong",
+      key: "strong",
     };
   }
 
   if (reviewCount >= 4 && accuracy >= 65) {
     return {
       stars: 3,
-      label: "Familiar",
+      key: "familiar",
     };
   }
 
   return {
     stars: 2,
-    label: "Learning",
+    key: "learning",
   };
+}
+
+function normalizePartOfSpeech(
+  value: string,
+): PartOfSpeechKey {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  const aliases: Record<string, PartOfSpeechKey> = {
+    noun: "noun",
+    verb: "verb",
+    adjective: "adjective",
+    adj: "adjective",
+    adverb: "adverb",
+    adv: "adverb",
+    pronoun: "pronoun",
+    preposition: "preposition",
+    conjunction: "conjunction",
+    interjection: "interjection",
+    phrase: "phrase",
+  };
+
+  return aliases[normalized] ?? "other";
 }
 
 export default function VocabularyHeader({
   item,
 }: VocabularyHeaderProps) {
+  const { t } = useTranslation();
+  const detail = t.vocabulary.detail;
+
   const reviewCount = item.review_count ?? 0;
 
   const accuracy =
@@ -75,13 +125,37 @@ export default function VocabularyHeader({
     item.status,
   );
 
+  const learningLevelLabel =
+    detail.levels[learningLevel.key];
+
+  const partOfSpeechLabel = item.part_of_speech
+    ? detail.partOfSpeech[
+        normalizePartOfSpeech(item.part_of_speech)
+      ]
+    : null;
+
+  const statusLabel =
+    item.status === "mastered"
+      ? detail.levels.mastered
+      : item.status === "learning"
+        ? detail.levels.learning
+        : item.status === "new"
+          ? detail.levels.new
+          : item.status;
+
+  const starsAriaLabel =
+    detail.starsAriaLabel.replace(
+      "{count}",
+      String(learningLevel.stars),
+    );
+
   return (
     <header className="overflow-hidden rounded-[32px] bg-neutral-950 text-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
       <div className="p-7 sm:p-9">
         <div className="flex flex-wrap gap-2">
-          {item.part_of_speech ? (
+          {partOfSpeechLabel ? (
             <AppBadge className="border-white/10 bg-white/10 text-white">
-              {item.part_of_speech}
+              {partOfSpeechLabel}
             </AppBadge>
           ) : null}
 
@@ -91,16 +165,16 @@ export default function VocabularyHeader({
             </AppBadge>
           ) : null}
 
-          {item.status ? (
-            <AppBadge className="border-white/10 bg-white/10 text-white capitalize">
-              {item.status}
+          {statusLabel ? (
+            <AppBadge className="border-white/10 bg-white/10 text-white">
+              {statusLabel}
             </AppBadge>
           ) : null}
         </div>
 
         <div className="mt-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
-            Vocabulary
+            {detail.vocabulary}
           </p>
 
           <h1 className="mt-3 break-words text-5xl font-semibold tracking-[-0.055em] sm:text-6xl">
@@ -118,7 +192,7 @@ export default function VocabularyHeader({
 
           <div className="mt-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
-              Translation
+              {detail.translation}
             </p>
 
             <p className="mt-2 text-2xl font-medium tracking-[-0.025em] text-neutral-100">
@@ -133,30 +207,29 @@ export default function VocabularyHeader({
           <div>
             <div
               className="flex gap-1 text-xl"
-              aria-label={`${learningLevel.stars} out of 5 stars`}
+              aria-label={starsAriaLabel}
             >
-              {Array.from({ length: 5 }).map(
-                (_, index) => (
-                  <span
-                    key={index}
-                    className={
-                      index < learningLevel.stars
-                        ? "text-white"
-                        : "text-neutral-700"
-                    }
-                  >
-                    ★
-                  </span>
-                ),
-              )}
+              {Array.from({ length: 5 }).map((_, index) => (
+                <span
+                  key={index}
+                  className={
+                    index < learningLevel.stars
+                      ? "text-white"
+                      : "text-neutral-700"
+                  }
+                  aria-hidden="true"
+                >
+                  ★
+                </span>
+              ))}
             </div>
 
             <p className="mt-2 text-lg font-semibold">
-              {learningLevel.label}
+              {learningLevelLabel}
             </p>
 
             <p className="mt-1 text-sm text-neutral-400">
-              Learning progress
+              {detail.learningProgress}
             </p>
           </div>
 
@@ -167,7 +240,7 @@ export default function VocabularyHeader({
               </p>
 
               <p className="mt-1 text-xs uppercase tracking-[0.14em] text-neutral-500">
-                Accuracy
+                {detail.accuracy}
               </p>
             </div>
 
@@ -177,7 +250,7 @@ export default function VocabularyHeader({
               </p>
 
               <p className="mt-1 text-xs uppercase tracking-[0.14em] text-neutral-500">
-                Reviews
+                {detail.reviews}
               </p>
             </div>
           </div>

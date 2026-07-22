@@ -3,6 +3,8 @@
 import { PointerEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Trash2 } from "lucide-react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
+
 const DELETE_WIDTH = 92;
 const OPEN_THRESHOLD = 44;
 const SWIPE_VELOCITY_THRESHOLD = 0.45;
@@ -20,6 +22,8 @@ export default function SwipeableConversationCard({
   onOpen,
   onRemove,
 }: SwipeableConversationCardProps) {
+  const { t } = useTranslation();
+
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -130,7 +134,7 @@ export default function SwipeableConversationCard({
         type="button"
         onClick={() => void handleDelete()}
         disabled={disabled || deleting || offset === 0}
-        aria-label="Delete friend"
+        aria-label={t.messages.deleteFriend}
         aria-hidden={offset === 0}
         tabIndex={offset === 0 ? -1 : 0}
         className="absolute inset-y-0 right-0 flex w-[92px] items-center justify-center bg-red-500 text-white disabled:pointer-events-none"
@@ -151,7 +155,7 @@ export default function SwipeableConversationCard({
         ) : (
           <div className="flex flex-col items-center gap-1">
             <Trash2 size={21} strokeWidth={1.9} />
-            <span className="text-[11px] font-semibold">Delete</span>
+            <span className="text-[11px] font-semibold">{t.messages.delete}</span>
           </div>
         )}
       </button>

@@ -2,16 +2,21 @@
 
 import type { FriendProfile } from "@/lib/friends";
 import ConversationAvatar from "@/components/messages/ConversationAvatar";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Props = {
   friend: FriendProfile;
 };
 
-function languageName(language: FriendProfile["nativeLanguage"]) {
-  return language === "english" ? "English" : "繁體中文";
-}
-
 export default function ConversationCard({ friend }: Props) {
+  const { t } = useTranslation();
+
+  function languageName(language: FriendProfile["nativeLanguage"]) {
+    return language === "english"
+      ? t.messages.english
+      : t.messages.traditionalChinese;
+  }
+
   return (
     <div className="flex items-center gap-4 rounded-3xl border border-black/[0.06] bg-white px-5 py-4 shadow-sm transition hover:shadow-md">
       <ConversationAvatar friend={friend} />

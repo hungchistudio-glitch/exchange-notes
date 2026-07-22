@@ -92,11 +92,20 @@ function fallbackOrder(
 
 function parseOrderedIds(text: string, validIds: Set<string>) {
   const stripped = text
-    .replace(/^```(?:json)?/i, "")
-    .replace(/```$/i, "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
     .trim();
 
-  const parsed = JSON.parse(stripped) as unknown;
+  const jsonStart = stripped.indexOf("{");
+  const jsonEnd = stripped.lastIndexOf("}");
+
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    throw new Error("Gemini did not return valid JSON.");
+  }
+
+  const json = stripped.slice(jsonStart, jsonEnd + 1);
+
+  const parsed = JSON.parse(json) as unknown;
   const candidate = Array.isArray(parsed)
     ? parsed
     : parsed && typeof parsed === "object" && "orderedIds" in parsed

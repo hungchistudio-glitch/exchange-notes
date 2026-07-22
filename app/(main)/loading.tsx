@@ -1,5 +1,10 @@
+"use client";
+
+import useTranslation from "@/hooks/i18n/useTranslation";
 import LogoLoader from "@/components/ui/LogoLoader";
 
 export default function MainLoading() {
-  return <LogoLoader label="Loading Exchange Notes" />;
+  const { t } = useTranslation();
+
+  return <LogoLoader label={t.messages.loadingConversations} />;
 }

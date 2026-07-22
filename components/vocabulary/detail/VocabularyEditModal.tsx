@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
 
 export type VocabularyEditValues = {
@@ -40,6 +41,8 @@ export default function VocabularyEditModal({
   onClose,
   onSave,
 }: VocabularyEditModalProps) {
+  const { t } = useTranslation();
+  const edit = t.vocabulary.detail.edit;
   const [word, setWord] = useState(item.word);
   const [translation, setTranslation] = useState(
     item.translation,
@@ -122,14 +125,14 @@ export default function VocabularyEditModal({
 
     if (!trimmedWord) {
       setError(
-        "English word cannot be empty.",
+        edit.englishRequired,
       );
       return;
     }
 
     if (!trimmedTranslation) {
       setError(
-        "Traditional Chinese translation cannot be empty.",
+        edit.chineseRequired,
       );
       return;
     }
@@ -154,7 +157,7 @@ export default function VocabularyEditModal({
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Could not save your changes.",
+          : edit.saveFailed,
       );
     } finally {
       setSaving(false);
@@ -187,17 +190,17 @@ export default function VocabularyEditModal({
               id="edit-vocabulary-title"
               className="text-xl font-semibold tracking-[-0.03em] text-neutral-950"
             >
-              Edit vocabulary
+              {edit.title}
             </h2>
 
             <p className="mt-1 text-sm text-neutral-500">
-              Update the word and examples.
+              {edit.subtitle}
             </p>
           </div>
 
           <button
             type="button"
-            aria-label="Close edit vocabulary"
+            aria-label={edit.close}
             onClick={onClose}
             disabled={saving}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
@@ -214,20 +217,20 @@ export default function VocabularyEditModal({
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block text-sm font-medium text-neutral-800">
-              English
+              {edit.english}
               <input
                 value={word}
                 onChange={(event) =>
                   setWord(event.target.value)
                 }
                 className={inputClassName}
-                placeholder="English word or phrase"
+                placeholder="{edit.english} word or phrase"
                 autoFocus
               />
             </label>
 
             <label className="block text-sm font-medium text-neutral-800">
-              Traditional Chinese
+              {edit.traditionalChinese}
               <input
                 value={translation}
                 onChange={(event) =>
@@ -236,7 +239,7 @@ export default function VocabularyEditModal({
                   )
                 }
                 className={inputClassName}
-                placeholder="繁體中文翻譯"
+                placeholder={edit.chinesePlaceholder}
               />
             </label>
           </div>
@@ -244,7 +247,7 @@ export default function VocabularyEditModal({
           <div className="h-px bg-neutral-100" />
 
           <label className="block text-sm font-medium text-neutral-800">
-            English example
+            {edit.englishExample}
             <textarea
               value={exampleSentence}
               onChange={(event) =>
@@ -253,12 +256,12 @@ export default function VocabularyEditModal({
                 )
               }
               className={`${inputClassName} min-h-28 resize-y`}
-              placeholder="Use the word in an English sentence."
+              placeholder="Use the word in an {edit.english} sentence."
             />
           </label>
 
           <label className="block text-sm font-medium text-neutral-800">
-            Chinese example
+            {edit.chineseExample}
             <textarea
               value={translatedExample}
               onChange={(event) =>
@@ -267,7 +270,7 @@ export default function VocabularyEditModal({
                 )
               }
               className={`${inputClassName} min-h-28 resize-y`}
-              placeholder="輸入繁體中文例句"
+              placeholder={edit.chineseExamplePlaceholder}
             />
           </label>
 
@@ -285,7 +288,7 @@ export default function VocabularyEditModal({
               onClick={onClose}
               disabled={saving}
             >
-              Cancel
+              {edit.cancel}
             </AppButton>
 
             <AppButton
@@ -301,8 +304,8 @@ export default function VocabularyEditModal({
               ) : null}
 
               {saving
-                ? "Saving..."
-                : "Save changes"}
+                ? edit.saving
+                : edit.save}
             </AppButton>
           </div>
         </form>

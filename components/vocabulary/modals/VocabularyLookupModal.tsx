@@ -121,7 +121,7 @@ export default function VocabularyLookupModal({
 
               <input
                 autoFocus
-                type="search"
+                type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="English or 繁體中文"
@@ -185,7 +185,7 @@ export default function VocabularyLookupModal({
                 <div className="space-y-6">
                   <section>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
-                      English
+                      {t.vocabulary.lookup.english}
                     </p>
 
                     <div className="mt-2 flex items-center gap-3">
@@ -198,8 +198,8 @@ export default function VocabularyLookupModal({
                         onClick={() =>
                           speak(lookupResult.englishName, "en-US")
                         }
-                        aria-label="Play English word"
-                        title="Play English word"
+                        aria-label={t.vocabulary.lookup.english}
+                        title={t.vocabulary.lookup.english}
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] transition-transform active:scale-95"
                       >
                         <Volume2 size={16} />
@@ -248,7 +248,7 @@ export default function VocabularyLookupModal({
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-                          English example
+                          {t.vocabulary.lookup.englishExample}
                         </p>
 
                         <p className="mt-3 text-[14px] leading-6">
@@ -309,7 +309,7 @@ export default function VocabularyLookupModal({
                     ) : (
                       <Share size={15} />
                     )}
-                    Share
+                    {t.vocabulary.lookup.share}
                   </button>
 
                   <button
@@ -319,7 +319,7 @@ export default function VocabularyLookupModal({
                     className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f5f2eb] text-[12px] font-semibold transition-transform active:scale-[0.98]"
                   >
                     <Send size={15} />
-                    Send
+                    {t.vocabulary.lookup.send}
                   </button>
                 </div>
 
@@ -332,12 +332,12 @@ export default function VocabularyLookupModal({
                   {savingLookup ? (
                     <>
                       <LoaderCircle size={15} className="animate-spin" />
-                      Saving
+                      {t.vocabulary.lookup.saving}
                     </>
                   ) : (
                     <>
                       <BookmarkPlus size={16} />
-                      Add to Vocabulary
+                      {t.vocabulary.lookup.addToVocabulary}
                     </>
                   )}
                 </button>

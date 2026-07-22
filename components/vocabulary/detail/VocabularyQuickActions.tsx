@@ -5,6 +5,7 @@ import { Check, Pencil, Share2 } from "lucide-react";
 
 import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 import AppButton from "@/components/ui/AppButton";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Props = {
   english: string;
@@ -17,6 +18,9 @@ export default function VocabularyQuickActions({
   chinese,
   onEdit,
 }: Props) {
+  const { t } = useTranslation();
+  const actions = t.vocabulary.detail.actions;
+
   const [copied, setCopied] = useState(false);
   const sharingRef = useRef(false);
 
@@ -47,7 +51,10 @@ export default function VocabularyQuickActions({
         setCopied(false);
       }, 1800);
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
+      if (
+        error instanceof DOMException &&
+        error.name === "AbortError"
+      ) {
         return;
       }
 
@@ -57,7 +64,12 @@ export default function VocabularyQuickActions({
     }
   }
 
-  const actionClassName = "flex min-h-12 items-center justify-center py-4";
+  const actionClassName =
+    "flex min-h-12 items-center justify-center py-4";
+
+  const shareLabel = copied
+    ? actions.copied
+    : actions.share;
 
   return (
     <SectionCard>
@@ -67,8 +79,8 @@ export default function VocabularyQuickActions({
           variant="secondary"
           className={actionClassName}
           onClick={onEdit}
-          aria-label="Edit vocabulary"
-          title="Edit vocabulary"
+          aria-label={actions.edit}
+          title={actions.edit}
         >
           <Pencil size={21} aria-hidden="true" />
         </AppButton>
@@ -78,8 +90,8 @@ export default function VocabularyQuickActions({
           variant="secondary"
           className={actionClassName}
           onClick={() => void handleShare()}
-          aria-label={copied ? "Copied" : "Share vocabulary"}
-          title={copied ? "Copied" : "Share vocabulary"}
+          aria-label={shareLabel}
+          title={shareLabel}
         >
           {copied ? (
             <Check size={21} aria-hidden="true" />

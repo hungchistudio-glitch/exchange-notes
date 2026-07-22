@@ -5,11 +5,39 @@ import { Volume2 } from "lucide-react";
 
 import { getPronunciationData } from "@/lib/pronunciation";
 import { speak } from "@/lib/speech";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type WordCardLanguage = "english" | "traditional-chinese";
 
 function isZhuyin(value: string) {
   return /[ㄅ-ㄩˉˊˇˋ˙]/u.test(value);
+}
+
+function normalizePartOfSpeech(value: string) {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ");
+
+  const aliases = {
+    n: "noun",
+    noun: "noun",
+    v: "verb",
+    verb: "verb",
+    adj: "adjective",
+    adjective: "adjective",
+    adv: "adverb",
+    adverb: "adverb",
+    pronoun: "pronoun",
+    preposition: "preposition",
+    conjunction: "conjunction",
+    interjection: "interjection",
+    phrase: "phrase",
+    "noun phrase": "phrase",
+  } as const;
+
+  return aliases[normalized as keyof typeof aliases] ?? "other";
 }
 
 type WordCardProps = {
@@ -70,10 +98,17 @@ export default function WordCard({
   actions,
   className = "",
 }: WordCardProps) {
+  const { t } = useTranslation();
+  const lookup = t.vocabulary.lookup;
+  const detail = t.vocabulary.detail;
   const englishText = english.trim();
   const chineseText = chinese.trim();
   const englishExampleText = englishExample?.trim() ?? "";
   const chineseExampleText = chineseExample?.trim() ?? "";
+
+  const partOfSpeechLabel = partOfSpeech?.trim()
+    ? detail.partOfSpeech[normalizePartOfSpeech(partOfSpeech)]
+    : null;
 
   const pronunciation = getPronunciationData({
     english: englishText,
@@ -93,13 +128,13 @@ export default function WordCard({
 
   const primary = learningChinese
     ? {
-        label: "Traditional Chinese",
+        label: lookup.chinese,
         text: chineseText,
         pronunciation: chinesePronunciation,
         language: "zh-TW" as const,
       }
     : {
-        label: "English",
+        label: lookup.english,
         text: englishText,
         pronunciation: englishPronunciation,
         language: "en-US" as const,
@@ -107,13 +142,13 @@ export default function WordCard({
 
   const secondary = learningChinese
     ? {
-        label: "English",
+        label: lookup.english,
         text: englishText,
         pronunciation: englishPronunciation,
         language: "en-US" as const,
       }
     : {
-        label: "Traditional Chinese",
+        label: lookup.chinese,
         text: chineseText,
         pronunciation: chinesePronunciation,
         language: "zh-TW" as const,
@@ -221,9 +256,9 @@ export default function WordCard({
           </div>
         </section>
 
-        {partOfSpeech && (
-          <p className="mt-5 text-[11px] capitalize tracking-[0.06em] text-black/35">
-            {partOfSpeech}
+        {partOfSpeechLabel && (
+          <p className="mt-5 text-[11px] tracking-[0.06em] text-black/35">
+            {partOfSpeechLabel}
           </p>
         )}
 
@@ -234,7 +269,7 @@ export default function WordCard({
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-                      English example
+                      {lookup.englishExample}
                     </p>
 
                     <p className="mt-3 text-[14px] leading-6">
@@ -245,7 +280,7 @@ export default function WordCard({
                   <AudioButton
                     text={englishExampleText}
                     language="en-US"
-                    label="Play English example"
+                    label="Play {lookup.englishExample}"
                     compact
                   />
                 </div>
@@ -257,7 +292,7 @@ export default function WordCard({
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-semibold tracking-[0.16em] text-black/35">
-                      中文例句
+                      {lookup.chineseExample}
                     </p>
 
                     <p className="mt-3 text-[14px] leading-6 text-neutral-600">
@@ -268,7 +303,7 @@ export default function WordCard({
                   <AudioButton
                     text={chineseExampleText}
                     language="zh-TW"
-                    label="播放中文例句"
+                    label="播放{lookup.chineseExample}"
                     compact
                   />
                 </div>

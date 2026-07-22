@@ -1,4 +1,7 @@
+"use client";
+
 import StatCard from "@/components/vocabulary/detail/VocabularyStatCard";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
 import { formatVocabularyDate } from "./types";
 
@@ -9,6 +12,9 @@ type VocabularyStatsProps = {
 export default function VocabularyStats({
   item,
 }: VocabularyStatsProps) {
+  const { t } = useTranslation();
+  const detail = t.vocabulary.detail;
+
   const reviewCount = item.review_count ?? 0;
 
   const accuracy =
@@ -21,17 +27,17 @@ export default function VocabularyStats({
   return (
     <section className="grid gap-4 sm:grid-cols-3">
       <StatCard
-        label="Reviews"
+        label={detail.reviews}
         value={reviewCount}
       />
 
       <StatCard
-        label="Accuracy"
+        label={detail.accuracy}
         value={`${accuracy}%`}
       />
 
       <StatCard
-        label="Next review"
+        label={detail.nextReview}
         value={formatVocabularyDate(item.next_review_at)}
       />
     </section>

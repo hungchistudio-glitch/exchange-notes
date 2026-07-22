@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { saveReviewResult } from "@/lib/review/saveReviewResult";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 import VocabularyHeader from "@/components/vocabulary/detail/VocabularyHeader";
 import VocabularyStats from "@/components/vocabulary/detail/VocabularyStats";
@@ -23,6 +24,8 @@ export default function VocabularyDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
+  const { t } = useTranslation();
+  const detail = t.vocabulary.detail;
 
   const [word, setWord] =
     useState<VocabularyItem | null>(null);
@@ -51,7 +54,7 @@ export default function VocabularyDetailPage() {
 
         if (!user) {
           throw new Error(
-            "Please log in to view this word.",
+            detail.page.loginToView,
           );
         }
 
@@ -77,7 +80,7 @@ export default function VocabularyDetailPage() {
           setError(
             loadError instanceof Error
               ? loadError.message
-              : "Could not load this word.",
+              : detail.page.loadError,
           );
         }
       } finally {
@@ -94,7 +97,11 @@ export default function VocabularyDetailPage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [
+    id,
+    detail.page.loadError,
+    detail.page.loginToView,
+  ]);
 
   async function handleSaveEdit(
     values: VocabularyEditValues,
@@ -114,7 +121,7 @@ export default function VocabularyDetailPage() {
 
     if (!user) {
       throw new Error(
-        "Please log in to edit this word.",
+        detail.page.loginToEdit,
       );
     }
 
@@ -138,7 +145,10 @@ export default function VocabularyDetailPage() {
     if (!word) return;
 
     const confirmed = window.confirm(
-      `Delete "${word.word}" from your vocabulary?`
+      detail.page.deleteConfirm.replace(
+        "{word}",
+        word.word,
+      ),
     );
 
     if (!confirmed) return;
@@ -217,16 +227,15 @@ export default function VocabularyDetailPage() {
           className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600"
         >
           <ArrowLeft size={18} />
-          Vocabulary
         </Link>
 
         <section className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-8">
           <h1 className="text-2xl font-bold">
-            Word not found
+            {detail.page.notFound}
           </h1>
 
           <p className="mt-2 text-red-700">
-            {error || "This word is unavailable."}
+            {error || detail.page.unavailable}
           </p>
         </section>
       </main>
@@ -241,7 +250,6 @@ export default function VocabularyDetailPage() {
           className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-black"
         >
           <ArrowLeft size={18} />
-          Vocabulary
         </Link>
 
         <div className="mt-8 space-y-6">
@@ -258,7 +266,7 @@ export default function VocabularyDetailPage() {
               onClick={() => void handleDelete()}
               className="rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
             >
-              Delete Word
+              {detail.page.deleteWord}
             </button>
           </div>
 

@@ -281,15 +281,42 @@ export type TranslationDictionary = {
     title: string;
     searchPlaceholder: string;
     loadingConversations: string;
+    loadingMessages: string;
+    today: string;
+    yesterday: string;
     removeFriendConfirm: string;
     inputPlaceholder: string;
+    backToMessages: string;
+    chatFallback: string;
+    selectedCount: string;
+    selectAll: string;
+    startConversationTitle: string;
+    startConversationDescription: string;
+    deleteSelectedMessage: string;
+    deleteSelectedMessages: string;
+    deleteDialogMessage: string;
+    deleteDialogMessages: string;
+    deleteDialogDescription: string;
+    closeDeleteConfirmation: string;
     analyzingAndSending: string;
     send: string;
     selectMessages: string;
+    delete: string;
+    deleting: string;
+    cancel: string;
+    deleteFriend: string;
+    deleteMessage: string;
+    deleteMessages: string;
+    english: string;
+    traditionalChinese: string;
+
     errors: {
       notLoggedIn: string;
       loadConversations: string;
       removeFriend: string;
+      noMessagesDeleted: string;
+      partialDelete: string;
+      deleteSelected: string;
     };
   };
   friends: {
@@ -418,6 +445,12 @@ export type TranslationDictionary = {
       send: string;
       saving: string;
       addToVocabulary: string;
+      unsavedTitle: string;
+      noMatchingTitle: string;
+      unsavedDescription: string;
+      noMatchingDescription: string;
+      lookingUp: string;
+      lookUpWord: string;
     };
 
     collections: {
@@ -512,6 +545,26 @@ export type TranslationDictionary = {
         ease: string;
       };
 
+      edit: {
+        title: string;
+        subtitle: string;
+        english: string;
+        traditionalChinese: string;
+        englishPlaceholder: string;
+        chinesePlaceholder: string;
+        englishExample: string;
+        chineseExample: string;
+        englishExamplePlaceholder: string;
+        chineseExamplePlaceholder: string;
+        close: string;
+        cancel: string;
+        save: string;
+        saving: string;
+        englishRequired: string;
+        chineseRequired: string;
+        saveFailed: string;
+      };
+
       actions: {
         edit: string;
         share: string;
@@ -546,6 +599,7 @@ export type TranslationDictionary = {
       noMatchingWords: string;
 
       statuses: {
+        all: string;
         new: string;
         learning: string;
         mastered: string;
