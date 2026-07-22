@@ -4,17 +4,13 @@ import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
 import VocabularyLearningStats from "@/components/vocabulary/card/VocabularyLearningStats";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 import type {
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
 
-const STATUS_LABELS: Record<VocabularyStatus, string> = {
-  new: "New",
-  learning: "Learning",
-  mastered: "Mastered",
-};
 
 type Props = {
   item: VocabularyItem;
@@ -23,6 +19,15 @@ type Props = {
 export default function VocabularyCardHeader({
   item,
 }: Props) {
+  const { t } = useTranslation();
+  const search = t.vocabulary.search;
+
+  const STATUS_LABELS: Record<VocabularyStatus, string> = {
+    new: search.statuses.new,
+    learning: search.statuses.learning,
+    mastered: search.statuses.mastered,
+  };
+
   const translation = item.translation?.trim() || "";
 
   return (

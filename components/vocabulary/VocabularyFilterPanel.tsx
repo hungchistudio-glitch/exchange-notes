@@ -3,13 +3,8 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo } from "react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
-
-const STATUS_LABELS: Record<VocabularyStatus, string> = {
-  new: "New",
-  learning: "Learning",
-  mastered: "Mastered",
-};
 
 type VocabularyFilterPanelProps = {
   items: VocabularyItem[];
@@ -26,6 +21,15 @@ export default function VocabularyFilterPanel({
   onClose,
   onSelect,
 }: VocabularyFilterPanelProps) {
+  const { t } = useTranslation();
+  const translations = t.vocabulary.search;
+
+  const statusLabels: Record<VocabularyStatus, string> = {
+    new: translations.statuses.new,
+    learning: translations.statuses.learning,
+    mastered: translations.statuses.mastered,
+  };
+
   const letters = useMemo(() => {
     const groups = new Map<string, VocabularyItem[]>();
 
@@ -70,17 +74,19 @@ export default function VocabularyFilterPanel({
             onClick={onClose}
             className="text-sm uppercase tracking-[0.08em]"
           >
-            Cancel
+            {translations.cancel}
           </button>
 
-          <p className="text-sm uppercase tracking-[0.08em]">Vocabulary</p>
+          <p className="text-sm uppercase tracking-[0.08em]">
+            {translations.vocabulary}
+          </p>
 
           <button
             type="button"
             onClick={() => onSearchChange("")}
             className="text-sm uppercase tracking-[0.08em]"
           >
-            Clear
+            {translations.clear}
           </button>
         </div>
 
@@ -94,7 +100,8 @@ export default function VocabularyFilterPanel({
             autoFocus
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search saved words"
+            placeholder={translations.searchPlaceholder}
+            aria-label={translations.searchAriaLabel}
             className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
           />
         </div>
@@ -103,12 +110,18 @@ export default function VocabularyFilterPanel({
       <div className="mx-auto grid max-w-xl grid-cols-[72px_1fr] gap-5 px-5 py-8">
         <aside className="text-xs uppercase leading-5 text-neutral-500">
           <p>{String(items.length).padStart(2, "0")}</p>
-          <p>Words</p>
+          <p>
+            {items.length === 1
+              ? translations.word
+              : translations.words}
+          </p>
         </aside>
 
         <div className="space-y-10">
           {letters.length === 0 ? (
-            <p className="text-neutral-400">No matching words.</p>
+            <p className="text-neutral-400">
+              {translations.noMatchingWords}
+            </p>
           ) : (
             letters.map(([letter, group]) => (
               <section key={letter} id={`letter-${letter}`}>
@@ -127,7 +140,7 @@ export default function VocabularyFilterPanel({
                       </span>
 
                       <span className="mt-1 block text-sm text-neutral-400">
-                        {item.translation} · {STATUS_LABELS[item.status]}
+                        {item.translation} · {statusLabels[item.status]}
                       </span>
                     </button>
                   ))}

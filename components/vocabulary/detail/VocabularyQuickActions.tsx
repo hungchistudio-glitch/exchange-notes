@@ -1,12 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  Brain,
-  Check,
-  Pencil,
-  Share2,
-} from "lucide-react";
+import { Check, Pencil, Share2 } from "lucide-react";
 
 import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 import AppButton from "@/components/ui/AppButton";
@@ -22,44 +17,17 @@ export default function VocabularyQuickActions({
   chinese,
   onEdit,
 }: Props) {
-
   const [copied, setCopied] = useState(false);
   const sharingRef = useRef(false);
-
-
-  function handleReview() {
-    const reviewSection =
-      document.getElementById("review-this-word");
-
-    if (!reviewSection) return;
-
-    reviewSection.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-
-    reviewSection.animate(
-      [
-        { transform: "scale(1)" },
-        { transform: "scale(1.015)" },
-        { transform: "scale(1)" },
-      ],
-      {
-        duration: 500,
-        easing: "ease-out",
-      },
-    );
-  }
 
   async function handleShare() {
     if (sharingRef.current) return;
 
     sharingRef.current = true;
+
     const shareData = {
       title: english,
-      text: chinese
-        ? `${english} — ${chinese}`
-        : english,
+      text: chinese ? `${english} — ${chinese}` : english,
       url: window.location.href,
     };
 
@@ -79,10 +47,7 @@ export default function VocabularyQuickActions({
         setCopied(false);
       }, 1800);
     } catch (error) {
-      if (
-        error instanceof DOMException &&
-        error.name === "AbortError"
-      ) {
+      if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
 
@@ -92,30 +57,20 @@ export default function VocabularyQuickActions({
     }
   }
 
-  const actionClassName =
-    "flex min-h-12 items-center justify-center gap-2 py-3";
+  const actionClassName = "flex min-h-12 items-center justify-center py-4";
 
   return (
     <SectionCard>
-      <div className="grid grid-cols-3 gap-3">
-        <AppButton
-          type="button"
-          variant="secondary"
-          className={actionClassName}
-          onClick={handleReview}
-        >
-          <Brain size={18} />
-          <span>Review</span>
-        </AppButton>
-
+      <div className="grid grid-cols-2 gap-3">
         <AppButton
           type="button"
           variant="secondary"
           className={actionClassName}
           onClick={onEdit}
+          aria-label="Edit vocabulary"
+          title="Edit vocabulary"
         >
-          <Pencil size={18} />
-          <span>Edit</span>
+          <Pencil size={21} aria-hidden="true" />
         </AppButton>
 
         <AppButton
@@ -123,14 +78,14 @@ export default function VocabularyQuickActions({
           variant="secondary"
           className={actionClassName}
           onClick={() => void handleShare()}
+          aria-label={copied ? "Copied" : "Share vocabulary"}
+          title={copied ? "Copied" : "Share vocabulary"}
         >
           {copied ? (
-            <Check size={18} />
+            <Check size={21} aria-hidden="true" />
           ) : (
-            <Share2 size={18} />
+            <Share2 size={21} aria-hidden="true" />
           )}
-
-          <span>{copied ? "Copied" : "Share"}</span>
         </AppButton>
       </div>
     </SectionCard>

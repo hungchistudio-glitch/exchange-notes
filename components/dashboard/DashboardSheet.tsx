@@ -4,11 +4,13 @@ import { ChevronDown } from "lucide-react";
 import {
   type ReactNode,
   useEffect,
-  useLayoutEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
+
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Props = {
   title?: string;
@@ -19,10 +21,14 @@ type Props = {
 const STORAGE_KEY = "vocabulary-dashboard-top-expanded";
 
 export default function DashboardSheet({
-  title = "Dashboard",
+  title,
   defaultExpanded = false,
   children,
 }: Props) {
+  const { t } = useTranslation();
+  const dashboard = t.vocabulary.dashboard;
+  const resolvedTitle = title ?? dashboard.title;
+
   const panelId = useId();
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -49,15 +55,12 @@ export default function DashboardSheet({
     );
   }, [expanded, ready]);
 
-  
   useLayoutEffect(() => {
     if (!contentRef.current) return;
 
-    if (expanded) {
-      setContentHeight(contentRef.current.scrollHeight);
-    } else {
-      setContentHeight(0);
-    }
+    setContentHeight(
+      expanded ? contentRef.current.scrollHeight : 0,
+    );
   }, [expanded, children]);
 
   return (
@@ -72,11 +75,11 @@ export default function DashboardSheet({
         >
           <span>
             <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-black/40">
-              Learning System
+              {dashboard.eyebrow}
             </span>
 
             <span className="mt-1.5 block text-[20px] font-semibold tracking-[-0.025em] text-black">
-              {title}
+              {resolvedTitle}
             </span>
           </span>
 

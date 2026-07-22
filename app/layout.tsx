@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import "./globals.css";
+
 import Providers from "@/app/providers";
+import AppPreferencesBootstrap from "@/components/preferences/AppPreferencesBootstrap";
+import InterfaceLanguageInitializer from "@/components/preferences/InterfaceLanguageInitializer";
+
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Exchange Notes",
@@ -14,9 +18,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      suppressHydrationWarning
+    >
       <body>
-        <Providers>{children}</Providers>
+        <InterfaceLanguageInitializer />
+        <AppPreferencesBootstrap />
+
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -5,6 +5,8 @@ export type FriendProfile = {
   displayName: string | null;
   exchangeId: string;
   avatarUrl: string | null;
+  nativeLanguage: "english" | "traditional-chinese";
+  learningLanguage: "english" | "traditional-chinese";
 };
 
 export type IncomingRequest = {
@@ -24,6 +26,8 @@ type ProfileRow = {
   display_name: string | null;
   exchange_id: string;
   avatar_url: string | null;
+  native_language: "english" | "traditional-chinese";
+  learning_language: "english" | "traditional-chinese";
 };
 
 function toFriendProfile(row: ProfileRow): FriendProfile {
@@ -32,6 +36,8 @@ function toFriendProfile(row: ProfileRow): FriendProfile {
     displayName: row.display_name,
     exchangeId: row.exchange_id,
     avatarUrl: row.avatar_url,
+    nativeLanguage: row.native_language,
+    learningLanguage: row.learning_language,
   };
 }
 
@@ -49,7 +55,7 @@ export async function findProfileByExchangeId(
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url")
+    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
     .ilike("exchange_id", clean)
     .maybeSingle();
 
@@ -137,7 +143,7 @@ export async function listIncomingRequests(
   const { data, error } = await supabase
     .from("friend_requests")
     .select(
-      "id, created_at, sender:profiles!friend_requests_sender_id_fkey(id, display_name, exchange_id, avatar_url)"
+      "id, created_at, sender:profiles!friend_requests_sender_id_fkey(id, display_name, exchange_id, avatar_url, native_language, learning_language)"
     )
     .eq("receiver_id", currentUserId)
     .eq("status", "pending")
@@ -169,7 +175,7 @@ export async function listOutgoingRequests(
   const { data, error } = await supabase
     .from("friend_requests")
     .select(
-      "id, created_at, receiver:profiles!friend_requests_receiver_id_fkey(id, display_name, exchange_id, avatar_url)"
+      "id, created_at, receiver:profiles!friend_requests_receiver_id_fkey(id, display_name, exchange_id, avatar_url, native_language, learning_language)"
     )
     .eq("sender_id", currentUserId)
     .eq("status", "pending")
@@ -212,7 +218,7 @@ export async function listFriends(
 
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url")
+    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
     .in("id", otherIds);
 
   if (profilesError) throw profilesError;

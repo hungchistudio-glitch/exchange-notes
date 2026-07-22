@@ -58,7 +58,14 @@ export async function saveReviewResult(
     });
 
   if (eventError) {
-    console.error("Failed to save review event:", eventError);
+    console.log("========== REVIEW EVENT ERROR ==========");
+    console.log(eventError);
+    console.log(JSON.stringify(eventError, null, 2));
+    console.log("code:", eventError.code);
+    console.log("message:", eventError.message);
+    console.log("details:", eventError.details);
+    console.log("hint:", eventError.hint);
+    console.log("========================================");
   }
 
   return next;

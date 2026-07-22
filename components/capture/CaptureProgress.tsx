@@ -1,41 +1,91 @@
+"use client";
+
 import { Check } from "lucide-react";
 
-type Step = "photo" | "analyze" | "review" | "save";
+import useTranslation from "@/hooks/i18n/useTranslation";
+
+type Step =
+  | "photo"
+  | "analyze"
+  | "review"
+  | "save";
 
 type CaptureProgressProps = {
   current: Step;
 };
 
-const steps: Array<{ id: Step; label: string }> = [
-  { id: "photo", label: "Photo" },
-  { id: "analyze", label: "Analyze" },
-  { id: "review", label: "Review" },
-  { id: "save", label: "Save" },
-];
+export default function CaptureProgress({
+  current,
+}: CaptureProgressProps) {
+  const { t } = useTranslation();
 
-export default function CaptureProgress({ current }: CaptureProgressProps) {
-  const currentIndex = steps.findIndex((step) => step.id === current);
+  const steps: Array<{
+    id: Step;
+    label: string;
+  }> = [
+    {
+      id: "photo",
+      label: t.capture.progress.photo,
+    },
+    {
+      id: "analyze",
+      label: t.capture.progress.analyze,
+    },
+    {
+      id: "review",
+      label: t.capture.progress.review,
+    },
+    {
+      id: "save",
+      label: t.capture.progress.save,
+    },
+  ];
+
+  const currentIndex = steps.findIndex(
+    (step) => step.id === current,
+  );
 
   return (
-    <div aria-label="Capture progress" className="grid grid-cols-4 gap-2">
+    <div
+      aria-label={
+        t.capture.progress.ariaLabel
+      }
+      className="grid grid-cols-4 gap-3"
+    >
       {steps.map((step, index) => {
-        const complete = index < currentIndex;
-        const active = index === currentIndex;
+        const complete =
+          index < currentIndex;
+
+        const active =
+          index === currentIndex;
 
         return (
-          <div key={step.id} className="min-w-0">
+          <div
+            key={step.id}
+            className="min-w-0"
+          >
             <div
-              className={`h-1.5 rounded-full transition-colors ${
-                complete || active ? "bg-black" : "bg-black/[0.08]"
+              className={`h-[5px] rounded-full transition-colors ${
+                complete || active
+                  ? "bg-black"
+                  : "bg-black/[0.08]"
               }`}
             />
-            <div className="mt-2 flex items-center gap-1.5">
+
+            <div className="mt-2.5 flex items-center gap-1.5">
               {complete ? (
-                <Check size={11} strokeWidth={2.2} className="shrink-0" />
+                <Check
+                  size={11}
+                  strokeWidth={2.2}
+                  className="shrink-0"
+                />
               ) : null}
+
               <span
-                className={`truncate text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                  active || complete ? "text-black/70" : "text-black/28"
+                className={`truncate text-[9px] font-semibold uppercase tracking-[0.14em] ${
+                  active || complete
+                    ? "text-black/70"
+                    : "text-black/28"
                 }`}
               >
                 {step.label}

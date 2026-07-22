@@ -16,7 +16,7 @@ export default function TodayReviewCard({ due }: Props) {
       </p>
 
       <Link
-        href="/review"
+        href="/review?from=vocabulary"
         className="mt-8 inline-flex rounded-xl bg-white px-5 py-3 font-semibold text-black"
       >
         Continue Review →

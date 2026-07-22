@@ -21,6 +21,12 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
+import type {
+  TranslationDictionary,
+  TranslationLanguage,
+} from "@/lib/i18n";
+
 import { speak } from "@/lib/speech";
 import { setPendingSharedArticle } from "@/lib/newsDraft";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
@@ -73,19 +79,76 @@ function writeSeenIds(ids: string[]) {
   }
 }
 
-function formatPublishedDate(value: string): string {
+function formatPublishedDate(
+  value: string,
+  language: TranslationLanguage,
+): string {
   try {
-    return new Date(value).toLocaleDateString("zh-TW", {
-      month: "short",
-      day: "numeric",
-    });
+    const locale =
+      language === "traditional-chinese"
+        ? "zh-TW"
+        : "en-US";
+
+    return new Date(value).toLocaleDateString(
+      locale,
+      {
+        month: "short",
+        day: "numeric",
+      },
+    );
   } catch {
     return "";
   }
 }
 
+function getTranslatedCategory(
+  category: string,
+  t: TranslationDictionary,
+): string {
+  const normalized = category
+    .trim()
+    .toLowerCase();
+
+  const categories = t.discover.categories;
+
+  switch (normalized) {
+    case "world":
+      return categories.world;
+
+    case "business":
+      return categories.business;
+
+    case "technology":
+    case "tech":
+      return categories.technology;
+
+    case "science":
+      return categories.science;
+
+    case "health":
+      return categories.health;
+
+    case "culture":
+    case "arts":
+    case "entertainment":
+      return categories.culture;
+
+    case "environment":
+    case "climate":
+      return categories.environment;
+
+    case "politics":
+    case "political":
+      return categories.politics;
+
+    default:
+      return categories.general;
+  }
+}
+
 export default function DiscoverPage() {
   const router = useRouter();
+  const { language, t } = useTranslation();
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +166,7 @@ export default function DiscoverPage() {
 
   const friendsRequestedRef = useRef(false);
 
-  const handleSendToPartner = useCallback((card: DailyNewsCard) => {
+  const handleSendToFriend = useCallback((card: DailyNewsCard) => {
     setFriendPickerCard(card);
   }, []);
 
@@ -227,15 +290,15 @@ export default function DiscoverPage() {
           type="button"
           onClick={() => void loadStories(true)}
           disabled={refreshing || loading}
-          aria-label="Load new stories"
+          aria-label={t.discover.loadNewStoriesAriaLabel}
           className="w-full text-left transition-opacity disabled:opacity-60"
         >
           <p className="text-sm font-bold uppercase tracking-[0.2em]">
-            Exchange Notes
+            {t.discover.eyebrow}
           </p>
 
           <h1 className="mt-3 flex items-center gap-3 text-5xl font-black">
-            Discover
+            {t.discover.title}
             <RefreshCw
               size={22}
               className={`text-[#8a8a8a] ${
@@ -245,7 +308,7 @@ export default function DiscoverPage() {
           </h1>
 
           <p className="mt-3 max-w-md text-lg leading-7 text-[#4f4f4f]">
-            Real news, rewritten as a daily English lesson.
+            {t.discover.subtitle}
           </p>
         </button>
 
@@ -278,11 +341,13 @@ export default function DiscoverPage() {
                     return next;
                   })
                 }
-                onSendToPartner={() => handleSendToPartner(card)}
-                onSendVocabularyToPartner={(item) => {
+                onSendToFriend={() => handleSendToFriend(card)}
+                onSendVocabularyToFriend={(item) => {
                   setFriendPickerCard(null);
                   setFriendPickerVocabulary(item);
                 }}
+                language={language}
+                t={t}
               />
             ))}
 
@@ -293,7 +358,9 @@ export default function DiscoverPage() {
               disabled={refreshing}
               className="w-full rounded-[24px] border border-black/10 bg-white py-4 text-center font-black transition-colors hover:bg-black/[0.03] disabled:opacity-40"
             >
-              {refreshing ? "Loading..." : "New Stories"}
+              {refreshing
+                ? t.discover.loadingNewStories
+                : t.discover.newStories}
             </button>
           )}
         </div>
@@ -597,13 +664,13 @@ function SelectionToolbar({
   addingWord,
   addedWord,
   onAddWord,
-  onSendToPartner,
+  onSendToFriend,
 }: {
   selection: SelectionState | null;
   addingWord: boolean;
   addedWord: boolean;
   onAddWord: () => void;
-  onSendToPartner: () => void;
+  onSendToFriend: () => void;
 }) {
   if (!selection) return null;
 
@@ -632,7 +699,7 @@ function SelectionToolbar({
 
       <button
         type="button"
-        onClick={onSendToPartner}
+        onClick={onSendToFriend}
         aria-label="傳送給夥伴"
         className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
       >
@@ -648,16 +715,22 @@ function NewsCard({
   onToggleVocabulary,
   imageBroken,
   onImageError,
-  onSendToPartner,
-  onSendVocabularyToPartner,
+  onSendToFriend,
+  onSendVocabularyToFriend,
+  language,
+  t,
 }: {
   card: DailyNewsCard;
   expanded: boolean;
   onToggleVocabulary: () => void;
   imageBroken: boolean;
   onImageError: () => void;
-  onSendToPartner: () => void;
-  onSendVocabularyToPartner: (item: AppVocabularyItem) => void;
+  onSendToFriend: () => void;
+  onSendVocabularyToFriend: (
+    item: AppVocabularyItem,
+  ) => void;
+  language: TranslationLanguage;
+  t: TranslationDictionary;
 }) {
   const hasChinese = Boolean(card.chineseTitle && card.chineseSummary);
   const hasVocabulary = card.vocabulary.length > 0;
@@ -728,7 +801,7 @@ function NewsCard({
     }
   }
 
-  async function handleSelectionSendToPartner() {
+  async function handleSelectionSendToFriend() {
     if (!selection || addingWord) return;
 
     const selectedText = selection.text.trim();
@@ -774,7 +847,7 @@ function NewsCard({
 
       window.getSelection()?.removeAllRanges();
       setSelection(null);
-      onSendVocabularyToPartner(selectedVocabulary);
+      onSendVocabularyToFriend(selectedVocabulary);
     } catch (selectionError) {
       console.error("Failed to prepare selected vocabulary:", selectionError);
     } finally {
@@ -824,11 +897,18 @@ function NewsCard({
       <div className="p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#8a8a8a]">
-            {card.category}
+            {getTranslatedCategory(
+              card.category,
+              t,
+            )}
           </span>
 
           <span className="text-xs font-bold text-[#8a8a8a]">
-            {formatPublishedDate(card.publishedAt)} · {card.sourceName}
+            {formatPublishedDate(
+              card.publishedAt,
+              language,
+            )}{" "}
+            · {card.sourceName}
           </span>
         </div>
 
@@ -838,7 +918,7 @@ function NewsCard({
             addingWord={addingWord}
             addedWord={addedWord}
             onAddWord={() => void handleAddSelectionToVocabulary()}
-            onSendToPartner={handleSelectionSendToPartner}
+            onSendToFriend={handleSelectionSendToFriend}
           />
 
           <div className="mt-4 flex items-start gap-2">
@@ -849,7 +929,7 @@ function NewsCard({
             <SpeakButton
               text={card.englishTitle}
               lang="en-US"
-              label="Listen to headline in English"
+              label={t.discover.listenHeadlineAriaLabel}
             />
           </div>
 
@@ -872,7 +952,7 @@ function NewsCard({
             <SpeakButton
               text={card.englishSummary}
               lang="en-US"
-              label="Listen to summary in English"
+              label={t.discover.listenSummaryAriaLabel}
             />
           </div>
 
@@ -900,7 +980,8 @@ function NewsCard({
               className="flex w-full items-center justify-between"
             >
               <span className="font-black">
-                Vocabulary · {card.vocabulary.length}
+                {t.discover.vocabulary} ·{" "}
+                {card.vocabulary.length}
               </span>
 
               <ChevronDown
@@ -926,31 +1007,37 @@ function NewsCard({
             href={card.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Original Source"
+            aria-label={t.discover.originalSourceAriaLabel}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-black py-3 text-white transition-transform active:scale-95"
           >
             <ExternalLink size={17} />
-            <span className="text-[11px] font-bold">Source</span>
+            <span className="text-[11px] font-bold">
+              {t.common.source}
+            </span>
           </a>
 
           <button
             type="button"
-            onClick={onSendToPartner}
-            aria-label="Send to Partner"
+            onClick={onSendToFriend}
+            aria-label={t.discover.sendToFriendAriaLabel}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
             <Send size={17} />
-            <span className="text-[11px] font-bold">Partner</span>
+            <span className="text-[11px] font-bold">
+              {t.discover.sendToFriend}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => void handleShare()}
-            aria-label="Share"
+            aria-label={t.discover.shareAriaLabel}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
             <Share size={17} />
-            <span className="text-[11px] font-bold">Share</span>
+            <span className="text-[11px] font-bold">
+              {t.common.share}
+            </span>
           </button>
         </div>
       </div>

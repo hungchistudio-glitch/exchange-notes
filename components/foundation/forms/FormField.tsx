@@ -21,22 +21,26 @@ export default function FormField({
     <div className={className}>
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-semibold tracking-[-0.01em] text-black"
+        className="block text-[14px] font-semibold tracking-[-0.015em] text-[var(--en-text-primary)]"
       >
         {label}
       </label>
 
-      <div className="mt-2">{children}</div>
+      <div className="mt-2.5">
+        {children}
+      </div>
 
-      {description && !error && (
-        <p className="mt-2 text-xs leading-5 text-black/45">{description}</p>
-      )}
+      {description && !error ? (
+        <p className="mt-2 text-xs leading-5 text-[var(--en-text-tertiary)]">
+          {description}
+        </p>
+      ) : null}
 
-      {error && (
-        <p className="mt-2 text-xs font-medium leading-5 text-red-600">
+      {error ? (
+        <p className="mt-2 text-xs font-medium leading-5 text-red-500">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, LoaderCircle, Send, UserRound, X } from "lucide-react";
-import Link from "next/link";
 
 import CaptureProgress from "@/components/capture/CaptureProgress";
 import CaptureResultEditor from "@/components/capture/CaptureResultEditor";
@@ -13,6 +12,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { speak } from "@/lib/speech";
 import { getPronunciationData } from "@/lib/pronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
@@ -59,6 +59,8 @@ function getVocabularyKey(word: string, translation: string) {
 
 export default function CameraPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const copy = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -149,9 +151,9 @@ export default function CameraPage() {
       window.setTimeout(() => identifyImageRef.current(draft.imageData), 0);
     } catch (draftError) {
       console.error("Could not restore capture draft:", draftError);
-      setError("Could not open the selected image.");
+      setError(copy.errors.openSelectedImage);
     }
-  }, []);
+  }, [copy.errors.openSelectedImage]);
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => {
@@ -223,15 +225,15 @@ export default function CameraPage() {
 
       if (errorName === "NotAllowedError") {
         setError(
-          "Camera permission was denied. Enable camera access in your browser settings, or choose an image instead.",
+          copy.errors.cameraPermissionDenied,
         );
       } else if (errorName === "NotFoundError") {
-        setError("No camera was found on this device.");
+        setError(copy.errors.noCamera);
       } else if (errorName === "NotReadableError") {
-        setError("The camera is already being used by another application.");
+        setError(copy.errors.cameraInUse);
       } else {
         setError(
-          "Camera access is unavailable. Try choosing an image instead.",
+          copy.errors.cameraUnavailable,
         );
       }
     } finally {
@@ -252,7 +254,7 @@ export default function CameraPage() {
     const handleLoadedMetadata = () => {
       void video.play().catch((playError) => {
         console.error("video.play() failed:", playError);
-        setError("Could not start the camera preview. Try again.");
+        setError(copy.errors.cameraPreview);
       });
     };
 
@@ -265,7 +267,10 @@ export default function CameraPage() {
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [cameraActive]);
+  }, [
+    cameraActive,
+    copy.errors.cameraPreview,
+  ]);
 
   function drawToDataUrl(
     source: CanvasImageSource,
@@ -297,19 +302,19 @@ export default function CameraPage() {
       const reader = new FileReader();
 
       reader.onerror = () => {
-        reject(new Error("Could not read this image."));
+        reject(new Error(copy.errors.readImage));
       };
 
       reader.onload = () => {
         if (typeof reader.result !== "string") {
-          reject(new Error("Could not read this image."));
+          reject(new Error(copy.errors.readImage));
           return;
         }
 
         const image = new Image();
 
         image.onerror = () => {
-          reject(new Error("Could not open this image."));
+          reject(new Error(copy.errors.openImage));
         };
 
         image.onload = () => {
@@ -320,7 +325,7 @@ export default function CameraPage() {
           );
 
           if (!compressed) {
-            reject(new Error("Could not process this image."));
+            reject(new Error(copy.errors.processImage));
             return;
           }
 
@@ -345,12 +350,12 @@ export default function CameraPage() {
     setSaved(false);
 
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+      setError(copy.errors.selectImage);
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError("Please choose an image smaller than 10 MB.");
+      setError(copy.errors.imageTooLarge);
       return;
     }
 
@@ -365,7 +370,7 @@ export default function CameraPage() {
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Could not process this image.",
+          : copy.errors.processImage,
       );
     }
   }
@@ -379,14 +384,14 @@ export default function CameraPage() {
       !video.videoWidth ||
       !video.videoHeight
     ) {
-      setError("The camera is not ready yet.");
+      setError(copy.errors.cameraNotReady);
       return;
     }
 
     const captured = drawToDataUrl(video, video.videoWidth, video.videoHeight);
 
     if (!captured) {
-      setError("Could not capture the image.");
+      setError(copy.errors.captureImage);
       return;
     }
 
@@ -423,7 +428,7 @@ export default function CameraPage() {
 
       if (!response.ok || "error" in data) {
         throw new Error(
-          "error" in data ? data.error : "Could not identify this image.",
+          "error" in data ? data.error : copy.errors.identifyImage,
         );
       }
 
@@ -432,7 +437,7 @@ export default function CameraPage() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Could not identify this image.",
+          : copy.errors.identifyImage,
       );
     } finally {
       setAnalyzing(false);
@@ -456,7 +461,7 @@ export default function CameraPage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error("Please log in before saving a word.");
+        throw new Error(copy.errors.loginBeforeSave);
       }
 
       const word = result.englishName.trim();
@@ -478,7 +483,7 @@ export default function CameraPage() {
 
       if (duplicate) {
         setSaved(true);
-        setError("This word is already in your vocabulary.");
+        setError(copy.errors.duplicateWord);
         return;
       }
 
@@ -530,7 +535,7 @@ export default function CameraPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : "Could not save this word.",
+          : copy.errors.saveWord,
       );
     } finally {
       setSaving(false);
@@ -552,14 +557,14 @@ export default function CameraPage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error("Please log in before sharing a word.");
+        throw new Error(copy.errors.loginBeforeShare);
       }
 
       const friends = await listFriends(supabase, user.id);
 
       if (friends.length === 0) {
         throw new Error(
-          "You don't have any learning partners yet. Add a friend first.",
+          copy.errors.noPartners,
         );
       }
 
@@ -569,7 +574,7 @@ export default function CameraPage() {
       setError(
         partnerError instanceof Error
           ? partnerError.message
-          : "Could not load your learning partners.",
+          : copy.errors.loadPartners,
       );
     } finally {
       setLoadingPartners(false);
@@ -592,7 +597,7 @@ export default function CameraPage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        throw new Error("Please log in before sharing a word.");
+        throw new Error(copy.errors.loginBeforeShare);
       }
 
       const now = new Date().toISOString();
@@ -632,7 +637,7 @@ export default function CameraPage() {
       setError(
         sendError instanceof Error
           ? sendError.message
-          : "Could not send this word.",
+          : copy.errors.sendWord,
       );
 
       setSending(false);
@@ -679,24 +684,47 @@ export default function CameraPage() {
         ? "analyze"
         : "photo";
 
+  const captureFlowActive =
+    cameraActive ||
+    Boolean(imageData) ||
+    analyzing ||
+    Boolean(result);
+
+  function handleBack() {
+    if (captureFlowActive) {
+      reset();
+      return;
+    }
+
+    router.push("/home");
+  }
+
   return (
     <AppPage
       width="default"
       className="pb-[calc(9rem+env(safe-area-inset-bottom))]"
     >
       <PageHeader
-        eyebrow="AI vocabulary capture"
-        title="Discover"
-        description="Photograph something, review the bilingual result, and save it as a word."
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        description={copy.description}
+        className="[&_h1]:text-[34px] [&_h1]:leading-[1.04] [&_h1]:tracking-[-0.045em] [&_p]:max-w-[600px] [&_p]:text-[14px] [&_p]:leading-[1.65]"
         leading={
-          <Link
-            href="/vocabulary"
-            aria-label="Back to vocabulary"
-            onClick={stopCamera}
-            className="flex h-11 w-11 items-center justify-center rounded-full text-black/55 transition hover:bg-black/[0.04]"
+          <button
+            type="button"
+            aria-label={
+              captureFlowActive
+                ? copy.backToCapture
+                : copy.backToHome
+            }
+            onClick={handleBack}
+            className="flex h-11 w-11 items-center justify-center rounded-full text-black/70 transition hover:bg-black/[0.045] active:scale-95"
           >
-            <ArrowLeft size={20} strokeWidth={1.8} />
-          </Link>
+            <ArrowLeft
+              size={21}
+              strokeWidth={1.8}
+            />
+          </button>
         }
         trailing={
           imageData || cameraActive ? (
@@ -705,7 +733,7 @@ export default function CameraPage() {
               onClick={reset}
               className="h-11 px-2 text-[13px] font-semibold text-black/45"
             >
-              Reset
+              {copy.reset}
             </button>
           ) : null
         }
@@ -726,7 +754,7 @@ export default function CameraPage() {
 
       {cameraActive && !imageData ? (
         <section className="mt-6">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-[28px] bg-black shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
+          <div className="relative h-[min(66dvh,720px)] min-h-[420px] overflow-hidden rounded-[26px] bg-black shadow-[0_16px_42px_rgba(0,0,0,0.13)]">
             <video
               ref={videoRef}
               autoPlay
@@ -739,21 +767,21 @@ export default function CameraPage() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/45 to-transparent" />
           </div>
 
-          <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center">
+          <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center pb-4">
             <button
               type="button"
               onClick={stopCamera}
-              className="justify-self-start px-3 py-3 text-[13px] font-semibold text-black/45"
+              className="justify-self-start rounded-full px-4 py-3 text-[13px] font-semibold text-black/52 transition hover:bg-black/[0.04]"
             >
-              Cancel
+              {copy.camera.cancel}
             </button>
             <button
               type="button"
               onClick={capturePhoto}
-              aria-label="Capture photo"
-              className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[5px] border-white bg-black shadow-[0_6px_22px_rgba(0,0,0,0.2)] transition-transform active:scale-95"
+              aria-label={copy.camera.captureAriaLabel}
+              className="flex h-[70px] w-[70px] items-center justify-center rounded-full border-[5px] border-white bg-black shadow-[0_6px_20px_rgba(0,0,0,0.18)] transition-transform active:scale-95"
             >
-              <span className="h-[56px] w-[56px] rounded-full border border-white/35" />
+              <span className="h-[50px] w-[50px] rounded-full border border-white/35" />
             </button>
             <span />
           </div>
@@ -766,14 +794,14 @@ export default function CameraPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageData}
-              alt="Selected object"
+              alt={copy.camera.selectedObjectAlt}
               className="max-h-[46dvh] w-full object-contain"
             />
           </AppCard>
 
           <div className="mt-3 flex items-center justify-between gap-3 px-1">
             <p className="min-w-0 truncate text-[11px] text-black/32">
-              {fileName || "Selected image"}
+              {fileName || copy.camera.selectedImage}
             </p>
             {!analyzing && !result ? (
               <button
@@ -781,7 +809,7 @@ export default function CameraPage() {
                 onClick={() => void identifyImage()}
                 className="shrink-0 text-[12px] font-semibold text-black/55"
               >
-                Analyze again
+                {copy.camera.analyzeAgain}
               </button>
             ) : null}
           </div>
@@ -792,11 +820,10 @@ export default function CameraPage() {
         <AppCard padding="lg" className="mt-5 text-center">
           <LoaderCircle size={26} className="mx-auto animate-spin" />
           <h2 className="mt-4 text-[20px] font-semibold tracking-[-0.03em]">
-            Analyzing your photo
+            {copy.analysis.title}
           </h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-5 text-black/45">
-            AI is identifying the object and preparing English and Traditional
-            Chinese examples.
+            {copy.analysis.description}
           </p>
         </AppCard>
       ) : null}
@@ -850,12 +877,12 @@ export default function CameraPage() {
             <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
             <header className="flex items-center justify-between border-b border-black/[0.07] px-5 pb-4 pt-4">
               <div>
-                <p className="app-eyebrow">Learning partners</p>
+                <p className="app-eyebrow">{copy.partners.eyebrow}</p>
                 <h2
                   id="partner-picker-title"
                   className="mt-1 text-[22px] font-semibold tracking-[-0.03em]"
                 >
-                  Send this word to
+                  {copy.partners.title}
                 </h2>
               </div>
               <AppButton
@@ -863,7 +890,7 @@ export default function CameraPage() {
                 variant="ghost"
                 onClick={() => setPartnerPickerOpen(false)}
                 disabled={sending}
-                aria-label="Close partner picker"
+                aria-label={copy.partners.closeAriaLabel}
               >
                 <X size={17} />
               </AppButton>

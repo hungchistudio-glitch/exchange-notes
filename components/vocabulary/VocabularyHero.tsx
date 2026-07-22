@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Props = {
   todayProgress: number;
@@ -45,6 +46,9 @@ export default function VocabularyHero({
   retention,
   weakWords,
 }: Props) {
+  const { t } = useTranslation();
+  const hero = t.vocabulary.hero;
+
   const percent =
     todayGoal <= 0
       ? 0
@@ -57,12 +61,18 @@ export default function VocabularyHero({
   const goalCompleted =
     todayGoal > 0 && todayProgress >= todayGoal;
 
+  const remainingMessage = (
+    remaining === 1
+      ? hero.wordRemaining
+      : hero.wordsRemaining
+  ).replace("{count}", String(remaining));
+
   return (
     <section className="overflow-hidden rounded-[22px] bg-black px-5 py-5 text-white sm:px-6 sm:py-6">
       <div className="flex items-start justify-between gap-5">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
-            Vocabulary
+            {hero.vocabulary}
           </p>
 
           <div className="mt-5 flex items-baseline gap-2">
@@ -76,13 +86,13 @@ export default function VocabularyHero({
           </div>
 
           <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
-            Today&apos;s progress
+            {hero.todayProgress}
           </p>
         </div>
 
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">
-            Completion
+            {hero.completion}
           </p>
 
           <p className="mt-2 text-2xl font-semibold tracking-[-0.04em]">
@@ -100,34 +110,32 @@ export default function VocabularyHero({
 
       <p className="mt-4 text-xs leading-5 text-white/45">
         {goalCompleted
-          ? "Daily target completed."
-          : `${remaining} ${
-              remaining === 1 ? "word" : "words"
-            } remaining.`}
+          ? hero.dailyTargetCompleted
+          : remainingMessage}
       </p>
 
       <div className="mt-6">
-        <Metric label="Due Today" value={dueToday} />
-        <Metric label="Retention" value={`${retention}%`} />
-        <Metric label="Accuracy" value={`${accuracy}%`} />
-        <Metric label="Weak Words" value={weakWords} />
-        <Metric label="Total Words" value={totalWords} />
-        <Metric label="Learning" value={learningWords} />
-        <Metric label="Mastered" value={masteredWords} />
+        <Metric label={hero.dueToday} value={dueToday} />
+        <Metric label={hero.retention} value={`${retention}%`} />
+        <Metric label={hero.accuracy} value={`${accuracy}%`} />
+        <Metric label={hero.weakWords} value={weakWords} />
+        <Metric label={hero.totalWords} value={totalWords} />
+        <Metric label={hero.learning} value={learningWords} />
+        <Metric label={hero.mastered} value={masteredWords} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 border-y border-white/10">
         <Link
-          href="/review"
+          href="/review?from=vocabulary"
           className="group flex min-w-0 items-center justify-between border-r border-white/10 py-4 pr-4"
         >
           <span>
             <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
-              Today
+              {hero.today}
             </span>
 
             <span className="mt-1 block text-sm font-medium">
-              Start Review
+              {hero.startReview}
             </span>
           </span>
 
@@ -144,11 +152,11 @@ export default function VocabularyHero({
         >
           <span>
             <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
-              Library
+              {hero.library}
             </span>
 
             <span className="mt-1 block text-sm font-medium">
-              Collections
+              {hero.collections}
             </span>
           </span>
 

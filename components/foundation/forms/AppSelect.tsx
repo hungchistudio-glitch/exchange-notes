@@ -1,21 +1,40 @@
-import { forwardRef, SelectHTMLAttributes } from "react";
+import {
+  forwardRef,
+  SelectHTMLAttributes,
+} from "react";
 import { ChevronDown } from "lucide-react";
 
-export type AppSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
-  invalid?: boolean;
-};
+export type AppSelectProps =
+  SelectHTMLAttributes<HTMLSelectElement> & {
+    invalid?: boolean;
+  };
 
-const AppSelect = forwardRef<HTMLSelectElement, AppSelectProps>(
-  ({ invalid = false, className = "", disabled, children, ...props }, ref) => {
+const AppSelect = forwardRef<
+  HTMLSelectElement,
+  AppSelectProps
+>(
+  (
+    {
+      invalid = false,
+      className = "",
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <div
         className={[
-          "relative min-h-12 w-full rounded-2xl border bg-white",
-          "transition-colors focus-within:ring-2 focus-within:ring-black/[0.08]",
+          "relative min-h-[52px] w-full rounded-[16px] border",
+          "bg-[var(--en-surface)] transition-colors",
+          "focus-within:ring-2 focus-within:ring-[var(--en-border-strong)]",
           invalid
             ? "border-red-400 focus-within:border-red-500"
-            : "border-black/[0.12] focus-within:border-black/40",
-          disabled ? "bg-black/[0.025] opacity-55" : "",
+            : "border-[var(--en-border)] focus-within:border-[var(--en-border-strong)]",
+          disabled
+            ? "bg-[var(--en-surface-secondary)] opacity-55"
+            : "",
           className,
         ]
           .filter(Boolean)
@@ -25,7 +44,10 @@ const AppSelect = forwardRef<HTMLSelectElement, AppSelectProps>(
           ref={ref}
           disabled={disabled}
           aria-invalid={invalid || undefined}
-          className="min-h-12 w-full appearance-none bg-transparent px-4 py-3 pr-11 text-[15px] text-black outline-none"
+          className={[
+            "min-h-[52px] w-full appearance-none bg-transparent px-4 py-3 pr-11",
+            "text-[16px] text-[var(--en-text-primary)] outline-none",
+          ].join(" ")}
           {...props}
         >
           {children}
@@ -35,7 +57,7 @@ const AppSelect = forwardRef<HTMLSelectElement, AppSelectProps>(
           aria-hidden="true"
           size={16}
           strokeWidth={1.8}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/40"
+          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--en-icon-secondary)]"
         />
       </div>
     );

@@ -22,35 +22,11 @@ export type AppButtonProps = Omit<
   children: ReactNode;
   variant?: AppButtonVariant;
   size?: AppButtonSize;
-
-  /**
-   * Displays a loading indicator and disables the button.
-   */
   loading?: boolean;
-
-  /**
-   * Temporary backwards-compatible alias for loading.
-   */
   isLoading?: boolean;
-
-  /**
-   * Makes the button fill the available width.
-   */
   fullWidth?: boolean;
-
-  /**
-   * Optional content displayed before the label.
-   */
   leftIcon?: ReactNode;
-
-  /**
-   * Optional content displayed after the label.
-   */
   rightIcon?: ReactNode;
-
-  /**
-   * Accessible label announced while loading.
-   */
   loadingLabel?: string;
 };
 
@@ -116,32 +92,26 @@ export default function AppButton({
       {...props}
     >
       {buttonIsLoading ? (
-        <>
+        <span className="inline-flex items-center justify-center gap-2">
           <LoadingSpinner />
           <span>{loadingLabel}</span>
-        </>
+        </span>
       ) : (
-        <>
-          {leftIcon ? (
-            <span
-              aria-hidden="true"
-              className="inline-flex shrink-0 items-center"
-            >
+        <span className="inline-flex items-center justify-center gap-2">
+          {leftIcon && (
+            <span className="inline-flex shrink-0 items-center">
               {leftIcon}
             </span>
-          ) : null}
+          )}
 
           <span>{children}</span>
 
-          {rightIcon ? (
-            <span
-              aria-hidden="true"
-              className="inline-flex shrink-0 items-center"
-            >
+          {rightIcon && (
+            <span className="inline-flex shrink-0 items-center">
               {rightIcon}
             </span>
-          ) : null}
-        </>
+          )}
+        </span>
       )}
     </button>
   );

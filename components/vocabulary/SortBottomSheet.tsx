@@ -3,13 +3,9 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 
-export type SortMode = "new" | "for-you" | "trending";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
-export const SORT_LABELS: Record<SortMode, string> = {
-  new: "New Words",
-  "for-you": "For You",
-  trending: "Trending",
-};
+export type SortMode = "new" | "for-you" | "trending";
 
 type SortBottomSheetProps = {
   value: SortMode;
@@ -22,6 +18,15 @@ export default function SortBottomSheet({
   onChange,
   onClose,
 }: SortBottomSheetProps) {
+  const { t } = useTranslation();
+  const search = t.vocabulary.search;
+
+  const sortLabels: Record<SortMode, string> = {
+    new: search.sortOptions.new,
+    "for-you": search.sortOptions.forYou,
+    trending: search.sortOptions.trending,
+  };
+
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -46,19 +51,19 @@ export default function SortBottomSheet({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label="Sort vocabulary"
+        aria-label={search.sort}
         onClick={(event) => event.stopPropagation()}
         className="w-full rounded-t-[24px] bg-white px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 text-black shadow-2xl"
       >
         <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-black/15" />
 
         <div className="flex items-center justify-between border-b border-black/10 py-3">
-          <p className="text-sm uppercase tracking-[0.08em]">Sort</p>
+          <p className="text-sm uppercase tracking-[0.08em]">{search.sort}</p>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close sort menu"
+            aria-label={search.closeSortMenu}
             className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
           >
             <X size={16} />
@@ -66,7 +71,7 @@ export default function SortBottomSheet({
         </div>
 
         <div className="py-2">
-          {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+          {(Object.keys(sortLabels) as SortMode[]).map((mode) => (
             <button
               key={mode}
               type="button"
@@ -76,7 +81,7 @@ export default function SortBottomSheet({
               <span className="w-8 text-lg">{value === mode ? "—" : ""}</span>
 
               <span className="text-xl uppercase tracking-[-0.02em]">
-                {SORT_LABELS[mode]}
+                {sortLabels[mode]}
               </span>
             </button>
           ))}

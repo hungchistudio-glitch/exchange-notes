@@ -1,17 +1,17 @@
 "use client";
 
-import { RotateCcw, Frown, Smile, PartyPopper } from "lucide-react";
+import { Frown, PartyPopper, RotateCcw, Smile } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
 import SectionCard from "@/components/vocabulary/detail/VocabularySection";
 
+type Rating = "again" | "hard" | "good" | "easy";
+
 type Props = {
-  onRate?: (rating: "again" | "hard" | "good" | "easy") => void;
+  onRate?: (rating: Rating) => void;
 };
 
-export default function VocabularyReviewPanel({
-  onRate,
-}: Props) {
+export default function VocabularyReviewPanel({ onRate }: Props) {
   const buttons = [
     {
       key: "again",
@@ -40,23 +40,21 @@ export default function VocabularyReviewPanel({
       title="Review this word"
       description="How well did you remember it?"
     >
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-4 gap-3">
         {buttons.map((button) => {
           const Icon = button.icon;
 
           return (
             <AppButton
               key={button.key}
+              type="button"
               variant="secondary"
-              className="flex flex-col gap-2 py-5"
-              onClick={() => {
-                if (onRate) {
-                  onRate(button.key);
-                }
-              }}
+              className="flex min-h-16 items-center justify-center px-2 py-5"
+              onClick={() => onRate?.(button.key)}
+              aria-label={button.label}
+              title={button.label}
             >
-              <Icon size={20} />
-              <span>{button.label}</span>
+              <Icon size={24} aria-hidden="true" />
             </AppButton>
           );
         })}

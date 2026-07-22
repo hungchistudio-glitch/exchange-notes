@@ -1,3 +1,4 @@
+@import "../styles/theme.css";
 @import "tailwindcss";
 
 :root {
@@ -587,3 +588,70 @@ a {
   }
 }
 /* EXCHANGE NOTES DESIGN SYSTEM END */
+
+/* Exchange Notes appearance preference */
+html {
+  background: var(--app-bg);
+}
+
+html,
+body,
+.app-page,
+[class*="bg-[#f4f1ea]"],
+[class*="bg-[#F4F1EA]"],
+[class*="bg-[#F6F3ED]"],
+[class*="bg-[#f6f3ed]"] {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  .app-page {
+    transition: none;
+  }
+}
+
+
+html,
+body {
+  background-color: var(--theme-bg);
+  color: var(--theme-ink);
+}
+
+
+/* Smooth appearance switching */
+body,
+main,
+header,
+nav,
+section,
+input,
+select,
+textarea,
+button,
+a {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  main,
+  header,
+  nav,
+  section,
+  input,
+  select,
+  textarea,
+  button,
+  a {
+    transition: none;
+  }
+}

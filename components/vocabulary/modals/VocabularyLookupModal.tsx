@@ -2,6 +2,7 @@
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { speak } from "@/lib/speech";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type {
   VocabularyLookupResult,
   VocabularyLookupStatus,
@@ -55,6 +56,8 @@ export default function VocabularyLookupModal({
   onShare,
   onSend,
 }: VocabularyLookupModalProps) {
+  const { t } = useTranslation();
+
   if (!open) return null;
 
   function resetSearchState() {
@@ -81,14 +84,14 @@ export default function VocabularyLookupModal({
         <header className="flex items-center justify-between border-b border-black/10 px-5 pb-4 pt-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-              Gemini AI
+              {t.vocabulary.lookup.search}
             </p>
 
             <h2
               id="ai-search-title"
               className="mt-1 text-xl font-semibold tracking-[-0.025em]"
             >
-              Search any word
+              {t.vocabulary.lookup.title}
             </h2>
           </div>
 
@@ -145,12 +148,12 @@ export default function VocabularyLookupModal({
               {lookupStatus === "loading" ? (
                 <>
                   <LoaderCircle size={16} className="animate-spin" />
-                  Searching
+                  {t.vocabulary.lookup.searching}
                 </>
               ) : (
                 <>
                   <Search size={15} />
-                  Search with Gemini
+                  {t.vocabulary.lookup.search}
                 </>
               )}
             </button>
@@ -163,8 +166,7 @@ export default function VocabularyLookupModal({
               </div>
 
               <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-neutral-500">
-                Search any English or Traditional Chinese word. Gemini will
-                generate its translation, part of speech and natural examples.
+                {t.vocabulary.lookup.description}
               </p>
             </div>
           )}
@@ -172,7 +174,7 @@ export default function VocabularyLookupModal({
           {lookupStatus === "error" && (
             <div className="mt-5 rounded-[20px] bg-red-50 p-4">
               <p className="text-[13px] leading-5 text-red-700">
-                {lookupError || "Could not search that word."}
+                {lookupError || t.vocabulary.lookup.error}
               </p>
             </div>
           )}
@@ -259,8 +261,8 @@ export default function VocabularyLookupModal({
                         onClick={() =>
                           speak(lookupResult.englishExample, "en-US")
                         }
-                        aria-label="Play English example"
-                        title="Play English example"
+                        aria-label={t.vocabulary.lookup.englishExample}
+                        title={t.vocabulary.lookup.englishExample}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
                       >
                         <Volume2 size={15} />
@@ -285,8 +287,8 @@ export default function VocabularyLookupModal({
                         onClick={() =>
                           speak(lookupResult.chineseExample, "zh-TW")
                         }
-                        aria-label="播放中文例句"
-                        title="播放中文例句"
+                        aria-label={t.vocabulary.lookup.chineseExample}
+                        title={t.vocabulary.lookup.chineseExample}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
                       >
                         <Volume2 size={15} />
@@ -299,7 +301,7 @@ export default function VocabularyLookupModal({
                   <button
                     type="button"
                     onClick={onShare}
-                    aria-label="Share this word"
+                    aria-label={t.vocabulary.lookup.share}
                     className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f5f2eb] text-[12px] font-semibold transition-transform active:scale-[0.98]"
                   >
                     {lookupCopied ? (
@@ -313,7 +315,7 @@ export default function VocabularyLookupModal({
                   <button
                     type="button"
                     onClick={onSend}
-                    aria-label="Send this word to a partner"
+                    aria-label={t.vocabulary.lookup.send}
                     className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f5f2eb] text-[12px] font-semibold transition-transform active:scale-[0.98]"
                   >
                     <Send size={15} />

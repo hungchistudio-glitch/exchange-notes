@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { Check, MoreHorizontal, Send } from "lucide-react";
 import AppButton from "@/components/ui/AppButton";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Props = {
   mastered: boolean;
@@ -19,6 +20,9 @@ function VocabularyCardActions({
   onSend,
   onOpen,
 }: Props) {
+  const { t } = useTranslation();
+  const search = t.vocabulary.search;
+
   return (
     <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-black/[0.06] bg-white px-5 py-4">
 
@@ -31,7 +35,7 @@ function VocabularyCardActions({
       >
         <span className="flex items-center justify-center gap-2">
           <Check size={18} strokeWidth={2.4} />
-          <span>{mastered ? "Learning" : "Mastered"}</span>
+          <span>{mastered ? search.statuses.learning : search.statuses.mastered}</span>
         </span>
       </AppButton>
 

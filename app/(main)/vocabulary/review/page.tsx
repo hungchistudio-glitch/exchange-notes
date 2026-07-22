@@ -1,9 +1,5 @@
-export default function ReviewPage() {
-  return (
-    <main className="p-8">
-      <h1 className="text-3xl font-bold">
-        Review
-      </h1>
-    </main>
-  );
+import { redirect } from "next/navigation";
+
+export default function VocabularyReviewPage() {
+  redirect("/review?from=vocabulary");
 }

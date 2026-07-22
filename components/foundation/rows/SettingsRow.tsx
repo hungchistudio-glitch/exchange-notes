@@ -27,7 +27,10 @@ type StaticRowProps = SharedProps & {
   onClick?: never;
 };
 
-type SettingsRowProps = LinkRowProps | ButtonRowProps | StaticRowProps;
+type SettingsRowProps =
+  | LinkRowProps
+  | ButtonRowProps
+  | StaticRowProps;
 
 function RowContent({
   title,
@@ -42,10 +45,10 @@ function RowContent({
       {icon ? (
         <span
           className={[
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
             danger
-              ? "bg-red-50 text-red-600"
-              : "bg-black/[0.045] text-black/55",
+              ? "bg-red-500/10 text-red-500"
+              : "bg-[var(--en-surface-secondary)] text-[var(--en-icon-secondary)]",
           ].join(" ")}
         >
           {icon}
@@ -55,22 +58,24 @@ function RowContent({
       <span className="min-w-0 flex-1">
         <span
           className={[
-            "block truncate text-[15px] font-semibold tracking-[-0.015em]",
-            danger ? "text-red-600" : "text-black",
+            "block truncate text-[15px] font-semibold tracking-[-0.02em]",
+            danger
+              ? "text-red-500"
+              : "text-[var(--en-text-primary)]",
           ].join(" ")}
         >
           {title}
         </span>
 
         {description ? (
-          <span className="mt-0.5 block text-xs leading-5 text-black/42">
+          <span className="mt-0.5 block text-[12px] leading-5 text-[var(--en-text-tertiary)]">
             {description}
           </span>
         ) : null}
       </span>
 
       {value ? (
-        <span className="max-w-[42%] truncate text-sm text-black/40">
+        <span className="max-w-[42%] truncate text-sm text-[var(--en-text-tertiary)]">
           {value}
         </span>
       ) : null}
@@ -80,23 +85,27 @@ function RowContent({
           aria-hidden="true"
           size={17}
           strokeWidth={1.8}
-          className="shrink-0 text-black/25"
+          className="shrink-0 text-[var(--en-text-disabled)]"
         />
       ) : null}
     </>
   );
 }
 
-export default function SettingsRow(props: SettingsRowProps) {
+export default function SettingsRow(
+  props: SettingsRowProps,
+) {
   const {
     disabled = false,
     className = "",
   } = props;
 
   const sharedClassName = [
-    "flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left",
+    "flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left",
     "transition-colors",
-    disabled ? "cursor-not-allowed opacity-40" : "hover:bg-black/[0.025]",
+    disabled
+      ? "cursor-not-allowed opacity-40"
+      : "hover:bg-[var(--en-surface-hover)]",
     className,
   ]
     .filter(Boolean)
@@ -104,7 +113,10 @@ export default function SettingsRow(props: SettingsRowProps) {
 
   if ("href" in props && props.href) {
     return (
-      <Link href={props.href} className={sharedClassName}>
+      <Link
+        href={props.href}
+        className={sharedClassName}
+      >
         <RowContent {...props} interactive />
       </Link>
     );

@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import jsQR from "jsqr";
 import { ArrowLeft, CheckCircle2, Info, XCircle } from "lucide-react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 import {
   FriendProfile,
@@ -26,6 +27,7 @@ type Banner = { tone: "success" | "error" | "info"; text: string } | null;
 const QR_PREFIX = "exchange-notes:friend:";
 
 export default function FriendsPage() {
+  const { t } = useTranslation();
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -464,34 +466,34 @@ export default function FriendsPage() {
         <header>
           <Link
             href="/home"
-            aria-label="Back to home"
+            aria-label={t.friends.backHome}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full text-black transition-colors hover:bg-black/5 active:bg-black/10"
           >
             <ArrowLeft className="h-6 w-6" strokeWidth={2} />
           </Link>
 
           <p className="mt-8 text-sm font-bold uppercase tracking-[0.2em] text-neutral-500">
-            Learning partners
+            {t.friends.eyebrow}
           </p>
 
           <h1 className="mt-2 text-4xl font-bold tracking-tight text-black sm:text-5xl">
-            Friends
+            {t.friends.title}
           </h1>
 
           <p className="mt-3 text-lg leading-7 text-neutral-600">
-            Add someone by Exchange ID or QR code.
+            {t.friends.subtitle}
           </p>
         </header>
 
         {!loadingSession && !userId && (
           <p className="mt-6 rounded-2xl bg-white p-4 font-semibold text-black shadow-sm">
-            Log in to add and manage friends.
+            {t.friends.loginRequired}
           </p>
         )}
 
         {/* ---- Add a friend ---- */}
         <section className="mt-8 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
-          <h2 className="text-2xl font-bold text-black">Add a friend</h2>
+          <h2 className="text-2xl font-bold text-black">{t.friends.add.title}</h2>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <button
@@ -507,7 +509,7 @@ export default function FriendsPage() {
                   : "border-neutral-300 bg-white text-black"
               }`}
             >
-              Exchange ID
+              {t.friends.add.exchangeId}
             </button>
 
             <button
@@ -522,7 +524,7 @@ export default function FriendsPage() {
                   : "border-neutral-300 bg-white text-black"
               }`}
             >
-              Scan QR
+              {t.friends.add.scanQr}
             </button>
           </div>
 
@@ -530,7 +532,7 @@ export default function FriendsPage() {
             <>
               <label className="mt-5 block">
                 <span className="text-sm font-bold text-black">
-                  Friend&apos;s Exchange ID
+                  {t.friends.add.fieldLabel}
                 </span>
 
                 <div className="mt-2 flex rounded-2xl border border-neutral-300 bg-white focus-within:border-black">
@@ -545,7 +547,7 @@ export default function FriendsPage() {
                     onKeyDown={(event) => {
                       if (event.key === "Enter") handleSendRequest();
                     }}
-                    placeholder="friendname"
+                    placeholder={t.friends.add.placeholder}
                     autoCapitalize="none"
                     autoCorrect="off"
                     className="min-w-0 flex-1 rounded-2xl bg-white px-4 py-4 text-base text-black placeholder:text-neutral-400 outline-none"
@@ -559,7 +561,7 @@ export default function FriendsPage() {
                 disabled={sending || !userId}
                 className="mt-5 w-full rounded-2xl bg-black px-5 py-4 font-bold text-white disabled:opacity-40"
               >
-                {sending ? "Sending…" : "Send Friend Request"}
+                {sending ? t.friends.add.sending : t.friends.add.sendRequest}
               </button>
             </>
           )}
@@ -572,7 +574,7 @@ export default function FriendsPage() {
                   onClick={startScanning}
                   className="w-full rounded-2xl bg-black px-5 py-4 font-bold text-white"
                 >
-                  Open Camera to Scan
+                  {t.friends.scanner.start}
                 </button>
               ) : (
                 <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-black">
@@ -592,7 +594,7 @@ export default function FriendsPage() {
                     onClick={stopScanning}
                     className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black"
                   >
-                    Cancel
+                    {t.friends.scanner.stop}
                   </button>
                 </div>
               )}
@@ -637,7 +639,7 @@ export default function FriendsPage() {
         {incoming.length > 0 && (
           <section className="mt-7">
             <h2 className="text-xl font-bold text-black">
-              Requests{" "}
+              {t.friends.incoming.title}{" "}
               <span className="text-neutral-400">· {incoming.length}</span>
             </h2>
 
@@ -651,7 +653,9 @@ export default function FriendsPage() {
                     <p className="truncate font-bold text-black">
                       @{request.sender.exchangeId}
                     </p>
-                    <p className="text-sm text-neutral-500">wants to connect</p>
+                    <p className="text-sm text-neutral-500">
+                      {t.friends.incoming.wantsToConnect}
+                    </p>
                   </div>
 
                   <div className="flex shrink-0 gap-2">
@@ -663,7 +667,9 @@ export default function FriendsPage() {
                       disabled={respondingId === request.requestId}
                       className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
                     >
-                      Decline
+                      {respondingId === request.requestId
+                        ? t.friends.incoming.responding
+                        : t.friends.incoming.decline}
                     </button>
                     <button
                       type="button"
@@ -673,7 +679,9 @@ export default function FriendsPage() {
                       disabled={respondingId === request.requestId}
                       className="rounded-full bg-black px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
                     >
-                      Accept
+                      {respondingId === request.requestId
+                        ? t.friends.incoming.responding
+                        : t.friends.incoming.accept}
                     </button>
                   </div>
                 </div>
@@ -685,7 +693,9 @@ export default function FriendsPage() {
         {/* ---- Outgoing requests ---- */}
         {outgoing.length > 0 && (
           <section className="mt-7">
-            <h2 className="text-xl font-bold text-black">Sent</h2>
+            <h2 className="text-xl font-bold text-black">
+              {t.friends.outgoing.title}
+            </h2>
 
             <div className="mt-3 space-y-3">
               {outgoing.map((request) => (
@@ -719,15 +729,15 @@ export default function FriendsPage() {
         {/* ---- My QR code ---- */}
         <section className="mt-7 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-neutral-500">
-            QR code
+            {t.friends.profileQr.eyebrow}
           </p>
 
           <h2 className="mt-2 text-2xl font-bold text-black">
-            Share your profile
+            {t.friends.profileQr.title}
           </h2>
 
           <p className="mt-2 leading-7 text-neutral-600">
-            Anyone who scans this adds you as a friend instantly.
+            {t.friends.profileQr.description}
           </p>
 
           <div className="mt-5 flex aspect-square max-w-xs items-center justify-center overflow-hidden rounded-3xl border border-neutral-200 bg-[#f4f1ea]">
@@ -735,12 +745,14 @@ export default function FriendsPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={qrDataUrl}
-                alt="Your friend QR code"
+                alt={t.friends.profileQr.imageAlt}
                 className="h-full w-full"
               />
             ) : (
               <span className="text-center font-bold text-neutral-400">
-                {loadingSession ? "Loading…" : "Log in to get your code"}
+                {loadingSession
+                  ? t.friends.profileQr.loading
+                  : t.friends.profileQr.loginToGetCode}
               </span>
             )}
           </div>
@@ -755,20 +767,25 @@ export default function FriendsPage() {
         {/* ---- Friends list ---- */}
         <section className="mt-7">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-black">Your friends</h2>
+            <h2 className="text-3xl font-bold text-black">
+              {t.friends.list.title}
+            </h2>
             <span className="font-bold text-black">{friends.length}</span>
           </div>
 
           {listsLoading ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
-              <p className="font-semibold text-neutral-400">Loading friends…</p>
+              <p className="font-semibold text-neutral-400">
+                {t.friends.list.loading}
+              </p>
             </div>
           ) : friends.length === 0 ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
-              <p className="text-xl font-bold text-black">No friends yet</p>
+              <p className="text-xl font-bold text-black">
+                {t.friends.list.emptyTitle}
+              </p>
               <p className="mt-2 leading-7 text-neutral-600">
-                Add your first learning partner to start sharing notes and
-                messages.
+                {t.friends.list.emptyDescription}
               </p>
             </div>
           ) : (

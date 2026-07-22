@@ -1,0 +1,70 @@
+/*
+ * Exchange Notes Theme V3
+ *
+ * This file provides:
+ * 1. Semantic theme tokens
+ * 2. A compatibility layer for legacy Tailwind color classes
+ *
+ * Components will gradually migrate from hard-coded colors to these tokens.
+ */
+
+:root {
+  color-scheme: light;
+
+  --en-page: #f4f1ea;
+  --en-page-elevated: #f8f6f1;
+
+  --en-surface: #ffffff;
+  --en-surface-secondary: #f7f5f0;
+  --en-surface-tertiary: #efede7;
+  --en-surface-hover: #f0eee8;
+
+  --en-text-primary: #11110f;
+  --en-text-secondary: rgba(17, 17, 15, 0.64);
+  --en-text-tertiary: rgba(17, 17, 15, 0.44);
+  --en-text-disabled: rgba(17, 17, 15, 0.28);
+
+  --en-icon-primary: #11110f;
+  --en-icon-secondary: rgba(17, 17, 15, 0.58);
+
+  --en-border: rgba(17, 17, 15, 0.09);
+  --en-border-strong: rgba(17, 17, 15, 0.18);
+
+  --en-action: #11110f;
+  --en-action-text: #ffffff;
+
+  --en-selected: #11110f;
+  --en-selected-text: #ffffff;
+
+  --en-overlay: rgba(0, 0, 0, 0.34);
+
+  --en-shadow:
+    0 18px 55px rgba(16, 16, 15, 0.12);
+}
+
+
+/* ------------------------------------------------------------------
+   Base document colors
+   ------------------------------------------------------------------ */
+
+html,
+body {
+  background: var(--en-page);
+  color: var(--en-text-primary);
+}
+
+body {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+
+/* ------------------------------------------------------------------
+   Selection and accessibility
+   ------------------------------------------------------------------ */
+
+::selection {
+  background: var(--en-selected);
+  color: var(--en-selected-text);
+}

@@ -18,6 +18,8 @@ import {
   stopSpeech,
 } from "@/lib/pronunciation/playback";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
+
 function LoadingCard() {
   return (
     <section className="animate-pulse rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
@@ -63,6 +65,7 @@ function EmptyCard() {
 }
 
 export default function TodayWordCard() {
+  const { t } = useTranslation();
   const { lesson, loading } = useTodayLesson();
 
   const [pronunciation, setPronunciation] =
@@ -147,7 +150,7 @@ export default function TodayWordCard() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            Today&apos;s Word
+            {t.home.todayWord.title}
           </p>
 
           <h2 className="mt-2 text-3xl font-bold">
@@ -168,7 +171,7 @@ export default function TodayWordCard() {
         >
           <div>
             <div className="text-sm text-neutral-500">
-              English pronunciation
+              {t.home.todayWord.englishPronunciation}
             </div>
 
             <div className="font-semibold">
@@ -188,7 +191,7 @@ export default function TodayWordCard() {
         >
           <div>
             <div className="text-sm text-neutral-500">
-              Zhuyin
+              {t.home.todayWord.zhuyin}
             </div>
 
             <div className="font-semibold">
@@ -211,7 +214,7 @@ export default function TodayWordCard() {
       {(example || translatedExample) && (
         <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
-            Example
+            {t.home.todayWord.example}
           </p>
 
           <div className="mt-3 space-y-2">
@@ -259,7 +262,7 @@ export default function TodayWordCard() {
         className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
       >
         <BookOpen size={16} />
-        Learn more
+        {t.home.todayWord.continueLearning}
       </Link>
     </section>
   );

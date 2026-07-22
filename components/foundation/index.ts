@@ -10,3 +10,5 @@ export * from "./overlays";
 export * from "./rows";
 export * from "./typography";
 export * from "./tokens";
+
+export { default as SpeakerButton } from "./audio/SpeakerButton";

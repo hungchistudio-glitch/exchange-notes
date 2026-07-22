@@ -2,6 +2,9 @@
 
 import WordCard from "@/components/learning/WordCard";
 import SwipeableConversationCard from "@/components/messages/SwipeableConversationCard";
+import ConversationCard from "@/components/messages/ConversationCard";
+import ConversationEmptyState from "@/components/messages/ConversationEmptyState";
+import SearchBar from "@/components/messages/SearchBar";
 import {
   FormEvent,
   Suspense,
@@ -18,7 +21,6 @@ import {
   Check,
   ChevronDown,
   FileText,
-  LogOut,
   Paperclip,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +36,7 @@ import {
 } from "@/lib/vocabularyDraft";
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import type { DailyNewsCard } from "@/lib/types/dailyNews";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Message = {
   id: number;
@@ -114,8 +117,7 @@ function SharedVocabularyMessage({
   item: VocabularyItem;
   currentUserId: string | null;
 }) {
-  const [, setLearningLanguage] =
-    useState<AppLanguage>("english");
+  const [, setLearningLanguage] = useState<AppLanguage>("english");
   const [savingSharedWord, setSavingSharedWord] = useState(false);
   const [sharedWordSaved, setSharedWordSaved] = useState(false);
 
@@ -302,37 +304,6 @@ function imageFileToDataUrl(file: File): Promise<string> {
   });
 }
 
-function IconLogoutButton() {
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  async function handleLogout() {
-    if (loggingOut) return;
-
-    setLoggingOut(true);
-
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      window.location.assign("/login");
-    } finally {
-      setLoggingOut(false);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => void handleLogout()}
-      disabled={loggingOut}
-      aria-label="Log out"
-      title="Log out"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-white/70 text-black/60 shadow-[0_1px_4px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-colors hover:bg-white disabled:opacity-40"
-    >
-      <LogOut size={14} strokeWidth={1.7} />
-    </button>
-  );
-}
-
 function encodeSharedVocabulary(item: VocabularyItem) {
   return `${VOCABULARY_MESSAGE_PREFIX}${JSON.stringify(item)}`;
 }
@@ -371,7 +342,12 @@ function MessagesPageContent() {
 // ---- Conversation list (no ?with param) -----------------------------------
 
 function ConversationList() {
+  const { t } = useTranslation();
+  const notLoggedInMessage = t.messages.errors.notLoggedIn;
+  const loadConversationsMessage = t.messages.errors.loadConversations;
+
   const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -389,7 +365,7 @@ function ConversationList() {
 
       if (!user) {
         if (!cancelled) {
-          setErrorMessage("You are not logged in.");
+          setErrorMessage(notLoggedInMessage);
           setLoading(false);
         }
         return;
@@ -407,7 +383,7 @@ function ConversationList() {
       } catch (loadError) {
         console.error("Failed to load friends:", loadError);
         if (!cancelled) {
-          setErrorMessage("Couldn't load your conversations.");
+          setErrorMessage(loadConversationsMessage);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -418,14 +394,16 @@ function ConversationList() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadConversationsMessage, notLoggedInMessage]);
 
   async function removeFriend(friend: FriendProfile) {
     if (!currentUserId || deletingFriendId) return;
 
     const friendName = friend.displayName ?? `@${friend.exchangeId}`;
 
-    const confirmed = window.confirm(`Remove ${friendName} from your friends?`);
+    const confirmed = window.confirm(
+      t.messages.removeFriendConfirm.replace("{name}", friendName),
+    );
 
     if (!confirmed) return;
 
@@ -455,7 +433,7 @@ function ConversationList() {
       setErrorMessage(
         removeError instanceof Error
           ? removeError.message
-          : "Could not remove this friend.",
+          : t.messages.errors.removeFriend,
       );
 
       throw removeError;
@@ -464,32 +442,43 @@ function ConversationList() {
     }
   }
 
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+
+  const filteredFriends = friends.filter((friend) => {
+    if (!normalizedSearchQuery) return true;
+
+    const displayName = friend.displayName?.toLowerCase() ?? "";
+    const exchangeId = friend.exchangeId.toLowerCase();
+
+    return (
+      displayName.includes(normalizedSearchQuery) ||
+      exchangeId.includes(normalizedSearchQuery)
+    );
+  });
+
   return (
     <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] max-w-xl flex-col">
-        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
-          <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
-            <Link
-              href="/"
-              aria-label="Back to Exchange Notes"
-              title="Back"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition-colors hover:bg-black/[0.04] active:scale-95"
-            >
-              <ArrowLeft size={18} strokeWidth={1.7} />
-            </Link>
-
-            <h1 className="min-w-0 truncate px-3 text-center text-[17px] font-semibold tracking-[-0.02em] text-black">
-              Messages
-            </h1>
-
-            <div className="justify-self-end">
-              <IconLogoutButton />
-            </div>
-          </div>
+        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-4 backdrop-blur-2xl">
+          <h1 className="text-center text-[20px] font-semibold tracking-[-0.03em] text-black">
+            {t.messages.title}
+          </h1>
         </header>
 
         <section className="flex-1 space-y-3 px-4 py-6">
-          {loading && <p className="text-center text-neutral-500">Loading…</p>}
+          {friends.length > 0 && (
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={t.messages.searchPlaceholder}
+            />
+          )}
+
+          {loading && (
+            <p className="text-center text-neutral-500">
+              {t.messages.loadingConversations}
+            </p>
+          )}
 
           {errorMessage && (
             <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">
@@ -497,22 +486,11 @@ function ConversationList() {
             </div>
           )}
 
-          {!loading && !errorMessage && friends.length === 0 && (
-            <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
-              <p className="font-semibold">No conversations yet</p>
-              <p className="mt-2 text-sm text-neutral-500">
-                Add a friend to start messaging.
-              </p>
-              <Link
-                href="/friends"
-                className="mt-4 inline-block rounded-full bg-black px-5 py-2 text-sm font-bold text-white"
-              >
-                Go to Friends
-              </Link>
-            </div>
+          {!loading && !errorMessage && filteredFriends.length === 0 && (
+            <ConversationEmptyState searchQuery={searchQuery} />
           )}
 
-          {friends.map((friend) => (
+          {filteredFriends.map((friend) => (
             <SwipeableConversationCard
               key={friend.id}
               disabled={deletingFriendId === friend.id}
@@ -523,27 +501,7 @@ function ConversationList() {
               }}
               onRemove={() => removeFriend(friend)}
             >
-              <div
-                className="flex w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-sm"
-                aria-label={`Open conversation with ${
-                  friend.displayName ?? friend.exchangeId
-                }`}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f4f1ea] font-bold text-black">
-                  {(friend.displayName ?? friend.exchangeId)
-                    .slice(0, 1)
-                    .toUpperCase()}
-                </span>
-
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-black">
-                    {friend.displayName ?? `@${friend.exchangeId}`}
-                  </p>
-                  <p className="truncate text-sm text-neutral-500">
-                    @{friend.exchangeId}
-                  </p>
-                </div>
-              </div>
+              <ConversationCard friend={friend} />
             </SwipeableConversationCard>
           ))}
         </section>
@@ -555,6 +513,8 @@ function ConversationList() {
 // ---- Chat room (?with={friendId}) ------------------------------------------
 
 function ChatRoom({ friendId }: { friendId: string }) {
+  const { t } = useTranslation();
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [friendProfile, setFriendProfile] = useState<FriendProfile | null>(
@@ -653,7 +613,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
       const { data: friend, error: friendError } = await supabase
         .from("profiles")
-        .select("id, exchange_id, display_name, avatar_url")
+        .select(
+          "id, exchange_id, display_name, avatar_url, native_language, learning_language",
+        )
         .eq("id", friendId)
         .maybeSingle();
 
@@ -671,6 +633,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
           exchangeId: friend.exchange_id,
           displayName: friend.display_name,
           avatarUrl: friend.avatar_url,
+          nativeLanguage: friend.native_language,
+          learningLanguage: friend.learning_language,
         });
       }
 
@@ -1348,7 +1312,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                         onClick={enterSelectionMode}
                         className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-black transition-colors hover:bg-black/[0.045] active:bg-black/[0.08]"
                       >
-                        Select Messages
+                        {t.messages.selectMessages}
                       </button>
                     </div>
                   </>
@@ -1651,7 +1615,9 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 onChange={(event) => setNewMessage(event.target.value)}
                 maxLength={2000}
                 placeholder={
-                  uploading ? "Analyzing and sending…" : "Write a message"
+                  uploading
+                    ? t.messages.analyzingAndSending
+                    : t.messages.inputPlaceholder
                 }
                 className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
               />
@@ -1661,7 +1627,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
                 disabled={sending || !newMessage.trim() || !conversationId}
                 className="h-9 shrink-0 rounded-full bg-black px-4 text-[11px] font-semibold tracking-[-0.01em] text-white transition-transform active:scale-95 disabled:bg-black/20 disabled:text-white disabled:opacity-100"
               >
-                {sending ? "..." : "Send"}
+                {sending ? "..." : t.messages.send}
               </button>
             </div>
           </form>

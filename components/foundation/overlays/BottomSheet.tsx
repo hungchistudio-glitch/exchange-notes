@@ -25,21 +25,32 @@ export default function BottomSheet({
   useEffect(() => {
     if (!open) return;
 
-    const previousOverflow = document.body.style.overflow;
+    const previousOverflow =
+      document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
-    function handleKeyDown(event: KeyboardEvent) {
+    function handleKeyDown(
+      event: KeyboardEvent,
+    ) {
       if (event.key === "Escape") {
         onClose();
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
     };
   }, [open, onClose]);
 
@@ -54,7 +65,7 @@ export default function BottomSheet({
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/35 backdrop-blur-[2px]"
+        className="absolute inset-0 cursor-default bg-[var(--en-overlay)] backdrop-blur-[2px]"
       />
 
       <section
@@ -62,26 +73,28 @@ export default function BottomSheet({
         aria-modal="true"
         aria-labelledby="bottom-sheet-title"
         className={[
-          "relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px] bg-white shadow-[0_-18px_60px_rgba(0,0,0,0.16)]",
-          "sm:rounded-[30px] sm:shadow-[0_24px_80px_rgba(0,0,0,0.2)]",
+          "relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px]",
+          "bg-[var(--en-surface)] text-[var(--en-text-primary)]",
+          "shadow-[0_-18px_60px_rgba(0,0,0,0.28)]",
+          "sm:rounded-[30px] sm:shadow-[var(--en-shadow)]",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
       >
-        <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+        <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-[var(--en-border-strong)] sm:hidden" />
 
-        <header className="flex items-start justify-between gap-4 border-b border-black/[0.07] px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-[var(--en-border)] px-5 py-4">
           <div className="min-w-0">
             <h2
               id="bottom-sheet-title"
-              className="text-[18px] font-semibold tracking-[-0.025em] text-black"
+              className="text-[18px] font-semibold tracking-[-0.025em] text-[var(--en-text-primary)]"
             >
               {title}
             </h2>
 
             {description ? (
-              <p className="mt-1 text-sm leading-5 text-black/45">
+              <p className="mt-1 text-sm leading-5 text-[var(--en-text-tertiary)]">
                 {description}
               </p>
             ) : null}
@@ -92,9 +105,16 @@ export default function BottomSheet({
             aria-label="Close"
             title="Close"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.045] text-black/55 transition-all hover:bg-black/[0.08] active:scale-95"
+            className={[
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+              "bg-[var(--en-surface-secondary)] text-[var(--en-icon-secondary)]",
+              "transition-all hover:bg-[var(--en-surface-hover)] active:scale-95",
+            ].join(" ")}
           >
-            <X size={17} strokeWidth={1.8} />
+            <X
+              size={17}
+              strokeWidth={1.8}
+            />
           </button>
         </header>
 
@@ -103,7 +123,7 @@ export default function BottomSheet({
         </div>
 
         {footer ? (
-          <footer className="border-t border-black/[0.07] bg-white px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
+          <footer className="border-t border-[var(--en-border)] bg-[var(--en-surface)] px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
             {footer}
           </footer>
         ) : null}

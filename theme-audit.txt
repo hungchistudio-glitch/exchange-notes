@@ -1,0 +1,933 @@
+app/apple-icon.tsx:10:        <rect x="0" y="0" width="400" height="400" rx="88" fill="#f0efec" />
+app/apple-icon.tsx:11:        <path d="M 300,70 Q 110,70 100,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/apple-icon.tsx:12:        <path d="M 100,180 Q 110,320 300,320" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/apple-icon.tsx:13:        <path d="M 100,180 L 250,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/apple-icon.tsx:14:        <circle cx="285" cy="180" r="40" fill="#f0efec" stroke="#111111" strokeWidth="12" />
+app/apple-icon.tsx:15:        <circle cx="294" cy="172" r="14" fill="#111111" />
+app/apple-icon.tsx:16:        <circle cx="300" cy="166" r="5" fill="#f0efec" />
+app/icon.tsx:10:        <rect x="0" y="0" width="400" height="400" rx="88" fill="#f0efec" />
+app/icon.tsx:11:        <path d="M 300,70 Q 110,70 100,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/icon.tsx:12:        <path d="M 100,180 Q 110,320 300,320" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/icon.tsx:13:        <path d="M 100,180 L 250,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/icon.tsx:14:        <circle cx="285" cy="180" r="40" fill="#f0efec" stroke="#111111" strokeWidth="12" />
+app/icon.tsx:15:        <circle cx="294" cy="172" r="14" fill="#111111" />
+app/icon.tsx:16:        <circle cx="300" cy="166" r="5" fill="#f0efec" />
+app/signup/page.tsx:341:      <main className="flex min-h-screen items-center justify-center bg-[#f3f0e8] px-5 py-10 text-neutral-950">
+app/signup/page.tsx:342:        <section className="w-full max-w-md rounded-[32px] border border-black/[0.06] bg-white px-7 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.08)] sm:px-10">
+app/signup/page.tsx:360:          <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+app/signup/page.tsx:370:            className="mt-4 text-[15px] leading-7 text-neutral-600"
+app/signup/page.tsx:375:          <div className="mt-8 rounded-2xl bg-[#f7f5f0] px-4 py-4 text-sm leading-6 text-neutral-600">
+app/signup/page.tsx:377:            <span className="font-semibold text-neutral-900">
+app/signup/page.tsx:388:            className="mt-7 flex h-13 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 active:scale-[0.99]"
+app/signup/page.tsx:401:            className="mt-3 flex h-12 w-full items-center justify-center rounded-2xl text-sm font-semibold text-neutral-500 transition hover:bg-neutral-50 hover:text-neutral-900"
+app/signup/page.tsx:411:    <main className="relative min-h-screen overflow-hidden bg-[#f3f0e8] px-5 py-8 text-neutral-950 sm:py-12">
+app/signup/page.tsx:424:          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-neutral-500">
+app/signup/page.tsx:432:          <p className="mt-6 max-w-sm text-[17px] leading-8 text-neutral-600">
+app/signup/page.tsx:436:          <div className="mt-10 flex items-center gap-3 text-sm text-neutral-500">
+app/signup/page.tsx:437:            <span className="h-px w-10 bg-neutral-300" />
+app/signup/page.tsx:442:        <section className="w-full rounded-[32px] border border-black/[0.06] bg-white/95 px-6 py-8 shadow-[0_28px_90px_rgba(0,0,0,0.09)] backdrop-blur-xl sm:px-10 sm:py-10">
+app/signup/page.tsx:446:              className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-500 transition hover:text-neutral-950"
+app/signup/page.tsx:454:            <p className="mt-7 text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 lg:hidden">
+app/signup/page.tsx:462:            <p className="mt-2 text-sm leading-6 text-neutral-500">
+app/signup/page.tsx:494:                className="h-13 w-full rounded-2xl border border-black/[0.09] bg-[#faf9f6] px-4 text-[15px] outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-black/[0.04]"
+app/signup/page.tsx:507:                className={`flex h-13 items-center rounded-2xl border bg-[#faf9f6] transition focus-within:bg-white focus-within:ring-4 focus-within:ring-black/[0.04] ${
+app/signup/page.tsx:511:                    : "border-black/[0.09] focus-within:border-neutral-950"
+app/signup/page.tsx:514:                <span className="pl-4 text-lg font-semibold text-neutral-400">
+app/signup/page.tsx:537:                  className="h-full min-w-0 flex-1 bg-transparent px-2 pr-4 text-[15px] outline-none placeholder:text-neutral-400"
+app/signup/page.tsx:547:                      : "text-neutral-400"
+app/signup/page.tsx:553:                <span className="shrink-0 text-[11px] text-neutral-400">
+app/signup/page.tsx:583:                className="h-13 w-full rounded-2xl border border-black/[0.09] bg-[#faf9f6] px-4 text-[15px] outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-black/[0.04]"
+app/signup/page.tsx:616:                  className="h-13 w-full rounded-2xl border border-black/[0.09] bg-[#faf9f6] px-4 pr-12 text-[15px] outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-black/[0.04]"
+app/signup/page.tsx:635:                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-neutral-400 transition hover:text-neutral-900"
+app/signup/page.tsx:676:                className={`h-13 w-full rounded-2xl border bg-[#faf9f6] px-4 text-[15px] outline-none transition placeholder:text-neutral-400 focus:bg-white focus:ring-4 focus:ring-black/[0.04] ${
+app/signup/page.tsx:680:                    : "border-black/[0.09] focus:border-neutral-950"
+app/signup/page.tsx:704:              <span className="text-xs leading-5 text-neutral-500">
+app/signup/page.tsx:708:                  className="font-semibold text-neutral-800 underline-offset-4 hover:underline"
+app/signup/page.tsx:715:                  className="font-semibold text-neutral-800 underline-offset-4 hover:underline"
+app/signup/page.tsx:739:              className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+app/signup/page.tsx:750:            <p className="text-center text-sm text-neutral-500">
+app/signup/page.tsx:754:                className="font-semibold text-neutral-950 underline-offset-4 hover:underline"
+app/components/settings/SpeechSettingsButton.tsx:70:          className="flex h-9 w-9 items-center justify-center rounded-full text-black/55 transition-all hover:bg-black/[0.045] active:scale-95"
+app/components/settings/SpeechSettingsButton.tsx:85:            className="flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition-transform active:scale-[0.985]"
+app/components/settings/SpeechSettingsButton.tsx:95:                <h3 className="text-[15px] font-semibold text-black">
+app/components/settings/SpeechSettingsButton.tsx:99:                <p className="mt-1 text-xs leading-5 text-black/45">
+app/components/settings/SpeechSettingsButton.tsx:104:              <span className="shrink-0 rounded-full bg-black/[0.05] px-3 py-1.5 text-xs font-semibold text-black/55">
+app/components/settings/SpeechSettingsButton.tsx:122:            <div className="mt-2 flex justify-between text-[10px] font-medium text-black/30">
+app/components/settings/SpeechSettingsButton.tsx:129:            <h3 className="text-[15px] font-semibold text-black">
+app/components/settings/SpeechSettingsButton.tsx:133:            <p className="mt-1 text-xs leading-5 text-black/45">
+app/components/settings/SpeechSettingsButton.tsx:150:                        ? "bg-black text-white"
+app/components/settings/SpeechSettingsButton.tsx:151:                        : "border border-black/[0.08] bg-black/[0.035] text-black",
+app/components/auth/LogoutButton.tsx:25:      className="flex h-11 w-11 items-center justify-center rounded-full border border-black bg-white text-black"
+app/components/auth/AuthGuard.tsx:72:          className="h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-black"
+app/components/navigation/BottomNav.tsx:124:      <div className="mx-auto grid h-[72px] max-w-xl grid-cols-5 rounded-[26px] border border-black/[0.08] bg-white/92 p-1.5 shadow-[0_18px_55px_rgba(16,16,15,0.14)] backdrop-blur-2xl">
+app/components/navigation/BottomNav.tsx:155:                  ? "bg-black text-white"
+app/components/navigation/BottomNav.tsx:157:                    ? "text-black/65"
+app/components/navigation/BottomNav.tsx:158:                    : "text-black/48"
+app/forgot-password/page.tsx:44:    <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea] px-5 py-8 text-black">
+app/forgot-password/page.tsx:45:      <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+app/forgot-password/page.tsx:46:        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
+app/forgot-password/page.tsx:50:        <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">
+app/forgot-password/page.tsx:54:        <p className="mt-3 leading-7 text-black">
+app/forgot-password/page.tsx:60:          <div className="mt-8 rounded-2xl border border-neutral-300 bg-neutral-100 p-4 text-sm font-semibold text-black">
+app/forgot-password/page.tsx:66:              <span className="mb-2 block text-sm font-bold text-black">
+app/forgot-password/page.tsx:77:                className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
+app/forgot-password/page.tsx:90:              className="w-full rounded-2xl bg-black px-5 py-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+app/forgot-password/page.tsx:97:              className="block w-full rounded-2xl border border-black bg-white px-5 py-4 text-center text-base font-bold text-black"
+app/api/icon/route.tsx:11:        <rect x="0" y="0" width="400" height="400" rx="88" fill="#f0efec" />
+app/api/icon/route.tsx:12:        <path d="M 300,70 Q 110,70 100,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/api/icon/route.tsx:13:        <path d="M 100,180 Q 110,320 300,320" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/api/icon/route.tsx:14:        <path d="M 100,180 L 250,180" fill="none" stroke="#111111" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+app/api/icon/route.tsx:15:        <circle cx="285" cy="180" r="40" fill="#f0efec" stroke="#111111" strokeWidth="12" />
+app/api/icon/route.tsx:16:        <circle cx="294" cy="172" r="14" fill="#111111" />
+app/api/icon/route.tsx:17:        <circle cx="300" cy="166" r="5" fill="#f0efec" />
+app/reset-password/page.tsx:72:    <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea] px-5 py-8 text-black">
+app/reset-password/page.tsx:73:      <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+app/reset-password/page.tsx:74:        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
+app/reset-password/page.tsx:78:        <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">
+app/reset-password/page.tsx:82:        <p className="mt-3 leading-7 text-black">
+app/reset-password/page.tsx:87:          <p className="mt-6 rounded-2xl border border-neutral-400 bg-neutral-50 p-4 text-sm font-bold text-black">
+app/reset-password/page.tsx:97:            <span className="mb-2 block text-sm font-bold text-black">
+app/reset-password/page.tsx:111:              className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
+app/reset-password/page.tsx:116:            <span className="mb-2 block text-sm font-bold text-black">
+app/reset-password/page.tsx:130:              className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
+app/reset-password/page.tsx:143:            className="w-full rounded-2xl bg-black px-5 py-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+app/reset-password/page.tsx:150:            className="block w-full rounded-2xl border border-black bg-white px-5 py-4 text-center text-base font-bold text-black"
+app/(main)/settings/page.tsx:404:    <main className="min-h-[100dvh] bg-[#F6F3ED] text-neutral-900">
+app/(main)/settings/page.tsx:409:          <section className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.035)]">
+app/(main)/settings/page.tsx:419:                <h2 className="truncate text-[22px] font-semibold tracking-[-0.035em] text-black">
+app/(main)/settings/page.tsx:425:                <p className="mt-1 truncate text-[14px] leading-5 text-black/45">
+app/(main)/settings/page.tsx:430:                  <p className="mt-1 truncate text-[13px] font-medium text-black/32">
+app/(main)/settings/page.tsx:450:                className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-4 text-xs font-semibold text-black transition-all disabled:opacity-40 active:scale-[0.985]"
+app/(main)/settings/page.tsx:485:            <section className="rounded-[24px] border border-black/[0.06] bg-white p-5">
+app/(main)/settings/page.tsx:486:              <div className="flex items-center gap-3 text-sm font-medium text-black/45">
+app/(main)/settings/page.tsx:494:              className="space-y-6 rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
+app/(main)/settings/page.tsx:497:                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+app/(main)/settings/page.tsx:501:                <h3 className="mt-2 text-[20px] font-semibold tracking-[-0.03em] text-black">
+app/(main)/settings/page.tsx:604:                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[16px] font-semibold text-white transition-all disabled:opacity-35 active:scale-[0.985]"
+app/(main)/settings/page.tsx:619:            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+app/(main)/settings/page.tsx:623:            <div className="divide-y divide-black/[0.06] overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+app/(main)/settings/page.tsx:646:            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+app/(main)/settings/page.tsx:650:            <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+app/(main)/home/page.tsx:45:            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+app/(main)/home/page.tsx:51:              className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+app/(main)/home/page.tsx:68:              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+app/(main)/home/page.tsx:74:                className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+app/(main)/home/page.tsx:82:              className="flex shrink-0 items-center gap-1 text-sm font-semibold text-black/48 transition-colors hover:text-black"
+app/(main)/home/page.tsx:94:            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+app/(main)/home/page.tsx:100:              className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+app/(main)/home/page.tsx:109:              className="group rounded-[24px] bg-black p-5 text-white transition-transform active:scale-[0.985]"
+app/(main)/home/page.tsx:111:              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/12">
+app/(main)/home/page.tsx:119:              <p className="mt-1 text-xs leading-5 text-white/58">
+app/(main)/home/page.tsx:130:              className="group rounded-[24px] border border-black/[0.07] bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-[0.985]"
+app/(main)/home/page.tsx:132:              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black/[0.045] text-black/60">
+app/(main)/home/page.tsx:136:              <p className="mt-5 text-[17px] font-semibold tracking-[-0.02em] text-black">
+app/(main)/home/page.tsx:140:              <p className="mt-1 text-xs leading-5 text-black/42">
+app/(main)/home/page.tsx:153:            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+app/(main)/home/page.tsx:159:              className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+app/(main)/home/page.tsx:180:                className="inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-85"
+app/(main)/home/page.tsx:221:            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/38">
+app/(main)/home/page.tsx:227:              className="mt-1 text-xl font-semibold tracking-[-0.025em] text-black"
+app/(main)/home/page.tsx:235:            className="group flex items-center justify-between rounded-[24px] border border-black/[0.07] bg-white p-5 shadow-sm transition-all hover:shadow-md active:scale-[0.99]"
+app/(main)/home/page.tsx:238:              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-black text-white">
+app/(main)/home/page.tsx:243:                <p className="font-semibold tracking-[-0.015em] text-black">
+app/(main)/home/page.tsx:247:                <p className="mt-1 text-sm leading-5 text-black/43">
+app/(main)/home/page.tsx:257:              className="ml-3 shrink-0 text-black/25 transition-transform group-hover:translate-x-0.5"
+app/(main)/capture/page.tsx:696:            className="flex h-11 w-11 items-center justify-center rounded-full text-black/55 transition hover:bg-black/[0.04]"
+app/(main)/capture/page.tsx:706:              className="h-11 px-2 text-[13px] font-semibold text-black/45"
+app/(main)/capture/page.tsx:729:          <div className="relative aspect-[3/4] overflow-hidden rounded-[28px] bg-black shadow-[0_18px_45px_rgba(0,0,0,0.14)]">
+app/(main)/capture/page.tsx:746:              className="justify-self-start px-3 py-3 text-[13px] font-semibold text-black/45"
+app/(main)/capture/page.tsx:754:              className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-[5px] border-white bg-black shadow-[0_6px_22px_rgba(0,0,0,0.2)] transition-transform active:scale-95"
+app/(main)/capture/page.tsx:765:          <AppCard padding="none" className="overflow-hidden bg-black">
+app/(main)/capture/page.tsx:775:            <p className="min-w-0 truncate text-[11px] text-black/32">
+app/(main)/capture/page.tsx:782:                className="shrink-0 text-[12px] font-semibold text-black/55"
+app/(main)/capture/page.tsx:797:          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-5 text-black/45">
+app/(main)/capture/page.tsx:837:          className="fixed inset-0 z-[180] flex items-end justify-center bg-black/30 backdrop-blur-[3px] sm:items-center"
+app/(main)/capture/page.tsx:847:            className="w-full max-w-xl overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+app/(main)/capture/page.tsx:850:            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+app/(main)/capture/page.tsx:851:            <header className="flex items-center justify-between border-b border-black/[0.07] px-5 pb-4 pt-4">
+app/(main)/capture/page.tsx:885:                      className="flex w-full items-center gap-3 rounded-[20px] border border-black/[0.06] bg-[#f8f6f1] px-4 py-3.5 text-left transition-transform active:scale-[0.99] disabled:opacity-50"
+app/(main)/capture/page.tsx:887:                      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white">
+app/(main)/capture/page.tsx:903:                        <span className="mt-0.5 block truncate text-[11px] text-black/40">
+app/(main)/capture/page.tsx:913:                          className="text-black/40"
+app/(main)/grammar/page.tsx:11:        <section className="mt-8 rounded-[30px] bg-white p-7">
+app/(main)/messages/page.tsx:242:                ? "bg-black text-white"
+app/(main)/messages/page.tsx:243:                : "bg-[#f1eee7] text-black/65 hover:bg-[#e7e2d8]"
+app/(main)/messages/page.tsx:456:    <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
+app/(main)/messages/page.tsx:458:        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-4 backdrop-blur-2xl">
+app/(main)/messages/page.tsx:459:          <h1 className="text-center text-[20px] font-semibold tracking-[-0.03em] text-black">
+app/(main)/messages/page.tsx:474:          {loading && <p className="text-center text-neutral-500">Loading…</p>}
+app/(main)/messages/page.tsx:1225:    <main className="flex min-h-[100dvh] flex-col bg-[#f4f1ea] text-neutral-900">
+app/(main)/messages/page.tsx:1227:        <header className="sticky top-0 z-[999] border-b border-black/[0.07] bg-[#f4f1ea]/90 px-4 py-3 backdrop-blur-2xl">
+app/(main)/messages/page.tsx:1233:                className="justify-self-start text-sm font-semibold text-black/65 transition-opacity active:opacity-50"
+app/(main)/messages/page.tsx:1238:              <p className="truncate px-2 text-center text-[15px] font-semibold tracking-[-0.015em] text-black">
+app/(main)/messages/page.tsx:1254:                className="justify-self-end text-sm font-semibold text-black/65 transition-opacity disabled:opacity-30 active:opacity-50"
+app/(main)/messages/page.tsx:1265:                className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
+app/(main)/messages/page.tsx:1271:                <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">
+app/(main)/messages/page.tsx:1279:                  <p className="mt-0.5 truncate text-[10px] tracking-[0.08em] text-black/35">
+app/(main)/messages/page.tsx:1292:                  className="flex h-9 w-9 items-center justify-center rounded-full text-black/55 transition-all hover:bg-black/[0.04] active:scale-95"
+app/(main)/messages/page.tsx:1306:                    <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-2xl border border-black/[0.08] bg-white/95 p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl">
+app/(main)/messages/page.tsx:1310:                        className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-black transition-colors hover:bg-black/[0.045] active:bg-black/[0.08]"
+app/(main)/messages/page.tsx:1330:            <p className="text-center text-neutral-500">Loading messages...</p>
+app/(main)/messages/page.tsx:1340:            <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+app/(main)/messages/page.tsx:1342:              <p className="mt-2 text-sm text-neutral-500">
+app/(main)/messages/page.tsx:1367:                    <span className="h-px flex-1 bg-black/[0.07]" />
+app/(main)/messages/page.tsx:1371:                      className="shrink-0 rounded-full bg-black/[0.045] px-3 py-1 text-[10px] font-semibold tracking-[0.06em] text-black/40"
+app/(main)/messages/page.tsx:1376:                    <span className="h-px flex-1 bg-black/[0.07]" />
+app/(main)/messages/page.tsx:1419:                          ? "border-black bg-black text-white"
+app/(main)/messages/page.tsx:1420:                          : "border-black/20 bg-white/60 text-transparent"
+app/(main)/messages/page.tsx:1435:                              ? "rounded-br-md bg-neutral-900 text-white"
+app/(main)/messages/page.tsx:1436:                              : "rounded-bl-md bg-white shadow-sm"
+app/(main)/messages/page.tsx:1459:                          isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+app/(main)/messages/page.tsx:1475:                          isMine ? "bg-white/10" : "bg-[#f4f1ea]"
+app/(main)/messages/page.tsx:1489:                              isMine ? "text-white/60" : "text-neutral-400"
+app/(main)/messages/page.tsx:1500:                              isMine ? "text-white/70" : "text-neutral-500"
+app/(main)/messages/page.tsx:1522:                    <p className="mt-2 text-xs text-neutral-400">
+app/(main)/messages/page.tsx:1544:                className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-black/10 bg-white/95 px-3.5 py-2 text-xs font-semibold text-black shadow-[0_8px_28px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all active:scale-95"
+app/(main)/messages/page.tsx:1565:              className="absolute z-20 flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-xs font-bold text-white shadow-lg disabled:opacity-50"
+app/(main)/messages/page.tsx:1574:              <span className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-lg">
+app/(main)/messages/page.tsx:1584:            className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.06] bg-[#f4f1ea]/90 px-3 py-2.5 backdrop-blur-2xl"
+app/(main)/messages/page.tsx:1586:            <div className="flex h-12 items-center gap-1.5 rounded-full border border-black/[0.08] bg-white/85 px-2 shadow-[0_4px_18px_rgba(0,0,0,0.05)] backdrop-blur-xl">
+app/(main)/messages/page.tsx:1604:                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition-colors hover:bg-black/[0.04] hover:text-black/70 disabled:opacity-30"
+app/(main)/messages/page.tsx:1617:                className="h-10 min-w-0 flex-1 truncate whitespace-nowrap bg-transparent px-2 text-[13px] tracking-[-0.01em] outline-none placeholder:text-black/35"
+app/(main)/messages/page.tsx:1623:                className="h-9 shrink-0 rounded-full bg-black px-4 text-[11px] font-semibold tracking-[-0.01em] text-white transition-transform active:scale-95 disabled:bg-black/20 disabled:text-white disabled:opacity-100"
+app/(main)/messages/page.tsx:1632:          <div className="fixed inset-x-0 bottom-[84px] z-40 mx-auto max-w-xl border-t border-black/[0.07] bg-[#f4f1ea]/95 px-4 py-3 backdrop-blur-2xl">
+app/(main)/messages/page.tsx:1637:              className="flex h-12 w-full items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white shadow-sm transition-all disabled:cursor-not-allowed disabled:bg-black/[0.08] disabled:text-black/25 active:scale-[0.985]"
+app/(main)/messages/page.tsx:1649:          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/30 px-4 pb-6 backdrop-blur-sm sm:items-center sm:pb-0">
+app/(main)/messages/page.tsx:1661:              className="relative z-10 w-full max-w-sm rounded-[28px] bg-white p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
+app/(main)/messages/page.tsx:1665:                className="text-center text-lg font-bold tracking-[-0.02em] text-black"
+app/(main)/messages/page.tsx:1671:              <p className="mx-auto mt-2 max-w-xs text-center text-sm leading-5 text-black/50">
+app/(main)/messages/page.tsx:1681:                  className="h-11 rounded-full bg-black/[0.055] text-sm font-bold text-black transition-all disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+app/(main)/messages/page.tsx:1692:                  className="h-11 rounded-full bg-red-600 text-sm font-bold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+app/(main)/discover/page.tsx:294:              className="w-full rounded-[24px] border border-black/10 bg-white py-4 text-center font-black transition-colors hover:bg-black/[0.03] disabled:opacity-40"
+app/(main)/discover/page.tsx:358:      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+app/(main)/discover/page.tsx:368:        className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
+app/(main)/discover/page.tsx:378:        <div className="mx-auto mt-3 h-1 w-9 shrink-0 rounded-full bg-black/15 sm:hidden" />
+app/(main)/discover/page.tsx:383:            className="text-base font-semibold tracking-tight text-black/90"
+app/(main)/discover/page.tsx:392:            className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
+app/(main)/discover/page.tsx:404:                  className="flex animate-pulse items-center gap-3 rounded-2xl bg-black/[0.03] p-3"
+app/(main)/discover/page.tsx:406:                  <div className="h-9 w-9 shrink-0 rounded-full bg-black/10" />
+app/(main)/discover/page.tsx:408:                    <div className="h-2.5 w-24 rounded-full bg-black/10" />
+app/(main)/discover/page.tsx:409:                    <div className="h-2.5 w-16 rounded-full bg-black/10" />
+app/(main)/discover/page.tsx:422:                className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-black/5"
+app/(main)/discover/page.tsx:430:            <p className="px-2 py-8 text-center text-sm text-black/40">
+app/(main)/discover/page.tsx:447:                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
+app/(main)/discover/page.tsx:449:                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
+app/(main)/discover/page.tsx:456:                    <p className="truncate text-sm font-medium text-black/85">
+app/(main)/discover/page.tsx:459:                    <p className="truncate text-xs text-black/40">
+app/(main)/discover/page.tsx:467:                      className="shrink-0 animate-spin text-black/40"
+app/(main)/discover/page.tsx:483:        <div key={index} className="animate-pulse rounded-[30px] bg-white p-6">
+app/(main)/discover/page.tsx:503:    <div className="rounded-[30px] bg-white p-7 text-center">
+app/(main)/discover/page.tsx:509:        className="mt-5 rounded-full bg-black px-6 py-3 font-black text-white transition-transform active:scale-95"
+app/(main)/discover/page.tsx:537:      className={`mt-0.5 shrink-0 rounded-full border border-black/10 p-2 transition-colors ${
+app/(main)/discover/page.tsx:538:        tone === "solid" ? "bg-white hover:bg-black/5" : "hover:bg-black/5"
+app/(main)/discover/page.tsx:612:      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full border border-white/20 bg-black/40 p-1.5 text-white shadow-xl backdrop-blur-xl"
+app/(main)/discover/page.tsx:620:        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15 disabled:opacity-60"
+app/(main)/discover/page.tsx:631:      <span className="h-4 w-px bg-white/20" />
+app/(main)/discover/page.tsx:637:        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
+app/(main)/discover/page.tsx:809:    <article className="overflow-hidden rounded-[30px] border border-black/5 bg-white transition-shadow hover:shadow-sm">
+app/(main)/discover/page.tsx:895:          <div className="mt-6 border-t border-black/5 pt-5">
+app/(main)/discover/page.tsx:930:            className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-black py-3 text-white transition-transform active:scale-95"
+app/(main)/discover/page.tsx:940:            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
+app/(main)/discover/page.tsx:950:            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
+app/(main)/coach/page.tsx:217:        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-400">
+app/(main)/coach/page.tsx:221:        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-neutral-950">
+app/(main)/coach/page.tsx:225:        <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
+app/(main)/coach/page.tsx:238:        <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm">
+app/(main)/coach/page.tsx:241:              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+app/(main)/coach/page.tsx:245:              <h2 className="mt-2 text-2xl font-semibold text-neutral-950">
+app/(main)/coach/page.tsx:250:            <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
+app/(main)/coach/page.tsx:256:            <p className="mt-8 text-sm text-neutral-500">
+app/(main)/coach/page.tsx:264:                  className="rounded-full border border-black/10 bg-neutral-50 px-4 py-2 text-sm font-medium text-neutral-800"
+app/(main)/coach/page.tsx:267:                  <span className="ml-2 text-neutral-400">
+app/(main)/coach/page.tsx:274:            <div className="mt-7 rounded-3xl bg-neutral-50 p-5">
+app/(main)/coach/page.tsx:275:              <p className="font-medium text-neutral-900">
+app/(main)/coach/page.tsx:278:              <p className="mt-1 text-sm leading-6 text-neutral-500">
+app/(main)/coach/page.tsx:293:            className="mt-8 w-full rounded-full bg-neutral-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+app/(main)/coach/page.tsx:302:          <section className="rounded-[2rem] bg-neutral-950 p-7 text-white">
+app/(main)/coach/page.tsx:303:            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+app/(main)/coach/page.tsx:311:            <p className="mt-4 text-sm leading-7 text-white/70">
+app/(main)/coach/page.tsx:319:                  className="rounded-full bg-white/10 px-3 py-2 text-xs font-medium"
+app/(main)/coach/page.tsx:328:            <p className="whitespace-pre-line text-base leading-8 text-neutral-900">
+app/(main)/coach/page.tsx:332:            <div className="mt-6 border-t border-black/5 pt-6">
+app/(main)/coach/page.tsx:333:              <p className="whitespace-pre-line text-sm leading-7 text-neutral-500">
+app/(main)/coach/page.tsx:344:                  className="rounded-3xl bg-neutral-50 p-5"
+app/(main)/coach/page.tsx:346:                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+app/(main)/coach/page.tsx:349:                  <p className="mt-2 font-medium leading-7 text-neutral-900">
+app/(main)/coach/page.tsx:352:                  <p className="mt-2 text-sm leading-6 text-neutral-500">
+app/(main)/coach/page.tsx:365:                  className="border-b border-black/5 pb-5 last:border-none last:pb-0"
+app/(main)/coach/page.tsx:367:                  <h3 className="font-semibold text-neutral-950">
+app/(main)/coach/page.tsx:370:                  <p className="mt-2 text-sm leading-7 text-neutral-600">
+app/(main)/coach/page.tsx:373:                  <div className="mt-3 rounded-2xl bg-neutral-50 p-4">
+app/(main)/coach/page.tsx:374:                    <p className="font-medium text-neutral-900">
+app/(main)/coach/page.tsx:377:                    <p className="mt-1 text-sm text-neutral-500">
+app/(main)/coach/page.tsx:395:                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+app/(main)/coach/page.tsx:399:                    <h3 className="mt-2 text-lg font-semibold leading-7 text-neutral-950">
+app/(main)/coach/page.tsx:403:                    <p className="mt-1 text-sm text-neutral-500">
+app/(main)/coach/page.tsx:431:                                    ? "border-neutral-950 bg-neutral-950 text-white"
+app/(main)/coach/page.tsx:432:                                    : "border-black/10 bg-white text-neutral-800 hover:bg-neutral-50",
+app/(main)/coach/page.tsx:466:                className="mt-8 w-full rounded-full bg-neutral-950 px-5 py-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+app/(main)/coach/page.tsx:471:              <div className="mt-8 rounded-3xl bg-neutral-950 p-6 text-white">
+app/(main)/coach/page.tsx:472:                <p className="text-sm text-white/60">
+app/(main)/coach/page.tsx:483:            <p className="text-center text-sm text-neutral-500">
+app/(main)/coach/page.tsx:496:            className="w-full rounded-full border border-black/10 bg-white px-5 py-4 text-sm font-semibold text-neutral-900"
+app/(main)/coach/page.tsx:514:    <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-sm">
+app/(main)/coach/page.tsx:515:      <h2 className="mb-6 text-2xl font-semibold tracking-tight text-neutral-950">
+app/(main)/pronunciation/page.tsx:56:          ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
+app/(main)/pronunciation/page.tsx:57:          : "border-neutral-200 bg-white hover:bg-neutral-100"
+app/(main)/pronunciation/page.tsx:67:    <article className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-sm">
+app/(main)/pronunciation/page.tsx:70:          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black text-lg font-bold text-white">
+app/(main)/pronunciation/page.tsx:75:            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+app/(main)/pronunciation/page.tsx:81:            <p className="mt-1 font-mono text-sm text-neutral-500">
+app/(main)/pronunciation/page.tsx:95:      <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
+app/(main)/pronunciation/page.tsx:96:        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
+app/(main)/pronunciation/page.tsx:100:        <p className="mt-2 text-sm leading-6 text-neutral-700">{sound.tip}</p>
+app/(main)/pronunciation/page.tsx:131:    <article className="rounded-[26px] border border-neutral-200 bg-white p-5 shadow-sm">
+app/(main)/pronunciation/page.tsx:134:          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black text-2xl font-bold text-white">
+app/(main)/pronunciation/page.tsx:139:            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+app/(main)/pronunciation/page.tsx:155:      <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
+app/(main)/pronunciation/page.tsx:156:        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
+app/(main)/pronunciation/page.tsx:160:        <p className="mt-2 text-sm leading-6 text-neutral-700">{sound.tip}</p>
+app/(main)/pronunciation/page.tsx:172:              <p className="mt-1 text-sm text-neutral-500">{example.zhuyin}</p>
+app/(main)/pronunciation/page.tsx:184:        <div className="mt-4 rounded-2xl border border-neutral-900 bg-neutral-950 p-4">
+app/(main)/pronunciation/page.tsx:185:          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
+app/(main)/pronunciation/page.tsx:189:          <p className="mt-2 text-sm leading-6 text-neutral-200">
+app/(main)/pronunciation/page.tsx:194:            <div className="rounded-xl bg-white/10 p-3">
+app/(main)/pronunciation/page.tsx:195:              <p className="text-xs text-neutral-400">正確：{sound.symbol}</p>
+app/(main)/pronunciation/page.tsx:199:                  <p className="font-medium text-white">
+app/(main)/pronunciation/page.tsx:203:                  <p className="text-xs text-neutral-400">
+app/(main)/pronunciation/page.tsx:218:            <div className="rounded-xl bg-white/10 p-3">
+app/(main)/pronunciation/page.tsx:219:              <p className="text-xs text-neutral-400">
+app/(main)/pronunciation/page.tsx:225:                  <p className="font-medium text-white">
+app/(main)/pronunciation/page.tsx:229:                  <p className="text-xs text-neutral-400">
+app/(main)/pronunciation/page.tsx:284:    <main className="min-h-screen bg-neutral-50 px-4 pb-28 pt-5 text-neutral-950">
+app/(main)/pronunciation/page.tsx:291:            className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-200"
+app/(main)/pronunciation/page.tsx:301:            <p className="mt-2 text-sm text-neutral-500">
+app/(main)/pronunciation/page.tsx:307:        <section className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-neutral-200 p-1">
+app/(main)/pronunciation/page.tsx:313:                ? "bg-white text-black shadow-sm"
+app/(main)/pronunciation/page.tsx:314:                : "text-neutral-500"
+app/(main)/pronunciation/page.tsx:325:                ? "bg-white text-black shadow-sm"
+app/(main)/pronunciation/page.tsx:326:                : "text-neutral-500"
+app/(main)/pronunciation/page.tsx:347:                      ? "bg-black text-white"
+app/(main)/pronunciation/page.tsx:348:                      : "border border-neutral-200 bg-white text-neutral-600"
+app/(main)/review/page.tsx:18:    <div className="flex items-center justify-between border-t border-black/10 py-3">
+app/(main)/review/page.tsx:19:      <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-neutral-500">
+app/(main)/review/page.tsx:23:      <span className="text-sm font-semibold tracking-tight text-black">
+app/(main)/review/page.tsx:65:        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-neutral-400">
+app/(main)/review/page.tsx:75:        <div className="w-full max-w-sm border-y border-black/10 py-6">
+app/(main)/review/page.tsx:76:          <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-neutral-400">
+app/(main)/review/page.tsx:88:          className="w-full max-w-sm bg-black px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition active:scale-[0.99]"
+app/(main)/review/page.tsx:99:        <section className="w-full border-y border-black/10 py-8">
+app/(main)/review/page.tsx:100:          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-neutral-400">
+app/(main)/review/page.tsx:108:          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.24em] text-neutral-500">
+app/(main)/review/page.tsx:117:        <p className="mt-2 max-w-sm text-sm leading-6 text-neutral-500">
+app/(main)/review/page.tsx:127:        <header className="mb-6 flex items-center justify-between border-b border-black/10 pb-4">
+app/(main)/review/page.tsx:129:            <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-neutral-400">
+app/(main)/review/page.tsx:150:      <section className="bg-black px-5 py-6 text-white">
+app/(main)/review/page.tsx:153:            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
+app/(main)/review/page.tsx:161:            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
+app/(main)/review/page.tsx:166:          <p className="text-right text-xs leading-5 text-white/45">
+app/(main)/review/page.tsx:189:        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.28em] text-neutral-400">
+app/(main)/friends/page.tsx:462:    <main className="min-h-screen bg-[#f4f1ea] px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
+app/(main)/friends/page.tsx:468:            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-black transition-colors hover:bg-black/5 active:bg-black/10"
+app/(main)/friends/page.tsx:473:          <p className="mt-8 text-sm font-bold uppercase tracking-[0.2em] text-neutral-500">
+app/(main)/friends/page.tsx:477:          <h1 className="mt-2 text-4xl font-bold tracking-tight text-black sm:text-5xl">
+app/(main)/friends/page.tsx:481:          <p className="mt-3 text-lg leading-7 text-neutral-600">
+app/(main)/friends/page.tsx:487:          <p className="mt-6 rounded-2xl bg-white p-4 font-semibold text-black shadow-sm">
+app/(main)/friends/page.tsx:493:        <section className="mt-8 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
+app/(main)/friends/page.tsx:494:          <h2 className="text-2xl font-bold text-black">Add a friend</h2>
+app/(main)/friends/page.tsx:506:                  ? "border-black bg-black text-white"
+app/(main)/friends/page.tsx:507:                  : "border-neutral-300 bg-white text-black"
+app/(main)/friends/page.tsx:521:                  ? "border-black bg-black text-white"
+app/(main)/friends/page.tsx:522:                  : "border-neutral-300 bg-white text-black"
+app/(main)/friends/page.tsx:532:                <span className="text-sm font-bold text-black">
+app/(main)/friends/page.tsx:536:                <div className="mt-2 flex rounded-2xl border border-neutral-300 bg-white focus-within:border-black">
+app/(main)/friends/page.tsx:537:                  <span className="px-4 py-4 text-xl font-bold text-neutral-400">
+app/(main)/friends/page.tsx:551:                    className="min-w-0 flex-1 rounded-2xl bg-white px-4 py-4 text-base text-black placeholder:text-neutral-400 outline-none"
+app/(main)/friends/page.tsx:560:                className="mt-5 w-full rounded-2xl bg-black px-5 py-4 font-bold text-white disabled:opacity-40"
+app/(main)/friends/page.tsx:573:                  className="w-full rounded-2xl bg-black px-5 py-4 font-bold text-white"
+app/(main)/friends/page.tsx:578:                <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-black">
+app/(main)/friends/page.tsx:593:                    className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black"
+app/(main)/friends/page.tsx:619:                    : "bg-[#f4f1ea] text-black"
+app/(main)/friends/page.tsx:639:            <h2 className="text-xl font-bold text-black">
+app/(main)/friends/page.tsx:641:              <span className="text-neutral-400">· {incoming.length}</span>
+app/(main)/friends/page.tsx:648:                  className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm"
+app/(main)/friends/page.tsx:651:                    <p className="truncate font-bold text-black">
+app/(main)/friends/page.tsx:654:                    <p className="text-sm text-neutral-500">wants to connect</p>
+app/(main)/friends/page.tsx:664:                      className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
+app/(main)/friends/page.tsx:674:                      className="rounded-full bg-black px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+app/(main)/friends/page.tsx:688:            <h2 className="text-xl font-bold text-black">Sent</h2>
+app/(main)/friends/page.tsx:694:                  className="flex items-center justify-between gap-3 rounded-3xl bg-white p-4 shadow-sm"
+app/(main)/friends/page.tsx:697:                    <p className="truncate font-bold text-black">
+app/(main)/friends/page.tsx:700:                    <p className="text-sm text-neutral-500">
+app/(main)/friends/page.tsx:709:                    className="shrink-0 rounded-full border border-neutral-300 px-4 py-2 text-sm font-bold text-black disabled:opacity-40"
+app/(main)/friends/page.tsx:720:        <section className="mt-7 rounded-3xl bg-white p-5 shadow-sm sm:p-7">
+app/(main)/friends/page.tsx:721:          <p className="text-sm font-bold uppercase tracking-[0.18em] text-neutral-500">
+app/(main)/friends/page.tsx:725:          <h2 className="mt-2 text-2xl font-bold text-black">
+app/(main)/friends/page.tsx:729:          <p className="mt-2 leading-7 text-neutral-600">
+app/(main)/friends/page.tsx:742:              <span className="text-center font-bold text-neutral-400">
+app/(main)/friends/page.tsx:749:            <p className="mt-3 text-center font-bold text-neutral-500">
+app/(main)/friends/page.tsx:758:            <h2 className="text-3xl font-bold text-black">Your friends</h2>
+app/(main)/friends/page.tsx:759:            <span className="font-bold text-black">{friends.length}</span>
+app/(main)/friends/page.tsx:763:            <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
+app/(main)/friends/page.tsx:764:              <p className="font-semibold text-neutral-400">Loading friends…</p>
+app/(main)/friends/page.tsx:767:            <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
+app/(main)/friends/page.tsx:768:              <p className="text-xl font-bold text-black">No friends yet</p>
+app/(main)/friends/page.tsx:769:              <p className="mt-2 leading-7 text-neutral-600">
+app/(main)/friends/page.tsx:780:                  className="flex items-center gap-3 rounded-3xl bg-white p-4 shadow-sm"
+app/(main)/friends/page.tsx:782:                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f4f1ea] font-bold text-black">
+app/(main)/friends/page.tsx:789:                    <p className="truncate font-bold text-black">
+app/(main)/friends/page.tsx:792:                    <p className="truncate text-sm text-neutral-500">
+app/(main)/vocabulary/quiz/page.tsx:115:            className="rounded-full bg-white p-3 text-black"
+app/(main)/vocabulary/quiz/page.tsx:134:          <section className="mt-8 flex items-center justify-center rounded-[30px] bg-white p-10">
+app/(main)/vocabulary/quiz/page.tsx:138:          <section className="mt-8 rounded-[30px] bg-white p-7 text-center">
+app/(main)/vocabulary/quiz/page.tsx:145:              className="mt-6 block rounded-[20px] bg-black px-5 py-4 font-black text-white"
+app/(main)/vocabulary/quiz/page.tsx:151:          <section className="mt-8 rounded-[30px] bg-white p-8 text-center">
+app/(main)/vocabulary/quiz/page.tsx:155:            <p className="mt-3 leading-7 text-neutral-600">
+app/(main)/vocabulary/quiz/page.tsx:161:              className="mt-6 inline-flex items-center gap-2 rounded-[20px] bg-black px-5 py-4 font-black text-white"
+app/(main)/vocabulary/quiz/page.tsx:169:            <p className="text-center text-sm font-bold text-neutral-400">
+app/(main)/vocabulary/quiz/page.tsx:176:              className="mt-4 flex min-h-[280px] w-full flex-col items-center justify-center rounded-[30px] bg-white p-8 text-center"
+app/(main)/vocabulary/quiz/page.tsx:182:                    <p className="mt-2 text-lg font-bold text-neutral-400">
+app/(main)/vocabulary/quiz/page.tsx:186:                  <p className="mt-6 text-sm font-bold uppercase tracking-[0.14em] text-neutral-400">
+app/(main)/vocabulary/quiz/page.tsx:192:                  <p className="text-lg font-bold text-neutral-400">
+app/(main)/vocabulary/quiz/page.tsx:199:                    <p className="mt-5 leading-7 text-neutral-600">
+app/(main)/vocabulary/quiz/page.tsx:218:                className="rounded-full bg-[#f1eee7] p-3 text-black"
+app/(main)/vocabulary/quiz/page.tsx:230:                  className="rounded-[20px] bg-[#f1eee7] px-4 py-4 font-black text-black disabled:opacity-40"
+app/(main)/vocabulary/quiz/page.tsx:238:                  className="rounded-[20px] bg-black px-4 py-4 font-black text-white disabled:opacity-40"
+app/(main)/vocabulary/[id]/page.tsx:203:          <div className="h-5 w-24 rounded bg-neutral-200" />
+app/(main)/vocabulary/[id]/page.tsx:204:          <div className="h-14 w-2/3 rounded bg-neutral-200" />
+app/(main)/vocabulary/[id]/page.tsx:205:          <div className="h-8 w-1/3 rounded bg-neutral-100" />
+app/(main)/vocabulary/[id]/page.tsx:206:          <div className="h-56 rounded-3xl bg-neutral-100" />
+app/(main)/vocabulary/[id]/page.tsx:217:          className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600"
+app/(main)/vocabulary/[id]/page.tsx:241:          className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-black"
+app/(main)/vocabulary/collections/[id]/page.tsx:123:        <div className="mt-8 flex min-h-48 items-center justify-center rounded-[28px] bg-white">
+app/(main)/vocabulary/collections/[id]/page.tsx:127:        <section className="mt-8 rounded-[30px] bg-white p-8 text-center">
+app/(main)/vocabulary/collections/[id]/page.tsx:128:          <BookOpen className="mx-auto text-black/30" size={28} />
+app/(main)/vocabulary/collections/[id]/page.tsx:130:          <p className="mt-2 text-[14px] leading-6 text-black/50">
+app/(main)/vocabulary/collections/[id]/page.tsx:135:            className="mt-5 inline-flex h-12 items-center justify-center rounded-full bg-black px-6 text-[13px] font-semibold text-white"
+app/(main)/vocabulary/collections/page.tsx:139:        <div className="mt-8 flex min-h-48 items-center justify-center rounded-[28px] bg-white">
+app/(main)/vocabulary/collections/page.tsx:143:        <section className="mt-8 rounded-[30px] bg-white p-8 text-center shadow-[0_3px_16px_rgba(0,0,0,0.035)]">
+app/(main)/vocabulary/collections/page.tsx:150:          <p className="mx-auto mt-3 max-w-sm text-[14px] leading-6 text-black/50">
+app/(main)/vocabulary/collections/page.tsx:173:              <p className="mt-2 text-[12px] font-semibold text-black/45">
+app/(main)/vocabulary/collections/page.tsx:186:            className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+app/(main)/vocabulary/collections/page.tsx:191:            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-black/15" />
+app/(main)/vocabulary/collections/page.tsx:192:            <div className="rounded-[28px] bg-white p-5">
+app/(main)/vocabulary/collections/page.tsx:200:                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.055]"
+app/(main)/vocabulary/collections/page.tsx:211:                  className="h-14 rounded-[18px] border border-black/[0.08] bg-[#f7f5f0] px-3 text-center text-2xl outline-none"
+app/(main)/vocabulary/collections/page.tsx:218:                  className="h-14 rounded-[18px] border border-black/[0.08] bg-[#f7f5f0] px-4 text-[15px] outline-none focus:border-black/30"
+app/login/page.tsx:48:    <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea] px-5 py-8 text-black">
+app/login/page.tsx:49:      <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
+app/login/page.tsx:50:        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
+app/login/page.tsx:54:        <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">
+app/login/page.tsx:58:        <p className="mt-3 leading-7 text-black">
+app/login/page.tsx:64:            <span className="mb-2 block text-sm font-bold text-black">
+app/login/page.tsx:75:              className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
+app/login/page.tsx:80:            <span className="mb-2 block text-sm font-bold text-black">
+app/login/page.tsx:92:              className="w-full rounded-2xl border border-neutral-500 bg-white px-4 py-4 text-base text-black placeholder:text-neutral-600 outline-none focus:border-black"
+app/login/page.tsx:97:            className="block text-right text-sm font-semibold text-black underline"
+app/login/page.tsx:110:            className="w-full rounded-2xl bg-black px-5 py-4 text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+app/login/page.tsx:117:            className="block w-full rounded-2xl border border-black bg-white px-5 py-4 text-center text-base font-bold text-black"
+components/ui/BackButton.tsx:48:        bg-white/90
+components/ui/Card.tsx:12:      className={`rounded-3xl border border-neutral-200 bg-white shadow-sm ${className}`}
+components/ui/Surface.tsx:11:  default: "border-[#E3E3DC] bg-white/90",
+components/ui/PageHeader.tsx:40:            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-400">
+components/ui/PageHeader.tsx:50:            <p className="mt-2 max-w-2xl text-neutral-500">
+components/ui/StatCard.tsx:16:      <p className="text-sm text-neutral-500">
+components/ui/StatCard.tsx:25:        <p className="mt-2 text-sm text-neutral-400">
+components/ui/SearchBar.tsx:30:        bg-white/90
+components/ui/Divider.tsx:11:        "h-px w-full bg-black/[0.06]",
+components/ui/Typography.tsx:12:        "text-[32px] font-bold tracking-[-0.055em] leading-[1.05] text-neutral-950",
+components/ui/Typography.tsx:25:        "text-[24px] font-semibold tracking-[-0.03em] leading-tight text-neutral-950",
+components/ui/Typography.tsx:38:        "text-[18px] font-semibold leading-7 text-neutral-900",
+components/ui/Typography.tsx:51:        "text-[16px] leading-7 text-neutral-700",
+components/ui/Typography.tsx:64:        "text-[13px] leading-6 text-neutral-500",
+components/ui/Typography.tsx:77:        "text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400",
+components/ui/AppCard.tsx:32:        "border border-black/[0.06]",
+components/ui/AppCard.tsx:33:        "bg-white",
+components/ui/LogoLoader.tsx:36:          <rect x="0" y="0" width="400" height="400" rx="88" fill="#f0efec" />
+components/ui/LogoLoader.tsx:41:            stroke="#111111"
+components/ui/LogoLoader.tsx:50:            stroke="#111111"
+components/ui/LogoLoader.tsx:59:            stroke="#111111"
+components/ui/LogoLoader.tsx:69:            fill="#f0efec"
+components/ui/LogoLoader.tsx:70:            stroke="#111111"
+components/ui/LogoLoader.tsx:75:            <circle cx="294" cy="172" r="14" fill="#111111" />
+components/ui/LogoLoader.tsx:76:            <circle cx="300" cy="166" r="5" fill="#f0efec" />
+components/ui/Button.tsx:19:    "bg-black text-white hover:opacity-90",
+components/ui/Button.tsx:22:    "border border-neutral-200 bg-white hover:bg-neutral-50",
+components/ui/Button.tsx:25:    "hover:bg-neutral-100",
+components/ui/Button.tsx:28:    "bg-red-600 text-white hover:bg-red-700",
+components/ui/EmptyState.tsx:11:    <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-8 py-14 text-center">
+components/ui/EmptyState.tsx:16:      <p className="mt-3 text-sm text-neutral-500">
+components/ui/DataPanel.tsx:14:    <section className="mt-10 border-y border-black/10 py-5">
+components/ui/DataPanel.tsx:20:          <span className="text-[10px] uppercase tracking-[0.24em] text-neutral-500">
+components/ui/Input.tsx:41:            bg-white/90
+components/settings/FontSizeSettingsButton.tsx:96:                    ? "border-black bg-black text-white"
+components/settings/FontSizeSettingsButton.tsx:97:                    : "border-black/[0.08] bg-black/[0.025] text-black",
+components/settings/FontSizeSettingsButton.tsx:105:                      ? "bg-white/14 text-white"
+components/settings/FontSizeSettingsButton.tsx:106:                      : "bg-white text-black",
+components/settings/FontSizeSettingsButton.tsx:120:                      selected ? "text-white/65" : "text-black/42",
+components/settings/AppLanguageSettingsButton.tsx:127:                    ? "border-black bg-black text-white"
+components/settings/AppLanguageSettingsButton.tsx:128:                    : "border-black/[0.08] bg-black/[0.025] text-black",
+components/settings/AppLanguageSettingsButton.tsx:135:                      ? "bg-white/15 text-white"
+components/settings/AppLanguageSettingsButton.tsx:136:                      : "bg-white text-black",
+components/settings/AppLanguageSettingsButton.tsx:153:                        ? "text-white/65"
+components/settings/AppLanguageSettingsButton.tsx:154:                        : "text-black/42",
+components/settings/AppearanceSettingsButton.tsx:110:                    ? "border-black bg-black text-white"
+components/settings/AppearanceSettingsButton.tsx:111:                    : "border-black/[0.08] bg-black/[0.025] text-black",
+components/settings/AppearanceSettingsButton.tsx:118:                      ? "bg-white/15 text-white"
+components/settings/AppearanceSettingsButton.tsx:119:                      : "bg-white text-black",
+components/settings/AppearanceSettingsButton.tsx:133:                      selected ? "text-white/65" : "text-black/42",
+components/home/QuickCaptureCard.tsx:68:              bg-white/70
+components/home/QuickCaptureCard.tsx:118:              text-white
+components/home/QuickCaptureCard.tsx:136:                bg-white/12
+components/home/QuickCaptureCard.tsx:138:                group-hover:bg-white/16
+components/home/QuickCaptureCard.tsx:149:              <span className="mt-1 block text-[11px] leading-4 text-white/65">
+components/home/QuickCaptureCard.tsx:168:              bg-white/72
+components/home/QuickCaptureCard.tsx:177:              hover:bg-white
+components/home/RecentLearningCard.tsx:137:                bg-white
+components/home/ProgressCard.tsx:98:            bg-white/75
+components/home/ProgressCard.tsx:102:            hover:bg-white
+components/home/HomeHeader.tsx:12:      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/38">
+components/home/HomeHeader.tsx:16:      <h1 className="mt-2 text-[34px] font-semibold leading-tight tracking-[-0.045em] text-black">
+components/home/HomeHeader.tsx:20:      <p className="mt-2 max-w-md text-[15px] leading-6 text-black/48">
+components/capture/CaptureResultEditor.tsx:40:  "mt-2 w-full rounded-[16px] border border-black/[0.08] bg-white px-4 py-3 text-[15px] outline-none transition focus:border-black/30";
+components/capture/CaptureResultEditor.tsx:70:            <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureResultEditor.tsx:86:                className="absolute right-2 top-1/2 mt-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-black/45 hover:bg-black/[0.04]"
+components/capture/CaptureResultEditor.tsx:92:              <p className="mt-1.5 text-[11px] text-black/38">
+components/capture/CaptureResultEditor.tsx:99:            <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureResultEditor.tsx:114:                className="absolute right-2 top-1/2 mt-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-black/45 hover:bg-black/[0.04]"
+components/capture/CaptureResultEditor.tsx:120:              <p className="mt-1.5 text-[11px] text-black/38">
+components/capture/CaptureResultEditor.tsx:128:              <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureResultEditor.tsx:141:              <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureResultEditor.tsx:163:            <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureResultEditor.tsx:177:            <span className="text-[12px] font-semibold text-black/55">
+components/capture/CaptureSourcePicker.tsx:24:      <p className="mx-auto mt-3 max-w-sm text-[14px] leading-6 text-black/48">
+components/capture/CaptureSourcePicker.tsx:34:          className="flex min-h-[136px] flex-col items-center justify-center rounded-[22px] bg-black px-4 text-white transition-transform active:scale-[0.985] disabled:opacity-45"
+components/capture/CaptureSourcePicker.tsx:42:          <span className="mt-1 text-[11px] text-white/55">Use camera</span>
+components/capture/CaptureSourcePicker.tsx:48:          className="flex min-h-[136px] flex-col items-center justify-center rounded-[22px] border border-black/[0.07] bg-[#f7f4ee] px-4 transition-transform active:scale-[0.985]"
+components/capture/CaptureSourcePicker.tsx:52:          <span className="mt-1 text-[11px] text-black/40">Photo library</span>
+components/capture/CaptureSourcePicker.tsx:57:        <p className="mt-5 text-[12px] leading-5 text-black/38">
+components/capture/CaptureProgress.tsx:29:                complete || active ? "bg-black" : "bg-black/[0.08]"
+components/capture/CaptureProgress.tsx:38:                  active || complete ? "text-black/70" : "text-black/28"
+components/messages/SwipeableConversationCard.tsx:136:        className="absolute inset-y-0 right-0 flex w-[92px] items-center justify-center bg-red-500 text-white disabled:pointer-events-none"
+components/messages/ConversationEmptyState.tsx:14:    <div className="rounded-[24px] border border-black/[0.06] bg-white px-6 py-10 text-center shadow-[0_8px_22px_rgba(0,0,0,0.045)]">
+components/messages/ConversationEmptyState.tsx:15:      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#ECE9E2] text-black/65">
+components/messages/ConversationEmptyState.tsx:23:      <h2 className="mt-5 text-[18px] font-semibold tracking-[-0.02em] text-black">
+components/messages/ConversationEmptyState.tsx:27:      <p className="mx-auto mt-2 max-w-[260px] text-sm leading-6 text-black/45">
+components/messages/ConversationEmptyState.tsx:36:          className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.98]"
+components/messages/SearchBar.tsx:21:        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-black/35"
+components/messages/SearchBar.tsx:30:        className="h-12 w-full rounded-2xl border border-black/[0.06] bg-white pl-11 pr-11 text-[15px] text-black outline-none transition placeholder:text-black/35 focus:border-black/[0.14] focus:ring-4 focus:ring-black/[0.03]"
+components/messages/SearchBar.tsx:38:          className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/[0.05] text-black/45 transition hover:bg-black/[0.08]"
+components/messages/ConversationCard.tsx:16:    <div className="flex items-center gap-4 rounded-3xl border border-black/[0.06] bg-white px-5 py-4 shadow-sm transition hover:shadow-md">
+components/messages/ConversationCard.tsx:20:        <h3 className="truncate text-[16px] font-semibold text-black">
+components/messages/ConversationCard.tsx:24:        <p className="truncate text-sm text-neutral-500">
+components/messages/ConversationCard.tsx:28:        <p className="mt-1 text-xs text-neutral-400">
+components/messages/ConversationAvatar.tsx:39:      className="flex shrink-0 items-center justify-center rounded-full bg-[#ECE9E2] font-semibold text-black"
+components/learning/WordCard.tsx:51:      className={`flex shrink-0 items-center justify-center rounded-full bg-[#f3f0e9] text-black/65 transition-all hover:bg-[#e9e5dc] active:scale-95 ${
+components/learning/WordCard.tsx:124:      className={`overflow-hidden rounded-[30px] border border-black/[0.07] bg-white shadow-[0_16px_45px_rgba(0,0,0,0.055)] ${className}`}
+components/learning/WordCard.tsx:141:              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+components/learning/WordCard.tsx:149:              <span className="rounded-full bg-[#f3f0e9] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-black/45">
+components/learning/WordCard.tsx:157:          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+components/learning/WordCard.tsx:168:                <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
+components/learning/WordCard.tsx:189:        <div className="my-6 border-t border-black/[0.07]" />
+components/learning/WordCard.tsx:192:          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+components/learning/WordCard.tsx:198:              <p className="break-words text-[25px] font-semibold leading-tight tracking-[-0.025em] text-neutral-800">
+components/learning/WordCard.tsx:203:                <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
+components/learning/WordCard.tsx:225:          <p className="mt-5 text-[11px] capitalize tracking-[0.06em] text-black/35">
+components/learning/WordCard.tsx:231:          <div className="mt-6 space-y-3 border-t border-black/[0.07] pt-5">
+components/learning/WordCard.tsx:236:                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+components/learning/WordCard.tsx:259:                    <p className="text-[10px] font-semibold tracking-[0.16em] text-black/35">
+components/learning/WordCard.tsx:263:                    <p className="mt-3 text-[14px] leading-6 text-neutral-600">
+components/learning/WordCard.tsx:281:          <div className="mt-5 border-t border-black/[0.07] pt-5">
+components/learning/AdaptiveWordCard.tsx:69:      className={`flex shrink-0 items-center justify-center rounded-full bg-[#f5f2eb] text-black/65 transition-transform active:scale-95 disabled:opacity-30 ${
+components/learning/AdaptiveWordCard.tsx:89:      <span className="min-w-[38px] font-semibold tracking-[0.08em] text-black/27">
+components/learning/AdaptiveWordCard.tsx:95:          className="text-black/48"
+components/learning/AdaptiveWordCard.tsx:104:        <span className="inline-flex items-center gap-1.5 text-black/25">
+components/learning/AdaptiveWordCard.tsx:109:        <span className="text-black/25">Listen with speaker</span>
+components/learning/AdaptiveWordCard.tsx:125:        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/30">
+components/learning/AdaptiveWordCard.tsx:141:            ? "text-[16px] text-black/82"
+components/learning/AdaptiveWordCard.tsx:142:            : "text-[15px] text-black/57"
+components/learning/AdaptiveWordCard.tsx:170:    <article className="overflow-hidden rounded-[30px] border border-black/[0.055] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.055)]">
+components/learning/AdaptiveWordCard.tsx:183:            <span className="absolute bottom-4 left-4 rounded-full border border-white/30 bg-white/82 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] text-black/55 backdrop-blur-xl">
+components/learning/AdaptiveWordCard.tsx:192:          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/35">
+components/learning/AdaptiveWordCard.tsx:197:            <span className="rounded-full bg-[#f5f2eb] px-3 py-1.5 text-[10px] font-medium capitalize text-black/40">
+components/learning/AdaptiveWordCard.tsx:226:            <h3 className="min-w-0 break-words text-[26px] font-medium leading-none tracking-[-0.035em] text-black/72">
+components/learning/AdaptiveWordCard.tsx:249:              <span className="capitalize text-black/32">{partOfSpeech}</span>
+components/learning/AdaptiveWordCard.tsx:253:              <span className="text-black/15">•</span>
+components/learning/AdaptiveWordCard.tsx:260:                className="text-black/28 underline decoration-black/15 underline-offset-4 transition-colors hover:text-black/55"
+components/foundation/forms/FormField.tsx:24:        className="block text-[14px] font-semibold tracking-[-0.015em] text-black"
+components/foundation/forms/FormField.tsx:32:        <p className="mt-2 text-xs leading-5 text-black/45">{description}</p>
+components/foundation/forms/AppInput.tsx:24:          "flex min-h-[52px] w-full items-center overflow-hidden rounded-[16px] border bg-white",
+components/foundation/forms/AppInput.tsx:28:            : "border-black/[0.12] focus-within:border-black/40",
+components/foundation/forms/AppInput.tsx:29:          disabled ? "bg-black/[0.025] opacity-55" : "",
+components/foundation/forms/AppInput.tsx:36:          <span className="flex shrink-0 items-center pl-4 text-black/45">
+components/foundation/forms/AppInput.tsx:46:            "min-w-0 flex-1 bg-transparent px-4 py-3 text-[16px] text-black outline-none",
+components/foundation/forms/AppInput.tsx:47:            "placeholder:text-black/30",
+components/foundation/forms/AppInput.tsx:57:          <span className="flex shrink-0 items-center pr-4 text-black/45">
+components/foundation/forms/AppSelect.tsx:13:          "relative min-h-[52px] w-full rounded-[16px] border bg-white",
+components/foundation/forms/AppSelect.tsx:17:            : "border-black/[0.12] focus-within:border-black/40",
+components/foundation/forms/AppSelect.tsx:18:          disabled ? "bg-black/[0.025] opacity-55" : "",
+components/foundation/forms/AppSelect.tsx:28:          className="min-h-[52px] w-full appearance-none bg-transparent px-4 py-3 pr-11 text-[16px] text-black outline-none"
+components/foundation/forms/AppSelect.tsx:38:          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black/40"
+components/foundation/overlays/BottomSheet.tsx:57:        className="absolute inset-0 cursor-default bg-black/35 backdrop-blur-[2px]"
+components/foundation/overlays/BottomSheet.tsx:65:          "relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px] bg-white shadow-[0_-18px_60px_rgba(0,0,0,0.16)]",
+components/foundation/overlays/BottomSheet.tsx:72:        <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+components/foundation/overlays/BottomSheet.tsx:74:        <header className="flex items-start justify-between gap-4 border-b border-black/[0.07] px-5 py-4">
+components/foundation/overlays/BottomSheet.tsx:78:              className="text-[18px] font-semibold tracking-[-0.025em] text-black"
+components/foundation/overlays/BottomSheet.tsx:84:              <p className="mt-1 text-sm leading-5 text-black/45">
+components/foundation/overlays/BottomSheet.tsx:95:            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.045] text-black/55 transition-all hover:bg-black/[0.08] active:scale-95"
+components/foundation/overlays/BottomSheet.tsx:106:          <footer className="border-t border-black/[0.07] bg-white px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-4">
+components/foundation/cards/Card.tsx:41:        "border border-black/[0.07]",
+components/foundation/cards/Card.tsx:42:        "bg-white",
+components/foundation/cards/Card.tsx:46:          ? "transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.10] hover:shadow-[0_12px_30px_rgba(0,0,0,0.07)]"
+components/foundation/navigation/AppHeader.tsx:33:        className="flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition-colors hover:bg-black/[0.045] active:scale-95"
+components/foundation/navigation/AppHeader.tsx:43:        "border-b border-black/[0.07] bg-[#f4f1ea]/92 px-4 py-3 backdrop-blur-2xl",
+components/foundation/navigation/AppHeader.tsx:53:          <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-black">
+components/foundation/navigation/AppHeader.tsx:58:            <p className="mt-0.5 truncate text-[10px] tracking-[0.06em] text-black/35">
+components/foundation/feedback/EmptyState.tsx:21:        "rounded-3xl bg-white px-6 py-8 text-center shadow-sm",
+components/foundation/feedback/EmptyState.tsx:28:        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f1ea] text-black/60">
+components/foundation/feedback/EmptyState.tsx:33:      <h3 className="text-lg font-semibold tracking-[-0.02em] text-black">
+components/foundation/feedback/EmptyState.tsx:38:        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/50">
+components/foundation/feedback/StatusMessage.tsx:12:  info: "bg-white text-black/65",
+components/foundation/rows/SettingsRow.tsx:48:              : "bg-black/[0.045] text-black/55",
+components/foundation/rows/SettingsRow.tsx:59:            danger ? "text-red-600" : "text-black",
+components/foundation/rows/SettingsRow.tsx:66:          <span className="mt-0.5 block text-[12px] leading-5 text-black/42">
+components/foundation/rows/SettingsRow.tsx:73:        <span className="max-w-[42%] truncate text-sm text-black/40">
+components/foundation/rows/SettingsRow.tsx:83:          className="shrink-0 text-black/25"
+components/foundation/rows/SettingsRow.tsx:99:    disabled ? "cursor-not-allowed opacity-40" : "hover:bg-black/[0.025]",
+components/foundation/controls/Pill.tsx:27:          ? "bg-black text-white"
+components/foundation/controls/Pill.tsx:28:          : "border border-black/[0.07] bg-white text-black/50",
+components/foundation/typography/Heading.tsx:33:        "font-semibold tracking-tight text-black",
+components/foundation/typography/Body.tsx:24:  default: "text-black",
+components/foundation/typography/Body.tsx:25:  muted: "text-neutral-600",
+components/foundation/typography/Body.tsx:26:  subtle: "text-neutral-500",
+components/foundation/typography/Display.tsx:33:        "font-semibold text-black",
+components/foundation/typography/Caption.tsx:17:  default: "text-black",
+components/foundation/typography/Caption.tsx:18:  muted: "text-neutral-600",
+components/foundation/typography/Caption.tsx:19:  subtle: "text-neutral-500",
+components/foundation/typography/Text.tsx:24:  default: "text-black",
+components/foundation/typography/Text.tsx:25:  muted: "text-neutral-600",
+components/foundation/typography/Text.tsx:26:  subtle: "text-neutral-500",
+components/foundation/media/Avatar.tsx:41:        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-black text-white",
+components/foundation/media/Avatar.tsx:66:        <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+components/dashboard/DashboardCard.tsx:21:        "rounded-[24px] border border-black/[0.07] bg-white shadow-sm",
+components/dashboard/DashboardCard.tsx:25:      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/38">
+components/dashboard/DashboardCard.tsx:31:          "font-semibold leading-none tracking-[-0.045em] text-black",
+components/dashboard/DashboardCard.tsx:41:            "text-black/43",
+components/dashboard/DashboardSheet.tsx:65:      <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-[#e9e8e4] shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+components/dashboard/DashboardSheet.tsx:71:          className="flex min-h-[82px] w-full items-center justify-between px-6 py-5 text-left font-sans outline-none transition hover:bg-black/[0.02] focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-inset sm:px-7"
+components/dashboard/DashboardSheet.tsx:74:            <span className="block text-[10px] font-semibold uppercase tracking-[0.28em] text-black/40">
+components/dashboard/DashboardSheet.tsx:78:            <span className="mt-1.5 block text-[20px] font-semibold tracking-[-0.025em] text-black">
+components/dashboard/DashboardSheet.tsx:83:          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/[0.07] bg-white/60">
+components/dashboard/DashboardSheet.tsx:105:            className="border-t border-black/[0.06] bg-[#f7f6f3] p-3 sm:p-4"
+components/dashboard/DailyFocusCard.tsx:19:      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+components/dashboard/DailyFocusCard.tsx:23:      <p className="mt-2 text-[24px] font-semibold leading-none tracking-[-0.04em] text-white">
+components/dashboard/DailyFocusCard.tsx:39:    <article className="overflow-hidden rounded-[26px] bg-black p-5 text-white sm:p-6">
+components/dashboard/DailyFocusCard.tsx:42:          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/38">
+components/dashboard/DailyFocusCard.tsx:60:      <p className="mt-4 max-w-sm text-sm leading-6 text-white/48">
+components/dashboard/DailyFocusCard.tsx:91:          className="text-white/45 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white"
+components/dashboard/LearningStreakCard.tsx:16:    <div className="rounded-3xl border bg-white p-6 shadow-sm">
+components/dashboard/LearningStreakCard.tsx:29:          <div className="text-sm text-neutral-500">
+components/dashboard/LearningStreakCard.tsx:38:          <div className="text-sm text-neutral-500">
+components/dashboard/LearningStreakCard.tsx:48:                : "text-neutral-400"
+components/dashboard/LearningStreakCard.tsx:62:            <span className="text-xs text-neutral-400">
+components/dashboard/LearningStreakCard.tsx:69:                  ? "bg-black"
+components/dashboard/LearningStreakCard.tsx:70:                  : "bg-neutral-200"
+components/dashboard/DashboardRollup.tsx:59:          className="flex w-full items-center justify-between px-8 py-7 text-left transition hover:bg-black/[0.02]"
+components/dashboard/DashboardRollup.tsx:62:            <div className="text-[11px] uppercase tracking-[0.36em] text-black/35">
+components/dashboard/DashboardRollup.tsx:66:            <div className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-black">
+components/dashboard/DashboardRollup.tsx:89:            className="border-t border-black/8 bg-white p-5"
+components/pronunciation/TodayWordCard.tsx:23:    <section className="animate-pulse rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
+components/pronunciation/TodayWordCard.tsx:24:      <div className="h-3 w-24 rounded bg-neutral-200" />
+components/pronunciation/TodayWordCard.tsx:25:      <div className="mt-4 h-9 w-44 rounded bg-neutral-200" />
+components/pronunciation/TodayWordCard.tsx:28:        <div className="h-16 rounded-2xl bg-neutral-100" />
+components/pronunciation/TodayWordCard.tsx:29:        <div className="h-16 rounded-2xl bg-neutral-100" />
+components/pronunciation/TodayWordCard.tsx:32:      <div className="mt-5 h-5 w-28 rounded bg-neutral-200" />
+components/pronunciation/TodayWordCard.tsx:33:      <div className="mt-3 h-4 w-full rounded bg-neutral-100" />
+components/pronunciation/TodayWordCard.tsx:40:    <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
+components/pronunciation/TodayWordCard.tsx:41:      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+components/pronunciation/TodayWordCard.tsx:49:      <p className="mt-2 max-w-sm text-sm leading-6 text-neutral-600">
+components/pronunciation/TodayWordCard.tsx:56:        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-medium text-white"
+components/pronunciation/TodayWordCard.tsx:146:    <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
+components/pronunciation/TodayWordCard.tsx:149:          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+components/pronunciation/TodayWordCard.tsx:158:        <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">
+components/pronunciation/TodayWordCard.tsx:167:          className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition hover:bg-neutral-50"
+components/pronunciation/TodayWordCard.tsx:170:            <div className="text-sm text-neutral-500">
+components/pronunciation/TodayWordCard.tsx:187:          className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition hover:bg-neutral-50"
+components/pronunciation/TodayWordCard.tsx:190:            <div className="text-sm text-neutral-500">
+components/pronunciation/TodayWordCard.tsx:201:              <div className="mt-1 text-sm text-neutral-500">
+components/pronunciation/TodayWordCard.tsx:212:        <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
+components/pronunciation/TodayWordCard.tsx:213:          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
+components/pronunciation/TodayWordCard.tsx:219:              <div className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3">
+components/pronunciation/TodayWordCard.tsx:220:                <p className="min-w-0 font-medium leading-6 text-neutral-900">
+components/pronunciation/TodayWordCard.tsx:228:                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition hover:bg-neutral-100 active:scale-95"
+components/pronunciation/TodayWordCard.tsx:236:              <div className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3">
+components/pronunciation/TodayWordCard.tsx:237:                <p className="min-w-0 text-sm leading-6 text-neutral-600">
+components/pronunciation/TodayWordCard.tsx:247:                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition hover:bg-neutral-100 active:scale-95"
+components/pronunciation/TodayWordCard.tsx:259:        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+components/pronunciation/PronunciationHub.tsx:10:      className="flex items-center justify-between rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm transition hover:bg-neutral-50"
+components/pronunciation/PronunciationHub.tsx:13:        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-100">
+components/pronunciation/PronunciationHub.tsx:18:          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+components/pronunciation/PronunciationHub.tsx:26:          <p className="mt-1 text-sm text-neutral-500">
+components/pronunciation/PronunciationHub.tsx:34:        className="shrink-0 text-neutral-500"
+components/pronunciation/PronunciationBlock.tsx:37:      className={`space-y-1 font-sans text-[12px] font-normal leading-[1.55] tracking-[-0.01em] text-black/45 ${className}`}
+components/review/ReviewActions.tsx:21:  { grade: "easy", label: "Easy", className: "bg-black text-white" },
+components/review/ReviewProgress.tsx:14:      <div className="mb-2 flex items-center justify-between text-[12px] font-semibold text-black/45">
+components/review/ReviewProgress.tsx:18:      <div className="h-2 overflow-hidden rounded-full bg-black/[0.07]">
+components/review/ReviewProgress.tsx:20:          className="h-full rounded-full bg-black transition-[width] duration-500"
+components/review/ReviewStats.tsx:16:        <div key={label} className="rounded-[22px] bg-white p-4 shadow-[0_8px_28px_rgba(0,0,0,0.04)]">
+components/review/ReviewStats.tsx:17:          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-black/35">{label}</p>
+components/review/ReviewSummary.tsx:29:      <p className="mx-auto mt-3 max-w-sm text-[14px] leading-6 text-black/45">
+components/review/ReviewSummary.tsx:43:            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-black/35">
+components/review/ReviewSummary.tsx:54:          className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-black px-5 text-[13px] font-semibold text-white"
+components/review/ReviewSummary.tsx:61:          className="flex min-h-[52px] items-center justify-center rounded-full bg-black/[0.06] px-5 text-[13px] font-semibold text-black/70"
+components/collections/CollectionPickerSheet.tsx:146:        className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+components/collections/CollectionPickerSheet.tsx:150:        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-black/15" />
+components/collections/CollectionPickerSheet.tsx:151:        <div className="rounded-[28px] bg-white p-5 shadow-[0_10px_36px_rgba(16,16,15,0.06)]">
+components/collections/CollectionPickerSheet.tsx:154:              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+components/collections/CollectionPickerSheet.tsx:160:              <p className="mt-1 text-[14px] text-black/45">
+components/collections/CollectionPickerSheet.tsx:167:              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black/[0.055]"
+components/collections/CollectionPickerSheet.tsx:189:                        ? "border-black bg-black text-white"
+components/collections/CollectionPickerSheet.tsx:190:                        : "border-black/[0.07] bg-[#f7f5f0]"
+components/collections/CollectionPickerSheet.tsx:199:                        selected ? "bg-white text-black" : "bg-black/[0.06]"
+components/collections/CollectionPickerSheet.tsx:210:                  <FolderPlus className="mx-auto text-black/35" size={25} />
+components/collections/CollectionPickerSheet.tsx:214:                  <p className="mt-1 text-[13px] leading-5 text-black/45">
+components/collections/CollectionPickerSheet.tsx:228:                      className="h-12 rounded-[16px] border border-black/[0.08] bg-white px-3 text-center text-xl outline-none"
+components/collections/CollectionPickerSheet.tsx:234:                      className="h-12 rounded-[16px] border border-black/[0.08] bg-white px-4 text-[14px] outline-none focus:border-black/30"
+components/collections/CollectionPickerSheet.tsx:262:                  className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[18px] border border-dashed border-black/15 text-[13px] font-semibold text-black/55"
+components/design-system/Card.tsx:30:        "border bg-white",
+components/design-system/Card.tsx:36:          "transition-all duration-200 hover:-translate-y-0.5 hover:border-black/[0.10]",
+components/design-system/Pill.tsx:27:          ? "bg-black text-white"
+components/design-system/Pill.tsx:28:          : "border border-black/[0.07] bg-white text-black/50",
+components/design-system/Button.tsx:27:    "bg-black text-white hover:bg-black/85",
+components/design-system/Button.tsx:29:    "border border-black/[0.07] bg-white text-black hover:bg-black/[0.025]",
+components/design-system/Button.tsx:31:    "bg-transparent text-black/60 hover:bg-black/[0.04]",
+components/vocabulary/VocabularyQuickActions.tsx:11:  "group min-w-0 rounded-[24px] border border-black/[0.06] bg-white p-5 text-left shadow-[0_4px_18px_rgba(0,0,0,0.035)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(0,0,0,0.07)] active:scale-[0.98]";
+components/vocabulary/VocabularyQuickActions.tsx:14:  "mb-5 flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.045] text-black transition group-hover:bg-black group-hover:text-white";
+components/vocabulary/VocabularyQuickActions.tsx:28:        <div className="mt-1.5 text-[11px] leading-4 text-black/40">
+components/vocabulary/VocabularyQuickActions.tsx:46:        <div className="mt-1.5 text-[11px] leading-4 text-black/40">
+components/vocabulary/VocabularyQuickActions.tsx:60:        <div className="mt-1.5 text-[11px] leading-4 text-black/40">
+components/vocabulary/ui/VocabularyTranslation.tsx:36:          text-black/80
+components/vocabulary/ui/VocabularySpeechButton.tsx:42:        "border border-black/[0.07] bg-black/[0.035] text-black/65",
+components/vocabulary/ui/VocabularySpeechButton.tsx:44:        "hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black",
+components/vocabulary/ui/VocabularyWord.tsx:32:          text-black
+components/vocabulary/ui/VocabularyExampleBlock.tsx:26:          <p className="flex-1 text-[15px] leading-6 text-neutral-700">
+components/vocabulary/ui/VocabularyExampleBlock.tsx:41:        <div className="flex items-start gap-3 border-t border-black/[0.05] px-5 py-5">
+components/vocabulary/ui/VocabularyExampleBlock.tsx:43:          <p className="flex-1 text-[15px] leading-6 text-neutral-500">
+components/vocabulary/sections/VocabularySearchSection.tsx:62:          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/35">
+components/vocabulary/sections/VocabularySearchSection.tsx:66:          <h2 className="mt-1 text-[26px] font-semibold tracking-[-0.04em] text-black">
+components/vocabulary/sections/VocabularySearchSection.tsx:70:          <p className="mt-1 text-[13px] text-black/45">
+components/vocabulary/sections/VocabularySearchSection.tsx:79:          className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-black px-4 text-[12px] font-semibold text-white transition active:scale-[0.98]"
+components/vocabulary/sections/VocabularySearchSection.tsx:86:      <div className="rounded-[24px] bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+components/vocabulary/sections/VocabularySearchSection.tsx:103:          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[11px] font-medium text-black/45">
+components/vocabulary/LearningCoach.tsx:14:    <section className="mb-8 overflow-hidden rounded-[32px] bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-800 p-8 text-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+components/vocabulary/LearningCoach.tsx:15:      <p className="text-sm text-neutral-400">{greeting}</p>
+components/vocabulary/LearningCoach.tsx:21:      <div className="mt-8 space-y-4 rounded-2xl bg-white/10 p-5 backdrop-blur">
+components/vocabulary/card/VocabularyLearningStats.tsx:35:    <section className="mt-6 border-t border-black/[0.06] pt-1">
+components/vocabulary/card/VocabularyLearningStats.tsx:42:        <span className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/40">
+components/vocabulary/card/VocabularyLearningStats.tsx:49:          className={`shrink-0 text-black/45 transition-transform duration-300 ${
+components/vocabulary/card/VocabularyLearningStats.tsx:63:          <dl className="border-t border-black/[0.05] pb-1 pt-2">
+components/vocabulary/card/VocabularyLearningStats.tsx:69:                <dt className="font-sans text-[11px] font-medium uppercase tracking-[0.18em] text-black/35">
+components/vocabulary/card/VocabularyLearningStats.tsx:73:                <dd className="font-sans text-[14px] font-medium tracking-[-0.015em] text-black/80">
+components/vocabulary/card/VocabularyCardActions.tsx:23:    <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-black/[0.06] bg-white px-5 py-4">
+components/vocabulary/card/VocabularyCardActions.tsx:41:        className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
+components/vocabulary/card/VocabularyCardActions.tsx:50:        className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
+components/vocabulary/card/VocabularyCardHeader.tsx:31:        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/45">
+components/vocabulary/card/VocabularyCardHeader.tsx:36:          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/30">
+components/vocabulary/card/VocabularyCardHeader.tsx:57:          className="mt-5 border-t border-black/[0.06] pt-5"
+components/vocabulary/SortBottomSheet.tsx:43:      className="fixed inset-0 z-[300] flex items-end bg-black/20 backdrop-blur-[2px]"
+components/vocabulary/SortBottomSheet.tsx:51:        className="w-full rounded-t-[24px] bg-white px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 text-black shadow-2xl"
+components/vocabulary/SortBottomSheet.tsx:53:        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-black/15" />
+components/vocabulary/SortBottomSheet.tsx:55:        <div className="flex items-center justify-between border-b border-black/10 py-3">
+components/vocabulary/SortBottomSheet.tsx:62:            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
+components/vocabulary/SortBottomSheet.tsx:74:              className="flex w-full items-center border-b border-black/10 py-4 text-left last:border-b-0"
+components/vocabulary/LearningInsights.tsx:19:        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-600 text-white">
+components/vocabulary/LearningInsights.tsx:35:      <p className="mt-6 text-[17px] leading-8 text-neutral-700">
+components/vocabulary/LearningInsights.tsx:42:          <span className="rounded-full bg-white px-4 py-2 text-sm shadow-sm">
+components/vocabulary/LearningInsights.tsx:47:        <span className="rounded-full bg-white px-4 py-2 text-sm shadow-sm">
+components/vocabulary/ReviewSession.tsx:85:      <section className="rounded-3xl border border-neutral-200 bg-white p-10 text-center shadow-sm">
+components/vocabulary/ReviewSession.tsx:92:        <p className="mt-2 text-neutral-500">
+components/vocabulary/ReviewSession.tsx:117:      <div className="flex items-center justify-between text-sm text-neutral-500">
+components/vocabulary/ReviewSession.tsx:122:      <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+components/vocabulary/ReviewSession.tsx:124:          className="h-full rounded-full bg-black transition-all"
+components/vocabulary/ReviewSession.tsx:148:        <p className="text-center text-sm text-neutral-500">
+components/vocabulary/ReviewCard.tsx:56:    <article className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+components/vocabulary/ReviewCard.tsx:58:        <p className="text-sm font-medium uppercase tracking-widest text-neutral-400">
+components/vocabulary/ReviewCard.tsx:68:            <p className="text-2xl font-semibold text-neutral-800">
+components/vocabulary/ReviewCard.tsx:73:              <p className="rounded-2xl bg-neutral-50 p-4 leading-7 text-neutral-600">
+components/vocabulary/ReviewCard.tsx:85:          className="mt-6 w-full rounded-2xl bg-black px-5 py-4 font-semibold text-white transition hover:opacity-90"
+components/vocabulary/FriendPickerModal.tsx:48:      className="fixed inset-0 z-[300] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+components/vocabulary/FriendPickerModal.tsx:58:        className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
+components/vocabulary/FriendPickerModal.tsx:68:        <div className="mx-auto mt-3 h-1 w-9 shrink-0 rounded-full bg-black/15 sm:hidden" />
+components/vocabulary/FriendPickerModal.tsx:73:            className="text-base font-semibold tracking-tight text-black/90"
+components/vocabulary/FriendPickerModal.tsx:82:            className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
+components/vocabulary/FriendPickerModal.tsx:94:                  className="flex animate-pulse items-center gap-3 rounded-2xl bg-black/[0.03] p-3"
+components/vocabulary/FriendPickerModal.tsx:96:                  <div className="h-9 w-9 shrink-0 rounded-full bg-black/10" />
+components/vocabulary/FriendPickerModal.tsx:99:                    <div className="h-2.5 w-24 rounded-full bg-black/10" />
+components/vocabulary/FriendPickerModal.tsx:100:                    <div className="h-2.5 w-16 rounded-full bg-black/10" />
+components/vocabulary/FriendPickerModal.tsx:114:                className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-black/5"
+components/vocabulary/FriendPickerModal.tsx:122:            <p className="px-2 py-8 text-center text-sm text-black/40">
+components/vocabulary/FriendPickerModal.tsx:139:                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
+components/vocabulary/FriendPickerModal.tsx:141:                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
+components/vocabulary/FriendPickerModal.tsx:148:                    <p className="truncate text-sm font-medium text-black/85">
+components/vocabulary/FriendPickerModal.tsx:152:                    <p className="truncate text-xs text-black/40">
+components/vocabulary/FriendPickerModal.tsx:160:                      className="shrink-0 animate-spin text-black/40"
+components/vocabulary/TodayReviewCard.tsx:9:    <section className="rounded-3xl bg-black p-8 text-white">
+components/vocabulary/TodayReviewCard.tsx:10:      <p className="text-neutral-400 text-sm">Today&apos;s Review</p>
+components/vocabulary/TodayReviewCard.tsx:14:      <p className="mt-2 text-neutral-300">
+components/vocabulary/TodayReviewCard.tsx:20:        className="mt-8 inline-flex rounded-xl bg-white px-5 py-3 font-semibold text-black"
+components/vocabulary/VocabularyDetailSheet.tsx:83:        className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+components/vocabulary/VocabularyDetailSheet.tsx:92:        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-black/15" />
+components/vocabulary/VocabularyDetailSheet.tsx:94:        <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.06)]">
+components/vocabulary/VocabularyDetailSheet.tsx:107:                className="text-black/35"
+components/vocabulary/VocabularyDetailSheet.tsx:135:                <p className="mt-2 break-words text-[22px] leading-tight text-black/58">
+components/vocabulary/VocabularyDetailSheet.tsx:150:                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black/[0.055]"
+components/vocabulary/VocabularyDetailSheet.tsx:178:                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+components/vocabulary/VocabularyDetailSheet.tsx:182:                  <p className="mt-3 text-[15px] leading-6 text-black/82">
+components/vocabulary/VocabularyDetailSheet.tsx:187:                  <p className="mt-2 text-[14px] leading-6 text-black/48">
+components/vocabulary/VocabularyDetailSheet.tsx:195:              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+components/vocabulary/VocabularyDetailSheet.tsx:207:                        ? "bg-black text-white shadow-sm"
+components/vocabulary/VocabularyDetailSheet.tsx:208:                        : "text-black/45"
+components/vocabulary/VocabularyDetailSheet.tsx:217:            <div className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-black/45">
+components/vocabulary/VocabularyDetailSheet.tsx:218:              <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
+components/vocabulary/VocabularyDetailSheet.tsx:222:              <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
+components/vocabulary/modals/VocabularyLookupModal.tsx:66:      className="fixed inset-0 z-[160] flex items-end justify-center bg-black/25 backdrop-blur-[3px] sm:items-center"
+components/vocabulary/modals/VocabularyLookupModal.tsx:74:        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+components/vocabulary/modals/VocabularyLookupModal.tsx:79:        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+components/vocabulary/modals/VocabularyLookupModal.tsx:81:        <header className="flex items-center justify-between border-b border-black/10 px-5 pb-4 pt-4">
+components/vocabulary/modals/VocabularyLookupModal.tsx:83:            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+components/vocabulary/modals/VocabularyLookupModal.tsx:112:            <div className="flex h-12 items-center gap-3 rounded-full border border-black/10 bg-[#f5f2eb] px-4">
+components/vocabulary/modals/VocabularyLookupModal.tsx:116:                className="shrink-0 text-neutral-500"
+components/vocabulary/modals/VocabularyLookupModal.tsx:125:                className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-neutral-400"
+components/vocabulary/modals/VocabularyLookupModal.tsx:133:                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/5"
+components/vocabulary/modals/VocabularyLookupModal.tsx:143:              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white disabled:opacity-30"
+components/vocabulary/modals/VocabularyLookupModal.tsx:165:              <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-neutral-500">
+components/vocabulary/modals/VocabularyLookupModal.tsx:181:            <article className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+components/vocabulary/modals/VocabularyLookupModal.tsx:185:                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+components/vocabulary/modals/VocabularyLookupModal.tsx:209:                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+components/vocabulary/modals/VocabularyLookupModal.tsx:214:                      <p className="min-w-0 flex-1 break-words text-[26px] font-semibold tracking-[-0.025em] text-neutral-800">
+components/vocabulary/modals/VocabularyLookupModal.tsx:237:                      <p className="mt-2 text-[11px] capitalize tracking-[0.04em] text-neutral-400">
+components/vocabulary/modals/VocabularyLookupModal.tsx:244:                <div className="mt-6 space-y-3 border-t border-black/[0.08] pt-5">
+components/vocabulary/modals/VocabularyLookupModal.tsx:248:                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+components/vocabulary/modals/VocabularyLookupModal.tsx:264:                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+components/vocabulary/modals/VocabularyLookupModal.tsx:274:                        <p className="text-[10px] font-semibold tracking-[0.16em] text-black/35">
+components/vocabulary/modals/VocabularyLookupModal.tsx:278:                        <p className="mt-3 text-[14px] leading-6 text-neutral-600">
+components/vocabulary/modals/VocabularyLookupModal.tsx:290:                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+components/vocabulary/modals/VocabularyLookupModal.tsx:328:                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[13px] font-semibold text-white transition-transform active:scale-[0.99] disabled:opacity-30"
+components/vocabulary/VocabularyFilterPanel.tsx:65:    <div className="fixed inset-0 z-[300] overflow-y-auto bg-white text-black">
+components/vocabulary/VocabularyFilterPanel.tsx:66:      <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
+components/vocabulary/VocabularyFilterPanel.tsx:87:        <div className="relative border-t border-black/10 px-5 py-4">
+components/vocabulary/VocabularyFilterPanel.tsx:90:            className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400"
+components/vocabulary/VocabularyFilterPanel.tsx:98:            className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
+components/vocabulary/VocabularyFilterPanel.tsx:104:        <aside className="text-xs uppercase leading-5 text-neutral-500">
+components/vocabulary/VocabularyFilterPanel.tsx:111:            <p className="text-neutral-400">No matching words.</p>
+components/vocabulary/VocabularyFilterPanel.tsx:129:                      <span className="mt-1 block text-sm text-neutral-400">
+components/vocabulary/VocabularyFilterPanel.tsx:141:      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-neutral-400 sm:flex">
+components/vocabulary/VocabularyStats.tsx:45:          className="rounded-[22px] border border-black/[0.05] bg-white p-4 shadow-[0_3px_16px_rgba(0,0,0,0.035)]"
+components/vocabulary/VocabularyStats.tsx:49:              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-black/35">
+components/vocabulary/VocabularyStats.tsx:58:            <div className="mt-1 h-2 w-2 rounded-full bg-black/15" />
+components/vocabulary/VocabularyStats.tsx:61:          <p className="mt-2 text-[11px] text-black/35">{stat.detail}</p>
+components/vocabulary/detail/VocabularyStatCard.tsx:21:        <span className="text-sm font-medium text-neutral-600">{label}</span>
+components/vocabulary/detail/VocabularyStatCard.tsx:24:          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700">
+components/vocabulary/detail/VocabularyStatCard.tsx:31:        <p className="text-3xl font-semibold tracking-[-0.04em] text-neutral-950">
+components/vocabulary/detail/VocabularyStatCard.tsx:36:          <p className="mt-1 text-sm leading-5 text-neutral-500">
+components/vocabulary/detail/VocabularyStatCard.tsx:45:    "rounded-[24px] border border-neutral-200 bg-white p-5 text-left shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition duration-200";
+components/vocabulary/detail/VocabularyHeader.tsx:79:    <header className="overflow-hidden rounded-[32px] bg-neutral-950 text-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+components/vocabulary/detail/VocabularyHeader.tsx:83:            <AppBadge className="border-white/10 bg-white/10 text-white">
+components/vocabulary/detail/VocabularyHeader.tsx:89:            <AppBadge className="border-white/10 bg-white/10 text-white">
+components/vocabulary/detail/VocabularyHeader.tsx:95:            <AppBadge className="border-white/10 bg-white/10 text-white capitalize">
+components/vocabulary/detail/VocabularyHeader.tsx:102:          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-500">
+components/vocabulary/detail/VocabularyHeader.tsx:114:            className="mt-4 text-sm leading-6 text-neutral-400"
+components/vocabulary/detail/VocabularyHeader.tsx:117:          <div className="mt-7 h-px bg-white/10" />
+components/vocabulary/detail/VocabularyHeader.tsx:120:            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+components/vocabulary/detail/VocabularyHeader.tsx:124:            <p className="mt-2 text-2xl font-medium tracking-[-0.025em] text-neutral-100">
+components/vocabulary/detail/VocabularyHeader.tsx:131:      <div className="border-t border-white/10 bg-white/[0.04] px-7 py-6 sm:px-9">
+components/vocabulary/detail/VocabularyHeader.tsx:144:                        ? "text-white"
+components/vocabulary/detail/VocabularyHeader.tsx:145:                        : "text-neutral-700"
+components/vocabulary/detail/VocabularyHeader.tsx:158:            <p className="mt-1 text-sm text-neutral-400">
+components/vocabulary/detail/VocabularyHeader.tsx:169:              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-neutral-500">
+components/vocabulary/detail/VocabularyHeader.tsx:179:              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-neutral-500">
+components/vocabulary/detail/VocabularyReviewDetails.tsx:16:          <dt className="text-neutral-500">
+components/vocabulary/detail/VocabularyReviewDetails.tsx:31:          <dt className="text-neutral-500">
+components/vocabulary/detail/VocabularyReviewDetails.tsx:41:          <dt className="text-neutral-500">
+components/vocabulary/detail/VocabularyEditModal.tsx:165:    "mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-neutral-950/5";
+components/vocabulary/detail/VocabularyEditModal.tsx:169:      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-center sm:p-6"
+components/vocabulary/detail/VocabularyEditModal.tsx:183:      <section className="max-h-[92vh] w-full overflow-y-auto rounded-t-[32px] bg-white shadow-2xl sm:max-w-2xl sm:rounded-[32px]">
+components/vocabulary/detail/VocabularyEditModal.tsx:184:        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white/95 px-6 py-5 backdrop-blur">
+components/vocabulary/detail/VocabularyEditModal.tsx:188:              className="text-xl font-semibold tracking-[-0.03em] text-neutral-950"
+components/vocabulary/detail/VocabularyEditModal.tsx:193:            <p className="mt-1 text-sm text-neutral-500">
+components/vocabulary/detail/VocabularyEditModal.tsx:203:            className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
+components/vocabulary/detail/VocabularyEditModal.tsx:216:            <label className="block text-sm font-medium text-neutral-800">
+components/vocabulary/detail/VocabularyEditModal.tsx:229:            <label className="block text-sm font-medium text-neutral-800">
+components/vocabulary/detail/VocabularyEditModal.tsx:244:          <div className="h-px bg-neutral-100" />
+components/vocabulary/detail/VocabularyEditModal.tsx:246:          <label className="block text-sm font-medium text-neutral-800">
+components/vocabulary/detail/VocabularyEditModal.tsx:260:          <label className="block text-sm font-medium text-neutral-800">
+components/vocabulary/detail/VocabularyEditModal.tsx:280:          <div className="sticky bottom-0 flex gap-3 border-t border-neutral-100 bg-white/95 pt-5 backdrop-blur">
+components/vocabulary/detail/VocabularySection.tsx:20:      className={`overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}
+components/vocabulary/detail/VocabularySection.tsx:26:              <h2 className="text-lg font-semibold tracking-[-0.02em] text-neutral-950">
+components/vocabulary/detail/VocabularySection.tsx:32:              <p className="mt-1 text-sm leading-5 text-neutral-500">
+components/vocabulary/VocabularySearch.tsx:47:        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-black/[0.07] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
+components/vocabulary/VocabularySearch.tsx:51:            className="shrink-0 text-black/35"
+components/vocabulary/VocabularySearch.tsx:60:            className="h-full min-w-0 flex-1 bg-transparent font-sans text-[14px] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-black/30"
+components/vocabulary/VocabularySearch.tsx:68:              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/50 transition-transform active:scale-95"
+components/vocabulary/VocabularySearch.tsx:88:              <span className={selected ? "text-white/50" : "text-black/25"}>
+components/vocabulary/VocabularySearch.tsx:97:        <p className="font-sans text-[11px] font-medium tracking-[-0.01em] text-black/35">
+components/vocabulary/VocabularySearch.tsx:106:            className="flex h-8 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-3 font-sans text-[11px] font-medium tracking-[-0.01em] text-black/55 transition-transform active:scale-95"
+components/vocabulary/VocabularySearch.tsx:116:            className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition-transform active:scale-95"
+components/vocabulary/VocabularyHero.tsx:26:      <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
+components/vocabulary/VocabularyHero.tsx:30:      <span className="text-sm font-semibold tracking-tight text-white">
+components/vocabulary/VocabularyHero.tsx:61:    <section className="overflow-hidden rounded-[22px] bg-black px-5 py-5 text-white sm:px-6 sm:py-6">
+components/vocabulary/VocabularyHero.tsx:64:          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
+components/vocabulary/VocabularyHero.tsx:73:            <span className="text-sm font-medium text-white/35">
+components/vocabulary/VocabularyHero.tsx:78:          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
+components/vocabulary/VocabularyHero.tsx:84:          <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+components/vocabulary/VocabularyHero.tsx:94:      <div className="mt-6 h-px bg-white/10">
+components/vocabulary/VocabularyHero.tsx:96:          className="h-px bg-white transition-[width] duration-500 ease-out"
+components/vocabulary/VocabularyHero.tsx:101:      <p className="mt-4 text-xs leading-5 text-white/45">
+components/vocabulary/VocabularyHero.tsx:125:            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+components/vocabulary/VocabularyHero.tsx:137:            className="text-white/35 transition group-hover:text-white"
+components/vocabulary/VocabularyHero.tsx:146:            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+components/vocabulary/VocabularyHero.tsx:158:            className="text-white/35 transition group-hover:text-white"
+components/vocabulary/list/VocabularyLookupResultState.tsx:20:    <section className="mt-8 rounded-[28px] bg-white p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.035)]">
+components/vocabulary/list/VocabularyLookupResultState.tsx:21:      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f1ea] text-black/60">
+components/vocabulary/list/VocabularyLookupResultState.tsx:25:      <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/35">
+components/vocabulary/list/VocabularyLookupResultState.tsx:29:      <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
+components/vocabulary/list/VocabularyLookupResultState.tsx:33:      <p className="mt-1 break-words text-xl text-black/60">
+components/vocabulary/list/VocabularyLookupResultState.tsx:37:      <p className="mt-2 text-[11px] font-medium capitalize tracking-[0.06em] text-black/35">
+components/vocabulary/list/VocabularyLookupResultState.tsx:42:        <p className="text-[14px] leading-6 text-black/80">
+components/vocabulary/list/VocabularyLookupResultState.tsx:46:        <p className="mt-2 text-[14px] leading-6 text-black/50">
+components/vocabulary/list/VocabularyLookupResultState.tsx:55:        className="mt-5 flex h-12 w-full items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+components/vocabulary/list/VocabularyEmptyLibraryState.tsx:16:          className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
+components/vocabulary/list/VocabularyLoadingState.tsx:8:      className="mt-8 flex min-h-40 items-center justify-center rounded-[28px] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.035)]"
+components/vocabulary/list/VocabularyLoadingState.tsx:10:      <div className="flex flex-col items-center gap-3 text-black/40">
+components/vocabulary/list/VocabularyEmptyResultsState.tsx:51:              className="mx-auto flex h-12 w-full max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+components/vocabulary/SelectionToolbar.tsx:28:      className="absolute z-20 flex -translate-x-1/2 -translate-y-full items-center gap-1 whitespace-nowrap rounded-full border border-white/20 bg-black/40 p-1.5 text-white shadow-xl backdrop-blur-xl"
+components/vocabulary/SelectionToolbar.tsx:39:        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15 disabled:opacity-60"
+components/vocabulary/SelectionToolbar.tsx:50:      <span className="h-4 w-px bg-white/20" />
+components/vocabulary/SelectionToolbar.tsx:56:        className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-white/15"
+components/vocabulary/VocabularyCardMenu.tsx:81:        className="flex h-10 w-10 items-center justify-center rounded-xl text-neutral-600 transition-colors hover:bg-neutral-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+components/vocabulary/VocabularyCardMenu.tsx:89:              className="fixed inset-0 z-[220] flex items-end justify-center bg-black/25 backdrop-blur-[2px] sm:items-center sm:p-6"
+components/vocabulary/VocabularyCardMenu.tsx:98:                className="w-full max-w-md overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+components/vocabulary/VocabularyCardMenu.tsx:104:                <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+components/vocabulary/VocabularyCardMenu.tsx:106:                <header className="flex items-center justify-between border-b border-black/[0.07] px-5 pb-4 pt-4">
+components/vocabulary/VocabularyCardMenu.tsx:108:                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+components/vocabulary/VocabularyCardMenu.tsx:112:                    <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.025em] text-neutral-950">
+components/vocabulary/VocabularyCardMenu.tsx:121:                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
+components/vocabulary/VocabularyCardMenu.tsx:131:                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold text-neutral-900 transition hover:bg-neutral-100 active:scale-[0.99]"
+components/vocabulary/VocabularyCardMenu.tsx:133:                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100">
+components/vocabulary/VocabularyCardMenu.tsx:143:                    className="mt-1 flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-[15px] font-semibold text-neutral-900 transition hover:bg-neutral-100 active:scale-[0.99]"
+components/vocabulary/VocabularyCardMenu.tsx:145:                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100">
+components/vocabulary/VocabularyCardMenu.tsx:152:                  <div className="my-2 h-px bg-black/[0.07]" />
+components/vocabulary/VocabularySection.tsx:26:            <p className="mt-1 text-sm text-neutral-500">
+components/vocabulary/VocabularyList.tsx:73:        className="mt-6 flex min-h-40 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
+components/vocabulary/VocabularyList.tsx:75:        <div className="flex flex-col items-center gap-3 text-black/40">
+components/vocabulary/VocabularyList.tsx:99:            className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
+components/vocabulary/VocabularyList.tsx:111:        <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
+components/vocabulary/VocabularyList.tsx:112:          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f1ea] text-black/60">
+components/vocabulary/VocabularyList.tsx:116:          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/35">
+components/vocabulary/VocabularyList.tsx:120:          <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
+components/vocabulary/VocabularyList.tsx:124:          <p className="mt-1 break-words text-xl text-black/60">
+components/vocabulary/VocabularyList.tsx:128:          <p className="mt-2 text-[11px] font-medium capitalize tracking-[0.06em] text-black/35">
+components/vocabulary/VocabularyList.tsx:133:            <p className="text-[14px] leading-6 text-black/80">
+components/vocabulary/VocabularyList.tsx:137:            <p className="mt-2 text-[14px] leading-6 text-black/50">
+components/vocabulary/VocabularyList.tsx:146:            className="mt-5 flex h-12 w-full items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+components/vocabulary/VocabularyList.tsx:191:                className="mx-auto flex h-12 w-full max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"

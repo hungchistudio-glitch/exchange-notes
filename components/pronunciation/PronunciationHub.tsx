@@ -1,9 +1,12 @@
 "use client";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import Link from "next/link";
 import { ChevronRight, Volume2 } from "lucide-react";
 
 export default function PronunciationHub() {
+  const { t } = useTranslation();
+
   return (
     <Link
       href="/pronunciation"
@@ -16,15 +19,15 @@ export default function PronunciationHub() {
 
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            Daily practice
+            {t.home.pronunciation.eyebrow}
           </p>
 
           <h2 className="mt-1 text-xl font-bold">
-            Pronunciation Lab
+            {t.home.pronunciation.title}
           </h2>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Practice English sounds and 注音.
+            {t.home.pronunciation.description}
           </p>
         </div>
       </div>

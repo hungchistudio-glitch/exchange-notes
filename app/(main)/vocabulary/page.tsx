@@ -16,7 +16,7 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      <DashboardSheet title="Dashboard">
+      <DashboardSheet>
         <VocabularyHero {...heroProps} />
       </DashboardSheet>
 

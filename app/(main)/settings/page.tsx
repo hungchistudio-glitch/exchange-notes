@@ -2,8 +2,7 @@
 
 import {
   Camera,
-  Languages,
-  LoaderCircle,
+    LoaderCircle,
   LogOut,
   X,
 } from "lucide-react";
@@ -17,6 +16,8 @@ import {
 import { useRouter } from "next/navigation";
 
 import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
+import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
+import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import {
   AppHeader,
   AppInput,
@@ -28,6 +29,7 @@ import {
 } from "@/components/foundation";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 
 type ProfileForm = {
   display_name: string;
@@ -51,6 +53,98 @@ function normalizeExchangeId(value: string) {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const interfaceLanguage = useInterfaceLanguage();
+  const isTraditionalChinese =
+    interfaceLanguage === "traditional-chinese";
+
+  const copy = isTraditionalChinese
+    ? {
+        pageTitle: "設定",
+        loading: "載入中…",
+        languageLearner: "語言學習者",
+        accountFallback: "Exchange Notes 帳號",
+        changePhoto: "更換照片",
+        addPhoto: "新增照片",
+        removePhoto: "移除個人照片",
+        loadingProfile: "正在載入個人資料…",
+        profile: "個人資料",
+        accountDetails: "帳號資料",
+        yourName: "你的名字",
+        namePlaceholder: "你的名字",
+        exchangeId: "Exchange ID",
+        exchangeIdDescription:
+          "使用 3–24 個小寫英文字母、數字或底線。",
+        exchangeIdPlaceholder: "yourname",
+        nativeLanguage: "母語",
+        learningLanguage: "學習語言",
+        saveChanges: "儲存變更",
+        saving: "儲存中…",
+        preferences: "偏好設定",
+        account: "帳號",
+        logout: "登出",
+        logoutDescription: "登出此裝置",
+        logoutConfirm: "確定要登出嗎？",
+        photoImageError: "請選擇圖片檔案。",
+        photoSizeError: "個人照片必須小於 5 MB。",
+        loginUploadError: "你必須先登入才能上傳個人照片。",
+        photoUpdated: "個人照片已更新！",
+        photoUploadError: "無法上傳個人照片。",
+        loginRequired: "你必須先登入。",
+        photoRemoved: "個人照片已移除。",
+        photoRemoveError: "無法移除個人照片。",
+        loginUpdateError: "你必須先登入才能更新個人資料。",
+        exchangeIdLength:
+          "Exchange ID 必須至少包含 3 個字元。",
+        profileUpdated: "個人資料已成功更新！",
+        profileUpdateError:
+          "無法更新個人資料，請再試一次。",
+      }
+    : {
+        pageTitle: "Settings",
+        loading: "Loading…",
+        languageLearner: "Language learner",
+        accountFallback: "Exchange Notes account",
+        changePhoto: "Change photo",
+        addPhoto: "Add photo",
+        removePhoto: "Remove profile photo",
+        loadingProfile: "{copy.loadingProfile}",
+        profile: "Profile",
+        accountDetails: "Account details",
+        yourName: "Your name",
+        namePlaceholder: "Your name",
+        exchangeId: "Exchange ID",
+        exchangeIdDescription:
+          "3–24 lowercase letters, numbers, or underscores.",
+        exchangeIdPlaceholder: "yourname",
+        nativeLanguage: "Native language",
+        learningLanguage: "Learning language",
+        saveChanges: "Save changes",
+        saving: "Saving…",
+        preferences: "Preferences",
+        account: "Account",
+        logout: "Log out",
+        logoutDescription: "Sign out of this device",
+        logoutConfirm: "Are you sure you want to log out?",
+        photoImageError: "Please choose an image file.",
+        photoSizeError:
+          "Profile photos must be smaller than 5 MB.",
+        loginUploadError:
+          "You must be logged in to upload a profile photo.",
+        photoUpdated: "Profile photo updated!",
+        photoUploadError:
+          "Could not upload your profile photo.",
+        loginRequired: "You must be logged in.",
+        photoRemoved: "Profile photo removed.",
+        photoRemoveError:
+          "Could not remove your profile photo.",
+        loginUpdateError:
+          "You must be logged in to update your profile.",
+        exchangeIdLength:
+          "Exchange ID must contain at least 3 characters.",
+        profileUpdated: "Profile updated successfully!",
+        profileUpdateError:
+          "Could not update profile. Please try again.",
+      };
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
@@ -124,12 +218,12 @@ export default function SettingsPage() {
     if (!file || uploadingPhoto) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+      setError(copy.photoImageError);
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Profile photos must be smaller than 5 MB.");
+      setError(copy.photoSizeError);
       return;
     }
 
@@ -145,7 +239,7 @@ export default function SettingsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("You must be logged in to upload a profile photo.");
+        throw new Error(copy.loginUploadError);
       }
 
       const extension =
@@ -183,13 +277,13 @@ export default function SettingsPage() {
       if (profileError) throw profileError;
 
       setAvatarUrl(avatarWithVersion);
-      setMessage("Profile photo updated!");
+      setMessage(copy.photoUpdated);
     } catch (uploadError) {
       console.error("Profile photo upload failed:", uploadError);
       setError(
         uploadError instanceof Error
           ? uploadError.message
-          : "Could not upload your profile photo.",
+          : copy.photoUploadError,
       );
     } finally {
       setUploadingPhoto(false);
@@ -211,7 +305,7 @@ export default function SettingsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("You must be logged in.");
+        throw new Error(copy.loginRequired);
       }
 
       const { error: updateError } = await supabase
@@ -222,12 +316,12 @@ export default function SettingsPage() {
       if (updateError) throw updateError;
 
       setAvatarUrl(null);
-      setMessage("Profile photo removed.");
+      setMessage(copy.photoRemoved);
     } catch (removeError) {
       setError(
         removeError instanceof Error
           ? removeError.message
-          : "Could not remove your profile photo.",
+          : copy.photoRemoveError,
       );
     } finally {
       setUploadingPhoto(false);
@@ -236,7 +330,7 @@ export default function SettingsPage() {
 
   async function handleLogout() {
     const confirmed = window.confirm(
-      "Are you sure you want to log out?",
+      copy.logoutConfirm,
     );
 
     if (!confirmed) return;
@@ -264,14 +358,14 @@ export default function SettingsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setError("You must be logged in to update your profile.");
+        setError(copy.loginUpdateError);
         return;
       }
 
       const cleanId = normalizeExchangeId(form.exchange_id);
 
       if (cleanId.length < 3) {
-        setError("Exchange ID must contain at least 3 characters.");
+        setError(copy.exchangeIdLength);
         return;
       }
 
@@ -291,25 +385,21 @@ export default function SettingsPage() {
       }
 
       setForm((current) => ({ ...current, exchange_id: cleanId }));
-      setMessage("Profile updated successfully!");
+      setMessage(copy.profileUpdated);
     } catch {
-      setError("Could not update profile. Please try again.");
+      setError(copy.profileUpdateError);
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f4f1ea] text-neutral-900">
+    <main className="min-h-[100dvh] bg-[#F6F3ED] text-neutral-900">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col">
-        <AppHeader
-          title="Settings"
-          backHref="/home"
-          backLabel="Back to home"
-        />
+        <AppHeader title={copy.pageTitle} />
 
-        <div className="flex-1 space-y-5 px-4 pb-32 pt-5">
-          <section className="rounded-[26px] border border-black/[0.06] bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.035)]">
+        <div className="flex-1 space-y-6 px-4 pb-32 pt-6 sm:px-6">
+          <section className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.035)]">
             <div className="flex items-center gap-4">
               <Avatar
                 src={avatarUrl}
@@ -319,18 +409,18 @@ export default function SettingsPage() {
               />
 
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-xl font-semibold tracking-[-0.025em] text-black">
+                <h2 className="truncate text-[22px] font-semibold tracking-[-0.035em] text-black">
                   {loading
-                    ? "Loading…"
-                    : form.display_name || "Language learner"}
+                    ? copy.loading
+                    : form.display_name || copy.languageLearner}
                 </h2>
 
-                <p className="mt-1 truncate text-sm text-black/45">
-                  {email || "Exchange Notes account"}
+                <p className="mt-1 truncate text-[14px] leading-5 text-black/45">
+                  {email || copy.accountFallback}
                 </p>
 
                 {!loading && form.exchange_id && (
-                  <p className="mt-1 truncate text-xs font-medium text-black/30">
+                  <p className="mt-1 truncate text-[13px] font-medium text-black/32">
                     @{form.exchange_id}
                   </p>
                 )}
@@ -350,7 +440,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => photoInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="flex min-h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-4 text-xs font-semibold text-black transition-all disabled:opacity-40 active:scale-[0.985]"
+                className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-4 text-xs font-semibold text-black transition-all disabled:opacity-40 active:scale-[0.985]"
               >
                 {uploadingPhoto ? (
                   <LoaderCircle size={15} className="animate-spin" />
@@ -358,7 +448,7 @@ export default function SettingsPage() {
                   <Camera size={15} strokeWidth={1.8} />
                 )}
 
-                {avatarUrl ? "Change photo" : "Add photo"}
+                {avatarUrl ? copy.changePhoto : copy.addPhoto}
               </button>
 
               {avatarUrl && (
@@ -366,9 +456,9 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => void removeProfilePhoto()}
                   disabled={uploadingPhoto}
-                  aria-label="Remove profile photo"
-                  title="Remove profile photo"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 transition-all disabled:opacity-40 active:scale-95"
+                  aria-label={copy.removePhoto}
+                  title={copy.removePhoto}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600 transition-all disabled:opacity-40 active:scale-95"
                 >
                   <X size={15} strokeWidth={1.8} />
                 </button>
@@ -385,7 +475,7 @@ export default function SettingsPage() {
           )}
 
           {loading ? (
-            <section className="rounded-[26px] border border-black/[0.06] bg-white p-5">
+            <section className="rounded-[24px] border border-black/[0.06] bg-white p-5">
               <div className="flex items-center gap-3 text-sm font-medium text-black/45">
                 <LoaderCircle size={17} className="animate-spin" />
                 Loading your profile…
@@ -394,20 +484,20 @@ export default function SettingsPage() {
           ) : (
             <form
               onSubmit={handleSubmit}
-              className="space-y-5 rounded-[26px] border border-black/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
+              className="space-y-6 rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.035)]"
             >
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-                  Profile
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+                  {copy.profile}
                 </p>
 
-                <h3 className="mt-1.5 text-lg font-semibold tracking-[-0.02em] text-black">
-                  Account details
+                <h3 className="mt-2 text-[20px] font-semibold tracking-[-0.03em] text-black">
+                  {copy.accountDetails}
                 </h3>
               </div>
 
               <FormField
-                label="Your name"
+                label={copy.yourName}
                 htmlFor="settings-display-name"
               >
                 <AppInput
@@ -421,14 +511,14 @@ export default function SettingsPage() {
                       display_name: event.target.value,
                     }))
                   }
-                  placeholder="Your name"
+                  placeholder={copy.namePlaceholder}
                 />
               </FormField>
 
               <FormField
-                label="Exchange ID"
+                label={copy.exchangeId}
                 htmlFor="settings-exchange-id"
-                description="3–24 lowercase letters, numbers, or underscores."
+                description={copy.exchangeIdDescription}
               >
                 <AppInput
                   id="settings-exchange-id"
@@ -442,7 +532,7 @@ export default function SettingsPage() {
                       ),
                     }))
                   }
-                  placeholder="yourname"
+                  placeholder={copy.exchangeIdPlaceholder}
                   leading={
                     <span className="text-sm font-semibold">@</span>
                   }
@@ -450,7 +540,7 @@ export default function SettingsPage() {
               </FormField>
 
               <FormField
-                label="Native language"
+                label={copy.nativeLanguage}
                 htmlFor="settings-native-language"
               >
                 <AppSelect
@@ -476,7 +566,7 @@ export default function SettingsPage() {
               </FormField>
 
               <FormField
-                label="Learning language"
+                label={copy.learningLanguage}
                 htmlFor="settings-learning-language"
               >
                 <AppSelect
@@ -504,7 +594,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all disabled:opacity-35 active:scale-[0.985]"
+                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[16px] font-semibold text-white transition-all disabled:opacity-35 active:scale-[0.985]"
               >
                 {saving && (
                   <LoaderCircle
@@ -513,41 +603,34 @@ export default function SettingsPage() {
                   />
                 )}
 
-                {saving ? "Saving…" : "Save changes"}
+                {saving ? copy.saving : copy.saveChanges}
               </button>
             </form>
           )}
 
           <section>
-            <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-              Preferences
+            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+              {copy.preferences}
             </p>
 
-            <div className="divide-y divide-black/[0.06] overflow-hidden rounded-[26px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+            <div className="divide-y divide-black/[0.06] overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
               <SpeechSettingsButton variant="row" />
 
-              <SettingsRow
-                title="Languages"
-                description="Your native and learning languages"
-                value={`${form.native_language === "english" ? "English" : "繁體中文"} → ${
-                  form.learning_language === "english"
-                    ? "English"
-                    : "繁體中文"
-                }`}
-                icon={<Languages size={17} strokeWidth={1.8} />}
-              />
+              <FontSizeSettingsButton />
+
+              <AppLanguageSettingsButton />
             </div>
           </section>
 
           <section>
-            <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-              Account
+            <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-black/38">
+              {copy.account}
             </p>
 
-            <div className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+            <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
               <SettingsRow
-                title="Log out"
-                description="Sign out of this device"
+                title={copy.logout}
+                description={copy.logoutDescription}
                 icon={<LogOut size={17} strokeWidth={1.8} />}
                 danger
                 onClick={() => void handleLogout()}
