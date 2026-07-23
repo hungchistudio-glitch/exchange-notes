@@ -54,3 +54,7 @@ supabase/.temp/
 # Local audit artifacts
 _audit/
 exchange-notes-audit.zip
+
+# Local backups
+.backups/
+.backup-*
