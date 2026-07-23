@@ -2,13 +2,13 @@
 
 import type { ComponentProps } from "react";
 
-import VocabularyHero from "@/components/vocabulary/VocabularyHero";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
-import VocabularySearchSection from "@/components/vocabulary/sections/VocabularySearchSection";
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 
 import useVocabularyController from "@/hooks/controllers/useVocabularyController";
+import buildVocabularyHeroProps from "@/hooks/pages/builders/buildVocabularyHeroProps";
+import buildVocabularySearchProps from "@/hooks/pages/builders/buildVocabularySearchProps";
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
@@ -16,6 +16,8 @@ import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import { recordInteraction } from "@/lib/vocabulary/helpers";
 
 export default function useVocabularyPage() {
+  const controller = useVocabularyController();
+
   const {
     query,
     setQuery,
@@ -29,11 +31,34 @@ export default function useVocabularyPage() {
     setFiltersOpen,
     aiSearchOpen,
     setAiSearchOpen,
+  } = controller.page;
 
+  const {
     learningLanguage,
     loading,
     error,
 
+    uniqueItems,
+
+    filterSearch,
+    setFilterSearch,
+    alphabetizedItems,
+    clearFilterSearch,
+  } = controller;
+
+  const {
+    totalWords,
+    learningWords,
+    masteredWords,
+    dailyGoal,
+    dailyProgress,
+    reviewStats,
+    quickFilters,
+  } = controller.stats;
+
+  const { updatingId, changeStatus } = controller.mutations;
+
+  const {
     friendPickerItem,
     friends,
     friendsLoading,
@@ -43,7 +68,9 @@ export default function useVocabularyPage() {
     retryFriends,
     handleClosePicker,
     handlePickFriend,
+  } = controller.friendPicker;
 
+  const {
     lookupStatus,
     lookupResult,
     lookupError,
@@ -54,31 +81,13 @@ export default function useVocabularyPage() {
     lookupCopied,
     shareLookupResult,
     sendLookupToPartner,
+  } = controller.lookup;
 
-    updatingId,
-    changeStatus,
-
-    totalWords,
-    learningWords,
-    masteredWords,
-    dailyGoal,
-    dailyProgress,
-    reviewStats,
-    quickFilters,
-    uniqueItems,
-
-    filterSearch,
-    setFilterSearch,
-    alphabetizedItems,
-    clearFilterSearch,
-  } = useVocabularyController();
-
-  const { rankedIds, rankingLoading, rankingError } =
-    useVocabularyRanking({
-      items: uniqueItems,
-      query,
-      sortMode,
-    });
+  const { rankedIds, rankingLoading, rankingError } = useVocabularyRanking({
+    items: uniqueItems,
+    query,
+    sortMode,
+  });
 
   useVocabularySearchTracking(uniqueItems, query);
 
@@ -102,19 +111,16 @@ export default function useVocabularyPage() {
     resetLookup();
   }
 
-  const heroProps = {
-    todayProgress: dailyProgress,
-    todayGoal: dailyGoal,
+  const heroProps = buildVocabularyHeroProps({
     totalWords,
     learningWords,
     masteredWords,
-    dueToday: reviewStats.due,
-    accuracy: reviewStats.accuracy,
-    retention: reviewStats.retention,
-    weakWords: reviewStats.weak,
-  } satisfies ComponentProps<typeof VocabularyHero>;
+    dailyGoal,
+    dailyProgress,
+    reviewStats,
+  });
 
-  const searchProps = {
+  const searchProps = buildVocabularySearchProps({
     totalWords,
     learningWords,
     masteredWords,
@@ -125,22 +131,13 @@ export default function useVocabularyPage() {
     sortMode,
     rankingLoading,
     rankingError,
-
-    onQueryChange: (value: string) => {
-      setQuery(value);
-      resetLookup();
-    },
-
-    onClear: () => {
-      setQuery("");
-      resetLookup();
-    },
-
-    onOpenAI: openAiSearch,
-    onQuickFilterChange: setQuickFilter,
-    onOpenSort: () => setSortOpen(true),
-    onOpenLibrary: () => setFiltersOpen(true),
-  } satisfies ComponentProps<typeof VocabularySearchSection>;
+    setQuery,
+    resetLookup,
+    openAiSearch,
+    setQuickFilter,
+    setSortOpen,
+    setFiltersOpen,
+  });
 
   const listProps = {
     loading,
