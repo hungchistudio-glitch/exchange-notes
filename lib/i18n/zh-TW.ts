@@ -40,6 +40,10 @@ const traditionalChinese: TranslationDictionary = {
     shareAriaLabel: "分享文章",
     listenHeadlineAriaLabel: "聆聽英文標題",
     listenSummaryAriaLabel: "聆聽英文摘要",
+    loginRequiredError: "你尚未登入。請先登入再分享給朋友。",
+    loadFriendsError: "無法載入朋友名單，請再試一次。",
+    loadNewsError: "無法載入每日新聞。",
+    loadNewsRetryError: "無法載入每日新聞，請稍後再試。",
 
     loading: "正在載入今日課程…",
     loadingDescription: "正在將最新新聞整理成英文學習內容。",

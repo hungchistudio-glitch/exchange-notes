@@ -40,6 +40,10 @@ const english: TranslationDictionary = {
     shareAriaLabel: "Share article",
     listenHeadlineAriaLabel: "Listen to headline in English",
     listenSummaryAriaLabel: "Listen to summary in English",
+    loginRequiredError: "You're not logged in. Log in to share with a partner.",
+    loadFriendsError: "Couldn't load your friends. Try again.",
+    loadNewsError: "Daily News could not be loaded.",
+    loadNewsRetryError: "Daily News could not be loaded. Please try again shortly.",
 
     loading: "Loading today’s lessons…",
     loadingDescription: "Preparing current news as English learning material.",

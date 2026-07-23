@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
@@ -24,6 +28,13 @@ export default function VocabularyDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const backHref =
+    searchParams.get("from") === "home"
+      ? "/home"
+      : "/vocabulary";
+
   const { t } = useTranslation();
   const detail = t.vocabulary.detail;
 
@@ -172,7 +183,7 @@ export default function VocabularyDetailPage() {
       return;
     }
 
-    router.push("/vocabulary");
+    router.push(backHref);
   }
 
   async function handleReview(
@@ -223,7 +234,7 @@ export default function VocabularyDetailPage() {
     return (
       <main className="mx-auto max-w-3xl p-6">
         <Link
-          href="/vocabulary"
+          href={backHref}
           className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600"
         >
           <ArrowLeft size={18} />
@@ -246,7 +257,7 @@ export default function VocabularyDetailPage() {
     <>
       <main className="mx-auto max-w-3xl px-6 py-8">
         <Link
-          href="/vocabulary"
+          href={backHref}
           className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-black"
         >
           <ArrowLeft size={18} />

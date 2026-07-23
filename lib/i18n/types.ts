@@ -42,6 +42,10 @@ export type TranslationDictionary = {
     shareAriaLabel: string;
     listenHeadlineAriaLabel: string;
     listenSummaryAriaLabel: string;
+    loginRequiredError: string;
+    loadFriendsError: string;
+    loadNewsError: string;
+    loadNewsRetryError: string;
 
     loading: string;
     loadingDescription: string;

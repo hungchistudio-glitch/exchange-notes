@@ -22,7 +22,6 @@ import {
 import { useRouter } from "next/navigation";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
-import VocabularyActionPopover from "@/components/discover/VocabularyActionPopover";
 import type { TranslationDictionary, TranslationLanguage } from "@/lib/i18n";
 
 import { speak } from "@/lib/speech";
@@ -248,9 +247,9 @@ export default function DiscoverPage() {
         setPendingSharedArticle(friendPickerCard);
       }
 
-      window.location.assign(`/messages?with=${encodeURIComponent(friendId)}`);
+      router.push(`/messages?with=${friendId}`);
     },
-    [friendPickerCard, friendPickerVocabulary, sendingFriendId],
+    [friendPickerCard, friendPickerVocabulary, router, sendingFriendId],
   );
 
   const loadStories = useCallback(
@@ -1008,11 +1007,7 @@ function NewsCard({
             {expanded && (
               <div className="mt-4 space-y-3">
                 {card.vocabulary.map((item, index) => (
-                  <VocabularyRow
-                    key={`${card.id}-${index}`}
-                    item={item}
-                    onSendToFriend={onSendVocabularyToFriend}
-                  />
+                  <VocabularyRow key={`${card.id}-${index}`} item={item} />
                 ))}
               </div>
             )}
@@ -1025,30 +1020,32 @@ function NewsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t.discover.originalSourceAriaLabel}
-            title={t.common.source}
-            className="flex h-14 items-center justify-center rounded-2xl bg-black text-white transition-transform hover:scale-[1.01] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-black py-3 text-white transition-transform active:scale-95"
           >
-            <ExternalLink size={20} strokeWidth={1.8} />
+            <ExternalLink size={17} />
+            <span className="text-[11px] font-bold">{t.common.source}</span>
           </a>
 
           <button
             type="button"
             onClick={onSendToFriend}
             aria-label={t.discover.sendToFriendAriaLabel}
-            title={t.discover.sendToFriend}
-            className="flex h-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-black transition-all hover:bg-black/[0.03] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
-            <Send size={20} strokeWidth={1.8} />
+            <Send size={17} />
+            <span className="text-[11px] font-bold">
+              {t.discover.sendToFriend}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => void handleShare()}
             aria-label={t.discover.shareAriaLabel}
-            title={t.common.share}
-            className="flex h-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-black transition-all hover:bg-black/[0.03] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
-            <Share size={20} strokeWidth={1.8} />
+            <Share size={17} />
+            <span className="text-[11px] font-bold">{t.common.share}</span>
           </button>
         </div>
       </div>
@@ -1056,240 +1053,45 @@ function NewsCard({
   );
 }
 
-function VocabularyRow({
-  item,
-  onSendToFriend,
-}: {
-  item: VocabularyItem;
-  onSendToFriend: (item: AppVocabularyItem) => void;
-}) {
+function VocabularyRow({ item }: { item: VocabularyItem }) {
   const { t } = useTranslation();
-
-  const [actionOpen, setActionOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
-
   const partOfSpeechLabel =
     t.vocabulary.detail.partOfSpeech[normalizePartOfSpeech(item.partOfSpeech)];
 
-  function openActions() {
-    setSaveErrorMessage(null);
-    setActionOpen(true);
-  }
-
-  function closeActions() {
-    if (saving) return;
-
-    setActionOpen(false);
-    setSaveErrorMessage(null);
-
-    window.setTimeout(() => {
-      setSaved(false);
-    }, 200);
-  }
-
-  function handleRowKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (
-      event.target !== event.currentTarget ||
-      (event.key !== "Enter" && event.key !== " ")
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    openActions();
-  }
-
-  async function handleSave() {
-    if (saving || saved) return;
-
-    setSaving(true);
-    setSaveErrorMessage(null);
-
-    try {
-      const supabase = createClient();
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!user) {
-        throw new Error("Please log in before saving a word.");
-      }
-
-      const normalizedWord = item.word.trim();
-
-      const { data: existingItem, error: existingError } = await supabase
-        .from("vocabulary_items")
-        .select("id")
-        .eq("user_id", user.id)
-        .ilike("word", normalizedWord)
-        .limit(1)
-        .maybeSingle();
-
-      if (existingError) {
-        throw existingError;
-      }
-
-      if (!existingItem) {
-        const { data: insertedItem, error: insertError } = await supabase
-          .from("vocabulary_items")
-          .insert({
-            user_id: user.id,
-            word: normalizedWord,
-            translation: item.translation.trim(),
-            language: "english",
-            part_of_speech: item.partOfSpeech.trim() || null,
-            example_sentence: item.englishExample.trim() || null,
-            translated_example: item.chineseExample.trim() || null,
-            confidence: "high",
-            category: "other" as VocabularyCategory,
-            status: "new",
-          })
-          .select("id, word, translation, created_at")
-          .single();
-
-        if (insertError) {
-          throw insertError;
-        }
-
-        if (!insertedItem) {
-          throw new Error(
-            "Supabase did not return the newly saved vocabulary item.",
-          );
-        }
-
-        console.info("Discover vocabulary saved successfully:", insertedItem);
-      }
-
-      setSaved(true);
-
-      window.setTimeout(() => {
-        setActionOpen(false);
-
-        window.setTimeout(() => {
-          setSaved(false);
-        }, 200);
-      }, 1000);
-    } catch (saveError) {
-      console.error("Failed to save Discover vocabulary:", saveError);
-
-      const message =
-        saveError instanceof Error
-          ? saveError.message
-          : typeof saveError === "object" &&
-              saveError !== null &&
-              "message" in saveError
-            ? String(saveError.message)
-            : "Could not save this word. Please try again.";
-
-      setSaveErrorMessage(message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleSend() {
-    if (saving) return;
-
-    const now = new Date().toISOString();
-
-    const vocabularyItem = {
-      id: `discover-${crypto.randomUUID()}`,
-      user_id: "",
-      word: item.word.trim(),
-      translation: item.translation.trim(),
-      language: "english",
-      category: "other",
-      favorite: false,
-      part_of_speech: item.partOfSpeech.trim() || null,
-      example_sentence: item.englishExample.trim() || null,
-      translated_example: item.chineseExample.trim() || null,
-      image_url: null,
-      confidence: "high",
-      status: "new",
-      created_at: now,
-      updated_at: now,
-    } as AppVocabularyItem;
-
-    setActionOpen(false);
-    onSendToFriend(vocabularyItem);
-  }
-
   return (
-    <>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={`${item.word} 單字選項`}
-        onClick={openActions}
-        onKeyDown={handleRowKeyDown}
-        className="cursor-pointer rounded-[20px] bg-[#f5f2eb] p-4 transition-[transform,background-color,box-shadow] hover:bg-[#f0ece3] hover:shadow-sm active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-2">
-            <span className="font-black">{item.word}</span>
-
-            <span className="text-xs font-bold uppercase text-[#8a8a8a]">
-              {partOfSpeechLabel}
-            </span>
-
-            <span className="text-[#5f5f5f]">{item.translation}</span>
-          </div>
-
-          <div
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <SpeakButton
-              text={item.word}
-              lang="en-US"
-              label={`Listen to ${item.word}`}
-              size={14}
-              tone="solid"
-            />
-          </div>
+    <div className="rounded-[20px] bg-[#f5f2eb] p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <span className="font-black">{item.word}</span>
+          <span className="text-xs font-bold uppercase text-[#8a8a8a]">
+            {partOfSpeechLabel}
+          </span>
+          <span className="text-[#5f5f5f]">{item.translation}</span>
         </div>
 
-        <div className="mt-3 flex items-start gap-2">
-          <p className="flex-1 text-sm leading-6">{item.englishExample}</p>
-
-          <div
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <SpeakButton
-              text={item.englishExample}
-              lang="en-US"
-              label="Listen to example sentence"
-              size={14}
-              tone="solid"
-            />
-          </div>
-        </div>
-
-        <p className="mt-1 text-sm leading-6 text-[#5f5f5f]">
-          {item.chineseExample}
-        </p>
+        <SpeakButton
+          text={item.word}
+          lang="en-US"
+          label={`Listen to ${item.word}`}
+          size={14}
+          tone="solid"
+        />
       </div>
 
-      <VocabularyActionPopover
-        open={actionOpen}
-        word={item.word}
-        translation={item.translation}
-        saving={saving}
-        saved={saved}
-        errorMessage={saveErrorMessage}
-        onSave={() => void handleSave()}
-        onSend={handleSend}
-        onClose={closeActions}
-      />
-    </>
+      <div className="mt-3 flex items-start gap-2">
+        <p className="flex-1 text-sm leading-6">{item.englishExample}</p>
+        <SpeakButton
+          text={item.englishExample}
+          lang="en-US"
+          label="Listen to example sentence"
+          size={14}
+          tone="solid"
+        />
+      </div>
+
+      <p className="mt-1 text-sm leading-6 text-[#5f5f5f]">
+        {item.chineseExample}
+      </p>
+    </div>
   );
 }

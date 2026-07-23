@@ -248,9 +248,9 @@ export default function DiscoverPage() {
         setPendingSharedArticle(friendPickerCard);
       }
 
-      window.location.assign(`/messages?with=${encodeURIComponent(friendId)}`);
+      router.push(`/messages?with=${friendId}`);
     },
-    [friendPickerCard, friendPickerVocabulary, sendingFriendId],
+    [friendPickerCard, friendPickerVocabulary, router, sendingFriendId],
   );
 
   const loadStories = useCallback(
@@ -1025,30 +1025,32 @@ function NewsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={t.discover.originalSourceAriaLabel}
-            title={t.common.source}
-            className="flex h-14 items-center justify-center rounded-2xl bg-black text-white transition-transform hover:scale-[1.01] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-black py-3 text-white transition-transform active:scale-95"
           >
-            <ExternalLink size={20} strokeWidth={1.8} />
+            <ExternalLink size={17} />
+            <span className="text-[11px] font-bold">{t.common.source}</span>
           </a>
 
           <button
             type="button"
             onClick={onSendToFriend}
             aria-label={t.discover.sendToFriendAriaLabel}
-            title={t.discover.sendToFriend}
-            className="flex h-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-black transition-all hover:bg-black/[0.03] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
-            <Send size={20} strokeWidth={1.8} />
+            <Send size={17} />
+            <span className="text-[11px] font-bold">
+              {t.discover.sendToFriend}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => void handleShare()}
             aria-label={t.discover.shareAriaLabel}
-            title={t.common.share}
-            className="flex h-14 items-center justify-center rounded-2xl border border-black/10 bg-white text-black transition-all hover:bg-black/[0.03] active:scale-95"
+            className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-black/10 bg-white py-3 text-black transition-colors hover:bg-black/[0.03]"
           >
-            <Share size={20} strokeWidth={1.8} />
+            <Share size={17} />
+            <span className="text-[11px] font-bold">{t.common.share}</span>
           </button>
         </div>
       </div>

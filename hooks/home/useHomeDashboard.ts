@@ -2,30 +2,49 @@
 
 import { useEffect, useState } from "react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { getReviewDashboardStats } from "@/lib/review/getReviewDashboardStats";
 import type { ReviewAnalytics } from "@/lib/review/analytics";
 
-function getGreeting() {
+type GreetingCopy = {
+  morning: string;
+  afternoon: string;
+  evening: string;
+};
+
+function getGreeting(copy: GreetingCopy) {
   const hour = new Date().getHours();
 
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
+  if (hour < 12) return copy.morning;
+  if (hour < 18) return copy.afternoon;
 
-  return "Good evening";
+  return copy.evening;
 }
 
 export default function useHomeDashboard() {
+  const { t } = useTranslation();
+
+  const morningGreeting = t.home.greeting.morning;
+  const afternoonGreeting = t.home.greeting.afternoon;
+  const eveningGreeting = t.home.greeting.evening;
+
   const [stats, setStats] =
     useState<ReviewAnalytics | null>(null);
 
   const [error, setError] = useState("");
   const [greeting, setGreeting] =
-    useState("Welcome back");
+    useState(morningGreeting);
 
   useEffect(() => {
     let isMounted = true;
 
-    setGreeting(getGreeting());
+    setGreeting(
+      getGreeting({
+        morning: morningGreeting,
+        afternoon: afternoonGreeting,
+        evening: eveningGreeting,
+      }),
+    );
 
     async function loadDashboard() {
       try {
@@ -56,7 +75,11 @@ export default function useHomeDashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [
+    afternoonGreeting,
+    eveningGreeting,
+    morningGreeting,
+  ]);
 
   const loading = stats === null && !error;
   const reviewCount = stats?.due ?? 0;

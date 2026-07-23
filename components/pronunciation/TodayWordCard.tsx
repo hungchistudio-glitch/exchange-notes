@@ -130,6 +130,11 @@ export default function TodayWordCard() {
 
   const { item, reasonLabel } = lesson;
 
+  const localizedReasonLabel =
+    reasonLabel === "Continue learning"
+      ? t.home.todayWord.continueLearning
+      : reasonLabel;
+
   const word = item.word?.trim() || "Untitled word";
 
   const translation =
@@ -159,7 +164,7 @@ export default function TodayWordCard() {
         </div>
 
         <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">
-          {reasonLabel}
+          {localizedReasonLabel}
         </span>
       </div>
 
@@ -258,7 +263,7 @@ export default function TodayWordCard() {
       )}
 
       <Link
-        href={`/vocabulary/${item.id}`}
+        href={`/vocabulary/${item.id}?from=home`}
         className="mt-6 inline-flex items-center gap-2 rounded-xl bg-black px-5 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
       >
         <BookOpen size={16} />

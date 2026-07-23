@@ -13,10 +13,6 @@ import {
 
 import type { DailyNewsCard } from "./types";
 
-const TAIWAN_NEWS_RATIO = 0.25;
-const ARTICLE_METADATA_TIMEOUT_MS = 3_000;
-const MAX_METADATA_IMAGE_REQUESTS = 6;
-
 /* -------------------------------------------------------------------------- */
 /* NewsAPI types                                                              */
 /* -------------------------------------------------------------------------- */
@@ -49,7 +45,9 @@ type NewsApiErrorResponse = {
   message?: string;
 };
 
-type NewsApiResponse = NewsApiSuccessResponse | NewsApiErrorResponse;
+type NewsApiResponse =
+  | NewsApiSuccessResponse
+  | NewsApiErrorResponse;
 
 export type CandidateArticle = {
   articleId: string;
@@ -200,7 +198,10 @@ function decodeBasicHtmlEntities(value: string): string {
     .replace(/&gt;/gi, ">");
 }
 
-function normalizeText(value: unknown, maximumLength: number): string {
+function normalizeText(
+  value: unknown,
+  maximumLength: number
+): string {
   if (typeof value !== "string") {
     return "";
   }
@@ -226,14 +227,17 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function cleanArticleTitle(value: string, sourceName: string): string {
+function cleanArticleTitle(
+  value: string,
+  sourceName: string
+): string {
   let title = normalizeText(value, 180);
   const cleanSourceName = normalizeText(sourceName, 80);
 
   if (cleanSourceName) {
     const suffixPattern = new RegExp(
       `\\s+[|–—-]\\s+${escapeRegExp(cleanSourceName)}$`,
-      "i",
+      "i"
     );
 
     title = title.replace(suffixPattern, "");
@@ -248,7 +252,7 @@ function normalizedTitleKey(value: string): string {
     .replace(/[^a-z0-9\s]/g, "")
     .replace(
       /\b(the|a|an|to|of|in|on|for|and|with|as|at|by|from|after|over|new)\b/g,
-      "",
+      ""
     )
     .replace(/\s+/g, " ")
     .trim();
@@ -266,7 +270,9 @@ function createStableId(value: string): string {
 }
 
 function containsBlockedContent(value: string): boolean {
-  return BLOCKED_CONTENT_PATTERNS.some((pattern) => pattern.test(value));
+  return BLOCKED_CONTENT_PATTERNS.some((pattern) =>
+    pattern.test(value)
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -288,19 +294,25 @@ function getUrlDomain(value: string): string {
   }
 }
 
-function domainMatches(domain: string, expectedDomain: string): boolean {
-  return domain === expectedDomain || domain.endsWith(`.${expectedDomain}`);
+function domainMatches(
+  domain: string,
+  expectedDomain: string
+): boolean {
+  return (
+    domain === expectedDomain ||
+    domain.endsWith(`.${expectedDomain}`)
+  );
 }
 
 function isTrustedDomain(domain: string): boolean {
   return TRUSTED_DOMAINS.some((trustedDomain) =>
-    domainMatches(domain, trustedDomain),
+    domainMatches(domain, trustedDomain)
   );
 }
 
 function isBlockedDomain(domain: string): boolean {
   return BLOCKED_DOMAINS.some((blockedDomain) =>
-    domainMatches(domain, blockedDomain),
+    domainMatches(domain, blockedDomain)
   );
 }
 
@@ -328,7 +340,10 @@ function normalizeSourceUrl(value: unknown): string {
   try {
     const url = new URL(decodedValue);
 
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
+    if (
+      url.protocol !== "https:" &&
+      url.protocol !== "http:"
+    ) {
       return "";
     }
 
@@ -354,7 +369,10 @@ function normalizeImageUrl(value: unknown): string | null {
   try {
     const url = new URL(decodedValue);
 
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
+    if (
+      url.protocol !== "https:" &&
+      url.protocol !== "http:"
+    ) {
       return null;
     }
 
@@ -362,164 +380,6 @@ function normalizeImageUrl(value: unknown): string | null {
   } catch {
     return null;
   }
-}
-
-function extractMetadataImageUrl(
-  html: string,
-  sourceUrl: string,
-): string | null {
-  const metadataPatterns = [
-    /<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["'][^>]*>/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:secure_url["'][^>]*>/i,
-    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i,
-    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["'][^>]*>/i,
-  ];
-
-  for (const pattern of metadataPatterns) {
-    const match = html.match(pattern);
-    const rawImageUrl = match?.[1];
-
-    if (!rawImageUrl) {
-      continue;
-    }
-
-    const decodedImageUrl = decodeBasicHtmlEntities(rawImageUrl).trim();
-
-    try {
-      const absoluteImageUrl = new URL(decodedImageUrl, sourceUrl).toString();
-
-      const normalizedImageUrl = normalizeImageUrl(absoluteImageUrl);
-
-      if (normalizedImageUrl) {
-        return normalizedImageUrl;
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
-}
-
-async function fetchMetadataImageUrl(
-  sourceUrl: string,
-): Promise<string | null> {
-  const controller = new AbortController();
-
-  const timeout = setTimeout(
-    () => controller.abort(),
-    ARTICLE_METADATA_TIMEOUT_MS,
-  );
-
-  try {
-    const response = await fetch(sourceUrl, {
-      method: "GET",
-      cache: "no-store",
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        Accept: "text/html,application/xhtml+xml",
-        "User-Agent": "Mozilla/5.0 (compatible; ExchangeNotes/1.0)",
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const contentType = response.headers.get("content-type") ?? "";
-
-    if (!contentType.toLowerCase().includes("text/html")) {
-      return null;
-    }
-
-    const html = await response.text();
-
-    return extractMetadataImageUrl(html, sourceUrl);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function enrichMissingCandidateImages(
-  candidates: CandidateArticle[],
-): Promise<CandidateArticle[]> {
-  let requestCount = 0;
-
-  return Promise.all(
-    candidates.map(async (candidate) => {
-      if (candidate.imageUrl || requestCount >= MAX_METADATA_IMAGE_REQUESTS) {
-        return candidate;
-      }
-
-      requestCount += 1;
-
-      const metadataImageUrl = await fetchMetadataImageUrl(candidate.sourceUrl);
-
-      if (!metadataImageUrl) {
-        return candidate;
-      }
-
-      return {
-        ...candidate,
-        imageUrl: metadataImageUrl,
-        importanceScore: candidate.importanceScore + 1,
-      };
-    }),
-  );
-}
-
-function mergeRegionalCandidates(
-  globalCandidates: CandidateArticle[],
-  taiwanCandidates: CandidateArticle[],
-): CandidateArticle[] {
-  const taiwanTarget = Math.max(
-    1,
-    Math.round(MAX_CARD_POOL * TAIWAN_NEWS_RATIO),
-  );
-
-  const selectedTaiwan = taiwanCandidates.slice(0, taiwanTarget);
-
-  const usedUrls = new Set(
-    selectedTaiwan.map((candidate) => candidate.sourceUrl),
-  );
-
-  const usedTitles = new Set(
-    selectedTaiwan.map((candidate) =>
-      normalizedTitleKey(candidate.originalTitle),
-    ),
-  );
-
-  const availableGlobal = globalCandidates.filter(
-    (candidate) =>
-      !usedUrls.has(candidate.sourceUrl) &&
-      !usedTitles.has(normalizedTitleKey(candidate.originalTitle)),
-  );
-
-  const selectedGlobal = availableGlobal.slice(
-    0,
-    Math.max(0, MAX_CARD_POOL - selectedTaiwan.length),
-  );
-
-  const combined = [...selectedTaiwan, ...selectedGlobal];
-
-  if (combined.length < MAX_CARD_POOL) {
-    const combinedUrls = new Set(
-      combined.map((candidate) => candidate.sourceUrl),
-    );
-
-    const remainingTaiwan = taiwanCandidates.filter(
-      (candidate) => !combinedUrls.has(candidate.sourceUrl),
-    );
-
-    combined.push(...remainingTaiwan.slice(0, MAX_CARD_POOL - combined.length));
-  }
-
-  return combined.slice(0, MAX_CARD_POOL);
 }
 
 function normalizePublishedAt(value: unknown): string {
@@ -548,14 +408,14 @@ function normalizePublishedAt(value: unknown): string {
 
 function inferCategory(
   title: string,
-  description: string,
+  description: string
 ): DailyNewsCard["category"] {
   const titleText = title.toLowerCase();
   const fullText = `${title} ${description}`.toLowerCase();
 
   if (
     /\b(election|government|president|prime minister|minister|parliament|senate|cabinet|politics|policy|reshuffle|congress)\b/.test(
-      titleText,
+      titleText
     )
   ) {
     return "Politics";
@@ -563,7 +423,7 @@ function inferCategory(
 
   if (
     /\b(ai|artificial intelligence|software|chip|semiconductor|cybersecurity|technology|tech|robot|computing)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Technology";
@@ -571,7 +431,7 @@ function inferCategory(
 
   if (
     /\b(science|scientist|research|space|nasa|astronomy|discovery|breakthrough|experiment)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Science";
@@ -579,7 +439,7 @@ function inferCategory(
 
   if (
     /\b(climate|weather|wildfire|flood|earthquake|environment|carbon|emissions|storm|heatwave|drought)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Climate";
@@ -587,7 +447,7 @@ function inferCategory(
 
   if (
     /\b(health|hospital|disease|vaccine|virus|medical|medicine|outbreak|measles|pandemic)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Health";
@@ -595,7 +455,7 @@ function inferCategory(
 
   if (
     /\b(economy|business|market|trade|bank|inflation|company|stocks|tariff|recession|investment|finance)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Business";
@@ -603,7 +463,7 @@ function inferCategory(
 
   if (
     /\b(culture|film|museum|art|music|book|festival|exhibition|heritage)\b/.test(
-      fullText,
+      fullText
     )
   ) {
     return "Culture";
@@ -617,7 +477,7 @@ function calculateImportanceScore(
   description: string,
   domain: string,
   publishedAt: string,
-  hasImage: boolean,
+  hasImage: boolean
 ): number {
   const combined = `${title} ${description}`.toLowerCase();
   let score = 0;
@@ -635,7 +495,10 @@ function calculateImportanceScore(
   const publishedTime = new Date(publishedAt).getTime();
 
   if (Number.isFinite(publishedTime)) {
-    const ageInHours = Math.max(0, (Date.now() - publishedTime) / 3_600_000);
+    const ageInHours = Math.max(
+      0,
+      (Date.now() - publishedTime) / 3_600_000
+    );
 
     if (ageInHours <= 12) {
       score += 12;
@@ -665,7 +528,9 @@ function calculateImportanceScore(
 /* Article validation                                                         */
 /* -------------------------------------------------------------------------- */
 
-function isUsableArticle(article: NewsApiArticle): article is NewsApiArticle & {
+function isUsableArticle(
+  article: NewsApiArticle
+): article is NewsApiArticle & {
   title: string;
   url: string;
   publishedAt: string;
@@ -678,7 +543,10 @@ function isUsableArticle(article: NewsApiArticle): article is NewsApiArticle & {
     return false;
   }
 
-  if (title === "[Removed]" || title.length < 20) {
+  if (
+    title === "[Removed]" ||
+    title.length < 20
+  ) {
     return false;
   }
 
@@ -703,10 +571,18 @@ function isUsableArticle(article: NewsApiArticle): article is NewsApiArticle & {
   return !containsBlockedContent(combinedContent);
 }
 
-function sortCandidates(candidates: CandidateArticle[]): CandidateArticle[] {
+function sortCandidates(
+  candidates: CandidateArticle[]
+): CandidateArticle[] {
   return [...candidates].sort((left, right) => {
-    if (right.importanceScore !== left.importanceScore) {
-      return right.importanceScore - left.importanceScore;
+    if (
+      right.importanceScore !==
+      left.importanceScore
+    ) {
+      return (
+        right.importanceScore -
+        left.importanceScore
+      );
     }
 
     return (
@@ -721,7 +597,7 @@ function sortCandidates(candidates: CandidateArticle[]): CandidateArticle[] {
 /* -------------------------------------------------------------------------- */
 
 export function prepareNewsCandidates(
-  articles: NewsApiArticle[],
+  articles: NewsApiArticle[]
 ): CandidateArticle[] {
   const seenUrls = new Set<string>();
   const seenTitles = new Set<string>();
@@ -738,13 +614,21 @@ export function prepareNewsCandidates(
     const sourceUrl = normalizeSourceUrl(article.url);
     const domain = getUrlDomain(sourceUrl);
 
-    if (!sourceUrl || !domain || seenUrls.has(sourceUrl)) {
+    if (
+      !sourceUrl ||
+      !domain ||
+      seenUrls.has(sourceUrl)
+    ) {
       continue;
     }
 
-    const sourceName = normalizeText(article.source?.name, 80) || domain;
+    const sourceName =
+      normalizeText(article.source?.name, 80) || domain;
 
-    const originalTitle = cleanArticleTitle(article.title, sourceName);
+    const originalTitle = cleanArticleTitle(
+      article.title,
+      sourceName
+    );
 
     const titleKey = normalizedTitleKey(originalTitle);
 
@@ -758,27 +642,44 @@ export function prepareNewsCandidates(
     }
 
     const rawDescription =
-      article.description || article.content || originalTitle;
+      article.description ||
+      article.content ||
+      originalTitle;
 
     const description = cleanDescription(rawDescription);
 
-    if (containsBlockedContent(`${originalTitle} ${description}`)) {
+    if (
+      containsBlockedContent(
+        `${originalTitle} ${description}`
+      )
+    ) {
       continue;
     }
 
-    const currentSourceCount = sourceCounts.get(domain) ?? 0;
+    const currentSourceCount =
+      sourceCounts.get(domain) ?? 0;
 
-    if (currentSourceCount >= MAX_ARTICLES_PER_SOURCE) {
+    if (
+      currentSourceCount >=
+      MAX_ARTICLES_PER_SOURCE
+    ) {
       continue;
     }
 
-    const publishedAt = normalizePublishedAt(article.publishedAt);
+    const publishedAt = normalizePublishedAt(
+      article.publishedAt
+    );
 
-    const imageUrl = normalizeImageUrl(article.urlToImage);
+    const imageUrl = normalizeImageUrl(
+      article.urlToImage
+    );
 
     const candidate: CandidateArticle = {
       articleId: createStableId(sourceUrl),
-      categoryHint: inferCategory(originalTitle, description),
+      categoryHint: inferCategory(
+        originalTitle,
+        description
+      ),
       originalTitle,
       description: description || originalTitle,
       sourceName,
@@ -792,7 +693,7 @@ export function prepareNewsCandidates(
         description,
         domain,
         publishedAt,
-        Boolean(imageUrl),
+        Boolean(imageUrl)
       ),
     };
 
@@ -806,13 +707,19 @@ export function prepareNewsCandidates(
 
     seenUrls.add(sourceUrl);
     seenTitles.add(titleKey);
-    sourceCounts.set(domain, currentSourceCount + 1);
+    sourceCounts.set(
+      domain,
+      currentSourceCount + 1
+    );
   }
 
   const trusted = sortCandidates(trustedCandidates);
   const secondary = sortCandidates(secondaryCandidates);
 
-  return [...trusted, ...secondary].slice(0, MAX_NEWS_CANDIDATES);
+  return [...trusted, ...secondary].slice(
+    0,
+    MAX_NEWS_CANDIDATES
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -821,7 +728,7 @@ export function prepareNewsCandidates(
 
 async function requestNewsApi(
   endpoint: "top-headlines" | "everything",
-  parameters: URLSearchParams,
+  parameters: URLSearchParams
 ): Promise<NewsApiArticle[]> {
   const newsApiKey = process.env.NEWS_API_KEY?.trim();
 
@@ -831,7 +738,10 @@ async function requestNewsApi(
 
   const controller = new AbortController();
 
-  const timeout = setTimeout(() => controller.abort(), NEWS_TIMEOUT_MS);
+  const timeout = setTimeout(
+    () => controller.abort(),
+    NEWS_TIMEOUT_MS
+  );
 
   try {
     const response = await fetch(
@@ -844,7 +754,7 @@ async function requestNewsApi(
           Accept: "application/json",
           "X-Api-Key": newsApiKey,
         },
-      },
+      }
     );
 
     let payload: NewsApiResponse;
@@ -852,26 +762,40 @@ async function requestNewsApi(
     try {
       payload = (await response.json()) as NewsApiResponse;
     } catch {
-      throw new Error(`NEWS_API_INVALID_RESPONSE:${response.status}`);
+      throw new Error(
+        `NEWS_API_INVALID_RESPONSE:${response.status}`
+      );
     }
 
-    if (!response.ok || payload.status !== "ok") {
+    if (
+      !response.ok ||
+      payload.status !== "ok"
+    ) {
       const errorCode =
-        "code" in payload ? payload.code : String(response.status);
+        "code" in payload
+          ? payload.code
+          : String(response.status);
 
       const errorMessage =
-        "message" in payload ? payload.message : "Unable to retrieve news.";
+        "message" in payload
+          ? payload.message
+          : "Unable to retrieve news.";
 
       throw new Error(
         `NEWS_API_ERROR:${errorCode ?? response.status}:${
           errorMessage ?? "Unable to retrieve news."
-        }`,
+        }`
       );
     }
 
-    return Array.isArray(payload.articles) ? payload.articles : [];
+    return Array.isArray(payload.articles)
+      ? payload.articles
+      : [];
   } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
+    if (
+      error instanceof DOMException &&
+      error.name === "AbortError"
+    ) {
       throw new Error("NEWS_API_TIMEOUT");
     }
 
@@ -881,27 +805,25 @@ async function requestNewsApi(
   }
 }
 
-async function fetchTopHeadlines(): Promise<NewsApiArticle[]> {
+async function fetchTopHeadlines(): Promise<
+  NewsApiArticle[]
+> {
   const parameters = new URLSearchParams({
     country: TOP_HEADLINES_COUNTRY,
     pageSize: String(NEWS_API_PAGE_SIZE),
   });
 
-  return requestNewsApi("top-headlines", parameters);
+  return requestNewsApi(
+    "top-headlines",
+    parameters
+  );
 }
 
-async function fetchTaiwanTopHeadlines(): Promise<NewsApiArticle[]> {
-  const parameters = new URLSearchParams({
-    country: "tw",
-    pageSize: String(NEWS_API_PAGE_SIZE),
-  });
-
-  return requestNewsApi("top-headlines", parameters);
-}
-
-async function fetchEverything(): Promise<NewsApiArticle[]> {
+async function fetchEverything(): Promise<
+  NewsApiArticle[]
+> {
   const threeDaysAgo = new Date(
-    Date.now() - 3 * 24 * 60 * 60 * 1000,
+    Date.now() - 3 * 24 * 60 * 60 * 1000
   ).toISOString();
 
   const parameters = new URLSearchParams({
@@ -913,62 +835,47 @@ async function fetchEverything(): Promise<NewsApiArticle[]> {
     pageSize: String(NEWS_API_PAGE_SIZE),
   });
 
-  return requestNewsApi("everything", parameters);
+  return requestNewsApi(
+    "everything",
+    parameters
+  );
 }
 
 /* -------------------------------------------------------------------------- */
 /* Public API                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export async function fetchNewsCandidates(): Promise<CandidateArticle[]> {
-  const [topHeadlinesResult, everythingResult, taiwanHeadlinesResult] =
-    await Promise.allSettled([
-      fetchTopHeadlines(),
-      fetchEverything(),
-      fetchTaiwanTopHeadlines(),
-    ]);
+export async function fetchNewsCandidates(): Promise<
+  CandidateArticle[]
+> {
+  let topHeadlines: NewsApiArticle[] = [];
 
-  const topHeadlines =
-    topHeadlinesResult.status === "fulfilled" ? topHeadlinesResult.value : [];
-
-  const everythingArticles =
-    everythingResult.status === "fulfilled" ? everythingResult.value : [];
-
-  const taiwanHeadlines =
-    taiwanHeadlinesResult.status === "fulfilled"
-      ? taiwanHeadlinesResult.value
-      : [];
-
-  if (topHeadlinesResult.status === "rejected") {
-    console.warn("Top-headlines request failed:", topHeadlinesResult.reason);
-  }
-
-  if (everythingResult.status === "rejected") {
-    console.warn("Everything request failed:", everythingResult.reason);
-  }
-
-  if (taiwanHeadlinesResult.status === "rejected") {
+  try {
+    topHeadlines = await fetchTopHeadlines();
+  } catch (error) {
     console.warn(
-      "Taiwan top-headlines request failed:",
-      taiwanHeadlinesResult.reason,
+      "Top-headlines request failed; trying Everything:",
+      error instanceof Error ? error.message : error
     );
   }
 
-  const globalCandidates = prepareNewsCandidates([
+  const topCandidates =
+    prepareNewsCandidates(topHeadlines);
+
+  if (topCandidates.length >= MAX_CARD_POOL) {
+    return topCandidates;
+  }
+
+  const everythingArticles = await fetchEverything();
+
+  const candidates = prepareNewsCandidates([
     ...topHeadlines,
     ...everythingArticles,
   ]);
-
-  const taiwanCandidates = prepareNewsCandidates(taiwanHeadlines);
-
-  const candidates = mergeRegionalCandidates(
-    globalCandidates,
-    taiwanCandidates,
-  );
 
   if (candidates.length === 0) {
     throw new Error("NO_SUITABLE_NEWS");
   }
 
-  return enrichMissingCandidateImages(candidates);
+  return candidates;
 }
