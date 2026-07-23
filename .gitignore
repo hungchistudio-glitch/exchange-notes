@@ -58,3 +58,4 @@ exchange-notes-audit.zip
 # Local backups
 .backups/
 .backup-*
+.backup/
