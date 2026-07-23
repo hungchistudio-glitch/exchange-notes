@@ -19,35 +19,6 @@ export type TranslationDictionary = {
     error: string;
   };
 
-  auth: {
-    language: {
-      eyebrow: string;
-      title: string;
-      subtitle: string;
-      englishTitle: string;
-      englishDescription: string;
-      traditionalChineseTitle: string;
-      traditionalChineseDescription: string;
-      continue: string;
-    };
-
-    login: {
-      eyebrow: string;
-      title: string;
-      subtitle: string;
-      email: string;
-      emailPlaceholder: string;
-      password: string;
-      passwordPlaceholder: string;
-      forgotPassword: string;
-      submit: string;
-      submitting: string;
-      createAccount: string;
-      genericError: string;
-      changeLanguage: string;
-    };
-  };
-
   navigation: {
     vocabulary: string;
     messages: string;

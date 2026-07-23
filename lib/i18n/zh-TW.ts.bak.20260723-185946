@@ -17,35 +17,6 @@ const traditionalChinese: TranslationDictionary = {
     error: "發生錯誤",
   },
 
-  auth: {
-    language: {
-      eyebrow: "Exchange Notes",
-      title: "選擇介面語言",
-      subtitle: "選擇整個 App 使用的顯示語言。",
-      englishTitle: "English",
-      englishDescription: "以英文使用 Exchange Notes",
-      traditionalChineseTitle: "繁體中文",
-      traditionalChineseDescription: "以繁體中文使用 Exchange Notes",
-      continue: "繼續",
-    },
-
-    login: {
-      eyebrow: "英文 × 繁體中文",
-      title: "Exchange Notes",
-      subtitle: "登入你的私人語言學習空間。",
-      email: "電子郵件",
-      emailPlaceholder: "you@example.com",
-      password: "密碼",
-      passwordPlaceholder: "至少 6 個字元",
-      forgotPassword: "忘記密碼？",
-      submit: "登入",
-      submitting: "登入中…",
-      createAccount: "建立帳號",
-      genericError: "目前無法登入，請再試一次。",
-      changeLanguage: "變更語言",
-    },
-  },
-
   navigation: {
     vocabulary: "單字",
     messages: "訊息",

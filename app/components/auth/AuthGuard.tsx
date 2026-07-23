@@ -1,61 +1,95 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import AppSplash from "@/components/ui/AppSplash";
 import { createClient } from "@/lib/supabase/client";
 
 const LOGIN_SPLASH_KEY = "exchange-notes:show-login-splash";
 
+type AuthStatus = "checking" | "authenticated" | "redirecting";
+
 type AuthGuardProps = {
   children: ReactNode;
 };
 
-export default function AuthGuard({ children }: AuthGuardProps) {
-  const router = useRouter();
+function AuthLoadingScreen({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea]">
+      <div className="flex flex-col items-center gap-4">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-black"
+          role="status"
+          aria-label={label}
+        />
 
-  const [checking, setChecking] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
+        <p className="text-sm font-medium text-black/55">
+          Exchange Notes
+        </p>
+      </div>
+    </main>
+  );
+}
+
+export default function AuthGuard({ children }: AuthGuardProps) {
+  const [status, setStatus] = useState<AuthStatus>("checking");
   const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     let active = true;
+    let redirectScheduled = false;
+
+    function redirectToLogin() {
+      if (!active || redirectScheduled) return;
+
+      redirectScheduled = true;
+      setShowSplash(false);
+      setStatus("redirecting");
+
+      window.setTimeout(() => {
+        window.location.replace("/login");
+      }, 0);
+    }
 
     async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
 
-      if (!active) return;
+        if (!active) return;
 
-      if (!user) {
-        setAuthenticated(false);
-        setChecking(false);
-        router.replace("/login");
-        return;
+        if (error || !user) {
+          redirectToLogin();
+          return;
+        }
+
+        const shouldShowSplash =
+          window.sessionStorage.getItem(LOGIN_SPLASH_KEY) === "1";
+
+        setShowSplash(shouldShowSplash);
+        setStatus("authenticated");
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        redirectToLogin();
       }
-
-      const shouldShowSplash =
-        window.sessionStorage.getItem(LOGIN_SPLASH_KEY) === "1";
-
-      setShowSplash(shouldShowSplash);
-      setAuthenticated(true);
-      setChecking(false);
     }
 
     void checkUser();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
 
-      if (!session) {
-        setAuthenticated(false);
-        setShowSplash(false);
-        router.replace("/login");
+      if (event === "SIGNED_OUT" || !session) {
+        redirectToLogin();
       }
     });
 
@@ -63,22 +97,18 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       active = false;
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, []);
 
-  if (checking) {
+  if (status !== "authenticated") {
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea]">
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-black/15 border-t-black"
-          role="status"
-          aria-label="Checking your account"
-        />
-      </main>
+      <AuthLoadingScreen
+        label={
+          status === "redirecting"
+            ? "Returning to login"
+            : "Checking your account"
+        }
+      />
     );
-  }
-
-  if (!authenticated) {
-    return null;
   }
 
   if (showSplash) {

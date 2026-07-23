@@ -17,35 +17,6 @@ const english: TranslationDictionary = {
     error: "Something went wrong",
   },
 
-  auth: {
-    language: {
-      eyebrow: "Exchange Notes",
-      title: "Choose your language",
-      subtitle: "Select the language used throughout the app.",
-      englishTitle: "English",
-      englishDescription: "Use Exchange Notes in English",
-      traditionalChineseTitle: "繁體中文",
-      traditionalChineseDescription: "Use Exchange Notes in Traditional Chinese",
-      continue: "Continue",
-    },
-
-    login: {
-      eyebrow: "English × Traditional Chinese",
-      title: "Exchange Notes",
-      subtitle: "Log in to your private learning space.",
-      email: "Email",
-      emailPlaceholder: "you@example.com",
-      password: "Password",
-      passwordPlaceholder: "At least 6 characters",
-      forgotPassword: "Forgot password?",
-      submit: "Log In",
-      submitting: "Logging in…",
-      createAccount: "Create Account",
-      genericError: "Could not log in. Please try again.",
-      changeLanguage: "Change language",
-    },
-  },
-
   navigation: {
     vocabulary: "Vocabulary",
     messages: "Messages",

@@ -272,21 +272,8 @@ export default function SignupPage() {
       });
 
       if (error) {
-        console.error("========== SUPABASE SIGNUP ERROR ==========");
-        console.error("name:", error.name);
-        console.error("message:", error.message);
-        console.error("status:", error.status);
-        console.error("full error:", error);
-        console.error("============================================");
-
-        setStatus({
-          type: "error",
-          message:
-            error.message ||
-            "We could not create your account. Please try again.",
-        });
-
-        return;
+        console.error("SUPABASE SIGNUP ERROR:", error);
+        throw error;
       }
 
       /*

@@ -2,7 +2,6 @@
 
 import { Camera, LoaderCircle, LogOut, X } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
@@ -41,7 +40,6 @@ function normalizeExchangeId(value: string) {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { t } = useTranslation();
   const copy = t.settings.profile;
 
@@ -233,12 +231,25 @@ export default function SettingsPage() {
 
     if (!confirmed) return;
 
-    const supabase = createClient();
+    setError("");
 
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      const { error: logoutError } = await supabase.auth.signOut();
 
-    router.replace("/login");
-    router.refresh();
+      if (logoutError) {
+        throw logoutError;
+      }
+
+      window.location.replace("/login");
+    } catch (logoutError) {
+      console.error("Logout failed:", logoutError);
+      setError(
+        logoutError instanceof Error
+          ? logoutError.message
+          : "Could not log out. Please try again.",
+      );
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
