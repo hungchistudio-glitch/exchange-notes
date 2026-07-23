@@ -3,6 +3,7 @@
 import AppBadge from "@/components/ui/AppBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { getVocabularyInsights } from "@/lib/vocabulary/getVocabularyInsights";
 import type { VocabularyItem } from "./types";
 
 type VocabularyHeaderProps = {
@@ -110,14 +111,8 @@ export default function VocabularyHeader({
   const { t } = useTranslation();
   const detail = t.vocabulary.detail;
 
-  const reviewCount = item.review_count ?? 0;
-
-  const accuracy =
-    reviewCount > 0
-      ? Math.round(
-          ((item.correct_count ?? 0) / reviewCount) * 100,
-        )
-      : 0;
+  const { accuracy, reviewCount } =
+    getVocabularyInsights(item);
 
   const learningLevel = getLearningLevel(
     reviewCount,
