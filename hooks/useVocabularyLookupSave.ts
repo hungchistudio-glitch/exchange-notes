@@ -8,28 +8,38 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { getVocabularyKey } from "@/lib/vocabulary/helpers";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
+import { getVocabularyKey } from "@/lib/vocabulary/helpers";
+
+export type VocabularyLookupSaveMessages = {
+  loginRequired: string;
+  duplicate: string;
+  saveFailed: string;
+};
 
 type UseVocabularyLookupSaveOptions = {
   items: VocabularyItem[];
   lookupResult: VocabularyLookupResult | null;
-  setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
+
+  addItem: (item: VocabularyItem) => void;
   setError: Dispatch<SetStateAction<string>>;
   setQuery: Dispatch<SetStateAction<string>>;
   setAiSearchOpen: Dispatch<SetStateAction<boolean>>;
+
   resetLookup: () => void;
+  messages: VocabularyLookupSaveMessages;
 };
 
 export default function useVocabularyLookupSave({
   items,
   lookupResult,
-  setItems,
+  addItem,
   setError,
   setQuery,
   setAiSearchOpen,
   resetLookup,
+  messages,
 }: UseVocabularyLookupSaveOptions) {
   const [savingLookup, setSavingLookup] = useState(false);
 
@@ -41,25 +51,37 @@ export default function useVocabularyLookupSave({
 
     try {
       const supabase = createClient();
+
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
+      if (userError) {
+        console.error(
+          "Unable to read the current user while saving vocabulary:",
+          userError,
+        );
+        setError(messages.saveFailed);
+        return;
+      }
+
       if (!user) {
-        throw new Error("Please log in before saving a word.");
+        setError(messages.loginRequired);
+        return;
       }
 
       const word = lookupResult.englishName.trim();
       const translation = lookupResult.chineseName.trim();
       const candidateKey = getVocabularyKey(word, translation);
 
-      const duplicate = items.find(
+      const duplicateExists = items.some(
         (item) =>
           getVocabularyKey(item.word, item.translation) === candidateKey,
       );
 
-      if (duplicate) {
-        setError("This word is already in your vocabulary.");
+      if (duplicateExists) {
+        setError(messages.duplicate);
         resetLookup();
         setQuery("");
         return;
@@ -82,33 +104,32 @@ export default function useVocabularyLookupSave({
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError || !inserted) {
+        console.error("Unable to save vocabulary lookup result:", insertError);
+        setError(messages.saveFailed);
+        return;
+      }
 
-      setItems((current) => [
-        inserted as VocabularyItem,
-        ...current,
-      ]);
+      addItem(inserted as VocabularyItem);
 
       resetLookup();
       setQuery("");
       setAiSearchOpen(false);
     } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Could not save this word.",
-      );
+      console.error("Unexpected vocabulary lookup save failure:", saveError);
+      setError(messages.saveFailed);
     } finally {
       setSavingLookup(false);
     }
   }, [
+    addItem,
     items,
     lookupResult,
+    messages,
     resetLookup,
     savingLookup,
     setAiSearchOpen,
     setError,
-    setItems,
     setQuery,
   ]);
 

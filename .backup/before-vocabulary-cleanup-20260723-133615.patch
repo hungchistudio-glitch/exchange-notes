@@ -1,0 +1,470 @@
+diff --git a/app/(main)/vocabulary/page.tsx b/app/(main)/vocabulary/page.tsx
+index 5497bb0..7f29142 100644
+--- a/app/(main)/vocabulary/page.tsx
++++ b/app/(main)/vocabulary/page.tsx
+@@ -1,18 +1,29 @@
+ "use client";
+ 
++import dynamic from "next/dynamic";
++
+ import DashboardSheet from "@/components/dashboard/DashboardSheet";
+ import AppPage from "@/components/ui/AppPage";
+ import VocabularyHero from "@/components/vocabulary/VocabularyHero";
+ import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
+-import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
+ import useVocabularyPage from "@/hooks/pages/useVocabularyPage";
+ 
++const VocabularyOverlays = dynamic(
++  () => import("@/components/vocabulary/sections/VocabularyOverlays"),
++  {
++    ssr: false,
++    loading: () => null,
++  },
++);
++
+ export default function VocabularyPage() {
+-  const {
+-    heroProps,
+-    mainContentProps,
+-    overlaysProps,
+-  } = useVocabularyPage();
++  const { heroProps, mainContentProps, overlaysProps } = useVocabularyPage();
++
++  const hasOpenOverlay =
++    overlaysProps.lookupProps.open ||
++    overlaysProps.sortOpen ||
++    overlaysProps.filtersOpen ||
++    overlaysProps.friendPickerOpen;
+ 
+   return (
+     <AppPage width="default">
+@@ -22,7 +33,7 @@ export default function VocabularyPage() {
+ 
+       <VocabularyMainContent {...mainContentProps} />
+ 
+-      <VocabularyOverlays {...overlaysProps} />
++      {hasOpenOverlay ? <VocabularyOverlays {...overlaysProps} /> : null}
+     </AppPage>
+   );
+ }
+diff --git a/components/vocabulary/sections/VocabularyMainContent.tsx b/components/vocabulary/sections/VocabularyMainContent.tsx
+index 381df11..4e96c73 100644
+--- a/components/vocabulary/sections/VocabularyMainContent.tsx
++++ b/components/vocabulary/sections/VocabularyMainContent.tsx
+@@ -20,8 +20,11 @@ export default function VocabularyMainContent({
+     <>
+       <VocabularySearchSection {...searchProps} />
+ 
+-      {error && (
+-        <p className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700">
++      {error && !listProps.loading && (
++        <p
++          role="alert"
++          className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700"
++        >
+           {error}
+         </p>
+       )}
+diff --git a/contexts/VocabularyContext.tsx b/contexts/VocabularyContext.tsx
+index 442d34f..ffece47 100644
+--- a/contexts/VocabularyContext.tsx
++++ b/contexts/VocabularyContext.tsx
+@@ -13,14 +13,8 @@ import {
+ } from "react";
+ 
+ import { createClient } from "@/lib/supabase/client";
+-import type {
+-  AppLanguage,
+-  VocabularyItem,
+-} from "@/lib/types/app";
+-import {
+-  fetchVocabulary,
+-  getCurrentUser,
+-} from "@/lib/vocabulary/repository";
++import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
++import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
+ 
+ type VocabularyContextType = {
+   items: VocabularyItem[];
+@@ -38,17 +32,13 @@ type VocabularyContextType = {
+   updateItem(item: VocabularyItem): void;
+ };
+ 
+-const VocabularyContext =
+-  createContext<VocabularyContextType | null>(null);
++const VocabularyContext = createContext<VocabularyContextType | null>(null);
+ 
+-export function VocabularyProvider({
+-  children,
+-}: {
+-  children: ReactNode;
+-}) {
++export function VocabularyProvider({ children }: { children: ReactNode }) {
+   const [items, setItems] = useState<VocabularyItem[]>([]);
+-  const [learningLanguage, setLearningLanguage] =
+-    useState<AppLanguage | null>(null);
++  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
++    null,
++  );
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+ 
+@@ -62,9 +52,7 @@ export function VocabularyProvider({
+       if (!user) {
+         setItems([]);
+         setLearningLanguage(null);
+-        throw new Error(
+-          "Please log in to view your vocabulary.",
+-        );
++        return;
+       }
+ 
+       const supabase = createClient();
+@@ -97,14 +85,38 @@ export function VocabularyProvider({
+   }, []);
+ 
+   useEffect(() => {
++    let active = true;
++    const supabase = createClient();
++
+     void refresh();
++
++    const {
++      data: { subscription },
++    } = supabase.auth.onAuthStateChange((event) => {
++      if (!active) return;
++
++      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
++        void refresh();
++        return;
++      }
++
++      if (event === "SIGNED_OUT") {
++        setItems([]);
++        setLearningLanguage(null);
++        setError("");
++        setLoading(false);
++      }
++    });
++
++    return () => {
++      active = false;
++      subscription.unsubscribe();
++    };
+   }, [refresh]);
+ 
+   const addItem = useCallback((item: VocabularyItem) => {
+     setItems((current) => {
+-      const alreadyExists = current.some(
+-        (existing) => existing.id === item.id,
+-      );
++      const alreadyExists = current.some((existing) => existing.id === item.id);
+ 
+       if (alreadyExists) {
+         return current.map((existing) =>
+@@ -117,16 +129,12 @@ export function VocabularyProvider({
+   }, []);
+ 
+   const removeItem = useCallback((id: string) => {
+-    setItems((current) =>
+-      current.filter((item) => item.id !== id),
+-    );
++    setItems((current) => current.filter((item) => item.id !== id));
+   }, []);
+ 
+   const updateItem = useCallback((item: VocabularyItem) => {
+     setItems((current) =>
+-      current.map((existing) =>
+-        existing.id === item.id ? item : existing,
+-      ),
++      current.map((existing) => (existing.id === item.id ? item : existing)),
+     );
+   }, []);
+ 
+@@ -166,9 +174,7 @@ export function useVocabulary() {
+   const context = useContext(VocabularyContext);
+ 
+   if (!context) {
+-    throw new Error(
+-      "useVocabulary must be used inside VocabularyProvider.",
+-    );
++    throw new Error("useVocabulary must be used inside VocabularyProvider.");
+   }
+ 
+   return context;
+diff --git a/hooks/controllers/useVocabularyController.ts b/hooks/controllers/useVocabularyController.ts
+index 60546cb..dc609db 100644
+--- a/hooks/controllers/useVocabularyController.ts
++++ b/hooks/controllers/useVocabularyController.ts
+@@ -1,15 +1,18 @@
+ "use client";
+ 
++import useTranslation from "@/hooks/i18n/useTranslation";
+ import { useVocabularyPage } from "@/hooks/useVocabularyPage";
+ import useVocabulary from "@/hooks/useVocabulary";
+ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
++import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
+ import useVocabularyLookupController from "@/hooks/useVocabularyLookupController";
+ import useVocabularyMutations from "@/hooks/useVocabularyMutations";
+ import useVocabularyStats from "@/hooks/useVocabularyStats";
+ import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
+-import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
+ 
+ export default function useVocabularyController() {
++  const { t } = useTranslation();
++
+   const page = useVocabularyPage();
+   const vocabulary = useVocabulary();
+   const friendPicker = useVocabularyFriendPicker();
+@@ -17,10 +20,15 @@ export default function useVocabularyController() {
+   const lookup = useVocabularyLookupController({
+     query: page.query,
+     items: vocabulary.items,
+-    setItems: vocabulary.setItems,
++    addItem: vocabulary.addItem,
+     setError: vocabulary.setError,
+     setQuery: page.setQuery,
+     setAiSearchOpen: page.setAiSearchOpen,
++    messages: {
++      loginRequired: t.capture.errors.loginBeforeSave,
++      duplicate: t.capture.errors.duplicateWord,
++      saveFailed: t.capture.errors.saveWord,
++    },
+     onSendToPartner: friendPicker.handleSendToPartner,
+   });
+ 
+@@ -35,13 +43,36 @@ export default function useVocabularyController() {
+   const stats = useVocabularyStats(uniqueItems);
+ 
+   return {
++    /*
++     * Grouped API
++     *
++     * New consumers should access values through their owning module:
++     * controller.page.query
++     * controller.vocabulary.items
++     * controller.lookup.lookupStatus
++     */
++    page,
++    vocabulary,
++    friendPicker,
++    lookup,
++    mutations,
++    stats,
++    library,
++    uniqueItems,
++
++    /*
++     * Temporary compatibility API
++     *
++     * Keep the existing flattened fields while useVocabularyPage is
++     * migrated incrementally. Remove this section after all consumers
++     * use the grouped API.
++     */
+     ...page,
+     ...vocabulary,
+     ...friendPicker,
+     ...lookup,
+     ...mutations,
+     ...stats,
+-    uniqueItems,
+     ...library,
+   };
+ }
+diff --git a/hooks/useVocabularyLookupController.ts b/hooks/useVocabularyLookupController.ts
+index 87ee002..f9abbb1 100644
+--- a/hooks/useVocabularyLookupController.ts
++++ b/hooks/useVocabularyLookupController.ts
+@@ -3,9 +3,11 @@
+ import type { Dispatch, SetStateAction } from "react";
+ 
+ import useVocabularyLookup from "@/hooks/useVocabularyLookup";
+-import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
+-import useVocabularyShare from "@/hooks/useVocabularyShare";
+ import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
++import useVocabularyLookupSave, {
++  type VocabularyLookupSaveMessages,
++} from "@/hooks/useVocabularyLookupSave";
++import useVocabularyShare from "@/hooks/useVocabularyShare";
+ 
+ import type { VocabularyItem } from "@/lib/types/app";
+ 
+@@ -13,21 +15,24 @@ type UseVocabularyLookupControllerOptions = {
+   query: string;
+ 
+   items: VocabularyItem[];
+-  setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
++  addItem: (item: VocabularyItem) => void;
++
+   setError: Dispatch<SetStateAction<string>>;
+   setQuery: Dispatch<SetStateAction<string>>;
+   setAiSearchOpen: Dispatch<SetStateAction<boolean>>;
+ 
++  messages: VocabularyLookupSaveMessages;
+   onSendToPartner: (item: VocabularyItem) => void;
+ };
+ 
+ export default function useVocabularyLookupController({
+   query,
+   items,
+-  setItems,
++  addItem,
+   setError,
+   setQuery,
+   setAiSearchOpen,
++  messages,
+   onSendToPartner,
+ }: UseVocabularyLookupControllerOptions) {
+   const lookup = useVocabularyLookup(query);
+@@ -35,16 +40,15 @@ export default function useVocabularyLookupController({
+   const save = useVocabularyLookupSave({
+     items,
+     lookupResult: lookup.lookupResult,
+-    setItems,
++    addItem,
+     setError,
+     setQuery,
+     setAiSearchOpen,
+     resetLookup: lookup.resetLookup,
++    messages,
+   });
+ 
+-  const share = useVocabularyShare(
+-    lookup.lookupResult,
+-  );
++  const share = useVocabularyShare(lookup.lookupResult);
+ 
+   const partner = useVocabularyLookupPartnerShare({
+     lookupResult: lookup.lookupResult,
+diff --git a/hooks/useVocabularyLookupSave.ts b/hooks/useVocabularyLookupSave.ts
+index 5cd29db..f37dfa6 100644
+--- a/hooks/useVocabularyLookupSave.ts
++++ b/hooks/useVocabularyLookupSave.ts
+@@ -8,28 +8,38 @@ import {
+ } from "react";
+ 
+ import { createClient } from "@/lib/supabase/client";
+-import { getVocabularyKey } from "@/lib/vocabulary/helpers";
+ import type { VocabularyItem } from "@/lib/types/app";
+ import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
++import { getVocabularyKey } from "@/lib/vocabulary/helpers";
++
++export type VocabularyLookupSaveMessages = {
++  loginRequired: string;
++  duplicate: string;
++  saveFailed: string;
++};
+ 
+ type UseVocabularyLookupSaveOptions = {
+   items: VocabularyItem[];
+   lookupResult: VocabularyLookupResult | null;
+-  setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
++
++  addItem: (item: VocabularyItem) => void;
+   setError: Dispatch<SetStateAction<string>>;
+   setQuery: Dispatch<SetStateAction<string>>;
+   setAiSearchOpen: Dispatch<SetStateAction<boolean>>;
++
+   resetLookup: () => void;
++  messages: VocabularyLookupSaveMessages;
+ };
+ 
+ export default function useVocabularyLookupSave({
+   items,
+   lookupResult,
+-  setItems,
++  addItem,
+   setError,
+   setQuery,
+   setAiSearchOpen,
+   resetLookup,
++  messages,
+ }: UseVocabularyLookupSaveOptions) {
+   const [savingLookup, setSavingLookup] = useState(false);
+ 
+@@ -41,25 +51,37 @@ export default function useVocabularyLookupSave({
+ 
+     try {
+       const supabase = createClient();
++
+       const {
+         data: { user },
++        error: userError,
+       } = await supabase.auth.getUser();
+ 
++      if (userError) {
++        console.error(
++          "Unable to read the current user while saving vocabulary:",
++          userError,
++        );
++        setError(messages.saveFailed);
++        return;
++      }
++
+       if (!user) {
+-        throw new Error("Please log in before saving a word.");
++        setError(messages.loginRequired);
++        return;
+       }
+ 
+       const word = lookupResult.englishName.trim();
+       const translation = lookupResult.chineseName.trim();
+       const candidateKey = getVocabularyKey(word, translation);
+ 
+-      const duplicate = items.find(
++      const duplicateExists = items.some(
+         (item) =>
+           getVocabularyKey(item.word, item.translation) === candidateKey,
+       );
+ 
+-      if (duplicate) {
+-        setError("This word is already in your vocabulary.");
++      if (duplicateExists) {
++        setError(messages.duplicate);
+         resetLookup();
+         setQuery("");
+         return;
+@@ -82,33 +104,32 @@ export default function useVocabularyLookupSave({
+         .select()
+         .single();
+ 
+-      if (insertError) throw insertError;
++      if (insertError || !inserted) {
++        console.error("Unable to save vocabulary lookup result:", insertError);
++        setError(messages.saveFailed);
++        return;
++      }
+ 
+-      setItems((current) => [
+-        inserted as VocabularyItem,
+-        ...current,
+-      ]);
++      addItem(inserted as VocabularyItem);
+ 
+       resetLookup();
+       setQuery("");
+       setAiSearchOpen(false);
+     } catch (saveError) {
+-      setError(
+-        saveError instanceof Error
+-          ? saveError.message
+-          : "Could not save this word.",
+-      );
++      console.error("Unexpected vocabulary lookup save failure:", saveError);
++      setError(messages.saveFailed);
+     } finally {
+       setSavingLookup(false);
+     }
+   }, [
++    addItem,
+     items,
+     lookupResult,
++    messages,
+     resetLookup,
+     savingLookup,
+     setAiSearchOpen,
+     setError,
+-    setItems,
+     setQuery,
+   ]);
+ 

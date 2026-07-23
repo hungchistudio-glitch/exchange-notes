@@ -13,14 +13,8 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type {
-  AppLanguage,
-  VocabularyItem,
-} from "@/lib/types/app";
-import {
-  fetchVocabulary,
-  getCurrentUser,
-} from "@/lib/vocabulary/repository";
+import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
+import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 
 type VocabularyContextType = {
   items: VocabularyItem[];
@@ -38,17 +32,13 @@ type VocabularyContextType = {
   updateItem(item: VocabularyItem): void;
 };
 
-const VocabularyContext =
-  createContext<VocabularyContextType | null>(null);
+const VocabularyContext = createContext<VocabularyContextType | null>(null);
 
-export function VocabularyProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [learningLanguage, setLearningLanguage] =
-    useState<AppLanguage | null>(null);
+  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -62,9 +52,7 @@ export function VocabularyProvider({
       if (!user) {
         setItems([]);
         setLearningLanguage(null);
-        throw new Error(
-          "Please log in to view your vocabulary.",
-        );
+        return;
       }
 
       const supabase = createClient();
@@ -97,14 +85,38 @@ export function VocabularyProvider({
   }, []);
 
   useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+
     void refresh();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (!active) return;
+
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        void refresh();
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        setItems([]);
+        setLearningLanguage(null);
+        setError("");
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [refresh]);
 
   const addItem = useCallback((item: VocabularyItem) => {
     setItems((current) => {
-      const alreadyExists = current.some(
-        (existing) => existing.id === item.id,
-      );
+      const alreadyExists = current.some((existing) => existing.id === item.id);
 
       if (alreadyExists) {
         return current.map((existing) =>
@@ -117,16 +129,12 @@ export function VocabularyProvider({
   }, []);
 
   const removeItem = useCallback((id: string) => {
-    setItems((current) =>
-      current.filter((item) => item.id !== id),
-    );
+    setItems((current) => current.filter((item) => item.id !== id));
   }, []);
 
   const updateItem = useCallback((item: VocabularyItem) => {
     setItems((current) =>
-      current.map((existing) =>
-        existing.id === item.id ? item : existing,
-      ),
+      current.map((existing) => (existing.id === item.id ? item : existing)),
     );
   }, []);
 
@@ -166,9 +174,7 @@ export function useVocabulary() {
   const context = useContext(VocabularyContext);
 
   if (!context) {
-    throw new Error(
-      "useVocabulary must be used inside VocabularyProvider.",
-    );
+    throw new Error("useVocabulary must be used inside VocabularyProvider.");
   }
 
   return context;

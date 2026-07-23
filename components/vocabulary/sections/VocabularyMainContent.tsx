@@ -20,8 +20,11 @@ export default function VocabularyMainContent({
     <>
       <VocabularySearchSection {...searchProps} />
 
-      {error && (
-        <p className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700">
+      {error && !listProps.loading && (
+        <p
+          role="alert"
+          className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700"
+        >
           {error}
         </p>
       )}

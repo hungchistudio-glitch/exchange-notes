@@ -3,9 +3,11 @@
 import type { Dispatch, SetStateAction } from "react";
 
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
-import useVocabularyLookupSave from "@/hooks/useVocabularyLookupSave";
-import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVocabularyLookupPartnerShare from "@/hooks/useVocabularyLookupPartnerShare";
+import useVocabularyLookupSave, {
+  type VocabularyLookupSaveMessages,
+} from "@/hooks/useVocabularyLookupSave";
+import useVocabularyShare from "@/hooks/useVocabularyShare";
 
 import type { VocabularyItem } from "@/lib/types/app";
 
@@ -13,21 +15,24 @@ type UseVocabularyLookupControllerOptions = {
   query: string;
 
   items: VocabularyItem[];
-  setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
+  addItem: (item: VocabularyItem) => void;
+
   setError: Dispatch<SetStateAction<string>>;
   setQuery: Dispatch<SetStateAction<string>>;
   setAiSearchOpen: Dispatch<SetStateAction<boolean>>;
 
+  messages: VocabularyLookupSaveMessages;
   onSendToPartner: (item: VocabularyItem) => void;
 };
 
 export default function useVocabularyLookupController({
   query,
   items,
-  setItems,
+  addItem,
   setError,
   setQuery,
   setAiSearchOpen,
+  messages,
   onSendToPartner,
 }: UseVocabularyLookupControllerOptions) {
   const lookup = useVocabularyLookup(query);
@@ -35,16 +40,15 @@ export default function useVocabularyLookupController({
   const save = useVocabularyLookupSave({
     items,
     lookupResult: lookup.lookupResult,
-    setItems,
+    addItem,
     setError,
     setQuery,
     setAiSearchOpen,
     resetLookup: lookup.resetLookup,
+    messages,
   });
 
-  const share = useVocabularyShare(
-    lookup.lookupResult,
-  );
+  const share = useVocabularyShare(lookup.lookupResult);
 
   const partner = useVocabularyLookupPartnerShare({
     lookupResult: lookup.lookupResult,
