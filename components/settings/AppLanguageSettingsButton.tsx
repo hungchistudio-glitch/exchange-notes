@@ -3,16 +3,9 @@
 import { Languages } from "lucide-react";
 import { useState } from "react";
 
-import {
-  BottomSheet,
-  SettingsRow,
-} from "@/components/foundation";
+import { BottomSheet, SettingsRow } from "@/components/foundation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import {
-  getLanguageLabel,
-  getSettingsCopy,
-} from "@/components/settings/settingsCopy";
-import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   setInterfaceLanguage,
   type InterfaceLanguage,
@@ -37,61 +30,46 @@ const LANGUAGE_OPTIONS: Array<{
 
 export default function AppLanguageSettingsButton() {
   const [open, setOpen] = useState(false);
-  const language = useInterfaceLanguage();
-  const copy = getSettingsCopy(language);
+  const { language, t } = useTranslation();
 
   function handleSelect(value: InterfaceLanguage) {
     setInterfaceLanguage(value);
   }
 
-  function getOptionDescription(
-    value: InterfaceLanguage,
-  ) {
+  function getOptionDescription(value: InterfaceLanguage) {
     return value === "english"
-      ? copy.appLanguage.englishDescription
-      : copy.appLanguage.traditionalChineseDescription;
+      ? t.settings.appLanguage.englishDescription
+      : t.settings.appLanguage.traditionalChineseDescription;
   }
+
+  const languageLabel =
+    language === "traditional-chinese" ? "繁體中文" : "English";
 
   return (
     <>
       <SettingsRow
-        title={copy.appLanguage.rowTitle}
-        description={copy.appLanguage.rowDescription}
-        value={getLanguageLabel(language)}
-        icon={
-          <Languages
-            size={17}
-            strokeWidth={1.8}
-          />
-        }
+        title={t.settings.appLanguage.rowTitle}
+        description={t.settings.appLanguage.rowDescription}
+        value={languageLabel}
+        icon={<Languages size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />
 
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title={copy.appLanguage.sheetTitle}
-        description={
-          copy.appLanguage.sheetDescription
-        }
+        title={t.settings.appLanguage.sheetTitle}
+        description={t.settings.appLanguage.sheetDescription}
       >
         <div className="space-y-3">
           {LANGUAGE_OPTIONS.map((option) => (
             <SettingsChoiceCard
               key={option.value}
               selected={language === option.value}
-              badge={
-                <span className="text-[15px]">
-                  {option.badge}
-                </span>
-              }
+              badge={<span className="text-[15px]">{option.badge}</span>}
               title={option.label}
-              description={getOptionDescription(
-                option.value,
-              )}
-              onClick={() =>
-                handleSelect(option.value)
-              }
+              description={getOptionDescription(option.value)}
+              onClick={() => handleSelect(option.value)}
             />
           ))}
         </div>

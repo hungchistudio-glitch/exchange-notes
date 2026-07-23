@@ -43,7 +43,8 @@ const english: TranslationDictionary = {
     loginRequiredError: "You're not logged in. Log in to share with a partner.",
     loadFriendsError: "Couldn't load your friends. Try again.",
     loadNewsError: "Daily News could not be loaded.",
-    loadNewsRetryError: "Daily News could not be loaded. Please try again shortly.",
+    loadNewsRetryError:
+      "Daily News could not be loaded. Please try again shortly.",
 
     loading: "Loading today’s lessons…",
     loadingDescription: "Preparing current news as English learning material.",
@@ -450,7 +451,6 @@ const english: TranslationDictionary = {
       title: "Dashboard",
     },
 
-
     lookup: {
       title: "Search any word",
       placeholder: "English or Traditional Chinese",
@@ -486,7 +486,8 @@ const english: TranslationDictionary = {
       loadingError: "Could not load your collections.",
       createError: "Could not create the collection.",
       emptyTitle: "No collections yet",
-      emptyDescription: "Create a learning space for words you want to study together.",
+      emptyDescription:
+        "Create a learning space for words you want to study together.",
       suggestions: "Start with an example",
       listAriaLabel: "Vocabulary collections",
       newCollection: "New collection",
@@ -603,8 +604,7 @@ const english: TranslationDictionary = {
         notFound: "Word not found",
         unavailable: "This word is unavailable.",
         deleteWord: "Delete Word",
-        deleteConfirm:
-          'Delete "{word}" from your vocabulary?',
+        deleteConfirm: 'Delete "{word}" from your vocabulary?',
       },
     },
 
@@ -713,6 +713,45 @@ const english: TranslationDictionary = {
   settings: {
     title: "Settings",
     preferences: "Preferences",
+
+    profile: {
+      pageTitle: "Settings",
+      loading: "Loading…",
+      languageLearner: "Language learner",
+      accountFallback: "Exchange Notes account",
+      changePhoto: "Change photo",
+      addPhoto: "Add photo",
+      removePhoto: "Remove profile photo",
+      loadingProfile: "Loading your profile…",
+      profile: "Profile",
+      accountDetails: "Account details",
+      yourName: "Your name",
+      namePlaceholder: "Your name",
+      exchangeId: "Exchange ID",
+      exchangeIdDescription: "3–24 lowercase letters, numbers, or underscores.",
+      exchangeIdPlaceholder: "yourname",
+      nativeLanguage: "Native language",
+      learningLanguage: "Learning language",
+      saveChanges: "Save changes",
+      saving: "Saving…",
+      preferences: "Preferences",
+      account: "Account",
+      logout: "Log out",
+      logoutDescription: "Sign out of this device",
+      logoutConfirm: "Are you sure you want to log out?",
+      photoImageError: "Please choose an image file.",
+      photoSizeError: "Profile photos must be smaller than 5 MB.",
+      loginUploadError: "You must be logged in to upload a profile photo.",
+      photoUpdated: "Profile photo updated!",
+      photoUploadError: "Could not upload your profile photo.",
+      loginRequired: "You must be logged in.",
+      photoRemoved: "Profile photo removed.",
+      photoRemoveError: "Could not remove your profile photo.",
+      loginUpdateError: "You must be logged in to update your profile.",
+      exchangeIdLength: "Exchange ID must contain at least 3 characters.",
+      profileUpdated: "Profile updated successfully!",
+      profileUpdateError: "Could not update profile. Please try again.",
+    },
 
     appLanguage: {
       rowTitle: "App language",

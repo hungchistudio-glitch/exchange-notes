@@ -296,8 +296,7 @@ const traditionalChinese: TranslationDictionary = {
     selectedCount: "已選擇 {count} 則",
     selectAll: "全選",
     startConversationTitle: "開始第一段對話",
-    startConversationDescription:
-      "與學習夥伴分享新單字、句子或問題。",
+    startConversationDescription: "與學習夥伴分享新單字、句子或問題。",
     deleteSelectedMessage: "刪除 {count} 則訊息",
     deleteSelectedMessages: "刪除 {count} 則訊息",
     deleteDialogMessage: "刪除 {count} 則訊息？",
@@ -440,7 +439,6 @@ const traditionalChinese: TranslationDictionary = {
       title: "學習總覽",
     },
 
-
     lookup: {
       title: "搜尋單字",
       placeholder: "英文或繁體中文",
@@ -461,8 +459,7 @@ const traditionalChinese: TranslationDictionary = {
       noMatchingTitle: "找不到符合的單字",
       unsavedDescription:
         "搜尋這個單字以查看意思與例句，並將它加入你的單字庫。",
-      noMatchingDescription:
-        "請嘗試其他搜尋或切換不同的學習狀態。",
+      noMatchingDescription: "請嘗試其他搜尋或切換不同的學習狀態。",
       lookingUp: "搜尋中",
       lookUpWord: "搜尋「{word}」",
     },
@@ -499,8 +496,7 @@ const traditionalChinese: TranslationDictionary = {
         backToCollections: "返回收藏分類",
         loadingError: "無法載入這個收藏分類。",
         emptyTitle: "這裡還沒有單字",
-        emptyDescription:
-          "打開任一單字卡，選擇收藏分類，就能將單字加入這裡。",
+        emptyDescription: "打開任一單字卡，選擇收藏分類，就能將單字加入這裡。",
         browseVocabulary: "瀏覽單字庫",
         word: "個單字",
         words: "個單字",
@@ -593,7 +589,7 @@ const traditionalChinese: TranslationDictionary = {
         notFound: "找不到這個單字",
         unavailable: "目前無法使用這個單字。",
         deleteWord: "刪除單字",
-        deleteConfirm: '確定要從單字庫中刪除「{word}」嗎？',
+        deleteConfirm: "確定要從單字庫中刪除「{word}」嗎？",
       },
     },
 
@@ -701,6 +697,45 @@ const traditionalChinese: TranslationDictionary = {
   settings: {
     title: "設定",
     preferences: "偏好設定",
+
+    profile: {
+      pageTitle: "設定",
+      loading: "載入中…",
+      languageLearner: "語言學習者",
+      accountFallback: "Exchange Notes 帳號",
+      changePhoto: "更換照片",
+      addPhoto: "新增照片",
+      removePhoto: "移除個人照片",
+      loadingProfile: "正在載入個人資料…",
+      profile: "個人資料",
+      accountDetails: "帳號資料",
+      yourName: "你的名字",
+      namePlaceholder: "你的名字",
+      exchangeId: "Exchange ID",
+      exchangeIdDescription: "使用 3–24 個小寫英文字母、數字或底線。",
+      exchangeIdPlaceholder: "yourname",
+      nativeLanguage: "母語",
+      learningLanguage: "學習語言",
+      saveChanges: "儲存變更",
+      saving: "儲存中…",
+      preferences: "偏好設定",
+      account: "帳號",
+      logout: "登出",
+      logoutDescription: "登出此裝置",
+      logoutConfirm: "確定要登出嗎？",
+      photoImageError: "請選擇圖片檔案。",
+      photoSizeError: "個人照片必須小於 5 MB。",
+      loginUploadError: "你必須先登入才能上傳個人照片。",
+      photoUpdated: "個人照片已更新！",
+      photoUploadError: "無法上傳個人照片。",
+      loginRequired: "你必須先登入。",
+      photoRemoved: "個人照片已移除。",
+      photoRemoveError: "無法移除個人照片。",
+      loginUpdateError: "你必須先登入才能更新個人資料。",
+      exchangeIdLength: "Exchange ID 必須至少包含 3 個字元。",
+      profileUpdated: "個人資料已成功更新！",
+      profileUpdateError: "無法更新個人資料，請再試一次。",
+    },
 
     appLanguage: {
       rowTitle: "App 顯示語言",

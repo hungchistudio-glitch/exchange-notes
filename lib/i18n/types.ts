@@ -433,7 +433,6 @@ export type TranslationDictionary = {
       title: string;
     };
 
-
     lookup: {
       title: string;
       placeholder: string;
@@ -690,6 +689,45 @@ export type TranslationDictionary = {
   settings: {
     title: string;
     preferences: string;
+
+    profile: {
+      pageTitle: string;
+      loading: string;
+      languageLearner: string;
+      accountFallback: string;
+      changePhoto: string;
+      addPhoto: string;
+      removePhoto: string;
+      loadingProfile: string;
+      profile: string;
+      accountDetails: string;
+      yourName: string;
+      namePlaceholder: string;
+      exchangeId: string;
+      exchangeIdDescription: string;
+      exchangeIdPlaceholder: string;
+      nativeLanguage: string;
+      learningLanguage: string;
+      saveChanges: string;
+      saving: string;
+      preferences: string;
+      account: string;
+      logout: string;
+      logoutDescription: string;
+      logoutConfirm: string;
+      photoImageError: string;
+      photoSizeError: string;
+      loginUploadError: string;
+      photoUpdated: string;
+      photoUploadError: string;
+      loginRequired: string;
+      photoRemoved: string;
+      photoRemoveError: string;
+      loginUpdateError: string;
+      exchangeIdLength: string;
+      profileUpdated: string;
+      profileUpdateError: string;
+    };
 
     appLanguage: {
       rowTitle: string;

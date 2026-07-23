@@ -1,18 +1,7 @@
 "use client";
 
-import {
-  Camera,
-    LoaderCircle,
-  LogOut,
-  X,
-} from "lucide-react";
-import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Camera, LoaderCircle, LogOut, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import SpeechSettingsButton from "@/app/components/settings/SpeechSettingsButton";
@@ -29,7 +18,7 @@ import {
 } from "@/components/foundation";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
-import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type ProfileForm = {
   display_name: string;
@@ -53,98 +42,9 @@ function normalizeExchangeId(value: string) {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const interfaceLanguage = useInterfaceLanguage();
-  const isTraditionalChinese =
-    interfaceLanguage === "traditional-chinese";
+  const { t } = useTranslation();
+  const copy = t.settings.profile;
 
-  const copy = isTraditionalChinese
-    ? {
-        pageTitle: "設定",
-        loading: "載入中…",
-        languageLearner: "語言學習者",
-        accountFallback: "Exchange Notes 帳號",
-        changePhoto: "更換照片",
-        addPhoto: "新增照片",
-        removePhoto: "移除個人照片",
-        loadingProfile: "正在載入個人資料…",
-        profile: "個人資料",
-        accountDetails: "帳號資料",
-        yourName: "你的名字",
-        namePlaceholder: "你的名字",
-        exchangeId: "Exchange ID",
-        exchangeIdDescription:
-          "使用 3–24 個小寫英文字母、數字或底線。",
-        exchangeIdPlaceholder: "yourname",
-        nativeLanguage: "母語",
-        learningLanguage: "學習語言",
-        saveChanges: "儲存變更",
-        saving: "儲存中…",
-        preferences: "偏好設定",
-        account: "帳號",
-        logout: "登出",
-        logoutDescription: "登出此裝置",
-        logoutConfirm: "確定要登出嗎？",
-        photoImageError: "請選擇圖片檔案。",
-        photoSizeError: "個人照片必須小於 5 MB。",
-        loginUploadError: "你必須先登入才能上傳個人照片。",
-        photoUpdated: "個人照片已更新！",
-        photoUploadError: "無法上傳個人照片。",
-        loginRequired: "你必須先登入。",
-        photoRemoved: "個人照片已移除。",
-        photoRemoveError: "無法移除個人照片。",
-        loginUpdateError: "你必須先登入才能更新個人資料。",
-        exchangeIdLength:
-          "Exchange ID 必須至少包含 3 個字元。",
-        profileUpdated: "個人資料已成功更新！",
-        profileUpdateError:
-          "無法更新個人資料，請再試一次。",
-      }
-    : {
-        pageTitle: "Settings",
-        loading: "Loading…",
-        languageLearner: "Language learner",
-        accountFallback: "Exchange Notes account",
-        changePhoto: "Change photo",
-        addPhoto: "Add photo",
-        removePhoto: "Remove profile photo",
-        loadingProfile: "{copy.loadingProfile}",
-        profile: "Profile",
-        accountDetails: "Account details",
-        yourName: "Your name",
-        namePlaceholder: "Your name",
-        exchangeId: "Exchange ID",
-        exchangeIdDescription:
-          "3–24 lowercase letters, numbers, or underscores.",
-        exchangeIdPlaceholder: "yourname",
-        nativeLanguage: "Native language",
-        learningLanguage: "Learning language",
-        saveChanges: "Save changes",
-        saving: "Saving…",
-        preferences: "Preferences",
-        account: "Account",
-        logout: "Log out",
-        logoutDescription: "Sign out of this device",
-        logoutConfirm: "Are you sure you want to log out?",
-        photoImageError: "Please choose an image file.",
-        photoSizeError:
-          "Profile photos must be smaller than 5 MB.",
-        loginUploadError:
-          "You must be logged in to upload a profile photo.",
-        photoUpdated: "Profile photo updated!",
-        photoUploadError:
-          "Could not upload your profile photo.",
-        loginRequired: "You must be logged in.",
-        photoRemoved: "Profile photo removed.",
-        photoRemoveError:
-          "Could not remove your profile photo.",
-        loginUpdateError:
-          "You must be logged in to update your profile.",
-        exchangeIdLength:
-          "Exchange ID must contain at least 3 characters.",
-        profileUpdated: "Profile updated successfully!",
-        profileUpdateError:
-          "Could not update profile. Please try again.",
-      };
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
@@ -329,9 +229,7 @@ export default function SettingsPage() {
   }
 
   async function handleLogout() {
-    const confirmed = window.confirm(
-      copy.logoutConfirm,
-    );
+    const confirmed = window.confirm(copy.logoutConfirm);
 
     if (!confirmed) return;
 
@@ -466,19 +364,15 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {error && (
-            <StatusMessage tone="danger">{error}</StatusMessage>
-          )}
+          {error && <StatusMessage tone="danger">{error}</StatusMessage>}
 
-          {message && (
-            <StatusMessage tone="success">{message}</StatusMessage>
-          )}
+          {message && <StatusMessage tone="success">{message}</StatusMessage>}
 
           {loading ? (
             <section className="rounded-[24px] border border-black/[0.06] bg-white p-5">
               <div className="flex items-center gap-3 text-sm font-medium text-black/45">
                 <LoaderCircle size={17} className="animate-spin" />
-                Loading your profile…
+                {copy.loadingProfile}
               </div>
             </section>
           ) : (
@@ -496,10 +390,7 @@ export default function SettingsPage() {
                 </h3>
               </div>
 
-              <FormField
-                label={copy.yourName}
-                htmlFor="settings-display-name"
-              >
+              <FormField label={copy.yourName} htmlFor="settings-display-name">
                 <AppInput
                   id="settings-display-name"
                   required
@@ -527,15 +418,11 @@ export default function SettingsPage() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      exchange_id: normalizeExchangeId(
-                        event.target.value,
-                      ),
+                      exchange_id: normalizeExchangeId(event.target.value),
                     }))
                   }
                   placeholder={copy.exchangeIdPlaceholder}
-                  leading={
-                    <span className="text-sm font-semibold">@</span>
-                  }
+                  leading={<span className="text-sm font-semibold">@</span>}
                 />
               </FormField>
 
@@ -549,16 +436,12 @@ export default function SettingsPage() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      native_language:
-                        event.target.value as AppLanguage,
+                      native_language: event.target.value as AppLanguage,
                     }))
                   }
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -575,16 +458,12 @@ export default function SettingsPage() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      learning_language:
-                        event.target.value as AppLanguage,
+                      learning_language: event.target.value as AppLanguage,
                     }))
                   }
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -596,12 +475,7 @@ export default function SettingsPage() {
                 disabled={saving}
                 className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-[16px] font-semibold text-white transition-all disabled:opacity-35 active:scale-[0.985]"
               >
-                {saving && (
-                  <LoaderCircle
-                    size={16}
-                    className="animate-spin"
-                  />
-                )}
+                {saving && <LoaderCircle size={16} className="animate-spin" />}
 
                 {saving ? copy.saving : copy.saveChanges}
               </button>

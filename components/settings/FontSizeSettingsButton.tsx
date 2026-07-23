@@ -3,13 +3,9 @@
 import { Type } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import {
-  BottomSheet,
-  SettingsRow,
-} from "@/components/foundation";
+import { BottomSheet, SettingsRow } from "@/components/foundation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import { getSettingsCopy } from "@/components/settings/settingsCopy";
-import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   DEFAULT_APP_FONT_SIZE,
   getAppFontSize,
@@ -38,20 +34,16 @@ const FONT_SIZE_OPTIONS: Array<{
 
 export default function FontSizeSettingsButton() {
   const [open, setOpen] = useState(false);
-  const [fontSize, setFontSizeState] =
-    useState<AppFontSize>(
-      DEFAULT_APP_FONT_SIZE,
-    );
+  const [fontSize, setFontSizeState] = useState<AppFontSize>(
+    DEFAULT_APP_FONT_SIZE,
+  );
 
-  const language = useInterfaceLanguage();
-  const copy = getSettingsCopy(language);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setFontSizeState(getAppFontSize());
 
-    return subscribeToAppFontSize(
-      setFontSizeState,
-    );
+    return subscribeToAppFontSize(setFontSizeState);
   }, []);
 
   function handleSelect(value: AppFontSize) {
@@ -61,51 +53,31 @@ export default function FontSizeSettingsButton() {
   return (
     <>
       <SettingsRow
-        title={copy.fontSize.rowTitle}
-        description={copy.fontSize.rowDescription}
-        value={copy.fontSize.options[fontSize].label}
-        icon={
-          <Type
-            size={17}
-            strokeWidth={1.8}
-          />
-        }
+        title={t.settings.fontSize.rowTitle}
+        description={t.settings.fontSize.rowDescription}
+        value={t.settings.fontSize.options[fontSize].label}
+        icon={<Type size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />
 
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title={copy.fontSize.sheetTitle}
-        description={copy.fontSize.sheetDescription}
+        title={t.settings.fontSize.sheetTitle}
+        description={t.settings.fontSize.sheetDescription}
       >
         <div className="space-y-3">
           {FONT_SIZE_OPTIONS.map((option) => {
-            const optionCopy =
-              copy.fontSize.options[option.value];
+            const optionCopy = t.settings.fontSize.options[option.value];
 
             return (
               <SettingsChoiceCard
                 key={option.value}
-                selected={
-                  fontSize === option.value
-                }
-                badge={
-                  <span
-                    className={
-                      option.previewClassName
-                    }
-                  >
-                    Aa
-                  </span>
-                }
+                selected={fontSize === option.value}
+                badge={<span className={option.previewClassName}>Aa</span>}
                 title={optionCopy.label}
-                description={
-                  optionCopy.description
-                }
-                onClick={() =>
-                  handleSelect(option.value)
-                }
+                description={optionCopy.description}
+                onClick={() => handleSelect(option.value)}
               />
             );
           })}

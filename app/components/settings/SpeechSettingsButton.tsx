@@ -3,15 +3,8 @@
 import { Volume2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import {
-  BottomSheet,
-  SettingsRow,
-} from "@/components/foundation";
-import {
-  getSettingsCopy,
-  getVoiceLabel,
-} from "@/components/settings/settingsCopy";
-import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
+import { BottomSheet, SettingsRow } from "@/components/foundation";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   getSpeechSettings,
   setSpeechSettings,
@@ -23,21 +16,16 @@ type SpeechSettingsButtonProps = {
   variant?: "icon" | "row";
 };
 
-const VOICE_OPTIONS: VoiceGender[] = [
-  "female",
-  "male",
-];
+const VOICE_OPTIONS: VoiceGender[] = ["female", "male"];
 
 export default function SpeechSettingsButton({
   variant = "icon",
 }: SpeechSettingsButtonProps) {
   const [open, setOpen] = useState(false);
   const [rate, setRate] = useState(0.75);
-  const [voiceGender, setVoiceGender] =
-    useState<VoiceGender>("female");
+  const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
 
-  const language = useInterfaceLanguage();
-  const copy = getSettingsCopy(language);
+  const { language, t } = useTranslation();
 
   useEffect(() => {
     const settings = getSpeechSettings();
@@ -46,10 +34,7 @@ export default function SpeechSettingsButton({
     setVoiceGender(settings.voiceGender);
   }, []);
 
-  function persist(
-    nextRate: number,
-    nextGender: VoiceGender,
-  ) {
+  function persist(nextRate: number, nextGender: VoiceGender) {
     setSpeechSettings({
       rate: nextRate,
       voiceGender: nextGender,
@@ -61,11 +46,15 @@ export default function SpeechSettingsButton({
     persist(value, voiceGender);
   }
 
-  function handleGenderChange(
-    value: VoiceGender,
-  ) {
+  function handleGenderChange(value: VoiceGender) {
     setVoiceGender(value);
     persist(rate, value);
+  }
+
+  function getVoiceLabel(gender: VoiceGender) {
+    return gender === "female"
+      ? t.settings.pronunciation.female
+      : t.settings.pronunciation.male;
   }
 
   function handleTest() {
@@ -74,43 +63,28 @@ export default function SpeechSettingsButton({
         ? "你好，歡迎使用 Exchange Notes。"
         : "Hello, welcome to Exchange Notes.";
 
-    const locale =
-      language === "traditional-chinese"
-        ? "zh-TW"
-        : "en-US";
+    const locale = language === "traditional-chinese" ? "zh-TW" : "en-US";
 
     speak(text, locale);
   }
 
-  const displayedVoice =
-    getVoiceLabel(voiceGender, language);
+  const displayedVoice = getVoiceLabel(voiceGender);
 
   return (
     <>
       {variant === "row" ? (
         <SettingsRow
-          title={copy.pronunciation.rowTitle}
-          description={
-            copy.pronunciation.rowDescription
-          }
+          title={t.settings.pronunciation.rowTitle}
+          description={t.settings.pronunciation.rowDescription}
           value={`${displayedVoice}，${rate.toFixed(2)}×`}
-          icon={
-            <Volume2
-              size={17}
-              strokeWidth={1.8}
-            />
-          }
+          icon={<Volume2 size={17} strokeWidth={1.8} />}
           onClick={() => setOpen(true)}
         />
       ) : (
         <button
           type="button"
-          aria-label={
-            copy.pronunciation.settingsAriaLabel
-          }
-          title={
-            copy.pronunciation.settingsAriaLabel
-          }
+          aria-label={t.settings.pronunciation.settingsAriaLabel}
+          title={t.settings.pronunciation.settingsAriaLabel}
           onClick={() => setOpen(true)}
           className={[
             "flex h-9 w-9 items-center",
@@ -120,20 +94,15 @@ export default function SpeechSettingsButton({
             "active:scale-95",
           ].join(" ")}
         >
-          <Volume2
-            size={17}
-            strokeWidth={1.8}
-          />
+          <Volume2 size={17} strokeWidth={1.8} />
         </button>
       )}
 
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title={copy.pronunciation.sheetTitle}
-        description={
-          copy.pronunciation.sheetDescription
-        }
+        title={t.settings.pronunciation.sheetTitle}
+        description={t.settings.pronunciation.sheetDescription}
         footer={
           <button
             type="button"
@@ -146,7 +115,7 @@ export default function SpeechSettingsButton({
               "active:scale-[0.985]",
             ].join(" ")}
           >
-            {copy.pronunciation.testVoice}
+            {t.settings.pronunciation.testVoice}
           </button>
         }
       >
@@ -155,17 +124,11 @@ export default function SpeechSettingsButton({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h3 className="text-[15px] font-semibold text-black">
-                  {
-                    copy.pronunciation
-                      .readingSpeed
-                  }
+                  {t.settings.pronunciation.readingSpeed}
                 </h3>
 
                 <p className="mt-1 text-xs leading-5 text-black/45">
-                  {
-                    copy.pronunciation
-                      .readingSpeedDescription
-                  }
+                  {t.settings.pronunciation.readingSpeedDescription}
                 </p>
               </div>
 
@@ -180,54 +143,37 @@ export default function SpeechSettingsButton({
               max={1.1}
               step={0.05}
               value={rate}
-              aria-label={
-                copy.pronunciation
-                  .readingSpeedAriaLabel
-              }
-              onChange={(event) =>
-                handleRateChange(
-                  Number(event.target.value),
-                )
-              }
+              aria-label={t.settings.pronunciation.readingSpeedAriaLabel}
+              onChange={(event) => handleRateChange(Number(event.target.value))}
               className="mt-5 w-full accent-black"
             />
 
             <div className="mt-2 flex justify-between text-[10px] font-medium text-black/30">
-              <span>
-                {copy.pronunciation.slower}
-              </span>
+              <span>{t.settings.pronunciation.slower}</span>
 
-              <span>
-                {copy.pronunciation.faster}
-              </span>
+              <span>{t.settings.pronunciation.faster}</span>
             </div>
           </section>
 
           <section>
             <h3 className="text-[15px] font-semibold text-black">
-              {copy.pronunciation.voice}
+              {t.settings.pronunciation.voice}
             </h3>
 
             <p className="mt-1 text-xs leading-5 text-black/45">
-              {
-                copy.pronunciation
-                  .voiceDescription
-              }
+              {t.settings.pronunciation.voiceDescription}
             </p>
 
             <div className="mt-4 grid grid-cols-2 gap-2">
               {VOICE_OPTIONS.map((gender) => {
-                const selected =
-                  voiceGender === gender;
+                const selected = voiceGender === gender;
 
                 return (
                   <button
                     key={gender}
                     type="button"
                     aria-pressed={selected}
-                    onClick={() =>
-                      handleGenderChange(gender)
-                    }
+                    onClick={() => handleGenderChange(gender)}
                     className={[
                       "flex min-h-12 items-center",
                       "justify-center rounded-2xl",
@@ -242,10 +188,7 @@ export default function SpeechSettingsButton({
                           ].join(" "),
                     ].join(" ")}
                   >
-                    {getVoiceLabel(
-                      gender,
-                      language,
-                    )}
+                    {getVoiceLabel(gender)}
                   </button>
                 );
               })}
