@@ -1329,6 +1329,7 @@ function ChatRoom({ friendId }: { friendId: string }) {
             <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
               <Link
                 href="/messages"
+                replace
                 aria-label={t.messages.backToMessages}
                 title={t.messages.backToMessages}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
