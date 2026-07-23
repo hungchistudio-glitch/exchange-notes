@@ -9,6 +9,13 @@ export type FriendProfile = {
   learningLanguage: "english" | "traditional-chinese";
 };
 
+export type ConversationSummary = {
+  friend: FriendProfile;
+  conversationId: string | null;
+  lastReadAt: string | null;
+  unreadCount: number;
+};
+
 export type IncomingRequest = {
   requestId: string;
   createdAt: string;
@@ -230,6 +237,128 @@ export async function listFriends(
   return otherIds
     .map((id) => byId.get(id))
     .filter((profile): profile is FriendProfile => Boolean(profile));
+}
+
+export async function listConversationSummaries(
+  supabase: SupabaseClient,
+  currentUserId: string
+): Promise<ConversationSummary[]> {
+  const friends = await listFriends(supabase, currentUserId);
+
+  if (friends.length === 0) {
+    return [];
+  }
+
+  const { data: myMemberships, error: membershipsError } = await supabase
+    .from("conversation_members")
+    .select("conversation_id, last_read_at")
+    .eq("user_id", currentUserId);
+
+  if (membershipsError) throw membershipsError;
+
+  if (!myMemberships || myMemberships.length === 0) {
+    return friends.map((friend) => ({
+      friend,
+      conversationId: null,
+      lastReadAt: null,
+      unreadCount: 0,
+    }));
+  }
+
+  const conversationIds = myMemberships.map(
+    (membership) => membership.conversation_id
+  );
+
+  const friendIds = new Set(friends.map((friend) => friend.id));
+
+  const { data: otherMemberships, error: otherMembershipsError } =
+    await supabase
+      .from("conversation_members")
+      .select("conversation_id, user_id")
+      .in("conversation_id", conversationIds)
+      .neq("user_id", currentUserId);
+
+  if (otherMembershipsError) throw otherMembershipsError;
+
+  const conversationByFriendId = new Map<string, string>();
+
+  for (const membership of otherMemberships ?? []) {
+    if (
+      friendIds.has(membership.user_id) &&
+      !conversationByFriendId.has(membership.user_id)
+    ) {
+      conversationByFriendId.set(
+        membership.user_id,
+        membership.conversation_id
+      );
+    }
+  }
+
+  const lastReadByConversationId = new Map<string, string | null>(
+    myMemberships.map((membership) => [
+      membership.conversation_id,
+      membership.last_read_at,
+    ])
+  );
+
+  const relevantConversationIds = Array.from(
+    new Set(conversationByFriendId.values())
+  );
+
+  const unreadCountByConversationId = new Map<string, number>();
+
+  if (relevantConversationIds.length > 0) {
+    const lastReadTimes = relevantConversationIds
+      .map((conversationId) =>
+        lastReadByConversationId.get(conversationId)
+      )
+      .filter((value): value is string => Boolean(value));
+
+    const earliestLastReadAt =
+      lastReadTimes.length > 0
+        ? lastReadTimes.reduce((earliest, current) =>
+            current < earliest ? current : earliest
+          )
+        : new Date(0).toISOString();
+
+    const { data: unreadMessages, error: unreadMessagesError } =
+      await supabase
+        .from("messages")
+        .select("conversation_id, sender_id, created_at")
+        .in("conversation_id", relevantConversationIds)
+        .neq("sender_id", currentUserId)
+        .gt("created_at", earliestLastReadAt);
+
+    if (unreadMessagesError) throw unreadMessagesError;
+
+    for (const message of unreadMessages ?? []) {
+      const lastReadAt =
+        lastReadByConversationId.get(message.conversation_id) ??
+        new Date(0).toISOString();
+
+      if (message.created_at <= lastReadAt) continue;
+
+      unreadCountByConversationId.set(
+        message.conversation_id,
+        (unreadCountByConversationId.get(message.conversation_id) ?? 0) + 1
+      );
+    }
+  }
+
+  return friends.map((friend) => {
+    const conversationId = conversationByFriendId.get(friend.id) ?? null;
+
+    return {
+      friend,
+      conversationId,
+      lastReadAt: conversationId
+        ? lastReadByConversationId.get(conversationId) ?? null
+        : null,
+      unreadCount: conversationId
+        ? unreadCountByConversationId.get(conversationId) ?? 0
+        : 0,
+    };
+  });
 }
 
 export async function respondToRequest(

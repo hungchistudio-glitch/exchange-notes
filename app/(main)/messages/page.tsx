@@ -26,7 +26,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import {
   getOrCreateConversationWithFriend,
-  listFriends,
+  listConversationSummaries,
+  type ConversationSummary,
   type FriendProfile,
 } from "@/lib/friends";
 import { consumePendingSharedArticle } from "@/lib/newsDraft";
@@ -293,12 +294,31 @@ function ConversationList() {
   const notLoggedInMessage = t.messages.errors.notLoggedIn;
   const loadConversationsMessage = t.messages.errors.loadConversations;
 
-  const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const refreshConversations = useCallback(async () => {
+    if (!currentUserId) return;
+
+    try {
+      const supabase = createClient();
+      const conversationData = await listConversationSummaries(
+        supabase,
+        currentUserId
+      );
+
+      setConversations(conversationData);
+    } catch (refreshError) {
+      console.error(
+        "Failed to refresh conversation summaries:",
+        refreshError
+      );
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -323,9 +343,13 @@ function ConversationList() {
       }
 
       try {
-        const friendsData = await listFriends(supabase, user.id);
+        const conversationData = await listConversationSummaries(
+          supabase,
+          user.id
+        );
+
         if (!cancelled) {
-          setFriends(friendsData);
+          setConversations(conversationData);
         }
       } catch (loadError) {
         console.error("Failed to load friends:", loadError);
@@ -342,6 +366,75 @@ function ConversationList() {
       cancelled = true;
     };
   }, [loadConversationsMessage, notLoggedInMessage]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel(`conversation-list:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const incomingMessage = payload.new as {
+            conversation_id?: string;
+            sender_id?: string;
+          };
+
+          if (
+            !incomingMessage.conversation_id ||
+            incomingMessage.sender_id === currentUserId
+          ) {
+            return;
+          }
+
+          setConversations((current) =>
+            current.map((conversation) =>
+              conversation.conversationId ===
+              incomingMessage.conversation_id
+                ? {
+                    ...conversation,
+                    unreadCount: conversation.unreadCount + 1,
+                  }
+                : conversation
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    function handleWindowFocus() {
+      void refreshConversations();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void refreshConversations();
+      }
+    }
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
+    return () => {
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+
+      void supabase.removeChannel(channel);
+    };
+  }, [currentUserId, refreshConversations]);
 
   async function removeFriend(friend: FriendProfile) {
     if (!currentUserId || deletingFriendId) return;
@@ -390,7 +483,9 @@ function ConversationList() {
         throw new Error("No friendship record was deleted.");
       }
 
-      setFriends((current) => current.filter((item) => item.id !== friend.id));
+      setConversations((current) =>
+        current.filter((item) => item.friend.id !== friend.id)
+      );
     } catch (removeError) {
       console.error("Could not remove friend:", removeError);
 
@@ -408,7 +503,7 @@ function ConversationList() {
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
-  const filteredFriends = friends.filter((friend) => {
+  const filteredConversations = conversations.filter(({ friend }) => {
     if (!normalizedSearchQuery) return true;
 
     const displayName = friend.displayName?.toLowerCase() ?? "";
@@ -430,7 +525,7 @@ function ConversationList() {
         </header>
 
         <section className="flex-1 space-y-3 px-4 py-6">
-          {friends.length > 0 && (
+          {conversations.length > 0 && (
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
@@ -450,11 +545,11 @@ function ConversationList() {
             </div>
           )}
 
-          {!loading && !errorMessage && filteredFriends.length === 0 && (
+          {!loading && !errorMessage && filteredConversations.length === 0 && (
             <ConversationEmptyState searchQuery={searchQuery} />
           )}
 
-          {filteredFriends.map((friend) => (
+          {filteredConversations.map(({ friend, unreadCount }) => (
             <SwipeableConversationCard
               key={friend.id}
               disabled={deletingFriendId === friend.id}
@@ -465,7 +560,10 @@ function ConversationList() {
               }}
               onRemove={() => removeFriend(friend)}
             >
-              <ConversationCard friend={friend} />
+              <ConversationCard
+                friend={friend}
+                unreadCount={unreadCount}
+              />
             </SwipeableConversationCard>
           ))}
         </section>
@@ -564,6 +662,23 @@ function ChatRoom({ friendId }: { friendId: string }) {
     }
   }, []);
 
+  const markConversationAsRead = useCallback(
+    async (roomId: string, userId: string) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from("conversation_members")
+        .update({ last_read_at: new Date().toISOString() })
+        .eq("conversation_id", roomId)
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("Failed to mark conversation as read:", error);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -640,6 +755,8 @@ function ChatRoom({ friendId }: { friendId: string }) {
 
       if (cancelled) return;
       setConversationId(roomId);
+
+      await markConversationAsRead(roomId, user.id);
 
       const { data: existingMessages, error: messagesError } = await supabase
         .from("messages")
@@ -749,7 +866,19 @@ function ChatRoom({ friendId }: { friendId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [friendId, loadHiddenMessageIds]);
+  }, [friendId, loadHiddenMessageIds, markConversationAsRead]);
+
+  useEffect(() => {
+    if (!isAtBottom || !conversationId || !currentUserId) return;
+
+    void markConversationAsRead(conversationId, currentUserId);
+  }, [
+    conversationId,
+    currentUserId,
+    isAtBottom,
+    markConversationAsRead,
+    messages.length,
+  ]);
 
   useEffect(() => {
     if (!conversationId) return;
