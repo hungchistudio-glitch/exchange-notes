@@ -1,11 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Volume2 } from "lucide-react";
-
-import { getPronunciationData } from "@/lib/pronunciation";
-import { speak } from "@/lib/speech";
+import { useMemo, type ReactNode } from "react";
+import SpeakerButton from "@/components/learning/SpeakerButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { getPronunciationData } from "@/lib/pronunciation";
 
 type WordCardLanguage = "english" | "traditional-chinese";
 
@@ -68,20 +66,13 @@ function AudioButton({
   label: string;
   compact?: boolean;
 }) {
-  if (!text.trim()) return null;
-
   return (
-    <button
-      type="button"
-      onClick={() => speak(text, language)}
-      aria-label={label}
-      title={label}
-      className={`flex shrink-0 items-center justify-center rounded-full bg-[#f3f0e9] text-black/65 transition-all hover:bg-[#e9e5dc] active:scale-95 ${
-        compact ? "h-9 w-9" : "h-10 w-10"
-      }`}
-    >
-      <Volume2 size={compact ? 15 : 16} strokeWidth={1.8} />
-    </button>
+    <SpeakerButton
+      text={text}
+      language={language}
+      label={label}
+      compact={compact}
+    />
   );
 }
 
@@ -110,10 +101,14 @@ export default function WordCard({
     ? detail.partOfSpeech[normalizePartOfSpeech(partOfSpeech)]
     : null;
 
-  const pronunciation = getPronunciationData({
-    english: englishText,
-    chinese: chineseText,
-  });
+  const pronunciation = useMemo(
+    () =>
+      getPronunciationData({
+        english: englishText,
+        chinese: chineseText,
+      }),
+    [chineseText, englishText],
+  );
 
   const learningChinese = learningLanguage === "traditional-chinese";
 
@@ -202,12 +197,24 @@ export default function WordCard({
               {primary.pronunciation.length > 0 && (
                 <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
                   {primary.pronunciation.map((value, index) => (
-                    <p
+                    <div
                       key={`${value}-${index}`}
-                      className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                      className="flex min-h-8 items-center justify-between gap-3"
                     >
-                      {value}
-                    </p>
+                      <p
+                        className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                      >
+                        {value}
+                      </p>
+
+                      <SpeakerButton
+                        text={primary.text}
+                        language={primary.language}
+                        label={`Play ${primary.label} pronunciation`}
+                        compact
+                        subtle
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -237,12 +244,24 @@ export default function WordCard({
               {secondary.pronunciation.length > 0 && (
                 <div className="mt-3 space-y-1 text-[12px] leading-5 text-black/45">
                   {secondary.pronunciation.map((value, index) => (
-                    <p
+                    <div
                       key={`${value}-${index}`}
-                      className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                      className="flex min-h-8 items-center justify-between gap-3"
                     >
-                      {value}
-                    </p>
+                      <p
+                        className={isZhuyin(value) ? "font-zhuyin" : undefined}
+                      >
+                        {value}
+                      </p>
+
+                      <SpeakerButton
+                        text={secondary.text}
+                        language={secondary.language}
+                        label={`Play ${secondary.label} pronunciation`}
+                        compact
+                        subtle
+                      />
+                    </div>
                   ))}
                 </div>
               )}

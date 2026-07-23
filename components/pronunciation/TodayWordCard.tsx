@@ -17,6 +17,7 @@ import {
   speakText,
   stopSpeech,
 } from "@/lib/pronunciation/playback";
+import { getPronunciationData } from "@/lib/pronunciation";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 
@@ -71,9 +72,6 @@ export default function TodayWordCard() {
   const [pronunciation, setPronunciation] =
     useState<PronunciationResult | null>(null);
 
-  const [pronunciationLoading, setPronunciationLoading] =
-    useState(false);
-
   useEffect(() => {
     return () => {
       stopSpeech();
@@ -83,7 +81,6 @@ export default function TodayWordCard() {
   useEffect(() => {
     if (!lesson) {
       setPronunciation(null);
-      setPronunciationLoading(false);
       return;
     }
 
@@ -94,23 +91,20 @@ export default function TodayWordCard() {
 
     if (!english || !chinese) {
       setPronunciation(null);
-      setPronunciationLoading(false);
       return;
     }
 
     async function loadPronunciation() {
       setPronunciation(null);
-      setPronunciationLoading(true);
 
       const result = await getPronunciation(
         english,
         chinese,
       );
 
-      if (!active) return;
+      if (!active || !result) return;
 
       setPronunciation(result);
-      setPronunciationLoading(false);
     }
 
     loadPronunciation();
@@ -140,15 +134,23 @@ export default function TodayWordCard() {
   const translation =
     item.translation?.trim() || "No translation yet";
 
+  const localPronunciation = getPronunciationData({
+    english: word,
+    chinese: translation,
+  });
+
   const example = item.example_sentence?.trim();
 
   const translatedExample =
     item.translated_example?.trim();
 
   const englishPronunciation =
-    pronunciation?.englishPronunciation?.trim();
+    pronunciation?.englishPronunciation?.trim() ||
+    localPronunciation.english;
 
-  const zhuyin = pronunciation?.zhuyin?.trim();
+  const zhuyin =
+    pronunciation?.zhuyin?.trim() ||
+    localPronunciation.zhuyin;
 
   return (
     <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
@@ -180,9 +182,7 @@ export default function TodayWordCard() {
             </div>
 
             <div className="font-semibold">
-              {pronunciationLoading
-                ? "Loading pronunciation..."
-                : englishPronunciation || "Tap to listen"}
+              {englishPronunciation || "Tap to listen"}
             </div>
           </div>
 
@@ -199,10 +199,8 @@ export default function TodayWordCard() {
               {t.home.todayWord.zhuyin}
             </div>
 
-            <div className="font-semibold">
-              {pronunciationLoading
-                ? "Loading Zhuyin..."
-                : zhuyin || translation}
+            <div className="font-zhuyin font-semibold tracking-[0.02em]">
+              {zhuyin || translation}
             </div>
 
             {zhuyin && (

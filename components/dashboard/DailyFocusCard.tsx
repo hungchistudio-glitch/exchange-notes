@@ -66,17 +66,17 @@ export default function DailyFocusCard({
   return (
     <article className="overflow-hidden rounded-[26px] bg-black p-5 text-white sm:p-6">
       <div className="flex items-start justify-between gap-6">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/38">
             {copy.cardEyebrow}
           </p>
 
-          <h2 className="mt-3 max-w-[240px] text-[30px] font-semibold leading-[1.05] tracking-[-0.045em]">
+          <h2 className="mt-3 whitespace-nowrap text-[clamp(26px,6vw,34px)] font-semibold leading-none tracking-[-0.045em]">
             {sessionTitle}
           </h2>
         </div>
 
-        <span className="flex h-11 min-w-11 items-center justify-center rounded-full border border-white/15 text-sm font-semibold">
+        <span className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-white/15 text-sm font-semibold">
           {loading ? "—" : due}
         </span>
       </div>

@@ -84,7 +84,7 @@ export default function useVocabularyFriendPicker() {
 
       setSendingFriendId(friendId);
       setPendingSharedVocabulary(friendPickerItem);
-      router.push(`/messages?with=${friendId}`);
+      router.push(`/messages/${encodeURIComponent(friendId)}`);
     },
     [friendPickerItem, router, sendingFriendId],
   );
