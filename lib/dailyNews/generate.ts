@@ -6,7 +6,7 @@ import {
   writeDailyNewsCache,
 } from "./cache";
 
-import { fetchNewsCandidates, type CandidateArticle } from "./newsApi";
+import { fetchNewsCandidates } from "./newsApi";
 
 import { enrichNewsWithGemini } from "./gemini";
 
@@ -44,14 +44,6 @@ let inFlightGeneration: Promise<RefreshDailyNewsResult> | null = null;
 /* -------------------------------------------------------------------------- */
 /* General helpers                                                            */
 /* -------------------------------------------------------------------------- */
-
-function normalizeText(value: string, maximumLength: number): string {
-  return value
-    .replace(/\u0000/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, maximumLength);
-}
 
 function isCompleteBilingualCard(card: DailyNewsCard): boolean {
   return Boolean(

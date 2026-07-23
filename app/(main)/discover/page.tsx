@@ -19,7 +19,6 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { useRouter } from "next/navigation";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import VocabularyActionPopover from "@/components/discover/VocabularyActionPopover";
@@ -165,7 +164,6 @@ function getTranslatedCategory(
 }
 
 export default function DiscoverPage() {
-  const router = useRouter();
   const { language, t } = useTranslation();
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
   const [loading, setLoading] = useState(true);

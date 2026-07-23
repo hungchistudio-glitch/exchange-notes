@@ -13,8 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BookmarkPlus,
@@ -575,6 +574,7 @@ function ConversationList() {
 // ---- Chat room (?with={friendId}) ------------------------------------------
 
 function ChatRoom({ friendId }: { friendId: string }) {
+  const router = useRouter();
   const { t, isTraditionalChinese } = useTranslation();
   const messageLocale = isTraditionalChinese ? "zh-TW" : "en-US";
 
@@ -1327,15 +1327,15 @@ function ChatRoom({ friendId }: { friendId: string }) {
             </div>
           ) : (
             <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center">
-              <Link
-                href="/messages"
-                replace
+              <button
+                type="button"
+                onClick={() => router.replace("/messages")}
                 aria-label={t.messages.backToMessages}
                 title={t.messages.backToMessages}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95"
+                className="flex h-11 w-11 touch-manipulation items-center justify-center rounded-full text-black/65 transition-colors hover:bg-black/[0.04] active:scale-95 active:bg-black/[0.06]"
               >
-                <ArrowLeft size={18} strokeWidth={1.7} />
-              </Link>
+                <ArrowLeft size={20} strokeWidth={1.8} />
+              </button>
 
               <div className="min-w-0 px-3 text-center">
                 <p className="truncate text-[15px] font-semibold tracking-[-0.015em] text-black">

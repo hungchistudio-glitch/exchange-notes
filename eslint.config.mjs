@@ -15,7 +15,7 @@ export default defineConfig([
   globalIgnores([
     ".next/**",
     "node_modules/**",
-    "_backups/**",
+    ".backups/**",
     "**/*.backup.*",
     "**/*.before-*",
     "**/*.tsx.txt",
