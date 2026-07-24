@@ -48,3 +48,23 @@ next-env.d.ts
 .env.local
 .env.*
 !.env.example
+
+# -------------------------
+# Local backups
+# -------------------------
+.backup/
+.backups/
+.local-backups/
+*.bak
+*.backup
+*.patch
+
+# Supabase local cache
+supabase/.temp/
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Standalone backup files
+.backup-*
