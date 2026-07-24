@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 function getSafeRedirectPath(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/home";
+    return "/launch";
   }
 
   return value;

@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AppSplash from "@/components/ui/AppSplash";
 import { createClient } from "@/lib/supabase/client";
 
 const INTERFACE_LANGUAGE_STORAGE_KEY =
   "exchange-notes-interface-language";
+
+type LaunchStatus =
+  | "checking"
+  | "authenticated"
+  | "redirecting";
 
 function hasSelectedLanguage() {
   const savedLanguage = window.localStorage.getItem(
@@ -21,50 +27,77 @@ function hasSelectedLanguage() {
 
 export default function LaunchPage() {
   const router = useRouter();
+  const [status, setStatus] =
+    useState<LaunchStatus>("checking");
 
   useEffect(() => {
     let active = true;
 
-    async function resolveDestination() {
+    async function resolveLaunch() {
       if (!hasSelectedLanguage()) {
-        router.replace("/language");
+        if (active) {
+          setStatus("redirecting");
+          router.replace("/language");
+        }
+
         return;
       }
 
       const supabase = createClient();
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let session =
+        await supabase.auth.getSession();
+
+      if (
+        !session.data.session
+      ) {
+        await new Promise(resolve =>
+          setTimeout(resolve, 300)
+        );
+
+        session =
+          await supabase.auth.getSession();
+      }
 
       if (!active) return;
 
-      router.replace(session ? "/home" : "/login");
+      if (!session.data.session) {
+        setStatus("redirecting");
+        router.replace("/login");
+        return;
+      }
+
+      setStatus("authenticated");
     }
 
-    void resolveDestination();
+    void resolveLaunch();
 
     return () => {
       active = false;
     };
   }, [router]);
 
+  if (status === "authenticated") {
+    return (
+      <AppSplash
+        onComplete={() => {
+          router.replace("/home");
+        }}
+      />
+    );
+  }
+
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea] px-5 text-black">
-      <div className="text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-black text-2xl font-bold text-white">
-          E
-        </div>
-
-        <h1 className="mt-5 text-2xl font-bold tracking-tight">
-          Exchange Notes
-        </h1>
-
-        <div
-          className="mx-auto mt-5 h-5 w-5 animate-spin rounded-full border-2 border-black/20 border-t-black"
-          aria-label="Loading"
-        />
-      </div>
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea] text-black">
+      <div
+        className="h-7 w-7 animate-spin rounded-full border-2 border-black/15 border-t-black"
+        role="status"
+        aria-label={
+          status === "redirecting"
+            ? "Opening Exchange Notes"
+            : "Checking your account"
+        }
+      />
     </main>
   );
 }

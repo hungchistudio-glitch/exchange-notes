@@ -22,7 +22,7 @@ export default function GoogleLoginButton() {
           provider: "google",
           options: {
             redirectTo:
-              `${window.location.origin}/auth/callback`,
+              `${window.location.origin}/auth/callback?next=/launch`,
           },
         });
 

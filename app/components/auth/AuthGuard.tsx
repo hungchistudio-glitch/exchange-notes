@@ -1,13 +1,14 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
-import AppSplash from "@/components/ui/AppSplash";
 import { createClient } from "@/lib/supabase/client";
 
-const LOGIN_SPLASH_KEY = "exchange-notes:show-login-splash";
-
-type AuthStatus = "checking" | "authenticated" | "redirecting";
+type AuthStatus =
+  | "checking"
+  | "authenticated"
+  | "redirecting";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -35,25 +36,23 @@ function AuthLoadingScreen({
   );
 }
 
-export default function AuthGuard({ children }: AuthGuardProps) {
-  const [status, setStatus] = useState<AuthStatus>("checking");
-  const [showSplash, setShowSplash] = useState(false);
+export default function AuthGuard({
+  children,
+}: AuthGuardProps) {
+  const [status, setStatus] =
+    useState<AuthStatus>("checking");
 
   useEffect(() => {
     const supabase = createClient();
     let active = true;
-    let redirectScheduled = false;
+    let redirecting = false;
 
     function redirectToLogin() {
-      if (!active || redirectScheduled) return;
+      if (!active || redirecting) return;
 
-      redirectScheduled = true;
-      setShowSplash(false);
+      redirecting = true;
       setStatus("redirecting");
-
-      window.setTimeout(() => {
-        window.location.replace("/login");
-      }, 0);
+      window.location.replace("/login");
     }
 
     async function checkUser() {
@@ -70,10 +69,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        const shouldShowSplash =
-          window.sessionStorage.getItem(LOGIN_SPLASH_KEY) === "1";
-
-        setShowSplash(shouldShowSplash);
         setStatus("authenticated");
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -85,10 +80,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active) return;
-
-      if (event === "SIGNED_OUT" || !session) {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
         redirectToLogin();
       }
     });
@@ -107,17 +100,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             ? "Returning to login"
             : "Checking your account"
         }
-      />
-    );
-  }
-
-  if (showSplash) {
-    return (
-      <AppSplash
-        onComplete={() => {
-          window.sessionStorage.removeItem(LOGIN_SPLASH_KEY);
-          setShowSplash(false);
-        }}
       />
     );
   }
