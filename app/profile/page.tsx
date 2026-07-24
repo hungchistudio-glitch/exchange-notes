@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
-import AuthGuard from "../components/AuthGuard";
+import AuthGuard from "@/app/components/auth/AuthGuard";
 import { createClient } from "@/lib/supabase/client";
 
 type ProfileForm = {

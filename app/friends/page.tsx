@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import AuthGuard from "../components/AuthGuard";
+import AuthGuard from "@/app/components/auth/AuthGuard";
 
 type AddMethod = "exchange-id" | "email";
 

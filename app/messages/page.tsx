@@ -12,8 +12,8 @@ import {
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
-import AuthGuard from "../components/AuthGuard";
-import LogoutButton from "../components/LogoutButton";
+import AuthGuard from "@/app/components/auth/AuthGuard";
+import LogoutButton from "@/app/components/auth/LogoutButton";
 
 type Message = {
   id: number;

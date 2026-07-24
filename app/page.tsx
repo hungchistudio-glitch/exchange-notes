@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import AuthGuard from "./components/AuthGuard";
+import AuthGuard from "@/app/components/auth/AuthGuard";
 import DailyNews from "./components/DailyNews";
-import LogoutButton from "./components/LogoutButton";
+import LogoutButton from "@/app/components/auth/LogoutButton";
 
 type HomeTab = "news" | "notes";
 
