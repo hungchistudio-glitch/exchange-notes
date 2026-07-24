@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+import { ensureProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeRedirectPath(value: string | null) {
@@ -15,8 +16,12 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
 
   const tokenHash = requestUrl.searchParams.get("token_hash");
-  const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
-  const next = getSafeRedirectPath(requestUrl.searchParams.get("next"));
+  const type = requestUrl.searchParams.get(
+    "type",
+  ) as EmailOtpType | null;
+  const next = getSafeRedirectPath(
+    requestUrl.searchParams.get("next"),
+  );
 
   if (!tokenHash || !type) {
     return NextResponse.redirect(
@@ -51,44 +56,20 @@ export async function GET(request: Request) {
     );
   }
 
-  const displayName =
-    typeof data.user.user_metadata?.display_name === "string"
-      ? data.user.user_metadata.display_name.trim()
-      : "";
+  try {
+    await ensureProfile(supabase, data.user);
+  } catch (profileError) {
+    console.error(
+      "Verified user profile bootstrap failed:",
+      profileError,
+    );
 
-  const exchangeId =
-    typeof data.user.user_metadata?.exchange_id === "string"
-      ? data.user.user_metadata.exchange_id.trim()
-      : "";
-
-  const email = data.user.email?.trim().toLowerCase() ?? "";
-
-  /*
-   * Ensure the public profile exists after the email has been verified.
-   * This is a fallback in case the project does not already have an
-   * auth.users -> profiles database trigger.
-   */
-  if (displayName && exchangeId && email) {
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .upsert(
-        {
-          id: data.user.id,
-          display_name: displayName,
-          exchange_id: exchangeId,
-          email,
-        },
-        {
-          onConflict: "id",
-        },
-      );
-
-    if (profileError) {
-      console.warn(
-        "Verified user profile upsert failed:",
-        profileError.message,
-      );
-    }
+    return NextResponse.redirect(
+      new URL(
+        "/login?verification=profile_setup_failed",
+        requestUrl.origin,
+      ),
+    );
   }
 
   return NextResponse.redirect(

@@ -1,6 +1,6 @@
-import type { User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
+import { ensureProfile } from "@/lib/auth/profile";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeRedirectPath(value: string | null) {
@@ -9,101 +9,6 @@ function getSafeRedirectPath(value: string | null) {
   }
 
   return value;
-}
-
-function getMetadataString(user: User, keys: string[]) {
-  for (const key of keys) {
-    const value = user.user_metadata?.[key];
-
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-  }
-
-  return "";
-}
-
-function createDisplayName(user: User) {
-  const metadataName = getMetadataString(user, [
-    "display_name",
-    "full_name",
-    "name",
-  ]);
-
-  if (metadataName) {
-    return metadataName;
-  }
-
-  const emailName = user.email?.split("@")[0]?.trim();
-
-  return emailName || "Exchange Notes User";
-}
-
-function createExchangeId(user: User) {
-  const emailPrefix =
-    user.email?.split("@")[0]?.toLowerCase() ?? "user";
-
-  const normalizedPrefix = emailPrefix
-    .replace(/[^a-z0-9_]/g, "")
-    .slice(0, 18);
-
-  const safePrefix = normalizedPrefix || "user";
-  const uniqueSuffix = user.id.replace(/-/g, "").slice(0, 6);
-
-  return `${safePrefix}_${uniqueSuffix}`;
-}
-
-async function ensureGoogleProfile(user: User) {
-  const supabase = await createClient();
-
-  const {
-    data: existingProfile,
-    error: lookupError,
-  } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (lookupError) {
-    throw new Error(
-      `Profile lookup failed: ${lookupError.message}`,
-    );
-  }
-
-  if (existingProfile) {
-    return;
-  }
-
-  const email = user.email?.trim().toLowerCase();
-
-  if (!email) {
-    throw new Error(
-      "Google did not return an email address.",
-    );
-  }
-
-  const avatarUrl =
-    getMetadataString(user, [
-      "avatar_url",
-      "picture",
-    ]) || null;
-
-  const { error: insertError } = await supabase
-    .from("profiles")
-    .insert({
-      id: user.id,
-      email,
-      display_name: createDisplayName(user),
-      exchange_id: createExchangeId(user),
-      avatar_url: avatarUrl,
-    });
-
-  if (insertError) {
-    throw new Error(
-      `Profile creation failed: ${insertError.message}`,
-    );
-  }
 }
 
 export async function GET(request: Request) {
@@ -144,7 +49,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    await ensureGoogleProfile(data.user);
+    await ensureProfile(supabase, data.user);
   } catch (profileError) {
     console.error(
       "Google profile bootstrap failed:",
