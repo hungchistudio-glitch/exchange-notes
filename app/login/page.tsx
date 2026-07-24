@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
@@ -36,13 +34,6 @@ export default function LoginPage() {
           Your Google account is used securely to create or access
           your private Exchange Notes account.
         </p>
-
-        <Link
-          href="/language"
-          className="mt-8 block text-center text-sm font-semibold text-neutral-500 underline-offset-4 transition hover:text-black hover:underline"
-        >
-          {copy.changeLanguage}
-        </Link>
       </section>
     </main>
   );

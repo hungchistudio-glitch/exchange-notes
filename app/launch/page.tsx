@@ -1,52 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import AppSplash from "@/components/ui/AppSplash";
 import { createClient } from "@/lib/supabase/client";
 
-const INTERFACE_LANGUAGE_STORAGE_KEY =
-  "exchange-notes-interface-language";
-
-type LaunchStatus =
-  | "checking"
-  | "authenticated"
-  | "redirecting";
-
-function hasSelectedLanguage() {
-  const savedLanguage = window.localStorage.getItem(
-    INTERFACE_LANGUAGE_STORAGE_KEY,
-  );
-
-  return (
-    savedLanguage === "english" ||
-    savedLanguage === "traditional-chinese"
-  );
-}
-
 export default function LaunchPage() {
   const router = useRouter();
-  const [status, setStatus] =
-    useState<LaunchStatus>("checking");
+  const destinationRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    async function resolveLaunch() {
-      if (!hasSelectedLanguage()) {
-        if (active) {
-          setStatus("redirecting");
-          router.replace("/language");
-        }
-
-        return;
-      }
-
+    async function resolveDestination() {
       const supabase = createClient();
-
-      let session =
-        await supabase.auth.getSession();
+      let session = await supabase.auth.getSession();
 
       console.log("[Launch] first session check", {
         hasSession: Boolean(session.data.session),
@@ -54,15 +23,9 @@ export default function LaunchPage() {
         errorMessage: session.error?.message ?? null,
       });
 
-      if (
-        !session.data.session
-      ) {
-        await new Promise(resolve =>
-          setTimeout(resolve, 300)
-        );
-
-        session =
-          await supabase.auth.getSession();
+      if (!session.data.session) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        session = await supabase.auth.getSession();
 
         console.log("[Launch] second session check", {
           hasSession: Boolean(session.data.session),
@@ -73,43 +36,33 @@ export default function LaunchPage() {
 
       if (!active) return;
 
-      if (!session.data.session) {
-        setStatus("redirecting");
-        router.replace("/login");
-        return;
-      }
-
-      setStatus("authenticated");
+      destinationRef.current = session.data.session ? "/home" : "/login";
     }
 
-    void resolveLaunch();
+    void resolveDestination();
 
     return () => {
       active = false;
     };
-  }, [router]);
-
-  if (status === "authenticated") {
-    return (
-      <AppSplash
-        onComplete={() => {
-          router.replace("/home");
-        }}
-      />
-    );
-  }
+  }, []);
 
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea] text-black">
-      <div
-        className="h-7 w-7 animate-spin rounded-full border-2 border-black/15 border-t-black"
-        role="status"
-        aria-label={
-          status === "redirecting"
-            ? "Opening Exchange Notes"
-            : "Checking your account"
+    <AppSplash
+      onComplete={() => {
+        const go = () => router.replace(destinationRef.current as string);
+
+        if (destinationRef.current) {
+          go();
+          return;
         }
-      />
-    </main>
+
+        const poll = setInterval(() => {
+          if (destinationRef.current) {
+            clearInterval(poll);
+            go();
+          }
+        }, 50);
+      }}
+    />
   );
 }
