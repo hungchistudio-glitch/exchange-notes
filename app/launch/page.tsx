@@ -48,6 +48,12 @@ export default function LaunchPage() {
       let session =
         await supabase.auth.getSession();
 
+      console.log("[Launch] first session check", {
+        hasSession: Boolean(session.data.session),
+        userId: session.data.session?.user.id ?? null,
+        errorMessage: session.error?.message ?? null,
+      });
+
       if (
         !session.data.session
       ) {
@@ -57,6 +63,12 @@ export default function LaunchPage() {
 
         session =
           await supabase.auth.getSession();
+
+        console.log("[Launch] second session check", {
+          hasSession: Boolean(session.data.session),
+          userId: session.data.session?.user.id ?? null,
+          errorMessage: session.error?.message ?? null,
+        });
       }
 
       if (!active) return;

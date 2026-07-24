@@ -18,6 +18,15 @@ export async function GET(request: Request) {
     requestUrl.searchParams.get("next"),
   );
 
+  console.log("[OAuth callback] request received", {
+    origin: requestUrl.origin,
+    hasCode: Boolean(code),
+    next,
+    hasForwardedHost: Boolean(
+      request.headers.get("x-forwarded-host"),
+    ),
+  });
+
   if (!code) {
     return NextResponse.redirect(
       new URL(
@@ -33,6 +42,13 @@ export async function GET(request: Request) {
     data,
     error,
   } = await supabase.auth.exchangeCodeForSession(code);
+
+  console.log("[OAuth callback] code exchange result", {
+    success: !error && Boolean(data.user),
+    hasUser: Boolean(data.user),
+    userId: data.user?.id ?? null,
+    errorMessage: error?.message ?? null,
+  });
 
   if (error || !data.user) {
     console.error(
@@ -50,6 +66,10 @@ export async function GET(request: Request) {
 
   try {
     await ensureProfile(supabase, data.user);
+
+    console.log("[OAuth callback] profile ready", {
+      userId: data.user.id,
+    });
   } catch (profileError) {
     console.error(
       "Google profile bootstrap failed:",
