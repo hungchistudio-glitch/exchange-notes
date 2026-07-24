@@ -5,13 +5,27 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    // Next.js
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+
+    // Local backup folders
+    ".backup/**",
+    ".backups/**",
+    ".local-backups/**",
+
+    // Standalone backup files
+    ".backup-*",
+    "**/*.bak",
+    "**/*.backup",
+    "**/*.patch",
+
+    // Supabase local cache
+    "supabase/.temp/**",
   ]),
 ]);
 
