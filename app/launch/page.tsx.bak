@@ -1,0 +1,94 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import AppSplash from "@/components/ui/AppSplash";
+import { createClient } from "@/lib/supabase/client";
+
+const INTERFACE_LANGUAGE_STORAGE_KEY =
+  "exchange-notes-interface-language";
+
+type LaunchStatus =
+  | "checking"
+  | "authenticated"
+  | "redirecting";
+
+function hasSelectedLanguage() {
+  const savedLanguage = window.localStorage.getItem(
+    INTERFACE_LANGUAGE_STORAGE_KEY,
+  );
+
+  return (
+    savedLanguage === "english" ||
+    savedLanguage === "traditional-chinese"
+  );
+}
+
+export default function LaunchPage() {
+  const router = useRouter();
+  const [status, setStatus] =
+    useState<LaunchStatus>("checking");
+
+  useEffect(() => {
+    let active = true;
+
+    async function resolveLaunch() {
+      if (!hasSelectedLanguage()) {
+        if (active) {
+          setStatus("redirecting");
+          router.replace("/language");
+        }
+
+        return;
+      }
+
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (!active) return;
+
+      if (error || !user) {
+        setStatus("redirecting");
+        router.replace("/login");
+        return;
+      }
+
+      setStatus("authenticated");
+    }
+
+    void resolveLaunch();
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  if (status === "authenticated") {
+    return (
+      <AppSplash
+        onComplete={() => {
+          router.replace("/home");
+        }}
+      />
+    );
+  }
+
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f1ea] text-black">
+      <div
+        className="h-7 w-7 animate-spin rounded-full border-2 border-black/15 border-t-black"
+        role="status"
+        aria-label={
+          status === "redirecting"
+            ? "Opening Exchange Notes"
+            : "Checking your account"
+        }
+      />
+    </main>
+  );
+}
