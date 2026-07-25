@@ -1,38 +1,41 @@
-const CACHE_NAME = "exchange-notes-v1";
-const CORE_ASSETS = ["/", "/login", "/signup"];
+/*
+ * Exchange Notes Service Worker retirement build.
+ *
+ * This file intentionally unregisters the legacy service worker
+ * and removes all Cache Storage entries created by older builds.
+ */
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
-  );
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
-  );
-  self.clients.claim();
-});
+    (async () => {
+      const cacheNames = await caches.keys();
 
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+      await Promise.all(
+        cacheNames.map((cacheName) =>
+          caches.delete(cacheName)
+        )
+      );
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) =>
-          cache.put(event.request, clone)
-        );
-        return response;
-      })
-      .catch(() => caches.match(event.request))
+      await self.registration.unregister();
+
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      await Promise.all(
+        clients.map((client) => {
+          if ("navigate" in client) {
+            return client.navigate(client.url);
+          }
+
+          return Promise.resolve();
+        })
+      );
+    })()
   );
 });
