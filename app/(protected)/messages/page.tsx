@@ -12,8 +12,7 @@ import {
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/client";
-import AuthGuard from "../components/AuthGuard";
-import LogoutButton from "../components/LogoutButton";
+import LogoutButton from "../../components/LogoutButton";
 
 type Message = {
   id: number;
@@ -549,7 +548,6 @@ export default function MessagesPage() {
     !sending;
 
   return (
-    <AuthGuard>
       <main className="h-[100dvh] overflow-hidden bg-[#f5f3ed] text-neutral-950">
         <div className="mx-auto flex h-full w-full max-w-xl flex-col">
           <header className="z-20 shrink-0 border-b border-black/[0.06] bg-[#f5f3ed]/90 px-4 backdrop-blur-xl">
@@ -814,6 +812,5 @@ export default function MessagesPage() {
           </div>
         </div>
       </main>
-    </AuthGuard>
   );
 }

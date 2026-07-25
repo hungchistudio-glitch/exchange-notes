@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import AuthGuard from "../components/AuthGuard";
 
 type AddMethod = "exchange-id" | "email";
 
@@ -31,7 +30,6 @@ export default function FriendsPage() {
   }
 
   return (
-    <AuthGuard>
       <main className="min-h-screen bg-[#f4f1ea] px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
         <div className="mx-auto max-w-2xl">
           <header>
@@ -224,6 +222,5 @@ export default function FriendsPage() {
           </Link>
         </nav>
       </main>
-    </AuthGuard>
   );
 }
