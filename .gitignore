@@ -16,3 +16,6 @@ tsconfig.tsbuildinfo
 .backups/
 .local-backups/
 .backup-*.tsx
+
+# Supabase CLI local temporary files
+supabase/.temp/
