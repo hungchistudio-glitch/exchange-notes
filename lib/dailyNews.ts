@@ -1,14 +1,27 @@
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * All Gemini + Google Search generation logic for the Daily News feature,
- * shared between the (server-only, cron-triggered) generation job and any
- * future admin/manual regeneration tooling.
+ * Daily News generation, redesigned to NOT depend on Gemini's Google Search
+ * grounding tool. As of late 2025 / 2026, Google appears to require a
+ * billing account linked to the Google Cloud project before grounding will
+ * work at all — even brand-new, unused projects get an immediate 429
+ * RESOURCE_EXHAUSTED the moment the `google_search` tool is attached, while
+ * plain (non-grounded) generation on the same key works fine. Rather than
+ * ask the user to link a credit card just to keep this feature, we get real,
+ * dated news articles from The Guardian's free Open Platform API (no
+ * billing required, explicitly permits non-commercial production use) and
+ * use Gemini ONLY for the bilingual rewriting/translation/vocabulary work —
+ * a plain text-in/text-out call with no tools attached, which stays on the
+ * normal free-tier budget we've already confirmed works.
  *
- * Nothing in this file is ever imported by a route that runs on a normal
- * user page load — see app/api/cron/daily-news/route.ts for the only
- * caller. The public-facing app/api/daily-news/route.ts reads pre-generated
- * results from Supabase instead of calling this.
+ * This also improves trustworthiness versus the old design: the source URL,
+ * source name, and publish date now come directly from The Guardian's API
+ * response instead of being regurgitated by the model, so they can never be
+ * hallucinated or point to the wrong article.
+ *
+ * Still only ever called from the scheduled cron job — see
+ * app/api/cron/daily-news/route.ts. Never call this from a route that runs
+ * on a user page load.
  */
 
 export type VocabularyItem = {
@@ -19,8 +32,8 @@ export type VocabularyItem = {
   chineseExample: string;
 };
 
-export type GeneratedNewsCard = {
-  region: "us" | "taiwan" | "international" | "europe" | "culture";
+export type DailyNewsCard = {
+  id: string;
   category: string;
   englishTitle: string;
   chineseTitle: string;
@@ -32,24 +45,25 @@ export type GeneratedNewsCard = {
   vocabulary: VocabularyItem[];
 };
 
-export type DailyNewsCard = GeneratedNewsCard & {
-  id: string;
+type GuardianArticle = {
+  category: string;
+  title: string;
+  url: string;
+  publishedAt: string;
+  excerpt: string;
 };
 
-type GeminiNewsResponse = {
-  cards: GeneratedNewsCard[];
+type LearningItem = {
+  englishTitle: string;
+  chineseTitle: string;
+  englishSummary: string;
+  chineseSummary: string;
+  vocabulary: VocabularyItem[];
 };
 
-const ALLOWED_CATEGORIES = new Set([
-  "World",
-  "Politics",
-  "Business",
-  "Technology",
-  "Science",
-  "Climate",
-  "Health",
-  "Culture",
-]);
+type GeminiLearningResponse = {
+  cards: LearningItem[];
+};
 
 const ALLOWED_PARTS_OF_SPEECH = new Set([
   "noun",
@@ -59,122 +73,21 @@ const ALLOWED_PARTS_OF_SPEECH = new Set([
   "phrase",
 ]);
 
-const TRUSTED_DOMAINS = [
-  "reuters.com",
-  "apnews.com",
-  "bbc.com",
-  "bbc.co.uk",
-  "theguardian.com",
-  "npr.org",
-  "aljazeera.com",
-  "dw.com",
-  "france24.com",
-  "cbc.ca",
-  "abc.net.au",
-  "channelnewsasia.com",
-  "japantimes.co.jp",
-  "scmp.com",
-  "bloomberg.com",
-  "cnbc.com",
-  "ft.com",
-  "economist.com",
-  "euronews.com",
-  "politico.com",
-  "politico.eu",
-  "nature.com",
-  "science.org",
-  "who.int",
-  "un.org",
+// One Guardian section per slot. Kept small and diverse rather than trying
+// to replicate the old 5-region (US/Taiwan/international/Europe/culture)
+// design, since a single-publisher source can't credibly claim that kind of
+// geographic breadth. Maps cleanly onto the category labels already used in
+// the UI.
+const GUARDIAN_SECTIONS: { section: string; category: string }[] = [
+  { section: "world", category: "World" },
+  { section: "business", category: "Business" },
+  { section: "technology", category: "Technology" },
+  { section: "science", category: "Science" },
+  { section: "culture", category: "Culture" },
 ];
 
-const NEWS_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    cards: {
-      type: "array",
-      minItems: 5,
-      maxItems: 5,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          region: {
-            type: "string",
-            enum: ["us", "taiwan", "international", "europe", "culture"],
-          },
-          category: {
-            type: "string",
-            enum: [
-              "World",
-              "Politics",
-              "Business",
-              "Technology",
-              "Science",
-              "Climate",
-              "Health",
-              "Culture",
-            ],
-          },
-          englishTitle: { type: "string", minLength: 8, maxLength: 120 },
-          chineseTitle: { type: "string", minLength: 4, maxLength: 80 },
-          englishSummary: { type: "string", minLength: 40, maxLength: 320 },
-          chineseSummary: { type: "string", minLength: 20, maxLength: 220 },
-          sourceName: { type: "string", minLength: 2, maxLength: 60 },
-          sourceUrl: { type: "string", minLength: 10, maxLength: 500 },
-          publishedAt: { type: "string", minLength: 10, maxLength: 40 },
-          vocabulary: {
-            type: "array",
-            minItems: 3,
-            maxItems: 3,
-            items: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                word: { type: "string", minLength: 2, maxLength: 45 },
-                translation: { type: "string", minLength: 1, maxLength: 40 },
-                partOfSpeech: {
-                  type: "string",
-                  enum: ["noun", "verb", "adjective", "adverb", "phrase"],
-                },
-                englishExample: {
-                  type: "string",
-                  minLength: 10,
-                  maxLength: 180,
-                },
-                chineseExample: {
-                  type: "string",
-                  minLength: 5,
-                  maxLength: 130,
-                },
-              },
-              required: [
-                "word",
-                "translation",
-                "partOfSpeech",
-                "englishExample",
-                "chineseExample",
-              ],
-            },
-          },
-        },
-        required: [
-          "region",
-          "category",
-          "englishTitle",
-          "chineseTitle",
-          "englishSummary",
-          "chineseSummary",
-          "sourceName",
-          "sourceUrl",
-          "publishedAt",
-          "vocabulary",
-        ],
-      },
-    },
-  },
-  required: ["cards"],
-} as const;
+const MINIMUM_BODY_LENGTH = 300;
+const EXCERPT_BODY_LENGTH = 1200;
 
 function normalizeText(value: unknown, maximumLength: number) {
   if (typeof value !== "string") {
@@ -197,77 +110,8 @@ function normalizeMultilineText(value: unknown, maximumLength: number) {
     .slice(0, maximumLength);
 }
 
-function normalizeDomain(value: string) {
-  return value.toLowerCase().replace(/^www\./, "").trim();
-}
-
-function getUrlDomain(value: string) {
-  try {
-    return normalizeDomain(new URL(value).hostname);
-  } catch {
-    return "";
-  }
-}
-
-function isTrustedSource(value: string) {
-  const domain = getUrlDomain(value);
-
-  if (!domain) {
-    return false;
-  }
-
-  return TRUSTED_DOMAINS.some(
-    (trustedDomain) =>
-      domain === trustedDomain || domain.endsWith(`.${trustedDomain}`)
-  );
-}
-
-function normalizeSourceUrl(value: unknown) {
-  if (typeof value !== "string") {
-    return "";
-  }
-
-  try {
-    const url = new URL(value.trim());
-
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return "";
-    }
-
-    url.hash = "";
-
-    const removableParameters = [
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "utm_content",
-      "utm_term",
-      "gclid",
-      "fbclid",
-    ];
-
-    for (const parameter of removableParameters) {
-      url.searchParams.delete(parameter);
-    }
-
-    return url.toString();
-  } catch {
-    return "";
-  }
-}
-
-function normalizePublishedAt(value: unknown) {
-  if (typeof value !== "string") {
-    return new Date().toISOString();
-  }
-
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return new Date().toISOString();
-  }
-
-  return parsedDate.toISOString();
+function stripHtml(value: string) {
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function createStableId(value: string) {
@@ -287,6 +131,78 @@ function stripJsonCodeFence(value: string) {
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
+}
+
+type GuardianApiFields = {
+  trailText?: string;
+  bodyText?: string;
+};
+
+type GuardianApiResult = {
+  id: string;
+  type: string;
+  webTitle: string;
+  webUrl: string;
+  webPublicationDate: string;
+  fields?: GuardianApiFields;
+};
+
+async function fetchGuardianArticle(
+  section: string,
+  category: string,
+  apiKey: string
+): Promise<GuardianArticle | null> {
+  const url = new URL("https://content.guardianapis.com/search");
+  url.searchParams.set("section", section);
+  url.searchParams.set("order-by", "newest");
+  url.searchParams.set("page-size", "5");
+  url.searchParams.set("show-fields", "trailText,bodyText");
+  url.searchParams.set("api-key", apiKey);
+
+  const response = await fetch(url.toString(), {
+    // The cron job already runs on a schedule; no need for Next.js's own
+    // data cache on top of that.
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    console.error(
+      `Guardian API request failed for section "${section}": ${response.status}`
+    );
+    return null;
+  }
+
+  const data = (await response.json()) as {
+    response?: { results?: GuardianApiResult[] };
+  };
+
+  const results = data.response?.results ?? [];
+
+  for (const result of results) {
+    if (result.type !== "article") {
+      continue;
+    }
+
+    const bodyText = stripHtml(result.fields?.bodyText ?? "");
+
+    if (bodyText.length < MINIMUM_BODY_LENGTH) {
+      continue;
+    }
+
+    const trailText = stripHtml(result.fields?.trailText ?? "");
+
+    return {
+      category,
+      title: normalizeText(result.webTitle, 200),
+      url: result.webUrl,
+      publishedAt: result.webPublicationDate,
+      excerpt: [trailText, bodyText.slice(0, EXCERPT_BODY_LENGTH)]
+        .filter(Boolean)
+        .join("\n\n"),
+    };
+  }
+
+  return null;
 }
 
 function validateVocabularyItem(value: unknown): VocabularyItem | null {
@@ -315,21 +231,17 @@ function validateVocabularyItem(value: unknown): VocabularyItem | null {
   return { word, translation, partOfSpeech, englishExample, chineseExample };
 }
 
-function validateNewsCard(value: unknown): DailyNewsCard | null {
+function validateLearningItem(value: unknown): LearningItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   const candidate = value as Record<string, unknown>;
 
-  const category = normalizeText(candidate.category, 30);
   const englishTitle = normalizeText(candidate.englishTitle, 120);
   const chineseTitle = normalizeText(candidate.chineseTitle, 80);
   const englishSummary = normalizeMultilineText(candidate.englishSummary, 320);
   const chineseSummary = normalizeMultilineText(candidate.chineseSummary, 220);
-  const sourceName = normalizeText(candidate.sourceName, 60);
-  const sourceUrl = normalizeSourceUrl(candidate.sourceUrl);
-  const publishedAt = normalizePublishedAt(candidate.publishedAt);
 
   const rawVocabulary = Array.isArray(candidate.vocabulary)
     ? candidate.vocabulary
@@ -340,133 +252,159 @@ function validateNewsCard(value: unknown): DailyNewsCard | null {
     .filter((item): item is VocabularyItem => item !== null)
     .slice(0, 3);
 
-  const region =
-    typeof candidate.region === "string" &&
-    ["us", "taiwan", "international", "europe", "culture"].includes(
-      candidate.region
-    )
-      ? (candidate.region as DailyNewsCard["region"])
-      : "international";
-
   if (
-    !ALLOWED_CATEGORIES.has(category) ||
     !englishTitle ||
     !chineseTitle ||
     !englishSummary ||
     !chineseSummary ||
-    !sourceName ||
-    !sourceUrl ||
-    !isTrustedSource(sourceUrl) ||
     vocabulary.length !== 3
   ) {
     return null;
   }
 
-  return {
-    id: createStableId(`${sourceUrl}:${englishTitle}`),
-    region,
-    category,
-    englishTitle,
-    chineseTitle,
-    englishSummary,
-    chineseSummary,
-    sourceName,
-    sourceUrl,
-    publishedAt,
-    vocabulary,
-  };
+  return { englishTitle, chineseTitle, englishSummary, chineseSummary, vocabulary };
 }
 
-function createPrompt() {
-  const currentTime = new Date().toISOString();
+function buildLearningSchema(count: number) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      cards: {
+        type: "array",
+        minItems: count,
+        maxItems: count,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            englishTitle: { type: "string", minLength: 8, maxLength: 120 },
+            chineseTitle: { type: "string", minLength: 4, maxLength: 80 },
+            englishSummary: { type: "string", minLength: 40, maxLength: 320 },
+            chineseSummary: { type: "string", minLength: 20, maxLength: 220 },
+            vocabulary: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  word: { type: "string", minLength: 2, maxLength: 45 },
+                  translation: {
+                    type: "string",
+                    minLength: 1,
+                    maxLength: 40,
+                  },
+                  partOfSpeech: {
+                    type: "string",
+                    enum: ["noun", "verb", "adjective", "adverb", "phrase"],
+                  },
+                  englishExample: {
+                    type: "string",
+                    minLength: 10,
+                    maxLength: 180,
+                  },
+                  chineseExample: {
+                    type: "string",
+                    minLength: 5,
+                    maxLength: 130,
+                  },
+                },
+                required: [
+                  "word",
+                  "translation",
+                  "partOfSpeech",
+                  "englishExample",
+                  "chineseExample",
+                ],
+              },
+            },
+          },
+          required: [
+            "englishTitle",
+            "chineseTitle",
+            "englishSummary",
+            "chineseSummary",
+            "vocabulary",
+          ],
+        },
+      },
+    },
+    required: ["cards"],
+  } as const;
+}
+
+function createLearningPrompt(articles: GuardianArticle[]) {
+  const articleBlocks = articles
+    .map(
+      (article, index) => `
+Article ${index + 1} (category: ${article.category}):
+Headline: ${article.title}
+Excerpt: ${article.excerpt}
+`.trim()
+    )
+    .join("\n\n---\n\n");
 
   return `
-Current UTC time: ${currentTime}
+You are building a bilingual (English / Traditional Chinese) vocabulary
+lesson from ${articles.length} real news articles published by The Guardian.
+Use ONLY the facts, names, and numbers stated in each excerpt below. Do not
+invent or add any detail, quote, or claim that is not present in the given
+text.
 
-Search Google for the most important verified news published or materially
-updated within the last 36 hours.
+${articleBlocks}
 
-Select exactly five distinct stories with this required mix:
-1. One major U.S. domestic news story.
-2. One major Taiwan news story (politics, economy, society, or technology
-   in Taiwan specifically).
-3. One major international/global news story not centered on the U.S. or
-   Taiwan.
-4. One major Europe-focused news story.
-5. One story from any of: technology, film, visual art, architecture,
-   academic research, space exploration, physical/natural science, or
-   history — pick whichever has the most substantive recent development.
+For EACH article above, in the same order, produce:
+- englishTitle: a clear, natural CEFR B1-B2 English headline. You may
+  lightly simplify difficult vocabulary from the original headline, but the
+  meaning must stay the same.
+- chineseTitle: a natural Traditional Chinese translation as used in Taiwan.
+- englishSummary: a concise 2-3 sentence English summary using only facts
+  present in the excerpt.
+- chineseSummary: an accurate Traditional Chinese translation of that
+  summary.
+- vocabulary: exactly 3 useful CEFR B1-B2 English vocabulary items drawn
+  from the headline or excerpt. For each: give its Traditional Chinese
+  meaning, its part of speech, one original English example sentence, and
+  that example's Traditional Chinese translation. Examples must not
+  introduce new claims about the article.
 
-Within these five, prioritize substantive stories over trivial ones:
-- major geopolitical developments, elections, and government decisions
-- economics, business, and trade
-- technology and scientific breakthroughs
-- space exploration and astronomy
-- architecture, film, and the visual arts (major works, awards, discoveries)
-- significant academic or historical findings
-- climate and environmental events
-- significant public-health developments
-
-Do not select:
-- celebrity gossip or tabloid content
-- sports scores or routine sports coverage
-- shopping content or product marketing
-- opinion columns
-- live-blog pages
-- duplicate reports about the same event
-- rumors or unverified social-media claims
-- stories whose original publication date cannot be verified
-
-Source requirements:
-- Use a direct original article URL.
-- Do not use a Google Search result or redirect URL.
-- For U.S./international/Europe stories, use only reputable publishers such
-  as Reuters, Associated Press, BBC, NPR, The Guardian, Al Jazeera, DW,
-  France 24, CBC, ABC Australia, Channel NewsAsia, Bloomberg, Financial
-  Times, CNBC, The Economist, Euronews, Politico, Nature, Science, WHO, or
-  the United Nations.
-- For the Taiwan story, use only reputable publishers such as Central News
-  Agency (CNA/中央社), Taipei Times, Focus Taiwan, or Radio Taiwan
-  International.
-- For the technology/film/art/architecture/academia/space/science/history
-  story, reputable specialist outlets are also acceptable, such as Nature,
-  Science, MIT Technology Review, The Art Newspaper, Architectural Digest,
-  Architectural Record, Smithsonian Magazine, Space.com, or NASA/ESA press
-  releases, in addition to the general outlets above.
-- Make sure the URL points to the article being summarized.
-- Do not invent URLs, source names, dates, quotations, numbers, or facts.
-
-Learning requirements:
-- Rewrite each headline in clear, natural CEFR B1-B2 English.
-- Provide a natural Traditional Chinese translation used in Taiwan.
-- Write a concise English summary using only verified facts supported by the searched article.
-- Provide an accurate Traditional Chinese translation of the summary.
-- Select exactly three useful B1-B2 English vocabulary items from the headline or summary.
-- Give the Traditional Chinese meaning and part of speech.
-- Write one original English learning example and its Traditional Chinese translation for each word.
-- The vocabulary examples must not introduce new claims about the news event.
-- Set the "region" field on each card to one of: "us", "taiwan",
-  "international", "europe", "culture" — matching which of the five
-  required slots above it fills ("culture" for the
-  technology/film/art/architecture/academia/space/science/history slot).
-
-Return exactly five cards matching the required JSON schema.
+Return exactly ${articles.length} cards, in the same order as the articles
+above, matching the required JSON schema.
 `.trim();
 }
 
 /**
- * Runs exactly one Gemini + Google Search call and returns validated,
- * deduplicated news cards. Throws on any failure — callers (the cron route)
- * are responsible for catching and reporting errors.
- *
- * This is intentionally the ONLY place in the app that calls Gemini for
- * daily news. It should only ever be invoked from a scheduled job, never
- * from a route that runs on a user page load.
+ * Fetches real articles from The Guardian's free Open Platform API, then
+ * makes exactly one (non-grounded) Gemini call to produce bilingual
+ * learning content for them. Throws on any failure — callers (the cron
+ * route) are responsible for catching and reporting errors.
  */
 export async function generateDailyNews(): Promise<{
   cards: DailyNewsCard[];
   generatedAt: string;
 }> {
+  const guardianApiKey = process.env.GUARDIAN_API_KEY;
+
+  if (!guardianApiKey) {
+    throw new Error("GUARDIAN_API_KEY is not configured on the server.");
+  }
+
+  const articles = (
+    await Promise.all(
+      GUARDIAN_SECTIONS.map((entry) =>
+        fetchGuardianArticle(entry.section, entry.category, guardianApiKey)
+      )
+    )
+  ).filter((article): article is GuardianArticle => article !== null);
+
+  if (articles.length === 0) {
+    throw new Error(
+      "The Guardian API did not return any usable articles today."
+    );
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -477,14 +415,16 @@ export async function generateDailyNews(): Promise<{
 
   const client = new GoogleGenAI({ apiKey });
 
+  // Deliberately no `tools` field here — this call never touches Google
+  // Search grounding, so it only ever draws on the normal (non-grounded)
+  // Gemini free tier, which we've confirmed works reliably with this key.
   const interaction = await client.interactions.create({
     model,
-    input: createPrompt(),
-    tools: [{ type: "google_search" }],
+    input: createLearningPrompt(articles),
     response_format: {
       type: "text",
       mime_type: "application/json",
-      schema: NEWS_SCHEMA,
+      schema: buildLearningSchema(articles.length),
     },
     generation_config: {
       thinking_level: "low",
@@ -503,26 +443,41 @@ export async function generateDailyNews(): Promise<{
 
   const parsed = JSON.parse(
     stripJsonCodeFence(outputText)
-  ) as GeminiNewsResponse;
+  ) as GeminiLearningResponse;
 
-  const rawCards = Array.isArray(parsed.cards) ? parsed.cards : [];
+  const rawLearningItems = Array.isArray(parsed.cards) ? parsed.cards : [];
 
-  const cards = rawCards
-    .map(validateNewsCard)
-    .filter((card): card is DailyNewsCard => card !== null);
+  const cards: DailyNewsCard[] = [];
 
-  const uniqueCards = Array.from(
-    new Map(cards.map((card) => [card.sourceUrl, card])).values()
-  ).slice(0, 5);
+  articles.forEach((article, index) => {
+    const learning = validateLearningItem(rawLearningItems[index]);
 
-  if (uniqueCards.length === 0) {
+    if (!learning) {
+      return;
+    }
+
+    cards.push({
+      id: createStableId(article.url),
+      category: article.category,
+      englishTitle: learning.englishTitle,
+      chineseTitle: learning.chineseTitle,
+      englishSummary: learning.englishSummary,
+      chineseSummary: learning.chineseSummary,
+      sourceName: "The Guardian",
+      sourceUrl: article.url,
+      publishedAt: article.publishedAt,
+      vocabulary: learning.vocabulary,
+    });
+  });
+
+  if (cards.length === 0) {
     throw new Error(
-      "Gemini did not return any valid news cards with trusted original sources."
+      "Gemini did not return any valid learning content for today's articles."
     );
   }
 
   return {
-    cards: uniqueCards,
+    cards,
     generatedAt: new Date().toISOString(),
   };
 }

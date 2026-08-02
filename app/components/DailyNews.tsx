@@ -20,7 +20,6 @@ type VocabularyItem = {
 
 type DailyNewsCard = {
   id: string;
-  region: "us" | "taiwan" | "international" | "europe" | "culture";
   category: string;
   englishTitle: string;
   chineseTitle: string;
@@ -49,13 +48,12 @@ type SpeechRate = 0.75 | 1 | 1.25;
 const NOTES_STORAGE_KEY =
   "exchange-notes-home-notes";
 
-const REGION_STYLES: Record<DailyNewsCard["region"], { label: string; badge: string }> = {
-  us: { label: "US", badge: "bg-[#eef7fd] text-[#2b6a99]" },
-  taiwan: { label: "Taiwan", badge: "bg-[#f2faee] text-[#2f6c38]" },
-  international: { label: "World", badge: "bg-[#fdf0f2] text-[#a13f52]" },
-  europe: { label: "Europe", badge: "bg-[#f2eefb] text-[#5a3f9e]" },
-  culture: { label: "Culture", badge: "bg-[#fdf6e6] text-[#95721f]" },
-};
+// Daily News is now sourced entirely from The Guardian (see lib/dailyNews.ts),
+// so the old multi-region (US/Taiwan/international/Europe/culture) badge no
+// longer reflects anything real — every card would show the same source.
+// The category badge (World/Business/Technology/Science/Culture) carries
+// the variety instead.
+const CATEGORY_BADGE_CLASS = "bg-surface text-neutral-700";
 
 function RefreshIcon({
   spinning,
@@ -892,14 +890,8 @@ export default function DailyNews() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${
-                        REGION_STYLES[card.region]?.badge ??
-                        "bg-surface text-neutral-700"
-                      }`}
+                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${CATEGORY_BADGE_CLASS}`}
                     >
-                      {REGION_STYLES[card.region]?.label ?? card.region}
-                    </span>
-                    <span className="rounded-full bg-surface px-3 py-1 text-[10px] font-semibold text-neutral-700">
                       {card.category}
                     </span>
                   </div>
