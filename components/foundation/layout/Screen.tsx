@@ -14,7 +14,7 @@ export default function Screen({
   return (
     <main
       className={[
-        "min-h-[100dvh] bg-[#f5f3ed] text-neutral-950",
+        "min-h-[100dvh] bg-surface text-neutral-950",
         className,
       ]
         .filter(Boolean)

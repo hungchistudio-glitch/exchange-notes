@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "Learn English and Traditional Chinese together, one note at a time.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f4f1ea",
+    background_color: "#f5f3ed",
     theme_color: "#000000",
     icons: [
       {

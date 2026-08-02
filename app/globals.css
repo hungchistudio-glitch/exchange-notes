@@ -3,24 +3,42 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Warm neutral page/card surface. This single value replaces 13 near-
+     identical hex codes (#f5f3ed, #f4f1ea, #f4f2ed, #f0efec, #f1eee7,
+     #f6f4ef, #f7f4ed, #f5f2eb, #f7f4ee, #f7f6f3, #f8f8f6, #e9e8e4, #ebe7de)
+     that had drifted apart across the app. */
+  --surface: #f5f3ed;
+
+  /* Warm neutral border/divider, replacing #e3e3dc and #e8e8e2. */
+  --line: #e3e3dc;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Latin text uses Geist. Traditional Chinese glyphs fall through to a
+   deliberately-chosen, lighter-weight CJK stack instead of whatever the
+   browser's generic sans-serif default happens to be — native "PingFang TC"
+   (macOS/iOS) and "Microsoft JhengHei" (Windows) are already elegant and
+   fairly thin; "Noto Sans TC" (loaded in app/layout.tsx) is the fallback
+   everywhere else. */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-sans),
+    "PingFang TC",
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    "Heiti TC",
+    Arial,
+    Helvetica,
+    sans-serif;
 }

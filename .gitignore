@@ -19,3 +19,7 @@ tsconfig.tsbuildinfo
 
 # Supabase CLI local temporary files
 supabase/.temp/
+
+# Stray archives that shouldn't be committed
+*.tar.gz
+*.zip

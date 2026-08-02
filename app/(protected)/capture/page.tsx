@@ -12,7 +12,8 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
-import { dataUrlToBlob, safeImageExtension } from "@/lib/vocabulary";
+import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
+import { encodeWordCardMessage } from "@/lib/messages/wordCard";
 
 type IdentificationResult = {
   englishName: string;
@@ -130,6 +131,55 @@ function SpinnerIcon() {
   );
 }
 
+function BookmarkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 4.5h12v15l-6-4-6 4v-15z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M5 12h13M13 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function CameraOverlay({
   videoRef,
   onClose,
@@ -217,11 +267,16 @@ function CaptureContent() {
   const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
 
   const sourceParam = searchParams.get("source");
+  const withParam = searchParams.get("with");
 
   const source: CaptureSource =
     sourceParam === "camera" || sourceParam === "library"
       ? sourceParam
       : null;
+
+  const messagesHref = withParam
+    ? `/messages?with=${withParam}`
+    : "/messages";
 
   useEffect(() => {
     setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
@@ -303,9 +358,22 @@ function CaptureContent() {
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
+    const targetLang = language === "en" ? "en-US" : "zh-TW";
+    const langPrefix = language === "en" ? "en" : "zh";
 
-    utterance.lang = language === "en" ? "en-US" : "zh-TW";
+    utterance.lang = targetLang;
     utterance.rate = 0.95;
+
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice =
+      voices.find((voice) => voice.lang === targetLang) ??
+      voices.find((voice) =>
+        voice.lang.toLowerCase().startsWith(langPrefix)
+      );
+
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
 
     utterance.onstart = () => setSpeakingLang(language);
     utterance.onend = () => setSpeakingLang(null);
@@ -596,11 +664,13 @@ function CaptureContent() {
   function createShareText() {
     if (!result) return "";
 
-    return `${result.englishName}
-${result.chineseName}
-
-${result.englishExample}
-${result.chineseExample}`;
+    return encodeWordCardMessage({
+      word: result.englishName,
+      translation: result.chineseName,
+      partOfSpeech: result.partOfSpeech,
+      englishExample: result.englishExample,
+      chineseExample: result.chineseExample,
+    });
   }
 
   async function saveToVocabulary() {
@@ -687,7 +757,7 @@ ${result.chineseExample}`;
       createShareText()
     );
 
-    router.push("/messages");
+    router.push(messagesHref);
   }
 
   function chooseAnotherImage() {
@@ -717,7 +787,7 @@ ${result.chineseExample}`;
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#f4f2ed] text-neutral-950">
+    <main className="min-h-[100dvh] bg-surface text-neutral-950">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col px-4">
         {!cameraActive && (
           <header
@@ -727,7 +797,7 @@ ${result.chineseExample}`;
             }}
           >
             <Link
-              href="/"
+              href={withParam ? messagesHref : "/"}
               className="min-w-14 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
             >
               Cancel
@@ -810,7 +880,7 @@ ${result.chineseExample}`;
         )}
 
         {!cameraActive && imageData && (
-          <section className="flex flex-1 flex-col pb-6">
+          <section className="flex flex-1 flex-col pb-28">
             <div className="overflow-hidden rounded-[24px] bg-neutral-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -818,7 +888,7 @@ ${result.chineseExample}`;
                 alt="Selected object"
                 className={
                   result
-                    ? "h-[28dvh] min-h-[190px] w-full object-cover"
+                    ? "h-[15dvh] max-h-[130px] min-h-[100px] w-full object-cover"
                     : "max-h-[52dvh] w-full object-contain"
                 }
               />
@@ -879,80 +949,144 @@ ${result.chineseExample}`;
                   </span>
                 </div>
 
-                <div className="mt-3">
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="min-w-0 break-words text-[30px] font-semibold tracking-[-0.035em]">
-                      {result.englishName}
-                    </h2>
+                <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
+                  {result.englishName}
+                </h2>
+                <p className="mt-0.5 break-words text-base font-medium text-neutral-700">
+                  {result.chineseName}
+                </p>
+                <p className="mt-1 text-xs text-neutral-400">
+                  {result.partOfSpeech}
+                </p>
+
+                <div className="mt-2.5 space-y-1.5">
+                  <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left">
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                        English
+                      </span>
+                      <span className="mt-0.5 block break-words text-[15px] font-medium text-black/85">
+                        {result.englishName}
+                      </span>
+                    </span>
 
                     {speechSupported && (
                       <button
                         type="button"
-                        onClick={speakEnglish}
-                        aria-label="Play English word and example"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-neutral-700 transition-transform active:scale-90"
+                        onClick={() => speak(result.englishName, "en")}
+                        aria-label="Play English word"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
                       >
-                        <SpeakerIcon
-                          speaking={speakingLang === "en"}
-                        />
+                        <SpeakerIcon speaking={speakingLang === "en"} />
                       </button>
                     )}
                   </div>
 
-                  <div className="mt-1 flex items-center gap-2">
-                    <p className="text-lg font-medium text-neutral-700">
-                      {result.chineseName}
+                  <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left">
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                        中文
+                      </span>
+                      <span className="mt-0.5 block break-words text-[15px] font-medium text-black/85">
+                        {result.chineseName}
+                      </span>
+                    </span>
+
+                    {speechSupported && (
+                      <button
+                        type="button"
+                        onClick={() => speak(result.chineseName, "zh")}
+                        aria-label="播放中文單字"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                      >
+                        <SpeakerIcon speaking={speakingLang === "zh"} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {(result.englishExample || result.chineseExample) && (
+                  <div className="mt-2.5">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+                      Example
                     </p>
 
-                    {speechSupported && (
-                      <button
-                        type="button"
-                        onClick={speakChinese}
-                        aria-label="播放中文單字和例句"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-neutral-700 transition-transform active:scale-90"
-                      >
-                        <SpeakerIcon
-                          speaking={speakingLang === "zh"}
-                        />
-                      </button>
-                    )}
+                    <div className="mt-1.5 space-y-1.5">
+                      {result.englishExample && (
+                        <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left">
+                          <span className="min-w-0 break-words text-sm leading-6 text-neutral-900">
+                            {result.englishExample}
+                          </span>
+
+                          {speechSupported && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                speak(result.englishExample, "en")
+                              }
+                              aria-label="Play English example"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                            >
+                              <SpeakerIcon
+                                speaking={speakingLang === "en"}
+                              />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {result.chineseExample && (
+                        <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left">
+                          <span className="min-w-0 break-words text-sm leading-6 text-neutral-500">
+                            {result.chineseExample}
+                          </span>
+
+                          {speechSupported && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                speak(result.chineseExample, "zh")
+                              }
+                              aria-label="播放中文例句"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                            >
+                              <SpeakerIcon
+                                speaking={speakingLang === "zh"}
+                              />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                )}
 
-                  <p className="mt-1.5 text-xs text-neutral-400">
-                    {result.partOfSpeech}
-                  </p>
-                </div>
-
-                <div className="mt-4 border-t border-black/[0.06] pt-4">
-                  <p className="text-sm leading-6 text-neutral-900">
-                    {result.englishExample}
-                  </p>
-
-                  <p className="mt-1.5 text-sm leading-6 text-neutral-500">
-                    {result.chineseExample}
-                  </p>
-                </div>
-
-                <div className="mt-auto space-y-2.5 pt-5">
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => void saveToVocabulary()}
                     disabled={saving || saved}
-                    className="flex h-12 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
+                    aria-label={
+                      saving ? "Saving" : saved ? "Saved" : "Save to Vocabulary"
+                    }
+                    className="flex h-12 w-full items-center justify-center rounded-2xl bg-neutral-950 text-white transition-transform active:scale-[0.98] disabled:opacity-40"
                   >
-                    {saving
-                      ? "Saving..."
-                      : saved
-                        ? "Saved"
-                        : "Save to Vocabulary"}
+                    {saving ? (
+                      <SpinnerIcon />
+                    ) : saved ? (
+                      <CheckIcon />
+                    ) : (
+                      <BookmarkIcon />
+                    )}
                   </button>
 
                   <button
                     type="button"
                     onClick={sendToPartner}
-                    className="h-12 w-full rounded-2xl border border-black/[0.06] bg-white px-5 text-sm font-semibold text-neutral-900 transition-transform active:scale-[0.98]"
+                    aria-label="Send to Partner"
+                    className="flex h-12 w-full items-center justify-center rounded-2xl border border-black/[0.06] bg-white text-neutral-900 transition-transform active:scale-[0.98]"
                   >
-                    Send to Partner
+                    <SendIcon />
                   </button>
                 </div>
               </div>
@@ -994,7 +1128,7 @@ ${result.chineseExample}`;
 
 function CaptureLoading() {
   return (
-    <main className="flex min-h-[100dvh] items-center justify-center bg-[#f4f2ed] text-neutral-950">
+    <main className="flex min-h-[100dvh] items-center justify-center bg-surface text-neutral-950">
       <div className="flex items-center gap-2 text-sm text-neutral-500">
         <SpinnerIcon />
         Loading

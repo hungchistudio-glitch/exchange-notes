@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+
+import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import { createClient } from "@/lib/supabase/server";
 
 type ProtectedLayoutProps = {
@@ -19,5 +21,10 @@ export default async function ProtectedLayout({
     redirect("/login");
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <ProtectedNav />
+    </>
+  );
 }

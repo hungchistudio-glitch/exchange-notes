@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import Card from "@/components/foundation/cards/Card";
 import TextArea from "@/components/foundation/forms/TextArea";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type NotesComposerProps = {
   onSave: (english: string, chinese: string) => void;
@@ -27,9 +28,14 @@ function PlusIcon() {
 export default function NotesComposer({
   onSave,
 }: NotesComposerProps) {
+  const { t } = useTranslation();
+  const copy = t.home.notes;
+
   const [isOpen, setIsOpen] = useState(false);
   const [englishDraft, setEnglishDraft] = useState("");
   const [chineseDraft, setChineseDraft] = useState("");
+  const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState("");
 
   const canSave = useMemo(
     () => Boolean(englishDraft.trim() || chineseDraft.trim()),
@@ -39,15 +45,49 @@ export default function NotesComposer({
   function resetComposer() {
     setEnglishDraft("");
     setChineseDraft("");
+    setTranslateError("");
     setIsOpen(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     const english = englishDraft.trim();
     const chinese = chineseDraft.trim();
 
     if (!english && !chinese) {
       return;
+    }
+
+    if (Boolean(english) !== Boolean(chinese)) {
+      setTranslating(true);
+      setTranslateError("");
+
+      try {
+        const response = await fetch("/api/translate-note", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: english || chinese }),
+        });
+
+        const data = (await response.json()) as {
+          english?: string;
+          chinese?: string;
+          error?: string;
+        };
+
+        if (!response.ok || !data.english || !data.chinese) {
+          throw new Error(data.error || "Translation failed.");
+        }
+
+        onSave(data.english, data.chinese);
+        resetComposer();
+        return;
+      } catch (error) {
+        setTranslateError(
+          error instanceof Error ? error.message : "Translation failed.",
+        );
+        setTranslating(false);
+        return;
+      }
     }
 
     onSave(english, chinese);
@@ -59,15 +99,15 @@ export default function NotesComposer({
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            Personal learning space
+            {copy.spaceEyebrow}
           </p>
 
           <h2 className="mt-1 text-[28px] font-bold tracking-[-0.035em]">
-            Notes
+            {copy.spaceTitle}
           </h2>
 
           <p className="mt-1 text-sm text-neutral-500">
-            Save useful words, sentences, and ideas.
+            {copy.spaceDescription}
           </p>
         </div>
 
@@ -78,7 +118,7 @@ export default function NotesComposer({
           className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-4 text-xs font-semibold text-neutral-700 transition-transform active:scale-95"
         >
           <PlusIcon />
-          New note
+          {copy.newNote}
         </button>
       </div>
 
@@ -97,7 +137,7 @@ export default function NotesComposer({
               rows={3}
               maxLength={1000}
               placeholder="Write a word, sentence, or thought..."
-              className="mt-2 bg-[#f5f3ed]"
+              className="mt-2 bg-surface"
             />
           </label>
 
@@ -114,7 +154,7 @@ export default function NotesComposer({
               rows={3}
               maxLength={1000}
               placeholder="寫下翻譯、想法或補充..."
-              className="mt-2 bg-[#f5f3ed]"
+              className="mt-2 bg-surface"
             />
           </label>
 
@@ -122,20 +162,33 @@ export default function NotesComposer({
             <button
               type="button"
               onClick={resetComposer}
-              className="h-11 rounded-2xl border border-black/[0.06] bg-white text-sm font-semibold"
+              className="h-11 rounded-2xl border border-black/[0.06] bg-white text-sm font-semibold transition-transform active:scale-95"
             >
               Cancel
             </button>
 
             <button
               type="button"
-              onClick={handleSave}
-              disabled={!canSave}
-              className="h-11 rounded-2xl bg-neutral-950 text-sm font-semibold text-white disabled:opacity-30"
+              onClick={() => void handleSave()}
+              disabled={!canSave || translating}
+              className="h-11 rounded-2xl bg-neutral-950 text-sm font-semibold text-white transition-transform active:scale-95 disabled:opacity-30 disabled:active:scale-100"
             >
-              Save note
+              {translating ? "Translating…" : "Save note"}
             </button>
           </div>
+
+          {translateError && (
+            <p className="mt-3 text-xs font-semibold text-red-600">
+              {translateError}
+            </p>
+          )}
+
+          {(Boolean(englishDraft.trim()) !== Boolean(chineseDraft.trim())) &&
+            !translateError && (
+              <p className="mt-3 text-xs text-neutral-400">
+                Saving will auto-translate the other language for you.
+              </p>
+            )}
         </Card>
       )}
     </>

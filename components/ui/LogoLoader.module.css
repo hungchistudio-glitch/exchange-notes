@@ -1,0 +1,179 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fullScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  min-height: 100dvh;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      rgba(255, 255, 255, 0.94),
+      rgba(246, 242, 233, 0.98) 58%,
+      rgba(241, 237, 228, 1) 100%
+    );
+  animation: loaderFadeIn 260ms ease both;
+}
+
+.inline {
+  width: 100%;
+  min-height: 220px;
+}
+
+.logoShell {
+  width: 96px;
+  height: 96px;
+  color: #111111;
+  transform-origin: 48% 58%;
+  animation:
+    logoFloat 2.8s cubic-bezier(0.37, 0, 0.24, 1) infinite;
+}
+
+.compact .logoShell {
+  width: 58px;
+  height: 58px;
+}
+
+.logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter:
+    drop-shadow(0 16px 27px rgba(17, 17, 17, 0.1));
+}
+
+.upperLid,
+.lowerLid {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.upperLid {
+  transform: translateY(-82px);
+  animation:
+    loaderUpperBlink 3.4s linear infinite;
+}
+
+.lowerLid {
+  transform: translateY(12px);
+  animation:
+    loaderLowerBlink 3.4s linear infinite;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes loaderFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes logoFloat {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1) scaleY(1);
+  }
+
+  12% {
+    transform: translateY(0.5px) scaleX(0.993) scaleY(0.997);
+  }
+
+  48% {
+    transform: translateY(-3px) scaleX(1.011) scaleY(1.016);
+  }
+
+  74% {
+    transform: translateY(0.25px) scaleX(0.999) scaleY(1.002);
+  }
+}
+
+@keyframes loaderUpperBlink {
+  0%,
+  42% {
+    transform: translateY(-82px);
+  }
+
+  44% {
+    transform: translateY(-2px);
+  }
+
+  45% {
+    transform: translateY(-2px);
+  }
+
+  48%,
+  78% {
+    transform: translateY(-82px);
+  }
+
+  80% {
+    transform: translateY(-2px);
+  }
+
+  81% {
+    transform: translateY(-2px);
+  }
+
+  84%,
+  100% {
+    transform: translateY(-82px);
+  }
+}
+
+@keyframes loaderLowerBlink {
+  0%,
+  42% {
+    transform: translateY(12px);
+  }
+
+  44% {
+    transform: translateY(-2px);
+  }
+
+  45% {
+    transform: translateY(-2px);
+  }
+
+  48%,
+  78% {
+    transform: translateY(12px);
+  }
+
+  80% {
+    transform: translateY(-2px);
+  }
+
+  81% {
+    transform: translateY(-2px);
+  }
+
+  84%,
+  100% {
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fullScreen,
+  .logoShell,
+  .upperLid,
+  .lowerLid {
+    animation: none;
+  }
+}

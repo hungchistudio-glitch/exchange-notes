@@ -2,7 +2,7 @@ import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea] px-5 py-8 text-black">
+    <main className="flex min-h-screen items-center justify-center bg-surface px-5 py-8 text-black">
       <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
           English × 繁體中文

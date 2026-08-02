@@ -63,7 +63,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f1ea] flex items-center justify-center px-6 py-10">
+    <main className="min-h-screen bg-surface flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-xl rounded-3xl bg-white shadow-sm p-10">
 
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-neutral-700">

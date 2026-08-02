@@ -15,7 +15,7 @@ export default function AppHeader({
 }: AppHeaderProps) {
   return (
     <header
-      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-[#f5f3ed]/90 px-4 backdrop-blur-xl ${className}`}
+      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface/90 px-4 backdrop-blur-xl ${className}`}
       style={{
         paddingTop: "env(safe-area-inset-top)",
       }}

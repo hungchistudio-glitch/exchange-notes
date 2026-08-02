@@ -1,26 +1,48 @@
 "use client";
 
+import {
+  Camera,
+  Copy,
+  GraduationCap,
+  Globe,
+  LoaderCircle,
+  LogOut,
+  QrCode,
+  Pencil,
+  X,
+} from "lucide-react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import Card from "@/components/foundation/cards/Card";
-import PrimaryButton from "@/components/foundation/buttons/PrimaryButton";
-import Screen from "@/components/foundation/layout/Screen";
+import AppHeader from "@/components/foundation/layout/AppHeader";
+import Avatar from "@/components/foundation/media/Avatar";
+import StatusMessage from "@/components/foundation/feedback/StatusMessage";
+import SettingsRow from "@/components/foundation/rows/SettingsRow";
+import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import EditProfileSheet from "@/components/settings/EditProfileSheet";
+import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
+import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
+import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
+import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
+import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { createClient } from "@/lib/supabase/client";
+import type { AppLanguage } from "@/lib/types/app";
 
 type ProfileForm = {
   display_name: string;
   exchange_id: string;
-  native_language: string;
-  learning_language: string;
+  native_language: AppLanguage;
+  learning_language: AppLanguage;
 };
 
-const LANGUAGE_OPTIONS = [
-  { value: "english", label: "English" },
-  { value: "traditional-chinese", label: "繁體中文" },
-];
-
 export default function ProfilePage() {
+  const router = useRouter();
+  const { t } = useTranslation();
+  const copy = t.settings.profile;
+
+  const [userId, setUserId] = useState<string | null>(null);
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
@@ -29,10 +51,16 @@ export default function ProfilePage() {
   });
 
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -46,15 +74,10 @@ export default function ProfilePage() {
           error: userError,
         } = await supabase.auth.getUser();
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (userError || !user) {
-          setError(
-            userError?.message ??
-              "You must be logged in to view your profile."
-          );
+          setError(userError?.message ?? copy.loginRequired);
           setLoading(false);
           return;
         }
@@ -62,14 +85,12 @@ export default function ProfilePage() {
         const { data, error: fetchError } = await supabase
           .from("profiles")
           .select(
-            "display_name, exchange_id, native_language, learning_language, email"
+            "display_name, exchange_id, native_language, learning_language, email, avatar_url",
           )
           .eq("id", user.id)
           .single();
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (fetchError) {
           setError(fetchError.message);
@@ -77,18 +98,21 @@ export default function ProfilePage() {
           return;
         }
 
+        setUserId(user.id);
         setForm({
           display_name: data?.display_name ?? "",
           exchange_id: data?.exchange_id ?? "",
-          native_language: data?.native_language ?? "english",
+          native_language:
+            (data?.native_language as AppLanguage) ?? "english",
           learning_language:
-            data?.learning_language ?? "traditional-chinese",
+            (data?.learning_language as AppLanguage) ?? "traditional-chinese",
         });
 
         setEmail(data?.email ?? user.email ?? "");
+        setAvatarUrl(data?.avatar_url ?? null);
       } catch {
         if (isMounted) {
-          setError("Could not load your profile. Please try again.");
+          setError(copy.profileUpdateError);
         }
       } finally {
         if (isMounted) {
@@ -102,251 +126,391 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handlePhotoSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
 
-    setSaving(true);
+    if (!file || uploadingPhoto || !userId) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError(copy.photoImageError);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(copy.photoSizeError);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setError("");
     setMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const extension =
+        file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+        "jpg";
+
+      const storagePath = `${userId}/profile.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(storagePath, file, {
+          upsert: true,
+          cacheControl: "3600",
+          contentType: file.type,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(storagePath);
+
+      const avatarWithVersion = `${publicUrl}?v=${Date.now()}`;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarWithVersion })
+        .eq("id", userId);
+
+      if (profileError) throw profileError;
+
+      setAvatarUrl(avatarWithVersion);
+      setMessage(copy.photoUpdated);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : copy.photoUploadError,
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function removeProfilePhoto() {
+    if (uploadingPhoto || !userId) return;
+
+    setUploadingPhoto(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", userId);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(null);
+      setMessage(copy.photoRemoved);
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : copy.photoRemoveError,
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function handleLanguageChange(
+    field: "native_language" | "learning_language",
+    value: AppLanguage,
+  ) {
+    if (!userId) return;
+
+    const previous = form[field];
+
+    setForm((current) => ({ ...current, [field]: value }));
     setError("");
 
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        setError(
-          userError?.message ??
-            "You must be logged in to update your profile."
-        );
-        return;
-      }
-
-      const displayName = form.display_name.trim();
-      const exchangeId = form.exchange_id.trim().toLowerCase();
-
-      if (!displayName) {
-        setError("Please enter your name.");
-        return;
-      }
-
-      if (!/^[a-z0-9_]{3,24}$/.test(exchangeId)) {
-        setError(
-          "Exchange ID must contain 3–24 lowercase letters, numbers, or underscores."
-        );
-        return;
-      }
-
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({
-          display_name: displayName,
-          exchange_id: exchangeId,
-          native_language: form.native_language,
-          learning_language: form.learning_language,
-        })
-        .eq("id", user.id);
+        .update({ [field]: value })
+        .eq("id", userId);
 
       if (updateError) {
+        setForm((current) => ({ ...current, [field]: previous }));
         setError(updateError.message);
-        return;
       }
-
-      setForm((current) => ({
-        ...current,
-        display_name: displayName,
-        exchange_id: exchangeId,
-      }));
-
-      setMessage("Profile updated successfully!");
     } catch {
-      setError("Could not update profile. Please try again.");
-    } finally {
-      setSaving(false);
+      setForm((current) => ({ ...current, [field]: previous }));
+      setError(copy.profileUpdateError);
     }
   }
 
+  async function handleCopyHandle() {
+    try {
+      await navigator.clipboard.writeText(`@${form.exchange_id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API may be unavailable; fail silently.
+    }
+  }
+
+  async function handleLogout() {
+    setLoggingOut(true);
+
+    const supabase = createClient();
+
+    await supabase.auth.signOut();
+
+    // Send the user back to the Google sign-in screen.
+    router.replace("/login");
+    router.refresh();
+  }
+
   return (
-    <Screen contentClassName="flex items-center justify-center px-5 py-8">
-      <Card className="w-full max-w-md p-7 sm:p-8">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
-          English × 繁體中文
-        </p>
+    <main className="min-h-[100dvh] bg-surface text-black">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-24">
+        <AppHeader title={copy.pageTitle} />
 
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">
-          Edit Profile
-        </h1>
+        <div className="flex-1 space-y-6 px-4 pt-5 sm:px-6">
+          {(error || message) && (
+            <>
+              {error && <StatusMessage tone="danger">{error}</StatusMessage>}
+              {message && (
+                <StatusMessage tone="success">{message}</StatusMessage>
+              )}
+            </>
+          )}
 
-        <p className="mt-3 leading-7 text-neutral-600">
-          Update how you appear to your learning partner.
-        </p>
+          {/* Account: compact identity summary */}
+          <section className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.035)]">
+            <div
+              aria-hidden="true"
+              className="h-1.5 w-full bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400"
+            />
 
-        {loading ? (
-          <div
-            role="status"
-            className="mt-8 rounded-2xl border border-black/[0.06] bg-[#f5f3ed] p-4"
-          >
-            <p className="text-sm font-semibold text-neutral-700">
-              Loading your profile...
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-black">
-                Your name
-              </span>
-
-              <input
-                required
-                value={form.display_name}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    display_name: event.target.value,
-                  }))
-                }
-                placeholder="First name"
-                autoComplete="name"
-                className="w-full rounded-2xl border border-black/[0.12] bg-white px-4 py-4 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-black">
-                Exchange ID
-              </span>
-
-              <div className="flex items-center rounded-2xl border border-black/[0.12] bg-white px-4 transition-colors focus-within:border-black">
-                <span className="mr-3 text-2xl font-bold text-black">@</span>
-
-                <input
-                  required
-                  minLength={3}
-                  maxLength={24}
-                  value={form.exchange_id}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      exchange_id: event.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9_]/g, ""),
-                    }))
-                  }
-                  placeholder="yourname"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="w-full bg-transparent py-4 text-base text-black outline-none placeholder:text-neutral-400"
+            <div className="flex items-center gap-5 border-b border-black/[0.05] bg-gradient-to-br from-blue-50/60 to-white px-6 pb-6 pt-6">
+              <div className="relative shrink-0">
+                <Avatar
+                  src={avatarUrl}
+                  fallback={form.display_name}
+                  size="xl"
+                  loading={uploadingPhoto}
                 />
+
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  aria-label={avatarUrl ? copy.changePhoto : copy.addPhoto}
+                  title={avatarUrl ? copy.changePhoto : copy.addPhoto}
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
+                >
+                  <Camera size={14} strokeWidth={2} />
+                </button>
+
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => void removeProfilePhoto()}
+                    disabled={uploadingPhoto}
+                    aria-label={copy.removePhoto}
+                    title={copy.removePhoto}
+                    className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white ring-[3px] ring-white transition-transform active:scale-90 disabled:opacity-50"
+                  >
+                    <X size={12} strokeWidth={2.5} />
+                  </button>
+                )}
               </div>
 
-              <p className="mt-2 text-sm text-neutral-500">
-                3–24 lowercase letters, numbers, or underscores.
-              </p>
-            </label>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-[22px] font-bold tracking-[-0.03em] text-black">
+                  {loading
+                    ? copy.loading
+                    : form.display_name || copy.languageLearner}
+                </h2>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-black">
-                Email
-              </span>
+                <p className="mt-1 truncate text-[14px] leading-5 text-black/45">
+                  {email || copy.accountFallback}
+                </p>
 
-              <input
-                disabled
-                value={email}
-                className="w-full cursor-not-allowed rounded-2xl border border-black/[0.06] bg-neutral-100 px-4 py-4 text-base text-neutral-500"
-              />
-            </label>
+                {!loading && form.exchange_id && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="truncate text-[14px] font-semibold text-blue-600">
+                      @{form.exchange_id}
+                    </span>
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-black">
-                Native language
-              </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyHandle()}
+                      className="flex shrink-0 items-center gap-1 rounded-full bg-black/[0.045] px-2 py-1 text-[11px] font-semibold text-black/55 transition-colors hover:bg-black/[0.08]"
+                    >
+                      <Copy size={11} strokeWidth={2} />
+                      {copied ? copy.copied : copy.copyHandle}
+                    </button>
 
-              <select
-                value={form.native_language}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    native_language: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-black/[0.12] bg-white px-4 py-4 text-base text-black outline-none transition-colors focus:border-black"
-              >
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-black">
-                Learning language
-              </span>
-
-              <select
-                value={form.learning_language}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    learning_language: event.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border border-black/[0.12] bg-white px-4 py-4 text-base text-black outline-none transition-colors focus:border-black"
-              >
-                {LANGUAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {error && (
-              <p
-                role="alert"
-                className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800"
-              >
-                {error}
-              </p>
-            )}
-
-            {message && (
-              <p
-                role="status"
-                className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800"
-              >
-                {message}
-              </p>
-            )}
-
-            <div className="space-y-3 pt-1">
-              <PrimaryButton
-                type="submit"
-                disabled={saving}
-                fullWidth
-                className="min-h-14 text-base"
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </PrimaryButton>
-
-              <Link
-                href="/"
-                className="flex min-h-14 w-full items-center justify-center rounded-2xl border border-black/[0.1] bg-white px-5 py-3 text-base font-semibold text-neutral-800 transition-all hover:bg-neutral-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
-              >
-                Back to Home
-              </Link>
+                    <Link
+                      href="/friends"
+                      className="flex shrink-0 items-center gap-1 rounded-full bg-black/[0.045] px-2 py-1 text-[11px] font-semibold text-black/55 transition-colors hover:bg-black/[0.08]"
+                    >
+                      <QrCode size={11} strokeWidth={2} />
+                      {copy.viewQr}
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
-          </form>
-        )}
-      </Card>
-    </Screen>
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+              className="hidden"
+              onChange={(event) => void handlePhotoSelected(event)}
+            />
+
+            <div className="px-6 py-4">
+              {loading ? (
+                <div className="flex items-center gap-2 text-sm font-medium text-black/45">
+                  <LoaderCircle size={16} className="animate-spin" />
+                  {copy.loadingProfile}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-black/[0.045] text-sm font-semibold text-black transition-colors hover:bg-black/[0.08] active:scale-[0.99]"
+                >
+                  <Pencil size={15} strokeWidth={1.8} />
+                  {copy.editProfile}
+                </button>
+              )}
+            </div>
+          </section>
+
+          {/* Learning setup */}
+          <section>
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+              {t.settings.learningSetup}
+            </p>
+
+            <div className="divide-y divide-black/[0.05] overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <ProfileLanguageSettingsButton
+                rowTitle={copy.nativeLanguage}
+                rowDescription={copy.nativeLanguageDescription}
+                sheetTitle={copy.nativeLanguage}
+                sheetDescription={copy.nativeLanguageDescription}
+                icon={<Globe size={16} strokeWidth={1.8} />}
+                value={form.native_language}
+                onChange={(value) =>
+                  handleLanguageChange("native_language", value)
+                }
+              />
+
+              <ProfileLanguageSettingsButton
+                rowTitle={copy.learningLanguage}
+                rowDescription={copy.learningLanguageDescription}
+                sheetTitle={copy.learningLanguage}
+                sheetDescription={copy.learningLanguageDescription}
+                icon={<GraduationCap size={16} strokeWidth={1.8} />}
+                value={form.learning_language}
+                onChange={(value) =>
+                  handleLanguageChange("learning_language", value)
+                }
+              />
+
+              <DailyGoalSettingsButton />
+            </div>
+          </section>
+
+          {/* Experience */}
+          <section>
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+              {copy.preferences}
+            </p>
+
+            <div className="divide-y divide-black/[0.05] overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <PronunciationSettingsButton />
+              <FontSizeSettingsButton />
+              <AppLanguageSettingsButton />
+            </div>
+          </section>
+
+          {/* Account actions */}
+          <section>
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+              {copy.account}
+            </p>
+
+            <div className="overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <SettingsRow
+                title={copy.logout}
+                description={copy.logoutDescription}
+                icon={<LogOut size={16} strokeWidth={1.8} />}
+                danger
+                onClick={() => setLogoutOpen(true)}
+              />
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {userId && (
+        <EditProfileSheet
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          userId={userId}
+          initialName={form.display_name}
+          initialExchangeId={form.exchange_id}
+          onSaved={(values) => {
+            setForm((current) => ({ ...current, ...values }));
+            setMessage(copy.profileUpdated);
+          }}
+        />
+      )}
+
+      <BottomSheet
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        title={copy.logout}
+        description={copy.logoutConfirm}
+        footer={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setLogoutOpen(false)}
+              disabled={loggingOut}
+              className="flex min-h-12 flex-1 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-black transition-all active:scale-[0.98] disabled:opacity-40"
+            >
+              {t.common.cancel}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={loggingOut}
+              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-red-600 text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+            >
+              {loggingOut ? (
+                <LoaderCircle size={16} className="animate-spin" />
+              ) : null}
+              {copy.logout}
+            </button>
+          </div>
+        }
+      >
+        <p className="text-sm leading-6 text-black/50">
+          {email || copy.accountFallback}
+        </p>
+      </BottomSheet>
+    </main>
   );
 }

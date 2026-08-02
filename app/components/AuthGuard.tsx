@@ -2,6 +2,8 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+import LogoLoader from "@/components/ui/LogoLoader";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthGuardProps = {
@@ -48,11 +50,7 @@ export default function AuthGuard({
   }, [router]);
 
   if (checking) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f4f1ea]">
-        <p className="text-neutral-500">Loading...</p>
-      </main>
-    );
+    return <LogoLoader label="Checking your session" />;
   }
 
   return <>{children}</>;

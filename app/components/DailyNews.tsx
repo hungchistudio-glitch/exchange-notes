@@ -20,6 +20,7 @@ type VocabularyItem = {
 
 type DailyNewsCard = {
   id: string;
+  region: "us" | "taiwan" | "international" | "europe" | "culture";
   category: string;
   englishTitle: string;
   chineseTitle: string;
@@ -36,11 +37,6 @@ type DailyNewsResponse = {
   generatedAt: string;
 };
 
-type SeenNewsItem = {
-  id: string;
-  title: string;
-};
-
 type StoredNote = {
   id: string;
   english: string;
@@ -50,13 +46,16 @@ type StoredNote = {
 
 type SpeechRate = 0.75 | 1 | 1.25;
 
-const SEEN_NEWS_STORAGE_KEY =
-  "exchange-notes-seen-news";
-
 const NOTES_STORAGE_KEY =
   "exchange-notes-home-notes";
 
-const MAX_SEEN_NEWS_ITEMS = 40;
+const REGION_STYLES: Record<DailyNewsCard["region"], { label: string; badge: string }> = {
+  us: { label: "US", badge: "bg-[#eef7fd] text-[#2b6a99]" },
+  taiwan: { label: "Taiwan", badge: "bg-[#f2faee] text-[#2f6c38]" },
+  international: { label: "World", badge: "bg-[#fdf0f2] text-[#a13f52]" },
+  europe: { label: "Europe", badge: "bg-[#f2eefb] text-[#5a3f9e]" },
+  culture: { label: "Culture", badge: "bg-[#fdf6e6] text-[#95721f]" },
+};
 
 function RefreshIcon({
   spinning,
@@ -247,64 +246,6 @@ function LoadingCard() {
   );
 }
 
-function readSeenNews(): SeenNewsItem[] {
-  try {
-    const rawValue =
-      window.localStorage.getItem(
-        SEEN_NEWS_STORAGE_KEY
-      );
-
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsedValue =
-      JSON.parse(rawValue) as unknown;
-
-    if (!Array.isArray(parsedValue)) {
-      return [];
-    }
-
-    return parsedValue.filter(
-      (item): item is SeenNewsItem =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as SeenNewsItem)
-          .id === "string" &&
-        typeof (item as SeenNewsItem)
-          .title === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-function storeSeenNews(
-  items: SeenNewsItem[]
-) {
-  try {
-    const uniqueItems = Array.from(
-      new Map(
-        items.map((item) => [
-          item.id,
-          item,
-        ])
-      ).values()
-    );
-
-    window.localStorage.setItem(
-      SEEN_NEWS_STORAGE_KEY,
-      JSON.stringify(
-        uniqueItems.slice(
-          -MAX_SEEN_NEWS_ITEMS
-        )
-      )
-    );
-  } catch {
-    // The feed still works when storage is unavailable.
-  }
-}
-
 function readStoredNotes(): StoredNote[] {
   try {
     const rawValue =
@@ -473,6 +414,9 @@ export default function DailyNews() {
   const [error, setError] =
     useState("");
 
+  const [notice, setNotice] =
+    useState("");
+
   const [
     speakingKey,
     setSpeakingKey,
@@ -500,6 +444,14 @@ export default function DailyNews() {
       null
     );
 
+  // Daily News is now generated once on a fixed schedule (see
+  // app/api/cron/daily-news/route.ts) instead of per request, so there's
+  // no more per-user "seen stories" exclusion — everyone reads the same
+  // pre-generated batch. We keep track of the last generatedAt we saw so
+  // the refresh button can tell the person when they're already looking
+  // at the latest batch, instead of implying something went wrong.
+  const lastGeneratedAtRef = useRef<string | null>(null);
+
   const loadNews = useCallback(
     async (
       isRefresh = false
@@ -519,37 +471,12 @@ export default function DailyNews() {
       }
 
       setError("");
+      setNotice("");
 
       try {
-        const seenNews =
-          readSeenNews();
-
-        const seenTitles =
-          seenNews
-            .slice(-20)
-            .map((item) =>
-              encodeURIComponent(
-                item.title
-              )
-            )
-            .join("||");
-
-        const parameters =
-          new URLSearchParams({
-            nonce:
-              crypto.randomUUID(),
-          });
-
-        if (seenTitles) {
-          parameters.set(
-            "seen",
-            seenTitles
-          );
-        }
-
         const response =
           await fetch(
-            `/api/daily-news?${parameters.toString()}`,
+            "/api/daily-news",
             {
               method: "GET",
               cache: "no-store",
@@ -578,18 +505,20 @@ export default function DailyNews() {
           );
         }
 
-        setCards(payload.cards);
+        if (
+          isRefresh &&
+          lastGeneratedAtRef.current ===
+            payload.generatedAt
+        ) {
+          setNotice(
+            "You're already seeing today's stories — a new batch is published once a day."
+          );
+        }
 
-        storeSeenNews([
-          ...seenNews,
-          ...payload.cards.map(
-            (card) => ({
-              id: card.id,
-              title:
-                card.englishTitle,
-            })
-          ),
-        ]);
+        lastGeneratedAtRef.current =
+          payload.generatedAt;
+
+        setCards(payload.cards);
       } catch (requestError) {
         if (
           requestError instanceof
@@ -903,6 +832,15 @@ export default function DailyNews() {
         </div>
       </div>
 
+      {notice && !error && (
+        <div
+          role="status"
+          className="mb-4 rounded-2xl bg-black/[0.035] px-4 py-3 text-sm leading-6 text-neutral-600"
+        >
+          {notice}
+        </div>
+      )}
+
       {error && (
         <div
           role="alert"
@@ -952,9 +890,19 @@ export default function DailyNews() {
             >
               <div className="p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="rounded-full bg-[#f1eee7] px-3 py-1 text-[10px] font-semibold text-neutral-700">
-                    {card.category}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${
+                        REGION_STYLES[card.region]?.badge ??
+                        "bg-surface text-neutral-700"
+                      }`}
+                    >
+                      {REGION_STYLES[card.region]?.label ?? card.region}
+                    </span>
+                    <span className="rounded-full bg-surface px-3 py-1 text-[10px] font-semibold text-neutral-700">
+                      {card.category}
+                    </span>
+                  </div>
 
                   <span className="text-[10px] text-neutral-400">
                     {formatPublishedTime(
@@ -1044,7 +992,7 @@ export default function DailyNews() {
                         return (
                           <details
                             key={baseKey}
-                            className="group rounded-2xl bg-[#f6f4ef]"
+                            className="group rounded-2xl bg-surface"
                           >
                             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
                               <div className="min-w-0">
