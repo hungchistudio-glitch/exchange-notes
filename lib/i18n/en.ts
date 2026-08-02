@@ -389,6 +389,7 @@ const english: TranslationDictionary = {
     title: "Friends",
     subtitle: "Add someone by Exchange ID or QR code.",
     loginRequired: "Log in to add and manage friends.",
+    deleteFriend: "Delete friend",
 
     add: {
       title: "Add a friend",

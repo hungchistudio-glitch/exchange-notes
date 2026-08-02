@@ -379,6 +379,7 @@ const traditionalChinese: TranslationDictionary = {
     title: "朋友",
     subtitle: "使用 Exchange ID 或 QR Code 新增朋友。",
     loginRequired: "請先登入以新增及管理朋友。",
+    deleteFriend: "刪除好友",
 
     add: {
       title: "新增朋友",

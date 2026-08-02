@@ -282,6 +282,20 @@ export type TranslationDictionary = {
       title: string;
       findFriends: string;
       description: string;
+      partnerLabel: string;
+      partnerTagline: string;
+    };
+
+    notes: {
+      eyebrow: string;
+      title: string;
+      spaceEyebrow: string;
+      spaceTitle: string;
+      spaceDescription: string;
+      newNote: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      deleteNote: string;
     };
   };
 
@@ -363,6 +377,7 @@ export type TranslationDictionary = {
     title: string;
     subtitle: string;
     loginRequired: string;
+    deleteFriend: string;
 
     add: {
       title: string;
