@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 
 import type { Cookie, CookieType } from "@/lib/pet/types";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -242,17 +243,20 @@ export default function CookieTray({
         </>
       )}
 
-      {drag ? (
-        <div
-          className={`${styles.ghost} ${styles[`cookie--${drag.cookie.type}`]} ${
-            drag.releasing ? styles.ghostFlying : styles.ghostDragging
-          }`}
-          style={{ left: drag.x, top: drag.y }}
-          onTransitionEnd={drag.releasing ? settleRelease : undefined}
-        >
-          <CookieGlyph cookie={drag.cookie} />
-        </div>
-      ) : null}
+      {drag && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={`${styles.ghost} ${styles[`cookie--${drag.cookie.type}`]} ${
+                drag.releasing ? styles.ghostFlying : styles.ghostDragging
+              }`}
+              style={{ left: drag.x, top: drag.y }}
+              onTransitionEnd={drag.releasing ? settleRelease : undefined}
+            >
+              <CookieGlyph cookie={drag.cookie} />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

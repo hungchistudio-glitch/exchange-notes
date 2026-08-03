@@ -15,6 +15,9 @@ import { createClient } from "@/lib/supabase/client";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
 import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
+import { listFriends, type FriendProfile } from "@/lib/friends";
+import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
+import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 
 type IdentificationResult = {
   englishName: string;
@@ -267,6 +270,13 @@ function CaptureContent() {
   const [speechSupported, setSpeechSupported] = useState(true);
   const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
   const [pronunciation, setPronunciation] = useState<PronunciationResult | null>(null);
+
+  const [friendPickerOpen, setFriendPickerOpen] = useState(false);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [friendsError, setFriendsError] = useState("");
+  const [sendingFriendId, setSendingFriendId] = useState<string | null>(null);
+  const friendsRequestedRef = useRef(false);
 
   const sourceParam = searchParams.get("source");
   const withParam = searchParams.get("with");
@@ -775,15 +785,73 @@ function CaptureContent() {
     }
   }
 
+  async function loadFriends() {
+    friendsRequestedRef.current = true;
+    setFriendsLoading(true);
+    setFriendsError("");
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setFriendsError("You're not logged in. Log in to share with a partner.");
+      setFriendsLoading(false);
+      friendsRequestedRef.current = false;
+      return;
+    }
+
+    try {
+      const friendsData = await listFriends(supabase, user.id);
+      setFriends(friendsData);
+    } catch (loadError) {
+      console.error("Failed to load friends:", loadError);
+      setFriendsError("Couldn't load your friends. Try again.");
+      friendsRequestedRef.current = false;
+    } finally {
+      setFriendsLoading(false);
+    }
+  }
+
   function sendToPartner() {
     if (!result) return;
 
-    sessionStorage.setItem(
-      "exchange-notes-draft-message",
-      createShareText()
-    );
+    // Already inside a specific conversation (opened the camera from
+    // there via ?with=) — the recipient is already known, so this keeps
+    // the existing draft-prefill behavior instead of asking again.
+    if (withParam) {
+      sessionStorage.setItem("exchange-notes-draft-message", createShareText());
+      router.push(messagesHref);
+      return;
+    }
 
-    router.push(messagesHref);
+    // Arrived from Discover with no target conversation — the recipient
+    // isn't known yet, so ask who via the same friend picker Vocabulary
+    // uses, instead of silently dropping onto the conversation list.
+    setFriendPickerOpen(true);
+    if (!friendsRequestedRef.current) {
+      void loadFriends();
+    }
+  }
+
+  function handleClosePicker() {
+    setFriendPickerOpen(false);
+    setSendingFriendId(null);
+  }
+
+  function handlePickFriend(friendId: string) {
+    if (!result || sendingFriendId) return;
+
+    setSendingFriendId(friendId);
+    setPendingSharedVocabulary({
+      word: result.englishName,
+      translation: result.chineseName,
+      partOfSpeech: result.partOfSpeech,
+      englishExample: result.englishExample,
+      chineseExample: result.chineseExample,
+    });
+    router.push(`/messages?with=${encodeURIComponent(friendId)}`);
   }
 
   function chooseAnotherImage() {
@@ -1160,6 +1228,18 @@ function CaptureContent() {
           className="hidden"
         />
       </div>
+
+      {friendPickerOpen && (
+        <FriendPickerModal
+          friends={friends}
+          loading={friendsLoading}
+          errorMessage={friendsError}
+          sendingFriendId={sendingFriendId}
+          onClose={handleClosePicker}
+          onPick={handlePickFriend}
+          onRetry={() => void loadFriends()}
+        />
+      )}
     </main>
   );
 }

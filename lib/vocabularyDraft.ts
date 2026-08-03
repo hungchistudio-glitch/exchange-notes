@@ -1,12 +1,19 @@
-import type { VocabularyItem } from "@/lib/types/app";
+import type { SharedWordCard } from "@/lib/messages/wordCard";
 
 const STORAGE_KEY = "pending-shared-vocabulary";
 
-export function setPendingSharedVocabulary(item: VocabularyItem): boolean {
+// Kept as SharedWordCard (word/translation/partOfSpeech/englishExample/
+// chineseExample) rather than the full VocabularyItem shape it used to be
+// typed as — that's the exact, and only, shape any consumer of this queue
+// (ConversationThread.tsx's word-card-on-open effect) actually needs, and
+// it lets any "share a word" entry point (Vocabulary, Discover's camera
+// identify, ...) write into the same queue without pretending to have a
+// full vocabulary row (id, user_id, status, etc.) it doesn't have.
+export function setPendingSharedVocabulary(card: SharedWordCard): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(item));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(card));
 
     return true;
   } catch (storageError) {
@@ -16,7 +23,7 @@ export function setPendingSharedVocabulary(item: VocabularyItem): boolean {
   }
 }
 
-export function getPendingSharedVocabulary(): VocabularyItem | null {
+export function getPendingSharedVocabulary(): SharedWordCard | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -24,7 +31,7 @@ export function getPendingSharedVocabulary(): VocabularyItem | null {
 
     if (!raw) return null;
 
-    return JSON.parse(raw) as VocabularyItem;
+    return JSON.parse(raw) as SharedWordCard;
   } catch (storageError) {
     console.error("Could not read pending vocabulary:", storageError);
 
@@ -45,7 +52,7 @@ export function clearPendingSharedVocabulary() {
 /**
  * Kept for compatibility with older code.
  */
-export function consumePendingSharedVocabulary(): VocabularyItem | null {
+export function consumePendingSharedVocabulary(): SharedWordCard | null {
   const item = getPendingSharedVocabulary();
 
   if (item) {

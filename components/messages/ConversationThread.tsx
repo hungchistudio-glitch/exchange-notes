@@ -475,13 +475,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
     clearPendingSharedVocabulary();
 
-    const cardBody = encodeWordCardMessage({
-      word: pendingVocabulary.word,
-      translation: pendingVocabulary.translation,
-      partOfSpeech: pendingVocabulary.part_of_speech,
-      englishExample: pendingVocabulary.example_sentence,
-      chineseExample: pendingVocabulary.translated_example,
-    });
+    const cardBody = encodeWordCardMessage(pendingVocabulary);
 
     void (async () => {
       const { data, error } = await supabase

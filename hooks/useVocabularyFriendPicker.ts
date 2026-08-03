@@ -83,7 +83,13 @@ export default function useVocabularyFriendPicker() {
       if (!friendPickerItem || sendingFriendId) return;
 
       setSendingFriendId(friendId);
-      setPendingSharedVocabulary(friendPickerItem);
+      setPendingSharedVocabulary({
+        word: friendPickerItem.word,
+        translation: friendPickerItem.translation,
+        partOfSpeech: friendPickerItem.part_of_speech,
+        englishExample: friendPickerItem.example_sentence,
+        chineseExample: friendPickerItem.translated_example,
+      });
       router.push(`/messages?with=${encodeURIComponent(friendId)}`);
     },
     [friendPickerItem, router, sendingFriendId],
