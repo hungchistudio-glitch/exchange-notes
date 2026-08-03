@@ -25,49 +25,72 @@ type BottomNavigationProps = {
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
+const INDICATOR_SIZE = 44;
+
+// A quiet, icon-only floating dock rather than a labelled tab bar: no
+// visible text, a small circular "energy base" that slides to sit behind
+// whichever icon is active instead of a wide pill spanning the column, and
+// a translucent glass surface so it reads as hardware sitting just above
+// the page rather than a full-width bar pressing down on it.
 export default function BottomNavigation({ items }: BottomNavigationProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
-  const [indicator, setIndicator] = useState<{
-    left: number;
-    width: number;
-  } | null>(null);
+  const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
 
   const activeIndex = items.findIndex((item) => item.active);
 
   useIsomorphicLayoutEffect(() => {
+    const container = containerRef.current;
     const activeElement = itemRefs.current[activeIndex];
 
-    if (!activeElement) {
-      setIndicator(null);
+    if (!container || !activeElement) {
+      setOffset(null);
       return;
     }
 
-    setIndicator({
-      left: activeElement.offsetLeft,
-      width: activeElement.offsetWidth,
+    // getBoundingClientRect for both, in the same (viewport) coordinate
+    // space, so the delta is exact regardless of the container's own
+    // border/padding — no dependence on offsetParent semantics, which is
+    // what made the previous version's circle land a few pixels off from
+    // the icon it was supposed to sit behind.
+    const containerRect = container.getBoundingClientRect();
+    const linkRect = activeElement.getBoundingClientRect();
+
+    setOffset({
+      x:
+        linkRect.left +
+        linkRect.width / 2 -
+        (containerRect.left + containerRect.width / 2),
+      y:
+        linkRect.top +
+        linkRect.height / 2 -
+        (containerRect.top + containerRect.height / 2),
     });
   }, [activeIndex, items.length]);
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-6"
+      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-5"
       style={{
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
       }}
       aria-label="Primary navigation"
     >
-      {/* Sized down ~15% and given more outer margin so it reads as a
-          floating piece of hardware rather than a full-width control
-          strip; selected pill uses a softer near-black rather than pure
-          #000. */}
-      <div className="relative w-full max-w-xl rounded-full border border-line bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
-        {indicator && (
+      <div
+        ref={containerRef}
+        className="relative w-full max-w-xl rounded-[28px] border border-black/[0.07] bg-[#fdfbf6]/75 p-2 shadow-[0_10px_36px_rgba(28,26,22,0.12)] backdrop-blur-xl"
+      >
+        {offset && (
           <div
             aria-hidden="true"
-            className="absolute inset-y-1 left-0 rounded-full bg-[#1B1B1B] transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="absolute left-1/2 top-1/2 rounded-full bg-[#1c1a16] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
-              width: indicator.width,
-              transform: `translateX(${indicator.left}px)`,
+              width: INDICATOR_SIZE,
+              height: INDICATOR_SIZE,
+              marginLeft: -INDICATOR_SIZE / 2,
+              marginTop: -INDICATOR_SIZE / 2,
+              transform: `translate(${offset.x}px, ${offset.y}px)`,
+              boxShadow: "0 0 0 6px rgba(28, 26, 22, 0.05)",
             }}
           />
         )}
@@ -83,18 +106,20 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
               key={`${item.href}-${item.label}`}
               href={item.href}
               prefetch={false}
+              title={item.label}
               ref={(element) => {
                 itemRefs.current[index] = element;
               }}
               aria-current={item.active ? "page" : undefined}
-              className={`z-10 flex flex-col items-center justify-center gap-0.5 rounded-full py-[5px] text-[9.5px] font-medium transition-colors duration-300 ${
-                item.active && indicator
-                  ? "text-white"
-                  : "text-neutral-500 hover:text-neutral-800"
+              aria-label={item.label}
+              className={`z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                item.active
+                  ? "scale-[1.05] text-white"
+                  : "text-black/40 hover:text-black/70"
               }`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="sr-only">{item.label}</span>
             </Link>
           ))}
         </div>
