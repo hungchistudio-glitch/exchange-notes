@@ -31,13 +31,21 @@
   will-change: transform;
 }
 
+/* Eyelids are hidden by BOTH being translated well outside the eye's clip
+   circle AND opacity — belt and suspenders. Some browsers don't reliably
+   clip these rects to the circular clip-path when they're also being
+   transformed, which was leaving a visible rectangular sliver above/below
+   the eye even at the "resting" (fully retracted) position. Opacity does
+   not depend on clip-path support, so it stays hidden regardless. */
 .upperLid {
   transform: translateY(-82px);
+  opacity: 0;
   animation: baseUpperBlink 4.2s linear infinite;
 }
 
 .lowerLid {
   transform: translateY(12px);
+  opacity: 0;
   animation: baseLowerBlink 4.2s linear infinite;
 }
 
@@ -57,10 +65,12 @@
   50%,
   100% {
     transform: translateY(-82px);
+    opacity: 0;
   }
   46%,
   47% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -70,10 +80,12 @@
   50%,
   100% {
     transform: translateY(12px);
+    opacity: 0;
   }
   46%,
   47% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -187,11 +199,13 @@
   76%,
   100% {
     transform: translateY(-82px);
+    opacity: 0;
   }
   61%,
   67%,
   73% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -203,11 +217,13 @@
   76%,
   100% {
     transform: translateY(12px);
+    opacity: 0;
   }
   61%,
   67%,
   73% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -292,9 +308,11 @@
   0%,
   100% {
     transform: translateY(-46px);
+    opacity: 1;
   }
   50% {
     transform: translateY(-40px);
+    opacity: 1;
   }
 }
 
@@ -370,13 +388,13 @@
   animation: wakeStretch 1.8s cubic-bezier(0.22, 1, 0.36, 1) 1 both;
 }
 
-.shell[data-waking="true"] .upperLid {
-  animation: wakeEyeOpenUpper 1.8s ease-out 1 both;
-}
-
-.shell[data-waking="true"] .lowerLid {
-  animation: wakeEyeOpenLower 1.8s ease-out 1 both;
-}
+/* Eyelids intentionally do NOT get a dedicated "closed → opening" animation
+   here: they used to rest at a visibly half-shut position for the first
+   ~270ms of this entrance, which — combined with the eyelid rects only
+   being clipped to a circle, not rounded themselves — read as a stray
+   rectangular patch above/below the eye rather than a believable closing
+   lid. Simpler and more reliable to just leave the eye at its normal open,
+   ambient-blink state through the wake stretch. */
 
 @keyframes wakeStretch {
   0% {
@@ -390,26 +408,6 @@
   }
   100% {
     transform: translateY(0) scaleY(1) scaleX(1);
-  }
-}
-
-@keyframes wakeEyeOpenUpper {
-  0%,
-  15% {
-    transform: translateY(-46px);
-  }
-  100% {
-    transform: translateY(-82px);
-  }
-}
-
-@keyframes wakeEyeOpenLower {
-  0%,
-  15% {
-    transform: translateY(-4px);
-  }
-  100% {
-    transform: translateY(12px);
   }
 }
 

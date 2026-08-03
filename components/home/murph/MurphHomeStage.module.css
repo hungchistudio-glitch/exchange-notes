@@ -167,13 +167,21 @@
   will-change: transform;
 }
 
+/* Eyelids are hidden by BOTH being translated well outside the eye's clip
+   circle AND opacity — belt and suspenders. Some browsers don't reliably
+   clip these rects to the circular clip-path when they're also being
+   transformed, which was leaving a visible rectangular sliver above/below
+   the eye even at the "resting" (fully retracted) position. Opacity does
+   not depend on clip-path support, so it stays hidden regardless. */
 .upperLid {
   transform: translateY(-82px);
+  opacity: 0;
   animation: homeBaseBlink 5s linear infinite;
 }
 
 .lowerLid {
   transform: translateY(12px);
+  opacity: 0;
   animation: homeBaseBlinkLower 5s linear infinite;
 }
 
@@ -193,10 +201,12 @@
   52%,
   100% {
     transform: translateY(-82px);
+    opacity: 0;
   }
   48%,
   49% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -206,10 +216,12 @@
   52%,
   100% {
     transform: translateY(12px);
+    opacity: 0;
   }
   48%,
   49% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -401,9 +413,11 @@
   0%,
   100% {
     transform: translateY(-52px);
+    opacity: 1;
   }
   50% {
     transform: translateY(-46px);
+    opacity: 1;
   }
 }
 
@@ -497,6 +511,7 @@
 
 .figure[data-mood="sleeping"] .upperLid {
   transform: translateY(-64px);
+  opacity: 1;
   animation: none;
 }
 
@@ -576,10 +591,12 @@
   0%,
   100% {
     transform: translateY(-82px);
+    opacity: 0;
   }
   8%,
   22% {
     transform: translateY(-58px);
+    opacity: 1;
   }
 }
 
@@ -615,13 +632,13 @@
   animation: homeWakeStretch 1.6s cubic-bezier(0.22, 1, 0.36, 1) 1 both !important;
 }
 
-.waking .upperLid {
-  animation: homeWakeEyeOpen 1.6s ease-out 1 both !important;
-}
-
-.waking .lowerLid {
-  animation: homeWakeEyeOpenLower 1.6s ease-out 1 both !important;
-}
+/* Eyelids intentionally do NOT get a dedicated "closed → opening" animation
+   here (see MurphMark.module.css for the matching Vocabulary-page fix): a
+   visibly half-shut rect for the first ~20% of this entrance read as a
+   stray rectangular patch above/below the eye rather than a believable
+   closing lid, since the eyelid rects are only clipped to a circle and
+   aren't rounded themselves. The eye just stays at its normal open,
+   ambient-blink state through the wake stretch instead. */
 
 @keyframes homeWakeStretch {
   0% {
@@ -632,26 +649,6 @@
   }
   100% {
     transform: translateY(0) scaleY(1) scaleX(1);
-  }
-}
-
-@keyframes homeWakeEyeOpen {
-  0%,
-  20% {
-    transform: translateY(-46px);
-  }
-  100% {
-    transform: translateY(-82px);
-  }
-}
-
-@keyframes homeWakeEyeOpenLower {
-  0%,
-  20% {
-    transform: translateY(-4px);
-  }
-  100% {
-    transform: translateY(12px);
   }
 }
 
