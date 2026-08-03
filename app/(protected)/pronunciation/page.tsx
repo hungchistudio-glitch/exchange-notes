@@ -481,15 +481,24 @@ export default function PronunciationLabPage() {
   // example-word rows below) with their own separate purpose — mixing them
   // into this one button is exactly what made the old main speaker feel
   // like it was "connected to the wrong audio."
+  //
+  // Speaks the LOWERCASE character, not `letter.letter` (which is uppercase
+  // for display). Several TTS voices treat a bare uppercase single
+  // character as a request to announce its case for disambiguation —
+  // reading "A" back as "capital A" — the same accessibility behavior
+  // screen readers use so users can tell "A" apart from "a". Lowercase
+  // doesn't trigger that: voices read it as plain the letter's name, which
+  // is exactly what this button is supposed to say.
   function playEnglishPrimary(letter: EnglishLetter) {
     const cardKey = `english-${letter.id}`;
     const mainKey = `en-main-${letter.id}`;
     const token = beginPlayback(mainKey, cardKey);
+    const soundText = letter.letter.toLowerCase();
 
     const steps: Step[] = [
-      speakStep(token, mainKey, letter.letter, "en-US", cardKey),
+      speakStep(token, mainKey, soundText, "en-US", cardKey),
       pauseStep(mainKey, PAUSE_BETWEEN_REPEATS_MS),
-      speakStep(token, mainKey, letter.letter, "en-US", cardKey),
+      speakStep(token, mainKey, soundText, "en-US", cardKey),
     ];
 
     void runSteps(token, steps, cardKey);
