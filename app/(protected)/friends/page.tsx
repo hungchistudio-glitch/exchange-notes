@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import Avatar from "@/components/foundation/media/Avatar";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { UserX } from "lucide-react";
@@ -52,23 +53,47 @@ export default function FriendsPage() {
     async (userId: string) => {
       setLoading(true);
 
-      try {
-        const [profile, friendList, incomingList] = await Promise.all([
+      // Promise.allSettled rather than Promise.all: a failure in any one
+      // of these (e.g. a single malformed request row) used to reject the
+      // whole batch and leave friends/incoming/profile all at their empty
+      // defaults — so one bad row could make an otherwise-healthy friends
+      // list and a very real incoming request both silently disappear.
+      // Each section now loads and fails independently.
+      const [profileResult, friendListResult, incomingListResult] =
+        await Promise.allSettled([
           getProfileById(supabase, userId),
           listFriends(supabase, userId),
           listIncomingRequests(supabase, userId),
         ]);
 
-        setOwnProfile(profile);
-        setFriends(friendList);
-        setIncoming(incomingList);
-      } catch (error) {
-        setMessage(
-          error instanceof Error ? error.message : copy.banners.loadFailed,
-        );
-      } finally {
-        setLoading(false);
+      if (profileResult.status === "fulfilled") {
+        setOwnProfile(profileResult.value);
       }
+
+      if (friendListResult.status === "fulfilled") {
+        setFriends(friendListResult.value);
+      }
+
+      if (incomingListResult.status === "fulfilled") {
+        setIncoming(incomingListResult.value);
+      }
+
+      const firstFailure = [
+        friendListResult,
+        incomingListResult,
+        profileResult,
+      ].find((result) => result.status === "rejected") as
+        | PromiseRejectedResult
+        | undefined;
+
+      if (firstFailure) {
+        const { reason } = firstFailure;
+        setMessage(
+          reason instanceof Error ? reason.message : copy.banners.loadFailed,
+        );
+      }
+
+      setLoading(false);
     },
     [supabase, copy.banners.loadFailed],
   );
@@ -329,14 +354,24 @@ export default function FriendsPage() {
                   key={request.requestId}
                   className="flex items-center justify-between gap-3 rounded-[20px] border border-line bg-white p-4"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-black">
-                      {request.sender.displayName ??
-                        request.sender.exchangeId}
-                    </p>
-                    <p className="truncate text-sm text-black/50">
-                      @{request.sender.exchangeId}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar
+                      src={request.sender.avatarUrl}
+                      fallback={
+                        request.sender.displayName ?? request.sender.exchangeId
+                      }
+                      size="sm"
+                    />
+
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-black">
+                        {request.sender.displayName ??
+                          request.sender.exchangeId}
+                      </p>
+                      <p className="truncate text-sm text-black/50">
+                        @{request.sender.exchangeId}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex shrink-0 gap-2">
@@ -407,13 +442,21 @@ export default function FriendsPage() {
                   className="rounded-3xl"
                 >
                   <div className="flex items-center justify-between gap-3 rounded-3xl bg-white p-5 shadow-sm">
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-bold text-black">
-                        {friend.displayName ?? friend.exchangeId}
-                      </p>
-                      <p className="truncate text-sm text-black/50">
-                        @{friend.exchangeId}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar
+                        src={friend.avatarUrl}
+                        fallback={friend.displayName ?? friend.exchangeId}
+                        size="md"
+                      />
+
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-bold text-black">
+                          {friend.displayName ?? friend.exchangeId}
+                        </p>
+                        <p className="truncate text-sm text-black/50">
+                          @{friend.exchangeId}
+                        </p>
+                      </div>
                     </div>
 
                     <Link

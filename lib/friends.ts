@@ -185,7 +185,15 @@ export async function listIncomingRequests(
   const rows = data ?? [];
 
   return rows.map((row) => {
-    const sender = row.sender[0];
+    // sender_id -> profiles.id is many-to-one (each request has exactly
+    // one sender), so PostgREST embeds it as a single object at runtime —
+    // indexing it with [0] (as this used to) always read `undefined` off
+    // the object and threw on every row. supabase-js's structural type
+    // inference here (no generated Database types passed to createClient)
+    // can't read cardinality off the select string though, so it types
+    // this as ProfileRow[] regardless of the true runtime shape — hence
+    // the cast rather than a plain assignment.
+    const sender = row.sender as unknown as ProfileRow;
 
     if (!sender) {
       throw new Error("Incoming friend request is missing its sender profile.");
@@ -238,7 +246,11 @@ export async function listOutgoingRequests(
   const rows = data ?? [];
 
   return rows.map((row) => {
-    const receiver = row.receiver[0];
+    // Same fix as listIncomingRequests above: receiver_id -> profiles.id is
+    // many-to-one, so this embeds as a single object at runtime, not an
+    // array — the type is cast for the same reason (see the comment
+    // there).
+    const receiver = row.receiver as unknown as ProfileRow;
 
     if (!receiver) {
       throw new Error("Outgoing friend request is missing its receiver profile.");
