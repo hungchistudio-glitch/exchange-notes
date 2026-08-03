@@ -71,6 +71,13 @@ function toYumiPhase(phase: PlaybackPhase | undefined): YumiAnimationState {
 const PAUSE_BETWEEN_REPEATS_MS = 320;
 const DONE_HOLD_MS = 700;
 
+// Most Zhuyin initials sit fairly close to a relaxed jaw/lip position to
+// begin with — Mandarin consonants distinguish themselves mostly by tongue
+// placement, not by mouth shape — so YumiFace's default teaching-emphasis
+// multiplier read as barely-there movement here. Boosted specifically for
+// Zhuyin per user request; English keeps YumiFace's own default.
+const ZHUYIN_MOUTH_EMPHASIS = 1.9;
+
 function BackIcon() {
   return (
     <svg
@@ -474,21 +481,23 @@ export default function PronunciationLabPage() {
 
   // The card's ONE primary playback trigger, now owned entirely by the Yumi
   // teaching stage (tapping anywhere in that box) rather than a separate
-  // top-right speaker button. Per the redesign brief: this must speak the
-  // LETTER'S OWN NAME (e.g. "A", "B" — `letter.letter`), never a
-  // commonSounds value and never an example word's audio. Those are a
-  // different card element (the pill switcher for study reference, and the
-  // example-word rows below) with their own separate purpose — mixing them
-  // into this one button is exactly what made the old main speaker feel
-  // like it was "connected to the wrong audio."
+  // top-right speaker button.
+  //
+  // This intentionally does NOT speak `sound.soundText` (the currently
+  // selected pill's word, e.g. "say" for Long A) — tried that, and it read
+  // as the wrong pronunciation: tapping the A card said "say" instead of
+  // just "A". Confirmed with the user this must stay simple: A says A, B
+  // says B, regardless of which pill is selected. The pill switcher and its
+  // sound-specific audio/mouth/tongue/guidance/examples still work exactly
+  // as before via `sound` in the surrounding JSX — only THIS button is
+  // pinned to the bare letter name.
   //
   // Speaks the LOWERCASE character, not `letter.letter` (which is uppercase
   // for display). Several TTS voices treat a bare uppercase single
   // character as a request to announce its case for disambiguation —
   // reading "A" back as "capital A" — the same accessibility behavior
   // screen readers use so users can tell "A" apart from "a". Lowercase
-  // doesn't trigger that: voices read it as plain the letter's name, which
-  // is exactly what this button is supposed to say.
+  // doesn't trigger that.
   function playEnglishPrimary(letter: EnglishLetter) {
     const cardKey = `english-${letter.id}`;
     const mainKey = `en-main-${letter.id}`;
@@ -784,6 +793,7 @@ export default function PronunciationLabPage() {
                     copy={copy}
                     language={language}
                     onPlayMain={() => playZhuyinMain(sound)}
+                    emphasisScale={ZHUYIN_MOUTH_EMPHASIS}
                   />
 
                   <div className="mt-3 rounded-2xl bg-surface p-3">
@@ -973,6 +983,8 @@ type TeachingStageProps = {
   copy: PronunciationCopy;
   language: InterfaceLanguage;
   onPlayMain: () => void;
+  /** Passed straight through to YumiFace — see its own comment. */
+  emphasisScale?: number;
 };
 
 // The "Yumi Teaching Stage" (brief sections 1-3, 8, 11): replaces the old
@@ -989,6 +1001,7 @@ function TeachingStage({
   copy,
   language,
   onPlayMain,
+  emphasisScale,
 }: TeachingStageProps) {
   const steps = useMemo(() => deriveTeachingSteps(phonetics), [phonetics]);
 
@@ -1085,22 +1098,32 @@ function TeachingStage({
       type="button"
       onClick={handleTap}
       aria-label={copy.yumi.tapToHear}
-      className="mt-3 flex w-full items-center gap-4 rounded-2xl bg-surface p-3 text-left transition-colors active:bg-black/[0.03] md:gap-4"
+      className="mt-3 flex w-full flex-col items-center gap-3 rounded-2xl bg-surface p-4 text-center transition-colors active:bg-black/[0.03] md:flex-row md:items-center md:gap-5 md:p-4 md:text-left"
     >
-      <div className="flex shrink-0 justify-center md:w-[35%]">
+      {/* Yumi herself is now the card's main teaching stage, not a small
+          side icon — centered and enlarged on mobile (brief: "手機版可以將
+          Yumi 置中放大"), ~38% of the row on wider screens so the mouth/
+          tongue stay the easiest thing on the card to actually look at. */}
+      <div className="flex shrink-0 justify-center md:w-[38%]">
         {mounted ? (
-          <YumiFace pose={pose} phase={rigPhase} size={72} label={copy.yumi.demoAriaLabel} />
+          <YumiFace
+            pose={pose}
+            phase={rigPhase}
+            size={104}
+            label={copy.yumi.demoAriaLabel}
+            emphasisScale={emphasisScale}
+          />
         ) : (
           <div
-            className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-dashed border-line/60 text-black/20"
+            className="flex h-[88px] w-[88px] items-center justify-center rounded-full border border-dashed border-line/60 text-black/20"
             aria-hidden="true"
           >
-            <Volume2 size={18} strokeWidth={1.5} />
+            <Volume2 size={22} strokeWidth={1.5} />
           </div>
         )}
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 w-full flex-1">
         {active && !everPlayed ? (
           <p className="mb-1.5 text-[11px] font-medium text-black/40">{copy.yumi.tapToHear}</p>
         ) : null}

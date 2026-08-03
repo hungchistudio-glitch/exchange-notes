@@ -502,7 +502,7 @@ const traditionalChinese: TranslationDictionary = {
       commonTrapSummary: "你可能把 {symbol} 發成 {confusedWith} 的音。",
       playbackFailed: "播放失敗，點一下再試一次。",
       kk: "KK",
-      moreSounds: "更多音值",
+      moreSounds: "發音變體",
       romanizationHint: "最接近的拼音",
     },
 
@@ -512,7 +512,7 @@ const traditionalChinese: TranslationDictionary = {
       airflow: "氣流",
       voice: "聲帶",
       demoAriaLabel: "Yumi 正在示範這個音的嘴型與舌位",
-      tapToHear: "點一下 Yumi，聽這個發音。",
+      tapToHear: "點一下 Yumi，聆聽並觀看目前的發音方式。",
       sleepingAriaLabel: "Yumi 正在休息——滑到這張卡片喚醒她",
     },
   },

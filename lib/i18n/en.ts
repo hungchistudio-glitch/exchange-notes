@@ -512,7 +512,7 @@ const english: TranslationDictionary = {
       commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
       playbackFailed: "Playback failed. Tap to try again.",
       kk: "KK",
-      moreSounds: "More sounds",
+      moreSounds: "Pronunciation variants",
       romanizationHint: "Closest pinyin",
     },
 
@@ -522,7 +522,7 @@ const english: TranslationDictionary = {
       airflow: "Airflow",
       voice: "Voice",
       demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
-      tapToHear: "Tap Yumi to hear the correct pronunciation.",
+      tapToHear: "Tap Yumi to hear and watch this sound.",
       sleepingAriaLabel: "Yumi is resting — scroll here to wake her up",
     },
   },
