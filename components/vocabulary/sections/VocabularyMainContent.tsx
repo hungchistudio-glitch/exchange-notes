@@ -21,7 +21,7 @@ export default function VocabularyMainContent({
     // its own insets), and neither VocabularySearchSection nor
     // VocabularyList add any — so this is the one place that gives the
     // search bar, filter chips, and word list some breathing room from the
-    // screen edge. 21px matches MurphCompanion's own section padding above,
+    // screen edge. 21px matches YumiCompanion's own section padding above,
     // so the page reads as one consistent column, not two different insets.
     <div className="px-[21px]">
       <VocabularySearchSection {...searchProps} />

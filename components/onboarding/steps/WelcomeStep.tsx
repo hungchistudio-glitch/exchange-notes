@@ -1,7 +1,7 @@
 "use client";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
-import OnboardingMurph from "@/components/onboarding/OnboardingMurph";
+import OnboardingYumi from "@/components/onboarding/OnboardingYumi";
 
 type WelcomeStepProps = {
   onContinue: () => void;
@@ -13,7 +13,7 @@ export default function WelcomeStep({ onContinue }: WelcomeStepProps) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center text-center">
-      <OnboardingMurph className="h-40 w-40" />
+      <OnboardingYumi className="h-40 w-40" />
 
       <h1 className="mt-6 text-[26px] font-bold tracking-[-0.03em] text-black">
         {copy.title}

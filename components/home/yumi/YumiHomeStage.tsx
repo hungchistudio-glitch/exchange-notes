@@ -19,11 +19,11 @@ import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
 
-import styles from "./MurphHomeStage.module.css";
+import styles from "./YumiHomeStage.module.css";
 
-type MurphCopy = TranslationDictionary["home"]["murph"];
+type YumiCopy = TranslationDictionary["home"]["yumi"];
 
-type MurphHomeStageProps = {
+type YumiHomeStageProps = {
   items: VocabularyItem[];
   onMoodChange?: (mood: HomeMood) => void;
 };
@@ -36,7 +36,7 @@ const MAX_PUPIL_OFFSET = 9;
 // Fallback durations, slightly longer than the CSS animations they back
 // up: onAnimationEnd never fires when prefers-reduced-motion disables the
 // animation entirely (or in any other edge case where the event is
-// missed), which would otherwise leave Murphy frozen in the intro/eating
+// missed), which would otherwise leave Yumi frozen in the intro/eating
 // pose forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 1900;
 const EAT_FALLBACK_MS = 1100;
@@ -67,7 +67,7 @@ function writeFlag(name: string) {
   }
 }
 
-function getStatusLines(mood: HomeMood, wordsToday: number, copy: MurphCopy) {
+function getStatusLines(mood: HomeMood, wordsToday: number, copy: YumiCopy) {
   switch (mood) {
     case "waiting":
       return { primary: copy.statusWaiting, secondary: copy.hintWaiting };
@@ -100,7 +100,7 @@ function getStatusLines(mood: HomeMood, wordsToday: number, copy: MurphCopy) {
   }
 }
 
-function getReactionText(reaction: HomeReactionMood, copy: MurphCopy) {
+function getReactionText(reaction: HomeReactionMood, copy: YumiCopy) {
   switch (reaction) {
     case "curious":
       return copy.reactionCurious;
@@ -115,14 +115,14 @@ function scrollToDailyFocus() {
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// The Home page's "little stage" for Murphy — same breathing eye-mark as
+// The Home page's "little stage" for Yumi — same breathing eye-mark as
 // everywhere else, but here it roams a small ground, reacts to today's
 // word count, and drifts into a quieter mood after a few days away. Shares
-// the same murph_pet_state row (and cookie tray) as the Vocabulary page's
-// MurphCompanion, so it's the same pet remembering the same history.
-export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStageProps) {
+// the same yumi_pet_state row (and cookie tray) as the Vocabulary page's
+// YumiCompanion, so it's the same pet remembering the same history.
+export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
   const { t } = useTranslation();
-  const copy = t.home.murph;
+  const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
 
   const [petState, setPetState] = useState<PetState | null>(null);
@@ -135,7 +135,7 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
   const [pupilOffset, setPupilOffset] = useState<{ x: number; y: number } | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
-  const murphZoneRef = useRef<HTMLDivElement>(null);
+  const yumiZoneRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<HTMLDivElement>(null);
   const reactionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,8 +182,8 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
         const { state } = await touchOpened(supabase, initial);
         if (!cancelled) setPetState(state);
       } catch {
-        // Not signed in yet, or murph_pet_state hasn't been migrated on
-        // the live database — Murphy still renders and reacts.
+        // Not signed in yet, or yumi_pet_state hasn't been migrated on
+        // the live database — Yumi still renders and reacts.
       }
     }
 
@@ -202,8 +202,8 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
   // the flag read/write is an intentional one-time side effect, not state
   // that can be computed from props alone.
   useEffect(() => {
-    if (context.justReturned && !readFlag("murph-home-welcomed")) {
-      writeFlag("murph-home-welcomed");
+    if (context.justReturned && !readFlag("yumi-home-welcomed")) {
+      writeFlag("yumi-home-welcomed");
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIntroMood("welcomeBack");
       introTimeoutRef.current = setTimeout(
@@ -213,8 +213,8 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
       return;
     }
 
-    if (context.wordsToday >= 3 && !readFlag("murph-home-danced")) {
-      writeFlag("murph-home-danced");
+    if (context.wordsToday >= 3 && !readFlag("yumi-home-danced")) {
+      writeFlag("yumi-home-danced");
       setIntroMood("dancing");
       introTimeoutRef.current = setTimeout(
         () => setIntroMood(null),
@@ -223,8 +223,8 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
       return;
     }
 
-    if (steadyMood === "lonely" && !readFlag("murph-home-lonely-tear")) {
-      writeFlag("murph-home-lonely-tear");
+    if (steadyMood === "lonely" && !readFlag("yumi-home-lonely-tear")) {
+      writeFlag("yumi-home-lonely-tear");
       setIntroMood("lonely");
       introTimeoutRef.current = setTimeout(
         () => setIntroMood(null),
@@ -279,7 +279,7 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
     return () => observer.disconnect();
   }, []);
 
-  // Belt-and-suspenders: force Murphy out of the wake pose even if the CSS
+  // Belt-and-suspenders: force Yumi out of the wake pose even if the CSS
   // animationend event never arrives.
   useEffect(() => {
     wakeFallbackRef.current = setTimeout(() => {
@@ -326,7 +326,7 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
     }
   }
 
-  // Murphy's eyes glance toward whichever cookie is currently being
+  // Yumi's eyes glance toward whichever cookie is currently being
   // dragged, clamped to a small max offset so it reads as a glance rather
   // than the pupil detaching from the eye.
   function handleDragPoint(point: { x: number; y: number } | null) {
@@ -378,7 +378,7 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
 
   return (
     <div ref={stageRef} className={styles.stage}>
-      <div ref={murphZoneRef} className={styles.ground}>
+      <div ref={yumiZoneRef} className={styles.ground}>
         <div className={styles.ambientLight} aria-hidden="true">
           <span />
           <span />
@@ -441,7 +441,7 @@ export default function MurphHomeStage({ items, onMoodChange }: MurphHomeStagePr
         <div className={styles.trayCorner}>
           <CookieTray
             cookies={cookies}
-            murphZoneRef={murphZoneRef}
+            yumiZoneRef={yumiZoneRef}
             onFeed={handleFeed}
             onDragPoint={handleDragPoint}
             disabled={!petState}

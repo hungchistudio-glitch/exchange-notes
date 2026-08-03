@@ -620,7 +620,7 @@
   }
 }
 
-/* A faint, breathing ground shadow — Murph now stands on something,
+/* A faint, breathing ground shadow — Yumi now stands on something,
    rather than floating loose in the middle of the page. */
 .groundShadow {
   position: absolute;
@@ -670,7 +670,7 @@
   }
 
   /* Reduced motion means no large translation/rotation/scale swings, not
-     "completely frozen" — Murph should always read as alive. A very
+     "completely frozen" — Yumi should always read as alive. A very
      small, slow opacity + scale pulse stays well within accessibility
      guidance while replacing the fully-disabled breathing animation.
      !important because the mood-specific disable rules above target the

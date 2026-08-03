@@ -3,9 +3,9 @@ type NavIconProps = {
   active?: boolean;
 };
 
-// "Murphy Portal" — a small core wrapped by a half-open orbital ring,
-// echoing Murph's own eye. This is the app's most brand-forward icon:
-// Home doubles as "back to Murph". The core fills solid and the ring
+// "Yumi Portal" — a small core wrapped by a half-open orbital ring,
+// echoing Yumi's own eye. This is the app's most brand-forward icon:
+// Home doubles as "back to Yumi". The core fills solid and the ring
 // nudges open a touch further once selected, like an eye catching light.
 export default function NavHomeIcon({
   className = "h-5 w-5",

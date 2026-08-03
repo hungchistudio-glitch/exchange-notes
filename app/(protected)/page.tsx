@@ -9,7 +9,7 @@ import Screen from "@/components/foundation/layout/Screen";
 import BookIcon from "@/components/foundation/icons/BookIcon";
 import CameraIcon from "@/components/foundation/icons/CameraIcon";
 import LearningPartnerCard from "@/components/home/LearningPartnerCard";
-import MurphHomeStage from "@/components/home/murph/MurphHomeStage";
+import YumiHomeStage from "@/components/home/yumi/YumiHomeStage";
 import NotesComposer from "@/components/home/NotesComposer";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
@@ -148,7 +148,7 @@ export default function HomePage() {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const { reviewStats } = useVocabularyStats(items);
-  const [murphMood, setMurphMood] = useState<HomeMood>("waiting");
+  const [yumiMood, setYumiMood] = useState<HomeMood>("waiting");
 
   const hour = new Date().getHours();
   const greeting =
@@ -160,7 +160,7 @@ export default function HomePage() {
 
   // Only the notable/celebratory moods get a distinct hero title — the
   // quiet ones (waiting, hungry, sad, grumpy, lonely, sleeping) keep the
-  // default "Keep learning" copy, since Murphy's own status line right
+  // default "Keep learning" copy, since Yumi's own status line right
   // below already carries that feeling; repeating it here would just be
   // the same sentence twice.
   const heroCopyByMood: Partial<Record<HomeMood, { title: string; description: string }>> = {
@@ -186,7 +186,7 @@ export default function HomePage() {
     },
   };
 
-  const heroCopy = heroCopyByMood[murphMood] ?? {
+  const heroCopy = heroCopyByMood[yumiMood] ?? {
     title: t.home.hero.title,
     description: t.home.hero.description,
   };
@@ -264,7 +264,7 @@ export default function HomePage() {
       </div>
 
       <div className="mt-1.5">
-        <MurphHomeStage items={items} onMoodChange={setMurphMood} />
+        <YumiHomeStage items={items} onMoodChange={setYumiMood} />
       </div>
 
       <div className="px-4 pt-3">

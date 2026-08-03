@@ -3,7 +3,7 @@
 import { LoaderCircle } from "lucide-react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
-import OnboardingMurph from "@/components/onboarding/OnboardingMurph";
+import OnboardingYumi from "@/components/onboarding/OnboardingYumi";
 import type { AppLanguage } from "@/lib/types/app";
 
 type ConfirmStepProps = {
@@ -33,7 +33,7 @@ export default function ConfirmStep({
   return (
     <div className="flex flex-1 flex-col items-center">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <OnboardingMurph mood="proud" className="h-32 w-32" />
+        <OnboardingYumi mood="proud" className="h-32 w-32" />
 
         <h1 className="mt-5 text-[24px] font-bold tracking-[-0.03em] text-black">
           {copy.title}

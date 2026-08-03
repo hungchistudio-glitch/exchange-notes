@@ -1,7 +1,7 @@
 /* Deliberately not a card: no border-radius, no hard edge — the gradient
    fades to fully transparent by the bottom so this dissolves straight into
    the page's white background instead of reading as a boxed header sitting
-   on top of the vocabulary list. Murph lives in the page, not in a frame
+   on top of the vocabulary list. Yumi lives in the page, not in a frame
    around it. */
 .section {
   position: relative;
@@ -25,7 +25,7 @@
   text-align: center;
 }
 
-.murphZone {
+.yumiZone {
   width: 100%;
   height: 220px;
   display: flex;
@@ -43,7 +43,7 @@
 }
 
 /* The compact stand-in for four separate stat cards — a single quiet
-   line, so Murph's status feels like the headline and this is just the
+   line, so Yumi's status feels like the headline and this is just the
    fine print underneath it, not four more boxes to scan. */
 .summaryLine {
   margin-top: 3px;

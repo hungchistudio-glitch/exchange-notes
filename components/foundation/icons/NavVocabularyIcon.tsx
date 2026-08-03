@@ -4,7 +4,7 @@ type NavIconProps = {
 };
 
 // "Language Core" — two facing arcs (reads as an open book, a mouth mid-
-// syllable, or Murph's own bracket silhouette) around a small central
+// syllable, or Yumi's own bracket silhouette) around a small central
 // node. The node fills in solid once selected, like a word just landed.
 export default function NavVocabularyIcon({
   className = "h-5 w-5",

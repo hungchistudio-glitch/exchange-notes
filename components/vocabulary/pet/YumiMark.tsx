@@ -2,28 +2,28 @@
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import type { GrowthStage } from "@/lib/pet/moodEngine";
-import type { MurphMood } from "@/lib/pet/types";
+import type { YumiMood } from "@/lib/pet/types";
 
-import styles from "./MurphMark.module.css";
+import styles from "./YumiMark.module.css";
 
-type MurphMarkProps = {
-  mood: MurphMood;
+type YumiMarkProps = {
+  mood: YumiMood;
   isWaking: boolean;
   isEating: boolean;
   growthStage: GrowthStage;
   crownEarned: boolean;
-  // One-shot: a brief downward glance, used right after Murph wakes up to
+  // One-shot: a brief downward glance, used right after Yumi wakes up to
   // suggest awareness of the vocabulary list below — not a steady mood.
   glanceDown?: boolean;
   onWakeAnimationEnd?: () => void;
   onEatAnimationEnd?: () => void;
 };
 
-// Murph is the same breathing "E"-mark used on the splash screen, loader,
+// Yumi is the same breathing "E"-mark used on the splash screen, loader,
 // and the Messages mood swiper — grown up into a full companion via CSS
 // layering only (glow ring / particles / crown), never by changing the
 // underlying SVG shape, so it keeps its identity as it grows.
-export default function MurphMark({
+export default function YumiMark({
   mood,
   isWaking,
   isEating,
@@ -32,7 +32,7 @@ export default function MurphMark({
   glanceDown = false,
   onWakeAnimationEnd,
   onEatAnimationEnd,
-}: MurphMarkProps) {
+}: YumiMarkProps) {
   return (
     <div className={styles.stage}>
       {growthStage >= 2 ? <div className={styles.glowRing} aria-hidden="true" /> : null}

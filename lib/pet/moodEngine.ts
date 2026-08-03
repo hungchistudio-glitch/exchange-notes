@@ -1,7 +1,7 @@
 import { getPronunciationData } from "@/lib/pronunciation";
 import type { VocabularyItem } from "@/lib/types/app";
 
-import type { Cookie, CookieType, MurphMood } from "./types";
+import type { Cookie, CookieType, YumiMood } from "./types";
 
 const COOKIE_CYCLE: CookieType[] = ["letter", "zhuyin"];
 const ZHUYIN_SYMBOL_PATTERN = /[ㄅ-ㄯ]/;
@@ -62,7 +62,7 @@ export type WordStreak = {
 
 // Mirrors lib/review/getLearningStreak.ts's date-key algorithm, but counts
 // days a vocabulary word was *added* rather than reviewed — the natural
-// streak definition for a "feed Murph a new word" mechanic. Operates on
+// streak definition for a "feed Yumi a new word" mechanic. Operates on
 // already-loaded items, so it costs no extra Supabase round trip.
 export function computeWordStreak(items: VocabularyItem[]): WordStreak {
   const activeDateKeys = new Set(
@@ -147,7 +147,7 @@ export function computeMood({
   cookiesAvailable,
   daysSinceLastOpen,
   goalCompleted,
-}: MoodInputs): MurphMood {
+}: MoodInputs): YumiMood {
   if (daysSinceLastOpen >= 3) return "missingYou";
   if (goalCompleted || streakDays >= 7) return "proud";
   if (cookiesAvailable >= 5) return "excited";
@@ -156,9 +156,9 @@ export function computeMood({
   return "hungry";
 }
 
-// The brief-and-satisfying reaction Murph plays right after eating a
+// The brief-and-satisfying reaction Yumi plays right after eating a
 // specific cookie type, independent of the steady-state mood above.
-export function cookieReactionMood(type: CookieType): MurphMood {
+export function cookieReactionMood(type: CookieType): YumiMood {
   switch (type) {
     case "letter":
       return "curious";
@@ -169,7 +169,7 @@ export function cookieReactionMood(type: CookieType): MurphMood {
 
 // Builds the full earned-order cookie list (oldest word first) so a
 // cookie's shape/type stays stable regardless of feed order, then filters
-// down to the ones not yet fed to Murph.
+// down to the ones not yet fed to Yumi.
 export function buildAvailableCookies(
   items: VocabularyItem[],
   fedWordIds: string[],

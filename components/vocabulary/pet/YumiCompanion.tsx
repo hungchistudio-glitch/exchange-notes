@@ -14,24 +14,24 @@ import {
   hasCrown,
 } from "@/lib/pet/moodEngine";
 import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
-import type { Cookie, MurphMood, PetState } from "@/lib/pet/types";
+import type { Cookie, YumiMood, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import CookieTray from "./CookieTray";
-import MurphMark from "./MurphMark";
+import YumiMark from "./YumiMark";
 
-import styles from "./MurphCompanion.module.css";
+import styles from "./YumiCompanion.module.css";
 
-type MurphCompanionProps = {
+type YumiCompanionProps = {
   items: VocabularyItem[];
   dailyGoal: number;
   dailyProgress: number;
   // True while the search box has text but the list came back empty — lets
-  // Murph read as aware of what's happening on the page instead of sitting
+  // Yumi read as aware of what's happening on the page instead of sitting
   // above it as a disconnected header.
   searchHasNoResults: boolean;
-  // Bumped by the parent every time a vocabulary card is opened, so Murph
+  // Bumped by the parent every time a vocabulary card is opened, so Yumi
   // can throw a quick curious glance without any deeper wiring.
   cardGlancePulse: number;
 };
@@ -40,21 +40,21 @@ const REACTION_DURATION_MS = 2200;
 // Fallback durations, slightly longer than the CSS animations they back
 // up: onAnimationEnd never fires when prefers-reduced-motion disables the
 // animation entirely (or in any other edge case where the event is
-// missed), which would otherwise leave Murph frozen in the intro/eating
+// missed), which would otherwise leave Yumi frozen in the intro/eating
 // pose forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 2000;
 const EAT_FALLBACK_MS = 1100;
 
-// Replaces the old data-dashboard at the top of the Vocabulary page: Murph
+// Replaces the old data-dashboard at the top of the Vocabulary page: Yumi
 // is fed one "cookie" per saved word and grows/reacts over time, so every
 // word added reads as caring for a companion rather than a stat ticking up.
-export default function MurphCompanion({
+export default function YumiCompanion({
   items,
   dailyGoal,
   dailyProgress,
   searchHasNoResults,
   cardGlancePulse,
-}: MurphCompanionProps) {
+}: YumiCompanionProps) {
   const { t } = useTranslation();
   const copy = t.vocabulary.mascot;
 
@@ -63,9 +63,9 @@ export default function MurphCompanion({
   const [isWaking, setIsWaking] = useState(true);
   const [glanceDown, setGlanceDown] = useState(false);
   const [eatingId, setEatingId] = useState<string | null>(null);
-  const [reactionMood, setReactionMood] = useState<MurphMood | null>(null);
+  const [reactionMood, setReactionMood] = useState<YumiMood | null>(null);
 
-  const murphZoneRef = useRef<HTMLDivElement>(null);
+  const yumiZoneRef = useRef<HTMLDivElement>(null);
   const reactionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const glanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wakeFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,8 +97,8 @@ export default function MurphCompanion({
         setDaysSinceLastOpen(previousOpenedAt ? daysSince(previousOpenedAt) : 0);
         setPetState(state);
       } catch {
-        // Not signed in yet, or murph_pet_state hasn't been migrated on the
-        // live database — Murph still renders and reacts, it just won't
+        // Not signed in yet, or yumi_pet_state hasn't been migrated on the
+        // live database — Yumi still renders and reacts, it just won't
         // remember growth across visits until that resolves.
       }
     }
@@ -110,7 +110,7 @@ export default function MurphCompanion({
     };
   }, []);
 
-  // Belt-and-suspenders: force Murph out of the wake pose even if the CSS
+  // Belt-and-suspenders: force Yumi out of the wake pose even if the CSS
   // animationend event never arrives.
   useEffect(() => {
     wakeFallbackRef.current = setTimeout(() => {
@@ -130,7 +130,7 @@ export default function MurphCompanion({
     };
   }, []);
 
-  // Right after Murph wakes up, a brief downward glance toward the
+  // Right after Yumi wakes up, a brief downward glance toward the
   // vocabulary list — a small acknowledgment that it's part of the same
   // page, not just a header sitting above it.
   function handleWakeEnd() {
@@ -148,7 +148,7 @@ export default function MurphCompanion({
   // Shared by feeding, the card-glance reaction, and the new-word bump —
   // all three are the same shape: show a mood for a bit, then let the
   // steady/search-driven mood take back over.
-  function triggerReaction(nextMood: MurphMood, durationMs: number) {
+  function triggerReaction(nextMood: YumiMood, durationMs: number) {
     setReactionMood(nextMood);
     if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
     reactionTimeoutRef.current = setTimeout(
@@ -157,7 +157,7 @@ export default function MurphCompanion({
     );
   }
 
-  // Weak awareness #1: opening a vocabulary card throws Murph a quick
+  // Weak awareness #1: opening a vocabulary card throws Yumi a quick
   // curious glance — a small acknowledgment, not a full interruption.
   useEffect(() => {
     if (cardGlancePulse !== previousGlancePulseRef.current) {
@@ -167,7 +167,7 @@ export default function MurphCompanion({
   }, [cardGlancePulse]);
 
   // Weak awareness #2: any time the word count goes up — whether from this
-  // page, AI lookup, or elsewhere — Murph gets a happy bump. Tracking via a
+  // page, AI lookup, or elsewhere — Yumi gets a happy bump. Tracking via a
   // ref means this works with zero cross-component event wiring.
   useEffect(() => {
     const previous = previousItemCountRef.current;
@@ -238,8 +238,8 @@ export default function MurphCompanion({
     <section className={styles.section}>
       <p className={styles.greeting}>{greeting}</p>
 
-      <div ref={murphZoneRef} className={styles.murphZone}>
-        <MurphMark
+      <div ref={yumiZoneRef} className={styles.yumiZone}>
+        <YumiMark
           mood={mood}
           isWaking={isWaking}
           isEating={Boolean(eatingId)}
@@ -257,7 +257,7 @@ export default function MurphCompanion({
       <div className={styles.foodZone}>
         <CookieTray
           cookies={cookies}
-          murphZoneRef={murphZoneRef}
+          yumiZoneRef={yumiZoneRef}
           onFeed={handleFeed}
           disabled={!petState}
           copy={copy}

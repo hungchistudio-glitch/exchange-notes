@@ -351,7 +351,7 @@ export type TranslationDictionary = {
       descriptionWelcomeBack: string;
     };
 
-    murph: {
+    yumi: {
       statusWaiting: string;
       hintWaiting: string;
       statusCurious: string;

@@ -43,7 +43,7 @@ export default function useVocabularyPage() {
   const [collectionsItem, setCollectionsItem] =
     useState<VocabularyItem | null>(null);
   const [editItem, setEditItem] = useState<VocabularyItem | null>(null);
-  // Bumped every time a vocabulary card is opened, so Murph can react with a
+  // Bumped every time a vocabulary card is opened, so Yumi can react with a
   // brief curious glance — a plain counter keeps the trigger self-contained
   // (no need to track *which* card, just "something happened").
   const [cardGlancePulse, setCardGlancePulse] = useState(0);
@@ -154,7 +154,7 @@ export default function useVocabularyPage() {
   const searchHasNoResults =
     query.trim().length > 0 && !loading && visibleItems.length === 0;
 
-  const murphProps = {
+  const yumiProps = {
     items: uniqueItems,
     dailyGoal,
     dailyProgress,
@@ -317,7 +317,7 @@ export default function useVocabularyPage() {
 
   return {
     heroProps,
-    murphProps,
+    yumiProps,
     mainContentProps,
     overlaysProps,
     learningLanguage,

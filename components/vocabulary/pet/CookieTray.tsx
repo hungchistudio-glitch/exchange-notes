@@ -12,14 +12,14 @@ type MascotCopy = TranslationDictionary["vocabulary"]["mascot"];
 
 type CookieTrayProps = {
   cookies: Cookie[];
-  murphZoneRef: RefObject<HTMLDivElement | null>;
+  yumiZoneRef: RefObject<HTMLDivElement | null>;
   onFeed: (cookie: Cookie) => void;
   disabled?: boolean;
   copy: MascotCopy;
   maxVisible?: number;
   hideHint?: boolean;
   // Reports the live pointer position while a cookie is actively being
-  // dragged (null once released/settled), so Murphy's eyes can follow it.
+  // dragged (null once released/settled), so Yumi's eyes can follow it.
   onDragPoint?: (point: { x: number; y: number } | null) => void;
 };
 
@@ -51,7 +51,7 @@ type DragState = {
 
 export default function CookieTray({
   cookies,
-  murphZoneRef,
+  yumiZoneRef,
   onFeed,
   disabled,
   copy,
@@ -86,8 +86,8 @@ export default function CookieTray({
     });
   }
 
-  function isOverMurph(clientX: number, clientY: number) {
-    const zone = murphZoneRef.current;
+  function isOverYumi(clientX: number, clientY: number) {
+    const zone = yumiZoneRef.current;
     if (!zone) return false;
 
     const rect = zone.getBoundingClientRect();
@@ -134,17 +134,17 @@ export default function CookieTray({
     });
   }
 
-  // On release: either let go over Murph, or a plain tap (never dragged
+  // On release: either let go over Yumi, or a plain tap (never dragged
   // past the threshold) — both count as feeding, and both play the same
-  // "fly to Murph" transition for a consistent, satisfying finish. A drag
+  // "fly to Yumi" transition for a consistent, satisfying finish. A drag
   // released anywhere else just snaps back (cancelled, no feed).
   function handlePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
     const current = dragRef.current;
     if (!current) return;
 
-    const overMurph = isOverMurph(event.clientX, event.clientY);
+    const overYumi = isOverYumi(event.clientX, event.clientY);
 
-    if (!current.dragging || overMurph) {
+    if (!current.dragging || overYumi) {
       settledRef.current = false;
       updateDrag({
         ...current,
@@ -168,12 +168,12 @@ export default function CookieTray({
   }
 
   // Second half of the release: on the next frame, move the ghost's target
-  // position to Murph's center so the CSS transition on the ghost animates
+  // position to Yumi's center so the CSS transition on the ghost animates
   // it flying there, then settle (feed + clear) when that finishes.
   useEffect(() => {
     if (!drag || !drag.releasing) return;
 
-    const zone = murphZoneRef.current;
+    const zone = yumiZoneRef.current;
     if (!zone) {
       onFeed(drag.cookie);
       updateDrag(null);
@@ -191,7 +191,7 @@ export default function CookieTray({
     });
 
     // Safety net: if the transition never fires (e.g. reduced-motion, or
-    // the cookie happened to already be at Murph's position), still settle
+    // the cookie happened to already be at Yumi's position), still settle
     // so the cookie doesn't get stuck un-fed.
     const fallback = setTimeout(settleRelease, 700);
 

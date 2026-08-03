@@ -13,7 +13,7 @@
   );
 }
 
-/* Murphy is meant to always be alive on screen — deliberately no
+/* Yumi is meant to always be alive on screen — deliberately no
    scroll-out-of-view animation pausing here (removed in favor of always
    moving, even off-screen or briefly scrolled past). */
 
@@ -74,10 +74,10 @@
   height: clamp(140px, 19dvh, 176px);
 }
 
-/* Anchors Murphy's stand-point to a fixed offset from the stage floor —
+/* Anchors Yumi's stand-point to a fixed offset from the stage floor —
    deliberately NOT a percentage padding/bottom here: percentage values for
    vertical padding resolve against the container's WIDTH per the CSS spec,
-   not its height, which on a short wide stage pushed Murphy almost
+   not its height, which on a short wide stage pushed Yumi almost
    entirely above the visible area. */
 .moverAnchor {
   position: absolute;
@@ -552,7 +552,7 @@
 }
 
 /* ---------- post-eat: satisfied, but still a little eager ---------- */
-/* Plays right after the chomp finishes, for as long as the "Murphy feels
+/* Plays right after the chomp finishes, for as long as the "Yumi feels
    ..." reaction text is showing: a happy little bounce, a squint, a
    glance down at the tray, then a glance up at the user — "I liked that,
    feed me another" rather than just snapping back to the idle loop. */
@@ -633,7 +633,7 @@
 }
 
 /* Eyelids intentionally do NOT get a dedicated "closed → opening" animation
-   here (see MurphMark.module.css for the matching Vocabulary-page fix): a
+   here (see YumiMark.module.css for the matching Vocabulary-page fix): a
    visibly half-shut rect for the first ~20% of this entrance read as a
    stray rectangular patch above/below the eye rather than a believable
    closing lid, since the eyelid rects are only clipped to a circle and
@@ -808,7 +808,7 @@
   }
 
   /* Reduced motion means no large translation/rotation/scale swings, not
-     "completely frozen" — Murphy should always read as alive. A very
+     "completely frozen" — Yumi should always read as alive. A very
      small, slow opacity + scale pulse stays well within accessibility
      guidance while replacing the fully-disabled animation above. */
   .figure {

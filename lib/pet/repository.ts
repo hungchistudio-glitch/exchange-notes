@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 import type { PetState } from "./types";
 
-const TABLE = "murph_pet_state";
+const TABLE = "yumi_pet_state";
 
 function emptyState(userId: string): PetState {
   const now = new Date().toISOString();
@@ -18,8 +18,8 @@ function emptyState(userId: string): PetState {
   };
 }
 
-// Fetches the caller's Murph state, creating a fresh row on first visit.
-// Returns a client-side fallback (never persisted) if the murph_pet_state
+// Fetches the caller's Yumi state, creating a fresh row on first visit.
+// Returns a client-side fallback (never persisted) if the yumi_pet_state
 // table doesn't exist yet — e.g. before the migration has been run against
 // the live database — so the page still renders instead of hard-failing.
 export async function getOrCreatePetState(
@@ -53,7 +53,7 @@ export async function getOrCreatePetState(
   return created as PetState;
 }
 
-// Records that a word's cookie has been fed to Murph. Read-modify-write is
+// Records that a word's cookie has been fed to Yumi. Read-modify-write is
 // fine here — feeding is a single-user, low-frequency, UI-driven action.
 export async function feedCookie(
   supabase: SupabaseClient,
@@ -94,7 +94,7 @@ export async function feedCookie(
   return data as PetState;
 }
 
-// Stamps "last opened" for mood computation (e.g. "Murph missed you"),
+// Stamps "last opened" for mood computation (e.g. "Yumi missed you"),
 // returning the PREVIOUS last_opened_at so the caller can diff against it
 // before it gets overwritten.
 export async function touchOpened(

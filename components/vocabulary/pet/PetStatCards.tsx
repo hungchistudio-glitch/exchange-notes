@@ -1,5 +1,5 @@
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import type { MurphMood } from "@/lib/pet/types";
+import type { YumiMood } from "@/lib/pet/types";
 
 import styles from "./PetStatCards.module.css";
 
@@ -9,7 +9,7 @@ type PetStatCardsProps = {
   wordsToday: number;
   cookies: number;
   streakDays: number;
-  mood: MurphMood;
+  mood: YumiMood;
   copy: MascotCopy;
 };
 

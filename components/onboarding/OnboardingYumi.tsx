@@ -2,26 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import MurphMark from "@/components/vocabulary/pet/MurphMark";
-import type { MurphMood } from "@/lib/pet/types";
+import YumiMark from "@/components/vocabulary/pet/YumiMark";
+import type { YumiMood } from "@/lib/pet/types";
 
-type OnboardingMurphProps = {
-  mood?: MurphMood;
+type OnboardingYumiProps = {
+  mood?: YumiMood;
   className?: string;
 };
 
 // Fallback in case the CSS wake animation never fires onAnimationEnd
 // (prefers-reduced-motion, or any other edge case) — mirrors the same
-// pattern MurphHomeStage uses, so Murph never gets stuck mid-wake.
+// pattern YumiHomeStage uses, so Yumi never gets stuck mid-wake.
 const WAKE_FALLBACK_MS = 1900;
 
-// A standalone, backend-free Murph for the onboarding flow: no pet state,
+// A standalone, backend-free Yumi for the onboarding flow: no pet state,
 // no vocabulary items, no growth stage — this is a brand-new account, so
-// Murph starts at the beginning too (growthStage 0, no crown, no glow).
-export default function OnboardingMurph({
+// Yumi starts at the beginning too (growthStage 0, no crown, no glow).
+export default function OnboardingYumi({
   mood = "curious",
   className = "",
-}: OnboardingMurphProps) {
+}: OnboardingYumiProps) {
   const [isWaking, setIsWaking] = useState(true);
   const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,7 +34,7 @@ export default function OnboardingMurph({
 
   return (
     <div className={className}>
-      <MurphMark
+      <YumiMark
         mood={mood}
         isWaking={isWaking}
         isEating={false}

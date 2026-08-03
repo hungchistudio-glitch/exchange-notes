@@ -4,7 +4,7 @@ import { cookieTypeForIndex } from "./moodEngine";
 import type { CookieType } from "./types";
 
 // A richer, Home-page-specific mood set than the Vocabulary page's
-// MurphMood — driven day-by-day by how many words were added today, and
+// YumiMood — driven day-by-day by how many words were added today, and
 // (when none have been added yet today) by how many days it's been since
 // the last one. Kept separate from lib/pet/moodEngine.ts on purpose: same
 // character, different "scene" with different pacing/thresholds.

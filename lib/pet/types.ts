@@ -1,4 +1,4 @@
-export type MurphMood =
+export type YumiMood =
   | "hungry"
   | "curious"
   | "happy"
@@ -10,7 +10,7 @@ export type MurphMood =
   // comes back empty.
   | "confused";
 
-// Two core content systems, per the "Murph cookie system" design doc:
+// Two core content systems, per the "Yumi cookie system" design doc:
 // the full Zhuyin symbol set and the full A-Z alphabet. No standalone
 // "pinyin" or "special" star cookie anymore.
 export type CookieType = "letter" | "zhuyin";
