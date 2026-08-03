@@ -21,6 +21,19 @@ export default async function ProtectedLayout({
     redirect("/login");
   }
 
+  // Every protected page funnels through here, so this is the single
+  // choke point that catches a not-yet-onboarded account regardless of
+  // how they arrived (OAuth callback, a bookmark, a deep link, etc.).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_completed")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile && !profile.onboarding_completed) {
+    redirect("/onboarding");
+  }
+
   return (
     <>
       {children}

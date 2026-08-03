@@ -26,6 +26,7 @@ import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButt
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
+import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
@@ -463,6 +464,7 @@ export default function ProfilePage() {
               <PronunciationSettingsButton />
               <FontSizeSettingsButton />
               <AppLanguageSettingsButton />
+              <PwaInstallSettingsButton />
             </div>
           </section>
 

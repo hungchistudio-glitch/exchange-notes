@@ -12,6 +12,7 @@ import LearningPartnerCard from "@/components/home/LearningPartnerCard";
 import MurphHomeStage from "@/components/home/murph/MurphHomeStage";
 import NotesComposer from "@/components/home/NotesComposer";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
+import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
 import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 
@@ -251,6 +252,8 @@ export default function HomePage() {
 
   return (
     <Screen>
+      <HomeInstallPrompt />
+
       <div
         className="px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}

@@ -3,6 +3,77 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 export type TranslationLanguage = InterfaceLanguage;
 
 export type TranslationDictionary = {
+  pwa: {
+    title: string;
+    subtitle: string;
+    benefitInstantTitle: string;
+    benefitInstantDescription: string;
+    benefitConnectedTitle: string;
+    benefitConnectedDescription: string;
+    benefitAnywhereTitle: string;
+    benefitAnywhereDescription: string;
+    installCta: string;
+    maybeLater: string;
+    gotIt: string;
+    iosStepsTitle: string;
+    iosStep1: string;
+    iosStep2: string;
+    iosStep3: string;
+    iosStep4: string;
+    settingsRowTitle: string;
+    settingsRowDescription: string;
+    installedRowTitle: string;
+  };
+  onboarding: {
+    back: string;
+    continue: string;
+    welcome: {
+      title: string;
+      subtitle: string;
+      cta: string;
+    };
+    name: {
+      title: string;
+      displayNameLabel: string;
+      displayNamePlaceholder: string;
+      usernameLabel: string;
+      usernamePlaceholder: string;
+      usernameHint: string;
+      checkingAvailability: string;
+      idAvailable: string;
+      idTaken: string;
+      idCheckError: string;
+      addPhoto: string;
+      changePhoto: string;
+      photoImageError: string;
+      photoSizeError: string;
+      photoUploadError: string;
+    };
+    appLanguage: {
+      title: string;
+      subtitle: string;
+      note: string;
+    };
+    languages: {
+      title: string;
+      nativeLabel: string;
+      nativeDescription: string;
+      learningLabel: string;
+      learningDescription: string;
+      previewPrimary: string;
+      previewSecondary: string;
+      sameLanguageHint: string;
+    };
+    confirm: {
+      title: string;
+      nameLabel: string;
+      appLanguageLabel: string;
+      nativeLabelSummary: string;
+      learningLabelSummary: string;
+      note: string;
+      cta: string;
+    };
+  };
   common: {
     close: string;
     cancel: string;
