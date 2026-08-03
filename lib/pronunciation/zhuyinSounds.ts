@@ -42,6 +42,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄅ",
     category: "initial",
     soundText: "玻",
+    audio: "/audio/zhuyin/b.mp3",
     tip: "雙唇緊閉，放開時輕輕吐氣，不送氣，聲帶不振動。",
     examples: [
       { word: "爸爸", zhuyin: "ㄅㄚˋ ㄅㄚ˙" },
@@ -54,6 +55,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄆ",
     category: "initial",
     soundText: "坡",
+    audio: "/audio/zhuyin/p.mp3",
     tip: "雙唇緊閉，放開時用力送氣，聲帶不振動。",
     examples: [
       { word: "婆婆", zhuyin: "ㄆㄛˊ ㄆㄛ˙" },
@@ -66,6 +68,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄇ",
     category: "initial",
     soundText: "摸",
+    audio: "/audio/zhuyin/m.mp3",
     tip: "雙唇閉合，氣流改從鼻腔流出，聲帶振動。",
     examples: [
       { word: "媽媽", zhuyin: "ㄇㄚ ㄇㄚ˙" },
@@ -78,6 +81,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄈ",
     category: "initial",
     soundText: "佛",
+    audio: "/audio/zhuyin/f.mp3",
     tip: "上排牙齒『輕輕咬住』下唇，讓氣流從牙齒與嘴唇的縫隙擠出摩擦，聲帶不振動。重點是牙齒一定要碰到下唇。",
     examples: [
       { word: "飛機", zhuyin: "ㄈㄟ ㄐㄧ" },
@@ -99,6 +103,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄉ",
     category: "initial",
     soundText: "得",
+    audio: "/audio/zhuyin/d.mp3",
     tip: "舌尖抵住上牙齦，放開時輕輕吐氣，不送氣。",
     examples: [
       { word: "弟弟", zhuyin: "ㄉㄧˋ ㄉㄧ˙" },
@@ -111,6 +116,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄊ",
     category: "initial",
     soundText: "特",
+    audio: "/audio/zhuyin/t.mp3",
     tip: "舌尖抵住上牙齦，放開時用力送氣。",
     examples: [
       { word: "兔子", zhuyin: "ㄊㄨˋ ㄗ˙" },
@@ -123,6 +129,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄋ",
     category: "initial",
     soundText: "呢",
+    audio: "/audio/zhuyin/n.mp3",
     tip: "舌尖抵住上牙齦，氣流改從鼻腔流出。",
     examples: [
       { word: "你好", zhuyin: "ㄋㄧˇ ㄏㄠˇ" },
@@ -135,6 +142,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄌ",
     category: "initial",
     soundText: "勒",
+    audio: "/audio/zhuyin/l.mp3",
     tip: "舌尖抵住上牙齦，氣流從舌頭兩側流出。",
     examples: [
       { word: "老師", zhuyin: "ㄌㄠˇ ㄕ" },
@@ -147,6 +155,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄍ",
     category: "initial",
     soundText: "哥",
+    audio: "/audio/zhuyin/g.mp3",
     tip: "舌根抵住軟顎，放開時輕輕吐氣，不送氣。",
     examples: [
       { word: "哥哥", zhuyin: "ㄍㄜ ㄍㄜ˙" },
@@ -159,6 +168,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄎ",
     category: "initial",
     soundText: "科",
+    audio: "/audio/zhuyin/k.mp3",
     tip: "舌根抵住軟顎，放開時用力送氣。",
     examples: [
       { word: "可樂", zhuyin: "ㄎㄜˇ ㄌㄜˋ" },
@@ -171,6 +181,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄏ",
     category: "initial",
     soundText: "喝",
+    audio: "/audio/zhuyin/h.mp3",
     tip: "舌根接近軟顎，氣流從喉嚨附近摩擦而出，嘴唇不噘圓。",
     examples: [
       { word: "好吃", zhuyin: "ㄏㄠˇ ㄔ" },
@@ -183,6 +194,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄐ",
     category: "initial",
     soundText: "基",
+    audio: "/audio/zhuyin/j.mp3",
     tip: "舌面抵住硬顎前部，放開時輕輕吐氣，不送氣。",
     examples: [
       { word: "雞蛋", zhuyin: "ㄐㄧ ㄉㄢˋ" },
@@ -195,6 +207,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄑ",
     category: "initial",
     soundText: "欺",
+    audio: "/audio/zhuyin/q.mp3",
     tip: "舌面抵住硬顎前部，放開時用力送氣。",
     examples: [
       { word: "汽車", zhuyin: "ㄑㄧˋ ㄔㄜ" },
@@ -207,6 +220,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄒ",
     category: "initial",
     soundText: "希",
+    audio: "/audio/zhuyin/x.mp3",
     tip: "舌面接近硬顎前部，氣流摩擦而出，不送氣。",
     examples: [
       { word: "西瓜", zhuyin: "ㄒㄧ ㄍㄨㄚ" },
@@ -219,6 +233,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄓ",
     category: "initial",
     soundText: "知",
+    audio: "/audio/zhuyin/zh.mp3",
     tip: "舌尖翹起抵住硬顎，放開時輕輕吐氣，不送氣。",
     examples: [
       { word: "中文", zhuyin: "ㄓㄨㄥ ㄨㄣˊ" },
@@ -231,6 +246,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄔ",
     category: "initial",
     soundText: "蚩",
+    audio: "/audio/zhuyin/ch.mp3",
     tip: "舌尖翹起抵住硬顎，放開時用力送氣。",
     examples: [
       { word: "吃飯", zhuyin: "ㄔ ㄈㄢˋ" },
@@ -243,6 +259,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄕ",
     category: "initial",
     soundText: "詩",
+    audio: "/audio/zhuyin/sh.mp3",
     tip: "舌尖翹起接近硬顎，氣流摩擦而出，聲帶不振動。",
     examples: [
       { word: "老師", zhuyin: "ㄌㄠˇ ㄕ" },
@@ -255,6 +272,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄖ",
     category: "initial",
     soundText: "日",
+    audio: "/audio/zhuyin/r.mp3",
     tip: "舌尖翹起接近硬顎，氣流摩擦而出，聲帶振動。",
     examples: [
       { word: "日曆", zhuyin: "ㄖˋ ㄌㄧˋ" },
@@ -267,6 +285,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄗ",
     category: "initial",
     soundText: "資",
+    audio: "/audio/zhuyin/z.mp3",
     tip: "舌尖抵住上齒背，放開時輕輕吐氣，不送氣。",
     examples: [
       { word: "兒子", zhuyin: "ㄦˊ ㄗ˙" },
@@ -279,6 +298,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄘ",
     category: "initial",
     soundText: "雌",
+    audio: "/audio/zhuyin/c.mp3",
     tip: "舌尖抵住上齒背，放開時用力送氣。",
     examples: [
       { word: "草莓", zhuyin: "ㄘㄠˇ ㄇㄟˊ" },
@@ -291,6 +311,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄙ",
     category: "initial",
     soundText: "思",
+    audio: "/audio/zhuyin/s.mp3",
     tip: "舌尖接近上齒背，氣流摩擦而出，聲帶不振動。",
     examples: [
       { word: "三個", zhuyin: "ㄙㄢ ㄍㄜˋ" },
@@ -305,6 +326,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄧ",
     category: "medial",
     soundText: "衣",
+    audio: "/audio/zhuyin/yi.mp3",
     tip: "嘴角向兩側拉開，舌位最高最前，類似英文的 ee。",
     examples: [
       { word: "衣服", zhuyin: "ㄧ ㄈㄨˊ" },
@@ -317,6 +339,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄨ",
     category: "medial",
     soundText: "烏",
+    audio: "/audio/zhuyin/wu.mp3",
     tip: "雙唇縮小突出，舌位最高最後，類似英文的 oo。",
     examples: [
       { word: "烏龜", zhuyin: "ㄨ ㄍㄨㄟ" },
@@ -329,6 +352,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄩ",
     category: "medial",
     soundText: "迂",
+    audio: "/audio/zhuyin/yu.mp3",
     tip: "雙唇突出程度同 ㄨ，但舌位同 ㄧ，是介於兩者之間的圓唇音。",
     examples: [
       { word: "魚", zhuyin: "ㄩˊ" },
@@ -343,6 +367,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄚ",
     category: "final",
     soundText: "啊",
+    audio: "/audio/zhuyin/a.mp3",
     tip: "嘴巴張到最大，舌位最低。",
     examples: [
       { word: "媽媽", zhuyin: "ㄇㄚ ㄇㄚ˙" },
@@ -355,6 +380,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄛ",
     category: "final",
     soundText: "喔",
+    audio: "/audio/zhuyin/o.mp3",
     tip: "嘴唇收成圓形，舌位中後。",
     examples: [
       { word: "婆婆", zhuyin: "ㄆㄛˊ ㄆㄛ˙" },
@@ -367,6 +393,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄜ",
     category: "final",
     soundText: "餓",
+    audio: "/audio/zhuyin/e.mp3",
     tip: "嘴巴半開不圓唇，舌位中後。",
     examples: [
       { word: "鵝肉", zhuyin: "ㄜˊ ㄖㄡˋ" },
@@ -379,6 +406,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄝ",
     category: "final",
     soundText: "耶",
+    audio: "/audio/zhuyin/eh-final.mp3",
     tip: "嘴角向兩側拉開，舌位中前，比 ㄜ 更扁，常跟 ㄧ／ㄩ 搭配出現。",
     examples: [
       { word: "爺爺", zhuyin: "ㄧㄝˊ ㄧㄝ˙" },
@@ -391,6 +419,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄞ",
     category: "final",
     soundText: "哀",
+    audio: "/audio/zhuyin/ai.mp3",
     tip: "從 ㄚ 的嘴形快速滑向 ㄧ。",
     examples: [
       { word: "奶奶", zhuyin: "ㄋㄞˇ ㄋㄞ˙" },
@@ -403,6 +432,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄟ",
     category: "final",
     soundText: "欸",
+    audio: "/audio/zhuyin/ei.mp3",
     tip: "從 ㄝ 的嘴形快速滑向 ㄧ。",
     examples: [
       { word: "誰", zhuyin: "ㄕㄟˊ" },
@@ -415,6 +445,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄠ",
     category: "final",
     soundText: "凹",
+    audio: "/audio/zhuyin/ao.mp3",
     tip: "從 ㄚ 的嘴形快速滑向 ㄨ。",
     examples: [
       { word: "貓咪", zhuyin: "ㄇㄠ ㄇㄧ" },
@@ -427,6 +458,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄡ",
     category: "final",
     soundText: "歐",
+    audio: "/audio/zhuyin/ou.mp3",
     tip: "從 ㄛ 的嘴形快速滑向 ㄨ。",
     examples: [
       { word: "豆漿", zhuyin: "ㄉㄡˋ ㄐㄧㄤ" },
@@ -439,6 +471,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄢ",
     category: "final",
     soundText: "安",
+    audio: "/audio/zhuyin/an.mp3",
     tip: "從 ㄚ 收尾到舌尖抵住上牙齦的鼻音（像英文 n）。",
     examples: [
       { word: "番茄", zhuyin: "ㄈㄢ ㄑㄧㄝˊ" },
@@ -451,6 +484,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄣ",
     category: "final",
     soundText: "恩",
+    audio: "/audio/zhuyin/en.mp3",
     tip: "從 ㄜ 收尾到舌尖抵住上牙齦的鼻音（像英文 n）。",
     examples: [
       { word: "很好", zhuyin: "ㄏㄣˇ ㄏㄠˇ" },
@@ -463,6 +497,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄤ",
     category: "final",
     soundText: "昂",
+    audio: "/audio/zhuyin/ang.mp3",
     tip: "從 ㄚ 收尾到舌根抵住軟顎的鼻音（像英文 ng）。",
     examples: [
       { word: "忙碌", zhuyin: "ㄇㄤˊ ㄌㄨˋ" },
@@ -475,6 +510,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄥ",
     category: "final",
     soundText: "鞥",
+    audio: "/audio/zhuyin/eng.mp3",
     tip: "從 ㄜ 收尾到舌根抵住軟顎的鼻音（像英文 ng）。",
     examples: [
       { word: "蜜蜂", zhuyin: "ㄇㄧˋ ㄈㄥ" },
@@ -487,6 +523,7 @@ export const zhuyinSounds: ZhuyinSound[] = [
     title: "ㄦ",
     category: "final",
     soundText: "兒",
+    audio: "/audio/zhuyin/er.mp3",
     tip: "舌尖捲起接近硬顎但不碰觸，單獨成一個音節。",
     examples: [
       { word: "兒子", zhuyin: "ㄦˊ ㄗ˙" },

@@ -11,8 +11,29 @@ import {
 import {
   zhuyinSounds,
   type ZhuyinCategory,
+  type ZhuyinSound,
 } from "@/lib/pronunciation/zhuyinSounds";
+import { playAudio } from "@/lib/pronunciation/playback";
 import { speak } from "@/lib/speech";
+
+// A real recording (once one exists at sound.audio) always sounds more
+// accurate than synthesized speech for these — Zhuyin initials are a
+// small, fixed set of ~37 sounds, so this is the one place in the app
+// where pre-recorded audio is actually practical (unlike arbitrary
+// vocabulary words, which have no fixed set to record ahead of time).
+// Falls back to the soundText TTS workaround transparently when no
+// recording is set yet, so this works today and improves the moment
+// real audio is added — no other code needs to change.
+function playZhuyinSound(sound: ZhuyinSound) {
+  if (sound.audio) {
+    playAudio(sound.audio, {
+      fallback: () => speak(sound.soundText, "zh-TW"),
+    });
+    return;
+  }
+
+  speak(sound.soundText, "zh-TW");
+}
 
 function BackIcon() {
   return (
@@ -81,9 +102,23 @@ export default function PronunciationLabPage() {
 
   const filteredEnglish = useMemo(
     () =>
-      englishSounds.filter(
-        (sound) => englishFilter === "all" || sound.category === englishFilter,
-      ),
+      englishSounds
+        .filter(
+          (sound) => englishFilter === "all" || sound.category === englishFilter,
+        )
+        // A-to-Z by id (b, ch, d, f, g, h, j, k, l, m, n, ng, p, r, s, sh,
+        // t, th, v, w, y, z — digraphs like "ch"/"sh"/"th"/"ng" naturally
+        // sort right after their base letter) instead of the previous
+        // voiced/unvoiced-pair grouping, which wasn't alphabetical at all.
+        // Consonants stay ahead of vowels in the "All" tab either way,
+        // since that's already how the two categories are ordered here.
+        .slice()
+        .sort((a, b) => {
+          if (a.category !== b.category) {
+            return a.category === "consonant" ? -1 : 1;
+          }
+          return a.id.localeCompare(b.id);
+        }),
     [englishFilter],
   );
 
@@ -191,7 +226,7 @@ export default function PronunciationLabPage() {
 
                   <button
                     type="button"
-                    onClick={() => speak(sound.soundText, "en-US")}
+                    onClick={() => speak(sound.anchor, "en-US")}
                     aria-label={`Listen to ${sound.title}`}
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line"
                   >
@@ -243,7 +278,7 @@ export default function PronunciationLabPage() {
 
                   <button
                     type="button"
-                    onClick={() => speak(sound.soundText, "zh-TW")}
+                    onClick={() => playZhuyinSound(sound)}
                     aria-label={`Listen to ${sound.title}`}
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line"
                   >

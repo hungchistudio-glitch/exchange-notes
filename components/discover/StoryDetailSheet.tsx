@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  Bookmark,
-  BookmarkCheck,
+  Check,
   ChevronRight,
   EyeOff,
   ExternalLink,
   LoaderCircle,
   MoreHorizontal,
+  NotebookPen,
   Send,
   Share2,
   Sparkles,
@@ -115,9 +115,9 @@ export default function StoryDetailSheet({
                 className="animate-spin"
               />
             ) : isSaved ? (
-              <BookmarkCheck size={17} strokeWidth={1.8} />
+              <Check size={17} strokeWidth={1.8} />
             ) : (
-              <Bookmark size={17} strokeWidth={1.8} />
+              <NotebookPen size={17} strokeWidth={1.8} />
             )}
           </button>
 
