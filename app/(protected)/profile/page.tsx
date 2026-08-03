@@ -2,6 +2,7 @@
 
 import {
   Camera,
+  Check,
   Copy,
   GraduationCap,
   Globe,
@@ -377,10 +378,30 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => void handleCopyHandle()}
-                      className="flex shrink-0 items-center gap-1 rounded-full bg-black/[0.045] px-2 py-1 text-[11px] font-semibold text-black/55 transition-colors hover:bg-black/[0.08]"
+                      aria-label={copied ? copy.copied : copy.copyHandle}
+                      title={copied ? copy.copied : copy.copyHandle}
+                      className={`flex shrink-0 items-center justify-center rounded-full p-1.5 transition-colors ${
+                        copied
+                          ? "bg-green-100 text-green-600"
+                          : "bg-black/[0.045] text-black/55 hover:bg-black/[0.08]"
+                      }`}
                     >
-                      <Copy size={11} strokeWidth={2} />
-                      {copied ? copy.copied : copy.copyHandle}
+                      <span className="relative flex h-[11px] w-[11px] items-center justify-center">
+                        <Copy
+                          size={11}
+                          strokeWidth={2}
+                          className={`absolute transition-all duration-200 ease-out ${
+                            copied ? "scale-50 opacity-0" : "scale-100 opacity-100"
+                          }`}
+                        />
+                        <Check
+                          size={11}
+                          strokeWidth={2.5}
+                          className={`absolute transition-all duration-200 ease-out ${
+                            copied ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                          }`}
+                        />
+                      </span>
                     </button>
 
                     <button
