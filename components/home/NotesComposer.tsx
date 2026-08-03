@@ -82,9 +82,8 @@ export default function NotesComposer({
         resetComposer();
         return;
       } catch (error) {
-        setTranslateError(
-          error instanceof Error ? error.message : "Translation failed.",
-        );
+        console.error(error);
+        setTranslateError(copy.translateError);
         setTranslating(false);
         return;
       }

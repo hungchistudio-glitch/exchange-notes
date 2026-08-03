@@ -304,7 +304,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-[100dvh] bg-surface text-black">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-24">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader title={copy.pageTitle} />
 
         <div className="flex-1 space-y-6 px-4 pt-5 sm:px-6">

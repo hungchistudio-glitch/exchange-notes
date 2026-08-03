@@ -912,7 +912,7 @@ function CaptureContent() {
         )}
 
         {!cameraActive && !imageData && (
-          <section className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
+          <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
               English × 繁體中文
             </p>

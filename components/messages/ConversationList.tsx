@@ -108,11 +108,8 @@ export default function ConversationList() {
         if (isMounted) setSummaries(rows);
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : copy.errors.loadConversations,
-          );
+          console.error(error);
+          setErrorMessage(copy.errors.loadConversations);
         }
       } finally {
         if (isMounted) {
@@ -155,9 +152,8 @@ export default function ConversationList() {
       await setConversationMuted(supabase, currentUserId, conversationId, nextMuted);
     } catch (error) {
       setSummaries(previous);
-      setErrorMessage(
-        error instanceof Error ? error.message : copy.errors.removeFriend,
-      );
+      console.error(error);
+      setErrorMessage(copy.errors.updateConversation);
     }
   }
 
@@ -177,11 +173,8 @@ export default function ConversationList() {
       await hideConversationForUser(supabase, currentUserId, conversationId);
     } catch (error) {
       setSummaries(previous);
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : copy.errors.removeFriend,
-      );
+      console.error(error);
+      setErrorMessage(copy.errors.updateConversation);
     } finally {
       setHidingId(null);
     }

@@ -87,10 +87,8 @@ export default function FriendsPage() {
         | undefined;
 
       if (firstFailure) {
-        const { reason } = firstFailure;
-        setMessage(
-          reason instanceof Error ? reason.message : copy.banners.loadFailed,
-        );
+        console.error(firstFailure.reason);
+        setMessage(copy.banners.loadFailed);
       }
 
       setLoading(false);
@@ -176,9 +174,8 @@ export default function FriendsPage() {
         setMessage(copy.banners.ownExchangeId);
       }
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : copy.banners.sendFailed,
-      );
+      console.error(error);
+      setMessage(copy.banners.sendFailed);
     } finally {
       setSending(false);
     }
@@ -196,9 +193,8 @@ export default function FriendsPage() {
       await respondToRequest(supabase, requestId, response);
       await loadData(currentUserId);
     } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : copy.banners.respondFailed,
-      );
+      console.error(error);
+      setMessage(copy.banners.respondFailed);
     } finally {
       setRespondingId(null);
     }
@@ -218,11 +214,8 @@ export default function FriendsPage() {
       await removeFriend(supabase, currentUserId, friend.id);
     } catch (error) {
       setFriends(previousFriends);
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to remove friend. / 無法移除好友。",
-      );
+      console.error(error);
+      setMessage(copy.banners.removeFriendFailed);
     } finally {
       setRemovingId(null);
     }

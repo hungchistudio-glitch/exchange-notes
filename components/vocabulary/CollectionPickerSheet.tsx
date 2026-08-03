@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   COLLECTION_EMOJI_PRESETS,
   addItemToCollection,
@@ -22,6 +23,9 @@ export default function CollectionPickerSheet({
   item,
   onClose,
 }: CollectionPickerSheetProps) {
+  const { t } = useTranslation();
+  const copy = t.vocabulary.collections;
+
   const [collections, setCollections] = useState<VocabularyCollection[]>([]);
   const [memberIds, setMemberIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -61,11 +65,8 @@ export default function CollectionPickerSheet({
         }
       } catch (error) {
         if (active) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "Could not load your collections.",
-          );
+          console.error(error);
+          setErrorMessage(copy.loadingError);
         }
       } finally {
         if (active) setLoading(false);
@@ -77,7 +78,7 @@ export default function CollectionPickerSheet({
     return () => {
       active = false;
     };
-  }, [item.id]);
+  }, [item.id, copy.loadingError]);
 
   async function handleToggle(collection: VocabularyCollection) {
     setTogglingId(collection.id);
@@ -121,11 +122,8 @@ export default function CollectionPickerSheet({
         ),
       );
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not update this collection.",
-      );
+      console.error(error);
+      setErrorMessage(copy.toggleError);
     } finally {
       setTogglingId(null);
     }
@@ -160,11 +158,8 @@ export default function CollectionPickerSheet({
       setNewName("");
       setCreating(false);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not create this collection.",
-      );
+      console.error(error);
+      setErrorMessage(copy.createError);
     } finally {
       setSaving(false);
     }

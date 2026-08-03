@@ -51,9 +51,8 @@ export default function VocabularyCollectionsPage() {
         if (active) setCollections(list);
       } catch (error) {
         if (active) {
-          setErrorMessage(
-            error instanceof Error ? error.message : copy.loadingError,
-          );
+          console.error(error);
+          setErrorMessage(copy.loadingError);
         }
       } finally {
         if (active) setLoading(false);
@@ -83,9 +82,8 @@ export default function VocabularyCollectionsPage() {
       setNewName("");
       setCreating(false);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : copy.createError,
-      );
+      console.error(error);
+      setErrorMessage(copy.createError);
     } finally {
       setSaving(false);
     }

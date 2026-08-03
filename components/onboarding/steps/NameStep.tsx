@@ -151,7 +151,8 @@ export default function NameStep({
 
       onChangeAvatarUrl(`${publicUrl}?v=${Date.now()}`);
     } catch (uploadError) {
-      setPhotoError(uploadError instanceof Error ? uploadError.message : copy.photoUploadError);
+      console.error(uploadError);
+      setPhotoError(copy.photoUploadError);
     } finally {
       setUploadingPhoto(false);
     }

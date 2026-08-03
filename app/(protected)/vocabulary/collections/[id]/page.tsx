@@ -63,9 +63,8 @@ export default function CollectionDetailPage() {
         }
       } catch (error) {
         if (active) {
-          setErrorMessage(
-            error instanceof Error ? error.message : copy.loadingError,
-          );
+          console.error(error);
+          setErrorMessage(copy.loadingError);
         }
       } finally {
         if (active) setLoading(false);
@@ -92,9 +91,8 @@ export default function CollectionDetailPage() {
       await removeItemFromCollection(supabase, collectionId, item.id);
     } catch (error) {
       setItems(previous);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Could not remove this word.",
-      );
+      console.error(error);
+      setErrorMessage(copy.removeError);
     } finally {
       setRemovingId(null);
     }

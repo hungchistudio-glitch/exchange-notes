@@ -295,7 +295,10 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
         });
       } catch (error) {
         if (cancelled) return;
-        setErrorMessage(error instanceof Error ? error.message : "Could not open this conversation.");
+        // Never show the raw error (DB/network details) to the user — log
+        // it for debugging and show friendly, translated copy instead.
+        console.error(error);
+        setErrorMessage(copy.errors.openConversation);
         setLoading(false);
       }
     }
@@ -305,7 +308,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     return () => {
       cancelled = true;
     };
-  }, [friendId, scrollToBottom, supabase]);
+  }, [friendId, scrollToBottom, supabase, copy.errors.openConversation]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -594,7 +597,8 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
       setSavedCardIds((current) => new Set(current).add(messageId));
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not save this word.");
+      console.error(error);
+      setErrorMessage(copy.errors.saveWord);
     } finally {
       setSavingCardId(null);
     }
@@ -640,7 +644,8 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
       setConfirmOpen(false);
       exitSelectMode();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : copy.errors.deleteSelected);
+      console.error(error);
+      setErrorMessage(copy.errors.deleteSelected);
     } finally {
       setDeleting(false);
     }

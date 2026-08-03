@@ -46,6 +46,7 @@ const traditionalChinese: TranslationDictionary = {
       photoImageError: "請選擇圖片檔案。",
       photoSizeError: "照片大小需小於 5MB。",
       photoUploadError: "無法上傳照片，請再試一次。",
+      saveError: "無法儲存你的名稱，請再試一次。",
     },
     appLanguage: {
       title: "選擇 App 語言",
@@ -61,6 +62,7 @@ const traditionalChinese: TranslationDictionary = {
       previewPrimary: "{language} 會成為單字卡與新聞卡的主要內容。",
       previewSecondary: "{language} 會作為翻譯與解釋。",
       sameLanguageHint: "請選擇與母語不同的學習語言。",
+      completeError: "無法儲存語言設定，請再試一次。",
     },
     confirm: {
       title: "設定完成",
@@ -104,6 +106,10 @@ const traditionalChinese: TranslationDictionary = {
       eyebrow: "英文 × 繁體中文",
       title: "Exchange Notes",
       subtitle: "登入你的私人語言學習空間。",
+      googleSubtitle: "透過真實對話與日常生活，自然地學習語言。",
+      consentNotice: "繼續即代表你同意使用 Google 帳號安全登入。",
+      googleSubmit: "使用 Google 繼續",
+      googleSubmitting: "連接中…",
       email: "電子郵件",
       emailPlaceholder: "you@example.com",
       password: "密碼",
@@ -467,6 +473,7 @@ const traditionalChinese: TranslationDictionary = {
       emptyTitle: "還沒有筆記",
       emptyDescription: "從今天的學習中儲存一個新單字或想法。",
       deleteNote: "刪除筆記",
+      translateError: "無法翻譯這則筆記，請再試一次。",
     },
   },
 
@@ -581,6 +588,9 @@ const traditionalChinese: TranslationDictionary = {
       partialDelete: "部分訊息無法刪除。你只能刪除自己傳送的訊息。",
       deleteSelected: "無法刪除所選訊息。",
       shareWord: "無法分享這個單字，請再試一次。",
+      openConversation: "無法開啟這個對話，請再試一次。",
+      saveWord: "無法儲存這個單字，請再試一次。",
+      updateConversation: "無法更新這個對話，請再試一次。",
     },
   },
   friends: {
@@ -657,6 +667,7 @@ const traditionalChinese: TranslationDictionary = {
       respondFailed: "無法更新這個邀請，請再試一次。",
       cancelFailed: "無法取消這個邀請，請再試一次。",
       loadFailed: "目前無法載入朋友資料，請稍後再試。",
+      removeFriendFailed: "無法移除這位好友，請再試一次。",
     },
 
     errors: {
@@ -772,6 +783,7 @@ const traditionalChinese: TranslationDictionary = {
       createCollectionAria: "建立新分類",
       loadingError: "無法載入收藏分類。",
       createError: "無法建立分類。",
+      toggleError: "無法更新這個收藏分類，請再試一次。",
       emptyTitle: "還沒有收藏分類",
       emptyDescription: "建立一個學習空間，把想一起學習的單字整理起來。",
       suggestions: "從範例開始",
@@ -793,6 +805,7 @@ const traditionalChinese: TranslationDictionary = {
 
       detail: {
         fallbackTitle: "收藏分類",
+        removeError: "無法移除這個單字，請再試一次。",
         backToCollections: "返回收藏分類",
         loadingError: "無法載入這個收藏分類。",
         emptyTitle: "這裡還沒有單字",

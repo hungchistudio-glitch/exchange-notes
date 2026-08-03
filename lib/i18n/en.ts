@@ -48,6 +48,7 @@ const english: TranslationDictionary = {
       photoImageError: "Please choose an image file.",
       photoSizeError: "Photo must be smaller than 5MB.",
       photoUploadError: "Could not upload photo. Please try again.",
+      saveError: "Could not save your name. Please try again.",
     },
     appLanguage: {
       title: "Choose your app language",
@@ -63,6 +64,7 @@ const english: TranslationDictionary = {
       previewPrimary: "{language} will be the main content in your word cards and news.",
       previewSecondary: "{language} will appear as the translation and explanation.",
       sameLanguageHint: "Please choose a learning language different from your native language.",
+      completeError: "Could not save your language preferences. Please try again.",
     },
     confirm: {
       title: "Everything looks good",
@@ -106,6 +108,12 @@ const english: TranslationDictionary = {
       eyebrow: "English × Traditional Chinese",
       title: "Exchange Notes",
       subtitle: "Log in to your private learning space.",
+      googleSubtitle:
+        "Learn languages naturally through real conversations and everyday life.",
+      consentNotice:
+        "By continuing, you agree to securely sign in with your Google account.",
+      googleSubmit: "Continue with Google",
+      googleSubmitting: "Connecting…",
       email: "Email",
       emailPlaceholder: "you@example.com",
       password: "Password",
@@ -477,6 +485,7 @@ const english: TranslationDictionary = {
       emptyTitle: "No notes yet",
       emptyDescription: "Save a new word or idea from today's learning.",
       deleteNote: "Delete note",
+      translateError: "Could not translate this note. Please try again.",
     },
   },
 
@@ -594,6 +603,9 @@ const english: TranslationDictionary = {
         "Some messages could not be deleted. You can only delete messages you sent.",
       deleteSelected: "Could not delete the selected messages.",
       shareWord: "Could not share this word. Please try again.",
+      openConversation: "Could not open this conversation. Please try again.",
+      saveWord: "Could not save this word. Please try again.",
+      updateConversation: "Could not update this conversation. Please try again.",
     },
   },
   friends: {
@@ -671,6 +683,7 @@ const english: TranslationDictionary = {
       respondFailed: "Couldn’t update that request. Try again.",
       cancelFailed: "Couldn’t cancel that request. Try again.",
       loadFailed: "Couldn’t load your friends right now. Try again shortly.",
+      removeFriendFailed: "Unable to remove this friend. Please try again.",
     },
 
     errors: {
@@ -788,6 +801,7 @@ const english: TranslationDictionary = {
       createCollectionAria: "Create a new collection",
       loadingError: "Could not load your collections.",
       createError: "Could not create the collection.",
+      toggleError: "Could not update this collection. Please try again.",
       emptyTitle: "No collections yet",
       emptyDescription:
         "Create a learning space for words you want to study together.",
@@ -810,6 +824,7 @@ const english: TranslationDictionary = {
 
       detail: {
         fallbackTitle: "Collection",
+        removeError: "Could not remove this word. Please try again.",
         backToCollections: "Back to collections",
         loadingError: "Could not load this collection.",
         emptyTitle: "No words here yet",

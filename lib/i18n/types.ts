@@ -48,6 +48,7 @@ export type TranslationDictionary = {
       photoImageError: string;
       photoSizeError: string;
       photoUploadError: string;
+      saveError: string;
     };
     appLanguage: {
       title: string;
@@ -63,6 +64,7 @@ export type TranslationDictionary = {
       previewPrimary: string;
       previewSecondary: string;
       sameLanguageHint: string;
+      completeError: string;
     };
     confirm: {
       title: string;
@@ -106,6 +108,10 @@ export type TranslationDictionary = {
       eyebrow: string;
       title: string;
       subtitle: string;
+      googleSubtitle: string;
+      consentNotice: string;
+      googleSubmit: string;
+      googleSubmitting: string;
       email: string;
       emailPlaceholder: string;
       password: string;
@@ -466,6 +472,7 @@ export type TranslationDictionary = {
       emptyTitle: string;
       emptyDescription: string;
       deleteNote: string;
+      translateError: string;
     };
   };
 
@@ -579,6 +586,9 @@ export type TranslationDictionary = {
       partialDelete: string;
       deleteSelected: string;
       shareWord: string;
+      openConversation: string;
+      saveWord: string;
+      updateConversation: string;
     };
   };
   friends: {
@@ -653,6 +663,7 @@ export type TranslationDictionary = {
       respondFailed: string;
       cancelFailed: string;
       loadFailed: string;
+      removeFriendFailed: string;
     };
 
     errors: {
@@ -764,6 +775,7 @@ export type TranslationDictionary = {
       createCollectionAria: string;
       loadingError: string;
       createError: string;
+      toggleError: string;
       emptyTitle: string;
       emptyDescription: string;
       suggestions: string;
@@ -787,6 +799,7 @@ export type TranslationDictionary = {
         fallbackTitle: string;
         backToCollections: string;
         loadingError: string;
+        removeError: string;
         emptyTitle: string;
         emptyDescription: string;
         browseVocabulary: string;

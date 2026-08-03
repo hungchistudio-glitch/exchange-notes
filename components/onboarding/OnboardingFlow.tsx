@@ -84,7 +84,12 @@ export default function OnboardingFlow({
     setSavingName(false);
 
     if (error) {
-      setNameError(error.message);
+      console.error(error);
+      // 23505 = unique_violation — someone else claimed this Exchange ID
+      // in the moment between the live-availability check and save.
+      setNameError(
+        error.code === "23505" ? copy.name.idTaken : copy.name.saveError,
+      );
       return;
     }
 
@@ -107,9 +112,12 @@ export default function OnboardingFlow({
       .eq("id", userId);
 
     if (error) {
+      console.error(error);
       setCompleting(false);
       setCompleteError(
-        error.code === "23514" ? copy.languages.sameLanguageHint : error.message,
+        error.code === "23514"
+          ? copy.languages.sameLanguageHint
+          : copy.languages.completeError,
       );
       return;
     }

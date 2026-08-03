@@ -144,9 +144,8 @@ export default function ReviewPage() {
         }
       } catch (error) {
         if (active) {
-          setErrorMessage(
-            error instanceof Error ? error.message : copy.loadError,
-          );
+          console.error(error);
+          setErrorMessage(copy.loadError);
         }
       } finally {
         if (active) setLoading(false);
@@ -189,9 +188,8 @@ export default function ReviewPage() {
     try {
       await saveReviewResult(currentWord.id, grade);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : copy.saveError,
-      );
+      console.error(error);
+      setErrorMessage(copy.saveError);
     } finally {
       setGrading(false);
     }

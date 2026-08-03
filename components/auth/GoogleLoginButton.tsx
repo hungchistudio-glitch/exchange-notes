@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function GoogleLoginButton() {
+  const { t } = useTranslation();
+  const copy = t.auth.login;
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -23,7 +27,9 @@ export default function GoogleLoginButton() {
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      // Never show the raw OAuth/network error to the user.
+      console.error(error);
+      setErrorMessage(copy.genericError);
       setLoading(false);
     }
   }
@@ -36,7 +42,7 @@ export default function GoogleLoginButton() {
         disabled={loading}
         className="flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Connecting..." : "Continue with Google"}
+        {loading ? copy.googleSubmitting : copy.googleSubmit}
       </button>
 
       {errorMessage ? (
