@@ -485,8 +485,8 @@ const english: TranslationDictionary = {
     subtitle: "Tap any speaker to hear the pronunciation.",
 
     modes: {
-      english: "English",
-      zhuyin: "Zhuyin",
+      english: "English Focus",
+      zhuyin: "Zhuyin Focus",
     },
 
     filters: {
@@ -506,6 +506,38 @@ const english: TranslationDictionary = {
       correct: "Correct",
       incorrect: "Common mistake",
       commonMistake: "Common pronunciation trap",
+      showMoreGuidance: "More guidance",
+      showLessGuidance: "Show less",
+      showTrapDetails: "Show details",
+      hideTrapDetails: "Hide details",
+      commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
+      playbackFailed: "Playback failed. Tap to try again.",
+    },
+
+    yumi: {
+      mouth: "Mouth",
+      tongue: "Tongue",
+      airflow: "Airflow",
+      voice: "Voice",
+      demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
+      tapToHear: "Tap to hear and watch Yumi.",
+      replayStep: "Replay this step",
+      sleepingAriaLabel: "Yumi is resting — scroll here to wake her up",
+    },
+
+    practice: {
+      listen: "Listen",
+      repeat: "Repeat",
+      compare: "Compare",
+      record: "Record",
+      stop: "Stop",
+      tryAgain: "Try again",
+      recordingHint: "Recording… tap stop when you're done.",
+      countdownHint: "Get ready to repeat the sound…",
+      playReference: "Play standard pronunciation",
+      playRecording: "Play your recording",
+      noRecordingYet: "Record yourself to compare with the standard pronunciation.",
+      micDenied: "Microphone access was denied. Check your browser settings to allow it.",
     },
   },
 

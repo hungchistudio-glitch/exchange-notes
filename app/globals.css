@@ -21,6 +21,24 @@
   --color-line: var(--line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Dedicated stacks for the Pronunciation Lab (and anywhere else mixing
+     English/Chinese/IPA/Zhuyin in the same view) instead of forcing every
+     symbol through one font. Using `font-sans` directly for CJK or Zhuyin
+     text is what caused the "亂碼/替代符號" look — Tailwind's `font-sans`
+     resolves to Geist only (Latin-only, see --font-sans above), which
+     silently drops any glyph Geist doesn't have instead of falling
+     through to a CJK-capable font. These four are additive utilities
+     (font-latin / font-cjk / font-phonetic / font-zhuyin) — use whichever
+     matches the text being rendered. */
+  --font-latin: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-cjk:
+    "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
+    sans-serif;
+  --font-phonetic: "Noto Sans", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --font-zhuyin:
+    "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "Heiti TC",
+    sans-serif;
 }
 
 /* Latin text uses Geist. Traditional Chinese glyphs fall through to a

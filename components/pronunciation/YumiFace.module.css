@@ -1,0 +1,269 @@
+.stage {
+  position: relative;
+  display: block;
+  color: #1c1a16;
+  transform-origin: 48% 55%;
+}
+
+.mouth {
+  fill: #1c1a16;
+  transition:
+    rx 320ms cubic-bezier(0.33, 1, 0.68, 1),
+    ry 320ms cubic-bezier(0.33, 1, 0.68, 1),
+    cy 320ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.mouth.voicing {
+  animation: mouthVoicing 620ms ease-in-out infinite;
+}
+
+@keyframes mouthVoicing {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.78;
+  }
+}
+
+/* The tongue bar — see the scope note in YumiFace.tsx. x2/y2 are plain SVG
+   presentation attributes here, which modern browsers happily CSS-
+   transition just like any other animatable property. */
+.tongueBar {
+  transition:
+    x2 340ms cubic-bezier(0.33, 1, 0.68, 1),
+    y2 340ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.contactPulse {
+  animation: contactPulse 420ms ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes contactPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  35% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+.contactStatic {
+  opacity: 0.8;
+}
+
+/* Entering/exiting: the fade-in-from-soft-light + settle described in
+   brief section 1 ("從淡光中慢慢顯現" / "光線慢慢淡下"), and the mirror
+   on the way out. Implemented as a plain opacity+scale transition rather
+   than a dedicated animation library — this component only ever mounts
+   for the single active card, so React's own mount/unmount lifecycle is
+   enough to drive it (the parent delays actual unmount briefly so this
+   transition has time to play, see page.tsx). */
+.entering {
+  animation: yumiEnter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes yumiEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: brightness(1.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.exiting {
+  animation: yumiExit 320ms ease-in both;
+}
+
+@keyframes yumiExit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+/* Idle "breathing" — upgraded from a plain scale pulse to a small float +
+   sway + scale loop (same shape as the vocabulary companion's baseFloat,
+   see components/vocabulary/pet/YumiMark.module.css) so Yumi keeps reading
+   as alive while waiting for a tap, not just gently pulsing in place. */
+.breathing {
+  animation: yumiBreathe 3600ms ease-in-out infinite;
+}
+
+@keyframes yumiBreathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.016) rotate(-0.6deg);
+  }
+}
+
+/* While actively teaching a sound, a slightly quicker, more purposeful
+   bob — replaces the idle float rather than stacking with it (both target
+   `transform` on the same element). */
+.focusing {
+  animation: yumiFocusBob 1400ms ease-in-out infinite;
+}
+
+@keyframes yumiFocusBob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.008);
+  }
+}
+
+/* Eyelids/pupil — the same shapes ExchangeNotesMark uses everywhere else
+   in the app (see components/vocabulary/pet/YumiMark.module.css), copied
+   here rather than shared via CSS module import (modules are scoped
+   per-file) so this card gets the same ambient blink without dragging in
+   the vocabulary companion's mood-reaction variants it doesn't need. */
+.pupil,
+.upperLid,
+.lowerLid {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* A small idle wander so the eye itself reads as alive, not just blinking
+   — a bit of expression on top of the tongue/mouth animation. Overridden
+   by .focusing below while Yumi is actively teaching. */
+.pupil {
+  animation: yumiFaceWander 5200ms ease-in-out infinite;
+}
+
+@keyframes yumiFaceWander {
+  0%,
+  18%,
+  100% {
+    transform: translate(0, 0);
+  }
+  30%,
+  42% {
+    transform: translate(-3px, 1px);
+  }
+  62%,
+  74% {
+    transform: translate(2px, -1px);
+  }
+}
+
+/* While teaching, Yumi glances down toward her own tongue/mouth instead of
+   wandering — a small "watch me" beat that ties the eye to what the rest
+   of the face is doing. */
+.focusing .pupil {
+  animation: yumiFaceFocusGlance 900ms ease-in-out both;
+}
+
+@keyframes yumiFaceFocusGlance {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(-2px, 4px);
+  }
+}
+
+.upperLid {
+  transform: translateY(-82px);
+  opacity: 0;
+  animation: yumiFaceUpperBlink 4.2s linear infinite;
+}
+
+.lowerLid {
+  transform: translateY(12px);
+  opacity: 0;
+  animation: yumiFaceLowerBlink 4.2s linear infinite;
+}
+
+@keyframes yumiFaceUpperBlink {
+  0%,
+  44%,
+  50%,
+  100% {
+    transform: translateY(-82px);
+    opacity: 0;
+  }
+  46%,
+  47% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+@keyframes yumiFaceLowerBlink {
+  0%,
+  44%,
+  50%,
+  100% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  46%,
+  47% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+}
+
+/* prefers-reduced-motion: no breathing/focus-bob loop, no entering/exiting
+   slide-and-scale, no blink loop, no pupil wander/glance, no voicing pulse
+   or contact-pulse animation — the mouth and tongue shapes themselves
+   still change with the target sound (a state change, not decorative
+   motion), just via a quick, non-repeating transition instead of a
+   continuous animation. */
+.reduced.breathing,
+.reduced.focusing {
+  animation: none;
+}
+
+.reduced.entering,
+.reduced.exiting {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+.reduced .upperLid,
+.reduced .lowerLid {
+  animation: none;
+  opacity: 0;
+}
+
+.reduced .pupil {
+  animation: none;
+  transform: none;
+}
+
+.reduced .mouth.voicing {
+  animation: none;
+  opacity: 1;
+}
+
+.reduced .contactPulse {
+  animation: none;
+  opacity: 0.8;
+}

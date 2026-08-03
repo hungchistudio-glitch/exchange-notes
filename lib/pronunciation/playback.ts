@@ -54,6 +54,8 @@ export function speakText(
 type PlayAudioOptions = {
   fallback?: () => void;
   onMissing?: () => void;
+  onStart?: () => void;
+  onEnd?: () => void;
 };
 
 export function playAudio(
@@ -85,6 +87,12 @@ export function playAudio(
     }
   };
 
+  if (options.onStart) {
+    audio.addEventListener("playing", () => options.onStart?.(), {
+      once: true,
+    });
+  }
+
   audio.addEventListener("error", handleError, {
     once: true,
   });
@@ -93,6 +101,7 @@ export function playAudio(
     "ended",
     () => {
       currentAudio = null;
+      options.onEnd?.();
     },
     { once: true },
   );

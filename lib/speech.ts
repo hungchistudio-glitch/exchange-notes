@@ -70,6 +70,49 @@ const MALE_NAME_HINTS = [
   "yu-shu",
 ];
 
+// macOS/iOS ship a set of "novelty" system voices (Albert, Bad News, Bahh,
+// Bells, Boing, Bubbles, Cellos, Good News, Jester, Organ, Superstar,
+// Trinoids, Whisper, Wobble, Zarvox, and older ones like Bruce/Fred/Ralph/
+// Kathy/Princess/Junior/Deranged/Hysterical) that are all tagged with a
+// normal "en-US" lang and pass every other filter here, but deliberately
+// mangle pronunciation into something robotic/alien/comically pitched —
+// not remotely close to normal speech. If the "real" voices (Samantha,
+// Alex, a Google voice, etc.) aren't installed/enabled for some reason,
+// these can end up as the only "en" candidates and get picked, which reads
+// as "every English word sounds completely wrong" even though the text
+// being spoken is correct. They're excluded from the normal pool and only
+// used as an absolute last resort (better than no audio at all).
+const NOVELTY_VOICE_NAMES = [
+  "albert",
+  "bad news",
+  "bahh",
+  "bells",
+  "boing",
+  "bubbles",
+  "cellos",
+  "deranged",
+  "good news",
+  "hysterical",
+  "jester",
+  "junior",
+  "kathy",
+  "organ",
+  "princess",
+  "ralph",
+  "superstar",
+  "trinoids",
+  "whisper",
+  "wobble",
+  "zarvox",
+  "bruce",
+  "fred",
+];
+
+function isNoveltyVoice(voice: SpeechSynthesisVoice): boolean {
+  const name = voice.name.toLowerCase();
+  return NOVELTY_VOICE_NAMES.some((noveltyName) => name.includes(noveltyName));
+}
+
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -113,6 +156,11 @@ function pickBestQualityVoice(
   const nonCompact = voices.filter(
     (voice) => !voice.name.toLowerCase().includes("compact")
   );
+
+  // Prefer a normal-sounding voice over a novelty one whenever any normal
+  // option exists at all — see the NOVELTY_VOICE_NAMES comment above.
+  const normalSounding = nonCompact.filter((voice) => !isNoveltyVoice(voice));
+  if (normalSounding.length > 0) return normalSounding[0];
 
   return nonCompact[0] ?? voices[0];
 }
@@ -158,11 +206,21 @@ function pickVoiceForGender(
   const voices = getAvailableVoices();
   const langPrefix = lang.slice(0, 2).toLowerCase();
 
-  const candidates = voices.filter((voice) =>
+  const allCandidates = voices.filter((voice) =>
     voice.lang.toLowerCase().startsWith(langPrefix)
   );
 
-  if (candidates.length === 0) return null;
+  if (allCandidates.length === 0) return null;
+
+  // Exclude novelty/joke system voices (Albert, Zarvox, Bad News, etc. —
+  // see NOVELTY_VOICE_NAMES) from the normal pool whenever there's at
+  // least one non-novelty candidate. Without this, if the "real" voices
+  // for a language aren't installed/enabled, one of these could get
+  // picked and every word in that language would come out mangled —
+  // exactly the "every English sound is wrong" failure mode reported
+  // against this Pronunciation Lab.
+  const normalSounding = allCandidates.filter((voice) => !isNoveltyVoice(voice));
+  const candidates = normalSounding.length > 0 ? normalSounding : allCandidates;
 
   const hints = gender === "female" ? FEMALE_NAME_HINTS : MALE_NAME_HINTS;
   const otherHints = gender === "female" ? MALE_NAME_HINTS : FEMALE_NAME_HINTS;
@@ -186,9 +244,30 @@ function pickVoiceForGender(
   return gender === "female" ? pool[0] : pool[pool.length - 1];
 }
 
-export function speak(text: string, lang: "zh-TW" | "en-US") {
+export type SpeechCallbacks = {
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: () => void;
+};
+
+// Bumped on every speak() call so a delayed speak() from an interaction the
+// user has since moved on from can detect it's stale and bail instead of
+// firing late.
+let speakSequence = 0;
+
+export function speak(
+  text: string,
+  lang: "zh-TW" | "en-US",
+  callbacks?: SpeechCallbacks,
+  rate?: number,
+) {
   if (typeof window === "undefined") return;
-  if (!("speechSynthesis" in window)) return;
+  if (!("speechSynthesis" in window)) {
+    callbacks?.onError?.();
+    return;
+  }
+
+  const sequence = ++speakSequence;
 
   window.speechSynthesis.cancel();
 
@@ -196,14 +275,46 @@ export function speak(text: string, lang: "zh-TW" | "en-US") {
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang;
-  utterance.rate = settings.rate;
+  utterance.rate = rate ?? settings.rate;
 
   const voice = pickVoiceForGender(lang, settings.voiceGender);
   if (voice) {
     utterance.voice = voice;
   }
 
-  window.speechSynthesis.speak(utterance);
+  // Cheap, always-on diagnostic: if playback ever sounds wrong again,
+  // checking the browser console for this line immediately shows whether
+  // it's a text/data bug (wrong `text` here) or a voice-selection bug
+  // (wrong/no `voice`, e.g. a novelty system voice slipping through) —
+  // the two look identical from the UI but need completely different
+  // fixes.
+  if (typeof console !== "undefined") {
+    console.debug("[speak]", {
+      text,
+      lang,
+      voice: voice ? `${voice.name} (${voice.lang})` : "(no explicit voice — browser default)",
+    });
+  }
+
+  if (callbacks?.onStart) utterance.onstart = () => callbacks.onStart?.();
+  if (callbacks?.onEnd) utterance.onend = () => callbacks.onEnd?.();
+  if (callbacks?.onError) utterance.onerror = () => callbacks.onError?.();
+
+  // Chrome/Edge/Safari have a well-known race: calling speak() in the same
+  // tick as cancel() can silently drop the new utterance, or let whatever
+  // was *just* cancelled keep making sound for a moment before the new one
+  // actually starts. When tapping between different sound cards quickly,
+  // that reads as "I tapped F but heard something else" — the previous
+  // card's audio bleeding through, or the new one never starting so the
+  // old one's tail is the last thing heard. A short delay after cancel()
+  // before queuing gives every browser's speech queue time to actually
+  // clear first. If a newer speak() call has started in the meantime (the
+  // user tapped something else during the delay), this one bails instead
+  // of firing late and stepping on it.
+  window.setTimeout(() => {
+    if (sequence !== speakSequence) return;
+    window.speechSynthesis.speak(utterance);
+  }, 60);
 }
 
 export function speechSupported(): boolean {

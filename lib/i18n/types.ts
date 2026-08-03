@@ -495,6 +495,38 @@ export type TranslationDictionary = {
       correct: string;
       incorrect: string;
       commonMistake: string;
+      showMoreGuidance: string;
+      showLessGuidance: string;
+      showTrapDetails: string;
+      hideTrapDetails: string;
+      commonTrapSummary: string;
+      playbackFailed: string;
+    };
+
+    yumi: {
+      mouth: string;
+      tongue: string;
+      airflow: string;
+      voice: string;
+      demoAriaLabel: string;
+      tapToHear: string;
+      replayStep: string;
+      sleepingAriaLabel: string;
+    };
+
+    practice: {
+      listen: string;
+      repeat: string;
+      compare: string;
+      record: string;
+      stop: string;
+      tryAgain: string;
+      recordingHint: string;
+      countdownHint: string;
+      playReference: string;
+      playRecording: string;
+      noRecordingYet: string;
+      micDenied: string;
     };
   };
 

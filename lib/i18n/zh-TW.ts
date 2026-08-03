@@ -475,8 +475,8 @@ const traditionalChinese: TranslationDictionary = {
     subtitle: "點一下喇叭即可播放發音。",
 
     modes: {
-      english: "英文",
-      zhuyin: "注音",
+      english: "英文為主",
+      zhuyin: "注音為主",
     },
 
     filters: {
@@ -496,6 +496,38 @@ const traditionalChinese: TranslationDictionary = {
       correct: "正確",
       incorrect: "常見誤發",
       commonMistake: "常見發音陷阱",
+      showMoreGuidance: "更多說明",
+      showLessGuidance: "收合",
+      showTrapDetails: "展開詳情",
+      hideTrapDetails: "收合詳情",
+      commonTrapSummary: "你可能把 {symbol} 發成 {confusedWith} 的音。",
+      playbackFailed: "播放失敗，點一下再試一次。",
+    },
+
+    yumi: {
+      mouth: "嘴型",
+      tongue: "舌位",
+      airflow: "氣流",
+      voice: "聲帶",
+      demoAriaLabel: "Yumi 正在示範這個音的嘴型與舌位",
+      tapToHear: "點擊聆聽，跟著 Yumi 看發音動作。",
+      replayStep: "重播這個步驟",
+      sleepingAriaLabel: "Yumi 正在休息——滑到這張卡片喚醒她",
+    },
+
+    practice: {
+      listen: "聆聽",
+      repeat: "跟讀",
+      compare: "比較",
+      record: "錄音",
+      stop: "停止",
+      tryAgain: "再試一次",
+      recordingHint: "錄音中…完成後點一下停止。",
+      countdownHint: "準備跟讀這個音…",
+      playReference: "播放標準發音",
+      playRecording: "播放你的錄音",
+      noRecordingYet: "先錄下自己的聲音，才能跟標準發音比較。",
+      micDenied: "麥克風權限被拒絕，請到瀏覽器設定中允許使用麥克風。",
     },
   },
 
