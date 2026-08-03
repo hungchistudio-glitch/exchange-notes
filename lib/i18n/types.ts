@@ -490,7 +490,6 @@ export type TranslationDictionary = {
     cards: {
       howToSayIt: string;
       pronunciationMethod: string;
-      playSound: string;
       playWord: string;
       correct: string;
       incorrect: string;
@@ -501,6 +500,9 @@ export type TranslationDictionary = {
       hideTrapDetails: string;
       commonTrapSummary: string;
       playbackFailed: string;
+      kk: string;
+      moreSounds: string;
+      romanizationHint: string;
     };
 
     yumi: {
@@ -510,23 +512,7 @@ export type TranslationDictionary = {
       voice: string;
       demoAriaLabel: string;
       tapToHear: string;
-      replayStep: string;
       sleepingAriaLabel: string;
-    };
-
-    practice: {
-      listen: string;
-      repeat: string;
-      compare: string;
-      record: string;
-      stop: string;
-      tryAgain: string;
-      recordingHint: string;
-      countdownHint: string;
-      playReference: string;
-      playRecording: string;
-      noRecordingYet: string;
-      micDenied: string;
     };
   };
 

@@ -52,6 +52,12 @@ const ENGLISH_CONSONANT_HINTS: Record<string, string[]> = {
   r: ["rr", "r"],
   w: ["w"],
   y: ["y"],
+  // Added for the A-Z letter model's multi-sound letters — see
+  // lib/pronunciation/englishSounds.ts (Q, X, and Y's long-I sound).
+  "q-kw": ["qu", "q"],
+  "x-ks": ["x"],
+  "x-gz": ["x"],
+  "y-ai": ["y"],
 };
 
 export function highlightEnglishExample(word: string, soundId: string): HighlightSpan {

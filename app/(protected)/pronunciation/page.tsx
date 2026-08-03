@@ -6,12 +6,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Ear,
-  GitCompare,
   LoaderCircle,
-  Mic,
   RotateCcw,
-  Square,
   Volume2,
 } from "lucide-react";
 
@@ -19,9 +15,10 @@ import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useLearningLanguage from "@/hooks/preferences/useLearningLanguage";
 import {
-  englishSounds,
+  englishLetters,
   type EnglishCategory,
-  type EnglishSound,
+  type EnglishLetter,
+  type LetterSoundValue,
 } from "@/lib/pronunciation/englishSounds";
 import {
   zhuyinSounds,
@@ -40,7 +37,6 @@ import {
   type YumiRigPose,
 } from "@/lib/pronunciation/yumiRig";
 import { deriveTeachingSteps, type TeachingStepKey } from "@/lib/pronunciation/teachingSteps";
-import type { LocalizedText } from "@/lib/pronunciation/localizedText";
 import { highlightEnglishExample, highlightZhuyinExample } from "@/lib/pronunciation/exampleHighlight";
 import { recordPracticePlay } from "@/lib/pronunciation/practiceRepository";
 import { createClient } from "@/lib/supabase/client";
@@ -53,8 +49,6 @@ type PlaybackPhase = "loading" | "playing" | "done" | "error";
 // 區域 → 停止音訊") — see the activeCardKey effect below.
 type PlaybackState = { key: string; phase: PlaybackPhase; cardKey: string } | null;
 type PronunciationCopy = TranslationDictionary["pronunciation"];
-type PracticeStep = "idle" | "countdown" | "recording" | "recorded";
-type PracticeState = { key: string; step: PracticeStep; recordingUrl: string | null } | null;
 
 function toYumiPhase(phase: PlaybackPhase | undefined): YumiAnimationState {
   switch (phase) {
@@ -112,11 +106,8 @@ function ariaLabelFor(base: string, phase: PlaybackPhase | undefined, copy: Pron
   return phase === "error" ? copy.cards.playbackFailed : base;
 }
 
-function playbackButtonClass(phase: PlaybackPhase | undefined, size: "sm" | "md") {
-  const base =
-    size === "md"
-      ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors"
-      : "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors";
+function playbackButtonClass(phase: PlaybackPhase | undefined) {
+  const base = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors";
 
   if (phase === "error") return `${base} border-red-300 bg-red-50 text-red-600`;
   if (phase === "done") return `${base} border-emerald-300 bg-emerald-50 text-emerald-700`;
@@ -183,32 +174,32 @@ export default function PronunciationLabPage() {
   const [englishFilter, setEnglishFilter] = useState<"all" | EnglishCategory>("all");
   const [zhuyinFilter, setZhuyinFilter] = useState<"all" | ZhuyinCategory>("all");
 
+  // Letters like C/G/S/X/Y carry more than one common sound (hard/soft C,
+  // etc.) — this tracks which one is currently showing per letter. Only
+  // letters the user has actually switched get an entry; everyone else
+  // just uses commonSounds[0] (selectedSoundFor below).
+  const [selectedSoundByLetter, setSelectedSoundByLetter] = useState<Record<string, string>>({});
+
+  // Defaults to `primarySoundId` — the sound actually embedded in the
+  // letter's own name (see the field comment in englishSounds.ts) — rather
+  // than just commonSounds[0], so the card's default view (IPA/KK caption,
+  // "How to say it", Yumi's mouth/tongue demo) matches what Yumi's audio
+  // actually says before the user has touched the pill switcher at all.
+  function selectedSoundFor(letter: EnglishLetter): LetterSoundValue {
+    const chosenId = selectedSoundByLetter[letter.id] ?? letter.primarySoundId;
+    return (
+      letter.commonSounds.find((sound) => sound.id === chosenId) ?? letter.commonSounds[0]
+    );
+  }
+
   const [expandedGuidance, setExpandedGuidance] = useState<Set<string>>(new Set());
   const [expandedTrap, setExpandedTrap] = useState<Set<string>>(new Set());
 
   const [playback, setPlayback] = useState<PlaybackState>(null);
   const playTokenRef = useRef(0);
-
-  // Listen → Repeat → Compare (section 6/19 of the brief). Only one card
-  // can be "in practice" at a time — recording needs real mic access, so
-  // keeping this to a single shared slot avoids ever having two live
-  // MediaRecorder streams or juggling which one a Compare tap refers to.
-  // Recordings stay as in-memory blob URLs for this pass (not uploaded) —
-  // see the practiceRepository.ts comment for why only replay *counts* are
-  // persisted, not the audio itself.
-  const [practice, setPractice] = useState<PracticeState>(null);
-  const [micError, setMicError] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const countdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
-  }, []);
+  // Tracks whether the *current* playback's card has ever actually been the
+  // centered/active card — see the auto-stop effect below.
+  const playbackWasActiveRef = useRef(false);
 
   // Brief section 13: stop audio immediately if the app/tab goes to the
   // background — nothing should keep talking once the user isn't looking
@@ -318,15 +309,44 @@ export default function PronunciationLabPage() {
   }, []);
 
   // Brief section 13: "卡片離開中央區域 → 停止音訊 → 取消尚未完成的動畫" —
-  // whenever the active card changes (including to nothing), any playback
-  // that belongs to a card which is no longer active gets cut off rather
-  // than continuing to play from off-screen. Bumping the shared token
-  // invalidates any in-flight runSteps() sequence for it too.
+  // once a card has actually been the centered/active one and audio is
+  // playing on it, scrolling it out of the center band cuts that audio off
+  // rather than letting it keep playing from off-screen. Bumping the shared
+  // token invalidates any in-flight runSteps() sequence for it too.
+  //
+  // This must NOT fire just because `playback.cardKey !== activeCardKey` —
+  // every card's speaker/example buttons are tappable regardless of
+  // whether that card happens to be the one "active" for the Yumi teaching
+  // stage (activeCardKey only reflects scroll-spy centering, on a ~350ms
+  // dwell). Cancelling on that mismatch alone killed audio the instant
+  // ANY of the following happened: tapping a button on a card that's
+  // visible but not exactly centered, or tapping anything before the
+  // scroll-spy's dwell timer had set an activeCardKey at all (e.g. the
+  // very first tap right after the page loads, when activeCardKey is
+  // still null). That reads as "every sound is wrong/cuts off/does
+  // nothing" regardless of what text or audio the button actually points
+  // at — a real bug found while investigating the letter-name pronunciation
+  // reports, independent of and in addition to those data-level fixes.
+  //
+  // playbackWasActiveRef tracks whether the *current* playback's card has
+  // ever actually been activeCardKey; only once that's true does a later
+  // mismatch (the card scrolling away) count as "left the center area."
   useEffect(() => {
-    if (playback && playback.cardKey !== activeCardKey) {
+    if (!playback) {
+      playbackWasActiveRef.current = false;
+      return;
+    }
+
+    if (playback.cardKey === activeCardKey) {
+      playbackWasActiveRef.current = true;
+      return;
+    }
+
+    if (playbackWasActiveRef.current) {
       playTokenRef.current += 1;
       stopSpeech();
       queueMicrotask(() => setPlayback(null));
+      playbackWasActiveRef.current = false;
     }
   }, [activeCardKey, playback]);
 
@@ -410,7 +430,7 @@ export default function PronunciationLabPage() {
     key: string,
     src: string | undefined,
     fallbackText: string,
-    fallbackLang: "zh-TW",
+    fallbackLang: "zh-TW" | "en-US",
     cardKey: string,
   ): Step {
     return {
@@ -452,40 +472,28 @@ export default function PronunciationLabPage() {
     void runSteps(token, [speakStep(token, key, text, lang, cardKey)], cardKey);
   }
 
-  // Layer 2's play sequence (section 2): the sound alone, a short pause,
-  // then the sound again — one clean repetition is enough to imitate, and
-  // keeping the sequence to just the symbol's own audio means the main
-  // speaker button only ever plays (and only ever visually owns) its own
-  // sound. It used to tack on a representative example word at the end,
-  // borrowing that word's key for the final step — but that meant tapping
-  // the main circle would make a DIFFERENT button (the example row) light
-  // up, which read as the main speaker "sharing" its sound with something
-  // else. Every speaker now maps to exactly one thing: the main button to
-  // the symbol, each example row to its own word.
-  //
-  // This must speak `soundText` (the short isolated-sound TTS cue, e.g.
-  // "buh" for /b/), not `anchor` (a full demo word, e.g. "Baby") — anchor
-  // exists only so example-word buttons never collide with the symbol's
-  // own audio (see the field comment in englishSounds.ts), it was never
-  // meant to BE the symbol's sound. Speaking the anchor here made every
-  // consonant card's main speaker say a whole unrelated word twice (e.g.
-  // "Baby, baby" for /b/) instead of the actual target sound — which is
-  // what was being reported as "wrong"/"unrelated" pronunciation. Zhuyin's
-  // playZhuyinMain below already uses soundText correctly; this brings
-  // English in line with it.
-  function playEnglishMain(sound: EnglishSound) {
-    const cardKey = `english-${sound.id}`;
-    const mainKey = `en-main-${sound.id}`;
+  // The card's ONE primary playback trigger, now owned entirely by the Yumi
+  // teaching stage (tapping anywhere in that box) rather than a separate
+  // top-right speaker button. Per the redesign brief: this must speak the
+  // LETTER'S OWN NAME (e.g. "A", "B" — `letter.letter`), never a
+  // commonSounds value and never an example word's audio. Those are a
+  // different card element (the pill switcher for study reference, and the
+  // example-word rows below) with their own separate purpose — mixing them
+  // into this one button is exactly what made the old main speaker feel
+  // like it was "connected to the wrong audio."
+  function playEnglishPrimary(letter: EnglishLetter) {
+    const cardKey = `english-${letter.id}`;
+    const mainKey = `en-main-${letter.id}`;
     const token = beginPlayback(mainKey, cardKey);
 
     const steps: Step[] = [
-      speakStep(token, mainKey, sound.soundText, "en-US", cardKey),
+      speakStep(token, mainKey, letter.letter, "en-US", cardKey),
       pauseStep(mainKey, PAUSE_BETWEEN_REPEATS_MS),
-      speakStep(token, mainKey, sound.soundText, "en-US", cardKey),
+      speakStep(token, mainKey, letter.letter, "en-US", cardKey),
     ];
 
     void runSteps(token, steps, cardKey);
-    void recordPracticePlay(createClient(), "english", sound.id);
+    void recordPracticePlay(createClient(), "english", letter.id);
   }
 
   function playZhuyinMain(sound: ZhuyinSound) {
@@ -503,121 +511,15 @@ export default function PronunciationLabPage() {
     void recordPracticePlay(createClient(), "zhuyin", sound.id);
   }
 
-  // ── Practice: Listen → Repeat → Compare ──────────────────────────
-  function practiceKeyFor(kind: Mode, id: string) {
-    return `${kind}-${id}`;
-  }
-
-  function resetPractice() {
-    if (practice?.recordingUrl) URL.revokeObjectURL(practice.recordingUrl);
-    if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    mediaRecorderRef.current = null;
-    setPractice(null);
-    setMicError(null);
-  }
-
-  function startRepeat(key: string) {
-    if (practice && practice.key !== key) resetPractice();
-    setMicError(null);
-    setPractice({ key, step: "countdown", recordingUrl: null });
-
-    countdownTimeoutRef.current = setTimeout(async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-        recordedChunksRef.current = [];
-
-        const recorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) recordedChunksRef.current.push(event.data);
-        };
-
-        recorder.onstop = () => {
-          const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
-          const url = URL.createObjectURL(blob);
-          stream.getTracks().forEach((track) => track.stop());
-          setPractice((current) =>
-            current?.key === key ? { ...current, step: "recorded", recordingUrl: url } : current,
-          );
-        };
-
-        recorder.start();
-        setPractice((current) => (current?.key === key ? { ...current, step: "recording" } : current));
-      } catch {
-        setMicError(copy.practice.micDenied);
-        setPractice(null);
-      }
-    }, 1000);
-  }
-
-  function stopRecording() {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-  }
-
-  function playCompare(
-    kind: Mode,
-    sound: EnglishSound | ZhuyinSound,
-    key: string,
-    recordingUrl: string,
-  ) {
-    const cardKey = `${kind}-${sound.id}`;
-    const token = beginPlayback(key, cardKey);
-
-    const referenceStep: Step =
-      kind === "english"
-        ? speakStep(token, key, (sound as EnglishSound).soundText, "en-US", cardKey)
-        : audioStep(
-            token,
-            key,
-            (sound as ZhuyinSound).audio,
-            (sound as ZhuyinSound).soundText,
-            "zh-TW",
-            cardKey,
-          );
-
-    const recordingStep: Step = {
-      key,
-      run: () =>
-        new Promise<void>((resolve) => {
-          playAudio(recordingUrl, {
-            onStart: () => {
-              if (playTokenRef.current === token) setPlayback({ key, phase: "playing", cardKey });
-            },
-            onEnd: () => resolve(),
-            onMissing: () => resolve(),
-          });
-        }),
-    };
-
-    void runSteps(token, [referenceStep, pauseStep(key, 500), recordingStep], cardKey);
-  }
-
   const filteredEnglish = useMemo(
     () =>
-      englishSounds
-        .filter((sound) => englishFilter === "all" || sound.category === englishFilter)
-        // A-to-Z by id (b, ch, d, f, g, h, j, k, l, m, n, ng, p, r, s, sh,
-        // t, th, v, w, y, z — digraphs like "ch"/"sh"/"th"/"ng" naturally
-        // sort right after their base letter) instead of the previous
-        // voiced/unvoiced-pair grouping, which wasn't alphabetical at all.
-        // Consonants stay ahead of vowels in the "All" tab either way,
-        // since that's already how the two categories are ordered here.
+      englishLetters
+        .filter((letter) => englishFilter === "all" || letter.category === englishFilter)
+        // Plain A-to-Z — with a letter per card instead of a phoneme per
+        // card, alphabetical order is just the alphabet, vowels and
+        // consonants interleaved as they naturally fall.
         .slice()
-        .sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category === "consonant" ? -1 : 1;
-          }
-          return a.id.localeCompare(b.id);
-        }),
+        .sort((a, b) => a.id.localeCompare(b.id)),
       [englishFilter],
   );
 
@@ -702,55 +604,76 @@ export default function PronunciationLabPage() {
 
       <div className="mt-5 grid grid-cols-1 gap-4 px-4 pb-4 md:grid-cols-2">
         {resolvedMode === "english"
-          ? filteredEnglish.map((sound) => {
-              const cardKey = `english-${sound.id}`;
-              const mainKey = `en-main-${sound.id}`;
+          ? filteredEnglish.map((letter) => {
+              const cardKey = `english-${letter.id}`;
+              const sound = selectedSoundFor(letter);
+              const practiceId = `${letter.id}-${sound.id}`;
+              const mainKey = `en-main-${letter.id}`;
               const mainPhase = phaseFor(mainKey);
-              const guidanceOpen = expandedGuidance.has(sound.id);
+              const guidanceOpen = expandedGuidance.has(practiceId);
+              const hasMultipleSounds = letter.commonSounds.length > 1;
 
               return (
                 <div
-                  key={sound.id}
+                  key={letter.id}
                   ref={registerCardRef(cardKey)}
                   className="rounded-[24px] border border-line bg-white p-5"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
-                        {sound.symbol}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
-                          {sound.category === "vowel" ? copy.filters.vowels : copy.filters.consonants}
-                        </p>
-                        <p className="text-[17px] font-bold">{sound.title}</p>
-                        <p className="font-phonetic text-xs text-black/40">{sound.ipa}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+                      {letter.letter}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
+                        {letter.category === "vowel" ? copy.filters.vowels : copy.filters.consonants}
+                      </p>
+                      <p className="text-[17px] font-bold">
+                        {letter.letter}
+                        <span className="font-phonetic ml-1.5 text-sm font-medium text-black/40">
+                          {letter.letterName.kk}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {hasMultipleSounds ? (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/30">
+                        {copy.cards.moreSounds}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {letter.commonSounds.map((value) => (
+                          <button
+                            key={value.id}
+                            type="button"
+                            onClick={() =>
+                              setSelectedSoundByLetter((current) => ({ ...current, [letter.id]: value.id }))
+                            }
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                              sound.id === value.id
+                                ? "border-black bg-black text-white"
+                                : "border-line bg-white text-black/60"
+                            }`}
+                          >
+                            {value.label[language]}
+                          </button>
+                        ))}
                       </div>
                     </div>
+                  ) : null}
 
-                    <button
-                      type="button"
-                      onClick={() => playEnglishMain(sound)}
-                      aria-label={ariaLabelFor(
-                        copy.cards.playSound.replace("{symbol}", sound.symbol),
-                        mainPhase,
-                        copy,
-                      )}
-                      className={playbackButtonClass(mainPhase, "md")}
-                    >
-                      <PlaybackIcon phase={mainPhase} />
-                    </button>
-                  </div>
+                  <p className="font-phonetic mt-2 text-xs text-black/40">
+                    {sound.ipa} · {copy.cards.kk} {sound.kk}
+                  </p>
 
                   <TeachingStage
                     active={activeCardKey === cardKey}
                     pose={deriveRigPose(sound.phonetics)}
-                    guidance={sound.guidance}
                     phonetics={sound.phonetics}
                     mainPhase={mainPhase}
                     copy={copy}
                     language={language}
-                    onPlayMain={() => playEnglishMain(sound)}
+                    onPlayMain={() => playEnglishPrimary(letter)}
                   />
 
                   <div className="mt-3 rounded-2xl bg-surface p-3">
@@ -771,7 +694,7 @@ export default function PronunciationLabPage() {
 
                     <button
                       type="button"
-                      onClick={() => toggleSet(setExpandedGuidance, sound.id)}
+                      onClick={() => toggleSet(setExpandedGuidance, practiceId)}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-black/50"
                     >
                       {guidanceOpen ? copy.cards.showLessGuidance : copy.cards.showMoreGuidance}
@@ -789,7 +712,7 @@ export default function PronunciationLabPage() {
 
                   <div className="mt-3 space-y-2">
                     {sound.examples.map((example, index) => {
-                      const key = `en-ex-${sound.id}-${index}`;
+                      const key = `en-ex-${practiceId}-${index}`;
                       const phase = phaseFor(key);
                       const span = highlightEnglishExample(example, sound.id);
 
@@ -806,33 +729,13 @@ export default function PronunciationLabPage() {
                           className="flex w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-2.5 text-left text-sm font-medium"
                         >
                           <span>{highlightedWord(example, span)}</span>
-                          <span className={playbackButtonClass(phase, "sm")} aria-hidden="true">
+                          <span className={playbackButtonClass(phase)} aria-hidden="true">
                             <PlaybackIcon phase={phase} />
                           </span>
                         </button>
                       );
                     })}
                   </div>
-
-                  <PracticeRow
-                    kind="english"
-                    sound={sound}
-                    copy={copy}
-                    practice={practice}
-                    micError={micError}
-                    onListen={() => playEnglishMain(sound)}
-                    onRepeat={() => startRepeat(practiceKeyFor("english", sound.id))}
-                    onStop={stopRecording}
-                    onCompare={(recordingUrl) =>
-                      playCompare(
-                        "english",
-                        sound,
-                        `practice-compare-${practiceKeyFor("english", sound.id)}`,
-                        recordingUrl,
-                      )
-                    }
-                    comparePhase={phaseFor(`practice-compare-${practiceKeyFor("english", sound.id)}`)}
-                  />
                 </div>
               );
             })
@@ -849,37 +752,24 @@ export default function PronunciationLabPage() {
                   ref={registerCardRef(cardKey)}
                   className="rounded-[24px] border border-line bg-white p-5"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
-                        <span className="font-zhuyin">{sound.symbol}</span>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
-                          {zhuyinCategoryLabel(sound.category, copy)}
-                        </p>
-                        <p className="font-zhuyin text-[17px] font-bold">{sound.title}</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+                      <span className="font-zhuyin">{sound.symbol}</span>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => playZhuyinMain(sound)}
-                      aria-label={ariaLabelFor(
-                        copy.cards.playSound.replace("{symbol}", sound.symbol),
-                        mainPhase,
-                        copy,
-                      )}
-                      className={playbackButtonClass(mainPhase, "md")}
-                    >
-                      <PlaybackIcon phase={mainPhase} />
-                    </button>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
+                        {zhuyinCategoryLabel(sound.category, copy)}
+                      </p>
+                      <p className="font-zhuyin text-[17px] font-bold">{sound.title}</p>
+                      <p className="text-xs text-black/40">
+                        {copy.cards.romanizationHint}: {sound.romanization}
+                      </p>
+                    </div>
                   </div>
 
                   <TeachingStage
                     active={activeCardKey === cardKey}
                     pose={deriveRigPose(sound.phonetics)}
-                    guidance={sound.guidance}
                     phonetics={sound.phonetics}
                     mainPhase={mainPhase}
                     copy={copy}
@@ -953,7 +843,7 @@ export default function PronunciationLabPage() {
                               )}
                             </span>
                           </span>
-                          <span className={playbackButtonClass(phase, "sm")} aria-hidden="true">
+                          <span className={playbackButtonClass(phase)} aria-hidden="true">
                             <PlaybackIcon phase={phase} />
                           </span>
                         </button>
@@ -1055,129 +945,11 @@ export default function PronunciationLabPage() {
                       ) : null}
                     </div>
                   ) : null}
-
-                  <PracticeRow
-                    kind="zhuyin"
-                    sound={sound}
-                    copy={copy}
-                    practice={practice}
-                    micError={micError}
-                    onListen={() => playZhuyinMain(sound)}
-                    onRepeat={() => startRepeat(practiceKeyFor("zhuyin", sound.id))}
-                    onStop={stopRecording}
-                    onCompare={(recordingUrl) =>
-                      playCompare(
-                        "zhuyin",
-                        sound,
-                        `practice-compare-${practiceKeyFor("zhuyin", sound.id)}`,
-                        recordingUrl,
-                      )
-                    }
-                    comparePhase={phaseFor(`practice-compare-${practiceKeyFor("zhuyin", sound.id)}`)}
-                  />
                 </div>
               );
             })}
       </div>
     </Screen>
-  );
-}
-
-type PracticeRowProps = {
-  kind: Mode;
-  sound: EnglishSound | ZhuyinSound;
-  copy: PronunciationCopy;
-  practice: PracticeState;
-  micError: string | null;
-  onListen: () => void;
-  onRepeat: () => void;
-  onStop: () => void;
-  onCompare: (recordingUrl: string) => void;
-  comparePhase: PlaybackPhase | undefined;
-};
-
-// Section 6/19 of the Yumi brief: Listen (reference), Repeat (countdown +
-// record via the browser's own MediaRecorder — no paid API), Compare
-// (reference then the user's own recording, back to back). No AI scoring —
-// hearing your own voice next to the standard pronunciation is already a
-// big step, and a fake-precise score would be worse than none.
-function PracticeRow({
-  kind,
-  sound,
-  copy,
-  practice,
-  micError,
-  onListen,
-  onRepeat,
-  onStop,
-  onCompare,
-  comparePhase,
-}: PracticeRowProps) {
-  const key = `${kind}-${sound.id}`;
-  const isThisPracticing = practice?.key === key;
-  const step = isThisPracticing ? practice.step : "idle";
-  const canCompare = isThisPracticing && step === "recorded" && Boolean(practice?.recordingUrl);
-
-  return (
-    <div className="mt-3 rounded-2xl border border-line p-3">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onListen}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line py-2 text-xs font-semibold text-black/70"
-        >
-          <Ear size={14} strokeWidth={1.8} aria-hidden="true" />
-          {copy.practice.listen}
-        </button>
-
-        {step === "recording" ? (
-          <button
-            type="button"
-            onClick={onStop}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-red-300 bg-red-50 py-2 text-xs font-semibold text-red-600"
-          >
-            <Square size={14} strokeWidth={1.8} aria-hidden="true" />
-            {copy.practice.stop}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onRepeat}
-            disabled={step === "countdown"}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line py-2 text-xs font-semibold text-black/70 disabled:opacity-50"
-          >
-            <Mic size={14} strokeWidth={1.8} aria-hidden="true" />
-            {copy.practice.repeat}
-          </button>
-        )}
-
-        <button
-          type="button"
-          disabled={!canCompare}
-          onClick={() => {
-            if (canCompare && practice?.recordingUrl) onCompare(practice.recordingUrl);
-          }}
-          aria-label={ariaLabelFor(copy.practice.compare, comparePhase, copy)}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line py-2 text-xs font-semibold text-black/70 disabled:opacity-40"
-        >
-          <GitCompare size={14} strokeWidth={1.8} aria-hidden="true" />
-          <PlaybackIcon phase={comparePhase} />
-        </button>
-      </div>
-
-      {step === "countdown" ? (
-        <p className="mt-2 text-center text-xs text-black/50">{copy.practice.countdownHint}</p>
-      ) : null}
-      {step === "recording" ? (
-        <p className="mt-2 text-center text-xs text-red-600">{copy.practice.recordingHint}</p>
-      ) : null}
-      {step === "idle" ? (
-        <p className="mt-2 text-center text-xs text-black/40">{copy.practice.noRecordingYet}</p>
-      ) : null}
-      {micError && isThisPracticing ? (
-        <p className="mt-2 text-center text-xs text-red-600">{micError}</p>
-      ) : null}
-    </div>
   );
 }
 
@@ -1187,7 +959,6 @@ const YUMI_EXIT_MS = 320;
 type TeachingStageProps = {
   active: boolean;
   pose: YumiRigPose;
-  guidance: { label: LocalizedText; text: LocalizedText }[];
   phonetics: PhoneticFeatures;
   mainPhase: PlaybackPhase | undefined;
   copy: PronunciationCopy;
@@ -1204,14 +975,13 @@ type TeachingStageProps = {
 function TeachingStage({
   active,
   pose,
-  guidance,
   phonetics,
   mainPhase,
   copy,
   language,
   onPlayMain,
 }: TeachingStageProps) {
-  const steps = useMemo(() => deriveTeachingSteps(guidance, phonetics), [guidance, phonetics]);
+  const steps = useMemo(() => deriveTeachingSteps(phonetics), [phonetics]);
 
   const [mounted, setMounted] = useState(active);
   const [lifecycle, setLifecycle] = useState<"idle" | "entering" | "exiting" | "previewing">(
@@ -1290,14 +1060,25 @@ function TeachingStage({
     return () => timers.forEach(clearTimeout);
   }, [lifecycle, mainPhase, steps]);
 
-  function handleStepTap() {
+  // The redesign brief is explicit that this whole box — not just the
+  // Yumi icon, and not individual step lines — is the card's one primary
+  // playback trigger now that the old top-right speaker button is gone.
+  // Making it a single <button> wrapping everything (icon + steps) means
+  // there's exactly one hit target, sized for a comfortable mobile tap,
+  // instead of several small separately-clickable step rows.
+  function handleTap() {
     setEverPlayed(true);
     onPlayMain();
   }
 
   return (
-    <div className="mt-3 rounded-2xl bg-surface p-3 md:flex md:items-center md:gap-4">
-      <div className="flex justify-center md:w-[35%] md:shrink-0">
+    <button
+      type="button"
+      onClick={handleTap}
+      aria-label={copy.yumi.tapToHear}
+      className="mt-3 flex w-full items-center gap-4 rounded-2xl bg-surface p-3 text-left transition-colors active:bg-black/[0.03] md:gap-4"
+    >
+      <div className="flex shrink-0 justify-center md:w-[35%]">
         {mounted ? (
           <YumiFace pose={pose} phase={rigPhase} size={72} label={copy.yumi.demoAriaLabel} />
         ) : (
@@ -1310,7 +1091,7 @@ function TeachingStage({
         )}
       </div>
 
-      <div className="mt-3 min-w-0 flex-1 md:mt-0">
+      <div className="min-w-0 flex-1">
         {active && !everPlayed ? (
           <p className="mb-1.5 text-[11px] font-medium text-black/40">{copy.yumi.tapToHear}</p>
         ) : null}
@@ -1319,12 +1100,9 @@ function TeachingStage({
           {steps.map((step, index) => {
             const isCurrent = active && highlightIndex === index;
             return (
-              <button
+              <p
                 key={step.key}
-                type="button"
-                onClick={handleStepTap}
-                aria-label={copy.yumi.replayStep}
-                className={`block w-full text-left text-sm leading-6 transition-colors ${
+                className={`text-sm leading-6 transition-colors ${
                   isCurrent ? "text-black" : "text-black/35"
                 }`}
               >
@@ -1336,11 +1114,11 @@ function TeachingStage({
                   {stepLabel(step.key, copy)}
                 </span>
                 <span className="font-cjk">{step.text[language]}</span>
-              </button>
+              </p>
             );
           })}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

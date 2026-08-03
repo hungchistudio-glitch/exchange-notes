@@ -501,7 +501,6 @@ const english: TranslationDictionary = {
     cards: {
       howToSayIt: "How to say it",
       pronunciationMethod: "Pronunciation guide",
-      playSound: "Play the {symbol} sound",
       playWord: "Play {word}",
       correct: "Correct",
       incorrect: "Common mistake",
@@ -512,6 +511,9 @@ const english: TranslationDictionary = {
       hideTrapDetails: "Hide details",
       commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
       playbackFailed: "Playback failed. Tap to try again.",
+      kk: "KK",
+      moreSounds: "More sounds",
+      romanizationHint: "Closest pinyin",
     },
 
     yumi: {
@@ -520,24 +522,8 @@ const english: TranslationDictionary = {
       airflow: "Airflow",
       voice: "Voice",
       demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
-      tapToHear: "Tap to hear and watch Yumi.",
-      replayStep: "Replay this step",
+      tapToHear: "Tap Yumi to hear the correct pronunciation.",
       sleepingAriaLabel: "Yumi is resting — scroll here to wake her up",
-    },
-
-    practice: {
-      listen: "Listen",
-      repeat: "Repeat",
-      compare: "Compare",
-      record: "Record",
-      stop: "Stop",
-      tryAgain: "Try again",
-      recordingHint: "Recording… tap stop when you're done.",
-      countdownHint: "Get ready to repeat the sound…",
-      playReference: "Play standard pronunciation",
-      playRecording: "Play your recording",
-      noRecordingYet: "Record yourself to compare with the standard pronunciation.",
-      micDenied: "Microphone access was denied. Check your browser settings to allow it.",
     },
   },
 
