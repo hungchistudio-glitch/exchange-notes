@@ -450,6 +450,28 @@ export async function removeFriend(
 }
 
 /**
+ * Marks a conversation as read for the current user, resetting the
+ * unread-count badge shown in ConversationList. Previously nothing ever
+ * updated `last_read_at` after the row was first created (it only had a
+ * DB-side `default now()`), so unread counts could get stuck forever even
+ * after the user had actually read the messages — this is the missing
+ * write, called when a thread is opened.
+ */
+export async function markConversationRead(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_members")
+    .update({ last_read_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId);
+
+  if (error) throw error;
+}
+
+/**
  * Hide a conversation from the current user's own message list. This does
  * not delete the conversation or its messages — the other participant is
  * unaffected and still sees the full history.

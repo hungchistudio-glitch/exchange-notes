@@ -85,6 +85,72 @@ function getAvailableVoices(): SpeechSynthesisVoice[] {
   return fresh.length > 0 ? fresh : cachedVoices;
 }
 
+// Plain (no gender preference) voice lookup for callers that just need
+// *a* working voice for the language — e.g. Daily News, which has its own
+// independent speed control and doesn't use the gender setting above.
+// Matching by lang *prefix* (e.g. "zh") rather than an exact string is
+// what actually makes Chinese playback reliable: many devices register
+// their Traditional Chinese voice under "zh-TW", "zh-Hant-TW", or even
+// "cmn-Hant-TW" rather than the literal string we ask for, and browsers
+// often play nothing at all — no error — when utterance.lang doesn't
+// exactly match an installed voice and no explicit voice is set.
+// Among a set of same-language candidate voices, prefer the one that will
+// actually sound least robotic. Chrome/Edge ship both a cloud-quality
+// "Google …" voice and a much flatter local/system voice for the same
+// language — when both are installed the Google one is dramatically more
+// natural. Local "Compact" voices (common on macOS/iOS for languages you
+// haven't downloaded the full voice pack for) are the opposite: noticeably
+// more synthetic than a normal system voice, so they're avoided unless
+// nothing else matches.
+function pickBestQualityVoice(
+  voices: SpeechSynthesisVoice[]
+): SpeechSynthesisVoice {
+  const cloudVoice = voices.find((voice) =>
+    voice.name.toLowerCase().includes("google")
+  );
+  if (cloudVoice) return cloudVoice;
+
+  const nonCompact = voices.filter(
+    (voice) => !voice.name.toLowerCase().includes("compact")
+  );
+
+  return nonCompact[0] ?? voices[0];
+}
+
+export function getVoiceForLanguage(
+  lang: "zh-TW" | "en-US"
+): SpeechSynthesisVoice | null {
+  const voices = getAvailableVoices();
+  const langPrefix = lang.slice(0, 2).toLowerCase();
+
+  const candidates = voices.filter((voice) =>
+    voice.lang.toLowerCase().startsWith(langPrefix)
+  );
+
+  if (candidates.length === 0) return null;
+  if (lang !== "zh-TW") return pickBestQualityVoice(candidates);
+
+  // For Chinese, "starts with zh" alone isn't enough — zh-CN and zh-HK
+  // voices match that same prefix but use Mandarin/Cantonese pronunciation
+  // that differs from Taiwan Mandarin, which reads as mispronunciations to
+  // a zh-TW learner. Prefer, in order: an exact zh-TW tag, then any tag
+  // that mentions "tw" or "hant" (Traditional), then fall back to
+  // whatever zh voice is available rather than showing no audio at all.
+  // Within whichever tier matches, pick the best-sounding voice available.
+  const exactTw = candidates.filter(
+    (voice) => voice.lang.toLowerCase() === "zh-tw"
+  );
+  if (exactTw.length > 0) return pickBestQualityVoice(exactTw);
+
+  const traditional = candidates.filter((voice) => {
+    const tag = voice.lang.toLowerCase();
+    return tag.includes("tw") || tag.includes("hant");
+  });
+  if (traditional.length > 0) return pickBestQualityVoice(traditional);
+
+  return pickBestQualityVoice(candidates);
+}
+
 function pickVoiceForGender(
   lang: "zh-TW" | "en-US",
   gender: VoiceGender

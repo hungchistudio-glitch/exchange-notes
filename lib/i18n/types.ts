@@ -61,7 +61,36 @@ export type TranslationDictionary = {
     eyebrow: string;
     subtitle: string;
 
+    liveGlobalStories: string;
+    dailyNewsTitle: string;
+    speechSpeed: string;
+
     vocabulary: string;
+    tapToExpand: string;
+
+    saveToNotes: string;
+    saving: string;
+    saved: string;
+    saveError: string;
+    sendToPartner: string;
+    sentToPartner: string;
+    quizSoon: string;
+    quizSoonTitle: string;
+
+    sameBatchNotice: string;
+    tryAgain: string;
+    loadFallbackError: string;
+
+    justNow: string;
+    minutesAgo: string;
+    hoursAgo: string;
+    recently: string;
+
+    readEnglishAriaLabel: string;
+    readChineseAriaLabel: string;
+    readVocabWordAriaLabel: string;
+    readVocabChineseAriaLabel: string;
+
     sendToFriend: string;
     newStories: string;
     loadingNewStories: string;
@@ -96,6 +125,40 @@ export type TranslationDictionary = {
       politics: string;
       general: string;
     };
+
+    latestStoriesLabel: string;
+    readMore: string;
+    keyWordsLabel: string;
+    moreActions: string;
+    moreActionsAriaLabel: string;
+    openSource: string;
+    shareStory: string;
+    shareCopied: string;
+    hideStory: string;
+    save: string;
+    listen: string;
+    speedSlow: string;
+    speedNatural: string;
+    speedFast: string;
+    vocabularyDrawerTitle: string;
+    vocabularyDrawerDescription: string;
+
+    refreshAction: string;
+    refreshAriaLabel: string;
+    playFullStory: string;
+    stopStory: string;
+    playFullStoryAriaLabel: string;
+    languageEnglish: string;
+    languageChinese: string;
+    languageEnglishShort: string;
+    languageChineseShort: string;
+
+    addToVocabulary: string;
+    addedToVocabulary: string;
+    addingToVocabulary: string;
+    addToVocabularyAriaLabel: string;
+
+    exploreImageLabel: string;
   };
 
   capture: {
@@ -207,6 +270,41 @@ export type TranslationDictionary = {
     hero: {
       title: string;
       description: string;
+      titleCurious: string;
+      descriptionCurious: string;
+      titleCelebrate: string;
+      descriptionCelebrate: string;
+      titleDancing: string;
+      descriptionDancing: string;
+      titleWelcomeBack: string;
+      descriptionWelcomeBack: string;
+    };
+
+    murph: {
+      statusWaiting: string;
+      hintWaiting: string;
+      statusCurious: string;
+      hintOneWord: string;
+      statusHappy: string;
+      hintWordsToday: string;
+      statusDancing: string;
+      hintThreeWords: string;
+      statusExcited: string;
+      hintWordsCount: string;
+      statusHungry: string;
+      hintHungry: string;
+      statusSad: string;
+      hintSad: string;
+      statusGrumpy: string;
+      hintGrumpy: string;
+      statusLonely: string;
+      hintLonely: string;
+      statusSleeping: string;
+      hintSleeping: string;
+      statusWelcomeBack: string;
+      hintWelcomeBack: string;
+      reactionCurious: string;
+      reactionHappy: string;
     };
 
     dailyFocus: {
@@ -362,6 +460,13 @@ export type TranslationDictionary = {
     english: string;
     traditionalChinese: string;
 
+    moodSwipeHint: string;
+    moodCalm: string;
+    moodCurious: string;
+    moodSleepy: string;
+    moodSurprised: string;
+    moodHappy: string;
+
     errors: {
       notLoggedIn: string;
       loadConversations: string;
@@ -480,6 +585,47 @@ export type TranslationDictionary = {
     dashboard: {
       eyebrow: string;
       title: string;
+    };
+
+    mascot: {
+      greetingDefault: string;
+      greetingWaiting: string;
+      moodStatus: {
+        hungry: string;
+        curious: string;
+        happy: string;
+        excited: string;
+        proud: string;
+        missingYou: string;
+        confused: string;
+      };
+      moodShort: {
+        hungry: string;
+        curious: string;
+        happy: string;
+        excited: string;
+        proud: string;
+        missingYou: string;
+        confused: string;
+      };
+      statWordsToday: string;
+      statCookies: string;
+      statStreak: string;
+      statStreakDays: string;
+      statMood: string;
+      summaryWordSingular: string;
+      summaryWordPlural: string;
+      summaryCookieSingular: string;
+      summaryCookiePlural: string;
+      summaryStreak: string;
+      cookieTrayEmpty: string;
+      cookieTrayHint: string;
+      cookieTrayMore: string;
+      feedAriaLabel: string;
+      cookieTypeLetter: string;
+      cookieTypeZhuyin: string;
+      reviewLinkLabel: string;
+      collectionsLinkLabel: string;
     };
 
     lookup: {

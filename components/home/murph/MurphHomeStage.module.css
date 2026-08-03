@@ -1,0 +1,832 @@
+/* Deliberately no fixed height / overflow:hidden here — the stage's total
+   height is whatever its content (ground + status text) actually needs.
+   A fixed height + overflow:hidden on this outer wrapper previously
+   clipped the status text entirely, since the ground area alone already
+   filled 100% of that fixed box, leaving zero room for anything after it. */
+.stage {
+  position: relative;
+  background: radial-gradient(
+    120% 160% at 50% 0%,
+    #f8f6ef 0%,
+    #f5f3ed 55%,
+    #f0ede3 100%
+  );
+}
+
+/* Murphy is meant to always be alive on screen — deliberately no
+   scroll-out-of-view animation pausing here (removed in favor of always
+   moving, even off-screen or briefly scrolled past). */
+
+.ambientLight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambientLight span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(14px);
+  opacity: 0.5;
+  background: radial-gradient(circle, #fffdf6 0%, rgba(255, 253, 246, 0) 70%);
+  animation: homeAmbientDrift 9s ease-in-out infinite;
+}
+
+.ambientLight span:nth-child(1) {
+  top: 10%;
+  left: 12%;
+  width: 70px;
+  height: 70px;
+  animation-delay: 0s;
+}
+
+.ambientLight span:nth-child(2) {
+  top: 18%;
+  right: 16%;
+  width: 54px;
+  height: 54px;
+  animation-delay: 2.4s;
+}
+
+.ambientLight span:nth-child(3) {
+  bottom: 30%;
+  left: 46%;
+  width: 46px;
+  height: 46px;
+  animation-delay: 4.8s;
+}
+
+@keyframes homeAmbientDrift {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-6px);
+  }
+}
+
+.ground {
+  position: relative;
+  overflow: hidden;
+  height: clamp(140px, 19dvh, 176px);
+}
+
+/* Anchors Murphy's stand-point to a fixed offset from the stage floor —
+   deliberately NOT a percentage padding/bottom here: percentage values for
+   vertical padding resolve against the container's WIDTH per the CSS spec,
+   not its height, which on a short wide stage pushed Murphy almost
+   entirely above the visible area. */
+.moverAnchor {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+}
+
+.mover {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: transform 1.3s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.shadow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 56px;
+  height: 12px;
+  margin-left: -28px;
+  border-radius: 9999px;
+  background: rgba(28, 26, 22, 0.14);
+  filter: blur(1.5px);
+  animation: homeShadowBreath 3.6s ease-in-out infinite;
+}
+
+.shadow[data-mood="dancing"],
+.shadow[data-mood="excited"] {
+  animation: homeShadowHop 0.7s ease-in-out infinite;
+}
+
+.shadow[data-mood="sleeping"] {
+  width: 46px;
+  margin-left: -23px;
+  opacity: 0.7;
+}
+
+@keyframes homeShadowBreath {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+}
+
+@keyframes homeShadowHop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.6);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+}
+
+.figure {
+  position: relative;
+  width: min(26vw, 96px);
+  height: min(26vw, 96px);
+  color: #1c1a16;
+  transform-origin: 50% 85%;
+  animation: homeIdleFloat 3.4s ease-in-out infinite;
+}
+
+.logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 10px 16px rgba(28, 26, 22, 0.12));
+}
+
+.pupil,
+.upperLid,
+.lowerLid {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.upperLid {
+  transform: translateY(-82px);
+  animation: homeBaseBlink 5s linear infinite;
+}
+
+.lowerLid {
+  transform: translateY(12px);
+  animation: homeBaseBlinkLower 5s linear infinite;
+}
+
+@keyframes homeIdleFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(-0.8deg);
+  }
+}
+
+@keyframes homeBaseBlink {
+  0%,
+  46%,
+  52%,
+  100% {
+    transform: translateY(-82px);
+  }
+  48%,
+  49% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes homeBaseBlinkLower {
+  0%,
+  46%,
+  52%,
+  100% {
+    transform: translateY(12px);
+  }
+  48%,
+  49% {
+    transform: translateY(-2px);
+  }
+}
+
+/* ---------- waiting: quiet default, occasional glance down at the tray ---------- */
+
+.figure[data-mood="waiting"] .pupil {
+  animation: homeGlanceDown 8s ease-in-out infinite;
+}
+
+@keyframes homeGlanceDown {
+  0%,
+  70%,
+  100% {
+    transform: translate(0, 0);
+  }
+  80%,
+  88% {
+    transform: translate(2px, 6px);
+  }
+}
+
+/* ---------- curious: perks up, quick look, one small hop in ---------- */
+
+.figure[data-mood="curious"] {
+  animation: homeCuriousFloat 3.2s ease-in-out infinite;
+}
+
+.figure[data-mood="curious"] .pupil {
+  animation: homeCuriousLook 4.4s ease-in-out infinite;
+}
+
+@keyframes homeCuriousFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+}
+
+@keyframes homeCuriousLook {
+  0%,
+  15%,
+  100% {
+    transform: translate(0, 0);
+  }
+  32%,
+  44% {
+    transform: translate(-7px, -1px);
+  }
+  62%,
+  74% {
+    transform: translate(6px, 0);
+  }
+}
+
+/* ---------- happy: small side moves + hops, edges toward the tray ---------- */
+
+.figure[data-mood="happy"] {
+  animation: homeHappyBounce 1.9s ease-in-out infinite;
+}
+
+@keyframes homeHappyBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  15% {
+    transform: translateY(-9px) translateX(-3px);
+  }
+  30% {
+    transform: translateY(0) translateX(3px);
+  }
+  45% {
+    transform: translateY(-5px) translateX(0);
+  }
+}
+
+/* ---------- dancing: one-shot celebration ---------- */
+
+.figure[data-mood="dancing"] {
+  animation: homeDance 2.6s cubic-bezier(0.34, 1.2, 0.4, 1) 1;
+}
+
+@keyframes homeDance {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  15% {
+    transform: translateY(-16px) rotate(-8deg) scale(1.05);
+  }
+  30% {
+    transform: translateY(0) rotate(10deg) scale(0.96);
+  }
+  45% {
+    transform: translateY(-12px) rotate(-10deg) scale(1.04);
+  }
+  60% {
+    transform: translateY(0) rotate(360deg) scale(1);
+  }
+  78% {
+    transform: translateY(-8px) rotate(360deg) scale(1.05);
+  }
+  100% {
+    transform: translateY(0) rotate(360deg) scale(1);
+  }
+}
+
+/* ---------- excited: brighter, brief lift, quick hops ---------- */
+
+.figure[data-mood="excited"] {
+  animation: homeExcitedFloat 1.1s cubic-bezier(0.34, 1.4, 0.5, 1) infinite;
+}
+
+.figure[data-mood="excited"] .pupil {
+  animation: homeExcitedGleam 1.1s ease-in-out infinite;
+}
+
+@keyframes homeExcitedFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-14px) scale(1.05);
+  }
+  70% {
+    transform: translateY(-4px) scale(0.99);
+  }
+}
+
+@keyframes homeExcitedGleam {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* ---------- hungry: slower, glances at the empty tray ---------- */
+
+.figure[data-mood="hungry"] {
+  animation: homeHungryFloat 4.4s ease-in-out infinite;
+}
+
+.figure[data-mood="hungry"] .pupil {
+  animation: homeGlanceDown 6s ease-in-out infinite;
+}
+
+@keyframes homeHungryFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* ---------- sad: droops, looks down more, slower blink ---------- */
+
+.figure[data-mood="sad"] {
+  animation: homeSadFloat 4.8s ease-in-out infinite;
+}
+
+.figure[data-mood="sad"] .upperLid {
+  animation: homeSadBlink 4.8s ease-in-out infinite;
+}
+
+.figure[data-mood="sad"] .pupil {
+  animation: homeSadLook 4.8s ease-in-out infinite;
+}
+
+@keyframes homeSadFloat {
+  0%,
+  100% {
+    transform: translateY(3px) scaleY(0.97) rotate(0deg);
+  }
+  50% {
+    transform: translateY(5px) scaleY(0.95) rotate(-1deg);
+  }
+}
+
+@keyframes homeSadBlink {
+  0%,
+  100% {
+    transform: translateY(-52px);
+  }
+  50% {
+    transform: translateY(-46px);
+  }
+}
+
+@keyframes homeSadLook {
+  0%,
+  100% {
+    transform: translate(-2px, 5px);
+  }
+  50% {
+    transform: translate(-3px, 6px);
+  }
+}
+
+/* ---------- grumpy: cute little huff, no aggression ---------- */
+
+.figure[data-mood="grumpy"] {
+  animation: homeGrumpyHuff 2.4s ease-in-out infinite;
+}
+
+@keyframes homeGrumpyHuff {
+  0%,
+  20%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  6% {
+    transform: rotate(-4deg) scale(1.03);
+  }
+  12% {
+    transform: rotate(4deg) scale(1.03);
+  }
+}
+
+/* ---------- lonely: one-shot, slow approach + look back, then settles ---------- */
+
+.figure[data-mood="lonely"] {
+  animation: homeLonely 2.4s ease-in-out 1;
+}
+
+@keyframes homeLonely {
+  0% {
+    transform: translateY(2px) scale(1);
+  }
+  50% {
+    transform: translateY(0) scale(0.97) translateX(-6px);
+  }
+  100% {
+    transform: translateY(2px) scale(1) translateX(0);
+  }
+}
+
+.tear {
+  position: absolute;
+  top: 44%;
+  left: 62%;
+  width: 5px;
+  height: 7px;
+  border-radius: 50% 50% 50% 0;
+  background: #a9c9e8;
+  opacity: 0;
+  transform: rotate(45deg);
+  animation: homeTearFall 2.4s ease-in 1;
+}
+
+@keyframes homeTearFall {
+  0%,
+  25% {
+    opacity: 0;
+    transform: rotate(45deg) translateY(0);
+  }
+  40% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.7;
+    transform: rotate(45deg) translateY(16px);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(45deg) translateY(20px);
+  }
+}
+
+/* ---------- sleeping: small, slow, low-energy ---------- */
+
+.figure[data-mood="sleeping"] {
+  transform: scale(0.86);
+  animation: homeSleepBreath 5.2s ease-in-out infinite;
+  opacity: 0.92;
+}
+
+.figure[data-mood="sleeping"] .upperLid {
+  transform: translateY(-64px);
+  animation: none;
+}
+
+@keyframes homeSleepBreath {
+  0%,
+  100% {
+    transform: scale(0.86) translateY(0);
+  }
+  50% {
+    transform: scale(0.84) translateY(2px);
+  }
+}
+
+/* ---------- welcome back: bright, rolls in, two happy hops ---------- */
+
+.figure[data-mood="welcomeBack"] {
+  animation: homeWelcome 1.8s cubic-bezier(0.34, 1.3, 0.4, 1) 1;
+}
+
+@keyframes homeWelcome {
+  0% {
+    transform: translateX(-18px) scale(0.94);
+    opacity: 0.7;
+  }
+  40% {
+    transform: translateX(4px) translateY(-12px) scale(1.05);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  80% {
+    transform: translateY(-8px) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- post-eat: satisfied, but still a little eager ---------- */
+/* Plays right after the chomp finishes, for as long as the "Murphy feels
+   ..." reaction text is showing: a happy little bounce, a squint, a
+   glance down at the tray, then a glance up at the user — "I liked that,
+   feed me another" rather than just snapping back to the idle loop. */
+
+.satisfied {
+  animation: homeSatisfiedLinger 2.2s cubic-bezier(0.34, 1.2, 0.4, 1) 1 both !important;
+}
+
+.satisfied .upperLid {
+  animation: homeSatisfiedSquint 2.2s ease-in-out 1 both !important;
+}
+
+.satisfied .pupil {
+  animation: homeSatisfiedGlance 2.2s ease-in-out 1 both !important;
+}
+
+@keyframes homeSatisfiedLinger {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  12% {
+    transform: translateY(-10px) scale(1.05);
+  }
+  24% {
+    transform: translateY(0) scale(0.98);
+  }
+  42% {
+    transform: translateY(-4px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes homeSatisfiedSquint {
+  0%,
+  100% {
+    transform: translateY(-82px);
+  }
+  8%,
+  22% {
+    transform: translateY(-58px);
+  }
+}
+
+@keyframes homeSatisfiedGlance {
+  0%,
+  15% {
+    transform: translate(0, 0);
+  }
+  40%,
+  55% {
+    transform: translate(1px, 6px);
+  }
+  75%,
+  90% {
+    transform: translate(-2px, -1px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* ---------- eye-tracking while a cookie is being dragged nearby ---------- */
+
+.tracking .pupil {
+  animation: none !important;
+  transform: translate(var(--pupil-x, 0px), var(--pupil-y, 0px)) !important;
+  transition: transform 0.15s ease-out;
+}
+
+/* ---------- wake-on-open entrance (one-shot) ---------- */
+
+.waking {
+  animation: homeWakeStretch 1.6s cubic-bezier(0.22, 1, 0.36, 1) 1 both !important;
+}
+
+.waking .upperLid {
+  animation: homeWakeEyeOpen 1.6s ease-out 1 both !important;
+}
+
+.waking .lowerLid {
+  animation: homeWakeEyeOpenLower 1.6s ease-out 1 both !important;
+}
+
+@keyframes homeWakeStretch {
+  0% {
+    transform: translateY(6px) scaleY(0.9) scaleX(1.04);
+  }
+  40% {
+    transform: translateY(-8px) scaleY(1.06) scaleX(0.98);
+  }
+  100% {
+    transform: translateY(0) scaleY(1) scaleX(1);
+  }
+}
+
+@keyframes homeWakeEyeOpen {
+  0%,
+  20% {
+    transform: translateY(-46px);
+  }
+  100% {
+    transform: translateY(-82px);
+  }
+}
+
+@keyframes homeWakeEyeOpenLower {
+  0%,
+  20% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(12px);
+  }
+}
+
+/* ---------- eating (one-shot, wins over the mood loop) ---------- */
+
+.eating {
+  animation: homeEatChomp 0.9s ease-in-out 1 both !important;
+}
+
+@keyframes homeEatChomp {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  25% {
+    transform: scale(0.94, 1.06) translateY(2px);
+  }
+  50% {
+    transform: scale(1.05, 0.93) translateY(-5px);
+  }
+  75% {
+    transform: scale(0.97, 1.03) translateY(1px);
+  }
+}
+
+/* ---------- celebration sparkles (dance / welcome back) ---------- */
+
+.sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sparkles span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0%, #e8c978 70%, transparent 100%);
+  opacity: 0;
+  animation: homeSparkle 2.4s ease-out infinite;
+}
+
+.sparkles span:nth-child(1) {
+  animation-delay: 0s;
+  --tx: -30px;
+  --ty: -34px;
+}
+
+.sparkles span:nth-child(2) {
+  animation-delay: 0.4s;
+  --tx: 28px;
+  --ty: -30px;
+}
+
+.sparkles span:nth-child(3) {
+  animation-delay: 0.8s;
+  --tx: -22px;
+  --ty: 8px;
+}
+
+.sparkles span:nth-child(4) {
+  animation-delay: 1.2s;
+  --tx: 26px;
+  --ty: 4px;
+}
+
+@keyframes homeSparkle {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(1);
+  }
+}
+
+.trayCorner {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  transform: scale(0.8);
+  transform-origin: bottom right;
+}
+
+.textBlock {
+  position: relative;
+  padding: 6px 16px 14px;
+  text-align: center;
+}
+
+.primaryText {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1c1a16;
+}
+
+.secondaryText {
+  margin-top: 2px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: rgba(28, 26, 22, 0.4);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mover {
+    transition: none;
+  }
+
+  .figure,
+  .figure[data-mood="waiting"] .pupil,
+  .figure[data-mood="curious"],
+  .figure[data-mood="curious"] .pupil,
+  .figure[data-mood="happy"],
+  .figure[data-mood="dancing"],
+  .figure[data-mood="excited"],
+  .figure[data-mood="excited"] .pupil,
+  .figure[data-mood="hungry"],
+  .figure[data-mood="hungry"] .pupil,
+  .figure[data-mood="sad"],
+  .figure[data-mood="sad"] .upperLid,
+  .figure[data-mood="sad"] .pupil,
+  .figure[data-mood="grumpy"],
+  .figure[data-mood="lonely"],
+  .figure[data-mood="sleeping"],
+  .figure[data-mood="welcomeBack"],
+  .waking,
+  .waking .upperLid,
+  .waking .lowerLid,
+  .eating,
+  .shadow,
+  .shadow[data-mood="dancing"],
+  .shadow[data-mood="excited"],
+  .sparkles span,
+  .ambientLight span,
+  .tear {
+    animation: none !important;
+  }
+
+  .upperLid {
+    animation: homeBaseBlink 5s linear infinite !important;
+  }
+
+  .lowerLid {
+    animation: homeBaseBlinkLower 5s linear infinite !important;
+  }
+
+  /* Reduced motion means no large translation/rotation/scale swings, not
+     "completely frozen" — Murphy should always read as alive. A very
+     small, slow opacity + scale pulse stays well within accessibility
+     guidance while replacing the fully-disabled animation above. */
+  .figure {
+    animation: reducedBreath 4.5s ease-in-out infinite !important;
+  }
+}
+
+@keyframes reducedBreath {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.94;
+    transform: scale(1.015);
+  }
+}

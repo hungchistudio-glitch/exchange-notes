@@ -51,7 +51,7 @@ export default function VocabularySearch({
   return (
     <section className="mt-4">
       <div className="flex items-center">
-        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-black/[0.07] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
+        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[#c9962e]/[0.18] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition-colors focus-within:border-[#c9962e]/45">
           <Search
             size={17}
             strokeWidth={1.8}
@@ -92,7 +92,7 @@ export default function VocabularySearch({
               onClick={() => onQuickFilterChange(filter.value)}
             >
               <span>{filter.label}</span>
-              <span className={selected ? "text-white/50" : "text-black/25"}>
+              <span className={selected ? "text-[#2b2013]/50" : "text-black/25"}>
                 {filter.count}
               </span>
             </Pill>

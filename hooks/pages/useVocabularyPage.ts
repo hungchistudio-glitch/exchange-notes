@@ -43,6 +43,10 @@ export default function useVocabularyPage() {
   const [collectionsItem, setCollectionsItem] =
     useState<VocabularyItem | null>(null);
   const [editItem, setEditItem] = useState<VocabularyItem | null>(null);
+  // Bumped every time a vocabulary card is opened, so Murph can react with a
+  // brief curious glance — a plain counter keeps the trigger self-contained
+  // (no need to track *which* card, just "something happened").
+  const [cardGlancePulse, setCardGlancePulse] = useState(0);
 
   const {
     query,
@@ -147,6 +151,17 @@ export default function useVocabularyPage() {
     reviewStats,
   });
 
+  const searchHasNoResults =
+    query.trim().length > 0 && !loading && visibleItems.length === 0;
+
+  const murphProps = {
+    items: uniqueItems,
+    dailyGoal,
+    dailyProgress,
+    searchHasNoResults,
+    cardGlancePulse,
+  };
+
   const searchProps = buildVocabularySearchProps({
     totalWords,
     learningWords,
@@ -180,7 +195,10 @@ export default function useVocabularyPage() {
     onSaveLookupResult: saveLookupResult,
     onChangeStatus: changeStatus,
     onDeleteItem: deleteVocabularyItem,
-    onOpenDetail: setDetailItem,
+    onOpenDetail: (item: VocabularyItem) => {
+      setDetailItem(item);
+      setCardGlancePulse((count) => count + 1);
+    },
     onOpenCollections: setCollectionsItem,
     onSendToPartner: handleSendToPartner,
     onInteract: recordInteraction,
@@ -299,6 +317,7 @@ export default function useVocabularyPage() {
 
   return {
     heroProps,
+    murphProps,
     mainContentProps,
     overlaysProps,
     learningLanguage,

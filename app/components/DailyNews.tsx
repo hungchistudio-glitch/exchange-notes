@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -9,27 +9,25 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { getVoiceForLanguage } from "@/lib/speech";
+import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
+import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import type { TranslationDictionary } from "@/lib/i18n/types";
 
-type VocabularyItem = {
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-};
-
-type DailyNewsCard = {
-  id: string;
-  category: string;
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string;
-  vocabulary: VocabularyItem[];
-};
+import CompactStoryRow from "@/components/discover/CompactStoryRow";
+import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
+import SpeechSpeedControl from "@/components/discover/SpeechSpeedControl";
+import StoryDetailSheet from "@/components/discover/StoryDetailSheet";
+import VocabularyDrawer from "@/components/discover/VocabularyDrawer";
+import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import {
+  DISCOVER_COLORS,
+  isImageFriendlyCategory,
+  type AudioPlaybackMode,
+  type DailyNewsCard,
+  type SpeechRate,
+} from "@/components/discover/types";
 
 type DailyNewsResponse = {
   cards: DailyNewsCard[];
@@ -43,220 +41,41 @@ type StoredNote = {
   createdAt: string;
 };
 
-type SpeechRate = 0.75 | 1 | 1.25;
+const NOTES_STORAGE_KEY = "exchange-notes-home-notes";
 
-const NOTES_STORAGE_KEY =
-  "exchange-notes-home-notes";
-
-// Daily News is now sourced entirely from The Guardian (see lib/dailyNews.ts),
-// so the old multi-region (US/Taiwan/international/Europe/culture) badge no
-// longer reflects anything real — every card would show the same source.
-// The category badge (World/Business/Technology/Science/Culture) carries
-// the variety instead.
-const CATEGORY_BADGE_CLASS = "bg-surface text-neutral-700";
-
-function RefreshIcon({
-  spinning,
-}: {
-  spinning: boolean;
-}) {
+function LoadingHero() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={`h-4 w-4 ${
-        spinning ? "animate-spin" : ""
-      }`}
-      aria-hidden="true"
-    >
-      <path
-        d="M20 11a8 8 0 10-2.3 5.7"
-        strokeLinecap="round"
-      />
+    <section className="mt-8">
+      <div className="mb-6">
+        <div className="h-9 w-40 animate-pulse rounded-lg bg-black/[0.06]" />
 
-      <path
-        d="M20 5v6h-6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SpeakerIcon({
-  active,
-}: {
-  active: boolean;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className={`h-4 w-4 ${
-        active ? "animate-pulse" : ""
-      }`}
-      aria-hidden="true"
-    >
-      <path
-        d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M16 8.5a5 5 0 010 7"
-        strokeLinecap="round"
-      />
-
-      <path
-        d="M18.5 6a8.5 8.5 0 010 12"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function BookmarkIcon({
-  filled,
-}: {
-  filled: boolean;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M7 4.5h10v15l-5-3-5 3v-15z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M4 5l16 7-16 7 3-7-3-7z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M7 12h13"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M14 5h5v5M19 5l-8 8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="M18 13v5a1 1 0 01-1 1H6a1 1 0 01-1-1V7a1 1 0 011-1h5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function BrainIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        d="M9.5 4.5a3 3 0 00-3 3v.4A3.5 3.5 0 005 14.5a3 3 0 003 3h1.5M14.5 4.5a3 3 0 013 3v.4a3.5 3.5 0 011.5 6.6 3 3 0 01-3 3h-1.5M12 4v16M8.5 10H12M12 14h3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function Spinner() {
-  return (
-    <span
-      className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-      aria-hidden="true"
-    />
-  );
-}
-
-function LoadingCard() {
-  return (
-    <div className="rounded-[26px] border border-black/[0.05] bg-white p-5">
-      <div className="flex items-center justify-between">
-        <div className="h-6 w-20 animate-pulse rounded-full bg-black/[0.06]" />
-
-        <div className="h-4 w-16 animate-pulse rounded bg-black/[0.05]" />
+        <div className="mt-2 h-4 w-64 animate-pulse rounded bg-black/[0.05]" />
       </div>
 
-      <div className="mt-5 h-7 w-full animate-pulse rounded-lg bg-black/[0.07]" />
+      <div className="space-y-3">
+        <div
+          className="h-64 animate-pulse rounded-[24px]"
+          style={{ backgroundColor: DISCOVER_COLORS.card }}
+        />
 
-      <div className="mt-3 h-5 w-4/5 animate-pulse rounded-lg bg-black/[0.05]" />
-
-      <div className="mt-6 h-4 w-full animate-pulse rounded bg-black/[0.05]" />
-
-      <div className="mt-2 h-4 w-5/6 animate-pulse rounded bg-black/[0.05]" />
-
-      <div className="mt-6 flex gap-2">
-        <div className="h-10 flex-1 animate-pulse rounded-2xl bg-black/[0.05]" />
-        <div className="h-10 flex-1 animate-pulse rounded-2xl bg-black/[0.05]" />
+        <div
+          className="h-40 animate-pulse rounded-[24px]"
+          style={{ backgroundColor: DISCOVER_COLORS.card }}
+        />
       </div>
-    </div>
+    </section>
   );
 }
 
 function readStoredNotes(): StoredNote[] {
   try {
-    const rawValue =
-      window.localStorage.getItem(
-        NOTES_STORAGE_KEY
-      );
+    const rawValue = window.localStorage.getItem(NOTES_STORAGE_KEY);
 
     if (!rawValue) {
       return [];
     }
 
-    const parsedValue =
-      JSON.parse(rawValue) as unknown;
+    const parsedValue = JSON.parse(rawValue) as unknown;
 
     if (!Array.isArray(parsedValue)) {
       return [];
@@ -266,14 +85,10 @@ function readStoredNotes(): StoredNote[] {
       (item): item is StoredNote =>
         typeof item === "object" &&
         item !== null &&
-        typeof (item as StoredNote)
-          .id === "string" &&
-        typeof (item as StoredNote)
-          .english === "string" &&
-        typeof (item as StoredNote)
-          .chinese === "string" &&
-        typeof (item as StoredNote)
-          .createdAt === "string"
+        typeof (item as StoredNote).id === "string" &&
+        typeof (item as StoredNote).english === "string" &&
+        typeof (item as StoredNote).chinese === "string" &&
+        typeof (item as StoredNote).createdAt === "string"
     );
   } catch {
     return [];
@@ -281,72 +96,57 @@ function readStoredNotes(): StoredNote[] {
 }
 
 function formatPublishedTime(
-  value: string
+  value: string,
+  copy: TranslationDictionary["discover"]
 ) {
-  const publishedDate =
-    new Date(value);
+  const publishedDate = new Date(value);
 
-  if (
-    Number.isNaN(
-      publishedDate.getTime()
-    )
-  ) {
-    return "Recently";
+  if (Number.isNaN(publishedDate.getTime())) {
+    return copy.recently;
   }
 
-  const difference =
-    Date.now() -
-    publishedDate.getTime();
-
-  const minutes = Math.max(
-    0,
-    Math.floor(
-      difference / 60_000
-    )
-  );
+  const difference = Date.now() - publishedDate.getTime();
+  const minutes = Math.max(0, Math.floor(difference / 60_000));
 
   if (minutes < 1) {
-    return "Just now";
+    return copy.justNow;
   }
 
   if (minutes < 60) {
-    return `${minutes}m ago`;
+    return copy.minutesAgo.replace("{count}", String(minutes));
   }
 
-  const hours =
-    Math.floor(minutes / 60);
+  const hours = Math.floor(minutes / 60);
 
   if (hours < 24) {
-    return `${hours}h ago`;
+    return copy.hoursAgo.replace("{count}", String(hours));
   }
 
-  return new Intl.DateTimeFormat(
-    undefined,
-    {
-      month: "short",
-      day: "numeric",
-    }
-  ).format(publishedDate);
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(publishedDate);
 }
 
-function createNoteContent(
-  card: DailyNewsCard
+function categoryLabel(
+  category: string,
+  copy: TranslationDictionary["discover"]
 ) {
-  const englishVocabulary =
-    card.vocabulary
-      .map(
-        (item) =>
-          `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`
-      )
-      .join("\n");
+  const key = category
+    .trim()
+    .toLowerCase() as keyof TranslationDictionary["discover"]["categories"];
 
-  const chineseVocabulary =
-    card.vocabulary
-      .map(
-        (item) =>
-          `• ${item.word}：${item.translation}\n  ${item.chineseExample}`
-      )
-      .join("\n");
+  return copy.categories[key] ?? category;
+}
+
+function createNoteContent(card: DailyNewsCard) {
+  const englishVocabulary = card.vocabulary
+    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`)
+    .join("\n");
+
+  const chineseVocabulary = card.vocabulary
+    .map((item) => `• ${item.word}：${item.translation}\n  ${item.chineseExample}`)
+    .join("\n");
 
   const english = `📰 ${card.englishTitle}
 
@@ -365,102 +165,83 @@ ${card.chineseSummary}
 學習單字
 ${chineseVocabulary}`;
 
-  return {
-    english,
-    chinese,
-  };
+  return { english, chinese };
 }
 
-function createPartnerMessage(
-  card: DailyNewsCard
-) {
-  const vocabulary =
-    card.vocabulary
-      .map(
-        (item) =>
-          `• ${item.word} — ${item.translation}`
-      )
-      .join("\n");
-
-  return `📰 ${card.englishTitle}
-
-${card.chineseTitle}
-
-${card.englishSummary}
-
-${card.chineseSummary}
-
-Vocabulary / 學習單字
-${vocabulary}
-
-Source / 來源：${card.sourceName}
-${card.sourceUrl}`;
+function createPartnerMessage(card: DailyNewsCard) {
+  return encodeNewsCardMessage({
+    englishTitle: card.englishTitle,
+    chineseTitle: card.chineseTitle,
+    englishSummary: card.englishSummary,
+    chineseSummary: card.chineseSummary,
+    vocabulary: card.vocabulary.map((item) => ({
+      word: item.word,
+      translation: item.translation,
+      partOfSpeech: item.partOfSpeech,
+      englishExample: item.englishExample,
+      chineseExample: item.chineseExample,
+    })),
+    sourceName: card.sourceName,
+    sourceUrl: card.sourceUrl,
+  });
 }
 
 export default function DailyNews() {
-  const router = useRouter();
+  const { t } = useTranslation();
+  const copy = t.discover;
 
-  const [cards, setCards] =
-    useState<DailyNewsCard[]>([]);
+  const [cards, setCards] = useState<DailyNewsCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const [savedCardIds, setSavedCardIds] = useState<Set<string>>(new Set());
+  const [savingCardId, setSavingCardId] = useState<string | null>(null);
+  const [speechRate, setSpeechRate] = useState<SpeechRate>(1);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  // "Hide story" is a lightweight, session-only affordance — there's no
+  // backend column for it, so it simply filters the current view rather
+  // than persisting a dismissal.
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
 
-  const [error, setError] =
-    useState("");
-
-  const [notice, setNotice] =
-    useState("");
-
-  const [
-    speakingKey,
-    setSpeakingKey,
-  ] = useState<string | null>(null);
-
-  const [
-    savedCardIds,
-    setSavedCardIds,
-  ] = useState<Set<string>>(
-    new Set()
+  const [detailCardId, setDetailCardId] = useState<string | null>(null);
+  // Decoupled from detailCardId so the featured card's "Explore this
+  // image" action can open the vocabulary drawer directly, without also
+  // opening the full detail sheet.
+  const [vocabDrawerCardId, setVocabDrawerCardId] = useState<string | null>(
+    null
   );
 
-  const [
-    savingCardId,
-    setSavingCardId,
-  ] = useState<string | null>(null);
+  // Unified "send to partner" flow — a friend-picker modal shared with the
+  // Vocabulary page (components/vocabulary/FriendPickerModal.tsx) rather
+  // than the old sessionStorage-draft + navigate-to-/messages detour.
+  const [sendModalCardId, setSendModalCardId] = useState<string | null>(null);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [friendsError, setFriendsError] = useState("");
+  const [sendingFriendId, setSendingFriendId] = useState<string | null>(null);
+  const friendsLoadedRef = useRef(false);
 
-  const [
-    speechRate,
-    setSpeechRate,
-  ] = useState<SpeechRate>(1);
+  // Featured-story "audio rail" playback (Play full story / language
+  // toggle / progress). Separate from `speakingKey`, which still drives
+  // the per-sentence speakers inside the detail sheet and vocabulary
+  // drawer.
+  const [audioMode, setAudioMode] = useState<AudioPlaybackMode>("en");
+  const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
 
-  const requestControllerRef =
-    useRef<AbortController | null>(
-      null
-    );
-
-  // Daily News is now generated once on a fixed schedule (see
-  // app/api/cron/daily-news/route.ts) instead of per request, so there's
-  // no more per-user "seen stories" exclusion — everyone reads the same
-  // pre-generated batch. We keep track of the last generatedAt we saw so
-  // the refresh button can tell the person when they're already looking
-  // at the latest batch, instead of implying something went wrong.
+  const requestControllerRef = useRef<AbortController | null>(null);
   const lastGeneratedAtRef = useRef<string | null>(null);
 
   const loadNews = useCallback(
-    async (
-      isRefresh = false
-    ) => {
+    async (isRefresh = false) => {
       requestControllerRef.current?.abort();
 
-      const controller =
-        new AbortController();
+      const controller = new AbortController();
 
-      requestControllerRef.current =
-        controller;
+      requestControllerRef.current = controller;
 
       if (isRefresh) {
         setRefreshing(true);
@@ -472,73 +253,52 @@ export default function DailyNews() {
       setNotice("");
 
       try {
-        const response =
-          await fetch(
-            "/api/daily-news",
-            {
-              method: "GET",
-              cache: "no-store",
-              signal:
-                controller.signal,
-              headers: {
-                Accept:
-                  "application/json",
-              },
-            }
-          );
+        const response = await fetch("/api/daily-news", {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
 
-        const payload =
-          (await response.json()) as
-            | DailyNewsResponse
-            | { error: string };
+        const payload = (await response.json()) as
+          | DailyNewsResponse
+          | { error: string };
 
-        if (
-          !response.ok ||
-          "error" in payload
-        ) {
+        if (!response.ok || "error" in payload) {
           throw new Error(
-            "error" in payload
-              ? payload.error
-              : "Unable to load daily news."
+            "error" in payload ? payload.error : copy.loadNewsError
           );
         }
 
         if (
           isRefresh &&
-          lastGeneratedAtRef.current ===
-            payload.generatedAt
+          lastGeneratedAtRef.current === payload.generatedAt
         ) {
-          setNotice(
-            "You're already seeing today's stories — a new batch is published once a day."
-          );
+          setNotice(copy.sameBatchNotice);
         }
 
-        lastGeneratedAtRef.current =
-          payload.generatedAt;
+        lastGeneratedAtRef.current = payload.generatedAt;
 
         setCards(payload.cards);
       } catch (requestError) {
         if (
-          requestError instanceof
-            DOMException &&
-          requestError.name ===
-            "AbortError"
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
         ) {
           return;
         }
 
         setError(
-          requestError instanceof
-            Error
+          requestError instanceof Error
             ? requestError.message
-            : "Daily news is temporarily unavailable."
+            : copy.loadFallbackError
         );
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    []
+    [copy]
   );
 
   useEffect(() => {
@@ -553,17 +313,11 @@ export default function DailyNews() {
   function speak(
     key: string,
     text: string,
-    language:
-      | "en-US"
-      | "zh-TW"
+    language: "en-US" | "zh-TW"
   ) {
     if (
-      typeof window ===
-        "undefined" ||
-      !(
-        "speechSynthesis" in
-        window
-      ) ||
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window) ||
       !text.trim()
     ) {
       return;
@@ -576,41 +330,119 @@ export default function DailyNews() {
       return;
     }
 
-    const utterance =
-      new SpeechSynthesisUtterance(
-        text
-      );
+    const utterance = new SpeechSynthesisUtterance(text);
 
     utterance.lang = language;
-
-    utterance.rate =
-      speechRate *
-      (language === "zh-TW"
-        ? 0.92
-        : 1);
-
+    // Chinese TTS reads noticeably more "rushed"/synthetic than English at
+    // the same rate value, so it gets an extra slowdown on top of whatever
+    // speed preset (Slow/Natural/Fast) the user picked.
+    utterance.rate = speechRate * (language === "zh-TW" ? 0.8 : 1);
     utterance.pitch = 1;
 
-    utterance.onstart = () => {
-      setSpeakingKey(key);
-    };
+    // Explicitly resolving a voice (rather than only setting
+    // utterance.lang) is what actually makes this reliable — see
+    // getVoiceForLanguage's comment for why.
+    const voice = getVoiceForLanguage(language);
 
-    utterance.onend = () => {
-      setSpeakingKey(null);
-    };
+    if (voice) {
+      utterance.voice = voice;
+    }
 
-    utterance.onerror = () => {
-      setSpeakingKey(null);
-    };
+    utterance.onstart = () => setSpeakingKey(key);
+    utterance.onend = () => setSpeakingKey(null);
+    utterance.onerror = () => setSpeakingKey(null);
 
-    window.speechSynthesis.speak(
-      utterance
-    );
+    window.speechSynthesis.speak(utterance);
   }
 
-  async function saveToNotes(
-    card: DailyNewsCard
-  ) {
+  // Consolidated "Play full story" control for the featured card's audio
+  // rail. Unlike `speak`, this can queue up to two utterances (English
+  // then Chinese, for bilingual mode) and reports overall progress across
+  // the whole queue via each utterance's `boundary` event.
+  function toggleFullStoryPlayback(card: DailyNewsCard) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    setSpeakingKey(null);
+
+    if (playingStoryId === card.id) {
+      setPlayingStoryId(null);
+      setPlaybackProgress(0);
+      return;
+    }
+
+    const segments: { text: string; lang: "en-US" | "zh-TW" }[] =
+      audioMode === "en"
+        ? [
+            {
+              text: `${card.englishTitle}. ${card.englishSummary}`,
+              lang: "en-US",
+            },
+          ]
+        : [
+            {
+              text: `${card.chineseTitle}。${card.chineseSummary}`,
+              lang: "zh-TW",
+            },
+          ];
+
+    const totalLength =
+      segments.reduce((sum, segment) => sum + segment.text.length, 0) || 1;
+    let completedLength = 0;
+
+    setPlayingStoryId(card.id);
+    setPlaybackProgress(0);
+
+    function speakSegment(index: number) {
+      if (index >= segments.length) {
+        setPlayingStoryId(null);
+        setPlaybackProgress(0);
+        return;
+      }
+
+      const segment = segments[index];
+      const utterance = new SpeechSynthesisUtterance(segment.text);
+
+      utterance.lang = segment.lang;
+      utterance.rate = speechRate * (segment.lang === "zh-TW" ? 0.8 : 1);
+      utterance.pitch = 1;
+
+      const voice = getVoiceForLanguage(segment.lang);
+
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.onboundary = (event) => {
+        const charIndex =
+          "charIndex" in event && typeof event.charIndex === "number"
+            ? event.charIndex
+            : 0;
+
+        setPlaybackProgress(
+          Math.min(1, (completedLength + charIndex) / totalLength)
+        );
+      };
+
+      utterance.onend = () => {
+        completedLength += segment.text.length;
+        speakSegment(index + 1);
+      };
+
+      utterance.onerror = () => {
+        setPlayingStoryId(null);
+        setPlaybackProgress(0);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    speakSegment(0);
+  }
+
+  async function saveToNotes(card: DailyNewsCard) {
     if (savingCardId) {
       return;
     }
@@ -618,17 +450,14 @@ export default function DailyNews() {
     setSavingCardId(card.id);
     setError("");
 
-    const noteContent =
-      createNoteContent(card);
+    const noteContent = createNoteContent(card);
 
     try {
-      const supabase =
-        createClient();
+      const supabase = createClient();
 
       const {
         data: { user },
-      } =
-        await supabase.auth.getUser();
+      } = await supabase.auth.getUser();
 
       /*
        * This attempts a Supabase save using common note columns.
@@ -636,20 +465,13 @@ export default function DailyNews() {
        * falls back to the existing localStorage Notes system.
        */
       if (user) {
-        const { error: insertError } =
-          await supabase
-            .from("notes")
-            .insert({
-              user_id: user.id,
-              english:
-                noteContent.english,
-              chinese:
-                noteContent.chinese,
-              source_name:
-                card.sourceName,
-              source_url:
-                card.sourceUrl,
-            });
+        const { error: insertError } = await supabase.from("notes").insert({
+          user_id: user.id,
+          english: noteContent.english,
+          chinese: noteContent.chinese,
+          source_name: card.sourceName,
+          source_url: card.sourceUrl,
+        });
 
         if (insertError) {
           console.warn(
@@ -657,183 +479,271 @@ export default function DailyNews() {
             insertError.message
           );
         } else {
-          setSavedCardIds(
-            (currentIds) => {
-              const nextIds =
-                new Set(currentIds);
-
-              nextIds.add(card.id);
-
-              return nextIds;
-            }
-          );
+          setSavedCardIds((currentIds) => {
+            const nextIds = new Set(currentIds);
+            nextIds.add(card.id);
+            return nextIds;
+          });
 
           return;
         }
       }
 
-      const existingNotes =
-        readStoredNotes();
+      const existingNotes = readStoredNotes();
 
-      const alreadySaved =
-        existingNotes.some((note) =>
-          note.english.includes(
-            card.sourceUrl
-          )
-        );
+      const alreadySaved = existingNotes.some((note) =>
+        note.english.includes(card.sourceUrl)
+      );
 
       if (!alreadySaved) {
         const note: StoredNote = {
           id: crypto.randomUUID(),
-          english:
-            noteContent.english,
-          chinese:
-            noteContent.chinese,
-          createdAt:
-            new Date().toISOString(),
+          english: noteContent.english,
+          chinese: noteContent.chinese,
+          createdAt: new Date().toISOString(),
         };
 
         window.localStorage.setItem(
           NOTES_STORAGE_KEY,
-          JSON.stringify([
-            note,
-            ...existingNotes,
-          ])
+          JSON.stringify([note, ...existingNotes])
         );
       }
 
-      setSavedCardIds(
-        (currentIds) => {
-          const nextIds =
-            new Set(currentIds);
-
-          nextIds.add(card.id);
-
-          return nextIds;
-        }
-      );
+      setSavedCardIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+        nextIds.add(card.id);
+        return nextIds;
+      });
 
       window.dispatchEvent(
-        new CustomEvent(
-          "exchange-notes-notes-updated"
-        )
+        new CustomEvent("exchange-notes-notes-updated")
       );
     } catch (saveError) {
-      console.error(
-        "Save note error:",
-        saveError
-      );
-
-      setError(
-        "This story could not be saved. Please try again."
-      );
+      console.error("Save note error:", saveError);
+      setError(copy.saveError);
     } finally {
       setSavingCardId(null);
     }
   }
 
-  function sendToPartner(
-    card: DailyNewsCard
-  ) {
-    window.sessionStorage.setItem(
-      "exchange-notes-draft-message",
-      createPartnerMessage(card)
-    );
+  async function loadFriends() {
+    setFriendsLoading(true);
+    setFriendsError("");
 
-    router.push("/messages");
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setFriendsError(copy.loginRequiredError);
+        return;
+      }
+
+      const list = await listFriends(supabase, user.id);
+      setFriends(list);
+      friendsLoadedRef.current = true;
+    } catch (loadError) {
+      setFriendsError(
+        loadError instanceof Error
+          ? loadError.message
+          : copy.loadFriendsError
+      );
+    } finally {
+      setFriendsLoading(false);
+    }
+  }
+
+  function sendToPartner(card: DailyNewsCard) {
+    setSendModalCardId(card.id);
+
+    if (!friendsLoadedRef.current) {
+      void loadFriends();
+    }
+  }
+
+  async function handlePickFriend(friendId: string) {
+    const card = visibleCards.find((item) => item.id === sendModalCardId);
+
+    if (!card || sendingFriendId) {
+      return;
+    }
+
+    setSendingFriendId(friendId);
+    setFriendsError("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setFriendsError(copy.loginRequiredError);
+        return;
+      }
+
+      const conversationId = await getOrCreateConversationWithFriend(
+        supabase,
+        user.id,
+        friendId
+      );
+
+      const { error: insertError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        body: createPartnerMessage(card),
+      });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      setSendModalCardId(null);
+      setNotice(copy.sentToPartner);
+    } catch (sendError) {
+      setFriendsError(
+        sendError instanceof Error
+          ? sendError.message
+          : copy.loadFriendsError
+      );
+    } finally {
+      setSendingFriendId(null);
+    }
+  }
+
+  async function shareStory(card: DailyNewsCard) {
+    const shareData = {
+      title: card.englishTitle,
+      text: card.chineseTitle,
+      url: card.sourceUrl,
+    };
+
+    if (
+      typeof navigator !== "undefined" &&
+      "share" in navigator
+    ) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // Fall through to clipboard fallback (also covers the user
+        // cancelling the native share sheet).
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(card.sourceUrl);
+      setNotice(copy.shareCopied);
+    } catch {
+      // Clipboard access can fail silently in unsupported contexts; the
+      // source link is still reachable from the detail sheet's overflow
+      // menu, so there's nothing further to recover here.
+    }
+  }
+
+  function hideStory(cardId: string) {
+    setHiddenIds((current) => {
+      const next = new Set(current);
+      next.add(cardId);
+      return next;
+    });
+
+    setDetailCardId((current) => (current === cardId ? null : current));
   }
 
   if (loading) {
-    return (
-      <section className="mt-8">
-        <div className="mb-5">
-          <div className="h-8 w-44 animate-pulse rounded-lg bg-black/[0.07]" />
-
-          <div className="mt-2 h-4 w-64 animate-pulse rounded bg-black/[0.05]" />
-        </div>
-
-        <div className="space-y-4">
-          <LoadingCard />
-          <LoadingCard />
-          <LoadingCard />
-        </div>
-      </section>
-    );
+    return <LoadingHero />;
   }
 
-  return (
-    <section className="mt-8">
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            Live global stories
-          </p>
+  const visibleCards = cards.filter((card) => !hiddenIds.has(card.id));
+  const featuredCard = visibleCards[0] ?? null;
+  const latestCards = visibleCards.slice(1);
+  const detailCard =
+    visibleCards.find((card) => card.id === detailCardId) ?? null;
+  const vocabDrawerCard =
+    visibleCards.find((card) => card.id === vocabDrawerCardId) ?? null;
 
-          <h2 className="mt-1 text-[28px] font-bold tracking-[-0.035em] text-neutral-950">
-            Daily News
+  // Selective thumbnails: only a handful of the latest-story rows get a
+  // photo (world/science/culture, up to 3), so the list keeps an
+  // image/text/image rhythm rather than every row looking identical.
+  // Written as a pure reduce (rather than mutating a counter across a
+  // .map()) so nothing about this derivation depends on render order.
+  const latestCardsWithThumbnail = latestCards.reduce<
+    { items: { card: DailyNewsCard; showThumbnail: boolean }[]; budget: number }
+  >(
+    (accumulator, card) => {
+      const eligible =
+        Boolean(card.imageUrl) && isImageFriendlyCategory(card.category);
+      const showThumbnail = eligible && accumulator.budget > 0;
+
+      return {
+        items: [...accumulator.items, { card, showThumbnail }],
+        budget: showThumbnail ? accumulator.budget - 1 : accumulator.budget,
+      };
+    },
+    { items: [], budget: 3 }
+  ).items;
+
+  return (
+    <section className="mt-10">
+      <div className="mb-7 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2
+            className="text-[34px] font-bold leading-[1.08] tracking-[-0.03em]"
+            style={{ color: DISCOVER_COLORS.text }}
+          >
+            {copy.dailyNewsTitle}
           </h2>
 
-          <p className="mt-1 text-sm leading-6 text-neutral-500">
-            Learn English from
-            today&apos;s major stories.
+          <p
+            className="mt-2 text-[15px] leading-[1.5]"
+            style={{ color: DISCOVER_COLORS.textSecondary }}
+          >
+            {copy.subtitle}
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() =>
-            void loadNews(true)
-          }
+          onClick={() => void loadNews(true)}
           disabled={refreshing}
-          className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-4 text-xs font-semibold text-neutral-700 transition-transform active:scale-95 disabled:opacity-50"
+          aria-label={refreshing ? copy.loadingNewStories : copy.refreshAction}
+          title={refreshing ? copy.loadingNewStories : copy.refreshAction}
+          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-50"
+          style={{
+            border: `1px solid ${DISCOVER_COLORS.divider}`,
+            color: DISCOVER_COLORS.accent,
+            backgroundColor: DISCOVER_COLORS.card,
+          }}
         >
-          <RefreshIcon
-            spinning={refreshing}
-          />
-
-          <span>
-            {refreshing
-              ? "Loading"
-              : "New stories"}
-          </span>
+          {refreshing ? (
+            <LoaderCircle size={14} strokeWidth={2} className="animate-spin" />
+          ) : (
+            <RefreshCw size={14} strokeWidth={2} />
+          )}
         </button>
       </div>
 
-      <div className="mb-4 flex items-center justify-between rounded-2xl bg-black/[0.035] px-3 py-2">
-        <span className="text-[11px] font-medium text-neutral-500">
-          Speech speed
-        </span>
-
-        <div className="flex gap-1">
-          {(
-            [
-              0.75,
-              1,
-              1.25,
-            ] as SpeechRate[]
-          ).map((rate) => (
-            <button
-              key={rate}
-              type="button"
-              onClick={() =>
-                setSpeechRate(rate)
-              }
-              className={`h-7 rounded-full px-3 text-[10px] font-semibold ${
-                speechRate === rate
-                  ? "bg-neutral-950 text-white"
-                  : "bg-white text-neutral-500"
-              }`}
-            >
-              {rate}×
-            </button>
-          ))}
-        </div>
+      <div className="mb-7">
+        <SpeechSpeedControl
+          value={speechRate}
+          onChange={setSpeechRate}
+          copy={copy}
+        />
       </div>
 
       {notice && !error && (
         <div
           role="status"
-          className="mb-4 rounded-2xl bg-black/[0.035] px-4 py-3 text-sm leading-6 text-neutral-600"
+          className="mb-4 rounded-2xl px-4 py-3 text-sm leading-6"
+          style={{
+            backgroundColor: DISCOVER_COLORS.accentSoft,
+            color: DISCOVER_COLORS.accent,
+          }}
         >
           {notice}
         </div>
@@ -848,322 +758,121 @@ export default function DailyNews() {
 
           <button
             type="button"
-            onClick={() =>
-              void loadNews(true)
-            }
+            onClick={() => void loadNews(true)}
             className="mt-2 font-semibold underline underline-offset-4"
           >
-            Try again
+            {copy.tryAgain}
           </button>
         </div>
       )}
 
-      {!error &&
-        cards.length === 0 && (
-          <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
-            <p className="text-sm font-semibold">
-              No news is available
-              right now
-            </p>
+      {!error && visibleCards.length === 0 && (
+        <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
+          <p className="text-sm font-semibold">{copy.emptyTitle}</p>
 
-            <p className="mt-1 text-sm leading-6 text-neutral-500">
-              Please try again in a
-              few minutes.
-            </p>
+          <p className="mt-1 text-sm leading-6 text-neutral-500">
+            {copy.emptyDescription}
+          </p>
+        </div>
+      )}
+
+      {featuredCard ? (
+        <FeaturedStoryCard
+          card={featuredCard}
+          copy={copy}
+          categoryText={categoryLabel(featuredCard.category, copy)}
+          formattedTime={formatPublishedTime(
+            featuredCard.publishedAt,
+            copy
+          )}
+          onOpen={() => setDetailCardId(featuredCard.id)}
+          isAudioPlaying={playingStoryId === featuredCard.id}
+          audioProgress={
+            playingStoryId === featuredCard.id ? playbackProgress : 0
+          }
+          audioMode={audioMode}
+          onAudioModeChange={setAudioMode}
+          onToggleAudio={() => toggleFullStoryPlayback(featuredCard)}
+          onExploreImage={() => setVocabDrawerCardId(featuredCard.id)}
+        />
+      ) : null}
+
+      {latestCardsWithThumbnail.length > 0 ? (
+        <div className="mt-9">
+          <p
+            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+            style={{ color: DISCOVER_COLORS.textSecondary }}
+          >
+            {copy.latestStoriesLabel}
+          </p>
+
+          <div
+            className="rounded-[21px] px-5"
+            style={{ backgroundColor: DISCOVER_COLORS.card }}
+          >
+            {latestCardsWithThumbnail.map(({ card, showThumbnail }, index) => (
+              <CompactStoryRow
+                key={card.id}
+                card={card}
+                categoryText={categoryLabel(card.category, copy)}
+                formattedTime={formatPublishedTime(card.publishedAt, copy)}
+                isLast={index === latestCardsWithThumbnail.length - 1}
+                showThumbnail={showThumbnail}
+                onOpen={() => setDetailCardId(card.id)}
+              />
+            ))}
           </div>
-        )}
+        </div>
+      ) : null}
 
-      <div className="space-y-4">
-        {cards.map((card) => {
-          const isSaved =
-            savedCardIds.has(card.id);
+      <StoryDetailSheet
+        card={detailCard}
+        open={detailCardId !== null && detailCard !== null}
+        onClose={() => setDetailCardId(null)}
+        copy={copy}
+        isSaved={detailCard ? savedCardIds.has(detailCard.id) : false}
+        isSaving={detailCard ? savingCardId === detailCard.id : false}
+        speakingKey={speakingKey}
+        categoryText={
+          detailCard ? categoryLabel(detailCard.category, copy) : ""
+        }
+        formattedTime={
+          detailCard ? formatPublishedTime(detailCard.publishedAt, copy) : ""
+        }
+        onSpeak={speak}
+        onSave={() => detailCard && void saveToNotes(detailCard)}
+        onSend={() => detailCard && sendToPartner(detailCard)}
+        onOpenVocabulary={() =>
+          detailCard && setVocabDrawerCardId(detailCard.id)
+        }
+        onOpenSource={() =>
+          detailCard &&
+          window.open(detailCard.sourceUrl, "_blank", "noopener,noreferrer")
+        }
+        onShare={() => detailCard && void shareStory(detailCard)}
+        onHide={() => detailCard && hideStory(detailCard.id)}
+      />
 
-          const isSaving =
-            savingCardId === card.id;
+      <VocabularyDrawer
+        card={vocabDrawerCard}
+        open={vocabDrawerCardId !== null}
+        onClose={() => setVocabDrawerCardId(null)}
+        copy={copy}
+        speakingKey={speakingKey}
+        onSpeak={speak}
+      />
 
-          return (
-            <article
-              key={card.id}
-              className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-white"
-            >
-              <div className="p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${CATEGORY_BADGE_CLASS}`}
-                    >
-                      {card.category}
-                    </span>
-                  </div>
-
-                  <span className="text-[10px] text-neutral-400">
-                    {formatPublishedTime(
-                      card.publishedAt
-                    )}
-                  </span>
-                </div>
-
-                <div className="mt-4 flex items-start gap-2">
-                  <h3 className="min-w-0 flex-1 text-[22px] font-bold leading-[1.22] tracking-[-0.025em] text-neutral-950">
-                    {card.englishTitle}
-                  </h3>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      speak(
-                        `story-en-${card.id}`,
-                        `${card.englishTitle}. ${card.englishSummary}`,
-                        "en-US"
-                      )
-                    }
-                    aria-label="Read English story aloud"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-neutral-600 transition-transform active:scale-90"
-                  >
-                    <SpeakerIcon
-                      active={
-                        speakingKey ===
-                        `story-en-${card.id}`
-                      }
-                    />
-                  </button>
-                </div>
-
-                <div className="mt-2 flex items-start gap-2">
-                  <p className="min-w-0 flex-1 text-[16px] font-semibold leading-7 text-neutral-800">
-                    {card.chineseTitle}
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      speak(
-                        `story-zh-${card.id}`,
-                        `${card.chineseTitle}。${card.chineseSummary}`,
-                        "zh-TW"
-                      )
-                    }
-                    aria-label="朗讀中文新聞"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-neutral-600 transition-transform active:scale-90"
-                  >
-                    <SpeakerIcon
-                      active={
-                        speakingKey ===
-                        `story-zh-${card.id}`
-                      }
-                    />
-                  </button>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <p className="text-[14px] leading-6 text-neutral-700">
-                    {card.englishSummary}
-                  </p>
-
-                  <p className="text-[14px] leading-6 text-neutral-500">
-                    {card.chineseSummary}
-                  </p>
-                </div>
-
-                <div className="mt-5 border-t border-black/[0.06] pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-                      Vocabulary
-                    </p>
-
-                    <span className="text-[10px] text-neutral-400">
-                      Tap to expand
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {card.vocabulary.map(
-                      (item, index) => {
-                        const baseKey = `${card.id}-${index}`;
-
-                        return (
-                          <details
-                            key={baseKey}
-                            className="group rounded-2xl bg-surface"
-                          >
-                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-baseline gap-2">
-                                  <span className="font-semibold text-neutral-900">
-                                    {item.word}
-                                  </span>
-
-                                  <span className="text-[10px] text-neutral-400">
-                                    {
-                                      item.partOfSpeech
-                                    }
-                                  </span>
-                                </div>
-
-                                <p className="mt-0.5 text-sm text-neutral-500">
-                                  {
-                                    item.translation
-                                  }
-                                </p>
-                              </div>
-
-                              <span className="text-lg leading-none text-neutral-400 transition-transform group-open:rotate-45">
-                                +
-                              </span>
-                            </summary>
-
-                            <div className="border-t border-black/[0.05] px-4 py-3">
-                              <div className="flex items-start gap-2">
-                                <p className="min-w-0 flex-1 text-sm leading-6 text-neutral-700">
-                                  {
-                                    item.englishExample
-                                  }
-                                </p>
-
-                                <button
-                                  type="button"
-                                  onClick={(
-                                    event
-                                  ) => {
-                                    event.preventDefault();
-
-                                    speak(
-                                      `vocab-en-${baseKey}`,
-                                      `${item.word}. ${item.englishExample}`,
-                                      "en-US"
-                                    );
-                                  }}
-                                  aria-label={`Read ${item.word} and its example`}
-                                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-neutral-600 transition-transform active:scale-90"
-                                >
-                                  <SpeakerIcon
-                                    active={
-                                      speakingKey ===
-                                      `vocab-en-${baseKey}`
-                                    }
-                                  />
-                                </button>
-                              </div>
-
-                              <div className="mt-2 flex items-start gap-2">
-                                <p className="min-w-0 flex-1 text-sm leading-6 text-neutral-500">
-                                  {
-                                    item.chineseExample
-                                  }
-                                </p>
-
-                                <button
-                                  type="button"
-                                  onClick={(
-                                    event
-                                  ) => {
-                                    event.preventDefault();
-
-                                    speak(
-                                      `vocab-zh-${baseKey}`,
-                                      `${item.translation}。${item.chineseExample}`,
-                                      "zh-TW"
-                                    );
-                                  }}
-                                  aria-label={`朗讀${item.translation}與中文例句`}
-                                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-neutral-600 transition-transform active:scale-90"
-                                >
-                                  <SpeakerIcon
-                                    active={
-                                      speakingKey ===
-                                      `vocab-zh-${baseKey}`
-                                    }
-                                  />
-                                </button>
-                              </div>
-                            </div>
-                          </details>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void saveToNotes(card)
-                    }
-                    disabled={
-                      isSaving ||
-                      isSaved
-                    }
-                    className={`flex h-11 items-center justify-center gap-2 rounded-2xl text-xs font-semibold transition-transform active:scale-[0.98] disabled:opacity-70 ${
-                      isSaved
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "border border-black/[0.07] bg-white text-neutral-800"
-                    }`}
-                  >
-                    {isSaving ? (
-                      <Spinner />
-                    ) : (
-                      <BookmarkIcon
-                        filled={isSaved}
-                      />
-                    )}
-
-                    <span>
-                      {isSaving
-                        ? "Saving"
-                        : isSaved
-                          ? "Saved"
-                          : "Save to Notes"}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendToPartner(card)
-                    }
-                    className="flex h-11 items-center justify-center gap-2 rounded-2xl bg-neutral-950 text-xs font-semibold text-white transition-transform active:scale-[0.98]"
-                  >
-                    <SendIcon />
-
-                    <span>
-                      Send to Partner
-                    </span>
-                  </button>
-                </div>
-
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled
-                    title="Quiz will be added in the next phase."
-                    className="flex h-11 cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-black/[0.04] text-xs font-semibold text-neutral-400"
-                  >
-                    <BrainIcon />
-
-                    <span>
-                      Quiz · Soon
-                    </span>
-                  </button>
-
-                  <a
-                    href={card.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-black/[0.07] bg-white px-3 text-xs font-semibold text-neutral-800 transition-transform active:scale-[0.98]"
-                  >
-                    <span className="truncate">
-                      {card.sourceName}
-                    </span>
-
-                    <ExternalLinkIcon />
-                  </a>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
+      {sendModalCardId !== null ? (
+        <FriendPickerModal
+          friends={friends}
+          loading={friendsLoading}
+          errorMessage={friendsError}
+          sendingFriendId={sendingFriendId}
+          onClose={() => setSendModalCardId(null)}
+          onPick={(friendId) => void handlePickFriend(friendId)}
+          onRetry={() => void loadFriends()}
+        />
+      ) : null}
     </section>
   );
 }

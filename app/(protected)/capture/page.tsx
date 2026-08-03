@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
+import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 
 type IdentificationResult = {
   englishName: string;
@@ -265,6 +266,7 @@ function CaptureContent() {
   const [cameraSupported, setCameraSupported] = useState(true);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
+  const [pronunciation, setPronunciation] = useState<PronunciationResult | null>(null);
 
   const sourceParam = searchParams.get("source");
   const withParam = searchParams.get("with");
@@ -286,6 +288,30 @@ function CaptureContent() {
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
+    };
+  }, [result]);
+
+  // Same phonetic lookup used by the Discover vocabulary drawer (English
+  // IPA via the free dictionary API, zhuyin/pinyin computed locally) — so
+  // a word identified here looks consistent with the rest of the app's
+  // word cards.
+  useEffect(() => {
+    if (!result) {
+      setPronunciation(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPronunciation(null);
+
+    void getPronunciation(result.englishName, result.chineseName).then(
+      (data) => {
+        if (!cancelled) setPronunciation(data);
+      }
+    );
+
+    return () => {
+      cancelled = true;
     };
   }, [result]);
 
@@ -968,6 +994,11 @@ function CaptureContent() {
                       <span className="mt-0.5 block break-words text-[15px] font-medium text-black/85">
                         {result.englishName}
                       </span>
+                      {pronunciation?.englishPronunciation && (
+                        <span className="mt-0.5 block text-[12px] text-black/40">
+                          {pronunciation.englishPronunciation}
+                        </span>
+                      )}
                     </span>
 
                     {speechSupported && (
@@ -990,6 +1021,13 @@ function CaptureContent() {
                       <span className="mt-0.5 block break-words text-[15px] font-medium text-black/85">
                         {result.chineseName}
                       </span>
+                      {(pronunciation?.pinyin || pronunciation?.zhuyin) && (
+                        <span className="mt-0.5 block text-[12px] text-black/40">
+                          {[pronunciation?.pinyin, pronunciation?.zhuyin]
+                            .filter(Boolean)
+                            .join("  ")}
+                        </span>
+                      )}
                     </span>
 
                     {speechSupported && (

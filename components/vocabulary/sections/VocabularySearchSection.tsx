@@ -64,7 +64,7 @@ export default function VocabularySearchSection({
   };
 
   return (
-    <section className="mt-7">
+    <section className="mt-4">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/35">
@@ -84,7 +84,7 @@ export default function VocabularySearchSection({
         <button
           type="button"
           onClick={onOpenAI}
-          className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-black px-4 text-[12px] font-semibold text-white transition active:scale-[0.98]"
+          className="flex h-10 shrink-0 items-center gap-2 rounded-full bg-gradient-to-br from-[#f3d998] to-[#c9962e] px-4 text-[12px] font-semibold text-[#2b2013] shadow-[0_4px_14px_rgba(201,150,46,0.35)] transition active:scale-[0.98]"
         >
           <Sparkles size={14} strokeWidth={1.8} />
           {search.addWord}

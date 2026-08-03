@@ -50,17 +50,21 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4"
+      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-6"
       style={{
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
       }}
       aria-label="Primary navigation"
     >
+      {/* Sized down ~15% and given more outer margin so it reads as a
+          floating piece of hardware rather than a full-width control
+          strip; selected pill uses a softer near-black rather than pure
+          #000. */}
       <div className="relative w-full max-w-xl rounded-full border border-line bg-white p-1 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
         {indicator && (
           <div
             aria-hidden="true"
-            className="absolute inset-y-1 left-0 rounded-full bg-black transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="absolute inset-y-1 left-0 rounded-full bg-[#1B1B1B] transition-[transform,width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               width: indicator.width,
               transform: `translateX(${indicator.left}px)`,
@@ -83,7 +87,7 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
                 itemRefs.current[index] = element;
               }}
               aria-current={item.active ? "page" : undefined}
-              className={`z-10 flex flex-col items-center justify-center gap-0.5 rounded-full py-1.5 text-[10px] font-medium transition-colors duration-300 ${
+              className={`z-10 flex flex-col items-center justify-center gap-0.5 rounded-full py-[5px] text-[9.5px] font-medium transition-colors duration-300 ${
                 item.active && indicator
                   ? "text-white"
                   : "text-neutral-500 hover:text-neutral-800"

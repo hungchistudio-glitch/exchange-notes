@@ -11,12 +11,13 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { Bookmark, Check as CheckMark, MoreVertical, Trash2, Volume2, X } from "lucide-react";
+import { Bookmark, Check as CheckMark, ListChecks, Trash2, Volume2, X } from "lucide-react";
 
-import { getProfileById, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
+import { getProfileById, getOrCreateConversationWithFriend, markConversationRead, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
 import { decodeWordCardMessage, type SharedWordCard } from "@/lib/messages/wordCard";
+import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { hideMessagesForUser, listHiddenMessageIds } from "@/lib/messages/hiddenMessages";
 import { getPronunciationData } from "@/lib/pronunciation";
 import { speak } from "@/lib/speech";
@@ -143,7 +144,6 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
   const [savedCardIds, setSavedCardIds] = useState<Set<number>>(new Set());
   const [savingCardId, setSavingCardId] = useState<number | null>(null);
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -201,6 +201,13 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
         setFriend(friendProfile);
         setConversationId(roomId);
+
+        // Best-effort: resets this conversation's unread badge. Non-fatal
+        // if it fails (e.g. an RLS policy gap) — the thread should still
+        // open normally either way.
+        markConversationRead(supabase, user.id, roomId).catch((markError) => {
+          console.warn("Could not mark conversation as read:", markError);
+        });
 
         const [{ data: existingMessages, error: messagesError }, hiddenIds] = await Promise.all([
           supabase
@@ -364,7 +371,6 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
   const ownMessageIds = messages.filter((message) => message.sender_id === currentUserId).map((message) => message.id);
 
   function startSelectMode() {
-    setMenuOpen(false);
     setSelectMode(true);
     setSelectedIds(new Set());
   }
@@ -457,22 +463,15 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 <span className="hidden min-[390px]:inline">Private</span>
               </div>
 
-              <div className="relative">
-                <button type="button" onClick={() => setMenuOpen((current) => !current)} aria-label="More options" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/[0.04] active:bg-black/[0.07]">
-                  <MoreVertical size={19} strokeWidth={1.8} />
-                </button>
-
-                {menuOpen && (
-                  <>
-                    <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-30 cursor-default" />
-                    <div className="absolute right-0 top-11 z-40 min-w-[180px] overflow-hidden rounded-2xl border border-black/[0.06] bg-white py-1 shadow-[0_10px_30px_rgba(0,0,0,0.12)]">
-                      <button type="button" onClick={startSelectMode} className="block w-full px-4 py-3 text-left text-sm font-medium hover:bg-black/[0.04]">
-                        {copy.selectMessages}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={startSelectMode}
+                aria-label={copy.selectMessages}
+                title={copy.selectMessages}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/[0.04] active:bg-black/[0.07]"
+              >
+                <ListChecks size={19} strokeWidth={1.8} />
+              </button>
             </div>
           )}
         </header>
@@ -513,6 +512,9 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
               const isMine = message.sender_id === currentUserId;
               const showDateDivider = shouldShowDateDivider(messages, index);
               const wordCard = decodeWordCardMessage(message.body);
+              const newsCard = wordCard
+                ? null
+                : decodeNewsCardMessage(message.body);
 
               return (
                 <div key={message.id}>
@@ -536,7 +538,114 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                       </span>
                     )}
 
-                    {wordCard ? (() => {
+                    {newsCard ? (() => {
+                      const titlePronunciation = getPronunciationData({ chinese: newsCard.chineseTitle });
+                      const summaryPronunciation = getPronunciationData({ chinese: newsCard.chineseSummary });
+
+                      return (
+                        <article className="w-full max-w-[320px] rounded-[22px] border border-black/[0.06] bg-white p-4 shadow-sm">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">
+                            📰 News
+                          </span>
+
+                          <div className="mt-1.5 flex items-start justify-between gap-2">
+                            <p className="min-w-0 flex-1 text-[16px] font-bold leading-[1.3] text-black">{newsCard.englishTitle}</p>
+                            <button type="button" onClick={() => speak(newsCard.englishTitle, "en-US")} aria-label="Play English title" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-black/60">
+                              <Volume2 size={13} strokeWidth={1.8} />
+                            </button>
+                          </div>
+
+                          <div className="mt-1 flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[14px] font-medium leading-[1.5] text-black/70">{newsCard.chineseTitle}</p>
+                              {(titlePronunciation.pinyin || titlePronunciation.zhuyin) && (
+                                <p className="mt-0.5 text-[10px] leading-4 text-black/40">
+                                  {[titlePronunciation.pinyin, titlePronunciation.zhuyin].filter(Boolean).join("  ")}
+                                </p>
+                              )}
+                            </div>
+                            <button type="button" onClick={() => speak(newsCard.chineseTitle, "zh-TW")} aria-label="播放中文標題" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-black/60">
+                              <Volume2 size={13} strokeWidth={1.8} />
+                            </button>
+                          </div>
+
+                          <div className="mt-3 space-y-2 border-t border-black/[0.06] pt-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 flex-1 text-xs leading-5 text-black/75">{newsCard.englishSummary}</p>
+                              <button type="button" onClick={() => speak(newsCard.englishSummary, "en-US")} aria-label="Play English summary" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                <Volume2 size={13} strokeWidth={1.8} />
+                              </button>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs leading-5 text-black/45">{newsCard.chineseSummary}</p>
+                                {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
+                                  <p className="mt-0.5 text-[10px] leading-4 text-black/35">
+                                    {[summaryPronunciation.pinyin, summaryPronunciation.zhuyin].filter(Boolean).join("  ")}
+                                  </p>
+                                )}
+                              </div>
+                              <button type="button" onClick={() => speak(newsCard.chineseSummary, "zh-TW")} aria-label="播放中文摘要" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                <Volume2 size={13} strokeWidth={1.8} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {newsCard.vocabulary.length > 0 && (
+                            <div className="mt-3 border-t border-black/[0.06] pt-3">
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">Vocabulary / 學習單字</span>
+
+                              <div className="mt-1.5 space-y-1.5">
+                                {newsCard.vocabulary.map((item, index) => {
+                                  const wordPronunciation = getPronunciationData({ english: item.word, chinese: item.translation });
+
+                                  return (
+                                    <div key={`${item.word}-${index}`} className="rounded-xl bg-surface p-2.5">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p className="min-w-0 truncate text-xs font-semibold text-black">{item.word}</p>
+                                        <button type="button" onClick={() => speak(item.word, "en-US")} aria-label="Play English word" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                          <Volume2 size={11} strokeWidth={1.8} />
+                                        </button>
+                                      </div>
+                                      <div className="mt-0.5 flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="truncate text-xs text-black/60">{item.translation}</p>
+                                          {(wordPronunciation.pinyin || wordPronunciation.zhuyin) && (
+                                            <p className="text-[10px] text-black/35">
+                                              {[wordPronunciation.pinyin, wordPronunciation.zhuyin].filter(Boolean).join("  ")}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <button type="button" onClick={() => speak(item.translation, "zh-TW")} aria-label="播放中文單字" className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                          <Volume2 size={11} strokeWidth={1.8} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="mt-3 flex items-center justify-between gap-2 border-t border-black/[0.06] pt-2.5">
+                            {newsCard.sourceUrl ? (
+                              <a
+                                href={newsCard.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="min-w-0 truncate text-[10px] text-black/40 underline"
+                              >
+                                {newsCard.sourceName || newsCard.sourceUrl}
+                              </a>
+                            ) : (
+                              <span className="min-w-0 truncate text-[10px] text-black/40">{newsCard.sourceName}</span>
+                            )}
+                            <time dateTime={message.created_at} className="shrink-0 text-[10px] text-black/35">{formatMessageTime(message.created_at)}</time>
+                          </div>
+                        </article>
+                      );
+                    })() : wordCard ? (() => {
                       const pronunciation = getPronunciationData({ english: wordCard.word, chinese: wordCard.translation });
 
                       return (

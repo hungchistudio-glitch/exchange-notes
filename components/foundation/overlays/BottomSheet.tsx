@@ -13,6 +13,16 @@ type BottomSheetProps = {
   className?: string;
 };
 
+// Multiple BottomSheets can legitimately be open at once (e.g. a detail
+// sheet with a vocabulary drawer layered on top of it). Each instance used
+// to save/restore document.body.style.overflow independently, which broke
+// as soon as two were stacked: the inner sheet would capture "hidden" (set
+// by the outer one) as its own "previous" value and restore to that on
+// close, leaving the whole app permanently unable to scroll. A shared
+// open-count only touches the body style on the 0→1 and 1→0 transitions,
+// so nesting in any order/close-sequence is safe.
+let openSheetCount = 0;
+
 export default function BottomSheet({
   open,
   onClose,
@@ -25,9 +35,11 @@ export default function BottomSheet({
   useEffect(() => {
     if (!open) return;
 
-    const previousOverflow = document.body.style.overflow;
+    openSheetCount += 1;
 
-    document.body.style.overflow = "hidden";
+    if (openSheetCount === 1) {
+      document.body.style.overflow = "hidden";
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -38,7 +50,11 @@ export default function BottomSheet({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      openSheetCount = Math.max(0, openSheetCount - 1);
+
+      if (openSheetCount === 0) {
+        document.body.style.overflow = "";
+      }
 
       window.removeEventListener("keydown", handleKeyDown);
     };

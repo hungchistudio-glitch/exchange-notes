@@ -1,0 +1,86 @@
+/* Deliberately not a card: no border-radius, no hard edge — the gradient
+   fades to fully transparent by the bottom so this dissolves straight into
+   the page's white background instead of reading as a boxed header sitting
+   on top of the vocabulary list. Murph lives in the page, not in a frame
+   around it. */
+.section {
+  position: relative;
+  padding: 18px 21px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    #fdfaf3 0%,
+    #f6f1e5 45%,
+    rgba(246, 241, 229, 0) 100%
+  );
+}
+
+.greeting {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(28, 26, 22, 0.55);
+  text-align: center;
+}
+
+.murphZone {
+  width: 100%;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.moodStatus {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(28, 26, 22, 0.75);
+  text-align: center;
+}
+
+/* The compact stand-in for four separate stat cards — a single quiet
+   line, so Murph's status feels like the headline and this is just the
+   fine print underneath it, not four more boxes to scan. */
+.summaryLine {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: rgba(28, 26, 22, 0.4);
+  text-align: center;
+}
+
+/* An "energy band" rather than a boxed tray: no fill, no border-radius —
+   just thin hairlines to suggest a shelf without fully enclosing it. */
+.foodZone {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px 10px;
+  border-top: 1px solid rgba(28, 26, 22, 0.06);
+  border-bottom: 1px solid rgba(28, 26, 22, 0.06);
+}
+
+.links {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.link {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(28, 26, 22, 0.4);
+  text-decoration: none;
+}
+
+.linkDivider {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(28, 26, 22, 0.25);
+}

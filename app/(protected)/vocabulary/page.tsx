@@ -2,9 +2,8 @@
 
 import dynamic from "next/dynamic";
 
-import DashboardSheet from "@/components/dashboard/DashboardSheet";
 import AppPage from "@/components/ui/AppPage";
-import VocabularyHero from "@/components/vocabulary/VocabularyHero";
+import MurphCompanion from "@/components/vocabulary/pet/MurphCompanion";
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import useVocabularyPage from "@/hooks/pages/useVocabularyPage";
 
@@ -17,7 +16,7 @@ const VocabularyOverlays = dynamic(
 );
 
 export default function VocabularyPage() {
-  const { heroProps, mainContentProps, overlaysProps } = useVocabularyPage();
+  const { murphProps, mainContentProps, overlaysProps } = useVocabularyPage();
 
   const hasOpenOverlay =
     overlaysProps.lookupProps.open ||
@@ -30,9 +29,7 @@ export default function VocabularyPage() {
 
   return (
     <AppPage width="default">
-      <DashboardSheet>
-        <VocabularyHero {...heroProps} />
-      </DashboardSheet>
+      <MurphCompanion {...murphProps} />
 
       <VocabularyMainContent {...mainContentProps} />
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { EyeOff, Search } from "lucide-react";
 
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
+import MoodLogoSwiper from "@/components/messages/MoodLogoSwiper";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   hideConversationForUser,
@@ -95,10 +96,11 @@ export default function ConversationList() {
   return (
     <main className="min-h-[100dvh] bg-surface px-4 pb-28 pt-6 text-neutral-950">
       <div className="mx-auto w-full max-w-xl">
-        <h1
-          className="text-center text-[22px] font-bold tracking-[-0.02em]"
-          style={{ paddingTop: "env(safe-area-inset-top)" }}
-        >
+        <div style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <MoodLogoSwiper />
+        </div>
+
+        <h1 className="mt-1 text-center text-[22px] font-bold tracking-[-0.02em]">
           {copy.title}
         </h1>
 

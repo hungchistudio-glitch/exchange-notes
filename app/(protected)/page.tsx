@@ -9,6 +9,7 @@ import Screen from "@/components/foundation/layout/Screen";
 import BookIcon from "@/components/foundation/icons/BookIcon";
 import CameraIcon from "@/components/foundation/icons/CameraIcon";
 import LearningPartnerCard from "@/components/home/LearningPartnerCard";
+import MurphHomeStage from "@/components/home/murph/MurphHomeStage";
 import NotesComposer from "@/components/home/NotesComposer";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
@@ -16,6 +17,7 @@ import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
+import type { HomeMood } from "@/lib/pet/homeMoodEngine";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import { speak } from "@/lib/speech";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -145,6 +147,7 @@ export default function HomePage() {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const { reviewStats } = useVocabularyStats(items);
+  const [murphMood, setMurphMood] = useState<HomeMood>("waiting");
 
   const hour = new Date().getHours();
   const greeting =
@@ -153,6 +156,39 @@ export default function HomePage() {
       : hour < 18
         ? t.home.greeting.afternoon
         : t.home.greeting.evening;
+
+  // Only the notable/celebratory moods get a distinct hero title — the
+  // quiet ones (waiting, hungry, sad, grumpy, lonely, sleeping) keep the
+  // default "Keep learning" copy, since Murphy's own status line right
+  // below already carries that feeling; repeating it here would just be
+  // the same sentence twice.
+  const heroCopyByMood: Partial<Record<HomeMood, { title: string; description: string }>> = {
+    curious: {
+      title: t.home.hero.titleCurious,
+      description: t.home.hero.descriptionCurious,
+    },
+    happy: {
+      title: t.home.hero.titleCelebrate,
+      description: t.home.hero.descriptionCelebrate,
+    },
+    dancing: {
+      title: t.home.hero.titleDancing,
+      description: t.home.hero.descriptionDancing,
+    },
+    excited: {
+      title: t.home.hero.titleCelebrate,
+      description: t.home.hero.descriptionCelebrate,
+    },
+    welcomeBack: {
+      title: t.home.hero.titleWelcomeBack,
+      description: t.home.hero.descriptionWelcomeBack,
+    },
+  };
+
+  const heroCopy = heroCopyByMood[murphMood] ?? {
+    title: t.home.hero.title,
+    description: t.home.hero.description,
+  };
 
   const [notes, setNotes] = useState<SavedNote[]>([]);
   const [notesLoaded, setNotesLoaded] = useState(false);
@@ -217,20 +253,25 @@ export default function HomePage() {
     <Screen>
       <div
         className="px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">
           {greeting}
-        </p>
-        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.02em]">
-          {t.home.hero.title}
-        </h1>
-        <p className="mt-1 text-black/50">
-          {t.home.hero.description}
         </p>
       </div>
 
-      <div className="px-4 pt-6">
+      <div className="mt-1.5">
+        <MurphHomeStage items={items} onMoodChange={setMurphMood} />
+      </div>
+
+      <div className="px-4 pt-3">
+        <h1 className="text-[26px] font-bold tracking-[-0.02em]">
+          {heroCopy.title}
+        </h1>
+        <p className="mt-1 text-black/50">{heroCopy.description}</p>
+      </div>
+
+      <div id="daily-focus-card" className="px-4 pt-4 scroll-mt-6">
         <DailyFocusCard
           due={itemsLoading ? 0 : reviewStats.due}
           retention={reviewStats.retention}
@@ -239,7 +280,7 @@ export default function HomePage() {
         />
       </div>
 
-      <div className="px-4 pt-8">
+      <div className="px-4 pt-6">
         <TodayWordCard />
       </div>
 

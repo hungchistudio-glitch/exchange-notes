@@ -43,6 +43,15 @@ export type DailyNewsCard = {
   sourceUrl: string;
   publishedAt: string;
   vocabulary: VocabularyItem[];
+  // Straight from Guardian's own thumbnail field — never AI-generated, so
+  // it's never a hallucinated image. Null when Guardian doesn't have one
+  // for that article (common for text-only pieces).
+  imageUrl: string | null;
+  // Gemini has no vision access to the actual photo, so this is
+  // deliberately NOT "a description of what's in the photo" — see the
+  // prompt instructions below for why it's scoped to scene/context only.
+  englishCaption: string | null;
+  chineseCaption: string | null;
 };
 
 type GuardianArticle = {
@@ -51,6 +60,7 @@ type GuardianArticle = {
   url: string;
   publishedAt: string;
   excerpt: string;
+  imageUrl: string | null;
 };
 
 type LearningItem = {
@@ -59,6 +69,8 @@ type LearningItem = {
   englishSummary: string;
   chineseSummary: string;
   vocabulary: VocabularyItem[];
+  englishCaption: string;
+  chineseCaption: string;
 };
 
 type GeminiLearningResponse = {
@@ -136,6 +148,7 @@ function stripJsonCodeFence(value: string) {
 type GuardianApiFields = {
   trailText?: string;
   bodyText?: string;
+  thumbnail?: string;
 };
 
 type GuardianApiResult = {
@@ -156,7 +169,7 @@ async function fetchGuardianArticle(
   url.searchParams.set("section", section);
   url.searchParams.set("order-by", "newest");
   url.searchParams.set("page-size", "5");
-  url.searchParams.set("show-fields", "trailText,bodyText");
+  url.searchParams.set("show-fields", "trailText,bodyText,thumbnail");
   url.searchParams.set("api-key", apiKey);
 
   const response = await fetch(url.toString(), {
@@ -199,6 +212,11 @@ async function fetchGuardianArticle(
       excerpt: [trailText, bodyText.slice(0, EXCERPT_BODY_LENGTH)]
         .filter(Boolean)
         .join("\n\n"),
+      imageUrl:
+        typeof result.fields?.thumbnail === "string" &&
+        result.fields.thumbnail.trim()
+          ? result.fields.thumbnail.trim()
+          : null,
     };
   }
 
@@ -242,6 +260,8 @@ function validateLearningItem(value: unknown): LearningItem | null {
   const chineseTitle = normalizeText(candidate.chineseTitle, 80);
   const englishSummary = normalizeMultilineText(candidate.englishSummary, 320);
   const chineseSummary = normalizeMultilineText(candidate.chineseSummary, 220);
+  const englishCaption = normalizeText(candidate.englishCaption, 90);
+  const chineseCaption = normalizeText(candidate.chineseCaption, 60);
 
   const rawVocabulary = Array.isArray(candidate.vocabulary)
     ? candidate.vocabulary
@@ -257,12 +277,22 @@ function validateLearningItem(value: unknown): LearningItem | null {
     !chineseTitle ||
     !englishSummary ||
     !chineseSummary ||
+    !englishCaption ||
+    !chineseCaption ||
     vocabulary.length !== 3
   ) {
     return null;
   }
 
-  return { englishTitle, chineseTitle, englishSummary, chineseSummary, vocabulary };
+  return {
+    englishTitle,
+    chineseTitle,
+    englishSummary,
+    chineseSummary,
+    vocabulary,
+    englishCaption,
+    chineseCaption,
+  };
 }
 
 function buildLearningSchema(count: number) {
@@ -282,6 +312,8 @@ function buildLearningSchema(count: number) {
             chineseTitle: { type: "string", minLength: 4, maxLength: 80 },
             englishSummary: { type: "string", minLength: 40, maxLength: 320 },
             chineseSummary: { type: "string", minLength: 20, maxLength: 220 },
+            englishCaption: { type: "string", minLength: 8, maxLength: 90 },
+            chineseCaption: { type: "string", minLength: 4, maxLength: 60 },
             vocabulary: {
               type: "array",
               minItems: 3,
@@ -326,6 +358,8 @@ function buildLearningSchema(count: number) {
             "chineseTitle",
             "englishSummary",
             "chineseSummary",
+            "englishCaption",
+            "chineseCaption",
             "vocabulary",
           ],
         },
@@ -369,6 +403,14 @@ For EACH article above, in the same order, produce:
   meaning, its part of speech, one original English example sentence, and
   that example's Traditional Chinese translation. Examples must not
   introduce new claims about the article.
+- englishCaption: a short one-line caption (max ~12 words) that could sit
+  beneath a generic editorial photo illustrating this story's general
+  topic or setting (e.g. "Demonstrators gather in a city square" for a
+  protest story). You have NOT seen the actual photo, so do not claim to
+  describe specific visual details, people, or exact numbers — only the
+  general scene/context implied by the story's subject matter.
+- chineseCaption: a natural Traditional Chinese translation of
+  englishCaption.
 
 Return exactly ${articles.length} cards, in the same order as the articles
 above, matching the required JSON schema.
@@ -467,6 +509,9 @@ export async function generateDailyNews(): Promise<{
       sourceUrl: article.url,
       publishedAt: article.publishedAt,
       vocabulary: learning.vocabulary,
+      imageUrl: article.imageUrl,
+      englishCaption: learning.englishCaption,
+      chineseCaption: learning.chineseCaption,
     });
   });
 

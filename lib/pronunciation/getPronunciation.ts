@@ -1,5 +1,6 @@
 export type PronunciationResult = {
   englishPronunciation: string;
+  pinyin: string;
   zhuyin: string;
 };
 

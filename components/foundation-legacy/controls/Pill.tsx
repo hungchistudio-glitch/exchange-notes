@@ -24,7 +24,7 @@ export default function Pill({
         "font-sans text-[12px] font-medium tracking-[-0.01em]",
         "transition active:scale-[0.98]",
         selected
-          ? "bg-black text-white"
+          ? "bg-gradient-to-br from-[#f3d998] to-[#c9962e] text-[#2b2013] shadow-[0_2px_10px_rgba(201,150,46,0.35)]"
           : "border border-black/[0.07] bg-white text-black/50",
         className,
       ]
