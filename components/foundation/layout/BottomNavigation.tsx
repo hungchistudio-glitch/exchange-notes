@@ -9,11 +9,19 @@ import {
   type ReactNode,
 } from "react";
 
+import styles from "./BottomNavigation.module.css";
+
 type NavigationItem = {
   href: string;
   label: string;
   icon: ReactNode;
   active?: boolean;
+  // Small unread-style badge (currently just Messages). Omitted/0 renders
+  // nothing — this is not a generic "always show a dot" affordance.
+  badgeCount?: number;
+  // Bumped by the caller only when badgeCount goes up, so the pulse ring
+  // replays via a key change instead of running on every render.
+  pulseToken?: number;
 };
 
 type BottomNavigationProps = {
@@ -118,7 +126,22 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
                   : "text-black/40 hover:text-black/70"
               }`}
             >
-              {item.icon}
+              <span className="relative inline-flex">
+                {item.icon}
+
+                {item.badgeCount ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[#c9962e] px-[3px] text-[9px] font-semibold leading-none text-white"
+                  >
+                    {item.badgeCount > 9 ? "9+" : item.badgeCount}
+                    <span
+                      key={item.pulseToken}
+                      className={styles.pulseRing}
+                    />
+                  </span>
+                ) : null}
+              </span>
               <span className="sr-only">{item.label}</span>
             </Link>
           ))}

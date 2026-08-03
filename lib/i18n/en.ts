@@ -471,6 +471,20 @@ const english: TranslationDictionary = {
     english: "English",
     traditionalChinese: "Traditional Chinese",
 
+    youPrefix: "You: ",
+    attachmentLabel: "Photo",
+    voiceLabel: "Voice message",
+    sharedArticleLabel: "Shared an article",
+    muted: "Muted",
+    muteConversation: "Mute",
+    unmuteConversation: "Unmute",
+    noConversationsFound: "No conversations found.",
+    typingIndicator: "{name} is typing…",
+    statusSending: "Sending",
+    statusSent: "Sent",
+    statusDelivered: "Delivered",
+    statusRead: "Read",
+
     moodSwipeHint: "Swipe to see more",
     moodCalm: "Calm",
     moodCurious: "Curious",
@@ -487,6 +501,7 @@ const english: TranslationDictionary = {
       partialDelete:
         "Some messages could not be deleted. You can only delete messages you sent.",
       deleteSelected: "Could not delete the selected messages.",
+      shareWord: "Could not share this word. Please try again.",
     },
   },
   friends: {
@@ -950,6 +965,7 @@ const english: TranslationDictionary = {
       exchangeIdLength: "Exchange ID must contain at least 3 characters.",
       profileUpdated: "Profile updated successfully!",
       profileUpdateError: "Could not update profile. Please try again.",
+      languagesMustDifferError: "Native language and learning language must be different.",
       editProfile: "Edit profile",
       copyHandle: "Copy",
       copied: "Copied!",

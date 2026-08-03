@@ -16,9 +16,17 @@ import { Bookmark, Check as CheckMark, ListChecks, Trash2, Volume2, X } from "lu
 import { getProfileById, getOrCreateConversationWithFriend, markConversationRead, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
-import { decodeWordCardMessage, type SharedWordCard } from "@/lib/messages/wordCard";
+import { decodeWordCardMessage, encodeWordCardMessage, type SharedWordCard } from "@/lib/messages/wordCard";
+import { getPendingSharedVocabulary, clearPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { hideMessagesForUser, listHiddenMessageIds } from "@/lib/messages/hiddenMessages";
+import {
+  fetchReceiptsForMessages,
+  getReceiptStatus,
+  markMessagesRead,
+  type MessageReceiptInfo,
+  type MessageReceiptStatus,
+} from "@/lib/messages/receipts";
 import { getPronunciationData } from "@/lib/pronunciation";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -70,11 +78,29 @@ function SendIcon() {
   );
 }
 
-function CheckIcon() {
+// Exchange Notes' own status glyph, not a copy of other apps' checkmarks:
+// a single line once it's on the server, a double line once the friend's
+// device has it, and a softly pulsing gold double line once they've read it.
+function MessageStatusIcon({ status, label }: { status: MessageReceiptStatus; label: string }) {
+  if (status === "sent") {
+    return (
+      <span title={label} aria-label={label} className="inline-flex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden="true">
+          <path d="M5 12.5l3.5 3.5L19 6.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+
+  const isRead = status === "read";
+
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden="true">
-      <path d="M5 12.5l3.5 3.5L19 6.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span title={label} aria-label={label} className={`inline-flex ${isRead ? "text-[#c9962e]" : ""}`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden="true">
+        <path d="M2 12.5l3.5 3.5L13 8.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 12.5l3.5 3.5L20 8.5" strokeLinecap="round" strokeLinejoin="round" className={isRead ? "animate-pulse" : ""} />
+      </svg>
+    </span>
   );
 }
 
@@ -149,8 +175,19 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [friendIsTyping, setFriendIsTyping] = useState(false);
+  const [receiptsByMessageId, setReceiptsByMessageId] = useState<Map<number, MessageReceiptInfo>>(new Map());
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const friendTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesRef = useRef<Message[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     bottomRef.current?.scrollIntoView({ behavior, block: "end" });
@@ -227,11 +264,34 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
           return;
         }
 
-        setMessages((existingMessages ?? []).filter((message) => !hiddenIds.has(message.id)));
+        const visibleMessages = (existingMessages ?? []).filter((message) => !hiddenIds.has(message.id));
+        setMessages(visibleMessages);
         setLoading(false);
 
         window.requestAnimationFrame(() => {
           scrollToBottom("auto");
+        });
+
+        const ownMessageIds = visibleMessages
+          .filter((message) => message.sender_id === user.id)
+          .map((message) => message.id);
+        const friendMessageIds = visibleMessages
+          .filter((message) => message.sender_id !== user.id)
+          .map((message) => message.id);
+
+        // Best-effort, non-fatal: read receipts are a nice-to-have overlay
+        // on top of the message list, not something that should block the
+        // conversation from opening if either call fails.
+        fetchReceiptsForMessages(supabase, ownMessageIds)
+          .then((receipts) => {
+            if (!cancelled) setReceiptsByMessageId(receipts);
+          })
+          .catch((receiptsError) => {
+            console.warn("Could not load read receipts:", receiptsError);
+          });
+
+        markMessagesRead(supabase, user.id, friendMessageIds).catch((readError) => {
+          console.warn("Could not mark messages as read:", readError);
         });
       } catch (error) {
         if (cancelled) return;
@@ -264,6 +324,14 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
             if (alreadyExists) return currentMessages;
             return [...currentMessages, incomingMessage];
           });
+
+          // The thread is open, so a message that just arrived from the
+          // friend is immediately both delivered and read.
+          if (currentUserId && incomingMessage.sender_id !== currentUserId) {
+            markMessagesRead(supabase, currentUserId, [incomingMessage.id]).catch((readError) => {
+              console.warn("Could not mark incoming message as read:", readError);
+            });
+          }
         },
       )
       .subscribe((status) => {
@@ -279,7 +347,93 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, supabase]);
+  }, [conversationId, currentUserId, supabase]);
+
+  // Listens for the friend's receipt writes on OUR sent messages (they
+  // opened the thread, or their client marked something delivered) so our
+  // own bubbles' status glyphs update live, without polling.
+  useEffect(() => {
+    if (!conversationId || !friendId) return;
+
+    const channel = supabase
+      .channel(`message-receipts:${conversationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "message_receipts", filter: `user_id=eq.${friendId}` },
+        (payload) => {
+          const row = payload.new as { message_id: number; delivered_at: string | null; read_at: string | null } | null;
+          if (!row) return;
+
+          const belongsToThisThread = messagesRef.current.some(
+            (message) => message.id === row.message_id && message.sender_id === currentUserId,
+          );
+          if (!belongsToThisThread) return;
+
+          setReceiptsByMessageId((current) => {
+            const next = new Map(current);
+            next.set(row.message_id, { deliveredAt: row.delivered_at, readAt: row.read_at });
+            return next;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [conversationId, friendId, currentUserId, supabase]);
+
+  // Ephemeral "is typing" presence: broadcast-only, never written to the
+  // database. Listens for the other participant's broadcast events and
+  // shows a transient indicator that auto-clears after a short silence.
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return;
+
+    const channel = supabase.channel(`typing:${conversationId}`, {
+      config: { broadcast: { self: false } },
+    });
+    typingChannelRef.current = channel;
+
+    channel
+      .on("broadcast", { event: "typing" }, (payload) => {
+        const senderId = (payload.payload as { userId?: string } | null)?.userId;
+        if (!senderId || senderId === currentUserId) return;
+
+        setFriendIsTyping(true);
+
+        if (friendTypingTimeoutRef.current) {
+          clearTimeout(friendTypingTimeoutRef.current);
+        }
+        friendTypingTimeoutRef.current = setTimeout(() => {
+          setFriendIsTyping(false);
+        }, 3000);
+      })
+      .on("broadcast", { event: "stopped-typing" }, (payload) => {
+        const senderId = (payload.payload as { userId?: string } | null)?.userId;
+        if (!senderId || senderId === currentUserId) return;
+
+        if (friendTypingTimeoutRef.current) {
+          clearTimeout(friendTypingTimeoutRef.current);
+          friendTypingTimeoutRef.current = null;
+        }
+        setFriendIsTyping(false);
+      })
+      .subscribe();
+
+    return () => {
+      typingChannelRef.current = null;
+      if (friendTypingTimeoutRef.current) {
+        clearTimeout(friendTypingTimeoutRef.current);
+        friendTypingTimeoutRef.current = null;
+      }
+      if (typingStopTimeoutRef.current) {
+        clearTimeout(typingStopTimeoutRef.current);
+        typingStopTimeoutRef.current = null;
+      }
+      setFriendIsTyping(false);
+      void supabase.removeChannel(channel);
+    };
+  }, [conversationId, currentUserId, supabase]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -287,6 +441,13 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
       scrollToBottom();
     });
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    if (!friendIsTyping) return;
+    window.requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+  }, [friendIsTyping, scrollToBottom]);
 
   useEffect(() => {
     const draft = sessionStorage.getItem("exchange-notes-draft-message");
@@ -300,6 +461,47 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     });
   }, []);
 
+  // Consumes a word queued from the Vocabulary "send to partner" flow
+  // (components/vocabulary/FriendPickerModal.tsx via
+  // hooks/useVocabularyFriendPicker.ts, which stashes it in sessionStorage
+  // and navigates here). Sends it as a real word-card message as soon as
+  // this thread is ready, then clears the queue so it can never resend on
+  // a later visit to a different conversation.
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return;
+
+    const pendingVocabulary = getPendingSharedVocabulary();
+    if (!pendingVocabulary) return;
+
+    clearPendingSharedVocabulary();
+
+    const cardBody = encodeWordCardMessage({
+      word: pendingVocabulary.word,
+      translation: pendingVocabulary.translation,
+      partOfSpeech: pendingVocabulary.part_of_speech,
+      englishExample: pendingVocabulary.example_sentence,
+      chineseExample: pendingVocabulary.translated_example,
+    });
+
+    void (async () => {
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({ conversation_id: conversationId, sender_id: currentUserId, body: cardBody })
+        .select("id, conversation_id, sender_id, body, created_at")
+        .single();
+
+      if (error) {
+        setErrorMessage(copy.errors.shareWord);
+        return;
+      }
+
+      setMessages((currentMessages) => {
+        const alreadyExists = currentMessages.some((message) => message.id === data.id);
+        return alreadyExists ? currentMessages : [...currentMessages, data];
+      });
+    })();
+  }, [conversationId, currentUserId, supabase, copy.errors.shareWord]);
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -308,6 +510,16 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
     setSending(true);
     setErrorMessage("");
+
+    if (typingStopTimeoutRef.current) {
+      clearTimeout(typingStopTimeoutRef.current);
+      typingStopTimeoutRef.current = null;
+    }
+    void typingChannelRef.current?.send({
+      type: "broadcast",
+      event: "stopped-typing",
+      payload: { userId: currentUserId },
+    });
 
     const { data, error } = await supabase
       .from("messages")
@@ -332,6 +544,32 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     window.requestAnimationFrame(() => {
       textareaRef.current?.focus();
     });
+  }
+
+  function handleComposerChange(event: FormEvent<HTMLTextAreaElement> & { target: HTMLTextAreaElement }) {
+    const value = event.target.value;
+    setNewMessage(value);
+
+    const channel = typingChannelRef.current;
+    if (!channel || !currentUserId) return;
+
+    if (value.trim().length === 0) {
+      if (typingStopTimeoutRef.current) {
+        clearTimeout(typingStopTimeoutRef.current);
+        typingStopTimeoutRef.current = null;
+      }
+      void channel.send({ type: "broadcast", event: "stopped-typing", payload: { userId: currentUserId } });
+      return;
+    }
+
+    void channel.send({ type: "broadcast", event: "typing", payload: { userId: currentUserId } });
+
+    if (typingStopTimeoutRef.current) {
+      clearTimeout(typingStopTimeoutRef.current);
+    }
+    typingStopTimeoutRef.current = setTimeout(() => {
+      void channel.send({ type: "broadcast", event: "stopped-typing", payload: { userId: currentUserId } });
+    }, 2500);
   }
 
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -716,7 +954,16 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                         <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.45]">{message.body}</p>
                         <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${isMine ? "text-white/50" : "text-neutral-400"}`}>
                           <time dateTime={message.created_at}>{formatMessageTime(message.created_at)}</time>
-                          {isMine && <CheckIcon />}
+                          {isMine && (() => {
+                            const status = getReceiptStatus(receiptsByMessageId.get(message.id));
+                            const label =
+                              status === "read"
+                                ? copy.statusRead
+                                : status === "delivered"
+                                  ? copy.statusDelivered
+                                  : copy.statusSent;
+                            return <MessageStatusIcon status={status} label={label} />;
+                          })()}
                         </div>
                       </article>
                     )}
@@ -724,6 +971,22 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 </div>
               );
             })}
+
+          {friendIsTyping && (
+            <div className="flex items-end gap-2 px-1">
+              <div className="flex items-center gap-1 rounded-[22px] rounded-bl-[6px] border border-black/[0.04] bg-white px-4 py-3">
+                <span className="sr-only">
+                  {copy.typingIndicator.replace(
+                    "{name}",
+                    friend?.displayName ?? friend?.exchangeId ?? "",
+                  )}
+                </span>
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-black/30 [animation-delay:-0.3s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-black/30 [animation-delay:-0.15s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-black/30" />
+              </div>
+            </div>
+          )}
 
           <div ref={bottomRef} />
         </section>
@@ -749,7 +1012,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
               <textarea
                 ref={textareaRef}
                 value={newMessage}
-                onChange={(event) => setNewMessage(event.target.value)}
+                onChange={handleComposerChange}
                 onKeyDown={handleComposerKeyDown}
                 rows={1}
                 maxLength={MAX_MESSAGE_LENGTH}

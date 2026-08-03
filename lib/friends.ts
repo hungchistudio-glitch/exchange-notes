@@ -9,11 +9,20 @@ export type FriendProfile = {
   learningLanguage: "english" | "traditional-chinese";
 };
 
+export type LastMessagePreview = {
+  body: string;
+  createdAt: string;
+  senderId: string;
+  attachmentType: string | null;
+};
+
 export type ConversationSummary = {
   friend: FriendProfile;
   conversationId: string | null;
   lastReadAt: string | null;
   unreadCount: number;
+  lastMessage: LastMessagePreview | null;
+  mutedAt: string | null;
 };
 
 export type IncomingRequest = {
@@ -266,7 +275,7 @@ export async function listConversationSummaries(
 
   const { data: myMemberships, error: membershipsError } = await supabase
     .from("conversation_members")
-    .select("conversation_id, last_read_at, hidden_at")
+    .select("conversation_id, last_read_at, hidden_at, muted_at")
     .eq("user_id", currentUserId)
     .is("hidden_at", null);
 
@@ -278,6 +287,8 @@ export async function listConversationSummaries(
       conversationId: null,
       lastReadAt: null,
       unreadCount: 0,
+      lastMessage: null,
+      mutedAt: null,
     }));
   }
 
@@ -317,9 +328,47 @@ export async function listConversationSummaries(
     ])
   );
 
+  const mutedAtByConversationId = new Map<string, string | null>(
+    myMemberships.map((membership) => [
+      membership.conversation_id,
+      membership.muted_at,
+    ])
+  );
+
   const relevantConversationIds = Array.from(
     new Set(conversationByFriendId.values())
   );
+
+  // One most-recent-message-per-conversation preview, for the "116 saved..."
+  // style dashboard-y list to instead read like an actual conversation
+  // list. Fetches a bounded window of the newest messages across all
+  // relevant conversations (newest-first) and keeps just the first one seen
+  // per conversation — cheaper than a per-conversation query, and 500 rows
+  // comfortably covers "at least the latest message" for any conversation
+  // count a friends-based 1:1 messaging app is likely to have.
+  const lastMessageByConversationId = new Map<string, LastMessagePreview>();
+
+  if (relevantConversationIds.length > 0) {
+    const { data: recentMessages, error: recentMessagesError } = await supabase
+      .from("messages")
+      .select("conversation_id, sender_id, body, created_at, attachment_type")
+      .in("conversation_id", relevantConversationIds)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (recentMessagesError) throw recentMessagesError;
+
+    for (const message of recentMessages ?? []) {
+      if (lastMessageByConversationId.has(message.conversation_id)) continue;
+
+      lastMessageByConversationId.set(message.conversation_id, {
+        body: message.body,
+        createdAt: message.created_at,
+        senderId: message.sender_id,
+        attachmentType: message.attachment_type,
+      });
+    }
+  }
 
   const unreadCountByConversationId = new Map<string, number>();
 
@@ -373,8 +422,29 @@ export async function listConversationSummaries(
       unreadCount: conversationId
         ? unreadCountByConversationId.get(conversationId) ?? 0
         : 0,
+      lastMessage: conversationId
+        ? lastMessageByConversationId.get(conversationId) ?? null
+        : null,
+      mutedAt: conversationId
+        ? mutedAtByConversationId.get(conversationId) ?? null
+        : null,
     };
   });
+}
+
+/**
+ * Total unread message count across every conversation, for the nav bar's
+ * badge. Uses a single-round-trip Postgres function (get_total_unread_count)
+ * that mirrors listConversationSummaries's per-conversation unread logic,
+ * rather than re-fetching every friend/membership/message client-side just
+ * to sum a number.
+ */
+export async function getTotalUnreadCount(
+  supabase: SupabaseClient
+): Promise<number> {
+  const { data, error } = await supabase.rpc("get_total_unread_count");
+  if (error) throw error;
+  return data ?? 0;
 }
 
 export async function respondToRequest(
@@ -465,6 +535,26 @@ export async function markConversationRead(
   const { error } = await supabase
     .from("conversation_members")
     .update({ last_read_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId);
+
+  if (error) throw error;
+}
+
+/**
+ * Toggle mute for a conversation, for the current user only. Muted
+ * conversations still update unread counts and sync normally — mute only
+ * means "don't sound/vibrate/push for this one," never "stop tracking."
+ */
+export async function setConversationMuted(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string,
+  muted: boolean
+): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_members")
+    .update({ muted_at: muted ? new Date().toISOString() : null })
     .eq("conversation_id", conversationId)
     .eq("user_id", currentUserId);
 

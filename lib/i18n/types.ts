@@ -460,6 +460,20 @@ export type TranslationDictionary = {
     english: string;
     traditionalChinese: string;
 
+    youPrefix: string;
+    attachmentLabel: string;
+    voiceLabel: string;
+    sharedArticleLabel: string;
+    muted: string;
+    muteConversation: string;
+    unmuteConversation: string;
+    noConversationsFound: string;
+    typingIndicator: string;
+    statusSending: string;
+    statusSent: string;
+    statusDelivered: string;
+    statusRead: string;
+
     moodSwipeHint: string;
     moodCalm: string;
     moodCurious: string;
@@ -474,6 +488,7 @@ export type TranslationDictionary = {
       noMessagesDeleted: string;
       partialDelete: string;
       deleteSelected: string;
+      shareWord: string;
     };
   };
   friends: {
@@ -925,6 +940,7 @@ export type TranslationDictionary = {
       exchangeIdLength: string;
       profileUpdated: string;
       profileUpdateError: string;
+      languagesMustDifferError: string;
       editProfile: string;
       copyHandle: string;
       copied: string;

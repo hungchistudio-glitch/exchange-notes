@@ -9,6 +9,7 @@ import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") {
@@ -23,6 +24,7 @@ const iconClassName = "h-[22px] w-[22px]";
 export default function ProtectedNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { unreadCount, pulseToken } = useUnreadMessageCount();
 
   const navRoutes = [
     {
@@ -56,12 +58,15 @@ export default function ProtectedNav() {
     <BottomNavigation
       items={navRoutes.map((route) => {
         const active = isActive(pathname, route.href);
+        const isMessages = route.href === "/messages";
 
         return {
           href: route.href,
           label: route.label,
           active,
           icon: <route.Icon className={iconClassName} active={active} />,
+          badgeCount: isMessages ? unreadCount : undefined,
+          pulseToken: isMessages ? pulseToken : undefined,
         };
       })}
     />

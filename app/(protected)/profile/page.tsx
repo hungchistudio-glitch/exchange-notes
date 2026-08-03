@@ -230,9 +230,27 @@ export default function ProfilePage() {
   ) {
     if (!userId) return;
 
-    const previous = form[field];
+    const otherField =
+      field === "native_language" ? "learning_language" : "native_language";
+    const previous = form;
 
-    setForm((current) => ({ ...current, [field]: value }));
+    // Only two languages exist app-wide, so native and learning can never
+    // be equal (the database enforces this too). If the new value collides
+    // with the other field, flip that field to the remaining language in
+    // the same update instead of sending a lone change that would violate
+    // the constraint.
+    const nextOtherValue: AppLanguage =
+      value === form[otherField]
+        ? value === "english"
+          ? "traditional-chinese"
+          : "english"
+        : form[otherField];
+
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      [otherField]: nextOtherValue,
+    }));
     setError("");
 
     try {
@@ -240,15 +258,19 @@ export default function ProfilePage() {
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ [field]: value })
+        .update({ [field]: value, [otherField]: nextOtherValue })
         .eq("id", userId);
 
       if (updateError) {
-        setForm((current) => ({ ...current, [field]: previous }));
-        setError(updateError.message);
+        setForm(previous);
+        setError(
+          updateError.code === "23514"
+            ? copy.languagesMustDifferError
+            : updateError.message,
+        );
       }
     } catch {
-      setForm((current) => ({ ...current, [field]: previous }));
+      setForm(previous);
       setError(copy.profileUpdateError);
     }
   }

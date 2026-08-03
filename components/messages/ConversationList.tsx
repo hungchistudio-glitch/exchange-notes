@@ -2,17 +2,85 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { EyeOff, Search } from "lucide-react";
+import { BellOff, EyeOff, Search } from "lucide-react";
 
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import MoodLogoSwiper from "@/components/messages/MoodLogoSwiper";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
   hideConversationForUser,
   listConversationSummaries,
+  setConversationMuted,
   type ConversationSummary,
 } from "@/lib/friends";
+import { decodeWordCardMessage } from "@/lib/messages/wordCard";
 import { createClient } from "@/lib/supabase/client";
+
+type MessagesCopy = TranslationDictionary["messages"];
+
+function formatConversationTime(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+
+  if (isToday) {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date);
+  }
+
+  const startOfToday = new Date(now).setHours(0, 0, 0, 0);
+  const startOfMessageDay = new Date(date).setHours(0, 0, 0, 0);
+  const daysAgo = Math.floor(
+    (startOfToday - startOfMessageDay) / (1000 * 60 * 60 * 24),
+  );
+
+  if (daysAgo < 7) {
+    return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(
+      date,
+    );
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+// Renders whatever the last message actually was as a one-line preview:
+// a shared word card reads as "Shared a word: {word}", an attachment gets
+// a type label, everything else is just the message body, truncated by
+// the surrounding `truncate` class.
+function getPreviewText(
+  summary: ConversationSummary,
+  currentUserId: string | null,
+  copy: MessagesCopy,
+): string {
+  const { lastMessage } = summary;
+  if (!lastMessage) return "";
+
+  const prefix =
+    currentUserId && lastMessage.senderId === currentUserId
+      ? copy.youPrefix
+      : "";
+
+  if (lastMessage.attachmentType === "image") {
+    return `${prefix}${copy.attachmentLabel}`;
+  }
+
+  if (lastMessage.attachmentType === "voice") {
+    return `${prefix}${copy.voiceLabel}`;
+  }
+
+  const wordCard = decodeWordCardMessage(lastMessage.body);
+  if (wordCard) {
+    return `${prefix}${wordCard.word}`;
+  }
+
+  return `${prefix}${lastMessage.body}`;
+}
 
 export default function ConversationList() {
   const { t } = useTranslation();
@@ -66,6 +134,32 @@ export default function ConversationList() {
       isMounted = false;
     };
   }, [copy.errors.loadConversations]);
+
+  async function handleToggleMute(summary: ConversationSummary) {
+    if (!currentUserId || !summary.conversationId) return;
+
+    const conversationId = summary.conversationId;
+    const nextMuted = !summary.mutedAt;
+    const previous = summaries;
+
+    setSummaries((current) =>
+      current.map((row) =>
+        row.friend.id === summary.friend.id
+          ? { ...row, mutedAt: nextMuted ? new Date().toISOString() : null }
+          : row,
+      ),
+    );
+
+    try {
+      const supabase = createClient();
+      await setConversationMuted(supabase, currentUserId, conversationId, nextMuted);
+    } catch (error) {
+      setSummaries(previous);
+      setErrorMessage(
+        error instanceof Error ? error.message : copy.errors.removeFriend,
+      );
+    }
+  }
 
   async function handleHide(summary: ConversationSummary) {
     if (!currentUserId || !summary.conversationId) return;
@@ -163,7 +257,7 @@ export default function ConversationList() {
           if (filteredSummaries.length === 0) {
             return (
               <p className="mt-10 text-center text-sm text-black/40">
-                No conversations found.
+                {copy.noConversationsFound}
               </p>
             );
           }
@@ -174,11 +268,18 @@ export default function ConversationList() {
               const name =
                 summary.friend.displayName ?? summary.friend.exchangeId;
               const initial = name.charAt(0).toUpperCase();
+              const hasUnread = summary.unreadCount > 0;
+              const isMuted = Boolean(summary.mutedAt);
+              const previewText = summary.lastMessage
+                ? getPreviewText(summary, currentUserId, copy)
+                : `@${summary.friend.exchangeId}`;
 
               const row = (
                 <Link
                   href={`/messages?with=${summary.friend.id}`}
-                  className="flex items-center gap-3 rounded-[24px] bg-white p-4 shadow-sm"
+                  className={`flex items-center gap-3 rounded-[24px] p-4 shadow-sm transition-colors ${
+                    hasUnread ? "bg-[#fdfaf3]" : "bg-white"
+                  }`}
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-base font-bold text-black">
                     {initial}
@@ -186,16 +287,47 @@ export default function ConversationList() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate font-bold text-black">{name}</p>
-                      {summary.unreadCount > 0 && (
-                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-black px-1.5 text-[11px] font-semibold text-white">
-                          {summary.unreadCount}
-                        </span>
-                      )}
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <p
+                          className={`truncate ${
+                            hasUnread ? "font-bold text-black" : "font-semibold text-black/85"
+                          }`}
+                        >
+                          {name}
+                        </p>
+                        {isMuted && (
+                          <BellOff
+                            size={12}
+                            strokeWidth={2}
+                            className="shrink-0 text-black/30"
+                            aria-label={copy.muted}
+                          />
+                        )}
+                      </span>
+
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {summary.lastMessage && (
+                          <time
+                            dateTime={summary.lastMessage.createdAt}
+                            className="text-[11px] text-black/35"
+                          >
+                            {formatConversationTime(summary.lastMessage.createdAt)}
+                          </time>
+                        )}
+                        {hasUnread && (
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#c9962e] px-1.5 text-[11px] font-semibold text-white">
+                            {summary.unreadCount}
+                          </span>
+                        )}
+                      </span>
                     </div>
 
-                    <p className="truncate text-sm text-black/50">
-                      @{summary.friend.exchangeId}
+                    <p
+                      className={`truncate text-sm ${
+                        hasUnread ? "text-black/70" : "text-black/45"
+                      }`}
+                    >
+                      {previewText}
                     </p>
                   </div>
                 </Link>
@@ -208,6 +340,12 @@ export default function ConversationList() {
               return (
                 <SwipeActionRow
                   key={summary.friend.id}
+                  leadingAction={{
+                    label: isMuted ? copy.unmuteConversation : copy.muteConversation,
+                    icon: <BellOff size={20} strokeWidth={1.8} />,
+                    onAction: () => handleToggleMute(summary),
+                    className: "bg-[#c9962e] text-white",
+                  }}
                   trailingAction={{
                     label: copy.deleteFriend,
                     icon: <EyeOff size={22} strokeWidth={1.8} />,
