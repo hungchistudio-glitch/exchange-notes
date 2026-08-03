@@ -453,6 +453,7 @@ export type TranslationDictionary = {
       description: string;
       partnerLabel: string;
       partnerTagline: string;
+      pendingRequestsBadge: string;
     };
 
     notes: {

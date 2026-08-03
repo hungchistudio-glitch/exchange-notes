@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 
 import AppHeader from "@/components/foundation/layout/AppHeader";
@@ -20,6 +20,7 @@ import Avatar from "@/components/foundation/media/Avatar";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import Modal from "@/components/ui/Modal";
 import EditProfileSheet from "@/components/settings/EditProfileSheet";
 import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguageSettingsButton";
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
@@ -42,6 +43,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const copy = t.settings.profile;
+  const qrCopy = t.friends.profileQr;
 
   const [userId, setUserId] = useState<string | null>(null);
   const [form, setForm] = useState<ProfileForm>({
@@ -59,6 +61,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
@@ -380,13 +383,15 @@ export default function ProfilePage() {
                       {copied ? copy.copied : copy.copyHandle}
                     </button>
 
-                    <Link
-                      href="/friends"
-                      className="flex shrink-0 items-center gap-1 rounded-full bg-black/[0.045] px-2 py-1 text-[11px] font-semibold text-black/55 transition-colors hover:bg-black/[0.08]"
+                    <button
+                      type="button"
+                      onClick={() => setQrOpen(true)}
+                      aria-label={copy.viewQr}
+                      title={copy.viewQr}
+                      className="flex shrink-0 items-center justify-center rounded-full bg-black/[0.045] p-1.5 text-black/55 transition-colors hover:bg-black/[0.08]"
                     >
                       <QrCode size={11} strokeWidth={2} />
-                      {copy.viewQr}
-                    </Link>
+                    </button>
                   </div>
                 )}
               </div>
@@ -500,6 +505,38 @@ export default function ProfilePage() {
           }}
         />
       )}
+
+      <Modal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        title={qrCopy.title}
+        description={qrCopy.description}
+      >
+        <div className="flex flex-col items-center">
+          <div className="flex aspect-square w-full max-w-[220px] items-center justify-center rounded-3xl border border-line p-6">
+            {form.exchange_id ? (
+              <QRCodeSVG
+                value={`exchangenotes://add-friend/${form.exchange_id}`}
+                size={160}
+                bgColor="transparent"
+                fgColor="#000000"
+                level="M"
+                aria-label={qrCopy.imageAlt}
+              />
+            ) : (
+              <span className="text-center text-sm text-black/40">
+                {qrCopy.loading}
+              </span>
+            )}
+          </div>
+
+          {form.exchange_id && (
+            <p className="mt-3 text-sm font-semibold text-black/50">
+              @{form.exchange_id}
+            </p>
+          )}
+        </div>
+      </Modal>
 
       <BottomSheet
         open={logoutOpen}

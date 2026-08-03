@@ -454,6 +454,7 @@ const traditionalChinese: TranslationDictionary = {
       description: "使用 Exchange ID 或 QR Code 新增朋友。",
       partnerLabel: "學習夥伴",
       partnerTagline: "每天一起練習",
+      pendingRequestsBadge: "{count} 則待處理的交友邀請",
     },
 
     notes: {

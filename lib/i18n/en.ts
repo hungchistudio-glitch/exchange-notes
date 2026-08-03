@@ -464,6 +464,7 @@ const english: TranslationDictionary = {
       description: "Add a friend by Exchange ID or QR code.",
       partnerLabel: "Learning Partner",
       partnerTagline: "Practice together every day",
+      pendingRequestsBadge: "{count} pending friend request(s)",
     },
 
     notes: {

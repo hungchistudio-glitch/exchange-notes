@@ -8,6 +8,7 @@ import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
+import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 
@@ -25,6 +26,8 @@ export default function ProtectedNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { unreadCount, pulseToken } = useUnreadMessageCount();
+  const { count: pendingFriendRequestCount, pulseToken: friendRequestPulseToken } =
+    useIncomingFriendRequestCount();
 
   const navRoutes = [
     {
@@ -59,14 +62,26 @@ export default function ProtectedNav() {
       items={navRoutes.map((route) => {
         const active = isActive(pathname, route.href);
         const isMessages = route.href === "/messages";
+        // Home is where the "add friends" entry point (LearningPartnerCard)
+        // lives, and there's no dedicated Friends tab, so a pending
+        // incoming request badges Home instead of going unnoticed.
+        const isHome = route.href === "/";
 
         return {
           href: route.href,
           label: route.label,
           active,
           icon: <route.Icon className={iconClassName} active={active} />,
-          badgeCount: isMessages ? unreadCount : undefined,
-          pulseToken: isMessages ? pulseToken : undefined,
+          badgeCount: isMessages
+            ? unreadCount
+            : isHome
+              ? pendingFriendRequestCount
+              : undefined,
+          pulseToken: isMessages
+            ? pulseToken
+            : isHome
+              ? friendRequestPulseToken
+              : undefined,
         };
       })}
     />

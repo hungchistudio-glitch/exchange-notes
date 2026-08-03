@@ -199,6 +199,27 @@ export async function listIncomingRequests(
   });
 }
 
+/**
+ * Count of pending incoming friend requests, for badges (nav dot, home
+ * card). The requests themselves were always correctly written and
+ * readable under RLS — this was simply never counted or surfaced anywhere
+ * outside the /friends page itself, so an incoming request could sit
+ * unnoticed unless the receiver happened to open that page on their own.
+ */
+export async function getPendingIncomingRequestCount(
+  supabase: SupabaseClient,
+  currentUserId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("friend_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("receiver_id", currentUserId)
+    .eq("status", "pending");
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function listOutgoingRequests(
   supabase: SupabaseClient,
   currentUserId: string
