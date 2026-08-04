@@ -18,3 +18,4 @@ as $$
     and cm.hidden_at is null
     and (cm.last_read_at is null or m.created_at > cm.last_read_at);
 $$;
+;

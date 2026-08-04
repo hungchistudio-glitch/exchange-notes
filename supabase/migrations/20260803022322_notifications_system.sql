@@ -2,20 +2,10 @@
 -- message delivery/read receipts, per-conversation mute, and notification
 -- preferences (quiet hours / privacy preview level). Deliberately does NOT
 -- include anything push/FCM-specific beyond a device_tokens table shaped to
--- be ready for it later — Phase 1 is fully self-contained and works with
--- zero external accounts or secrets.
-
--- ---------- per-conversation mute ----------
--- Reuses conversation_members rather than a new table, matching the
--- existing last_read_at / hidden_at columns already living there.
+-- be ready for it later.
 
 alter table public.conversation_members
   add column if not exists muted_at timestamptz;
-
--- ---------- message_receipts ----------
--- One row per (message, recipient) — the sender never gets a row for their
--- own message. delivered_at / read_at populated client-side as the
--- recipient's device processes the message.
 
 create table if not exists public.message_receipts (
   message_id bigint not null references public.messages (id) on delete cascade,
@@ -27,9 +17,6 @@ create table if not exists public.message_receipts (
 
 alter table public.message_receipts enable row level security;
 
--- Anyone in the conversation can see receipt state (so the sender can see
--- "delivered"/"read" on their own outgoing messages), but a user can only
--- ever write their own receipt row.
 do $$ begin
   create policy "Members can view receipts in their conversations" on public.message_receipts
     for select to authenticated using (
@@ -57,8 +44,6 @@ do $$ begin
   create policy "Users can update their own receipt" on public.message_receipts
     for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
-
--- ---------- notifications (in-app notification log) ----------
 
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
@@ -95,19 +80,12 @@ do $$ begin
     for delete to authenticated using (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
 
--- Inserts happen via the authenticated actor writing a notification row
--- for the OTHER party (e.g. sending a message writes a notification for
--- the recipient) — so this intentionally allows inserting rows for a
--- user_id that isn't auth.uid(), same shape as "Members can send messages"
--- already does for the messages table.
 do $$ begin
   create policy "Conversation members can create notifications for each other" on public.notifications
     for insert to authenticated with check (
       actor_id is null or actor_id = auth.uid()
     );
 exception when duplicate_object then null; end $$;
-
--- ---------- notification_preferences ----------
 
 create table if not exists public.notification_preferences (
   user_id uuid primary key references auth.users (id),
@@ -142,10 +120,6 @@ do $$ begin
     for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
 
--- ---------- device_tokens ----------
--- Not used by anything in Phase 1 — shaped now so Phase 2 (FCM push) has
--- somewhere to write tokens without another schema migration.
-
 create table if not exists public.device_tokens (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id),
@@ -177,3 +151,4 @@ do $$ begin
   create policy "Users can delete their own device tokens" on public.device_tokens
     for delete to authenticated using (user_id = auth.uid());
 exception when duplicate_object then null; end $$;
+;

@@ -6,13 +6,6 @@
 -- Supabase MCP on 2026-08-02 — every column, constraint, and RLS policy
 -- below matches production exactly.
 --
--- This migration is NOT required to run against the current live project
--- (everything here already exists there). It exists so that:
---   1. A fresh environment (staging, local dev, disaster recovery) can be
---      brought up from `supabase/migrations/` alone.
---   2. Later migrations (e.g. the notifications system) have something to
---      declare foreign keys against without guessing column types.
---
 -- Every statement is written to be safe to run against a database that
 -- already has these objects (IF NOT EXISTS / duplicate_object guards), so
 -- running it against the live project is a harmless no-op.
@@ -127,7 +120,6 @@ create table if not exists public.conversation_members (
   conversation_id uuid not null references public.conversations (id),
   user_id uuid not null references auth.users (id),
   joined_at timestamptz not null default now(),
-  -- Latest time this user has read the conversation.
   last_read_at timestamptz default now(),
   hidden_at timestamptz,
   primary key (conversation_id, user_id)
@@ -211,10 +203,6 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 -- ---------- message_user_states / hidden_messages ----------
--- Two per-user "hide this message from my view" mechanisms exist live
--- (hidden_messages is the older one, message_user_states the newer,
--- more general one) — both are captured as-is rather than picking one,
--- since this migration's job is to mirror reality, not clean it up.
 
 create table if not exists public.message_user_states (
   message_id bigint not null references public.messages (id),
@@ -272,3 +260,4 @@ do $$ begin
   create policy "Users can hide messages for themselves" on public.hidden_messages
     for insert with check (auth.uid() = user_id);
 exception when duplicate_object then null; end $$;
+;
