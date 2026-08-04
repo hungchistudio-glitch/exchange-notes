@@ -1177,6 +1177,22 @@ const english: TranslationDictionary = {
         "Notifications could not be disabled. Please try again.",
       statusError:
         "Notification status could not be checked. Please try again.",
+      sendTest: "Send test notification",
+      testing: "Sending test…",
+      testDescription:
+        "The test is sent to every active Exchange Notes device on your account.",
+      testSuccess:
+        "A test notification was sent to your active Exchange Notes devices.",
+      testAuthenticationError:
+        "Your session has expired. Sign in again before sending a test.",
+      testNoSubscriptionError:
+        "No active server subscription was found. Turn notifications off and on again.",
+      testExpiredError:
+        "Your saved notification subscription has expired. Turn notifications off and on again.",
+      testDeliveryError:
+        "The test notification could not be delivered. Please try again.",
+      testNetworkError:
+        "The test service could not be reached. Check your connection and try again.",
     },
 
     fontSize: {

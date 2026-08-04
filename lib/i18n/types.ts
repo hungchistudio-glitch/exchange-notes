@@ -1134,6 +1134,15 @@ export type TranslationDictionary = {
       subscriptionError: string;
       unsubscribeError: string;
       statusError: string;
+      sendTest: string;
+      testing: string;
+      testDescription: string;
+      testSuccess: string;
+      testAuthenticationError: string;
+      testNoSubscriptionError: string;
+      testExpiredError: string;
+      testDeliveryError: string;
+      testNetworkError: string;
     };
 
     fontSize: {

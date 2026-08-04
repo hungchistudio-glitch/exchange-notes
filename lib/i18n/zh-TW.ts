@@ -1154,6 +1154,22 @@ const traditionalChinese: TranslationDictionary = {
         "無法關閉通知，請再試一次。",
       statusError:
         "無法檢查通知狀態，請再試一次。",
+      sendTest: "傳送測試通知",
+      testing: "正在傳送測試…",
+      testDescription:
+        "測試通知會傳送至此帳號所有已開啟通知的 Exchange Notes 裝置。",
+      testSuccess:
+        "測試通知已傳送至你已開啟通知的 Exchange Notes 裝置。",
+      testAuthenticationError:
+        "登入狀態已失效，請重新登入後再傳送測試通知。",
+      testNoSubscriptionError:
+        "找不到有效的伺服器訂閱，請先關閉通知再重新開啟。",
+      testExpiredError:
+        "已儲存的通知訂閱已失效，請先關閉通知再重新開啟。",
+      testDeliveryError:
+        "無法傳送測試通知，請再試一次。",
+      testNetworkError:
+        "無法連線至測試服務，請檢查網路後再試一次。",
     },
 
     fontSize: {

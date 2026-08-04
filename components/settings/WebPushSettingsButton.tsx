@@ -4,6 +4,7 @@ import {
   Bell,
   BellOff,
   LoaderCircle,
+  Send,
   Smartphone,
 } from "lucide-react";
 import { useState } from "react";
@@ -24,11 +25,38 @@ type DisplayState =
   | "blocked"
   | "unavailable";
 
+type TestFeedback = {
+  tone: "success" | "danger";
+  message: string;
+};
+
+type TestResponse = {
+  ok?: boolean;
+  state?: string;
+};
+
+function isTestResponse(
+  value: unknown,
+): value is TestResponse {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (!("ok" in value) ||
+      typeof value.ok === "boolean") &&
+    (!("state" in value) ||
+      typeof value.state === "string")
+  );
+}
+
 export default function WebPushSettingsButton() {
   const { t } = useTranslation();
   const copy = t.settings.webPush;
 
   const [open, setOpen] = useState(false);
+  const [testSending, setTestSending] =
+    useState(false);
+  const [testFeedback, setTestFeedback] =
+    useState<TestFeedback | null>(null);
 
   const {
     status,
@@ -42,7 +70,8 @@ export default function WebPushSettingsButton() {
     clearError,
   } = useWebPush();
 
-  const busy = isEnabling || isDisabling;
+  const busy =
+    isEnabling || isDisabling || testSending;
 
   const displayState: DisplayState = loading
     ? "loading"
@@ -224,12 +253,98 @@ export default function WebPushSettingsButton() {
 
   function handleOpen() {
     clearError();
+    setTestFeedback(null);
     setOpen(true);
   }
 
   function handleClose() {
     clearError();
+    setTestFeedback(null);
     setOpen(false);
+  }
+
+  async function handleTestNotification() {
+    if (!isSubscribed || testSending) {
+      return;
+    }
+
+    clearError();
+    setTestFeedback(null);
+    setTestSending(true);
+
+    try {
+      const response = await fetch("/api/push/test", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      const payload: unknown = await response
+        .json()
+        .catch(() => null);
+
+      const responseState = isTestResponse(payload)
+        ? payload.state
+        : undefined;
+
+      if (
+        response.ok &&
+        isTestResponse(payload) &&
+        payload.ok === true
+      ) {
+        setTestFeedback({
+          tone: "success",
+          message: copy.testSuccess,
+        });
+        return;
+      }
+
+      if (response.status === 401) {
+        setTestFeedback({
+          tone: "danger",
+          message: copy.testAuthenticationError,
+        });
+        return;
+      }
+
+      if (
+        response.status === 409 ||
+        responseState === "no-active-subscriptions"
+      ) {
+        setTestFeedback({
+          tone: "danger",
+          message: copy.testNoSubscriptionError,
+        });
+        return;
+      }
+
+      if (
+        response.status === 410 ||
+        responseState ===
+          "all-subscriptions-expired"
+      ) {
+        setTestFeedback({
+          tone: "danger",
+          message: copy.testExpiredError,
+        });
+        return;
+      }
+
+      setTestFeedback({
+        tone: "danger",
+        message: copy.testDeliveryError,
+      });
+    } catch {
+      setTestFeedback({
+        tone: "danger",
+        message: copy.testNetworkError,
+      });
+    } finally {
+      setTestSending(false);
+    }
   }
 
   const canEnable = displayState === "unsubscribed";
@@ -265,49 +380,93 @@ export default function WebPushSettingsButton() {
         description={copy.sheetDescription}
         footer={
           showAction ? (
-            <button
-              type="button"
-              disabled={loading || busy}
-              aria-busy={busy}
-              onClick={() => {
-                if (canDisable) {
-                  void disable();
-                  return;
-                }
+            <div className="space-y-2">
+              {canDisable ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    aria-busy={testSending}
+                    onClick={() =>
+                      void handleTestNotification()
+                    }
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-5 text-sm font-semibold text-white transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {testSending ? (
+                      <LoaderCircle
+                        aria-hidden="true"
+                        size={16}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <Send
+                        aria-hidden="true"
+                        size={16}
+                        strokeWidth={1.9}
+                      />
+                    )}
 
-                if (canEnable) {
-                  void enable();
-                }
-              }}
-              className={[
-                "flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45",
-                canDisable
-                  ? "bg-black/[0.06] text-black"
-                  : "bg-black text-white",
-              ].join(" ")}
-            >
-              {loading || busy ? (
-                <LoaderCircle
-                  aria-hidden="true"
-                  size={16}
-                  className="animate-spin"
-                />
-              ) : canDisable ? (
-                <BellOff
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.9}
-                />
-              ) : (
-                <Bell
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.9}
-                />
-              )}
+                    {testSending
+                      ? copy.testing
+                      : copy.sendTest}
+                  </button>
 
-              {actionLabel}
-            </button>
+                  <p className="px-3 text-center text-[11px] leading-4 text-black/40">
+                    {copy.testDescription}
+                  </p>
+                </>
+              ) : null}
+
+              <button
+                type="button"
+                disabled={loading || busy}
+                aria-busy={
+                  isEnabling || isDisabling
+                }
+                onClick={() => {
+                  setTestFeedback(null);
+
+                  if (canDisable) {
+                    void disable();
+                    return;
+                  }
+
+                  if (canEnable) {
+                    void enable();
+                  }
+                }}
+                className={[
+                  "flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-all active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45",
+                  canDisable
+                    ? "bg-black/[0.06] text-black"
+                    : "bg-black text-white",
+                ].join(" ")}
+              >
+                {loading ||
+                isEnabling ||
+                isDisabling ? (
+                  <LoaderCircle
+                    aria-hidden="true"
+                    size={16}
+                    className="animate-spin"
+                  />
+                ) : canDisable ? (
+                  <BellOff
+                    aria-hidden="true"
+                    size={16}
+                    strokeWidth={1.9}
+                  />
+                ) : (
+                  <Bell
+                    aria-hidden="true"
+                    size={16}
+                    strokeWidth={1.9}
+                  />
+                )}
+
+                {actionLabel}
+              </button>
+            </div>
           ) : undefined
         }
       >
@@ -318,6 +477,24 @@ export default function WebPushSettingsButton() {
               className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700"
             >
               {localizedError}
+            </div>
+          ) : null}
+
+          {testFeedback ? (
+            <div
+              role={
+                testFeedback.tone === "danger"
+                  ? "alert"
+                  : "status"
+              }
+              className={[
+                "rounded-2xl border px-4 py-3 text-sm font-medium leading-6",
+                testFeedback.tone === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-red-50 text-red-700",
+              ].join(" ")}
+            >
+              {testFeedback.message}
             </div>
           ) : null}
 
