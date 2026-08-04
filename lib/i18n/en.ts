@@ -1132,6 +1132,53 @@ const english: TranslationDictionary = {
         "Display the app interface in Traditional Chinese.",
     },
 
+    webPush: {
+      rowTitle: "Notifications",
+      rowDescription: "Message and learning updates",
+      sheetTitle: "Notifications",
+      sheetDescription:
+        "Choose whether Exchange Notes can send notifications to this device.",
+      statusOn: "On",
+      statusOff: "Off",
+      statusLoading: "Checking…",
+      statusNeedsHomeScreen: "Install first",
+      statusUnsupported: "Unsupported",
+      statusBlocked: "Blocked",
+      statusUnavailable: "Unavailable",
+      enabledTitle: "Notifications are on",
+      enabledDescription:
+        "This device can receive message and learning notifications.",
+      disabledTitle: "Notifications are off",
+      disabledDescription:
+        "Turn them on to receive updates when Exchange Notes is not open.",
+      needsHomeScreenTitle: "Add Exchange Notes to your Home Screen",
+      needsHomeScreenDescription:
+        "On iPhone or iPad, use the Install Exchange Notes option in this section, then open the app from your Home Screen.",
+      unsupportedTitle: "Notifications are not supported",
+      unsupportedDescription:
+        "This browser or device cannot receive Web Push notifications.",
+      blockedTitle: "Notifications are blocked",
+      blockedDescription:
+        "Allow notifications for Exchange Notes in your browser or device settings, then return here.",
+      unavailableTitle: "Notifications are unavailable",
+      unavailableDescription:
+        "Web Push is not available in this version of Exchange Notes.",
+      enable: "Turn on notifications",
+      enabling: "Turning on…",
+      disable: "Turn off notifications",
+      disabling: "Turning off…",
+      authenticationError:
+        "Sign in again before changing notification settings.",
+      permissionDismissedError:
+        "Notification permission was not granted. Try again when you are ready.",
+      subscriptionError:
+        "Notifications could not be enabled. Please try again.",
+      unsubscribeError:
+        "Notifications could not be disabled. Please try again.",
+      statusError:
+        "Notification status could not be checked. Please try again.",
+    },
+
     fontSize: {
       rowTitle: "Font size",
       rowDescription: "Adjust text throughout the app",

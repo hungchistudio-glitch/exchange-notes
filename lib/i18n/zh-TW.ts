@@ -1109,6 +1109,53 @@ const traditionalChinese: TranslationDictionary = {
       traditionalChineseDescription: "以繁體中文顯示 App 介面。",
     },
 
+    webPush: {
+      rowTitle: "通知",
+      rowDescription: "訊息與學習更新",
+      sheetTitle: "通知",
+      sheetDescription:
+        "設定此裝置是否可以接收 Exchange Notes 通知。",
+      statusOn: "已開啟",
+      statusOff: "已關閉",
+      statusLoading: "檢查中…",
+      statusNeedsHomeScreen: "請先安裝",
+      statusUnsupported: "不支援",
+      statusBlocked: "已封鎖",
+      statusUnavailable: "無法使用",
+      enabledTitle: "通知已開啟",
+      enabledDescription:
+        "此裝置可以接收訊息與學習通知。",
+      disabledTitle: "通知已關閉",
+      disabledDescription:
+        "開啟後，即使 Exchange Notes 沒有開著，也能收到重要更新。",
+      needsHomeScreenTitle: "先將 Exchange Notes 加入主畫面",
+      needsHomeScreenDescription:
+        "在 iPhone 或 iPad 上，請先使用此區塊的「安裝 Exchange Notes」，再從主畫面開啟 App。",
+      unsupportedTitle: "此裝置不支援通知",
+      unsupportedDescription:
+        "目前的瀏覽器或裝置無法接收 Web Push 通知。",
+      blockedTitle: "通知已被封鎖",
+      blockedDescription:
+        "請到瀏覽器或裝置設定中允許 Exchange Notes 通知，再回到這裡。",
+      unavailableTitle: "通知目前無法使用",
+      unavailableDescription:
+        "這個版本的 Exchange Notes 目前無法使用 Web Push。",
+      enable: "開啟通知",
+      enabling: "正在開啟…",
+      disable: "關閉通知",
+      disabling: "正在關閉…",
+      authenticationError:
+        "請重新登入後再變更通知設定。",
+      permissionDismissedError:
+        "你尚未允許通知，準備好後可以再次嘗試。",
+      subscriptionError:
+        "無法開啟通知，請再試一次。",
+      unsubscribeError:
+        "無法關閉通知，請再試一次。",
+      statusError:
+        "無法檢查通知狀態，請再試一次。",
+    },
+
     fontSize: {
       rowTitle: "字體大小",
       rowDescription: "調整 App 內的文字大小",

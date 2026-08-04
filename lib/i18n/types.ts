@@ -1101,6 +1101,41 @@ export type TranslationDictionary = {
       traditionalChineseDescription: string;
     };
 
+    webPush: {
+      rowTitle: string;
+      rowDescription: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      statusOn: string;
+      statusOff: string;
+      statusLoading: string;
+      statusNeedsHomeScreen: string;
+      statusUnsupported: string;
+      statusBlocked: string;
+      statusUnavailable: string;
+      enabledTitle: string;
+      enabledDescription: string;
+      disabledTitle: string;
+      disabledDescription: string;
+      needsHomeScreenTitle: string;
+      needsHomeScreenDescription: string;
+      unsupportedTitle: string;
+      unsupportedDescription: string;
+      blockedTitle: string;
+      blockedDescription: string;
+      unavailableTitle: string;
+      unavailableDescription: string;
+      enable: string;
+      enabling: string;
+      disable: string;
+      disabling: string;
+      authenticationError: string;
+      permissionDismissedError: string;
+      subscriptionError: string;
+      unsubscribeError: string;
+      statusError: string;
+    };
+
     fontSize: {
       rowTitle: string;
       rowDescription: string;

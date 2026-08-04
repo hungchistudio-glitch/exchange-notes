@@ -29,6 +29,7 @@ import PronunciationSettingsButton from "@/components/settings/PronunciationSett
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
+import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { createClient } from "@/lib/supabase/client";
@@ -500,6 +501,7 @@ export default function ProfilePage() {
               <FontSizeSettingsButton />
               <AppLanguageSettingsButton />
               <PwaInstallSettingsButton />
+              <WebPushSettingsButton />
             </div>
           </section>
 
