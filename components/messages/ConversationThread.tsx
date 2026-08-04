@@ -11,11 +11,12 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { Bookmark, Check as CheckMark, ListChecks, Trash2, Volume2, X } from "lucide-react";
+import { Bookmark, Check as CheckMark, ListChecks, Plus, Trash2, Volume2, X } from "lucide-react";
 
 import { getProfileById, getOrCreateConversationWithFriend, markConversationRead, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import { decodeWordCardMessage, encodeWordCardMessage, type SharedWordCard } from "@/lib/messages/wordCard";
 import { getPendingSharedVocabulary, clearPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
@@ -29,7 +30,9 @@ import {
 } from "@/lib/messages/receipts";
 import { getPronunciationData } from "@/lib/pronunciation";
 import { speak } from "@/lib/speech";
+import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 
 type Message = {
   id: number;
@@ -58,14 +61,6 @@ function ShieldIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
       <path d="M12 3.5l7 3v5.2c0 4.3-2.8 7.4-7 8.8-4.2-1.4-7-4.5-7-8.8V6.5l7-3z" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M9.5 12l1.7 1.7 3.5-3.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-5 w-5" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
     </svg>
   );
 }
@@ -154,6 +149,7 @@ type ConversationThreadProps = {
 export default function ConversationThread({ friendId }: ConversationThreadProps) {
   const supabase = useMemo(() => createClient(), []);
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
   const copy = t.messages;
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -885,23 +881,42 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                     })() : wordCard ? (() => {
                       const pronunciation = getPronunciationData({ english: wordCard.word, chinese: wordCard.translation });
 
-                      return (
-                      <article className="w-full max-w-[300px] rounded-[22px] border border-black/[0.06] bg-white p-4 shadow-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">English</span>
-                        </div>
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="min-w-0 truncate text-xl font-bold">{wordCard.word}</p>
-                          <button type="button" onClick={() => speak(wordCard.word, "en-US")} aria-label="Play English word" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-black/60">
-                            <Volume2 size={15} strokeWidth={1.8} />
-                          </button>
-                        </div>
+                      const englishIsPrimary = !isLearningChinese;
+                      const primaryWordClass = "min-w-0 truncate text-xl font-bold text-black";
+                      const secondaryWordClass = "min-w-0 truncate text-base font-normal text-black/45";
+                      const primarySpeakerClass = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white";
+                      const secondarySpeakerClass = "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-black/60";
 
-                        <div className="mt-3 border-t border-black/[0.06] pt-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">Traditional Chinese</span>
+                      const englishBlock = (
+                        <div key="english">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">English</span>
+                          </div>
                           <div className="mt-1 flex items-center justify-between gap-2">
-                            <p className="min-w-0 truncate text-xl font-bold">{wordCard.translation}</p>
-                            <button type="button" onClick={() => speak(wordCard.translation, "zh-TW")} aria-label="播放中文單字" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-black/60">
+                            <p className={englishIsPrimary ? primaryWordClass : secondaryWordClass}>{wordCard.word}</p>
+                            <button
+                              type="button"
+                              onClick={() => speak(wordCard.word, "en-US")}
+                              aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, { text: wordCard.word })}
+                              className={englishIsPrimary ? primarySpeakerClass : secondarySpeakerClass}
+                            >
+                              <Volume2 size={15} strokeWidth={1.8} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+
+                      const chineseBlock = (
+                        <div key="chinese">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">中文</span>
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <p className={englishIsPrimary ? secondaryWordClass : primaryWordClass}>{wordCard.translation}</p>
+                            <button
+                              type="button"
+                              onClick={() => speak(wordCard.translation, "zh-TW")}
+                              aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, { text: wordCard.translation })}
+                              className={englishIsPrimary ? secondarySpeakerClass : primarySpeakerClass}
+                            >
                               <Volume2 size={15} strokeWidth={1.8} />
                             </button>
                           </div>
@@ -911,22 +926,58 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                             </p>
                           )}
                         </div>
+                      );
 
-                        {wordCard.partOfSpeech && <p className="mt-2 text-xs capitalize text-black/40">{wordCard.partOfSpeech}</p>}
-                        {(wordCard.englishExample || wordCard.chineseExample) && (
+                      const [firstBlock, secondBlock] = isLearningChinese
+                        ? [chineseBlock, englishBlock]
+                        : [englishBlock, chineseBlock];
+
+                      const [firstExample, secondExample] = isLearningChinese
+                        ? [wordCard.chineseExample, wordCard.englishExample]
+                        : [wordCard.englishExample, wordCard.chineseExample];
+                      const firstExampleLang = isLearningChinese ? "zh-TW" : "en-US";
+                      const secondExampleLang = isLearningChinese ? "en-US" : "zh-TW";
+                      const firstExampleClass = isLearningChinese ? "text-black/45" : "text-black/75";
+                      const secondExampleClass = isLearningChinese ? "text-black/75" : "text-black/45";
+
+                      return (
+                      <article className="w-full max-w-[300px] rounded-[22px] border border-black/[0.06] bg-white p-4 shadow-sm">
+                        {firstBlock}
+                        <div className="mt-3 border-t border-black/[0.06] pt-3">
+                          {secondBlock}
+                        </div>
+
+                        {wordCard.partOfSpeech && (
+                          <p className="mt-2 text-xs text-black/40">
+                            {t.vocabulary.detail.partOfSpeech[
+                              normalizePartOfSpeech(wordCard.partOfSpeech)
+                            ]}
+                          </p>
+                        )}
+                        {(firstExample || secondExample) && (
                           <div className="mt-2.5 space-y-1.5">
-                            {wordCard.englishExample && (
+                            {firstExample && (
                               <div className="flex items-center justify-between gap-2 rounded-xl bg-surface p-2.5">
-                                <p className="min-w-0 text-xs leading-5 text-black/75">{wordCard.englishExample}</p>
-                                <button type="button" onClick={() => speak(wordCard.englishExample as string, "en-US")} aria-label="Play English example" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                <p className={`min-w-0 text-xs leading-5 ${firstExampleClass}`}>{firstExample}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => speak(firstExample as string, firstExampleLang)}
+                                  aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, { text: firstExample as string })}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60"
+                                >
                                   <Volume2 size={13} strokeWidth={1.8} />
                                 </button>
                               </div>
                             )}
-                            {wordCard.chineseExample && (
+                            {secondExample && (
                               <div className="flex items-center justify-between gap-2 rounded-xl bg-surface p-2.5">
-                                <p className="min-w-0 text-xs leading-5 text-black/45">{wordCard.chineseExample}</p>
-                                <button type="button" onClick={() => speak(wordCard.chineseExample as string, "zh-TW")} aria-label="播放中文例句" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60">
+                                <p className={`min-w-0 text-xs leading-5 ${secondExampleClass}`}>{secondExample}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => speak(secondExample as string, secondExampleLang)}
+                                  aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, { text: secondExample as string })}
+                                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-black/60"
+                                >
                                   <Volume2 size={13} strokeWidth={1.8} />
                                 </button>
                               </div>
@@ -940,7 +991,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                             type="button"
                             onClick={() => handleSaveCard(message.id, wordCard)}
                             disabled={savingCardId === message.id || savedCardIds.has(message.id)}
-                            aria-label="Save to Vocabulary"
+                            aria-label={t.capture.result.saveToVocabulary}
                             className={`flex h-7 w-7 items-center justify-center rounded-full transition ${savedCardIds.has(message.id) ? "bg-emerald-100 text-emerald-700" : "bg-black text-white"} disabled:opacity-60`}
                           >
                             {savedCardIds.has(message.id) ? <CheckMark size={13} strokeWidth={2} /> : <Bookmark size={13} strokeWidth={1.8} />}
@@ -1005,7 +1056,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
           <form onSubmit={sendMessage}>
             <div className="flex items-end gap-2 rounded-[26px] border border-black/[0.06] bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
               <Link href={`/capture?source=library&with=${friendId}`} aria-label="Add a photo" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.04] hover:text-neutral-900 active:bg-black/[0.07]">
-                <PlusIcon />
+                <Plus size={20} strokeWidth={1.9} aria-hidden="true" />
               </Link>
 
               <textarea

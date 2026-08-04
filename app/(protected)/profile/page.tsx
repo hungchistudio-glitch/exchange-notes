@@ -30,6 +30,7 @@ import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -43,6 +44,7 @@ type ProfileForm = {
 export default function ProfilePage() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { refresh: refreshLearningLanguage } = useLearningLanguageContext();
   const copy = t.settings.profile;
   const qrCopy = t.friends.profileQr;
 
@@ -273,7 +275,14 @@ export default function ProfilePage() {
             ? copy.languagesMustDifferError
             : updateError.message,
         );
+        return;
       }
+
+      // Both fields can change here (native/learning are mutually
+      // exclusive), so always refresh the shared learning-language
+      // context — every mounted word card should reflect the new value
+      // immediately, without a full page reload.
+      void refreshLearningLanguage();
     } catch {
       setForm(previous);
       setError(copy.profileUpdateError);

@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import { DISCOVER_COLORS, type DailyNewsCard, type VocabularyItem } from "./types";
@@ -90,6 +93,10 @@ export default function VocabularyDrawer({
   speakingKey,
   onSpeak,
 }: VocabularyDrawerProps) {
+  const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
+  const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
+
   // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
   // of this component (it stays mounted across drawer open/close, only
   // BottomSheet's `open` prop toggles). The ref-backed "already requested"
@@ -177,29 +184,41 @@ export default function VocabularyDrawer({
             const chineseExampleKey = `${baseKey}-zh-example`;
             const pronunciation = pronunciations[`${card.id}-${index}`];
 
-            return (
-              <div key={baseKey}>
-                {/* English word */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-[17px] font-semibold text-black">
-                        {item.word}
-                      </span>
+            const wordBlock = (
+              <div
+                key="word"
+                className="flex items-start justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className={
+                        isLearningChinese
+                          ? "text-sm text-black/50"
+                          : "text-[17px] font-semibold text-black"
+                      }
+                    >
+                      {item.word}
+                    </span>
 
+                    {!isLearningChinese && (
                       <span className="text-[11px] text-black/40">
-                        {item.partOfSpeech}
+                        {partOfSpeechLabels[
+                          normalizePartOfSpeech(item.partOfSpeech)
+                        ]}
                       </span>
-                    </div>
-
-                    {pronunciation?.englishPronunciation ? (
-                      <p className="mt-0.5 text-[12px] text-black/40">
-                        {pronunciation.englishPronunciation}
-                      </p>
-                    ) : null}
+                    )}
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  {pronunciation?.englishPronunciation ? (
+                    <p className="mt-0.5 text-[12px] text-black/40">
+                      {pronunciation.englishPronunciation}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {!isLearningChinese && (
                     <SaveWordButton
                       onClick={() => void handleSaveWord(wordKey, item)}
                       saving={savingWordKey === wordKey}
@@ -213,35 +232,73 @@ export default function VocabularyDrawer({
                             )
                       }
                     />
+                  )}
 
-                    <SpeakerButton
-                      onClick={() =>
-                        onSpeak(wordKey, item.word, "en-US")
-                      }
-                      active={speakingKey === wordKey}
-                      ariaLabel={copy.readVocabWordAriaLabel.replace(
-                        "{word}",
-                        item.word
-                      )}
-                    />
-                  </div>
+                  <SpeakerButton
+                    onClick={() =>
+                      onSpeak(wordKey, item.word, "en-US")
+                    }
+                    active={speakingKey === wordKey}
+                    ariaLabel={copy.readVocabWordAriaLabel.replace(
+                      "{word}",
+                      item.word
+                    )}
+                  />
                 </div>
+              </div>
+            );
 
-                {/* Chinese translation */}
-                <div className="mt-1 flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-black/50">
+            const translationBlock = (
+              <div
+                key="translation"
+                className="flex items-start justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p
+                      className={
+                        isLearningChinese
+                          ? "text-[17px] font-semibold text-black"
+                          : "text-sm text-black/50"
+                      }
+                    >
                       {item.translation}
                     </p>
 
-                    {pronunciation?.pinyin || pronunciation?.zhuyin ? (
-                      <p className="mt-0.5 text-[11px] text-black/35">
-                        {[pronunciation?.pinyin, pronunciation?.zhuyin]
-                          .filter(Boolean)
-                          .join("  ")}
-                      </p>
-                    ) : null}
+                    {isLearningChinese && (
+                      <span className="text-[11px] text-black/40">
+                        {partOfSpeechLabels[
+                          normalizePartOfSpeech(item.partOfSpeech)
+                        ]}
+                      </span>
+                    )}
                   </div>
+
+                  {pronunciation?.pinyin || pronunciation?.zhuyin ? (
+                    <p className="mt-0.5 text-[11px] text-black/35">
+                      {[pronunciation?.pinyin, pronunciation?.zhuyin]
+                        .filter(Boolean)
+                        .join("  ")}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {isLearningChinese && (
+                    <SaveWordButton
+                      onClick={() => void handleSaveWord(wordKey, item)}
+                      saving={savingWordKey === wordKey}
+                      saved={savedWordKeys.has(wordKey)}
+                      ariaLabel={
+                        savedWordKeys.has(wordKey)
+                          ? copy.addedToVocabulary
+                          : copy.addToVocabularyAriaLabel.replace(
+                              "{word}",
+                              item.word
+                            )
+                      }
+                    />
+                  )}
 
                   <SpeakerButton
                     onClick={() =>
@@ -258,43 +315,67 @@ export default function VocabularyDrawer({
                     )}
                   />
                 </div>
+              </div>
+            );
 
-                {/* English example sentence */}
-                <div className="mt-2.5 flex items-start gap-2">
-                  <p className="min-w-0 flex-1 text-sm leading-6 text-black/70">
-                    {item.englishExample}
-                  </p>
+            const englishExampleBlock = (
+              <div
+                key="english-example"
+                className="flex items-start gap-2"
+              >
+                <p className="min-w-0 flex-1 text-sm leading-6 text-black/70">
+                  {item.englishExample}
+                </p>
 
-                  <SpeakerButton
-                    onClick={() =>
-                      onSpeak(
-                        englishExampleKey,
-                        item.englishExample,
-                        "en-US"
-                      )
-                    }
-                    active={speakingKey === englishExampleKey}
-                    ariaLabel={copy.readEnglishAriaLabel}
-                  />
+                <SpeakerButton
+                  onClick={() =>
+                    onSpeak(
+                      englishExampleKey,
+                      item.englishExample,
+                      "en-US"
+                    )
+                  }
+                  active={speakingKey === englishExampleKey}
+                  ariaLabel={copy.readEnglishAriaLabel}
+                />
+              </div>
+            );
+
+            const chineseExampleBlock = (
+              <div
+                key="chinese-example"
+                className="flex items-start gap-2"
+              >
+                <p className="min-w-0 flex-1 text-sm leading-6 text-black/45">
+                  {item.chineseExample}
+                </p>
+
+                <SpeakerButton
+                  onClick={() =>
+                    onSpeak(
+                      chineseExampleKey,
+                      item.chineseExample,
+                      "zh-TW"
+                    )
+                  }
+                  active={speakingKey === chineseExampleKey}
+                  ariaLabel={copy.readChineseAriaLabel}
+                />
+              </div>
+            );
+
+            return (
+              <div key={baseKey}>
+                <div className="space-y-1">
+                  {isLearningChinese
+                    ? [translationBlock, wordBlock]
+                    : [wordBlock, translationBlock]}
                 </div>
 
-                {/* Chinese example sentence */}
-                <div className="mt-1 flex items-start gap-2">
-                  <p className="min-w-0 flex-1 text-sm leading-6 text-black/45">
-                    {item.chineseExample}
-                  </p>
-
-                  <SpeakerButton
-                    onClick={() =>
-                      onSpeak(
-                        chineseExampleKey,
-                        item.chineseExample,
-                        "zh-TW"
-                      )
-                    }
-                    active={speakingKey === chineseExampleKey}
-                    ariaLabel={copy.readChineseAriaLabel}
-                  />
+                <div className="mt-2.5 space-y-1">
+                  {isLearningChinese
+                    ? [chineseExampleBlock, englishExampleBlock]
+                    : [englishExampleBlock, chineseExampleBlock]}
                 </div>
 
                 {index < card.vocabulary.length - 1 ? (

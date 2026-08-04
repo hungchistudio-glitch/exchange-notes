@@ -20,10 +20,12 @@ import type {
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import type {
   VocabularyItem,
   VocabularyStatus,
 } from "@/lib/types/app";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
 
 
@@ -75,6 +77,7 @@ function VocabularyList({
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
   const lookup = t.vocabulary.lookup;
 
   if (loading) {
@@ -126,19 +129,35 @@ function VocabularyList({
           </div>
 
           <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/35">
-            Word found
+            {lookup.wordFound}
           </p>
 
-          <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
-            {lookupResult.englishName}
-          </h2>
+          {isLearningChinese ? (
+            <>
+              <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
+                {lookupResult.chineseName}
+              </h2>
 
-          <p className="mt-1 break-words text-xl text-black/60">
-            {lookupResult.chineseName}
-          </p>
+              <p className="mt-1 break-words text-xl font-normal text-black/45">
+                {lookupResult.englishName}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
+                {lookupResult.englishName}
+              </h2>
 
-          <p className="mt-2 text-[11px] font-medium capitalize tracking-[0.06em] text-black/35">
-            {lookupResult.partOfSpeech}
+              <p className="mt-1 break-words text-xl font-normal text-black/45">
+                {lookupResult.chineseName}
+              </p>
+            </>
+          )}
+
+          <p className="mt-2 text-[11px] font-medium tracking-[0.06em] text-black/35">
+            {t.vocabulary.detail.partOfSpeech[
+              normalizePartOfSpeech(lookupResult.partOfSpeech)
+            ]}
           </p>
 
           <div className="mt-5 rounded-[20px] bg-surface p-4 text-left">

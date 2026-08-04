@@ -9,6 +9,12 @@ type VocabularySpeechButtonProps = {
   label: string;
   size?: "sm" | "md";
   className?: string;
+  /** "secondary" (default) is the current subtle ghost style, used
+   * everywhere that isn't language-hierarchy-aware. "primary" is a
+   * solid, higher-contrast treatment for whichever language is the
+   * current visual hero (see isLearningChinese) — the demoted language's
+   * button should stay "secondary". */
+  prominence?: "primary" | "secondary";
 };
 
 export default function VocabularySpeechButton({
@@ -17,6 +23,7 @@ export default function VocabularySpeechButton({
   label,
   size = "md",
   className = "",
+  prominence = "secondary",
 }: VocabularySpeechButtonProps) {
   const value = text?.trim();
 
@@ -29,6 +36,11 @@ export default function VocabularySpeechButton({
 
   const iconSize = size === "sm" ? 15 : 16;
 
+  const prominenceClasses =
+    prominence === "primary"
+      ? "border border-black bg-black text-white hover:bg-black/85"
+      : "border border-black/[0.07] bg-black/[0.035] text-black/65 hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black";
+
   return (
     <button
       type="button"
@@ -39,9 +51,8 @@ export default function VocabularySpeechButton({
       }}
       className={[
         "inline-flex shrink-0 items-center justify-center rounded-full",
-        "border border-black/[0.07] bg-black/[0.035] text-black/65",
+        prominenceClasses,
         "transition duration-200",
-        "hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black",
         "active:scale-95",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20",
         sizeClasses,

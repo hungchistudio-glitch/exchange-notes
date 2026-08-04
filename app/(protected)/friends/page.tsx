@@ -20,16 +20,7 @@ import {
   type IncomingRequest,
 } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
-
-function insertValues(
-  template: string,
-  values: Record<string, string | number>,
-) {
-  return Object.entries(values).reduce(
-    (result, [key, value]) => result.replace(`{${key}}`, String(value)),
-    template,
-  );
-}
+import { insertValues } from "@/lib/utils";
 
 export default function FriendsPage() {
   const supabase = createClient();

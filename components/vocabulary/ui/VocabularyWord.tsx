@@ -1,17 +1,24 @@
 import { cn } from "@/lib/utils";
-import { Display } from "@/components/ui/Typography";
+import { Display, Title } from "@/components/ui/Typography";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
   word: string;
   className?: string;
+  /** "primary" (default) renders as the large hero headline; "secondary"
+   * renders as the smaller supporting line. Callers flip this based on
+   * which language the user is learning (see isLearningChinese from
+   * LearningLanguageContext) — NOT the interface display language. */
+  variant?: "primary" | "secondary";
 };
 
 export default function VocabularyWord({
   word,
   className,
+  variant = "primary",
 }: Props) {
   const normalizedWord = word.trim();
+  const TextComponent = variant === "primary" ? Display : Title;
 
   return (
     <div
@@ -20,21 +27,15 @@ export default function VocabularyWord({
         className,
       )}
     >
-      <Display
-        className="
-          min-w-0
-          flex-1
-          break-words
-          text-[30px]
-          font-semibold
-          leading-[1.08]
-          tracking-[-0.04em]
-          text-black
-          sm:text-[34px]
-        "
+      <TextComponent
+        className={
+          variant === "primary"
+            ? "min-w-0 flex-1 break-words text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[34px]"
+            : "min-w-0 flex-1 break-words text-[22px] font-normal leading-[1.4] tracking-[-0.02em] text-black/45"
+        }
       >
         {normalizedWord}
-      </Display>
+      </TextComponent>
 
       <div className="shrink-0">
         <VocabularySpeechButton
@@ -42,6 +43,7 @@ export default function VocabularyWord({
           language="en-US"
           label={`Play ${normalizedWord}`}
           size="sm"
+          prominence={variant}
         />
       </div>
     </div>

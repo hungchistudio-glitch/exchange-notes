@@ -251,6 +251,8 @@ const english: TranslationDictionary = {
     description:
       "Photograph something, review the bilingual result, and save it as a word.",
     reset: "Reset",
+    identify: "Identify",
+    identifying: "Identifying",
 
     progress: {
       ariaLabel: "Capture progress",
@@ -277,9 +279,11 @@ const english: TranslationDictionary = {
     camera: {
       cancel: "Cancel",
       captureAriaLabel: "Capture photo",
+      closeCameraAriaLabel: "Close camera",
       selectedObjectAlt: "Selected object",
       selectedImage: "Selected image",
       analyzeAgain: "Analyze again",
+      chooseAnother: "Choose another",
     },
 
     analysis: {
@@ -791,6 +795,7 @@ const english: TranslationDictionary = {
         "Try another search or choose a different learning status.",
       lookingUp: "Looking up",
       lookUpWord: 'Look up "{word}"',
+      wordFound: "Word found",
     },
 
     collections: {
@@ -812,6 +817,8 @@ const english: TranslationDictionary = {
       emojiLabel: "Collection emoji",
       namePlaceholder: "Collection name",
       creating: "Creating",
+      create: "Create",
+      noCollectionsYet: "You don't have any collections yet.",
       word: "word",
       words: "words",
       examples: {
@@ -869,6 +876,21 @@ const english: TranslationDictionary = {
         phrase: "Phrase",
         other: "Other",
       },
+
+      closeDetailsAriaLabel: "Close word details",
+      editWordAriaLabel: "Edit word",
+      closeAriaLabel: "Close",
+      learningStatusLabel: "Learning status",
+      addedLabel: "Added {date}",
+      confidenceLabel: "{confidence} confidence",
+      confidenceHigh: "High",
+      confidenceMedium: "Medium",
+      confidenceLow: "Low",
+      addToCollectionsAriaLabel: "Add to collections",
+      sendToFriendAriaLabel: "Send to a friend",
+      shareWordAriaLabel: "Share word",
+      deleteWordAriaLabel: "Delete word",
+      listenAriaLabel: "Listen: {text}",
 
       reviewPanel: {
         title: "Review this word",

@@ -180,7 +180,7 @@ export default function CollectionPickerSheet({
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
-              Collections
+              {copy.title}
             </p>
             <h2 className="mt-0.5 truncate text-lg font-bold">{item.word}</h2>
           </div>
@@ -188,7 +188,7 @@ export default function CollectionPickerSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={copy.close}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/50 hover:bg-black/[0.04]"
           >
             ✕
@@ -204,13 +204,13 @@ export default function CollectionPickerSheet({
         <div className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto">
           {loading && (
             <p className="py-6 text-center text-sm text-black/40">
-              Loading…
+              {t.common.loading}
             </p>
           )}
 
           {!loading && collections.length === 0 && (
             <p className="py-6 text-center text-sm text-black/40">
-              You don&apos;t have any collections yet.
+              {copy.noCollectionsYet}
             </p>
           )}
 
@@ -235,7 +235,7 @@ export default function CollectionPickerSheet({
                       {collection.name}
                     </span>
                     <span className="block text-xs text-black/40">
-                      {collection.word_count ?? 0} words
+                      {collection.word_count ?? 0} {copy.words}
                     </span>
                   </span>
 
@@ -273,7 +273,7 @@ export default function CollectionPickerSheet({
             <input
               value={newName}
               onChange={(event) => setNewName(event.target.value)}
-              placeholder="Collection name"
+              placeholder={copy.namePlaceholder}
               className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none"
             />
 
@@ -283,7 +283,7 @@ export default function CollectionPickerSheet({
                 onClick={() => setCreating(false)}
                 className="flex-1 rounded-xl border border-line bg-white py-2.5 text-sm font-semibold"
               >
-                Cancel
+                {t.common.cancel}
               </button>
               <button
                 type="button"
@@ -291,7 +291,7 @@ export default function CollectionPickerSheet({
                 disabled={saving || !newName.trim()}
                 className="flex-1 rounded-xl bg-black py-2.5 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {saving ? "Creating…" : "Create"}
+                {saving ? `${copy.creating}…` : copy.create}
               </button>
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function CollectionPickerSheet({
             onClick={() => setCreating(true)}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 py-3 text-sm font-semibold text-black/60"
           >
-            + New collection
+            + {copy.newCollection}
           </button>
         )}
       </div>

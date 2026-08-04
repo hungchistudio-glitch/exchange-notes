@@ -16,17 +16,15 @@ import { useEffect } from "react";
 import AppBadge from "@/components/ui/AppBadge";
 import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { speak } from "@/lib/speech";
+import { insertValues } from "@/lib/utils";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
 
-const STATUS_LABELS: Record<VocabularyStatus, string> = {
-  new: "New",
-  learning: "Learning",
-  mastered: "Mastered",
-};
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -38,11 +36,13 @@ function SpeechRow({
   text,
   lang,
   size = "md",
+  listenAriaLabel,
 }: {
   eyebrow?: string;
   text: string;
   lang: "en-US" | "zh-TW";
   size?: "md" | "sm";
+  listenAriaLabel: string;
 }) {
   return (
     <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-left">
@@ -64,7 +64,7 @@ function SpeechRow({
       <button
         type="button"
         onClick={() => speak(text, lang)}
-        aria-label={`Listen: ${text}`}
+        aria-label={listenAriaLabel}
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
       >
         <Volume2 size={16} strokeWidth={1.8} />
@@ -96,6 +96,10 @@ export default function VocabularyDetailSheet({
   onOpenCollections: () => void;
   onEdit: () => void;
 }) {
+  const { t, isTraditionalChinese } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
+  const detail = t.vocabulary.detail;
+
   useEffect(() => {
     if (!open) return;
 
@@ -120,7 +124,7 @@ export default function VocabularyDetailSheet({
     <div className="fixed inset-0 z-[80] flex items-end justify-center">
       <button
         type="button"
-        aria-label="Close word details"
+        aria-label={detail.closeDetailsAriaLabel}
         onClick={onClose}
         className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
       />
@@ -156,19 +160,36 @@ export default function VocabularyDetailSheet({
                           : "neutral"
                     }
                   >
-                    {STATUS_LABELS[item.status]}
+                    {detail.levels[item.status]}
                   </AppBadge>
                   {item.part_of_speech && (
-                    <AppBadge tone="neutral">{item.part_of_speech}</AppBadge>
+                    <AppBadge tone="neutral">
+                      {detail.partOfSpeech[
+                        normalizePartOfSpeech(item.part_of_speech)
+                      ]}
+                    </AppBadge>
                   )}
                 </div>
 
-                <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
-                  {item.word}
-                </h2>
-                <p className="mt-2 break-words text-[22px] leading-tight text-black/58">
-                  {item.translation}
-                </p>
+                {isLearningChinese ? (
+                  <>
+                    <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
+                      {item.translation}
+                    </h2>
+                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-black/45">
+                      {item.word}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
+                      {item.word}
+                    </h2>
+                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-black/45">
+                      {item.translation}
+                    </p>
+                  </>
+                )}
 
                 <PronunciationBlock
                   english={item.word}
@@ -182,7 +203,7 @@ export default function VocabularyDetailSheet({
                 <button
                   type="button"
                   onClick={onEdit}
-                  aria-label="Edit word"
+                  aria-label={detail.editWordAriaLabel}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.055]"
                 >
                   <Pencil size={17} strokeWidth={1.8} />
@@ -191,7 +212,7 @@ export default function VocabularyDetailSheet({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Close"
+                  aria-label={detail.closeAriaLabel}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.055]"
                 >
                   <X size={18} />
@@ -200,31 +221,106 @@ export default function VocabularyDetailSheet({
             </div>
 
             <div className="mt-5 space-y-2">
-              <SpeechRow eyebrow="English" text={item.word} lang="en-US" />
-              <SpeechRow eyebrow="中文" text={item.translation} lang="zh-TW" />
+              {isLearningChinese ? (
+                <>
+                  <SpeechRow
+                    eyebrow="中文"
+                    text={item.translation}
+                    lang="zh-TW"
+                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                      text: item.translation,
+                    })}
+                  />
+                  <SpeechRow
+                    eyebrow="English"
+                    text={item.word}
+                    lang="en-US"
+                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                      text: item.word,
+                    })}
+                  />
+                </>
+              ) : (
+                <>
+                  <SpeechRow
+                    eyebrow="English"
+                    text={item.word}
+                    lang="en-US"
+                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                      text: item.word,
+                    })}
+                  />
+                  <SpeechRow
+                    eyebrow="中文"
+                    text={item.translation}
+                    lang="zh-TW"
+                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                      text: item.translation,
+                    })}
+                  />
+                </>
+              )}
             </div>
 
             {(item.example_sentence || item.translated_example) && (
               <div className="mt-3">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
-                  Example
+                  {detail.example}
                 </p>
 
                 <div className="mt-2 space-y-2">
-                  {item.example_sentence && (
-                    <SpeechRow
-                      text={item.example_sentence}
-                      lang="en-US"
-                      size="sm"
-                    />
-                  )}
+                  {isLearningChinese ? (
+                    <>
+                      {item.translated_example && (
+                        <SpeechRow
+                          text={item.translated_example}
+                          lang="zh-TW"
+                          size="sm"
+                          listenAriaLabel={insertValues(
+                            detail.listenAriaLabel,
+                            { text: item.translated_example },
+                          )}
+                        />
+                      )}
 
-                  {item.translated_example && (
-                    <SpeechRow
-                      text={item.translated_example}
-                      lang="zh-TW"
-                      size="sm"
-                    />
+                      {item.example_sentence && (
+                        <SpeechRow
+                          text={item.example_sentence}
+                          lang="en-US"
+                          size="sm"
+                          listenAriaLabel={insertValues(
+                            detail.listenAriaLabel,
+                            { text: item.example_sentence },
+                          )}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {item.example_sentence && (
+                        <SpeechRow
+                          text={item.example_sentence}
+                          lang="en-US"
+                          size="sm"
+                          listenAriaLabel={insertValues(
+                            detail.listenAriaLabel,
+                            { text: item.example_sentence },
+                          )}
+                        />
+                      )}
+
+                      {item.translated_example && (
+                        <SpeechRow
+                          text={item.translated_example}
+                          lang="zh-TW"
+                          size="sm"
+                          listenAriaLabel={insertValues(
+                            detail.listenAriaLabel,
+                            { text: item.translated_example },
+                          )}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -232,7 +328,7 @@ export default function VocabularyDetailSheet({
 
             <div className="mt-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
-                Learning status
+                {detail.learningStatusLabel}
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 rounded-[20px] bg-surface p-1.5">
                 {(["new", "learning", "mastered"] as const).map((status) => (
@@ -247,7 +343,7 @@ export default function VocabularyDetailSheet({
                         : "text-black/45"
                     }`}
                   >
-                    {STATUS_LABELS[status]}
+                    {detail.levels[status]}
                   </button>
                 ))}
               </div>
@@ -256,11 +352,27 @@ export default function VocabularyDetailSheet({
             <div className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-black/45">
               <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
                 <Clock3 size={15} />
-                <span>Added {formatDate(item.created_at)}</span>
+                <span>
+                  {insertValues(detail.addedLabel, {
+                    date: formatDate(
+                      item.created_at,
+                      isTraditionalChinese ? "zh-TW" : "en-US",
+                    ),
+                  })}
+                </span>
               </div>
               <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
                 <Check size={15} />
-                <span>{item.confidence ?? "medium"} confidence</span>
+                <span>
+                  {insertValues(detail.confidenceLabel, {
+                    confidence:
+                      item.confidence === "high"
+                        ? detail.confidenceHigh
+                        : item.confidence === "low"
+                          ? detail.confidenceLow
+                          : detail.confidenceMedium,
+                  })}
+                </span>
               </div>
             </div>
 
@@ -270,7 +382,7 @@ export default function VocabularyDetailSheet({
                 size="icon"
                 className="h-12 w-full"
                 onClick={onOpenCollections}
-                aria-label="Add to collections"
+                aria-label={detail.addToCollectionsAriaLabel}
               >
                 <FolderPlus size={18} />
               </AppButton>
@@ -279,7 +391,7 @@ export default function VocabularyDetailSheet({
                 size="icon"
                 className="h-12 w-full"
                 onClick={onSendToPartner}
-                aria-label="Send to a friend"
+                aria-label={detail.sendToFriendAriaLabel}
               >
                 <Send size={18} />
               </AppButton>
@@ -289,7 +401,7 @@ export default function VocabularyDetailSheet({
                 size="icon"
                 className="h-12 w-full"
                 onClick={onShare}
-                aria-label="Share word"
+                aria-label={detail.shareWordAriaLabel}
               >
                 <Share2 size={18} />
               </AppButton>
@@ -299,7 +411,7 @@ export default function VocabularyDetailSheet({
                 size="icon"
                 className="h-12 w-full"
                 onClick={onDelete}
-                aria-label="Delete word"
+                aria-label={detail.deleteWordAriaLabel}
               >
                 <Trash2 size={18} />
               </AppButton>

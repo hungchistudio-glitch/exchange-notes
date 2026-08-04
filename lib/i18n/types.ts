@@ -246,6 +246,8 @@ export type TranslationDictionary = {
     title: string;
     description: string;
     reset: string;
+    identify: string;
+    identifying: string;
 
     progress: {
       ariaLabel: string;
@@ -270,9 +272,11 @@ export type TranslationDictionary = {
     camera: {
       cancel: string;
       captureAriaLabel: string;
+      closeCameraAriaLabel: string;
       selectedObjectAlt: string;
       selectedImage: string;
       analyzeAgain: string;
+      chooseAnother: string;
     };
 
     analysis: {
@@ -765,6 +769,7 @@ export type TranslationDictionary = {
       noMatchingDescription: string;
       lookingUp: string;
       lookUpWord: string;
+      wordFound: string;
     };
 
     collections: {
@@ -785,6 +790,8 @@ export type TranslationDictionary = {
       emojiLabel: string;
       namePlaceholder: string;
       creating: string;
+      create: string;
+      noCollectionsYet: string;
       word: string;
       words: string;
       examples: {
@@ -841,6 +848,21 @@ export type TranslationDictionary = {
         phrase: string;
         other: string;
       };
+
+      closeDetailsAriaLabel: string;
+      editWordAriaLabel: string;
+      closeAriaLabel: string;
+      learningStatusLabel: string;
+      addedLabel: string;
+      confidenceLabel: string;
+      confidenceHigh: string;
+      confidenceMedium: string;
+      confidenceLow: string;
+      addToCollectionsAriaLabel: string;
+      sendToFriendAriaLabel: string;
+      shareWordAriaLabel: string;
+      deleteWordAriaLabel: string;
+      listenAriaLabel: string;
 
       reviewPanel: {
         title: string;

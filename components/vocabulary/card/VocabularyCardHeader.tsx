@@ -4,7 +4,9 @@ import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -14,47 +16,11 @@ type Props = {
   item: VocabularyItem;
 };
 
-type PartOfSpeechKey =
-  | "noun"
-  | "verb"
-  | "adjective"
-  | "adverb"
-  | "pronoun"
-  | "preposition"
-  | "conjunction"
-  | "interjection"
-  | "phrase"
-  | "other";
-
-function normalizePartOfSpeech(
-  value: string,
-): PartOfSpeechKey {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-
-  const aliases: Record<string, PartOfSpeechKey> = {
-    noun: "noun",
-    verb: "verb",
-    adjective: "adjective",
-    adj: "adjective",
-    adverb: "adverb",
-    adv: "adverb",
-    pronoun: "pronoun",
-    preposition: "preposition",
-    conjunction: "conjunction",
-    interjection: "interjection",
-    phrase: "phrase",
-  };
-
-  return aliases[normalized] ?? "other";
-}
-
 export default function VocabularyCardHeader({
   item,
 }: Props) {
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
   const search = t.vocabulary.search;
   const detail = t.vocabulary.detail;
 
@@ -86,24 +52,51 @@ export default function VocabularyCardHeader({
         ) : null}
       </div>
 
-      <VocabularyWord
-        word={item.word}
-        className="mt-6"
-      />
+      {isLearningChinese ? (
+        <>
+          {translation ? (
+            <VocabularyTranslation
+              text={translation}
+              variant="primary"
+              className="mt-6"
+            />
+          ) : null}
 
-      <PronunciationBlock
-        english={item.word}
-        chinese={translation}
-        showEnglish
-        className="mt-4"
-      />
+          <PronunciationBlock
+            english={item.word}
+            chinese={translation}
+            showEnglish
+            className="mt-4"
+          />
 
-      {translation ? (
-        <VocabularyTranslation
-          text={translation}
-          className="mt-5 border-t border-black/[0.06] pt-5"
-        />
-      ) : null}
+          <VocabularyWord
+            word={item.word}
+            variant="secondary"
+            className="mt-5 border-t border-black/[0.06] pt-5"
+          />
+        </>
+      ) : (
+        <>
+          <VocabularyWord
+            word={item.word}
+            className="mt-6"
+          />
+
+          <PronunciationBlock
+            english={item.word}
+            chinese={translation}
+            showEnglish
+            className="mt-4"
+          />
+
+          {translation ? (
+            <VocabularyTranslation
+              text={translation}
+              className="mt-5 border-t border-black/[0.06] pt-5"
+            />
+          ) : null}
+        </>
+      )}
     </header>
   );
 }

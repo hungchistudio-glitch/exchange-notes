@@ -1,21 +1,29 @@
 import { cn } from "@/lib/utils";
-import { Title } from "@/components/ui/Typography";
+import { Display, Title } from "@/components/ui/Typography";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
   text: string;
   className?: string;
+  /** "secondary" (default) renders as the smaller supporting line; "primary"
+   * renders as the large hero headline. Callers flip this based on which
+   * language the user is learning (see isLearningChinese from
+   * LearningLanguageContext) — NOT the interface display language. */
+  variant?: "primary" | "secondary";
 };
 
 export default function VocabularyTranslation({
   text,
   className,
+  variant = "secondary",
 }: Props) {
   const normalizedText = text.trim();
 
   if (!normalizedText) {
     return null;
   }
+
+  const TextComponent = variant === "primary" ? Display : Title;
 
   return (
     <div
@@ -24,20 +32,15 @@ export default function VocabularyTranslation({
         className,
       )}
     >
-      <Title
-        className="
-          min-w-0
-          flex-1
-          break-words
-          text-[20px]
-          font-medium
-          leading-[1.4]
-          tracking-[-0.02em]
-          text-black/80
-        "
+      <TextComponent
+        className={
+          variant === "primary"
+            ? "min-w-0 flex-1 break-words text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[34px]"
+            : "min-w-0 flex-1 break-words text-[22px] font-normal leading-[1.4] tracking-[-0.02em] text-black/45"
+        }
       >
         {normalizedText}
-      </Title>
+      </TextComponent>
 
       <div className="shrink-0">
         <VocabularySpeechButton
@@ -45,6 +48,7 @@ export default function VocabularyTranslation({
           language="zh-TW"
           label={`播放 ${normalizedText}`}
           size="sm"
+          prominence={variant}
         />
       </div>
     </div>

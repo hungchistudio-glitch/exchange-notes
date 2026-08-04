@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { saveReviewResult } from "@/lib/review/saveReviewResult";
+import { insertValues } from "@/lib/utils";
 import type { ReviewGrade } from "@/types/vocabulary";
 
 import ReviewCard from "./ReviewCard";
@@ -28,20 +29,6 @@ type Props = {
   exitHref?: string;
   mode: "scheduled" | "practice";
 };
-
-function insertValues(
-  template: string,
-  values: Record<string, string | number>,
-) {
-  return Object.entries(values).reduce(
-    (result, [key, value]) =>
-      result.replace(
-        `{${key}}`,
-        String(value),
-      ),
-    template,
-  );
-}
 
 export default function ReviewSession({
   words,

@@ -8,16 +8,7 @@ import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getPendingIncomingRequestCount } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
-
-function insertValues(
-  template: string,
-  values: Record<string, string | number>,
-) {
-  return Object.entries(values).reduce(
-    (result, [key, value]) => result.replace(`{${key}}`, String(value)),
-    template,
-  );
-}
+import { insertValues } from "@/lib/utils";
 
 function AddFriendIcon() {
   return (

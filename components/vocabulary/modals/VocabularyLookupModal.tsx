@@ -3,6 +3,9 @@
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { insertValues } from "@/lib/utils";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
   VocabularyLookupResult,
   VocabularyLookupStatus,
@@ -57,6 +60,7 @@ export default function VocabularyLookupModal({
   onSend,
 }: VocabularyLookupModalProps) {
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
 
   if (!open) return null;
 
@@ -183,118 +187,185 @@ export default function VocabularyLookupModal({
             <article className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="p-5 sm:p-6">
                 <div className="space-y-6">
-                  <section>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
-                      {t.vocabulary.lookup.english}
-                    </p>
+                  {(() => {
+                    const englishSection = (
+                      <section key="english">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                          {t.vocabulary.lookup.english}
+                        </p>
 
-                    <div className="mt-2 flex items-center gap-3">
-                      <p className="min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em]">
-                        {lookupResult.englishName}
-                      </p>
+                        <div className="mt-2 flex items-center gap-3">
+                          <p
+                            className={
+                              isLearningChinese
+                                ? "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-black/45"
+                                : "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
+                            }
+                          >
+                            {lookupResult.englishName}
+                          </p>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speak(lookupResult.englishName, "en-US")
-                        }
-                        aria-label={t.vocabulary.lookup.english}
-                        title={t.vocabulary.lookup.english}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
-                      >
-                        <Volume2 size={16} />
-                      </button>
-                    </div>
-                  </section>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.englishName, "en-US")
+                            }
+                            aria-label={t.vocabulary.lookup.english}
+                            title={t.vocabulary.lookup.english}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
 
-                  <section>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
-                      繁體中文
-                    </p>
+                        {!isLearningChinese && (
+                          <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
+                            <PronunciationBlock
+                              english={lookupResult.englishName}
+                              chinese={lookupResult.chineseName}
+                            />
 
-                    <div className="mt-2 flex items-center gap-3">
-                      <p className="min-w-0 flex-1 break-words text-[26px] font-semibold tracking-[-0.025em] text-neutral-800">
-                        {lookupResult.chineseName}
-                      </p>
+                            <p className="mt-2 text-[11px] tracking-[0.04em] text-neutral-400">
+                              {t.vocabulary.detail.partOfSpeech[
+                                normalizePartOfSpeech(
+                                  lookupResult.partOfSpeech,
+                                )
+                              ]}
+                            </p>
+                          </div>
+                        )}
+                      </section>
+                    );
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speak(lookupResult.chineseName, "zh-TW")
-                        }
-                        aria-label="播放中文單字"
-                        title="播放中文單字"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
-                      >
-                        <Volume2 size={16} />
-                      </button>
-                    </div>
+                    const chineseSection = (
+                      <section key="chinese">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                          繁體中文
+                        </p>
 
-                    <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
-                      <PronunciationBlock
-                        english={lookupResult.englishName}
-                        chinese={lookupResult.chineseName}
-                      />
+                        <div className="mt-2 flex items-center gap-3">
+                          <p
+                            className={
+                              isLearningChinese
+                                ? "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
+                                : "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-black/45"
+                            }
+                          >
+                            {lookupResult.chineseName}
+                          </p>
 
-                      <p className="mt-2 text-[11px] capitalize tracking-[0.04em] text-neutral-400">
-                        {lookupResult.partOfSpeech}
-                      </p>
-                    </div>
-                  </section>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.chineseName, "zh-TW")
+                            }
+                            aria-label={insertValues(
+                              t.vocabulary.detail.listenAriaLabel,
+                              { text: lookupResult.chineseName },
+                            )}
+                            title={insertValues(
+                              t.vocabulary.detail.listenAriaLabel,
+                              { text: lookupResult.chineseName },
+                            )}
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                        </div>
+
+                        {isLearningChinese && (
+                          <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
+                            <PronunciationBlock
+                              english={lookupResult.englishName}
+                              chinese={lookupResult.chineseName}
+                            />
+
+                            <p className="mt-2 text-[11px] tracking-[0.04em] text-neutral-400">
+                              {t.vocabulary.detail.partOfSpeech[
+                                normalizePartOfSpeech(
+                                  lookupResult.partOfSpeech,
+                                )
+                              ]}
+                            </p>
+                          </div>
+                        )}
+                      </section>
+                    );
+
+                    return isLearningChinese
+                      ? [chineseSection, englishSection]
+                      : [englishSection, chineseSection];
+                  })()}
                 </div>
 
                 <div className="mt-6 space-y-3 border-t border-black/[0.08] pt-5">
-                  <section className="rounded-[20px] bg-surface p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
-                          {t.vocabulary.lookup.englishExample}
-                        </p>
+                  {(() => {
+                    const englishExampleSection = (
+                      <section
+                        key="english-example"
+                        className="rounded-[20px] bg-surface p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                              {t.vocabulary.lookup.englishExample}
+                            </p>
 
-                        <p className="mt-3 text-[14px] leading-6">
-                          {lookupResult.englishExample}
-                        </p>
-                      </div>
+                            <p className="mt-3 text-[14px] leading-6">
+                              {lookupResult.englishExample}
+                            </p>
+                          </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speak(lookupResult.englishExample, "en-US")
-                        }
-                        aria-label={t.vocabulary.lookup.englishExample}
-                        title={t.vocabulary.lookup.englishExample}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.englishExample, "en-US")
+                            }
+                            aria-label={t.vocabulary.lookup.englishExample}
+                            title={t.vocabulary.lookup.englishExample}
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+                          >
+                            <Volume2 size={15} />
+                          </button>
+                        </div>
+                      </section>
+                    );
+
+                    const chineseExampleSection = (
+                      <section
+                        key="chinese-example"
+                        className="rounded-[20px] bg-surface p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                              {t.vocabulary.lookup.chineseExample}
+                            </p>
+
+                            <p className="mt-3 text-[14px] leading-6 text-neutral-600">
+                              {lookupResult.chineseExample}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              speak(lookupResult.chineseExample, "zh-TW")
+                            }
+                            aria-label={t.vocabulary.lookup.chineseExample}
+                            title={t.vocabulary.lookup.chineseExample}
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
                       >
                         <Volume2 size={15} />
                       </button>
                     </div>
                   </section>
+                    );
 
-                  <section className="rounded-[20px] bg-surface p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-semibold tracking-[0.16em] text-black/35">
-                          中文例句
-                        </p>
-
-                        <p className="mt-3 text-[14px] leading-6 text-neutral-600">
-                          {lookupResult.chineseExample}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speak(lookupResult.chineseExample, "zh-TW")
-                        }
-                        aria-label={t.vocabulary.lookup.chineseExample}
-                        title={t.vocabulary.lookup.chineseExample}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
-                      >
-                        <Volume2 size={15} />
-                      </button>
-                    </div>
-                  </section>
+                    return isLearningChinese
+                      ? [chineseExampleSection, englishExampleSection]
+                      : [englishExampleSection, chineseExampleSection];
+                  })()}
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-2">

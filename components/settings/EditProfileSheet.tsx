@@ -7,6 +7,7 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { findProfileByExchangeId } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { normalizeExchangeId } from "@/lib/utils";
 
 type IdStatus = "idle" | "checking" | "available" | "taken" | "error";
 
@@ -18,14 +19,6 @@ type EditProfileSheetProps = {
   initialExchangeId: string;
   onSaved: (values: { display_name: string; exchange_id: string }) => void;
 };
-
-function normalizeExchangeId(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/^@/, "")
-    .replace(/[^a-z0-9_]/g, "")
-    .slice(0, 24);
-}
 
 export default function EditProfileSheet({
   open,

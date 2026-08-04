@@ -10,6 +10,7 @@ import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 
 function LoadingCard() {
   return (
@@ -81,6 +82,7 @@ function WordSlide({
   statusLabels,
   playEnglishExampleAriaLabel,
   playChineseExampleAriaLabel,
+  isLearningChinese,
 }: {
   item: VocabularyItem;
   continueLearningLabel: string;
@@ -91,6 +93,7 @@ function WordSlide({
   statusLabels: { new: string; learning: string; mastered: string };
   playEnglishExampleAriaLabel: string;
   playChineseExampleAriaLabel: string;
+  isLearningChinese: boolean;
 }) {
   const word = item.word?.trim() || untitledWordLabel;
   const translation = item.translation?.trim() || "";
@@ -115,7 +118,9 @@ function WordSlide({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
             {statusLabel}
           </p>
-          <h2 className="mt-2 truncate text-3xl font-bold">{word}</h2>
+          <h2 className="mt-2 truncate text-3xl font-bold">
+            {isLearningChinese ? translation || word : word}
+          </h2>
         </div>
 
         <Link
@@ -128,36 +133,92 @@ function WordSlide({
       </div>
 
       <div className="mt-6 space-y-3">
-        <button
-          type="button"
-          onClick={() => speakText(word, "en-US")}
-          className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition active:scale-[0.99]"
-        >
-          <div>
-            <div className="text-sm text-neutral-500">{englishLabel}</div>
-            <div className="font-semibold">{word}</div>
-          </div>
-          <Volume2 size={18} />
-        </button>
+        {(() => {
+          const englishIsPrimary = !isLearningChinese;
+          const primaryButtonClass =
+            "flex w-full items-center justify-between rounded-2xl border border-black bg-black px-4 py-3 text-left text-white transition active:scale-[0.99]";
+          const secondaryButtonClass =
+            "flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left text-black/45 transition active:scale-[0.99]";
+          const primaryValueClass = "text-lg font-semibold";
+          const secondaryValueClass = "font-normal";
+          const primaryLabelClass = "text-sm text-white/60";
+          const secondaryLabelClass = "text-sm text-neutral-400";
 
-        <button
-          type="button"
-          onClick={() => speakText(translation, "zh-TW")}
-          className="flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left transition active:scale-[0.99]"
-        >
-          <div>
-            <div className="text-sm text-neutral-500">{zhuyinLabel}</div>
-            <div className="font-zhuyin font-semibold tracking-[0.02em]">
-              {pronunciation.zhuyin || translation}
-            </div>
-            {pronunciation.zhuyin && (
-              <div className="mt-1 text-sm text-neutral-500">
-                {translation}
+          const englishButton = (
+            <button
+              key="english"
+              type="button"
+              onClick={() => speakText(word, "en-US")}
+              className={
+                englishIsPrimary ? primaryButtonClass : secondaryButtonClass
+              }
+            >
+              <div>
+                <div
+                  className={
+                    englishIsPrimary ? primaryLabelClass : secondaryLabelClass
+                  }
+                >
+                  {englishLabel}
+                </div>
+                <div
+                  className={
+                    englishIsPrimary ? primaryValueClass : secondaryValueClass
+                  }
+                >
+                  {word}
+                </div>
               </div>
-            )}
-          </div>
-          <Volume2 size={18} />
-        </button>
+              <Volume2 size={18} />
+            </button>
+          );
+
+          const zhuyinButton = (
+            <button
+              key="zhuyin"
+              type="button"
+              onClick={() => speakText(translation, "zh-TW")}
+              className={
+                !englishIsPrimary ? primaryButtonClass : secondaryButtonClass
+              }
+            >
+              <div>
+                <div
+                  className={
+                    !englishIsPrimary
+                      ? primaryLabelClass
+                      : secondaryLabelClass
+                  }
+                >
+                  {zhuyinLabel}
+                </div>
+                <div
+                  className={`font-zhuyin tracking-[0.02em] ${
+                    !englishIsPrimary ? primaryValueClass : secondaryValueClass
+                  }`}
+                >
+                  {pronunciation.zhuyin || translation}
+                </div>
+                {pronunciation.zhuyin && (
+                  <div
+                    className={
+                      !englishIsPrimary
+                        ? "mt-1 text-sm text-white/60"
+                        : "mt-1 text-sm text-neutral-400"
+                    }
+                  >
+                    {translation}
+                  </div>
+                )}
+              </div>
+              <Volume2 size={18} />
+            </button>
+          );
+
+          return isLearningChinese
+            ? [zhuyinButton, englishButton]
+            : [englishButton, zhuyinButton];
+        })()}
       </div>
 
       {(example || translatedExample) && (
@@ -167,37 +228,49 @@ function WordSlide({
           </p>
 
           <div className="mt-3 space-y-2">
-            {example && (
-              <div className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3">
-                <p className="min-w-0 font-medium leading-6 text-neutral-900">
-                  {example}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => speakText(example, "en-US")}
-                  aria-label={playEnglishExampleAriaLabel}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
+            {(() => {
+              const englishExampleBlock = example ? (
+                <div
+                  key="english-example"
+                  className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3"
                 >
-                  <Volume2 size={16} />
-                </button>
-              </div>
-            )}
+                  <p className="min-w-0 font-medium leading-6 text-neutral-900">
+                    {example}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => speakText(example, "en-US")}
+                    aria-label={playEnglishExampleAriaLabel}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
+                  >
+                    <Volume2 size={16} />
+                  </button>
+                </div>
+              ) : null;
 
-            {translatedExample && (
-              <div className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3">
-                <p className="min-w-0 text-sm leading-6 text-neutral-600">
-                  {translatedExample}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => speakText(translatedExample, "zh-TW")}
-                  aria-label={playChineseExampleAriaLabel}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
+              const chineseExampleBlock = translatedExample ? (
+                <div
+                  key="chinese-example"
+                  className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3"
                 >
-                  <Volume2 size={16} />
-                </button>
-              </div>
-            )}
+                  <p className="min-w-0 text-sm leading-6 text-neutral-600">
+                    {translatedExample}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => speakText(translatedExample, "zh-TW")}
+                    aria-label={playChineseExampleAriaLabel}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
+                  >
+                    <Volume2 size={16} />
+                  </button>
+                </div>
+              ) : null;
+
+              return isLearningChinese
+                ? [chineseExampleBlock, englishExampleBlock]
+                : [englishExampleBlock, chineseExampleBlock];
+            })()}
           </div>
         </div>
       )}
@@ -207,6 +280,7 @@ function WordSlide({
 
 export default function TodayWordCard() {
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
 
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -296,6 +370,7 @@ export default function TodayWordCard() {
             playChineseExampleAriaLabel={
               t.home.todayWord.playChineseExampleAriaLabel
             }
+            isLearningChinese={isLearningChinese}
           />
         ))}
       </div>

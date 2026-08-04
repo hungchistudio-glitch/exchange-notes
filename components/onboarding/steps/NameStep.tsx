@@ -7,6 +7,7 @@ import Avatar from "@/components/foundation/media/Avatar";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { findProfileByExchangeId } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { normalizeExchangeId } from "@/lib/utils";
 
 type IdStatus = "idle" | "checking" | "available" | "taken" | "error";
 
@@ -23,14 +24,6 @@ type NameStepProps = {
   onChangeAvatarUrl: (value: string | null) => void;
   onContinue: () => void;
 };
-
-function normalizeExchangeId(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/^@/, "")
-    .replace(/[^a-z0-9_]/g, "")
-    .slice(0, 24);
-}
 
 // The DB trigger's fallback handle looks like "user_9f2a1c..." — not
 // something worth showing as a starting point. A slug of the person's own

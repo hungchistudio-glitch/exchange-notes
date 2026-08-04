@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import Card from "@/components/foundation/cards/Card";
@@ -9,21 +10,6 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 type NotesComposerProps = {
   onSave: (english: string, chinese: string) => void;
 };
-
-function PlusIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
 
 export default function NotesComposer({
   onSave,
@@ -116,7 +102,7 @@ export default function NotesComposer({
           aria-expanded={isOpen}
           className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-4 text-xs font-semibold text-neutral-700 transition-transform active:scale-95"
         >
-          <PlusIcon />
+          <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
           {copy.newNote}
         </button>
       </div>

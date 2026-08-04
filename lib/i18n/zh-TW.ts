@@ -244,6 +244,8 @@ const traditionalChinese: TranslationDictionary = {
     title: "探索",
     description: "拍攝生活中的物品，確認 AI 產生的雙語結果，再儲存成新單字。",
     reset: "重新開始",
+    identify: "辨識",
+    identifying: "辨識中",
 
     progress: {
       ariaLabel: "辨識進度",
@@ -270,9 +272,11 @@ const traditionalChinese: TranslationDictionary = {
     camera: {
       cancel: "取消",
       captureAriaLabel: "拍攝照片",
+      closeCameraAriaLabel: "關閉相機",
       selectedObjectAlt: "已選擇的物品",
       selectedImage: "已選擇的照片",
       analyzeAgain: "重新分析",
+      chooseAnother: "選擇其他照片",
     },
 
     analysis: {
@@ -773,6 +777,7 @@ const traditionalChinese: TranslationDictionary = {
       noMatchingDescription: "請嘗試其他搜尋或切換不同的學習狀態。",
       lookingUp: "搜尋中",
       lookUpWord: "搜尋「{word}」",
+      wordFound: "找到單字",
     },
 
     collections: {
@@ -793,6 +798,8 @@ const traditionalChinese: TranslationDictionary = {
       emojiLabel: "分類表情符號",
       namePlaceholder: "分類名稱",
       creating: "建立中",
+      create: "建立",
+      noCollectionsYet: "你還沒有任何收藏分類。",
       word: "個單字",
       words: "個單字",
       examples: {
@@ -849,6 +856,21 @@ const traditionalChinese: TranslationDictionary = {
         phrase: "片語",
         other: "其他",
       },
+
+      closeDetailsAriaLabel: "關閉單字詳細資訊",
+      editWordAriaLabel: "編輯單字",
+      closeAriaLabel: "關閉",
+      learningStatusLabel: "學習狀態",
+      addedLabel: "新增於 {date}",
+      confidenceLabel: "信心程度：{confidence}",
+      confidenceHigh: "高",
+      confidenceMedium: "中",
+      confidenceLow: "低",
+      addToCollectionsAriaLabel: "加入收藏分類",
+      sendToFriendAriaLabel: "傳送給朋友",
+      shareWordAriaLabel: "分享單字",
+      deleteWordAriaLabel: "刪除單字",
+      listenAriaLabel: "播放：{text}",
 
       reviewPanel: {
         title: "複習這個單字",
