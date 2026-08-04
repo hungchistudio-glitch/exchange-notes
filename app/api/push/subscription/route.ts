@@ -234,6 +234,28 @@ async function readJson(
   }
 }
 
+function getSupabaseProjectRef(): string {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!configuredUrl) {
+    return "missing";
+  }
+
+  try {
+    const hostname =
+      new URL(configuredUrl).hostname.toLowerCase();
+
+    const match = hostname.match(
+      /^([a-z0-9]+)\.supabase\.co$/
+    );
+
+    return match?.[1] ?? "custom-domain";
+  } catch {
+    return "invalid-url";
+  }
+}
+
 export async function POST(request: Request) {
   const authenticated = await requireAuthenticatedClient();
 
@@ -304,7 +326,10 @@ export async function POST(request: Request) {
     return jsonResponse(
       {
         ok: false,
-        error: "Unable to register this push subscription.",
+        error:
+          process.env.VERCEL_ENV === "preview"
+            ? `Unable to register this push subscription. [${error.code} @ ${getSupabaseProjectRef()}]`
+            : "Unable to register this push subscription.",
       },
       500
     );
