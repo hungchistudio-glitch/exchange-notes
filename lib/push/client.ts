@@ -420,13 +420,28 @@ function toFailureResult(
     };
   }
 
+  if (error instanceof Error) {
+    const name = error.name.trim();
+    const message = error.message.trim();
+
+    const safeDetails = [
+      name && name !== "Error" ? name : "",
+      message,
+    ]
+      .filter(Boolean)
+      .join(": ");
+
+    return {
+      ok: false,
+      code: fallbackCode,
+      message: safeDetails || fallbackMessage,
+    };
+  }
+
   return {
     ok: false,
     code: fallbackCode,
-    message:
-      error instanceof Error && error.message
-        ? error.message
-        : fallbackMessage,
+    message: fallbackMessage,
   };
 }
 
