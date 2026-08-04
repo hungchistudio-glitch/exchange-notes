@@ -15,6 +15,7 @@ import { Bookmark, Check as CheckMark, ListChecks, Plus, Trash2, Volume2, X } fr
 
 import { getProfileById, getOrCreateConversationWithFriend, markConversationRead, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import { decodeWordCardMessage, encodeWordCardMessage, type SharedWordCard } from "@/lib/messages/wordCard";
@@ -488,6 +489,11 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
         return;
       }
 
+      void notifyPushEvent({
+        kind: "message",
+        messageId: data.id,
+      });
+
       setMessages((currentMessages) => {
         const alreadyExists = currentMessages.some((message) => message.id === data.id);
         return alreadyExists ? currentMessages : [...currentMessages, data];
@@ -525,6 +531,11 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
       setSending(false);
       return;
     }
+
+    void notifyPushEvent({
+      kind: "message",
+      messageId: data.id,
+    });
 
     setMessages((currentMessages) => {
       const alreadyExists = currentMessages.some((message) => message.id === data.id);

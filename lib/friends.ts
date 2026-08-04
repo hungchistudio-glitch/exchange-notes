@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { notifyPushEvent } from "@/lib/push/eventsClient";
+
 export type FriendProfile = {
   id: string;
   displayName: string | null;
@@ -154,6 +156,12 @@ export async function sendFriendRequest(
     });
 
     if (reinsertError) throw reinsertError;
+
+    void notifyPushEvent({
+      kind: "friend-request",
+      targetUserId,
+    });
+
     return { status: "sent" };
   }
 
@@ -164,6 +172,12 @@ export async function sendFriendRequest(
   });
 
   if (insertError) throw insertError;
+
+  void notifyPushEvent({
+    kind: "friend-request",
+    targetUserId,
+  });
+
   return { status: "sent" };
 }
 
@@ -521,6 +535,11 @@ export async function respondToRequest(
     request.sender_id,
     request.receiver_id
   );
+
+  void notifyPushEvent({
+    kind: "friend-accepted",
+    requestId,
+  });
 }
 
 export async function cancelRequest(

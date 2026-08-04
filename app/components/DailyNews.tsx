@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
@@ -592,15 +593,32 @@ export default function DailyNews() {
         friendId
       );
 
-      const { error: insertError } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        body: createPartnerMessage(card),
-      });
+      const {
+        data: insertedMessage,
+        error: insertError,
+      } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          body: createPartnerMessage(card),
+        })
+        .select("id")
+        .single();
 
-      if (insertError) {
-        throw insertError;
+      if (insertError || !insertedMessage) {
+        throw (
+          insertError ??
+          new Error(
+            "The shared news message was not returned.",
+          )
+        );
       }
+
+      void notifyPushEvent({
+        kind: "message",
+        messageId: insertedMessage.id,
+      });
 
       setSendModalCardId(null);
       setNotice(copy.sentToPartner);
