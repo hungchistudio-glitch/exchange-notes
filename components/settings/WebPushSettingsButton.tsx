@@ -206,10 +206,6 @@ export default function WebPushSettingsButton() {
 
       case "subscription-failed":
       case "server-error":
-        return error.message.trim()
-          ? `[${error.code}] ${error.message}`
-          : copy.subscriptionError;
-
       default:
         return copy.subscriptionError;
     }
