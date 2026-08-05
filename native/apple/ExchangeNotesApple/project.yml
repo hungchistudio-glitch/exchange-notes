@@ -14,29 +14,44 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
+
     sources:
       - path: App
+        excludes:
+          - ExchangeNotes.entitlements
       - path: Shared
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes
         PRODUCT_NAME: ExchangeNotes
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: App/ExchangeNotes.entitlements
+
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Exchange Notes
+        NSCameraUsageDescription: "Exchange Notes uses the camera to identify objects and create vocabulary cards."
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         LSApplicationCategoryType: public.app-category.education
         UILaunchScreen: {}
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
           - CFBundleTypeRole: Editor
             CFBundleURLName: art.hungchi.exchangenotes
             CFBundleURLSchemes:
               - exchangenotes
+
     dependencies:
       - target: YumiWidgetExtension
 
@@ -44,16 +59,25 @@ targets:
     type: app-extension
     platform: iOS
     deploymentTarget: "17.0"
+
     sources:
       - path: Widget
+        excludes:
+          - Resources
+          - YumiWidgetExtension.entitlements
+      - path: Widget/Resources
+        buildPhase: resources
       - path: Shared
+
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes.yumiwidget
         PRODUCT_NAME: YumiWidgetExtension
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
-        TARGETED_DEVICE_FAMILY: "1"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: Widget/YumiWidgetExtension.entitlements
+
     info:
       path: Widget/Info.plist
       properties:

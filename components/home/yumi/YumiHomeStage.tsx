@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -14,10 +15,12 @@ import {
   type HomeReactionMood,
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
+import { getPronunciationData } from "@/lib/pronunciation";
 import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
+import { postYumiWidgetUpdate } from "@/lib/widget/yumiWidgetBridge";
 
 import styles from "./YumiHomeStage.module.css";
 
@@ -40,10 +43,44 @@ const MAX_PUPIL_OFFSET = 9;
 // pose forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 1900;
 const EAT_FALLBACK_MS = 1100;
+const YUMI_DAILY_WORD_GOAL = 3;
 
 function todayKey() {
   const now = new Date();
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+}
+
+function localDateKey(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function newestWidgetWords(items: VocabularyItem[], limit = 12) {
+  const sorted = [...items].sort((left, right) => {
+    const leftTime = new Date(left.created_at).getTime();
+    const rightTime = new Date(right.created_at).getTime();
+
+    return (Number.isNaN(rightTime) ? 0 : rightTime)
+      - (Number.isNaN(leftTime) ? 0 : leftTime);
+  });
+
+  const todayWords = sorted.filter(
+    (item) => localDateKey(item.created_at) === todayKey(),
+  );
+
+  const ordered = [
+    ...todayWords,
+    ...sorted.filter(
+      (item) => localDateKey(item.created_at) !== todayKey(),
+    ),
+  ];
+
+  return ordered.slice(0, limit);
 }
 
 function readFlag(name: string) {
@@ -121,7 +158,8 @@ function scrollToDailyFocus() {
 // the same yumi_pet_state row (and cookie tray) as the Vocabulary page's
 // YumiCompanion, so it's the same pet remembering the same history.
 export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const { learningLanguage } = useLearningLanguageContext();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
 
@@ -148,6 +186,32 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const context = computeHomeContext(items);
   const steadyMood = computeSteadyHomeMood(context);
   const displayMood: HomeMood = introMood ?? steadyMood;
+
+  const widgetWords = useMemo(
+    () => newestWidgetWords(items),
+    [items],
+  );
+
+  const widgetWordPayloads = useMemo(
+    () =>
+      widgetWords.map((item) => {
+        const pronunciation = getPronunciationData({
+          english: item.word,
+          chinese: item.translation,
+        });
+
+        return {
+          id: item.id,
+          englishWord: item.word.trim(),
+          traditionalChineseWord: item.translation.trim(),
+          pinyin: pronunciation.pinyin ?? "",
+          zhuyin: pronunciation.zhuyin ?? "",
+        };
+      }),
+    [widgetWords],
+  );
+
+  const widgetWord = widgetWordPayloads[0] ?? null;
 
   // Kept in a ref (rather than read directly) so the roam-scheduling
   // timer below always sees the latest values without needing to be torn
@@ -373,6 +437,41 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   }
 
   const lines = getStatusLines(displayMood, context.wordsToday, copy);
+
+  useEffect(() => {
+    postYumiWidgetUpdate({
+      cookieCount: Math.min(context.wordsToday, YUMI_DAILY_WORD_GOAL),
+      cookieGoal: YUMI_DAILY_WORD_GOAL,
+      englishWord: widgetWord?.englishWord ?? "",
+      traditionalChineseWord: widgetWord?.traditionalChineseWord ?? "",
+      pinyin: widgetWord?.pinyin ?? "",
+      zhuyin: widgetWord?.zhuyin ?? "",
+      words: widgetWordPayloads,
+      interfaceLanguage: language,
+      learningLanguage,
+      moodKey: displayMood,
+      localizedText: {
+        headline: lines.primary,
+        hint: lines.secondary,
+        emptyWord: t.home.todayWord.emptyHeading,
+        cookieUnit: "",
+      },
+    });
+  }, [
+    context.wordsToday,
+    displayMood,
+    language,
+    learningLanguage,
+    lines.primary,
+    lines.secondary,
+    t.home.todayWord.emptyHeading,
+    widgetWord?.englishWord,
+    widgetWord?.pinyin,
+    widgetWord?.traditionalChineseWord,
+    widgetWord?.zhuyin,
+    widgetWordPayloads,
+  ]);
+
   const primaryText = reaction ? getReactionText(reaction, copy) : lines.primary;
   const secondaryText = reaction ? "" : lines.secondary;
 

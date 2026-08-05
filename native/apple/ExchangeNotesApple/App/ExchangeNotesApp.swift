@@ -2,14 +2,30 @@ import SwiftUI
 
 @main
 struct ExchangeNotesApp: App {
-    @State private var webURL = ExchangeNotesRoute.home.webURL
+    @StateObject
+    private var speechController =
+        WidgetSpeechController()
+
+    @State
+    private var webURL =
+        ExchangeNotesRoute.home.webURL
 
     var body: some Scene {
         WindowGroup {
             ExchangeNotesWebView(url: webURL)
-                .ignoresSafeArea(.container, edges: .bottom)
+                .ignoresSafeArea(
+                    .container,
+                    edges: .bottom
+                )
                 .onOpenURL { url in
-                    webURL = ExchangeNotesRoute(deepLinkURL: url).webURL
+                    if speechController.handle(url: url) {
+                        return
+                    }
+
+                    webURL =
+                        ExchangeNotesRoute.webURL(
+                            for: url
+                        )
                 }
         }
     }
