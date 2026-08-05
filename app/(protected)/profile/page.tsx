@@ -1,5 +1,7 @@
 "use client";
 
+import { disableNativePushRegistration } from "@/lib/push/nativeClient";
+
 import {
   Camera,
   Check,
@@ -306,6 +308,7 @@ export default function ProfilePage() {
 
     const supabase = createClient();
 
+    await disableNativePushRegistration();
     await supabase.auth.signOut();
 
     // Send the user back to the Google sign-in screen.

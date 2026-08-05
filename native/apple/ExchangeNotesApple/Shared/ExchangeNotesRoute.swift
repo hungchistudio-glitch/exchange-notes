@@ -95,6 +95,57 @@ enum ExchangeNotesRoute: String {
             ?? route.webURL
     }
 
+    static func webURL(
+        forNotificationPath path: String
+    ) -> URL {
+        let normalized =
+            path.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+
+        guard
+            normalized.hasPrefix("/"),
+            !normalized.hasPrefix("//"),
+            let candidate =
+                URL(
+                    string: normalized,
+                    relativeTo: rootURL
+                )?.absoluteURL,
+            candidate.scheme == rootURL.scheme,
+            candidate.host == rootURL.host,
+            var components =
+                URLComponents(
+                    url: candidate,
+                    resolvingAgainstBaseURL:
+                        false
+                )
+        else {
+            return ExchangeNotesRoute.home
+                .webURL
+        }
+
+        var queryItems =
+            components.queryItems ?? []
+
+        queryItems.append(
+            URLQueryItem(
+                name: "notificationNonce",
+                value: String(
+                    Int(
+                        Date()
+                            .timeIntervalSince1970
+                            * 1000
+                    )
+                )
+            )
+        )
+
+        components.queryItems = queryItems
+
+        return components.url
+            ?? candidate
+    }
+
     init(deepLinkURL url: URL) {
         self =
             ExchangeNotesRoute(

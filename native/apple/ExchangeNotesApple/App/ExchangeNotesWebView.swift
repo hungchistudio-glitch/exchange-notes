@@ -26,6 +26,12 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             name: Coordinator.messageName
         )
 
+        configuration.userContentController.add(
+            context.coordinator,
+            name:
+                Coordinator.nativePushMessageName
+        )
+
         configuration.userContentController
             .addUserScript(
                 WKUserScript(
@@ -40,6 +46,8 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             frame: .zero,
             configuration: configuration
         )
+
+        context.coordinator.webView = webView
 
         webView.navigationDelegate =
             context.coordinator
@@ -82,9 +90,17 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                     Coordinator.messageName
             )
 
+        webView.configuration
+            .userContentController
+            .removeScriptMessageHandler(
+                forName:
+                    Coordinator.nativePushMessageName
+            )
+
         webView.navigationDelegate = nil
     }
 
+    @MainActor
     final class Coordinator:
         NSObject,
         WKScriptMessageHandler,
@@ -92,6 +108,9 @@ struct ExchangeNotesWebView: UIViewRepresentable {
     {
         static let messageName =
             "yumiWidgetUpdate"
+
+        static let nativePushMessageName =
+            "nativePushControl"
 
         static let nativeReadyScript = """
         window.__exchangeNotesNativeBridge = true;
@@ -101,7 +120,32 @@ struct ExchangeNotesWebView: UIViewRepresentable {
         window.__exchangeNotesFlushYumiWidget?.();
         """
 
+        weak var webView: WKWebView?
+
         var lastURL: URL?
+
+        override init() {
+            super.init()
+
+            NotificationCenter.default
+                .addObserver(
+                    self,
+                    selector:
+                        #selector(
+                            nativePushTokenDidChange(
+                                _:
+                            )
+                        ),
+                    name:
+                        .exchangeNotesNativePushToken,
+                    object: nil
+                )
+        }
+
+        deinit {
+            NotificationCenter.default
+                .removeObserver(self)
+        }
 
         func webView(
             _ webView: WKWebView,
@@ -118,6 +162,23 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             didReceive message:
                 WKScriptMessage
         ) {
+            if
+                message.name
+                    == Self.nativePushMessageName
+            {
+                guard
+                    message.frameInfo.isMainFrame
+                else {
+                    return
+                }
+
+                handleNativePushMessage(
+                    message.body
+                )
+
+                return
+            }
+
             guard
                 message.name
                     == Self.messageName,
@@ -262,6 +323,95 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                     );
                     """
                 )
+        }
+
+        private func handleNativePushMessage(
+            _ body: Any
+        ) {
+            guard
+                let payload =
+                    body as? [String: Any],
+                let action =
+                    payload["action"] as? String
+            else {
+                return
+            }
+
+            switch action {
+            case "requestAuthorization":
+                NativePushController.shared
+                    .requestAuthorizationAndRegister()
+
+            default:
+                return
+            }
+        }
+
+        @objc
+        private func nativePushTokenDidChange(
+            _ notification: Notification
+        ) {
+            guard
+                let token =
+                    notification.userInfo?["token"]
+                    as? String,
+                let environment =
+                    notification.userInfo?[
+                        "environment"
+                    ] as? String,
+                let bundleID =
+                    notification.userInfo?[
+                        "bundleId"
+                    ] as? String
+            else {
+                return
+            }
+
+            emitNativePushToken(
+                token: token,
+                environment: environment,
+                bundleID: bundleID
+            )
+        }
+
+        private func emitNativePushToken(
+            token: String,
+            environment: String,
+            bundleID: String
+        ) {
+            guard let webView else {
+                return
+            }
+
+            let payload: [String: String] = [
+                "token": token,
+                "environment": environment,
+                "bundleId": bundleID,
+            ]
+
+            guard
+                let data = try? JSONSerialization
+                    .data(
+                        withJSONObject: payload
+                    ),
+                let json = String(
+                    data: data,
+                    encoding: .utf8
+                )
+            else {
+                return
+            }
+
+            webView.evaluateJavaScript(
+                """
+                window.dispatchEvent(
+                  new CustomEvent(
+                    'exchange-notes-native-push-token',
+                    { detail: \(json) }
+                  )
+                );
+                """
+            )
         }
 
         private func widgetWords(

@@ -27,6 +27,11 @@ targets:
         PRODUCT_NAME: ExchangeNotes
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_ENTITLEMENTS: App/ExchangeNotes.entitlements
+      configs:
+        Debug:
+          APS_ENVIRONMENT: development
+        Release:
+          APS_ENVIRONMENT: production
 
     info:
       path: App/Info.plist

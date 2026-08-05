@@ -2,6 +2,11 @@ import SwiftUI
 
 @main
 struct ExchangeNotesApp: App {
+    @UIApplicationDelegateAdaptor(
+        NativePushAppDelegate.self
+    )
+    private var appDelegate
+
     @StateObject
     private var speechController =
         WidgetSpeechController()
@@ -26,6 +31,28 @@ struct ExchangeNotesApp: App {
                         ExchangeNotesRoute.webURL(
                             for: url
                         )
+                }
+                .onReceive(
+                    NotificationCenter.default
+                        .publisher(
+                            for:
+                                .exchangeNotesNativePushOpenPath
+                        )
+                ) { notification in
+                    guard
+                        let path =
+                            notification.userInfo?["path"]
+                            as? String
+                    else {
+                        return
+                    }
+
+                    webURL =
+                        ExchangeNotesRoute
+                            .webURL(
+                                forNotificationPath:
+                                    path
+                            )
                 }
         }
     }
