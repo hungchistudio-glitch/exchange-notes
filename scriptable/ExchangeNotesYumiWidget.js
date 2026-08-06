@@ -7,7 +7,7 @@
 // The token is stored only in the iOS Keychain.
 // The latest successful Widget response is cached locally for offline use.
 
-const SCRIPT_VERSION = 1;
+const SCRIPT_VERSION = 2;
 const SNAPSHOT_SCHEMA_VERSION = 1;
 
 const KEYCHAIN_BASE_URL =
@@ -22,6 +22,28 @@ const CACHE_FILE_NAME =
 const REQUEST_TIMEOUT_SECONDS = 8;
 const REFRESH_INTERVAL_MINUTES = 30;
 const MAX_WORDS = 12;
+
+const NATIVE_APP_LINKS = {
+  home:
+    "exchangenotes://home",
+
+  vocabulary:
+    "exchangenotes://vocabulary",
+
+  addWord:
+    "exchangenotes://vocabulary"
+    + "?widgetAction=add-word",
+
+  capture:
+    "exchangenotes://capture"
+    + "?widgetAction=camera",
+
+  review:
+    "exchangenotes://review",
+
+  profile:
+    "exchangenotes://profile",
+};
 
 const fileManager =
   FileManager.local();
@@ -818,10 +840,7 @@ function buildSmallWidget(model) {
   );
 
   widget.url =
-    joinUrl(
-      model.baseUrl,
-      "/vocabulary",
-    );
+    NATIVE_APP_LINKS.home;
 
   return widget;
 }
@@ -1106,10 +1125,7 @@ function createBaseWidget(
     );
 
   widget.url =
-    joinUrl(
-      model.baseUrl,
-      "/vocabulary",
-    );
+    NATIVE_APP_LINKS.home;
 
   return widget;
 }
@@ -1232,10 +1248,7 @@ function buildErrorWidget(
 
   widget.url =
     model.baseUrl
-      ? joinUrl(
-          model.baseUrl,
-          "/profile",
-        )
+      ? NATIVE_APP_LINKS.profile
       : scriptableRunUrl();
 
   return widget;
@@ -1854,10 +1867,7 @@ function addWordList(
       palette().secondary;
 
     empty.url =
-      joinUrl(
-        baseUrl,
-        "/vocabulary",
-      );
+      NATIVE_APP_LINKS.vocabulary;
 
     return;
   }
@@ -1892,10 +1902,7 @@ function addWordList(
       );
 
       row.url =
-        joinUrl(
-          baseUrl,
-          "/vocabulary",
-        );
+        NATIVE_APP_LINKS.vocabulary;
 
       const number =
         row.addText(
@@ -1980,6 +1987,10 @@ function addActionRow(
   baseUrl,
   copy,
 ) {
+  // baseUrl remains part of the existing function
+  // contract, but navigation now uses native links.
+  void baseUrl;
+
   const row =
     container.addStack();
 
@@ -1990,30 +2001,21 @@ function addActionRow(
     row,
     copy.addWord,
     "plus",
-    joinUrl(
-      baseUrl,
-      "/vocabulary",
-    ),
+    NATIVE_APP_LINKS.addWord,
   );
 
   addActionPill(
     row,
     copy.camera,
     "camera",
-    joinUrl(
-      baseUrl,
-      "/capture",
-    ),
+    NATIVE_APP_LINKS.capture,
   );
 
   addActionPill(
     row,
     copy.review,
     "checkmark.circle",
-    joinUrl(
-      baseUrl,
-      "/review",
-    ),
+    NATIVE_APP_LINKS.review,
   );
 }
 
