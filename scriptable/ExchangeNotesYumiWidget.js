@@ -7,7 +7,7 @@
 // The token is stored only in the iOS Keychain.
 // The latest successful Widget response is cached locally for offline use.
 
-const SCRIPT_VERSION = 2;
+const SCRIPT_VERSION = 5;
 const SNAPSHOT_SCHEMA_VERSION = 1;
 
 const KEYCHAIN_BASE_URL =
@@ -18,6 +18,9 @@ const KEYCHAIN_TOKEN =
 
 const CACHE_FILE_NAME =
   "exchange-notes-yumi-widget-cache-v1.json";
+
+const WORD_INDEX_FILE_NAME =
+  "exchange-notes-yumi-widget-word-index-v1.txt";
 
 const REQUEST_TIMEOUT_SECONDS = 8;
 const REFRESH_INTERVAL_MINUTES = 30;
@@ -38,9 +41,6 @@ const NATIVE_APP_LINKS = {
     "exchangenotes://capture"
     + "?widgetAction=camera",
 
-  review:
-    "exchangenotes://review",
-
   profile:
     "exchangenotes://profile",
 };
@@ -57,6 +57,14 @@ const cacheFilePath =
 await main();
 
 async function main() {
+  const handledWidgetAction =
+    await handleWidgetNavigationAction();
+
+  if (handledWidgetAction) {
+    Script.complete();
+    return;
+  }
+
   if (config.runsInWidget) {
     const model =
       await loadWidgetModel();
@@ -777,66 +785,53 @@ function buildSmallWidget(model) {
   const payload =
     model.snapshot.payload;
 
-  const copy =
-    widgetCopy(payload);
-
-  const header =
+  const content =
     widget.addStack();
 
-  header.layoutHorizontally();
-  header.centerAlignContent();
+  content.layoutVertically();
+
+  const top =
+    content.addStack();
+
+  top.layoutHorizontally();
+  top.topAlignContent();
+
+  const yumiSlot =
+    top.addStack();
+
+  yumiSlot.layoutVertically();
+  yumiSlot.centerAlignContent();
+  yumiSlot.size =
+    new Size(92, 92);
 
   addYumiImage(
-    header,
+    yumiSlot,
     payload.moodKey,
-    51,
-    35,
+    88,
+    88,
   );
 
-  header.addSpacer();
+  top.addSpacer();
 
-  addProgressCapsule(
-    header,
+  const progressSlot =
+    top.addStack();
+
+  progressSlot.layoutVertically();
+  progressSlot.centerAlignContent();
+  progressSlot.size =
+    new Size(38, 38);
+
+  addProgressRing(
+    progressSlot,
     payload,
-    copy,
+    36,
   );
 
-  widget.addSpacer(7);
+  content.addSpacer();
 
-  const headline =
-    widget.addText(
-      payload.localizedText.headline
-      || copy.yumi,
-    );
-
-  headline.font =
-    Font.semiboldSystemFont(13);
-
-  headline.textColor =
-    palette().primary;
-
-  headline.lineLimit = 2;
-  headline.minimumScaleFactor = 0.8;
-
-  widget.addSpacer(6);
-
-  addPrimaryWordCard(
-    widget,
-    payload,
-    {
-      primarySize: 22,
-      secondarySize: 12,
-      compact: true,
-    },
-  );
-
-  widget.addSpacer();
-
-  addUpdateFooter(
-    widget,
-    model,
-    copy,
-    true,
+  addQuickActions(
+    content,
+    "small",
   );
 
   widget.url =
@@ -855,68 +850,46 @@ function buildMediumWidget(model) {
   const payload =
     model.snapshot.payload;
 
-  const copy =
-    widgetCopy(payload);
-
   const main =
     widget.addStack();
 
   main.layoutHorizontally();
-  main.spacing = 13;
+  main.centerAlignContent();
+  main.spacing = 10;
 
   const left =
     main.addStack();
 
   left.layoutVertically();
+  left.centerAlignContent();
   left.size =
-    new Size(132, 0);
+    new Size(108, 0);
 
   addYumiImage(
     left,
     payload.moodKey,
-    78,
-    53,
+    86,
+    86,
   );
-
-  left.addSpacer(5);
-
-  const headline =
-    left.addText(
-      payload.localizedText.headline
-      || copy.yumi,
-    );
-
-  headline.font =
-    Font.semiboldSystemFont(14);
-
-  headline.textColor =
-    palette().primary;
-
-  headline.lineLimit = 2;
-  headline.minimumScaleFactor = 0.78;
-
-  left.addSpacer(4);
-
-  const hint =
-    left.addText(
-      payload.localizedText.hint
-      || copy.openApp,
-    );
-
-  hint.font =
-    Font.systemFont(10);
-
-  hint.textColor =
-    palette().secondary;
-
-  hint.lineLimit = 2;
 
   left.addSpacer();
 
-  addProgressCapsule(
-    left,
+  const utilityRow =
+    left.addStack();
+
+  utilityRow.layoutHorizontally();
+  utilityRow.centerAlignContent();
+  utilityRow.spacing = 5;
+
+  addProgressRing(
+    utilityRow,
     payload,
-    copy,
+    30,
+  );
+
+  addQuickActions(
+    utilityRow,
+    "micro",
   );
 
   const right =
@@ -924,31 +897,31 @@ function buildMediumWidget(model) {
 
   right.layoutVertically();
 
-  addPrimaryWordCard(
+  addCompanionHeader(
     right,
     payload,
-    {
-      primarySize: 25,
-      secondarySize: 13,
-      compact: false,
-    },
+    14,
+    10,
   );
 
   right.addSpacer();
 
-  addUpdateFooter(
+  addDarkWordPanel(
     right,
-    model,
-    copy,
-    false,
-  );
-
-  widget.addSpacer(9);
-
-  addActionRow(
-    widget,
-    model.baseUrl,
-    copy,
+    payload,
+    {
+      family: "medium",
+      panelHeight: 92,
+      primarySize: 19,
+      secondarySize: 12,
+      pronunciationSize: 9,
+      navigationDiameter: 27,
+      navigationSymbolSize: 10,
+      audioDiameter: 34,
+      audioGlyphSize: 15,
+      cornerRadius: 18,
+      padding: 9,
+    },
   );
 
   return widget;
@@ -964,104 +937,80 @@ function buildLargeWidget(model) {
   const payload =
     model.snapshot.payload;
 
-  const copy =
-    widgetCopy(payload);
-
   const header =
     widget.addStack();
 
   header.layoutHorizontally();
-  header.centerAlignContent();
+  header.topAlignContent();
+  header.spacing = 14;
+
+  const yumiSlot =
+    header.addStack();
+
+  yumiSlot.layoutVertically();
+  yumiSlot.centerAlignContent();
+  yumiSlot.size =
+    new Size(132, 132);
 
   addYumiImage(
-    header,
+    yumiSlot,
     payload.moodKey,
-    90,
-    61,
+    128,
+    128,
   );
-
-  header.addSpacer(12);
 
   const heading =
     header.addStack();
 
   heading.layoutVertically();
 
-  const headline =
-    heading.addText(
-      payload.localizedText.headline
-      || copy.yumi,
-    );
-
-  headline.font =
-    Font.boldSystemFont(17);
-
-  headline.textColor =
-    palette().primary;
-
-  headline.lineLimit = 2;
-
-  heading.addSpacer(4);
-
-  const hint =
-    heading.addText(
-      payload.localizedText.hint
-      || copy.openApp,
-    );
-
-  hint.font =
-    Font.systemFont(11);
-
-  hint.textColor =
-    palette().secondary;
-
-  hint.lineLimit = 2;
-
-  heading.addSpacer(7);
-
-  addProgressCapsule(
+  addCompanionHeader(
     heading,
     payload,
-    copy,
+    20,
+    13,
   );
 
-  widget.addSpacer(13);
+  heading.addSpacer();
 
-  const sectionTitle =
-    widget.addText(
-      copy.latestWords,
-    );
+  const summary =
+    heading.addStack();
 
-  sectionTitle.font =
-    Font.semiboldSystemFont(11);
+  summary.layoutHorizontally();
+  summary.centerAlignContent();
+  summary.spacing = 10;
 
-  sectionTitle.textColor =
-    palette().tertiary;
-
-  widget.addSpacer(7);
-
-  addWordList(
-    widget,
+  addProgressRing(
+    summary,
     payload,
-    model.baseUrl,
-    5,
+    46,
+  );
+
+  summary.addSpacer();
+
+  addQuickActions(
+    summary,
+    "compact",
   );
 
   widget.addSpacer();
 
-  addUpdateFooter(
+  addDarkWordPanel(
     widget,
-    model,
-    copy,
-    false,
-  );
-
-  widget.addSpacer(10);
-
-  addActionRow(
-    widget,
-    model.baseUrl,
-    copy,
+    payload,
+    {
+      family: "large",
+      panelHeight: 170,
+      primarySize: 30,
+      secondarySize: 17,
+      pronunciationSize: 13,
+      navigationDiameter: 34,
+      navigationSymbolSize: 12,
+      audioDiameter: 52,
+      audioGlyphSize: 23,
+      cornerRadius: 23,
+      padding: 17,
+    },
   );
 
   return widget;
@@ -1074,47 +1023,38 @@ function createBaseWidget(
   const widget =
     new ListWidget();
 
-  const colors =
-    palette();
+  const payload =
+    model
+    && model.snapshot
+    && model.snapshot.payload
+      ? model.snapshot.payload
+      : null;
 
-  const gradient =
-    new LinearGradient();
+  const mood =
+    payload
+      ? payload.moodKey
+      : "waiting";
 
-  gradient.colors = [
-    colors.backgroundTop,
-    colors.backgroundBottom,
-  ];
+  widget.backgroundColor =
+    Color.clear();
 
-  gradient.locations = [
-    0,
-    1,
-  ];
-
-  widget.backgroundGradient =
-    gradient;
-
-  if (family === "small") {
-    widget.setPadding(
-      13,
-      13,
-      12,
-      13,
+  widget.backgroundImage =
+    drawPremiumBackground(
+      family,
+      mood,
     );
-  } else if (family === "large") {
-    widget.setPadding(
-      17,
-      18,
-      16,
-      18,
-    );
-  } else {
-    widget.setPadding(
-      14,
-      16,
-      13,
-      16,
-    );
-  }
+
+  const outerInset =
+    family === "large"
+      ? 14
+      : 12;
+
+  widget.setPadding(
+    outerInset,
+    outerInset,
+    outerInset,
+    outerInset,
+  );
 
   widget.refreshAfterDate =
     new Date(
@@ -1297,25 +1237,1540 @@ function createStandaloneWidget(
   return widget;
 }
 
+async function handleWidgetNavigationAction() {
+  const parameters =
+    isRecord(args.queryParameters)
+      ? args.queryParameters
+      : {};
+
+  const action =
+    safeString(
+      parameters.widgetAction,
+      40,
+    );
+
+  if (
+    action !== "previous-word"
+    && action !== "next-word"
+  ) {
+    return false;
+  }
+
+  const model =
+    await loadWidgetModel();
+
+  if (
+    model.state !== "ready"
+    || !model.snapshot
+  ) {
+    return true;
+  }
+
+  const payload =
+    model.snapshot.payload;
+
+  const words =
+    availableWordRecords(payload);
+
+  if (words.length > 1) {
+    const currentIndex =
+      normalizedSelectedWordIndex(
+        words.length,
+      );
+
+    const offset =
+      action === "previous-word"
+        ? -1
+        : 1;
+
+    const nextIndex =
+      (
+        currentIndex
+        + offset
+        + words.length
+      ) % words.length;
+
+    writeSelectedWordIndex(nextIndex);
+  }
+
+  const family =
+    normalizeWidgetFamily(
+      safeString(
+        parameters.family,
+        20,
+      ) || "medium",
+    );
+
+  const widget =
+    buildWidget(
+      model,
+      family,
+    );
+
+  Script.setWidget(widget);
+
+  return true;
+}
+
+function addProgressRing(
+  container,
+  payload,
+  diameter,
+) {
+  const image =
+    container.addImage(
+      drawProgressRing(
+        payload,
+        diameter,
+      ),
+    );
+
+  image.imageSize =
+    new Size(
+      diameter,
+      diameter,
+    );
+
+  image.applyFittingContentMode();
+
+  return image;
+}
+
+function drawProgressRing(
+  payload,
+  diameter,
+) {
+  const context =
+    new DrawContext();
+
+  context.size =
+    new Size(
+      diameter,
+      diameter,
+    );
+
+  context.opaque = false;
+  context.respectScreenScale = true;
+
+  const goal =
+    Math.max(
+      1,
+      Number(payload.cookieGoal) || 1,
+    );
+
+  const count =
+    Math.max(
+      0,
+      Number(payload.cookieCount) || 0,
+    );
+
+  const progress =
+    Math.min(
+      1,
+      count / goal,
+    );
+
+  const center =
+    diameter / 2;
+
+  const radius =
+    diameter * 0.39;
+
+  const segments = 40;
+
+  for (
+    let index = 0;
+    index < segments;
+    index += 1
+  ) {
+    const angle =
+      -Math.PI / 2
+      + (
+        Math.PI * 2 * index
+      ) / segments;
+
+    const active =
+      index
+      < Math.round(
+        progress * segments,
+      );
+
+    const dotSize =
+      diameter * 0.052;
+
+    const x =
+      center
+      + Math.cos(angle) * radius
+      - dotSize / 2;
+
+    const y =
+      center
+      + Math.sin(angle) * radius
+      - dotSize / 2;
+
+    context.setFillColor(
+      active
+        ? new Color("#F47A1F")
+        : new Color("#F47A1F", 0.18),
+    );
+
+    context.fillEllipse(
+      new Rect(
+        x,
+        y,
+        dotSize,
+        dotSize,
+      ),
+    );
+  }
+
+  context.setTextColor(
+    new Color("#18342D"),
+  );
+
+  context.setFont(
+    Font.boldSystemFont(
+      diameter * 0.17,
+    ),
+  );
+
+  context.setTextAlignedCenter();
+
+  context.drawTextInRect(
+    count + "/" + goal,
+    new Rect(
+      0,
+      diameter * 0.39,
+      diameter,
+      diameter * 0.28,
+    ),
+  );
+
+  return context.getImage();
+}
+
+function addCompanionHeader(
+  container,
+  payload,
+  headlineSize,
+  hintSize,
+) {
+  const colors =
+    palette();
+
+  const headline =
+    container.addText(
+      payload.localizedText.headline
+      || "Yumi",
+    );
+
+  headline.font =
+    Font.semiboldSystemFont(
+      headlineSize,
+    );
+
+  headline.textColor =
+    colors.primary;
+
+  headline.lineLimit = 2;
+  headline.minimumScaleFactor = 0.66;
+
+  if (
+    payload.localizedText.hint
+  ) {
+    container.addSpacer(2);
+
+    const hint =
+      container.addText(
+        payload.localizedText.hint,
+      );
+
+    hint.font =
+      Font.semiboldSystemFont(
+        hintSize,
+      );
+
+    hint.textColor =
+      colors.secondary;
+
+    hint.lineLimit = 2;
+    hint.minimumScaleFactor = 0.68;
+  }
+}
+
+function addDarkWordPanel(
+  container,
+  payload,
+  options,
+) {
+  const colors =
+    palette();
+
+  const panel =
+    container.addStack();
+
+  panel.layoutHorizontally();
+  panel.centerAlignContent();
+
+  panel.backgroundColor =
+    colors.card;
+
+  panel.cornerRadius =
+    options.cornerRadius;
+
+  panel.setPadding(
+    options.padding,
+    options.padding,
+    options.padding,
+    options.padding,
+  );
+
+  panel.size =
+    new Size(
+      0,
+      options.panelHeight,
+    );
+
+  const textColumn =
+    panel.addStack();
+
+  textColumn.layoutVertically();
+
+  addWordContent(
+    textColumn,
+    payload,
+    options,
+  );
+
+  textColumn.addSpacer();
+
+  addWordNavigation(
+    textColumn,
+    payload,
+    options.family,
+    options.navigationDiameter,
+    options.navigationSymbolSize,
+  );
+
+  panel.addSpacer();
+
+  addAudioActions(
+    panel,
+    payload,
+    options.audioDiameter,
+    options.audioGlyphSize,
+  );
+
+  return panel;
+}
+
+function addWordContent(
+  container,
+  payload,
+  options,
+) {
+  const colors =
+    palette();
+
+  const state =
+    selectedWordState(payload);
+
+  const word =
+    state.record;
+
+  const learningTraditionalChinese =
+    payload.learningLanguage
+      !== "english";
+
+  const primaryValue =
+    learningTraditionalChinese
+      ? word.traditionalChineseWord
+      : word.englishWord;
+
+  const secondaryValue =
+    learningTraditionalChinese
+      ? word.englishWord
+      : word.traditionalChineseWord;
+
+  const primary =
+    container.addText(
+      safeString(
+        primaryValue,
+        160,
+      )
+      || payload.localizedText.emptyWord
+      || "Add a word",
+    );
+
+  primary.font =
+    Font.boldSystemFont(
+      options.primarySize,
+    );
+
+  primary.textColor =
+    colors.cardText;
+
+  primary.lineLimit = 2;
+  primary.minimumScaleFactor = 0.52;
+
+  if (secondaryValue) {
+    container.addSpacer(
+      options.family === "large"
+        ? 4
+        : 2,
+    );
+
+    const secondary =
+      container.addText(
+        safeString(
+          secondaryValue,
+          160,
+        ),
+      );
+
+    secondary.font =
+      Font.semiboldSystemFont(
+        options.secondarySize,
+      );
+
+    secondary.textColor =
+      colors.cardSecondary;
+
+    secondary.lineLimit = 1;
+    secondary.minimumScaleFactor = 0.62;
+  }
+
+  const pronunciationValues = [
+    safeString(
+      word.pinyin,
+      120,
+    ),
+    safeString(
+      word.zhuyin,
+      120,
+    ),
+  ].filter(
+    function nonEmpty(value) {
+      return Boolean(value);
+    },
+  );
+
+  pronunciationValues.forEach(
+    function addPronunciation(value) {
+      container.addSpacer(
+        options.family === "large"
+          ? 4
+          : 2,
+      );
+
+      const pronunciation =
+        container.addText(value);
+
+      pronunciation.font =
+        Font.semiboldSystemFont(
+          options.pronunciationSize,
+        );
+
+      pronunciation.textColor =
+        colors.cardTertiary;
+
+      pronunciation.lineLimit = 1;
+      pronunciation.minimumScaleFactor = 0.62;
+    },
+  );
+}
+
+function addWordNavigation(
+  container,
+  payload,
+  family,
+  diameter,
+  symbolSize,
+) {
+  const words =
+    availableWordRecords(payload);
+
+  if (words.length <= 1) {
+    return null;
+  }
+
+  const row =
+    container.addStack();
+
+  row.layoutHorizontally();
+  row.centerAlignContent();
+  row.spacing = 8;
+
+  addNavigationButton(
+    row,
+    "chevron.left",
+    widgetScriptActionUrl(
+      "previous-word",
+      family,
+    ),
+    diameter,
+    symbolSize,
+  );
+
+  addNavigationButton(
+    row,
+    "chevron.right",
+    widgetScriptActionUrl(
+      "next-word",
+      family,
+    ),
+    diameter,
+    symbolSize,
+  );
+
+  return row;
+}
+
+function addNavigationButton(
+  container,
+  symbolName,
+  url,
+  diameter,
+  symbolSize,
+) {
+  const colors =
+    palette();
+
+  const button =
+    container.addStack();
+
+  button.layoutHorizontally();
+  button.centerAlignContent();
+
+  button.size =
+    new Size(
+      diameter,
+      diameter,
+    );
+
+  button.backgroundColor =
+    new Color(
+      "#FFFFFF",
+      0.10,
+    );
+
+  button.cornerRadius =
+    diameter / 2;
+
+  button.borderWidth = 1;
+  button.borderColor =
+    new Color(
+      "#FFFFFF",
+      0.32,
+    );
+
+  button.url = url;
+
+  button.addSpacer();
+
+  const symbol =
+    SFSymbol.named(
+      symbolName,
+    );
+
+  const icon =
+    button.addImage(
+      symbol.image,
+    );
+
+  icon.imageSize =
+    new Size(
+      symbolSize,
+      symbolSize,
+    );
+
+  icon.tintColor =
+    colors.cardText;
+
+  button.addSpacer();
+
+  return button;
+}
+
+function addAudioActions(
+  container,
+  payload,
+  diameter,
+  glyphSize,
+) {
+  const state =
+    selectedWordState(payload);
+
+  const column =
+    container.addStack();
+
+  column.layoutVertically();
+  column.spacing =
+    diameter >= 50
+      ? 10
+      : 7;
+
+  addAudioButton(
+    column,
+    "A",
+    state.record.englishWord,
+    "en-US",
+    "english",
+    diameter,
+    glyphSize,
+  );
+
+  addAudioButton(
+    column,
+    "ㄅ",
+    state.record.traditionalChineseWord,
+    "zh-TW",
+    "traditional-chinese",
+    diameter,
+    glyphSize,
+  );
+
+  return column;
+}
+
+function addAudioButton(
+  container,
+  badge,
+  text,
+  language,
+  style,
+  diameter,
+  glyphSize,
+) {
+  const button =
+    container.addStack();
+
+  button.layoutHorizontally();
+  button.centerAlignContent();
+
+  button.size =
+    new Size(
+      diameter,
+      diameter,
+    );
+
+  button.cornerRadius =
+    diameter * 0.25;
+
+  const gradient =
+    new LinearGradient();
+
+  if (style === "english") {
+    gradient.colors = [
+      new Color("#FFD147"),
+      new Color("#FF730A"),
+    ];
+  } else {
+    gradient.colors = [
+      new Color("#20243B"),
+      new Color("#03050D"),
+    ];
+  }
+
+  gradient.locations = [
+    0,
+    1,
+  ];
+
+  button.backgroundGradient =
+    gradient;
+
+  button.borderWidth = 1;
+
+  button.borderColor =
+    style === "english"
+      ? new Color("#FFFFFF", 0.48)
+      : new Color("#FF8A1F", 0.72);
+
+  button.url =
+    text
+      ? speechDeepLink(
+          text,
+          language,
+        )
+      : NATIVE_APP_LINKS.home;
+
+  button.addSpacer();
+
+  const label =
+    button.addText(badge);
+
+  label.font =
+    Font.boldSystemFont(
+      glyphSize,
+    );
+
+  label.textColor =
+    style === "english"
+      ? new Color("#221508")
+      : new Color("#FFFFFF");
+
+  button.addSpacer();
+
+  return button;
+}
+
+function addQuickActions(
+  container,
+  style,
+) {
+  const row =
+    container.addStack();
+
+  row.layoutHorizontally();
+  row.centerAlignContent();
+
+  if (style === "small") {
+    row.spacing = 10;
+    row.addSpacer();
+  } else if (style === "micro") {
+    row.spacing = 5;
+  } else {
+    row.spacing = 8;
+  }
+
+  const width =
+    style === "small"
+      ? 62
+      : style === "micro"
+        ? 28
+        : 42;
+
+  const height =
+    style === "small"
+      ? 40
+      : style === "micro"
+        ? 28
+        : 42;
+
+  const iconSize =
+    style === "small"
+      ? 17
+      : style === "micro"
+        ? 11
+        : 14;
+
+  addQuickActionButton(
+    row,
+    "plus",
+    NATIVE_APP_LINKS.addWord,
+    true,
+    width,
+    height,
+    iconSize,
+  );
+
+  addQuickActionButton(
+    row,
+    "camera.viewfinder",
+    NATIVE_APP_LINKS.capture,
+    false,
+    width,
+    height,
+    iconSize,
+  );
+
+  if (style === "small") {
+    row.addSpacer();
+  }
+
+  return row;
+}
+
+function addQuickActionButton(
+  container,
+  symbolName,
+  url,
+  isPrimary,
+  width,
+  height,
+  iconSize,
+) {
+  const colors =
+    palette();
+
+  const button =
+    container.addStack();
+
+  button.layoutHorizontally();
+  button.centerAlignContent();
+
+  button.size =
+    new Size(
+      width,
+      height,
+    );
+
+  button.cornerRadius =
+    Math.min(
+      15,
+      height * 0.38,
+    );
+
+  const gradient =
+    new LinearGradient();
+
+  if (isPrimary) {
+    gradient.colors = [
+      new Color(
+        "#073A45",
+        0.90,
+      ),
+      new Color(
+        "#4C2B8C",
+        0.84,
+      ),
+    ];
+  } else {
+    gradient.colors = [
+      new Color(
+        "#FFFFFF",
+        0.26,
+      ),
+      new Color(
+        "#48DCC0",
+        0.14,
+      ),
+    ];
+  }
+
+  gradient.locations = [
+    0,
+    1,
+  ];
+
+  button.backgroundGradient =
+    gradient;
+
+  button.borderWidth = 1;
+
+  button.borderColor =
+    isPrimary
+      ? new Color(
+          "#7AF6DC",
+          0.54,
+        )
+      : new Color(
+          "#FFFFFF",
+          0.42,
+        );
+
+  button.url = url;
+
+  button.addSpacer();
+
+  const symbol =
+    SFSymbol.named(
+      symbolName,
+    );
+
+  const icon =
+    button.addImage(
+      symbol.image,
+    );
+
+  icon.imageSize =
+    new Size(
+      iconSize,
+      iconSize,
+    );
+
+  icon.tintColor =
+    isPrimary
+      ? new Color("#FFFFFF")
+      : colors.primary;
+
+  button.addSpacer();
+
+  return button;
+}
+
+function availableWordRecords(payload) {
+  if (
+    Array.isArray(payload.words)
+    && payload.words.length > 0
+  ) {
+    return payload.words;
+  }
+
+  return [
+    {
+      englishWord:
+        safeString(
+          payload.englishWord,
+          160,
+        ),
+
+      traditionalChineseWord:
+        safeString(
+          payload.traditionalChineseWord,
+          160,
+        ),
+
+      pinyin:
+        safeString(
+          payload.pinyin,
+          120,
+        ),
+
+      zhuyin:
+        safeString(
+          payload.zhuyin,
+          120,
+        ),
+    },
+  ];
+}
+
+function selectedWordState(payload) {
+  const words =
+    availableWordRecords(payload);
+
+  const index =
+    normalizedSelectedWordIndex(
+      words.length,
+    );
+
+  return {
+    record:
+      words[index]
+      || words[0],
+
+    index,
+    count: words.length,
+  };
+}
+
+function normalizedSelectedWordIndex(
+  wordCount,
+) {
+  if (wordCount <= 0) {
+    return 0;
+  }
+
+  const stored =
+    readSelectedWordIndex();
+
+  return (
+    stored % wordCount
+    + wordCount
+  ) % wordCount;
+}
+
+function readSelectedWordIndex() {
+  const path =
+    fileManager.joinPath(
+      fileManager.libraryDirectory(),
+      WORD_INDEX_FILE_NAME,
+    );
+
+  if (
+    !fileManager.fileExists(path)
+  ) {
+    return 0;
+  }
+
+  try {
+    const parsed =
+      Number.parseInt(
+        fileManager.readString(path),
+        10,
+      );
+
+    return Number.isFinite(parsed)
+      ? parsed
+      : 0;
+  } catch (error) {
+    return 0;
+  }
+}
+
+function writeSelectedWordIndex(index) {
+  const path =
+    fileManager.joinPath(
+      fileManager.libraryDirectory(),
+      WORD_INDEX_FILE_NAME,
+    );
+
+  fileManager.writeString(
+    path,
+    String(
+      Math.max(
+        0,
+        Math.trunc(index),
+      ),
+    ),
+  );
+}
+
+function widgetScriptActionUrl(
+  action,
+  family,
+) {
+  const base =
+    scriptableRunUrl();
+
+  const separator =
+    base.indexOf("?") >= 0
+      ? "&"
+      : "?";
+
+  return (
+    base
+    + separator
+    + "widgetAction="
+    + encodeURIComponent(action)
+    + "&family="
+    + encodeURIComponent(family)
+  );
+}
+
+function speechDeepLink(
+  text,
+  language,
+) {
+  return (
+    "exchangenotes://speak"
+    + "?language="
+    + encodeURIComponent(language)
+    + "&text="
+    + encodeURIComponent(text)
+  );
+}
+
+function drawPremiumBackground(
+  family,
+  mood,
+) {
+  const size =
+    familyCanvasSize(family);
+
+  const context =
+    new DrawContext();
+
+  context.size =
+    new Size(
+      size.width,
+      size.height,
+    );
+
+  context.opaque = false;
+  context.respectScreenScale = true;
+
+  const colors =
+    yumiPaletteForMood(mood);
+
+  context.setFillColor(
+    new Color(
+      "#04101E",
+      0.58,
+    ),
+  );
+
+  context.fillRect(
+    new Rect(
+      0,
+      0,
+      size.width,
+      size.height,
+    ),
+  );
+
+  context.setFillColor(
+    new Color(
+      "#133E72",
+      0.25,
+    ),
+  );
+
+  context.fillEllipse(
+    new Rect(
+      -size.width * 0.32,
+      -size.height * 0.72,
+      size.width * 1.18,
+      size.width * 1.18,
+    ),
+  );
+
+  context.setFillColor(
+    new Color(
+      colors.cyan,
+      0.18,
+    ),
+  );
+
+  context.fillEllipse(
+    new Rect(
+      size.width * 0.30,
+      -size.height * 0.42,
+      size.width * 0.92,
+      size.width * 0.92,
+    ),
+  );
+
+  context.setFillColor(
+    new Color(
+      colors.violet,
+      0.17,
+    ),
+  );
+
+  context.fillEllipse(
+    new Rect(
+      size.width * 0.52,
+      size.height * 0.34,
+      size.width * 0.72,
+      size.width * 0.72,
+    ),
+  );
+
+  context.setFillColor(
+    new Color(
+      colors.pink,
+      0.11,
+    ),
+  );
+
+  context.fillEllipse(
+    new Rect(
+      -size.width * 0.12,
+      size.height * 0.60,
+      size.width * 0.54,
+      size.width * 0.54,
+    ),
+  );
+
+  const grid =
+    new Path();
+
+  const step =
+    family === "small"
+      ? 26
+      : 32;
+
+  for (
+    let x = -step;
+    x <= size.width + step;
+    x += step
+  ) {
+    grid.move(
+      new Point(
+        x,
+        0,
+      ),
+    );
+
+    grid.addLine(
+      new Point(
+        x,
+        size.height,
+      ),
+    );
+  }
+
+  for (
+    let y = -step;
+    y <= size.height + step;
+    y += step
+  ) {
+    grid.move(
+      new Point(
+        0,
+        y,
+      ),
+    );
+
+    grid.addLine(
+      new Point(
+        size.width,
+        y,
+      ),
+    );
+  }
+
+  context.setStrokeColor(
+    new Color(
+      "#BEEBFF",
+      0.075,
+    ),
+  );
+
+  context.setLineWidth(0.7);
+  context.addPath(grid);
+  context.strokePath();
+
+  const constellation =
+    new Path();
+
+  const points = [
+    [0.07, 0.18],
+    [0.20, 0.66],
+    [0.36, 0.29],
+    [0.51, 0.82],
+    [0.66, 0.18],
+    [0.79, 0.61],
+    [0.93, 0.27],
+  ];
+
+  for (
+    let index = 0;
+    index < points.length - 1;
+    index += 1
+  ) {
+    constellation.move(
+      new Point(
+        size.width * points[index][0],
+        size.height * points[index][1],
+      ),
+    );
+
+    constellation.addLine(
+      new Point(
+        size.width * points[index + 1][0],
+        size.height * points[index + 1][1],
+      ),
+    );
+  }
+
+  context.setStrokeColor(
+    new Color(
+      "#B7E9FF",
+      0.16,
+    ),
+  );
+
+  context.setLineWidth(0.8);
+  context.addPath(constellation);
+  context.strokePath();
+
+  const orbitSpecs = [
+    [
+      -size.width * 0.08,
+      -size.height * 0.20,
+      size.width * 0.72,
+      size.height * 0.72,
+      colors.cyan,
+      0.34,
+    ],
+    [
+      size.width * 0.56,
+      size.height * 0.48,
+      size.width * 0.46,
+      size.height * 0.32,
+      colors.violet,
+      0.34,
+    ],
+    [
+      size.width * 0.24,
+      size.height * 0.10,
+      size.width * 0.86,
+      size.height * 0.54,
+      colors.warm,
+      0.24,
+    ],
+  ];
+
+  orbitSpecs.forEach(
+    function drawOrbit(item, index) {
+      context.setStrokeColor(
+        new Color(
+          item[4],
+          item[5],
+        ),
+      );
+
+      context.setLineWidth(
+        index === 0
+          ? 1.4
+          : 1.0,
+      );
+
+      context.strokeEllipse(
+        new Rect(
+          item[0],
+          item[1],
+          item[2],
+          item[3],
+        ),
+      );
+    },
+  );
+
+  const particles = [
+    [0.06, 0.16, 3, colors.cyan],
+    [0.13, 0.76, 5, "#FFFFFF"],
+    [0.24, 0.44, 2, colors.warm],
+    [0.41, 0.14, 4, colors.violet],
+    [0.56, 0.76, 3, colors.cyan],
+    [0.68, 0.24, 2, "#FFFFFF"],
+    [0.81, 0.58, 5, colors.pink],
+    [0.94, 0.18, 3, colors.warm],
+    [0.92, 0.84, 4, colors.violet],
+  ];
+
+  particles.forEach(
+    function drawBackgroundParticle(
+      item,
+      index,
+    ) {
+      context.setFillColor(
+        new Color(
+          item[3],
+          index % 3 === 0
+            ? 0.86
+            : 0.58,
+        ),
+      );
+
+      context.fillEllipse(
+        new Rect(
+          size.width * item[0],
+          size.height * item[1],
+          item[2],
+          item[2],
+        ),
+      );
+    },
+  );
+
+  const glassBorder =
+    new Path();
+
+  const borderInset =
+    family === "small"
+      ? 3
+      : 4;
+
+  const borderRadius =
+    family === "small"
+      ? 22
+      : 26;
+
+  glassBorder.addRoundedRect(
+    new Rect(
+      borderInset,
+      borderInset,
+      size.width - borderInset * 2,
+      size.height - borderInset * 2,
+    ),
+    borderRadius,
+    borderRadius,
+  );
+
+  context.setStrokeColor(
+    new Color(
+      "#D9FAFF",
+      0.18,
+    ),
+  );
+
+  context.setLineWidth(1.2);
+  context.addPath(glassBorder);
+  context.strokePath();
+
+  return context.getImage();
+}
+
+function familyCanvasSize(family) {
+  if (family === "small") {
+    return {
+      width: 170,
+      height: 170,
+    };
+  }
+
+  if (family === "large") {
+    return {
+      width: 364,
+      height: 382,
+    };
+  }
+
+  return {
+    width: 364,
+    height: 170,
+  };
+}
+
+function yumiPaletteForMood(mood) {
+  const base = {
+    body: "#36D7AC",
+    bodyTop: "#32E6C2",
+    bodyMiddle: "#53D8B2",
+    bodyBottom: "#7777FF",
+    bodyDark: "#073A45",
+    glow: "#70F7DA",
+    particle: "#2FDDBA",
+    cyan: "#53DFFF",
+    violet: "#8A70FF",
+    warm: "#FFB84A",
+    pink: "#FF6FAE",
+    eyeSurface: "#F4FFF9",
+    eyeInk: "#062B35",
+  };
+
+  if (
+    mood === "sad"
+    || mood === "lonely"
+    || mood === "sleeping"
+  ) {
+    return {
+      body: "#54B8B0",
+      bodyTop: "#67C7BE",
+      bodyMiddle: "#50AEA7",
+      bodyBottom: "#6D78C9",
+      bodyDark: "#173E51",
+      glow: "#92DDE3",
+      particle: "#72C8D9",
+      cyan: "#78D9F0",
+      violet: "#8E8DE8",
+      warm: "#F0C273",
+      pink: "#D78CAE",
+      eyeSurface: "#F3FFFC",
+      eyeInk: "#173742",
+    };
+  }
+
+  if (mood === "grumpy") {
+    return {
+      body: "#244A52",
+      bodyTop: "#2D5960",
+      bodyMiddle: "#173E46",
+      bodyBottom: "#633C81",
+      bodyDark: "#081E2A",
+      glow: "#FF8B39",
+      particle: "#FFB34D",
+      cyan: "#42C6E8",
+      violet: "#A35BFF",
+      warm: "#FF8A32",
+      pink: "#FF4D7C",
+      eyeSurface: "#F8FFF9",
+      eyeInk: "#112B37",
+    };
+  }
+
+  if (
+    mood === "excited"
+    || mood === "dancing"
+    || mood === "welcomeBack"
+    || mood === "happy"
+  ) {
+    return {
+      body: "#31E2A8",
+      bodyTop: "#22F0C2",
+      bodyMiddle: "#56D7FF",
+      bodyBottom: "#8D65FF",
+      bodyDark: "#053B4A",
+      glow: "#9DFFE1",
+      particle: "#F6B84A",
+      cyan: "#49E4FF",
+      violet: "#916CFF",
+      warm: "#FFB92E",
+      pink: "#FF67B0",
+      eyeSurface: "#F7FFF9",
+      eyeInk: "#06313B",
+    };
+  }
+
+  if (mood === "hungry") {
+    return {
+      body: "#49D9A5",
+      bodyTop: "#64E7B3",
+      bodyMiddle: "#49D9D2",
+      bodyBottom: "#A568F0",
+      bodyDark: "#16433F",
+      glow: "#FFBE55",
+      particle: "#FF8F3C",
+      cyan: "#4FE0F0",
+      violet: "#A568F0",
+      warm: "#FF9F32",
+      pink: "#FF708D",
+      eyeSurface: "#F9FFF4",
+      eyeInk: "#173A34",
+    };
+  }
+
+  return base;
+}
+
+function yumiPupilOffset(mood) {
+  if (mood === "curious") {
+    return {
+      x: -5,
+      y: -2,
+    };
+  }
+
+  if (
+    mood === "excited"
+    || mood === "welcomeBack"
+  ) {
+    return {
+      x: 4,
+      y: -2,
+    };
+  }
+
+  if (mood === "hungry") {
+    return {
+      x: 0,
+      y: 6,
+    };
+  }
+
+  if (
+    mood === "sad"
+    || mood === "lonely"
+  ) {
+    return {
+      x: -3,
+      y: 5,
+    };
+  }
+
+  if (mood === "grumpy") {
+    return {
+      x: 4,
+      y: 0,
+    };
+  }
+
+  return {
+    x: 0,
+    y: 0,
+  };
+}
+
 function addYumiImage(
   container,
   mood,
   width,
   height,
 ) {
+  const side =
+    Math.min(
+      width,
+      height,
+    );
+
   const image =
     container.addImage(
       drawYumi(
         mood,
-        width * 2,
-        height * 2,
+        side,
+        side,
       ),
     );
 
   image.imageSize =
     new Size(
-      width,
-      height,
+      side,
+      side,
     );
 
   image.applyFittingContentMode();
@@ -1340,244 +2795,760 @@ function drawYumi(
   context.opaque = false;
   context.respectScreenScale = true;
 
-  const facePath =
+  const scale =
+    Math.min(
+      width / 400,
+      height / 400,
+    );
+
+  const offsetX =
+    (
+      width
+      - 400 * scale
+    ) / 2;
+
+  const offsetY =
+    (
+      height
+      - 400 * scale
+    ) / 2;
+
+  const pose =
+    Math.floor(
+      Date.now()
+      / (
+        10
+        * 60
+        * 1000
+      ),
+    ) % 4;
+
+  function point(x, y) {
+    return new Point(
+      offsetX + x * scale,
+      offsetY + y * scale,
+    );
+  }
+
+  function ellipse(
+    x,
+    y,
+    ellipseWidth,
+    ellipseHeight,
+  ) {
+    return new Rect(
+      offsetX + x * scale,
+      offsetY + y * scale,
+      ellipseWidth * scale,
+      ellipseHeight * scale,
+    );
+  }
+
+  function strokePath(
+    path,
+    color,
+    lineWidth,
+  ) {
+    context.setStrokeColor(color);
+    context.setLineWidth(
+      lineWidth * scale,
+    );
+    context.addPath(path);
+    context.strokePath();
+  }
+
+  function roundCap(
+    x,
+    y,
+    diameter,
+    color,
+  ) {
+    context.setFillColor(color);
+    context.fillEllipse(
+      ellipse(
+        x - diameter / 2,
+        y - diameter / 2,
+        diameter,
+        diameter,
+      ),
+    );
+  }
+
+  function star(
+    x,
+    y,
+    radius,
+    color,
+  ) {
+    const path =
+      new Path();
+
+    path.move(
+      point(
+        x,
+        y - radius,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x + radius * 0.28,
+        y - radius * 0.28,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x + radius,
+        y,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x + radius * 0.28,
+        y + radius * 0.28,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x,
+        y + radius,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x - radius * 0.28,
+        y + radius * 0.28,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x - radius,
+        y,
+      ),
+    );
+
+    path.addLine(
+      point(
+        x - radius * 0.28,
+        y - radius * 0.28,
+      ),
+    );
+
+    path.closeSubpath();
+
+    context.setFillColor(color);
+    context.addPath(path);
+    context.fillPath();
+  }
+
+  const colors =
+    yumiPaletteForMood(mood);
+
+  context.setFillColor(
+    new Color(
+      colors.glow,
+      0.16,
+    ),
+  );
+
+  context.fillEllipse(
+    ellipse(
+      28,
+      28,
+      344,
+      344,
+    ),
+  );
+
+  const orbitColors = [
+    new Color(
+      colors.particle,
+      0.66,
+    ),
+    new Color(
+      colors.violet,
+      0.50,
+    ),
+    new Color(
+      colors.warm,
+      0.44,
+    ),
+  ];
+
+  const orbitRects = [
+    [38, 102, 324, 168],
+    [72, 70, 258, 260],
+    [46, 146, 310, 112],
+  ];
+
+  orbitRects.forEach(
+    function drawOrbit(item, index) {
+      context.setStrokeColor(
+        orbitColors[index],
+      );
+
+      context.setLineWidth(
+        (
+          index === 0
+            ? 3.4
+            : 2.2
+        ) * scale,
+      );
+
+      context.strokeEllipse(
+        ellipse(
+          item[0]
+            + (
+              pose - 1
+            ) * 2,
+          item[1],
+          item[2],
+          item[3],
+        ),
+      );
+    },
+  );
+
+  const trail =
     new Path();
 
-  facePath.addRoundedRect(
-    new Rect(
-      2,
-      2,
-      width - 4,
-      height - 4,
+  trail.move(
+    point(
+      52,
+      106 + pose * 3,
     ),
-    height * 0.34,
-    height * 0.34,
   );
 
-  context.addPath(
-    facePath,
+  trail.addLine(
+    point(
+      350,
+      42 + pose * 2,
+    ),
+  );
+
+  strokePath(
+    trail,
+    new Color(
+      colors.warm,
+      0.52,
+    ),
+    4,
   );
 
   context.setFillColor(
     new Color(
-      "#FFFDF7",
+      colors.glow,
+      0.22,
     ),
   );
 
-  context.fillPath();
+  context.fillEllipse(
+    ellipse(
+      88,
+      306,
+      236,
+      40,
+    ),
+  );
 
-  context.setStrokeColor(
+  const topArm =
+    new Path();
+
+  topArm.move(
+    point(
+      300,
+      70,
+    ),
+  );
+
+  topArm.addCurve(
+    point(
+      100,
+      180,
+    ),
+    point(
+      174,
+      70,
+    ),
+    point(
+      107,
+      107,
+    ),
+  );
+
+  const bottomArm =
+    new Path();
+
+  bottomArm.move(
+    point(
+      100,
+      180,
+    ),
+  );
+
+  bottomArm.addCurve(
+    point(
+      300,
+      320,
+    ),
+    point(
+      107,
+      273,
+    ),
+    point(
+      174,
+      320,
+    ),
+  );
+
+  const middleArm =
+    new Path();
+
+  middleArm.move(
+    point(
+      100,
+      180,
+    ),
+  );
+
+  middleArm.addLine(
+    point(
+      250,
+      180,
+    ),
+  );
+
+  const bodyPaths = [
+    {
+      path: topArm,
+      start: [300, 70],
+      end: [100, 180],
+      body: colors.bodyTop,
+      accent: colors.cyan,
+    },
+    {
+      path: bottomArm,
+      start: [100, 180],
+      end: [300, 320],
+      body: colors.bodyBottom,
+      accent: colors.violet,
+    },
+    {
+      path: middleArm,
+      start: [100, 180],
+      end: [250, 180],
+      body: colors.bodyMiddle,
+      accent: colors.warm,
+    },
+  ];
+
+  bodyPaths.forEach(
+    function drawBodySegment(
+      segment,
+      index,
+    ) {
+      strokePath(
+        segment.path,
+        new Color(
+          colors.glow,
+          0.24,
+        ),
+        72,
+      );
+
+      roundCap(
+        segment.start[0],
+        segment.start[1],
+        72,
+        new Color(
+          colors.glow,
+          0.24,
+        ),
+      );
+
+      roundCap(
+        segment.end[0],
+        segment.end[1],
+        72,
+        new Color(
+          colors.glow,
+          0.24,
+        ),
+      );
+
+      strokePath(
+        segment.path,
+        new Color(
+          colors.bodyDark,
+        ),
+        58,
+      );
+
+      roundCap(
+        segment.start[0],
+        segment.start[1],
+        58,
+        new Color(
+          colors.bodyDark,
+        ),
+      );
+
+      roundCap(
+        segment.end[0],
+        segment.end[1],
+        58,
+        new Color(
+          colors.bodyDark,
+        ),
+      );
+
+      strokePath(
+        segment.path,
+        new Color(
+          segment.body,
+        ),
+        47,
+      );
+
+      roundCap(
+        segment.start[0],
+        segment.start[1],
+        47,
+        new Color(
+          segment.body,
+        ),
+      );
+
+      roundCap(
+        segment.end[0],
+        segment.end[1],
+        47,
+        new Color(
+          segment.body,
+        ),
+      );
+
+      strokePath(
+        segment.path,
+        new Color(
+          segment.accent,
+          0.78,
+        ),
+        10,
+      );
+
+      strokePath(
+        segment.path,
+        new Color(
+          "#FFFFFF",
+          index === pose % 3
+            ? 0.78
+            : 0.42,
+        ),
+        4,
+      );
+    },
+  );
+
+  const antenna =
+    new Path();
+
+  antenna.move(
+    point(
+      268,
+      74,
+    ),
+  );
+
+  antenna.addCurve(
+    point(
+      322,
+      34,
+    ),
+    point(
+      292,
+      52,
+    ),
+    point(
+      306,
+      42,
+    ),
+  );
+
+  strokePath(
+    antenna,
     new Color(
-      "#000000",
-      0.06,
+      colors.cyan,
+      0.76,
     ),
-  );
-
-  context.setLineWidth(2);
-  context.addPath(facePath);
-  context.strokePath();
-
-  const eyeWidth =
-    width * 0.115;
-
-  const eyeHeight =
-    height * 0.39;
-
-  const leftX =
-    width * 0.295;
-
-  const rightX =
-    width * 0.59;
-
-  const eyeY =
-    height * 0.28;
-
-  context.setStrokeColor(
-    new Color("#16130F"),
+    5,
   );
 
   context.setFillColor(
-    new Color("#16130F"),
+    new Color(
+      colors.warm,
+    ),
   );
 
-  if (
-    mood === "sleeping"
-  ) {
-    drawClosedEye(
-      context,
-      leftX,
-      eyeY + eyeHeight * 0.45,
-      eyeWidth,
+  context.fillEllipse(
+    ellipse(
+      315,
+      26,
+      18,
+      18,
+    ),
+  );
+
+  const eyeRect =
+    ellipse(
+      245,
+      140,
+      80,
+      80,
     );
 
-    drawClosedEye(
-      context,
-      rightX,
-      eyeY + eyeHeight * 0.45,
-      eyeWidth,
+  context.setFillColor(
+    new Color(
+      colors.eyeSurface,
+    ),
+  );
+
+  context.fillEllipse(
+    eyeRect,
+  );
+
+  if (mood === "sleeping") {
+    const closedEye =
+      new Path();
+
+    closedEye.move(
+      point(
+        263,
+        181,
+      ),
+    );
+
+    closedEye.addCurve(
+      point(
+        307,
+        181,
+      ),
+      point(
+        276,
+        195,
+      ),
+      point(
+        294,
+        195,
+      ),
+    );
+
+    strokePath(
+      closedEye,
+      new Color(
+        colors.eyeInk,
+      ),
+      8,
     );
   } else {
-    context.fillEllipse(
-      new Rect(
-        leftX,
-        eyeY,
-        eyeWidth,
-        eyeHeight,
+    const pupilOffset =
+      yumiPupilOffset(mood);
+
+    const poseOffsets = [
+      [-4, 0],
+      [2, -3],
+      [5, 1],
+      [-2, 3],
+    ];
+
+    context.setFillColor(
+      new Color(
+        colors.eyeInk,
       ),
     );
 
     context.fillEllipse(
-      new Rect(
-        rightX,
-        eyeY,
-        eyeWidth,
-        eyeHeight,
+      ellipse(
+        280
+          + pupilOffset.x
+          + poseOffsets[pose][0],
+        158
+          + pupilOffset.y
+          + poseOffsets[pose][1],
+        28,
+        28,
+      ),
+    );
+
+    context.setFillColor(
+      new Color(
+        colors.cyan,
+        0.76,
+      ),
+    );
+
+    context.fillEllipse(
+      ellipse(
+        285
+          + pupilOffset.x
+          + poseOffsets[pose][0],
+        163
+          + pupilOffset.y
+          + poseOffsets[pose][1],
+        12,
+        12,
       ),
     );
 
     context.setFillColor(
       new Color(
         "#FFFFFF",
-        0.9,
       ),
     );
 
-    const highlight =
-      Math.max(
-        3,
-        eyeWidth * 0.22,
+    context.fillEllipse(
+      ellipse(
+        296
+          + pupilOffset.x
+          + poseOffsets[pose][0],
+        160
+          + pupilOffset.y
+          + poseOffsets[pose][1],
+        9,
+        9,
+      ),
+    );
+  }
+
+  context.setStrokeColor(
+    new Color(
+      colors.eyeInk,
+    ),
+  );
+
+  context.setLineWidth(
+    12 * scale,
+  );
+
+  context.strokeEllipse(
+    eyeRect,
+  );
+
+  context.setStrokeColor(
+    new Color(
+      colors.violet,
+      0.74,
+    ),
+  );
+
+  context.setLineWidth(
+    3.5 * scale,
+  );
+
+  context.strokeEllipse(
+    ellipse(
+      236,
+      131,
+      98,
+      98,
+    ),
+  );
+
+  const particlePositions = [
+    [48, 276, 11, colors.warm],
+    [350, 108, 13, colors.violet],
+    [332, 286, 8, colors.cyan],
+    [70, 82, 7, "#FFFFFF"],
+    [346, 224, 6, colors.pink],
+    [118, 42, 5, colors.cyan],
+  ];
+
+  particlePositions.forEach(
+    function drawParticle(item, index) {
+      const x =
+        item[0]
+        + (
+          index % 2 === 0
+            ? pose * 2
+            : -pose * 2
+        );
+
+      const y =
+        item[1]
+        + (
+          index % 3 - 1
+        ) * pose;
+
+      context.setFillColor(
+        new Color(
+          item[3],
+          index % 2 === 0
+            ? 0.90
+            : 0.72,
+        ),
       );
 
-    context.fillEllipse(
-      new Rect(
-        leftX
-          + eyeWidth * 0.2,
-        eyeY
-          + eyeHeight * 0.18,
-        highlight,
-        highlight,
-      ),
-    );
+      context.fillEllipse(
+        ellipse(
+          x,
+          y,
+          item[2],
+          item[2],
+        ),
+      );
+    },
+  );
 
-    context.fillEllipse(
-      new Rect(
-        rightX
-          + eyeWidth * 0.2,
-        eyeY
-          + eyeHeight * 0.18,
-        highlight,
-        highlight,
-      ),
-    );
-  }
+  star(
+    64 + pose * 3,
+    60,
+    10,
+    new Color(
+      colors.warm,
+      0.94,
+    ),
+  );
 
-  if (
-    mood === "grumpy"
-    || mood === "hungry"
-  ) {
-    drawBrow(
-      context,
-      leftX - 2,
-      eyeY - 5,
-      eyeWidth + 5,
-      true,
-    );
-
-    drawBrow(
-      context,
-      rightX - 2,
-      eyeY - 5,
-      eyeWidth + 5,
-      false,
-    );
-  }
-
-  if (
-    mood === "sad"
-    || mood === "lonely"
-  ) {
-    context.setFillColor(
-      new Color(
-        "#77B9E8",
-        0.9,
-      ),
-    );
-
-    context.fillEllipse(
-      new Rect(
-        rightX
-          + eyeWidth * 0.45,
-        eyeY
-          + eyeHeight * 0.85,
-        eyeWidth * 0.34,
-        eyeHeight * 0.38,
-      ),
-    );
-  }
+  star(
+    344 - pose * 3,
+    334,
+    8,
+    new Color(
+      colors.violet,
+      0.86,
+    ),
+  );
 
   if (
     mood === "excited"
     || mood === "dancing"
+    || mood === "happy"
     || mood === "welcomeBack"
   ) {
-    context.setFillColor(
+    star(
+      336,
+      64,
+      15,
       new Color(
-        "#F2B84B",
-        0.95,
+        colors.pink,
+        0.92,
       ),
     );
 
-    context.fillEllipse(
-      new Rect(
-        width * 0.12,
-        height * 0.18,
-        7,
-        7,
+    star(
+      44,
+      220,
+      12,
+      new Color(
+        colors.cyan,
+        0.90,
       ),
     );
-
-    context.fillEllipse(
-      new Rect(
-        width * 0.82,
-        height * 0.12,
-        9,
-        9,
-      ),
-    );
-
-    context.fillEllipse(
-      new Rect(
-        width * 0.88,
-        height * 0.58,
-        6,
-        6,
-      ),
-    );
-  }
-
-  if (
-    mood === "hungry"
-  ) {
-    context.setStrokeColor(
-      new Color("#16130F"),
-    );
-
-    context.setLineWidth(3);
-
-    const mouth =
-      new Path();
-
-    mouth.addEllipse(
-      new Rect(
-        width * 0.46,
-        height * 0.71,
-        width * 0.08,
-        height * 0.12,
-      ),
-    );
-
-    context.addPath(mouth);
-    context.strokePath();
   }
 
   return context.getImage();
@@ -1987,35 +3958,12 @@ function addActionRow(
   baseUrl,
   copy,
 ) {
-  // baseUrl remains part of the existing function
-  // contract, but navigation now uses native links.
   void baseUrl;
+  void copy;
 
-  const row =
-    container.addStack();
-
-  row.layoutHorizontally();
-  row.spacing = 7;
-
-  addActionPill(
-    row,
-    copy.addWord,
-    "plus",
-    NATIVE_APP_LINKS.addWord,
-  );
-
-  addActionPill(
-    row,
-    copy.camera,
-    "camera",
-    NATIVE_APP_LINKS.capture,
-  );
-
-  addActionPill(
-    row,
-    copy.review,
-    "checkmark.circle",
-    NATIVE_APP_LINKS.review,
+  return addQuickActions(
+    container,
+    "compact",
   );
 }
 
@@ -2208,10 +4156,8 @@ function widgetCopy(payload) {
     return {
       yumi: "Yumi",
       cookie: "餅乾",
-      latestWords: "最新單字",
       addWord: "新增單字",
       camera: "相機",
-      review: "複習",
       offline: "離線快取",
       justNow: "剛剛更新",
       minutesAgo: "{count} 分鐘前",
@@ -2224,10 +4170,8 @@ function widgetCopy(payload) {
   return {
     yumi: "Yumi",
     cookie: "cookies",
-    latestWords: "Latest words",
     addWord: "Add word",
     camera: "Camera",
-    review: "Review",
     offline: "Offline cache",
     justNow: "Updated now",
     minutesAgo: "{count}m ago",
@@ -2298,52 +4242,76 @@ function relativeTimestamp(
 function palette() {
   return {
     backgroundTop:
-      Color.dynamic(
-        new Color("#FBF7EE"),
-        new Color("#1A1815"),
+      new Color(
+        "#061221",
+        0.58,
       ),
 
     backgroundBottom:
-      Color.dynamic(
-        new Color("#F2E9D9"),
-        new Color("#11100E"),
+      new Color(
+        "#11183A",
+        0.54,
       ),
 
     primary:
-      Color.dynamic(
-        new Color("#17130F"),
-        new Color("#FFF9ED"),
-      ),
+      new Color("#F3FDFF"),
 
     secondary:
-      Color.dynamic(
-        new Color("#17130F", 0.58),
-        new Color("#FFF9ED", 0.64),
+      new Color(
+        "#D4F4F8",
+        0.76,
       ),
 
     tertiary:
-      Color.dynamic(
-        new Color("#17130F", 0.38),
-        new Color("#FFF9ED", 0.42),
+      new Color(
+        "#C6E9F0",
+        0.56,
       ),
 
     card:
-      Color.dynamic(
-        new Color("#FFFFFF", 0.72),
-        new Color("#FFFFFF", 0.08),
+      new Color(
+        "#03111B",
+        0.74,
+      ),
+
+    cardText:
+      new Color("#FFFFFF"),
+
+    cardSecondary:
+      new Color(
+        "#E7F7F7",
+        0.82,
+      ),
+
+    cardTertiary:
+      new Color(
+        "#BFE2E5",
+        0.70,
       ),
 
     action:
-      Color.dynamic(
-        new Color("#FFFFFF", 0.82),
-        new Color("#FFFFFF", 0.11),
+      new Color(
+        "#FFFFFF",
+        0.16,
+      ),
+
+    actionPrimary:
+      new Color(
+        "#0A3440",
+        0.82,
+      ),
+
+    actionSecondary:
+      new Color(
+        "#FFFFFF",
+        0.18,
       ),
 
     cookie:
-      new Color("#D79B35"),
+      new Color("#FF8A25"),
 
     offline:
-      new Color("#C46F35"),
+      new Color("#FF9B52"),
   };
 }
 
