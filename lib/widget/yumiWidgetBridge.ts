@@ -1,3 +1,5 @@
+import { queueScriptableYumiWidgetSnapshotSync } from "@/lib/scriptable/widgetSnapshotClient";
+
 export type YumiWidgetLanguage =
   | "english"
   | "traditional-chinese";
@@ -165,6 +167,15 @@ export function postYumiWidgetUpdate(
 
   latestPayload = payload;
   target.__exchangeNotesYumiWidgetPayload = payload;
+
+  /*
+   * Best-effort web synchronization for the Scriptable Widget.
+   * This is intentionally independent from native delivery and must not
+   * change this function's existing boolean return value.
+   */
+  queueScriptableYumiWidgetSnapshotSync(
+    payload,
+  );
 
   installNativeReadyListener();
 
