@@ -1109,6 +1109,68 @@ const traditionalChinese: TranslationDictionary = {
       traditionalChineseDescription: "以繁體中文顯示 App 介面。",
     },
 
+    scriptableWidget: {
+      rowTitle: "iPhone Widget",
+      rowDescription: "將 Yumi 連接至 Scriptable",
+      statusReady: "已連接",
+      statusNotConfigured: "尚未設定",
+      statusRevoked: "已中斷",
+      statusLoading: "檢查中…",
+      statusUnavailable: "無法使用",
+      sheetTitle: "Scriptable iPhone Widget",
+      sheetDescription:
+        "建立私人權杖，讓 iPhone 上的 Scriptable App 安全讀取最新的 Yumi 學習進度。",
+      activeTitle: "Widget 連線已啟用",
+      activeDescription:
+        "Scriptable 可以安全讀取最新的 Yumi 心情、餅乾進度與單字。",
+      emptyTitle: "Widget 尚未連接",
+      emptyDescription:
+        "建立私人權杖、立即複製一次，再將它儲存在 iPhone 的 Scriptable App 中。",
+      revokedTitle: "Widget 連線已撤銷",
+      revokedDescription:
+        "先前的權杖已無法再存取你的 Yumi Widget 資料。",
+      unavailableTitle: "Widget 設定目前無法使用",
+      unavailableDescription:
+        "目前無法連線至 Scriptable Widget 服務，請檢查網路後再試一次。",
+      tokenPrefixLabel: "權杖",
+      createdLabel: "建立時間",
+      lastUsedLabel: "最後使用",
+      neverUsed: "尚未使用",
+      notAvailable: "無法取得",
+      oneTimeTitle: "請立即複製這組權杖",
+      oneTimeDescription:
+        "基於安全考量，完整權杖只會顯示一次。Exchange Notes 只儲存它的 SHA-256 雜湊值。",
+      generate: "建立私人權杖",
+      generating: "建立中…",
+      generateSuccess: "新的 Scriptable 權杖已建立完成。",
+      rotate: "更換私人權杖",
+      rotating: "更換中…",
+      rotateConfirmTitle: "確定要更換目前的權杖嗎？",
+      rotateConfirmDescription:
+        "目前的權杖會立即失效，你必須同步更新 Scriptable 中儲存的權杖。",
+      confirmRotate: "更換權杖",
+      revoke: "中斷 Widget 連線",
+      revoking: "正在中斷…",
+      revokeSuccess: "Scriptable Widget 連線已撤銷。",
+      revokeConfirmTitle: "確定要中斷 Widget 連線嗎？",
+      revokeConfirmDescription:
+        "目前的權杖將無法再讓 Scriptable 讀取你的 Yumi Widget 資料。",
+      confirmRevoke: "中斷連線",
+      refresh: "重新整理狀態",
+      close: "完成",
+      copy: "複製權杖",
+      copied: "已複製",
+      cancel: "取消",
+      authenticationError:
+        "登入狀態已失效，請重新登入後再管理 Widget。",
+      loadError:
+        "無法載入 Widget 狀態，請再試一次。",
+      actionError:
+        "無法更新 Widget 連線，請再試一次。",
+      copyError:
+        "無法自動複製權杖，請手動選取並複製。",
+    },
+
     webPush: {
       rowTitle: "通知",
       rowDescription: "訊息與學習更新",

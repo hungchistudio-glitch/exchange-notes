@@ -1101,6 +1101,56 @@ export type TranslationDictionary = {
       traditionalChineseDescription: string;
     };
 
+    scriptableWidget: {
+      rowTitle: string;
+      rowDescription: string;
+      statusReady: string;
+      statusNotConfigured: string;
+      statusRevoked: string;
+      statusLoading: string;
+      statusUnavailable: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      activeTitle: string;
+      activeDescription: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      revokedTitle: string;
+      revokedDescription: string;
+      unavailableTitle: string;
+      unavailableDescription: string;
+      tokenPrefixLabel: string;
+      createdLabel: string;
+      lastUsedLabel: string;
+      neverUsed: string;
+      notAvailable: string;
+      oneTimeTitle: string;
+      oneTimeDescription: string;
+      generate: string;
+      generating: string;
+      generateSuccess: string;
+      rotate: string;
+      rotating: string;
+      rotateConfirmTitle: string;
+      rotateConfirmDescription: string;
+      confirmRotate: string;
+      revoke: string;
+      revoking: string;
+      revokeSuccess: string;
+      revokeConfirmTitle: string;
+      revokeConfirmDescription: string;
+      confirmRevoke: string;
+      refresh: string;
+      close: string;
+      copy: string;
+      copied: string;
+      cancel: string;
+      authenticationError: string;
+      loadError: string;
+      actionError: string;
+      copyError: string;
+    };
+
     webPush: {
       rowTitle: string;
       rowDescription: string;

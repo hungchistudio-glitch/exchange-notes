@@ -1132,6 +1132,68 @@ const english: TranslationDictionary = {
         "Display the app interface in Traditional Chinese.",
     },
 
+    scriptableWidget: {
+      rowTitle: "iPhone Widget",
+      rowDescription: "Connect Yumi to Scriptable",
+      statusReady: "Connected",
+      statusNotConfigured: "Not set up",
+      statusRevoked: "Disconnected",
+      statusLoading: "Checking…",
+      statusUnavailable: "Unavailable",
+      sheetTitle: "Scriptable iPhone Widget",
+      sheetDescription:
+        "Create a private token that lets the Scriptable app securely load your latest Yumi progress.",
+      activeTitle: "Widget connection is active",
+      activeDescription:
+        "Scriptable can securely load your latest Yumi mood, cookie progress, and vocabulary.",
+      emptyTitle: "Widget is not connected",
+      emptyDescription:
+        "Generate a private token, copy it once, and save it inside the Scriptable app on your iPhone.",
+      revokedTitle: "Widget connection was revoked",
+      revokedDescription:
+        "The previous token can no longer access your Yumi Widget data.",
+      unavailableTitle: "Widget settings are unavailable",
+      unavailableDescription:
+        "The Scriptable Widget service could not be reached. Try again after checking your connection.",
+      tokenPrefixLabel: "Token",
+      createdLabel: "Created",
+      lastUsedLabel: "Last used",
+      neverUsed: "Never",
+      notAvailable: "Unavailable",
+      oneTimeTitle: "Copy this token now",
+      oneTimeDescription:
+        "For security, the complete token is shown only once. Exchange Notes stores only its SHA-256 hash.",
+      generate: "Generate private token",
+      generating: "Generating…",
+      generateSuccess: "Your new Scriptable token is ready.",
+      rotate: "Replace private token",
+      rotating: "Replacing…",
+      rotateConfirmTitle: "Replace the current token?",
+      rotateConfirmDescription:
+        "The current token will stop working immediately. You must update the token saved in Scriptable.",
+      confirmRotate: "Replace token",
+      revoke: "Disconnect Widget",
+      revoking: "Disconnecting…",
+      revokeSuccess: "The Scriptable Widget connection was revoked.",
+      revokeConfirmTitle: "Disconnect the Widget?",
+      revokeConfirmDescription:
+        "Scriptable will no longer be able to load your Yumi Widget data with the current token.",
+      confirmRevoke: "Disconnect",
+      refresh: "Refresh status",
+      close: "Done",
+      copy: "Copy token",
+      copied: "Copied",
+      cancel: "Cancel",
+      authenticationError:
+        "Your session has expired. Sign in again before managing the Widget.",
+      loadError:
+        "Widget status could not be loaded. Please try again.",
+      actionError:
+        "The Widget connection could not be updated. Please try again.",
+      copyError:
+        "The token could not be copied. Select and copy it manually.",
+    },
+
     webPush: {
       rowTitle: "Notifications",
       rowDescription: "Message and learning updates",
