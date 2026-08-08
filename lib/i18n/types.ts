@@ -1306,6 +1306,10 @@ export type TranslationDictionary = {
       voiceDescription: string;
       female: string;
       male: string;
+      voicesOnDevice: string;
+      voicesOnDeviceDescription: string;
+      voiceAutomatic: string;
+      noVoicesInstalled: string;
       testVoice: string;
     };
   };

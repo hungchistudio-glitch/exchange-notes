@@ -1,17 +1,22 @@
 "use client";
 
 import { Volume2 } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   getDefaultSpeechSettings,
+  getInitialVoicesVersion,
   getSpeechSettings,
+  getVoicesVersion,
+  listVoicesForLanguage,
   setSpeechSettings,
   speak,
   subscribeToSpeechSettings,
+  subscribeToVoices,
+  type SpeechLanguage,
   type VoiceGender,
 } from "@/lib/speech";
 
@@ -26,21 +31,49 @@ export default function PronunciationSettingsButton() {
    * Writing through setSpeechSettings notifies this subscription, so the UI
    * follows the store instead of tracking it in parallel.
    */
-  const { rate, voiceGender } = useSyncExternalStore(
+  const { rate, voiceGender, voiceURIs } = useSyncExternalStore(
     subscribeToSpeechSettings,
     getSpeechSettings,
     getDefaultSpeechSettings,
+  );
+
+  // A number, not the voice array: useSyncExternalStore compares snapshots by
+  // identity, and the browser hands back a new array each call.
+  const voicesVersion = useSyncExternalStore(
+    subscribeToVoices,
+    getVoicesVersion,
+    getInitialVoicesVersion,
+  );
+
+  const voicesByLanguage = useMemo(
+    () => ({
+      "zh-TW": listVoicesForLanguage("zh-TW"),
+      "en-US": listVoicesForLanguage("en-US"),
+    }),
+    // voicesVersion is the trigger: the browser loads voices asynchronously
+    // and the list is empty on the first render of a cold page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [voicesVersion],
   );
 
   const { t, isTraditionalChinese } = useTranslation();
   const copy = t.settings.pronunciation;
 
   function handleRateChange(value: number) {
-    setSpeechSettings({ rate: value, voiceGender });
+    setSpeechSettings({ rate: value, voiceGender, voiceURIs });
   }
 
   function handleGenderChange(value: VoiceGender) {
-    setSpeechSettings({ rate, voiceGender: value });
+    setSpeechSettings({ rate, voiceGender: value, voiceURIs });
+  }
+
+  function handleVoiceChange(language: SpeechLanguage, voiceURI: string | null) {
+    const nextURIs = { ...voiceURIs };
+
+    if (voiceURI) nextURIs[language] = voiceURI;
+    else delete nextURIs[language];
+
+    setSpeechSettings({ rate, voiceGender, voiceURIs: nextURIs });
   }
 
   function handleTest() {
@@ -146,6 +179,92 @@ export default function PronunciationSettingsButton() {
                 );
               })}
             </div>
+          </section>
+
+          <section>
+            <h3 className="text-[15px] font-semibold text-black">
+              {copy.voicesOnDevice}
+            </h3>
+
+            <p className="mt-1 text-xs leading-5 text-black/45">
+              {copy.voicesOnDeviceDescription}
+            </p>
+
+            {(["zh-TW", "en-US"] as const).map((language) => {
+              const voices = voicesByLanguage[language];
+              const chosen = voiceURIs[language];
+
+              return (
+                <div key={language} className="mt-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black/35">
+                    {language === "zh-TW"
+                      ? t.vocabulary.lookup.chinese
+                      : t.vocabulary.lookup.english}
+                  </p>
+
+                  {voices.length === 0 ? (
+                    <p className="mt-2 text-xs leading-5 text-black/40">
+                      {copy.noVoicesInstalled}
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <button
+                        type="button"
+                        aria-pressed={!chosen}
+                        onClick={() => handleVoiceChange(language, null)}
+                        className={[
+                          "flex min-h-11 items-center justify-between rounded-2xl px-4 text-sm transition-all active:scale-[0.99]",
+                          !chosen
+                            ? "bg-blue-600 font-semibold text-white"
+                            : "border border-black/[0.08] bg-white text-black",
+                        ].join(" ")}
+                      >
+                        <span>{copy.voiceAutomatic}</span>
+                      </button>
+
+                      {voices.map((voice) => {
+                        const selected = chosen === voice.voiceURI;
+
+                        return (
+                          <button
+                            key={voice.voiceURI}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              handleVoiceChange(language, voice.voiceURI);
+                              // Selecting is also the preview: the point of
+                              // the list is hearing which voice you picked.
+                              speak(
+                                language === "zh-TW"
+                                  ? "你好，歡迎使用 Exchange Notes。"
+                                  : "Hello, welcome to Exchange Notes.",
+                                language,
+                              );
+                            }}
+                            className={[
+                              "flex min-h-11 items-center justify-between gap-3 rounded-2xl px-4 text-sm transition-all active:scale-[0.99]",
+                              selected
+                                ? "bg-blue-600 font-semibold text-white"
+                                : "border border-black/[0.08] bg-white text-black",
+                            ].join(" ")}
+                          >
+                            <span className="min-w-0 truncate">{voice.name}</span>
+                            <span
+                              className={[
+                                "shrink-0 font-mono text-[10px]",
+                                selected ? "text-white/70" : "text-black/35",
+                              ].join(" ")}
+                            >
+                              {voice.lang}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </section>
         </div>
       </BottomSheet>

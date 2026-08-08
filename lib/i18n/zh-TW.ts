@@ -1351,6 +1351,11 @@ const traditionalChinese: TranslationDictionary = {
       female: "女聲",
       male: "男聲",
       testVoice: "試聽聲音",
+      voicesOnDevice: "這台裝置上的語音",
+      voicesOnDeviceDescription:
+        "直接選定語音名稱，就能確定聽到哪一個。沒有指定時，App 會依語音名稱推測性別，而裝置不一定有你要的那種。",
+      voiceAutomatic: "自動",
+      noVoicesInstalled: "這台裝置沒有安裝這個語言的語音。",
     },
   },
 };

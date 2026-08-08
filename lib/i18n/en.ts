@@ -1379,6 +1379,11 @@ const english: TranslationDictionary = {
       female: "Female",
       male: "Male",
       testVoice: "Test voice",
+      voicesOnDevice: "Voices on this device",
+      voicesOnDeviceDescription:
+        "Pick a voice by name to be certain which one you get. Without a choice, the app guesses from the voice name, which cannot always find the gender you asked for.",
+      voiceAutomatic: "Automatic",
+      noVoicesInstalled: "This device has no voice installed for this language.",
     },
   },
 };

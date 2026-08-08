@@ -1,8 +1,19 @@
 export type VoiceGender = "female" | "male";
 
+export type SpeechLanguage = "zh-TW" | "en-US";
+
 export type SpeechSettings = {
   rate: number;
   voiceGender: VoiceGender;
+  /**
+   * A voice the user picked by name, per language.
+   *
+   * Guessing gender from a voice name is unavoidable as a default — the Web
+   * Speech API does not expose gender — but it is a guess, and on devices
+   * where a language ships a single voice no guess can succeed. An explicit
+   * choice overrides it, which is the only way to be certain.
+   */
+  voiceURIs: Partial<Record<SpeechLanguage, string>>;
 };
 
 const SETTINGS_STORAGE_KEY = "speech-settings";
@@ -10,6 +21,7 @@ const SETTINGS_STORAGE_KEY = "speech-settings";
 const DEFAULT_SETTINGS: SpeechSettings = {
   rate: 0.75,
   voiceGender: "female",
+  voiceURIs: {},
 };
 
 /**
@@ -32,6 +44,15 @@ function readSettingsFromStorage(): SpeechSettings {
 
     const parsed = JSON.parse(raw) as Partial<SpeechSettings>;
 
+    const voiceURIs: Partial<Record<SpeechLanguage, string>> = {};
+
+    if (parsed.voiceURIs && typeof parsed.voiceURIs === "object") {
+      for (const language of ["zh-TW", "en-US"] as const) {
+        const uri = (parsed.voiceURIs as Record<string, unknown>)[language];
+        if (typeof uri === "string" && uri) voiceURIs[language] = uri;
+      }
+    }
+
     return {
       rate:
         typeof parsed.rate === "number" ? parsed.rate : DEFAULT_SETTINGS.rate,
@@ -39,6 +60,7 @@ function readSettingsFromStorage(): SpeechSettings {
         parsed.voiceGender === "male" || parsed.voiceGender === "female"
           ? parsed.voiceGender
           : DEFAULT_SETTINGS.voiceGender,
+      voiceURIs,
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -167,11 +189,42 @@ function isNoveltyVoice(voice: SpeechSynthesisVoice): boolean {
 
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
+/**
+ * Bumped whenever the browser reports a different set of installed voices.
+ *
+ * Exposed as a number rather than the array itself because
+ * useSyncExternalStore compares snapshots by identity: a getter returning a
+ * fresh array each call would re-render forever. Callers watch this and
+ * recompute their own list from it.
+ */
+let voicesVersion = 0;
+
+const voicesListeners = new Set<() => void>();
+
 if (typeof window !== "undefined" && "speechSynthesis" in window) {
   cachedVoices = window.speechSynthesis.getVoices();
   window.speechSynthesis.addEventListener("voiceschanged", () => {
     cachedVoices = window.speechSynthesis.getVoices();
+    voicesVersion += 1;
+    for (const listener of voicesListeners) listener();
   });
+}
+
+export function subscribeToVoices(listener: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+
+  voicesListeners.add(listener);
+  return () => {
+    voicesListeners.delete(listener);
+  };
+}
+
+export function getVoicesVersion() {
+  return voicesVersion;
+}
+
+export function getInitialVoicesVersion() {
+  return 0;
 }
 
 function getAvailableVoices(): SpeechSynthesisVoice[] {
@@ -293,9 +346,18 @@ function narrowToTraditionalChinese(
  */
 export function selectVoice(
   lang: "zh-TW" | "en-US",
-  gender: VoiceGender
+  gender: VoiceGender,
+  preferredVoiceURI?: string
 ): SpeechSynthesisVoice | null {
   const voices = getAvailableVoices();
+
+  // An explicitly chosen voice is not a preference to be balanced against
+  // dialect and quality heuristics — it is the answer.
+  if (preferredVoiceURI) {
+    const chosen = voices.find((voice) => voice.voiceURI === preferredVoiceURI);
+    if (chosen) return chosen;
+  }
+
   const langPrefix = lang.slice(0, 2).toLowerCase();
 
   const candidates = voices.filter((voice) =>
@@ -317,7 +379,33 @@ export function selectVoice(
 export function getVoiceForLanguage(
   lang: "zh-TW" | "en-US"
 ): SpeechSynthesisVoice | null {
-  return selectVoice(lang, getSpeechSettings().voiceGender);
+  const settings = getSpeechSettings();
+  return selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang]);
+}
+
+/**
+ * Voices this device can actually use for a language, in the order the
+ * selector would consider them. Surfaced in settings so the user can see what
+ * exists rather than being told a gender that may not be installed.
+ */
+export function listVoicesForLanguage(
+  lang: SpeechLanguage
+): SpeechSynthesisVoice[] {
+  const langPrefix = lang.slice(0, 2).toLowerCase();
+
+  const candidates = getAvailableVoices().filter((voice) =>
+    voice.lang.toLowerCase().startsWith(langPrefix)
+  );
+
+  if (lang !== "zh-TW") return candidates;
+
+  // Traditional-first, but every zh voice is still listed: a user who only
+  // has zh-CN voices should be able to see and choose one rather than find
+  // the list empty.
+  const traditional = narrowToTraditionalChinese(candidates);
+  const rest = candidates.filter((voice) => !traditional.includes(voice));
+
+  return [...traditional, ...rest];
 }
 
 export type SpeechCallbacks = {
@@ -353,7 +441,7 @@ export function speak(
   utterance.lang = lang;
   utterance.rate = rate ?? settings.rate;
 
-  const voice = selectVoice(lang, settings.voiceGender);
+  const voice = selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang as SpeechLanguage]);
   if (voice) {
     utterance.voice = voice;
   }
