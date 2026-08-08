@@ -190,8 +190,14 @@ export default function VocabularySearch({
       </div>
 
       <div className="mt-2.5 flex items-center justify-between gap-3">
-        <p className="font-sans text-[11px] font-medium tracking-[-0.01em] text-black/35">
+        {/* The sort mode belongs here rather than only on the button, whose
+            icon-only form left `title` as the sole indication — and a title
+            tooltip never fires on touch, so on a phone there was no way to
+            see which sort was active without opening the sheet. */}
+        <p className="min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-black/35">
           {visibleCount} {visibleCount === 1 ? search.word : search.words}
+          <span aria-hidden="true"> · </span>
+          <span className="text-black/50">{sortLabels[sortMode]}</span>
         </p>
 
         <div
