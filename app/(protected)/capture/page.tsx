@@ -496,20 +496,11 @@ function CaptureContent() {
     };
   }, [result, pronunciationKey]);
 
-  useEffect(() => {
-    if (!cameraActive) return;
-
-    const previousOverflow = document.body.style.overflow;
-    const previousOverscroll = document.body.style.overscrollBehavior;
-
-    document.body.style.overflow = "hidden";
-    document.body.style.overscrollBehavior = "none";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.overscrollBehavior = previousOverscroll;
-    };
-  }, [cameraActive]);
+  // Body scrolling is locked by the camera overlay's own useSheetMotion, which
+  // now also handles overscroll. A second lock here fought it: this one lived
+  // as long as cameraActive, the overlay's only while the overlay was
+  // mounted, and taking a photo unmounts the overlay first — so the overlay
+  // released a lock this effect was still holding.
 
   useEffect(() => {
     const video = videoRef.current;
