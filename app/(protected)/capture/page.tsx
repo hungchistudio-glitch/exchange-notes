@@ -447,6 +447,7 @@ function CaptureContent() {
 
   const sourceParam = searchParams.get("source");
   const withParam = searchParams.get("with");
+  const fromParam = searchParams.get("from");
 
   const source: CaptureSource =
     sourceParam === "camera" || sourceParam === "library"
@@ -456,6 +457,23 @@ function CaptureContent() {
   const messagesHref = withParam
     ? `/messages?with=${withParam}`
     : "/messages";
+
+  /**
+   * Where Cancel goes back to.
+   *
+   * It used to be messages-or-home, so every entry from the vocabulary page —
+   * the search bar's camera and photo buttons, the Yumi menu, the empty-state
+   * link — dropped the user on the home screen instead of the list they
+   * started from.
+   *
+   * Matched against a fixed set rather than used as a path: the value comes
+   * from the query string, and treating it as one would be an open redirect.
+   */
+  const cancelHref = withParam
+    ? messagesHref
+    : fromParam === "vocabulary"
+      ? "/vocabulary"
+      : "/";
 
   useEffect(() => {
     return () => {
@@ -1128,7 +1146,7 @@ function CaptureContent() {
             }}
           >
             <Link
-              href={withParam ? messagesHref : "/"}
+              href={cancelHref}
               className="min-w-14 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
             >
               {capture.camera.cancel}

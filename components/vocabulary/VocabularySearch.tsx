@@ -126,7 +126,7 @@ export default function VocabularySearch({
             aria-label={search.lookupToolbarAriaLabel}
           >
             <Link
-              href="/capture?source=camera"
+              href="/capture?source=camera&from=vocabulary"
               aria-label={search.cameraLookup}
               title={search.cameraLookup}
               className={lookupButtonClass}
@@ -135,7 +135,7 @@ export default function VocabularySearch({
             </Link>
 
             <Link
-              href="/capture?source=library"
+              href="/capture?source=library&from=vocabulary"
               aria-label={search.photoLookup}
               title={search.photoLookup}
               className={lookupButtonClass}
