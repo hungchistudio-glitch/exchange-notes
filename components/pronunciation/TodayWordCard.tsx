@@ -589,8 +589,14 @@ export function TodayWordDeck({
 
       node.style.transform = visual.transform;
       node.style.opacity = String(visual.opacity);
-      node.style.filter = visual.filter;
       node.style.zIndex = String(visual.zIndex);
+
+      // Brightness only while dragging. The depth blur applies to the two
+      // deepest cards, which sit at 0.48 opacity behind four others — it is
+      // not perceptible on a card in motion, and blur forces the whole
+      // subtree to re-rasterise on every frame. React restores the full
+      // filter when the finger lifts.
+      node.style.filter = visual.filter.replace(/ blur\([^)]*\)/, "");
     }
   }
 
@@ -729,6 +735,7 @@ export function TodayWordDeck({
     <div className={styles.wrapper}>
       <section
         className={styles.deckSurface}
+        data-dragging={gesture.dragging ? "true" : "false"}
         style={{ "--deck-accent": accent } as CSSProperties}
         aria-roledescription="carousel"
         aria-label={copy.title}

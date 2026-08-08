@@ -74,6 +74,34 @@
   cursor: grabbing;
 }
 
+/*
+ * Everything below is dropped for the duration of a drag.
+ *
+ * The gesture itself was made cheap by writing transforms straight to the DOM,
+ * but that only fixed the JavaScript side. Each frame the compositor still had
+ * to re-blur 21 backdrop-filter regions — three per card across seven cards —
+ * while every one of them was being 3D-transformed, and backdrop-filter is
+ * among the most expensive things to ask iOS to do repeatedly.
+ *
+ * None of it is visible mid-swipe: the eye cannot resolve a 12px backdrop blur
+ * on a card travelling across the screen. It all comes back the moment the
+ * finger lifts.
+ */
+.deckViewport[data-dragging="true"] .markLink,
+.deckViewport[data-dragging="true"] .markStatic,
+.deckViewport[data-dragging="true"] .soundButton,
+.deckViewport[data-dragging="true"] .detailLink,
+.deckViewport[data-dragging="true"] .detailStatic {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* A 34px-blurred conic gradient rotating forever, repainting behind the cards
+   even while nothing is happening. */
+.deckSurface[data-dragging="true"]::before {
+  animation-play-state: paused;
+}
+
 .cardSlot {
   position: absolute;
   top: 58px;
