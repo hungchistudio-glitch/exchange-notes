@@ -3,6 +3,25 @@
    A fixed height + overflow:hidden on this outer wrapper previously
    clipped the status text entirely, since the ground area alone already
    filled 100% of that fixed box, leaving zero room for anything after it. */
+/*
+ * Every animation in this stage — and in the face it contains — stops while a
+ * word card is being dragged.
+ *
+ * There are 33 infinite animations between the two files. They use transform
+ * and opacity, so each is individually cheap, but each also holds its own
+ * compositing layer permanently, and all of them keep advancing while the deck
+ * below is being swiped. Five rounds of optimising the deck itself could not
+ * fix that, because the frames were being spent up here.
+ *
+ * animation-play-state is safe to toggle mid-gesture in a way backdrop-filter
+ * is not: it stops a layer advancing rather than tearing it down and building
+ * it again.
+ */
+:global(html[data-deck-dragging="true"]) .stage *,
+:global(html[data-deck-dragging="true"]) .stage {
+  animation-play-state: paused !important;
+}
+
 .stage {
   position: relative;
   background: radial-gradient(

@@ -655,6 +655,11 @@ export function TodayWordDeck({
       // their CSS transition so the per-frame writes below are not fighting
       // an interpolation.
       setGesture({ x: 0, dragging: true, transition: null });
+
+      // Signals the rest of the page to hold still. The Yumi stage above this
+      // deck runs 33 infinite animations, each holding its own compositing
+      // layer, and they were consuming the frames this gesture needed.
+      document.documentElement.setAttribute("data-deck-dragging", "true");
     }
 
     event.preventDefault();
@@ -682,6 +687,7 @@ export function TodayWordDeck({
     if (!pointer || pointer.pointerId !== event.pointerId) return;
 
     pointerRef.current = null;
+    document.documentElement.removeAttribute("data-deck-dragging");
 
     // A queued paint would land after React commits the settle target and
     // snap the cards back to the drag position mid-animation.
@@ -715,6 +721,7 @@ export function TodayWordDeck({
     if (!pointer || pointer.pointerId !== event.pointerId) return;
 
     pointerRef.current = null;
+    document.documentElement.removeAttribute("data-deck-dragging");
 
     // A queued paint would land after React commits the settle target and
     // snap the cards back to the drag position mid-animation.
