@@ -217,8 +217,83 @@ function pickBestQualityVoice(
   return nonCompact[0] ?? voices[0];
 }
 
-export function getVoiceForLanguage(
-  lang: "zh-TW" | "en-US"
+/**
+ * Narrows a set of same-language voices to the requested gender.
+ *
+ * Runs before quality selection, not after: pickBestQualityVoice prefers a
+ * "Google" cloud voice above everything else, so filtering afterwards would
+ * let that preference silently override the user's choice.
+ */
+function narrowToGender(
+  voices: SpeechSynthesisVoice[],
+  gender: VoiceGender
+): SpeechSynthesisVoice[] {
+  // Novelty voices are excluded first so a joke voice can never win a
+  // gender match on its name alone.
+  const normalSounding = voices.filter((voice) => !isNoveltyVoice(voice));
+  const pool = normalSounding.length > 0 ? normalSounding : voices;
+
+  const hints = gender === "female" ? FEMALE_NAME_HINTS : MALE_NAME_HINTS;
+  const otherHints = gender === "female" ? MALE_NAME_HINTS : FEMALE_NAME_HINTS;
+
+  const matching = pool.filter((voice) => {
+    const name = voice.name.toLowerCase();
+    return hints.some((hint) => name.includes(hint));
+  });
+
+  if (matching.length > 0) return matching;
+
+  // Nothing named for the requested gender. Drop anything clearly named for
+  // the other one so the two settings still sound different.
+  const neutral = pool.filter((voice) => {
+    const name = voice.name.toLowerCase();
+    return !otherHints.some((hint) => name.includes(hint));
+  });
+
+  return neutral.length > 0 ? neutral : pool;
+}
+
+/**
+ * For Chinese, "starts with zh" alone isn't enough — zh-CN and zh-HK voices
+ * match that same prefix but use Mandarin/Cantonese pronunciation that reads
+ * as mispronunciation to a zh-TW learner. Prefer an exact zh-TW tag, then any
+ * tag mentioning "tw" or "hant", then fall back to whatever zh voice exists
+ * rather than playing nothing.
+ */
+function narrowToTraditionalChinese(
+  candidates: SpeechSynthesisVoice[]
+): SpeechSynthesisVoice[] {
+  const exactTw = candidates.filter(
+    (voice) => voice.lang.toLowerCase() === "zh-tw"
+  );
+  if (exactTw.length > 0) return exactTw;
+
+  const traditional = candidates.filter((voice) => {
+    const tag = voice.lang.toLowerCase();
+    return tag.includes("tw") || tag.includes("hant");
+  });
+  if (traditional.length > 0) return traditional;
+
+  return candidates;
+}
+
+/**
+ * The app's single voice selector.
+ *
+ * There used to be two. One honoured the gender setting but skipped the
+ * Chinese dialect tiering, so zh-CN and zh-HK voices could read Traditional
+ * Chinese. The other did the tiering and quality ranking but took no gender
+ * argument at all — and that was the one behind word-card playback, which is
+ * why changing the voice setting appeared to do nothing across most of the
+ * app. Each path was missing what the other had.
+ *
+ * Order matters: dialect first, because a Cantonese voice reading Mandarin is
+ * a worse outcome than a voice of the wrong gender; then gender; then quality
+ * within whatever is left.
+ */
+export function selectVoice(
+  lang: "zh-TW" | "en-US",
+  gender: VoiceGender
 ): SpeechSynthesisVoice | null {
   const voices = getAvailableVoices();
   const langPrefix = lang.slice(0, 2).toLowerCase();
@@ -228,72 +303,21 @@ export function getVoiceForLanguage(
   );
 
   if (candidates.length === 0) return null;
-  if (lang !== "zh-TW") return pickBestQualityVoice(candidates);
 
-  // For Chinese, "starts with zh" alone isn't enough — zh-CN and zh-HK
-  // voices match that same prefix but use Mandarin/Cantonese pronunciation
-  // that differs from Taiwan Mandarin, which reads as mispronunciations to
-  // a zh-TW learner. Prefer, in order: an exact zh-TW tag, then any tag
-  // that mentions "tw" or "hant" (Traditional), then fall back to
-  // whatever zh voice is available rather than showing no audio at all.
-  // Within whichever tier matches, pick the best-sounding voice available.
-  const exactTw = candidates.filter(
-    (voice) => voice.lang.toLowerCase() === "zh-tw"
-  );
-  if (exactTw.length > 0) return pickBestQualityVoice(exactTw);
+  const dialectMatched =
+    lang === "zh-TW" ? narrowToTraditionalChinese(candidates) : candidates;
 
-  const traditional = candidates.filter((voice) => {
-    const tag = voice.lang.toLowerCase();
-    return tag.includes("tw") || tag.includes("hant");
-  });
-  if (traditional.length > 0) return pickBestQualityVoice(traditional);
-
-  return pickBestQualityVoice(candidates);
+  return pickBestQualityVoice(narrowToGender(dialectMatched, gender));
 }
 
-function pickVoiceForGender(
-  lang: "zh-TW" | "en-US",
-  gender: VoiceGender
+/**
+ * Resolves the voice for a language using the user's saved gender setting.
+ * Existing callers keep their signature and pick up the setting for free.
+ */
+export function getVoiceForLanguage(
+  lang: "zh-TW" | "en-US"
 ): SpeechSynthesisVoice | null {
-  const voices = getAvailableVoices();
-  const langPrefix = lang.slice(0, 2).toLowerCase();
-
-  const allCandidates = voices.filter((voice) =>
-    voice.lang.toLowerCase().startsWith(langPrefix)
-  );
-
-  if (allCandidates.length === 0) return null;
-
-  // Exclude novelty/joke system voices (Albert, Zarvox, Bad News, etc. —
-  // see NOVELTY_VOICE_NAMES) from the normal pool whenever there's at
-  // least one non-novelty candidate. Without this, if the "real" voices
-  // for a language aren't installed/enabled, one of these could get
-  // picked and every word in that language would come out mangled —
-  // exactly the "every English sound is wrong" failure mode reported
-  // against this Pronunciation Lab.
-  const normalSounding = allCandidates.filter((voice) => !isNoveltyVoice(voice));
-  const candidates = normalSounding.length > 0 ? normalSounding : allCandidates;
-
-  const hints = gender === "female" ? FEMALE_NAME_HINTS : MALE_NAME_HINTS;
-  const otherHints = gender === "female" ? MALE_NAME_HINTS : FEMALE_NAME_HINTS;
-
-  const matched = candidates.find((voice) => {
-    const name = voice.name.toLowerCase();
-    return hints.some((hint) => name.includes(hint));
-  });
-
-  if (matched) return matched;
-
-  // No name matched the requested gender. Avoid anything that clearly
-  // matches the OTHER gender so the two settings still sound different.
-  const remaining = candidates.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    return !otherHints.some((hint) => name.includes(hint));
-  });
-
-  const pool = remaining.length > 0 ? remaining : candidates;
-
-  return gender === "female" ? pool[0] : pool[pool.length - 1];
+  return selectVoice(lang, getSpeechSettings().voiceGender);
 }
 
 export type SpeechCallbacks = {
@@ -329,7 +353,7 @@ export function speak(
   utterance.lang = lang;
   utterance.rate = rate ?? settings.rate;
 
-  const voice = pickVoiceForGender(lang, settings.voiceGender);
+  const voice = selectVoice(lang, settings.voiceGender);
   if (voice) {
     utterance.voice = voice;
   }
