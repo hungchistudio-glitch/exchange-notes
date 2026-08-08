@@ -309,6 +309,28 @@ function DeckWordCard({
  * What JavaScript is left runs only when the settled card changes: updating
  * the counter, and recentring the loop.
  */
+/** Slots either side of centre. Nine cards total, whatever the list size. */
+const WINDOW_RADIUS = 4;
+
+/**
+ * The deck is a native horizontal scroller over a fixed window of cards.
+ *
+ * Every earlier version drove this from JavaScript: pointer handlers, a
+ * velocity model, a settle animation and per-frame transform writes. It never
+ * felt native because it never was — the work ran on the main thread, against
+ * everything else on the page.
+ *
+ * The gesture now belongs to the browser. Momentum, rubber-banding, flick
+ * velocity and snapping come from a scroll-snap container, and the depth is a
+ * scroll-driven animation on view(x), which Safari runs on the compositor from
+ * 26.4. No JavaScript executes during a swipe.
+ *
+ * The window is what makes that affordable. A first attempt rendered the whole
+ * list three times over for cyclic scrolling; at 175 saved words that is 525
+ * cards and over thirty thousand elements, and the phone could not render it
+ * at all. Nine slots are held instead, re-pointed at different words as the
+ * deck moves, so the DOM cost is the same for 20 words or 2,000.
+ */
 export function TodayWordDeck({
   items,
   copy,
@@ -323,55 +345,55 @@ export function TodayWordDeck({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  /**
-   * Three consecutive copies of the list.
-   *
-   * A native scroller has ends; this deck does not. Rendering the run three
-   * times and jumping the scroll position by one run once a swipe settles near
-   * an edge produces an endless deck — the jump is invisible because the card
-   * being jumped to is the same card, at the same offset, showing the same
-   * word.
-   */
-  const loop = useMemo(() => {
+  /** Set while the scroll position is being reset, so the reset is not read
+   *  back as a user swipe. */
+  const recentringRef = useRef(false);
+
+  const window_ = useMemo(() => {
     if (items.length === 0) return [];
 
-    return Array.from({ length: items.length * 3 }, (_, position) => ({
-      position,
-      index: position % items.length,
-      item: items[position % items.length],
-    }));
-  }, [items]);
+    return Array.from({ length: WINDOW_RADIUS * 2 + 1 }, (_, slot) => {
+      const offset = slot - WINDOW_RADIUS;
+      const index = wrapIndex(activeIndex + offset, items.length);
 
-  const slotWidth = () => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return 0;
-
-    const slot = scroller.firstElementChild as HTMLElement | null;
-    return slot?.getBoundingClientRect().width ?? 0;
-  };
-
-  const runWidth = () => slotWidth() * items.length;
-
-  // Open on the middle run so there is a full run of cards in either
-  // direction before any recentring is needed.
-  useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller || items.length === 0) return;
-
-    const frame = requestAnimationFrame(() => {
-      scroller.scrollLeft = runWidth();
+      return { slot, offset, index, item: items[index] };
     });
+  }, [items, activeIndex]);
 
+  function slotWidth() {
+    const scroller = scrollerRef.current;
+    const slot = scroller?.firstElementChild as HTMLElement | null;
+    return slot?.getBoundingClientRect().width ?? 0;
+  }
+
+  /** Puts the middle slot under the snap point without animating. */
+  function centreScroll() {
+    const scroller = scrollerRef.current;
+    const width = slotWidth();
+    if (!scroller || !width) return;
+
+    recentringRef.current = true;
+    scroller.scrollLeft = width * WINDOW_RADIUS;
+
+    // Cleared on the next frame: the scroll event this triggers has to be
+    // ignored, but nothing after it should be.
+    requestAnimationFrame(() => {
+      recentringRef.current = false;
+    });
+  }
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(centreScroll);
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
   /**
-   * Reads the settled card and keeps the loop centred.
+   * Moves the window to wherever the swipe settled.
    *
-   * Bound to scroll rather than to a frame loop, and it only writes state when
-   * the rounded position actually changes — a few times per swipe, not a
-   * hundred and twenty times a second.
+   * Bound to scroll rather than a frame loop, and it only acts once the
+   * scroller has come to rest — so a swipe runs entirely without JavaScript,
+   * and this does its work afterwards.
    */
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -380,28 +402,23 @@ export function TodayWordDeck({
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
     function handleScroll() {
-      const width = slotWidth();
-      if (!width || !scroller) return;
-
-      const position = Math.round(scroller.scrollLeft / width);
-      const next = wrapIndex(position, items.length);
-
-      setActiveIndex((current) => (current === next ? current : next));
-
-      // Recentring mid-gesture would fight the scroller, so it waits for the
-      // scrolling to stop.
+      if (recentringRef.current) return;
       if (settleTimer) clearTimeout(settleTimer);
 
       settleTimer = setTimeout(() => {
-        const run = runWidth();
-        if (!run || !scroller) return;
+        const width = slotWidth();
+        if (!width || !scroller) return;
 
-        if (scroller.scrollLeft < run * 0.5) {
-          scroller.scrollLeft += run;
-        } else if (scroller.scrollLeft > run * 1.5) {
-          scroller.scrollLeft -= run;
-        }
-      }, 140);
+        const landed = Math.round(scroller.scrollLeft / width);
+        const moved = landed - WINDOW_RADIUS;
+        if (moved === 0) return;
+
+        // The window shifts by however far the swipe travelled and the scroll
+        // returns to centre. The card under the snap point is the same one
+        // either way, so the reset cannot be seen.
+        setActiveIndex((current) => wrapIndex(current + moved, items.length));
+        centreScroll();
+      }, 120);
     }
 
     scroller.addEventListener("scroll", handleScroll, { passive: true });
@@ -415,7 +432,6 @@ export function TodayWordDeck({
 
   useEffect(() => () => stopSpeech(), []);
 
-  /** Arrows scroll by exactly one card; the browser animates and snaps. */
   function step(direction: -1 | 1) {
     const scroller = scrollerRef.current;
     const width = slotWidth();
@@ -437,14 +453,14 @@ export function TodayWordDeck({
         aria-label={copy.title}
       >
         <div ref={scrollerRef} className={styles.scroller}>
-          {loop.map(({ position, index, item }) => (
-            <div key={position} className={styles.slot}>
+          {window_.map(({ slot, offset, index, item }) => (
+            <div key={slot} className={styles.slot}>
               <div className={styles.slotInner}>
                 <DeckWordCard
                   item={item}
                   index={index}
                   total={items.length}
-                  interactive={index === activeIndex}
+                  interactive={offset === 0}
                   tone={toneForCard(index)}
                   copy={copy}
                   vocabularyCopy={vocabularyCopy}
