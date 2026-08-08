@@ -1,15 +1,17 @@
 "use client";
 
 import { Volume2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
+  getDefaultSpeechSettings,
   getSpeechSettings,
   setSpeechSettings,
   speak,
+  subscribeToSpeechSettings,
   type VoiceGender,
 } from "@/lib/speech";
 
@@ -17,31 +19,28 @@ const VOICE_OPTIONS: VoiceGender[] = ["female", "male"];
 
 export default function PronunciationSettingsButton() {
   const [open, setOpen] = useState(false);
-  const [rate, setRate] = useState(0.75);
-  const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
+
+  /**
+   * The saved settings are the source of truth, so the controls read them
+   * directly rather than keeping a copy that had to be filled in on mount.
+   * Writing through setSpeechSettings notifies this subscription, so the UI
+   * follows the store instead of tracking it in parallel.
+   */
+  const { rate, voiceGender } = useSyncExternalStore(
+    subscribeToSpeechSettings,
+    getSpeechSettings,
+    getDefaultSpeechSettings,
+  );
 
   const { t, isTraditionalChinese } = useTranslation();
   const copy = t.settings.pronunciation;
 
-  useEffect(() => {
-    const settings = getSpeechSettings();
-
-    setRate(settings.rate);
-    setVoiceGender(settings.voiceGender);
-  }, []);
-
-  function persist(nextRate: number, nextGender: VoiceGender) {
-    setSpeechSettings({ rate: nextRate, voiceGender: nextGender });
-  }
-
   function handleRateChange(value: number) {
-    setRate(value);
-    persist(value, voiceGender);
+    setSpeechSettings({ rate: value, voiceGender });
   }
 
   function handleGenderChange(value: VoiceGender) {
-    setVoiceGender(value);
-    persist(rate, value);
+    setSpeechSettings({ rate, voiceGender: value });
   }
 
   function handleTest() {
