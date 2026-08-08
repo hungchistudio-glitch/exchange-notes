@@ -555,9 +555,12 @@ export function TodayWordDeck({
       return;
     }
 
+    // Element, not HTMLElement: the sound and detail buttons hold <svg>
+    // icons, so a press on the icon itself reports an SVGElement target and
+    // would otherwise slip past this guard and start a drag.
     const target = event.target;
     if (
-      target instanceof HTMLElement
+      target instanceof Element
       && target.closest("button, a")
     ) {
       return;

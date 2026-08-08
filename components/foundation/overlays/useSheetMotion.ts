@@ -148,6 +148,22 @@ export default function useSheetMotion({
   function handlePointerDown(event: ReactPointerEvent<HTMLElement>) {
     if (closingRef.current || closeDisabled || event.button !== 0) return;
 
+    // The sheet header doubles as the drag handle and also holds the close
+    // button. Capturing the pointer retargets pointerup to the header, so the
+    // browser never finds a common target for a click and the button silently
+    // stops working. Let the press through instead of starting a drag.
+    // Element rather than HTMLElement: the close button's icon is an <svg>,
+    // so a press usually lands on an SVGElement, which is an Element but not
+    // an HTMLElement. Narrowing to HTMLElement here would skip the guard for
+    // the exact press this exists to protect.
+    const target = event.target;
+    if (
+      target instanceof Element
+      && target.closest("button, a, input, select, textarea, [role='button']")
+    ) {
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     pointerRef.current = {
       id: event.pointerId,
