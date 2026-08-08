@@ -124,6 +124,15 @@ export function setSpeechSettings(settings: SpeechSettings): void {
 // Browsers don't expose voice gender as data — only as part of the
 // human-readable name, and that varies a lot by OS/browser. These are
 // best-effort hints, not a guarantee.
+/**
+ * Voice names observed on a real device rather than assumed.
+ *
+ * The Mandarin (Taiwan) entries are Apple's Eloquence family, which iOS
+ * groups under that language and which — unlike Meijia — includes male
+ * voices. Meijia appears both with and without a hyphen depending on the
+ * reporting surface, so both spellings are listed; an earlier version had
+ * only "meijia" and never matched the hyphenated name the device reports.
+ */
 const FEMALE_NAME_HINTS = [
   "female",
   "woman",
@@ -133,6 +142,11 @@ const FEMALE_NAME_HINTS = [
   "婷婷",
   "美嘉",
   "meijia",
+  "mei-jia",
+  "grandma",
+  "shelley",
+  "sandy",
+  "flo",
 ];
 const MALE_NAME_HINTS = [
   "male",
