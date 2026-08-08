@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, LoaderCircle } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -33,65 +33,71 @@ export default function EditProfileSheet({
 
   const [name, setName] = useState(initialName);
   const [exchangeId, setExchangeId] = useState(initialExchangeId);
-  const [idStatus, setIdStatus] = useState<IdStatus>("idle");
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
-  const checkTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset local state whenever the sheet is (re)opened.
-  useEffect(() => {
-    if (!open) return;
+  /**
+   * Outcome of the last completed availability lookup, tagged with the id it
+   * ran against so a slow response is never shown beside newer input.
+   */
+  const [idCheck, setIdCheck] = useState<{
+    exchangeId: string;
+    status: "available" | "taken" | "error";
+  } | null>(null);
 
-    setName(initialName);
-    setExchangeId(initialExchangeId);
-    setIdStatus("idle");
-    setError("");
-    setJustSaved(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  /**
+   * Resets the form each time the sheet reopens. Adjusting state during
+   * render is React's documented alternative to a reset effect. Remounting
+   * via a `key` would be the other option, but useSheetMotion keeps this
+   * component mounted for its 380ms exit animation, so a key that changed on
+   * close would cut that animation short.
+   */
+  const [wasOpen, setWasOpen] = useState(open);
+
+  if (open !== wasOpen) {
+    setWasOpen(open);
+
+    if (open) {
+      setName(initialName);
+      setExchangeId(initialExchangeId);
+      setIdCheck(null);
+      setError("");
+      setJustSaved(false);
+    }
+  }
+
+  const needsIdCheck =
+    exchangeId.length >= 3 && exchangeId !== initialExchangeId;
+
+  // Derived rather than stored: "idle" and "checking" follow directly from
+  // the current input, so only the asynchronous outcome is real state.
+  const idStatus: IdStatus = !needsIdCheck
+    ? "idle"
+    : idCheck?.exchangeId === exchangeId
+      ? idCheck.status
+      : "checking";
 
   // Debounced Exchange ID availability check.
   useEffect(() => {
-    if (!open) return;
+    if (!open || !needsIdCheck) return;
 
-    if (checkTimeout.current) {
-      clearTimeout(checkTimeout.current);
-    }
-
-    if (exchangeId.length < 3) {
-      setIdStatus("idle");
-      return;
-    }
-
-    if (exchangeId === initialExchangeId) {
-      setIdStatus("idle");
-      return;
-    }
-
-    setIdStatus("checking");
-
-    checkTimeout.current = setTimeout(async () => {
+    const timeout = setTimeout(async () => {
       try {
         const supabase = createClient();
         const match = await findProfileByExchangeId(supabase, exchangeId);
 
-        if (!match || match.id === userId) {
-          setIdStatus("available");
-        } else {
-          setIdStatus("taken");
-        }
+        setIdCheck({
+          exchangeId,
+          status: !match || match.id === userId ? "available" : "taken",
+        });
       } catch {
-        setIdStatus("error");
+        setIdCheck({ exchangeId, status: "error" });
       }
     }, 400);
 
-    return () => {
-      if (checkTimeout.current) {
-        clearTimeout(checkTimeout.current);
-      }
-    };
-  }, [exchangeId, initialExchangeId, open, userId]);
+    return () => clearTimeout(timeout);
+  }, [exchangeId, needsIdCheck, open, userId]);
 
   const isDirty =
     name.trim() !== initialName.trim() || exchangeId !== initialExchangeId;
