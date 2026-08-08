@@ -58,9 +58,7 @@ export default function VocabularyCardHeader({
             <VocabularyTranslation
               text={translation}
               variant="primary"
-              className="mt-6"
-              showSpeechButton={false}
-            />
+              className="mt-6"            />
           ) : null}
 
           <PronunciationBlock
@@ -73,17 +71,13 @@ export default function VocabularyCardHeader({
           <VocabularyWord
             word={item.word}
             variant="secondary"
-            className="mt-5 border-t border-black/[0.06] pt-5"
-            showSpeechButton={false}
-          />
+            className="mt-5 border-t border-black/[0.06] pt-5"          />
         </>
       ) : (
         <>
           <VocabularyWord
             word={item.word}
-            className="mt-6"
-            showSpeechButton={false}
-          />
+            className="mt-6"          />
 
           <PronunciationBlock
             english={item.word}
@@ -95,9 +89,7 @@ export default function VocabularyCardHeader({
           {translation ? (
             <VocabularyTranslation
               text={translation}
-              className="mt-5 border-t border-black/[0.06] pt-5"
-              showSpeechButton={false}
-            />
+              className="mt-5 border-t border-black/[0.06] pt-5"            />
           ) : null}
         </>
       )}

@@ -1,5 +1,8 @@
-import { cn } from "@/lib/utils";
+"use client";
+
+import { cn, insertValues } from "@/lib/utils";
 import { Display, Title } from "@/components/ui/Typography";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
@@ -19,6 +22,7 @@ export default function VocabularyWord({
   variant = "primary",
   showSpeechButton = true,
 }: Props) {
+  const { t } = useTranslation();
   const normalizedWord = word.trim();
   const TextComponent = variant === "primary" ? Display : Title;
 
@@ -43,7 +47,9 @@ export default function VocabularyWord({
         <VocabularySpeechButton
           text={normalizedWord}
           language="en-US"
-          label={`Play ${normalizedWord}`}
+          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+            text: normalizedWord,
+          })}
           size="sm"
           prominence={variant}
         />
