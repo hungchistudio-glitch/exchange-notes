@@ -1351,6 +1351,13 @@ const traditionalChinese: TranslationDictionary = {
       female: "女聲",
       male: "男聲",
       testVoice: "試聽聲音",
+      genderUnavailable:
+        "Safari 沒有{language}的{gender}語音，所以會使用 {fallback}。在 iOS 設定裡下載更多語音不會有幫助——那些只開放給原生 App，Safari 只拿得到兩個內建的中文語音。",
+      voicesOnDevice: "這台裝置上的語音",
+      voicesOnDeviceDescription:
+        "直接選定語音名稱，就能確定聽到哪一個。沒有指定時，App 會依語音名稱推測性別，而裝置不一定有你要的那種。",
+      voiceAutomatic: "自動",
+      noVoicesInstalled: "這台裝置沒有安裝這個語言的語音。",
     },
   },
 };

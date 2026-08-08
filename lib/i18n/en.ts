@@ -1379,6 +1379,13 @@ const english: TranslationDictionary = {
       female: "Female",
       male: "Male",
       testVoice: "Test voice",
+      genderUnavailable:
+        "Safari has no {gender} {language} voice, so {fallback} is used. Downloading more voices in iOS Settings will not help — iOS keeps those for native apps and only offers Safari the two built-in Chinese voices.",
+      voicesOnDevice: "Voices on this device",
+      voicesOnDeviceDescription:
+        "Pick a voice by name to be certain which one you get. Without a choice, the app guesses from the voice name, which cannot always find the gender you asked for.",
+      voiceAutomatic: "Automatic",
+      noVoicesInstalled: "This device has no voice installed for this language.",
     },
   },
 };
