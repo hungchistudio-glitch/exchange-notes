@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -43,6 +44,21 @@ type CameraOverlayProps = {
   captureAriaLabel: string;
   focusHint: string;
 };
+
+/**
+ * Browser capabilities are read through useSyncExternalStore rather than set
+ * from an effect. They never change while the page is open, so the subscribe
+ * function is a no-op; what matters is the server snapshot.
+ *
+ * That snapshot reports supported. Assuming unsupported would render the
+ * "camera unavailable" notice on the server and then take it away a moment
+ * later, which looks like a fault rather than a capability check.
+ */
+const subscribeNever = () => () => undefined;
+const readCameraSupport = () =>
+  Boolean(navigator.mediaDevices?.getUserMedia);
+const readSpeechSupport = () => "speechSynthesis" in window;
+const assumeSupported = () => true;
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_DIMENSION = 1280;
@@ -406,10 +422,21 @@ function CaptureContent() {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [cameraSupported, setCameraSupported] = useState(true);
-  const [speechSupported, setSpeechSupported] = useState(true);
+  const cameraSupported = useSyncExternalStore(
+    subscribeNever,
+    readCameraSupport,
+    assumeSupported,
+  );
+  const speechSupported = useSyncExternalStore(
+    subscribeNever,
+    readSpeechSupport,
+    assumeSupported,
+  );
   const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
-  const [pronunciation, setPronunciation] = useState<PronunciationResult | null>(null);
+  const [pronunciationEntry, setPronunciationEntry] = useState<{
+    key: string;
+    data: PronunciationResult | null;
+  } | null>(null);
 
   const [friendPickerOpen, setFriendPickerOpen] = useState(false);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
@@ -431,11 +458,6 @@ function CaptureContent() {
     : "/messages";
 
   useEffect(() => {
-    setCameraSupported(Boolean(navigator.mediaDevices?.getUserMedia));
-    setSpeechSupported("speechSynthesis" in window);
-  }, []);
-
-  useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
     };
@@ -445,25 +467,34 @@ function CaptureContent() {
   // IPA via the free dictionary API, zhuyin/pinyin computed locally) — so
   // a word identified here looks consistent with the rest of the app's
   // word cards.
+  const pronunciationKey = result
+    ? `${result.englishName}|${result.chineseName}`
+    : null;
+
+  // Derived rather than cleared: tagging the fetched data with the word it
+  // was fetched for means a slow response for a previous identification can
+  // never appear beside the current one, and nothing has to be reset
+  // synchronously when `result` changes.
+  const pronunciation =
+    pronunciationKey && pronunciationEntry?.key === pronunciationKey
+      ? pronunciationEntry.data
+      : null;
+
   useEffect(() => {
-    if (!result) {
-      setPronunciation(null);
-      return;
-    }
+    if (!result || !pronunciationKey) return;
 
     let cancelled = false;
-    setPronunciation(null);
 
     void getPronunciation(result.englishName, result.chineseName).then(
       (data) => {
-        if (!cancelled) setPronunciation(data);
+        if (!cancelled) setPronunciationEntry({ key: pronunciationKey, data });
       }
     );
 
     return () => {
       cancelled = true;
     };
-  }, [result]);
+  }, [result, pronunciationKey]);
 
   useEffect(() => {
     if (!cameraActive) return;
@@ -600,7 +631,6 @@ function CaptureContent() {
     setCameraStarting(true);
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraSupported(false);
       setCameraStarting(false);
       takePhotoInputRef.current?.click();
       return;
