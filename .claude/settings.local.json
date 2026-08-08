@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git add *)",
       "Bash(git commit -q -m 'refactor: read font size and daily goal via useSyncExternalStore *)",
-      "Bash(git commit -q -m 'perf: drive the card deck drag off React state *)"
+      "Bash(git commit -q -m 'perf: drive the card deck drag off React state *)",
+      "Bash(git checkout *)"
     ]
   }
 }

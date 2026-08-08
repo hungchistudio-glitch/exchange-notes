@@ -8,16 +8,6 @@ type ExchangeNotesMarkProps = {
   surfaceColor?: string;
   highlightColor?: string;
   withTile?: boolean;
-  /**
-   * Drops the nebula, constellation and star field.
-   *
-   * Those details are authored against a 400-unit viewBox, so below roughly
-   * 64px they fall under one device pixel — a 1.25-unit stroke lands at
-   * 0.09px at 29px — and the renderer resolves them as grey haze rather than
-   * as detail. Removing them at small sizes is what makes the mark look
-   * sharp; keeping them is what makes it look low-resolution.
-   */
-  simplified?: boolean;
 };
 
 export default function ExchangeNotesMark({
@@ -28,7 +18,6 @@ export default function ExchangeNotesMark({
   surfaceColor = "#f5f3ed",
   highlightColor = "#ffffff",
   withTile = false,
-  simplified = false,
 }: ExchangeNotesMarkProps) {
   const rawId = useId();
   const idBase = rawId.replace(/:/g, "");
@@ -181,7 +170,6 @@ export default function ExchangeNotesMark({
         strokeLinecap="round"
       />
 
-      {simplified ? null : (
       <g mask={`url(#${bodyMaskId})`}>
         <ellipse
           cx="174"
@@ -253,7 +241,6 @@ export default function ExchangeNotesMark({
           />
         ))}
       </g>
-      )}
 
       <circle cx="285" cy="180" r="40" fill={surfaceColor} />
 

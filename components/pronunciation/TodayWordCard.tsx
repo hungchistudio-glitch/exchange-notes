@@ -17,7 +17,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -300,8 +300,6 @@ function DeckWordCard({
   const detailHref =
     `/vocabulary?widgetAction=open-word&widgetWordId=${encodeURIComponent(item.id)}`
     + `&widgetNonce=home-${encodeURIComponent(item.id)}`;
-  const surfaceColor = tone === "ink" ? "#111216" : "#f1f0eb";
-  const highlightColor = tone === "ink" ? "#ffffff" : "#ffffff";
 
   return (
     <article
@@ -329,21 +327,11 @@ function DeckWordCard({
               aria-label={copy.continueLearning}
               className={styles.markLink}
             >
-              <ExchangeNotesMark
-                className={styles.mark}
-                simplified
-                surfaceColor={surfaceColor}
-                highlightColor={highlightColor}
-              />
+              <ExchangeNotesGlyph className={styles.mark} />
             </Link>
           ) : (
             <span className={styles.markStatic}>
-              <ExchangeNotesMark
-                className={styles.mark}
-                simplified
-                surfaceColor={surfaceColor}
-                highlightColor={highlightColor}
-              />
+              <ExchangeNotesGlyph className={styles.mark} />
             </span>
           )}
         </header>
