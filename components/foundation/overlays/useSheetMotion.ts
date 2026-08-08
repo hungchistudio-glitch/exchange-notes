@@ -15,19 +15,33 @@ const EXIT_DURATION_MS = 380;
 
 let bodyLockCount = 0;
 let previousBodyOverflow = "";
+let previousBodyOverscroll = "";
 
 function lockBodyScroll() {
   if (bodyLockCount === 0) {
-    previousBodyOverflow = document.body.style.overflow;
+    const overflow = document.body.style.overflow;
+
+    // Never remember a locked state as the value to restore. If something
+    // else hid overflow first, storing "hidden" here means releasing this
+    // lock re-applies it — and the page stays unscrollable for good once the
+    // other holder lets go. That is exactly what stranded the capture screen
+    // after taking a photo.
+    previousBodyOverflow = overflow === "hidden" ? "" : overflow;
+    previousBodyOverscroll = document.body.style.overscrollBehavior;
+
     document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
   }
+
   bodyLockCount += 1;
 }
 
 function unlockBodyScroll() {
   bodyLockCount = Math.max(0, bodyLockCount - 1);
+
   if (bodyLockCount === 0) {
     document.body.style.overflow = previousBodyOverflow;
+    document.body.style.overscrollBehavior = previousBodyOverscroll;
   }
 }
 
