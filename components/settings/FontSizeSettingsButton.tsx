@@ -1,14 +1,13 @@
 "use client";
 
 import { Type } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
-  DEFAULT_APP_FONT_SIZE,
   getAppFontSize,
   setAppFontSize,
   subscribeToAppFontSize,
@@ -26,18 +25,21 @@ const FONT_SIZE_OPTIONS: Array<{
 
 export default function FontSizeSettingsButton() {
   const [open, setOpen] = useState(false);
-  const [fontSize, setFontSizeState] = useState<AppFontSize>(
-    DEFAULT_APP_FONT_SIZE,
+
+  /**
+   * The stored preference is an external store, not component state, so it is
+   * read through useSyncExternalStore rather than copied in on mount. Both
+   * snapshots use getAppFontSize because it already returns the default when
+   * there is no window, which keeps the server and client renders identical.
+   */
+  const fontSize = useSyncExternalStore(
+    subscribeToAppFontSize,
+    getAppFontSize,
+    getAppFontSize,
   );
 
   const { t } = useTranslation();
   const copy = t.settings.fontSize;
-
-  useEffect(() => {
-    setFontSizeState(getAppFontSize());
-
-    return subscribeToAppFontSize(setFontSizeState);
-  }, []);
 
   function handleSelect(value: AppFontSize) {
     setAppFontSize(value);

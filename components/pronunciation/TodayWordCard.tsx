@@ -17,7 +17,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -300,8 +300,6 @@ function DeckWordCard({
   const detailHref =
     `/vocabulary?widgetAction=open-word&widgetWordId=${encodeURIComponent(item.id)}`
     + `&widgetNonce=home-${encodeURIComponent(item.id)}`;
-  const surfaceColor = tone === "ink" ? "#111216" : "#f1f0eb";
-  const highlightColor = tone === "ink" ? "#ffffff" : "#ffffff";
 
   return (
     <article
@@ -329,19 +327,11 @@ function DeckWordCard({
               aria-label={copy.continueLearning}
               className={styles.markLink}
             >
-              <ExchangeNotesMark
-                className={styles.mark}
-                surfaceColor={surfaceColor}
-                highlightColor={highlightColor}
-              />
+              <ExchangeNotesGlyph className={styles.mark} />
             </Link>
           ) : (
             <span className={styles.markStatic}>
-              <ExchangeNotesMark
-                className={styles.mark}
-                surfaceColor={surfaceColor}
-                highlightColor={highlightColor}
-              />
+              <ExchangeNotesGlyph className={styles.mark} />
             </span>
           )}
         </header>
@@ -467,6 +457,21 @@ export function TodayWordDeck({
   const pointerRef = useRef<PointerState | null>(null);
   const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /**
+   * Live card slots, keyed by item id and tagged with the deck offset they
+   * were rendered at. A drag writes to these nodes directly: routing every
+   * pointermove through state re-rendered the whole deck up to 120 times a
+   * second on a ProMotion display, which is what cost the gesture its
+   * smoothness. State is only updated once the finger lifts, so the settle
+   * animation still runs through React.
+   */
+  const slotNodesRef = useRef<
+    Map<string, { node: HTMLDivElement; offset: number }>
+  >(new Map());
+
+  const dragFrameRef = useRef<number | null>(null);
+  const pendingDragXRef = useRef(0);
+
   const normalizedActiveIndex = wrapIndex(activeIndex, items.length);
   const activeItem = items[normalizedActiveIndex];
   const entries = useMemo(
@@ -566,13 +571,47 @@ export function TodayWordDeck({
       startX: event.clientX,
       startY: event.clientY,
       lastX: event.clientX,
-      lastTime: performance.now(),
+      lastTime: event.timeStamp,
       velocityX: 0,
       currentX: 0,
       dragging: false,
       blocked: false,
     };
     setGesture(INITIAL_GESTURE);
+  }
+
+  function paintDrag(x: number) {
+    for (const { node, offset } of slotNodesRef.current.values()) {
+      const visual = cardVisual(offset, x, deckWidth);
+
+      node.style.transform = visual.transform;
+      node.style.opacity = String(visual.opacity);
+      node.style.filter = visual.filter;
+      node.style.zIndex = String(visual.zIndex);
+    }
+  }
+
+  /**
+   * Pointer events can outpace the display, so paints are coalesced to one
+   * per frame. Without this a 120Hz stream of moves would queue redundant
+   * style writes that the next move overwrites anyway.
+   */
+  function scheduleDragPaint(x: number) {
+    pendingDragXRef.current = x;
+
+    if (dragFrameRef.current !== null) return;
+
+    dragFrameRef.current = requestAnimationFrame(() => {
+      dragFrameRef.current = null;
+      paintDrag(pendingDragXRef.current);
+    });
+  }
+
+  function cancelDragPaint() {
+    if (dragFrameRef.current === null) return;
+
+    cancelAnimationFrame(dragFrameRef.current);
+    dragFrameRef.current = null;
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -599,10 +638,17 @@ export function TodayWordDeck({
 
       if (Math.abs(deltaX) < 8) return;
       pointer.dragging = true;
+
+      // The only state write of the whole gesture. It flips the slots out of
+      // their CSS transition so the per-frame writes below are not fighting
+      // an interpolation.
+      setGesture({ x: 0, dragging: true, transition: null });
     }
 
     event.preventDefault();
-    const now = performance.now();
+    // The moment the event happened, not the moment this handler ran, so a
+    // delayed handler cannot inflate the measured velocity.
+    const now = event.timeStamp;
     const elapsed = Math.max(now - pointer.lastTime, 1);
     const instantaneousVelocity = (event.clientX - pointer.lastX) / elapsed;
     pointer.velocityX = pointer.velocityX * 0.48 + instantaneousVelocity * 0.52;
@@ -616,12 +662,7 @@ export function TodayWordDeck({
       : deltaX;
 
     pointer.currentX = resistedX;
-
-    setGesture({
-      x: resistedX,
-      dragging: true,
-      transition: null,
-    });
+    scheduleDragPaint(resistedX);
   }
 
   function finishPointer(event: ReactPointerEvent<HTMLDivElement>) {
@@ -629,6 +670,11 @@ export function TodayWordDeck({
     if (!pointer || pointer.pointerId !== event.pointerId) return;
 
     pointerRef.current = null;
+
+    // A queued paint would land after React commits the settle target and
+    // snap the cards back to the drag position mid-animation.
+    cancelDragPaint();
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -657,6 +703,11 @@ export function TodayWordDeck({
     if (!pointer || pointer.pointerId !== event.pointerId) return;
 
     pointerRef.current = null;
+
+    // A queued paint would land after React commits the settle target and
+    // snap the cards back to the drag position mid-animation.
+    cancelDragPaint();
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -699,6 +750,14 @@ export function TodayWordDeck({
             return (
               <div
                 key={item.id}
+                ref={(node) => {
+                  const slots = slotNodesRef.current;
+                  if (node) {
+                    slots.set(item.id, { node, offset });
+                  } else {
+                    slots.delete(item.id);
+                  }
+                }}
                 className={styles.cardSlot}
                 style={{
                   transform: visual.transform,
