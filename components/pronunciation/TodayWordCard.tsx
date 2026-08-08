@@ -191,9 +191,6 @@ function cardVisual(
   const rotationY = -side * effectiveDepth * 1.48;
   const scale = 1 - effectiveDepth * 0.034;
   const opacity = clamp(1 - effectiveDepth * 0.075, 0.48, 1);
-  const blur = effectiveDepth >= 4.5
-    ? (effectiveDepth - 4.2) * 0.34
-    : 0;
 
   return {
     transform: [
@@ -203,7 +200,7 @@ function cardVisual(
       `scale(${scale})`,
     ].join(" "),
     opacity,
-    filter: `brightness(${1 - effectiveDepth * 0.018}) blur(${blur}px)`,
+    filter: `brightness(${1 - effectiveDepth * 0.018})`,
     zIndex: 90 - depth * 8 + (side > 0 ? 1 : 0),
   };
 }
@@ -589,14 +586,8 @@ export function TodayWordDeck({
 
       node.style.transform = visual.transform;
       node.style.opacity = String(visual.opacity);
+      node.style.filter = visual.filter;
       node.style.zIndex = String(visual.zIndex);
-
-      // Brightness only while dragging. The depth blur applies to the two
-      // deepest cards, which sit at 0.48 opacity behind four others — it is
-      // not perceptible on a card in motion, and blur forces the whole
-      // subtree to re-rasterise on every frame. React restores the full
-      // filter when the finger lifts.
-      node.style.filter = visual.filter.replace(/ blur\([^)]*\)/, "");
     }
   }
 
@@ -735,7 +726,6 @@ export function TodayWordDeck({
     <div className={styles.wrapper}>
       <section
         className={styles.deckSurface}
-        data-dragging={gesture.dragging ? "true" : "false"}
         style={{ "--deck-accent": accent } as CSSProperties}
         aria-roledescription="carousel"
         aria-label={copy.title}
