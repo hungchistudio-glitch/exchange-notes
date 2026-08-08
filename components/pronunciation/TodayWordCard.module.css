@@ -50,7 +50,6 @@
   background:
     linear-gradient(112deg, rgba(255, 255, 255, 0.42), transparent 24%, transparent 75%, rgba(255, 255, 255, 0.18)),
     repeating-linear-gradient(96deg, rgba(12, 13, 16, 0.014) 0 1px, transparent 1px 5px);
-  mix-blend-mode: soft-light;
 }
 
 @keyframes ambientOrbit {
@@ -97,7 +96,7 @@
   height: 370px;
   transform-style: preserve-3d;
   transform-origin: 50% 82%;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
 }
 
 .card {
@@ -164,13 +163,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.12;
   background-image:
     radial-gradient(circle at 16% 22%, currentColor 0 0.55px, transparent 0.8px),
     radial-gradient(circle at 76% 64%, currentColor 0 0.45px, transparent 0.75px),
     radial-gradient(circle at 42% 83%, currentColor 0 0.5px, transparent 0.8px);
   background-size: 7px 9px, 11px 13px, 13px 8px;
-  mix-blend-mode: soft-light;
 }
 
 .orbit {

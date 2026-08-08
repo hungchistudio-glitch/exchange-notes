@@ -173,7 +173,6 @@ function cardVisual(
         `scale(${scale})`,
       ].join(" "),
       opacity: 1 - progressAmount * 0.12,
-      filter: `brightness(${1 - progressAmount * 0.025})`,
       zIndex: 100,
     };
   }
@@ -200,7 +199,6 @@ function cardVisual(
       `scale(${scale})`,
     ].join(" "),
     opacity,
-    filter: `brightness(${1 - effectiveDepth * 0.018})`,
     zIndex: 90 - depth * 8 + (side > 0 ? 1 : 0),
   };
 }
@@ -584,10 +582,15 @@ export function TodayWordDeck({
     for (const { node, offset } of slotNodesRef.current.values()) {
       const visual = cardVisual(offset, x, deckWidth);
 
+      // transform and opacity only. These are the two properties a compositor
+      // can apply without repainting anything; every other write here forced
+      // work it could otherwise skip.
+      //
+      // zIndex is deliberately not written: it derives from `offset` alone, so
+      // it cannot change mid-drag — it was being set 120 times a second to the
+      // value it already held, and each write re-evaluated stacking order.
       node.style.transform = visual.transform;
       node.style.opacity = String(visual.opacity);
-      node.style.filter = visual.filter;
-      node.style.zIndex = String(visual.zIndex);
     }
   }
 
@@ -717,9 +720,9 @@ export function TodayWordDeck({
   const transition = gesture.dragging
     ? "none"
     : gesture.transition === "cancel"
-      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease, filter 260ms ease`
+      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease`
       : gesture.transition === "commit"
-        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease, filter 340ms ease`
+        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease`
         : "none";
 
   return (
@@ -762,7 +765,6 @@ export function TodayWordDeck({
                 style={{
                   transform: visual.transform,
                   opacity: visual.opacity,
-                  filter: visual.filter,
                   zIndex: visual.zIndex,
                   transition,
                   pointerEvents: interactive ? "auto" : "none",
