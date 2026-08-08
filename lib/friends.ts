@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
 import { notifyPushEvent } from "@/lib/push/eventsClient";
+import { normalizeExchangeId } from "@/lib/utils";
 
 export type FriendProfile = {
   id: string;
@@ -65,9 +66,22 @@ function orderedPair(a: string, b: string): [string, string] {
 
 export const FRIEND_INVITE_PARAM = "add";
 
-/** Strip the decorations people type around an Exchange ID. */
-export function normalizeExchangeId(exchangeId: string): string {
-  return exchangeId.trim().replace(/^@/, "").toLowerCase();
+/**
+ * Survives only the round trip through Google's OAuth screen, so it is scoped
+ * as tightly as that allows: httpOnly so no script can read who invited whom,
+ * and Lax rather than Strict because the browser arrives back here as a
+ * top-level navigation from accounts.google.com, which Strict would drop.
+ */
+export const PENDING_FRIEND_INVITE_COOKIE = "exchange-notes-pending-invite";
+export const PENDING_FRIEND_INVITE_MAX_AGE_SECONDS = 15 * 60;
+
+/**
+ * Where a scanned friend QR ultimately lands. Callers pass an already
+ * normalized Exchange ID; normalizeExchangeId caps it at 24 characters of
+ * [a-z0-9_], so there is nothing here that could steer the redirect.
+ */
+export function friendInvitePath(exchangeId: string): string {
+  return `/friends?${FRIEND_INVITE_PARAM}=${encodeURIComponent(exchangeId)}`;
 }
 
 /**
@@ -76,7 +90,11 @@ export function normalizeExchangeId(exchangeId: string): string {
  * Developer Mode and a provisioning profile that expires weekly — and even
  * there `add-friend` was not a known route, so it landed on Home. An https
  * link is recognised by the system camera on any phone and opens the installed
- * PWA, or the browser, with the Exchange ID already filled in.
+ * PWA, or the browser.
+ *
+ * It points at /invite rather than straight at /friends because /friends is
+ * behind the login wall: a route handler is the only place that can park the
+ * pending invite in a cookie so it survives signing in.
  *
  * The origin comes from the caller rather than a build-time constant so a
  * Vercel Preview build produces a QR that points back at that same preview.
@@ -85,9 +103,42 @@ export function friendInviteUrl(
   exchangeId: string,
   origin: string
 ): string {
-  const clean = normalizeExchangeId(exchangeId);
+  return `${origin}/invite/${encodeURIComponent(normalizeExchangeId(exchangeId))}`;
+}
 
-  return `${origin}/friends?${FRIEND_INVITE_PARAM}=${encodeURIComponent(clean)}`;
+/**
+ * Pulls the Exchange ID back out of whatever a QR code decoded to — both the
+ * /invite/<id> links this app generates and the older /friends?add=<id> form.
+ * Returns "" for anything else, including a valid URL from somewhere entirely
+ * unrelated, which is what the scanner needs to tell "not our code" apart from
+ * "our code, unreadable".
+ */
+export function exchangeIdFromInviteUrl(value: string): string {
+  let url: URL;
+
+  try {
+    url = new URL(value);
+  } catch {
+    return "";
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    return "";
+  }
+
+  const inviteMatch = url.pathname.match(/^\/invite\/([^/]+)\/?$/);
+
+  if (inviteMatch) {
+    return normalizeExchangeId(decodeURIComponent(inviteMatch[1]));
+  }
+
+  if (url.pathname.replace(/\/$/, "") === "/friends") {
+    return normalizeExchangeId(
+      url.searchParams.get(FRIEND_INVITE_PARAM) ?? ""
+    );
+  }
+
+  return "";
 }
 
 /** Look up a single profile by its user id. */
@@ -110,7 +161,7 @@ export async function findProfileByExchangeId(
   supabase: SupabaseClient,
   exchangeId: string
 ): Promise<FriendProfile | null> {
-  const clean = normalizeExchangeId(exchangeId);
+  const clean = exchangeId.trim().replace(/^@/, "").toLowerCase();
   if (!clean) return null;
 
   const { data, error } = await supabase
