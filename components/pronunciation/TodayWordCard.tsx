@@ -812,12 +812,17 @@ export function TodayWordDeck({
 
         {items.length > 1 ? (
           <nav className={styles.deckMeta} aria-label={copy.title}>
+            {/* The arrow points where the card goes, which is also where the
+                finger would take it: dragging left sends the card left and
+                advances, so the left arrow does the same. Previously each
+                button sent the card the opposite way from the arrow drawn on
+                it. */}
             <button
               type="button"
-              aria-label={copy.previousWord}
+              aria-label={copy.nextWord}
               className={styles.navButton}
               disabled={Boolean(gesture.transition)}
-              onClick={() => settleTo(-1)}
+              onClick={() => settleTo(1)}
             >
               <ArrowLeft size={15} />
             </button>
@@ -830,10 +835,10 @@ export function TodayWordDeck({
 
             <button
               type="button"
-              aria-label={copy.nextWord}
+              aria-label={copy.previousWord}
               className={styles.navButton}
               disabled={Boolean(gesture.transition)}
-              onClick={() => settleTo(1)}
+              onClick={() => settleTo(-1)}
             >
               <ArrowRight size={15} />
             </button>
