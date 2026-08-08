@@ -1,29 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import {
-  DEFAULT_INTERFACE_LANGUAGE,
   getInterfaceLanguage,
   subscribeToInterfaceLanguage,
-  type InterfaceLanguage,
 } from "@/lib/appPreferences";
 
+/**
+ * The stored interface language is an external store, not component state, so
+ * it is read through useSyncExternalStore rather than copied in on mount.
+ *
+ * Both snapshots use the same getter because it already returns the default
+ * when there is no window, which keeps the server and client renders
+ * identical — the reason the old copy-in effect could not simply move into a
+ * useState initialiser.
+ */
 export default function useInterfaceLanguage() {
-  const [language, setLanguage] =
-    useState<InterfaceLanguage>(
-      DEFAULT_INTERFACE_LANGUAGE,
-    );
-
-  useEffect(() => {
-    setLanguage(getInterfaceLanguage());
-
-    return subscribeToInterfaceLanguage(
-      (nextLanguage) => {
-        setLanguage(nextLanguage);
-      },
-    );
-  }, []);
-
-  return language;
+  return useSyncExternalStore(
+    subscribeToInterfaceLanguage,
+    getInterfaceLanguage,
+    getInterfaceLanguage,
+  );
 }
