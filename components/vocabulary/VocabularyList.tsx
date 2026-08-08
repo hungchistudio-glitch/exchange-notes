@@ -121,7 +121,7 @@ function VocabularyList({
         description={t.vocabulary.search.firstWordDescription}
         action={
           <Link
-            href="/capture"
+            href="/capture?from=vocabulary"
             className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
           >
             {t.vocabulary.search.discoverWord}
