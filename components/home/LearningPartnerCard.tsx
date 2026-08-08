@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import Card from "@/components/foundation/cards/Card";
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getPendingIncomingRequestCount } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
@@ -64,7 +64,7 @@ export default function LearningPartnerCard() {
       <Link href="/messages" className="block">
         <Card className="flex items-center gap-3 border border-[#cdeac4] bg-gradient-to-br from-[#f2faee] to-white p-4 transition active:scale-[0.99]">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#dbead6] text-[#2f6c38]">
-            <ExchangeNotesMark className="h-6 w-6" surfaceColor="#dbead6" />
+            <ExchangeNotesGlyph className="h-6 w-6" eyeColor="#dbead6" />
           </div>
 
           <div className="min-w-0 flex-1">

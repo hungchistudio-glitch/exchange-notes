@@ -3,6 +3,16 @@ type ExchangeNotesGlyphProps = {
   withTile?: boolean;
   /** Background fill, used only when `withTile` is set. */
   tileColor?: string;
+  /**
+   * What shows through the eye. Set it to the colour of the surface directly
+   * behind the glyph and the eye reads as a hole punched through the mark
+   * rather than as a light dot.
+   *
+   * Must stay light. Passing a dark surface colour — which is how the word
+   * card originally lost its mark on ink-toned cards — flattens the eye into
+   * the body and takes the glyph's most recognisable feature with it.
+   */
+  eyeColor?: string;
 };
 
 /** Brand ink. Fixed rather than themed — the mark reads the same everywhere. */
@@ -15,7 +25,7 @@ const INK = "#09090b";
  */
 const BAR = "#c2c4c8";
 
-/** The eye. Light on every surface — a dark eye collapses the mark. */
+/** Default eye. Light on every surface — a dark eye collapses the mark. */
 const EYE = "#f1f0eb";
 
 /**
@@ -37,6 +47,7 @@ export default function ExchangeNotesGlyph({
   className,
   withTile = false,
   tileColor = "#f5f3ed",
+  eyeColor = EYE,
 }: ExchangeNotesGlyphProps) {
   return (
     <svg
@@ -79,7 +90,7 @@ export default function ExchangeNotesGlyph({
 
       {/* Eye sits in the mouth of the body and knocks a hole through the bar
           running under it, exactly as the full mark does. */}
-      <circle cx="16.6" cy="12" r="2.9" fill={EYE} />
+      <circle cx="16.6" cy="12" r="2.9" fill={eyeColor} />
       <circle
         cx="16.6"
         cy="12"
