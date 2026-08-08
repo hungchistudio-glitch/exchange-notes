@@ -899,6 +899,8 @@ const traditionalChinese: TranslationDictionary = {
       shareWordAriaLabel: "分享單字",
       deleteWordAriaLabel: "刪除單字",
       listenAriaLabel: "播放：{text}",
+      markAsMastered: "標記為已掌握",
+      markAsLearning: "移回學習中",
 
       reviewPanel: {
         title: "複習這個單字",

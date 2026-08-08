@@ -922,6 +922,8 @@ const english: TranslationDictionary = {
       shareWordAriaLabel: "Share word",
       deleteWordAriaLabel: "Delete word",
       listenAriaLabel: "Listen: {text}",
+      markAsMastered: "Mark as mastered",
+      markAsLearning: "Move to learning",
 
       reviewPanel: {
         title: "Review this word",

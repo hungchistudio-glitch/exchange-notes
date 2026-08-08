@@ -891,6 +891,8 @@ export type TranslationDictionary = {
       shareWordAriaLabel: string;
       deleteWordAriaLabel: string;
       listenAriaLabel: string;
+      markAsMastered: string;
+      markAsLearning: string;
 
       reviewPanel: {
         title: string;
