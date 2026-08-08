@@ -331,6 +331,7 @@ function DeckWordCard({
             >
               <ExchangeNotesMark
                 className={styles.mark}
+                simplified
                 surfaceColor={surfaceColor}
                 highlightColor={highlightColor}
               />
@@ -339,6 +340,7 @@ function DeckWordCard({
             <span className={styles.markStatic}>
               <ExchangeNotesMark
                 className={styles.mark}
+                simplified
                 surfaceColor={surfaceColor}
                 highlightColor={highlightColor}
               />
