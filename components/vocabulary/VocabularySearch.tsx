@@ -1,19 +1,25 @@
 "use client";
 
 import {
+  Camera,
   FolderHeart,
+  ImageIcon,
   LayoutGrid,
   List,
+  Mic,
   Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import Link from "next/link";
 
 import { Pill } from "@/components/foundation-legacy";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useVoiceInput from "@/hooks/useVoiceInput";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
 type QuickFilter = {
@@ -52,7 +58,19 @@ export default function VocabularySearch({
   onToggleView,
 }: VocabularySearchProps) {
   const { t } = useTranslation();
+  const { isLearningChinese } = useLearningLanguageContext();
   const search = t.vocabulary.search;
+
+  // Dictate in the language being learned — that's what the user is
+  // searching their vocabulary for.
+  const { supported: voiceSupported, listening, toggle: toggleVoice } =
+    useVoiceInput({
+      lang: isLearningChinese ? "zh-TW" : "en-US",
+      onResult: onQueryChange,
+    });
+
+  const lookupButtonClass =
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
 
   const sortLabels: Record<SortMode, string> = {
     new: search.sortOptions.new,
@@ -94,6 +112,59 @@ export default function VocabularySearch({
               <X size={13} strokeWidth={2} />
             </button>
           )}
+
+          {/* Recognition shortcuts live inside the field because they're
+              all alternative ways of filling it. Camera and photo reuse the
+              existing /capture pipeline (same 10MB / 1600px / JPEG limits)
+              rather than duplicating an upload flow, and voice runs
+              on-device via the Web Speech API — so none of the three adds
+              an extra AI round trip just to get the input. */}
+          <span
+            className="flex shrink-0 items-center gap-0.5 border-l border-black/[0.07] pl-1.5"
+            role="toolbar"
+            aria-label={search.lookupToolbarAriaLabel}
+          >
+            <Link
+              href="/capture?source=camera"
+              aria-label={search.cameraLookup}
+              title={search.cameraLookup}
+              className={lookupButtonClass}
+            >
+              <Camera size={16} strokeWidth={1.8} />
+            </Link>
+
+            <Link
+              href="/capture?source=library"
+              aria-label={search.photoLookup}
+              title={search.photoLookup}
+              className={lookupButtonClass}
+            >
+              <ImageIcon size={16} strokeWidth={1.8} />
+            </Link>
+
+            {voiceSupported && (
+              <button
+                type="button"
+                onClick={toggleVoice}
+                aria-label={
+                  listening ? search.voiceListening : search.voiceSearch
+                }
+                title={listening ? search.voiceListening : search.voiceSearch}
+                aria-pressed={listening}
+                className={
+                  listening
+                    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#c9962e] text-white transition duration-200 active:scale-90"
+                    : lookupButtonClass
+                }
+              >
+                <Mic
+                  size={16}
+                  strokeWidth={1.8}
+                  className={listening ? "animate-pulse" : undefined}
+                />
+              </button>
+            )}
+          </span>
         </label>
 
       </div>

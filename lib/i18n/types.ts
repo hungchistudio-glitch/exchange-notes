@@ -982,6 +982,11 @@ export type TranslationDictionary = {
       openLibrary: string;
       openCollections: string;
       toolbarAriaLabel: string;
+      lookupToolbarAriaLabel: string;
+      cameraLookup: string;
+      photoLookup: string;
+      voiceSearch: string;
+      voiceListening: string;
       cardsView: string;
       compactView: string;
       closeSortMenu: string;
