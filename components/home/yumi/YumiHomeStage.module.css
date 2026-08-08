@@ -3,6 +3,35 @@
    A fixed height + overflow:hidden on this outer wrapper previously
    clipped the status text entirely, since the ground area alone already
    filled 100% of that fixed box, leaving zero room for anything after it. */
+/*
+ * Animation here is budgeted, not free.
+ *
+ * Yumi and the mark inside her run 64 infinite animations between them. Each
+ * is individually cheap — nearly all animate transform or opacity — but each
+ * also holds a compositing layer for as long as it runs, and they were running
+ * whether or not anyone could see them.
+ *
+ * They stop in the two situations where the frames are needed elsewhere and
+ * the motion cannot be appreciated anyway: while a word card is being swiped,
+ * and while the stage is scrolled out of view. The IntersectionObserver that
+ * drives the second was already here, feeding Yumi's mood; it just was not
+ * being used for this.
+ *
+ * animation-play-state is the right lever for it. It stops a layer advancing
+ * rather than tearing it down and rebuilding it, so unlike toggling a filter
+ * it costs nothing at the moment it is applied.
+ */
+:global(html[data-deck-dragging="true"]) .stage *,
+:global(html[data-deck-dragging="true"]) .stage,
+.stage[data-in-view="false"] *,
+.stage[data-in-view="false"] {
+  animation-play-state: paused !important;
+}
+
+.stage {
+  animation-play-state: paused !important;
+}
+
 .stage {
   position: relative;
   background: radial-gradient(

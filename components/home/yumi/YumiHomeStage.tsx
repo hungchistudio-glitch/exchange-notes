@@ -486,7 +486,11 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const secondaryText = feeding.isFeeding || reaction ? "" : lines.secondary;
 
   return (
-    <div ref={stageRef} className={styles.stage}>
+    <div
+      ref={stageRef}
+      className={styles.stage}
+      data-in-view={inView ? "true" : "false"}
+    >
       <div ref={yumiZoneRef} className={styles.ground}>
         <div className={styles.ambientLight} aria-hidden="true">
           <span />
