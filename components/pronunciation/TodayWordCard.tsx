@@ -68,16 +68,7 @@ const INITIAL_GESTURE: GestureState = {
 
 const COMMIT_DURATION_MS = 440;
 const CANCEL_DURATION_MS = 360;
-/**
- * Active card plus one either side.
- *
- * Each card is 59 elements, so seven put 413 of them inside a 3D perspective
- * context being transformed every frame — and that volume, not any single
- * property, was what the compositor could not keep up with. Three is the
- * minimum that still shows a card arriving from the direction of travel,
- * which is the only depth a swipe actually reveals.
- */
-const MAX_VISIBLE_CARDS = 3;
+const MAX_VISIBLE_CARDS = 7;
 
 const DECK_ACCENTS = [
   "154 174 194",
@@ -182,6 +173,7 @@ function cardVisual(
         `scale(${scale})`,
       ].join(" "),
       opacity: 1 - progressAmount * 0.12,
+      filter: `brightness(${1 - progressAmount * 0.025})`,
       zIndex: 100,
     };
   }
@@ -199,6 +191,9 @@ function cardVisual(
   const rotationY = -side * effectiveDepth * 1.48;
   const scale = 1 - effectiveDepth * 0.034;
   const opacity = clamp(1 - effectiveDepth * 0.075, 0.48, 1);
+  const blur = effectiveDepth >= 4.5
+    ? (effectiveDepth - 4.2) * 0.34
+    : 0;
 
   return {
     transform: [
@@ -208,6 +203,7 @@ function cardVisual(
       `scale(${scale})`,
     ].join(" "),
     opacity,
+    filter: `brightness(${1 - effectiveDepth * 0.018}) blur(${blur}px)`,
     zIndex: 90 - depth * 8 + (side > 0 ? 1 : 0),
   };
 }
@@ -587,19 +583,31 @@ export function TodayWordDeck({
     setGesture(INITIAL_GESTURE);
   }
 
+  /**
+   * Cards two or more layers deep are not repainted mid-drag.
+   *
+   * Their transform is driven by `depth + progressAmount * 0.08`, so across a
+   * whole swipe a card at depth 3 travels from 3 to 3.08 — nothing an eye can
+   * resolve behind three other cards. Yet each was being rewritten 120 times a
+   * second, and every one of them carries the full card: paper grain over a
+   * blend mode, orbit rules, frosted controls, layered shadows.
+   *
+   * The stack stays seven deep and keeps every one of those effects. Only the
+   * three that actually travel — the active card and the neighbour on either
+   * side, so the direction of the swipe does not matter — are written per
+   * frame. React restores the exact values for the rest when the gesture
+   * settles, and the 0.08 they were owed arrives then.
+   */
   function paintDrag(x: number) {
     for (const { node, offset } of slotNodesRef.current.values()) {
+      if (Math.abs(offset) > 1) continue;
+
       const visual = cardVisual(offset, x, deckWidth);
 
-      // transform and opacity only. These are the two properties a compositor
-      // can apply without repainting anything; every other write here forced
-      // work it could otherwise skip.
-      //
-      // zIndex is deliberately not written: it derives from `offset` alone, so
-      // it cannot change mid-drag — it was being set 120 times a second to the
-      // value it already held, and each write re-evaluated stacking order.
       node.style.transform = visual.transform;
       node.style.opacity = String(visual.opacity);
+      node.style.filter = visual.filter;
+      node.style.zIndex = String(visual.zIndex);
     }
   }
 
@@ -656,9 +664,9 @@ export function TodayWordDeck({
       // an interpolation.
       setGesture({ x: 0, dragging: true, transition: null });
 
-      // Signals the rest of the page to hold still. The Yumi stage above this
-      // deck runs 33 infinite animations, each holding its own compositing
-      // layer, and they were consuming the frames this gesture needed.
+      // Holds the rest of the page still. The Yumi stage above this deck runs
+      // 33 infinite animations, each keeping a compositing layer alive, and
+      // they were consuming the frames this gesture needed.
       document.documentElement.setAttribute("data-deck-dragging", "true");
     }
 
@@ -736,9 +744,9 @@ export function TodayWordDeck({
   const transition = gesture.dragging
     ? "none"
     : gesture.transition === "cancel"
-      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease`
+      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease, filter 260ms ease`
       : gesture.transition === "commit"
-        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease`
+        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease, filter 340ms ease`
         : "none";
 
   return (
@@ -781,6 +789,7 @@ export function TodayWordDeck({
                 style={{
                   transform: visual.transform,
                   opacity: visual.opacity,
+                  filter: visual.filter,
                   zIndex: visual.zIndex,
                   transition,
                   pointerEvents: interactive ? "auto" : "none",

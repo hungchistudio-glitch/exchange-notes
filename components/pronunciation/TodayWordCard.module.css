@@ -37,6 +37,7 @@
       transparent 360deg
     );
   filter: blur(34px);
+  animation: ambientOrbit 16s linear infinite;
 }
 
 .deckSurface::after {
@@ -47,7 +48,15 @@
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(112deg, rgba(255, 255, 255, 0.42), transparent 24%, transparent 75%, rgba(255, 255, 255, 0.18));
+    linear-gradient(112deg, rgba(255, 255, 255, 0.42), transparent 24%, transparent 75%, rgba(255, 255, 255, 0.18)),
+    repeating-linear-gradient(96deg, rgba(12, 13, 16, 0.014) 0 1px, transparent 1px 5px);
+  mix-blend-mode: soft-light;
+}
+
+@keyframes ambientOrbit {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .deckViewport {
@@ -65,21 +74,6 @@
   cursor: grabbing;
 }
 
-/*
- * backdrop-filter is gone from every control on these cards rather than
- * toggled during a drag.
- *
- * Toggling it was worse than leaving it on: changing the property forces the
- * browser to tear down and rebuild compositing layers, and doing that for 21
- * elements at the instant a drag begins put the cost exactly where the hand
- * feels it.
- *
- * Removing it outright is the real fix, because backdrop-filter samples
- * whatever sits behind the element — and these cards move every frame, so the
- * blur can never be rasterised once and reused the way an ordinary filter can.
- * It was the only effect here that was uncacheable by construction. The tint
- * behind each control is raised slightly to carry the look on its own.
- */
 .cardSlot {
   position: absolute;
   top: 58px;
@@ -88,7 +82,7 @@
   height: 370px;
   transform-style: preserve-3d;
   transform-origin: 50% 82%;
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
 }
 
 .card {
@@ -97,7 +91,7 @@
   --card-muted: rgba(17, 18, 22, 0.48);
   --card-line: rgba(17, 18, 22, 0.1);
   --card-panel: rgba(255, 255, 255, 0.48);
-  --card-control: rgba(17, 18, 22, 0.10);
+  --card-control: rgba(17, 18, 22, 0.07);
   --card-control-strong: #111216;
   --card-control-strong-fg: #f7f6f2;
   position: relative;
@@ -124,7 +118,7 @@
   --card-muted: rgba(245, 244, 240, 0.5);
   --card-line: rgba(255, 255, 255, 0.11);
   --card-panel: rgba(255, 255, 255, 0.065);
-  --card-control: rgba(255, 255, 255, 0.13);
+  --card-control: rgba(255, 255, 255, 0.09);
   --card-control-strong: #f4f2ec;
   --card-control-strong-fg: #111216;
   border-color: rgba(255, 255, 255, 0.16);
@@ -145,7 +139,7 @@
   --card-muted: rgba(16, 17, 21, 0.48);
   --card-line: rgba(16, 17, 21, 0.11);
   --card-panel: rgba(255, 255, 255, 0.38);
-  --card-control: rgba(16, 17, 21, 0.10);
+  --card-control: rgba(16, 17, 21, 0.07);
   background:
     linear-gradient(112deg, rgba(255, 255, 255, 0.8), transparent 31%, rgba(255, 255, 255, 0.2) 62%, transparent),
     linear-gradient(148deg, #eeeeeb 0%, #c7c8c8 47%, #e1e0db 100%);
@@ -155,12 +149,13 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.12;
+  opacity: 0.18;
   background-image:
     radial-gradient(circle at 16% 22%, currentColor 0 0.55px, transparent 0.8px),
     radial-gradient(circle at 76% 64%, currentColor 0 0.45px, transparent 0.75px),
     radial-gradient(circle at 42% 83%, currentColor 0 0.5px, transparent 0.8px);
   background-size: 7px 9px, 11px 13px, 13px 8px;
+  mix-blend-mode: soft-light;
 }
 
 .orbit {
@@ -239,6 +234,8 @@
   border-radius: 50%;
   color: var(--card-fg);
   background: var(--card-control);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .markLink {
@@ -325,6 +322,8 @@
   padding: 13px 14px;
   color: var(--card-fg);
   background: var(--card-control);
+  backdrop-filter: blur(13px);
+  -webkit-backdrop-filter: blur(13px);
   transition: transform 160ms ease, background 160ms ease;
 }
 
@@ -451,6 +450,8 @@
   color: rgba(12, 13, 16, 0.62);
   background: rgba(255, 255, 255, 0.6);
   box-shadow: 0 8px 18px rgba(12, 13, 16, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   pointer-events: auto;
   transition: transform 160ms ease, background 160ms ease;
 }
