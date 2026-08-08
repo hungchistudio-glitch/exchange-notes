@@ -17,6 +17,18 @@ export type VocabularyLookupResult = {
 };
 
 /**
+ * What the offline dictionary can answer on its own, with no model call.
+ * Example sentences are absent by design: the offline index fabricates them,
+ * so the UI shows a skeleton there until the real lookup lands.
+ */
+export type VocabularyLookupPreview = {
+  englishName: string;
+  chineseName: string;
+  partOfSpeech: string;
+  category: VocabularyCategory;
+};
+
+/**
  * Shared by the model response parser and the shared lookup cache. Rows read
  * back from the cache are re-validated with this rather than trusted, so a
  * row written by an older result shape is discarded instead of served.

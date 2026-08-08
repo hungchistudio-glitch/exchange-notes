@@ -8,6 +8,7 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
+  VocabularyLookupPreview,
   VocabularyLookupResult,
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
@@ -36,6 +37,7 @@ export type VocabularyLookupModalProps = {
   lookupResult: VocabularyLookupResult | null;
   lookupError: string;
   lookupDegraded?: boolean;
+  lookupPreview?: VocabularyLookupPreview | null;
 
   savingLookup: boolean;
   lookupCopied: boolean;
@@ -55,6 +57,7 @@ export default function VocabularyLookupModal({
   lookupResult,
   lookupError,
   lookupDegraded = false,
+  lookupPreview = null,
   savingLookup,
   lookupCopied,
   onLookupWord,
@@ -179,6 +182,39 @@ export default function VocabularyLookupModal({
               )}
             </button>
           </form>
+
+          {lookupStatus === "loading" && lookupPreview && (
+            <article
+              aria-busy="true"
+              className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)] sm:p-6"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                {isLearningChinese
+                  ? t.vocabulary.lookup.chinese
+                  : t.vocabulary.lookup.english}
+              </p>
+
+              <p className="mt-2 text-[24px] font-bold tracking-[-0.02em]">
+                {isLearningChinese
+                  ? lookupPreview.chineseName
+                  : lookupPreview.englishName}
+              </p>
+
+              <p className="mt-1 text-[15px] text-black/45">
+                {isLearningChinese
+                  ? lookupPreview.englishName
+                  : lookupPreview.chineseName}
+              </p>
+
+              {/* Examples are still loading. The offline dictionary only
+                  invents them, so nothing is shown here until the real
+                  lookup lands. */}
+              <div className="mt-5 space-y-2">
+                <div className="h-4 w-4/5 animate-pulse rounded-full bg-black/[0.06]" />
+                <div className="h-4 w-3/5 animate-pulse rounded-full bg-black/[0.06]" />
+              </div>
+            </article>
+          )}
 
           {lookupStatus === "idle" && (
             <div className="py-12 text-center">
