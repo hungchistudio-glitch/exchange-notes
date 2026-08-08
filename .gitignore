@@ -23,3 +23,6 @@ supabase/.temp/
 # Stray archives that shouldn't be committed
 *.tar.gz
 *.zip
+
+# Machine-local Claude Code settings (permission grants, not shared config)
+.claude/settings.local.json
