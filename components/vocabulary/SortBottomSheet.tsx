@@ -16,6 +16,9 @@ export type SortMode =
   | "for-you"
   | "trending";
 
+/** The sort applied when the user has not chosen one. */
+export const DEFAULT_SORT_MODE: SortMode = "new";
+
 type SortBottomSheetProps = {
   value: SortMode;
   onChange: (mode: SortMode) => void;

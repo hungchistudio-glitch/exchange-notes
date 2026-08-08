@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Pill } from "@/components/foundation-legacy";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
+import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -201,15 +202,17 @@ export default function VocabularySearch({
           <button
             type="button"
             onClick={onOpenSort}
-            aria-label={search.sort}
+            aria-label={`${search.sort}: ${sortLabels[sortMode]}`}
             title={sortLabels[sortMode]}
             className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
           >
             <SlidersHorizontal size={16} strokeWidth={1.8} />
-            <span
-              className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#c9962e]"
-              aria-hidden="true"
-            />
+            {sortMode !== DEFAULT_SORT_MODE && (
+              <span
+                className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#c9962e]"
+                aria-hidden="true"
+              />
+            )}
           </button>
 
           <button
