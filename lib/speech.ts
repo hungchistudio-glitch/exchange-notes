@@ -447,9 +447,18 @@ export function listVoicesForLanguage(
 ): SpeechSynthesisVoice[] {
   const langPrefix = lang.slice(0, 2).toLowerCase();
 
-  const candidates = getAvailableVoices().filter((voice) =>
-    voice.lang.toLowerCase().startsWith(langPrefix)
-  );
+  // iOS Safari reports some voices twice with the same voiceURI, which showed
+  // up as duplicate rows that both highlighted when either was picked — and
+  // as duplicate React keys.
+  const seen = new Set<string>();
+
+  const candidates = getAvailableVoices().filter((voice) => {
+    if (!voice.lang.toLowerCase().startsWith(langPrefix)) return false;
+    if (seen.has(voice.voiceURI)) return false;
+
+    seen.add(voice.voiceURI);
+    return true;
+  });
 
   if (lang !== "zh-TW") return candidates;
 
