@@ -79,7 +79,12 @@ begin
 end;
 $$;
 
+-- Revoking from `public` alone is not enough: Supabase's default privileges
+-- grant EXECUTE on new public-schema functions directly to anon, and a direct
+-- grant survives a revoke aimed at the PUBLIC pseudo-role. Revoke anon too so
+-- an unauthenticated session can never reach this quota function.
 revoke all on function public.consume_ai_daily_quota(text, integer) from public;
+revoke all on function public.consume_ai_daily_quota(text, integer) from anon;
 grant execute on function public.consume_ai_daily_quota(text, integer) to authenticated;
 
 comment on table public.ai_usage_daily is
