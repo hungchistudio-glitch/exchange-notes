@@ -800,6 +800,9 @@ const english: TranslationDictionary = {
       description:
         "Search any English or Traditional Chinese word for its translation, part of speech and natural examples.",
       error: "Could not search that word.",
+      degradedNotice:
+        "Smart search is busy, so this came from the offline dictionary. The word and translation are correct — only the examples are generic.",
+      degradedRetry: "Try again for real examples",
       english: "English",
       chinese: "Traditional Chinese",
       englishExample: "English example",

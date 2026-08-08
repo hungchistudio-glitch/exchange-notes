@@ -46,10 +46,20 @@ type CameraOverlayProps = {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_DIMENSION = 1280;
+
+/**
+ * Gemini bills images as 768x768 tiles, so a 1280px photo costs four tiles
+ * where a 768px one costs a single tile. Identifying the object nearest the
+ * centre does not need the extra detail, so the model gets its own smaller
+ * copy while the preview and the saved word image stay at MAX_DIMENSION.
+ */
+const MAX_AI_DIMENSION = 768;
+
 const JPEG_QUALITY = 0.8;
 const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
-const IDENTIFICATION_CACHE_VERSION = "v1";
+// v2: cache keys now hash the downscaled image actually sent to the model.
+const IDENTIFICATION_CACHE_VERSION = "v2";
 
 type CachedIdentification = {
   expiresAt: number;
@@ -635,7 +645,8 @@ function CaptureContent() {
   function drawToDataUrl(
     sourceImage: CanvasImageSource,
     sourceWidth: number,
-    sourceHeight: number
+    sourceHeight: number,
+    maxDimension: number = MAX_DIMENSION
   ): string | null {
     if (
       !Number.isFinite(sourceWidth) ||
@@ -651,7 +662,7 @@ function CaptureContent() {
 
     const scale = Math.min(
       1,
-      MAX_DIMENSION / Math.max(sourceWidth, sourceHeight)
+      maxDimension / Math.max(sourceWidth, sourceHeight)
     );
 
     canvas.width = Math.max(1, Math.round(sourceWidth * scale));
@@ -673,6 +684,32 @@ function CaptureContent() {
     );
 
     return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  }
+
+  /**
+   * Re-renders the stored preview down to MAX_AI_DIMENSION for the
+   * identification request. Falls back to the full-size copy if the decode
+   * fails: a larger image only costs more, whereas throwing here would block
+   * the capture entirely.
+   */
+  function buildAiImage(dataUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const image = new Image();
+
+      image.onload = () => {
+        resolve(
+          drawToDataUrl(
+            image,
+            image.naturalWidth,
+            image.naturalHeight,
+            MAX_AI_DIMENSION
+          ) ?? dataUrl
+        );
+      };
+
+      image.onerror = () => resolve(dataUrl);
+      image.src = dataUrl;
+    });
   }
 
   function compressImage(file: File): Promise<string> {
@@ -792,7 +829,10 @@ function CaptureContent() {
     setResult(null);
 
     try {
-      const cacheKey = await getIdentificationCacheKey(imageData);
+      // Keyed on the downscaled copy because that is what determines the
+      // model's answer.
+      const aiImage = await buildAiImage(imageData);
+      const cacheKey = await getIdentificationCacheKey(aiImage);
       const cachedResult = getCachedIdentification(cacheKey);
 
       if (cachedResult) {
@@ -815,7 +855,7 @@ function CaptureContent() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            image: imageData,
+            image: aiImage,
           }),
           signal: controller.signal,
         });

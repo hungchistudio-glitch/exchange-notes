@@ -781,6 +781,9 @@ const traditionalChinese: TranslationDictionary = {
       description:
         "搜尋任何英文或繁體中文單字，自動取得翻譯、詞性與自然例句。",
       error: "無法搜尋這個單字。",
+      degradedNotice:
+        "智慧搜尋忙碌中，這筆結果來自離線字典。單字和翻譯都正確，只有例句是通用範本。",
+      degradedRetry: "再試一次以取得真實例句",
       english: "英文",
       chinese: "繁體中文",
       englishExample: "英文例句",

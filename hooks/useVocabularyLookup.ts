@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import type {
   VocabularyLookupResult,
+  VocabularyLookupPreview,
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
 
@@ -84,10 +85,28 @@ export default function useVocabularyLookup(query: string) {
     useState<VocabularyLookupResult | null>(null);
   const [lookupError, setLookupError] = useState("");
 
+  /**
+   * True when the result came from the offline dictionary because the model
+   * was unreachable or rate limited. The word and translation are still
+   * correct; only the example sentences are canned templates.
+   */
+  const [lookupDegraded, setLookupDegraded] = useState(false);
+
+  /**
+   * Word, translation and part of speech from the offline dictionary, shown
+   * while the real lookup is still running. Carries no example sentences on
+   * purpose — the offline index invents those, and flashing invented text
+   * that the real result overwrites reads as a glitch.
+   */
+  const [lookupPreview, setLookupPreview] =
+    useState<VocabularyLookupPreview | null>(null);
+
   const resetLookup = useCallback(() => {
     setLookupStatus("idle");
     setLookupResult(null);
     setLookupError("");
+    setLookupDegraded(false);
+    setLookupPreview(null);
   }, []);
 
   const lookupWord = useCallback(async () => {
@@ -97,6 +116,8 @@ export default function useVocabularyLookup(query: string) {
 
     setLookupStatus("loading");
     setLookupError("");
+    setLookupDegraded(false);
+    setLookupPreview(null);
 
     try {
       const cachedResult = readCachedLookup(cleanQuery);
@@ -106,6 +127,23 @@ export default function useVocabularyLookup(query: string) {
         setLookupStatus("result");
         return;
       }
+
+      // Runs alongside the real lookup rather than before it, so it can only
+      // ever fill dead time. Any failure just means no preview.
+      void fetch("/api/classify-text/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanQuery }),
+      })
+        .then((previewResponse) =>
+          previewResponse.ok ? previewResponse.json() : null,
+        )
+        .then((previewData) => {
+          if (previewData && !("error" in previewData)) {
+            setLookupPreview(previewData as VocabularyLookupPreview);
+          }
+        })
+        .catch(() => undefined);
 
       const response = await fetch("/api/classify-text", {
         method: "POST",
@@ -127,9 +165,16 @@ export default function useVocabularyLookup(query: string) {
         );
       }
 
-      const result = data as VocabularyLookupResult;
-      storeCachedLookup(cleanQuery, result);
+      const { degraded, ...result } = data as VocabularyLookupResult & {
+        degraded?: boolean;
+      };
+
+      // Caching a degraded result would keep the canned example sentences in
+      // front of this user long after the model recovered.
+      if (!degraded) storeCachedLookup(cleanQuery, result);
+
       setLookupResult(result);
+      setLookupDegraded(Boolean(degraded));
       setLookupStatus("result");
     } catch (lookupErrorValue) {
       setLookupError(
@@ -145,6 +190,8 @@ export default function useVocabularyLookup(query: string) {
     lookupStatus,
     lookupResult,
     lookupError,
+    lookupDegraded,
+    lookupPreview,
     lookupWord,
     resetLookup,
   };
