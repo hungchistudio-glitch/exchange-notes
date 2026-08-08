@@ -4,21 +4,31 @@
    clipped the status text entirely, since the ground area alone already
    filled 100% of that fixed box, leaving zero room for anything after it. */
 /*
- * Every animation in this stage — and in the face it contains — stops while a
- * word card is being dragged.
+ * Animation here is budgeted, not free.
  *
- * There are 33 infinite animations between the two files. They use transform
- * and opacity, so each is individually cheap, but each also holds its own
- * compositing layer permanently, and all of them keep advancing while the deck
- * below is being swiped. Five rounds of optimising the deck itself could not
- * fix that, because the frames were being spent up here.
+ * Yumi and the mark inside her run 64 infinite animations between them. Each
+ * is individually cheap — nearly all animate transform or opacity — but each
+ * also holds a compositing layer for as long as it runs, and they were running
+ * whether or not anyone could see them.
  *
- * animation-play-state is safe to toggle mid-gesture in a way backdrop-filter
- * is not: it stops a layer advancing rather than tearing it down and building
- * it again.
+ * They stop in the two situations where the frames are needed elsewhere and
+ * the motion cannot be appreciated anyway: while a word card is being swiped,
+ * and while the stage is scrolled out of view. The IntersectionObserver that
+ * drives the second was already here, feeding Yumi's mood; it just was not
+ * being used for this.
+ *
+ * animation-play-state is the right lever for it. It stops a layer advancing
+ * rather than tearing it down and rebuilding it, so unlike toggling a filter
+ * it costs nothing at the moment it is applied.
  */
 :global(html[data-deck-dragging="true"]) .stage *,
-:global(html[data-deck-dragging="true"]) .stage {
+:global(html[data-deck-dragging="true"]) .stage,
+.stage[data-in-view="false"] *,
+.stage[data-in-view="false"] {
+  animation-play-state: paused !important;
+}
+
+.stage {
   animation-play-state: paused !important;
 }
 
