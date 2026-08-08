@@ -182,9 +182,11 @@
   inset: 24px;
 }
 
+/* The centre dot this used to carry sat directly under the 40px mark badge,
+   which is translucent, so it read as a speck of dirt on the logo rather
+   than as the centre of an orbit. The rings carry the motif without it. */
 .orbit::after {
   inset: 58px;
-  background: radial-gradient(circle, var(--card-fg) 0 2px, transparent 2.5px);
 }
 
 .cardInner {
@@ -297,8 +299,13 @@
   color: var(--card-muted);
 }
 
+/* Takes the slack instead of leaving it between here and the footer, which
+   is pinned to the bottom by margin-top:auto. On a 370px card that gap ran
+   to roughly 77px of nothing. */
 .soundGrid {
   display: grid;
+  min-height: 0;
+  flex: 1;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 21px;
@@ -312,7 +319,7 @@
   justify-content: flex-start;
   border: 1px solid var(--card-line);
   border-radius: 15px;
-  padding: 10px 12px;
+  padding: 13px 14px;
   color: var(--card-fg);
   background: var(--card-control);
   backdrop-filter: blur(13px);
@@ -341,7 +348,7 @@
 
 .soundLabel {
   display: block;
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0.08em;
@@ -349,22 +356,25 @@
   opacity: 0.52;
 }
 
+/* Sizes lifted along with the panel height. The panels were set small to fit
+   a 62px box; with the reclaimed space they can be read at a glance, which
+   is the whole point of the pronunciation row. */
 .soundValue {
   display: block;
-  margin-top: 5px;
+  margin-top: 6px;
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 650;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .soundValue[data-script="english"] {
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: -0.015em;
 }
 
 .soundValue[data-script="zhuyin"] {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.01em;
 }
 
