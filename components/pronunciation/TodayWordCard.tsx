@@ -68,7 +68,16 @@ const INITIAL_GESTURE: GestureState = {
 
 const COMMIT_DURATION_MS = 440;
 const CANCEL_DURATION_MS = 360;
-const MAX_VISIBLE_CARDS = 7;
+/**
+ * Active card plus one either side.
+ *
+ * Each card is 59 elements, so seven put 413 of them inside a 3D perspective
+ * context being transformed every frame — and that volume, not any single
+ * property, was what the compositor could not keep up with. Three is the
+ * minimum that still shows a card arriving from the direction of travel,
+ * which is the only depth a swipe actually reveals.
+ */
+const MAX_VISIBLE_CARDS = 3;
 
 const DECK_ACCENTS = [
   "154 174 194",
