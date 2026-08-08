@@ -137,11 +137,27 @@
 }
 
 .overlay[data-feeding-phase="swallowing"] .swallowTrack {
-  animation: trackIn 560ms ease-in-out both;
+  animation: trackIn 700ms ease-in-out both;
 }
 
+.overlay[data-feeding-phase="swallowing"] .swallowTrack path {
+  animation: trackStrain 700ms cubic-bezier(0.3, 0, 0.45, 1) both;
+}
+
+/*
+ * Two animations on one element: the travel, and the colour draining out of
+ * it. Kept separate so the timing of each can be read on its own.
+ */
 .overlay[data-feeding-phase="swallowing"] .swallowPulse {
-  animation: swallowDown 560ms cubic-bezier(0.3, 0, 0.45, 1) both;
+  animation:
+    swallowDown 700ms cubic-bezier(0.3, 0, 0.45, 1) both,
+    swallowTint 700ms linear both;
+}
+
+/* The gulp runs across the whole face, so it has to sit on the root. */
+.overlay[data-feeding-phase="swallowing"] {
+  animation: swallowGulp 700ms cubic-bezier(0.34, 0.9, 0.4, 1) both;
+  transform-origin: 50% 62%;
 }
 
 .overlay[data-feeding-phase="satisfied"] .mouthAssembly {
@@ -265,11 +281,114 @@
   22%, 72% { opacity: 1; }
 }
 
+/*
+ * A lump too big for the throat, forced down.
+ *
+ * The scale is deliberately non-uniform and alternating: wide when it is being
+ * pushed against, tall when it is squeezed through. That alternation is what
+ * reads as peristalsis rather than a dot sliding along a line — a uniform
+ * scale looks like a bubble, not like swallowing something whole.
+ */
 @keyframes swallowDown {
-  0% { opacity: 0; transform: translate(0, -2px) scale(0.4); }
-  18% { opacity: 0.95; transform: translate(0, 0) scale(1); }
-  72% { opacity: 0.72; transform: translate(-23px, 27px) scale(0.78); }
-  100% { opacity: 0; transform: translate(-34px, 34px) scale(0.2); }
+  0% {
+    opacity: 0;
+    transform: translate(0, -3px) scale(0.3, 0.3);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1.62, 1.28);
+  }
+
+  24% {
+    transform: translate(-4px, 7px) scale(1.12, 1.78);
+  }
+
+  40% {
+    transform: translate(-11px, 15px) scale(1.48, 1.16);
+  }
+
+  58% {
+    transform: translate(-18px, 22px) scale(1.06, 1.62);
+  }
+
+  76% {
+    opacity: 0.82;
+    transform: translate(-26px, 29px) scale(1.3, 1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-34px, 35px) scale(0.4, 0.55);
+  }
+}
+
+/*
+ * The colour of the food draining out of it as it goes down — cookie gold at
+ * the throat, Yumi's own grey by the time it is gone. It is the detail that
+ * makes the lump read as something she ate rather than a highlight.
+ */
+@keyframes swallowTint {
+  0% {
+    fill: #e8c37a;
+  }
+
+  30% {
+    fill: #ddd0b4;
+  }
+
+  65% {
+    fill: #cfd1d4;
+  }
+
+  100% {
+    fill: #e6e7e9;
+  }
+}
+
+/* The throat distends around whatever is passing through it. */
+@keyframes trackStrain {
+  0%, 100% {
+    stroke-width: 5;
+    stroke-opacity: 0.26;
+  }
+
+  30% {
+    stroke-width: 12;
+    stroke-opacity: 0.5;
+  }
+
+  62% {
+    stroke-width: 9.5;
+    stroke-opacity: 0.42;
+  }
+}
+
+/* One hard gulp through the whole head, not a wobble. */
+@keyframes swallowGulp {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+
+  14% {
+    transform: translateY(-2.5px) scale(0.975, 1.045);
+  }
+
+  34% {
+    transform: translateY(2px) scale(1.05, 0.955);
+  }
+
+  56% {
+    transform: translateY(-1px) scale(0.99, 1.018);
+  }
+
+  78% {
+    transform: translateY(0.6px) scale(1.012, 0.992);
+  }
+
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
 }
 
 @keyframes satisfiedSmile {
@@ -294,9 +413,14 @@
   .leftCheek,
   .rightCheek,
   .swallowTrack,
+  .swallowTrack path,
   .swallowPulse,
-  .biteEnergy {
+  .biteEnergy,
+  /* The gulp moves the whole face, so it is the one most worth suppressing
+     for anyone who asked for less motion. */
+  .overlay {
     animation: none !important;
+    transform: none !important;
   }
 
   .overlay[data-feeding-phase="anticipating"] .mouthAssembly,
