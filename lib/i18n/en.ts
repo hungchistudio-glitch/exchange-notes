@@ -23,6 +23,9 @@ const english: TranslationDictionary = {
     settingsRowTitle: "Install Exchange Notes",
     settingsRowDescription: "Add the app to your Home Screen",
     installedRowTitle: "Exchange Notes is installed",
+    updateReadyTitle: "A new version is ready",
+    updateReadyAction: "Reload",
+    updateReadyDismiss: "Not now",
   },
   onboarding: {
     back: "Back",

@@ -23,6 +23,9 @@ export type TranslationDictionary = {
     settingsRowTitle: string;
     settingsRowDescription: string;
     installedRowTitle: string;
+    updateReadyTitle: string;
+    updateReadyAction: string;
+    updateReadyDismiss: string;
   };
   onboarding: {
     back: string;
