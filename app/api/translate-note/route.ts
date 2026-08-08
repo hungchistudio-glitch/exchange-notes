@@ -1,7 +1,35 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
+import { readBoundedInteger } from "@/lib/ai/modelConfig";
+import { createClient } from "@/lib/supabase/server";
+
 export const runtime = "nodejs";
+
+/**
+ * This endpoint spends money on every call, so it is gated the same way the
+ * other model-backed routes are. It previously had no sign-in check, no
+ * quota and no length limit, which meant anyone who read the app's network
+ * traffic could run unlimited translations of arbitrarily long text on the
+ * project's Gemini key — and exhausting the free tier that way takes the
+ * feature down for real users.
+ */
+const MAX_TEXT_LENGTH = readBoundedInteger(
+  process.env.TRANSLATE_MAX_TEXT_LENGTH,
+  1000,
+  100,
+  4000,
+);
+
+const MAX_TRANSLATIONS_PER_DAY = readBoundedInteger(
+  process.env.TRANSLATE_DAILY_USER_LIMIT,
+  60,
+  1,
+  500,
+);
+
+/** Set once the quota function is found to be missing, to stop retrying it. */
+let persistentQuotaUnavailable = false;
 
 type TranslateResult = {
   english: string;
@@ -26,8 +54,43 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
+async function consumeDailyQuota(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+) {
+  if (persistentQuotaUnavailable) return true;
+
+  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
+    p_operation: "note_translation",
+    p_limit: MAX_TRANSLATIONS_PER_DAY,
+  });
+
+  if (error) {
+    persistentQuotaUnavailable = true;
+    console.warn(
+      "Persistent AI quota is unavailable for note translation.",
+      { code: error.code },
+    );
+    return true;
+  }
+
+  const rows = data as Array<{ allowed?: boolean }> | null;
+  return rows?.[0]?.allowed === true;
+}
+
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Please sign in before translating a note." },
+        { status: 401 }
+      );
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -44,6 +107,26 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Please provide some text to translate." },
         { status: 400 }
+      );
+    }
+
+    if (text.length > MAX_TEXT_LENGTH) {
+      return NextResponse.json(
+        {
+          error:
+            `Please keep the note under ${MAX_TEXT_LENGTH} characters.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!(await consumeDailyQuota(supabase))) {
+      return NextResponse.json(
+        {
+          error:
+            "You've reached today's translation limit. Please try again tomorrow.",
+        },
+        { status: 429 }
       );
     }
 

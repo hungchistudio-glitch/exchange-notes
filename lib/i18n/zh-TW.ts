@@ -21,6 +21,9 @@ const traditionalChinese: TranslationDictionary = {
     settingsRowTitle: "安裝 Exchange Notes",
     settingsRowDescription: "把 App 加入主畫面",
     installedRowTitle: "Exchange Notes 已安裝",
+    updateReadyTitle: "有新版本可以使用",
+    updateReadyAction: "重新載入",
+    updateReadyDismiss: "稍後再說",
   },
   onboarding: {
     back: "返回",

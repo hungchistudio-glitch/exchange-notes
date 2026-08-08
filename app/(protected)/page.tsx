@@ -20,17 +20,16 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { HomeMood } from "@/lib/pet/homeMoodEngine";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
+import { createClient } from "@/lib/supabase/client";
+import type { Note } from "@/lib/notes/repository";
+import {
+  createNote,
+  deleteNote as deleteNoteRow,
+  fetchNotes,
+  importLegacyNotes,
+} from "@/lib/notes/repository";
 import { speak } from "@/lib/speech";
 import type { VocabularyItem } from "@/lib/types/app";
-
-type SavedNote = {
-  id: string;
-  english: string;
-  chinese: string;
-  createdAt: string;
-};
-
-const NOTES_STORAGE_KEY = "exchange-notes-home-notes";
 
 function ArrowRightIcon() {
   return (
@@ -66,37 +65,6 @@ function TrashIcon() {
   );
 }
 
-function readStoredNotes(): SavedNote[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(NOTES_STORAGE_KEY);
-
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsedValue = JSON.parse(rawValue) as unknown;
-
-    if (!Array.isArray(parsedValue)) {
-      return [];
-    }
-
-    return parsedValue.filter(
-      (item): item is SavedNote =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as SavedNote).id === "string" &&
-        typeof (item as SavedNote).english === "string" &&
-        typeof (item as SavedNote).chinese === "string" &&
-        typeof (item as SavedNote).createdAt === "string",
-    );
-  } catch {
-    return [];
-  }
-}
 
 function formatNoteDate(value: string) {
   const date = new Date(value);
@@ -191,8 +159,7 @@ export default function HomePage() {
     description: t.home.hero.description,
   };
 
-  const [notes, setNotes] = useState<SavedNote[]>([]);
-  const [notesLoaded, setNotesLoaded] = useState(false);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -221,30 +188,58 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setNotes(readStoredNotes());
-    setNotesLoaded(true);
-  }, []);
+    let active = true;
 
-  useEffect(() => {
-    if (!notesLoaded) {
-      return;
+    async function loadNotes() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return;
+      }
+
+      // Hands over anything this device saved back when notes were local
+      // only. Runs once per device and is a no-op afterwards.
+      await importLegacyNotes(supabase, user.id);
+
+      const rows = await fetchNotes(supabase);
+
+      if (!active) return;
+
+      setNotes(rows);
     }
 
-    window.localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
-  }, [notes, notesLoaded]);
+    void loadNotes();
 
-  function addNote(english: string, chinese: string) {
-    const newNote: SavedNote = {
-      id: crypto.randomUUID(),
-      english,
-      chinese,
-      createdAt: new Date().toISOString(),
+    return () => {
+      active = false;
     };
+  }, []);
 
-    setNotes((currentNotes) => [newNote, ...currentNotes]);
+  async function addNote(english: string, chinese: string) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const saved = await createNote(supabase, user.id, { english, chinese });
+
+    // Nothing optimistic here: a note that only appeared to save is the
+    // failure this whole change exists to remove.
+    if (!saved) return;
+
+    setNotes((currentNotes) => [saved, ...currentNotes]);
   }
 
-  function deleteNote(noteId: string) {
+  async function deleteNote(noteId: string) {
+    const supabase = createClient();
+
+    if (!(await deleteNoteRow(supabase, noteId))) return;
+
     setNotes((currentNotes) =>
       currentNotes.filter((note) => note.id !== noteId),
     );

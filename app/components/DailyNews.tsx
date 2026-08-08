@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { createNote } from "@/lib/notes/repository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
@@ -35,15 +36,6 @@ type DailyNewsResponse = {
   generatedAt: string;
 };
 
-type StoredNote = {
-  id: string;
-  english: string;
-  chinese: string;
-  createdAt: string;
-};
-
-const NOTES_STORAGE_KEY = "exchange-notes-home-notes";
-
 function LoadingHero() {
   return (
     <section className="mt-8">
@@ -68,33 +60,6 @@ function LoadingHero() {
   );
 }
 
-function readStoredNotes(): StoredNote[] {
-  try {
-    const rawValue = window.localStorage.getItem(NOTES_STORAGE_KEY);
-
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsedValue = JSON.parse(rawValue) as unknown;
-
-    if (!Array.isArray(parsedValue)) {
-      return [];
-    }
-
-    return parsedValue.filter(
-      (item): item is StoredNote =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as StoredNote).id === "string" &&
-        typeof (item as StoredNote).english === "string" &&
-        typeof (item as StoredNote).chinese === "string" &&
-        typeof (item as StoredNote).createdAt === "string"
-    );
-  } catch {
-    return [];
-  }
-}
 
 function formatPublishedTime(
   value: string,
@@ -460,54 +425,25 @@ export default function DailyNews() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      /*
-       * This attempts a Supabase save using common note columns.
-       * If your notes table has a different schema, it safely
-       * falls back to the existing localStorage Notes system.
-       */
-      if (user) {
-        const { error: insertError } = await supabase.from("notes").insert({
-          user_id: user.id,
-          english: noteContent.english,
-          chinese: noteContent.chinese,
-          source_name: card.sourceName,
-          source_url: card.sourceUrl,
-        });
-
-        if (insertError) {
-          console.warn(
-            "Supabase note save failed; using local fallback:",
-            insertError.message
-          );
-        } else {
-          setSavedCardIds((currentIds) => {
-            const nextIds = new Set(currentIds);
-            nextIds.add(card.id);
-            return nextIds;
-          });
-
-          return;
-        }
+      if (!user) {
+        setError(copy.saveError);
+        return;
       }
 
-      const existingNotes = readStoredNotes();
+      const saved = await createNote(supabase, user.id, {
+        english: noteContent.english,
+        chinese: noteContent.chinese,
+        sourceName: card.sourceName,
+        sourceUrl: card.sourceUrl,
+      });
 
-      const alreadySaved = existingNotes.some((note) =>
-        note.english.includes(card.sourceUrl)
-      );
-
-      if (!alreadySaved) {
-        const note: StoredNote = {
-          id: crypto.randomUUID(),
-          english: noteContent.english,
-          chinese: noteContent.chinese,
-          createdAt: new Date().toISOString(),
-        };
-
-        window.localStorage.setItem(
-          NOTES_STORAGE_KEY,
-          JSON.stringify([note, ...existingNotes])
-        );
+      // No local fallback any more. The old one masked a save that could
+      // never succeed — the table had a different shape and no RLS policy —
+      // so notes silently lived on one device. Surfacing the failure is the
+      // point.
+      if (!saved) {
+        setError(copy.saveError);
+        return;
       }
 
       setSavedCardIds((currentIds) => {
