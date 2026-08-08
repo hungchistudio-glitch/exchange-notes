@@ -1,8 +1,10 @@
+import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useMemo, useState } from "react";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
+import { toTraditional } from "@/lib/chinese/toTraditional";
 
 type ResetLookup = () => void;
 
@@ -13,7 +15,23 @@ type UseVocabularyPageOptions = {
 export function useVocabularyPage({
   initialAiSearchOpen = false,
 }: UseVocabularyPageOptions = {}) {
-  const [query, setQuery] = useState("");
+  const [query, setRawQuery] = useState("");
+
+  /**
+   * Every route into the search box passes through here, so simplified
+   * characters are rewritten once rather than at each entry point.
+   *
+   * Browser speech recognition is the reason this exists: it returns
+   * simplified Chinese even when asked for zh-TW, which put simplified text
+   * in the box and then failed to match the user's saved words — the list
+   * would read "0 words" for a word they had definitely saved. Typed input
+   * goes through the same conversion, since the app is Traditional-only.
+   */
+  const setQuery = useCallback<Dispatch<SetStateAction<string>>>((value) => {
+    setRawQuery((current) =>
+      toTraditional(typeof value === "function" ? value(current) : value),
+    );
+  }, []);
 
   const [quickFilter, setQuickFilter] = useState<
     "all" | VocabularyStatus
@@ -28,13 +46,13 @@ export function useVocabularyPage({
     setQuery("");
     resetLookup();
     setAiSearchOpen(true);
-  }, []);
+  }, [setQuery]);
 
   const closeAiSearch = useCallback((resetLookup: ResetLookup) => {
     setAiSearchOpen(false);
     setQuery("");
     resetLookup();
-  }, []);
+  }, [setQuery]);
 
   return useMemo(
     () => ({
@@ -61,6 +79,7 @@ export function useVocabularyPage({
     }),
     [
       query,
+      setQuery,
       quickFilter,
       sortMode,
       sortOpen,
