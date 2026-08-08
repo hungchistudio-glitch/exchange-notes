@@ -26,11 +26,13 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             name: Coordinator.messageName
         )
 
+#if !EXCHANGE_NOTES_PERSONAL_TEAM
         configuration.userContentController.add(
             context.coordinator,
             name:
                 Coordinator.nativePushMessageName
         )
+#endif
 
         configuration.userContentController
             .addUserScript(
@@ -90,12 +92,14 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                     Coordinator.messageName
             )
 
+#if !EXCHANGE_NOTES_PERSONAL_TEAM
         webView.configuration
             .userContentController
             .removeScriptMessageHandler(
                 forName:
                     Coordinator.nativePushMessageName
             )
+#endif
 
         webView.navigationDelegate = nil
     }

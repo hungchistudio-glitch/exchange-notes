@@ -36,15 +36,43 @@ The complete private token is shown only once. Exchange Notes stores only its SH
 
 ## Widget links
 
-Small Widget:
+All Widget sizes:
 
-- Opens Vocabulary.
+- Widget background → Home (`/`)
+- Add Word → Vocabulary with the add-word dialog open (`/vocabulary?widgetAction=add-word`)
+- Camera → Capture with the camera flow selected (`/capture?source=camera&from=widget`)
 
-Medium and large Widgets:
+Medium and large Widgets also include:
 
-- Add Word → Vocabulary
-- Camera → Capture
-- Review → Review
+- Previous/next → Run this Scriptable script and update the selected word
+- `A` → English speech page (`/speak?language=en-US&text=...`)
+- `ㄅ` → Traditional Chinese speech page (`/speak?language=zh-TW&text=...`)
+
+The speech page is public because it only plays the text already present in
+the URL. Home, Vocabulary, Capture, and Profile remain protected by the normal
+Exchange Notes sign-in flow.
+
+## Visual behavior
+
+- Small and medium Widgets use 12-point padding on every outer edge.
+- Large Widgets use 14-point padding on every outer edge.
+- The background uses translucent space, orbit, grid, and particle artwork.
+- iOS does not expose the Home Screen wallpaper through a normal Scriptable
+  Widget. The glass effect is translucent artwork, not true wallpaper
+  transparency.
+
+## Automated verification
+
+Run the Widget contract test from the project root:
+
+```bash
+npm run test:widget
+```
+
+The test compiles the Scriptable source in a mocked runtime, builds small,
+medium, and large layouts, verifies equal outer padding and action sizes, and
+checks that every HTTPS target maps to a real Next.js page with the expected
+query-parameter handler.
 
 ## Refresh behavior
 

@@ -18,6 +18,7 @@ import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { insertValues } from "@/lib/utils";
@@ -40,11 +41,101 @@ type CameraOverlayProps = {
   onCapture: () => void;
   closeCameraAriaLabel: string;
   captureAriaLabel: string;
+  focusHint: string;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_DIMENSION = 1600;
-const JPEG_QUALITY = 0.82;
+const MAX_DIMENSION = 1280;
+const JPEG_QUALITY = 0.8;
+const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
+const IDENTIFICATION_CACHE_VERSION = "v1";
+
+type CachedIdentification = {
+  expiresAt: number;
+  result: IdentificationResult;
+};
+
+function isIdentificationResult(value: unknown): value is IdentificationResult {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    [
+      "englishName",
+      "chineseName",
+      "partOfSpeech",
+      "englishExample",
+      "chineseExample",
+    ].every(
+      (field) =>
+        typeof candidate[field] === "string" &&
+        (candidate[field] as string).trim().length > 0,
+    ) && ["high", "medium", "low"].includes(String(candidate.confidence))
+  );
+}
+
+async function getIdentificationCacheKey(imageData: string) {
+  if (!globalThis.crypto?.subtle) return null;
+
+  try {
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(imageData),
+    );
+
+    return Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+  } catch {
+    return null;
+  }
+}
+
+function getCachedIdentification(key: string | null) {
+  if (!key) return null;
+
+  try {
+    const storageKey = `yumi:vision:${IDENTIFICATION_CACHE_VERSION}:${key}`;
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) return null;
+
+    const cached = JSON.parse(stored) as CachedIdentification;
+    if (
+      !Number.isFinite(cached.expiresAt) ||
+      cached.expiresAt <= Date.now() ||
+      !isIdentificationResult(cached.result)
+    ) {
+      window.localStorage.removeItem(storageKey);
+      return null;
+    }
+
+    return cached.result;
+  } catch {
+    return null;
+  }
+}
+
+function cacheIdentification(
+  key: string | null,
+  result: IdentificationResult,
+) {
+  if (!key) return;
+
+  try {
+    const cached: CachedIdentification = {
+      expiresAt: Date.now() + IDENTIFICATION_CACHE_TTL_MS,
+      result,
+    };
+
+    window.localStorage.setItem(
+      `yumi:vision:${IDENTIFICATION_CACHE_VERSION}:${key}`,
+      JSON.stringify(cached),
+    );
+  } catch {
+    // Recognition still works when private browsing disables local storage.
+  }
+}
 
 function SpeakerIcon({ speaking }: { speaking: boolean }) {
   return (
@@ -196,9 +287,15 @@ function CameraOverlay({
   onCapture,
   closeCameraAriaLabel,
   captureAriaLabel,
+  focusHint,
 }: CameraOverlayProps) {
+  const motion = useSheetMotion({ onClose });
+
   return (
-    <section className="fixed inset-0 z-[100] overflow-hidden bg-black">
+    <section
+      {...motion.panelProps}
+      className={`${motion.panelClassName} fixed inset-0 z-[100] overflow-hidden bg-black`}
+    >
       <video
         ref={videoRef}
         autoPlay
@@ -209,9 +306,23 @@ function CameraOverlay({
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/45 to-transparent" />
 
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="relative h-52 w-52">
+          <span className="absolute left-0 top-0 h-9 w-9 rounded-tl-[20px] border-l-2 border-t-2 border-white/80" />
+          <span className="absolute right-0 top-0 h-9 w-9 rounded-tr-[20px] border-r-2 border-t-2 border-white/80" />
+          <span className="absolute bottom-0 left-0 h-9 w-9 rounded-bl-[20px] border-b-2 border-l-2 border-white/80" />
+          <span className="absolute bottom-0 right-0 h-9 w-9 rounded-br-[20px] border-b-2 border-r-2 border-white/80" />
+          <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-[0_0_0_5px_rgba(255,255,255,0.12)]" />
+        </div>
+
+        <p className="absolute top-[calc(50%+7.5rem)] rounded-full bg-black/25 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 backdrop-blur-md">
+          {focusHint}
+        </p>
+      </div>
+
       <button
         type="button"
-        onClick={onClose}
+        onClick={motion.requestClose}
         aria-label={closeCameraAriaLabel}
         className="absolute left-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-md transition-transform duration-150 active:scale-90"
         style={{
@@ -233,6 +344,14 @@ function CameraOverlay({
           />
         </svg>
       </button>
+
+      <div
+        className={`${motion.handleClassName} absolute inset-x-0 z-10 flex h-12 items-start justify-center pt-3`}
+        style={{ top: "env(safe-area-inset-top)" }}
+        {...motion.handleProps}
+      >
+        <span className="h-1 w-12 rounded-full bg-white/55 shadow-sm" />
+      </div>
 
       <div
         className="absolute inset-x-0 bottom-0 flex justify-center"
@@ -543,6 +662,8 @@ function CaptureContent() {
     if (!context) return null;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     context.drawImage(
       sourceImage,
       0,
@@ -671,21 +792,50 @@ function CaptureContent() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/identify-object", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          image: imageData,
-        }),
-      });
+      const cacheKey = await getIdentificationCacheKey(imageData);
+      const cachedResult = getCachedIdentification(cacheKey);
+
+      if (cachedResult) {
+        setResult(cachedResult);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(
+        () => controller.abort(),
+        IDENTIFICATION_TIMEOUT_MS,
+      );
+
+      let response: Response;
+
+      try {
+        response = await fetch("/api/identify-object", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image: imageData,
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        window.clearTimeout(timeout);
+      }
 
       const data = (await response.json()) as
         | IdentificationResult
-        | { error: string };
+        | { error: string; code?: string };
 
       if (!response.ok || "error" in data) {
+        if ("error" in data && data.code === "daily_limit") {
+          throw new Error("VISION_DAILY_LIMIT");
+        }
+
+        if (response.status === 429 || response.status === 503) {
+          throw new Error("VISION_BUSY");
+        }
+
         throw new Error(
           "error" in data
             ? data.error
@@ -693,10 +843,20 @@ function CaptureContent() {
         );
       }
 
+      cacheIdentification(cacheKey, data);
       setResult(data);
     } catch (requestError) {
       console.error(requestError);
-      setError(capture.errors.identifyImage);
+      setError(
+        requestError instanceof DOMException && requestError.name === "AbortError"
+          ? capture.errors.identifyTimeout
+          : requestError instanceof Error &&
+              requestError.message === "VISION_DAILY_LIMIT"
+            ? capture.errors.identifyDailyLimit
+          : requestError instanceof Error && requestError.message === "VISION_BUSY"
+            ? capture.errors.identifyBusy
+            : capture.errors.identifyImage,
+      );
     } finally {
       setAnalyzing(false);
     }
@@ -978,12 +1138,13 @@ function CaptureContent() {
             onCapture={capturePhoto}
             closeCameraAriaLabel={capture.camera.closeCameraAriaLabel}
             captureAriaLabel={capture.camera.captureAriaLabel}
+            focusHint={capture.camera.focusHint}
           />
         )}
 
         {!cameraActive && imageData && (
           <section className="flex flex-1 flex-col pb-28">
-            <div className="overflow-hidden rounded-[24px] bg-neutral-950">
+            <div className="relative overflow-hidden rounded-[24px] bg-neutral-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageData}
@@ -994,6 +1155,16 @@ function CaptureContent() {
                     : "max-h-[52dvh] w-full object-contain"
                 }
               />
+
+              {analyzing && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                  <span className="relative z-10 flex items-center gap-2 rounded-full border border-white/20 bg-black/45 px-4 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-xl">
+                    <SpinnerIcon />
+                    {capture.identifying}
+                  </span>
+                  <span className="absolute inset-x-8 top-1/2 h-px animate-pulse bg-gradient-to-r from-transparent via-white/90 to-transparent shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
+                </div>
+              )}
             </div>
 
             {!result && fileName && (

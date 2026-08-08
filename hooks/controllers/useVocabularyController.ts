@@ -10,10 +10,18 @@ import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 
-export default function useVocabularyController() {
+type UseVocabularyControllerOptions = {
+  initialAiSearchOpen?: boolean;
+};
+
+export default function useVocabularyController({
+  initialAiSearchOpen = false,
+}: UseVocabularyControllerOptions = {}) {
   const { t } = useTranslation();
 
-  const page = useVocabularyPage();
+  const page = useVocabularyPage({
+    initialAiSearchOpen,
+  });
   const vocabulary = useVocabulary();
   const friendPicker = useVocabularyFriendPicker();
 

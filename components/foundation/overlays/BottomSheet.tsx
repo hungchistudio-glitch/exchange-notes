@@ -1,7 +1,9 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useId } from "react";
 import { X } from "lucide-react";
+
+import useSheetMotion from "./useSheetMotion";
 
 type BottomSheetProps = {
   open: boolean;
@@ -13,16 +15,6 @@ type BottomSheetProps = {
   className?: string;
 };
 
-// Multiple BottomSheets can legitimately be open at once (e.g. a detail
-// sheet with a vocabulary drawer layered on top of it). Each instance used
-// to save/restore document.body.style.overflow independently, which broke
-// as soon as two were stacked: the inner sheet would capture "hidden" (set
-// by the outer one) as its own "previous" value and restore to that on
-// close, leaving the whole app permanently unable to scroll. A shared
-// open-count only touches the body style on the 0→1 and 1→0 transitions,
-// so nesting in any order/close-sequence is safe.
-let openSheetCount = 0;
-
 export default function BottomSheet({
   open,
   onClose,
@@ -32,35 +24,10 @@ export default function BottomSheet({
   footer,
   className = "",
 }: BottomSheetProps) {
-  useEffect(() => {
-    if (!open) return;
+  const titleId = useId();
+  const motion = useSheetMotion({ open, onClose });
 
-    openSheetCount += 1;
-
-    if (openSheetCount === 1) {
-      document.body.style.overflow = "hidden";
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      openSheetCount = Math.max(0, openSheetCount - 1);
-
-      if (openSheetCount === 0) {
-        document.body.style.overflow = "";
-      }
-
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  if (!motion.rendered) return null;
 
   return (
     <div
@@ -70,15 +37,18 @@ export default function BottomSheet({
       <button
         type="button"
         aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px]"
+        onClick={motion.requestClose}
+        className={`absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
+        {...motion.backdropProps}
       />
 
       <section
         role="dialog"
         aria-modal="true"
-        aria-labelledby="bottom-sheet-title"
+        aria-labelledby={titleId}
+        {...motion.panelProps}
         className={[
+          motion.panelClassName,
           "relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px]",
           "bg-surface text-black",
           "shadow-[0_-18px_60px_rgba(0,0,0,0.28)]",
@@ -88,12 +58,20 @@ export default function BottomSheet({
           .filter(Boolean)
           .join(" ")}
       >
-        <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+        <div
+          className={`${motion.handleClassName} flex h-7 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/15" />
+        </div>
 
-        <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <header
+          className={`${motion.handleClassName} flex items-start justify-between gap-4 border-b border-line px-5 py-4`}
+          {...motion.handleProps}
+        >
           <div className="min-w-0">
             <h2
-              id="bottom-sheet-title"
+              id={titleId}
               className="text-[18px] font-semibold tracking-[-0.025em] text-black"
             >
               {title}
@@ -110,7 +88,7 @@ export default function BottomSheet({
             type="button"
             aria-label="Close"
             title="Close"
-            onClick={onClose}
+            onClick={motion.requestClose}
             className={[
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
               "bg-black/[0.05] text-black/55",

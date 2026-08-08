@@ -1,12 +1,20 @@
 "use client";
 
-import { BookOpen, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  FolderHeart,
+  LayoutGrid,
+  List,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { Pill } from "@/components/foundation-legacy";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
 type QuickFilter = {
   value: "all" | VocabularyStatus;
@@ -20,11 +28,13 @@ type VocabularySearchProps = {
   quickFilters: QuickFilter[];
   visibleCount: number;
   sortMode: SortMode;
+  viewMode: VocabularyViewMode;
   onQueryChange: (value: string) => void;
   onClear: () => void;
   onQuickFilterChange: (value: "all" | VocabularyStatus) => void;
   onOpenSort: () => void;
-  onOpenLibrary: () => void;
+  onOpenCollections: () => void;
+  onToggleView: () => void;
 };
 
 export default function VocabularySearch({
@@ -33,17 +43,24 @@ export default function VocabularySearch({
   quickFilters,
   visibleCount,
   sortMode,
+  viewMode,
   onQueryChange,
   onClear,
   onQuickFilterChange,
   onOpenSort,
-  onOpenLibrary,
+  onOpenCollections,
+  onToggleView,
 }: VocabularySearchProps) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
 
   const sortLabels: Record<SortMode, string> = {
     new: search.sortOptions.new,
+    old: search.sortOptions.old,
+    alphabetical: search.sortOptions.alphabetical,
+    "reverse-alphabetical": search.sortOptions.reverseAlphabetical,
+    "recently-reviewed": search.sortOptions.recentlyReviewed,
+    "least-reviewed": search.sortOptions.leastReviewed,
     "for-you": search.sortOptions.forYou,
     trending: search.sortOptions.trending,
   };
@@ -105,24 +122,52 @@ export default function VocabularySearch({
           {visibleCount} {visibleCount === 1 ? search.word : search.words}
         </p>
 
-        <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2"
+          role="toolbar"
+          aria-label={search.toolbarAriaLabel}
+        >
           <button
             type="button"
             onClick={onOpenSort}
             aria-label={search.sort}
-            className="flex h-8 items-center gap-2 rounded-full border border-black/[0.07] bg-white px-3 font-sans text-[11px] font-medium tracking-[-0.01em] text-black/55 transition-transform active:scale-95"
+            title={sortLabels[sortMode]}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
           >
-            <SlidersHorizontal size={14} strokeWidth={1.8} />
-            {sortLabels[sortMode]}
+            <SlidersHorizontal size={16} strokeWidth={1.8} />
+            <span
+              className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#c9962e]"
+              aria-hidden="true"
+            />
           </button>
 
           <button
             type="button"
-            onClick={onOpenLibrary}
-            aria-label={search.openLibrary}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition-transform active:scale-95"
+            onClick={onOpenCollections}
+            aria-label={search.openCollections}
+            title={search.openCollections}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
           >
-            <BookOpen size={15} strokeWidth={1.8} />
+            <FolderHeart size={16} strokeWidth={1.8} />
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleView}
+            aria-label={
+              viewMode === "cards" ? search.compactView : search.cardsView
+            }
+            title={
+              viewMode === "cards" ? search.compactView : search.cardsView
+            }
+            aria-pressed={viewMode === "compact"}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
+          >
+            {viewMode === "cards" ? (
+              <List size={16} strokeWidth={1.8} />
+            ) : (
+              <LayoutGrid size={16} strokeWidth={1.8} />
+            )}
           </button>
         </div>
       </div>

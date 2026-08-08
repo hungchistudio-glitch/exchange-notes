@@ -26,6 +26,7 @@ import type {
   VocabularyStatus,
 } from "@/lib/types/app";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
+import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
 
 
@@ -43,6 +44,8 @@ type VocabularyListProps = {
   lookupResult: VocabularyLookupResult | null;
   lookupError: string;
   savingLookup: boolean;
+  expandedItemId: string | null;
+  viewMode: VocabularyViewMode;
   onLookupWord: () => void;
   onSaveLookupResult: () => void;
   onChangeStatus: (
@@ -51,6 +54,7 @@ type VocabularyListProps = {
   ) => void | Promise<void>;
   onDeleteItem: (item: VocabularyItem) => void | Promise<void>;
   onOpenDetail: (item: VocabularyItem) => void;
+  onToggleExpanded: (item: VocabularyItem) => void;
   onOpenCollections: (item: VocabularyItem) => void;
   onSendToPartner: (item: VocabularyItem) => void;
   onInteract: (item: VocabularyItem, type: CardInteraction) => void;
@@ -66,11 +70,14 @@ function VocabularyList({
   lookupResult,
   lookupError,
   savingLookup,
+  expandedItemId,
+  viewMode,
   onLookupWord,
   onSaveLookupResult,
   onChangeStatus,
   onDeleteItem,
   onOpenDetail,
+  onToggleExpanded,
   onOpenCollections,
   onSendToPartner,
   onInteract,
@@ -83,7 +90,7 @@ function VocabularyList({
   if (loading) {
     return (
       <section
-        aria-label="Loading vocabulary"
+        aria-label={t.vocabulary.search.loadingVocabulary}
         aria-live="polite"
         className="mt-6 flex min-h-40 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
       >
@@ -94,7 +101,7 @@ function VocabularyList({
             strokeWidth={1.8}
           />
           <span className="text-[12px] font-medium">
-            Loading your words
+            {t.vocabulary.search.loadingVocabulary}
           </span>
         </div>
       </section>
@@ -106,14 +113,14 @@ function VocabularyList({
       <EmptyState
         className="mt-6 rounded-[24px] py-8 shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
         icon={<Camera size={23} strokeWidth={1.7} />}
-        title="Your first word begins outside"
-        description="Photograph something from daily life and save its English and Traditional Chinese meaning."
+        title={t.vocabulary.search.firstWordTitle}
+        description={t.vocabulary.search.firstWordDescription}
         action={
           <Link
             href="/capture"
             className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
           >
-            Discover a word
+            {t.vocabulary.search.discoverWord}
           </Link>
         }
       />
@@ -182,7 +189,7 @@ function VocabularyList({
                   size={15}
                   className="mr-2 animate-spin"
                 />
-                Saving
+                {lookup.saving}
               </>
             ) : (
               lookup.addToVocabulary
@@ -227,7 +234,7 @@ function VocabularyList({
                       size={15}
                       className="mr-2 animate-spin"
                     />
-                    Looking up
+                    {lookup.lookingUp}
                   </>
                 ) : (
                   lookup.lookUpWord.replace("{word}", trimmedQuery)
@@ -251,20 +258,20 @@ function VocabularyList({
 
   return (
     <section
-      aria-label="Saved vocabulary"
-      className="mt-5 space-y-3"
+      aria-label={t.vocabulary.search.yourWords}
+      className={viewMode === "compact" ? "mt-5 space-y-2" : "mt-5 space-y-3"}
     >
       {items.map((item) => (
         <SwipeActionRow
           key={item.id}
           disabled={updatingId === item.id}
           trailingAction={{
-            label: "刪除",
+            label: t.vocabulary.detail.deleteWordAriaLabel,
             icon: <Trash2 size={22} strokeWidth={1.8} />,
             onAction: () => onDeleteItem(item),
           }}
           leadingAction={{
-            label: "收藏集",
+            label: t.vocabulary.detail.addToCollectionsAriaLabel,
             icon: <FolderPlus size={22} strokeWidth={1.8} />,
             onAction: () => onOpenCollections(item),
           }}
@@ -272,9 +279,12 @@ function VocabularyList({
           <VocabularyCard
             item={item}
             updating={updatingId === item.id}
+            expanded={expandedItemId === item.id}
+            viewMode={viewMode}
             onChangeStatus={onChangeStatus}
             onSendToPartner={onSendToPartner}
             onOpenDetail={onOpenDetail}
+            onToggleExpanded={onToggleExpanded}
             onInteract={onInteract}
           />
         </SwipeActionRow>

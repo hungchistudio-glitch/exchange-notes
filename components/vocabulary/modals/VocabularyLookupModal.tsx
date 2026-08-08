@@ -1,6 +1,7 @@
 "use client";
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -61,8 +62,9 @@ export default function VocabularyLookupModal({
 }: VocabularyLookupModalProps) {
   const { t } = useTranslation();
   const { isLearningChinese } = useLearningLanguageContext();
+  const motion = useSheetMotion({ open, onClose });
 
-  if (!open) return null;
+  if (!motion.rendered) return null;
 
   function resetSearchState() {
     setQuery("");
@@ -70,20 +72,33 @@ export default function VocabularyLookupModal({
 
   return (
     <div
-      className="fixed inset-0 z-[160] flex items-end justify-center bg-black/25 backdrop-blur-[3px] sm:items-center"
-      onClick={onClose}
+      className="fixed inset-0 z-[160] flex items-end justify-center sm:items-center"
     >
+      <button
+        type="button"
+        aria-label={t.vocabulary.lookup.closeSearchAriaLabel}
+        onClick={motion.requestClose}
+        className={`absolute inset-0 bg-black/25 backdrop-blur-[3px] ${motion.backdropClassName}`}
+        {...motion.backdropProps}
+      />
+
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="ai-search-title"
-        onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+        {...motion.panelProps}
+        className={`${motion.panelClassName} relative z-10 flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]`}
         style={{
+          ...motion.panelProps.style,
           paddingBottom: "max(env(safe-area-inset-bottom), 18px)",
         }}
       >
-        <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+        <div
+          className={`${motion.handleClassName} flex h-8 shrink-0 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/15" />
+        </div>
 
         <header className="flex items-center justify-between border-b border-black/10 px-5 pb-4 pt-4">
           <div>
@@ -101,8 +116,8 @@ export default function VocabularyLookupModal({
 
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close word search"
+            onClick={motion.requestClose}
+            aria-label={t.vocabulary.lookup.closeSearchAriaLabel}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface"
           >
             <X size={17} />
@@ -128,7 +143,7 @@ export default function VocabularyLookupModal({
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="English or 繁體中文"
+                placeholder={t.vocabulary.lookup.inputPlaceholder}
                 className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-neutral-400"
               />
 
@@ -136,7 +151,7 @@ export default function VocabularyLookupModal({
                 <button
                   type="button"
                   onClick={resetSearchState}
-                  aria-label="Clear search"
+                  aria-label={t.vocabulary.lookup.clearSearchAriaLabel}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/5"
                 >
                   <X size={14} />
@@ -240,7 +255,7 @@ export default function VocabularyLookupModal({
                     const chineseSection = (
                       <section key="chinese">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
-                          繁體中文
+                          {t.vocabulary.lookup.chinese}
                         </p>
 
                         <div className="mt-2 flex items-center gap-3">
@@ -354,12 +369,12 @@ export default function VocabularyLookupModal({
                             }
                             aria-label={t.vocabulary.lookup.chineseExample}
                             title={t.vocabulary.lookup.chineseExample}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
-                      >
-                        <Volume2 size={15} />
-                      </button>
-                    </div>
-                  </section>
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white transition-transform active:scale-95"
+                          >
+                            <Volume2 size={15} />
+                          </button>
+                        </div>
+                      </section>
                     );
 
                     return isLearningChinese
@@ -367,6 +382,15 @@ export default function VocabularyLookupModal({
                       : [englishExampleSection, chineseExampleSection];
                   })()}
                 </div>
+
+                {lookupResult.confidence === "low" ? (
+                  <p
+                    role="status"
+                    className="mt-5 rounded-[18px] border border-[#c9962e]/20 bg-[#c9962e]/[0.07] px-4 py-3 text-[12px] leading-5 text-[#6b4e1f]"
+                  >
+                    {t.vocabulary.lookup.lowConfidenceNotice}
+                  </p>
+                ) : null}
 
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <button

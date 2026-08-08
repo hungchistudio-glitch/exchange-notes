@@ -2,7 +2,9 @@
 
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { useId } from "react";
+
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 type ModalProps = {
   open: boolean;
@@ -23,27 +25,10 @@ export default function Modal({
   onClose,
   className = "",
 }: ModalProps) {
-  useEffect(() => {
-    if (!open) return;
+  const titleId = useId();
+  const motion = useSheetMotion({ open, onClose });
 
-    const previousOverflow = document.body.style.overflow;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  if (!motion.rendered) return null;
 
   return (
     <div
@@ -54,22 +39,28 @@ export default function Modal({
         flex
         items-end
         justify-center
-        bg-[#252821]/35
         p-0
-        backdrop-blur-[3px]
         sm:items-center
         sm:p-5
       "
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target) {
-          onClose();
-        }
-      }}
     >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={motion.requestClose}
+        className={`absolute inset-0 bg-[#252821]/35 backdrop-blur-[3px] ${motion.backdropClassName}`}
+        {...motion.backdropProps}
+      />
+
       <div
         role="dialog"
         aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        {...motion.panelProps}
         className={`
+          ${motion.panelClassName}
+          relative
+          z-10
           max-h-[90vh]
           w-full
           max-w-[520px]
@@ -83,10 +74,20 @@ export default function Modal({
           ${className}
         `}
       >
-        <div className="sticky top-0 z-10 flex items-start gap-4 border-b border-line bg-[#FCFCF9]/95 px-5 py-4 backdrop-blur">
+        <div
+          className={`${motion.handleClassName} flex h-7 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/15" />
+        </div>
+
+        <div
+          className={`${motion.handleClassName} sticky top-0 z-10 flex items-start gap-4 border-b border-line bg-[#FCFCF9]/95 px-5 py-4 backdrop-blur`}
+          {...motion.handleProps}
+        >
           <div className="min-w-0 flex-1">
             {title ? (
-              <h2 className="text-xl font-semibold tracking-[-0.025em] text-[#2F312D]">
+              <h2 id={titleId} className="text-xl font-semibold tracking-[-0.025em] text-[#2F312D]">
                 {title}
               </h2>
             ) : null}
@@ -101,7 +102,7 @@ export default function Modal({
           <button
             type="button"
             aria-label="Close"
-            onClick={onClose}
+            onClick={motion.requestClose}
             className="
               en-focus-ring
               inline-flex

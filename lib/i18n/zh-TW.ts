@@ -277,6 +277,7 @@ const traditionalChinese: TranslationDictionary = {
       selectedImage: "已選擇的照片",
       analyzeAgain: "重新分析",
       chooseAnother: "選擇其他照片",
+      focusHint: "將物品對準中央",
     },
 
     analysis: {
@@ -332,6 +333,9 @@ const traditionalChinese: TranslationDictionary = {
       cameraNotReady: "相機尚未準備完成。",
       captureImage: "無法拍攝照片。",
       identifyImage: "無法辨識這張照片。",
+      identifyBusy: "AI 視覺目前較忙，請稍候再試。",
+      identifyDailyLimit: "今天的免費圖片辨識次數已用完，請明天再試。",
+      identifyTimeout: "辨識時間較久，請換一張清晰、靠近物品的照片再試。",
       loginBeforeSave: "請先登入再儲存單字。",
       duplicateWord: "這個單字已經存在於你的單字庫。",
       saveWord: "無法儲存這個單字。",
@@ -417,6 +421,10 @@ const traditionalChinese: TranslationDictionary = {
       emptyDescription: "新增一個單字，就會出現在這裡。",
       playEnglishExampleAriaLabel: "播放英文例句",
       playChineseExampleAriaLabel: "播放中文例句",
+      previousWord: "上一個單字",
+      nextWord: "下一個單字",
+      swipeHint: "左右滑動翻閱單字卡",
+      positionLabel: "第 {current} 張，共 {total} 張",
     },
 
     quickStart: {
@@ -750,6 +758,17 @@ const traditionalChinese: TranslationDictionary = {
       feedAriaLabel: "餵 Yumi 吃 {word}",
       cookieTypeLetter: "英文字母餅乾",
       cookieTypeZhuyin: "注音符號餅乾",
+      feedingAnticipating: "Yumi 期待地張開嘴巴。",
+      feedingEating: "Yumi 正在慢慢咀嚼。",
+      feedingSwallowing: "Yumi 吞下了單字能量。",
+      feedingSatisfied: "Yumi 吃飽了，覺得很滿足。",
+      openActionsAriaLabel: "開啟 Yumi 操作選單",
+      closeActionsAriaLabel: "關閉 Yumi 操作選單",
+      actionMenuAriaLabel: "Yumi 學習操作",
+      menuPrompt: "今天想從哪裡開始？",
+      reviewActionLabel: "開始複習",
+      addWordActionLabel: "使用 AI 新增單字",
+      cameraActionLabel: "使用相機辨識",
       reviewLinkLabel: "開始複習",
       collectionsLinkLabel: "收藏分類",
     },
@@ -757,10 +776,10 @@ const traditionalChinese: TranslationDictionary = {
     lookup: {
       title: "搜尋單字",
       placeholder: "英文或繁體中文",
-      search: "使用 Gemini 搜尋",
+      search: "智慧搜尋",
       searching: "搜尋中",
       description:
-        "搜尋任何英文或繁體中文單字，Gemini 會自動產生翻譯、詞性與自然例句。",
+        "搜尋任何英文或繁體中文單字，自動取得翻譯、詞性與自然例句。",
       error: "無法搜尋這個單字。",
       english: "英文",
       chinese: "繁體中文",
@@ -778,6 +797,10 @@ const traditionalChinese: TranslationDictionary = {
       lookingUp: "搜尋中",
       lookUpWord: "搜尋「{word}」",
       wordFound: "找到單字",
+      closeSearchAriaLabel: "關閉單字搜尋",
+      inputPlaceholder: "輸入英文或繁體中文",
+      clearSearchAriaLabel: "清除搜尋",
+      lowConfidenceNotice: "Yumi 還不太確定，儲存前請先檢查結果。",
     },
 
     collections: {
@@ -815,9 +838,11 @@ const traditionalChinese: TranslationDictionary = {
         removeError: "無法移除這個單字，請再試一次。",
         backToCollections: "返回收藏分類",
         loadingError: "無法載入這個收藏分類。",
+        loading: "正在載入收藏分類…",
         emptyTitle: "這裡還沒有單字",
         emptyDescription: "打開任一單字卡，選擇收藏分類，就能將單字加入這裡。",
         browseVocabulary: "瀏覽單字庫",
+        removeWordAriaLabel: "從收藏分類移除單字",
         word: "個單字",
         words: "個單字",
         inCollection: "",
@@ -858,6 +883,9 @@ const traditionalChinese: TranslationDictionary = {
       },
 
       closeDetailsAriaLabel: "關閉單字詳細資訊",
+      expandDetailsAriaLabel: "展開「{word}」的詳細資訊",
+      collapseDetailsAriaLabel: "收起「{word}」的詳細資訊",
+      openFullDetailsAriaLabel: "開啟「{word}」的完整詳細資訊",
       editWordAriaLabel: "編輯單字",
       closeAriaLabel: "關閉",
       learningStatusLabel: "學習狀態",
@@ -943,6 +971,11 @@ const traditionalChinese: TranslationDictionary = {
       cancel: "取消",
       clear: "清除",
       noMatchingWords: "找不到符合的單字。",
+      loadingVocabulary: "正在載入你的單字",
+      firstWordTitle: "第一個單字，從生活開始",
+      firstWordDescription:
+        "拍下日常生活中的物品，儲存它的英文與繁體中文意思。",
+      discoverWord: "探索一個單字",
 
       statuses: {
         all: "全部",
@@ -956,10 +989,19 @@ const traditionalChinese: TranslationDictionary = {
 
       sort: "排序",
       openLibrary: "開啟單字庫",
+      openCollections: "開啟收藏分類",
+      toolbarAriaLabel: "單字工具",
+      cardsView: "切換為經典卡片",
+      compactView: "切換為精簡列表",
       closeSortMenu: "關閉排序選單",
 
       sortOptions: {
         new: "最新單字",
+        old: "最早加入",
+        alphabetical: "A 到 Z",
+        reverseAlphabetical: "Z 到 A",
+        recentlyReviewed: "最近複習",
+        leastReviewed: "最少複習",
         forYou: "為你推薦",
         trending: "熱門",
       },
@@ -1169,6 +1211,28 @@ const traditionalChinese: TranslationDictionary = {
         "無法更新 Widget 連線，請再試一次。",
       copyError:
         "無法自動複製權杖，請手動選取並複製。",
+    },
+
+    iphoneWidget: {
+      rowTitle: "Yumi iPhone Widget",
+      rowDescription: "Exchange Notes 原生支援並自動同步",
+      statusNative: "原生",
+      sheetTitle: "Yumi iPhone Widget",
+      sheetDescription:
+        "Widget 已內建於 Exchange Notes，不再需要 Scriptable、私人權杖或額外連線。",
+      nativeTitle: "已改用原生 Widget",
+      nativeDescription:
+        "開啟 Exchange Notes 後，Yumi 與最新單字會安全同步到 iPhone 主畫面。",
+      addTitle: "加入主畫面",
+      stepOne: "長按 iPhone 主畫面的空白處。",
+      stepTwo: "點一下「編輯」，再選擇「加入 Widget」。",
+      stepThree: "搜尋 Exchange Notes 或 Yumi。",
+      stepFour: "選擇小型、中型或大型尺寸並加入。",
+      behaviorTitle: "按鈕行為",
+      behaviorDescription:
+        "A 與 ㄅ 會直接播放發音，不會開啟 App；點按單字會前往該單字的詳細頁面。",
+      openAppNote: "+ 與相機辨識會開啟 App 的指定功能。",
+      done: "完成",
     },
 
     webPush: {

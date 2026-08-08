@@ -31,6 +31,7 @@ export default function CollectionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -135,7 +136,9 @@ export default function CollectionDetailPage() {
         )}
 
         {loading && (
-          <p className="mt-10 text-center text-sm text-black/40">Loading…</p>
+          <p className="mt-10 text-center text-sm text-black/40">
+            {copy.loading}
+          </p>
         )}
 
         {!loading && items.length === 0 && (
@@ -163,7 +166,7 @@ export default function CollectionDetailPage() {
                 key={item.id}
                 disabled={removingId === item.id}
                 trailingAction={{
-                  label: "Remove",
+                  label: copy.removeWordAriaLabel,
                   icon: <Trash2 size={22} strokeWidth={1.8} />,
                   onAction: () => handleRemove(item),
                 }}
@@ -171,9 +174,16 @@ export default function CollectionDetailPage() {
                 <VocabularyCard
                   item={item}
                   updating={false}
+                  expanded={expandedItemId === item.id}
+                  viewMode="cards"
                   onChangeStatus={() => {}}
                   onSendToPartner={() => {}}
                   onOpenDetail={() => {}}
+                  onToggleExpanded={(selectedItem) => {
+                    setExpandedItemId((current) =>
+                      current === selectedItem.id ? null : selectedItem.id,
+                    );
+                  }}
                   onInteract={() => {}}
                 />
               </SwipeActionRow>

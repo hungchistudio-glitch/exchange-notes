@@ -54,6 +54,48 @@ export default function useVisibleVocabularyItems({
       );
     }
 
+    if (sortMode === "old") {
+      return [...filtered].sort(
+        (a, b) =>
+          new Date(a.created_at ?? 0).getTime() -
+          new Date(b.created_at ?? 0).getTime(),
+      );
+    }
+
+    if (sortMode === "alphabetical") {
+      return [...filtered].sort((a, b) =>
+        a.word.localeCompare(b.word, undefined, { sensitivity: "base" }),
+      );
+    }
+
+    if (sortMode === "reverse-alphabetical") {
+      return [...filtered].sort((a, b) =>
+        b.word.localeCompare(a.word, undefined, { sensitivity: "base" }),
+      );
+    }
+
+    if (sortMode === "recently-reviewed") {
+      return [...filtered].sort(
+        (a, b) =>
+          new Date(b.last_reviewed_at ?? 0).getTime() -
+          new Date(a.last_reviewed_at ?? 0).getTime(),
+      );
+    }
+
+    if (sortMode === "least-reviewed") {
+      return [...filtered].sort((a, b) => {
+        const reviewDifference =
+          (a.review_count ?? 0) - (b.review_count ?? 0);
+
+        if (reviewDifference !== 0) return reviewDifference;
+
+        return (
+          new Date(a.last_reviewed_at ?? 0).getTime() -
+          new Date(b.last_reviewed_at ?? 0).getTime()
+        );
+      });
+    }
+
     const rankIndex = new Map(
       rankedIds.map((id, index) => [id, index]),
     );

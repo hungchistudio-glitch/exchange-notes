@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
+import useYumiOrbitMenu from "@/hooks/pet/useYumiOrbitMenu";
 import {
   buildAvailableCookies,
   computeGrowthStage,
@@ -20,6 +21,7 @@ import type { VocabularyItem } from "@/lib/types/app";
 
 import CookieTray from "./CookieTray";
 import YumiMark from "./YumiMark";
+import YumiOrbitMenu from "./YumiOrbitMenu";
 
 import styles from "./YumiCompanion.module.css";
 
@@ -34,16 +36,15 @@ type YumiCompanionProps = {
   // Bumped by the parent every time a vocabulary card is opened, so Yumi
   // can throw a quick curious glance without any deeper wiring.
   cardGlancePulse: number;
+  onStartReview: () => void;
+  onAddWord: () => void;
+  onOpenCamera: () => void;
 };
 
-const REACTION_DURATION_MS = 2200;
-// Fallback durations, slightly longer than the CSS animations they back
-// up: onAnimationEnd never fires when prefers-reduced-motion disables the
-// animation entirely (or in any other edge case where the event is
-// missed), which would otherwise leave Yumi frozen in the intro/eating
-// pose forever instead of returning to its always-on idle loop.
+const REACTION_DURATION_MS = 3900;
+// Fallback duration, slightly longer than the CSS animation it backs up:
+// onAnimationEnd never fires when prefers-reduced-motion disables it.
 const WAKE_FALLBACK_MS = 2000;
-const EAT_FALLBACK_MS = 1100;
 
 // Replaces the old data-dashboard at the top of the Vocabulary page: Yumi
 // is fed one "cookie" per saved word and grows/reacts over time, so every
@@ -54,6 +55,9 @@ export default function YumiCompanion({
   dailyProgress,
   searchHasNoResults,
   cardGlancePulse,
+  onStartReview,
+  onAddWord,
+  onOpenCamera,
 }: YumiCompanionProps) {
   const { t } = useTranslation();
   const copy = t.vocabulary.mascot;
@@ -62,14 +66,17 @@ export default function YumiCompanion({
   const [daysSinceLastOpen, setDaysSinceLastOpen] = useState(0);
   const [isWaking, setIsWaking] = useState(true);
   const [glanceDown, setGlanceDown] = useState(false);
-  const [eatingId, setEatingId] = useState<string | null>(null);
   const [reactionMood, setReactionMood] = useState<YumiMood | null>(null);
+  const [isTrackingFood, setIsTrackingFood] = useState(false);
+  const orbit = useYumiOrbitMenu();
 
   const yumiZoneRef = useRef<HTMLDivElement>(null);
+  const feedTargetRef = useRef<HTMLSpanElement>(null);
   const reactionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const glanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wakeFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const eatFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchGlanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTrackingTouch, setIsTrackingTouch] = useState(false);
   // Baselines for the two "weak awareness" effects below — null on the very
   // first render so neither one fires just because the page loaded with
   // existing words or a pulse count of 0.
@@ -126,7 +133,9 @@ export default function YumiCompanion({
     return () => {
       if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
       if (glanceTimeoutRef.current) clearTimeout(glanceTimeoutRef.current);
-      if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
+      if (touchGlanceTimeoutRef.current) {
+        clearTimeout(touchGlanceTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -138,11 +147,6 @@ export default function YumiCompanion({
     setIsWaking(false);
     setGlanceDown(true);
     glanceTimeoutRef.current = setTimeout(() => setGlanceDown(false), 1600);
-  }
-
-  function handleEatEnd() {
-    if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
-    setEatingId(null);
   }
 
   // Shared by feeding, the card-glance reaction, and the new-word bump —
@@ -211,15 +215,87 @@ export default function YumiCompanion({
     }
   }
 
-  function handleFeed(cookie: Cookie) {
-    setEatingId(cookie.id);
+  function handleCookieConsumed(cookie: Cookie) {
     triggerReaction(cookieReactionMood(cookie.type), REACTION_DURATION_MS);
-
-    if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
-    eatFallbackRef.current = setTimeout(() => setEatingId(null), EAT_FALLBACK_MS);
-
     void persistFeed(cookie);
   }
+
+  const feeding = useYumiFeedingSequence({
+    onConsume: handleCookieConsumed,
+  });
+
+  function handleFeedStart(cookie: Cookie) {
+    orbit.close();
+    feeding.beginApproach(cookie);
+  }
+
+  function handleYumiActivate() {
+    if (feeding.isFeeding) return;
+    orbit.toggle();
+  }
+
+  function handleYumiPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    const zone = yumiZoneRef.current;
+    if (!zone || feeding.isFeeding) return;
+
+    const rect = zone.getBoundingClientRect();
+    const normalizedX = Math.max(
+      -1,
+      Math.min(
+        1,
+        (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2),
+      ),
+    );
+    const normalizedY = Math.max(
+      -1,
+      Math.min(
+        1,
+        (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2),
+      ),
+    );
+
+    zone.style.setProperty("--yumi-gaze-x", `${normalizedX * 9}px`);
+    zone.style.setProperty("--yumi-gaze-y", `${normalizedY * 8}px`);
+    setIsTrackingTouch(true);
+
+    if (touchGlanceTimeoutRef.current) {
+      clearTimeout(touchGlanceTimeoutRef.current);
+    }
+    touchGlanceTimeoutRef.current = setTimeout(
+      () => setIsTrackingTouch(false),
+      65,
+    );
+  }
+
+  const handleCookieDragPoint = useCallback(
+    (point: { x: number; y: number } | null) => {
+      const zone = yumiZoneRef.current;
+
+      if (!point || !zone) {
+        zone?.style.removeProperty("--yumi-gaze-x");
+        zone?.style.removeProperty("--yumi-gaze-y");
+        setIsTrackingFood(false);
+        return;
+      }
+
+      const rect = zone.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const normalizedX = Math.max(
+        -1,
+        Math.min(1, (point.x - centerX) / Math.max(rect.width / 2, 1)),
+      );
+      const normalizedY = Math.max(
+        -1,
+        Math.min(1, (point.y - centerY) / Math.max(rect.height / 2, 1)),
+      );
+
+      zone.style.setProperty("--yumi-gaze-x", `${normalizedX * 9}px`);
+      zone.style.setProperty("--yumi-gaze-y", `${normalizedY * 8}px`);
+      setIsTrackingFood(true);
+    },
+    [],
+  );
 
   const totalCookiesFed = petState?.total_cookies_fed ?? 0;
   const wordsText = (
@@ -233,46 +309,88 @@ export default function YumiCompanion({
     String(streak.currentStreak),
   );
   const summaryLine = `${wordsText} · ${cookiesText} · ${streakText} · ${copy.moodShort[mood]}`;
+  const moodStatus = (() => {
+    if (orbit.isOpen && feeding.phase === "idle") return copy.menuPrompt;
+
+    switch (feeding.phase) {
+      case "anticipating":
+        return copy.feedingAnticipating;
+      case "biting":
+      case "chewing":
+        return copy.feedingEating;
+      case "swallowing":
+        return copy.feedingSwallowing;
+      case "satisfied":
+        return copy.feedingSatisfied;
+      case "idle":
+        return copy.moodStatus[mood];
+    }
+  })();
 
   return (
-    <section className={styles.section}>
+    <section className={styles.section} data-menu-open={orbit.isVisible}>
       <p className={styles.greeting}>{greeting}</p>
 
       <div ref={yumiZoneRef} className={styles.yumiZone}>
-        <YumiMark
-          mood={mood}
-          isWaking={isWaking}
-          isEating={Boolean(eatingId)}
-          growthStage={growthStage}
-          crownEarned={crownEarned}
-          glanceDown={glanceDown}
-          onWakeAnimationEnd={handleWakeEnd}
-          onEatAnimationEnd={handleEatEnd}
+        <button
+          type="button"
+          className={styles.yumiButton}
+          onClick={handleYumiActivate}
+          onPointerDown={handleYumiPointerDown}
+          aria-label={
+            orbit.isVisible
+              ? copy.closeActionsAriaLabel
+              : copy.openActionsAriaLabel
+          }
+          aria-expanded={orbit.isVisible}
+          disabled={feeding.isFeeding}
+        >
+          <YumiMark
+            mood={mood}
+            isWaking={isWaking}
+            isEating={feeding.isFeeding}
+            feedingPhase={feeding.phase}
+            chewBeat={feeding.chewBeat}
+            feedTargetRef={feedTargetRef}
+            growthStage={growthStage}
+            crownEarned={crownEarned}
+            glanceDown={glanceDown}
+            orbitPhase={orbit.phase}
+            lookTarget={
+              isTrackingFood || isTrackingTouch ? "food" : orbit.lookTarget
+            }
+            onWakeAnimationEnd={handleWakeEnd}
+          />
+        </button>
+
+        <YumiOrbitMenu
+          phase={orbit.phase}
+          showHints={orbit.showHints}
+          copy={copy}
+          onClose={orbit.close}
+          onLook={orbit.lookAt}
+          onReview={onStartReview}
+          onAddWord={onAddWord}
+          onCamera={onOpenCamera}
         />
       </div>
 
-      <p className={styles.moodStatus}>{copy.moodStatus[mood]}</p>
+      <p className={styles.moodStatus}>{moodStatus}</p>
       <p className={styles.summaryLine}>{summaryLine}</p>
 
       <div className={styles.foodZone}>
         <CookieTray
           cookies={cookies}
           yumiZoneRef={yumiZoneRef}
-          onFeed={handleFeed}
-          disabled={!petState}
+          onFeed={feeding.consume}
+          onFeedStart={handleFeedStart}
+          feedTargetRef={feedTargetRef}
+          disabled={!petState || feeding.isFeeding}
           copy={copy}
+          onDragPoint={handleCookieDragPoint}
         />
       </div>
 
-      <div className={styles.links}>
-        <Link href="/review?from=vocabulary" className={styles.link}>
-          {copy.reviewLinkLabel}
-        </Link>
-        <span className={styles.linkDivider} aria-hidden="true" />
-        <Link href="/vocabulary/collections" className={styles.link}>
-          {copy.collectionsLinkLabel}
-        </Link>
-      </div>
     </section>
   );
 }

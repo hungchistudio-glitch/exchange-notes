@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   COLLECTION_EMOJI_PRESETS,
@@ -25,6 +26,7 @@ export default function CollectionPickerSheet({
 }: CollectionPickerSheetProps) {
   const { t } = useTranslation();
   const copy = t.vocabulary.collections;
+  const motion = useSheetMotion({ onClose });
 
   const [collections, setCollections] = useState<VocabularyCollection[]>([]);
   const [memberIds, setMemberIds] = useState<Set<string>>(new Set());
@@ -167,15 +169,33 @@ export default function CollectionPickerSheet({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] flex items-end justify-center"
     >
+      <button
+        type="button"
+        aria-label={copy.close}
+        onClick={motion.requestClose}
+        className={`absolute inset-0 bg-black/40 ${motion.backdropClassName}`}
+        {...motion.backdropProps}
+      />
+
       <div
-        className="w-full max-w-xl rounded-t-[28px] bg-white p-5"
-        style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
-        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${copy.title}: ${item.word}`}
+        {...motion.panelProps}
+        className={`${motion.panelClassName} relative z-10 w-full max-w-xl rounded-t-[28px] bg-white p-5`}
+        style={{
+          ...motion.panelProps.style,
+          paddingBottom: "calc(2rem + env(safe-area-inset-bottom))",
+        }}
       >
-        <div className="mx-auto h-1 w-10 rounded-full bg-black/10" />
+        <div
+          className={`${motion.handleClassName} -mx-5 -mt-5 flex h-10 items-center justify-center`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/10" />
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -187,7 +207,7 @@ export default function CollectionPickerSheet({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={motion.requestClose}
             aria-label={copy.close}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/50 hover:bg-black/[0.04]"
           >

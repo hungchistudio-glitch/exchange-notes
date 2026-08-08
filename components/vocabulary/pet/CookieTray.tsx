@@ -14,6 +14,8 @@ type CookieTrayProps = {
   cookies: Cookie[];
   yumiZoneRef: RefObject<HTMLDivElement | null>;
   onFeed: (cookie: Cookie) => void;
+  onFeedStart?: (cookie: Cookie) => void;
+  feedTargetRef?: RefObject<HTMLElement | null>;
   disabled?: boolean;
   copy: MascotCopy;
   maxVisible?: number;
@@ -53,6 +55,8 @@ export default function CookieTray({
   cookies,
   yumiZoneRef,
   onFeed,
+  onFeedStart,
+  feedTargetRef,
   disabled,
   copy,
   maxVisible = DEFAULT_VISIBLE_LIMIT,
@@ -79,11 +83,17 @@ export default function CookieTray({
   function updateDrag(
     next: DragState | null | ((prev: DragState | null) => DragState | null),
   ) {
-    setDrag((prev) => {
-      const resolved = typeof next === "function" ? next(prev) : next;
-      dragRef.current = resolved;
-      return resolved;
-    });
+    // Pointer down/up can arrive inside the same React event batch on a
+    // fast tap. Resolve against the ref synchronously so pointer-up always
+    // sees the state written by pointer-down; React state remains the
+    // rendering copy of the same value.
+    const resolved =
+      typeof next === "function"
+        ? next(dragRef.current)
+        : next;
+
+    dragRef.current = resolved;
+    setDrag(resolved);
   }
 
   function isOverYumi(clientX: number, clientY: number) {
@@ -146,6 +156,7 @@ export default function CookieTray({
 
     if (!current.dragging || overYumi) {
       settledRef.current = false;
+      onFeedStart?.(current.cookie);
       updateDrag({
         ...current,
         x: current.dragging ? event.clientX : current.originX,
@@ -156,6 +167,44 @@ export default function CookieTray({
     } else {
       updateDrag(null);
     }
+  }
+
+  // Accessibility activation and a few WebKit/assistive-touch paths can
+  // produce a click without delivering the matching pointer-up back to the
+  // captured element. This is a guarded fallback: a normal pointer-up has
+  // already marked the drag as releasing, so it cannot feed twice.
+  function handleClick(
+    event: React.MouseEvent<HTMLButtonElement>,
+    cookie: Cookie,
+  ) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const current = dragRef.current ?? {
+      cookie,
+      originX: rect.left + rect.width / 2,
+      originY: rect.top + rect.height / 2,
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      dragging: false,
+      releasing: false,
+    };
+
+    if (
+      current.cookie.id !== cookie.id
+      || current.dragging
+      || current.releasing
+    ) {
+      return;
+    }
+
+    settledRef.current = false;
+    onFeedStart?.(current.cookie);
+    updateDrag({
+      ...current,
+      x: event.clientX || current.originX,
+      y: event.clientY || current.originY,
+      dragging: false,
+      releasing: true,
+    });
   }
 
   function settleRelease() {
@@ -180,7 +229,8 @@ export default function CookieTray({
       return;
     }
 
-    const rect = zone.getBoundingClientRect();
+    const target = feedTargetRef?.current ?? zone;
+    const rect = target.getBoundingClientRect();
     const targetX = rect.left + rect.width / 2;
     const targetY = rect.top + rect.height / 2;
 
@@ -226,6 +276,7 @@ export default function CookieTray({
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={() => updateDrag(null)}
+                  onClick={(event) => handleClick(event, cookie)}
                 >
                   <CookieGlyph cookie={cookie} />
                 </button>

@@ -2,6 +2,9 @@
 
 import { useMemo } from "react";
 import { getPronunciationData } from "@/lib/pronunciation";
+import { speak } from "@/lib/speech";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { insertValues } from "@/lib/utils";
 
 type PronunciationBlockProps = {
   english?: string | null;
@@ -16,6 +19,7 @@ export default function PronunciationBlock({
   showEnglish = false,
   className = "",
 }: PronunciationBlockProps) {
+  const { t } = useTranslation();
   const pronunciation = useMemo(
     () =>
       getPronunciationData({
@@ -32,15 +36,44 @@ export default function PronunciationBlock({
 
   if (!hasContent) return null;
 
+  function pronunciationButton(
+    label: string,
+    spokenText: string,
+    language: "en-US" | "zh-TW",
+  ) {
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          speak(spokenText, language);
+        }}
+        aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+          text: spokenText,
+        })}
+        className="block max-w-full rounded-md text-left transition-colors hover:text-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9962e]/30 active:text-black"
+      >
+        {label}
+      </button>
+    );
+  }
+
   return (
     <div
-      className={`space-y-1 font-sans text-[12px] font-normal leading-[1.55] tracking-[-0.01em] text-black/45 ${className}`}
+      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-black/45 ${className}`}
     >
-      {showEnglish && pronunciation.english && <p>{pronunciation.english}</p>}
+      {showEnglish && pronunciation.english
+        ? pronunciationButton(pronunciation.english, pronunciation.english, "en-US")
+        : null}
 
-      {pronunciation.pinyin && <p>{pronunciation.pinyin}</p>}
+      {pronunciation.pinyin && chinese
+        ? pronunciationButton(pronunciation.pinyin, chinese, "zh-TW")
+        : null}
 
-      {pronunciation.zhuyin && <p>{pronunciation.zhuyin}</p>}
+      {pronunciation.zhuyin && chinese
+        ? pronunciationButton(pronunciation.zhuyin, chinese, "zh-TW")
+        : null}
     </div>
   );
 }

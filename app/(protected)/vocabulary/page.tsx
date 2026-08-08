@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { use } from "react";
 
 import AppPage from "@/components/ui/AppPage";
 import YumiCompanion from "@/components/vocabulary/pet/YumiCompanion";
@@ -15,8 +16,37 @@ const VocabularyOverlays = dynamic(
   },
 );
 
-export default function VocabularyPage() {
-  const { yumiProps, mainContentProps, overlaysProps } = useVocabularyPage();
+type VocabularyPageProps = {
+  searchParams: Promise<{
+    widgetAction?: string | string[];
+    widgetWordId?: string | string[];
+    widgetNonce?: string | string[];
+  }>;
+};
+
+export default function VocabularyPage({ searchParams }: VocabularyPageProps) {
+  const { widgetAction, widgetWordId, widgetNonce } = use(searchParams);
+  const normalizedWidgetAction = Array.isArray(widgetAction)
+    ? widgetAction[0]
+    : widgetAction;
+  const normalizedWidgetWordId = Array.isArray(widgetWordId)
+    ? widgetWordId[0]
+    : widgetWordId;
+  const addWordRequestId = Array.isArray(widgetNonce)
+    ? widgetNonce[0]
+    : widgetNonce;
+  const openAddWord = normalizedWidgetAction === "add-word";
+  const openWidgetWordId =
+    normalizedWidgetAction === "open-word"
+      ? normalizedWidgetWordId
+      : undefined;
+
+  const { yumiProps, mainContentProps, overlaysProps } = useVocabularyPage({
+    openAddWord,
+    addWordRequestId,
+    openWidgetWordId,
+    openWidgetWordRequestId: addWordRequestId,
+  });
 
   const hasOpenOverlay =
     overlaysProps.lookupProps.open ||

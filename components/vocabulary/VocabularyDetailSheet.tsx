@@ -11,7 +11,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { useEffect } from "react";
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 import AppBadge from "@/components/ui/AppBadge";
 import AppButton from "@/components/ui/AppButton";
@@ -99,43 +99,33 @@ export default function VocabularyDetailSheet({
   const { t, isTraditionalChinese } = useTranslation();
   const { isLearningChinese } = useLearningLanguageContext();
   const detail = t.vocabulary.detail;
+  const motion = useSheetMotion({ open, onClose });
 
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose, open]);
-
-  if (!open) return null;
+  if (!motion.rendered) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center">
       <button
         type="button"
         aria-label={detail.closeDetailsAriaLabel}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+        onClick={motion.requestClose}
+        className={`absolute inset-0 bg-black/35 backdrop-blur-[2px] ${motion.backdropClassName}`}
+        {...motion.backdropProps}
       />
 
       <section
         role="dialog"
         aria-modal="true"
         aria-label={`${item.word} details`}
-        className="relative z-10 max-h-[90dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[32px] bg-surface px-4 pb-[calc(24px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_60px_rgba(0,0,0,0.18)]"
+        {...motion.panelProps}
+        className={`${motion.panelClassName} relative z-10 max-h-[90dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[32px] bg-surface px-4 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-18px_60px_rgba(0,0,0,0.18)]`}
       >
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-black/15" />
+        <div
+          className={`${motion.handleClassName} -mx-4 flex h-9 items-center justify-center`}
+          {...motion.handleProps}
+        >
+          <span className="h-1.5 w-12 rounded-full bg-black/15" />
+        </div>
 
         <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.06)]">
           {item.image_url && (
@@ -211,7 +201,7 @@ export default function VocabularyDetailSheet({
 
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={motion.requestClose}
                   aria-label={detail.closeAriaLabel}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.055]"
                 >

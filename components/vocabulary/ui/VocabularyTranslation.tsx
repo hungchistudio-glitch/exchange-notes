@@ -10,12 +10,14 @@ type Props = {
    * language the user is learning (see isLearningChinese from
    * LearningLanguageContext) — NOT the interface display language. */
   variant?: "primary" | "secondary";
+  showSpeechButton?: boolean;
 };
 
 export default function VocabularyTranslation({
   text,
   className,
   variant = "secondary",
+  showSpeechButton = true,
 }: Props) {
   const normalizedText = text.trim();
 
@@ -42,7 +44,7 @@ export default function VocabularyTranslation({
         {normalizedText}
       </TextComponent>
 
-      <div className="shrink-0">
+      {showSpeechButton ? <div className="shrink-0">
         <VocabularySpeechButton
           text={normalizedText}
           language="zh-TW"
@@ -50,7 +52,7 @@ export default function VocabularyTranslation({
           size="sm"
           prominence={variant}
         />
-      </div>
+      </div> : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
@@ -12,6 +13,7 @@ import buildVocabularySearchProps from "@/hooks/pages/builders/buildVocabularySe
 import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
+import useVocabularyViewMode from "@/hooks/useVocabularyViewMode";
 
 import { recordInteraction } from "@/lib/vocabulary/helpers";
 import { updateVocabularyFields } from "@/lib/vocabulary/repository";
@@ -36,8 +38,23 @@ async function shareVocabularyItem(item: VocabularyItem) {
   }
 }
 
-export default function useVocabularyPage() {
-  const controller = useVocabularyController();
+type UseVocabularyPageOptions = {
+  openAddWord?: boolean;
+  addWordRequestId?: string;
+  openWidgetWordId?: string;
+  openWidgetWordRequestId?: string;
+};
+
+export default function useVocabularyPage({
+  openAddWord = false,
+  addWordRequestId,
+  openWidgetWordId,
+  openWidgetWordRequestId,
+}: UseVocabularyPageOptions = {}) {
+  const router = useRouter();
+  const controller = useVocabularyController({
+    initialAiSearchOpen: openAddWord,
+  });
 
   const [detailItem, setDetailItem] = useState<VocabularyItem | null>(null);
   const [collectionsItem, setCollectionsItem] =
@@ -47,6 +64,9 @@ export default function useVocabularyPage() {
   // brief curious glance — a plain counter keeps the trigger self-contained
   // (no need to track *which* card, just "something happened").
   const [cardGlancePulse, setCardGlancePulse] = useState(0);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const handledWidgetWordRequestRef = useRef<string | null>(null);
+  const { viewMode, toggleViewMode } = useVocabularyViewMode();
 
   const {
     query,
@@ -114,6 +134,70 @@ export default function useVocabularyPage() {
     sendLookupToPartner,
   } = controller.lookup;
 
+  useEffect(() => {
+    if (!openAddWord) return;
+
+    setQuery("");
+    resetLookup();
+    setAiSearchOpen(true);
+  }, [
+    addWordRequestId,
+    openAddWord,
+    resetLookup,
+    setAiSearchOpen,
+    setQuery,
+  ]);
+
+  useEffect(() => {
+    if (!openWidgetWordId || loading) return;
+
+    const requestKey = `${openWidgetWordRequestId ?? "initial"}:${openWidgetWordId}`;
+
+    if (handledWidgetWordRequestRef.current === requestKey) return;
+
+    const matchingItem = uniqueItems.find(
+      (item) => item.id === openWidgetWordId,
+    );
+
+    if (!matchingItem) return;
+
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      setAiSearchOpen(false);
+      resetLookup();
+      setQuery("");
+      setQuickFilter("all");
+      setExpandedItemId(matchingItem.id);
+      setCardGlancePulse((count) => count + 1);
+      handledWidgetWordRequestRef.current = requestKey;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const card = document.getElementById(
+            `vocabulary-card-${matchingItem.id}`,
+          );
+          card?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    loading,
+    openWidgetWordId,
+    openWidgetWordRequestId,
+    resetLookup,
+    setAiSearchOpen,
+    setQuickFilter,
+    setQuery,
+    uniqueItems,
+  ]);
+
   const { rankedIds, rankingLoading, rankingError } = useVocabularyRanking({
     items: uniqueItems,
     query,
@@ -160,6 +244,9 @@ export default function useVocabularyPage() {
     dailyProgress,
     searchHasNoResults,
     cardGlancePulse,
+    onStartReview: () => router.push("/review?from=vocabulary"),
+    onAddWord: openAiSearch,
+    onOpenCamera: () => router.push("/capture?source=camera&from=vocabulary"),
   };
 
   const searchProps = buildVocabularySearchProps({
@@ -171,14 +258,21 @@ export default function useVocabularyPage() {
     quickFilters,
     visibleCount: visibleItems.length,
     sortMode,
+    viewMode,
     rankingLoading,
     rankingError,
-    setQuery,
+    setQuery: (value: string) => {
+      setExpandedItemId(null);
+      setQuery(value);
+    },
     resetLookup,
-    openAiSearch,
-    setQuickFilter,
+    setQuickFilter: (value) => {
+      setExpandedItemId(null);
+      setQuickFilter(value);
+    },
     setSortOpen,
-    setFiltersOpen,
+    openCollections: () => router.push("/vocabulary/collections"),
+    toggleViewMode,
   });
 
   const listProps = {
@@ -191,12 +285,18 @@ export default function useVocabularyPage() {
     lookupResult,
     lookupError,
     savingLookup,
+    expandedItemId,
+    viewMode,
     onLookupWord: lookupWord,
     onSaveLookupResult: saveLookupResult,
     onChangeStatus: changeStatus,
     onDeleteItem: deleteVocabularyItem,
     onOpenDetail: (item: VocabularyItem) => {
       setDetailItem(item);
+      setCardGlancePulse((count) => count + 1);
+    },
+    onToggleExpanded: (item: VocabularyItem) => {
+      setExpandedItemId((current) => (current === item.id ? null : item.id));
       setCardGlancePulse((count) => count + 1);
     },
     onOpenCollections: setCollectionsItem,

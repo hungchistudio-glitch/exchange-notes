@@ -17,17 +17,13 @@ export default function useVocabularyRanking({
   query,
   sortMode,
 }: UseVocabularyRankingOptions) {
+  const rankingEnabled = sortMode === "for-you" || sortMode === "trending";
   const [rankedIds, setRankedIds] = useState<string[]>([]);
   const [rankingLoading, setRankingLoading] = useState(false);
   const [rankingError, setRankingError] = useState("");
 
   useEffect(() => {
-    if (sortMode === "new" || items.length === 0) {
-      setRankedIds([]);
-      setRankingLoading(false);
-      setRankingError("");
-      return;
-    }
+    if (!rankingEnabled || items.length === 0) return;
 
     const controller = new AbortController();
 
@@ -111,11 +107,11 @@ export default function useVocabularyRanking({
     void loadAiRanking();
 
     return () => controller.abort();
-  }, [items, query, sortMode]);
+  }, [items, query, rankingEnabled, sortMode]);
 
   return {
-    rankedIds,
-    rankingLoading,
-    rankingError,
+    rankedIds: rankingEnabled && items.length > 0 ? rankedIds : [],
+    rankingLoading: rankingEnabled && items.length > 0 && rankingLoading,
+    rankingError: rankingEnabled && items.length > 0 ? rankingError : "",
   };
 }

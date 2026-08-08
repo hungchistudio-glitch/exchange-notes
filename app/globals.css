@@ -60,3 +60,16 @@ body {
     Helvetica,
     sans-serif;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Keep every in-app scroll surface inertial on iOS and prevent a nested
+   sheet from handing its overscroll back to the page underneath. */
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+}

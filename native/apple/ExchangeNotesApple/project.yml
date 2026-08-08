@@ -3,6 +3,11 @@ name: ExchangeNotesApple
 options:
   createIntermediateGroups: true
 
+configs:
+  Debug: debug
+  Personal: debug
+  Release: release
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -26,10 +31,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes
         PRODUCT_NAME: ExchangeNotes
         TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        REGISTER_APP_GROUPS: YES
         CODE_SIGN_ENTITLEMENTS: App/ExchangeNotes.entitlements
       configs:
         Debug:
           APS_ENVIRONMENT: development
+        Personal:
+          CODE_SIGN_ENTITLEMENTS: App/ExchangeNotesPersonal.entitlements
+          DEVELOPMENT_TEAM: 249MSJ3P8Z
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) EXCHANGE_NOTES_PERSONAL_TEAM"
         Release:
           APS_ENVIRONMENT: production
 
@@ -42,6 +53,8 @@ targets:
         CFBundleVersion: "1"
         LSApplicationCategoryType: public.app-category.education
         UILaunchScreen: {}
+        UIBackgroundModes:
+          - audio
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UISupportedInterfaceOrientations:
@@ -81,7 +94,12 @@ targets:
         APPLICATION_EXTENSION_API_ONLY: YES
         SKIP_INSTALL: YES
         TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        REGISTER_APP_GROUPS: YES
         CODE_SIGN_ENTITLEMENTS: Widget/YumiWidgetExtension.entitlements
+      configs:
+        Personal:
+          DEVELOPMENT_TEAM: 249MSJ3P8Z
 
     info:
       path: Widget/Info.plist
@@ -102,3 +120,13 @@ schemes:
       config: Debug
     archive:
       config: Release
+
+  ExchangeNotesPersonal:
+    build:
+      targets:
+        ExchangeNotes: all
+        YumiWidgetExtension: all
+    run:
+      config: Personal
+    archive:
+      config: Personal

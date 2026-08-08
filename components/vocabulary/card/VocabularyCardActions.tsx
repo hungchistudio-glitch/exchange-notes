@@ -11,6 +11,7 @@ type Props = {
   onToggleMastered: () => void;
   onSend: () => void;
   onOpen: () => void;
+  word: string;
 };
 
 function VocabularyCardActions({
@@ -19,6 +20,7 @@ function VocabularyCardActions({
   onToggleMastered,
   onSend,
   onOpen,
+  word,
 }: Props) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
@@ -44,6 +46,8 @@ function VocabularyCardActions({
         size="icon"
         className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onSend}
+        aria-label={t.vocabulary.detail.sendToFriendAriaLabel}
+        title={t.vocabulary.detail.sendToFriendAriaLabel}
       >
         <Send size={18} />
       </AppButton>
@@ -53,6 +57,14 @@ function VocabularyCardActions({
         size="icon"
         className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onOpen}
+        aria-label={t.vocabulary.detail.openFullDetailsAriaLabel.replace(
+          "{word}",
+          word,
+        )}
+        title={t.vocabulary.detail.openFullDetailsAriaLabel.replace(
+          "{word}",
+          word,
+        )}
       >
         <MoreHorizontal size={18} />
       </AppButton>

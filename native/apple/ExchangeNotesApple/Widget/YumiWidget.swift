@@ -100,12 +100,16 @@ struct YumiDailyWidget: Widget {
             .systemLarge,
             .systemExtraLarge,
         ])
+        .containerBackgroundRemovable(true)
     }
 }
 
 struct YumiWidgetView: View {
     @Environment(\.widgetFamily)
     private var family
+
+    @Environment(\.widgetRenderingMode)
+    private var renderingMode
 
     let entry: YumiEntry
 
@@ -144,6 +148,15 @@ struct YumiWidgetView: View {
                     poseIndex: entry.poseIndex
                 )
 
+            case .accessoryCircular,
+                 .accessoryRectangular,
+                 .accessoryInline:
+                SmallLayout(
+                    data: entry.data,
+                    mood: mood,
+                    poseIndex: entry.poseIndex
+                )
+
             @unknown default:
                 MediumLayout(
                     data: entry.data,
@@ -158,17 +171,72 @@ struct YumiWidgetView: View {
                 poseIndex: entry.poseIndex
             )
         }
+        .overlay {
+            if renderingMode == .accented {
+                YumiClearAppearanceEtching(
+                    mood: mood,
+                    poseIndex: entry.poseIndex
+                )
+            }
+        }
         .widgetURL(defaultDeepLink)
     }
 
     private var defaultDeepLink: URL {
-        switch mood {
-        case .curious, .happy, .dancing, .excited, .welcomeBack:
-            return WidgetLinks.review
-
-        default:
+        guard entry.data.hasWord else {
             return WidgetLinks.addWord
         }
+
+        return WidgetLinks.wordDetail(
+            entry.data.displayedWord
+        )
+    }
+}
+
+private struct YumiClearAppearanceEtching: View {
+    let mood: YumiMood
+    let poseIndex: Int
+
+    private var palette: YumiWidgetPalette {
+        mood.widgetPalette(
+            poseIndex: poseIndex
+        )
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                YumiTechGrid(
+                    lineColor: Color.white.opacity(0.10)
+                )
+
+                YumiOrbitalEtching(
+                    accent: palette.particle,
+                    shadow: Color.black,
+                    poseIndex: poseIndex
+                )
+
+                YumiSignalArc(
+                    color: palette.particle,
+                    poseIndex: poseIndex
+                )
+                .frame(
+                    width: max(210, proxy.size.width * 0.82),
+                    height: max(210, proxy.size.height * 0.82)
+                )
+                .offset(
+                    x: proxy.size.width * 0.18,
+                    y: -proxy.size.height * 0.10
+                )
+            }
+            .frame(
+                width: proxy.size.width,
+                height: proxy.size.height
+            )
+            .clipped()
+        }
+        .widgetAccentable()
+        .allowsHitTesting(false)
     }
 }
 
@@ -193,21 +261,38 @@ private struct YumiPremiumBackground: View {
             let shortSide = min(width, height)
 
             ZStack {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.58)
+
                 LinearGradient(
                     colors: [
-                        weeklyTheme.backgroundStart,
-                        weeklyTheme.backgroundMiddle,
-                        palette.glow.opacity(0.24),
-                        weeklyTheme.backgroundEnd,
+                        Color.white.opacity(0.07),
+                        weeklyTheme.backgroundStart
+                            .opacity(0.06),
+                        palette.glow.opacity(0.04),
+                        weeklyTheme.backgroundEnd
+                            .opacity(0.07),
+                        Color.black.opacity(0.035),
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
 
+                LinearGradient(
+                    colors: [
+                        Color.clear,
+                        weeklyTheme.deepSpace.opacity(0.035),
+                        Color.black.opacity(0.035),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
                 RadialGradient(
                     colors: [
-                        palette.particle.opacity(0.38),
-                        palette.glow.opacity(0.10),
+                        palette.particle.opacity(0.10),
+                        palette.glow.opacity(0.025),
                         Color.clear,
                     ],
                     center: .topLeading,
@@ -218,8 +303,8 @@ private struct YumiPremiumBackground: View {
 
                 RadialGradient(
                     colors: [
-                        weeklyTheme.deepSpace.opacity(0.28),
-                        weeklyTheme.secondary.opacity(0.12),
+                        weeklyTheme.deepSpace.opacity(0.08),
+                        weeklyTheme.secondary.opacity(0.035),
                         Color.clear,
                     ],
                     center: .bottomTrailing,
@@ -229,10 +314,10 @@ private struct YumiPremiumBackground: View {
 
                 YumiCosmicField(
                     accent: palette.particle,
-                    ink: palette.eyeInk,
+                    ink: weeklyTheme.deepSpace,
                     poseIndex: poseIndex
                 )
-                .opacity(0.72)
+                .opacity(0.90)
 
                 YumiAlienPlanet(
                     accent: palette.glow,
@@ -263,11 +348,18 @@ private struct YumiPremiumBackground: View {
                     x: width * 0.42,
                     y: height * 0.36
                 )
-                .opacity(0.62)
+                .opacity(0.72)
 
                 YumiTechGrid(
                     lineColor:
-                        palette.eyeInk.opacity(0.072)
+                        weeklyTheme.deepSpace
+                            .opacity(0.12)
+                )
+
+                YumiOrbitalEtching(
+                    accent: palette.particle,
+                    shadow: weeklyTheme.deepSpace,
+                    poseIndex: poseIndex
                 )
 
                 YumiSignalArc(
@@ -288,8 +380,8 @@ private struct YumiPremiumBackground: View {
                         LinearGradient(
                             colors: [
                                 Color.clear,
-                                Color.white.opacity(0.34),
-                                palette.particle.opacity(0.16),
+                                Color.white.opacity(0.22),
+                                palette.particle.opacity(0.10),
                                 Color.clear,
                             ],
                             startPoint: .leading,
@@ -311,6 +403,28 @@ private struct YumiPremiumBackground: View {
                     color: palette.particle,
                     poseIndex: poseIndex
                 )
+
+                RoundedRectangle(
+                    cornerRadius: max(
+                        24,
+                        shortSide * 0.16
+                    ),
+                    style: .continuous
+                )
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.30),
+                            palette.particle.opacity(0.16),
+                            weeklyTheme.deepSpace
+                                .opacity(0.10),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 0.8
+                )
+                .padding(0.5)
             }
             .frame(
                 width: width,
@@ -612,6 +726,181 @@ private struct YumiTechGrid: View {
     }
 }
 
+private struct YumiOrbitalEtching: View {
+    let accent: Color
+    let shadow: Color
+    let poseIndex: Int
+
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(
+                x: size.width * 0.72,
+                y: size.height * 0.48
+            )
+            let radiusX = max(
+                82,
+                size.width * 0.30
+            )
+            let radiusY = max(
+                46,
+                size.height * 0.28
+            )
+
+            var orbitalPaths = Path()
+            orbitalPaths.addEllipse(
+                in: CGRect(
+                    x: center.x - radiusX,
+                    y: center.y - radiusY,
+                    width: radiusX * 2,
+                    height: radiusY * 2
+                )
+            )
+            orbitalPaths.addEllipse(
+                in: CGRect(
+                    x: center.x - radiusX * 0.72,
+                    y: center.y - radiusY * 1.16,
+                    width: radiusX * 1.44,
+                    height: radiusY * 2.32
+                )
+            )
+            orbitalPaths.addEllipse(
+                in: CGRect(
+                    x: center.x - radiusY * 0.34,
+                    y: center.y - radiusY * 0.34,
+                    width: radiusY * 0.68,
+                    height: radiusY * 0.68
+                )
+            )
+
+            context.stroke(
+                orbitalPaths,
+                with: .color(shadow.opacity(0.22)),
+                style: StrokeStyle(
+                    lineWidth: 1.25,
+                    lineCap: .round
+                )
+            )
+            context.stroke(
+                orbitalPaths,
+                with: .color(Color.white.opacity(0.13)),
+                style: StrokeStyle(
+                    lineWidth: 0.48,
+                    lineCap: .round
+                )
+            )
+
+            var tickPaths = Path()
+            let tickCount = 28
+
+            for index in 0..<tickCount {
+                let angle =
+                    Double(index) * 2 * Double.pi
+                    / Double(tickCount)
+                    + Double(poseIndex) * 0.04
+                let cosine = CGFloat(cos(angle))
+                let sine = CGFloat(sin(angle))
+                let tickLength: CGFloat =
+                    index.isMultiple(of: 7)
+                    ? 9
+                    : 4
+
+                tickPaths.move(
+                    to: CGPoint(
+                        x: center.x
+                            + (radiusX - tickLength)
+                                * cosine,
+                        y: center.y
+                            + (radiusY - tickLength * 0.55)
+                                * sine
+                    )
+                )
+                tickPaths.addLine(
+                    to: CGPoint(
+                        x: center.x + radiusX * cosine,
+                        y: center.y + radiusY * sine
+                    )
+                )
+            }
+
+            context.stroke(
+                tickPaths,
+                with: .color(accent.opacity(0.24)),
+                style: StrokeStyle(
+                    lineWidth: 0.75,
+                    lineCap: .round
+                )
+            )
+
+            var circuitPath = Path()
+            circuitPath.move(
+                to: CGPoint(
+                    x: size.width * 0.04,
+                    y: size.height * 0.80
+                )
+            )
+            circuitPath.addLine(
+                to: CGPoint(
+                    x: size.width * 0.18,
+                    y: size.height * 0.80
+                )
+            )
+            circuitPath.addLine(
+                to: CGPoint(
+                    x: size.width * 0.24,
+                    y: size.height * 0.71
+                )
+            )
+            circuitPath.addLine(
+                to: CGPoint(
+                    x: size.width * 0.40,
+                    y: size.height * 0.71
+                )
+            )
+
+            context.stroke(
+                circuitPath,
+                with: .color(shadow.opacity(0.18)),
+                style: StrokeStyle(lineWidth: 1.15)
+            )
+            context.stroke(
+                circuitPath,
+                with: .color(Color.white.opacity(0.12)),
+                style: StrokeStyle(lineWidth: 0.42)
+            )
+
+            let nodePoints: [CGPoint] = [
+                CGPoint(
+                    x: size.width * 0.18,
+                    y: size.height * 0.80
+                ),
+                CGPoint(
+                    x: size.width * 0.24,
+                    y: size.height * 0.71
+                ),
+                CGPoint(
+                    x: size.width * 0.40,
+                    y: size.height * 0.71
+                ),
+            ]
+
+            for point in nodePoints {
+                context.fill(
+                    Path(
+                        ellipseIn: CGRect(
+                            x: point.x - 1.8,
+                            y: point.y - 1.8,
+                            width: 3.6,
+                            height: 3.6
+                        )
+                    ),
+                    with: .color(accent.opacity(0.36))
+                )
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 private struct YumiBackgroundParticles: View {
     let color: Color
     let poseIndex: Int
@@ -657,7 +946,9 @@ private struct SmallLayout: View {
             alignment: .leading,
             spacing: 6
         ) {
-            HStack(alignment: .top) {
+            HStack {
+                Spacer(minLength: 0)
+
                 YumiFace(
                     mood: mood,
                     poseIndex: poseIndex,
@@ -666,13 +957,7 @@ private struct SmallLayout: View {
                 )
                 .frame(width: 94, height: 94)
 
-                Spacer(minLength: 4)
-
-                ProgressBadge(
-                    data: data,
-                    mood: mood,
-                    diameter: 34
-                )
+                Spacer(minLength: 0)
             }
 
             Spacer(minLength: 0)
@@ -699,13 +984,9 @@ private struct MediumLayout: View {
                     accessibilityText:
                         data.localizedText.headline
                 )
-                .frame(width: 104, height: 104)
+                .frame(width: 92, height: 92)
 
-                ProgressBadge(
-                    data: data,
-                    mood: mood,
-                    diameter: 38
-                )
+                QuickActions(style: .compact)
             }
             .frame(width: 110)
 
@@ -796,13 +1077,7 @@ private struct LargeLayout: View {
                         hintSize: 13
                     )
 
-                    HStack(spacing: 10) {
-                        ProgressBadge(
-                            data: data,
-                            mood: mood,
-                            diameter: 48
-                        )
-
+                    HStack {
                         Spacer(minLength: 0)
 
                         QuickActions(style: .compact)
@@ -880,11 +1155,6 @@ private struct ExtraLargeLayout: View {
                     mood: mood,
                     poseIndex: poseIndex,
                     size: 300
-                )
-
-                ProgressSummary(
-                    data: data,
-                    mood: mood
                 )
 
                 QuickActions(style: .compact)
@@ -1183,6 +1453,7 @@ private struct YumiCharacterStage: View {
                 palette: palette,
                 poseIndex: poseIndex
             )
+            .opacity(0.34)
             .frame(
                 width: size * 1.08,
                 height: size * 1.08
@@ -1327,74 +1598,6 @@ private struct YumiPlanetPortal: View {
     }
 }
 
-private struct ProgressBadge: View {
-    let data: YumiWidgetData
-    let mood: YumiMood
-    let diameter: CGFloat
-
-    var body: some View {
-        YumiProgressRing(
-            progress: data.progress,
-            tint: mood.accentColor
-        )
-        .frame(
-            width: diameter,
-            height: diameter
-        )
-        .overlay {
-            Text(
-                "\(data.cookieCount)/\(data.cookieGoal)"
-            )
-            .font(.system(
-                size: diameter * 0.22,
-                weight: .bold,
-                design: .rounded
-            ))
-        }
-    }
-}
-
-private struct ProgressSummary: View {
-    let data: YumiWidgetData
-    let mood: YumiMood
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ProgressBadge(
-                data: data,
-                mood: mood,
-                diameter: 48
-            )
-
-            VStack(
-                alignment: .leading,
-                spacing: 2
-            ) {
-                Text(
-                    "\(data.cookieCount)/\(data.cookieGoal)"
-                )
-                .font(.system(
-                    size: 18,
-                    weight: .bold,
-                    design: .rounded
-                ))
-
-                Text(
-                    LocalizedStringKey(
-                        "widget.progress.today"
-                    )
-                )
-                .font(.system(
-                    size: 11,
-                    weight: .medium,
-                    design: .rounded
-                ))
-                .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
 // MARK: - Quick and Audio Actions
 
 private enum WidgetLinks {
@@ -1410,30 +1613,24 @@ private enum WidgetLinks {
             + "?widgetAction=camera"
     )!
 
-    static let review = URL(
-        string: "exchangenotes://review"
-    )!
-
-    static func speech(
-        text: String,
-        language: String
+    static func wordDetail(
+        _ word: YumiWidgetWord
     ) -> URL {
         var components = URLComponents()
         components.scheme = "exchangenotes"
-        components.host = "speak"
+        components.host = "vocabulary"
         components.queryItems = [
             URLQueryItem(
-                name: "language",
-                value: language
+                name: "widgetAction",
+                value: "open-word"
             ),
             URLQueryItem(
-                name: "text",
-                value: text
+                name: "widgetWordId",
+                value: word.id
             ),
         ]
 
-        return components.url
-            ?? URL(string: "exchangenotes://home")!
+        return components.url ?? addWord
     }
 }
 
@@ -1706,10 +1903,7 @@ private struct AudioActions: View {
         VStack(spacing: 10) {
             AudioActionButton(
                 badge: "A",
-                destination: WidgetLinks.speech(
-                    text: data.displayedWord.englishWord,
-                    language: "en-US"
-                ),
+                text: data.displayedWord.englishWord,
                 style: .english,
                 accessibilityText:
                     englishAccessibilityText,
@@ -1723,12 +1917,9 @@ private struct AudioActions: View {
 
             AudioActionButton(
                 badge: "ㄅ",
-                destination: WidgetLinks.speech(
-                    text:
-                        data.displayedWord
-                            .traditionalChineseWord,
-                    language: "zh-TW"
-                ),
+                text:
+                    data.displayedWord
+                        .traditionalChineseWord,
                 style: .traditionalChinese,
                 accessibilityText:
                     chineseAccessibilityText,
@@ -1761,13 +1952,44 @@ private struct AudioActions: View {
 
 private struct AudioActionButton: View {
     let badge: String
-    let destination: URL
+    let text: String
     let style: AudioLanguageStyle
     let accessibilityText: String
     let size: AudioActionSize
 
     var body: some View {
-        Link(destination: destination) {
+        Group {
+            switch style {
+            case .english:
+                Button(
+                    intent: SpeakYumiEnglishWordIntent(
+                        text: text
+                    )
+                ) {
+                    buttonLabel
+                }
+
+            case .traditionalChinese:
+                Button(
+                    intent:
+                        SpeakYumiTraditionalChineseWordIntent(
+                            text: text
+                        )
+                ) {
+                    buttonLabel
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(
+            text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        )
+        .accessibilityLabel(Text(accessibilityText))
+    }
+
+    private var buttonLabel: some View {
             ZStack {
                 RoundedRectangle(
                     cornerRadius: size.cornerRadius,
@@ -1840,8 +2062,6 @@ private struct AudioActionButton: View {
                 x: 0,
                 y: 3
             )
-        }
-        .accessibilityLabel(Text(accessibilityText))
     }
 }
 
@@ -1969,37 +2189,6 @@ private struct WordNavigationButton: View {
 }
 
 // MARK: - Shared Building Blocks
-
-private struct YumiProgressRing: View {
-    let progress: Double
-    let tint: Color
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(
-                    tint.opacity(0.18),
-                    lineWidth: 4
-                )
-
-            Circle()
-                .trim(
-                    from: 0,
-                    to: progress
-                )
-                .stroke(
-                    tint,
-                    style: StrokeStyle(
-                        lineWidth: 4,
-                        lineCap: .round
-                    )
-                )
-                .rotationEffect(
-                    .degrees(-90)
-                )
-        }
-    }
-}
 
 private struct YumiWidgetPalette {
     let body: Color
@@ -2244,11 +2433,43 @@ private struct YumiWeekdayTheme {
 
 private extension YumiMood {
     func widgetPalette(
-        poseIndex: Int
+        poseIndex _: Int
     ) -> YumiWidgetPalette {
-        YumiWeekdayTheme.current.palette(
-            for: self,
-            poseIndex: poseIndex
+        let lightLevel: Double
+
+        switch self {
+        case .happy, .dancing, .excited, .welcomeBack:
+            lightLevel = 0.96
+        case .curious, .waiting, .hungry:
+            lightLevel = 0.84
+        case .sad, .grumpy, .lonely, .sleeping:
+            lightLevel = 0.68
+        }
+
+        return YumiWidgetPalette(
+            body: Color(
+                red: 0.035,
+                green: 0.037,
+                blue: 0.043
+            ),
+            eyeSurface: Color(
+                red: 0.97,
+                green: 0.965,
+                blue: 0.94
+            ),
+            eyeInk: Color(
+                red: 0.02,
+                green: 0.021,
+                blue: 0.024
+            ),
+            glow: Color(
+                red: 0.52,
+                green: 0.53,
+                blue: 0.56
+            ),
+            particle: Color.white.opacity(
+                lightLevel
+            )
         )
     }
 }
@@ -2270,21 +2491,11 @@ private struct YumiFace: View {
                 palette: palette,
                 poseIndex: poseIndex
             )
-
-            YumiEnergyTrail(
-                color: palette.glow,
-                poseIndex: poseIndex
-            )
-
-            YumiEnergyParticles(
-                mood: mood,
-                poseIndex: poseIndex,
-                color: palette.particle
-            )
+            .opacity(0.40)
 
             Ellipse()
                 .fill(
-                    palette.glow.opacity(0.18)
+                    Color.black.opacity(0.16)
                 )
                 .frame(width: 70, height: 18)
                 .blur(radius: 5)
@@ -2591,96 +2802,6 @@ private struct YumiTechHalo: View {
     }
 }
 
-private struct YumiEnergyTrail: View {
-    let color: Color
-    let poseIndex: Int
-
-    var body: some View {
-        Capsule()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.clear,
-                        color.opacity(0.34),
-                        Color.white.opacity(0.56),
-                        Color.clear,
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .frame(width: 58, height: 3)
-            .blur(radius: 1.4)
-            .rotationEffect(
-                .degrees(poseIndex.isMultiple(of: 2) ? -18 : 16)
-            )
-            .offset(
-                x: poseIndex.isMultiple(of: 2) ? -22 : 22,
-                y: poseIndex < 2 ? -23 : 22
-            )
-            .blendMode(.plusLighter)
-    }
-}
-
-private struct YumiEnergyParticles: View {
-    let mood: YumiMood
-    let poseIndex: Int
-    let color: Color
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(color.opacity(0.78))
-                .frame(width: 6, height: 6)
-                .offset(
-                    x: poseIndex.isMultiple(of: 2) ? -34 : 36,
-                    y: poseIndex < 2 ? 20 : -22
-                )
-
-            Circle()
-                .fill(Color.white.opacity(0.72))
-                .frame(width: 3, height: 3)
-                .offset(
-                    x: poseIndex < 2 ? 32 : -30,
-                    y: 27
-                )
-
-            Circle()
-                .stroke(
-                    color.opacity(0.52),
-                    lineWidth: 1.2
-                )
-                .frame(width: 9, height: 9)
-                .offset(
-                    x: poseIndex.isMultiple(of: 2) ? 34 : -32,
-                    y: -25
-                )
-
-            Image(systemName: "sparkle")
-                .font(.system(size: 9))
-                .foregroundStyle(color)
-                .offset(x: -28, y: -30)
-
-            if mood == .dancing
-                || mood == .excited
-                || mood == .welcomeBack
-                || mood == .happy
-            {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 11))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [color, .white],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .offset(x: 29, y: -27)
-            }
-        }
-    }
-}
-
 /// Native SwiftUI projection of components/ui/ExchangeNotesMark.tsx.
 ///
 /// The canonical 400×400 SVG geometry is preserved exactly:
@@ -2696,25 +2817,49 @@ private struct ExactYumiMark: View {
     private var bodyShading: GraphicsContext.Shading {
         .linearGradient(
             Gradient(colors: [
-                palette.body,
-                palette.glow,
-                palette.particle,
-                palette.body,
+                Color(
+                    red: 0.01,
+                    green: 0.011,
+                    blue: 0.014
+                ),
+                Color(
+                    red: 0.12,
+                    green: 0.125,
+                    blue: 0.14
+                ),
+                Color(
+                    red: 0.055,
+                    green: 0.058,
+                    blue: 0.066
+                ),
+                Color.black,
             ]),
             startPoint: CGPoint(x: 58, y: 54),
             endPoint: CGPoint(x: 334, y: 340)
         )
     }
 
-    private var highlightShading: GraphicsContext.Shading {
+    private var connectorShading: GraphicsContext.Shading {
         .linearGradient(
             Gradient(colors: [
-                Color.white.opacity(0.74),
-                Color.white.opacity(0.12),
-                Color.clear,
+                Color(
+                    red: 0.32,
+                    green: 0.33,
+                    blue: 0.36
+                ),
+                Color(
+                    red: 0.84,
+                    green: 0.845,
+                    blue: 0.86
+                ),
+                Color(
+                    red: 0.38,
+                    green: 0.39,
+                    blue: 0.42
+                ),
             ]),
-            startPoint: CGPoint(x: 70, y: 62),
-            endPoint: CGPoint(x: 312, y: 300)
+            startPoint: CGPoint(x: 100, y: 180),
+            endPoint: CGPoint(x: 250, y: 180)
         )
     }
 
@@ -2750,8 +2895,13 @@ private struct ExactYumiMark: View {
     private func drawBody(
         in context: inout GraphicsContext
     ) {
-        let stroke = StrokeStyle(
+        let bodyStroke = StrokeStyle(
             lineWidth: 52,
+            lineCap: .round,
+            lineJoin: .round
+        )
+        let outlineStroke = StrokeStyle(
+            lineWidth: 60,
             lineCap: .round,
             lineJoin: .round
         )
@@ -2764,17 +2914,13 @@ private struct ExactYumiMark: View {
         )
         context.stroke(
             topArm,
-            with: bodyShading,
-            style: stroke
+            with: .color(Color.black),
+            style: outlineStroke
         )
         context.stroke(
             topArm,
-            with: highlightShading,
-            style: StrokeStyle(
-                lineWidth: 8,
-                lineCap: .round,
-                lineJoin: .round
-            )
+            with: bodyShading,
+            style: bodyStroke
         )
 
         var bottomArm = Path()
@@ -2785,17 +2931,20 @@ private struct ExactYumiMark: View {
         )
         context.stroke(
             bottomArm,
-            with: bodyShading,
-            style: stroke
+            with: .color(Color.black),
+            style: outlineStroke
         )
         context.stroke(
             bottomArm,
-            with: highlightShading,
-            style: StrokeStyle(
-                lineWidth: 8,
-                lineCap: .round,
-                lineJoin: .round
-            )
+            with: bodyShading,
+            style: bodyStroke
+        )
+
+        drawCosmicInterior(
+            in: &context,
+            topArm: topArm,
+            bottomArm: bottomArm,
+            bodyStroke: bodyStroke
         )
 
         var middleArm = Path()
@@ -2803,18 +2952,188 @@ private struct ExactYumiMark: View {
         middleArm.addLine(to: CGPoint(x: 250, y: 180))
         context.stroke(
             middleArm,
-            with: bodyShading,
-            style: stroke
+            with: .color(Color.black),
+            style: StrokeStyle(
+                lineWidth: 50,
+                lineCap: .round
+            )
         )
         context.stroke(
             middleArm,
-            with: highlightShading,
+            with: connectorShading,
             style: StrokeStyle(
-                lineWidth: 8,
-                lineCap: .round,
-                lineJoin: .round
+                lineWidth: 42,
+                lineCap: .round
             )
         )
+    }
+
+    private func drawCosmicInterior(
+        in context: inout GraphicsContext,
+        topArm: Path,
+        bottomArm: Path,
+        bodyStroke: StrokeStyle
+    ) {
+        var bodyMask = Path()
+        bodyMask.addPath(
+            topArm.strokedPath(bodyStroke)
+        )
+        bodyMask.addPath(
+            bottomArm.strokedPath(bodyStroke)
+        )
+
+        context.drawLayer { layer in
+            layer.clip(to: bodyMask)
+
+            layer.fill(
+                Path(
+                    ellipseIn: CGRect(
+                        x: 70,
+                        y: 82,
+                        width: 190,
+                        height: 222
+                    )
+                ),
+                with: .radialGradient(
+                    Gradient(colors: [
+                        Color.white.opacity(0.25),
+                        Color(
+                            red: 0.50,
+                            green: 0.51,
+                            blue: 0.55
+                        ).opacity(0.16),
+                        Color.clear,
+                    ]),
+                    center: CGPoint(x: 165, y: 192),
+                    startRadius: 4,
+                    endRadius: 126
+                )
+            )
+
+            var lifeCurrent = Path()
+            lifeCurrent.move(
+                to: CGPoint(x: 300, y: 70)
+            )
+            lifeCurrent.addQuadCurve(
+                to: CGPoint(x: 100, y: 180),
+                control: CGPoint(x: 110, y: 70)
+            )
+            lifeCurrent.addQuadCurve(
+                to: CGPoint(x: 300, y: 320),
+                control: CGPoint(x: 110, y: 320)
+            )
+
+            layer.stroke(
+                lifeCurrent,
+                with: .color(
+                    Color.white.opacity(0.12)
+                ),
+                style: StrokeStyle(
+                    lineWidth: 10,
+                    lineCap: .round
+                )
+            )
+            layer.stroke(
+                lifeCurrent,
+                with: .color(
+                    Color.white.opacity(0.38)
+                ),
+                style: StrokeStyle(
+                    lineWidth: 2.2,
+                    lineCap: .round
+                )
+            )
+
+            var constellations = Path()
+            constellations.move(
+                to: CGPoint(x: 274, y: 75)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 238, y: 80)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 205, y: 91)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 171, y: 108)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 143, y: 132)
+            )
+            constellations.move(
+                to: CGPoint(x: 112, y: 155)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 101, y: 181)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 108, y: 211)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 124, y: 246)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 151, y: 276)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 190, y: 301)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 239, y: 314)
+            )
+            constellations.addLine(
+                to: CGPoint(x: 282, y: 319)
+            )
+
+            layer.stroke(
+                constellations,
+                with: .color(
+                    Color.white.opacity(0.30)
+                ),
+                style: StrokeStyle(
+                    lineWidth: 1.25,
+                    lineCap: .round,
+                    lineJoin: .round
+                )
+            )
+
+            let stars: [(
+                point: CGPoint,
+                radius: CGFloat
+            )] = [
+                (CGPoint(x: 274, y: 75), 2.8),
+                (CGPoint(x: 238, y: 80), 1.7),
+                (CGPoint(x: 205, y: 91), 2.2),
+                (CGPoint(x: 171, y: 108), 1.6),
+                (CGPoint(x: 143, y: 132), 2.5),
+                (CGPoint(x: 112, y: 155), 1.5),
+                (CGPoint(x: 101, y: 181), 3.0),
+                (CGPoint(x: 108, y: 211), 1.8),
+                (CGPoint(x: 124, y: 246), 2.6),
+                (CGPoint(x: 151, y: 276), 1.6),
+                (CGPoint(x: 190, y: 301), 2.4),
+                (CGPoint(x: 239, y: 314), 1.7),
+                (CGPoint(x: 282, y: 319), 3.0),
+            ]
+
+            for star in stars {
+                layer.fill(
+                    Path(
+                        ellipseIn: CGRect(
+                            x: star.point.x
+                                - star.radius,
+                            y: star.point.y
+                                - star.radius,
+                            width: star.radius * 2,
+                            height: star.radius * 2
+                        )
+                    ),
+                    with: .color(
+                        Color.white.opacity(0.88)
+                    )
+                )
+            }
+        }
     }
 
     private func drawEye(

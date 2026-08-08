@@ -2,10 +2,12 @@ import SwiftUI
 
 @main
 struct ExchangeNotesApp: App {
+#if !EXCHANGE_NOTES_PERSONAL_TEAM
     @UIApplicationDelegateAdaptor(
         NativePushAppDelegate.self
     )
     private var appDelegate
+#endif
 
     @StateObject
     private var speechController =
@@ -23,14 +25,47 @@ struct ExchangeNotesApp: App {
                     edges: .bottom
                 )
                 .onOpenURL { url in
+#if DEBUG
+                    let queryItemNames =
+                        URLComponents(
+                            url: url,
+                            resolvingAgainstBaseURL: false
+                        )?
+                        .queryItems?
+                        .map(\.name)
+                        .joined(separator: ",")
+                        ?? "none"
+
+                    print(
+                        "ExchangeNotes deep link "
+                        + "host=\(url.host ?? "none") "
+                        + "queryItems=\(queryItemNames)"
+                    )
+#endif
+
                     if speechController.handle(url: url) {
+#if DEBUG
+                        print(
+                            "ExchangeNotes route "
+                            + "handled=speech"
+                        )
+#endif
                         return
                     }
 
-                    webURL =
+                    let destination =
                         ExchangeNotesRoute.webURL(
                             for: url
                         )
+
+#if DEBUG
+                    print(
+                        "ExchangeNotes route "
+                        + "path=\(destination.path)"
+                    )
+#endif
+
+                    webURL = destination
                 }
                 .onReceive(
                     NotificationCenter.default

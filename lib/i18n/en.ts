@@ -284,6 +284,7 @@ const english: TranslationDictionary = {
       selectedImage: "Selected image",
       analyzeAgain: "Analyze again",
       chooseAnother: "Choose another",
+      focusHint: "Center the object",
     },
 
     analysis: {
@@ -341,6 +342,11 @@ const english: TranslationDictionary = {
       cameraNotReady: "The camera is not ready yet.",
       captureImage: "Could not capture the image.",
       identifyImage: "Could not identify this image.",
+      identifyBusy: "AI vision is busy right now. Please try again shortly.",
+      identifyDailyLimit:
+        "You have used today's free image recognitions. Please try again tomorrow.",
+      identifyTimeout:
+        "Recognition took too long. Try a clear photo closer to the object.",
       loginBeforeSave: "Please log in before saving a word.",
       duplicateWord: "This word is already in your vocabulary.",
       saveWord: "Could not save this word.",
@@ -429,6 +435,10 @@ const english: TranslationDictionary = {
       emptyDescription: "Add a vocabulary word and it will show up here.",
       playEnglishExampleAriaLabel: "Play English example",
       playChineseExampleAriaLabel: "Play Chinese example",
+      previousWord: "Previous word",
+      nextWord: "Next word",
+      swipeHint: "Swipe to browse vocabulary cards",
+      positionLabel: "Card {current} of {total}",
     },
 
     quickStart: {
@@ -767,6 +777,17 @@ const english: TranslationDictionary = {
       feedAriaLabel: "Feed {word} to Yumi",
       cookieTypeLetter: "Letter cookie",
       cookieTypeZhuyin: "Zhuyin cookie",
+      feedingAnticipating: "Yumi opens up with anticipation.",
+      feedingEating: "Yumi is chewing slowly.",
+      feedingSwallowing: "Yumi swallows the word energy.",
+      feedingSatisfied: "Yumi is full and satisfied.",
+      openActionsAriaLabel: "Open Yumi actions",
+      closeActionsAriaLabel: "Close Yumi actions",
+      actionMenuAriaLabel: "Yumi learning actions",
+      menuPrompt: "Where would you like to begin?",
+      reviewActionLabel: "Start review",
+      addWordActionLabel: "Add a word with AI",
+      cameraActionLabel: "Identify with camera",
       reviewLinkLabel: "Start Review",
       collectionsLinkLabel: "Collections",
     },
@@ -774,10 +795,10 @@ const english: TranslationDictionary = {
     lookup: {
       title: "Search any word",
       placeholder: "English or Traditional Chinese",
-      search: "Search with Gemini",
+      search: "Smart search",
       searching: "Searching",
       description:
-        "Search any English or Traditional Chinese word. Gemini will generate its translation, part of speech and natural examples.",
+        "Search any English or Traditional Chinese word for its translation, part of speech and natural examples.",
       error: "Could not search that word.",
       english: "English",
       chinese: "Traditional Chinese",
@@ -796,6 +817,11 @@ const english: TranslationDictionary = {
       lookingUp: "Looking up",
       lookUpWord: 'Look up "{word}"',
       wordFound: "Word found",
+      closeSearchAriaLabel: "Close word search",
+      inputPlaceholder: "English or Traditional Chinese",
+      clearSearchAriaLabel: "Clear search",
+      lowConfidenceNotice:
+        "Yumi is not completely sure. Please review the result before saving.",
     },
 
     collections: {
@@ -834,10 +860,12 @@ const english: TranslationDictionary = {
         removeError: "Could not remove this word. Please try again.",
         backToCollections: "Back to collections",
         loadingError: "Could not load this collection.",
+        loading: "Loading collection…",
         emptyTitle: "No words here yet",
         emptyDescription:
           "Open a vocabulary card and choose Collections to add it here.",
         browseVocabulary: "Browse vocabulary",
+        removeWordAriaLabel: "Remove word from collection",
         word: "word",
         words: "words",
         inCollection: "in this collection",
@@ -878,6 +906,9 @@ const english: TranslationDictionary = {
       },
 
       closeDetailsAriaLabel: "Close word details",
+      expandDetailsAriaLabel: "Expand details for {word}",
+      collapseDetailsAriaLabel: "Collapse details for {word}",
+      openFullDetailsAriaLabel: "Open all details for {word}",
       editWordAriaLabel: "Edit word",
       closeAriaLabel: "Close",
       learningStatusLabel: "Learning status",
@@ -963,6 +994,11 @@ const english: TranslationDictionary = {
       cancel: "Cancel",
       clear: "Clear",
       noMatchingWords: "No matching words.",
+      loadingVocabulary: "Loading your words",
+      firstWordTitle: "Your first word begins outside",
+      firstWordDescription:
+        "Photograph something from daily life and save its English and Traditional Chinese meaning.",
+      discoverWord: "Discover a word",
 
       statuses: {
         all: "All",
@@ -976,10 +1012,19 @@ const english: TranslationDictionary = {
 
       sort: "Sort",
       openLibrary: "Open vocabulary library",
+      openCollections: "Open collections",
+      toolbarAriaLabel: "Vocabulary tools",
+      cardsView: "Use classic card view",
+      compactView: "Use compact list view",
       closeSortMenu: "Close sort menu",
 
       sortOptions: {
         new: "New Words",
+        old: "Oldest First",
+        alphabetical: "A to Z",
+        reverseAlphabetical: "Z to A",
+        recentlyReviewed: "Recently Reviewed",
+        leastReviewed: "Least Reviewed",
         forYou: "For You",
         trending: "Trending",
       },
@@ -1192,6 +1237,28 @@ const english: TranslationDictionary = {
         "The Widget connection could not be updated. Please try again.",
       copyError:
         "The token could not be copied. Select and copy it manually.",
+    },
+
+    iphoneWidget: {
+      rowTitle: "Yumi iPhone Widget",
+      rowDescription: "Native Exchange Notes widget with automatic sync",
+      statusNative: "Native",
+      sheetTitle: "Yumi iPhone Widget",
+      sheetDescription:
+        "The widget is built into Exchange Notes. Scriptable, private tokens, and a separate connection are no longer required.",
+      nativeTitle: "Native widget is ready",
+      nativeDescription:
+        "Open Exchange Notes to securely sync Yumi and your latest vocabulary to the iPhone Home Screen.",
+      addTitle: "Add to Home Screen",
+      stepOne: "Touch and hold an empty area of the iPhone Home Screen.",
+      stepTwo: "Tap Edit, then choose Add Widget.",
+      stepThree: "Search for Exchange Notes or Yumi.",
+      stepFour: "Choose the small, medium, or large size and add it.",
+      behaviorTitle: "Button behavior",
+      behaviorDescription:
+        "A and ㄅ play pronunciation without opening the app. Tapping the word opens its matching vocabulary detail page.",
+      openAppNote: "+ and camera recognition open their matching app features.",
+      done: "Done",
     },
 
     webPush: {

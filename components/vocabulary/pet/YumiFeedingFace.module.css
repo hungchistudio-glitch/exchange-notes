@@ -1,0 +1,313 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.target {
+  position: absolute;
+  left: 72.25%;
+  top: 61.25%;
+  width: clamp(8px, 5%, 14px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+}
+
+.mouthAssembly,
+.mouthCavity,
+.upperLip,
+.lowerLip,
+.tongue,
+.upperTeeth,
+.lowerTeeth,
+.smile,
+.leftCheek,
+.rightCheek,
+.swallowTrack,
+.swallowPulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.biteEnergy {
+  fill: #d3ae61;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(211, 174, 97, 0.55));
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mouthAssembly {
+  opacity: 0;
+  transform-origin: 289px 245px;
+}
+
+.smile,
+.swallowTrack {
+  opacity: 0;
+}
+
+.overlay[data-feeding-phase="anticipating"] .mouthAssembly {
+  opacity: 1;
+  animation: mouthAnticipate 520ms cubic-bezier(0.2, 0.85, 0.3, 1) both;
+}
+
+.overlay[data-feeding-phase="anticipating"] .mouthCavity {
+  animation: cavityWait 540ms ease-in-out infinite alternate;
+}
+
+.overlay[data-feeding-phase="anticipating"] .tongue {
+  animation: tongueWait 540ms ease-in-out infinite alternate;
+}
+
+.overlay[data-feeding-phase="biting"] .mouthAssembly {
+  opacity: 1;
+  animation: mouthBite 260ms cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+
+.overlay[data-feeding-phase="biting"] .tongue {
+  animation: tongueBite 260ms ease-in both;
+}
+
+.overlay[data-feeding-phase="biting"] .biteEnergy {
+  animation: biteEnergyBurst 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.overlay[data-feeding-phase="chewing"] .mouthAssembly {
+  opacity: 1;
+}
+
+.overlay[data-feeding-phase="chewing"][data-chew-beat="1"] .mouthAssembly {
+  animation: mouthChewLeft 250ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="chewing"][data-chew-beat="2"] .mouthAssembly {
+  animation: mouthChewRight 270ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="chewing"][data-chew-beat="3"] .mouthAssembly {
+  animation: mouthChewSmall 220ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="chewing"][data-chew-beat="4"] .mouthAssembly {
+  animation: mouthChewFinish 285ms cubic-bezier(0.3, 0.7, 0.25, 1) both;
+}
+
+.overlay[data-feeding-phase="chewing"] .leftCheek {
+  animation: cheekChewLeft 255ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="chewing"] .rightCheek {
+  animation: cheekChewRight 255ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="chewing"] .tongue {
+  animation: tongueChew 255ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="swallowing"] .mouthAssembly {
+  opacity: 1;
+  animation: mouthSeal 600ms cubic-bezier(0.25, 0.7, 0.35, 1) both;
+}
+
+.overlay[data-feeding-phase="swallowing"] .mouthCavity,
+.overlay[data-feeding-phase="swallowing"] .upperLip,
+.overlay[data-feeding-phase="swallowing"] .lowerLip,
+.overlay[data-feeding-phase="swallowing"] .tongue {
+  animation: mouthDisappear 240ms ease-in forwards;
+}
+
+.overlay[data-feeding-phase="swallowing"] .upperTeeth,
+.overlay[data-feeding-phase="swallowing"] .lowerTeeth {
+  animation: mouthDisappear 180ms ease-in forwards;
+}
+
+.overlay[data-feeding-phase="swallowing"] .smile {
+  animation: smileIn 360ms ease-out 180ms both;
+}
+
+.overlay[data-feeding-phase="swallowing"] .swallowTrack {
+  animation: trackIn 560ms ease-in-out both;
+}
+
+.overlay[data-feeding-phase="swallowing"] .swallowPulse {
+  animation: swallowDown 560ms cubic-bezier(0.3, 0, 0.45, 1) both;
+}
+
+.overlay[data-feeding-phase="satisfied"] .mouthAssembly {
+  opacity: 1;
+}
+
+.overlay[data-feeding-phase="satisfied"] .mouthCavity,
+.overlay[data-feeding-phase="satisfied"] .upperLip,
+.overlay[data-feeding-phase="satisfied"] .lowerLip,
+.overlay[data-feeding-phase="satisfied"] .tongue {
+  opacity: 0;
+}
+
+.overlay[data-feeding-phase="satisfied"] .smile {
+  opacity: 1;
+  animation: satisfiedSmile 1.8s ease-in-out infinite;
+}
+
+.overlay[data-feeding-phase="satisfied"] .leftCheek,
+.overlay[data-feeding-phase="satisfied"] .rightCheek {
+  opacity: 0.58;
+  animation: satisfiedCheek 1.8s ease-in-out infinite;
+}
+
+@keyframes mouthAnticipate {
+  0% {
+    opacity: 0;
+    transform: scale(0.25, 0.08) translateY(-4px);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1.1, 1.22) translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1, 1.08);
+  }
+}
+
+@keyframes cavityWait {
+  from { transform: scale(0.96, 0.92); }
+  to { transform: scale(1.04, 1.13); }
+}
+
+@keyframes tongueWait {
+  from { transform: translateY(0) scaleX(0.96); }
+  to { transform: translateY(2px) scaleX(1.04); }
+}
+
+@keyframes mouthBite {
+  0% { transform: scale(1.08, 1.25); }
+  58% { transform: scale(1.04, 0.12); }
+  78% { transform: scale(0.95, 0.3); }
+  100% { transform: scale(1, 0.54); }
+}
+
+@keyframes tongueBite {
+  0% { opacity: 1; transform: translateY(0); }
+  70%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes biteEnergyBurst {
+  0% { opacity: 0; transform: translate(-7px, 7px) scale(0.3) rotate(0); }
+  28% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(13px, -13px) scale(1.4) rotate(24deg); }
+}
+
+@keyframes mouthChewLeft {
+  0%, 100% { transform: translate(0, 0) scale(1, 0.48); }
+  48% { transform: translate(-4px, 2px) scale(1.12, 0.84); }
+}
+
+@keyframes mouthChewRight {
+  0%, 100% { transform: translate(0, 0) scale(1, 0.46); }
+  52% { transform: translate(4px, -1px) scale(0.95, 0.76); }
+}
+
+@keyframes mouthChewSmall {
+  0%, 100% { transform: translate(0, 0) scale(1, 0.44); }
+  50% { transform: translate(-2px, 1px) scale(1.04, 0.67); }
+}
+
+@keyframes mouthChewFinish {
+  0% { transform: translate(0, 0) scale(1, 0.48); }
+  42% { transform: translate(2px, 1px) scale(0.98, 0.72); }
+  100% { transform: translate(0, 1px) scale(1, 0.22); }
+}
+
+@keyframes cheekChewLeft {
+  0%, 100% { opacity: 0.34; transform: scale(0.9); }
+  50% { opacity: 0.78; transform: translate(-2px, 2px) scale(1.18); }
+}
+
+@keyframes cheekChewRight {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.26; transform: translate(2px, -1px) scale(0.86); }
+}
+
+@keyframes tongueChew {
+  0%, 100% { opacity: 0.55; transform: translateX(-2px) scaleX(0.85); }
+  50% { opacity: 0.9; transform: translateX(3px) scaleX(1.05); }
+}
+
+@keyframes mouthSeal {
+  0% { transform: scale(1, 0.52); }
+  45% { transform: scale(0.98, 0.08); }
+  100% { transform: translateY(1px) scale(1); }
+}
+
+@keyframes mouthDisappear {
+  to { opacity: 0; transform: scaleY(0.1); }
+}
+
+@keyframes smileIn {
+  from { opacity: 0; transform: scaleX(0.4) translateY(-2px); }
+  to { opacity: 1; transform: scaleX(1) translateY(0); }
+}
+
+@keyframes trackIn {
+  0%, 100% { opacity: 0; }
+  22%, 72% { opacity: 1; }
+}
+
+@keyframes swallowDown {
+  0% { opacity: 0; transform: translate(0, -2px) scale(0.4); }
+  18% { opacity: 0.95; transform: translate(0, 0) scale(1); }
+  72% { opacity: 0.72; transform: translate(-23px, 27px) scale(0.78); }
+  100% { opacity: 0; transform: translate(-34px, 34px) scale(0.2); }
+}
+
+@keyframes satisfiedSmile {
+  0%, 100% { transform: scaleX(0.96) translateY(0); }
+  50% { transform: scaleX(1.05) translateY(1px); }
+}
+
+@keyframes satisfiedCheek {
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mouthAssembly,
+  .mouthCavity,
+  .upperLip,
+  .lowerLip,
+  .tongue,
+  .upperTeeth,
+  .lowerTeeth,
+  .smile,
+  .leftCheek,
+  .rightCheek,
+  .swallowTrack,
+  .swallowPulse,
+  .biteEnergy {
+    animation: none !important;
+  }
+
+  .overlay[data-feeding-phase="anticipating"] .mouthAssembly,
+  .overlay[data-feeding-phase="biting"] .mouthAssembly,
+  .overlay[data-feeding-phase="chewing"] .mouthAssembly {
+    opacity: 1;
+  }
+
+  .overlay[data-feeding-phase="swallowing"] .mouthAssembly,
+  .overlay[data-feeding-phase="satisfied"] .mouthAssembly,
+  .overlay[data-feeding-phase="satisfied"] .smile {
+    opacity: 1;
+  }
+}

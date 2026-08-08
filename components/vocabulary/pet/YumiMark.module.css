@@ -16,6 +16,53 @@
   animation: baseFloat 3.6s ease-in-out infinite;
 }
 
+.menuAura {
+  position: absolute;
+  inset: 11%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.86) 0%,
+    rgba(224, 205, 155, 0.2) 38%,
+    rgba(201, 150, 46, 0) 70%
+  );
+  filter: blur(2px);
+  opacity: 0;
+  animation: menuAuraIn 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.menuAura span {
+  position: absolute;
+  inset: 50%;
+  border: 1px solid rgba(201, 150, 46, 0.22);
+  border-radius: 50%;
+  opacity: 0;
+  animation: menuAuraWave 1.25s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.menuAura span:nth-child(2) { animation-delay: 160ms; }
+.menuAura span:nth-child(3) { animation-delay: 320ms; }
+
+.menuAura[data-phase="closing"] {
+  animation: menuAuraOut 280ms ease-in forwards;
+}
+
+@keyframes menuAuraIn {
+  from { opacity: 0; transform: scale(0.72); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes menuAuraOut {
+  to { opacity: 0; transform: scale(0.72); }
+}
+
+@keyframes menuAuraWave {
+  0% { inset: 50%; opacity: 0.68; }
+  100% { inset: -8%; opacity: 0; }
+}
+
 .logo {
   display: block;
   width: 100%;
@@ -411,29 +458,195 @@
   }
 }
 
-/* ---------- Eating reaction (one-shot, wins over the mood loop) ---------- */
+/* ---------- Orbit-menu performance ---------- */
 
-.eating {
-  animation: eatChomp 0.9s ease-in-out 1 both;
+.shell[data-orbit="opening"] {
+  animation: markMenuOpen 560ms cubic-bezier(0.18, 1.32, 0.32, 1) both;
 }
 
-@keyframes eatChomp {
-  0%,
-  100% {
-    transform: scale(1) translateY(0);
-  }
-  20% {
-    transform: scale(0.94, 1.06) translateY(2px);
-  }
-  40% {
-    transform: scale(1.05, 0.93) translateY(-4px);
-  }
-  60% {
-    transform: scale(0.96, 1.04) translateY(2px);
-  }
-  80% {
-    transform: scale(1.02, 0.98) translateY(-1px);
-  }
+.shell[data-orbit="open"] {
+  animation: markMenuHold 3.8s ease-in-out infinite;
+}
+
+.shell[data-orbit="closing"] {
+  animation: markMenuClose 320ms cubic-bezier(0.4, 0, 0.8, 0.2) both;
+}
+
+.shell[data-orbit]:not([data-orbit="closed"]) .pupil {
+  animation: none;
+  transition: transform 170ms cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.shell[data-look="viewer"] .pupil { transform: translate(0, 0) scale(1.08); }
+.shell[data-look="review"] .pupil { transform: translate(-8px, 1px) scale(1.12); }
+.shell[data-look="add"] .pupil { transform: translate(7px, -5px) scale(1.13); }
+.shell[data-look="camera"] .pupil { transform: translate(8px, 6px) scale(1.12); }
+.shell[data-look="food"] .pupil {
+  transform: translate(
+      var(--yumi-gaze-x, 0px),
+      var(--yumi-gaze-y, 0px)
+    )
+    scale(1.12);
+}
+
+@keyframes markMenuOpen {
+  0% { transform: translateY(0) scale(1) rotate(0); }
+  18% { transform: translateY(5px) scale(0.92, 1.06) rotate(-1deg); }
+  48% { transform: translateY(-12px) scale(1.08, 0.95) rotate(2.2deg); }
+  72% { transform: translateY(2px) scale(0.985, 1.02) rotate(-0.8deg); }
+  88% { transform: translateY(-3px) scale(1.018) rotate(0.4deg); }
+  100% { transform: translateY(0) scale(1) rotate(0); }
+}
+
+@keyframes markMenuHold {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.018); }
+}
+
+@keyframes markMenuClose {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(3px) scale(0.94, 1.045); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* ---------- Feeding sequence ---------- */
+/* The mouth overlay handles the facial anatomy while the body follows the
+   same physical rhythm: lean toward the incoming food, recoil for the bite,
+   shift from side to side while chewing, lengthen once for the swallow, and
+   finally settle into a relaxed satisfied pose. */
+
+.shell[data-feeding="anticipating"] {
+  animation: markAnticipate 560ms cubic-bezier(0.2, 0.85, 0.3, 1) both;
+}
+
+.shell[data-feeding="anticipating"] .pupil {
+  animation: markWatchFood 560ms ease-out both;
+}
+
+.shell[data-feeding="biting"] {
+  animation: markBite 260ms cubic-bezier(0.5, 0, 0.2, 1) both;
+}
+
+.shell[data-feeding="biting"] .pupil {
+  animation: markChewEyes 260ms ease-in-out both;
+}
+
+.shell[data-feeding="chewing"] {
+  animation: markChewLeft 250ms ease-in-out both;
+}
+
+.shell[data-feeding="chewing"][data-chew-beat="2"] {
+  animation-name: markChewRight;
+  animation-duration: 270ms;
+}
+
+.shell[data-feeding="chewing"][data-chew-beat="3"] {
+  animation-name: markChewSmall;
+  animation-duration: 220ms;
+}
+
+.shell[data-feeding="chewing"][data-chew-beat="4"] {
+  animation-name: markChewFinish;
+  animation-duration: 285ms;
+}
+
+.shell[data-feeding="chewing"] .pupil {
+  animation: markChewEyes 250ms ease-in-out both;
+}
+
+.shell[data-feeding="swallowing"] {
+  animation: markSwallow 600ms cubic-bezier(0.25, 0.7, 0.35, 1) both;
+}
+
+.shell[data-feeding="swallowing"] .upperLid {
+  animation: markSwallowBlink 600ms ease-in-out both;
+}
+
+.shell[data-feeding="satisfied"] {
+  animation: markSatisfied 2.18s cubic-bezier(0.34, 1.18, 0.4, 1) both;
+}
+
+.shell[data-feeding="satisfied"] .upperLid {
+  animation: markSatisfiedSquint 2.18s ease-in-out both;
+}
+
+.shell[data-feeding="satisfied"] .pupil {
+  animation: markSatisfiedLook 2.18s ease-in-out both;
+}
+
+@keyframes markAnticipate {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  72% { transform: translate(5px, -5px) rotate(2deg) scale(1.045); }
+  100% { transform: translate(4px, -3px) rotate(1.3deg) scale(1.035); }
+}
+
+@keyframes markWatchFood {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(4px, 7px) scale(1.12); }
+}
+
+@keyframes markBite {
+  0% { transform: translate(4px, -3px) scale(1.035); }
+  48% { transform: translateY(4px) scale(0.92, 1.1); }
+  78% { transform: translateY(-3px) scale(1.06, 0.94); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes markChewLeft {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(-4px, 2px) rotate(-1.35deg) scale(1.018, 0.982); }
+}
+
+@keyframes markChewRight {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  52% { transform: translate(4px, -1px) rotate(1.15deg) scale(0.99, 1.014); }
+}
+
+@keyframes markChewSmall {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate(-2px, 1px) rotate(-0.65deg) scale(1.008, 0.993); }
+}
+
+@keyframes markChewFinish {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  48% { transform: translate(2px, 2px) rotate(0.6deg) scale(0.995, 1.012); }
+  100% { transform: translate(0, 1px) scale(1.004, 0.996); }
+}
+
+@keyframes markChewEyes {
+  0%, 100% { transform: translate(2px, 2px); }
+  50% { transform: translate(-2px, 4px) scaleY(0.94); }
+}
+
+@keyframes markSwallow {
+  0% { transform: translateY(0) scale(1); }
+  34% { transform: translateY(2px) scale(0.98, 1.07); }
+  62% { transform: translateY(5px) scale(1.015, 0.96); }
+  100% { transform: translateY(0) scale(1.015); }
+}
+
+@keyframes markSwallowBlink {
+  0%, 100% { transform: translateY(-82px); opacity: 0; }
+  30%, 66% { transform: translateY(-2px); opacity: 1; }
+}
+
+@keyframes markSatisfied {
+  0% { transform: translateY(0) scale(1.015); }
+  12% { transform: translateY(-10px) scale(1.055); }
+  25% { transform: translateY(1px) scale(0.985); }
+  42% { transform: translateY(-4px) scale(1.02); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes markSatisfiedSquint {
+  0%, 100% { transform: translateY(-82px); opacity: 0; }
+  7%, 28% { transform: translateY(-53px); opacity: 1; }
+}
+
+@keyframes markSatisfiedLook {
+  0%, 20% { transform: translate(0, 1px); }
+  46%, 66% { transform: translate(-2px, -1px); }
+  100% { transform: translate(0, 0); }
 }
 
 /* ---------- Growth-stage decorations (additive, never replace the mark) ---------- */
@@ -660,7 +873,16 @@
   .shell .pupil,
   .shell .upperLid,
   .shell .lowerLid,
-  .eating,
+  .shell[data-feeding="anticipating"],
+  .shell[data-feeding="biting"],
+  .shell[data-feeding="chewing"],
+  .shell[data-feeding="swallowing"],
+  .shell[data-feeding="satisfied"],
+  .shell[data-orbit="opening"],
+  .shell[data-orbit="open"],
+  .shell[data-orbit="closing"],
+  .menuAura,
+  .menuAura span,
   .glowRing,
   .particle,
   .crown,

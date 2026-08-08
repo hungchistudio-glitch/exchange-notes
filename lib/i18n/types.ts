@@ -277,6 +277,7 @@ export type TranslationDictionary = {
       selectedImage: string;
       analyzeAgain: string;
       chooseAnother: string;
+      focusHint: string;
     };
 
     analysis: {
@@ -331,6 +332,9 @@ export type TranslationDictionary = {
       cameraNotReady: string;
       captureImage: string;
       identifyImage: string;
+      identifyBusy: string;
+      identifyDailyLimit: string;
+      identifyTimeout: string;
       loginBeforeSave: string;
       duplicateWord: string;
       saveWord: string;
@@ -416,6 +420,10 @@ export type TranslationDictionary = {
       emptyDescription: string;
       playEnglishExampleAriaLabel: string;
       playChineseExampleAriaLabel: string;
+      previousWord: string;
+      nextWord: string;
+      swipeHint: string;
+      positionLabel: string;
     };
 
     quickStart: {
@@ -744,6 +752,17 @@ export type TranslationDictionary = {
       feedAriaLabel: string;
       cookieTypeLetter: string;
       cookieTypeZhuyin: string;
+      feedingAnticipating: string;
+      feedingEating: string;
+      feedingSwallowing: string;
+      feedingSatisfied: string;
+      openActionsAriaLabel: string;
+      closeActionsAriaLabel: string;
+      actionMenuAriaLabel: string;
+      menuPrompt: string;
+      reviewActionLabel: string;
+      addWordActionLabel: string;
+      cameraActionLabel: string;
       reviewLinkLabel: string;
       collectionsLinkLabel: string;
     };
@@ -770,6 +789,10 @@ export type TranslationDictionary = {
       lookingUp: string;
       lookUpWord: string;
       wordFound: string;
+      closeSearchAriaLabel: string;
+      inputPlaceholder: string;
+      clearSearchAriaLabel: string;
+      lowConfidenceNotice: string;
     };
 
     collections: {
@@ -806,10 +829,12 @@ export type TranslationDictionary = {
         fallbackTitle: string;
         backToCollections: string;
         loadingError: string;
+        loading: string;
         removeError: string;
         emptyTitle: string;
         emptyDescription: string;
         browseVocabulary: string;
+        removeWordAriaLabel: string;
         word: string;
         words: string;
         inCollection: string;
@@ -850,6 +875,9 @@ export type TranslationDictionary = {
       };
 
       closeDetailsAriaLabel: string;
+      expandDetailsAriaLabel: string;
+      collapseDetailsAriaLabel: string;
+      openFullDetailsAriaLabel: string;
       editWordAriaLabel: string;
       closeAriaLabel: string;
       learningStatusLabel: string;
@@ -935,6 +963,10 @@ export type TranslationDictionary = {
       cancel: string;
       clear: string;
       noMatchingWords: string;
+      loadingVocabulary: string;
+      firstWordTitle: string;
+      firstWordDescription: string;
+      discoverWord: string;
 
       statuses: {
         all: string;
@@ -948,10 +980,19 @@ export type TranslationDictionary = {
 
       sort: string;
       openLibrary: string;
+      openCollections: string;
+      toolbarAriaLabel: string;
+      cardsView: string;
+      compactView: string;
       closeSortMenu: string;
 
       sortOptions: {
         new: string;
+        old: string;
+        alphabetical: string;
+        reverseAlphabetical: string;
+        recentlyReviewed: string;
+        leastReviewed: string;
         forYou: string;
         trending: string;
       };
@@ -1149,6 +1190,25 @@ export type TranslationDictionary = {
       loadError: string;
       actionError: string;
       copyError: string;
+    };
+
+    iphoneWidget: {
+      rowTitle: string;
+      rowDescription: string;
+      statusNative: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      nativeTitle: string;
+      nativeDescription: string;
+      addTitle: string;
+      stepOne: string;
+      stepTwo: string;
+      stepThree: string;
+      stepFour: string;
+      behaviorTitle: string;
+      behaviorDescription: string;
+      openAppNote: string;
+      done: string;
     };
 
     webPush: {

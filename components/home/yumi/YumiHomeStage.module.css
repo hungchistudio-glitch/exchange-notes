@@ -557,15 +557,15 @@
    glance down at the tray, then a glance up at the user — "I liked that,
    feed me another" rather than just snapping back to the idle loop. */
 
-.satisfied {
+.figure[data-feeding="satisfied"] {
   animation: homeSatisfiedLinger 2.2s cubic-bezier(0.34, 1.2, 0.4, 1) 1 both !important;
 }
 
-.satisfied .upperLid {
+.figure[data-feeding="satisfied"] .upperLid {
   animation: homeSatisfiedSquint 2.2s ease-in-out 1 both !important;
 }
 
-.satisfied .pupil {
+.figure[data-feeding="satisfied"] .pupil {
   animation: homeSatisfiedGlance 2.2s ease-in-out 1 both !important;
 }
 
@@ -652,26 +652,76 @@
   }
 }
 
-/* ---------- eating (one-shot, wins over the mood loop) ---------- */
+/* ---------- feeding sequence ---------- */
 
-.eating {
-  animation: homeEatChomp 0.9s ease-in-out 1 both !important;
+.figure[data-feeding="anticipating"] {
+  animation: homeFeedAnticipate 560ms cubic-bezier(0.2, 0.85, 0.3, 1) both !important;
 }
 
-@keyframes homeEatChomp {
-  0%,
-  100% {
-    transform: scale(1) translateY(0);
-  }
-  25% {
-    transform: scale(0.94, 1.06) translateY(2px);
-  }
-  50% {
-    transform: scale(1.05, 0.93) translateY(-5px);
-  }
-  75% {
-    transform: scale(0.97, 1.03) translateY(1px);
-  }
+.figure[data-feeding="anticipating"] .pupil {
+  animation: homeFeedWatch 560ms ease-out both !important;
+}
+
+.figure[data-feeding="biting"] {
+  animation: homeFeedBite 260ms cubic-bezier(0.5, 0, 0.2, 1) both !important;
+}
+
+.figure[data-feeding="biting"] .pupil,
+.figure[data-feeding="chewing"] .pupil {
+  animation: homeFeedChewEyes 286ms ease-in-out 3 !important;
+}
+
+.figure[data-feeding="chewing"] {
+  animation: homeFeedChew 286ms ease-in-out 3 !important;
+}
+
+.figure[data-feeding="swallowing"] {
+  animation: homeFeedSwallow 600ms cubic-bezier(0.25, 0.7, 0.35, 1) both !important;
+}
+
+.figure[data-feeding="swallowing"] .upperLid {
+  animation: homeFeedSwallowBlink 600ms ease-in-out both !important;
+}
+
+@keyframes homeFeedAnticipate {
+  0% { transform: translateY(0) rotate(0deg) scale(1); }
+  72% { transform: translate(4px, -5px) rotate(2deg) scale(1.06); }
+  100% { transform: translate(3px, -3px) rotate(1.3deg) scale(1.045); }
+}
+
+@keyframes homeFeedWatch {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(4px, 7px) scale(1.14); }
+}
+
+@keyframes homeFeedBite {
+  0% { transform: translate(3px, -3px) scale(1.045); }
+  48% { transform: translateY(3px) scale(0.91, 1.11); }
+  78% { transform: translateY(-3px) scale(1.07, 0.93); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes homeFeedChew {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  45% { transform: translate(-2px, 1px) rotate(-1.4deg) scale(1.02, 0.98); }
+  72% { transform: translate(2px, -1px) rotate(1.2deg) scale(0.99, 1.015); }
+}
+
+@keyframes homeFeedChewEyes {
+  0%, 100% { transform: translate(2px, 2px); }
+  50% { transform: translate(-2px, 4px) scaleY(0.94); }
+}
+
+@keyframes homeFeedSwallow {
+  0% { transform: translateY(0) scale(1); }
+  34% { transform: translateY(1px) scale(0.98, 1.09); }
+  62% { transform: translateY(4px) scale(1.02, 0.95); }
+  100% { transform: translateY(0) scale(1.02); }
+}
+
+@keyframes homeFeedSwallowBlink {
+  0%, 100% { transform: translateY(-82px); opacity: 0; }
+  30%, 66% { transform: translateY(-2px); opacity: 1; }
 }
 
 /* ---------- celebration sparkles (dance / welcome back) ---------- */
@@ -789,7 +839,11 @@
   .waking,
   .waking .upperLid,
   .waking .lowerLid,
-  .eating,
+  .figure[data-feeding="anticipating"],
+  .figure[data-feeding="biting"],
+  .figure[data-feeding="chewing"],
+  .figure[data-feeding="swallowing"],
+  .figure[data-feeding="satisfied"],
   .shadow,
   .shadow[data-mood="dancing"],
   .shadow[data-mood="excited"],

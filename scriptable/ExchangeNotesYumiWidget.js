@@ -7,7 +7,7 @@
 // The token is stored only in the iOS Keychain.
 // The latest successful Widget response is cached locally for offline use.
 
-const SCRIPT_VERSION = 5;
+const SCRIPT_VERSION = 6;
 const SNAPSHOT_SCHEMA_VERSION = 1;
 
 const KEYCHAIN_BASE_URL =
@@ -26,24 +26,44 @@ const REQUEST_TIMEOUT_SECONDS = 8;
 const REFRESH_INTERVAL_MINUTES = 30;
 const MAX_WORDS = 12;
 
-const NATIVE_APP_LINKS = {
-  home:
-    "exchangenotes://home",
+/*
+ * Exchange Notes is currently a web app, so every app destination must use
+ * the configured HTTPS origin. Scriptable actions are reserved for controls
+ * that update the widget itself, such as the previous/next word buttons.
+ */
+function appLinks(baseUrl) {
+  if (!baseUrl) {
+    const fallback =
+      scriptableRunUrl();
 
-  vocabulary:
-    "exchangenotes://vocabulary",
+    return {
+      home: fallback,
+      vocabulary: fallback,
+      addWord: fallback,
+      capture: fallback,
+      profile: fallback,
+    };
+  }
 
-  addWord:
-    "exchangenotes://vocabulary"
-    + "?widgetAction=add-word",
+  return {
+    home:
+      joinUrl(baseUrl, "/"),
 
-  capture:
-    "exchangenotes://capture"
-    + "?widgetAction=camera",
+    vocabulary:
+      joinUrl(baseUrl, "/vocabulary"),
 
-  profile:
-    "exchangenotes://profile",
-};
+    addWord:
+      joinUrl(baseUrl, "/vocabulary")
+      + "?widgetAction=add-word",
+
+    capture:
+      joinUrl(baseUrl, "/capture")
+      + "?source=camera&from=widget",
+
+    profile:
+      joinUrl(baseUrl, "/profile"),
+  };
+}
 
 const fileManager =
   FileManager.local();
@@ -832,10 +852,13 @@ function buildSmallWidget(model) {
   addQuickActions(
     content,
     "small",
+    model.baseUrl,
   );
 
   widget.url =
-    NATIVE_APP_LINKS.home;
+    appLinks(
+      model.baseUrl,
+    ).home;
 
   return widget;
 }
@@ -890,6 +913,7 @@ function buildMediumWidget(model) {
   addQuickActions(
     utilityRow,
     "micro",
+    model.baseUrl,
   );
 
   const right =
@@ -921,6 +945,7 @@ function buildMediumWidget(model) {
       audioGlyphSize: 15,
       cornerRadius: 18,
       padding: 9,
+      baseUrl: model.baseUrl,
     },
   );
 
@@ -991,6 +1016,7 @@ function buildLargeWidget(model) {
   addQuickActions(
     summary,
     "compact",
+    model.baseUrl,
   );
 
   widget.addSpacer();
@@ -1010,6 +1036,7 @@ function buildLargeWidget(model) {
       audioGlyphSize: 23,
       cornerRadius: 23,
       padding: 17,
+      baseUrl: model.baseUrl,
     },
   );
 
@@ -1065,7 +1092,9 @@ function createBaseWidget(
     );
 
   widget.url =
-    NATIVE_APP_LINKS.home;
+    appLinks(
+      model.baseUrl,
+    ).home;
 
   return widget;
 }
@@ -1188,7 +1217,9 @@ function buildErrorWidget(
 
   widget.url =
     model.baseUrl
-      ? NATIVE_APP_LINKS.profile
+      ? appLinks(
+          model.baseUrl,
+        ).profile
       : scriptableRunUrl();
 
   return widget;
@@ -1559,6 +1590,7 @@ function addDarkWordPanel(
     payload,
     options.audioDiameter,
     options.audioGlyphSize,
+    options.baseUrl,
   );
 
   return panel;
@@ -1797,6 +1829,7 @@ function addAudioActions(
   payload,
   diameter,
   glyphSize,
+  baseUrl,
 ) {
   const state =
     selectedWordState(payload);
@@ -1818,6 +1851,7 @@ function addAudioActions(
     "english",
     diameter,
     glyphSize,
+    baseUrl,
   );
 
   addAudioButton(
@@ -1828,6 +1862,7 @@ function addAudioActions(
     "traditional-chinese",
     diameter,
     glyphSize,
+    baseUrl,
   );
 
   return column;
@@ -1841,6 +1876,7 @@ function addAudioButton(
   style,
   diameter,
   glyphSize,
+  baseUrl,
 ) {
   const button =
     container.addStack();
@@ -1892,8 +1928,11 @@ function addAudioButton(
       ? speechDeepLink(
           text,
           language,
+          baseUrl,
         )
-      : NATIVE_APP_LINKS.home;
+      : appLinks(
+          baseUrl,
+        ).home;
 
   button.addSpacer();
 
@@ -1918,7 +1957,11 @@ function addAudioButton(
 function addQuickActions(
   container,
   style,
+  baseUrl,
 ) {
+  const links =
+    appLinks(baseUrl);
+
   const row =
     container.addStack();
 
@@ -1958,7 +2001,7 @@ function addQuickActions(
   addQuickActionButton(
     row,
     "plus",
-    NATIVE_APP_LINKS.addWord,
+    links.addWord,
     true,
     width,
     height,
@@ -1968,7 +2011,7 @@ function addQuickActions(
   addQuickActionButton(
     row,
     "camera.viewfinder",
-    NATIVE_APP_LINKS.capture,
+    links.capture,
     false,
     width,
     height,
@@ -2233,9 +2276,14 @@ function widgetScriptActionUrl(
 function speechDeepLink(
   text,
   language,
+  baseUrl,
 ) {
+  if (!baseUrl) {
+    return scriptableRunUrl();
+  }
+
   return (
-    "exchangenotes://speak"
+    joinUrl(baseUrl, "/speak")
     + "?language="
     + encodeURIComponent(language)
     + "&text="
@@ -3803,6 +3851,9 @@ function addWordList(
   baseUrl,
   limit,
 ) {
+  const links =
+    appLinks(baseUrl);
+
   const words =
     payload.words.slice(
       0,
@@ -3838,7 +3889,7 @@ function addWordList(
       palette().secondary;
 
     empty.url =
-      NATIVE_APP_LINKS.vocabulary;
+      links.vocabulary;
 
     return;
   }
@@ -3873,7 +3924,7 @@ function addWordList(
       );
 
       row.url =
-        NATIVE_APP_LINKS.vocabulary;
+        links.vocabulary;
 
       const number =
         row.addText(
@@ -3958,12 +4009,12 @@ function addActionRow(
   baseUrl,
   copy,
 ) {
-  void baseUrl;
   void copy;
 
   return addQuickActions(
     container,
     "compact",
+    baseUrl,
   );
 }
 
