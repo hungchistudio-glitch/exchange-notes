@@ -14,7 +14,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 
 import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
@@ -36,39 +35,6 @@ type VocabularyCopy = TranslationDictionary["vocabulary"];
 
 type CardTone = "paper" | "ink" | "silver";
 
-type GestureState = {
-  x: number;
-  dragging: boolean;
-  transition: "commit" | "cancel" | null;
-};
-
-type PointerState = {
-  pointerId: number;
-  startX: number;
-  startY: number;
-  lastX: number;
-  lastTime: number;
-  velocityX: number;
-  currentX: number;
-  dragging: boolean;
-  blocked: boolean;
-};
-
-type DeckEntry = {
-  index: number;
-  offset: number;
-  item: VocabularyItem;
-};
-
-const INITIAL_GESTURE: GestureState = {
-  x: 0,
-  dragging: false,
-  transition: null,
-};
-
-const COMMIT_DURATION_MS = 440;
-const CANCEL_DURATION_MS = 360;
-const MAX_VISIBLE_CARDS = 7;
 
 const DECK_ACCENTS = [
   "154 174 194",
@@ -77,17 +43,6 @@ const DECK_ACCENTS = [
   "145 177 169",
   "173 177 185",
 ] as const;
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function centeredTranslateX(value: number) {
-  if (Math.abs(value) < 0.01) return "-50%";
-  return value < 0
-    ? `calc(-50% - ${Math.abs(value)}px)`
-    : `calc(-50% + ${value}px)`;
-}
 
 function wrapIndex(index: number, count: number) {
   if (count <= 0) return 0;
@@ -105,107 +60,6 @@ function toneForCard(index: number): CardTone {
     "paper",
   ];
   return tones[index % tones.length];
-}
-
-function visibleDeckEntries(
-  items: VocabularyItem[],
-  activeIndex: number,
-): DeckEntry[] {
-  if (items.length === 0) return [];
-
-  const offsets = [0, 1, -1, 2, -2, 3, -3];
-  const seen = new Set<number>();
-  const entries: DeckEntry[] = [];
-
-  for (const offset of offsets) {
-    if (entries.length >= Math.min(items.length, MAX_VISIBLE_CARDS)) {
-      break;
-    }
-
-    const index = wrapIndex(activeIndex + offset, items.length);
-    if (seen.has(index)) continue;
-
-    seen.add(index);
-    entries.push({
-      index,
-      offset,
-      item: items[index],
-    });
-  }
-
-  return entries;
-}
-
-function replacePosition(
-  template: string,
-  current: number,
-  total: number,
-) {
-  return template
-    .replace("{current}", String(current))
-    .replace("{total}", String(total));
-}
-
-function cardVisual(
-  offset: number,
-  dragX: number,
-  deckWidth: number,
-) {
-  const progress = clamp(
-    deckWidth > 0 ? -dragX / deckWidth : 0,
-    -1,
-    1,
-  );
-  const progressAmount = Math.abs(progress);
-  const travelDirection = Math.sign(progress);
-
-  if (offset === 0) {
-    const rotationZ = -progress * 5.2;
-    const rotationY = progress * 7.5;
-    const translateY = progressAmount * 15;
-    const scale = 1 - progressAmount * 0.016;
-
-    return {
-      transform: [
-        `translate3d(${centeredTranslateX(dragX)}, ${translateY}px, 58px)`,
-        `rotateY(${rotationY}deg)`,
-        `rotateZ(${rotationZ}deg)`,
-        `scale(${scale})`,
-      ].join(" "),
-      opacity: 1 - progressAmount * 0.12,
-      filter: `brightness(${1 - progressAmount * 0.025})`,
-      zIndex: 100,
-    };
-  }
-
-  const side = Math.sign(offset);
-  const depth = Math.abs(offset);
-  const isIncoming = travelDirection !== 0 && side === travelDirection;
-  const effectiveDepth = isIncoming
-    ? Math.max(0, depth - progressAmount)
-    : depth + (travelDirection !== 0 ? progressAmount * 0.08 : 0);
-  const translateX = side * effectiveDepth * 9.5;
-  const translateY = -effectiveDepth * 13;
-  const translateZ = -effectiveDepth * 54;
-  const rotationZ = side * effectiveDepth * 1.18;
-  const rotationY = -side * effectiveDepth * 1.48;
-  const scale = 1 - effectiveDepth * 0.034;
-  const opacity = clamp(1 - effectiveDepth * 0.075, 0.48, 1);
-  const blur = effectiveDepth >= 4.5
-    ? (effectiveDepth - 4.2) * 0.34
-    : 0;
-
-  return {
-    transform: [
-      `translate3d(${centeredTranslateX(translateX)}, ${translateY}px, ${translateZ}px)`,
-      `rotateY(${rotationY}deg)`,
-      `rotateZ(${rotationZ}deg)`,
-      `scale(${scale})`,
-    ].join(" "),
-    opacity,
-    filter: `brightness(${1 - effectiveDepth * 0.018}) blur(${blur}px)`,
-    zIndex: 90 - depth * 8 + (side > 0 ? 1 : 0),
-  };
 }
 
 function LoadingCard() {
@@ -438,6 +292,23 @@ function DeckWordCard({
   );
 }
 
+/**
+ * The deck is a native horizontal scroller.
+ *
+ * Every earlier version drove this from JavaScript: pointer handlers, a
+ * velocity model, a settle animation and per-frame transform writes for seven
+ * cards. Six rounds of optimisation could not make it feel like a native
+ * carousel, because it never was one — the work happened on the main thread,
+ * where anything else on the page competes for the same frames.
+ *
+ * This hands the whole gesture to the browser. Momentum, rubber-banding,
+ * snapping and flick velocity come from the scroller itself, and the depth
+ * effect is a scroll-driven animation on `view(x)`, which Safari runs on the
+ * compositor thread from 26.4. During a swipe there is no JavaScript at all.
+ *
+ * What JavaScript is left runs only when the settled card changes: updating
+ * the counter, and recentring the loop.
+ */
 export function TodayWordDeck({
   items,
   copy,
@@ -449,305 +320,113 @@ export function TodayWordDeck({
   vocabularyCopy: VocabularyCopy;
   isLearningChinese: boolean;
 }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [gesture, setGesture] = useState<GestureState>(INITIAL_GESTURE);
-  const [deckWidth, setDeckWidth] = useState(320);
-
-  const deckRef = useRef<HTMLDivElement>(null);
-  const pointerRef = useRef<PointerState | null>(null);
-  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
-   * Live card slots, keyed by item id and tagged with the deck offset they
-   * were rendered at. A drag writes to these nodes directly: routing every
-   * pointermove through state re-rendered the whole deck up to 120 times a
-   * second on a ProMotion display, which is what cost the gesture its
-   * smoothness. State is only updated once the finger lifts, so the settle
-   * animation still runs through React.
+   * Three consecutive copies of the list.
+   *
+   * A native scroller has ends; this deck does not. Rendering the run three
+   * times and jumping the scroll position by one run once a swipe settles near
+   * an edge produces an endless deck — the jump is invisible because the card
+   * being jumped to is the same card, at the same offset, showing the same
+   * word.
    */
-  const slotNodesRef = useRef<
-    Map<string, { node: HTMLDivElement; offset: number }>
-  >(new Map());
+  const loop = useMemo(() => {
+    if (items.length === 0) return [];
 
-  const dragFrameRef = useRef<number | null>(null);
-  const pendingDragXRef = useRef(0);
+    return Array.from({ length: items.length * 3 }, (_, position) => ({
+      position,
+      index: position % items.length,
+      item: items[position % items.length],
+    }));
+  }, [items]);
 
-  const normalizedActiveIndex = wrapIndex(activeIndex, items.length);
-  const activeItem = items[normalizedActiveIndex];
-  const entries = useMemo(
-    () => visibleDeckEntries(items, normalizedActiveIndex),
-    [items, normalizedActiveIndex],
-  );
-  const accent = DECK_ACCENTS[
-    normalizedActiveIndex % DECK_ACCENTS.length
-  ];
+  const slotWidth = () => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return 0;
 
+    const slot = scroller.firstElementChild as HTMLElement | null;
+    return slot?.getBoundingClientRect().width ?? 0;
+  };
+
+  const runWidth = () => slotWidth() * items.length;
+
+  // Open on the middle run so there is a full run of cards in either
+  // direction before any recentring is needed.
   useEffect(() => {
-    const node = deckRef.current;
-    if (!node || typeof ResizeObserver === "undefined") return;
+    const scroller = scrollerRef.current;
+    if (!scroller || items.length === 0) return;
 
-    const updateWidth = () => {
-      setDeckWidth(node.getBoundingClientRect().width || 320);
-    };
+    const frame = requestAnimationFrame(() => {
+      scroller.scrollLeft = runWidth();
+    });
 
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(node);
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
-    return () => observer.disconnect();
-  }, []);
-
+  /**
+   * Reads the settled card and keeps the loop centred.
+   *
+   * Bound to scroll rather than to a frame loop, and it only writes state when
+   * the rounded position actually changes — a few times per swipe, not a
+   * hundred and twenty times a second.
+   */
   useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller || items.length === 0) return;
+
+    let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function handleScroll() {
+      const width = slotWidth();
+      if (!width || !scroller) return;
+
+      const position = Math.round(scroller.scrollLeft / width);
+      const next = wrapIndex(position, items.length);
+
+      setActiveIndex((current) => (current === next ? current : next));
+
+      // Recentring mid-gesture would fight the scroller, so it waits for the
+      // scrolling to stop.
+      if (settleTimer) clearTimeout(settleTimer);
+
+      settleTimer = setTimeout(() => {
+        const run = runWidth();
+        if (!run || !scroller) return;
+
+        if (scroller.scrollLeft < run * 0.5) {
+          scroller.scrollLeft += run;
+        } else if (scroller.scrollLeft > run * 1.5) {
+          scroller.scrollLeft -= run;
+        }
+      }, 140);
+    }
+
+    scroller.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
-      if (settleTimeoutRef.current) {
-        clearTimeout(settleTimeoutRef.current);
-      }
-      stopSpeech();
+      scroller.removeEventListener("scroll", handleScroll);
+      if (settleTimer) clearTimeout(settleTimer);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
-  function clearSettleTimeout() {
-    if (!settleTimeoutRef.current) return;
-    clearTimeout(settleTimeoutRef.current);
-    settleTimeoutRef.current = null;
+  useEffect(() => () => stopSpeech(), []);
+
+  /** Arrows scroll by exactly one card; the browser animates and snaps. */
+  function step(direction: -1 | 1) {
+    const scroller = scrollerRef.current;
+    const width = slotWidth();
+    if (!scroller || !width) return;
+
+    scroller.scrollBy({ left: direction * width, behavior: "smooth" });
   }
 
-  function settleTo(direction: -1 | 1) {
-    if (items.length < 2 || gesture.transition) return;
+  const accent = DECK_ACCENTS[activeIndex % DECK_ACCENTS.length];
 
-    clearSettleTimeout();
-    setGesture({
-      x: -direction * deckWidth * 1.16,
-      dragging: false,
-      transition: "commit",
-    });
-
-    settleTimeoutRef.current = setTimeout(() => {
-      setActiveIndex((current) => wrapIndex(
-        current + direction,
-        items.length,
-      ));
-      setGesture(INITIAL_GESTURE);
-      settleTimeoutRef.current = null;
-    }, COMMIT_DURATION_MS);
-  }
-
-  function cancelGesture() {
-    clearSettleTimeout();
-    setGesture({
-      x: 0,
-      dragging: false,
-      transition: "cancel",
-    });
-
-    settleTimeoutRef.current = setTimeout(() => {
-      setGesture(INITIAL_GESTURE);
-      settleTimeoutRef.current = null;
-    }, CANCEL_DURATION_MS);
-  }
-
-  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    if (
-      items.length < 2
-      || gesture.transition
-      || event.button !== 0
-    ) {
-      return;
-    }
-
-    // Element, not HTMLElement: the sound and detail buttons hold <svg>
-    // icons, so a press on the icon itself reports an SVGElement target and
-    // would otherwise slip past this guard and start a drag.
-    const target = event.target;
-    if (
-      target instanceof Element
-      && target.closest("button, a")
-    ) {
-      return;
-    }
-
-    clearSettleTimeout();
-    event.currentTarget.setPointerCapture(event.pointerId);
-
-    pointerRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      lastX: event.clientX,
-      lastTime: event.timeStamp,
-      velocityX: 0,
-      currentX: 0,
-      dragging: false,
-      blocked: false,
-    };
-    setGesture(INITIAL_GESTURE);
-  }
-
-  /**
-   * Cards two or more layers deep are not repainted mid-drag.
-   *
-   * Their transform is driven by `depth + progressAmount * 0.08`, so across a
-   * whole swipe a card at depth 3 travels from 3 to 3.08 — nothing an eye can
-   * resolve behind three other cards. Yet each was being rewritten 120 times a
-   * second, and every one of them carries the full card: paper grain over a
-   * blend mode, orbit rules, frosted controls, layered shadows.
-   *
-   * The stack stays seven deep and keeps every one of those effects. Only the
-   * three that actually travel — the active card and the neighbour on either
-   * side, so the direction of the swipe does not matter — are written per
-   * frame. React restores the exact values for the rest when the gesture
-   * settles, and the 0.08 they were owed arrives then.
-   */
-  function paintDrag(x: number) {
-    for (const { node, offset } of slotNodesRef.current.values()) {
-      if (Math.abs(offset) > 1) continue;
-
-      const visual = cardVisual(offset, x, deckWidth);
-
-      node.style.transform = visual.transform;
-      node.style.opacity = String(visual.opacity);
-      node.style.filter = visual.filter;
-      node.style.zIndex = String(visual.zIndex);
-    }
-  }
-
-  /**
-   * Pointer events can outpace the display, so paints are coalesced to one
-   * per frame. Without this a 120Hz stream of moves would queue redundant
-   * style writes that the next move overwrites anyway.
-   */
-  function scheduleDragPaint(x: number) {
-    pendingDragXRef.current = x;
-
-    if (dragFrameRef.current !== null) return;
-
-    dragFrameRef.current = requestAnimationFrame(() => {
-      dragFrameRef.current = null;
-      paintDrag(pendingDragXRef.current);
-    });
-  }
-
-  function cancelDragPaint() {
-    if (dragFrameRef.current === null) return;
-
-    cancelAnimationFrame(dragFrameRef.current);
-    dragFrameRef.current = null;
-  }
-
-  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    const pointer = pointerRef.current;
-    if (
-      !pointer
-      || pointer.pointerId !== event.pointerId
-      || pointer.blocked
-    ) {
-      return;
-    }
-
-    const deltaX = event.clientX - pointer.startX;
-    const deltaY = event.clientY - pointer.startY;
-
-    if (!pointer.dragging) {
-      if (
-        Math.abs(deltaY) > 10
-        && Math.abs(deltaY) > Math.abs(deltaX) * 1.12
-      ) {
-        pointer.blocked = true;
-        return;
-      }
-
-      if (Math.abs(deltaX) < 8) return;
-      pointer.dragging = true;
-
-      // The only state write of the whole gesture. It flips the slots out of
-      // their CSS transition so the per-frame writes below are not fighting
-      // an interpolation.
-      setGesture({ x: 0, dragging: true, transition: null });
-
-      // Holds the rest of the page still. The Yumi stage above this deck runs
-      // 33 infinite animations, each keeping a compositing layer alive, and
-      // they were consuming the frames this gesture needed.
-      document.documentElement.setAttribute("data-deck-dragging", "true");
-    }
-
-    event.preventDefault();
-    // The moment the event happened, not the moment this handler ran, so a
-    // delayed handler cannot inflate the measured velocity.
-    const now = event.timeStamp;
-    const elapsed = Math.max(now - pointer.lastTime, 1);
-    const instantaneousVelocity = (event.clientX - pointer.lastX) / elapsed;
-    pointer.velocityX = pointer.velocityX * 0.48 + instantaneousVelocity * 0.52;
-    pointer.lastX = event.clientX;
-    pointer.lastTime = now;
-
-    const resistanceLimit = deckWidth * 0.82;
-    const resistedX = Math.abs(deltaX) > resistanceLimit
-      ? Math.sign(deltaX)
-        * (resistanceLimit + (Math.abs(deltaX) - resistanceLimit) * 0.16)
-      : deltaX;
-
-    pointer.currentX = resistedX;
-    scheduleDragPaint(resistedX);
-  }
-
-  function finishPointer(event: ReactPointerEvent<HTMLDivElement>) {
-    const pointer = pointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId) return;
-
-    pointerRef.current = null;
-    document.documentElement.removeAttribute("data-deck-dragging");
-
-    // A queued paint would land after React commits the settle target and
-    // snap the cards back to the drag position mid-animation.
-    cancelDragPaint();
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-
-    if (!pointer.dragging || pointer.blocked) {
-      cancelGesture();
-      return;
-    }
-
-    const projectedX = pointer.currentX + pointer.velocityX * 220;
-    const shouldCommit =
-      Math.abs(projectedX) > deckWidth * 0.18
-      || Math.abs(pointer.velocityX) > 0.42;
-
-    if (!shouldCommit) {
-      cancelGesture();
-      return;
-    }
-
-    const direction: -1 | 1 = projectedX < 0 ? 1 : -1;
-    settleTo(direction);
-  }
-
-  function cancelPointer(event: ReactPointerEvent<HTMLDivElement>) {
-    const pointer = pointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId) return;
-
-    pointerRef.current = null;
-    document.documentElement.removeAttribute("data-deck-dragging");
-
-    // A queued paint would land after React commits the settle target and
-    // snap the cards back to the drag position mid-animation.
-    cancelDragPaint();
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    cancelGesture();
-  }
-
-  const transition = gesture.dragging
-    ? "none"
-    : gesture.transition === "cancel"
-      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease, filter 260ms ease`
-      : gesture.transition === "commit"
-        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease, filter 340ms ease`
-        : "none";
+  if (items.length === 0) return null;
 
   return (
     <div className={styles.wrapper}>
@@ -757,79 +436,41 @@ export function TodayWordDeck({
         aria-roledescription="carousel"
         aria-label={copy.title}
       >
-        <div
-          ref={deckRef}
-          className={styles.deckViewport}
-          data-dragging={gesture.dragging ? "true" : "false"}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={finishPointer}
-          onPointerCancel={cancelPointer}
-        >
-          {entries.map(({ item, index, offset }) => {
-            const visual = cardVisual(
-              offset,
-              gesture.x,
-              deckWidth,
-            );
-            const interactive = offset === 0;
-
-            return (
-              <div
-                key={item.id}
-                ref={(node) => {
-                  const slots = slotNodesRef.current;
-                  if (node) {
-                    slots.set(item.id, { node, offset });
-                  } else {
-                    slots.delete(item.id);
-                  }
-                }}
-                className={styles.cardSlot}
-                style={{
-                  transform: visual.transform,
-                  opacity: visual.opacity,
-                  filter: visual.filter,
-                  zIndex: visual.zIndex,
-                  transition,
-                  pointerEvents: interactive ? "auto" : "none",
-                }}
-              >
+        <div ref={scrollerRef} className={styles.scroller}>
+          {loop.map(({ position, index, item }) => (
+            <div key={position} className={styles.slot}>
+              <div className={styles.slotInner}>
                 <DeckWordCard
                   item={item}
                   index={index}
                   total={items.length}
-                  interactive={interactive}
+                  interactive={index === activeIndex}
                   tone={toneForCard(index)}
                   copy={copy}
                   vocabularyCopy={vocabularyCopy}
                   isLearningChinese={isLearningChinese}
                 />
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {items.length > 1 ? (
           <nav className={styles.deckMeta} aria-label={copy.title}>
-            {/* The arrow points where the card goes, which is also where the
-                finger would take it: dragging left sends the card left and
-                advances, so the left arrow does the same. Previously each
-                button sent the card the opposite way from the arrow drawn on
-                it. */}
+            {/* The arrow points where the card travels, matching the direction
+                a finger would take it. */}
             <button
               type="button"
               aria-label={copy.nextWord}
               className={styles.navButton}
-              disabled={Boolean(gesture.transition)}
-              onClick={() => settleTo(1)}
+              onClick={() => step(1)}
             >
               <ArrowLeft size={15} />
             </button>
 
-            <p className={styles.counter} aria-hidden="true">
-              {String(normalizedActiveIndex + 1).padStart(2, "0")}
-              <span> / </span>
+            <p className={styles.counter} aria-live="polite">
+              {String(activeIndex + 1).padStart(2, "0")}
+              <span aria-hidden="true"> / </span>
               {String(items.length).padStart(2, "0")}
             </p>
 
@@ -837,24 +478,13 @@ export function TodayWordDeck({
               type="button"
               aria-label={copy.previousWord}
               className={styles.navButton}
-              disabled={Boolean(gesture.transition)}
-              onClick={() => settleTo(-1)}
+              onClick={() => step(-1)}
             >
               <ArrowRight size={15} />
             </button>
           </nav>
         ) : null}
       </section>
-
-      <p className={styles.liveRegion} aria-live="polite">
-        {activeItem
-          ? `${replacePosition(
-              copy.positionLabel,
-              normalizedActiveIndex + 1,
-              items.length,
-            )}: ${activeItem.word}`
-          : ""}
-      </p>
     </div>
   );
 }

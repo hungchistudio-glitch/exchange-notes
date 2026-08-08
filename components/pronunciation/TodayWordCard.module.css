@@ -59,30 +59,82 @@
   }
 }
 
-.deckViewport {
-  position: relative;
+/*
+ * A native horizontal scroller, not a JavaScript carousel.
+ *
+ * Momentum, rubber-banding, flick velocity and snapping all come from the
+ * browser, which runs them on the compositor thread — so nothing else on the
+ * page can steal frames from the gesture. Vertical page scrolling passes
+ * through untouched without any touch-action tuning, because the scroller
+ * only claims the horizontal axis.
+ */
+.scroller {
+  --slot-width: min(calc(100% - 72px), 286px);
+  display: flex;
   height: 458px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   perspective: 1380px;
   perspective-origin: 50% 44%;
-  touch-action: pan-y pinch-zoom;
-  user-select: none;
-  -webkit-user-select: none;
-  cursor: grab;
+  scrollbar-width: none;
+  /* Lets the first and last card reach the centre. */
+  padding-inline: calc((100% - var(--slot-width)) / 2);
 }
 
-.deckViewport[data-dragging="true"] {
-  cursor: grabbing;
+.scroller::-webkit-scrollbar {
+  display: none;
 }
 
-.cardSlot {
-  position: absolute;
-  top: 58px;
-  left: 50%;
-  width: min(calc(100% - 72px), 286px);
+.slot {
+  flex: 0 0 var(--slot-width);
   height: 370px;
+  margin-top: 58px;
+  scroll-snap-align: center;
   transform-style: preserve-3d;
+}
+
+/*
+ * The depth is a scroll-driven animation rather than a per-frame transform
+ * write. `view(x)` maps the card's travel across the scrollport onto the
+ * keyframes below: 50% is dead centre, either end is fully off to one side.
+ *
+ * Safari runs these on the compositor from 26.4, which is the whole point —
+ * the stack tilts and recedes without JavaScript being involved at all.
+ */
+.slotInner {
+  height: 100%;
   transform-origin: 50% 82%;
-  will-change: transform, opacity, filter;
+  animation: cardTravel linear both;
+  animation-timeline: view(x);
+}
+
+@keyframes cardTravel {
+  0% {
+    transform: translateZ(-168px) rotateY(-26deg) rotateZ(4.5deg) scale(0.82);
+    opacity: 0.28;
+  }
+
+  50% {
+    transform: translateZ(58px) rotateY(0deg) rotateZ(0deg) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateZ(-168px) rotateY(26deg) rotateZ(-4.5deg) scale(0.82);
+    opacity: 0.28;
+  }
+}
+
+/* Without scroll-driven animation the deck is a flat carousel rather than a
+   stack — still fully usable, and still natively smooth. */
+@supports not (animation-timeline: view()) {
+  .slotInner {
+    animation: none;
+    transform: translateZ(58px);
+  }
 }
 
 .card {
@@ -593,14 +645,14 @@
     min-height: 490px;
   }
 
-  .deckViewport {
+  .scroller {
+    --slot-width: min(calc(100% - 64px), 282px);
     height: 444px;
   }
 
-  .cardSlot {
-    top: 54px;
-    width: min(calc(100% - 64px), 282px);
+  .slot {
     height: 362px;
+    margin-top: 54px;
   }
 
   .cardInner {
@@ -625,7 +677,7 @@
     animation: none;
   }
 
-  .cardSlot,
+  .slotInner,
   .deckSurface,
   .navButton,
   .soundButton,
