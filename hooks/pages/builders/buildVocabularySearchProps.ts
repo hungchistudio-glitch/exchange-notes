@@ -16,13 +16,14 @@ type BuildVocabularySearchPropsParams = Pick<
   | "sortMode"
   | "rankingLoading"
   | "rankingError"
+  | "viewMode"
 > & {
   setQuery: (value: string) => void;
   resetLookup: () => void;
-  openAiSearch: () => void;
   setQuickFilter: SearchProps["onQuickFilterChange"];
   setSortOpen: (open: boolean) => void;
-  setFiltersOpen: (open: boolean) => void;
+  openCollections: () => void;
+  toggleViewMode: () => void;
 };
 
 export default function buildVocabularySearchProps({
@@ -34,14 +35,15 @@ export default function buildVocabularySearchProps({
   quickFilters,
   visibleCount,
   sortMode,
+  viewMode,
   rankingLoading,
   rankingError,
   setQuery,
   resetLookup,
-  openAiSearch,
   setQuickFilter,
   setSortOpen,
-  setFiltersOpen,
+  openCollections,
+  toggleViewMode,
 }: BuildVocabularySearchPropsParams): SearchProps {
   return {
     totalWords,
@@ -52,6 +54,7 @@ export default function buildVocabularySearchProps({
     quickFilters,
     visibleCount,
     sortMode,
+    viewMode,
     rankingLoading,
     rankingError,
 
@@ -65,9 +68,9 @@ export default function buildVocabularySearchProps({
       resetLookup();
     },
 
-    onOpenAI: openAiSearch,
     onQuickFilterChange: setQuickFilter,
     onOpenSort: () => setSortOpen(true),
-    onOpenLibrary: () => setFiltersOpen(true),
+    onOpenCollections: openCollections,
+    onToggleView: toggleViewMode,
   };
 }

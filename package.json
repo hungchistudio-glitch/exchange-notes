@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:widget": "node scripts/verify-scriptable-widget.mjs",
+    "generate:native": "bash native/apple/scripts/generate-project.sh",
+    "test:native-personal": "bash native/apple/scripts/verify-personal-build.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

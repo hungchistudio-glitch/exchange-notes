@@ -1,5 +1,8 @@
-import { cn } from "@/lib/utils";
+"use client";
+
+import { cn, insertValues } from "@/lib/utils";
 import { Display, Title } from "@/components/ui/Typography";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
@@ -10,13 +13,16 @@ type Props = {
    * which language the user is learning (see isLearningChinese from
    * LearningLanguageContext) — NOT the interface display language. */
   variant?: "primary" | "secondary";
+  showSpeechButton?: boolean;
 };
 
 export default function VocabularyWord({
   word,
   className,
   variant = "primary",
+  showSpeechButton = true,
 }: Props) {
+  const { t } = useTranslation();
   const normalizedWord = word.trim();
   const TextComponent = variant === "primary" ? Display : Title;
 
@@ -37,15 +43,17 @@ export default function VocabularyWord({
         {normalizedWord}
       </TextComponent>
 
-      <div className="shrink-0">
+      {showSpeechButton ? <div className="shrink-0">
         <VocabularySpeechButton
           text={normalizedWord}
           language="en-US"
-          label={`Play ${normalizedWord}`}
+          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+            text: normalizedWord,
+          })}
           size="sm"
           prominence={variant}
         />
-      </div>
+      </div> : null}
     </div>
   );
 }

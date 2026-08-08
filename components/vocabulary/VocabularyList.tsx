@@ -9,10 +9,14 @@ import {
   LoaderCircle,
   SearchX,
   Trash2,
+  Volume2,
 } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/foundation-legacy";
+import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { speak } from "@/lib/speech";
+import { insertValues } from "@/lib/utils";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import VocabularyCard from "@/components/vocabulary/VocabularyCard";
 import type {
@@ -26,6 +30,7 @@ import type {
   VocabularyStatus,
 } from "@/lib/types/app";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
+import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
 
 
@@ -43,6 +48,8 @@ type VocabularyListProps = {
   lookupResult: VocabularyLookupResult | null;
   lookupError: string;
   savingLookup: boolean;
+  expandedItemId: string | null;
+  viewMode: VocabularyViewMode;
   onLookupWord: () => void;
   onSaveLookupResult: () => void;
   onChangeStatus: (
@@ -51,6 +58,7 @@ type VocabularyListProps = {
   ) => void | Promise<void>;
   onDeleteItem: (item: VocabularyItem) => void | Promise<void>;
   onOpenDetail: (item: VocabularyItem) => void;
+  onToggleExpanded: (item: VocabularyItem) => void;
   onOpenCollections: (item: VocabularyItem) => void;
   onSendToPartner: (item: VocabularyItem) => void;
   onInteract: (item: VocabularyItem, type: CardInteraction) => void;
@@ -66,11 +74,14 @@ function VocabularyList({
   lookupResult,
   lookupError,
   savingLookup,
+  expandedItemId,
+  viewMode,
   onLookupWord,
   onSaveLookupResult,
   onChangeStatus,
   onDeleteItem,
   onOpenDetail,
+  onToggleExpanded,
   onOpenCollections,
   onSendToPartner,
   onInteract,
@@ -83,7 +94,7 @@ function VocabularyList({
   if (loading) {
     return (
       <section
-        aria-label="Loading vocabulary"
+        aria-label={t.vocabulary.search.loadingVocabulary}
         aria-live="polite"
         className="mt-6 flex min-h-40 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
       >
@@ -94,7 +105,7 @@ function VocabularyList({
             strokeWidth={1.8}
           />
           <span className="text-[12px] font-medium">
-            Loading your words
+            {t.vocabulary.search.loadingVocabulary}
           </span>
         </div>
       </section>
@@ -106,14 +117,14 @@ function VocabularyList({
       <EmptyState
         className="mt-6 rounded-[24px] py-8 shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
         icon={<Camera size={23} strokeWidth={1.7} />}
-        title="Your first word begins outside"
-        description="Photograph something from daily life and save its English and Traditional Chinese meaning."
+        title={t.vocabulary.search.firstWordTitle}
+        description={t.vocabulary.search.firstWordDescription}
         action={
           <Link
             href="/capture"
             className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
           >
-            Discover a word
+            {t.vocabulary.search.discoverWord}
           </Link>
         }
       />
@@ -122,6 +133,111 @@ function VocabularyList({
 
   if (items.length === 0) {
     if (lookupStatus === "result" && lookupResult) {
+      // The looked-up word gets the same hierarchy treatment as saved
+      // word cards: the language being learned is the hero (larger, darker,
+      // solid speaker button), the other language is the supporting
+      // translation. Order flips with the learning language too, so the
+      // reading flow of the target language is never interrupted.
+      const englishIsPrimary = !isLearningChinese;
+
+      const heroTextClass =
+        "min-w-0 break-words text-[27px] font-semibold tracking-[-0.04em] text-black";
+      const supportTextClass =
+        "min-w-0 break-words text-xl font-normal text-black/45";
+      const speakerBase =
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-90";
+      const heroSpeakerClass = `${speakerBase} bg-black text-white`;
+      const supportSpeakerClass = `${speakerBase} bg-black/[0.05] text-black/55`;
+
+      const englishRow = (
+        <div
+          key="english"
+          className="mt-2 flex items-center justify-center gap-2.5"
+        >
+          <h2 className={englishIsPrimary ? heroTextClass : supportTextClass}>
+            {lookupResult.englishName}
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => speak(lookupResult.englishName, "en-US")}
+            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: lookupResult.englishName,
+            })}
+            className={
+              englishIsPrimary ? heroSpeakerClass : supportSpeakerClass
+            }
+          >
+            <Volume2 size={15} strokeWidth={1.8} />
+          </button>
+        </div>
+      );
+
+      const chineseRow = (
+        <div
+          key="chinese"
+          className="mt-2 flex items-center justify-center gap-2.5"
+        >
+          <h2 className={englishIsPrimary ? supportTextClass : heroTextClass}>
+            {lookupResult.chineseName}
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => speak(lookupResult.chineseName, "zh-TW")}
+            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: lookupResult.chineseName,
+            })}
+            className={
+              englishIsPrimary ? supportSpeakerClass : heroSpeakerClass
+            }
+          >
+            <Volume2 size={15} strokeWidth={1.8} />
+          </button>
+        </div>
+      );
+
+      const exampleSpeakerClass =
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-black/55 transition active:scale-90";
+
+      const englishExampleRow = lookupResult.englishExample ? (
+        <div key="english-example" className="flex items-start gap-3">
+          <p className="min-w-0 flex-1 text-[14px] leading-6 text-black/80">
+            {lookupResult.englishExample}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => speak(lookupResult.englishExample, "en-US")}
+            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: lookupResult.englishExample,
+            })}
+            className={exampleSpeakerClass}
+          >
+            <Volume2 size={14} strokeWidth={1.8} />
+          </button>
+        </div>
+      ) : null;
+
+      const chineseExampleRow = lookupResult.chineseExample ? (
+        <div key="chinese-example" className="flex items-start gap-3">
+          <p className="min-w-0 flex-1 text-[14px] leading-6 text-black/50">
+            {lookupResult.chineseExample}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => speak(lookupResult.chineseExample, "zh-TW")}
+            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: lookupResult.chineseExample,
+            })}
+            className={exampleSpeakerClass}
+          >
+            <Volume2 size={14} strokeWidth={1.8} />
+          </button>
+        </div>
+      ) : null;
+
       return (
         <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/60">
@@ -132,27 +248,16 @@ function VocabularyList({
             {lookup.wordFound}
           </p>
 
-          {isLearningChinese ? (
-            <>
-              <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
-                {lookupResult.chineseName}
-              </h2>
+          {englishIsPrimary
+            ? [englishRow, chineseRow]
+            : [chineseRow, englishRow]}
 
-              <p className="mt-1 break-words text-xl font-normal text-black/45">
-                {lookupResult.englishName}
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="mt-2 break-words text-[27px] font-semibold tracking-[-0.04em] text-black">
-                {lookupResult.englishName}
-              </h2>
-
-              <p className="mt-1 break-words text-xl font-normal text-black/45">
-                {lookupResult.chineseName}
-              </p>
-            </>
-          )}
+          <PronunciationBlock
+            english={lookupResult.englishName}
+            chinese={lookupResult.chineseName}
+            showEnglish
+            className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
+          />
 
           <p className="mt-2 text-[11px] font-medium tracking-[0.06em] text-black/35">
             {t.vocabulary.detail.partOfSpeech[
@@ -160,14 +265,10 @@ function VocabularyList({
             ]}
           </p>
 
-          <div className="mt-5 rounded-[20px] bg-surface p-4 text-left">
-            <p className="text-[14px] leading-6 text-black/80">
-              {lookupResult.englishExample}
-            </p>
-
-            <p className="mt-2 text-[14px] leading-6 text-black/50">
-              {lookupResult.chineseExample}
-            </p>
+          <div className="mt-5 space-y-2 rounded-[20px] bg-surface p-4 text-left">
+            {englishIsPrimary
+              ? [englishExampleRow, chineseExampleRow]
+              : [chineseExampleRow, englishExampleRow]}
           </div>
 
           <button
@@ -182,7 +283,7 @@ function VocabularyList({
                   size={15}
                   className="mr-2 animate-spin"
                 />
-                Saving
+                {lookup.saving}
               </>
             ) : (
               lookup.addToVocabulary
@@ -227,7 +328,7 @@ function VocabularyList({
                       size={15}
                       className="mr-2 animate-spin"
                     />
-                    Looking up
+                    {lookup.lookingUp}
                   </>
                 ) : (
                   lookup.lookUpWord.replace("{word}", trimmedQuery)
@@ -251,20 +352,20 @@ function VocabularyList({
 
   return (
     <section
-      aria-label="Saved vocabulary"
-      className="mt-5 space-y-3"
+      aria-label={t.vocabulary.search.yourWords}
+      className={viewMode === "compact" ? "mt-5 space-y-2" : "mt-5 space-y-3"}
     >
       {items.map((item) => (
         <SwipeActionRow
           key={item.id}
           disabled={updatingId === item.id}
           trailingAction={{
-            label: "刪除",
+            label: t.vocabulary.detail.deleteWordAriaLabel,
             icon: <Trash2 size={22} strokeWidth={1.8} />,
             onAction: () => onDeleteItem(item),
           }}
           leadingAction={{
-            label: "收藏集",
+            label: t.vocabulary.detail.addToCollectionsAriaLabel,
             icon: <FolderPlus size={22} strokeWidth={1.8} />,
             onAction: () => onOpenCollections(item),
           }}
@@ -272,9 +373,12 @@ function VocabularyList({
           <VocabularyCard
             item={item}
             updating={updatingId === item.id}
+            expanded={expandedItemId === item.id}
+            viewMode={viewMode}
             onChangeStatus={onChangeStatus}
             onSendToPartner={onSendToPartner}
             onOpenDetail={onOpenDetail}
+            onToggleExpanded={onToggleExpanded}
             onInteract={onInteract}
           />
         </SwipeActionRow>

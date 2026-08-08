@@ -1,5 +1,7 @@
 "use client";
 
+import { disableNativePushRegistration } from "@/lib/push/nativeClient";
+
 import {
   Camera,
   Check,
@@ -29,6 +31,7 @@ import PronunciationSettingsButton from "@/components/settings/PronunciationSett
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
+import NativeWidgetSettingsButton from "@/components/settings/NativeWidgetSettingsButton";
 import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
 import YumiReminderSettingsButton from "@/components/settings/YumiReminderSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -306,6 +309,7 @@ export default function ProfilePage() {
 
     const supabase = createClient();
 
+    await disableNativePushRegistration();
     await supabase.auth.signOut();
 
     // Send the user back to the Google sign-in screen.
@@ -502,6 +506,7 @@ export default function ProfilePage() {
               <FontSizeSettingsButton />
               <AppLanguageSettingsButton />
               <PwaInstallSettingsButton />
+              <NativeWidgetSettingsButton />
               <WebPushSettingsButton />
               <YumiReminderSettingsButton />
             </div>

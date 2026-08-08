@@ -2,7 +2,6 @@
 
 import {
   FormEvent,
-  useEffect,
   useState,
 } from "react";
 import {
@@ -11,6 +10,7 @@ import {
 } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
 
@@ -62,57 +62,13 @@ export default function VocabularyEditModal({
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const motion = useSheetMotion({
+    open,
+    onClose,
+    closeDisabled: saving,
+  });
 
-  useEffect(() => {
-    if (!open) return;
-
-    setWord(item.word);
-    setTranslation(item.translation);
-    setExampleSentence(
-      item.example_sentence ?? "",
-    );
-    setTranslatedExample(
-      item.translated_example ?? "",
-    );
-    setError("");
-  }, [open, item]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow =
-      document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-
-    function handleKeyDown(
-      event: KeyboardEvent,
-    ) {
-      if (
-        event.key === "Escape" &&
-        !saving
-      ) {
-        onClose();
-      }
-    }
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown,
-    );
-
-    return () => {
-      document.body.style.overflow =
-        previousOverflow;
-
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown,
-      );
-    };
-  }, [open, saving, onClose]);
-
-  if (!open) return null;
+  if (!motion.rendered) return null;
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -150,7 +106,8 @@ export default function VocabularyEditModal({
           optionalValue(translatedExample),
       });
 
-      onClose();
+      setSaving(false);
+      motion.requestClose();
     } catch (saveError) {
       console.error(saveError);
 
@@ -159,7 +116,6 @@ export default function VocabularyEditModal({
           ? saveError.message
           : edit.saveFailed,
       );
-    } finally {
       setSaving(false);
     }
   }
@@ -169,21 +125,31 @@ export default function VocabularyEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-vocabulary-title"
-      onMouseDown={(event) => {
-        if (
-          event.target ===
-            event.currentTarget &&
-          !saving
-        ) {
-          onClose();
-        }
-      }}
+      className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-6"
     >
-      <section className="max-h-[92vh] w-full overflow-y-auto rounded-t-[32px] bg-white shadow-2xl sm:max-w-2xl sm:rounded-[32px]">
+      <button
+        type="button"
+        aria-label={edit.close}
+        onClick={motion.requestClose}
+        disabled={saving}
+        className={`absolute inset-0 bg-black/45 backdrop-blur-sm ${motion.backdropClassName}`}
+        {...motion.backdropProps}
+      />
+
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-vocabulary-title"
+        {...motion.panelProps}
+        className={`${motion.panelClassName} relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-[32px] bg-white shadow-2xl sm:max-w-2xl sm:rounded-[32px]`}
+      >
+        <div
+          className={`${motion.handleClassName} flex h-8 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/15" />
+        </div>
+
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-neutral-100 bg-white/95 px-6 py-5 backdrop-blur">
           <div>
             <h2
@@ -201,7 +167,7 @@ export default function VocabularyEditModal({
           <button
             type="button"
             aria-label={edit.close}
-            onClick={onClose}
+            onClick={motion.requestClose}
             disabled={saving}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
           >
@@ -285,7 +251,7 @@ export default function VocabularyEditModal({
               type="button"
               variant="secondary"
               className="flex-1 justify-center"
-              onClick={onClose}
+              onClick={motion.requestClose}
               disabled={saving}
             >
               {edit.cancel}

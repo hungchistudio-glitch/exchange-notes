@@ -1,0 +1,7 @@
+ExchangeNotesApple.xcodeproj/
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+App/Info.plist
+Widget/Info.plist

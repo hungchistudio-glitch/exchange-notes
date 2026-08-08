@@ -1,8 +1,9 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
 
@@ -23,6 +24,7 @@ export default function VocabularyFilterPanel({
 }: VocabularyFilterPanelProps) {
   const { t } = useTranslation();
   const translations = t.vocabulary.search;
+  const motion = useSheetMotion({ onClose });
 
   const statusLabels: Record<VocabularyStatus, string> = {
     new: translations.statuses.new,
@@ -49,29 +51,23 @@ export default function VocabularyFilterPanel({
     });
   }, [items]);
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-[300] overflow-y-auto bg-white text-black">
+    <div
+      {...motion.panelProps}
+      className={`${motion.panelClassName} fixed inset-0 z-[300] overflow-y-auto bg-white text-black`}
+    >
       <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
+        <div
+          className={`${motion.handleClassName} flex h-7 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-10 rounded-full bg-black/15" />
+        </div>
+
         <div className="flex items-center justify-between px-5 py-5">
           <button
             type="button"
-            onClick={onClose}
+            onClick={motion.requestClose}
             className="text-sm uppercase tracking-[0.08em]"
           >
             {translations.cancel}

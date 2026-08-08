@@ -6,6 +6,7 @@ import SplashGate from "@/components/ui/SplashGate";
 import "./globals.css";
 
 import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
+import NativePushRegister from "./components/NativePushRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,6 +83,7 @@ export default function RootLayout({
         <SplashGate />
         {children}
         <ServiceWorkerRegister />
+        <NativePushRegister />
       </body>
     </html>
   );

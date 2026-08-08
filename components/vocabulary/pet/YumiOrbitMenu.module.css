@@ -1,0 +1,293 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(223, 203, 151, 0.09), transparent 38%),
+    rgba(247, 245, 239, 0.5);
+  backdrop-filter: blur(3px) saturate(0.82);
+  opacity: 0;
+  animation: orbitBackdropIn 260ms ease-out forwards;
+}
+
+.backdrop[data-phase="closing"] {
+  pointer-events: none;
+  animation: orbitBackdropOut 300ms ease-in forwards;
+}
+
+.menu {
+  position: absolute;
+  z-index: 74;
+  left: 50%;
+  top: 50%;
+  width: min(92vw, 356px);
+  height: 250px;
+  translate: -50% -50%;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.orbitLine {
+  position: absolute;
+  inset: 16px 22px 18px;
+  border: 1px solid rgba(98, 91, 78, 0.11);
+  border-left-color: rgba(201, 150, 46, 0.34);
+  border-radius: 50%;
+  opacity: 0;
+  transform: rotate(-18deg) scale(0.74);
+  animation: orbitLineIn 680ms cubic-bezier(0.16, 1, 0.3, 1) 90ms forwards;
+}
+
+.orbitLine::before,
+.orbitLine::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  background: #c9962e;
+  box-shadow: 0 0 12px rgba(201, 150, 46, 0.5);
+}
+
+.orbitLine::before {
+  width: 4px;
+  height: 4px;
+  left: 11%;
+  top: 17%;
+}
+
+.orbitLine::after {
+  width: 2px;
+  height: 2px;
+  right: 8%;
+  bottom: 24%;
+}
+
+.signalRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 148px;
+  height: 148px;
+  margin: -74px 0 0 -74px;
+  border: 1px solid rgba(201, 150, 46, 0.28);
+  border-radius: 50%;
+  opacity: 0;
+  animation: signalExpand 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.action,
+.closeAction {
+  pointer-events: auto;
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  color: rgba(19, 19, 21, 0.82);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(229, 226, 218, 0.65));
+  box-shadow:
+    0 18px 40px rgba(17, 17, 19, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(18px) saturate(1.08);
+  opacity: 0;
+  transform: translate3d(var(--origin-x), var(--origin-y), 0) scale(0.54)
+    rotate(var(--origin-rotate));
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action {
+  width: 54px;
+  height: 54px;
+  border-radius: 19px;
+  animation: orbitActionIn 560ms cubic-bezier(0.18, 1.35, 0.35, 1) forwards;
+}
+
+.action::after {
+  content: attr(data-tooltip);
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: 132px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.82);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  transform: translateY(-2px) scale(0.96);
+  transition: opacity 140ms ease, transform 140ms ease;
+  white-space: nowrap;
+}
+
+.action:hover::after,
+.action:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.menu[data-show-hints="true"] .action::after {
+  animation: orbitTooltipHint 1.75s ease both;
+}
+
+.menu[data-show-hints="true"] .addAction::after { animation-delay: 100ms; }
+.menu[data-show-hints="true"] .cameraAction::after { animation-delay: 200ms; }
+
+.action:hover,
+.action:focus-visible {
+  outline: none;
+  color: #17130d;
+  border-color: rgba(201, 150, 46, 0.44);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(234, 220, 181, 0.78));
+  box-shadow:
+    0 20px 44px rgba(17, 17, 19, 0.15),
+    0 0 0 4px rgba(201, 150, 46, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.action:active {
+  scale: 0.91;
+}
+
+.reviewAction {
+  left: 8px;
+  top: 98px;
+  --origin-x: 122px;
+  --origin-y: 8px;
+  --origin-rotate: 22deg;
+  animation-delay: 40ms;
+}
+
+.addAction {
+  right: 21px;
+  top: 25px;
+  --origin-x: -112px;
+  --origin-y: 76px;
+  --origin-rotate: -24deg;
+  animation-delay: 100ms;
+}
+
+.cameraAction {
+  right: 4px;
+  bottom: 24px;
+  --origin-x: -128px;
+  --origin-y: -63px;
+  --origin-rotate: 24deg;
+  animation-delay: 160ms;
+}
+
+.closeAction {
+  right: 72px;
+  bottom: 5px;
+  width: 34px;
+  height: 34px;
+  border-radius: 13px;
+  --origin-x: -72px;
+  --origin-y: -42px;
+  --origin-rotate: 18deg;
+  animation: orbitActionIn 440ms cubic-bezier(0.18, 1.25, 0.35, 1) 220ms forwards;
+}
+
+.menu[data-phase="closing"] .action,
+.menu[data-phase="closing"] .closeAction {
+  pointer-events: none;
+  animation: orbitActionOut 300ms cubic-bezier(0.4, 0, 0.8, 0.2) forwards;
+}
+
+.menu[data-phase="closing"] .reviewAction { animation-delay: 130ms; }
+.menu[data-phase="closing"] .addAction { animation-delay: 70ms; }
+.menu[data-phase="closing"] .cameraAction { animation-delay: 10ms; }
+.menu[data-phase="closing"] .closeAction { animation-delay: 0ms; }
+
+.menu[data-phase="closing"] .orbitLine,
+.menu[data-phase="closing"] .signalRing {
+  animation: orbitLineOut 250ms ease-in forwards;
+}
+
+@keyframes orbitBackdropIn {
+  to { opacity: 1; }
+}
+
+@keyframes orbitBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes orbitLineIn {
+  0% { opacity: 0; transform: rotate(-28deg) scale(0.72); }
+  55% { opacity: 0.8; }
+  100% { opacity: 1; transform: rotate(8deg) scale(1); }
+}
+
+@keyframes orbitLineOut {
+  to { opacity: 0; transform: rotate(24deg) scale(0.74); }
+}
+
+@keyframes signalExpand {
+  0% { opacity: 0.52; transform: scale(0.5); }
+  100% { opacity: 0; transform: scale(1.72); }
+}
+
+@keyframes orbitActionIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--origin-x), var(--origin-y), 0) scale(0.54)
+      rotate(var(--origin-rotate));
+  }
+  68% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.07) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0);
+  }
+}
+
+@keyframes orbitActionOut {
+  0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--origin-x), var(--origin-y), 0) scale(0.42)
+      rotate(var(--origin-rotate));
+  }
+}
+
+@keyframes orbitTooltipHint {
+  0%, 15%, 100% { opacity: 0; transform: translateY(-2px) scale(0.96); }
+  28%, 72% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 370px) {
+  .menu { width: 332px; }
+  .reviewAction { left: 10px; }
+  .addAction { right: 15px; }
+  .cameraAction { right: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .orbitLine,
+  .signalRing,
+  .action,
+  .closeAction,
+  .menu[data-phase="closing"] .action,
+  .menu[data-phase="closing"] .closeAction,
+  .menu[data-phase="closing"] .orbitLine,
+  .menu[data-phase="closing"] .signalRing {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

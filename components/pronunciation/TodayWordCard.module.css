@@ -1,0 +1,625 @@
+.wrapper {
+  position: relative;
+}
+
+.deckSurface {
+  --deck-accent: 164 179 196;
+  position: relative;
+  min-height: 504px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(13, 14, 17, 0.07);
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 50% 34%, rgb(var(--deck-accent) / 0.26), transparent 34%),
+    radial-gradient(circle at 18% 68%, rgb(var(--deck-accent) / 0.12), transparent 30%),
+    linear-gradient(155deg, #fbfaf6 0%, #f1f0eb 48%, #faf9f5 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 24px 55px rgba(12, 13, 16, 0.08);
+  transition: background 520ms ease;
+}
+
+.deckSurface::before {
+  content: "";
+  position: absolute;
+  inset: -24%;
+  z-index: -2;
+  background:
+    conic-gradient(
+      from 122deg at 50% 50%,
+      transparent 0deg,
+      rgb(var(--deck-accent) / 0.08) 42deg,
+      transparent 100deg,
+      rgba(255, 255, 255, 0.68) 168deg,
+      transparent 236deg,
+      rgb(var(--deck-accent) / 0.08) 310deg,
+      transparent 360deg
+    );
+  filter: blur(34px);
+  animation: ambientOrbit 16s linear infinite;
+}
+
+.deckSurface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.42), transparent 24%, transparent 75%, rgba(255, 255, 255, 0.18)),
+    repeating-linear-gradient(96deg, rgba(12, 13, 16, 0.014) 0 1px, transparent 1px 5px);
+  mix-blend-mode: soft-light;
+}
+
+@keyframes ambientOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.deckViewport {
+  position: relative;
+  height: 458px;
+  perspective: 1380px;
+  perspective-origin: 50% 44%;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.deckViewport[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.cardSlot {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  width: min(calc(100% - 72px), 286px);
+  height: 370px;
+  transform-style: preserve-3d;
+  transform-origin: 50% 82%;
+  will-change: transform, opacity, filter;
+}
+
+.card {
+  --card-bg: #f3f1eb;
+  --card-fg: #111216;
+  --card-muted: rgba(17, 18, 22, 0.48);
+  --card-line: rgba(17, 18, 22, 0.1);
+  --card-panel: rgba(255, 255, 255, 0.48);
+  --card-control: rgba(17, 18, 22, 0.07);
+  --card-control-strong: #111216;
+  --card-control-strong-fg: #f7f6f2;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 25px;
+  color: var(--card-fg);
+  background:
+    radial-gradient(circle at 76% 14%, rgba(255, 255, 255, 0.55), transparent 28%),
+    linear-gradient(148deg, color-mix(in srgb, var(--card-bg) 94%, white), var(--card-bg));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 0 1px rgba(13, 14, 17, 0.025),
+    0 4px 8px rgba(10, 11, 14, 0.08),
+    0 20px 36px rgba(10, 11, 14, 0.16);
+  transform: translateZ(0);
+}
+
+.card[data-tone="ink"] {
+  --card-bg: #111216;
+  --card-fg: #f5f4f0;
+  --card-muted: rgba(245, 244, 240, 0.5);
+  --card-line: rgba(255, 255, 255, 0.11);
+  --card-panel: rgba(255, 255, 255, 0.065);
+  --card-control: rgba(255, 255, 255, 0.09);
+  --card-control-strong: #f4f2ec;
+  --card-control-strong-fg: #111216;
+  border-color: rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 73% 12%, rgba(255, 255, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 24% 78%, rgb(var(--deck-accent) / 0.18), transparent 30%),
+    linear-gradient(148deg, #202126 0%, #0d0e11 58%, #050506 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.16),
+    0 22px 42px rgba(5, 5, 7, 0.26);
+}
+
+.card[data-tone="silver"] {
+  --card-bg: #d6d6d3;
+  --card-fg: #101115;
+  --card-muted: rgba(16, 17, 21, 0.48);
+  --card-line: rgba(16, 17, 21, 0.11);
+  --card-panel: rgba(255, 255, 255, 0.38);
+  --card-control: rgba(16, 17, 21, 0.07);
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.8), transparent 31%, rgba(255, 255, 255, 0.2) 62%, transparent),
+    linear-gradient(148deg, #eeeeeb 0%, #c7c8c8 47%, #e1e0db 100%);
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 16% 22%, currentColor 0 0.55px, transparent 0.8px),
+    radial-gradient(circle at 76% 64%, currentColor 0 0.45px, transparent 0.75px),
+    radial-gradient(circle at 42% 83%, currentColor 0 0.5px, transparent 0.8px);
+  background-size: 7px 9px, 11px 13px, 13px 8px;
+  mix-blend-mode: soft-light;
+}
+
+.orbit {
+  position: absolute;
+  top: -58px;
+  right: -72px;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+  border: 1px solid var(--card-line);
+  border-radius: 50%;
+  transform: rotate(-18deg) scaleY(0.46);
+}
+
+.orbit::before,
+.orbit::after {
+  content: "";
+  position: absolute;
+  border: 1px solid var(--card-line);
+  border-radius: 50%;
+}
+
+.orbit::before {
+  inset: 24px;
+}
+
+.orbit::after {
+  inset: 58px;
+  background: radial-gradient(circle, var(--card-fg) 0 2px, transparent 2.5px);
+}
+
+.cardInner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--card-muted);
+}
+
+.serial {
+  margin-top: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--card-muted);
+}
+
+.markLink,
+.markStatic {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--card-line);
+  border-radius: 50%;
+  color: var(--card-fg);
+  background: var(--card-control);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.markLink {
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.markLink:active {
+  transform: scale(0.9);
+}
+
+.mark {
+  width: 29px;
+  height: 29px;
+}
+
+.hero {
+  margin-top: 21px;
+}
+
+.primaryWord {
+  font-size: clamp(30px, 9vw, 44px);
+  font-weight: 760;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+}
+
+.primaryWord[data-word-size="medium"] {
+  font-size: clamp(27px, 7.2vw, 34px);
+}
+
+.primaryWord[data-word-size="long"] {
+  font-size: clamp(23px, 6.4vw, 29px);
+  letter-spacing: -0.045em;
+}
+
+.primaryWord[data-word-size="extra-long"] {
+  overflow-wrap: anywhere;
+  font-size: clamp(20px, 5.6vw, 25px);
+  letter-spacing: -0.035em;
+  white-space: normal;
+}
+
+.secondaryWord {
+  margin-top: 9px;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: var(--card-muted);
+}
+
+.phonetic {
+  margin-top: 7px;
+  min-height: 17px;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.42;
+  letter-spacing: 0.015em;
+  color: var(--card-muted);
+}
+
+.soundGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 21px;
+}
+
+.soundButton {
+  display: flex;
+  min-width: 0;
+  min-height: 62px;
+  align-items: center;
+  justify-content: flex-start;
+  border: 1px solid var(--card-line);
+  border-radius: 15px;
+  padding: 10px 12px;
+  color: var(--card-fg);
+  background: var(--card-control);
+  backdrop-filter: blur(13px);
+  -webkit-backdrop-filter: blur(13px);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.soundButton:first-child {
+  color: var(--card-control-strong-fg);
+  background: var(--card-control-strong);
+}
+
+.soundButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.soundButton:disabled {
+  cursor: default;
+}
+
+.soundCopy {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.soundLabel {
+  display: block;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.52;
+}
+
+.soundValue {
+  display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.soundValue[data-script="english"] {
+  font-size: 8.5px;
+  letter-spacing: -0.015em;
+}
+
+.soundValue[data-script="zhuyin"] {
+  font-size: 9px;
+  letter-spacing: 0.01em;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--card-line);
+}
+
+.swipeMicrocopy {
+  overflow: hidden;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--card-muted);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.detailLink,
+.detailStatic {
+  display: inline-flex;
+  height: 29px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  width: 31px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--card-fg);
+  background: var(--card-control);
+}
+
+.detailLink:active {
+  transform: scale(0.95);
+}
+
+.deckMeta {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 25;
+  display: flex;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  pointer-events: none;
+}
+
+.navButton {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(12, 13, 16, 0.08);
+  border-radius: 50%;
+  color: rgba(12, 13, 16, 0.62);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 18px rgba(12, 13, 16, 0.07);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  pointer-events: auto;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.navButton:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.navButton:disabled {
+  opacity: 0.35;
+}
+
+.counter {
+  min-width: 72px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-align: center;
+  color: rgba(12, 13, 16, 0.48);
+}
+
+.liveRegion {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.loading,
+.empty {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(13, 14, 17, 0.07);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(174, 186, 201, 0.24), transparent 30%),
+    #f5f3ed;
+  box-shadow: 0 20px 48px rgba(12, 13, 16, 0.08);
+}
+
+.loading {
+  height: 360px;
+  padding: 24px;
+}
+
+.empty {
+  padding: 26px;
+}
+
+.skeletonLine,
+.skeletonTitle,
+.skeletonPanel {
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(15, 16, 19, 0.06), rgba(255, 255, 255, 0.72), rgba(15, 16, 19, 0.06));
+  background-size: 220% 100%;
+  animation: skeletonFlow 1.6s ease-in-out infinite;
+}
+
+.skeletonLine {
+  width: 88px;
+  height: 9px;
+}
+
+.skeletonTitle {
+  width: 62%;
+  height: 42px;
+  margin-top: 28px;
+}
+
+.skeletonPanel {
+  height: 58px;
+  margin-top: 22px;
+  border-radius: 16px;
+}
+
+@keyframes skeletonFlow {
+  to {
+    background-position: -120% 0;
+  }
+}
+
+.emptyEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(12, 13, 16, 0.4);
+}
+
+.emptyTitle {
+  margin-top: 12px;
+  font-size: 28px;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.emptyDescription {
+  max-width: 290px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(12, 13, 16, 0.54);
+}
+
+.emptyActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.emptyPrimary,
+.emptySecondary {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.emptyPrimary {
+  color: white;
+  background: #111216;
+}
+
+.emptySecondary {
+  border: 1px solid rgba(12, 13, 16, 0.1);
+  color: #111216;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+@media (max-width: 380px) {
+  .deckSurface {
+    min-height: 490px;
+  }
+
+  .deckViewport {
+    height: 444px;
+  }
+
+  .cardSlot {
+    top: 54px;
+    width: min(calc(100% - 64px), 282px);
+    height: 362px;
+  }
+
+  .cardInner {
+    padding: 18px;
+  }
+
+  .hero {
+    margin-top: 18px;
+  }
+
+  .soundGrid {
+    margin-top: 17px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deckSurface::before,
+  .skeletonLine,
+  .skeletonTitle,
+  .skeletonPanel {
+    animation: none;
+  }
+
+  .cardSlot,
+  .deckSurface,
+  .navButton,
+  .soundButton,
+  .markLink {
+    transition-duration: 1ms !important;
+  }
+}

@@ -1,15 +1,26 @@
 "use client";
 
+import type { RefObject } from "react";
+
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import type { YumiFeedingPhase } from "@/hooks/pet/useYumiFeedingSequence";
+import type {
+  YumiLookTarget,
+  YumiOrbitPhase,
+} from "@/hooks/pet/useYumiOrbitMenu";
 import type { GrowthStage } from "@/lib/pet/moodEngine";
 import type { YumiMood } from "@/lib/pet/types";
 
+import YumiFeedingFace from "./YumiFeedingFace";
 import styles from "./YumiMark.module.css";
 
 type YumiMarkProps = {
   mood: YumiMood;
   isWaking: boolean;
   isEating: boolean;
+  feedingPhase?: YumiFeedingPhase;
+  chewBeat?: number;
+  feedTargetRef?: RefObject<HTMLSpanElement | null>;
   growthStage: GrowthStage;
   crownEarned: boolean;
   // One-shot: a brief downward glance, used right after Yumi wakes up to
@@ -17,6 +28,8 @@ type YumiMarkProps = {
   glanceDown?: boolean;
   onWakeAnimationEnd?: () => void;
   onEatAnimationEnd?: () => void;
+  orbitPhase?: YumiOrbitPhase;
+  lookTarget?: YumiLookTarget;
 };
 
 // Yumi is the same breathing "E"-mark used on the splash screen, loader,
@@ -27,14 +40,30 @@ export default function YumiMark({
   mood,
   isWaking,
   isEating,
+  feedingPhase,
+  chewBeat = 0,
+  feedTargetRef,
   growthStage,
   crownEarned,
   glanceDown = false,
   onWakeAnimationEnd,
   onEatAnimationEnd,
+  orbitPhase = "closed",
+  lookTarget = "viewer",
 }: YumiMarkProps) {
+  const resolvedFeedingPhase =
+    feedingPhase ?? (isEating ? "chewing" : "idle");
+
   return (
     <div className={styles.stage}>
+      {orbitPhase !== "closed" ? (
+        <div className={styles.menuAura} data-phase={orbitPhase} aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      ) : null}
+
       {growthStage >= 2 ? <div className={styles.glowRing} aria-hidden="true" /> : null}
 
       {growthStage >= 1 ? (
@@ -67,7 +96,7 @@ export default function YumiMark({
         </svg>
       ) : null}
 
-      {isEating ? (
+      {resolvedFeedingPhase !== "idle" ? (
         <div className={styles.sparkleBurst} aria-hidden="true">
           <span />
           <span />
@@ -80,16 +109,25 @@ export default function YumiMark({
       <div className={styles.groundShadow} aria-hidden="true" />
 
       <div
-        className={`${styles.shell} ${isEating ? styles.eating : ""}`}
+        className={styles.shell}
         data-mood={mood}
         data-waking={isWaking ? "true" : "false"}
         data-glance={glanceDown ? "true" : "false"}
+        data-feeding={resolvedFeedingPhase}
+        data-chew-beat={chewBeat}
+        data-orbit={orbitPhase}
+        data-look={lookTarget}
         onAnimationEnd={(event) => {
           if (event.animationName.startsWith("wake")) {
             onWakeAnimationEnd?.();
           }
 
-          if (event.animationName.startsWith("eat")) {
+          if (
+            event.animationName.startsWith("eat")
+            || event.animationName.startsWith("markBite")
+            || event.animationName.startsWith("markChew")
+            || event.animationName.startsWith("markSwallow")
+          ) {
             onEatAnimationEnd?.();
           }
         }}
@@ -101,6 +139,12 @@ export default function YumiMark({
           lowerLidClassName={styles.lowerLid}
           surfaceColor="#faf7f0"
           highlightColor="#ffffff"
+        />
+
+        <YumiFeedingFace
+          phase={resolvedFeedingPhase}
+          chewBeat={chewBeat}
+          targetRef={feedTargetRef}
         />
       </div>
     </div>

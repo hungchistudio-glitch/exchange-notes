@@ -13,6 +13,8 @@ import Link from "next/link";
 
 import { Bookmark, Check as CheckMark, ListChecks, Plus, Trash2, Volume2, X } from "lucide-react";
 
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+
 import { getProfileById, getOrCreateConversationWithFriend, markConversationRead, type FriendProfile } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
@@ -171,6 +173,11 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const deleteMotion = useSheetMotion({
+    open: confirmOpen,
+    onClose: () => setConfirmOpen(false),
+    closeDisabled: deleting,
+  });
 
   const [friendIsTyping, setFriendIsTyping] = useState(false);
   const [receiptsByMessageId, setReceiptsByMessageId] = useState<Map<number, MessageReceiptInfo>>(new Map());
@@ -1100,14 +1107,35 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
         </div>
       </div>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-          <div className="w-full max-w-sm rounded-t-[28px] bg-white p-5 sm:rounded-[28px]">
+      {deleteMotion.rendered && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          <button
+            type="button"
+            aria-label={copy.closeDeleteConfirmation}
+            onClick={deleteMotion.requestClose}
+            disabled={deleting}
+            className={`absolute inset-0 bg-black/40 ${deleteMotion.backdropClassName}`}
+            {...deleteMotion.backdropProps}
+          />
+
+          <div
+            role="dialog"
+            aria-modal="true"
+            {...deleteMotion.panelProps}
+            className={`${deleteMotion.panelClassName} relative z-10 w-full max-w-sm rounded-t-[28px] bg-white p-5 sm:rounded-[28px]`}
+          >
+            <div
+              className={`${deleteMotion.handleClassName} -mx-5 -mt-5 flex h-9 items-center justify-center sm:hidden`}
+              {...deleteMotion.handleProps}
+            >
+              <span className="h-1 w-10 rounded-full bg-black/15" />
+            </div>
+
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-bold">
                 {selectedIds.size === 1 ? copy.deleteDialogMessage.replace("{count}", "1") : copy.deleteDialogMessages.replace("{count}", String(selectedIds.size))}
               </h2>
-              <button type="button" onClick={() => setConfirmOpen(false)} aria-label={copy.closeDeleteConfirmation} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60">
+              <button type="button" onClick={deleteMotion.requestClose} disabled={deleting} aria-label={copy.closeDeleteConfirmation} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 disabled:opacity-50">
                 <X size={16} />
               </button>
             </div>
@@ -1115,7 +1143,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
             <p className="mt-2 text-sm leading-6 text-black/55">{copy.deleteDialogDescription}</p>
 
             <div className="mt-5 flex gap-2">
-              <button type="button" onClick={() => setConfirmOpen(false)} className="flex-1 rounded-2xl border border-black/[0.08] bg-white py-3 text-sm font-semibold">
+              <button type="button" onClick={deleteMotion.requestClose} disabled={deleting} className="flex-1 rounded-2xl border border-black/[0.08] bg-white py-3 text-sm font-semibold disabled:opacity-50">
                 {copy.cancel}
               </button>
               <button type="button" onClick={() => void handleDeleteSelected()} disabled={deleting} className="flex-1 rounded-2xl bg-red-500 py-3 text-sm font-semibold text-white disabled:opacity-50">

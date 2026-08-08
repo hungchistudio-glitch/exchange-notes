@@ -277,6 +277,7 @@ export type TranslationDictionary = {
       selectedImage: string;
       analyzeAgain: string;
       chooseAnother: string;
+      focusHint: string;
     };
 
     analysis: {
@@ -331,6 +332,9 @@ export type TranslationDictionary = {
       cameraNotReady: string;
       captureImage: string;
       identifyImage: string;
+      identifyBusy: string;
+      identifyDailyLimit: string;
+      identifyTimeout: string;
       loginBeforeSave: string;
       duplicateWord: string;
       saveWord: string;
@@ -416,6 +420,10 @@ export type TranslationDictionary = {
       emptyDescription: string;
       playEnglishExampleAriaLabel: string;
       playChineseExampleAriaLabel: string;
+      previousWord: string;
+      nextWord: string;
+      swipeHint: string;
+      positionLabel: string;
     };
 
     quickStart: {
@@ -744,6 +752,17 @@ export type TranslationDictionary = {
       feedAriaLabel: string;
       cookieTypeLetter: string;
       cookieTypeZhuyin: string;
+      feedingAnticipating: string;
+      feedingEating: string;
+      feedingSwallowing: string;
+      feedingSatisfied: string;
+      openActionsAriaLabel: string;
+      closeActionsAriaLabel: string;
+      actionMenuAriaLabel: string;
+      menuPrompt: string;
+      reviewActionLabel: string;
+      addWordActionLabel: string;
+      cameraActionLabel: string;
       reviewLinkLabel: string;
       collectionsLinkLabel: string;
     };
@@ -770,6 +789,10 @@ export type TranslationDictionary = {
       lookingUp: string;
       lookUpWord: string;
       wordFound: string;
+      closeSearchAriaLabel: string;
+      inputPlaceholder: string;
+      clearSearchAriaLabel: string;
+      lowConfidenceNotice: string;
     };
 
     collections: {
@@ -806,10 +829,12 @@ export type TranslationDictionary = {
         fallbackTitle: string;
         backToCollections: string;
         loadingError: string;
+        loading: string;
         removeError: string;
         emptyTitle: string;
         emptyDescription: string;
         browseVocabulary: string;
+        removeWordAriaLabel: string;
         word: string;
         words: string;
         inCollection: string;
@@ -850,6 +875,9 @@ export type TranslationDictionary = {
       };
 
       closeDetailsAriaLabel: string;
+      expandDetailsAriaLabel: string;
+      collapseDetailsAriaLabel: string;
+      openFullDetailsAriaLabel: string;
       editWordAriaLabel: string;
       closeAriaLabel: string;
       learningStatusLabel: string;
@@ -863,6 +891,8 @@ export type TranslationDictionary = {
       shareWordAriaLabel: string;
       deleteWordAriaLabel: string;
       listenAriaLabel: string;
+      markAsMastered: string;
+      markAsLearning: string;
 
       reviewPanel: {
         title: string;
@@ -935,6 +965,10 @@ export type TranslationDictionary = {
       cancel: string;
       clear: string;
       noMatchingWords: string;
+      loadingVocabulary: string;
+      firstWordTitle: string;
+      firstWordDescription: string;
+      discoverWord: string;
 
       statuses: {
         all: string;
@@ -948,10 +982,24 @@ export type TranslationDictionary = {
 
       sort: string;
       openLibrary: string;
+      openCollections: string;
+      toolbarAriaLabel: string;
+      lookupToolbarAriaLabel: string;
+      cameraLookup: string;
+      photoLookup: string;
+      voiceSearch: string;
+      voiceListening: string;
+      cardsView: string;
+      compactView: string;
       closeSortMenu: string;
 
       sortOptions: {
         new: string;
+        old: string;
+        alphabetical: string;
+        reverseAlphabetical: string;
+        recentlyReviewed: string;
+        leastReviewed: string;
         forYou: string;
         trending: string;
       };
@@ -1099,6 +1147,75 @@ export type TranslationDictionary = {
       sheetDescription: string;
       englishDescription: string;
       traditionalChineseDescription: string;
+    };
+
+    scriptableWidget: {
+      rowTitle: string;
+      rowDescription: string;
+      statusReady: string;
+      statusNotConfigured: string;
+      statusRevoked: string;
+      statusLoading: string;
+      statusUnavailable: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      activeTitle: string;
+      activeDescription: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      revokedTitle: string;
+      revokedDescription: string;
+      unavailableTitle: string;
+      unavailableDescription: string;
+      tokenPrefixLabel: string;
+      createdLabel: string;
+      lastUsedLabel: string;
+      neverUsed: string;
+      notAvailable: string;
+      oneTimeTitle: string;
+      oneTimeDescription: string;
+      generate: string;
+      generating: string;
+      generateSuccess: string;
+      rotate: string;
+      rotating: string;
+      rotateConfirmTitle: string;
+      rotateConfirmDescription: string;
+      confirmRotate: string;
+      revoke: string;
+      revoking: string;
+      revokeSuccess: string;
+      revokeConfirmTitle: string;
+      revokeConfirmDescription: string;
+      confirmRevoke: string;
+      refresh: string;
+      close: string;
+      copy: string;
+      copied: string;
+      cancel: string;
+      authenticationError: string;
+      loadError: string;
+      actionError: string;
+      copyError: string;
+    };
+
+    iphoneWidget: {
+      rowTitle: string;
+      rowDescription: string;
+      statusNative: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      nativeTitle: string;
+      nativeDescription: string;
+      addTitle: string;
+      stepOne: string;
+      stepTwo: string;
+      stepThree: string;
+      stepFour: string;
+      behaviorTitle: string;
+      behaviorDescription: string;
+      openAppNote: string;
+      done: string;
     };
 
     webPush: {

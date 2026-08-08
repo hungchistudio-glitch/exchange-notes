@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
+import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
   computeHomeContext,
@@ -14,10 +17,12 @@ import {
   type HomeReactionMood,
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
+import { getPronunciationData } from "@/lib/pronunciation";
 import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
+import { postYumiWidgetUpdate } from "@/lib/widget/yumiWidgetBridge";
 
 import styles from "./YumiHomeStage.module.css";
 
@@ -28,7 +33,7 @@ type YumiHomeStageProps = {
   onMoodChange?: (mood: HomeMood) => void;
 };
 
-const REACTION_DURATION_MS = 2200;
+const REACTION_DURATION_MS = 3900;
 const DANCE_DURATION_MS = 4200;
 const WELCOME_DURATION_MS = 3600;
 const LONELY_TEAR_DURATION_MS = 2600;
@@ -36,14 +41,47 @@ const MAX_PUPIL_OFFSET = 9;
 // Fallback durations, slightly longer than the CSS animations they back
 // up: onAnimationEnd never fires when prefers-reduced-motion disables the
 // animation entirely (or in any other edge case where the event is
-// missed), which would otherwise leave Yumi frozen in the intro/eating
-// pose forever instead of returning to its always-on idle loop.
+// missed), which would otherwise leave Yumi frozen in the intro pose
+// forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 1900;
-const EAT_FALLBACK_MS = 1100;
+const YUMI_DAILY_WORD_GOAL = 3;
 
 function todayKey() {
   const now = new Date();
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+}
+
+function localDateKey(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function newestWidgetWords(items: VocabularyItem[], limit = 12) {
+  const sorted = [...items].sort((left, right) => {
+    const leftTime = new Date(left.created_at).getTime();
+    const rightTime = new Date(right.created_at).getTime();
+
+    return (Number.isNaN(rightTime) ? 0 : rightTime)
+      - (Number.isNaN(leftTime) ? 0 : leftTime);
+  });
+
+  const todayWords = sorted.filter(
+    (item) => localDateKey(item.created_at) === todayKey(),
+  );
+
+  const ordered = [
+    ...todayWords,
+    ...sorted.filter(
+      (item) => localDateKey(item.created_at) !== todayKey(),
+    ),
+  ];
+
+  return ordered.slice(0, limit);
 }
 
 function readFlag(name: string) {
@@ -121,7 +159,8 @@ function scrollToDailyFocus() {
 // the same yumi_pet_state row (and cookie tray) as the Vocabulary page's
 // YumiCompanion, so it's the same pet remembering the same history.
 export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  const { learningLanguage } = useLearningLanguageContext();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
 
@@ -129,7 +168,6 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const [isWaking, setIsWaking] = useState(true);
   const [introMood, setIntroMood] = useState<HomeMood | null>(null);
   const [reaction, setReaction] = useState<HomeReactionMood | null>(null);
-  const [eatingId, setEatingId] = useState<string | null>(null);
   const [roamX, setRoamX] = useState(0);
   const [inView, setInView] = useState(true);
   const [pupilOffset, setPupilOffset] = useState<{ x: number; y: number } | null>(null);
@@ -137,17 +175,47 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const stageRef = useRef<HTMLDivElement>(null);
   const yumiZoneRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<HTMLDivElement>(null);
+  const feedTargetRef = useRef<HTMLSpanElement>(null);
   const reactionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roamTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wakeFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const eatFallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotionRef = useRef(false);
   const stateRef = useRef({ inView: true, eating: false, intro: false });
+
+  const feeding = useYumiFeedingSequence({
+    onConsume: handleCookieConsumed,
+  });
 
   const context = computeHomeContext(items);
   const steadyMood = computeSteadyHomeMood(context);
   const displayMood: HomeMood = introMood ?? steadyMood;
+
+  const widgetWords = useMemo(
+    () => newestWidgetWords(items),
+    [items],
+  );
+
+  const widgetWordPayloads = useMemo(
+    () =>
+      widgetWords.map((item) => {
+        const pronunciation = getPronunciationData({
+          english: item.word,
+          chinese: item.translation,
+        });
+
+        return {
+          id: item.id,
+          englishWord: item.word.trim(),
+          traditionalChineseWord: item.translation.trim(),
+          pinyin: pronunciation.pinyin ?? "",
+          zhuyin: pronunciation.zhuyin ?? "",
+        };
+      }),
+    [widgetWords],
+  );
+
+  const widgetWord = widgetWordPayloads[0] ?? null;
 
   // Kept in a ref (rather than read directly) so the roam-scheduling
   // timer below always sees the latest values without needing to be torn
@@ -155,10 +223,10 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   useEffect(() => {
     stateRef.current = {
       inView,
-      eating: Boolean(eatingId),
+      eating: feeding.isFeeding,
       intro: Boolean(introMood),
     };
-  }, [inView, eatingId, introMood]);
+  }, [inView, feeding.isFeeding, introMood]);
 
   useEffect(() => {
     reducedMotionRef.current =
@@ -295,18 +363,12 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     return () => {
       if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
       if (introTimeoutRef.current) clearTimeout(introTimeoutRef.current);
-      if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
     };
   }, []);
 
   function handleWakeEnd() {
     if (wakeFallbackRef.current) clearTimeout(wakeFallbackRef.current);
     setIsWaking(false);
-  }
-
-  function handleEatEnd() {
-    if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
-    setEatingId(null);
   }
 
   const cookies: Cookie[] = buildAvailableCookies(
@@ -356,8 +418,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     setPupilOffset({ x: (dx / distance) * clamped, y: (dy / distance) * clamped });
   }
 
-  function handleFeed(cookie: Cookie) {
-    setEatingId(cookie.id);
+  function handleCookieConsumed(cookie: Cookie) {
     setReaction(cookieHomeReaction(cookie.type));
 
     if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
@@ -366,15 +427,63 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
       REACTION_DURATION_MS,
     );
 
-    if (eatFallbackRef.current) clearTimeout(eatFallbackRef.current);
-    eatFallbackRef.current = setTimeout(() => setEatingId(null), EAT_FALLBACK_MS);
-
     void persistFeed(cookie);
   }
 
   const lines = getStatusLines(displayMood, context.wordsToday, copy);
-  const primaryText = reaction ? getReactionText(reaction, copy) : lines.primary;
-  const secondaryText = reaction ? "" : lines.secondary;
+
+  useEffect(() => {
+    postYumiWidgetUpdate({
+      cookieCount: Math.min(context.wordsToday, YUMI_DAILY_WORD_GOAL),
+      cookieGoal: YUMI_DAILY_WORD_GOAL,
+      englishWord: widgetWord?.englishWord ?? "",
+      traditionalChineseWord: widgetWord?.traditionalChineseWord ?? "",
+      pinyin: widgetWord?.pinyin ?? "",
+      zhuyin: widgetWord?.zhuyin ?? "",
+      words: widgetWordPayloads,
+      interfaceLanguage: language,
+      learningLanguage,
+      moodKey: displayMood,
+      localizedText: {
+        headline: lines.primary,
+        hint: lines.secondary,
+        emptyWord: t.home.todayWord.emptyHeading,
+        cookieUnit: "",
+      },
+    });
+  }, [
+    context.wordsToday,
+    displayMood,
+    language,
+    learningLanguage,
+    lines.primary,
+    lines.secondary,
+    t.home.todayWord.emptyHeading,
+    widgetWord?.englishWord,
+    widgetWord?.pinyin,
+    widgetWord?.traditionalChineseWord,
+    widgetWord?.zhuyin,
+    widgetWordPayloads,
+  ]);
+
+  const feedingText = (() => {
+    switch (feeding.phase) {
+      case "anticipating":
+        return cookieCopy.feedingAnticipating;
+      case "biting":
+      case "chewing":
+        return cookieCopy.feedingEating;
+      case "swallowing":
+        return cookieCopy.feedingSwallowing;
+      case "satisfied":
+        return cookieCopy.feedingSatisfied;
+      case "idle":
+        return null;
+    }
+  })();
+  const primaryText = feedingText
+    ?? (reaction ? getReactionText(reaction, copy) : lines.primary);
+  const secondaryText = feeding.isFeeding || reaction ? "" : lines.secondary;
 
   return (
     <div ref={stageRef} className={styles.stage}>
@@ -395,11 +504,10 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
             <div
               ref={figureRef}
               className={`${styles.figure} ${isWaking ? styles.waking : ""} ${
-                eatingId ? styles.eating : ""
-              } ${!eatingId && reaction ? styles.satisfied : ""} ${
                 pupilOffset ? styles.tracking : ""
               }`}
               data-mood={displayMood}
+              data-feeding={feeding.phase}
               style={
                 pupilOffset
                   ? ({
@@ -410,7 +518,6 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
               }
               onAnimationEnd={(event) => {
                 if (event.animationName.startsWith("homeWake")) handleWakeEnd();
-                if (event.animationName.startsWith("homeEat")) handleEatEnd();
               }}
             >
               {displayMood === "dancing" || displayMood === "welcomeBack" ? (
@@ -434,6 +541,11 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
                 surfaceColor="#faf7f0"
                 highlightColor="#ffffff"
               />
+
+              <YumiFeedingFace
+                phase={feeding.phase}
+                targetRef={feedTargetRef}
+              />
             </div>
           </div>
         </div>
@@ -442,9 +554,11 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
           <CookieTray
             cookies={cookies}
             yumiZoneRef={yumiZoneRef}
-            onFeed={handleFeed}
+            onFeed={feeding.consume}
+            onFeedStart={feeding.beginApproach}
+            feedTargetRef={feedTargetRef}
             onDragPoint={handleDragPoint}
-            disabled={!petState}
+            disabled={!petState || feeding.isFeeding}
             copy={cookieCopy}
             maxVisible={3}
             hideHint

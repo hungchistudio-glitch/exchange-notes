@@ -1,8 +1,9 @@
 "use client";
 
 import { LoaderCircle, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import type { FriendProfile } from "@/lib/friends";
 
 type FriendPickerModalProps = {
@@ -25,47 +26,45 @@ export default function FriendPickerModal({
   onRetry,
 }: FriendPickerModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const motion = useSheetMotion({ onClose });
 
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setMounted(true));
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    dialogRef.current?.focus();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+    const frame = requestAnimationFrame(() => dialogRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
-      onClick={onClose}
+      className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center"
     >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={motion.requestClose}
+        className={`absolute inset-0 bg-black/30 backdrop-blur-sm ${motion.backdropClassName}`}
+        {...motion.backdropProps}
+      />
+
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="send-to-partner-title"
         tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-        className={`flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl transition-transform duration-300 ease-out sm:rounded-[28px] ${
-          mounted
-            ? "translate-y-0"
-            : "translate-y-full sm:translate-y-4 sm:opacity-0"
-        }`}
+        {...motion.panelProps}
+        className={`${motion.panelClassName} relative z-10 flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl sm:rounded-[28px]`}
         style={{
+          ...motion.panelProps.style,
           maxHeight: "min(78vh, 640px)",
           paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
         }}
       >
-        <div className="mx-auto mt-3 h-1 w-9 shrink-0 rounded-full bg-black/15 sm:hidden" />
+        <div
+          className={`${motion.handleClassName} flex h-8 shrink-0 items-center justify-center sm:hidden`}
+          {...motion.handleProps}
+        >
+          <span className="h-1 w-9 rounded-full bg-black/15" />
+        </div>
 
         <div className="flex shrink-0 items-center justify-between px-6 pb-3 pt-3">
           <h2
@@ -77,7 +76,7 @@ export default function FriendPickerModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={motion.requestClose}
             aria-label="Close"
             className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
           >

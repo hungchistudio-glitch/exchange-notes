@@ -1,5 +1,8 @@
-import { cn } from "@/lib/utils";
+"use client";
+
+import { cn, insertValues } from "@/lib/utils";
 import { Display, Title } from "@/components/ui/Typography";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
@@ -10,13 +13,16 @@ type Props = {
    * language the user is learning (see isLearningChinese from
    * LearningLanguageContext) — NOT the interface display language. */
   variant?: "primary" | "secondary";
+  showSpeechButton?: boolean;
 };
 
 export default function VocabularyTranslation({
   text,
   className,
   variant = "secondary",
+  showSpeechButton = true,
 }: Props) {
+  const { t } = useTranslation();
   const normalizedText = text.trim();
 
   if (!normalizedText) {
@@ -36,21 +42,27 @@ export default function VocabularyTranslation({
         className={
           variant === "primary"
             ? "min-w-0 flex-1 break-words text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[34px]"
-            : "min-w-0 flex-1 break-words text-[22px] font-normal leading-[1.4] tracking-[-0.02em] text-black/45"
+            // CJK glyphs carry more visual weight than Latin at the same
+            // size, so the demoted Chinese line needs to sit a step lower
+            // than the demoted English line (see VocabularyWord) to read
+            // as genuinely secondary rather than as a second headline.
+            : "min-w-0 flex-1 break-words text-[20px] font-normal leading-[1.45] tracking-[-0.01em] text-black/35"
         }
       >
         {normalizedText}
       </TextComponent>
 
-      <div className="shrink-0">
+      {showSpeechButton ? <div className="shrink-0">
         <VocabularySpeechButton
           text={normalizedText}
           language="zh-TW"
-          label={`播放 ${normalizedText}`}
+          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+            text: normalizedText,
+          })}
           size="sm"
           prominence={variant}
         />
-      </div>
+      </div> : null}
     </div>
   );
 }

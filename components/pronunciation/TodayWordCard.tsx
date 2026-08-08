@@ -1,27 +1,220 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { BookOpen, Camera, Plus, Volume2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Camera,
+  Plus,
+} from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
-import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
-import { getPronunciationData } from "@/lib/pronunciation";
-import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
-import type { VocabularyItem } from "@/lib/types/app";
-
-import useTranslation from "@/hooks/i18n/useTranslation";
+import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import type { TranslationDictionary } from "@/lib/i18n/types";
+import { getPronunciationData } from "@/lib/pronunciation";
+import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
+import type { VocabularyItem } from "@/lib/types/app";
+import {
+  fetchVocabulary,
+  getCurrentUser,
+} from "@/lib/vocabulary/repository";
+
+import styles from "./TodayWordCard.module.css";
+
+type TodayWordCopy = TranslationDictionary["home"]["todayWord"];
+type VocabularyCopy = TranslationDictionary["vocabulary"];
+
+type CardTone = "paper" | "ink" | "silver";
+
+type GestureState = {
+  x: number;
+  dragging: boolean;
+  transition: "commit" | "cancel" | null;
+};
+
+type PointerState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  lastX: number;
+  lastTime: number;
+  velocityX: number;
+  currentX: number;
+  dragging: boolean;
+  blocked: boolean;
+};
+
+type DeckEntry = {
+  index: number;
+  offset: number;
+  item: VocabularyItem;
+};
+
+const INITIAL_GESTURE: GestureState = {
+  x: 0,
+  dragging: false,
+  transition: null,
+};
+
+const COMMIT_DURATION_MS = 440;
+const CANCEL_DURATION_MS = 360;
+const MAX_VISIBLE_CARDS = 7;
+
+const DECK_ACCENTS = [
+  "154 174 194",
+  "185 166 195",
+  "202 181 132",
+  "145 177 169",
+  "173 177 185",
+] as const;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function centeredTranslateX(value: number) {
+  if (Math.abs(value) < 0.01) return "-50%";
+  return value < 0
+    ? `calc(-50% - ${Math.abs(value)}px)`
+    : `calc(-50% + ${value}px)`;
+}
+
+function wrapIndex(index: number, count: number) {
+  if (count <= 0) return 0;
+  return ((index % count) + count) % count;
+}
+
+function toneForCard(index: number): CardTone {
+  const tones: CardTone[] = [
+    "ink",
+    "paper",
+    "silver",
+    "paper",
+    "ink",
+    "silver",
+    "paper",
+  ];
+  return tones[index % tones.length];
+}
+
+function visibleDeckEntries(
+  items: VocabularyItem[],
+  activeIndex: number,
+): DeckEntry[] {
+  if (items.length === 0) return [];
+
+  const offsets = [0, 1, -1, 2, -2, 3, -3];
+  const seen = new Set<number>();
+  const entries: DeckEntry[] = [];
+
+  for (const offset of offsets) {
+    if (entries.length >= Math.min(items.length, MAX_VISIBLE_CARDS)) {
+      break;
+    }
+
+    const index = wrapIndex(activeIndex + offset, items.length);
+    if (seen.has(index)) continue;
+
+    seen.add(index);
+    entries.push({
+      index,
+      offset,
+      item: items[index],
+    });
+  }
+
+  return entries;
+}
+
+function replacePosition(
+  template: string,
+  current: number,
+  total: number,
+) {
+  return template
+    .replace("{current}", String(current))
+    .replace("{total}", String(total));
+}
+
+function cardVisual(
+  offset: number,
+  dragX: number,
+  deckWidth: number,
+) {
+  const progress = clamp(
+    deckWidth > 0 ? -dragX / deckWidth : 0,
+    -1,
+    1,
+  );
+  const progressAmount = Math.abs(progress);
+  const travelDirection = Math.sign(progress);
+
+  if (offset === 0) {
+    const rotationZ = -progress * 5.2;
+    const rotationY = progress * 7.5;
+    const translateY = progressAmount * 15;
+    const scale = 1 - progressAmount * 0.016;
+
+    return {
+      transform: [
+        `translate3d(${centeredTranslateX(dragX)}, ${translateY}px, 58px)`,
+        `rotateY(${rotationY}deg)`,
+        `rotateZ(${rotationZ}deg)`,
+        `scale(${scale})`,
+      ].join(" "),
+      opacity: 1 - progressAmount * 0.12,
+      filter: `brightness(${1 - progressAmount * 0.025})`,
+      zIndex: 100,
+    };
+  }
+
+  const side = Math.sign(offset);
+  const depth = Math.abs(offset);
+  const isIncoming = travelDirection !== 0 && side === travelDirection;
+  const effectiveDepth = isIncoming
+    ? Math.max(0, depth - progressAmount)
+    : depth + (travelDirection !== 0 ? progressAmount * 0.08 : 0);
+  const translateX = side * effectiveDepth * 9.5;
+  const translateY = -effectiveDepth * 13;
+  const translateZ = -effectiveDepth * 54;
+  const rotationZ = side * effectiveDepth * 1.18;
+  const rotationY = -side * effectiveDepth * 1.48;
+  const scale = 1 - effectiveDepth * 0.034;
+  const opacity = clamp(1 - effectiveDepth * 0.075, 0.48, 1);
+  const blur = effectiveDepth >= 4.5
+    ? (effectiveDepth - 4.2) * 0.34
+    : 0;
+
+  return {
+    transform: [
+      `translate3d(${centeredTranslateX(translateX)}, ${translateY}px, ${translateZ}px)`,
+      `rotateY(${rotationY}deg)`,
+      `rotateZ(${rotationZ}deg)`,
+      `scale(${scale})`,
+    ].join(" "),
+    opacity,
+    filter: `brightness(${1 - effectiveDepth * 0.018}) blur(${blur}px)`,
+    zIndex: 90 - depth * 8 + (side > 0 ? 1 : 0),
+  };
+}
 
 function LoadingCard() {
   return (
-    <section className="animate-pulse rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
-      <div className="h-3 w-24 rounded bg-neutral-200" />
-      <div className="mt-4 h-9 w-44 rounded bg-neutral-200" />
-
-      <div className="mt-6 space-y-3">
-        <div className="h-16 rounded-2xl bg-neutral-100" />
-        <div className="h-16 rounded-2xl bg-neutral-100" />
-      </div>
+    <section className={styles.loading} aria-hidden="true">
+      <div className={styles.skeletonLine} />
+      <div className={styles.skeletonTitle} />
+      <div className={styles.skeletonPanel} />
+      <div className={styles.skeletonPanel} />
     </section>
   );
 }
@@ -40,31 +233,18 @@ function EmptyCard({
   captureLabel: string;
 }) {
   return (
-    <section className="rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-        {title}
-      </p>
+    <section className={styles.empty}>
+      <p className={styles.emptyEyebrow}>{title}</p>
+      <h2 className={styles.emptyTitle}>{heading}</h2>
+      <p className={styles.emptyDescription}>{description}</p>
 
-      <h2 className="mt-3 text-2xl font-bold">{heading}</h2>
-
-      <p className="mt-2 max-w-sm text-sm leading-6 text-neutral-600">
-        {description}
-      </p>
-
-      <div className="mt-6 grid grid-cols-2 gap-2.5">
-        <Link
-          href="/vocabulary"
-          className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-black text-sm font-medium text-white transition-transform active:scale-[0.98]"
-        >
-          <Plus size={16} />
+      <div className={styles.emptyActions}>
+        <Link href="/vocabulary" className={styles.emptyPrimary}>
+          <Plus size={15} />
           {addWordLabel}
         </Link>
-
-        <Link
-          href="/capture"
-          className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-neutral-200 text-sm font-medium text-black transition-transform active:scale-[0.98]"
-        >
-          <Camera size={16} />
+        <Link href="/capture" className={styles.emptySecondary}>
+          <Camera size={15} />
           {captureLabel}
         </Link>
       </div>
@@ -72,221 +252,527 @@ function EmptyCard({
   );
 }
 
-function WordSlide({
+function DeckWordCard({
   item,
-  continueLearningLabel,
-  englishLabel,
-  zhuyinLabel,
-  exampleLabel,
-  untitledWordLabel,
-  statusLabels,
-  playEnglishExampleAriaLabel,
-  playChineseExampleAriaLabel,
+  index,
+  total,
+  interactive,
+  tone,
+  copy,
+  vocabularyCopy,
   isLearningChinese,
 }: {
   item: VocabularyItem;
-  continueLearningLabel: string;
-  englishLabel: string;
-  zhuyinLabel: string;
-  exampleLabel: string;
-  untitledWordLabel: string;
-  statusLabels: { new: string; learning: string; mastered: string };
-  playEnglishExampleAriaLabel: string;
-  playChineseExampleAriaLabel: string;
+  index: number;
+  total: number;
+  interactive: boolean;
+  tone: CardTone;
+  copy: TodayWordCopy;
+  vocabularyCopy: VocabularyCopy;
   isLearningChinese: boolean;
 }) {
-  const word = item.word?.trim() || untitledWordLabel;
+  const word = item.word?.trim() || copy.untitledWord;
   const translation = item.translation?.trim() || "";
   const pronunciation = getPronunciationData({
     english: word,
     chinese: translation,
   });
-  const example = item.example_sentence?.trim();
-  const translatedExample = item.translated_example?.trim();
-
+  const primaryWord = isLearningChinese
+    ? translation || word
+    : word;
+  const secondaryWord = isLearningChinese
+    ? word
+    : translation;
+  const primaryWordLength = Array.from(primaryWord).length;
+  const primaryWordSize = primaryWordLength >= 20
+    ? "extra-long"
+    : primaryWordLength >= 16
+      ? "long"
+      : primaryWordLength >= 13
+        ? "medium"
+        : "regular";
   const statusLabel =
     item.status === "new"
-      ? statusLabels.new
+      ? vocabularyCopy.detail.levels.new
       : item.status === "learning"
-        ? statusLabels.learning
-        : statusLabels.mastered;
+        ? vocabularyCopy.detail.levels.learning
+        : vocabularyCopy.detail.levels.mastered;
+  const detailHref =
+    `/vocabulary?widgetAction=open-word&widgetWordId=${encodeURIComponent(item.id)}`
+    + `&widgetNonce=home-${encodeURIComponent(item.id)}`;
+  const surfaceColor = tone === "ink" ? "#111216" : "#f1f0eb";
+  const highlightColor = tone === "ink" ? "#ffffff" : "#ffffff";
 
   return (
-    <section className="w-full shrink-0 snap-center rounded-[30px] border border-neutral-200 bg-white p-6 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            {statusLabel}
-          </p>
-          <h2 className="mt-2 truncate text-3xl font-bold">
-            {isLearningChinese ? translation || word : word}
-          </h2>
-        </div>
+    <article
+      className={styles.card}
+      data-tone={tone}
+      aria-hidden={interactive ? undefined : true}
+    >
+      <div className={styles.grain} aria-hidden="true" />
+      <div className={styles.orbit} aria-hidden="true" />
 
-        <Link
-          href="/vocabulary"
-          aria-label={continueLearningLabel}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-black transition-transform hover:bg-neutral-100 active:scale-90"
-        >
-          <BookOpen size={18} />
-        </Link>
-      </div>
-
-      <div className="mt-6 space-y-3">
-        {(() => {
-          const englishIsPrimary = !isLearningChinese;
-          const primaryButtonClass =
-            "flex w-full items-center justify-between rounded-2xl border border-black bg-black px-4 py-3 text-left text-white transition active:scale-[0.99]";
-          const secondaryButtonClass =
-            "flex w-full items-center justify-between rounded-2xl border border-neutral-200 px-4 py-3 text-left text-black/45 transition active:scale-[0.99]";
-          const primaryValueClass = "text-lg font-semibold";
-          const secondaryValueClass = "font-normal";
-          const primaryLabelClass = "text-sm text-white/60";
-          const secondaryLabelClass = "text-sm text-neutral-400";
-
-          const englishButton = (
-            <button
-              key="english"
-              type="button"
-              onClick={() => speakText(word, "en-US")}
-              className={
-                englishIsPrimary ? primaryButtonClass : secondaryButtonClass
-              }
-            >
-              <div>
-                <div
-                  className={
-                    englishIsPrimary ? primaryLabelClass : secondaryLabelClass
-                  }
-                >
-                  {englishLabel}
-                </div>
-                <div
-                  className={
-                    englishIsPrimary ? primaryValueClass : secondaryValueClass
-                  }
-                >
-                  {word}
-                </div>
-              </div>
-              <Volume2 size={18} />
-            </button>
-          );
-
-          const zhuyinButton = (
-            <button
-              key="zhuyin"
-              type="button"
-              onClick={() => speakText(translation, "zh-TW")}
-              className={
-                !englishIsPrimary ? primaryButtonClass : secondaryButtonClass
-              }
-            >
-              <div>
-                <div
-                  className={
-                    !englishIsPrimary
-                      ? primaryLabelClass
-                      : secondaryLabelClass
-                  }
-                >
-                  {zhuyinLabel}
-                </div>
-                <div
-                  className={`font-zhuyin tracking-[0.02em] ${
-                    !englishIsPrimary ? primaryValueClass : secondaryValueClass
-                  }`}
-                >
-                  {pronunciation.zhuyin || translation}
-                </div>
-                {pronunciation.zhuyin && (
-                  <div
-                    className={
-                      !englishIsPrimary
-                        ? "mt-1 text-sm text-white/60"
-                        : "mt-1 text-sm text-neutral-400"
-                    }
-                  >
-                    {translation}
-                  </div>
-                )}
-              </div>
-              <Volume2 size={18} />
-            </button>
-          );
-
-          return isLearningChinese
-            ? [zhuyinButton, englishButton]
-            : [englishButton, zhuyinButton];
-        })()}
-      </div>
-
-      {(example || translatedExample) && (
-        <div className="mt-5 rounded-2xl bg-neutral-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
-            {exampleLabel}
-          </p>
-
-          <div className="mt-3 space-y-2">
-            {(() => {
-              const englishExampleBlock = example ? (
-                <div
-                  key="english-example"
-                  className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3"
-                >
-                  <p className="min-w-0 font-medium leading-6 text-neutral-900">
-                    {example}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => speakText(example, "en-US")}
-                    aria-label={playEnglishExampleAriaLabel}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
-                  >
-                    <Volume2 size={16} />
-                  </button>
-                </div>
-              ) : null;
-
-              const chineseExampleBlock = translatedExample ? (
-                <div
-                  key="chinese-example"
-                  className="flex items-start justify-between gap-4 rounded-xl bg-white px-4 py-3"
-                >
-                  <p className="min-w-0 text-sm leading-6 text-neutral-600">
-                    {translatedExample}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => speakText(translatedExample, "zh-TW")}
-                    aria-label={playChineseExampleAriaLabel}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-neutral-200 transition active:scale-90"
-                  >
-                    <Volume2 size={16} />
-                  </button>
-                </div>
-              ) : null;
-
-              return isLearningChinese
-                ? [chineseExampleBlock, englishExampleBlock]
-                : [englishExampleBlock, chineseExampleBlock];
-            })()}
+      <div className={styles.cardInner}>
+        <header className={styles.cardHeader}>
+          <div>
+            <p className={styles.eyebrow}>{statusLabel}</p>
+            <p className={styles.serial}>
+              {String(index + 1).padStart(2, "0")}
+              <span aria-hidden="true"> / </span>
+              {String(total).padStart(2, "0")}
+            </p>
           </div>
+
+          {interactive ? (
+            <Link
+              href={detailHref}
+              aria-label={copy.continueLearning}
+              className={styles.markLink}
+            >
+              <ExchangeNotesMark
+                className={styles.mark}
+                surfaceColor={surfaceColor}
+                highlightColor={highlightColor}
+              />
+            </Link>
+          ) : (
+            <span className={styles.markStatic}>
+              <ExchangeNotesMark
+                className={styles.mark}
+                surfaceColor={surfaceColor}
+                highlightColor={highlightColor}
+              />
+            </span>
+          )}
+        </header>
+
+        <div className={styles.hero}>
+          <h2
+            className={styles.primaryWord}
+            data-word-size={primaryWordSize}
+          >
+            {primaryWord}
+          </h2>
+          {secondaryWord ? (
+            <p className={styles.secondaryWord}>{secondaryWord}</p>
+          ) : null}
+          <p className={styles.phonetic}>
+            {pronunciation.pinyin || pronunciation.zhuyin || "\u00a0"}
+          </p>
         </div>
-      )}
-    </section>
+
+        <div className={styles.soundGrid}>
+          <button
+            type="button"
+            disabled={!interactive}
+            tabIndex={interactive ? 0 : -1}
+            onClick={() => speakText(
+              isLearningChinese ? translation : word,
+              isLearningChinese ? "zh-TW" : "en-US",
+            )}
+            aria-label={
+              isLearningChinese
+                ? `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
+                : `${copy.englishPronunciation}: ${word}`
+            }
+            className={styles.soundButton}
+          >
+            <span className={styles.soundCopy}>
+              <span className={styles.soundLabel}>
+                {isLearningChinese ? copy.zhuyin : copy.englishPronunciation}
+              </span>
+              <span
+                className={styles.soundValue}
+                data-script={isLearningChinese ? "zhuyin" : "english"}
+              >
+                {isLearningChinese
+                  ? pronunciation.zhuyin || translation
+                  : word}
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={!interactive || !secondaryWord}
+            tabIndex={interactive ? 0 : -1}
+            onClick={() => speakText(
+              isLearningChinese ? word : translation,
+              isLearningChinese ? "en-US" : "zh-TW",
+            )}
+            aria-label={
+              isLearningChinese
+                ? `${copy.englishPronunciation}: ${word}`
+                : `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
+            }
+            className={styles.soundButton}
+          >
+            <span className={styles.soundCopy}>
+              <span className={styles.soundLabel}>
+                {isLearningChinese ? copy.englishPronunciation : copy.zhuyin}
+              </span>
+              <span
+                className={styles.soundValue}
+                data-script={isLearningChinese ? "english" : "zhuyin"}
+              >
+                {isLearningChinese
+                  ? word
+                  : pronunciation.zhuyin || translation}
+              </span>
+            </span>
+          </button>
+        </div>
+
+        <footer className={styles.cardFooter}>
+          <p className={styles.swipeMicrocopy}>
+            <span aria-hidden="true">← · →</span>
+            <span className={styles.visuallyHidden}>{copy.swipeHint}</span>
+          </p>
+          {interactive ? (
+            <Link
+              href={detailHref}
+              aria-label={copy.continueLearning}
+              title={copy.continueLearning}
+              className={styles.detailLink}
+            >
+              <BookOpen size={14} />
+            </Link>
+          ) : (
+            <span className={styles.detailStatic} aria-hidden="true">
+              <BookOpen size={14} />
+            </span>
+          )}
+        </footer>
+      </div>
+    </article>
+  );
+}
+
+export function TodayWordDeck({
+  items,
+  copy,
+  vocabularyCopy,
+  isLearningChinese,
+}: {
+  items: VocabularyItem[];
+  copy: TodayWordCopy;
+  vocabularyCopy: VocabularyCopy;
+  isLearningChinese: boolean;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [gesture, setGesture] = useState<GestureState>(INITIAL_GESTURE);
+  const [deckWidth, setDeckWidth] = useState(320);
+
+  const deckRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef<PointerState | null>(null);
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const normalizedActiveIndex = wrapIndex(activeIndex, items.length);
+  const activeItem = items[normalizedActiveIndex];
+  const entries = useMemo(
+    () => visibleDeckEntries(items, normalizedActiveIndex),
+    [items, normalizedActiveIndex],
+  );
+  const accent = DECK_ACCENTS[
+    normalizedActiveIndex % DECK_ACCENTS.length
+  ];
+
+  useEffect(() => {
+    const node = deckRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+
+    const updateWidth = () => {
+      setDeckWidth(node.getBoundingClientRect().width || 320);
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (settleTimeoutRef.current) {
+        clearTimeout(settleTimeoutRef.current);
+      }
+      stopSpeech();
+    };
+  }, []);
+
+  function clearSettleTimeout() {
+    if (!settleTimeoutRef.current) return;
+    clearTimeout(settleTimeoutRef.current);
+    settleTimeoutRef.current = null;
+  }
+
+  function settleTo(direction: -1 | 1) {
+    if (items.length < 2 || gesture.transition) return;
+
+    clearSettleTimeout();
+    setGesture({
+      x: -direction * deckWidth * 1.16,
+      dragging: false,
+      transition: "commit",
+    });
+
+    settleTimeoutRef.current = setTimeout(() => {
+      setActiveIndex((current) => wrapIndex(
+        current + direction,
+        items.length,
+      ));
+      setGesture(INITIAL_GESTURE);
+      settleTimeoutRef.current = null;
+    }, COMMIT_DURATION_MS);
+  }
+
+  function cancelGesture() {
+    clearSettleTimeout();
+    setGesture({
+      x: 0,
+      dragging: false,
+      transition: "cancel",
+    });
+
+    settleTimeoutRef.current = setTimeout(() => {
+      setGesture(INITIAL_GESTURE);
+      settleTimeoutRef.current = null;
+    }, CANCEL_DURATION_MS);
+  }
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (
+      items.length < 2
+      || gesture.transition
+      || event.button !== 0
+    ) {
+      return;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof HTMLElement
+      && target.closest("button, a")
+    ) {
+      return;
+    }
+
+    clearSettleTimeout();
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    pointerRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastTime: performance.now(),
+      velocityX: 0,
+      currentX: 0,
+      dragging: false,
+      blocked: false,
+    };
+    setGesture(INITIAL_GESTURE);
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const pointer = pointerRef.current;
+    if (
+      !pointer
+      || pointer.pointerId !== event.pointerId
+      || pointer.blocked
+    ) {
+      return;
+    }
+
+    const deltaX = event.clientX - pointer.startX;
+    const deltaY = event.clientY - pointer.startY;
+
+    if (!pointer.dragging) {
+      if (
+        Math.abs(deltaY) > 10
+        && Math.abs(deltaY) > Math.abs(deltaX) * 1.12
+      ) {
+        pointer.blocked = true;
+        return;
+      }
+
+      if (Math.abs(deltaX) < 8) return;
+      pointer.dragging = true;
+    }
+
+    event.preventDefault();
+    const now = performance.now();
+    const elapsed = Math.max(now - pointer.lastTime, 1);
+    const instantaneousVelocity = (event.clientX - pointer.lastX) / elapsed;
+    pointer.velocityX = pointer.velocityX * 0.48 + instantaneousVelocity * 0.52;
+    pointer.lastX = event.clientX;
+    pointer.lastTime = now;
+
+    const resistanceLimit = deckWidth * 0.82;
+    const resistedX = Math.abs(deltaX) > resistanceLimit
+      ? Math.sign(deltaX)
+        * (resistanceLimit + (Math.abs(deltaX) - resistanceLimit) * 0.16)
+      : deltaX;
+
+    pointer.currentX = resistedX;
+
+    setGesture({
+      x: resistedX,
+      dragging: true,
+      transition: null,
+    });
+  }
+
+  function finishPointer(event: ReactPointerEvent<HTMLDivElement>) {
+    const pointer = pointerRef.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+
+    pointerRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (!pointer.dragging || pointer.blocked) {
+      cancelGesture();
+      return;
+    }
+
+    const projectedX = pointer.currentX + pointer.velocityX * 220;
+    const shouldCommit =
+      Math.abs(projectedX) > deckWidth * 0.18
+      || Math.abs(pointer.velocityX) > 0.42;
+
+    if (!shouldCommit) {
+      cancelGesture();
+      return;
+    }
+
+    const direction: -1 | 1 = projectedX < 0 ? 1 : -1;
+    settleTo(direction);
+  }
+
+  function cancelPointer(event: ReactPointerEvent<HTMLDivElement>) {
+    const pointer = pointerRef.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+
+    pointerRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    cancelGesture();
+  }
+
+  const transition = gesture.dragging
+    ? "none"
+    : gesture.transition === "cancel"
+      ? `transform ${CANCEL_DURATION_MS}ms cubic-bezier(0.2, 1.3, 0.32, 1), opacity 260ms ease, filter 260ms ease`
+      : gesture.transition === "commit"
+        ? `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.2, 0.88, 0.24, 1), opacity 340ms ease, filter 340ms ease`
+        : "none";
+
+  return (
+    <div className={styles.wrapper}>
+      <section
+        className={styles.deckSurface}
+        style={{ "--deck-accent": accent } as CSSProperties}
+        aria-roledescription="carousel"
+        aria-label={copy.title}
+      >
+        <div
+          ref={deckRef}
+          className={styles.deckViewport}
+          data-dragging={gesture.dragging ? "true" : "false"}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishPointer}
+          onPointerCancel={cancelPointer}
+        >
+          {entries.map(({ item, index, offset }) => {
+            const visual = cardVisual(
+              offset,
+              gesture.x,
+              deckWidth,
+            );
+            const interactive = offset === 0;
+
+            return (
+              <div
+                key={item.id}
+                className={styles.cardSlot}
+                style={{
+                  transform: visual.transform,
+                  opacity: visual.opacity,
+                  filter: visual.filter,
+                  zIndex: visual.zIndex,
+                  transition,
+                  pointerEvents: interactive ? "auto" : "none",
+                }}
+              >
+                <DeckWordCard
+                  item={item}
+                  index={index}
+                  total={items.length}
+                  interactive={interactive}
+                  tone={toneForCard(index)}
+                  copy={copy}
+                  vocabularyCopy={vocabularyCopy}
+                  isLearningChinese={isLearningChinese}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {items.length > 1 ? (
+          <nav className={styles.deckMeta} aria-label={copy.title}>
+            <button
+              type="button"
+              aria-label={copy.previousWord}
+              className={styles.navButton}
+              disabled={Boolean(gesture.transition)}
+              onClick={() => settleTo(-1)}
+            >
+              <ArrowLeft size={15} />
+            </button>
+
+            <p className={styles.counter} aria-hidden="true">
+              {String(normalizedActiveIndex + 1).padStart(2, "0")}
+              <span> / </span>
+              {String(items.length).padStart(2, "0")}
+            </p>
+
+            <button
+              type="button"
+              aria-label={copy.nextWord}
+              className={styles.navButton}
+              disabled={Boolean(gesture.transition)}
+              onClick={() => settleTo(1)}
+            >
+              <ArrowRight size={15} />
+            </button>
+          </nav>
+        ) : null}
+      </section>
+
+      <p className={styles.liveRegion} aria-live="polite">
+        {activeItem
+          ? `${replacePosition(
+              copy.positionLabel,
+              normalizedActiveIndex + 1,
+              items.length,
+            )}: ${activeItem.word}`
+          : ""}
+      </p>
+    </div>
   );
 }
 
 export default function TodayWordCard() {
   const { t } = useTranslation();
   const { isLearningChinese } = useLearningLanguageContext();
-
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -307,33 +793,14 @@ export default function TodayWordCard() {
       }
     }
 
-    load();
+    void load();
 
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      stopSpeech();
-    };
-  }, []);
-
-  function handleScroll() {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    const slideWidth = el.clientWidth;
-    if (slideWidth === 0) return;
-
-    const index = Math.round(el.scrollLeft / slideWidth);
-    setActiveIndex(Math.min(Math.max(index, 0), items.length - 1));
-  }
-
-  if (loading) {
-    return <LoadingCard />;
-  }
+  if (loading) return <LoadingCard />;
 
   if (items.length === 0) {
     return (
@@ -348,52 +815,11 @@ export default function TodayWordCard() {
   }
 
   return (
-    <div>
-      <div
-        ref={scrollerRef}
-        onScroll={handleScroll}
-        className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {items.map((item) => (
-          <WordSlide
-            key={item.id}
-            item={item}
-            continueLearningLabel={t.home.todayWord.continueLearning}
-            englishLabel={t.home.todayWord.englishPronunciation}
-            zhuyinLabel={t.home.todayWord.zhuyin}
-            exampleLabel={t.home.todayWord.example}
-            untitledWordLabel={t.home.todayWord.untitledWord}
-            statusLabels={t.vocabulary.detail.levels}
-            playEnglishExampleAriaLabel={
-              t.home.todayWord.playEnglishExampleAriaLabel
-            }
-            playChineseExampleAriaLabel={
-              t.home.todayWord.playChineseExampleAriaLabel
-            }
-            isLearningChinese={isLearningChinese}
-          />
-        ))}
-      </div>
-
-      {items.length > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-1.5">
-          {items.slice(0, 12).map((item, index) => (
-            <span
-              key={item.id}
-              className={`h-1.5 rounded-full transition-all ${
-                index === activeIndex
-                  ? "w-4 bg-black"
-                  : "w-1.5 bg-black/15"
-              }`}
-            />
-          ))}
-          {items.length > 12 && (
-            <span className="ml-0.5 text-[10px] text-black/30">
-              +{items.length - 12}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
+    <TodayWordDeck
+      items={items}
+      copy={t.home.todayWord}
+      vocabularyCopy={t.vocabulary}
+      isLearningChinese={isLearningChinese}
+    />
   );
 }

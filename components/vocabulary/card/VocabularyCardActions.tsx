@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Check, MoreHorizontal, Send } from "lucide-react";
+import { Check, MoreHorizontal, RotateCcw, Send } from "lucide-react";
 import AppButton from "@/components/ui/AppButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
@@ -11,6 +11,7 @@ type Props = {
   onToggleMastered: () => void;
   onSend: () => void;
   onOpen: () => void;
+  word: string;
 };
 
 function VocabularyCardActions({
@@ -19,9 +20,10 @@ function VocabularyCardActions({
   onToggleMastered,
   onSend,
   onOpen,
+  word,
 }: Props) {
   const { t } = useTranslation();
-  const search = t.vocabulary.search;
+  const detail = t.vocabulary.detail;
 
   return (
     <div className="grid grid-cols-[1fr_auto_auto] gap-2 border-t border-black/[0.06] bg-white px-5 py-4">
@@ -34,8 +36,12 @@ function VocabularyCardActions({
         onClick={onToggleMastered}
       >
         <span className="flex items-center justify-center gap-2">
-          <Check size={18} strokeWidth={2.4} />
-          <span>{mastered ? search.statuses.learning : search.statuses.mastered}</span>
+          {mastered ? (
+            <RotateCcw size={18} strokeWidth={2.4} />
+          ) : (
+            <Check size={18} strokeWidth={2.4} />
+          )}
+          <span>{mastered ? detail.markAsLearning : detail.markAsMastered}</span>
         </span>
       </AppButton>
 
@@ -44,6 +50,8 @@ function VocabularyCardActions({
         size="icon"
         className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onSend}
+        aria-label={detail.sendToFriendAriaLabel}
+        title={detail.sendToFriendAriaLabel}
       >
         <Send size={18} />
       </AppButton>
@@ -53,6 +61,14 @@ function VocabularyCardActions({
         size="icon"
         className="rounded-full h-10 w-10 hover:bg-black/[0.04]"
         onClick={onOpen}
+        aria-label={detail.openFullDetailsAriaLabel.replace(
+          "{word}",
+          word,
+        )}
+        title={detail.openFullDetailsAriaLabel.replace(
+          "{word}",
+          word,
+        )}
       >
         <MoreHorizontal size={18} />
       </AppButton>

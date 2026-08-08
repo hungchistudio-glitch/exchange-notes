@@ -1,0 +1,132 @@
+name: ExchangeNotesApple
+
+options:
+  createIntermediateGroups: true
+
+configs:
+  Debug: debug
+  Personal: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 1.0
+
+targets:
+  ExchangeNotes:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+
+    sources:
+      - path: App
+        excludes:
+          - ExchangeNotes.entitlements
+      - path: Shared
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes
+        PRODUCT_NAME: ExchangeNotes
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        REGISTER_APP_GROUPS: YES
+        CODE_SIGN_ENTITLEMENTS: App/ExchangeNotes.entitlements
+      configs:
+        Debug:
+          APS_ENVIRONMENT: development
+        Personal:
+          CODE_SIGN_ENTITLEMENTS: App/ExchangeNotesPersonal.entitlements
+          DEVELOPMENT_TEAM: 249MSJ3P8Z
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) EXCHANGE_NOTES_PERSONAL_TEAM"
+        Release:
+          APS_ENVIRONMENT: production
+
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Exchange Notes
+        NSCameraUsageDescription: "Exchange Notes uses the camera to identify objects and create vocabulary cards."
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        LSApplicationCategoryType: public.app-category.education
+        UILaunchScreen: {}
+        UIBackgroundModes:
+          - audio
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: art.hungchi.exchangenotes
+            CFBundleURLSchemes:
+              - exchangenotes
+
+    dependencies:
+      - target: YumiWidgetExtension
+
+  YumiWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+
+    sources:
+      - path: Widget
+        excludes:
+          - Resources
+          - YumiWidgetExtension.entitlements
+      - path: Widget/Resources
+        buildPhase: resources
+      - path: Shared
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: art.hungchi.exchangenotes.yumiwidget
+        PRODUCT_NAME: YumiWidgetExtension
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        REGISTER_APP_GROUPS: YES
+        CODE_SIGN_ENTITLEMENTS: Widget/YumiWidgetExtension.entitlements
+      configs:
+        Personal:
+          DEVELOPMENT_TEAM: 249MSJ3P8Z
+
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: Yumi
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+schemes:
+  ExchangeNotes:
+    build:
+      targets:
+        ExchangeNotes: all
+        YumiWidgetExtension: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  ExchangeNotesPersonal:
+    build:
+      targets:
+        ExchangeNotes: all
+        YumiWidgetExtension: all
+    run:
+      config: Personal
+    archive:
+      config: Personal

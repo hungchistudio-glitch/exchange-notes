@@ -8,11 +8,15 @@ import {
   X,
 } from "lucide-react";
 import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
   type MouseEvent,
 } from "react";
 import { createPortal } from "react-dom";
+
+import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 type Props = {
   word: string;
@@ -31,30 +35,21 @@ export default function VocabularyCardMenu({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const pendingActionRef = useRef<(() => void | Promise<void>) | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
+  const finishClose = useCallback(() => {
+    setOpen(false);
+    const pendingAction = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (pendingAction) void pendingAction();
   }, []);
 
+  const motion = useSheetMotion({ open, onClose: finishClose });
+
   useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    }
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   function handleTriggerClick(event: MouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
@@ -65,8 +60,8 @@ export default function VocabularyCardMenu({
   }
 
   function runAction(action: () => void | Promise<void>) {
-    setOpen(false);
-    void action();
+    pendingActionRef.current = action;
+    motion.requestClose();
   }
 
   return (
@@ -83,25 +78,38 @@ export default function VocabularyCardMenu({
         <MoreHorizontal size={18} />
       </button>
 
-      {mounted && open
+      {mounted && motion.rendered
         ? createPortal(
             <div
-              className="fixed inset-0 z-[220] flex items-end justify-center bg-black/25 backdrop-blur-[2px] sm:items-center sm:p-6"
+              className="fixed inset-0 z-[220] flex items-end justify-center sm:items-center sm:p-6"
               role="presentation"
-              onClick={() => setOpen(false)}
             >
+              <button
+                type="button"
+                aria-label="Close actions"
+                onClick={motion.requestClose}
+                className={`absolute inset-0 bg-black/25 backdrop-blur-[2px] ${motion.backdropClassName}`}
+                {...motion.backdropProps}
+              />
+
               <section
                 role="dialog"
                 aria-modal="true"
                 aria-label={`Actions for ${word}`}
-                onClick={(event) => event.stopPropagation()}
-                className="w-full max-w-md overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]"
+                {...motion.panelProps}
+                className={`${motion.panelClassName} relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px] bg-white shadow-2xl sm:rounded-[30px]`}
                 style={{
+                  ...motion.panelProps.style,
                   paddingBottom:
                     "max(env(safe-area-inset-bottom), 16px)",
                 }}
               >
-                <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-black/15 sm:hidden" />
+                <div
+                  className={`${motion.handleClassName} flex h-8 items-center justify-center sm:hidden`}
+                  {...motion.handleProps}
+                >
+                  <span className="h-1 w-10 rounded-full bg-black/15" />
+                </div>
 
                 <header className="flex items-center justify-between border-b border-black/[0.07] px-5 pb-4 pt-4">
                   <div className="min-w-0">
@@ -116,7 +124,7 @@ export default function VocabularyCardMenu({
 
                   <button
                     type="button"
-                    onClick={() => setOpen(false)}
+                    onClick={motion.requestClose}
                     aria-label="Close actions"
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
                   >
