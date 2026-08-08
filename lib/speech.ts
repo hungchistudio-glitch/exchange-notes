@@ -118,9 +118,33 @@ const MALE_NAME_HINTS = [
   "alex",
   "daniel",
   "aaron",
+  "宥樹",
   "宥树",
   "yu-shu",
 ];
+
+/**
+ * A voice counts as male only if a male hint matches and no female hint does.
+ *
+ * The order matters because the hints overlap as substrings: "female"
+ * contains "male", and "woman" contains "man". Testing the male list alone
+ * meant a voice named "Chinese Female 1" — the usual shape on Android and
+ * Chrome — matched as male, so choosing the male voice reliably returned a
+ * female one. The female list has no such collision, which is why only the
+ * male setting appeared broken.
+ */
+function matchesHints(name: string, hints: string[]) {
+  return hints.some((hint) => name.includes(hint));
+}
+
+function isNamedForGender(voice: SpeechSynthesisVoice, gender: VoiceGender) {
+  const name = voice.name.toLowerCase();
+  const female = matchesHints(name, FEMALE_NAME_HINTS);
+
+  if (gender === "female") return female;
+
+  return matchesHints(name, MALE_NAME_HINTS) && !female;
+}
 
 // macOS/iOS ship a set of "novelty" system voices (Albert, Bad News, Bahh,
 // Bells, Boing, Bubbles, Cellos, Good News, Jester, Organ, Superstar,
@@ -233,22 +257,15 @@ function narrowToGender(
   const normalSounding = voices.filter((voice) => !isNoveltyVoice(voice));
   const pool = normalSounding.length > 0 ? normalSounding : voices;
 
-  const hints = gender === "female" ? FEMALE_NAME_HINTS : MALE_NAME_HINTS;
-  const otherHints = gender === "female" ? MALE_NAME_HINTS : FEMALE_NAME_HINTS;
+  const other: VoiceGender = gender === "female" ? "male" : "female";
 
-  const matching = pool.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    return hints.some((hint) => name.includes(hint));
-  });
-
+  const matching = pool.filter((voice) => isNamedForGender(voice, gender));
   if (matching.length > 0) return matching;
 
   // Nothing named for the requested gender. Drop anything clearly named for
-  // the other one so the two settings still sound different.
-  const neutral = pool.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    return !otherHints.some((hint) => name.includes(hint));
-  });
+  // the other one so the two settings still sound different where the device
+  // gives any choice at all.
+  const neutral = pool.filter((voice) => !isNamedForGender(voice, other));
 
   return neutral.length > 0 ? neutral : pool;
 }
