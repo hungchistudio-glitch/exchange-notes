@@ -139,6 +139,7 @@ const FEMALE_NAME_HINTS = [
   "samantha",
   "susan",
   "ting-ting",
+  "tingting",
   "婷婷",
   "美嘉",
   "meijia",
@@ -147,6 +148,9 @@ const FEMALE_NAME_HINTS = [
   "shelley",
   "sandy",
   "flo",
+  "bobo",
+  "lanlan",
+  "panpan",
 ];
 const MALE_NAME_HINTS = [
   "male",
