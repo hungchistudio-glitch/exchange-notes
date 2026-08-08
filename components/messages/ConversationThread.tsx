@@ -164,7 +164,16 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
+  /**
+   * The outcome the channel last reported, tagged with the conversation it
+   * belongs to. Tagging matters because a status callback from a channel that
+   * is being torn down can otherwise land after the next conversation has
+   * opened and label it with the old channel's state.
+   */
+  const [channelState, setChannelState] = useState<{
+    conversationId: string;
+    status: Exclude<RealtimeStatus, "connecting">;
+  } | null>(null);
 
   const [savedCardIds, setSavedCardIds] = useState<Set<number>>(new Set());
   const [savingCardId, setSavingCardId] = useState<number | null>(null);
@@ -314,10 +323,18 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     };
   }, [friendId, scrollToBottom, supabase, copy.errors.openConversation]);
 
+  /**
+   * Derived rather than stored: "connecting" is simply the absence of a
+   * reported outcome for the conversation currently open, so it does not need
+   * to be assigned when the subscription starts.
+   */
+  const realtimeStatus: RealtimeStatus =
+    conversationId && channelState?.conversationId === conversationId
+      ? channelState.status
+      : "connecting";
+
   useEffect(() => {
     if (!conversationId) return;
-
-    setRealtimeStatus("connecting");
 
     const channel = supabase
       .channel(`messages:${conversationId}`)
@@ -343,11 +360,11 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
       )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
-          setRealtimeStatus("connected");
+          setChannelState({ conversationId, status: "connected" });
           return;
         }
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          setRealtimeStatus("disconnected");
+          setChannelState({ conversationId, status: "disconnected" });
         }
       });
 
