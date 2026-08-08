@@ -774,6 +774,8 @@ export type TranslationDictionary = {
       searching: string;
       description: string;
       error: string;
+      degradedNotice: string;
+      degradedRetry: string;
       english: string;
       chinese: string;
       englishExample: string;

@@ -84,10 +84,18 @@ export default function useVocabularyLookup(query: string) {
     useState<VocabularyLookupResult | null>(null);
   const [lookupError, setLookupError] = useState("");
 
+  /**
+   * True when the result came from the offline dictionary because the model
+   * was unreachable or rate limited. The word and translation are still
+   * correct; only the example sentences are canned templates.
+   */
+  const [lookupDegraded, setLookupDegraded] = useState(false);
+
   const resetLookup = useCallback(() => {
     setLookupStatus("idle");
     setLookupResult(null);
     setLookupError("");
+    setLookupDegraded(false);
   }, []);
 
   const lookupWord = useCallback(async () => {
@@ -97,6 +105,7 @@ export default function useVocabularyLookup(query: string) {
 
     setLookupStatus("loading");
     setLookupError("");
+    setLookupDegraded(false);
 
     try {
       const cachedResult = readCachedLookup(cleanQuery);
@@ -127,9 +136,16 @@ export default function useVocabularyLookup(query: string) {
         );
       }
 
-      const result = data as VocabularyLookupResult;
-      storeCachedLookup(cleanQuery, result);
+      const { degraded, ...result } = data as VocabularyLookupResult & {
+        degraded?: boolean;
+      };
+
+      // Caching a degraded result would keep the canned example sentences in
+      // front of this user long after the model recovered.
+      if (!degraded) storeCachedLookup(cleanQuery, result);
+
       setLookupResult(result);
+      setLookupDegraded(Boolean(degraded));
       setLookupStatus("result");
     } catch (lookupErrorValue) {
       setLookupError(
@@ -145,6 +161,7 @@ export default function useVocabularyLookup(query: string) {
     lookupStatus,
     lookupResult,
     lookupError,
+    lookupDegraded,
     lookupWord,
     resetLookup,
   };

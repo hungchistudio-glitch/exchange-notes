@@ -318,13 +318,22 @@ export async function POST(request: Request) {
 
     const resolved = await lookupVocabulary(query);
 
-    return NextResponse.json(resolved.result, {
-      headers: {
-        // Lets cache effectiveness be read straight off a response rather
-        // than inferred from billing.
-        "X-Lookup-Source": resolved.origin,
+    return NextResponse.json(
+      {
+        ...resolved.result,
+        // Tells the client this is the offline dictionary's canned example
+        // rather than a real one, so it can say so and offer a retry instead
+        // of passing the degraded copy off as a normal result.
+        degraded: !resolved.fromModel,
       },
-    });
+      {
+        headers: {
+          // Lets cache effectiveness be read straight off a response rather
+          // than inferred from billing.
+          "X-Lookup-Source": resolved.origin,
+        },
+      },
+    );
   } catch (error) {
     console.error("Vocabulary lookup route failed:", {
       status: getErrorStatus(error),

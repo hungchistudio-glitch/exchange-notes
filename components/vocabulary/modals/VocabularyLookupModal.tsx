@@ -35,6 +35,7 @@ export type VocabularyLookupModalProps = {
   lookupStatus: VocabularyLookupStatus;
   lookupResult: VocabularyLookupResult | null;
   lookupError: string;
+  lookupDegraded?: boolean;
 
   savingLookup: boolean;
   lookupCopied: boolean;
@@ -53,6 +54,7 @@ export default function VocabularyLookupModal({
   lookupStatus,
   lookupResult,
   lookupError,
+  lookupDegraded = false,
   savingLookup,
   lookupCopied,
   onLookupWord,
@@ -195,6 +197,22 @@ export default function VocabularyLookupModal({
               <p className="text-[13px] leading-5 text-red-700">
                 {lookupError || t.vocabulary.lookup.error}
               </p>
+            </div>
+          )}
+
+          {lookupStatus === "result" && lookupDegraded && (
+            <div className="mt-5 rounded-[20px] border border-[#c9962e]/20 bg-[#c9962e]/[0.07] p-4">
+              <p className="text-[13px] leading-5 text-[#6b4e1f]">
+                {t.vocabulary.lookup.degradedNotice}
+              </p>
+
+              <button
+                type="button"
+                onClick={onLookupWord}
+                className="mt-2 text-[13px] font-semibold text-[#6b4e1f] underline underline-offset-2"
+              >
+                {t.vocabulary.lookup.degradedRetry}
+              </button>
             </div>
           )}
 
