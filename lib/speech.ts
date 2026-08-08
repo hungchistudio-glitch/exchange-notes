@@ -12,9 +12,20 @@ const DEFAULT_SETTINGS: SpeechSettings = {
   voiceGender: "female",
 };
 
-export function getSpeechSettings(): SpeechSettings {
-  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+/**
+ * Cached so that repeated reads return the same object.
+ *
+ * useSyncExternalStore compares snapshots by identity, so a getter that
+ * parsed localStorage afresh on every call would hand React a new object
+ * each render and spin forever. Nothing else depended on re-reading storage
+ * per call — the value only changes when this module writes it, or when
+ * another tab does.
+ */
+let cachedSettings: SpeechSettings | null = null;
 
+const settingsListeners = new Set<() => void>();
+
+function readSettingsFromStorage(): SpeechSettings {
   try {
     const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return DEFAULT_SETTINGS;
@@ -34,8 +45,47 @@ export function getSpeechSettings(): SpeechSettings {
   }
 }
 
+function notifySettingsListeners() {
+  for (const listener of settingsListeners) listener();
+}
+
+export function getSpeechSettings(): SpeechSettings {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+
+  cachedSettings ??= readSettingsFromStorage();
+  return cachedSettings;
+}
+
+/** Server snapshot for useSyncExternalStore: never touches storage. */
+export function getDefaultSpeechSettings(): SpeechSettings {
+  return DEFAULT_SETTINGS;
+}
+
+export function subscribeToSpeechSettings(listener: () => void) {
+  if (typeof window === "undefined") return () => undefined;
+
+  settingsListeners.add(listener);
+
+  // Another tab changing the setting has to invalidate this tab's cache,
+  // otherwise the stale copy would outlive the change.
+  function handleStorage(event: StorageEvent) {
+    if (event.key !== SETTINGS_STORAGE_KEY) return;
+    cachedSettings = null;
+    notifySettingsListeners();
+  }
+
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    settingsListeners.delete(listener);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
 export function setSpeechSettings(settings: SpeechSettings): void {
   if (typeof window === "undefined") return;
+
+  cachedSettings = settings;
 
   try {
     window.localStorage.setItem(
@@ -45,6 +95,8 @@ export function setSpeechSettings(settings: SpeechSettings): void {
   } catch {
     // Storage can fail (private mode, quota). Safe to ignore.
   }
+
+  notifySettingsListeners();
 }
 
 // Browsers don't expose voice gender as data — only as part of the
