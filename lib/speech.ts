@@ -291,6 +291,28 @@ function pickBestQualityVoice(
  * "Google" cloud voice above everything else, so filtering afterwards would
  * let that preference silently override the user's choice.
  */
+/**
+ * A voice counts as a gender only if that gender's hints match and the other
+ * gender's do not.
+ *
+ * The lists overlap as substrings — "female" contains "male", "woman"
+ * contains "man" — so testing the male list alone made a voice named
+ * "Chinese Female 1" match as male. Only the male setting appeared broken,
+ * because the collision runs in one direction.
+ */
+function matchesHints(name: string, hints: string[]) {
+  return hints.some((hint) => name.includes(hint));
+}
+
+function isNamedForGender(voice: SpeechSynthesisVoice, gender: VoiceGender) {
+  const name = voice.name.toLowerCase();
+  const female = matchesHints(name, FEMALE_NAME_HINTS);
+
+  if (gender === "female") return female;
+
+  return matchesHints(name, MALE_NAME_HINTS) && !female;
+}
+
 function narrowToGender(
   voices: SpeechSynthesisVoice[],
   gender: VoiceGender
@@ -300,22 +322,14 @@ function narrowToGender(
   const normalSounding = voices.filter((voice) => !isNoveltyVoice(voice));
   const pool = normalSounding.length > 0 ? normalSounding : voices;
 
-  const hints = gender === "female" ? FEMALE_NAME_HINTS : MALE_NAME_HINTS;
-  const otherHints = gender === "female" ? MALE_NAME_HINTS : FEMALE_NAME_HINTS;
+  const other: VoiceGender = gender === "female" ? "male" : "female";
 
-  const matching = pool.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    return hints.some((hint) => name.includes(hint));
-  });
-
+  const matching = pool.filter((voice) => isNamedForGender(voice, gender));
   if (matching.length > 0) return matching;
 
   // Nothing named for the requested gender. Drop anything clearly named for
-  // the other one so the two settings still sound different.
-  const neutral = pool.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    return !otherHints.some((hint) => name.includes(hint));
-  });
+  // the other one so the two settings still differ where the device allows.
+  const neutral = pool.filter((voice) => !isNamedForGender(voice, other));
 
   return neutral.length > 0 ? neutral : pool;
 }
@@ -395,6 +409,28 @@ export function getVoiceForLanguage(
 ): SpeechSynthesisVoice | null {
   const settings = getSpeechSettings();
   return selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang]);
+}
+
+/**
+ * Whether this device has any voice matching a gender for a language.
+ *
+ * iOS is the reason this exists. Its Mandarin (Taiwan) male voices belong to
+ * Apple's Eloquence family, which the system exposes to native apps but not
+ * to Safari — a web app sees only Meijia. Asking for a male Chinese voice
+ * there is not a preference the app can satisfy, and silently returning a
+ * female one is what made the setting look broken.
+ */
+export function hasVoiceForGender(
+  lang: SpeechLanguage,
+  gender: VoiceGender
+): boolean {
+  const langPrefix = lang.slice(0, 2).toLowerCase();
+
+  const candidates = getAvailableVoices().filter((voice) =>
+    voice.lang.toLowerCase().startsWith(langPrefix)
+  );
+
+  return candidates.some((voice) => isNamedForGender(voice, gender));
 }
 
 /**

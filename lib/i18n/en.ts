@@ -1379,6 +1379,8 @@ const english: TranslationDictionary = {
       female: "Female",
       male: "Male",
       testVoice: "Test voice",
+      genderUnavailable:
+        "This device has no {gender} voice for {language}, so {fallback} is used instead. iOS keeps its other Chinese voices for native apps only.",
       voicesOnDevice: "Voices on this device",
       voicesOnDeviceDescription:
         "Pick a voice by name to be certain which one you get. Without a choice, the app guesses from the voice name, which cannot always find the gender you asked for.",

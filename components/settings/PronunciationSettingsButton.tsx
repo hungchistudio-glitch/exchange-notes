@@ -11,6 +11,7 @@ import {
   getInitialVoicesVersion,
   getSpeechSettings,
   getVoicesVersion,
+  hasVoiceForGender,
   listVoicesForLanguage,
   setSpeechSettings,
   speak,
@@ -43,6 +44,24 @@ export default function PronunciationSettingsButton() {
     subscribeToVoices,
     getVoicesVersion,
     getInitialVoicesVersion,
+  );
+
+  /**
+   * Languages where the chosen gender simply does not exist on this device.
+   *
+   * Reported rather than silently substituted: iOS exposes its Mandarin
+   * (Taiwan) male voices to native apps only, so asking for one in a web app
+   * returns Meijia and the setting looks broken.
+   */
+  const genderGaps = useMemo(
+    () =>
+      (["zh-TW", "en-US"] as const).filter(
+        (language) =>
+          listVoicesForLanguage(language).length > 0
+          && !hasVoiceForGender(language, voiceGender),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [voiceGender, voicesVersion],
   );
 
   const voicesByLanguage = useMemo(
@@ -145,6 +164,35 @@ export default function PronunciationSettingsButton() {
               <span>{copy.slower}</span>
               <span>{copy.faster}</span>
             </div>
+
+            {genderGaps.length > 0 && (
+              <div className="mt-3 rounded-2xl border border-[#c9962e]/20 bg-[#c9962e]/[0.07] p-3">
+                {genderGaps.map((language) => {
+                  const fallback =
+                    listVoicesForLanguage(language)[0]?.name ?? "";
+
+                  return (
+                    <p
+                      key={language}
+                      className="text-[12px] leading-5 text-[#6b4e1f]"
+                    >
+                      {copy.genderUnavailable
+                        .replace(
+                          "{language}",
+                          language === "zh-TW"
+                            ? t.vocabulary.lookup.chinese
+                            : t.vocabulary.lookup.english,
+                        )
+                        .replace(
+                          "{gender}",
+                          voiceGender === "female" ? copy.female : copy.male,
+                        )
+                        .replace("{fallback}", fallback)}
+                    </p>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section>
