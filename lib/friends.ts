@@ -63,6 +63,33 @@ function orderedPair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a];
 }
 
+export const FRIEND_INVITE_PARAM = "add";
+
+/** Strip the decorations people type around an Exchange ID. */
+export function normalizeExchangeId(exchangeId: string): string {
+  return exchangeId.trim().replace(/^@/, "").toLowerCase();
+}
+
+/**
+ * The friend QR code encodes an ordinary https link, not `exchangenotes://`.
+ * A custom scheme is only openable by the sideloaded native app — which needs
+ * Developer Mode and a provisioning profile that expires weekly — and even
+ * there `add-friend` was not a known route, so it landed on Home. An https
+ * link is recognised by the system camera on any phone and opens the installed
+ * PWA, or the browser, with the Exchange ID already filled in.
+ *
+ * The origin comes from the caller rather than a build-time constant so a
+ * Vercel Preview build produces a QR that points back at that same preview.
+ */
+export function friendInviteUrl(
+  exchangeId: string,
+  origin: string
+): string {
+  const clean = normalizeExchangeId(exchangeId);
+
+  return `${origin}/friends?${FRIEND_INVITE_PARAM}=${encodeURIComponent(clean)}`;
+}
+
 /** Look up a single profile by its user id. */
 export async function getProfileById(
   supabase: SupabaseClient,
@@ -83,7 +110,7 @@ export async function findProfileByExchangeId(
   supabase: SupabaseClient,
   exchangeId: string
 ): Promise<FriendProfile | null> {
-  const clean = exchangeId.trim().replace(/^@/, "").toLowerCase();
+  const clean = normalizeExchangeId(exchangeId);
   if (!clean) return null;
 
   const { data, error } = await supabase

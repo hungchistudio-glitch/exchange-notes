@@ -37,6 +37,11 @@ exchangenotes://review
 exchangenotes://speak?language=en-US&text=example
 ```
 
+These are widget-to-app links only. Nothing outside this build depends on the
+`exchangenotes://` scheme — in particular the friend QR code encodes an
+ordinary `https://<host>/friends?add=<exchangeId>` link, so the system camera
+recognises it and it works on a phone that has never installed this app.
+
 ## Phase 1
 
 - SwiftUI iPhone host app

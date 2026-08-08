@@ -669,6 +669,7 @@ export type TranslationDictionary = {
     banners: {
       loginFirst: string;
       enterExchangeId: string;
+      invitePrefilled: string;
       profileNotFound: string;
       ownExchangeId: string;
       alreadyFriends: string;
