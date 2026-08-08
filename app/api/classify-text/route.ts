@@ -3,7 +3,12 @@ import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
+import { isVocabularyLookupResult } from "@/lib/types/vocabularyLookup";
 import { lookupOffline } from "@/lib/vocabulary/offlineLookup";
+import {
+  readSharedLookupCache,
+  writeSharedLookupCache,
+} from "@/lib/vocabulary/sharedLookupCache";
 import {
   getTextModelCandidates,
   readBoundedInteger,
@@ -56,8 +61,20 @@ type CacheEntry = {
   result: VocabularyLookupResult;
 };
 
+type ResolvedLookup = {
+  result: VocabularyLookupResult;
+  /** "memory", "shared", "offline", or the model id that produced it. */
+  origin: string;
+  /**
+   * Whether a model produced this. Offline fallbacks carry canned template
+   * sentences, so they are returned but never cached — otherwise a momentary
+   * Gemini outage would outlive itself in every cache layer.
+   */
+  fromModel: boolean;
+};
+
 const resultCache = new Map<string, CacheEntry>();
-const inFlightLookups = new Map<string, Promise<VocabularyLookupResult>>();
+const inFlightLookups = new Map<string, Promise<ResolvedLookup>>();
 const modelCooldowns = new Map<string, number>();
 
 function normalizeQuery(value: string) {
@@ -103,29 +120,6 @@ function stripJsonCodeFence(text: string) {
     .replace(/^```\s*/i, "")
     .replace(/\s*```$/i, "")
     .trim();
-}
-
-function isVocabularyLookupResult(value: unknown): value is VocabularyLookupResult {
-  if (!value || typeof value !== "object") return false;
-
-  const candidate = value as Record<string, unknown>;
-  const stringFields = [
-    "englishName",
-    "chineseName",
-    "partOfSpeech",
-    "englishExample",
-    "chineseExample",
-  ];
-
-  return (
-    stringFields.every(
-      (field) =>
-        typeof candidate[field] === "string" &&
-        (candidate[field] as string).trim().length > 0,
-    ) &&
-    ["high", "medium", "low"].includes(String(candidate.confidence)) &&
-    ["people", "objects", "actions", "other"].includes(String(candidate.category))
-  );
 }
 
 function getErrorStatus(error: unknown) {
@@ -218,7 +212,8 @@ async function lookupWithModelFallback(query: string) {
     if (cooldownUntil > Date.now()) continue;
 
     try {
-      return await lookupWithModel(client, model, query);
+      const result = await lookupWithModel(client, model, query);
+      return { result, model };
     } catch (error) {
       const status = getErrorStatus(error);
 
@@ -237,23 +232,50 @@ async function lookupWithModelFallback(query: string) {
   return null;
 }
 
-async function performLookup(query: string) {
+async function performLookup(
+  query: string,
+  key: string,
+): Promise<ResolvedLookup> {
+  // Any word another user has already looked up costs nothing and returns in
+  // a single round trip, so this runs ahead of the model.
+  const shared = await readSharedLookupCache(key);
+  if (shared) {
+    return { result: shared, origin: "shared", fromModel: true };
+  }
+
   const modelResult = await lookupWithModelFallback(query);
-  return modelResult ?? lookupOffline(query);
+  if (modelResult) {
+    // Not awaited: persisting for other users must not delay this response,
+    // and a cache that cannot be written is not a failed lookup.
+    void writeSharedLookupCache(key, modelResult.result, modelResult.model);
+
+    return {
+      result: modelResult.result,
+      origin: modelResult.model,
+      fromModel: true,
+    };
+  }
+
+  return {
+    result: await lookupOffline(query),
+    origin: "offline",
+    fromModel: false,
+  };
 }
 
-async function lookupVocabulary(query: string) {
+async function lookupVocabulary(query: string): Promise<ResolvedLookup> {
   const key = getCacheKey(query);
+
   const cached = getCachedResult(key);
-  if (cached) return cached;
+  if (cached) return { result: cached, origin: "memory", fromModel: true };
 
   const existingRequest = inFlightLookups.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = performLookup(query)
-    .then((result) => {
-      cacheResult(key, result);
-      return result;
+  const request = performLookup(query, key)
+    .then((resolved) => {
+      if (resolved.fromModel) cacheResult(key, resolved.result);
+      return resolved;
     })
     .finally(() => {
       inFlightLookups.delete(key);
@@ -294,8 +316,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await lookupVocabulary(query);
-    return NextResponse.json(result);
+    const resolved = await lookupVocabulary(query);
+
+    return NextResponse.json(resolved.result, {
+      headers: {
+        // Lets cache effectiveness be read straight off a response rather
+        // than inferred from billing.
+        "X-Lookup-Source": resolved.origin,
+      },
+    });
   } catch (error) {
     console.error("Vocabulary lookup route failed:", {
       status: getErrorStatus(error),
