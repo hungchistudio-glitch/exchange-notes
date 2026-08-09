@@ -39,9 +39,14 @@ function normalizeLearningLanguage(value: unknown): AppLanguage {
  * app/(protected)/layout.tsx) so there's no fetch-on-mount waterfall, and
  * refetched on window focus / tab visibility change / explicit refresh()
  * (call refresh() after saving a learning-language change in Settings so
- * every mounted card updates without a full reload). Mounted once here
- * instead of calling useLearningLanguage() per card, which would fire one
- * Supabase query per rendered card.
+ * every mounted card updates without a full reload). Mounted once here so a
+ * screen full of cards costs one Supabase query rather than one per card.
+ *
+ * This is now the only way to read the learning language. A parallel
+ * useLearningLanguage hook used to exist alongside it with the same query and
+ * the same focus/visibility refresh; the difference was that it began at
+ * English and corrected itself after the fetch, so anything choosing a
+ * default from it showed the wrong one first.
  */
 export function LearningLanguageProvider({
   children,
