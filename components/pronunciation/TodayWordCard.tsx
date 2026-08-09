@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -43,6 +44,11 @@ const DECK_ACCENTS = [
   "145 177 169",
   "173 177 185",
 ] as const;
+
+// Same reason as BottomNavigation: keeps React quiet during server rendering
+// while still writing before paint once hydrated, which is the entire point.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function wrapIndex(index: number, count: number) {
   if (count <= 0) return 0;
@@ -345,10 +351,6 @@ export function TodayWordDeck({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  /** Set while the scroll position is being reset, so the reset is not read
-   *  back as a user swipe. */
-  const recentringRef = useRef(false);
-
   const window_ = useMemo(() => {
     if (items.length === 0) return [];
 
@@ -366,68 +368,104 @@ export function TodayWordDeck({
     return slot?.getBoundingClientRect().width ?? 0;
   }
 
-  /** Puts the middle slot under the snap point without animating. */
+  /**
+   * Puts the middle slot under the snap point without animating.
+   *
+   * Needs no guard against being read back as a swipe. The settle below only
+   * acts on a landing that is off centre, and this lands exactly on centre by
+   * construction, so the event it provokes is already a no-op.
+   *
+   * There used to be a flag here cleared inside requestAnimationFrame, which
+   * is a promise the browser does not always keep: rAF is deferred in a
+   * background tab and can be throttled under low power. Any frame it skipped
+   * left the flag raised and every later swipe ignored — the deck simply
+   * stopped moving. An invariant cannot get stuck the way a flag can.
+   */
   function centreScroll() {
     const scroller = scrollerRef.current;
     const width = slotWidth();
     if (!scroller || !width) return;
 
-    recentringRef.current = true;
     scroller.scrollLeft = width * WINDOW_RADIUS;
-
-    // Cleared on the next frame: the scroll event this triggers has to be
-    // ignored, but nothing after it should be.
-    requestAnimationFrame(() => {
-      recentringRef.current = false;
-    });
   }
 
-  useEffect(() => {
+  /*
+   * Recentring belongs here, after React has committed the window built from
+   * the new activeIndex and before the browser paints.
+   *
+   * It used to run inline right after setActiveIndex, which cannot work:
+   * setState is asynchronous, so scrollLeft was reset while the DOM still held
+   * the previous window. For one frame the middle slot showed the card the
+   * swipe had just left, and only then did the correct one replace it — the
+   * flash of the previous card. A layout effect puts both in the same paint,
+   * which is what the old inline comment assumed was already true.
+   *
+   * Width can still be zero on the very first pass if the slots have not been
+   * laid out; a frame later they have.
+   */
+  useIsomorphicLayoutEffect(() => {
+    if (items.length === 0) return;
+
+    if (slotWidth()) {
+      centreScroll();
+      return;
+    }
+
     const frame = requestAnimationFrame(centreScroll);
     return () => cancelAnimationFrame(frame);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length]);
+  }, [activeIndex, items.length]);
 
   /**
    * Moves the window to wherever the swipe settled.
    *
-   * Bound to scroll rather than a frame loop, and it only acts once the
-   * scroller has come to rest — so a swipe runs entirely without JavaScript,
-   * and this does its work afterwards.
+   * Nothing runs during the swipe itself — the scroller snaps natively — and
+   * this does its work once it has come to rest.
+   *
+   * "At rest" comes from scrollend where the browser reports it, which is
+   * exact and immediate. The 120ms quiet period is only the fallback for
+   * engines without it, and it was always a guess: too short and a slow finger
+   * settles the deck mid-swipe, too long and the counter lags behind the card.
    */
   useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller || items.length === 0) return;
+    const node = scrollerRef.current;
+    if (!node || items.length === 0) return;
 
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    function handleScroll() {
-      if (recentringRef.current) return;
+    const settle = () => {
+      const width = slotWidth();
+      if (!width) return;
+
+      const landed = Math.round(node.scrollLeft / width);
+      const moved = landed - WINDOW_RADIUS;
+      if (moved === 0) return;
+
+      // Only the window moves here. The scroll returns to centre in the layout
+      // effect above, once the DOM actually holds the new window.
+      setActiveIndex((current) => wrapIndex(current + moved, items.length));
+    };
+
+    const hasScrollEnd = "onscrollend" in window;
+
+    const handleScrollEnd = () => settle();
+
+    const handleScroll = () => {
       if (settleTimer) clearTimeout(settleTimer);
 
-      settleTimer = setTimeout(() => {
-        const width = slotWidth();
-        if (!width || !scroller) return;
+      settleTimer = setTimeout(settle, 120);
+    };
 
-        const landed = Math.round(scroller.scrollLeft / width);
-        const moved = landed - WINDOW_RADIUS;
-        if (moved === 0) return;
-
-        // The window shifts by however far the swipe travelled and the scroll
-        // returns to centre. The card under the snap point is the same one
-        // either way, so the reset cannot be seen.
-        setActiveIndex((current) => wrapIndex(current + moved, items.length));
-        centreScroll();
-      }, 120);
+    if (hasScrollEnd) {
+      node.addEventListener("scrollend", handleScrollEnd, { passive: true });
+    } else {
+      node.addEventListener("scroll", handleScroll, { passive: true });
     }
 
-    scroller.addEventListener("scroll", handleScroll, { passive: true });
-
     return () => {
-      scroller.removeEventListener("scroll", handleScroll);
+      node.removeEventListener("scrollend", handleScrollEnd);
+      node.removeEventListener("scroll", handleScroll);
       if (settleTimer) clearTimeout(settleTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
   useEffect(() => () => stopSpeech(), []);
