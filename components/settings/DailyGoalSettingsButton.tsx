@@ -17,13 +17,13 @@ import {
 
 const DAILY_GOAL_OPTIONS: Array<{
   value: DailyGoalWords;
-  key: "five" | "ten" | "fifteen" | "twenty" | "thirty";
+  key: "five" | "ten" | "fifteen" | "twenty" | "thirtyThree";
 }> = [
   { value: 5, key: "five" },
   { value: 10, key: "ten" },
   { value: 15, key: "fifteen" },
   { value: 20, key: "twenty" },
-  { value: 30, key: "thirty" },
+  { value: 33, key: "thirtyThree" },
 ];
 
 export default function DailyGoalSettingsButton() {

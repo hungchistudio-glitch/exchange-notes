@@ -1147,7 +1147,7 @@ const english: TranslationDictionary = {
         ten: "10 words",
         fifteen: "15 words",
         twenty: "20 words",
-        thirty: "30 words",
+        thirtyThree: "33 words",
       },
     },
 

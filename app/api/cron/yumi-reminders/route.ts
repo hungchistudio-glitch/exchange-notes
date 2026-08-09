@@ -26,7 +26,7 @@ const RECENT_OPEN_WINDOW_MS =
 const MAX_USERS_PER_RUN = 500;
 
 const DEFAULT_GOAL_WORDS = 10;
-const ALLOWED_GOAL_WORDS = [5, 10, 15, 20, 30];
+const ALLOWED_GOAL_WORDS = [5, 10, 15, 20, 33];
 
 function dailyGoalWords(value: unknown): number {
   return typeof value === "number" &&

@@ -1126,7 +1126,7 @@ const traditionalChinese: TranslationDictionary = {
         ten: "10 個字",
         fifteen: "15 個字",
         twenty: "20 個字",
-        thirty: "30 個字",
+        thirtyThree: "33 個字",
       },
     },
 

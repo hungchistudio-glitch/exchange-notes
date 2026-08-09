@@ -123,7 +123,7 @@ export function subscribeToAppFontSize(
    Daily study goal (minutes)
    ========================================================= */
 
-export type DailyGoalWords = 5 | 10 | 15 | 20 | 30;
+export type DailyGoalWords = 5 | 10 | 15 | 20 | 33;
 
 /*
  * A new key rather than the old "exchange-notes-daily-goal". That one held
@@ -139,7 +139,7 @@ export function isDailyGoalWords(
   value: unknown,
 ): value is DailyGoalWords {
   return (
-    value === 5 || value === 10 || value === 15 || value === 20 || value === 30
+    value === 5 || value === 10 || value === 15 || value === 20 || value === 33
   );
 }
 

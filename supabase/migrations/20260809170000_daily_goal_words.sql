@@ -25,7 +25,7 @@ alter table public.profiles
 -- outside them would render as a progress bar that can never fill.
 alter table public.profiles
   add constraint profiles_daily_goal_words_allowed
-  check (daily_goal_words in (5, 10, 15, 20, 30));
+  check (daily_goal_words in (5, 10, 15, 20, 33));
 
 comment on column public.profiles.daily_goal_words is
   'Words the user aims to add per day. Read by the Yumi reminder cron and by the vocabulary hero.';

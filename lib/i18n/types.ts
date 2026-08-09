@@ -1066,7 +1066,7 @@ export type TranslationDictionary = {
         ten: string;
         fifteen: string;
         twenty: string;
-        thirty: string;
+        thirtyThree: string;
       };
     };
 
