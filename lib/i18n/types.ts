@@ -118,6 +118,43 @@ export type TranslationDictionary = {
     };
   };
 
+  tutorial: {
+    rowTitle: string;
+    rowDescription: string;
+    rowValue: string;
+    homeButton: string;
+    open: string;
+    skip: string;
+    back: string;
+    next: string;
+    finish: string;
+    close: string;
+    stepLabel: string;
+    replay: string;
+
+    steps: {
+      meet: { title: string; body: string };
+      setup: {
+        title: string;
+        body: string;
+        appLanguageLabel: string;
+        learningLabel: string;
+        note: string;
+        saveError: string;
+      };
+      name: { title: string; body: string };
+      senses: { title: string; body: string };
+      home: { title: string; body: string };
+      vocabulary: { title: string; body: string };
+      capture: { title: string; body: string; action: string };
+      discover: { title: string; body: string; action: string };
+      messages: { title: string; body: string };
+      friends: { title: string; body: string; action: string };
+      settings: { title: string; body: string; action: string };
+      done: { title: string; body: string };
+    };
+  };
+
   navigation: {
     vocabulary: string;
     messages: string;

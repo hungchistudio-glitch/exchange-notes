@@ -33,6 +33,7 @@ import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettings
 import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
 import NativeWidgetSettingsButton from "@/components/settings/NativeWidgetSettingsButton";
 import ScriptableWidgetSettingsButton from "@/components/settings/ScriptableWidgetSettingsButton";
+import TutorialSettingsButton from "@/components/settings/TutorialSettingsButton";
 import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
 import YumiReminderSettingsButton from "@/components/settings/YumiReminderSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -507,6 +508,7 @@ export default function ProfilePage() {
             </p>
 
             <div className="divide-y divide-black/[0.05] overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.03)]">
+              <TutorialSettingsButton />
               <PronunciationSettingsButton />
               <FontSizeSettingsButton />
               <AppLanguageSettingsButton />

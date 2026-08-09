@@ -310,3 +310,77 @@ export function subscribeToInterfaceLanguage(
     );
   };
 }
+
+/* =========================================================
+   Tutorial
+   ========================================================= */
+
+const TUTORIAL_SEEN_STORAGE_KEY = "exchange-notes-tutorial-seen";
+const TUTORIAL_SEEN_EVENT = "exchange-notes-tutorial-seen-change";
+
+/*
+ * Deliberately local rather than a profiles column. Whether someone has been
+ * shown the tour is a property of this device, not of the account: the tour
+ * points at what is on screen, so a first visit from a phone after a laptop is
+ * still a first visit. It also keeps a cosmetic flag out of a production
+ * migration.
+ */
+export function getTutorialSeen(): boolean {
+  if (typeof window === "undefined") {
+    /*
+     * Reporting "seen" on the server is what stops the tour flashing over the
+     * home screen during hydration for someone who has already dismissed it.
+     * The client corrects this immediately for anyone who has not.
+     */
+    return true;
+  }
+
+  return (
+    window.localStorage.getItem(TUTORIAL_SEEN_STORAGE_KEY) === "true"
+  );
+}
+
+export function setTutorialSeen(seen: boolean) {
+  if (typeof window === "undefined") return;
+
+  window.localStorage.setItem(
+    TUTORIAL_SEEN_STORAGE_KEY,
+    String(seen),
+  );
+
+  window.dispatchEvent(
+    new CustomEvent<boolean>(TUTORIAL_SEEN_EVENT, {
+      detail: seen,
+    }),
+  );
+}
+
+export function subscribeToTutorialSeen(
+  listener: (seen: boolean) => void,
+) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  function handleChange(event: Event) {
+    const customEvent = event as CustomEvent<boolean>;
+
+    if (typeof customEvent.detail === "boolean") {
+      listener(customEvent.detail);
+    }
+  }
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === TUTORIAL_SEEN_STORAGE_KEY) {
+      listener(event.newValue === "true");
+    }
+  }
+
+  window.addEventListener(TUTORIAL_SEEN_EVENT, handleChange);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(TUTORIAL_SEEN_EVENT, handleChange);
+    window.removeEventListener("storage", handleStorage);
+  };
+}
