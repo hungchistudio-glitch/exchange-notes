@@ -34,6 +34,49 @@ type VocabularyContextType = {
 
 const VocabularyContext = createContext<VocabularyContextType | null>(null);
 
+type VocabularySnapshot = {
+  items: VocabularyItem[];
+  learningLanguage: AppLanguage | null;
+};
+
+/*
+ * Deliberately touches no state. The mount effect has to await this and
+ * assign the result itself: set-state-in-effect is a reachability check, so
+ * an effect may not call anything that writes state anywhere in its body,
+ * however deep past an await it happens.
+ */
+async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
+  const { user } = await getCurrentUser();
+
+  if (!user) {
+    return { items: [], learningLanguage: null };
+  }
+
+  const supabase = createClient();
+
+  const [{ data: profile }, rows] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("learning_language")
+      .eq("id", user.id)
+      .single(),
+    fetchVocabulary(user.id),
+  ]);
+
+  return {
+    items: rows as VocabularyItem[],
+    learningLanguage: profile?.learning_language
+      ? (profile.learning_language as AppLanguage)
+      : null,
+  };
+}
+
+function loadErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : "Could not load your vocabulary.";
+}
+
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
@@ -42,43 +85,24 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  /*
+   * Reached from event handlers and from the auth subscription below, never
+   * from an effect body, so it is free to show the spinner eagerly. The mount
+   * path in the effect repeats the apply step rather than calling this —
+   * about eight lines of overlap, which is the cost of not suppressing the
+   * rule here.
+   */
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const { user } = await getCurrentUser();
+      const snapshot = await fetchVocabularySnapshot();
 
-      if (!user) {
-        setItems([]);
-        setLearningLanguage(null);
-        return;
-      }
-
-      const supabase = createClient();
-
-      const [{ data: profile }, rows] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("learning_language")
-          .eq("id", user.id)
-          .single(),
-        fetchVocabulary(user.id),
-      ]);
-
-      setLearningLanguage(
-        profile?.learning_language
-          ? (profile.learning_language as AppLanguage)
-          : null,
-      );
-
-      setItems(rows as VocabularyItem[]);
+      setItems(snapshot.items);
+      setLearningLanguage(snapshot.learningLanguage);
     } catch (refreshError) {
-      setError(
-        refreshError instanceof Error
-          ? refreshError.message
-          : "Could not load your vocabulary.",
-      );
+      setError(loadErrorMessage(refreshError));
     } finally {
       setLoading(false);
     }
@@ -88,7 +112,22 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     let active = true;
     const supabase = createClient();
 
-    void refresh();
+    async function loadOnMount() {
+      try {
+        const snapshot = await fetchVocabularySnapshot();
+
+        if (!active) return;
+
+        setItems(snapshot.items);
+        setLearningLanguage(snapshot.learningLanguage);
+      } catch (loadError) {
+        if (active) setError(loadErrorMessage(loadError));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadOnMount();
 
     const {
       data: { subscription },

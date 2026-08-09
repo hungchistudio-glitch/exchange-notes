@@ -13,7 +13,7 @@ import {
 
 import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import useLearningLanguage from "@/hooks/preferences/useLearningLanguage";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import {
   englishLetters,
   type EnglishCategory,
@@ -168,13 +168,18 @@ function highlightedWord(
 export default function PronunciationLabPage() {
   const { t, language } = useTranslation();
   const copy = t.pronunciation;
-  const { learningLanguage } = useLearningLanguage();
+  const { learningLanguage } = useLearningLanguageContext();
 
   // Defaults to whichever language the user is actually learning (section 1
   // of the brief: "Learning language 決定主要學習內容") but stays a plain
   // user override once they tap the other Focus tab themselves — `mode`
   // starts null so the very first render can pick the default from
   // learningLanguage without needing an effect to sync it in afterwards.
+  //
+  // That only actually holds through the context, which the protected layout
+  // seeds from the profile server-side. The hook this used to call started
+  // every render at English and fetched afterwards, so a Chinese learner got
+  // one frame of the English tab before it swapped to zhuyin.
   const [mode, setMode] = useState<Mode | null>(null);
   const resolvedMode: Mode = mode ?? (learningLanguage === "traditional-chinese" ? "zhuyin" : "english");
 
