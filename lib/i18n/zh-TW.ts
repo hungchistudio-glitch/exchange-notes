@@ -1202,23 +1202,17 @@ const traditionalChinese: TranslationDictionary = {
 
     iphoneWidget: {
       rowTitle: "Yumi iPhone Widget",
-      rowDescription: "Exchange Notes 原生支援並自動同步",
-      statusNative: "原生",
+      rowDescription: "原生小工具 —— 尚未開放",
+      statusUnavailable: "暫不提供",
       sheetTitle: "Yumi iPhone Widget",
       sheetDescription:
-        "這個 Widget 內建在原生 App 版本裡。如果你沒有安裝該版本，請改用上方的 Scriptable Widget。",
-      nativeTitle: "已改用原生 Widget",
-      nativeDescription:
-        "開啟 Exchange Notes 後，Yumi 與最新單字會安全同步到 iPhone 主畫面。",
-      addTitle: "加入主畫面",
-      stepOne: "長按 iPhone 主畫面的空白處。",
-      stepTwo: "點一下「編輯」，再選擇「加入 Widget」。",
-      stepThree: "搜尋 Exchange Notes 或 Yumi。",
-      stepFour: "選擇小型、中型或大型尺寸並加入。",
-      behaviorTitle: "按鈕行為",
-      behaviorDescription:
-        "A 與 ㄅ 會直接播放發音，不會開啟 App；點按單字會前往該單字的詳細頁面。",
-      openAppNote: "+ 與相機辨識會開啟 App 的指定功能。",
+        "原生桌面小工具是 App 安裝檔的一部分，而目前的安裝檔還在免費開發佈建上。",
+      unavailableTitle: "免費試用階段暫不提供",
+      unavailableDescription:
+        "Exchange Notes 目前是免費開發版本。安裝原生小工具需要付費的 Apple 開發者帳號、手機要開啟開發者模式，而且免費佈建每七天就會過期 —— 與其每週壞一次，不如先關著。",
+      alternativeTitle: "改用 Scriptable 小工具",
+      alternativeDescription:
+        "上方的「iPhone Widget」那一列做的是同一件事，透過 App Store 上的 Scriptable，不需要開發者帳號，也沒有東西要續期。",
       done: "完成",
     },
 

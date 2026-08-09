@@ -1225,23 +1225,17 @@ const english: TranslationDictionary = {
 
     iphoneWidget: {
       rowTitle: "Yumi iPhone Widget",
-      rowDescription: "Native Exchange Notes widget with automatic sync",
-      statusNative: "Native",
+      rowDescription: "Native widget — not available yet",
+      statusUnavailable: "Unavailable",
       sheetTitle: "Yumi iPhone Widget",
       sheetDescription:
-        "This widget ships inside the native app build. If you are not running that build, use the Scriptable widget above instead.",
-      nativeTitle: "Native widget is ready",
-      nativeDescription:
-        "Open Exchange Notes to securely sync Yumi and your latest vocabulary to the iPhone Home Screen.",
-      addTitle: "Add to Home Screen",
-      stepOne: "Touch and hold an empty area of the iPhone Home Screen.",
-      stepTwo: "Tap Edit, then choose Add Widget.",
-      stepThree: "Search for Exchange Notes or Yumi.",
-      stepFour: "Choose the small, medium, or large size and add it.",
-      behaviorTitle: "Button behavior",
-      behaviorDescription:
-        "A and ㄅ play pronunciation without opening the app. Tapping the word opens its matching vocabulary detail page.",
-      openAppNote: "+ and camera recognition open their matching app features.",
+        "The native Home Screen widget is part of the app build, and that build is still on a free development profile.",
+      unavailableTitle: "Not available during the free trial",
+      unavailableDescription:
+        "Exchange Notes is running as a free development build. Installing the native widget needs a paid Apple developer account and Developer Mode on the phone, and a free profile expires after seven days — so this stays switched off rather than breaking once a week.",
+      alternativeTitle: "Use the Scriptable widget instead",
+      alternativeDescription:
+        "The iPhone Widget row above does the same job through Scriptable, from the App Store, with no developer account and nothing to renew.",
       done: "Done",
     },
 
