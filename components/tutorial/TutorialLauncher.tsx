@@ -6,25 +6,29 @@ import { useState } from "react";
 import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import useTutorialSeen from "@/hooks/preferences/useTutorialSeen";
+import useTutorialPending from "@/hooks/preferences/useTutorialPending";
 
 /**
  * The tour's home-screen entry point, and the thing that opens it unprompted
  * the very first time.
  *
- * First-run is derived, not assigned: the overlay is on screen whenever the
- * device has not seen it, so there is no effect writing state on mount and no
- * frame where the home screen is visible before the tour covers it. Dismissing
- * flips the stored flag, the store notifies, and this unmounts on its own.
+ * It opens by itself only when onboarding has just finished and left a tour
+ * pending — never merely because this device has no record of one. An account
+ * that has been in use for months has no pending tour and is left alone; its
+ * owner reaches the tour through this button or through Settings.
+ *
+ * Pending is derived, not assigned: the overlay is on screen while the flag is
+ * set, so no effect writes state on mount. Dismissing clears the flag, the
+ * store notifies, and this unmounts on its own.
  */
 export default function TutorialLauncher() {
   const { t } = useTranslation();
   const copy = t.tutorial;
 
-  const seen = useTutorialSeen();
+  const pending = useTutorialPending();
   const [reopened, setReopened] = useState(false);
 
-  const showing = reopened || !seen;
+  const showing = reopened || pending;
 
   return (
     <>

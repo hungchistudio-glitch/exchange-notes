@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { setTutorialPending } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -121,6 +122,14 @@ export default function OnboardingFlow({
       );
       return;
     }
+
+    /*
+     * The only place a tour is ever armed. Arming it here rather than treating
+     * "this device has no record" as new is what keeps it away from accounts
+     * that have been in use for months — they reach it from Home or Settings
+     * instead. Cleared by the tour itself the moment it is dismissed.
+     */
+    setTutorialPending(true);
 
     router.replace("/");
     router.refresh();

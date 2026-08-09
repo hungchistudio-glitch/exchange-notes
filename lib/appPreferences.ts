@@ -315,48 +315,51 @@ export function subscribeToInterfaceLanguage(
    Tutorial
    ========================================================= */
 
-const TUTORIAL_SEEN_STORAGE_KEY = "exchange-notes-tutorial-seen";
-const TUTORIAL_SEEN_EVENT = "exchange-notes-tutorial-seen-change";
+const TUTORIAL_PENDING_STORAGE_KEY = "exchange-notes-tutorial-pending";
+const TUTORIAL_PENDING_EVENT = "exchange-notes-tutorial-pending-change";
 
 /*
- * Deliberately local rather than a profiles column. Whether someone has been
- * shown the tour is a property of this device, not of the account: the tour
- * points at what is on screen, so a first visit from a phone after a laptop is
- * still a first visit. It also keeps a cosmetic flag out of a production
- * migration.
+ * Whether the tour is waiting to be shown, which is set once when onboarding
+ * completes and cleared the moment the tour is dismissed.
+ *
+ * Deliberately not "has this device seen it". That phrasing defaults to
+ * showing, so every existing account would have been handed the tour the next
+ * time they opened the app — they have been using it for months. Asking
+ * instead whether someone has just finished signing up defaults to silence,
+ * and only a genuinely new account can answer yes.
+ *
+ * Local rather than a profiles column: it is answered once, seconds after
+ * onboarding, on the device onboarding happened on, and it keeps a cosmetic
+ * flag out of a production migration.
  */
-export function getTutorialSeen(): boolean {
+export function getTutorialPending(): boolean {
   if (typeof window === "undefined") {
-    /*
-     * Reporting "seen" on the server is what stops the tour flashing over the
-     * home screen during hydration for someone who has already dismissed it.
-     * The client corrects this immediately for anyone who has not.
-     */
-    return true;
+    return false;
   }
 
   return (
-    window.localStorage.getItem(TUTORIAL_SEEN_STORAGE_KEY) === "true"
+    window.localStorage.getItem(TUTORIAL_PENDING_STORAGE_KEY) === "true"
   );
 }
 
-export function setTutorialSeen(seen: boolean) {
+export function setTutorialPending(pending: boolean) {
   if (typeof window === "undefined") return;
 
-  window.localStorage.setItem(
-    TUTORIAL_SEEN_STORAGE_KEY,
-    String(seen),
-  );
+  if (pending) {
+    window.localStorage.setItem(TUTORIAL_PENDING_STORAGE_KEY, "true");
+  } else {
+    window.localStorage.removeItem(TUTORIAL_PENDING_STORAGE_KEY);
+  }
 
   window.dispatchEvent(
-    new CustomEvent<boolean>(TUTORIAL_SEEN_EVENT, {
-      detail: seen,
+    new CustomEvent<boolean>(TUTORIAL_PENDING_EVENT, {
+      detail: pending,
     }),
   );
 }
 
-export function subscribeToTutorialSeen(
-  listener: (seen: boolean) => void,
+export function subscribeToTutorialPending(
+  listener: (pending: boolean) => void,
 ) {
   if (typeof window === "undefined") {
     return () => undefined;
@@ -371,16 +374,16 @@ export function subscribeToTutorialSeen(
   }
 
   function handleStorage(event: StorageEvent) {
-    if (event.key === TUTORIAL_SEEN_STORAGE_KEY) {
+    if (event.key === TUTORIAL_PENDING_STORAGE_KEY) {
       listener(event.newValue === "true");
     }
   }
 
-  window.addEventListener(TUTORIAL_SEEN_EVENT, handleChange);
+  window.addEventListener(TUTORIAL_PENDING_EVENT, handleChange);
   window.addEventListener("storage", handleStorage);
 
   return () => {
-    window.removeEventListener(TUTORIAL_SEEN_EVENT, handleChange);
+    window.removeEventListener(TUTORIAL_PENDING_EVENT, handleChange);
     window.removeEventListener("storage", handleStorage);
   };
 }

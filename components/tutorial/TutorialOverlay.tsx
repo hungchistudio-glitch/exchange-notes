@@ -24,7 +24,7 @@ import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { setTutorialSeen } from "@/lib/appPreferences";
+import { setTutorialPending } from "@/lib/appPreferences";
 import { insertValues } from "@/lib/utils";
 
 type StepKey =
@@ -202,13 +202,13 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const isYumiStep = step === "meet" || step === "done";
 
   /*
-   * Dismissing is always recorded, whether the tour was finished, skipped, or
-   * followed out to a destination. Someone who skipped has made a decision,
-   * and asking again next time would override it. Both entry points are
-   * permanent, so nothing is lost by taking them at their word.
+   * Clearing the pending flag is unconditional — finished, skipped, or
+   * followed out to a destination all count. Someone who skipped has made a
+   * decision, and asking again next time would override it. Both entry points
+   * are permanent, so nothing is lost by taking them at their word.
    */
   const dismiss = useCallback(() => {
-    setTutorialSeen(true);
+    setTutorialPending(false);
     onClose();
   }, [onClose]);
 
