@@ -89,7 +89,6 @@ const traditionalChinese: TranslationDictionary = {
     send: "傳送",
     source: "來源",
     loading: "載入中…",
-    retry: "再試一次",
     error: "發生錯誤",
   },
 
@@ -100,7 +99,6 @@ const traditionalChinese: TranslationDictionary = {
       subtitle: "選擇整個 App 使用的顯示語言。",
       englishTitle: "English",
       englishDescription: "以英文使用 Exchange Notes",
-      traditionalChineseTitle: "繁體中文",
       traditionalChineseDescription: "以繁體中文使用 Exchange Notes",
       continue: "繼續",
     },
@@ -114,15 +112,7 @@ const traditionalChinese: TranslationDictionary = {
       googleSubmit: "使用 Google 繼續",
       googleSubmitting: "連接中…",
       email: "電子郵件",
-      emailPlaceholder: "you@example.com",
-      password: "密碼",
-      passwordPlaceholder: "至少 6 個字元",
-      forgotPassword: "忘記密碼？",
-      submit: "登入",
-      submitting: "登入中…",
-      createAccount: "建立帳號",
       genericError: "目前無法登入，請再試一次。",
-      changeLanguage: "變更語言",
     },
   },
 
@@ -139,12 +129,10 @@ const traditionalChinese: TranslationDictionary = {
     eyebrow: "Exchange Notes",
     subtitle: "從今日的重要新聞學英文。",
 
-    liveGlobalStories: "全球即時報導",
     dailyNewsTitle: "每日新聞",
     speechSpeed: "朗讀速度",
 
     vocabulary: "單字",
-    tapToExpand: "點擊展開",
 
     saveToNotes: "儲存到筆記",
     saving: "儲存中",
@@ -169,28 +157,16 @@ const traditionalChinese: TranslationDictionary = {
     readVocabWordAriaLabel: "朗讀 {word} 與其例句",
     readVocabChineseAriaLabel: "朗讀 {translation} 與中文例句",
 
-    sendToFriend: "傳送",
-    newStories: "載入新文章",
     loadingNewStories: "載入中…",
-    loadNewStoriesAriaLabel: "載入新的新聞課程",
-    originalSourceAriaLabel: "開啟原始新聞來源",
     sendToFriendAriaLabel: "傳送給朋友",
-    shareAriaLabel: "分享文章",
-    listenHeadlineAriaLabel: "聆聽英文標題",
-    listenSummaryAriaLabel: "聆聽英文摘要",
     loginRequiredError: "你尚未登入。請先登入再分享給朋友。",
     loadFriendsError: "無法載入朋友名單，請再試一次。",
     loadNewsError: "無法載入每日新聞。",
-    loadNewsRetryError: "無法載入每日新聞，請稍後再試。",
 
     loading: "正在載入今日課程…",
-    loadingDescription: "正在將最新新聞整理成英文學習內容。",
 
     emptyTitle: "目前沒有新聞",
     emptyDescription: "請稍後再試一次。",
-
-    errorTitle: "無法載入探索內容",
-    errorDescription: "請檢查網路連線後再試一次。",
 
     categories: {
       world: "世界",
@@ -205,16 +181,13 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     latestStoriesLabel: "最新新聞",
-    readMore: "展開閱讀",
     keyWordsLabel: "{count} 個重點單字",
-    moreActions: "更多",
     moreActionsAriaLabel: "更多操作",
     openSource: "開啟來源",
     shareStory: "分享",
     shareCopied: "連結已複製",
     hideStory: "隱藏新聞",
     save: "收藏",
-    listen: "聆聽",
     speedSlow: "慢速",
     speedNatural: "自然",
     speedFast: "快速",
@@ -222,7 +195,6 @@ const traditionalChinese: TranslationDictionary = {
     vocabularyDrawerDescription: "點擊單字即可聆聽發音。",
 
     refreshAction: "更新",
-    refreshAriaLabel: "重新載入新聞",
     playFullStory: "播放全文",
     stopStory: "停止",
     playFullStoryAriaLabel: "朗讀全文",
@@ -233,7 +205,6 @@ const traditionalChinese: TranslationDictionary = {
 
     addToVocabulary: "加入單字庫",
     addedToVocabulary: "已加入",
-    addingToVocabulary: "加入中",
     addToVocabularyAriaLabel: "將 {word} 加入單字庫",
 
     exploreImageLabel: "探索這張圖片 · {count} 個單字",
@@ -242,7 +213,6 @@ const traditionalChinese: TranslationDictionary = {
   capture: {
     backToVocabulary: "返回單字",
     backToHome: "返回首頁",
-    backToCapture: "返回探索主頁",
     eyebrow: "AI 單字辨識",
     title: "探索",
     description: "拍攝生活中的物品，確認 AI 產生的雙語結果，再儲存成新單字。",
@@ -253,7 +223,6 @@ const traditionalChinese: TranslationDictionary = {
     progress: {
       ariaLabel: "辨識進度",
       photo: "照片",
-      analyze: "分析",
       review: "確認",
       save: "儲存",
     },
@@ -263,9 +232,7 @@ const traditionalChinese: TranslationDictionary = {
       title: "把生活變成單字",
       description:
         "拍攝物品或選擇照片，AI 會建立一張雙語單字卡，讓你確認後再儲存。",
-      takePhoto: "拍攝照片",
       useCamera: "開啟相機",
-      chooseImage: "選擇照片",
       photoLibrary: "照片圖庫",
       cameraStarting: "正在開啟相機…",
       unsupported:
@@ -277,8 +244,6 @@ const traditionalChinese: TranslationDictionary = {
       captureAriaLabel: "拍攝照片",
       closeCameraAriaLabel: "關閉相機",
       selectedObjectAlt: "已選擇的物品",
-      selectedImage: "已選擇的照片",
-      analyzeAgain: "重新分析",
       chooseAnother: "選擇其他照片",
       focusHint: "將物品對準中央",
     },
@@ -303,14 +268,11 @@ const traditionalChinese: TranslationDictionary = {
       saving: "正在儲存",
       saved: "已儲存至單字庫",
       saveToVocabulary: "儲存至單字庫",
-      loadingPartners: "正在載入學習夥伴",
       sendToPartner: "傳送給學習夥伴",
     },
 
     categories: {
       people: "人物",
-      objects: "物品",
-      actions: "動作",
       other: "其他",
     },
 
@@ -321,15 +283,12 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     errors: {
-      openSelectedImage: "無法開啟所選照片。",
       cameraPermissionDenied:
         "相機權限遭到拒絕。請在瀏覽器設定中允許相機權限，或改為選擇照片。",
       noCamera: "此裝置找不到可用的相機。",
       cameraInUse: "相機目前正由其他應用程式使用。",
       cameraUnavailable: "目前無法使用相機，請改為選擇照片。",
       cameraPreview: "無法啟動相機預覽，請再試一次。",
-      readImage: "無法讀取這張照片。",
-      openImage: "無法開啟這張照片。",
       processImage: "無法處理這張照片。",
       selectImage: "請選擇照片檔案。",
       imageTooLarge: "請選擇小於 10 MB 的照片。",
@@ -343,9 +302,7 @@ const traditionalChinese: TranslationDictionary = {
       duplicateWord: "這個單字已經存在於你的單字庫。",
       saveWord: "無法儲存這個單字。",
       loginBeforeShare: "請先登入再分享單字。",
-      noPartners: "你目前還沒有學習夥伴，請先新增朋友。",
       loadPartners: "無法載入學習夥伴。",
-      sendWord: "無法傳送這個單字。",
     },
   },
 
@@ -398,7 +355,6 @@ const traditionalChinese: TranslationDictionary = {
 
     dailyFocus: {
       eyebrow: "今天",
-      sectionTitle: "今日學習重點",
       cardEyebrow: "每日學習重點",
       wordReady: "1 個單字待複習",
       wordsReady: "{count} 個單字待複習",
@@ -422,12 +378,9 @@ const traditionalChinese: TranslationDictionary = {
       untitledWord: "未命名單字",
       emptyHeading: "開始你的第一堂課",
       emptyDescription: "新增一個單字，就會出現在這裡。",
-      playEnglishExampleAriaLabel: "播放英文例句",
-      playChineseExampleAriaLabel: "播放中文例句",
       previousWord: "上一個單字",
       nextWord: "下一個單字",
       swipeHint: "左右滑動翻閱單字卡",
-      positionLabel: "第 {current} 張，共 {total} 張",
     },
 
     quickStart: {
@@ -435,7 +388,6 @@ const traditionalChinese: TranslationDictionary = {
       title: "繼續學習",
       review: "複習",
       capture: "拍照學單字",
-      loadingWords: "正在載入單字…",
       wordReady: "1 個單字待複習",
       wordsReady: "{count} 個單字待複習",
       caughtUp: "今天的複習已完成",
@@ -457,7 +409,6 @@ const traditionalChinese: TranslationDictionary = {
       readyDescription: "你的單字已準備好開始複習。",
       caughtUpDescription: "目前沒有需要複習的單字。",
       continueReview: "繼續複習",
-      openReview: "開啟複習",
       accuracy: "答題準確率",
       retention: "記憶保留度",
       mastered: "已掌握",
@@ -520,8 +471,6 @@ const traditionalChinese: TranslationDictionary = {
       commonMistake: "常見發音陷阱",
       showMoreGuidance: "更多說明",
       showLessGuidance: "收合",
-      showTrapDetails: "展開詳情",
-      hideTrapDetails: "收合詳情",
       commonTrapSummary: "你可能把 {symbol} 發成 {confusedWith} 的音。",
       playbackFailed: "播放失敗，點一下再試一次。",
       kk: "KK",
@@ -536,7 +485,6 @@ const traditionalChinese: TranslationDictionary = {
       voice: "聲帶",
       demoAriaLabel: "Yumi 正在示範這個音的嘴型與舌位",
       tapToHear: "點一下 Yumi，聆聽並觀看目前的發音方式。",
-      sleepingAriaLabel: "Yumi 正在休息——滑到這張卡片喚醒她",
     },
   },
 
@@ -547,9 +495,7 @@ const traditionalChinese: TranslationDictionary = {
     loadingMessages: "正在載入訊息…",
     today: "今天",
     yesterday: "昨天",
-    removeFriendConfirm: "要將 {name} 從好友中移除嗎？",
     inputPlaceholder: "寫訊息…",
-    backToMessages: "返回訊息",
     chatFallback: "對話",
     selectedCount: "已選擇 {count} 則",
     selectAll: "全選",
@@ -562,33 +508,27 @@ const traditionalChinese: TranslationDictionary = {
     deleteDialogDescription:
       "這些訊息只會從你的畫面移除，對話中的其他人仍然看得到。",
     closeDeleteConfirmation: "關閉刪除確認視窗",
-    analyzingAndSending: "分析並傳送中…",
     send: "傳送",
     selectMessages: "選擇訊息",
     delete: "刪除",
     deleting: "刪除中…",
     cancel: "取消",
     deleteFriend: "刪除好友",
-    deleteMessage: "刪除訊息",
-    deleteMessages: "刪除訊息",
     english: "英文",
     traditionalChinese: "繁體中文",
 
     youPrefix: "你：",
     attachmentLabel: "照片",
     voiceLabel: "語音訊息",
-    sharedArticleLabel: "分享了一篇文章",
     muted: "已靜音",
     muteConversation: "靜音",
     unmuteConversation: "取消靜音",
     noConversationsFound: "找不到符合的對話。",
     typingIndicator: "{name} 正在輸入…",
-    statusSending: "傳送中",
     statusSent: "已送出",
     statusDelivered: "已送達",
     statusRead: "已讀",
 
-    moodSwipeHint: "滑動看看更多表情",
     moodCalm: "平靜",
     moodCurious: "好奇",
     moodSleepy: "想睡",
@@ -596,11 +536,8 @@ const traditionalChinese: TranslationDictionary = {
     moodHappy: "開心",
 
     errors: {
-      notLoggedIn: "你尚未登入。",
       loadConversations: "無法載入你的對話。",
       removeFriend: "無法移除此好友。",
-      noMessagesDeleted: "沒有刪除任何訊息。你只能刪除自己傳送的訊息。",
-      partialDelete: "部分訊息無法刪除。你只能刪除自己傳送的訊息。",
       deleteSelected: "無法刪除所選訊息。",
       shareWord: "無法分享這個單字，請再試一次。",
       openConversation: "無法開啟這個對話，請再試一次。",
@@ -640,7 +577,6 @@ const traditionalChinese: TranslationDictionary = {
       description: "其他人掃描這個 QR Code 後，就能立即新增你為朋友。",
       imageAlt: "你的 Exchange Notes 朋友 QR Code",
       loading: "載入中…",
-      loginToGetCode: "登入後即可取得你的 QR Code",
     },
 
     incoming: {
@@ -649,16 +585,12 @@ const traditionalChinese: TranslationDictionary = {
       accept: "接受",
       decline: "拒絕",
       responding: "更新中…",
-      wantsToConnect: "想和你成為朋友",
     },
 
     outgoing: {
       title: "已傳送的邀請",
       empty: "目前沒有等待回覆的邀請。",
-      pending: "等待回覆",
       cancel: "取消",
-      cancelling: "取消中…",
-      waitingForResponse: "等待對方回覆",
     },
 
     list: {
@@ -669,7 +601,6 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     banners: {
-      loginFirst: "請先登入，登入後即可開始新增朋友。",
       enterExchangeId: "請輸入朋友的 Exchange ID。",
       invitePrefilled: "已掃描到 @{exchangeId}，送出邀請就能加對方好友。",
       profileNotFound:
@@ -681,7 +612,6 @@ const traditionalChinese: TranslationDictionary = {
         "已將邀請傳送給 @{exchangeId}，對方下次開啟朋友頁面時就會看到。",
       sendFailed: "傳送邀請時發生問題，請稍後再試。",
       respondFailed: "無法更新這個邀請，請再試一次。",
-      cancelFailed: "無法取消這個邀請，請再試一次。",
       loadFailed: "目前無法載入朋友資料，請稍後再試。",
       removeFriendFailed: "無法移除這位好友，請再試一次。",
     },
@@ -746,11 +676,6 @@ const traditionalChinese: TranslationDictionary = {
         missingYou: "想你了",
         confused: "疑惑",
       },
-      statWordsToday: "今日新增",
-      statCookies: "餅乾",
-      statStreak: "連續天數",
-      statStreakDays: "天",
-      statMood: "心情",
       summaryWordSingular: "今天新增 {count} 個單字",
       summaryWordPlural: "今天新增 {count} 個單字",
       summaryCookieSingular: "{count} 個餅乾",
@@ -773,8 +698,6 @@ const traditionalChinese: TranslationDictionary = {
       reviewActionLabel: "開始複習",
       addWordActionLabel: "使用 AI 新增單字",
       cameraActionLabel: "使用相機辨識",
-      reviewLinkLabel: "開始複習",
-      collectionsLinkLabel: "收藏分類",
     },
 
     lookup: {
@@ -821,7 +744,6 @@ const traditionalChinese: TranslationDictionary = {
       toggleError: "無法更新這個收藏分類，請再試一次。",
       emptyTitle: "還沒有收藏分類",
       emptyDescription: "建立一個學習空間，把想一起學習的單字整理起來。",
-      suggestions: "從範例開始",
       listAriaLabel: "單字收藏分類",
       newCollection: "新增分類",
       close: "關閉",
@@ -833,10 +755,6 @@ const traditionalChinese: TranslationDictionary = {
       word: "個單字",
       words: "個單字",
       examples: {
-        food: "食物",
-        fashion: "時尚",
-        travel: "旅行",
-        work: "工作",
         home: "居家",
       },
 
@@ -862,11 +780,9 @@ const traditionalChinese: TranslationDictionary = {
       translation: "翻譯",
       example: "例句",
 
-      learningProgress: "學習進度",
       accuracy: "準確率",
       reviews: "複習次數",
       nextReview: "下次複習",
-      starsAriaLabel: "學習程度為 5 顆星中的 {count} 顆",
 
       levels: {
         new: "新單字",
@@ -922,10 +838,8 @@ const traditionalChinese: TranslationDictionary = {
         title: "複習詳細資料",
         lastReviewed: "上次複習",
         never: "尚未複習",
-        interval: "複習間隔",
         day: "天",
         days: "天",
-        ease: "熟悉係數",
       },
 
       edit: {
@@ -933,11 +847,9 @@ const traditionalChinese: TranslationDictionary = {
         subtitle: "更新單字與例句。",
         english: "英文",
         traditionalChinese: "繁體中文",
-        englishPlaceholder: "英文單字或片語",
         chinesePlaceholder: "繁體中文翻譯",
         englishExample: "英文例句",
         chineseExample: "中文例句",
-        englishExamplePlaceholder: "輸入英文例句",
         chineseExamplePlaceholder: "輸入繁體中文例句",
         close: "關閉編輯單字",
         cancel: "取消",
@@ -955,13 +867,7 @@ const traditionalChinese: TranslationDictionary = {
       },
 
       page: {
-        loginToView: "請先登入以查看這個單字。",
-        loginToEdit: "請先登入以編輯這個單字。",
         loadError: "無法載入這個單字。",
-        notFound: "找不到這個單字",
-        unavailable: "目前無法使用這個單字。",
-        deleteWord: "刪除單字",
-        deleteConfirm: "確定要從單字庫中刪除「{word}」嗎？",
       },
     },
 
@@ -997,7 +903,6 @@ const traditionalChinese: TranslationDictionary = {
       words: "個單字",
 
       sort: "排序",
-      openLibrary: "開啟單字庫",
       openCollections: "開啟收藏分類",
       toolbarAriaLabel: "單字工具",
       lookupToolbarAriaLabel: "查詢單字",
@@ -1026,44 +931,30 @@ const traditionalChinese: TranslationDictionary = {
 
   review: {
     backHome: "返回首頁",
-    backReview: "返回複習首頁",
     eyebrow: "每日複習",
     title: "複習",
     subtitle: "加強今天已準備好複習的單字。",
     today: "今天",
     cardsReady: "個單字待複習",
     introLineOne: "先複習今天到期的單字。",
-    introLineTwo: "接著再學習新單字。",
     startReview: "開始複習",
     freePractice: "自由練習",
     freePracticeDescription: "隨時練習所有已儲存的單字，不限制每日次數。",
     practiceAllWords: "練習所有單字",
-    noWordsTitle: "目前還沒有單字",
-    noWordsDescription: "先新增第一個單字，就可以開始練習。",
-    addWords: "新增單字",
-    practiceEyebrow: "自由練習",
-    practiceTitle: "練習進行中",
     queueData: "今日複習",
     ready: "待複習",
-    loadingQueue: "正在載入複習內容…",
-    system: "複習系統",
     loadError: "無法載入今天的複習內容。",
-    retry: "再試一次",
-    caughtUpTitle: "今天的複習已完成",
     caughtUpDescription: "目前沒有需要複習的單字。",
     sessionEyebrow: "每日複習",
     sessionTitle: "複習進行中",
     remaining: "剩下 {count} 個",
-    progressAriaLabel: "已完成 {completed} 個，共 {total} 個複習",
     vocabulary: "單字",
     revealAnswer: "顯示答案",
     saving: "正在儲存複習結果…",
     saveError: "無法儲存這次複習結果。",
-    completeEyebrow: "複習完成",
     completeTitle: "做得很好",
     completeDescription: "系統已根據你的回答更新下次複習時間。",
     completedReviews: "你已完成 {count} 個單字複習。",
-    reviewAgain: "再複習一次",
     backToHome: "返回首頁",
     grades: {
       again: {
@@ -1100,7 +991,6 @@ const traditionalChinese: TranslationDictionary = {
       removePhoto: "移除個人照片",
       loadingProfile: "正在載入個人資料…",
       profile: "個人資料",
-      accountDetails: "帳號資料",
       yourName: "你的名字",
       namePlaceholder: "你的名字",
       exchangeId: "Exchange ID",
@@ -1119,14 +1009,11 @@ const traditionalChinese: TranslationDictionary = {
       logoutConfirm: "確定要登出嗎？",
       photoImageError: "請選擇圖片檔案。",
       photoSizeError: "個人照片必須小於 5 MB。",
-      loginUploadError: "你必須先登入才能上傳個人照片。",
       photoUpdated: "個人照片已更新！",
       photoUploadError: "無法上傳個人照片。",
       loginRequired: "你必須先登入。",
       photoRemoved: "個人照片已移除。",
       photoRemoveError: "無法移除個人照片。",
-      loginUpdateError: "你必須先登入才能更新個人資料。",
-      exchangeIdLength: "Exchange ID 必須至少包含 3 個字元。",
       profileUpdated: "個人資料已成功更新！",
       profileUpdateError: "無法更新個人資料，請再試一次。",
       languagesMustDifferError: "母語與學習語言必須不同。",
@@ -1341,7 +1228,6 @@ const traditionalChinese: TranslationDictionary = {
       rowDescription: "聲音與朗讀速度",
       sheetTitle: "發音",
       sheetDescription: "選擇 Exchange Notes 使用的聲音與朗讀速度。",
-      settingsAriaLabel: "發音設定",
       readingSpeed: "朗讀速度",
       readingSpeedDescription: "調整單字與例句的朗讀速度。",
       readingSpeedAriaLabel: "朗讀速度",

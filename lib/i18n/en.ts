@@ -91,7 +91,6 @@ const english: TranslationDictionary = {
     send: "Send",
     source: "Source",
     loading: "Loading…",
-    retry: "Try again",
     error: "Something went wrong",
   },
 
@@ -102,7 +101,6 @@ const english: TranslationDictionary = {
       subtitle: "Select the language used throughout the app.",
       englishTitle: "English",
       englishDescription: "Use Exchange Notes in English",
-      traditionalChineseTitle: "繁體中文",
       traditionalChineseDescription: "Use Exchange Notes in Traditional Chinese",
       continue: "Continue",
     },
@@ -118,15 +116,7 @@ const english: TranslationDictionary = {
       googleSubmit: "Continue with Google",
       googleSubmitting: "Connecting…",
       email: "Email",
-      emailPlaceholder: "you@example.com",
-      password: "Password",
-      passwordPlaceholder: "At least 6 characters",
-      forgotPassword: "Forgot password?",
-      submit: "Log In",
-      submitting: "Logging in…",
-      createAccount: "Create Account",
       genericError: "Could not log in. Please try again.",
-      changeLanguage: "Change language",
     },
   },
 
@@ -143,12 +133,10 @@ const english: TranslationDictionary = {
     eyebrow: "Exchange Notes",
     subtitle: "Learn English from today's major stories.",
 
-    liveGlobalStories: "Live global stories",
     dailyNewsTitle: "Daily News",
     speechSpeed: "Speech speed",
 
     vocabulary: "Vocabulary",
-    tapToExpand: "Tap to expand",
 
     saveToNotes: "Save to Notes",
     saving: "Saving",
@@ -174,29 +162,16 @@ const english: TranslationDictionary = {
     readVocabWordAriaLabel: "Read {word} and its example",
     readVocabChineseAriaLabel: "Read {translation} and its Chinese example",
 
-    sendToFriend: "Send",
-    newStories: "New stories",
     loadingNewStories: "Loading",
-    loadNewStoriesAriaLabel: "Load new stories",
-    originalSourceAriaLabel: "Open original source",
     sendToFriendAriaLabel: "Send to a friend",
-    shareAriaLabel: "Share article",
-    listenHeadlineAriaLabel: "Listen to headline in English",
-    listenSummaryAriaLabel: "Listen to summary in English",
     loginRequiredError: "You're not logged in. Log in to share with a partner.",
     loadFriendsError: "Couldn't load your friends. Try again.",
     loadNewsError: "Unable to load daily news.",
-    loadNewsRetryError:
-      "Daily News could not be loaded. Please try again shortly.",
 
     loading: "Loading today’s lessons…",
-    loadingDescription: "Preparing current news as English learning material.",
 
     emptyTitle: "No news is available right now",
     emptyDescription: "Please try again in a few minutes.",
-
-    errorTitle: "Unable to load Discover",
-    errorDescription: "Check your connection and try again.",
 
     categories: {
       world: "World",
@@ -211,16 +186,13 @@ const english: TranslationDictionary = {
     },
 
     latestStoriesLabel: "Latest stories",
-    readMore: "Read more",
     keyWordsLabel: "{count} key words",
-    moreActions: "More",
     moreActionsAriaLabel: "More actions",
     openSource: "Open source",
     shareStory: "Share",
     shareCopied: "Link copied",
     hideStory: "Hide story",
     save: "Save",
-    listen: "Listen",
     speedSlow: "Slow",
     speedNatural: "Natural",
     speedFast: "Fast",
@@ -228,7 +200,6 @@ const english: TranslationDictionary = {
     vocabularyDrawerDescription: "Tap a word to hear it.",
 
     refreshAction: "Refresh",
-    refreshAriaLabel: "Refresh stories",
     playFullStory: "Play full story",
     stopStory: "Stop",
     playFullStoryAriaLabel: "Play the full story aloud",
@@ -239,7 +210,6 @@ const english: TranslationDictionary = {
 
     addToVocabulary: "Add to Vocabulary",
     addedToVocabulary: "Added",
-    addingToVocabulary: "Adding",
     addToVocabularyAriaLabel: "Add {word} to Vocabulary",
 
     exploreImageLabel: "Explore this image · {count} words",
@@ -248,7 +218,6 @@ const english: TranslationDictionary = {
   capture: {
     backToVocabulary: "Back to Vocabulary",
     backToHome: "Back to Home",
-    backToCapture: "Back to Discover",
     eyebrow: "AI vocabulary capture",
     title: "Discover",
     description:
@@ -260,7 +229,6 @@ const english: TranslationDictionary = {
     progress: {
       ariaLabel: "Capture progress",
       photo: "Photo",
-      analyze: "Analyze",
       review: "Review",
       save: "Save",
     },
@@ -270,9 +238,7 @@ const english: TranslationDictionary = {
       title: "Turn life into words",
       description:
         "Photograph an object or choose an image. AI will create a bilingual vocabulary card that you can review before saving.",
-      takePhoto: "Take photo",
       useCamera: "Use camera",
-      chooseImage: "Choose image",
       photoLibrary: "Photo library",
       cameraStarting: "Opening camera…",
       unsupported:
@@ -284,8 +250,6 @@ const english: TranslationDictionary = {
       captureAriaLabel: "Capture photo",
       closeCameraAriaLabel: "Close camera",
       selectedObjectAlt: "Selected object",
-      selectedImage: "Selected image",
-      analyzeAgain: "Analyze again",
       chooseAnother: "Choose another",
       focusHint: "Center the object",
     },
@@ -311,14 +275,11 @@ const english: TranslationDictionary = {
       saving: "Saving",
       saved: "Saved to Vocabulary",
       saveToVocabulary: "Save to Vocabulary",
-      loadingPartners: "Loading partners",
       sendToPartner: "Send to partner",
     },
 
     categories: {
       people: "People",
-      objects: "Objects",
-      actions: "Actions",
       other: "Other",
     },
 
@@ -329,7 +290,6 @@ const english: TranslationDictionary = {
     },
 
     errors: {
-      openSelectedImage: "Could not open the selected image.",
       cameraPermissionDenied:
         "Camera permission was denied. Enable camera access in your browser settings, or choose an image instead.",
       noCamera: "No camera was found on this device.",
@@ -337,8 +297,6 @@ const english: TranslationDictionary = {
       cameraUnavailable:
         "Camera access is unavailable. Try choosing an image instead.",
       cameraPreview: "Could not start the camera preview. Try again.",
-      readImage: "Could not read this image.",
-      openImage: "Could not open this image.",
       processImage: "Could not process this image.",
       selectImage: "Please select an image file.",
       imageTooLarge: "Please choose an image smaller than 10 MB.",
@@ -354,10 +312,7 @@ const english: TranslationDictionary = {
       duplicateWord: "This word is already in your vocabulary.",
       saveWord: "Could not save this word.",
       loginBeforeShare: "Please log in before sharing a word.",
-      noPartners:
-        "You don't have any learning partners yet. Add a friend first.",
       loadPartners: "Could not load your learning partners.",
-      sendWord: "Could not send this word.",
     },
   },
 
@@ -410,7 +365,6 @@ const english: TranslationDictionary = {
 
     dailyFocus: {
       eyebrow: "Today",
-      sectionTitle: "Your daily focus",
       cardEyebrow: "Daily focus",
       wordReady: "1 word is ready",
       wordsReady: "{count} words are ready",
@@ -436,12 +390,9 @@ const english: TranslationDictionary = {
       untitledWord: "Untitled word",
       emptyHeading: "Start your first lesson",
       emptyDescription: "Add a vocabulary word and it will show up here.",
-      playEnglishExampleAriaLabel: "Play English example",
-      playChineseExampleAriaLabel: "Play Chinese example",
       previousWord: "Previous word",
       nextWord: "Next word",
       swipeHint: "Swipe to browse vocabulary cards",
-      positionLabel: "Card {current} of {total}",
     },
 
     quickStart: {
@@ -449,7 +400,6 @@ const english: TranslationDictionary = {
       title: "Continue learning",
       review: "Review",
       capture: "Capture",
-      loadingWords: "Loading your words…",
       wordReady: "1 word ready",
       wordsReady: "{count} words ready",
       caughtUp: "You are caught up",
@@ -471,7 +421,6 @@ const english: TranslationDictionary = {
       readyDescription: "Your vocabulary is ready to review.",
       caughtUpDescription: "You’re all caught up for now.",
       continueReview: "Continue Review",
-      openReview: "Open Review",
       accuracy: "Accuracy",
       retention: "Retention",
       mastered: "Mastered",
@@ -534,8 +483,6 @@ const english: TranslationDictionary = {
       commonMistake: "Common pronunciation trap",
       showMoreGuidance: "More guidance",
       showLessGuidance: "Show less",
-      showTrapDetails: "Show details",
-      hideTrapDetails: "Hide details",
       commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
       playbackFailed: "Playback failed. Tap to try again.",
       kk: "KK",
@@ -550,7 +497,6 @@ const english: TranslationDictionary = {
       voice: "Voice",
       demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
       tapToHear: "Tap Yumi to hear and watch this sound.",
-      sleepingAriaLabel: "Yumi is resting — scroll here to wake her up",
     },
   },
 
@@ -561,9 +507,7 @@ const english: TranslationDictionary = {
     loadingMessages: "Loading messages…",
     today: "Today",
     yesterday: "Yesterday",
-    removeFriendConfirm: "Remove {name} from your friends?",
     inputPlaceholder: "Write a message",
-    backToMessages: "Back to Messages",
     chatFallback: "Chat",
     selectedCount: "{count} selected",
     selectAll: "Select All",
@@ -577,33 +521,27 @@ const english: TranslationDictionary = {
     deleteDialogDescription:
       "These messages will be removed only from your view. Other people in the conversation will still see them.",
     closeDeleteConfirmation: "Close delete confirmation",
-    analyzingAndSending: "Analyzing and sending…",
     send: "Send",
     selectMessages: "Select Messages",
     delete: "Delete",
     deleting: "Deleting…",
     cancel: "Cancel",
     deleteFriend: "Delete friend",
-    deleteMessage: "Delete message",
-    deleteMessages: "Delete messages",
     english: "English",
     traditionalChinese: "Traditional Chinese",
 
     youPrefix: "You: ",
     attachmentLabel: "Photo",
     voiceLabel: "Voice message",
-    sharedArticleLabel: "Shared an article",
     muted: "Muted",
     muteConversation: "Mute",
     unmuteConversation: "Unmute",
     noConversationsFound: "No conversations found.",
     typingIndicator: "{name} is typing…",
-    statusSending: "Sending",
     statusSent: "Sent",
     statusDelivered: "Delivered",
     statusRead: "Read",
 
-    moodSwipeHint: "Swipe to see more",
     moodCalm: "Calm",
     moodCurious: "Curious",
     moodSleepy: "Sleepy",
@@ -611,13 +549,8 @@ const english: TranslationDictionary = {
     moodHappy: "Happy",
 
     errors: {
-      notLoggedIn: "You are not logged in.",
       loadConversations: "Couldn't load your conversations.",
       removeFriend: "Could not remove this friend.",
-      noMessagesDeleted:
-        "No messages were deleted. You can only delete messages you sent.",
-      partialDelete:
-        "Some messages could not be deleted. You can only delete messages you sent.",
       deleteSelected: "Could not delete the selected messages.",
       shareWord: "Could not share this word. Please try again.",
       openConversation: "Could not open this conversation. Please try again.",
@@ -657,7 +590,6 @@ const english: TranslationDictionary = {
       description: "Anyone who scans this adds you as a friend instantly.",
       imageAlt: "Your Exchange Notes friend QR code",
       loading: "Loading…",
-      loginToGetCode: "Log in to get your code",
     },
 
     incoming: {
@@ -666,16 +598,12 @@ const english: TranslationDictionary = {
       accept: "Accept",
       decline: "Decline",
       responding: "Updating…",
-      wantsToConnect: "wants to connect",
     },
 
     outgoing: {
       title: "Sent requests",
       empty: "No pending sent requests.",
-      pending: "Pending",
       cancel: "Cancel",
-      cancelling: "Cancelling…",
-      waitingForResponse: "Waiting for a response",
     },
 
     list: {
@@ -686,7 +614,6 @@ const english: TranslationDictionary = {
     },
 
     banners: {
-      loginFirst: "Log in first, then you can start adding friends.",
       enterExchangeId: "Enter a friend’s Exchange ID to send a request.",
       invitePrefilled:
         "Scanned @{exchangeId}. Send the request to connect with them.",
@@ -700,7 +627,6 @@ const english: TranslationDictionary = {
       sendFailed:
         "Something went wrong while sending that request. Try again in a moment.",
       respondFailed: "Couldn’t update that request. Try again.",
-      cancelFailed: "Couldn’t cancel that request. Try again.",
       loadFailed: "Couldn’t load your friends right now. Try again shortly.",
       removeFriendFailed: "Unable to remove this friend. Please try again.",
     },
@@ -766,11 +692,6 @@ const english: TranslationDictionary = {
         missingYou: "Missing You",
         confused: "Puzzled",
       },
-      statWordsToday: "Words Today",
-      statCookies: "Cookies",
-      statStreak: "Learning Streak",
-      statStreakDays: "Days",
-      statMood: "Mood",
       summaryWordSingular: "{count} word today",
       summaryWordPlural: "{count} words today",
       summaryCookieSingular: "{count} cookie",
@@ -793,8 +714,6 @@ const english: TranslationDictionary = {
       reviewActionLabel: "Start review",
       addWordActionLabel: "Add a word with AI",
       cameraActionLabel: "Identify with camera",
-      reviewLinkLabel: "Start Review",
-      collectionsLinkLabel: "Collections",
     },
 
     lookup: {
@@ -844,7 +763,6 @@ const english: TranslationDictionary = {
       emptyTitle: "No collections yet",
       emptyDescription:
         "Create a learning space for words you want to study together.",
-      suggestions: "Start with an example",
       listAriaLabel: "Vocabulary collections",
       newCollection: "New collection",
       close: "Close",
@@ -856,10 +774,6 @@ const english: TranslationDictionary = {
       word: "word",
       words: "words",
       examples: {
-        food: "Food",
-        fashion: "Fashion",
-        travel: "Travel",
-        work: "Work",
         home: "Home",
       },
 
@@ -886,11 +800,9 @@ const english: TranslationDictionary = {
       translation: "Translation",
       example: "Example",
 
-      learningProgress: "Learning progress",
       accuracy: "Accuracy",
       reviews: "Reviews",
       nextReview: "Next review",
-      starsAriaLabel: "{count} out of 5 stars",
 
       levels: {
         new: "New",
@@ -946,10 +858,8 @@ const english: TranslationDictionary = {
         title: "Review details",
         lastReviewed: "Last reviewed",
         never: "Never",
-        interval: "Interval",
         day: "day",
         days: "days",
-        ease: "Ease",
       },
 
       edit: {
@@ -957,11 +867,9 @@ const english: TranslationDictionary = {
         subtitle: "Update the word and examples.",
         english: "English",
         traditionalChinese: "Traditional Chinese",
-        englishPlaceholder: "English word or phrase",
         chinesePlaceholder: "Traditional Chinese translation",
         englishExample: "English example",
         chineseExample: "Traditional Chinese example",
-        englishExamplePlaceholder: "Use the word in an English sentence.",
         chineseExamplePlaceholder: "Write a Traditional Chinese example.",
         close: "Close edit vocabulary",
         cancel: "Cancel",
@@ -979,13 +887,7 @@ const english: TranslationDictionary = {
       },
 
       page: {
-        loginToView: "Please log in to view this word.",
-        loginToEdit: "Please log in to edit this word.",
         loadError: "Could not load this word.",
-        notFound: "Word not found",
-        unavailable: "This word is unavailable.",
-        deleteWord: "Delete Word",
-        deleteConfirm: 'Delete "{word}" from your vocabulary?',
       },
     },
 
@@ -1021,7 +923,6 @@ const english: TranslationDictionary = {
       words: "words",
 
       sort: "Sort",
-      openLibrary: "Open vocabulary library",
       openCollections: "Open collections",
       toolbarAriaLabel: "Vocabulary tools",
       lookupToolbarAriaLabel: "Look up a word",
@@ -1050,45 +951,31 @@ const english: TranslationDictionary = {
 
   review: {
     backHome: "Back to Home",
-    backReview: "Back to Review",
     eyebrow: "Daily review",
     title: "Review",
     subtitle: "Strengthen the words that are ready today.",
     today: "Today",
     cardsReady: "Cards ready",
     introLineOne: "Review due cards first.",
-    introLineTwo: "New words follow.",
     startReview: "Start review",
     freePractice: "Free practice",
     freePracticeDescription:
       "Practice every saved word anytime, with no daily limit.",
     practiceAllWords: "Practice all words",
-    noWordsTitle: "No vocabulary yet",
-    noWordsDescription: "Add your first word to begin practicing.",
-    addWords: "Add words",
-    practiceEyebrow: "Free practice",
-    practiceTitle: "Practice in progress",
     queueData: "Today’s queue",
     ready: "Ready",
-    loadingQueue: "Loading review queue…",
-    system: "Review system",
     loadError: "Unable to load today’s review.",
-    retry: "Try again",
-    caughtUpTitle: "You’re all caught up",
     caughtUpDescription: "There are no vocabulary cards due right now.",
     sessionEyebrow: "Daily review",
     sessionTitle: "Session in progress",
     remaining: "{count} remaining",
-    progressAriaLabel: "{completed} of {total} reviews completed",
     vocabulary: "Vocabulary",
     revealAnswer: "Reveal answer",
     saving: "Saving review…",
     saveError: "Unable to save this review.",
-    completeEyebrow: "Session complete",
     completeTitle: "Nice work.",
     completeDescription: "Your review schedule has been updated.",
     completedReviews: "You completed {count} reviews.",
-    reviewAgain: "Review again",
     backToHome: "Back to Home",
     grades: {
       again: {
@@ -1125,7 +1012,6 @@ const english: TranslationDictionary = {
       removePhoto: "Remove profile photo",
       loadingProfile: "Loading your profile…",
       profile: "Profile",
-      accountDetails: "Account details",
       yourName: "Your name",
       namePlaceholder: "Your name",
       exchangeId: "Exchange ID",
@@ -1144,14 +1030,11 @@ const english: TranslationDictionary = {
       logoutConfirm: "Are you sure you want to log out?",
       photoImageError: "Please choose an image file.",
       photoSizeError: "Profile photos must be smaller than 5 MB.",
-      loginUploadError: "You must be logged in to upload a profile photo.",
       photoUpdated: "Profile photo updated!",
       photoUploadError: "Could not upload your profile photo.",
       loginRequired: "You must be logged in.",
       photoRemoved: "Profile photo removed.",
       photoRemoveError: "Could not remove your profile photo.",
-      loginUpdateError: "You must be logged in to update your profile.",
-      exchangeIdLength: "Exchange ID must contain at least 3 characters.",
       profileUpdated: "Profile updated successfully!",
       profileUpdateError: "Could not update profile. Please try again.",
       languagesMustDifferError: "Native language and learning language must be different.",
@@ -1369,7 +1252,6 @@ const english: TranslationDictionary = {
       sheetTitle: "Pronunciation",
       sheetDescription:
         "Choose the voice and reading speed used throughout Exchange Notes.",
-      settingsAriaLabel: "Pronunciation settings",
       readingSpeed: "Reading speed",
       readingSpeedDescription:
         "Adjust how quickly words and examples are spoken.",
