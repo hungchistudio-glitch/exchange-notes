@@ -7,22 +7,23 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { createClient } from "@/lib/supabase/client";
 import {
-  getDailyGoalMinutes,
-  setDailyGoalMinutes,
-  subscribeToDailyGoalMinutes,
-  type DailyGoalMinutes,
+  getDailyGoalWords,
+  setDailyGoalWords,
+  subscribeToDailyGoalWords,
+  type DailyGoalWords,
 } from "@/lib/appPreferences";
 
 const DAILY_GOAL_OPTIONS: Array<{
-  value: DailyGoalMinutes;
-  key: "five" | "ten" | "fifteen" | "twenty" | "thirty";
+  value: DailyGoalWords;
+  key: "five" | "ten" | "fifteen" | "twenty" | "thirtyThree";
 }> = [
   { value: 5, key: "five" },
   { value: 10, key: "ten" },
   { value: 15, key: "fifteen" },
   { value: 20, key: "twenty" },
-  { value: 30, key: "thirty" },
+  { value: 33, key: "thirtyThree" },
 ];
 
 export default function DailyGoalSettingsButton() {
@@ -30,21 +31,49 @@ export default function DailyGoalSettingsButton() {
 
   /**
    * The stored goal is an external store, not component state. Both snapshots
-   * use getDailyGoalMinutes because it already returns the default when there
+   * use getDailyGoalWords because it already returns the default when there
    * is no window, keeping the server and client renders identical.
    */
   const goal = useSyncExternalStore(
-    subscribeToDailyGoalMinutes,
-    getDailyGoalMinutes,
-    getDailyGoalMinutes,
+    subscribeToDailyGoalWords,
+    getDailyGoalWords,
+    getDailyGoalWords,
   );
 
   const { t } = useTranslation();
   const copy = t.settings.dailyGoal;
 
-  function handleSelect(value: DailyGoalMinutes) {
-    setDailyGoalMinutes(value);
+  /*
+   * Written twice, deliberately. The local store is what every screen reads,
+   * so it changes now and without a round trip; the profile copy is what the
+   * reminder cron reads, and it is the only reason the server knows the goal
+   * at all. The local write is not rolled back if the remote one fails —
+   * the choice is still true of this device, and the next change will carry
+   * it up.
+   */
+  async function persist(value: DailyGoalWords) {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ daily_goal_words: value })
+      .eq("id", user.id);
+
+    if (error) {
+      console.warn("Daily goal could not be saved to the profile.", error);
+    }
+  }
+
+  function handleSelect(value: DailyGoalWords) {
+    setDailyGoalWords(value);
     setOpen(false);
+    void persist(value);
   }
 
   return (
@@ -52,7 +81,7 @@ export default function DailyGoalSettingsButton() {
       <SettingsRow
         title={copy.rowTitle}
         description={copy.rowDescription}
-        value={`${goal} ${copy.minutesLabel}`}
+        value={`${goal} ${copy.wordsLabel}`}
         icon={<Target size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />

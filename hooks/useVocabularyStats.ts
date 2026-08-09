@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import { buildReviewAnalytics } from "@/lib/review/analytics";
+import {
+  getDailyGoalWords,
+  subscribeToDailyGoalWords,
+} from "@/lib/appPreferences";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 
@@ -20,6 +24,19 @@ export type VocabularyQuickFilter = {
 export default function useVocabularyStats(items: VocabularyItem[]) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
+
+  /*
+   * Read here rather than threaded through both callers, and read as an
+   * external store so changing it in Settings updates the hero without a
+   * reload. Until now this was the literal 10 below, which is why the setting
+   * appeared to do nothing.
+   */
+  const dailyGoal = useSyncExternalStore(
+    subscribeToDailyGoalWords,
+    getDailyGoalWords,
+    getDailyGoalWords,
+  );
+
   return useMemo(() => {
     const totalWords = items.length;
     const newWords = items.filter((item) => item.status === "new").length;
@@ -37,7 +54,6 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       return new Date(item.created_at).toDateString() === todayKey;
     }).length;
 
-    const dailyGoal = 10;
     const dailyProgress = Math.min(todayAdded, dailyGoal);
 
     const reviewStats = buildReviewAnalytics(items);
@@ -76,5 +92,5 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       quickFilters,
       reviewStats,
     };
-  }, [items, search]);
+  }, [items, search, dailyGoal]);
 }

@@ -123,55 +123,60 @@ export function subscribeToAppFontSize(
    Daily study goal (minutes)
    ========================================================= */
 
-export type DailyGoalMinutes = 5 | 10 | 15 | 20 | 30;
+export type DailyGoalWords = 5 | 10 | 15 | 20 | 33;
 
-const DAILY_GOAL_STORAGE_KEY = "exchange-notes-daily-goal";
-const DAILY_GOAL_EVENT = "exchange-notes-daily-goal-change";
+/*
+ * A new key rather than the old "exchange-notes-daily-goal". That one held
+ * minutes, and this holds words; the numbers overlap, so reusing it would
+ * silently reinterpret a stored 30 as thirty words a day.
+ */
+const DAILY_GOAL_STORAGE_KEY = "exchange-notes-daily-goal-words";
+const DAILY_GOAL_EVENT = "exchange-notes-daily-goal-words-change";
 
-export const DEFAULT_DAILY_GOAL_MINUTES: DailyGoalMinutes = 10;
+export const DEFAULT_DAILY_GOAL_WORDS: DailyGoalWords = 10;
 
-export function isDailyGoalMinutes(
+export function isDailyGoalWords(
   value: unknown,
-): value is DailyGoalMinutes {
+): value is DailyGoalWords {
   return (
-    value === 5 || value === 10 || value === 15 || value === 20 || value === 30
+    value === 5 || value === 10 || value === 15 || value === 20 || value === 33
   );
 }
 
-export function getDailyGoalMinutes(): DailyGoalMinutes {
+export function getDailyGoalWords(): DailyGoalWords {
   if (typeof window === "undefined") {
-    return DEFAULT_DAILY_GOAL_MINUTES;
+    return DEFAULT_DAILY_GOAL_WORDS;
   }
 
   const saved = window.localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
   const parsed = saved === null ? null : Number(saved);
 
-  return isDailyGoalMinutes(parsed) ? parsed : DEFAULT_DAILY_GOAL_MINUTES;
+  return isDailyGoalWords(parsed) ? parsed : DEFAULT_DAILY_GOAL_WORDS;
 }
 
-export function setDailyGoalMinutes(minutes: DailyGoalMinutes) {
+export function setDailyGoalWords(words: DailyGoalWords) {
   if (typeof window === "undefined") return;
 
-  window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(minutes));
+  window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(words));
 
   window.dispatchEvent(
-    new CustomEvent<DailyGoalMinutes>(DAILY_GOAL_EVENT, {
-      detail: minutes,
+    new CustomEvent<DailyGoalWords>(DAILY_GOAL_EVENT, {
+      detail: words,
     }),
   );
 }
 
-export function subscribeToDailyGoalMinutes(
-  listener: (minutes: DailyGoalMinutes) => void,
+export function subscribeToDailyGoalWords(
+  listener: (words: DailyGoalWords) => void,
 ) {
   if (typeof window === "undefined") {
     return () => undefined;
   }
 
   function handleChange(event: Event) {
-    const customEvent = event as CustomEvent<DailyGoalMinutes>;
+    const customEvent = event as CustomEvent<DailyGoalWords>;
 
-    if (isDailyGoalMinutes(customEvent.detail)) {
+    if (isDailyGoalWords(customEvent.detail)) {
       listener(customEvent.detail);
     }
   }
@@ -179,7 +184,7 @@ export function subscribeToDailyGoalMinutes(
   function handleStorage(event: StorageEvent) {
     const parsed = event.newValue === null ? null : Number(event.newValue);
 
-    if (event.key === DAILY_GOAL_STORAGE_KEY && isDailyGoalMinutes(parsed)) {
+    if (event.key === DAILY_GOAL_STORAGE_KEY && isDailyGoalWords(parsed)) {
       listener(parsed);
     }
   }

@@ -1,37 +1,29 @@
 "use client";
 
-import {
-  Camera,
-  Check,
-  Plus,
-  Search,
-  Smartphone,
-  Volume2,
-} from "lucide-react";
+import { Info, Smartphone } from "lucide-react";
 import { useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
-const STEP_ICONS = [
-  Smartphone,
-  Plus,
-  Search,
-  Check,
-] as const;
-
+/**
+ * The native Home Screen widget, which cannot currently be offered.
+ *
+ * It ships inside the app build, and that build is signed with a free Apple
+ * development profile: installing it needs a paid developer account and
+ * Developer Mode on the phone, and the profile expires after seven days. The
+ * row used to walk through adding it to the Home Screen, which was an
+ * instruction nobody could follow to the end.
+ *
+ * It stays visible rather than being removed so the answer to "where is the
+ * widget" is on the screen where it is expected, next to the Scriptable row
+ * that does work.
+ */
 export default function NativeWidgetSettingsButton() {
   const { t } = useTranslation();
   const copy = t.settings.iphoneWidget;
   const [open, setOpen] = useState(false);
-
-  const steps = [
-    copy.stepOne,
-    copy.stepTwo,
-    copy.stepThree,
-    copy.stepFour,
-  ];
 
   return (
     <>
@@ -39,8 +31,8 @@ export default function NativeWidgetSettingsButton() {
         title={copy.rowTitle}
         description={copy.rowDescription}
         icon={<Smartphone size={16} strokeWidth={1.8} />}
-        value={copy.statusNative}
-        tone="emerald"
+        value={copy.statusUnavailable}
+        tone="neutral"
         onClick={() => setOpen(true)}
       />
 
@@ -59,73 +51,31 @@ export default function NativeWidgetSettingsButton() {
           </button>
         }
       >
-        <div className="space-y-5">
-          <section className="rounded-[24px] border border-emerald-500/15 bg-emerald-500/[0.07] p-4">
+        <div className="space-y-3">
+          <section className="rounded-[24px] border border-amber-500/20 bg-amber-500/[0.07] p-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-                <Check size={17} strokeWidth={2.2} />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+                <Info size={17} strokeWidth={2.1} />
               </span>
 
               <div>
                 <h3 className="text-[15px] font-semibold text-black">
-                  {copy.nativeTitle}
+                  {copy.unavailableTitle}
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-black/55">
-                  {copy.nativeDescription}
+                  {copy.unavailableDescription}
                 </p>
               </div>
             </div>
-          </section>
-
-          <section>
-            <h3 className="px-1 text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
-              {copy.addTitle}
-            </h3>
-
-            <ol className="mt-2 overflow-hidden rounded-[24px] border border-black/[0.06] bg-white">
-              {steps.map((step, index) => {
-                const StepIcon = STEP_ICONS[index];
-
-                return (
-                  <li
-                    key={step}
-                    className="flex items-center gap-3 border-b border-black/[0.05] px-4 py-3.5 last:border-b-0"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/60">
-                      <StepIcon size={15} strokeWidth={1.9} />
-                    </span>
-                    <span className="text-sm font-medium leading-5 text-black/75">
-                      {step}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
           </section>
 
           <section className="rounded-[24px] border border-black/[0.06] bg-black/[0.025] p-4">
-            <div className="flex items-start gap-3">
-              <Volume2
-                aria-hidden="true"
-                size={18}
-                strokeWidth={1.8}
-                className="mt-0.5 shrink-0 text-black/55"
-              />
-              <div>
-                <h3 className="text-sm font-semibold text-black/75">
-                  {copy.behaviorTitle}
-                </h3>
-                <p className="mt-1 text-sm leading-5 text-black/50">
-                  {copy.behaviorDescription}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2 border-t border-black/[0.05] pt-3 text-xs font-medium text-black/45">
-              <Plus size={14} strokeWidth={1.9} />
-              <Camera size={14} strokeWidth={1.9} />
-              <span>{copy.openAppNote}</span>
-            </div>
+            <h3 className="text-sm font-semibold text-black/75">
+              {copy.alternativeTitle}
+            </h3>
+            <p className="mt-1 text-sm leading-5 text-black/50">
+              {copy.alternativeDescription}
+            </p>
           </section>
         </div>
       </BottomSheet>

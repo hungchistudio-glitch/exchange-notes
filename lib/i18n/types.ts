@@ -1059,14 +1059,14 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
-      minutesLabel: string;
+      wordsLabel: string;
 
       options: {
         five: string;
         ten: string;
         fifteen: string;
         twenty: string;
-        thirty: string;
+        thirtyThree: string;
       };
     };
 
@@ -1132,19 +1132,13 @@ export type TranslationDictionary = {
     iphoneWidget: {
       rowTitle: string;
       rowDescription: string;
-      statusNative: string;
+      statusUnavailable: string;
       sheetTitle: string;
       sheetDescription: string;
-      nativeTitle: string;
-      nativeDescription: string;
-      addTitle: string;
-      stepOne: string;
-      stepTwo: string;
-      stepThree: string;
-      stepFour: string;
-      behaviorTitle: string;
-      behaviorDescription: string;
-      openAppNote: string;
+      unavailableTitle: string;
+      unavailableDescription: string;
+      alternativeTitle: string;
+      alternativeDescription: string;
       done: string;
     };
 
