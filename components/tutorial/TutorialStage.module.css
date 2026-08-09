@@ -1,0 +1,234 @@
+/*
+ * One-shot performance beats for the tour. YumiMark already carries a per-mood
+ * idle loop; nothing here loops, so once a beat finishes the only thing still
+ * running is that existing idle. A tour that is open is being watched by
+ * definition, and it unmounts when dismissed, so this adds no standing cost.
+ *
+ * Every scale is non-uniform. A dot growing evenly reads as a bubble; wide
+ * where it lands and tall where it launches is what reads as weight.
+ */
+
+/* Each step's visual re-enters when the step changes. Small, springy, quick —
+   it punctuates the tap rather than making the reader wait for it. */
+.stageEnter {
+  animation: stageEnter 620ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes stageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.84, 0.96);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(-9px) scale(1.07, 0.95);
+  }
+  70% {
+    transform: translateY(3px) scale(0.97, 1.04);
+  }
+  88% {
+    transform: translateY(-2px) scale(1.02, 0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Yumi's entrance. She falls in stretched, lands hard enough to flatten,
+ * rebounds past where she is going, and takes two decreasing wobbles to
+ * settle. The stretch on the way down and the squash on impact are the whole
+ * trick — without them a drop reads as a slide.
+ */
+.yumiEnter {
+  animation: yumiEnter 1400ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes yumiEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(-150px) scale(0.8, 1.26);
+  }
+  28% {
+    opacity: 1;
+    transform: translateY(0) scale(0.84, 1.2);
+  }
+  38% {
+    transform: translateY(8px) scale(1.3, 0.7);
+  }
+  55% {
+    transform: translateY(-40px) scale(0.89, 1.16);
+  }
+  70% {
+    transform: translateY(4px) scale(1.14, 0.89);
+  }
+  82% {
+    transform: translateY(-14px) scale(0.96, 1.06);
+  }
+  92% {
+    transform: translateY(2px) scale(1.04, 0.97);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/*
+ * The finale. Crouch first — the anticipation is what sells the height — then
+ * a full rotation at the top, a heavy landing, and a small proud bounce.
+ */
+.yumiFinale {
+  animation: yumiFinale 1750ms cubic-bezier(0.34, 1.2, 0.44, 1) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes yumiFinale {
+  0% {
+    transform: none;
+  }
+  14% {
+    transform: translateY(14px) scale(1.24, 0.76);
+  }
+  22% {
+    transform: translateY(6px) scale(1.1, 0.9);
+  }
+  42% {
+    transform: translateY(-92px) scale(0.84, 1.22) rotate(200deg);
+  }
+  58% {
+    transform: translateY(-96px) scale(0.9, 1.12) rotate(360deg);
+  }
+  74% {
+    transform: translateY(10px) scale(1.26, 0.74) rotate(360deg);
+  }
+  86% {
+    transform: translateY(-18px) scale(0.94, 1.1) rotate(360deg);
+  }
+  95% {
+    transform: translateY(2px) scale(1.05, 0.96) rotate(360deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * The shadow works against the body: widest and darkest at the moment of
+ * impact, nearly gone at the top of the jump. Reading it alone should tell you
+ * where she is.
+ */
+.shadow {
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.16);
+  filter: blur(5px);
+}
+
+.shadowEnter {
+  animation: shadowEnter 1400ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+}
+
+@keyframes shadowEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.3, 0.6);
+  }
+  28% {
+    opacity: 0.35;
+    transform: scale(0.5, 0.7);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1.35, 1.1);
+  }
+  55% {
+    opacity: 0.4;
+    transform: scale(0.62, 0.8);
+  }
+  70% {
+    opacity: 0.95;
+    transform: scale(1.16, 1);
+  }
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+}
+
+.shadowFinale {
+  animation: shadowFinale 1750ms cubic-bezier(0.34, 1.2, 0.44, 1) both;
+}
+
+@keyframes shadowFinale {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1.3, 1.1);
+  }
+  42% {
+    opacity: 0.22;
+    transform: scale(0.44, 0.7);
+  }
+  58% {
+    opacity: 0.2;
+    transform: scale(0.42, 0.7);
+  }
+  74% {
+    opacity: 1;
+    transform: scale(1.4, 1.15);
+  }
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+}
+
+/* Sparks thrown outward on the finale's landing, each on its own delay. */
+.spark {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #e2a33c;
+  opacity: 0;
+  animation: spark 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes spark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.35);
+  }
+}
+
+/*
+ * Reduced motion removes the performance, not the content. Everything still
+ * appears; it simply appears instead of arriving.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .stageEnter,
+  .yumiEnter,
+  .yumiFinale,
+  .shadowEnter,
+  .shadowFinale,
+  .spark {
+    animation: none;
+  }
+
+  .spark {
+    display: none;
+  }
+}

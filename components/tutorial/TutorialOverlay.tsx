@@ -10,8 +10,8 @@ import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
-import OnboardingYumi from "@/components/onboarding/OnboardingYumi";
 import { CircledIcon, SketchUnderline } from "@/components/tutorial/HandDrawn";
+import TutorialStage from "@/components/tutorial/TutorialStage";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialSeen } from "@/lib/appPreferences";
@@ -107,10 +107,6 @@ function ExchangeMark() {
 
 function stepVisual(step: StepKey): ReactNode {
   switch (step) {
-    case "meet":
-    case "done":
-      return <OnboardingYumi mood={step === "done" ? "happy" : "curious"} />;
-
     // The two choice rows are this step's content; a mark above them would
     // only push them off a small screen.
     case "setup":
@@ -185,6 +181,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const stepCopy = copy.steps[step];
   const href = STEP_HREF[step];
   const visual = stepVisual(step);
+  const isYumiStep = step === "meet" || step === "done";
 
   /*
    * Dismissing is always recorded, whether the tour was finished, skipped, or
@@ -233,8 +230,21 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
 
       <div className="flex-1 overflow-y-auto px-7">
         <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center py-8">
-          {visual && (
-            <div className="mb-10 flex min-h-[9rem] items-center">{visual}</div>
+          {/* Keyed by step so the CSS restarts on every advance — that
+              punctuation is most of what makes the tour feel alive. */}
+          {(isYumiStep || visual) && (
+            <div
+              key={step}
+              className="mb-10 flex min-h-[11rem] items-end"
+            >
+              {isYumiStep ? (
+                <TutorialStage
+                  performance={step === "done" ? "finale" : "enter"}
+                />
+              ) : (
+                <TutorialStage performance="prop">{visual}</TutorialStage>
+              )}
+            </div>
           )}
 
           <h2 className="text-[2.125rem] font-bold leading-[1.12] tracking-[-0.03em] text-black">
