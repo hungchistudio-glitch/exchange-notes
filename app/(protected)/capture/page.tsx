@@ -598,26 +598,6 @@ function CaptureContent() {
     window.speechSynthesis.speak(utterance);
   }
 
-  function speakEnglish() {
-    if (!result) return;
-
-    const text = [result.englishName, result.englishExample]
-      .filter(Boolean)
-      .join(". ");
-
-    speak(text, "en");
-  }
-
-  function speakChinese() {
-    if (!result) return;
-
-    const text = [result.chineseName, result.chineseExample]
-      .filter(Boolean)
-      .join("。");
-
-    speak(text, "zh");
-  }
-
   function stopCamera() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;

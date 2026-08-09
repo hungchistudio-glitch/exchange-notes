@@ -91,7 +91,6 @@ export type TranslationDictionary = {
     send: string;
     source: string;
     loading: string;
-    retry: string;
     error: string;
   };
 
@@ -102,7 +101,6 @@ export type TranslationDictionary = {
       subtitle: string;
       englishTitle: string;
       englishDescription: string;
-      traditionalChineseTitle: string;
       traditionalChineseDescription: string;
       continue: string;
     };
@@ -116,15 +114,7 @@ export type TranslationDictionary = {
       googleSubmit: string;
       googleSubmitting: string;
       email: string;
-      emailPlaceholder: string;
-      password: string;
-      passwordPlaceholder: string;
-      forgotPassword: string;
-      submit: string;
-      submitting: string;
-      createAccount: string;
       genericError: string;
-      changeLanguage: string;
     };
   };
 
@@ -141,12 +131,10 @@ export type TranslationDictionary = {
     eyebrow: string;
     subtitle: string;
 
-    liveGlobalStories: string;
     dailyNewsTitle: string;
     speechSpeed: string;
 
     vocabulary: string;
-    tapToExpand: string;
 
     saveToNotes: string;
     saving: string;
@@ -171,28 +159,16 @@ export type TranslationDictionary = {
     readVocabWordAriaLabel: string;
     readVocabChineseAriaLabel: string;
 
-    sendToFriend: string;
-    newStories: string;
     loadingNewStories: string;
-    loadNewStoriesAriaLabel: string;
-    originalSourceAriaLabel: string;
     sendToFriendAriaLabel: string;
-    shareAriaLabel: string;
-    listenHeadlineAriaLabel: string;
-    listenSummaryAriaLabel: string;
     loginRequiredError: string;
     loadFriendsError: string;
     loadNewsError: string;
-    loadNewsRetryError: string;
 
     loading: string;
-    loadingDescription: string;
 
     emptyTitle: string;
     emptyDescription: string;
-
-    errorTitle: string;
-    errorDescription: string;
 
     categories: {
       world: string;
@@ -207,16 +183,13 @@ export type TranslationDictionary = {
     };
 
     latestStoriesLabel: string;
-    readMore: string;
     keyWordsLabel: string;
-    moreActions: string;
     moreActionsAriaLabel: string;
     openSource: string;
     shareStory: string;
     shareCopied: string;
     hideStory: string;
     save: string;
-    listen: string;
     speedSlow: string;
     speedNatural: string;
     speedFast: string;
@@ -224,7 +197,6 @@ export type TranslationDictionary = {
     vocabularyDrawerDescription: string;
 
     refreshAction: string;
-    refreshAriaLabel: string;
     playFullStory: string;
     stopStory: string;
     playFullStoryAriaLabel: string;
@@ -235,7 +207,6 @@ export type TranslationDictionary = {
 
     addToVocabulary: string;
     addedToVocabulary: string;
-    addingToVocabulary: string;
     addToVocabularyAriaLabel: string;
 
     exploreImageLabel: string;
@@ -244,7 +215,6 @@ export type TranslationDictionary = {
   capture: {
     backToVocabulary: string;
     backToHome: string;
-    backToCapture: string;
     eyebrow: string;
     title: string;
     description: string;
@@ -255,7 +225,6 @@ export type TranslationDictionary = {
     progress: {
       ariaLabel: string;
       photo: string;
-      analyze: string;
       review: string;
       save: string;
     };
@@ -264,9 +233,7 @@ export type TranslationDictionary = {
       eyebrow: string;
       title: string;
       description: string;
-      takePhoto: string;
       useCamera: string;
-      chooseImage: string;
       photoLibrary: string;
       cameraStarting: string;
       unsupported: string;
@@ -277,8 +244,6 @@ export type TranslationDictionary = {
       captureAriaLabel: string;
       closeCameraAriaLabel: string;
       selectedObjectAlt: string;
-      selectedImage: string;
-      analyzeAgain: string;
       chooseAnother: string;
       focusHint: string;
     };
@@ -303,14 +268,11 @@ export type TranslationDictionary = {
       saving: string;
       saved: string;
       saveToVocabulary: string;
-      loadingPartners: string;
       sendToPartner: string;
     };
 
     categories: {
       people: string;
-      objects: string;
-      actions: string;
       other: string;
     };
 
@@ -321,14 +283,11 @@ export type TranslationDictionary = {
     };
 
     errors: {
-      openSelectedImage: string;
       cameraPermissionDenied: string;
       noCamera: string;
       cameraInUse: string;
       cameraUnavailable: string;
       cameraPreview: string;
-      readImage: string;
-      openImage: string;
       processImage: string;
       selectImage: string;
       imageTooLarge: string;
@@ -342,9 +301,7 @@ export type TranslationDictionary = {
       duplicateWord: string;
       saveWord: string;
       loginBeforeShare: string;
-      noPartners: string;
       loadPartners: string;
-      sendWord: string;
     };
   };
 
@@ -397,7 +354,6 @@ export type TranslationDictionary = {
 
     dailyFocus: {
       eyebrow: string;
-      sectionTitle: string;
       cardEyebrow: string;
       wordReady: string;
       wordsReady: string;
@@ -421,12 +377,9 @@ export type TranslationDictionary = {
       untitledWord: string;
       emptyHeading: string;
       emptyDescription: string;
-      playEnglishExampleAriaLabel: string;
-      playChineseExampleAriaLabel: string;
       previousWord: string;
       nextWord: string;
       swipeHint: string;
-      positionLabel: string;
     };
 
     quickStart: {
@@ -434,7 +387,6 @@ export type TranslationDictionary = {
       title: string;
       review: string;
       capture: string;
-      loadingWords: string;
       wordReady: string;
       wordsReady: string;
       caughtUp: string;
@@ -456,7 +408,6 @@ export type TranslationDictionary = {
       readyDescription: string;
       caughtUpDescription: string;
       continueReview: string;
-      openReview: string;
       accuracy: string;
       retention: string;
       mastered: string;
@@ -519,8 +470,6 @@ export type TranslationDictionary = {
       commonMistake: string;
       showMoreGuidance: string;
       showLessGuidance: string;
-      showTrapDetails: string;
-      hideTrapDetails: string;
       commonTrapSummary: string;
       playbackFailed: string;
       kk: string;
@@ -535,7 +484,6 @@ export type TranslationDictionary = {
       voice: string;
       demoAriaLabel: string;
       tapToHear: string;
-      sleepingAriaLabel: string;
     };
   };
 
@@ -546,9 +494,7 @@ export type TranslationDictionary = {
     loadingMessages: string;
     today: string;
     yesterday: string;
-    removeFriendConfirm: string;
     inputPlaceholder: string;
-    backToMessages: string;
     chatFallback: string;
     selectedCount: string;
     selectAll: string;
@@ -560,33 +506,27 @@ export type TranslationDictionary = {
     deleteDialogMessages: string;
     deleteDialogDescription: string;
     closeDeleteConfirmation: string;
-    analyzingAndSending: string;
     send: string;
     selectMessages: string;
     delete: string;
     deleting: string;
     cancel: string;
     deleteFriend: string;
-    deleteMessage: string;
-    deleteMessages: string;
     english: string;
     traditionalChinese: string;
 
     youPrefix: string;
     attachmentLabel: string;
     voiceLabel: string;
-    sharedArticleLabel: string;
     muted: string;
     muteConversation: string;
     unmuteConversation: string;
     noConversationsFound: string;
     typingIndicator: string;
-    statusSending: string;
     statusSent: string;
     statusDelivered: string;
     statusRead: string;
 
-    moodSwipeHint: string;
     moodCalm: string;
     moodCurious: string;
     moodSleepy: string;
@@ -594,11 +534,8 @@ export type TranslationDictionary = {
     moodHappy: string;
 
     errors: {
-      notLoggedIn: string;
       loadConversations: string;
       removeFriend: string;
-      noMessagesDeleted: string;
-      partialDelete: string;
       deleteSelected: string;
       shareWord: string;
       openConversation: string;
@@ -638,7 +575,6 @@ export type TranslationDictionary = {
       description: string;
       imageAlt: string;
       loading: string;
-      loginToGetCode: string;
     };
 
     incoming: {
@@ -647,16 +583,12 @@ export type TranslationDictionary = {
       accept: string;
       decline: string;
       responding: string;
-      wantsToConnect: string;
     };
 
     outgoing: {
       title: string;
       empty: string;
-      pending: string;
       cancel: string;
-      cancelling: string;
-      waitingForResponse: string;
     };
 
     list: {
@@ -667,7 +599,6 @@ export type TranslationDictionary = {
     };
 
     banners: {
-      loginFirst: string;
       enterExchangeId: string;
       invitePrefilled: string;
       profileNotFound: string;
@@ -677,7 +608,6 @@ export type TranslationDictionary = {
       requestSent: string;
       sendFailed: string;
       respondFailed: string;
-      cancelFailed: string;
       loadFailed: string;
       removeFriendFailed: string;
     };
@@ -740,11 +670,6 @@ export type TranslationDictionary = {
         missingYou: string;
         confused: string;
       };
-      statWordsToday: string;
-      statCookies: string;
-      statStreak: string;
-      statStreakDays: string;
-      statMood: string;
       summaryWordSingular: string;
       summaryWordPlural: string;
       summaryCookieSingular: string;
@@ -767,8 +692,6 @@ export type TranslationDictionary = {
       reviewActionLabel: string;
       addWordActionLabel: string;
       cameraActionLabel: string;
-      reviewLinkLabel: string;
-      collectionsLinkLabel: string;
     };
 
     lookup: {
@@ -812,7 +735,6 @@ export type TranslationDictionary = {
       toggleError: string;
       emptyTitle: string;
       emptyDescription: string;
-      suggestions: string;
       listAriaLabel: string;
       newCollection: string;
       close: string;
@@ -824,10 +746,6 @@ export type TranslationDictionary = {
       word: string;
       words: string;
       examples: {
-        food: string;
-        fashion: string;
-        travel: string;
-        work: string;
         home: string;
       };
 
@@ -853,11 +771,9 @@ export type TranslationDictionary = {
       translation: string;
       example: string;
 
-      learningProgress: string;
       accuracy: string;
       reviews: string;
       nextReview: string;
-      starsAriaLabel: string;
 
       levels: {
         new: string;
@@ -913,10 +829,8 @@ export type TranslationDictionary = {
         title: string;
         lastReviewed: string;
         never: string;
-        interval: string;
         day: string;
         days: string;
-        ease: string;
       };
 
       edit: {
@@ -924,11 +838,9 @@ export type TranslationDictionary = {
         subtitle: string;
         english: string;
         traditionalChinese: string;
-        englishPlaceholder: string;
         chinesePlaceholder: string;
         englishExample: string;
         chineseExample: string;
-        englishExamplePlaceholder: string;
         chineseExamplePlaceholder: string;
         close: string;
         cancel: string;
@@ -946,13 +858,7 @@ export type TranslationDictionary = {
       };
 
       page: {
-        loginToView: string;
-        loginToEdit: string;
         loadError: string;
-        notFound: string;
-        unavailable: string;
-        deleteWord: string;
-        deleteConfirm: string;
       };
     };
 
@@ -987,7 +893,6 @@ export type TranslationDictionary = {
       words: string;
 
       sort: string;
-      openLibrary: string;
       openCollections: string;
       toolbarAriaLabel: string;
       lookupToolbarAriaLabel: string;
@@ -1016,44 +921,30 @@ export type TranslationDictionary = {
 
   review: {
     backHome: string;
-    backReview: string;
     eyebrow: string;
     title: string;
     subtitle: string;
     today: string;
     cardsReady: string;
     introLineOne: string;
-    introLineTwo: string;
     startReview: string;
     freePractice: string;
     freePracticeDescription: string;
     practiceAllWords: string;
-    noWordsTitle: string;
-    noWordsDescription: string;
-    addWords: string;
-    practiceEyebrow: string;
-    practiceTitle: string;
     queueData: string;
     ready: string;
-    loadingQueue: string;
-    system: string;
     loadError: string;
-    retry: string;
-    caughtUpTitle: string;
     caughtUpDescription: string;
     sessionEyebrow: string;
     sessionTitle: string;
     remaining: string;
-    progressAriaLabel: string;
     vocabulary: string;
     revealAnswer: string;
     saving: string;
     saveError: string;
-    completeEyebrow: string;
     completeTitle: string;
     completeDescription: string;
     completedReviews: string;
-    reviewAgain: string;
     backToHome: string;
     grades: {
       again: {
@@ -1090,7 +981,6 @@ export type TranslationDictionary = {
       removePhoto: string;
       loadingProfile: string;
       profile: string;
-      accountDetails: string;
       yourName: string;
       namePlaceholder: string;
       exchangeId: string;
@@ -1109,14 +999,11 @@ export type TranslationDictionary = {
       logoutConfirm: string;
       photoImageError: string;
       photoSizeError: string;
-      loginUploadError: string;
       photoUpdated: string;
       photoUploadError: string;
       loginRequired: string;
       photoRemoved: string;
       photoRemoveError: string;
-      loginUpdateError: string;
-      exchangeIdLength: string;
       profileUpdated: string;
       profileUpdateError: string;
       languagesMustDifferError: string;
@@ -1297,7 +1184,6 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
-      settingsAriaLabel: string;
       readingSpeed: string;
       readingSpeedDescription: string;
       readingSpeedAriaLabel: string;
