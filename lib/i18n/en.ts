@@ -688,6 +688,8 @@ const english: TranslationDictionary = {
     banners: {
       loginFirst: "Log in first, then you can start adding friends.",
       enterExchangeId: "Enter a friend’s Exchange ID to send a request.",
+      invitePrefilled:
+        "Scanned @{exchangeId}. Send the request to connect with them.",
       profileNotFound:
         "Couldn’t find “@{exchangeId}”. Exchange IDs are lowercase with no spaces. Double-check with your friend.",
       ownExchangeId: "That’s your own Exchange ID. Try a friend’s instead.",

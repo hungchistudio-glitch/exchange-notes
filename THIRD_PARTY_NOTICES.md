@@ -16,6 +16,16 @@ translation per lookup key; it does not claim ownership of the dictionary
 content. Application-created examples and interface code are separate from the
 CC-CEDICT dataset.
 
+## jsQR
+
+Friend QR codes are decoded in the browser with jsQR. Safari does not
+implement the `BarcodeDetector` API, so an in-app scanner on iPhone needs a
+JavaScript decoder rather than a platform one.
+
+- Source: https://github.com/cozmo/jsQR
+- License: Apache License 2.0
+  (https://www.apache.org/licenses/LICENSE-2.0)
+
 ## Free Dictionary API
 
 English dictionary metadata is retrieved from https://dictionaryapi.dev/ as a

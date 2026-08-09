@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+import {
+  friendInvitePath,
+  PENDING_FRIEND_INVITE_COOKIE,
+} from "@/lib/friends";
+import { normalizeExchangeId } from "@/lib/utils";
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
 
   const code = requestUrl.searchParams.get("code");
+  const cookieStore = await cookies();
 
   if (code) {
-    const cookieStore = await cookies();
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,5 +36,31 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(new URL("/", request.url));
+  /*
+   * /invite parks a scanned Exchange ID here when the visitor turned out to be
+   * signed out, so a QR code scanned from the lock screen still ends where it
+   * was pointing instead of dumping them on the home page.
+   *
+   * Re-normalized rather than trusted: the cookie is httpOnly, but the value
+   * goes into a redirect, and "the last hop wrote it" is not a reason to skip
+   * checking. Anything that does not survive normalization sends them home.
+   */
+  const pendingCookie = cookieStore.get(PENDING_FRIEND_INVITE_COOKIE);
+  const pendingInvite = normalizeExchangeId(pendingCookie?.value ?? "");
+
+  const destination = pendingInvite
+    ? friendInvitePath(pendingInvite)
+    : "/";
+
+  const response = NextResponse.redirect(
+    new URL(destination, request.url),
+  );
+
+  // Cleared whenever it was set, not only when it was usable, so a value that
+  // fails normalization cannot sit around redirecting later sign-ins.
+  if (pendingCookie) {
+    response.cookies.delete(PENDING_FRIEND_INVITE_COOKIE);
+  }
+
+  return response;
 }

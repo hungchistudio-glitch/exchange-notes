@@ -671,6 +671,7 @@ const traditionalChinese: TranslationDictionary = {
     banners: {
       loginFirst: "請先登入，登入後即可開始新增朋友。",
       enterExchangeId: "請輸入朋友的 Exchange ID。",
+      invitePrefilled: "已掃描到 @{exchangeId}，送出邀請就能加對方好友。",
       profileNotFound:
         "找不到「@{exchangeId}」。Exchange ID 必須使用小寫英文且不可包含空格，請向朋友再次確認。",
       ownExchangeId: "這是你自己的 Exchange ID，請輸入朋友的 ID。",

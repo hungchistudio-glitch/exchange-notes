@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
+import FriendQrScanner from "@/components/friends/FriendQrScanner";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import usePageOrigin from "@/hooks/usePageOrigin";
 import { UserX } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   findProfileByExchangeId,
+  friendInviteUrl,
+  FRIEND_INVITE_PARAM,
   getProfileById,
   listFriends,
   listIncomingRequests,
@@ -20,16 +25,35 @@ import {
   type IncomingRequest,
 } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
-import { insertValues } from "@/lib/utils";
+import { insertValues, normalizeExchangeId } from "@/lib/utils";
 
-export default function FriendsPage() {
+function FriendsPageContent() {
   const supabase = createClient();
   const { t } = useTranslation();
   const copy = t.friends;
+  const searchParams = useSearchParams();
+  const invitedExchangeId = normalizeExchangeId(
+    searchParams.get(FRIEND_INVITE_PARAM) ?? "",
+  );
+
+  const origin = usePageOrigin();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [exchangeId, setExchangeId] = useState("");
-  const [message, setMessage] = useState("");
+  /*
+   * The friend QR encodes /friends?add=<exchangeId>, so scanning it with the
+   * system camera lands here with the ID already known. Seed the field and
+   * name whose code it was, but leave the send to a deliberate tap — a link
+   * anyone can hold up to a camera must not fire off a friend request by
+   * itself.
+   */
+  const [exchangeId, setExchangeId] = useState(invitedExchangeId);
+  const [message, setMessage] = useState(() =>
+    invitedExchangeId
+      ? insertValues(copy.banners.invitePrefilled, {
+          exchangeId: invitedExchangeId,
+        })
+      : "",
+  );
   const [sending, setSending] = useState(false);
   const [addMode, setAddMode] = useState<"id" | "qr">("id");
 
@@ -107,6 +131,23 @@ export default function FriendsPage() {
       isMounted = false;
     };
   }, [supabase, loadData]);
+
+  /*
+   * The in-app scanner lands in exactly the same place as a scan from the
+   * system camera: field seeded, whose code it was named, sending left to a
+   * deliberate tap. Switching back to the ID tab is what makes that filled
+   * field visible — leaving the user on the camera view after a successful
+   * read looks like nothing happened.
+   */
+  function handleScannedExchangeId(scannedExchangeId: string) {
+    setAddMode("id");
+    setExchangeId(scannedExchangeId);
+    setMessage(
+      insertValues(copy.banners.invitePrefilled, {
+        exchangeId: scannedExchangeId,
+      }),
+    );
+  }
 
   async function handleSendRequest() {
     const cleanValue = exchangeId.trim();
@@ -286,33 +327,41 @@ export default function FriendsPage() {
               </button>
             </div>
           ) : (
-            <div className="mt-5 flex flex-col items-center">
-              <p className="text-center text-sm text-black/60">
-                {copy.profileQr.description}
-              </p>
+            <div className="mt-5">
+              <FriendQrScanner onDetected={handleScannedExchangeId} />
 
-              <div className="mt-4 flex aspect-square w-full max-w-[220px] items-center justify-center rounded-3xl border border-line p-6">
-                {ownProfile ? (
-                  <QRCodeSVG
-                    value={`exchangenotes://add-friend/${ownProfile.exchangeId}`}
-                    size={160}
-                    bgColor="transparent"
-                    fgColor="#000000"
-                    level="M"
-                    aria-label={copy.profileQr.imageAlt}
-                  />
-                ) : (
-                  <span className="text-center text-sm text-black/40">
-                    {copy.profileQr.loading}
-                  </span>
+              <div className="mt-6 flex flex-col items-center border-t border-line pt-5">
+                <h3 className="text-sm font-semibold text-black">
+                  {copy.profileQr.title}
+                </h3>
+
+                <p className="mt-1 text-center text-sm text-black/60">
+                  {copy.profileQr.description}
+                </p>
+
+                <div className="mt-4 flex aspect-square w-full max-w-[220px] items-center justify-center rounded-3xl border border-line p-6">
+                  {ownProfile && origin ? (
+                    <QRCodeSVG
+                      value={friendInviteUrl(ownProfile.exchangeId, origin)}
+                      size={160}
+                      bgColor="transparent"
+                      fgColor="#000000"
+                      level="M"
+                      aria-label={copy.profileQr.imageAlt}
+                    />
+                  ) : (
+                    <span className="text-center text-sm text-black/40">
+                      {copy.profileQr.loading}
+                    </span>
+                  )}
+                </div>
+
+                {ownProfile && (
+                  <p className="mt-3 text-sm font-semibold text-black/50">
+                    @{ownProfile.exchangeId}
+                  </p>
                 )}
               </div>
-
-              {ownProfile && (
-                <p className="mt-3 text-sm font-semibold text-black/50">
-                  @{ownProfile.exchangeId}
-                </p>
-              )}
             </div>
           )}
 
@@ -457,5 +506,13 @@ export default function FriendsPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function FriendsPage() {
+  return (
+    <Suspense fallback={null}>
+      <FriendsPageContent />
+    </Suspense>
   );
 }

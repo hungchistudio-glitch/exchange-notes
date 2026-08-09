@@ -35,7 +35,9 @@ import NativeWidgetSettingsButton from "@/components/settings/NativeWidgetSettin
 import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
 import YumiReminderSettingsButton from "@/components/settings/YumiReminderSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import usePageOrigin from "@/hooks/usePageOrigin";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { friendInviteUrl } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage } from "@/lib/types/app";
 
@@ -52,6 +54,8 @@ export default function ProfilePage() {
   const { refresh: refreshLearningLanguage } = useLearningLanguageContext();
   const copy = t.settings.profile;
   const qrCopy = t.friends.profileQr;
+
+  const origin = usePageOrigin();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [form, setForm] = useState<ProfileForm>({
@@ -553,9 +557,9 @@ export default function ProfilePage() {
       >
         <div className="flex flex-col items-center">
           <div className="flex aspect-square w-full max-w-[220px] items-center justify-center rounded-3xl border border-line p-6">
-            {form.exchange_id ? (
+            {form.exchange_id && origin ? (
               <QRCodeSVG
-                value={`exchangenotes://add-friend/${form.exchange_id}`}
+                value={friendInviteUrl(form.exchange_id, origin)}
                 size={160}
                 bgColor="transparent"
                 fgColor="#000000"
