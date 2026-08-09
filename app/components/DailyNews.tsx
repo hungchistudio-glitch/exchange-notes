@@ -36,6 +36,36 @@ type DailyNewsResponse = {
   generatedAt: string;
 };
 
+/*
+ * Deliberately touches no state, so both the mount effect and the refresh
+ * control can await it and apply the result on their own terms. It takes the
+ * fallback message rather than reading the dictionary itself, which keeps it
+ * outside the component without pulling translation in with it.
+ */
+async function fetchDailyNews(
+  signal: AbortSignal,
+  loadNewsError: string
+): Promise<DailyNewsResponse> {
+  const response = await fetch("/api/daily-news", {
+    method: "GET",
+    cache: "no-store",
+    signal,
+    headers: { Accept: "application/json" },
+  });
+
+  const payload = (await response.json()) as
+    | DailyNewsResponse
+    | { error: string };
+
+  if (!response.ok || "error" in payload) {
+    throw new Error(
+      "error" in payload ? payload.error : loadNewsError
+    );
+  }
+
+  return payload;
+}
+
 function LoadingHero() {
   return (
     <section className="mt-8">
@@ -201,6 +231,14 @@ export default function DailyNews() {
   const requestControllerRef = useRef<AbortController | null>(null);
   const lastGeneratedAtRef = useRef<string | null>(null);
 
+  /*
+   * Reached only from the refresh control, never from an effect body, so it
+   * is free to clear the notice and raise the spinner eagerly. The mount path
+   * in the effect below repeats the request and apply steps instead of
+   * calling this, because set-state-in-effect is a reachability check: an
+   * effect may not call anything that writes state anywhere in its body,
+   * however deep past an await it happens.
+   */
   const loadNews = useCallback(
     async (isRefresh = false) => {
       requestControllerRef.current?.abort();
@@ -219,22 +257,10 @@ export default function DailyNews() {
       setNotice("");
 
       try {
-        const response = await fetch("/api/daily-news", {
-          method: "GET",
-          cache: "no-store",
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
-
-        const payload = (await response.json()) as
-          | DailyNewsResponse
-          | { error: string };
-
-        if (!response.ok || "error" in payload) {
-          throw new Error(
-            "error" in payload ? payload.error : copy.loadNewsError
-          );
-        }
+        const payload = await fetchDailyNews(
+          controller.signal,
+          copy.loadNewsError
+        );
 
         if (
           isRefresh &&
@@ -268,13 +294,51 @@ export default function DailyNews() {
   );
 
   useEffect(() => {
-    void loadNews();
+    const controller = new AbortController();
+
+    requestControllerRef.current = controller;
+
+    // No spinner or clearing step here: on mount the component is already in
+    // exactly that state, which is what makes the eager half of loadNews
+    // unnecessary rather than merely inconvenient.
+    async function loadOnMount() {
+      try {
+        const payload = await fetchDailyNews(
+          controller.signal,
+          copy.loadNewsError
+        );
+
+        lastGeneratedAtRef.current = payload.generatedAt;
+
+        setCards(payload.cards);
+      } catch (requestError) {
+        if (
+          requestError instanceof DOMException &&
+          requestError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : copy.loadFallbackError
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadOnMount();
 
     return () => {
+      // Via the ref, not the local controller: a refresh started after mount
+      // replaces it, and that newer request is the one still in flight and
+      // worth cancelling.
       requestControllerRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
-  }, [loadNews]);
+  }, [copy]);
 
   function speak(
     key: string,

@@ -477,10 +477,17 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     const draft = sessionStorage.getItem("exchange-notes-draft-message");
     if (!draft) return;
 
-    setNewMessage(draft);
     sessionStorage.removeItem("exchange-notes-draft-message");
 
+    /*
+     * The draft is restored in the same frame callback that focuses the
+     * textarea, rather than assigned straight from the effect body. A lazy
+     * useState initialiser cannot do this instead: the server has no
+     * sessionStorage, so it would render an empty textarea and then hydrate
+     * against a filled one.
+     */
     window.requestAnimationFrame(() => {
+      setNewMessage(draft);
       textareaRef.current?.focus();
     });
   }, []);
