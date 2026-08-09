@@ -1260,7 +1260,7 @@ const english: TranslationDictionary = {
       statusNative: "Native",
       sheetTitle: "Yumi iPhone Widget",
       sheetDescription:
-        "The widget is built into Exchange Notes. Scriptable, private tokens, and a separate connection are no longer required.",
+        "This widget ships inside the native app build. If you are not running that build, use the Scriptable widget above instead.",
       nativeTitle: "Native widget is ready",
       nativeDescription:
         "Open Exchange Notes to securely sync Yumi and your latest vocabulary to the iPhone Home Screen.",

@@ -6,10 +6,9 @@ This directory contains the JavaScript used by the Scriptable iPhone Widget.
 
 Before testing the Widget:
 
-1. Deploy the `feature/scriptable-yumi-widget` application changes.
-2. Apply the reviewed Scriptable Yumi Supabase migration.
-3. Log in to Exchange Notes and open the Home page once so the first snapshot can be saved.
-4. Open **Settings → iPhone Widget** and generate a private token.
+1. Apply the Scriptable Yumi Supabase migration.
+2. Log in to Exchange Notes and open the Home page once so the first snapshot can be saved.
+3. Open **Settings → iPhone Widget** and generate a private token.
 
 The complete private token is shown only once. Exchange Notes stores only its SHA-256 hash.
 
