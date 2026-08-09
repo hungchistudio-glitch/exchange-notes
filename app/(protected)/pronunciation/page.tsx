@@ -504,10 +504,24 @@ export default function PronunciationLabPage() {
   // screen readers use so users can tell "A" apart from "a". Lowercase
   // doesn't trigger that.
   function playEnglishPrimary(letter: EnglishLetter) {
+    /*
+     * The selected variant, not the letter.
+     *
+     * This used to speak letter.letter.toLowerCase() — the character itself —
+     * which was wrong twice over. Switching between Short A and Long A moved
+     * the IPA, the tip and Yumi's mouth while the audio stayed identical,
+     * because the audio never consulted the selection at all. And speech
+     * synthesis reads a lone "b" as the letter's *name*, /biː/, so the card
+     * teaching the sound /b/ played "bee".
+     *
+     * soundText is the field that exists for this and has always been per
+     * variant: "cat" against "say" for A, "buh" for B, "puh" for P.
+     */
+    const sound = selectedSoundFor(letter);
     const cardKey = `english-${letter.id}`;
     const mainKey = `en-main-${letter.id}`;
     const token = beginPlayback(mainKey, cardKey);
-    const soundText = letter.letter.toLowerCase();
+    const soundText = sound.soundText;
 
     const steps: Step[] = [
       speakStep(token, mainKey, soundText, "en-US", cardKey),
