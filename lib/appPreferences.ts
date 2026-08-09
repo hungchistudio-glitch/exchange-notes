@@ -310,3 +310,80 @@ export function subscribeToInterfaceLanguage(
     );
   };
 }
+
+/* =========================================================
+   Tutorial
+   ========================================================= */
+
+const TUTORIAL_PENDING_STORAGE_KEY = "exchange-notes-tutorial-pending";
+const TUTORIAL_PENDING_EVENT = "exchange-notes-tutorial-pending-change";
+
+/*
+ * Whether the tour is waiting to be shown, which is set once when onboarding
+ * completes and cleared the moment the tour is dismissed.
+ *
+ * Deliberately not "has this device seen it". That phrasing defaults to
+ * showing, so every existing account would have been handed the tour the next
+ * time they opened the app — they have been using it for months. Asking
+ * instead whether someone has just finished signing up defaults to silence,
+ * and only a genuinely new account can answer yes.
+ *
+ * Local rather than a profiles column: it is answered once, seconds after
+ * onboarding, on the device onboarding happened on, and it keeps a cosmetic
+ * flag out of a production migration.
+ */
+export function getTutorialPending(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(TUTORIAL_PENDING_STORAGE_KEY) === "true"
+  );
+}
+
+export function setTutorialPending(pending: boolean) {
+  if (typeof window === "undefined") return;
+
+  if (pending) {
+    window.localStorage.setItem(TUTORIAL_PENDING_STORAGE_KEY, "true");
+  } else {
+    window.localStorage.removeItem(TUTORIAL_PENDING_STORAGE_KEY);
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<boolean>(TUTORIAL_PENDING_EVENT, {
+      detail: pending,
+    }),
+  );
+}
+
+export function subscribeToTutorialPending(
+  listener: (pending: boolean) => void,
+) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  function handleChange(event: Event) {
+    const customEvent = event as CustomEvent<boolean>;
+
+    if (typeof customEvent.detail === "boolean") {
+      listener(customEvent.detail);
+    }
+  }
+
+  function handleStorage(event: StorageEvent) {
+    if (event.key === TUTORIAL_PENDING_STORAGE_KEY) {
+      listener(event.newValue === "true");
+    }
+  }
+
+  window.addEventListener(TUTORIAL_PENDING_EVENT, handleChange);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(TUTORIAL_PENDING_EVENT, handleChange);
+    window.removeEventListener("storage", handleStorage);
+  };
+}

@@ -14,6 +14,7 @@ import NotesComposer from "@/components/home/NotesComposer";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
+import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -467,6 +468,8 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
+        <TutorialLauncher />
       </div>
     </Screen>
   );
