@@ -1059,7 +1059,7 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
-      minutesLabel: string;
+      wordsLabel: string;
 
       options: {
         five: string;

@@ -1115,17 +1115,18 @@ const traditionalChinese: TranslationDictionary = {
 
     dailyGoal: {
       rowTitle: "每日目標",
-      rowDescription: "你希望每天學習多久",
+      rowDescription: "每天想新增幾個單字",
       sheetTitle: "每日目標",
-      sheetDescription: "選擇你希望每天學習的時間長度。",
-      minutesLabel: "分鐘",
+      sheetDescription:
+        "選擇你每天想新增幾個新單字。Yumi 會數這個數字，快到一天結束還沒達成時提醒你。",
+      wordsLabel: "個字",
 
       options: {
-        five: "5 分鐘",
-        ten: "10 分鐘",
-        fifteen: "15 分鐘",
-        twenty: "20 分鐘",
-        thirty: "30 分鐘",
+        five: "5 個字",
+        ten: "10 個字",
+        fifteen: "15 個字",
+        twenty: "20 個字",
+        thirty: "30 個字",
       },
     },
 

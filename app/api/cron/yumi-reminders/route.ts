@@ -25,6 +25,28 @@ const RECENT_OPEN_WINDOW_MS =
 
 const MAX_USERS_PER_RUN = 500;
 
+const DEFAULT_GOAL_WORDS = 10;
+const ALLOWED_GOAL_WORDS = [5, 10, 15, 20, 30];
+
+function dailyGoalWords(value: unknown): number {
+  return typeof value === "number" &&
+    ALLOWED_GOAL_WORDS.includes(value)
+    ? value
+    : DEFAULT_GOAL_WORDS;
+}
+
+/*
+ * Bilingual in one body, the way every other push here is: the notification
+ * is delivered by the operating system, which has no idea which interface
+ * language the app is set to.
+ */
+function reminderBody(goalWords: number): string {
+  return (
+    `今天的目標是 ${goalWords} 個字，還沒開始呢！` +
+    ` Today's goal is ${goalWords} words — none yet.`
+  );
+}
+
 type PreferenceRow = {
   user_id: string;
   notification_level: string;
@@ -409,6 +431,26 @@ export async function GET(
               last_opened_at: null,
             }) as PetStateRow;
 
+        /*
+         * The goal lives on the profile because this is the one reader that
+         * cannot see a browser. It used to exist only in localStorage, which
+         * is why Yumi could never name the target she was reminding people
+         * about. A missing or malformed value falls back to the same default
+         * the app shows.
+         */
+        const {
+          data: profileRow,
+        } = await supabase
+          .from("profiles")
+          .select("daily_goal_words")
+          .eq("id", preference.user_id)
+          .maybeSingle();
+
+        const goalWords = dailyGoalWords(
+          (profileRow as { daily_goal_words?: unknown } | null)
+            ?.daily_goal_words,
+        );
+
         if (
           localDateForTimestamp(
             pet.last_fed_at,
@@ -457,8 +499,7 @@ export async function GET(
             {
               title:
                 "Yumi 想你了 · Yumi misses you",
-              body:
-                "今天還沒餵我單字餅乾呢！Come feed me one word cookie.",
+              body: reminderBody(goalWords),
               url: "/vocabulary",
               tag:
                 `yumi-reminder-${local.date}`,

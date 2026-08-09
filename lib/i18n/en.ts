@@ -1136,17 +1136,18 @@ const english: TranslationDictionary = {
 
     dailyGoal: {
       rowTitle: "Daily goal",
-      rowDescription: "How long you'd like to study each day",
+      rowDescription: "How many words you'd like to add each day",
       sheetTitle: "Daily goal",
-      sheetDescription: "Choose how many minutes you'd like to study each day.",
-      minutesLabel: "min",
+      sheetDescription:
+        "Choose how many new words you'd like to add each day. Yumi counts these, and reminds you if the day is nearly over.",
+      wordsLabel: "words",
 
       options: {
-        five: "5 minutes",
-        ten: "10 minutes",
-        fifteen: "15 minutes",
-        twenty: "20 minutes",
-        thirty: "30 minutes",
+        five: "5 words",
+        ten: "10 words",
+        fifteen: "15 words",
+        twenty: "20 words",
+        thirty: "30 words",
       },
     },
 

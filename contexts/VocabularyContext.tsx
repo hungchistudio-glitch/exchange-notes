@@ -12,6 +12,10 @@ import {
   type SetStateAction,
 } from "react";
 
+import {
+  isDailyGoalWords,
+  setDailyGoalWords,
+} from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
 import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
@@ -57,11 +61,22 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
   const [{ data: profile }, rows] = await Promise.all([
     supabase
       .from("profiles")
-      .select("learning_language")
+      .select("learning_language, daily_goal_words")
       .eq("id", user.id)
       .single(),
     fetchVocabulary(user.id),
   ]);
+
+  /*
+   * The goal belongs to the account, but every screen reads it from the local
+   * store so the hero renders without waiting on a query. Seeding it here is
+   * what carries a goal set on one device to the next one — this is a cache
+   * write, not React state, so it stays clear of the fetcher's promise not to
+   * touch state.
+   */
+  if (isDailyGoalWords(profile?.daily_goal_words)) {
+    setDailyGoalWords(profile.daily_goal_words);
+  }
 
   return {
     items: rows as VocabularyItem[],
