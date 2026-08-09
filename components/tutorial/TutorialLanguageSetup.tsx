@@ -24,11 +24,11 @@ type ChoiceRowProps = {
 function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
   return (
     <div>
-      <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-black/35">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
         {label}
       </p>
 
-      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+      <div className="mt-2 grid grid-cols-2 gap-2">
         {OPTIONS.map((option) => {
           const active = option.value === value;
 
@@ -39,10 +39,10 @@ function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
               disabled={disabled}
               aria-pressed={active}
               onClick={() => onSelect(option.value)}
-              className={`min-h-14 rounded-2xl border-2 px-4 text-lg font-bold transition-transform active:scale-[0.98] disabled:opacity-50 ${
+              className={`min-h-12 rounded-2xl border px-4 text-[15px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${
                 active
                   ? "border-black bg-black text-white"
-                  : "border-black/12 bg-white text-black"
+                  : "border-black/10 bg-white text-black"
               }`}
             >
               {option.label}
@@ -120,7 +120,7 @@ export default function TutorialLanguageSetup() {
   }
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-7 space-y-5">
       <ChoiceRow
         label={copy.appLanguageLabel}
         value={interfaceLanguage}
@@ -135,11 +135,11 @@ export default function TutorialLanguageSetup() {
       />
 
       {error ? (
-        <p role="alert" className="text-sm font-medium text-red-600">
+        <p role="alert" className="text-[12.5px] font-medium text-red-600">
           {error}
         </p>
       ) : (
-        <p className="text-sm leading-6 text-black/40">{copy.note}</p>
+        <p className="text-[12.5px] leading-6 text-black/35">{copy.note}</p>
       )}
     </div>
   );

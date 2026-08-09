@@ -1,33 +1,32 @@
 /*
  * One-shot performance beats for the tour. YumiMark already carries a per-mood
- * idle loop; nothing here loops, so once a beat finishes the only thing still
- * running is that existing idle. A tour that is open is being watched by
- * definition, and it unmounts when dismissed, so this adds no standing cost.
+ * idle loop; only the orbit rings below loop, and they belong to a screen that
+ * is open by definition only while it is being watched.
  *
- * Every scale is non-uniform. A dot growing evenly reads as a bubble; wide
- * where it lands and tall where it launches is what reads as weight.
+ * Scales stay non-uniform — a shape growing evenly reads as a bubble, wide
+ * where it lands and tall where it launches reads as weight — but the extremes
+ * are gentler than a cartoon squash and the frames are spaced closer together,
+ * which is what reads as smooth rather than snappy.
  */
 
-/* Each step's visual re-enters when the step changes. Small, springy, quick —
-   it punctuates the tap rather than making the reader wait for it. */
 .stageEnter {
-  animation: stageEnter 620ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  animation: stageEnter 720ms cubic-bezier(0.33, 0.9, 0.32, 1) both;
 }
 
 @keyframes stageEnter {
   0% {
     opacity: 0;
-    transform: translateY(18px) scale(0.84, 0.96);
+    transform: translateY(12px) scale(0.93, 0.99);
   }
-  45% {
+  40% {
     opacity: 1;
-    transform: translateY(-9px) scale(1.07, 0.95);
+    transform: translateY(-4px) scale(1.03, 0.98);
   }
-  70% {
-    transform: translateY(3px) scale(0.97, 1.04);
+  68% {
+    transform: translateY(1px) scale(0.99, 1.01);
   }
-  88% {
-    transform: translateY(-2px) scale(1.02, 0.99);
+  86% {
+    transform: translateY(-1px) scale(1.005, 0.997);
   }
   100% {
     opacity: 1;
@@ -36,39 +35,42 @@
 }
 
 /*
- * Yumi's entrance. She falls in stretched, lands hard enough to flatten,
- * rebounds past where she is going, and takes two decreasing wobbles to
- * settle. The stretch on the way down and the squash on impact are the whole
- * trick — without them a drop reads as a slide.
+ * Yumi's entrance. She descends slightly stretched, compresses on contact,
+ * rises again and settles over three decreasing swings. Each stage overlaps
+ * the next rather than stopping at it, which is the difference between a
+ * bounce and a stutter.
  */
 .yumiEnter {
-  animation: yumiEnter 1400ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+  animation: yumiEnter 1650ms cubic-bezier(0.32, 0.72, 0.3, 1) both;
   transform-origin: 50% 100%;
 }
 
 @keyframes yumiEnter {
   0% {
     opacity: 0;
-    transform: translateY(-150px) scale(0.8, 1.26);
+    transform: translateY(-96px) scale(0.92, 1.12);
   }
-  28% {
+  22% {
     opacity: 1;
-    transform: translateY(0) scale(0.84, 1.2);
+    transform: translateY(-42px) scale(0.94, 1.09);
   }
-  38% {
-    transform: translateY(8px) scale(1.3, 0.7);
+  36% {
+    transform: translateY(0) scale(0.97, 1.04);
   }
-  55% {
-    transform: translateY(-40px) scale(0.89, 1.16);
+  45% {
+    transform: translateY(5px) scale(1.14, 0.88);
+  }
+  58% {
+    transform: translateY(-24px) scale(0.95, 1.07);
   }
   70% {
-    transform: translateY(4px) scale(1.14, 0.89);
+    transform: translateY(2px) scale(1.07, 0.94);
   }
-  82% {
-    transform: translateY(-14px) scale(0.96, 1.06);
+  81% {
+    transform: translateY(-9px) scale(0.98, 1.03);
   }
-  92% {
-    transform: translateY(2px) scale(1.04, 0.97);
+  91% {
+    transform: translateY(1px) scale(1.02, 0.985);
   }
   100% {
     transform: none;
@@ -76,11 +78,11 @@
 }
 
 /*
- * The finale. Crouch first — the anticipation is what sells the height — then
- * a full rotation at the top, a heavy landing, and a small proud bounce.
+ * The finale. A shallow crouch, one unhurried rotation carried across the top
+ * of the arc rather than snapped through it, then a soft landing.
  */
 .yumiFinale {
-  animation: yumiFinale 1750ms cubic-bezier(0.34, 1.2, 0.44, 1) both;
+  animation: yumiFinale 2000ms cubic-bezier(0.36, 0.66, 0.3, 1) both;
   transform-origin: 50% 100%;
 }
 
@@ -88,26 +90,29 @@
   0% {
     transform: none;
   }
-  14% {
-    transform: translateY(14px) scale(1.24, 0.76);
+  12% {
+    transform: translateY(9px) scale(1.12, 0.88);
   }
-  22% {
-    transform: translateY(6px) scale(1.1, 0.9);
+  20% {
+    transform: translateY(3px) scale(1.04, 0.96);
   }
-  42% {
-    transform: translateY(-92px) scale(0.84, 1.22) rotate(200deg);
+  36% {
+    transform: translateY(-52px) scale(0.94, 1.08) rotate(140deg);
   }
-  58% {
-    transform: translateY(-96px) scale(0.9, 1.12) rotate(360deg);
+  50% {
+    transform: translateY(-68px) scale(0.96, 1.04) rotate(260deg);
   }
-  74% {
-    transform: translateY(10px) scale(1.26, 0.74) rotate(360deg);
+  63% {
+    transform: translateY(-44px) scale(0.97, 1.03) rotate(360deg);
+  }
+  76% {
+    transform: translateY(6px) scale(1.12, 0.89) rotate(360deg);
   }
   86% {
-    transform: translateY(-18px) scale(0.94, 1.1) rotate(360deg);
+    transform: translateY(-12px) scale(0.97, 1.04) rotate(360deg);
   }
-  95% {
-    transform: translateY(2px) scale(1.05, 0.96) rotate(360deg);
+  94% {
+    transform: translateY(1px) scale(1.02, 0.99) rotate(360deg);
   }
   100% {
     transform: rotate(360deg);
@@ -115,120 +120,201 @@
 }
 
 /*
- * The shadow works against the body: widest and darkest at the moment of
- * impact, nearly gone at the top of the jump. Reading it alone should tell you
- * where she is.
+ * The shadow works against the body: widest and softest at contact, tightest
+ * at the top of the arc. Reading it alone should tell you where she is.
  */
 .shadow {
-  height: 10px;
+  height: 8px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.16);
-  filter: blur(5px);
+  background: rgba(0, 0, 0, 0.14);
+  filter: blur(6px);
 }
 
 .shadowEnter {
-  animation: shadowEnter 1400ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+  animation: shadowEnter 1650ms cubic-bezier(0.32, 0.72, 0.3, 1) both;
 }
 
 @keyframes shadowEnter {
   0% {
     opacity: 0;
-    transform: scale(0.3, 0.6);
+    transform: scale(0.42, 0.7);
   }
-  28% {
-    opacity: 0.35;
-    transform: scale(0.5, 0.7);
+  22% {
+    opacity: 0.32;
+    transform: scale(0.56, 0.78);
   }
-  38% {
-    opacity: 1;
-    transform: scale(1.35, 1.1);
+  45% {
+    opacity: 0.95;
+    transform: scale(1.18, 1.06);
   }
-  55% {
-    opacity: 0.4;
-    transform: scale(0.62, 0.8);
+  58% {
+    opacity: 0.5;
+    transform: scale(0.74, 0.86);
   }
   70% {
-    opacity: 0.95;
-    transform: scale(1.16, 1);
+    opacity: 0.88;
+    transform: scale(1.08, 1.02);
   }
   100% {
-    opacity: 0.75;
+    opacity: 0.7;
     transform: scale(1);
   }
 }
 
 .shadowFinale {
-  animation: shadowFinale 1750ms cubic-bezier(0.34, 1.2, 0.44, 1) both;
+  animation: shadowFinale 2000ms cubic-bezier(0.36, 0.66, 0.3, 1) both;
 }
 
 @keyframes shadowFinale {
   0% {
-    opacity: 0.75;
+    opacity: 0.7;
     transform: scale(1);
   }
-  14% {
-    opacity: 1;
-    transform: scale(1.3, 1.1);
+  12% {
+    opacity: 0.9;
+    transform: scale(1.16, 1.06);
   }
-  42% {
-    opacity: 0.22;
-    transform: scale(0.44, 0.7);
+  50% {
+    opacity: 0.24;
+    transform: scale(0.52, 0.74);
   }
-  58% {
-    opacity: 0.2;
-    transform: scale(0.42, 0.7);
-  }
-  74% {
-    opacity: 1;
-    transform: scale(1.4, 1.15);
+  76% {
+    opacity: 0.92;
+    transform: scale(1.2, 1.07);
   }
   100% {
-    opacity: 0.75;
+    opacity: 0.7;
     transform: scale(1);
   }
 }
 
-/* Sparks thrown outward on the finale's landing, each on its own delay. */
+/* Sparks on the landing, each on its own delay so the burst scatters. */
 .spark {
   position: absolute;
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
-  background: #e2a33c;
+  background: #d9a248;
   opacity: 0;
-  animation: spark 900ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: spark 1000ms cubic-bezier(0.25, 0.8, 0.3, 1) both;
 }
 
 @keyframes spark {
   0% {
     opacity: 0;
-    transform: translate(0, 0) scale(0.3);
+    transform: translate(0, 0) scale(0.4);
   }
-  25% {
-    opacity: 1;
-    transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) scale(1.15);
+  28% {
+    opacity: 0.9;
+    transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5)) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--dx), var(--dy)) scale(0.35);
+    transform: translate(var(--dx), var(--dy)) scale(0.3);
+  }
+}
+
+/* =========================================================
+   Orbit — the icon steps
+   ========================================================= */
+
+/*
+ * Two hairline rings around the icon, one of them dashed and turning. The
+ * app's own iconography is already built on this language — NavHomeIcon is a
+ * core inside a half-open orbital ring, NavDiscoverIcon is a scanner sweep —
+ * so the tour presents an icon the way the icon presents itself.
+ */
+.orbitRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.09);
+}
+
+.orbitDashed {
+  position: absolute;
+  inset: 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(0, 0, 0, 0.16);
+  animation: orbitSpin 18s linear infinite;
+}
+
+@keyframes orbitSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 /*
- * Reduced motion removes the performance, not the content. Everything still
- * appears; it simply appears instead of arriving.
+ * The press demonstration. The icon's own active state does the real work —
+ * stroke weight, dash offset, the core filling in, all on the 220ms
+ * transition it already ships with. This only supplies the dip of a finger
+ * landing on it, so what is shown is the component behaving, not an imitation
+ * of it.
  */
+.pressPulse {
+  animation: pressPulse 2400ms cubic-bezier(0.33, 0.9, 0.32, 1) infinite;
+}
+
+@keyframes pressPulse {
+  0%,
+  22% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.88);
+  }
+  44% {
+    transform: scale(1.04);
+  }
+  56%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* A ring expanding out of the tap, the way a touch ripple reads. */
+.pressRipple {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  animation: pressRipple 2400ms cubic-bezier(0.22, 0.9, 0.3, 1) infinite;
+}
+
+@keyframes pressRipple {
+  0%,
+  28% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  36% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  64%,
+  100% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stageEnter,
   .yumiEnter,
   .yumiFinale,
   .shadowEnter,
   .shadowFinale,
-  .spark {
+  .spark,
+  .orbitDashed,
+  .pressPulse,
+  .pressRipple {
     animation: none;
   }
 
-  .spark {
+  .spark,
+  .pressRipple {
     display: none;
   }
 }
