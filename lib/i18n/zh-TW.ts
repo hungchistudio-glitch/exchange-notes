@@ -1120,7 +1120,7 @@ const traditionalChinese: TranslationDictionary = {
       statusNative: "原生",
       sheetTitle: "Yumi iPhone Widget",
       sheetDescription:
-        "Widget 已內建於 Exchange Notes，不再需要 Scriptable、私人權杖或額外連線。",
+        "這個 Widget 內建在原生 App 版本裡。如果你沒有安裝該版本，請改用上方的 Scriptable Widget。",
       nativeTitle: "已改用原生 Widget",
       nativeDescription:
         "開啟 Exchange Notes 後，Yumi 與最新單字會安全同步到 iPhone 主畫面。",
