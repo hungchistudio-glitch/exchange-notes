@@ -1,0 +1,158 @@
+/*
+ * Ambient orbital lines, mounted once in the root layout so every route and
+ * sub-route carries them without any page opting in.
+ *
+ * Above the page surface rather than behind it. Screen paints an opaque
+ * bg-surface and twenty-seven other files paint their own, so a backdrop at
+ * z-index -1 would be invisible on nearly every screen. A fixed layer at z-0
+ * sits over those static surfaces and under every piece of chrome — the nav is
+ * z-40, sheets are z-100 and above.
+ *
+ * Sitting over content is only tolerable because of where the lines are. The
+ * circles are far wider than the viewport with their centres pushed off it, so
+ * what enters the frame is a shallow arc through a corner. Reading happens in
+ * the middle of the screen; this happens at the edges.
+ *
+ * Cost is three composited transforms. No JavaScript runs per frame, nothing
+ * reads layout, and only transform and opacity animate — the properties that
+ * stay off the main thread. Yumi's idle budget was hard-won and this does not
+ * spend it.
+ */
+
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /*
+   * No blend mode. Multiply looked marginally better against the warm surface,
+   * but a blended full-viewport fixed layer makes the compositor sample
+   * everything beneath it on every frame, and this runs on every screen of a
+   * phone app. The mask below already guarantees the lines never land on
+   * content, which is the only thing the blend was buying.
+   */
+
+  /*
+   * The centre of the screen is cut out of the layer entirely.
+   *
+   * Confining the arcs geometrically did not work: a circle wide enough to
+   * graze one corner sweeps straight through the middle of the next screen,
+   * and on the login card the dashed arc ran directly through the body text
+   * and the comet sat on the card. Masking is the reliable version of the
+   * same intent — wherever an arc travels, it is invisible where reading
+   * happens and fades in towards the margins.
+   */
+  -webkit-mask-image: radial-gradient(
+    ellipse 62% 44% at 50% 46%,
+    transparent 0%,
+    transparent 38%,
+    rgba(0, 0, 0, 0.5) 66%,
+    #000 92%
+  );
+  mask-image: radial-gradient(
+    ellipse 62% 44% at 50% 46%,
+    transparent 0%,
+    transparent 38%,
+    rgba(0, 0, 0, 0.5) 66%,
+    #000 92%
+  );
+}
+
+.orbit {
+  position: absolute;
+  border-radius: 50%;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* Dashed, because a rotating solid circle is indistinguishable from a still
+     one — the dashes are what make the motion legible at all. */
+  border: 1px dashed rgba(20, 24, 34, 0.16);
+
+  /*
+   * A pale companion stroke sitting just outside the dark one. The app is
+   * mostly a warm cream surface, where the dark line reads and this does not —
+   * but /speak is dark end to end, and there the dark line vanishes and this
+   * one carries the arc. One rule covers both instead of the layer needing to
+   * know which page it is on.
+   */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.ringSolid {
+  border-style: solid;
+  border-color: rgba(20, 24, 34, 0.12);
+}
+
+/* The travelling light. Sits on the ring's edge and is carried around by the
+   parent's rotation, so one transform moves both. */
+.comet {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 999px;
+  background: rgba(206, 142, 46, 0.85);
+  box-shadow:
+    0 0 12px 3px rgba(206, 142, 46, 0.4),
+    0 0 34px 8px rgba(206, 142, 46, 0.18);
+}
+
+.cometCool {
+  background: rgba(52, 104, 158, 0.72);
+  box-shadow:
+    0 0 12px 3px rgba(52, 104, 158, 0.32),
+    0 0 34px 8px rgba(52, 104, 158, 0.15);
+}
+
+/* Three arcs at different radii and speeds. Deliberately not multiples of one
+   another, so the pattern they make together never repeats on screen. */
+.orbitA {
+  width: 150vmax;
+  height: 150vmax;
+  top: -96vmax;
+  left: -46vmax;
+  animation: spin 148s linear infinite;
+}
+
+.orbitB {
+  width: 118vmax;
+  height: 118vmax;
+  right: -70vmax;
+  bottom: -62vmax;
+  animation: spin 97s linear infinite reverse;
+}
+
+.orbitC {
+  width: 196vmax;
+  height: 196vmax;
+  top: -60vmax;
+  right: -120vmax;
+  animation: spin 233s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbitA,
+  .orbitB,
+  .orbitC {
+    animation: none;
+  }
+
+  /* The lines stay. It is the movement that was the problem, not the look. */
+  .comet {
+    box-shadow: none;
+  }
+}

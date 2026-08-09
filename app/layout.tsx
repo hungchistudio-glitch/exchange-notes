@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import OrbitField from "@/components/foundation/ambience/OrbitField";
 import SplashGate from "@/components/ui/SplashGate";
 
 import "./globals.css";
@@ -81,6 +82,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <SplashGate />
+        <OrbitField />
         {children}
         <ServiceWorkerRegister />
         <NativePushRegister />
