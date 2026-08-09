@@ -39,6 +39,10 @@ import {
 import { deriveTeachingSteps, type TeachingStepKey } from "@/lib/pronunciation/teachingSteps";
 import { highlightEnglishExample, highlightZhuyinExample } from "@/lib/pronunciation/exampleHighlight";
 import { recordPracticePlay } from "@/lib/pronunciation/practiceRepository";
+import {
+  cachedWordClip,
+  warmWordAudio,
+} from "@/lib/pronunciation/wordAudio";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "english" | "zhuyin";
@@ -249,6 +253,33 @@ export default function PronunciationLabPage() {
   const dwellTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dwellCandidateRef = useRef<string | null>(null);
   const [activeCardKey, setActiveCardKey] = useState<string | null>(null);
+
+  /*
+   * Fetches the recording for whichever English card is under the reading
+   * band, so it is already in hand by the time the play button is pressed.
+   *
+   * This is the half that keeps playback instant. Warming here rather than on
+   * tap means the network happens while the user is still reading, and the tap
+   * itself only ever touches memory. Nothing is awaited and nothing is
+   * assigned — a failure just leaves that word on speech synthesis.
+   */
+  useEffect(() => {
+    if (resolvedMode !== "english" || !activeCardKey?.startsWith("english-")) {
+      return;
+    }
+
+    const letterId = activeCardKey.slice("english-".length);
+    const letter = englishLetters.find((entry) => entry.id === letterId);
+
+    if (!letter) return;
+
+    const chosenId = selectedSoundByLetter[letter.id] ?? letter.primarySoundId;
+    const sound =
+      letter.commonSounds.find((value) => value.id === chosenId)
+      ?? letter.commonSounds[0];
+
+    if (sound) warmWordAudio(sound.soundText);
+  }, [activeCardKey, resolvedMode, selectedSoundByLetter]);
 
   const registerCardRef = useCallback(
     (key: string) => (el: HTMLDivElement | null) => {
@@ -523,10 +554,24 @@ export default function PronunciationLabPage() {
     const token = beginPlayback(mainKey, cardKey);
     const soundText = sound.soundText;
 
+    /*
+     * A real recording if one is already in hand, speech synthesis if not —
+     * read synchronously and never awaited. Fetching at this point would put a
+     * network round trip between the tap and the first sound, and a late
+     * recording is worse than an immediate synthetic one. Cards warm
+     * themselves as they reach the reading band, so the recording is normally
+     * already here; when it is not, this still plays instantly and the next
+     * tap is the real voice.
+     */
+    const clip = cachedWordClip(soundText);
+
+    const say = () =>
+      audioStep(token, mainKey, clip?.audio, soundText, "en-US", cardKey);
+
     const steps: Step[] = [
-      speakStep(token, mainKey, soundText, "en-US", cardKey),
+      say(),
       pauseStep(mainKey, PAUSE_BETWEEN_REPEATS_MS),
-      speakStep(token, mainKey, soundText, "en-US", cardKey),
+      say(),
     ];
 
     void runSteps(token, steps, cardKey);

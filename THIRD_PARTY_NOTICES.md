@@ -30,3 +30,17 @@ JavaScript decoder rather than a platform one.
 
 English dictionary metadata is retrieved from https://dictionaryapi.dev/ as a
 best-effort, keyless fallback.
+
+### Pronunciation recordings
+
+The pronunciation audio the same API returns is contributed to Wiktionary and
+hosted on Wikimedia Commons. Individual clips carry their own Creative Commons
+licence — CC BY or CC BY-SA, in several versions — and the licence name for
+each clip is returned alongside its URL by `/api/pronunciation-audio` so it can
+be attributed where it is played.
+
+- Source: https://commons.wikimedia.org/
+- Licences: Creative Commons BY / BY-SA, per clip
+
+This is the reason the recordings come from here rather than from a learner's
+dictionary: these are licensed for reuse, and those are not.
