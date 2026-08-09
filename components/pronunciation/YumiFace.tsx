@@ -48,6 +48,87 @@ const CONTACT_PHASES: YumiAnimationState[] = ["holding", "articulating"];
 // release; a fricative's hiss continues right up to it).
 const AIRFLOW_PHASES: YumiAnimationState[] = ["articulating", "holding", "releasing"];
 
+/*
+ * How an articulation is actually performed, in stages, by airflow path.
+ *
+ * The rig has modelled four stages since it was written, and the comments
+ * above describe them precisely — a stop's burst IS the release, a
+ * fricative's hiss continues right up to it. But nothing ever drove them: the
+ * pronunciation page maps loading to preparing, playing to articulating and
+ * done to completed, so holding and releasing had never once appeared on
+ * screen. For a stop that means the closure and the burst — the whole of the
+ * sound — were missing from the demonstration of how to make it.
+ *
+ * Sequencing this here rather than in the two pages means neither page
+ * changes and both get it, and the timings stay next to the rig they belong
+ * to. Each entry is a stage and how long to hold it.
+ */
+const ARTICULATION_SCRIPT: Record<
+  YumiRigPose["airflow"]["path"],
+  Array<[YumiAnimationState, number]>
+> = {
+  // Approach, seal, pressure behind the seal, then the burst that is the
+  // sound. The hold is the longest part because holding is what a stop is.
+  burst: [
+    ["articulating", 170],
+    ["holding", 240],
+    ["releasing", 210],
+  ],
+  // Contact is made once and the friction is sustained; there is no release
+  // event to show, so the hold simply runs long.
+  friction: [
+    ["articulating", 150],
+    ["holding", 520],
+  ],
+  nasal: [
+    ["articulating", 140],
+    ["holding", 470],
+  ],
+  // Nothing is closed, so there is nothing to hold or release. Vowels and
+  // approximants stay in the shape they opened into.
+  oral_center: [],
+  oral_side: [],
+};
+
+/**
+ * Walks the articulation through its stages while the face is told to
+ * articulate, and reports the stage it is currently in.
+ *
+ * State is only ever written from a timer callback, never from the effect
+ * body, which is what keeps this clear of the project's set-state-in-effect
+ * rule.
+ */
+function useArticulationStage(
+  phase: YumiAnimationState,
+  path: YumiRigPose["airflow"]["path"],
+): YumiAnimationState {
+  const [stage, setStage] = useState<YumiAnimationState | null>(null);
+
+  useEffect(() => {
+    if (phase !== "articulating") return;
+
+    const script = ARTICULATION_SCRIPT[path];
+    if (script.length === 0) return;
+
+    const timers: number[] = [];
+    let elapsed = 0;
+
+    for (const [next, hold] of script) {
+      const at = elapsed;
+      timers.push(window.setTimeout(() => setStage(next), at));
+      elapsed += hold;
+    }
+
+    // Settles back into the sustained shape rather than snapping to neutral,
+    // so a voiced tail still reads after the burst.
+    timers.push(window.setTimeout(() => setStage("articulating"), elapsed));
+
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, [phase, path]);
+
+  return phase === "articulating" && stage ? stage : phase;
+}
+
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
@@ -196,7 +277,15 @@ export default function YumiFace({
   emphasisScale = DEFAULT_TEACHING_EMPHASIS,
 }: YumiFaceProps) {
   const reducedMotion = useReducedMotion();
-  const isActive = ACTIVE_PHASES.includes(phase);
+
+  /*
+   * The stage the articulation has reached, which is what the rest of this
+   * component reads. `phase` is still what comes in from the page — it just
+   * no longer collapses the whole articulation into one frame.
+   */
+  const stage = useArticulationStage(phase, pose.airflow.path);
+
+  const isActive = ACTIVE_PHASES.includes(stage);
   const activePose = isActive ? pose : YUMI_IDLE_POSE;
   const rawId = useId();
   const eyeClipId = `yumi-face-eye-${rawId.replace(/:/g, "")}`;
@@ -204,13 +293,13 @@ export default function YumiFace({
   const mouth = mouthGeometry(activePose.mouth, isActive, emphasisScale);
   const tip = tongueTip(activePose);
   const showVoicing = activePose.voicing.voiced && isActive;
-  const showContact = activePose.contact.zone !== "none" && CONTACT_PHASES.includes(phase);
+  const showContact = activePose.contact.zone !== "none" && CONTACT_PHASES.includes(stage);
   const mouthSpeedMs = isActive ? MOUTH_SPEED_MS[activePose.airflow.path] : 320;
-  const showAirflow = isActive && activePose.airflow.enabled && AIRFLOW_PHASES.includes(phase);
+  const showAirflow = isActive && activePose.airflow.enabled && AIRFLOW_PHASES.includes(stage);
   const airflowPath = activePose.airflow.path;
   const airflowOriginPoint = airflowPath === "nasal" ? NASAL_ORIGIN : airflowOrigin(mouth);
 
-  const breathing = !reducedMotion && (phase === "idle" || phase === "entering");
+  const breathing = !reducedMotion && (stage === "idle" || stage === "entering");
 
   return (
     <div
