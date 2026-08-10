@@ -116,6 +116,7 @@ export default function useVocabularyPage({
     friendsError,
     sendingFriendId,
     handleSendToPartner,
+    shareCard,
     retryFriends,
     handleClosePicker,
     handlePickFriend,
@@ -291,6 +292,22 @@ export default function useVocabularyPage({
     viewMode,
     onLookupWord: lookupWord,
     onSaveLookupResult: saveLookupResult,
+    /*
+     * Sharing a looked-up word does not save it first. The send path only ever
+     * needed the card, so a word can go to a friend without being added to
+     * your own vocabulary — which is often the point of looking it up.
+     */
+    onShareLookupResult: () => {
+      if (!lookupResult) return;
+
+      shareCard({
+        word: lookupResult.englishName,
+        translation: lookupResult.chineseName,
+        partOfSpeech: lookupResult.partOfSpeech,
+        englishExample: lookupResult.englishExample,
+        chineseExample: lookupResult.chineseExample,
+      });
+    },
     onChangeStatus: changeStatus,
     onDeleteItem: deleteVocabularyItem,
     onOpenDetail: (item: VocabularyItem) => {

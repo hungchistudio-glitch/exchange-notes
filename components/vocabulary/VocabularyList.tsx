@@ -10,6 +10,7 @@ import {
   SearchX,
   Trash2,
   Volume2,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -52,6 +53,7 @@ type VocabularyListProps = {
   viewMode: VocabularyViewMode;
   onLookupWord: () => void;
   onSaveLookupResult: () => void;
+  onShareLookupResult: () => void;
   onChangeStatus: (
     item: VocabularyItem,
     status: VocabularyStatus,
@@ -78,6 +80,7 @@ function VocabularyList({
   viewMode,
   onLookupWord,
   onSaveLookupResult,
+  onShareLookupResult,
   onChangeStatus,
   onDeleteItem,
   onOpenDetail,
@@ -271,11 +274,24 @@ function VocabularyList({
               : [chineseExampleRow, englishExampleRow]}
           </div>
 
-          <button
+          {/* Share sits beside Add rather than after it: sending a word to a
+              partner is not a step that follows saving it, and often replaces
+              it — the word was looked up for them, not for you. */}
+          <div className="mt-5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onShareLookupResult}
+              aria-label={lookup.shareWithFriend}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-line bg-white text-black transition active:scale-[0.96]"
+            >
+              <Send size={17} strokeWidth={1.9} aria-hidden="true" />
+            </button>
+
+            <button
             type="button"
             onClick={onSaveLookupResult}
             disabled={savingLookup}
-            className="mt-5 flex h-12 w-full items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
+            className="flex h-12 flex-1 items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-35"
           >
             {savingLookup ? (
               <>
@@ -289,6 +305,7 @@ function VocabularyList({
               lookup.addToVocabulary
             )}
           </button>
+          </div>
         </section>
       );
     }

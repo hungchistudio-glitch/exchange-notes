@@ -12,13 +12,23 @@ import { createClient } from "@/lib/supabase/client";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { recordInteraction } from "@/lib/vocabulary/helpers";
+import type { SharedWordCard } from "@/lib/messages/wordCard";
 import type { VocabularyItem } from "@/lib/types/app";
 
 export default function useVocabularyFriendPicker() {
   const router = useRouter();
 
-  const [friendPickerItem, setFriendPickerItem] =
-    useState<VocabularyItem | null>(null);
+  /*
+   * What is waiting to be sent, held as the card rather than as a saved
+   * vocabulary row.
+   *
+   * The send path never needed a row: picking a friend stashes this payload
+   * and navigates to their thread, which sends it. Holding a VocabularyItem
+   * meant only saved words could be shared, which is why a looked-up word and
+   * a card already sitting in a conversation had no way to reach a friend.
+   */
+  const [pendingCard, setPendingCard] =
+    useState<SharedWordCard | null>(null);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [friendsError, setFriendsError] = useState("");
@@ -29,7 +39,20 @@ export default function useVocabularyFriendPicker() {
 
   const handleSendToPartner = useCallback((item: VocabularyItem) => {
     recordInteraction(item, "send");
-    setFriendPickerItem(item);
+
+    setPendingCard({
+      word: item.word,
+      translation: item.translation,
+      partOfSpeech: item.part_of_speech,
+      englishExample: item.example_sentence,
+      chineseExample: item.translated_example,
+    });
+  }, []);
+
+  /** Opens the picker for a card that is not a saved row — a lookup result, or
+   *  one already sitting in a conversation. */
+  const shareCard = useCallback((card: SharedWordCard) => {
+    setPendingCard(card);
   }, []);
 
   const loadFriends = useCallback(async () => {
@@ -69,34 +92,30 @@ export default function useVocabularyFriendPicker() {
   }, [loadFriends]);
 
   useEffect(() => {
-    if (!friendPickerItem || friendsRequestedRef.current) return;
+    if (!pendingCard || friendsRequestedRef.current) return;
     void loadFriends();
-  }, [friendPickerItem, loadFriends]);
+  }, [pendingCard, loadFriends]);
 
   const handleClosePicker = useCallback(() => {
-    setFriendPickerItem(null);
+    setPendingCard(null);
     setSendingFriendId(null);
   }, []);
 
   const handlePickFriend = useCallback(
     (friendId: string) => {
-      if (!friendPickerItem || sendingFriendId) return;
+      if (!pendingCard || sendingFriendId) return;
 
       setSendingFriendId(friendId);
-      setPendingSharedVocabulary({
-        word: friendPickerItem.word,
-        translation: friendPickerItem.translation,
-        partOfSpeech: friendPickerItem.part_of_speech,
-        englishExample: friendPickerItem.example_sentence,
-        chineseExample: friendPickerItem.translated_example,
-      });
+      setPendingSharedVocabulary(pendingCard);
       router.push(`/messages?with=${encodeURIComponent(friendId)}`);
     },
-    [friendPickerItem, router, sendingFriendId],
+    [pendingCard, router, sendingFriendId],
   );
 
   return {
-    friendPickerItem,
+    /* Kept as the modal's open/closed signal; it is the card now, not a row. */
+    friendPickerItem: pendingCard,
+    shareCard,
     friends,
     friendsLoading,
     friendsError,

@@ -813,6 +813,7 @@ const traditionalChinese: TranslationDictionary = {
       lookingUp: "搜尋中",
       lookUpWord: "搜尋「{word}」",
       wordFound: "找到單字",
+      shareWithFriend: "分享給朋友",
       closeSearchAriaLabel: "關閉單字搜尋",
       inputPlaceholder: "輸入英文或繁體中文",
       clearSearchAriaLabel: "清除搜尋",

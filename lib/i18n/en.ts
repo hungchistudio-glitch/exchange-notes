@@ -830,6 +830,7 @@ const english: TranslationDictionary = {
       lookingUp: "Looking up",
       lookUpWord: 'Look up "{word}"',
       wordFound: "Word found",
+      shareWithFriend: "Send to a friend",
       closeSearchAriaLabel: "Close word search",
       inputPlaceholder: "English or Traditional Chinese",
       clearSearchAriaLabel: "Clear search",
