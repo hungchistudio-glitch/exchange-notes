@@ -37,6 +37,7 @@ import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 
 type Message = {
@@ -1053,14 +1054,13 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                           {/* Forwarding a card someone sent you is how a good
                               word travels. The picker holds the card itself,
                               so this needs nothing saved first. */}
-                          <button
-                            type="button"
+                          <OrbitIconButton
                             onClick={() => shareCard(wordCard)}
                             aria-label={t.vocabulary.lookup.shareWithFriend}
-                            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white text-black transition active:scale-95"
+                            sizeClassName="h-7 w-7"
                           >
                             <Send size={13} strokeWidth={1.9} />
-                          </button>
+                          </OrbitIconButton>
 
                           <button
                             type="button"
