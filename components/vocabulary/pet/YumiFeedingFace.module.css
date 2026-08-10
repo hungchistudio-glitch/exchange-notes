@@ -49,6 +49,18 @@
 
 .mouthAssembly {
   opacity: 0;
+
+  /*
+   * view-box, not the fill-box inherited from the shared rule above.
+   *
+   * 289 245 are SVG coordinates — they sit with the cheeks at cy 242 and the
+   * cavity at cy 245. Under fill-box they were being read as an offset from
+   * this group's own bounding box, which is about 101×29, so the origin landed
+   * roughly three widths to the right and eight heights below the mouth.
+   * Every squash then pulled the mouth down toward that point, which is why it
+   * sat low through the whole chew.
+   */
+  transform-box: view-box;
   transform-origin: 289px 245px;
 }
 
