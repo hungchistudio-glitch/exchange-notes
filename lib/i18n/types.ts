@@ -755,6 +755,7 @@ export type TranslationDictionary = {
       lookingUp: string;
       lookUpWord: string;
       wordFound: string;
+      shareWithFriend: string;
       closeSearchAriaLabel: string;
       inputPlaceholder: string;
       clearSearchAriaLabel: string;
