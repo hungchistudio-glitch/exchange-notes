@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import { EmptyState } from "@/components/foundation-legacy";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { speak } from "@/lib/speech";
@@ -278,14 +279,13 @@ function VocabularyList({
               partner is not a step that follows saving it, and often replaces
               it — the word was looked up for them, not for you. */}
           <div className="mt-5 flex items-center gap-2">
-            <button
-              type="button"
+            <OrbitIconButton
               onClick={onShareLookupResult}
               aria-label={lookup.shareWithFriend}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-line bg-white text-black transition active:scale-[0.96]"
+              sizeClassName="h-12 w-12 shrink-0"
             >
               <Send size={17} strokeWidth={1.9} aria-hidden="true" />
-            </button>
+            </OrbitIconButton>
 
             <button
             type="button"

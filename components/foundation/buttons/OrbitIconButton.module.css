@@ -1,0 +1,111 @@
+/*
+ * The app's icon buttons, in the same language as its icons.
+ *
+ * NavHomeIcon is a core inside a half-open orbital ring and NavDiscoverIcon is
+ * a scanner sweep, but the buttons holding icons around the app were plain
+ * bordered circles. This gives them the ring.
+ *
+ * Everything animated here is a transform or an opacity on an absolutely
+ * positioned pseudo-layer, so nothing reflows and nothing is read back.
+ */
+
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #fff;
+  color: #000;
+  border: 1px solid rgba(20, 24, 34, 0.1);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.button:active {
+  transform: scale(0.94);
+  border-color: rgba(20, 24, 34, 0.28);
+  box-shadow: 0 0 0 4px rgba(20, 24, 34, 0.05);
+}
+
+/*
+ * The orbit. Dashed, because a turning solid ring is indistinguishable from a
+ * still one — the same reason the ambient arcs and the nav indicator are
+ * dashed.
+ */
+.orbit {
+  position: absolute;
+  /* Proportional, not fixed. At 3px the rings were comfortable on a 48px
+     button and almost touching the glyph on a 28px one. */
+  inset: 9%;
+  border-radius: 9999px;
+  border: 1px dashed rgba(20, 24, 34, 0.22);
+  animation: orbitSpin 11s linear infinite;
+  pointer-events: none;
+}
+
+/* A second, tighter arc turning the other way. Two speeds in opposite
+   directions is what stops it reading as a single spinning wheel. */
+.orbitInner {
+  position: absolute;
+  inset: 19%;
+  border-radius: 9999px;
+  border-top: 1px solid rgba(201, 150, 46, 0.55);
+  border-right: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-left: 1px solid transparent;
+  animation: orbitSpin 4.5s linear infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes orbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A halo that expands out of the press, the way a touch ripple reads. */
+.button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid rgba(201, 150, 46, 0.5);
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+}
+
+.button:active::after {
+  animation: orbitPing 520ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes orbitPing {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+.icon {
+  position: relative;
+  display: inline-flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The rings stay — they are part of the shape. Only the turning stops. */
+  .orbit,
+  .orbitInner {
+    animation: none;
+  }
+
+  .button:active::after {
+    animation: none;
+  }
+}
