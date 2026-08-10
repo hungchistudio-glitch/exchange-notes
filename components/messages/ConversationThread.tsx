@@ -11,7 +11,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { Bookmark, Check as CheckMark, ListChecks, Plus, Trash2, Volume2, X } from "lucide-react";
+import { Bookmark, Check as CheckMark, ListChecks, Plus, Send, Trash2, Volume2, X } from "lucide-react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
@@ -35,6 +35,8 @@ import { getPronunciationData } from "@/lib/pronunciation";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
+import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 
 type Message = {
@@ -187,6 +189,24 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
     onClose: () => setConfirmOpen(false),
     closeDisabled: deleting,
   });
+
+  /*
+   * Forwarding a card to a different friend. The picker stashes the card and
+   * navigates to that friend's thread, which is the same path the vocabulary
+   * page has always used — this screen just becomes another place a card can
+   * start from.
+   */
+  const {
+    friendPickerItem,
+    shareCard,
+    friends: pickerFriends,
+    friendsLoading,
+    friendsError,
+    sendingFriendId,
+    loadFriends,
+    handleClosePicker,
+    handlePickFriend,
+  } = useVocabularyFriendPicker();
 
   const [friendIsTyping, setFriendIsTyping] = useState(false);
   const [receiptsByMessageId, setReceiptsByMessageId] = useState<Map<number, MessageReceiptInfo>>(new Map());
@@ -1029,6 +1049,19 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
                         <div className="mt-2.5 flex items-center justify-between">
                           <time dateTime={message.created_at} className="text-[10px] text-black/35">{formatMessageTime(message.created_at)}</time>
+                          <div className="flex items-center gap-1.5">
+                          {/* Forwarding a card someone sent you is how a good
+                              word travels. The picker holds the card itself,
+                              so this needs nothing saved first. */}
+                          <button
+                            type="button"
+                            onClick={() => shareCard(wordCard)}
+                            aria-label={t.vocabulary.lookup.shareWithFriend}
+                            className="flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white text-black transition active:scale-95"
+                          >
+                            <Send size={13} strokeWidth={1.9} />
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => handleSaveCard(message.id, wordCard)}
@@ -1038,6 +1071,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                           >
                             {savedCardIds.has(message.id) ? <CheckMark size={13} strokeWidth={2} /> : <Bookmark size={13} strokeWidth={1.8} />}
                           </button>
+                          </div>
                         </div>
                       </article>
                       );
@@ -1176,6 +1210,18 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
             </div>
           </div>
         </div>
+      )}
+
+      {friendPickerItem && (
+        <FriendPickerModal
+          friends={pickerFriends}
+          loading={friendsLoading}
+          errorMessage={friendsError}
+          sendingFriendId={sendingFriendId}
+          onClose={handleClosePicker}
+          onPick={handlePickFriend}
+          onRetry={() => void loadFriends()}
+        />
       )}
     </main>
   );
