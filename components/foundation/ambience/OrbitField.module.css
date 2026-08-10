@@ -114,27 +114,40 @@
 
 /* Three arcs at different radii and speeds. Deliberately not multiples of one
    another, so the pattern they make together never repeats on screen. */
+/*
+ * Sized in vw, and kept near the viewport rather than spanning several of it.
+ *
+ * These were 150–196vmax with origins pushed 60–120vmax outside, which put
+ * single elements from roughly -370px to +1350px on a 375px screen. They were
+ * clipped and never widened the document, but making the compositor carry
+ * boxes three times the width of the phone to draw a thin arc through a corner
+ * is work for nothing — and an element that large is exactly the kind of thing
+ * a mobile browser can be talked into reasoning about oddly.
+ *
+ * The arcs read the same: what is on screen is still a shallow curve through a
+ * corner, because the radius is still much larger than the corner it crosses.
+ */
 .orbitA {
-  width: 150vmax;
-  height: 150vmax;
-  top: -96vmax;
-  left: -46vmax;
+  width: 78vw;
+  height: 78vw;
+  top: -34vw;
+  left: -26vw;
   animation: spin 148s linear infinite;
 }
 
 .orbitB {
-  width: 118vmax;
-  height: 118vmax;
-  right: -70vmax;
-  bottom: -62vmax;
+  width: 66vw;
+  height: 66vw;
+  right: -30vw;
+  bottom: -24vw;
   animation: spin 97s linear infinite reverse;
 }
 
 .orbitC {
-  width: 196vmax;
-  height: 196vmax;
-  top: -60vmax;
-  right: -120vmax;
+  width: 96vw;
+  height: 96vw;
+  top: -20vw;
+  right: -52vw;
   animation: spin 233s linear infinite;
 }
 
