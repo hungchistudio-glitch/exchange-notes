@@ -73,3 +73,30 @@ html {
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
 }
+
+/*
+ * Stop iOS zooming the page when a field takes focus.
+ *
+ * Safari scales the viewport up whenever the focused control's computed
+ * font-size is below 16px, and it does not scale back afterwards — so tapping
+ * the vocabulary search box or any field in the capture flow left the whole
+ * interface enlarged and shifted, and every subsequent tap landed on a layout
+ * that had moved. Seventeen fields across search, capture, messages, friends,
+ * collections, editing and onboarding were under the threshold.
+ *
+ * Raising each one by hand would fix today's seventeen and none of tomorrow's,
+ * so the floor is set here instead. Only on coarse pointers: this is a
+ * touch-keyboard behaviour, and the designed sizes stay untouched with a mouse.
+ *
+ * The other well-known fix is maximum-scale=1 on the viewport, which is
+ * rejected deliberately. It does stop this, and it also takes pinch-zoom away
+ * from everyone who relies on it. Making the text big enough to not need
+ * rescuing is the version that costs nobody anything.
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
