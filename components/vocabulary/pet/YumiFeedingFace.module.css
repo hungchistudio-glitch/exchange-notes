@@ -171,8 +171,23 @@
   transform-origin: 50% 62%;
 }
 
+/*
+ * Satisfied has to carry a transform, because it is the only phase that showed
+ * the assembly without one.
+ *
+ * mouthSeal belongs to the swallowing selector, so the moment the phase turns
+ * to satisfied the rule stops matching and its `both` fill goes with it — the
+ * assembly snapped back to its untransformed coordinates and stayed there for
+ * the 2.3 seconds satisfied lasts. The cavity, lips and tongue are hidden
+ * below, so what was left visible was .smile: a dark stroke, at a position no
+ * other phase ever puts it, painting across the status line under Yumi.
+ *
+ * This is where the seal ends, so the mouth simply stays where the swallow
+ * left it instead of jumping to a place nothing has ever validated.
+ */
 .overlay[data-feeding-phase="satisfied"] .mouthAssembly {
   opacity: 1;
+  transform: translateY(1px) scale(1);
 }
 
 .overlay[data-feeding-phase="satisfied"] .mouthCavity,
