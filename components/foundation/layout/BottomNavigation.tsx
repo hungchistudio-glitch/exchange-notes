@@ -100,7 +100,9 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
               transform: `translate(${offset.x}px, ${offset.y}px)`,
               boxShadow: "0 0 0 6px rgba(28, 26, 22, 0.05)",
             }}
-          />
+          >
+            <span aria-hidden="true" className={styles.indicatorOrbit} />
+          </div>
         )}
 
         <div
