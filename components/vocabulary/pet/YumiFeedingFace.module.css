@@ -87,6 +87,17 @@
   opacity: 1;
 }
 
+/*
+ * Chewing with no beat yet. YumiMark falls back to "chewing" whenever it is
+ * told it is eating without being told which phase, and beat 0 matches none of
+ * the four rules below — which left the mouth visible, untransformed, at
+ * whatever its raw coordinates are. Resting it explicitly means that path
+ * shows a closed mouth rather than a misplaced one.
+ */
+.overlay[data-feeding-phase="chewing"][data-chew-beat="0"] .mouthAssembly {
+  transform: translate(0, 0) scale(1, 0.48);
+}
+
 .overlay[data-feeding-phase="chewing"][data-chew-beat="1"] .mouthAssembly {
   animation: mouthChewLeft 250ms ease-in-out both;
 }
@@ -160,8 +171,23 @@
   transform-origin: 50% 62%;
 }
 
+/*
+ * Satisfied has to carry a transform, because it is the only phase that showed
+ * the assembly without one.
+ *
+ * mouthSeal belongs to the swallowing selector, so the moment the phase turns
+ * to satisfied the rule stops matching and its `both` fill goes with it — the
+ * assembly snapped back to its untransformed coordinates and stayed there for
+ * the 2.3 seconds satisfied lasts. The cavity, lips and tongue are hidden
+ * below, so what was left visible was .smile: a dark stroke, at a position no
+ * other phase ever puts it, painting across the status line under Yumi.
+ *
+ * This is where the seal ends, so the mouth simply stays where the swallow
+ * left it instead of jumping to a place nothing has ever validated.
+ */
 .overlay[data-feeding-phase="satisfied"] .mouthAssembly {
   opacity: 1;
+  transform: translateY(1px) scale(1);
 }
 
 .overlay[data-feeding-phase="satisfied"] .mouthCavity,
@@ -240,10 +266,24 @@
   50% { transform: translate(-2px, 1px) scale(1.04, 0.67); }
 }
 
+/*
+ * Ends where the other three beats end, at rest.
+ *
+ * It used to finish at translate(0, 1px) scale(1, 0.22) — displaced and
+ * squashed — and every beat is declared with `both`, so that end state is held
+ * after the animation stops. Any interruption between the last chew and the
+ * swallow (a new cookie, leaving the page) left the mouth stranded low and
+ * flattened, painting over the status line beneath Yumi, since .face is
+ * overflow: visible and nothing clips it.
+ *
+ * The seal it was reaching for is not lost: the swallowing phase has
+ * mouthSeal, which is where sealing belongs.
+ */
 @keyframes mouthChewFinish {
   0% { transform: translate(0, 0) scale(1, 0.48); }
   42% { transform: translate(2px, 1px) scale(0.98, 0.72); }
-  100% { transform: translate(0, 1px) scale(1, 0.22); }
+  78% { transform: translate(0, 0) scale(1, 0.34); }
+  100% { transform: translate(0, 0) scale(1, 0.48); }
 }
 
 @keyframes cheekChewLeft {
