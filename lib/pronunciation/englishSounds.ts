@@ -472,7 +472,8 @@ export const englishLetters: EnglishLetter[] = [
         soundText: "queen",
         tip: { english: "Q is almost always followed by u — together they say kw, starting like k then rounding your lips into a w.", "traditional-chinese": "Q 幾乎都跟著 u，兩個字母合起來唸 kw，先像 k 一樣抵住軟顎，再圓唇滑向 w。" },
         guidance: [{ label: { english: "How it's made", "traditional-chinese": "發音方式" }, text: { english: "k released straight into a rounded w", "traditional-chinese": "k 之後立刻圓唇滑向 w" } }, { label: { english: "Note", "traditional-chinese": "重點提示" }, text: { english: "Q on its own is never said — it always pairs with u", "traditional-chinese": "Q 單獨不會發音，一定跟 u 一起" } }],
-        phonetics: { manner: "approximant", place: "velar", voiced: true, aspirated: false, nasal: false, lipRounding: "strongly_rounded", jawOpening: 0.15, tongueRegion: "back", tongueHeight: 0.75, tongueFrontness: 0.15, contactZone: "none" },
+        // /kw/ opens on a voiceless velar stop; modelled as the glide alone it derived the same pose as plain W.
+        phonetics: { manner: "stop", place: "velar", voiced: false, aspirated: true, nasal: false, lipRounding: "strongly_rounded", jawOpening: 0.15, tongueRegion: "back", tongueHeight: 0.9, tongueFrontness: 0.15, contactZone: "velum" },
         examples: ["Queen", "Quick", "Quiet"],
       },
     ],
@@ -634,7 +635,8 @@ export const englishLetters: EnglishLetter[] = [
         soundText: "box",
         tip: { english: "Most words say x as a quick k followed by an s — the tongue moves from the back of the mouth straight to the front.", "traditional-chinese": "大多數單字裡 x 唸成 k 加 s 快速連在一起，舌頭從口腔後方快速移到前方。" },
         guidance: [{ label: { english: "How it's made", "traditional-chinese": "發音方式" }, text: { english: "k released straight into s", "traditional-chinese": "k 之後立刻接 s" } }, { label: { english: "Voicing", "traditional-chinese": "聲帶" }, text: { english: "Vocal cords don't vibrate", "traditional-chinese": "聲帶不振動" } }],
-        phonetics: { manner: "fricative", place: "alveolar", voiced: false, aspirated: false, nasal: false, lipRounding: "unrounded", jawOpening: 0.15, tongueRegion: "tip", tongueHeight: 0.75, tongueFrontness: 0.85, contactZone: "alveolar_ridge" },
+        // /ks/ opens on a voiceless velar stop; modelled as the /s/ alone it derived the same pose as plain S.
+        phonetics: { manner: "stop", place: "velar", voiced: false, aspirated: true, nasal: false, lipRounding: "unrounded", jawOpening: 0.15, tongueRegion: "back", tongueHeight: 0.9, tongueFrontness: 0.2, contactZone: "velum" },
         examples: ["Box", "Fox", "Six"],
       },
       {
@@ -645,7 +647,8 @@ export const englishLetters: EnglishLetter[] = [
         soundText: "exam",
         tip: { english: "When x sits between two vowels in a stressed word like exam, it's voiced instead — g followed by z.", "traditional-chinese": "當 x 夾在兩個母音之間、且該音節重讀時（例如 exam），會唸成有聲的 g 加 z。" },
         guidance: [{ label: { english: "How it's made", "traditional-chinese": "發音方式" }, text: { english: "g released straight into z", "traditional-chinese": "g 之後立刻接 z" } }, { label: { english: "Voicing", "traditional-chinese": "聲帶" }, text: { english: "Vocal cords do vibrate", "traditional-chinese": "聲帶要振動" } }],
-        phonetics: { manner: "fricative", place: "alveolar", voiced: true, aspirated: false, nasal: false, lipRounding: "unrounded", jawOpening: 0.15, tongueRegion: "tip", tongueHeight: 0.75, tongueFrontness: 0.85, contactZone: "alveolar_ridge" },
+        // /gz/ opens on a voiced velar stop; modelled as the /z/ alone it derived the same pose as plain Z.
+        phonetics: { manner: "stop", place: "velar", voiced: true, aspirated: false, nasal: false, lipRounding: "unrounded", jawOpening: 0.15, tongueRegion: "back", tongueHeight: 0.9, tongueFrontness: 0.2, contactZone: "velum" },
         examples: ["Exam", "Exact", "Exist"],
       },
     ],

@@ -80,6 +80,16 @@ const ARTICULATION_SCRIPT: Record<
     ["articulating", 150],
     ["holding", 520],
   ],
+  // A stop released into a fricative, and it has to read as both: close,
+  // build, release, then keep hissing. The friction after the release is
+  // what separates ㄓ from ㄉ, just as the closure before it separates ㄓ
+  // from ㄕ.
+  affricate: [
+    ["articulating", 150],
+    ["holding", 200],
+    ["releasing", 180],
+    ["holding", 300],
+  ],
   nasal: [
     ["articulating", 140],
     ["holding", 470],
@@ -199,6 +209,9 @@ function mouthGeometry(mouth: YumiRigPose["mouth"], active: boolean, scale: numb
 // steadily, matching brief section 3 ("爆破音...更鮮明" / "母音...更穩定").
 const MOUTH_SPEED_MS: Record<AirflowRig["path"], number> = {
   burst: 150,
+  // Between the two it is made of: crisper than a fricative because it opens
+  // from a closure, softer than a stop because it lands in friction.
+  affricate: 180,
   friction: 220,
   nasal: 260,
   oral_center: 340,

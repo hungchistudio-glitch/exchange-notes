@@ -102,7 +102,13 @@ export interface TongueRig {
 
 export interface AirflowRig {
   enabled: boolean;
-  path: "oral_center" | "oral_side" | "nasal" | "burst" | "friction";
+  path:
+    | "oral_center"
+    | "oral_side"
+    | "nasal"
+    | "burst"
+    | "friction"
+    | "affricate";
   intensity: number;
 }
 
@@ -188,10 +194,17 @@ const CONTACT_POSITION: Record<ContactZone, Point2D> = {
   none: { x: 0.5, y: 0.5 },
 };
 
+/*
+ * An affricate had its own manner all along and was then thrown in with the
+ * fricatives here, which is why ㄓ and ㄕ, ㄐ and ㄒ, ㄗ and ㄙ each derived a
+ * byte-identical pose: same place, same contact, and now the same airflow, so
+ * nothing was left to tell them apart. An affricate is a stop released into a
+ * fricative — it needs the closure the fricative does not have.
+ */
 const AIRFLOW_BY_MANNER: Record<Manner, AirflowRig["path"]> = {
   stop: "burst",
   fricative: "friction",
-  affricate: "friction",
+  affricate: "affricate",
   nasal: "nasal",
   approximant: "oral_center",
   lateral: "oral_side",
