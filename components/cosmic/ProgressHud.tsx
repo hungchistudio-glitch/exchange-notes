@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import useDailyGoalMinutes from "@/hooks/preferences/useDailyGoalMinutes";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -81,11 +80,9 @@ function Gauge({
 export default function ProgressHud() {
   const { t } = useTranslation();
   const copy = t.cosmic.hud;
-  const dailyGoal = useDailyGoalMinutes();
-
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { reviewStats } = useVocabularyStats(items);
+  const { reviewStats, todayAdded, dailyGoal } = useVocabularyStats(items);
 
   useEffect(() => {
     let active = true;
@@ -134,11 +131,15 @@ export default function ProgressHud() {
           tone="violet"
         />
         <Gauge
-          // The goal is the whole ring by definition — it is a target, not a
-          // measurement, so the arc shows the target rather than pretending
-          // to know how much of today has been spent against it.
-          value={1}
-          display={`${dailyGoal}m`}
+          /*
+           * A real measurement, now that there is one to make. While the goal
+           * was counted in minutes this ring showed the target as a full
+           * circle, because nothing in the app measured minutes and a partial
+           * arc would have been invented. Words are counted, so the arc is how
+           * much of today's goal is actually done.
+           */
+          value={todayAdded / dailyGoal}
+          display={loading ? dash : `${todayAdded}/${dailyGoal}`}
           label={copy.dailyGoal}
           tone="amber"
         />

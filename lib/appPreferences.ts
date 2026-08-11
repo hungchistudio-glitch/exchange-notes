@@ -120,58 +120,75 @@ export function subscribeToAppFontSize(
 }
 
 /* =========================================================
-   Daily study goal (minutes)
+   Daily study goal (new words)
    ========================================================= */
 
-export type DailyGoalMinutes = 5 | 10 | 15 | 20 | 30;
+/*
+ * The daily goal, counted in new words rather than in minutes.
+ *
+ * Minutes was a number nothing in the app could measure — you could ask for
+ * thirty of them and no screen ever checked. Words is something already being
+ * counted: Yumi's cookie tray fills from the words added today, so the setting
+ * now drives behaviour instead of only describing an intention.
+ *
+ * The ladder starts at 3 because that is the milestone Yumi already used, so
+ * the lowest setting matches what the app was doing before anyone touched it.
+ */
+export type DailyGoalWords = 3 | 5 | 10 | 20 | 33;
 
-const DAILY_GOAL_STORAGE_KEY = "exchange-notes-daily-goal";
+/*
+ * A new key, deliberately. The old one holds minutes, and 5, 10 and 20 are
+ * valid in both ladders — reusing it would silently reinterpret somebody's
+ * "20 minutes" as "20 words" without them choosing that. A fresh key lets
+ * everyone land on the default once and pick again.
+ */
+const DAILY_GOAL_STORAGE_KEY = "exchange-notes-daily-word-goal";
 const DAILY_GOAL_EVENT = "exchange-notes-daily-goal-change";
 
-export const DEFAULT_DAILY_GOAL_MINUTES: DailyGoalMinutes = 10;
+export const DEFAULT_DAILY_GOAL_WORDS: DailyGoalWords = 10;
 
-export function isDailyGoalMinutes(
+export function isDailyGoalWords(
   value: unknown,
-): value is DailyGoalMinutes {
+): value is DailyGoalWords {
   return (
-    value === 5 || value === 10 || value === 15 || value === 20 || value === 30
+    value === 3 || value === 5 || value === 10 || value === 20 || value === 33
   );
 }
 
-export function getDailyGoalMinutes(): DailyGoalMinutes {
+export function getDailyGoalWords(): DailyGoalWords {
   if (typeof window === "undefined") {
-    return DEFAULT_DAILY_GOAL_MINUTES;
+    return DEFAULT_DAILY_GOAL_WORDS;
   }
 
   const saved = window.localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
   const parsed = saved === null ? null : Number(saved);
 
-  return isDailyGoalMinutes(parsed) ? parsed : DEFAULT_DAILY_GOAL_MINUTES;
+  return isDailyGoalWords(parsed) ? parsed : DEFAULT_DAILY_GOAL_WORDS;
 }
 
-export function setDailyGoalMinutes(minutes: DailyGoalMinutes) {
+export function setDailyGoalWords(words: DailyGoalWords) {
   if (typeof window === "undefined") return;
 
-  window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(minutes));
+  window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(words));
 
   window.dispatchEvent(
-    new CustomEvent<DailyGoalMinutes>(DAILY_GOAL_EVENT, {
-      detail: minutes,
+    new CustomEvent<DailyGoalWords>(DAILY_GOAL_EVENT, {
+      detail: words,
     }),
   );
 }
 
-export function subscribeToDailyGoalMinutes(
-  listener: (minutes: DailyGoalMinutes) => void,
+export function subscribeToDailyGoalWords(
+  listener: (words: DailyGoalWords) => void,
 ) {
   if (typeof window === "undefined") {
     return () => undefined;
   }
 
   function handleChange(event: Event) {
-    const customEvent = event as CustomEvent<DailyGoalMinutes>;
+    const customEvent = event as CustomEvent<DailyGoalWords>;
 
-    if (isDailyGoalMinutes(customEvent.detail)) {
+    if (isDailyGoalWords(customEvent.detail)) {
       listener(customEvent.detail);
     }
   }
@@ -179,7 +196,7 @@ export function subscribeToDailyGoalMinutes(
   function handleStorage(event: StorageEvent) {
     const parsed = event.newValue === null ? null : Number(event.newValue);
 
-    if (event.key === DAILY_GOAL_STORAGE_KEY && isDailyGoalMinutes(parsed)) {
+    if (event.key === DAILY_GOAL_STORAGE_KEY && isDailyGoalWords(parsed)) {
       listener(parsed);
     }
   }

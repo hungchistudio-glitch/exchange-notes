@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { buildReviewAnalytics } from "@/lib/review/analytics";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 
 import type {
   VocabularyItem,
@@ -20,6 +21,18 @@ export type VocabularyQuickFilter = {
 export default function useVocabularyStats(items: VocabularyItem[]) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
+
+  /*
+   * The goal the user actually chose, rather than a constant.
+   *
+   * This hook used to hardcode 10, Yumi's cookie tray hardcoded 3, and the
+   * Settings row stored minutes that nothing read — three unrelated daily
+   * goals in one app, none of them the one the user picked. Reading the
+   * preference here makes this the single source, and every caller gets it
+   * without threading a parameter through.
+   */
+  const dailyGoal = useDailyGoalWords();
+
   return useMemo(() => {
     const totalWords = items.length;
     const newWords = items.filter((item) => item.status === "new").length;
@@ -37,7 +50,6 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       return new Date(item.created_at).toDateString() === todayKey;
     }).length;
 
-    const dailyGoal = 10;
     const dailyProgress = Math.min(todayAdded, dailyGoal);
 
     const reviewStats = buildReviewAnalytics(items);
@@ -76,5 +88,5 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       quickFilters,
       reviewStats,
     };
-  }, [items, search]);
+  }, [dailyGoal, items, search]);
 }

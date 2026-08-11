@@ -1244,17 +1244,18 @@ const english: TranslationDictionary = {
 
     dailyGoal: {
       rowTitle: "Daily goal",
-      rowDescription: "How long you'd like to study each day",
+      rowDescription: "How many new words a day",
       sheetTitle: "Daily goal",
-      sheetDescription: "Choose how many minutes you'd like to study each day.",
-      minutesLabel: "min",
+      sheetDescription:
+        "Choose how many new words you'd like to meet each day. Yumi's cookies fill up as you reach it.",
+      wordsLabel: "words",
 
       options: {
-        five: "5 minutes",
-        ten: "10 minutes",
-        fifteen: "15 minutes",
-        twenty: "20 minutes",
-        thirty: "30 minutes",
+        three: "3 words",
+        five: "5 words",
+        ten: "10 words",
+        twenty: "20 words",
+        thirtyThree: "33 words",
       },
     },
 

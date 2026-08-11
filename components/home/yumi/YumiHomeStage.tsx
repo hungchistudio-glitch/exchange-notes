@@ -7,6 +7,7 @@ import CookieTray from "@/components/vocabulary/pet/CookieTray";
 import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -44,7 +45,6 @@ const MAX_PUPIL_OFFSET = 9;
 // missed), which would otherwise leave Yumi frozen in the intro pose
 // forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 1900;
-const YUMI_DAILY_WORD_GOAL = 3;
 
 function todayKey() {
   const now = new Date();
@@ -163,6 +163,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const { learningLanguage } = useLearningLanguageContext();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
+  const dailyGoal = useDailyGoalWords();
 
   const [petState, setPetState] = useState<PetState | null>(null);
   const [isWaking, setIsWaking] = useState(true);
@@ -434,8 +435,14 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
 
   useEffect(() => {
     postYumiWidgetUpdate({
-      cookieCount: Math.min(context.wordsToday, YUMI_DAILY_WORD_GOAL),
-      cookieGoal: YUMI_DAILY_WORD_GOAL,
+      /*
+       * The goal the user set in Settings, not a constant. Yumi's tray was
+       * fixed at three words while the setting stored minutes nothing read;
+       * now the tray is what the setting visibly drives — pick ten and Yumi
+       * wants ten.
+       */
+      cookieCount: Math.min(context.wordsToday, dailyGoal),
+      cookieGoal: dailyGoal,
       englishWord: widgetWord?.englishWord ?? "",
       traditionalChineseWord: widgetWord?.traditionalChineseWord ?? "",
       pinyin: widgetWord?.pinyin ?? "",
@@ -453,6 +460,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     });
   }, [
     context.wordsToday,
+    // Included so changing the goal in Settings pushes a fresh cookie target
+    // to the widget instead of leaving the old one on the Home Screen.
+    dailyGoal,
     displayMood,
     language,
     learningLanguage,

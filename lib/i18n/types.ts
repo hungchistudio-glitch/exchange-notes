@@ -1146,14 +1146,14 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
-      minutesLabel: string;
+      wordsLabel: string;
 
       options: {
+        three: string;
         five: string;
         ten: string;
-        fifteen: string;
         twenty: string;
-        thirty: string;
+        thirtyThree: string;
       };
     };
 
