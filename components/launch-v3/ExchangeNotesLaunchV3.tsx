@@ -11,7 +11,7 @@ type Props = {
   onComplete?: () => void;
 };
 
-const FULL_DURATION = 3000;
+const DURATION = 3000;
 const REDUCED_DURATION = 1200;
 
 export default function ExchangeNotesLaunchV3({
@@ -22,17 +22,12 @@ export default function ExchangeNotesLaunchV3({
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
-    setFinished(false);
-
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    const duration = reduced
-      ? REDUCED_DURATION
-      : FULL_DURATION;
-
-    const startedAt = performance.now();
+    const duration = reduced ? REDUCED_DURATION : DURATION;
+    const started = performance.now();
 
     let raf = 0;
     let cancelled = false;
@@ -40,7 +35,7 @@ export default function ExchangeNotesLaunchV3({
     const tick = (now: number) => {
       if (cancelled) return;
 
-      if (now - startedAt >= duration) {
+      if (now - started >= duration) {
         setFinished(true);
         onComplete?.();
         return;
@@ -58,6 +53,7 @@ export default function ExchangeNotesLaunchV3({
   }, [runId, onComplete]);
 
   const replay = useCallback(() => {
+    setFinished(false);
     setRunId((value) => value + 1);
   }, []);
 
@@ -75,7 +71,6 @@ export default function ExchangeNotesLaunchV3({
         <div className={styles.vignette} />
 
         <div className={styles.stage}>
-          {/* Back cinematic structures */}
           <svg
             className={styles.backEffects}
             viewBox="0 0 400 400"
@@ -83,11 +78,11 @@ export default function ExchangeNotesLaunchV3({
           >
             <defs>
               <filter
-                id="en-launch-blur"
-                x="-80%"
-                y="-80%"
-                width="260%"
-                height="260%"
+                id="exchange-launch-blur"
+                x="-100%"
+                y="-100%"
+                width="300%"
+                height="300%"
               >
                 <feGaussianBlur stdDeviation="8" />
               </filter>
@@ -96,59 +91,54 @@ export default function ExchangeNotesLaunchV3({
             <g className={styles.leftWing}>
               <path
                 className={styles.wingBloom}
-                d="M 72 75 Q -34 88 -38 180 Q -34 272 72 285"
+                d="M 72 72 Q -35 92 -42 180 Q -35 268 72 288"
               />
               <path
                 className={styles.wingRail}
-                d="M 72 75 Q -34 88 -38 180 Q -34 272 72 285"
+                d="M 72 72 Q -35 92 -42 180 Q -35 268 72 288"
               />
               <path
                 className={styles.wingParticles}
                 pathLength="100"
-                d="M 72 75 Q -34 88 -38 180 Q -34 272 72 285"
+                d="M 72 72 Q -35 92 -42 180 Q -35 268 72 288"
               />
             </g>
 
             <g className={styles.rightWing}>
               <path
                 className={styles.wingBloom}
-                d="M 328 75 Q 434 88 438 180 Q 434 272 328 285"
+                d="M 328 72 Q 435 92 442 180 Q 435 268 328 288"
               />
               <path
                 className={styles.wingRail}
-                d="M 328 75 Q 434 88 438 180 Q 434 272 328 285"
+                d="M 328 72 Q 435 92 442 180 Q 435 268 328 288"
               />
               <path
                 className={styles.wingParticles}
                 pathLength="100"
-                d="M 328 75 Q 434 88 438 180 Q 434 272 328 285"
+                d="M 328 72 Q 435 92 442 180 Q 435 268 328 288"
               />
             </g>
 
             <path
               className={styles.beamBloom}
               pathLength="100"
-              d="M -100 180 L 285 180"
+              d="M -125 180 L 285 180"
             />
 
             <path
               className={styles.beamHalo}
               pathLength="100"
-              d="M -100 180 L 285 180"
+              d="M -125 180 L 285 180"
             />
 
             <path
               className={styles.beamCore}
               pathLength="100"
-              d="M -100 180 L 285 180"
+              d="M -125 180 L 285 180"
             />
           </svg>
 
-          {/*
-            IMPORTANT:
-            This is the actual existing production brand mark.
-            We do not redraw Yumi.
-          */}
           <ExchangeNotesMark
             className={styles.mark}
             surfaceColor="#f5f3ed"
@@ -158,33 +148,31 @@ export default function ExchangeNotesLaunchV3({
             energy={0}
           />
 
-          {/* Front effects use the exact canonical geometry */}
           <svg
             className={styles.frontEffects}
             viewBox="0 0 400 400"
             aria-hidden="true"
           >
             <defs>
-              <radialGradient id="en-eye-halo">
+              <radialGradient id="exchange-eye-halo">
                 <stop
                   offset="0"
                   stopColor="#ffffff"
                   stopOpacity="0.75"
                 />
                 <stop
-                  offset="0.38"
-                  stopColor="#dfe7f2"
+                  offset="0.36"
+                  stopColor="#dfe6f0"
                   stopOpacity="0.20"
                 />
                 <stop
                   offset="1"
-                  stopColor="#c5d1e2"
+                  stopColor="#bdc9da"
                   stopOpacity="0"
                 />
               </radialGradient>
             </defs>
 
-            {/* Exact canonical Yumi rail */}
             <path
               className={styles.railWake}
               pathLength="100"
@@ -197,35 +185,63 @@ export default function ExchangeNotesLaunchV3({
               d="M 300 70 Q 110 70 100 180 Q 110 320 300 320"
             />
 
-            {/* Exact canonical metallic connector */}
             <path
               className={styles.connectorEnergy}
               pathLength="100"
               d="M 100 180 L 250 180"
             />
 
-            {/* Exact canonical eye center */}
             <circle
               className={styles.eyeHalo}
               cx="285"
               cy="180"
-              r="70"
-              fill="url(#en-eye-halo)"
+              r="72"
+              fill="url(#exchange-eye-halo)"
             />
 
             <circle
               className={styles.exchangePulse}
               cx="285"
               cy="180"
-              r="55"
+              r="56"
             />
 
             <g className={styles.exchangeArrows}>
-              <path d="M 218 180 H 249" />
-              <path d="M 228 169 L 216 180 L 228 191" />
+              <path d="M 219 180 H 248" />
+              <path d="M 229 169 L 217 180 L 229 191" />
 
-              <path d="M 321 180 H 352" />
+              <path d="M 322 180 H 351" />
               <path d="M 341 169 L 353 180 L 341 191" />
+            </g>
+
+            <g className={styles.completeEye}>
+              <circle
+                className={styles.eyeShell}
+                cx="285"
+                cy="180"
+                r="39"
+              />
+
+              <circle
+                className={styles.eyeIris}
+                cx="299"
+                cy="170"
+                r="13"
+              />
+
+              <circle
+                className={styles.eyePupil}
+                cx="299"
+                cy="170"
+                r="8.5"
+              />
+
+              <circle
+                className={styles.eyeCatchlight}
+                cx="303"
+                cy="166"
+                r="3.8"
+              />
             </g>
           </svg>
         </div>
@@ -258,7 +274,7 @@ export default function ExchangeNotesLaunchV3({
           }`}
         >
           <span className={styles.reviewLabel}>
-            3.000s · Exchange Notes Launch
+            3.000s · Storyboard Review
           </span>
 
           <button

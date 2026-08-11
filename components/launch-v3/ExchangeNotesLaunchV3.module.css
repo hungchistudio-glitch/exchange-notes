@@ -2,7 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: 10000;
+
   overflow: hidden;
+
   min-height: 100dvh;
 
   color: #f5f4f0;
@@ -17,7 +19,9 @@
     );
 
   isolation: isolate;
+
   -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 .reviewMode {
@@ -32,18 +36,22 @@
 
 .backgroundGlow {
   position: absolute;
+
   left: 50%;
   top: 40%;
+
   width: min(100vw, 820px);
   aspect-ratio: 1;
+
   transform: translate(-50%, -50%);
+
   border-radius: 50%;
 
   background:
     radial-gradient(
       circle,
-      rgba(220, 226, 236, 0.055),
-      rgba(160, 172, 190, 0.024) 36%,
+      rgba(221, 227, 237, 0.055),
+      rgba(162, 174, 193, 0.025) 36%,
       transparent 70%
     );
 }
@@ -51,18 +59,20 @@
 .grain {
   position: absolute;
   inset: -40%;
-  opacity: 0.032;
+
+  opacity: 0.03;
 
   background-image:
     repeating-radial-gradient(
       circle at 17% 31%,
-      rgba(255, 255, 255, 0.22) 0,
-      rgba(255, 255, 255, 0.22) 0.3px,
+      rgba(255, 255, 255, 0.20) 0,
+      rgba(255, 255, 255, 0.20) 0.3px,
       transparent 0.5px,
       transparent 2.3px
     );
 
   background-size: 5px 5px;
+
   mix-blend-mode: soft-light;
 }
 
@@ -74,26 +84,23 @@
     radial-gradient(
       ellipse at center,
       transparent 40%,
-      rgba(0, 0, 0, 0.24) 73%,
-      rgba(0, 0, 0, 0.68) 100%
+      rgba(0, 0, 0, 0.22) 72%,
+      rgba(0, 0, 0, 0.70) 100%
     );
 }
 
 /* =========================================================
-   THE COMPLETE YUMI OBJECT
+   主舞台
    ========================================================= */
 
 .stage {
   position: absolute;
+
   left: 50%;
   top: 42%;
 
   width: clamp(270px, 62vw, 370px);
   aspect-ratio: 1;
-
-  transform:
-    translate(-50%, -50%)
-    scale(0.92);
 
   transform-origin: center;
 
@@ -107,8 +114,10 @@
 .frontEffects {
   position: absolute;
   inset: 0;
+
   width: 100%;
   height: 100%;
+
   overflow: visible;
 }
 
@@ -119,18 +128,16 @@
 .mark {
   z-index: 2;
 
-  opacity: 0;
-
   filter:
-    brightness(1.34)
-    contrast(1.07)
+    brightness(1.26)
+    contrast(1.05)
     drop-shadow(
       0 10px 18px
       rgba(0, 0, 0, 0.44)
     )
     drop-shadow(
-      0 0 10px
-      rgba(214, 223, 239, 0.10)
+      0 0 11px
+      rgba(214, 224, 239, 0.10)
     );
 
   animation:
@@ -144,19 +151,14 @@
 }
 
 /* =========================================================
-   01 — AWAKEN
+   01 AWAKEN
    ========================================================= */
 
 .railWake {
   fill: none;
 
   stroke:
-    rgba(
-      248,
-      250,
-      255,
-      0.93
-    );
+    rgba(248, 250, 255, 0.94);
 
   stroke-width: 2.2;
 
@@ -165,16 +167,12 @@
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
 
-  opacity: 0;
-
   filter:
     drop-shadow(
-      0 0 3px
-      rgba(255, 255, 255, 0.7)
+      0 0 3px rgba(255, 255, 255, 0.72)
     )
     drop-shadow(
-      0 0 11px
-      rgba(202, 215, 236, 0.22)
+      0 0 11px rgba(201, 215, 236, 0.22)
     );
 
   animation:
@@ -186,29 +184,21 @@
   fill: none;
 
   stroke:
-    rgba(
-      255,
-      255,
-      255,
-      0.95
-    );
+    rgba(255, 255, 255, 0.96);
 
   stroke-width: 3;
 
   stroke-linecap: round;
 
   stroke-dasharray:
-    0.25 6.5;
-
-  opacity: 0;
+    0.28 6.3;
 
   filter:
     drop-shadow(
       0 0 3px white
     )
     drop-shadow(
-      0 0 8px
-      rgba(198, 213, 237, 0.32)
+      0 0 8px rgba(198, 214, 238, 0.34)
     );
 
   animation:
@@ -217,7 +207,7 @@
 }
 
 /* =========================================================
-   02 — FLOW
+   02 FLOW
    ========================================================= */
 
 .connectorEnergy {
@@ -232,15 +222,12 @@
 
   stroke-dashoffset: 100;
 
-  opacity: 0;
-
   filter:
     drop-shadow(
       0 0 3px white
     )
     drop-shadow(
-      0 0 11px
-      rgba(211, 223, 243, 0.5)
+      0 0 11px rgba(211, 223, 243, 0.52)
     );
 
   animation:
@@ -260,8 +247,6 @@
 
   stroke-dashoffset: 100;
 
-  opacity: 0;
-
   animation:
     beamTimeline 3000ms
     linear both;
@@ -269,58 +254,109 @@
 
 .beamBloom {
   stroke:
-    rgba(
-      220,
-      228,
-      241,
-      0.20
-    );
+    rgba(220, 228, 241, 0.20);
 
   stroke-width: 28;
 
-  filter: url("#en-launch-blur");
+  filter:
+    url("#exchange-launch-blur");
 }
 
 .beamHalo {
   stroke:
-    rgba(
-      234,
-      240,
-      249,
-      0.54
-    );
+    rgba(234, 240, 249, 0.55);
 
   stroke-width: 7;
 }
 
 .beamCore {
   stroke:
-    rgba(
-      255,
-      255,
-      255,
-      0.98
-    );
+    rgba(255, 255, 255, 0.99);
 
   stroke-width: 1.7;
 
   filter:
+    drop-shadow(0 0 3px white)
     drop-shadow(
-      0 0 3px white
-    )
-    drop-shadow(
-      0 0 8px
-      rgba(215, 227, 246, 0.56)
+      0 0 8px rgba(215, 227, 246, 0.56)
     );
 }
 
 /* =========================================================
-   03 — EXCHANGE
+   完整眼睛
+   ========================================================= */
+
+.completeEye {
+  animation:
+    eyeTimeline 3000ms
+    linear both;
+}
+
+.eyeShell {
+  fill: #f4f2ec;
+
+  stroke: #09090b;
+  stroke-width: 8;
+
+  filter:
+    drop-shadow(
+      0 4px 8px rgba(0, 0, 0, 0.30)
+    );
+}
+
+.eyeIris {
+  fill: #24272d;
+}
+
+.eyePupil {
+  fill: #07080a;
+}
+
+.eyeCatchlight {
+  fill: #ffffff;
+
+  filter:
+    drop-shadow(
+      0 0 2px rgba(255, 255, 255, 0.70)
+    );
+}
+
+.eyeHalo {
+  animation:
+    eyeHaloTimeline 3000ms
+    linear both;
+}
+
+.exchangePulse {
+  fill: none;
+
+  stroke:
+    rgba(250, 252, 255, 0.86);
+
+  stroke-width: 2;
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  filter:
+    drop-shadow(
+      0 0 6px rgba(255, 255, 255, 0.74)
+    )
+    drop-shadow(
+      0 0 18px rgba(198, 214, 239, 0.40)
+    );
+
+  animation:
+    pulseTimeline 3000ms
+    linear both;
+}
+
+/* =========================================================
+   03 EXCHANGE
    ========================================================= */
 
 .leftWing,
 .rightWing {
-  opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
 
@@ -330,13 +366,11 @@
 }
 
 .leftWing {
-  animation-name:
-    leftWingTimeline;
+  animation-name: leftWingTimeline;
 }
 
 .rightWing {
-  animation-name:
-    rightWingTimeline;
+  animation-name: rightWingTimeline;
 }
 
 .wingBloom,
@@ -348,44 +382,29 @@
 
 .wingBloom {
   stroke:
-    rgba(
-      210,
-      220,
-      235,
-      0.15
-    );
+    rgba(208, 218, 233, 0.15);
 
-  stroke-width: 32;
+  stroke-width: 33;
 
-  filter: url("#en-launch-blur");
+  filter:
+    url("#exchange-launch-blur");
 }
 
 .wingRail {
   stroke:
-    rgba(
-      117,
-      124,
-      135,
-      0.62
-    );
+    rgba(116, 123, 134, 0.61);
 
   stroke-width: 18;
 
   filter:
     drop-shadow(
-      0 0 6px
-      rgba(220, 228, 240, 0.12)
+      0 0 7px rgba(219, 228, 241, 0.12)
     );
 }
 
 .wingParticles {
   stroke:
-    rgba(
-      250,
-      252,
-      255,
-      0.70
-    );
+    rgba(250, 252, 255, 0.72);
 
   stroke-width: 2.1;
 
@@ -393,7 +412,7 @@
     0.5 6;
 
   animation:
-    wingParticleMove 900ms
+    wingParticleMovement 820ms
     linear infinite;
 }
 
@@ -401,23 +420,16 @@
   fill: none;
 
   stroke:
-    rgba(
-      248,
-      250,
-      253,
-      0.92
-    );
+    rgba(248, 250, 253, 0.92);
 
   stroke-width: 3;
+
   stroke-linecap: round;
   stroke-linejoin: round;
 
-  opacity: 0;
-
   filter:
     drop-shadow(
-      0 0 4px
-      rgba(255, 255, 255, 0.5)
+      0 0 4px rgba(255, 255, 255, 0.50)
     );
 
   animation:
@@ -425,49 +437,8 @@
     linear both;
 }
 
-.eyeHalo {
-  opacity: 0;
-
-  animation:
-    eyeHaloTimeline 3000ms
-    linear both;
-}
-
-.exchangePulse {
-  fill: none;
-
-  stroke:
-    rgba(
-      250,
-      252,
-      255,
-      0.84
-    );
-
-  stroke-width: 2;
-
-  opacity: 0;
-
-  transform-box: fill-box;
-  transform-origin: center;
-
-  filter:
-    drop-shadow(
-      0 0 6px
-      rgba(255, 255, 255, 0.7)
-    )
-    drop-shadow(
-      0 0 18px
-      rgba(198, 214, 239, 0.38)
-    );
-
-  animation:
-    pulseTimeline 3000ms
-    linear both;
-}
-
 /* =========================================================
-   05 — EXCHANGE NOTES
+   05 EXCHANGE NOTES
    ========================================================= */
 
 .wordmark {
@@ -476,7 +447,7 @@
   z-index: 5;
 
   left: 50%;
-  top: 60.8%;
+  top: 61%;
 
   display: flex;
   flex-direction: column;
@@ -490,15 +461,8 @@
 }
 
 .exchangeWord {
-  opacity: 0;
-
   color:
-    rgba(
-      247,
-      246,
-      242,
-      0.97
-    );
+    rgba(247, 246, 242, 0.97);
 
   font-family:
     var(--font-geist-sans),
@@ -507,13 +471,10 @@
     sans-serif;
 
   font-size:
-    clamp(
-      19px,
-      5.6vw,
-      31px
-    );
+    clamp(19px, 5.6vw, 31px);
 
   font-weight: 400;
+
   line-height: 1;
 
   letter-spacing:
@@ -529,21 +490,10 @@
 
 .notesWord {
   margin-top:
-    clamp(
-      13px,
-      3vw,
-      18px
-    );
-
-  opacity: 0;
+    clamp(13px, 3vw, 18px);
 
   color:
-    rgba(
-      240,
-      240,
-      237,
-      0.80
-    );
+    rgba(240, 240, 237, 0.80);
 
   font-family:
     var(--font-geist-sans),
@@ -552,13 +502,10 @@
     sans-serif;
 
   font-size:
-    clamp(
-      9px,
-      2.5vw,
-      13px
-    );
+    clamp(9px, 2.5vw, 13px);
 
   font-weight: 400;
+
   line-height: 1;
 
   letter-spacing:
@@ -589,8 +536,6 @@
 
   height: 22%;
 
-  opacity: 0;
-
   transform:
     translateX(-50%);
 
@@ -601,8 +546,8 @@
   background:
     radial-gradient(
       ellipse at 50% 0%,
-      rgba(73, 78, 88, 0.34),
-      rgba(30, 33, 39, 0.82) 36%,
+      rgba(73, 78, 88, 0.31),
+      rgba(30, 33, 39, 0.80) 36%,
       #0e1014 75%
     );
 
@@ -613,6 +558,7 @@
 
 .horizonEdge {
   position: absolute;
+
   left: 5%;
   right: 5%;
   top: 0;
@@ -623,15 +569,15 @@
     linear-gradient(
       90deg,
       transparent,
-      rgba(208, 214, 224, 0.08) 18%,
-      rgba(242, 244, 248, 0.38) 50%,
-      rgba(208, 214, 224, 0.08) 82%,
+      rgba(208, 214, 224, 0.07) 18%,
+      rgba(242, 244, 248, 0.34) 50%,
+      rgba(208, 214, 224, 0.07) 82%,
       transparent
     );
 
   box-shadow:
-    0 -1px 10px
-    rgba(222, 230, 242, 0.07);
+    0 -1px 9px
+    rgba(222, 230, 242, 0.06);
 }
 
 .beacon {
@@ -664,13 +610,12 @@
   background:
     radial-gradient(
       circle,
-      rgba(255, 255, 255, 0.5),
-      rgba(211, 222, 239, 0.14) 35%,
+      rgba(255, 255, 255, 0.48),
+      rgba(211, 222, 239, 0.13) 35%,
       transparent 74%
     );
 
-  filter:
-    blur(4px);
+  filter: blur(4px);
 }
 
 .beaconHead {
@@ -686,12 +631,12 @@
     translateX(-50%);
 
   border-radius: 50%;
+
   background: #ffffff;
 
   box-shadow:
-    0 0 4px white,
-    0 0 11px
-    rgba(215, 226, 245, 0.60);
+    0 0 4px #ffffff,
+    0 0 11px rgba(215, 226, 245, 0.58);
 }
 
 .beaconStem {
@@ -710,13 +655,13 @@
     linear-gradient(
       to bottom,
       rgba(255, 255, 255, 0.76),
-      rgba(204, 217, 237, 0.16) 60%,
+      rgba(204, 217, 237, 0.15) 60%,
       transparent
     );
 }
 
 /* =========================================================
-   REVIEW CONTROLS
+   REVIEW UI
    ========================================================= */
 
 .reviewControls {
@@ -761,7 +706,7 @@
   display: none;
 
   color:
-    rgba(255,255,255,0.32);
+    rgba(255, 255, 255, 0.32);
 
   font-family:
     var(--font-geist-mono),
@@ -781,15 +726,15 @@
 
   border:
     1px solid
-    rgba(255,255,255,0.16);
+    rgba(255, 255, 255, 0.16);
 
   border-radius: 999px;
 
   color:
-    rgba(255,255,255,0.78);
+    rgba(255, 255, 255, 0.78);
 
   background:
-    rgba(16,18,22,0.74);
+    rgba(16, 18, 22, 0.74);
 
   backdrop-filter:
     blur(14px);
@@ -805,31 +750,40 @@
     0.10em;
 }
 
-.replayButton:hover {
-  border-color:
-    rgba(255,255,255,0.30);
-
-  color: #ffffff;
-}
-
 /* =========================================================
-   MASTER 3.000 SECOND TIMELINE
+   MASTER TIMELINE — 3.000s
    ========================================================= */
 
 @keyframes markTimeline {
   0% {
-    opacity: 0;
+    opacity: 0.03;
   }
 
-  3% {
-    opacity: 0;
+  4% {
+    opacity: 0.10;
   }
 
-  9% {
-    opacity: 0.44;
+  17.33% {
+    opacity: 1;
   }
 
-  17.3% {
+  35.33% {
+    opacity: 1;
+  }
+
+  44% {
+    opacity: 0.14;
+  }
+
+  57.33% {
+    opacity: 0.14;
+  }
+
+  70% {
+    opacity: 0.70;
+  }
+
+  78.67% {
     opacity: 1;
   }
 
@@ -845,28 +799,52 @@
       scale(0.92);
   }
 
-  17.3% {
+  17.33% {
     transform:
       translate(-50%, -50%)
       scale(1);
   }
 
-  57% {
+  57.33% {
     transform:
       translate(-50%, -50%)
       scale(1);
   }
 
-  73% {
+  73.33% {
     transform:
-      translate(-50%, calc(-50% - 74px))
-      scale(0.56);
+      translate(-50%, calc(-50% - 78px))
+      scale(0.58);
   }
 
   100% {
     transform:
-      translate(-50%, calc(-50% - 74px))
-      scale(0.56);
+      translate(-50%, calc(-50% - 78px))
+      scale(0.58);
+  }
+}
+
+@keyframes eyeTimeline {
+  0% {
+    opacity: 0;
+    transform: scale(0.88);
+    transform-origin: 285px 180px;
+  }
+
+  6% {
+    opacity: 0.35;
+  }
+
+  17.33% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: 285px 180px;
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: 285px 180px;
   }
 }
 
@@ -877,23 +855,23 @@
   }
 
   2% {
-    opacity: 0;
+    opacity: 0.15;
   }
 
-  7% {
-    opacity: 0.75;
+  8% {
+    opacity: 0.76;
   }
 
-  17.3% {
-    opacity: 0.86;
+  17.33% {
+    opacity: 0.90;
     stroke-dashoffset: 0;
   }
 
-  42% {
-    opacity: 0.34;
+  35% {
+    opacity: 0.35;
   }
 
-  70% {
+  68% {
     opacity: 0;
   }
 
@@ -910,26 +888,26 @@
   }
 
   7% {
-    opacity: 0;
+    opacity: 0.22;
   }
 
-  14% {
-    opacity: 0.48;
+  17% {
+    opacity: 0.62;
   }
 
-  38% {
-    opacity: 0.82;
+  36% {
+    opacity: 0.86;
     stroke-dashoffset: -58;
   }
 
   58% {
-    opacity: 0.42;
-    stroke-dashoffset: -92;
+    opacity: 0.38;
+    stroke-dashoffset: -96;
   }
 
   72% {
     opacity: 0;
-    stroke-dashoffset: -110;
+    stroke-dashoffset: -112;
   }
 
   100% {
@@ -939,7 +917,7 @@
 
 @keyframes connectorTimeline {
   0%,
-  12% {
+  14% {
     opacity: 0;
     stroke-dashoffset: 100;
   }
@@ -948,12 +926,12 @@
     opacity: 0.82;
   }
 
-  35% {
+  31% {
     opacity: 1;
-    stroke-dashoffset: -20;
+    stroke-dashoffset: 0;
   }
 
-  42% {
+  38.67% {
     opacity: 0;
     stroke-dashoffset: -80;
   }
@@ -965,23 +943,23 @@
 
 @keyframes beamTimeline {
   0%,
-  12% {
+  14% {
     opacity: 0;
     stroke-dashoffset: 100;
   }
 
   18% {
-    opacity: 0.52;
+    opacity: 0.48;
   }
 
   29% {
     opacity: 1;
-    stroke-dashoffset: 5;
+    stroke-dashoffset: 4;
   }
 
-  38.7% {
+  38.67% {
     opacity: 0;
-    stroke-dashoffset: -80;
+    stroke-dashoffset: -82;
   }
 
   100% {
@@ -991,31 +969,38 @@
 
 @keyframes leftWingTimeline {
   0%,
-  35% {
+  35.33% {
     opacity: 0;
     transform:
-      translateX(-115px)
+      translateX(-120px)
       scale(0.94);
   }
 
   43% {
-    opacity: 0.82;
+    opacity: 0.84;
     transform:
       translateX(0)
       scale(1);
   }
 
-  55% {
-    opacity: 0.88;
+  54% {
+    opacity: 0.90;
     transform:
       translateX(0)
       scale(1);
   }
 
-  68% {
+  64% {
+    opacity: 0.30;
+    transform:
+      translateX(-72px)
+      scale(1.02);
+  }
+
+  69% {
     opacity: 0;
     transform:
-      translateX(-135px)
+      translateX(-142px)
       scale(1.05);
   }
 
@@ -1026,31 +1011,38 @@
 
 @keyframes rightWingTimeline {
   0%,
-  35% {
+  35.33% {
     opacity: 0;
     transform:
-      translateX(115px)
+      translateX(120px)
       scale(0.94);
   }
 
   43% {
-    opacity: 0.82;
+    opacity: 0.84;
     transform:
       translateX(0)
       scale(1);
   }
 
-  55% {
-    opacity: 0.88;
+  56% {
+    opacity: 0.90;
     transform:
       translateX(0)
       scale(1);
   }
 
-  68% {
+  67% {
+    opacity: 0.34;
+    transform:
+      translateX(62px)
+      scale(1.02);
+  }
+
+  72% {
     opacity: 0;
     transform:
-      translateX(135px)
+      translateX(142px)
       scale(1.05);
   }
 
@@ -1059,7 +1051,7 @@
   }
 }
 
-@keyframes wingParticleMove {
+@keyframes wingParticleMovement {
   from {
     stroke-dashoffset: 0;
   }
@@ -1076,11 +1068,11 @@
   }
 
   44% {
-    opacity: 0.78;
+    opacity: 0.80;
   }
 
   52% {
-    opacity: 0.78;
+    opacity: 0.80;
   }
 
   56% {
@@ -1094,19 +1086,19 @@
 
 @keyframes pulseTimeline {
   0%,
-  46.5% {
+  46% {
     opacity: 0;
-    transform: scale(0.90);
+    transform: scale(0.92);
   }
 
-  49.3% {
-    opacity: 0.88;
+  49.33% {
+    opacity: 0.90;
     transform: scale(1.34);
   }
 
-  53% {
+  53.5% {
     opacity: 0;
-    transform: scale(1.48);
+    transform: scale(1.52);
   }
 
   100% {
@@ -1120,7 +1112,7 @@
     opacity: 0;
   }
 
-  49.3% {
+  49.33% {
     opacity: 0.82;
   }
 
@@ -1135,48 +1127,60 @@
 
 @keyframes exchangeWordTimeline {
   0%,
-  72% {
+  73.33% {
     opacity: 0;
+
     transform:
       translateY(9px);
+
     filter: blur(5px);
   }
 
   82% {
     opacity: 1;
+
     transform:
       translateY(0);
+
     filter: blur(0);
   }
 
   100% {
     opacity: 1;
+
     transform:
       translateY(0);
+
     filter: blur(0);
   }
 }
 
 @keyframes notesWordTimeline {
   0%,
-  76% {
+  77% {
     opacity: 0;
+
     transform:
       translateY(8px);
+
     filter: blur(5px);
   }
 
   86% {
     opacity: 1;
+
     transform:
       translateY(0);
+
     filter: blur(0);
   }
 
   100% {
     opacity: 1;
+
     transform:
       translateY(0);
+
     filter: blur(0);
   }
 }
@@ -1188,11 +1192,11 @@
   }
 
   90% {
-    opacity: 0.80;
+    opacity: 0.78;
   }
 
   100% {
-    opacity: 0.80;
+    opacity: 0.78;
   }
 }
 
@@ -1231,12 +1235,7 @@
       ease-out both;
   }
 
-  .exchangeWord {
-    animation:
-      reducedWord 1200ms
-      ease-out both;
-  }
-
+  .exchangeWord,
   .notesWord {
     animation:
       reducedWord 1200ms
@@ -1264,13 +1263,13 @@
   from {
     transform:
       translate(-50%, -50%)
-      scale(0.60);
+      scale(0.62);
   }
 
   to {
     transform:
-      translate(-50%, calc(-50% - 74px))
-      scale(0.56);
+      translate(-50%, calc(-50% - 78px))
+      scale(0.58);
   }
 }
 
@@ -1292,6 +1291,6 @@
   }
 
   to {
-    opacity: 0.80;
+    opacity: 0.78;
   }
 }
