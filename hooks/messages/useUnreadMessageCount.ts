@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { getTotalUnreadCount } from "@/lib/friends";
@@ -36,6 +36,17 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
   const [unreadCount, setUnreadCount] = useState(0);
   const [pulseToken, setPulseToken] = useState(0);
 
+  /*
+   * One topic per hook instance rather than a shared literal.
+   *
+   * supabase-js hands back the existing channel when two callers ask for the
+   * same topic, and a channel that has already been subscribed refuses new
+   * postgres_changes callbacks — so the moment a second place on screen
+   * wanted the unread count (the Command Deck's Comms node, alongside the
+   * dock's badge) the second one threw and never became live.
+   */
+  const channelTopic = `unread-message-count-${useId()}`;
+
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
@@ -59,7 +70,7 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
       if (cancelled) return;
 
       channel = supabase
-        .channel("unread-message-count")
+        .channel(channelTopic)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "messages" },
@@ -97,7 +108,7 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
       cancelled = true;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [channelTopic]);
 
   return { unreadCount, pulseToken };
 }

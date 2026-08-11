@@ -46,10 +46,10 @@ export default function BackButton({
         border
         border-line
         bg-white/90
-        text-[#394A35]
+        text-[var(--modal-accent)]
         shadow-sm
         transition
-        hover:bg-[#F4F7F2]
+        hover:bg-[var(--control-surface)]
         active:scale-[0.96]
         ${className}
       `}

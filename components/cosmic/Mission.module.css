@@ -1,0 +1,249 @@
+/*
+ * Mission Launch and Mission Complete.
+ *
+ * These are the two beats either side of a review session in Cosmic Mode. The
+ * session between them is not decorated at all — a person answering questions
+ * does not need a light show in their peripheral vision.
+ *
+ * The completion sequence is deliberately not a celebration effect bolted on
+ * top. Nothing here invents a number, a score or an award: the rings settle,
+ * Yumi notices, and what is revealed underneath is the same real count of
+ * words the session actually reviewed. The motion is there to give that
+ * result a moment, not to substitute for it.
+ */
+
+/* =========================================================
+   Launch
+   ========================================================= */
+
+.launch {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  /* Never blocks the session behind it. The first question is already live
+     and answerable the whole time this is on screen. */
+  pointer-events: none;
+  animation: launchVeil 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  background: radial-gradient(
+    circle at 50% 44%,
+    rgba(10, 20, 40, 0.72) 0%,
+    rgba(6, 10, 20, 0.9) 70%
+  );
+}
+
+@keyframes launchVeil {
+  0% {
+    opacity: 0;
+  }
+  18%,
+  52% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.launchRing {
+  position: absolute;
+  width: min(64vw, 18rem);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan, #7fd4ff);
+  animation: launchRing 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.launchRingInner {
+  width: min(38vw, 11rem);
+  border-style: dashed;
+  animation-delay: 90ms;
+}
+
+@keyframes launchRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.36);
+  }
+  46% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+/* =========================================================
+   Complete
+   ========================================================= */
+
+.complete {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-block: 1rem;
+}
+
+/*
+ * The rings stop turning and settle onto the same axis. Alignment is the
+ * whole idea of the beat: six systems that have been quietly rotating all
+ * session come to rest together, which is what "done" looks like on a ship.
+ */
+.completeRing {
+  position: absolute;
+  width: min(72vw, 20rem);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  border: 1px dashed var(--cosmic-ring, rgba(127, 212, 255, 0.22));
+  animation: ringAlign 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: none;
+}
+
+.completeRingInner {
+  width: min(48vw, 13rem);
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: var(--cosmic-cyan-dim, rgba(127, 212, 255, 0.35));
+  animation-delay: 110ms;
+}
+
+@keyframes ringAlign {
+  0% {
+    opacity: 0;
+    transform: rotate(-34deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(4deg) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* One soft wave out of the core, once. */
+.wave {
+  position: absolute;
+  width: min(48vw, 13rem);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan, #7fd4ff);
+  animation: completeWave 1000ms cubic-bezier(0.2, 0.9, 0.3, 1) 420ms both;
+  pointer-events: none;
+}
+
+@keyframes completeWave {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--cosmic-star, rgba(220, 233, 255, 0.75));
+  animation: sparkRise 1400ms ease-out var(--spark-delay) both;
+  pointer-events: none;
+}
+
+@keyframes sparkRise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.6);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.7);
+  }
+}
+
+/* Yumi notices, then celebrates: a small double hop rather than a spin, in
+   keeping with how Yumi behaves everywhere else in the app. */
+.yumi {
+  position: relative;
+  width: min(34vw, 8rem);
+  animation: yumiNotice 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes yumiNotice {
+  0% {
+    opacity: 0;
+    transform: scale(0.82) translateY(6px);
+  }
+  22% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  46% {
+    transform: scale(1.04) translateY(-10px);
+  }
+  58% {
+    transform: scale(1) translateY(0);
+  }
+  72% {
+    transform: scale(1.03) translateY(-6px);
+  }
+  84%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* The real result waits for the alignment, then arrives plainly. */
+.result {
+  position: relative;
+  z-index: 1;
+  animation: resultArrive 420ms ease-out 620ms both;
+}
+
+@keyframes resultArrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/*
+ * Reduced motion.
+ *
+ * The launch veil is dropped entirely — it is a full-screen luminance change
+ * with nothing behind it but a ring, and the session underneath is already
+ * running. Completion keeps its structure and its result, and simply stops
+ * moving: no alignment sweep, no wave, no sparks, no hop. The words reviewed
+ * are the point and they are still right there.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .launch {
+    display: none;
+  }
+
+  .completeRing,
+  .completeRingInner,
+  .wave,
+  .spark,
+  .yumi,
+  .result {
+    animation: none;
+  }
+
+  .wave,
+  .spark {
+    display: none;
+  }
+}

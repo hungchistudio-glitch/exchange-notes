@@ -96,7 +96,7 @@ function MessageStatusIcon({ status, label }: { status: MessageReceiptStatus; la
   const isRead = status === "read";
 
   return (
-    <span title={label} aria-label={label} className={`inline-flex ${isRead ? "text-[#c9962e]" : ""}`}>
+    <span title={label} aria-label={label} className={`inline-flex ${isRead ? "text-[var(--accent-amber)]" : ""}`}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5" aria-hidden="true">
         <path d="M2 12.5l3.5 3.5L13 8.5" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M9 12.5l3.5 3.5L20 8.5" strokeLinecap="round" strokeLinejoin="round" className={isRead ? "animate-pulse" : ""} />
@@ -740,7 +740,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
               </Link>
 
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d7ead2] text-sm font-bold text-[#236c32]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--success-soft)] text-sm font-bold text-[var(--success)]">
                   {friendInitial}
                 </div>
 

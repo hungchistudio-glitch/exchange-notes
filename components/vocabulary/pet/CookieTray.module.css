@@ -7,7 +7,7 @@
   text-align: center;
   font-size: 12px;
   line-height: 1.5;
-  color: rgba(28, 26, 22, 0.4);
+  color: color-mix(in oklab, var(--color-black) 40%, transparent);
 }
 
 .tray {
@@ -23,7 +23,7 @@
   text-align: center;
   font-size: 11px;
   letter-spacing: 0.02em;
-  color: rgba(28, 26, 22, 0.35);
+  color: color-mix(in oklab, var(--color-black) 35%, transparent);
 }
 
 .more {
@@ -33,7 +33,7 @@
   height: 46px;
   padding: 0 10px;
   font-size: 11px;
-  color: rgba(28, 26, 22, 0.4);
+  color: color-mix(in oklab, var(--color-black) 40%, transparent);
 }
 
 /* "Language energy chip" look: a frosted glass capsule with a soft glow
@@ -44,7 +44,7 @@
   width: 46px;
   height: 46px;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid color-mix(in oklab, var(--color-white) 65%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,8 +64,8 @@
   border-radius: inherit;
   background: radial-gradient(
     circle at 30% 24%,
-    rgba(255, 255, 255, 0.65),
-    rgba(255, 255, 255, 0) 55%
+    color-mix(in oklab, var(--color-white) 65%, transparent),
+    color-mix(in oklab, var(--color-white) 0%, transparent) 55%
   );
   pointer-events: none;
 }
@@ -90,11 +90,11 @@
     rgba(235, 244, 251, 0.92),
     rgba(206, 224, 240, 0.78)
   );
-  color: #2c4a63;
+  color: var(--accent-cool);
   box-shadow:
     0 0 0 1px rgba(143, 180, 217, 0.35) inset,
     0 0 10px rgba(143, 180, 217, 0.4),
-    0 8px 14px rgba(28, 26, 22, 0.1);
+    0 8px 14px color-mix(in oklab, var(--color-black) 10%, transparent);
 }
 
 .cookie--zhuyin {
@@ -103,11 +103,11 @@
     rgba(251, 244, 227, 0.92),
     rgba(240, 221, 184, 0.78)
   );
-  color: #6b4e1f;
+  color: var(--accent-amber-deep);
   box-shadow:
     0 0 0 1px rgba(217, 183, 104, 0.35) inset,
     0 0 10px rgba(217, 183, 104, 0.4),
-    0 8px 14px rgba(28, 26, 22, 0.1);
+    0 8px 14px color-mix(in oklab, var(--color-black) 10%, transparent);
 }
 
 .glyphText {
@@ -137,7 +137,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  box-shadow: 0 10px 20px rgba(28, 26, 22, 0.18);
+  box-shadow: 0 10px 20px color-mix(in oklab, var(--color-black) 18%, transparent);
 }
 
 .ghostDragging {

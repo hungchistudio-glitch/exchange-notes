@@ -40,7 +40,7 @@ function SpeakerButton({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+      className="cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
     >
       <Volume2
         size={14}
@@ -68,7 +68,10 @@ function SaveWordButton({
       onClick={onClick}
       disabled={saving || saved}
       aria-label={ariaLabel}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 disabled:active:scale-100 ${
+      // Cosmic Mode holds a cyan seam on an engaged lock — see .cosmic-lock in
+      // app/cosmic.css. Standard Mode ignores it and keeps the emerald fill.
+      data-saved={saved}
+      className={`cosmic-lock flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 disabled:active:scale-100 ${
         saved
           ? "bg-emerald-50 text-emerald-700"
           : "bg-black/[0.04] text-black/60"

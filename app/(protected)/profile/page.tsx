@@ -18,6 +18,7 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useRouter } from "next/navigation";
 
+import ProgressHud from "@/components/cosmic/ProgressHud";
 import AppHeader from "@/components/foundation/layout/AppHeader";
 import Avatar from "@/components/foundation/media/Avatar";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
@@ -30,6 +31,7 @@ import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButt
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
+import InterfaceModeSettingsButton from "@/components/settings/InterfaceModeSettingsButton";
 import PwaInstallSettingsButton from "@/components/settings/PwaInstallSettingsButton";
 import NativeWidgetSettingsButton from "@/components/settings/NativeWidgetSettingsButton";
 import ScriptableWidgetSettingsButton from "@/components/settings/ScriptableWidgetSettingsButton";
@@ -38,6 +40,7 @@ import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
 import YumiReminderSettingsButton from "@/components/settings/YumiReminderSettingsButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePageOrigin from "@/hooks/usePageOrigin";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { friendInviteUrl } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
@@ -54,6 +57,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { refresh: refreshLearningLanguage } = useLearningLanguageContext();
+  const { isCosmic } = useInterfaceMode();
   const copy = t.settings.profile;
   const qrCopy = t.friends.profileQr;
 
@@ -466,6 +470,17 @@ export default function ProfilePage() {
             </div>
           </section>
 
+          {/*
+            Cosmic Mode's read on the learning itself, above the settings that
+            configure it. Standard Mode is unchanged — this is an instrument
+            panel, and it belongs to the mode that has instruments.
+          */}
+          {isCosmic && (
+            <section>
+              <ProgressHud />
+            </section>
+          )}
+
           {/* Learning setup */}
           <section>
             <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
@@ -512,6 +527,7 @@ export default function ProfilePage() {
               <PronunciationSettingsButton />
               <FontSizeSettingsButton />
               <AppLanguageSettingsButton />
+              <InterfaceModeSettingsButton />
               <PwaInstallSettingsButton />
               <ScriptableWidgetSettingsButton />
               <NativeWidgetSettingsButton />

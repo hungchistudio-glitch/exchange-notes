@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./cosmic.css";
+@import "./cosmic-motion.css";
 
 :root {
   --background: #ffffff;
@@ -12,6 +14,78 @@
 
   /* Warm neutral border/divider, replacing #e3e3dc and #e8e8e2. */
   --line: #e3e3dc;
+
+  /*
+   * Accent and component colours that used to be written as raw hex at each
+   * call site. Naming them is what makes Yumi Cosmic Mode possible: the mode
+   * repaints the app by redefining these in one place (app/cosmic.css) rather
+   * than by editing — and risking — every component that uses them.
+   *
+   * Everything below keeps its exact original value, so Standard Mode is
+   * pixel-for-pixel unchanged.
+   */
+
+  /* The app's gold. Categories, highlights, selected chips, Yumi's warmth. */
+  --accent-amber: #c9962e;
+  --accent-amber-ink: #2b2013;
+  --accent-amber-deep: #6b4e1f;
+  --accent-amber-soft: #f3d998;
+  --accent-amber-wash: #fdfaf3;
+
+  /* Confirmation green, used for delivered/known states. */
+  --success: #236c32;
+  --success-soft: #d7ead2;
+
+  /* The cool counterpart to the gold, on the cookie tray's phonetic labels. */
+  --accent-cool: #2c4a63;
+
+  /* The wash Yumi sits on at the top of the vocabulary screen. */
+  --yumi-wash-top: #fdfaf3;
+  --yumi-wash-bottom: #f6f1e5;
+
+  /* The modal family — a cooler, greener neutral than the page behind it. */
+  --modal-scrim: #252821;
+  --modal-surface: #fcfcf9;
+  --modal-ink: #2f312d;
+  --modal-accent: #394a35;
+  --modal-muted: #666a63;
+  --modal-line: #e7eee4;
+
+  /* Round controls that sit on top of content (back buttons, and friends). */
+  --control-surface: #f4f7f2;
+  --control-ink: #394a35;
+
+  /* The floating dock. Its glass, its line, and the circular energy base that
+     slides behind whichever icon is active. */
+  --dock-surface: rgba(253, 251, 246, 0.75);
+  --dock-line: rgba(0, 0, 0, 0.07);
+  --dock-shadow: 0 10px 36px rgba(28, 26, 22, 0.12);
+  --dock-indicator: #1c1a16;
+  --dock-indicator-border: transparent;
+  --dock-indicator-halo: rgba(28, 26, 22, 0.05);
+  /* The icon sitting on the energy base. A filled dark base needs white on
+     it; a hollow ring needs the ring's own colour. */
+  --dock-active-ink: #ffffff;
+
+  /* Discover's editorial surface, applied through inline styles — see
+     components/discover/types.ts. */
+  --discover-page: #f3f0e8;
+  --discover-card: #fbfaf6;
+  --discover-text: #151515;
+  --discover-text-secondary: #77736c;
+  --discover-divider: #e7e2d9;
+  --discover-divider-soft: rgba(231, 226, 217, 0.28);
+  --discover-accent: #244b3a;
+  --discover-accent-soft: #e7eee9;
+  --discover-selected: #ffffff;
+  --discover-on-accent: #ffffff;
+  --discover-category-business: #7a3226;
+  --discover-category-technology: #2e4c7a;
+  --discover-category-science: #5c4a7a;
+  --discover-category-culture: #7a5a35;
+  --discover-category-health: #2e6b5e;
+  --discover-category-environment: #5b6b35;
+  --discover-category-politics: #55524a;
 }
 
 @theme inline {

@@ -25,7 +25,7 @@ export default function VocabularyCompactHeader({ item }: Props) {
     <header className="min-w-0 px-4 py-3.5">
       <div className="flex min-w-0 items-start gap-3">
         <span
-          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#c9962e]/70"
+          className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-amber)]/70"
           aria-hidden="true"
         />
 

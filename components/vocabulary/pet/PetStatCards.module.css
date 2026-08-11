@@ -12,7 +12,7 @@
   gap: 3px;
   padding: 12px 6px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.55);
+  background: color-mix(in oklab, var(--color-white) 55%, transparent);
   backdrop-filter: blur(6px);
 }
 
@@ -20,7 +20,7 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #1c1a16;
+  color: var(--color-black);
   animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -29,7 +29,7 @@
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(28, 26, 22, 0.4);
+  color: color-mix(in oklab, var(--color-black) 40%, transparent);
   text-align: center;
 }
 

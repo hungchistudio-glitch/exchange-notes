@@ -212,6 +212,109 @@ const english: TranslationDictionary = {
     home: "Home",
     discover: "Discover",
     settings: "Settings",
+    primaryLabel: "Primary navigation",
+  },
+
+  cosmic: {
+    modeName: "Yumi Cosmic Mode",
+    deck: {
+      eyebrow: "Command Deck",
+      title: "Yumi Command Deck",
+      subtitle: "Every system online. Pick where to go.",
+      coreLabel: "Yumi core",
+      dockLabel: "Cosmic navigation",
+      roomsLabel: "Command controls",
+      readoutLexicon: "Lexicon",
+      readoutDue: "Due",
+      readoutLearning: "Learning",
+      languageEnglish: "English",
+      languageChinese: "Chinese",
+    },
+    rooms: {
+      lexicon: {
+        name: "Lexicon Core",
+        familiar: "Vocabulary",
+        description: "Your saved words and collections",
+      },
+      mission: {
+        name: "Mission Control",
+        familiar: "Review",
+        description: "Today's words to practise",
+      },
+      scanner: {
+        name: "Scanner Bay",
+        familiar: "Camera",
+        description: "Point at anything and learn it",
+      },
+      comms: {
+        name: "Comms",
+        familiar: "Messages",
+        description: "Talk with your exchange partners",
+      },
+      earth: {
+        name: "Earth Signal",
+        familiar: "Discover",
+        description: "Daily news in your learning language",
+      },
+      memory: {
+        name: "Memory Deck",
+        familiar: "Profile",
+        description: "Progress, profile and settings",
+      },
+    },
+    status: {
+      wordsSaved: "{count} saved",
+      dueNow: "{count} due",
+      nothingDue: "All caught up",
+      unreadMessages: "{count} unread",
+      loading: "…",
+    },
+    transition: {
+      entering: "Command deck coming online",
+      leaving: "Command deck standing down",
+    },
+    mission: {
+      launching: "Mission starting",
+      completeEyebrow: "Mission complete",
+    },
+    omni: {
+      label: "Yumi OmniLexicon",
+      placeholder: "Search, speak, scan, or show Yumi anything",
+      placeholderChinese: "Something you can't read?",
+      placeholderEnglish: "Something you heard?",
+      inputText: "Type",
+      inputVoice: "Voice",
+      inputCamera: "Scan",
+      inputImage: "Image",
+      submit: "Identify",
+      clear: "Clear",
+      listening: "Listening\u2026",
+      scanning: "Identifying\u2026",
+      acquired: "Word identified",
+      noMatch: "Yumi could not place that one",
+      noMatchHint: "Try another spelling, say it aloud, or show Yumi a photo.",
+      degraded: "Offline dictionary result",
+      addToVocabulary: "Add to vocabulary",
+      recentSignals: "Recent signals",
+      playLearning: "Play the word",
+      playTranslation: "Play the translation",
+      playExampleLearning: "Play the example",
+      playExampleTranslation: "Play the translated example",
+      save: "Add to vocabulary",
+      saved: "Saved",
+      share: "Share",
+      copied: "Copied",
+      sendToFriend: "Send to a friend",
+    },
+    hud: {
+      eyebrow: "Learning profile",
+      title: "Progress HUD",
+      accuracy: "Accuracy",
+      retention: "Retention",
+      dailyGoal: "Daily goal",
+      mastered: "Words mastered",
+      reviewed: "Reviews done",
+    },
   },
 
   discover: {
@@ -1160,6 +1263,22 @@ const english: TranslationDictionary = {
       englishDescription: "Display the app interface in English.",
       traditionalChineseDescription:
         "Display the app interface in Traditional Chinese.",
+    },
+
+    interfaceMode: {
+      rowTitle: "Interface mode",
+      rowDescription: "Standard, or Yumi's Command Deck",
+      sheetTitle: "Interface mode",
+      sheetDescription:
+        "Choose how Exchange Notes looks and how you move around it.",
+      standardTitle: "Standard Mode",
+      standardDescription:
+        "The quick, quiet Exchange Notes you already know.",
+      cosmicTitle: "Yumi Cosmic Mode",
+      cosmicDescription:
+        "Step into Yumi's command deck, with every feature arranged around Yumi.",
+      sharedDataNote:
+        "Both modes are the same Exchange Notes. Your words, messages, friends and progress stay exactly where they are, and you can switch back any time.",
     },
 
     scriptableWidget: {

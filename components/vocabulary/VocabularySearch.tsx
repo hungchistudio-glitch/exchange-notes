@@ -87,7 +87,7 @@ export default function VocabularySearch({
   return (
     <section className="mt-4">
       <div className="flex items-center">
-        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[#c9962e]/[0.18] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition-colors focus-within:border-[#c9962e]/45">
+        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[var(--accent-amber)]/[0.18] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition-colors focus-within:border-[var(--accent-amber)]/45">
           <Search
             size={17}
             strokeWidth={1.8}
@@ -154,7 +154,7 @@ export default function VocabularySearch({
                 aria-pressed={listening}
                 className={
                   listening
-                    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#c9962e] text-white transition duration-200 active:scale-90"
+                    ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-amber)] text-white transition duration-200 active:scale-90"
                     : lookupButtonClass
                 }
               >
@@ -181,7 +181,7 @@ export default function VocabularySearch({
               onClick={() => onQuickFilterChange(filter.value)}
             >
               <span>{filter.label}</span>
-              <span className={selected ? "text-[#2b2013]/50" : "text-black/25"}>
+              <span className={selected ? "text-[var(--accent-amber-ink)]/50" : "text-black/25"}>
                 {filter.count}
               </span>
             </Pill>
@@ -210,12 +210,12 @@ export default function VocabularySearch({
             onClick={onOpenSort}
             aria-label={`${search.sort}: ${sortLabels[sortMode]}`}
             title={sortLabels[sortMode]}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <SlidersHorizontal size={16} strokeWidth={1.8} />
             {sortMode !== DEFAULT_SORT_MODE && (
               <span
-                className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#c9962e]"
+                className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]"
                 aria-hidden="true"
               />
             )}
@@ -226,7 +226,7 @@ export default function VocabularySearch({
             onClick={onOpenCollections}
             aria-label={search.openCollections}
             title={search.openCollections}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <FolderHeart size={16} strokeWidth={1.8} />
           </button>
@@ -241,7 +241,7 @@ export default function VocabularySearch({
               viewMode === "cards" ? search.compactView : search.cardsView
             }
             aria-pressed={viewMode === "compact"}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[#c9962e]/30 hover:text-black active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             {viewMode === "cards" ? (
               <List size={16} strokeWidth={1.8} />

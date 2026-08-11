@@ -166,7 +166,7 @@ export default function PronunciationSettingsButton() {
             </div>
 
             {genderGaps.length > 0 && (
-              <div className="mt-3 rounded-2xl border border-[#c9962e]/20 bg-[#c9962e]/[0.07] p-3">
+              <div className="mt-3 rounded-2xl border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-3">
                 {genderGaps.map((language) => {
                   const fallback =
                     listVoicesForLanguage(language)[0]?.name ?? "";
@@ -174,7 +174,7 @@ export default function PronunciationSettingsButton() {
                   return (
                     <p
                       key={language}
-                      className="text-[12px] leading-5 text-[#6b4e1f]"
+                      className="text-[12px] leading-5 text-[var(--accent-amber-deep)]"
                     >
                       {copy.genderUnavailable
                         .replace(

@@ -1,0 +1,303 @@
+/*
+ * Yumi Cosmic Mode — the cinematic navigation system.
+ *
+ * Every animation here is keyed to a transition type that only Cosmic Mode's
+ * own controls emit (see components/cosmic/CosmicRouteStage.tsx for the
+ * mapping). Standard Mode tags nothing, an untagged navigation resolves to
+ * `none`, and so does a browser back button or an edge-swipe — which is the
+ * behaviour we want anyway, since a gesture the user is dragging should not
+ * have a scripted animation fighting it.
+ *
+ * Timing follows the brief: everyday navigation lands between 300 and 550ms
+ * end to end, with the exit deliberately faster than the entrance so the old
+ * screen stops competing for attention before the new one arrives. Cinematic
+ * means the quality of the motion, not the length of it.
+ *
+ * Only transform, opacity, filter and clip-path are animated. All four are
+ * composited, so none of this touches layout — the deck can be leaving while
+ * Yumi is still breathing without either one dropping frames.
+ */
+
+:root {
+  /* Where on the ring the tapped node was, as an offset from the centre of
+     the screen. CommandDeck writes these at the moment of the tap so the room
+     can expand from the direction its control was actually in, rather than
+     from a fixed edge. Zero is the honest default: a navigation that did not
+     come from the deck has no direction to inherit. */
+  --deck-origin-x: 0px;
+  --deck-origin-y: 0px;
+
+  --cosmic-exit-duration: 180ms;
+  --cosmic-enter-duration: 360ms;
+  --cosmic-enter-delay: 140ms;
+}
+
+/* =========================================================
+   Leaving the deck
+   ========================================================= */
+
+/*
+ * The bridge recedes rather than slides. Pushing it back in z and letting it
+ * blur is what sells "you moved away from this", where a sideways slide would
+ * only say "this was replaced".
+ */
+::view-transition-old(.deck-depart) {
+  animation:
+    var(--cosmic-exit-duration) cubic-bezier(0.4, 0, 1, 1) both deckRecede,
+    var(--cosmic-exit-duration) ease-in both cosmicFadeOut;
+  transform-origin: calc(50% + var(--deck-origin-x))
+    calc(50% + var(--deck-origin-y));
+}
+
+@keyframes deckRecede {
+  to {
+    transform: scale(0.94);
+    filter: blur(4px);
+  }
+}
+
+/* Coming back the other way: the room drops away towards the viewer, which
+   reads as the opposite motion to receding. */
+::view-transition-old(.room-depart) {
+  animation:
+    150ms cubic-bezier(0.4, 0, 1, 1) both roomRelease,
+    150ms ease-in both cosmicFadeOut;
+}
+
+@keyframes roomRelease {
+  to {
+    transform: scale(1.04);
+    filter: blur(3px);
+  }
+}
+
+::view-transition-new(.deck-arrive) {
+  animation:
+    300ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both deckReturn,
+    260ms ease-out 120ms both cosmicFadeIn;
+}
+
+@keyframes deckReturn {
+  from {
+    transform: scale(0.97);
+  }
+}
+
+/* =========================================================
+   Arriving in a room — one personality each
+   ========================================================= */
+
+/*
+ * The shared part of every arrival: the room comes in from the direction its
+ * control sat in on the ring, with a short depth travel. What differs per
+ * room is the second animation layered on top.
+ */
+::view-transition-new(.room-lexicon),
+::view-transition-new(.room-mission),
+::view-transition-new(.room-scanner),
+::view-transition-new(.room-comms),
+::view-transition-new(.room-earth),
+::view-transition-new(.room-memory) {
+  transform-origin: calc(50% + var(--deck-origin-x))
+    calc(50% + var(--deck-origin-y));
+}
+
+/* Lexicon Core — the words settle into place from their node's direction. */
+::view-transition-new(.room-lexicon) {
+  animation:
+    var(--cosmic-enter-duration) cubic-bezier(0.22, 1, 0.36, 1)
+      var(--cosmic-enter-delay) both roomTravel,
+    260ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+/* Mission Control — arrives tighter and lands harder, because what is on the
+   other side of it is a task rather than a library. */
+::view-transition-new(.room-mission) {
+  animation:
+    320ms cubic-bezier(0.16, 1, 0.3, 1) var(--cosmic-enter-delay) both
+      missionLock,
+    240ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+@keyframes missionLock {
+  from {
+    transform: translate(
+        calc(var(--deck-origin-x) * 0.28),
+        calc(var(--deck-origin-y) * 0.28)
+      )
+      scale(1.06);
+  }
+}
+
+/* Scanner Bay — a lens. The room opens out of a circular aperture centred on
+   where the scanner control was, which is the closest CSS gets to a shutter. */
+::view-transition-new(.room-scanner) {
+  animation:
+    var(--cosmic-enter-duration) cubic-bezier(0.22, 1, 0.36, 1)
+      var(--cosmic-enter-delay) both scannerAperture,
+    200ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+@keyframes scannerAperture {
+  from {
+    clip-path: circle(
+      18% at calc(50% + var(--deck-origin-x)) calc(50% + var(--deck-origin-y))
+    );
+    transform: scale(1.05);
+  }
+  to {
+    clip-path: circle(150% at 50% 50%);
+    transform: scale(1);
+  }
+}
+
+/* Comms — a signal converging. It arrives compressed along one axis and
+   settles, the way a waveform collapses into a line before it resolves. */
+::view-transition-new(.room-comms) {
+  animation:
+    var(--cosmic-enter-duration) cubic-bezier(0.22, 1, 0.36, 1)
+      var(--cosmic-enter-delay) both commsConverge,
+    240ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+@keyframes commsConverge {
+  from {
+    transform: translate(
+        calc(var(--deck-origin-x) * 0.3),
+        calc(var(--deck-origin-y) * 0.3)
+      )
+      scaleY(0.9);
+  }
+}
+
+/* Earth Signal — a transmission expanding out of a point. */
+::view-transition-new(.room-earth) {
+  animation:
+    420ms cubic-bezier(0.22, 1, 0.36, 1) var(--cosmic-enter-delay) both
+      signalExpand,
+    280ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+@keyframes signalExpand {
+  from {
+    transform: scale(0.9);
+  }
+}
+
+/* Memory Deck — the slowest and quietest of the six, gathering rather than
+   travelling, because it opens onto the record of everything already done. */
+::view-transition-new(.room-memory) {
+  animation:
+    440ms cubic-bezier(0.22, 1, 0.36, 1) var(--cosmic-enter-delay) both
+      constellationGather,
+    320ms ease-out var(--cosmic-enter-delay) both cosmicFadeIn;
+}
+
+@keyframes constellationGather {
+  from {
+    transform: translate(
+        calc(var(--deck-origin-x) * 0.18),
+        calc(var(--deck-origin-y) * 0.18)
+      )
+      scale(1.03);
+    filter: blur(5px);
+  }
+  to {
+    transform: translate(0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes roomTravel {
+  from {
+    transform: translate(
+        calc(var(--deck-origin-x) * 0.32),
+        calc(var(--deck-origin-y) * 0.32)
+      )
+      scale(1.04);
+  }
+}
+
+/* =========================================================
+   Moving along the dock
+   ========================================================= */
+
+/*
+ * Deliberately the plainest transition in the file. The dock is for getting
+ * somewhere on a sub-page, several times a minute; a spatial travel every
+ * time would be exhausting long before it stopped being impressive. A short
+ * crossfade says "same ship, different room" and gets out of the way.
+ */
+::view-transition-old(.dock-move) {
+  animation: 120ms ease-in both cosmicFadeOut;
+}
+
+::view-transition-new(.dock-move) {
+  animation: 200ms ease-out 100ms both cosmicFadeIn;
+}
+
+@keyframes cosmicFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes cosmicFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * The dock itself never travels.
+ *
+ * It is the one thing on screen that is in the same place before and after,
+ * and animating it away would throw out the user's only fixed reference for
+ * what just moved. Giving it a name takes it out of the root snapshot so the
+ * page can animate underneath it while it stays put.
+ */
+::view-transition-group(cosmic-dock) {
+  animation: none;
+  z-index: 50;
+}
+
+::view-transition-old(cosmic-dock) {
+  display: none;
+}
+
+::view-transition-new(cosmic-dock) {
+  animation: none;
+}
+
+/*
+ * Reduced motion.
+ *
+ * Not "no transition" — an instant swap on a dark interface is its own kind
+ * of jolt, and the brief asks for the destination to still be legible as a
+ * destination. What is removed is everything positional: no travel, no depth,
+ * no aperture. What remains is a fast crossfade, which is the part that
+ * carries the meaning rather than the movement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  ::view-transition-old(.deck-depart),
+  ::view-transition-old(.room-depart),
+  ::view-transition-old(.dock-move) {
+    animation: 90ms ease both cosmicFadeOut !important;
+  }
+
+  ::view-transition-new(.deck-arrive),
+  ::view-transition-new(.dock-move),
+  ::view-transition-new(.room-lexicon),
+  ::view-transition-new(.room-mission),
+  ::view-transition-new(.room-scanner),
+  ::view-transition-new(.room-comms),
+  ::view-transition-new(.room-earth),
+  ::view-transition-new(.room-memory) {
+    animation: 120ms ease 60ms both cosmicFadeIn !important;
+  }
+}

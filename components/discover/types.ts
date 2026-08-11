@@ -42,34 +42,37 @@ export type AudioPlaybackMode = "en" | "zh";
 // Three surface levels (page < card < selected-control) so depth reads
 // from layering rather than shadows.
 export const DISCOVER_COLORS = {
-  page: "#F3F0E8",
-  card: "#FBFAF6",
-  text: "#151515",
-  textSecondary: "#77736C",
-  divider: "#E7E2D9",
+  page: "var(--discover-page)",
+  card: "var(--discover-card)",
+  text: "var(--discover-text)",
+  textSecondary: "var(--discover-text-secondary)",
+  divider: "var(--discover-divider)",
   // A much quieter divider for dense editorial lists — pacing comes from
   // vertical whitespace, this line is just a faint seam, not a boundary.
-  dividerSoft: "rgba(231,226,217,0.28)",
+  dividerSoft: "var(--discover-divider-soft)",
   // One signature accent for the whole experience — deep forest green,
   // used sparingly (categories, audio progress, selected micro-actions),
   // never as a default button fill.
-  accent: "#244B3A",
-  accentSoft: "#E7EEE9",
-  selected: "#FFFFFF",
+  accent: "var(--discover-accent)",
+  accentSoft: "var(--discover-accent-soft)",
+  selected: "var(--discover-selected)",
+  // Text sitting on top of an accent fill. Named rather than hard-coded to
+  // white because the accent is not always dark — see app/cosmic.css.
+  onAccent: "var(--discover-on-accent)",
 } as const;
 
 // Only category labels use accent colors; everything else in the
 // interface stays neutral. Categories without an explicit brief mapping
 // fall back to DISCOVER_COLORS.accent via categoryAccent() below.
 const CATEGORY_ACCENTS: Record<string, string> = {
-  world: "#244B3A",
-  business: "#7A3226",
-  technology: "#2E4C7A",
-  science: "#5C4A7A",
-  culture: "#7A5A35",
-  health: "#2E6B5E",
-  environment: "#5B6B35",
-  politics: "#55524A",
+  world: "var(--discover-accent)",
+  business: "var(--discover-category-business)",
+  technology: "var(--discover-category-technology)",
+  science: "var(--discover-category-science)",
+  culture: "var(--discover-category-culture)",
+  health: "var(--discover-category-health)",
+  environment: "var(--discover-category-environment)",
+  politics: "var(--discover-category-politics)",
 };
 
 export function categoryAccent(category: string): string {

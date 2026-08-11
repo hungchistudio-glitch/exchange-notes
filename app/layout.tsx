@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
 import SplashGate from "@/components/ui/SplashGate";
+import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
 
 import "./globals.css";
 
@@ -30,18 +31,47 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#f5f3ed",
-};
+/*
+ * Per-mode rather than a constant, because this is the colour iOS paints
+ * behind the status bar and around the safe areas of an installed PWA. Left
+ * at the warm neutral, Cosmic Mode would run a cream band along the top of a
+ * deep-space screen on exactly the device this app is mostly used on.
+ */
+export async function generateViewport(): Promise<Viewport> {
+  const interfaceMode = await getServerInterfaceMode();
 
-export default function RootLayout({
+  return {
+    themeColor: interfaceMode === "yumi-cosmic" ? "#060a14" : "#f5f3ed",
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read here, on the server, rather than corrected on the client: the cosmic
+  // token layer keys off this attribute, so anything later than the HTML
+  // itself means painting the standard surface first and the deep-space one a
+  // moment after. See lib/appPreferences.ts for why the mode is a cookie.
+  const interfaceMode = await getServerInterfaceMode();
+
   return (
     <html
       lang="en"
+      data-interface-mode={interfaceMode}
+      /*
+       * The attribute is written imperatively too, by InterfaceModeProvider,
+       * the moment the mode changes — and that write is the one that must
+       * stand. This element belongs to the root layout, whose payload is not
+       * re-fetched on a soft navigation, so without this React can find the
+       * cookie's answer in the DOM and the previous mode in its own tree and
+       * try to "correct" the live one back to stale. Telling it the DOM wins
+       * is the documented resolution for exactly this shape of state; see
+       * node_modules/next/dist/docs/01-app/02-guides/
+       * preventing-flash-before-hydration.md.
+       */
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>

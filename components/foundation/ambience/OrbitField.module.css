@@ -47,14 +47,14 @@
     ellipse 62% 44% at 50% 46%,
     transparent 0%,
     transparent 38%,
-    rgba(0, 0, 0, 0.5) 66%,
+    color-mix(in oklab, var(--color-black) 50%, transparent) 66%,
     #000 92%
   );
   mask-image: radial-gradient(
     ellipse 62% 44% at 50% 46%,
     transparent 0%,
     transparent 38%,
-    rgba(0, 0, 0, 0.5) 66%,
+    color-mix(in oklab, var(--color-black) 50%, transparent) 66%,
     #000 92%
   );
 }
@@ -72,7 +72,7 @@
   border-radius: 50%;
   /* Dashed, because a rotating solid circle is indistinguishable from a still
      one — the dashes are what make the motion legible at all. */
-  border: 1px dashed rgba(20, 24, 34, 0.16);
+  border: 1px dashed color-mix(in oklab, var(--color-black) 16%, transparent);
 
   /*
    * A pale companion stroke sitting just outside the dark one. The app is
@@ -81,12 +81,12 @@
    * one carries the arc. One rule covers both instead of the layer needing to
    * know which page it is on.
    */
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-white) 10%, transparent);
 }
 
 .ringSolid {
   border-style: solid;
-  border-color: rgba(20, 24, 34, 0.12);
+  border-color: color-mix(in oklab, var(--color-black) 12%, transparent);
 }
 
 /* The travelling light. Sits on the ring's edge and is carried around by the
@@ -99,10 +99,10 @@
   height: 8px;
   margin-left: -4px;
   border-radius: 999px;
-  background: rgba(206, 142, 46, 0.85);
+  background: color-mix(in oklab, var(--accent-amber) 85%, transparent);
   box-shadow:
-    0 0 12px 3px rgba(206, 142, 46, 0.4),
-    0 0 34px 8px rgba(206, 142, 46, 0.18);
+    0 0 12px 3px color-mix(in oklab, var(--accent-amber) 40%, transparent),
+    0 0 34px 8px color-mix(in oklab, var(--accent-amber) 18%, transparent);
 }
 
 .cometCool {

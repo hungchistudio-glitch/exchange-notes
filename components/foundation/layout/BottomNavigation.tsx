@@ -22,10 +22,16 @@ type NavigationItem = {
   // Bumped by the caller only when badgeCount goes up, so the pulse ring
   // replays via a key change instead of running on every render.
   pulseToken?: number;
+  // Cosmic Mode only. Tags the navigation so the route stage knows which
+  // arrival to play; Standard Mode leaves it undefined and gets no animation.
+  transitionTypes?: string[];
 };
 
 type BottomNavigationProps = {
   items: NavigationItem[];
+  // Named by the caller rather than read from the DOM, so the dock has no
+  // opinion about where the interface mode is stored.
+  label: string;
 };
 
 // Avoids a React warning about useLayoutEffect during server rendering,
@@ -40,7 +46,16 @@ const INDICATOR_SIZE = 44;
 // whichever icon is active instead of a wide pill spanning the column, and
 // a translucent glass surface so it reads as hardware sitting just above
 // the page rather than a full-width bar pressing down on it.
-export default function BottomNavigation({ items }: BottomNavigationProps) {
+//
+// One dock serves both interface modes. Everything that differs between them
+// is a colour, and every one of those colours is a variable defined once per
+// mode in app/globals.css and app/cosmic.css — so Cosmic Mode gets its cyan
+// energy base and cool glass without a second copy of the measuring, the
+// badges or the indicator to keep in step with this one.
+export default function BottomNavigation({
+  items,
+  label,
+}: BottomNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
@@ -81,24 +96,34 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
       className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-5"
       style={{
         paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
+        /*
+         * Named so the browser gives the dock its own snapshot during a view
+         * transition and app/cosmic-motion.css can hold it perfectly still.
+         * Without this the dock is part of the root snapshot and travels with
+         * the page, taking away the one fixed thing on screen — the reference
+         * that tells the user the content moved rather than the whole ship.
+         *
+         * Harmless in Standard Mode, where no transition ever runs.
+         */
+        viewTransitionName: "cosmic-dock",
       }}
-      aria-label="Primary navigation"
+      aria-label={label}
     >
       <div
         ref={containerRef}
-        className="relative w-full max-w-xl rounded-[28px] border border-black/[0.07] bg-[#fdfbf6]/75 p-2 shadow-[0_10px_36px_rgba(28,26,22,0.12)] backdrop-blur-xl"
+        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-2 shadow-[var(--dock-shadow)] backdrop-blur-xl"
       >
         {offset && (
           <div
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 rounded-full bg-[#1c1a16] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="absolute left-1/2 top-1/2 rounded-full border border-[var(--dock-indicator-border)] bg-[var(--dock-indicator)] transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               width: INDICATOR_SIZE,
               height: INDICATOR_SIZE,
               marginLeft: -INDICATOR_SIZE / 2,
               marginTop: -INDICATOR_SIZE / 2,
               transform: `translate(${offset.x}px, ${offset.y}px)`,
-              boxShadow: "0 0 0 6px rgba(28, 26, 22, 0.05)",
+              boxShadow: "0 0 0 6px var(--dock-indicator-halo)",
             }}
           />
         )}
@@ -114,6 +139,7 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
               key={`${item.href}-${item.label}`}
               href={item.href}
               prefetch={false}
+              transitionTypes={item.transitionTypes}
               title={item.label}
               ref={(element) => {
                 itemRefs.current[index] = element;
@@ -122,7 +148,7 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
               aria-label={item.label}
               className={`z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 item.active
-                  ? "scale-[1.05] text-white"
+                  ? "scale-[1.05] text-[var(--dock-active-ink)]"
                   : "text-black/40 hover:text-black/70"
               }`}
             >
@@ -132,7 +158,7 @@ export default function BottomNavigation({ items }: BottomNavigationProps) {
                 {item.badgeCount ? (
                   <span
                     aria-hidden="true"
-                    className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[#c9962e] px-[3px] text-[9px] font-semibold leading-none text-white"
+                    className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--accent-amber)] px-[3px] text-[9px] font-semibold leading-none text-white"
                   >
                     {item.badgeCount > 9 ? "9+" : item.badgeCount}
                     <span

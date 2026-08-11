@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
+import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
+import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
 import Screen from "@/components/foundation/layout/Screen";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import {
   getAllReviewWords,
   getTodaysReview,
@@ -111,9 +114,13 @@ const GRADE_OPTIONS: {
 export default function ReviewPage() {
   const { t } = useTranslation();
   const copy = t.review;
+  const { isCosmic } = useInterfaceMode();
 
   const [phase, setPhase] = useState<Phase>("landing");
   const [mode, setMode] = useState<Mode>("due");
+  // Bumped on every session start so the launch sequence replays for a second
+  // review without the component needing to be torn down and remounted.
+  const [launchToken, setLaunchToken] = useState(0);
 
   const [dueWords, setDueWords] = useState<ReviewWord[]>([]);
   const [allWords, setAllWords] = useState<ReviewWord[]>([]);
@@ -172,6 +179,7 @@ export default function ReviewPage() {
       setIndex(0);
       setRevealed(false);
       setPhase("session");
+      setLaunchToken((token) => token + 1);
     },
     [dueWords, allWords],
   );
@@ -210,6 +218,8 @@ export default function ReviewPage() {
 
     return (
       <Screen>
+        {isCosmic && <MissionLaunchStage key={launchToken} />}
+
         <div
           className="px-4"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
@@ -362,31 +372,54 @@ export default function ReviewPage() {
   }
 
   if (phase === "complete") {
+    /*
+     * The same result in both modes. Cosmic Mode reframes it as a mission and
+     * gives it a moment of orbital alignment around it, but the count is the
+     * count — no score, no bonus, nothing added that the session did not
+     * actually do.
+     */
+    const summary = (
+      <>
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
+          ✓
+        </div>
+        <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          {isCosmic
+            ? t.cosmic.mission.completeEyebrow
+            : mode === "due"
+              ? copy.today
+              : copy.freePractice}
+        </p>
+        <h1 className="mt-1 text-2xl font-bold">{copy.completeTitle}</h1>
+        <p className="mt-2 max-w-xs text-black/50">
+          {copy.completedReviews.replace("{count}", String(queue.length))}
+          {" "}
+          {copy.completeDescription}
+        </p>
+
+        <Link
+          href="/"
+          transitionTypes={isCosmic ? ["deck-return"] : undefined}
+          className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white"
+        >
+          {copy.backToHome}
+        </Link>
+      </>
+    );
+
     return (
       <Screen>
         <div
           className="flex min-h-[70dvh] flex-col items-center justify-center px-4 text-center"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
-            ✓
-          </div>
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
-            {mode === "due" ? copy.today : copy.freePractice}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold">{copy.completeTitle}</h1>
-          <p className="mt-2 max-w-xs text-black/50">
-            {copy.completedReviews.replace("{count}", String(queue.length))}
-            {" "}
-            {copy.completeDescription}
-          </p>
-
-          <Link
-            href="/"
-            className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white"
-          >
-            {copy.backToHome}
-          </Link>
+          {isCosmic ? (
+            <MissionCompleteStage>
+              <div className="flex flex-col items-center">{summary}</div>
+            </MissionCompleteStage>
+          ) : (
+            summary
+          )}
         </div>
       </Screen>
     );
@@ -400,6 +433,7 @@ export default function ReviewPage() {
       >
         <Link
           href="/"
+          transitionTypes={isCosmic ? ["deck-return"] : undefined}
           aria-label="Back"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
         >

@@ -48,7 +48,7 @@ export default function Modal({
         type="button"
         aria-label="Close"
         onClick={motion.requestClose}
-        className={`absolute inset-0 bg-[#252821]/35 backdrop-blur-[3px] ${motion.backdropClassName}`}
+        className={`absolute inset-0 bg-[var(--modal-scrim)]/35 backdrop-blur-[3px] ${motion.backdropClassName}`}
         {...motion.backdropProps}
       />
 
@@ -68,7 +68,7 @@ export default function Modal({
           rounded-t-[28px]
           border
           border-line
-          bg-[#FCFCF9]
+          bg-[var(--modal-surface)]
           shadow-2xl
           sm:rounded-[28px]
           ${className}
@@ -82,18 +82,18 @@ export default function Modal({
         </div>
 
         <div
-          className={`${motion.handleClassName} sticky top-0 z-10 flex items-start gap-4 border-b border-line bg-[#FCFCF9]/95 px-5 py-4 backdrop-blur`}
+          className={`${motion.handleClassName} sticky top-0 z-10 flex items-start gap-4 border-b border-line bg-[var(--modal-surface)]/95 px-5 py-4 backdrop-blur`}
           {...motion.handleProps}
         >
           <div className="min-w-0 flex-1">
             {title ? (
-              <h2 id={titleId} className="text-xl font-semibold tracking-[-0.025em] text-[#2F312D]">
+              <h2 id={titleId} className="text-xl font-semibold tracking-[-0.025em] text-[var(--modal-ink)]">
                 {title}
               </h2>
             ) : null}
 
             {description ? (
-              <div className="mt-1 text-sm leading-5 text-[#666A63]">
+              <div className="mt-1 text-sm leading-5 text-[var(--modal-muted)]">
                 {description}
               </div>
             ) : null}
@@ -111,10 +111,10 @@ export default function Modal({
               items-center
               justify-center
               rounded-2xl
-              text-[#666A63]
+              text-[var(--modal-muted)]
               transition
-              hover:bg-[#E7EEE4]
-              hover:text-[#394A35]
+              hover:bg-[var(--modal-line)]
+              hover:text-[var(--modal-accent)]
             "
           >
             <X size={20} />
@@ -126,7 +126,7 @@ export default function Modal({
         </div>
 
         {footer ? (
-          <div className="sticky bottom-0 border-t border-line bg-[#FCFCF9]/95 px-5 py-4 backdrop-blur">
+          <div className="sticky bottom-0 border-t border-line bg-[var(--modal-surface)]/95 px-5 py-4 backdrop-blur">
             {footer}
           </div>
         ) : null}

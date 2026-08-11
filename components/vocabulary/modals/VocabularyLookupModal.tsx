@@ -237,15 +237,15 @@ export default function VocabularyLookupModal({
           )}
 
           {lookupStatus === "result" && lookupDegraded && (
-            <div className="mt-5 rounded-[20px] border border-[#c9962e]/20 bg-[#c9962e]/[0.07] p-4">
-              <p className="text-[13px] leading-5 text-[#6b4e1f]">
+            <div className="mt-5 rounded-[20px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-4">
+              <p className="text-[13px] leading-5 text-[var(--accent-amber-deep)]">
                 {t.vocabulary.lookup.degradedNotice}
               </p>
 
               <button
                 type="button"
                 onClick={onLookupWord}
-                className="mt-2 text-[13px] font-semibold text-[#6b4e1f] underline underline-offset-2"
+                className="mt-2 text-[13px] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
               >
                 {t.vocabulary.lookup.degradedRetry}
               </button>
@@ -440,7 +440,7 @@ export default function VocabularyLookupModal({
                 {lookupResult.confidence === "low" ? (
                   <p
                     role="status"
-                    className="mt-5 rounded-[18px] border border-[#c9962e]/20 bg-[#c9962e]/[0.07] px-4 py-3 text-[12px] leading-5 text-[#6b4e1f]"
+                    className="mt-5 rounded-[18px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[12px] leading-5 text-[var(--accent-amber-deep)]"
                   >
                     {t.vocabulary.lookup.lowConfidenceNotice}
                   </p>

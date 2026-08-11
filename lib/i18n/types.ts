@@ -161,6 +161,91 @@ export type TranslationDictionary = {
     home: string;
     discover: string;
     settings: string;
+    primaryLabel: string;
+  };
+
+  /*
+   * Yumi Cosmic Mode. Each room carries both its deck name and the plain name
+   * of the feature it opens, so nobody has to guess that "Scanner Bay" is the
+   * camera. Counts are the app's real numbers — there is no copy here for
+   * anything the system does not actually know.
+   */
+  cosmic: {
+    modeName: string;
+    deck: {
+      eyebrow: string;
+      title: string;
+      subtitle: string;
+      coreLabel: string;
+      dockLabel: string;
+      roomsLabel: string;
+      readoutLexicon: string;
+      readoutDue: string;
+      readoutLearning: string;
+      languageEnglish: string;
+      languageChinese: string;
+    };
+    rooms: {
+      lexicon: { name: string; familiar: string; description: string };
+      mission: { name: string; familiar: string; description: string };
+      scanner: { name: string; familiar: string; description: string };
+      comms: { name: string; familiar: string; description: string };
+      earth: { name: string; familiar: string; description: string };
+      memory: { name: string; familiar: string; description: string };
+    };
+    status: {
+      wordsSaved: string;
+      dueNow: string;
+      nothingDue: string;
+      unreadMessages: string;
+      loading: string;
+    };
+    transition: {
+      entering: string;
+      leaving: string;
+    };
+    mission: {
+      launching: string;
+      completeEyebrow: string;
+    };
+    omni: {
+      label: string;
+      placeholder: string;
+      placeholderChinese: string;
+      placeholderEnglish: string;
+      inputText: string;
+      inputVoice: string;
+      inputCamera: string;
+      inputImage: string;
+      submit: string;
+      clear: string;
+      listening: string;
+      scanning: string;
+      acquired: string;
+      noMatch: string;
+      noMatchHint: string;
+      degraded: string;
+      addToVocabulary: string;
+      recentSignals: string;
+      playLearning: string;
+      playTranslation: string;
+      playExampleLearning: string;
+      playExampleTranslation: string;
+      save: string;
+      saved: string;
+      share: string;
+      copied: string;
+      sendToFriend: string;
+    };
+    hud: {
+      eyebrow: string;
+      title: string;
+      accuracy: string;
+      retention: string;
+      dailyGoal: string;
+      mastered: string;
+      reviewed: string;
+    };
   };
 
   discover: {
@@ -1078,6 +1163,18 @@ export type TranslationDictionary = {
       sheetDescription: string;
       englishDescription: string;
       traditionalChineseDescription: string;
+    };
+
+    interfaceMode: {
+      rowTitle: string;
+      rowDescription: string;
+      sheetTitle: string;
+      sheetDescription: string;
+      standardTitle: string;
+      standardDescription: string;
+      cosmicTitle: string;
+      cosmicDescription: string;
+      sharedDataNote: string;
     };
 
     scriptableWidget: {

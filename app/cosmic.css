@@ -1,0 +1,418 @@
+/*
+ * Yumi Cosmic Mode — the token layer.
+ *
+ * This file is the whole reason Cosmic Mode could ship without touching the
+ * pages it repaints. Tailwind v4 compiles its colour utilities to variable
+ * references rather than literals:
+ *
+ *   .bg-white      → background-color: var(--color-white)
+ *   .text-black/40 → color: color-mix(in oklab, var(--color-black) 40%, …)
+ *
+ * so redefining --color-white and --color-black under one attribute selector
+ * carries every `bg-white` panel and every `black/x` piece of text in the app
+ * into deep space at once. Roughly 670 utility usages across every screen,
+ * with no component edited and — because Standard Mode never matches this
+ * selector — nothing at all to regress there.
+ *
+ * The inversion is deliberate rather than a trick. `bg-black` buttons take
+ * --color-black and their `text-white` labels take --color-white, so a black
+ * button with white text becomes a pale button with deep navy text and keeps
+ * its contrast without a single override.
+ *
+ * The attribute lands on <html> during the server render (see app/layout.tsx
+ * and lib/appPreferences.ts), so the first paint is already correct — there is
+ * no standard-surface flash to sit through on the way in.
+ */
+
+html[data-interface-mode="yumi-cosmic"] {
+  /* Panels. What every `bg-white` card becomes: lifted just enough off the
+     page behind it to read as a surface, not a hole. */
+  --color-white: #101a30;
+
+  /* Ink. What every `text-black`, `black/50` and `border-black/10` becomes —
+     a cool pale blue rather than pure white, so long passages of text are not
+     glaring at night, which is when this mode will mostly be used. */
+  --color-black: #dce9ff;
+
+  --background: #060a14;
+  --foreground: #dce9ff;
+  --surface: #16223c;
+  --line: #24345a;
+
+  /* The gold survives the trip: on deep space it reads as a warm signal light
+     instead of a paper highlight. Its dark inks flip to the panel colour so
+     text on an amber fill stays legible. */
+  --accent-amber: #f0b64a;
+  --accent-amber-ink: #0b1220;
+  --accent-amber-deep: #f7d391;
+  --accent-amber-soft: #4a3a17;
+  --accent-amber-wash: #1a2340;
+
+  --success: #6ee7a5;
+  --success-soft: #123626;
+
+  --accent-cool: #9ec9ee;
+
+  --yumi-wash-top: #16223c;
+  --yumi-wash-bottom: #0d1526;
+
+  --modal-scrim: #01040c;
+  --modal-surface: #101a30;
+  --modal-ink: #dce9ff;
+  --modal-accent: var(--cosmic-cyan);
+  --modal-muted: #8ba0c6;
+  --modal-line: #24345a;
+
+  --control-surface: #16223c;
+  --control-ink: #cfe6ff;
+
+  /* The dock as flight hardware: cool glass, a faint cyan seam for the thin
+     orbital halo, and a cyan energy base under the active system. The active
+     icon keeps its `text-white`, which in this mode resolves to the panel
+     navy — dark on cyan, and legible without an override. */
+  --dock-surface: rgba(16, 26, 48, 0.72);
+  --dock-line: var(--cosmic-ring);
+  --dock-shadow: 0 10px 36px rgba(1, 4, 12, 0.55);
+  /* Hollow rather than filled. A solid cyan disc is the brightest thing on a
+     dark screen and pulls the eye down to the dock permanently; an outlined
+     ring marks the active system just as clearly and stays quiet. */
+  --dock-indicator: rgba(77, 227, 240, 0.1);
+  --dock-indicator-border: var(--cosmic-cyan);
+  --dock-indicator-halo: var(--cosmic-glow);
+  --dock-active-ink: var(--cosmic-cyan);
+
+  --discover-page: #060a14;
+  --discover-card: #101a30;
+  --discover-text: #dce9ff;
+  --discover-text-secondary: #8ba0c6;
+  --discover-divider: #24345a;
+  --discover-divider-soft: rgba(36, 52, 90, 0.45);
+  /* The same cyan the deck and dock use, not a second one a shade away from
+     it — two near-identical blues on one screen read as a mistake. */
+  --discover-accent: var(--cosmic-cyan);
+  --discover-accent-soft: #12243c;
+  --discover-selected: #16223c;
+  --discover-on-accent: #06121f;
+
+  /* The category accents were chosen to sit on paper; on deep space the same
+     hues have to be lifted well past mid-tone to stay readable. */
+  --discover-category-business: #f0a08c;
+  --discover-category-technology: #93b6f0;
+  --discover-category-science: #bda6ee;
+  --discover-category-culture: #e6bd85;
+  --discover-category-health: #79cfbb;
+  --discover-category-environment: #b6cd85;
+  --discover-category-politics: #b9b5ac;
+
+  /* Cosmic-only. The cyan that marks an active system, and the field colours
+     the Command Deck and dock draw their rings and glow from. */
+  --cosmic-cyan: #4de3f0;
+  --cosmic-cyan-dim: rgba(77, 227, 240, 0.35);
+  --cosmic-ring: rgba(77, 227, 240, 0.22);
+  --cosmic-glow: rgba(77, 227, 240, 0.14);
+  --cosmic-star: rgba(220, 233, 255, 0.75);
+
+  /* The second signal colour. Cyan alone reads as a single-hue skin; the
+     violet is what gives the deck depth, and it carries a different meaning —
+     cyan is a system that is live, violet is a measure of progress. */
+  --cosmic-violet: #8b5cf6;
+  --cosmic-violet-dim: rgba(139, 92, 246, 0.35);
+  --cosmic-amber: #f0b64a;
+}
+
+/*
+ * The field the deck floats in: a deep violet bloom, faint concentric rings
+ * expanding from behind Yumi, and a halftone dot grid over the top.
+ *
+ * Painted onto the body rather than added as an element, so it costs no DOM
+ * and no hydration anywhere in the app. `background-attachment: fixed` keeps
+ * it still while pages scroll, which is what makes it read as the space the
+ * ship is in rather than as wallpaper glued to the content.
+ */
+html[data-interface-mode="yumi-cosmic"] body {
+  background-image:
+    repeating-radial-gradient(
+      circle at 50% 38%,
+      transparent 0 46px,
+      rgba(77, 227, 240, 0.035) 46px 47px
+    ),
+    radial-gradient(
+      circle at 22% 12%,
+      rgba(77, 227, 240, 0.16) 0%,
+      transparent 46%
+    ),
+    radial-gradient(
+      ellipse 90% 60% at 50% 8%,
+      rgba(139, 92, 246, 0.26) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 55% at 50% 104%,
+      rgba(139, 92, 246, 0.2) 0%,
+      transparent 66%
+    );
+  background-attachment: fixed;
+}
+
+/*
+ * Screen paints an opaque warm surface, which would cover all of the above on
+ * every page in the app. In Cosmic Mode the page surface steps aside and lets
+ * the field show through; panels and cards keep their own fills, so content
+ * still sits on something solid and legible.
+ */
+html[data-interface-mode="yumi-cosmic"] main {
+  background-color: transparent;
+}
+
+/*
+ * The HUD micro-label: monospace, uppercase, wide-tracked, bracketed at the
+ * call site. Used for the readouts across Cosmic Mode. A global class rather
+ * than a module because it is shared by components in three directories and
+ * only ever exists in this mode.
+ */
+html[data-interface-mode="yumi-cosmic"] .hud-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cosmic-cyan);
+  opacity: 0.85;
+}
+
+/* Corner brackets, the way an instrument panel frames a readout. Drawn with
+   two gradients on one element so it adds nothing to the DOM. */
+html[data-interface-mode="yumi-cosmic"] .hud-frame {
+  position: relative;
+}
+
+html[data-interface-mode="yumi-cosmic"] .hud-frame::before,
+html[data-interface-mode="yumi-cosmic"] .hud-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--cosmic-cyan-dim);
+  border-style: solid;
+  pointer-events: none;
+}
+
+html[data-interface-mode="yumi-cosmic"] .hud-frame::before {
+  top: 8px;
+  left: 8px;
+  border-width: 1px 0 0 1px;
+}
+
+html[data-interface-mode="yumi-cosmic"] .hud-frame::after {
+  right: 8px;
+  bottom: 8px;
+  border-width: 0 1px 1px 0;
+}
+
+/*
+ * The shade ramps, mirrored end for end: 50 takes 950's value, 100 takes
+ * 900's, and so on through the middle.
+ *
+ * Around 270 utilities across the app reach for a ramp rather than for
+ * black/white — `text-neutral-400` for a caption, `bg-red-50 text-red-700`
+ * for a warning chip. Left alone in Cosmic Mode those become near-black text
+ * on a dark panel, and chips become bright paper rectangles.
+ *
+ * Mirroring is the version that needs no per-component judgement: the idiom
+ * is always "light fill, dark text on it", and reversing the ramp turns that
+ * into "dark fill, light text on it" while leaving the hue and the pairing
+ * intact. Only the ramps the app actually uses are listed.
+ */
+html[data-interface-mode="yumi-cosmic"] {
+  --color-neutral-50: oklch(14.5% 0 0);
+  --color-neutral-100: oklch(20.5% 0 0);
+  --color-neutral-200: oklch(26.9% 0 0);
+  --color-neutral-300: oklch(37.1% 0 0);
+  --color-neutral-400: oklch(43.9% 0 0);
+  --color-neutral-500: oklch(55.6% 0 0);
+  --color-neutral-600: oklch(70.8% 0 0);
+  --color-neutral-700: oklch(87% 0 0);
+  --color-neutral-800: oklch(92.2% 0 0);
+  --color-neutral-900: oklch(97% 0 0);
+  --color-neutral-950: oklch(98.5% 0 0);
+
+  --color-red-50: oklch(25.8% 0.092 26.042);
+  --color-red-100: oklch(39.6% 0.141 25.723);
+  --color-red-200: oklch(44.4% 0.177 26.899);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-400: oklch(57.7% 0.245 27.325);
+  --color-red-500: oklch(63.7% 0.237 25.331);
+  --color-red-600: oklch(70.4% 0.191 22.216);
+  --color-red-700: oklch(80.8% 0.114 19.571);
+  --color-red-800: oklch(88.5% 0.062 18.334);
+  --color-red-900: oklch(93.6% 0.032 17.717);
+  --color-red-950: oklch(97.1% 0.013 17.38);
+
+  --color-emerald-50: oklch(26.2% 0.051 172.552);
+  --color-emerald-100: oklch(37.8% 0.077 168.94);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-400: oklch(59.6% 0.145 163.225);
+  --color-emerald-500: oklch(69.6% 0.17 162.48);
+  --color-emerald-600: oklch(76.5% 0.177 163.223);
+  --color-emerald-700: oklch(84.5% 0.143 164.978);
+  --color-emerald-800: oklch(90.5% 0.093 164.15);
+  --color-emerald-900: oklch(95% 0.052 163.051);
+  --color-emerald-950: oklch(97.9% 0.021 166.113);
+
+  --color-amber-50: oklch(27.9% 0.077 45.635);
+  --color-amber-100: oklch(41.4% 0.112 45.904);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-400: oklch(66.6% 0.179 58.318);
+  --color-amber-500: oklch(76.9% 0.188 70.08);
+  --color-amber-600: oklch(82.8% 0.189 84.429);
+  --color-amber-700: oklch(87.9% 0.169 91.605);
+  --color-amber-800: oklch(92.4% 0.12 95.746);
+  --color-amber-900: oklch(96.2% 0.059 95.617);
+  --color-amber-950: oklch(98.7% 0.022 95.277);
+
+  --color-blue-50: oklch(28.2% 0.091 267.935);
+  --color-blue-100: oklch(37.9% 0.146 265.522);
+  --color-blue-200: oklch(42.4% 0.199 265.638);
+  --color-blue-300: oklch(48.8% 0.243 264.376);
+  --color-blue-400: oklch(54.6% 0.245 262.881);
+  --color-blue-500: oklch(62.3% 0.214 259.815);
+  --color-blue-600: oklch(70.7% 0.165 254.624);
+  --color-blue-700: oklch(80.9% 0.105 251.813);
+  --color-blue-800: oklch(88.2% 0.059 254.128);
+  --color-blue-900: oklch(93.2% 0.032 255.585);
+  --color-blue-950: oklch(97% 0.014 254.604);
+
+  --color-orange-50: oklch(26.6% 0.079 36.259);
+  --color-orange-100: oklch(40.8% 0.123 38.172);
+  --color-orange-200: oklch(47% 0.157 37.304);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-orange-400: oklch(64.6% 0.222 41.116);
+  --color-orange-500: oklch(70.5% 0.213 47.604);
+  --color-orange-600: oklch(75% 0.183 55.934);
+  --color-orange-700: oklch(83.7% 0.128 66.29);
+  --color-orange-800: oklch(90.1% 0.076 70.697);
+  --color-orange-900: oklch(95.4% 0.038 75.164);
+  --color-orange-950: oklch(98% 0.016 73.684);
+
+  --color-green-50: oklch(26.6% 0.065 152.934);
+  --color-green-100: oklch(39.3% 0.095 152.535);
+  --color-green-200: oklch(44.8% 0.119 151.328);
+  --color-green-300: oklch(52.7% 0.154 150.069);
+  --color-green-400: oklch(62.7% 0.194 149.214);
+  --color-green-500: oklch(72.3% 0.219 149.579);
+  --color-green-600: oklch(79.2% 0.209 151.711);
+  --color-green-700: oklch(87.1% 0.15 154.449);
+  --color-green-800: oklch(92.5% 0.084 155.995);
+  --color-green-900: oklch(96.2% 0.044 156.743);
+  --color-green-950: oklch(98.2% 0.018 155.826);
+}
+
+/*
+ * Form controls are painted by the browser, not by Tailwind, so they need to
+ * be told the surface went dark or they arrive as bright white rectangles in
+ * the middle of the deck.
+ */
+html[data-interface-mode="yumi-cosmic"] {
+  color-scheme: dark;
+}
+
+/* =========================================================
+   Icon button identities
+   ========================================================= */
+
+/*
+ * Two treatments, deliberately different from each other and from the radar
+ * on the deck. A screen where every control does the same trick stops reading
+ * as instruments and starts reading as a theme, so each of these says what its
+ * button actually does.
+ *
+ * Both are built entirely from box-shadow. No pseudo-element, and therefore no
+ * `position` — these buttons are statically positioned and adding relative
+ * positioning to reach a pseudo-element is exactly the change that once
+ * dropped the swipe action discs out of their container. Layered shadows give
+ * concentric rings for free and cannot affect layout at all.
+ */
+
+/*
+ * Speaker — sonar emission.
+ *
+ * At rest, one faint standing ring: the transducer is live. On press, three
+ * rings leave the button at staggered radii, which is what a single ping
+ * looks like. Not a loop — it fires on the tap and stops.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-sonar {
+  border-color: var(--cosmic-cyan-dim);
+  color: var(--cosmic-cyan);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 200ms ease;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-sonar:active {
+  animation: cosmicSonarPing 620ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes cosmicSonarPing {
+  0% {
+    box-shadow:
+      0 0 0 0 color-mix(in oklab, var(--cosmic-cyan) 55%, transparent),
+      0 0 0 0 color-mix(in oklab, var(--cosmic-cyan) 34%, transparent),
+      0 0 0 0 color-mix(in oklab, var(--cosmic-cyan) 18%, transparent);
+  }
+  100% {
+    box-shadow:
+      0 0 0 7px transparent,
+      0 0 0 13px transparent,
+      0 0 0 19px transparent;
+  }
+}
+
+/*
+ * Bookmark — target lock.
+ *
+ * Saving a word is an acquisition, not an emission, so this one closes inward
+ * instead of radiating out: the ring starts wide and tightens onto the button.
+ * The saved state then holds a solid seam, because the lock is engaged.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-lock {
+  color: color-mix(in oklab, var(--color-black) 55%, transparent);
+  transition:
+    color 180ms ease,
+    box-shadow 220ms ease;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-lock:active {
+  color: var(--cosmic-cyan);
+  animation: cosmicLockAcquire 460ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cosmicLockAcquire {
+  0% {
+    box-shadow: 0 0 0 12px color-mix(in oklab, var(--cosmic-cyan) 0%, transparent);
+  }
+  55% {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--cosmic-cyan) 40%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 55%, transparent);
+  }
+}
+
+/* Engaged: the seam stays. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-lock[data-saved="true"] {
+  color: var(--cosmic-cyan);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The colours and the engaged seam stay — they carry the state. Only the
+     travelling rings stop, since a ring that expands is pure movement. */
+  html[data-interface-mode="yumi-cosmic"] .cosmic-sonar:active,
+  html[data-interface-mode="yumi-cosmic"] .cosmic-lock:active {
+    animation: none;
+  }
+}

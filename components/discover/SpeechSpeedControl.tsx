@@ -42,7 +42,10 @@ export default function SpeechSpeedControl({
       <div
         className="flex items-center gap-1 rounded-full p-1"
         style={{
-          backgroundColor: "rgba(255,255,255,0.55)",
+          // Not a literal white: the track has to lift off whatever surface
+          // Discover is painted on, and in Cosmic Mode that surface is deep
+          // space. See --discover-card in app/globals.css and app/cosmic.css.
+          backgroundColor: "color-mix(in oklab, var(--discover-card) 55%, transparent)",
           border: `1px solid ${DISCOVER_COLORS.divider}`,
         }}
       >

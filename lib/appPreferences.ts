@@ -312,6 +312,105 @@ export function subscribeToInterfaceLanguage(
 }
 
 /* =========================================================
+   Interface mode
+   ========================================================= */
+
+export type InterfaceMode = "standard" | "yumi-cosmic";
+
+/*
+ * Alone among the preferences here, this one lives in a cookie rather than
+ * localStorage.
+ *
+ * Every other preference only ever changes how something already on screen is
+ * painted, so correcting it after hydration is invisible. Interface mode picks
+ * between two different component trees — the standard home and the Command
+ * Deck — which the server has to render correctly the first time. localStorage
+ * does not exist during a server render; a cookie does, so the mode is already
+ * decided in the HTML that arrives, and there is no mismatch to reconcile and
+ * no standard-then-cosmic flash to sit through.
+ */
+export const INTERFACE_MODE_COOKIE = "exchange-notes-interface-mode";
+
+const INTERFACE_MODE_EVENT = "exchange-notes-interface-mode-change";
+
+// A year, so the choice outlives any realistic gap between visits.
+const INTERFACE_MODE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+export const DEFAULT_INTERFACE_MODE: InterfaceMode = "standard";
+
+export function isInterfaceMode(value: unknown): value is InterfaceMode {
+  return value === "standard" || value === "yumi-cosmic";
+}
+
+function readInterfaceModeCookie(): string | null {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${INTERFACE_MODE_COOKIE}=([^;]*)`),
+  );
+
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function getInterfaceMode(): InterfaceMode {
+  if (typeof document === "undefined") {
+    return DEFAULT_INTERFACE_MODE;
+  }
+
+  const saved = readInterfaceModeCookie();
+
+  return isInterfaceMode(saved) ? saved : DEFAULT_INTERFACE_MODE;
+}
+
+export function applyInterfaceMode(mode: InterfaceMode) {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.dataset.interfaceMode = mode;
+}
+
+export function setInterfaceMode(mode: InterfaceMode) {
+  if (typeof document === "undefined") return;
+
+  document.cookie =
+    `${INTERFACE_MODE_COOKIE}=${mode}; path=/; max-age=` +
+    `${INTERFACE_MODE_COOKIE_MAX_AGE}; SameSite=Lax`;
+
+  applyInterfaceMode(mode);
+
+  window.dispatchEvent(
+    new CustomEvent<InterfaceMode>(INTERFACE_MODE_EVENT, {
+      detail: mode,
+    }),
+  );
+}
+
+/*
+ * No "storage" listener here, unlike the sections above: cookies do not fire
+ * one. Two tabs open at once therefore stay on whichever mode each was showing
+ * until they next load, which is the same behaviour as any other cookie-backed
+ * setting and not worth polling for.
+ */
+export function subscribeToInterfaceMode(
+  listener: (mode: InterfaceMode) => void,
+) {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  function handleChange(event: Event) {
+    const customEvent = event as CustomEvent<InterfaceMode>;
+
+    if (isInterfaceMode(customEvent.detail)) {
+      listener(customEvent.detail);
+    }
+  }
+
+  window.addEventListener(INTERFACE_MODE_EVENT, handleChange);
+
+  return () => {
+    window.removeEventListener(INTERFACE_MODE_EVENT, handleChange);
+  };
+}
+
+/* =========================================================
    Tutorial
    ========================================================= */
 

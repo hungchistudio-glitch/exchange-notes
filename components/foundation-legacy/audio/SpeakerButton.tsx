@@ -26,7 +26,7 @@ export default function SpeakerButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`cosmic-sonar inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
         variant === "dark"
           ? "border-white/20 bg-white/10 text-white hover:bg-white/20"
           : "border-neutral-200 bg-white text-neutral-950 hover:bg-neutral-100"

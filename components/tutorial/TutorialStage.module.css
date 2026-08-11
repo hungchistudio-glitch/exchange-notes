@@ -126,7 +126,7 @@
 .shadow {
   height: 8px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.14);
+  background: color-mix(in oklab, var(--color-black) 14%, transparent);
   filter: blur(6px);
 }
 
@@ -194,7 +194,7 @@
   width: 5px;
   height: 5px;
   border-radius: 999px;
-  background: #d9a248;
+  background: var(--accent-amber);
   opacity: 0;
   animation: spark 1000ms cubic-bezier(0.25, 0.8, 0.3, 1) both;
 }
@@ -228,14 +228,14 @@
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.09);
+  border: 1px solid color-mix(in oklab, var(--color-black) 9%, transparent);
 }
 
 .orbitDashed {
   position: absolute;
   inset: 10px;
   border-radius: 999px;
-  border: 1px dashed rgba(0, 0, 0, 0.16);
+  border: 1px dashed color-mix(in oklab, var(--color-black) 16%, transparent);
   animation: orbitSpin 18s linear infinite;
 }
 
@@ -278,7 +278,7 @@
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  border: 1px solid rgba(0, 0, 0, 0.28);
+  border: 1px solid color-mix(in oklab, var(--color-black) 28%, transparent);
   opacity: 0;
   animation: pressRipple 2400ms cubic-bezier(0.22, 0.9, 0.3, 1) infinite;
 }

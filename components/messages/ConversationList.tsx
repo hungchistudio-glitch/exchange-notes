@@ -271,7 +271,7 @@ export default function ConversationList() {
                 <Link
                   href={`/messages?with=${summary.friend.id}`}
                   className={`flex items-center gap-3 rounded-[24px] p-4 shadow-sm transition-colors ${
-                    hasUnread ? "bg-[#fdfaf3]" : "bg-white"
+                    hasUnread ? "bg-[var(--accent-amber-wash)]" : "bg-white"
                   }`}
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-base font-bold text-black">
@@ -308,7 +308,7 @@ export default function ConversationList() {
                           </time>
                         )}
                         {hasUnread && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#c9962e] px-1.5 text-[11px] font-semibold text-white">
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent-amber)] px-1.5 text-[11px] font-semibold text-white">
                             {summary.unreadCount}
                           </span>
                         )}
@@ -337,7 +337,7 @@ export default function ConversationList() {
                     label: isMuted ? copy.unmuteConversation : copy.muteConversation,
                     icon: <BellOff size={20} strokeWidth={1.8} />,
                     onAction: () => handleToggleMute(summary),
-                    className: "bg-[#c9962e] text-white",
+                    className: "bg-[var(--accent-amber)] text-white",
                   }}
                   trailingAction={{
                     label: copy.deleteFriend,

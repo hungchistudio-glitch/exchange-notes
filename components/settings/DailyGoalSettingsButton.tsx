@@ -1,16 +1,15 @@
 "use client";
 
 import { Target } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDailyGoalMinutes from "@/hooks/preferences/useDailyGoalMinutes";
 import {
-  getDailyGoalMinutes,
   setDailyGoalMinutes,
-  subscribeToDailyGoalMinutes,
   type DailyGoalMinutes,
 } from "@/lib/appPreferences";
 
@@ -28,16 +27,7 @@ const DAILY_GOAL_OPTIONS: Array<{
 export default function DailyGoalSettingsButton() {
   const [open, setOpen] = useState(false);
 
-  /**
-   * The stored goal is an external store, not component state. Both snapshots
-   * use getDailyGoalMinutes because it already returns the default when there
-   * is no window, keeping the server and client renders identical.
-   */
-  const goal = useSyncExternalStore(
-    subscribeToDailyGoalMinutes,
-    getDailyGoalMinutes,
-    getDailyGoalMinutes,
-  );
+  const goal = useDailyGoalMinutes();
 
   const { t } = useTranslation();
   const copy = t.settings.dailyGoal;

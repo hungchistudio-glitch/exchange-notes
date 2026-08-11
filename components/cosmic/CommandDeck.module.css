@@ -1,0 +1,532 @@
+/*
+ * The Yumi Command Deck.
+ *
+ * Everything animated here is a transform or an opacity on a composited
+ * layer. Nothing animates a colour, a size or a position that would make the
+ * browser lay the page out again, which is what keeps the deck cheap enough
+ * to leave running on a phone while Yumi's own idle loop is also going.
+ *
+ * The stage is a square that scales with the viewport rather than a fixed
+ * pixel box, so the six nodes stay on their ring from a small phone up to a
+ * tablet without a media query per size.
+ */
+
+.deck {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage {
+  /* Sized against the shorter of the two axes as well as the width, so the
+     deck fits one screen on a small phone instead of pushing its own bottom
+     row under the dock. */
+  --deck-size: min(84vw, 60vh, 23rem);
+  /* How far out on the ring a node sits. A length, not a percentage: a
+     percentage in translateY resolves against the node's own box, which put
+     all six of them a couple of centimetres from the centre and straight on
+     top of Yumi. */
+  --deck-radius: calc(var(--deck-size) * 0.42);
+
+  position: relative;
+  width: var(--deck-size);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+}
+
+/* The field the nodes orbit. Two rings, counter-rotating, dashed for the same
+   reason the rest of the app's orbits are dashed: a turning solid ring looks
+   identical to a still one. */
+.field,
+.fieldInner {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.field {
+  inset: 4%;
+  border: 1px dashed var(--cosmic-ring);
+  animation: deckSpin 44s linear infinite;
+}
+
+.fieldInner {
+  inset: 22%;
+  border: 1px solid transparent;
+  border-top-color: var(--cosmic-cyan-dim);
+  animation: deckSpin 19s linear infinite reverse;
+}
+
+@keyframes deckSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Yumi at the centre, with a soft energy core behind rather than around, so
+   Yumi's own silhouette stays the thing you read first. */
+/* Yumi is the centre of the deck and has to read as it. Wide enough to hold
+   the middle, still clear of the labels hanging below the top node — the
+   mark's artwork fills its viewBox almost edge to edge, so this percentage is
+   very nearly the diameter it actually occupies. */
+.core {
+  position: relative;
+  z-index: 2;
+  width: 38%;
+  display: grid;
+  place-items: center;
+}
+
+.coreGlow {
+  position: absolute;
+  inset: -18%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--cosmic-glow) 0%,
+    transparent 68%
+  );
+  animation: corePulse 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes corePulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+/*
+ * A node's place on the ring.
+ *
+ * The angle arrives as a custom property from the component, so the six
+ * positions are one rule rather than six. The inner translate is what pushes
+ * the node out along the radius; the counter-rotation puts it back upright.
+ */
+.node {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--angle));
+  pointer-events: none;
+}
+
+.nodeInner {
+  /* Out along the radius, then turned back upright so the label reads
+     horizontally wherever on the ring it landed. */
+  transform: translateY(calc(var(--deck-radius) * -1))
+    rotate(calc(var(--angle) * -1));
+  pointer-events: auto;
+}
+
+.nodeLink {
+  position: relative;
+  display: flex;
+  width: 5rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 1.25rem;
+  padding: 0.3rem 0.1rem;
+  text-align: center;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nodeLink:active {
+  transform: scale(0.94);
+}
+
+/* The tappable disc. Comfortably past the 44px floor even though the glyph
+   inside it is small. */
+.nodeDisc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* Still comfortably past the 44px touch floor. */
+  width: 2.875rem;
+  height: 2.875rem;
+  border-radius: 9999px;
+  background: var(--color-white);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 0 var(--cosmic-glow);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.nodeLink:active .nodeDisc {
+  border-color: var(--cosmic-cyan-dim);
+  box-shadow: 0 0 0 5px var(--cosmic-glow);
+}
+
+/*
+ * Target lock.
+ *
+ * The chosen system brightens and takes a cyan ring; every other control on
+ * the deck drops back. Two things are happening at once and only one of them
+ * is the animation — the dimming is what tells the eye where to look during
+ * the travel that follows, so the room does not arrive unannounced.
+ */
+.nodeLocked .nodeDisc {
+  border-color: var(--cosmic-cyan);
+  box-shadow:
+    0 0 0 3px var(--cosmic-glow),
+    0 0 18px var(--cosmic-cyan-dim);
+}
+
+.nodeLocked::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2.875rem;
+  height: 2.875rem;
+  margin-left: -1.4375rem;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan);
+  animation: nodeLockRing 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  pointer-events: none;
+}
+
+@keyframes nodeLockRing {
+  from {
+    opacity: 0.85;
+    transform: scale(1.35);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.nodeDimmed {
+  opacity: 0.35;
+  transition: opacity 160ms ease;
+}
+
+.nodeName {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.nodeFamiliar {
+  font-size: 0.5625rem;
+  line-height: 1.1;
+  opacity: 0.55;
+}
+
+/*
+ * Yumi's idle at the centre of the deck: breathing, a slow blink and a pupil
+ * that drifts across the systems around it. Yumi is meant to feel like
+ * someone living in the deck rather than a logo parked in the middle of it.
+ *
+ * The rest positions (-82px / 12px) are the same ones the mark's other idles
+ * use — see components/messages/MoodLogoSwiper.module.css. They are what
+ * holds the lids clear of the eye, so an animation here must always return to
+ * them or Yumi is left with its eye shut.
+ */
+.coreMark {
+  animation: coreBreath 4.2s ease-in-out infinite;
+}
+
+.pupil,
+.upperLid,
+.lowerLid {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.pupil {
+  animation: coreLook 9s ease-in-out infinite;
+}
+
+.upperLid {
+  transform: translateY(-82px);
+  animation: coreUpperBlink 5.6s linear infinite;
+}
+
+.lowerLid {
+  transform: translateY(12px);
+  animation: coreLowerBlink 5.6s linear infinite;
+}
+
+@keyframes coreBreath {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.014);
+  }
+}
+
+@keyframes coreLook {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  22% {
+    transform: translate(-7px, 3px);
+  }
+  48% {
+    transform: translate(6px, -2px);
+  }
+  74% {
+    transform: translate(-3px, -4px);
+  }
+}
+
+@keyframes coreUpperBlink {
+  0%,
+  46%,
+  52%,
+  100% {
+    transform: translateY(-82px);
+  }
+  48%,
+  50% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes coreLowerBlink {
+  0%,
+  46%,
+  52%,
+  100% {
+    transform: translateY(12px);
+  }
+  48%,
+  50% {
+    transform: translateY(-28px);
+  }
+}
+
+/*
+ * Ambient stars.
+ *
+ * A deliberately small fixed set placed by hand rather than a generated
+ * field: a dozen composited dots cost nothing, and the count cannot drift
+ * upwards later the way a "density" parameter invites.
+ */
+.stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+  background: var(--cosmic-star);
+  opacity: 0.35;
+  animation: starBreathe 5s ease-in-out infinite;
+}
+
+@keyframes starBreathe {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
+
+/*
+ * Reduced motion keeps every ring, every node and every star exactly where it
+ * is — they are the shape of the deck, not decoration on top of it. Only the
+ * turning, the pulsing and the breathing stop, so nothing a finger is aiming
+ * at is ever in a different place than it looks.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .field,
+  .fieldInner,
+  .coreGlow,
+  .star,
+  .coreMark,
+  .pupil {
+    animation: none;
+  }
+
+  /* The lids stop blinking but keep their rest transform, so Yumi's eye is
+     open rather than closed on whatever frame the animation was cancelled. */
+  .upperLid {
+    animation: none;
+    transform: translateY(-82px);
+  }
+
+  .lowerLid {
+    animation: none;
+    transform: translateY(12px);
+  }
+
+  .nodeLink,
+  .nodeDimmed {
+    transition: none;
+  }
+
+  /* The lock still happens — it is feedback, not decoration, and without it a
+     tap has no acknowledgement. It just stops expanding: the ring appears at
+     its final size instead of sweeping in. */
+  .nodeLocked::after {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/*
+ * Radar on the six command controls.
+ *
+ * Two layers, and they say different things. The sweep on ::before is the
+ * system idling — always turning, barely visible. The ping on ::after is the
+ * system reporting: one ring expanding out past the disc, then a long pause.
+ *
+ * The pause is the point. A ring every half second is a loading spinner; a
+ * ring every few seconds, staggered across six controls, is a bridge full of
+ * instruments each on its own cycle. --node-radar-delay comes from the
+ * component so no two fire together.
+ */
+.nodeDisc::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 292deg,
+    color-mix(in oklab, var(--cosmic-cyan) 22%, transparent) 342deg,
+    transparent 360deg
+  );
+  opacity: 0.5;
+  animation: discRadarSweep 4.4s linear infinite var(--node-radar-delay, 0s);
+  pointer-events: none;
+}
+
+.nodeDisc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--cosmic-cyan);
+  opacity: 0;
+  animation: discRadarPing 5.6s cubic-bezier(0.2, 0.9, 0.3, 1) infinite
+    var(--node-radar-delay, 0s);
+  pointer-events: none;
+}
+
+.nodeLink:active .nodeDisc::before {
+  opacity: 1;
+  animation-duration: 1.1s;
+}
+
+@keyframes discRadarSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Most of the cycle is silence. The ring only exists for the first fifth of
+ * it, which is what makes it read as a detection rather than a pulse.
+ */
+@keyframes discRadarPing {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  18% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The sweep holds its position and the ping stops entirely — an expanding
+     ring is movement with no information in it once the beam is still. */
+  .nodeDisc::before {
+    animation: none;
+  }
+
+  .nodeDisc::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* =========================================================
+   Yumi reacts to the console
+   ========================================================= */
+
+/*
+ * The brief asks for OmniLexicon and Yumi to be one thing rather than two
+ * pieces of UI on the same screen, and this is the cheapest honest version of
+ * that: the eye goes where the attention is.
+ *
+ * Typing or identifying — the console is above Yumi, so the pupil looks up.
+ * The idle drift is suspended for as long as that holds, because a pupil that
+ * keeps wandering while it is supposed to be watching something reads as
+ * broken rather than alive.
+ */
+.core[data-omni="typing"] .pupil,
+.core[data-omni="scanning"] .pupil {
+  animation: none;
+  transform: translate(-2px, -9px);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Listening: Yumi turns to the person, not the console. */
+.core[data-omni="listening"] .pupil {
+  animation: none;
+  transform: translate(0, 2px);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Identifying: the orbit picks up, which is the only place a wait is shown at
+   deck scale. */
+.deck[data-omni="scanning"] .field {
+  animation-duration: 9s;
+}
+
+.deck[data-omni="scanning"] .fieldInner {
+  animation-duration: 4s;
+}
+
+/* Listening: concentric sensing rings on the core instead of a faster orbit —
+   listening is receiving, not working. */
+.core[data-omni="listening"] .coreGlow {
+  animation-duration: 1.6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The look still happens — where Yumi is looking is information. It simply
+     arrives without being animated into place. */
+  .core[data-omni="typing"] .pupil,
+  .core[data-omni="scanning"] .pupil,
+  .core[data-omni="listening"] .pupil {
+    transition: none;
+  }
+}

@@ -1,0 +1,555 @@
+/*
+ * Yumi OmniLexicon — the language recognition console.
+ *
+ * The brief is explicit that this must not read as a search bar, and the
+ * difference is structural rather than decorative. A search bar is a field you
+ * fill in. This is a bay you put something into: it has a frame with corner
+ * brackets, a beam that sweeps the cavity whether or not you are using it, and
+ * it changes shape depending on which sense it is using — typing, listening,
+ * or looking.
+ *
+ * Rendered only in Cosmic Mode, so this file styles freely rather than
+ * overriding anything. Every animation is transform, opacity or filter; the
+ * one exception is the voice state's height, which is a deliberate layout
+ * change on a single element and is what makes the console feel like it opens.
+ */
+
+.console {
+  position: relative;
+  border-radius: 20px;
+  padding: 0.9rem 0.95rem 0.8rem;
+  /* Glass, not a panel: the field behind it stays faintly visible, which is
+     what stops it reading as a card sitting on top of the deck. */
+  background:
+    linear-gradient(
+      158deg,
+      color-mix(in oklab, var(--color-white) 78%, transparent) 0%,
+      color-mix(in oklab, var(--color-white) 52%, transparent) 100%
+    );
+  border: 1px solid var(--cosmic-ring);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 16%, transparent),
+    0 18px 44px rgba(1, 4, 12, 0.42);
+  backdrop-filter: blur(16px) saturate(1.06);
+  overflow: hidden;
+  transition:
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+/* Engaged: the bay is receiving. */
+.console[data-state="typing"],
+.console[data-state="listening"] {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 30%, transparent),
+    0 0 0 4px var(--cosmic-glow),
+    0 18px 44px rgba(1, 4, 12, 0.5);
+}
+
+/* ---------- The frame ---------- */
+
+/*
+ * Corner brackets. Four L-shapes rather than a continuous border, because a
+ * bracket says "this region is being measured" and a border only says "box".
+ * They close inward when a lookup fires — the target lock from the brief.
+ */
+.bracket {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 60%, transparent);
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bracketTopLeft {
+  top: 7px;
+  left: 7px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.bracketTopRight {
+  top: 7px;
+  right: 7px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.bracketBottomLeft {
+  bottom: 7px;
+  left: 7px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.bracketBottomRight {
+  bottom: 7px;
+  right: 7px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* The lock: all four corners step in together, once. */
+.console[data-state="scanning"] .bracketTopLeft {
+  transform: translate(5px, 5px);
+}
+
+.console[data-state="scanning"] .bracketTopRight {
+  transform: translate(-5px, 5px);
+}
+
+.console[data-state="scanning"] .bracketBottomLeft {
+  transform: translate(5px, -5px);
+}
+
+.console[data-state="scanning"] .bracketBottomRight {
+  transform: translate(-5px, -5px);
+}
+
+/* ---------- The beam ---------- */
+
+/*
+ * A single band travelling down the cavity. Nearly invisible at rest — the
+ * console is idling, not working — and it speeds up and brightens while a
+ * lookup is in flight, which is the only honest progress signal available
+ * for a request whose duration is unknown.
+ */
+.beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 34%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--cosmic-cyan) 9%, transparent) 50%,
+    transparent 100%
+  );
+  animation: omniBeam 5.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.console[data-state="scanning"] .beam {
+  animation-duration: 1.1s;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--cosmic-cyan) 26%, transparent) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes omniBeam {
+  0%,
+  100% {
+    transform: translateY(-120%);
+  }
+  50% {
+    transform: translateY(340%);
+  }
+}
+
+/* Drifting motes. Six, placed by hand — a generated field is a density
+   parameter that only ever gets turned up. */
+.mote {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 9999px;
+  background: var(--cosmic-star);
+  opacity: 0.3;
+  animation: omniMote 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes omniMote {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(6px, -4px);
+  }
+}
+
+/* ---------- Content ---------- */
+
+.head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.field {
+  position: relative;
+  margin-top: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--color-black);
+}
+
+.input::placeholder {
+  color: color-mix(in oklab, var(--color-black) 38%, transparent);
+}
+
+/* The submit key. Cyan seam, dark core — the same instrument language as the
+   dock's active ring, so it reads as "engage" rather than "go". */
+.submit {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan);
+  background: color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
+  color: var(--cosmic-cyan);
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 200ms ease,
+    opacity 200ms ease;
+}
+
+.submit:active {
+  transform: scale(0.92);
+  box-shadow: 0 0 18px var(--cosmic-cyan-dim);
+}
+
+.submit:disabled {
+  opacity: 0.3;
+}
+
+/* ---------- The four senses ---------- */
+
+.modes {
+  position: relative;
+  margin-top: 0.7rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
+}
+
+.mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.35rem 0.15rem;
+  border-radius: 12px;
+  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mode:active {
+  transform: scale(0.94);
+}
+
+.mode[data-active="true"] {
+  color: var(--cosmic-cyan);
+  background: color-mix(in oklab, var(--cosmic-cyan) 9%, transparent);
+}
+
+.modeLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ---------- Listening ---------- */
+
+/*
+ * Twelve bars, each on its own cycle. Deliberately not driven by the live
+ * audio level: the Web Speech API does not expose one, and animating bars from
+ * nothing while claiming to show a voice would be exactly the fake telemetry
+ * the rest of this mode refuses. This is an "input is open" indicator, and it
+ * is shaped like one rather than like a meter.
+ */
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 26px;
+}
+
+.waveBar {
+  width: 2px;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--cosmic-cyan);
+  opacity: 0.65;
+  transform-origin: center;
+  animation: omniWave 1.15s ease-in-out infinite var(--bar-delay);
+}
+
+@keyframes omniWave {
+  0%,
+  100% {
+    transform: scaleY(0.22);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------- Result ---------- */
+
+.result {
+  position: relative;
+  margin-top: 0.75rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+  animation: omniResultRise 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Rises out of the console rather than appearing below it — the word comes
+   forward out of the bay it was identified in. */
+@keyframes omniResultRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.resultWord {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.resultTranslation {
+  margin-top: 0.15rem;
+  font-size: 0.9375rem;
+  color: color-mix(in oklab, var(--color-black) 62%, transparent);
+}
+
+.resultExample {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--color-black) 48%, transparent);
+}
+
+.resultMeta {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pos {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cosmic-cyan);
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 30%, transparent);
+}
+
+.note {
+  font-size: 0.75rem;
+  color: color-mix(in oklab, var(--color-black) 45%, transparent);
+}
+
+.error {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+}
+
+.errorTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/*
+ * Reduced motion.
+ *
+ * The frame, the brackets, the glass and every colour stay — they are what the
+ * console is. What stops is everything that travels: the beam, the motes, the
+ * bracket lock, the result's rise. The waveform keeps a static shape so
+ * "listening" is still legible without twelve bars moving.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .beam,
+  .mote {
+    animation: none;
+  }
+
+  .beam {
+    opacity: 0;
+  }
+
+  .bracket,
+  .console[data-state="scanning"] .bracketTopLeft,
+  .console[data-state="scanning"] .bracketTopRight,
+  .console[data-state="scanning"] .bracketBottomLeft,
+  .console[data-state="scanning"] .bracketBottomRight {
+    transform: none;
+    transition: none;
+  }
+
+  .waveBar {
+    animation: none;
+    transform: scaleY(0.55);
+  }
+
+  .result {
+    animation: none;
+  }
+
+  .mode,
+  .submit {
+    transition: none;
+  }
+}
+
+/* ---------- Result rows ---------- */
+
+/*
+ * Every line of the result is a row with its own speaker, because these are two
+ * languages sitting next to each other and hearing one is not hearing the
+ * other. The speaker sits at the end of the line it plays rather than in a
+ * shared cluster, so there is never a question of which one it belongs to.
+ */
+.resultRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.speak {
+  display: grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: color-mix(in oklab, var(--color-black) 5%, transparent);
+  color: var(--cosmic-cyan);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.speak:active {
+  transform: scale(0.9);
+}
+
+/* Pinyin, zhuyin and IPA on one line, each in its own font stack. */
+.phonetics {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: 0.8125rem;
+  color: color-mix(in oklab, var(--color-black) 50%, transparent);
+}
+
+.examples {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid color-mix(in oklab, var(--cosmic-cyan) 10%, transparent);
+}
+
+/* ---------- Save and share ---------- */
+
+.actions {
+  margin-top: 0.7rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/*
+ * Icon-only instrument keys. Square-ish with a notched corner rather than a
+ * circle, so they read as console hardware next to the round speakers — the
+ * speakers are one shape and these are another, which is how you tell at a
+ * glance that they do different kinds of thing.
+ */
+.action {
+  display: grid;
+  place-items: center;
+  width: 2.375rem;
+  height: 2.375rem;
+  border-radius: 12px;
+  border: 1px solid var(--cosmic-ring);
+  background: linear-gradient(
+    152deg,
+    color-mix(in oklab, var(--color-white) 88%, transparent) 0%,
+    color-mix(in oklab, var(--color-white) 58%, transparent) 100%
+  );
+  box-shadow: inset 0 1px 0
+    color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+  color: var(--cosmic-cyan);
+  clip-path: polygon(0 20%, 20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%);
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    color 200ms ease;
+}
+
+.action:hover,
+.action:focus-visible {
+  outline: none;
+  border-color: var(--cosmic-cyan);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 28%, transparent),
+    0 0 18px var(--cosmic-glow);
+}
+
+.action:active {
+  transform: scale(0.95);
+}
+
+.action:disabled {
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speak,
+  .action {
+    transition: none;
+  }
+}

@@ -91,7 +91,9 @@ export default function AudioRail({
               className="flex h-7 w-7 items-center justify-center rounded-full text-[10.5px] font-semibold transition-colors"
               style={{
                 backgroundColor: active ? DISCOVER_COLORS.accent : "transparent",
-                color: active ? "#FFFFFF" : DISCOVER_COLORS.textSecondary,
+                color: active
+                  ? DISCOVER_COLORS.onAccent
+                  : DISCOVER_COLORS.textSecondary,
               }}
             >
               {copy[option.shortKey]}
