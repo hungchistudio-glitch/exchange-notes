@@ -1,0 +1,1297 @@
+.launch {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  min-height: 100dvh;
+
+  color: #f5f4f0;
+
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      #1b1e23 0%,
+      #14171c 28%,
+      #0e1014 60%,
+      #090b0e 100%
+    );
+
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+
+.reviewMode {
+  z-index: 2147483000;
+}
+
+.sequence {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.backgroundGlow {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(100vw, 820px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(220, 226, 236, 0.055),
+      rgba(160, 172, 190, 0.024) 36%,
+      transparent 70%
+    );
+}
+
+.grain {
+  position: absolute;
+  inset: -40%;
+  opacity: 0.032;
+
+  background-image:
+    repeating-radial-gradient(
+      circle at 17% 31%,
+      rgba(255, 255, 255, 0.22) 0,
+      rgba(255, 255, 255, 0.22) 0.3px,
+      transparent 0.5px,
+      transparent 2.3px
+    );
+
+  background-size: 5px 5px;
+  mix-blend-mode: soft-light;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 40%,
+      rgba(0, 0, 0, 0.24) 73%,
+      rgba(0, 0, 0, 0.68) 100%
+    );
+}
+
+/* =========================================================
+   THE COMPLETE YUMI OBJECT
+   ========================================================= */
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+
+  width: clamp(270px, 62vw, 370px);
+  aspect-ratio: 1;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.92);
+
+  transform-origin: center;
+
+  animation:
+    stageTimeline 3000ms
+    linear both;
+}
+
+.mark,
+.backEffects,
+.frontEffects {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.backEffects {
+  z-index: 1;
+}
+
+.mark {
+  z-index: 2;
+
+  opacity: 0;
+
+  filter:
+    brightness(1.34)
+    contrast(1.07)
+    drop-shadow(
+      0 10px 18px
+      rgba(0, 0, 0, 0.44)
+    )
+    drop-shadow(
+      0 0 10px
+      rgba(214, 223, 239, 0.10)
+    );
+
+  animation:
+    markTimeline 3000ms
+    linear both;
+}
+
+.frontEffects {
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* =========================================================
+   01 — AWAKEN
+   ========================================================= */
+
+.railWake {
+  fill: none;
+
+  stroke:
+    rgba(
+      248,
+      250,
+      255,
+      0.93
+    );
+
+  stroke-width: 2.2;
+
+  stroke-linecap: round;
+
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+
+  opacity: 0;
+
+  filter:
+    drop-shadow(
+      0 0 3px
+      rgba(255, 255, 255, 0.7)
+    )
+    drop-shadow(
+      0 0 11px
+      rgba(202, 215, 236, 0.22)
+    );
+
+  animation:
+    railWakeTimeline 3000ms
+    linear both;
+}
+
+.railParticles {
+  fill: none;
+
+  stroke:
+    rgba(
+      255,
+      255,
+      255,
+      0.95
+    );
+
+  stroke-width: 3;
+
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    0.25 6.5;
+
+  opacity: 0;
+
+  filter:
+    drop-shadow(
+      0 0 3px white
+    )
+    drop-shadow(
+      0 0 8px
+      rgba(198, 213, 237, 0.32)
+    );
+
+  animation:
+    railParticleTimeline 3000ms
+    linear both;
+}
+
+/* =========================================================
+   02 — FLOW
+   ========================================================= */
+
+.connectorEnergy {
+  fill: none;
+
+  stroke: #ffffff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    20 80;
+
+  stroke-dashoffset: 100;
+
+  opacity: 0;
+
+  filter:
+    drop-shadow(
+      0 0 3px white
+    )
+    drop-shadow(
+      0 0 11px
+      rgba(211, 223, 243, 0.5)
+    );
+
+  animation:
+    connectorTimeline 3000ms
+    linear both;
+}
+
+.beamBloom,
+.beamHalo,
+.beamCore {
+  fill: none;
+
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    24 76;
+
+  stroke-dashoffset: 100;
+
+  opacity: 0;
+
+  animation:
+    beamTimeline 3000ms
+    linear both;
+}
+
+.beamBloom {
+  stroke:
+    rgba(
+      220,
+      228,
+      241,
+      0.20
+    );
+
+  stroke-width: 28;
+
+  filter: url("#en-launch-blur");
+}
+
+.beamHalo {
+  stroke:
+    rgba(
+      234,
+      240,
+      249,
+      0.54
+    );
+
+  stroke-width: 7;
+}
+
+.beamCore {
+  stroke:
+    rgba(
+      255,
+      255,
+      255,
+      0.98
+    );
+
+  stroke-width: 1.7;
+
+  filter:
+    drop-shadow(
+      0 0 3px white
+    )
+    drop-shadow(
+      0 0 8px
+      rgba(215, 227, 246, 0.56)
+    );
+}
+
+/* =========================================================
+   03 — EXCHANGE
+   ========================================================= */
+
+.leftWing,
+.rightWing {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+
+  animation-duration: 3000ms;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+.leftWing {
+  animation-name:
+    leftWingTimeline;
+}
+
+.rightWing {
+  animation-name:
+    rightWingTimeline;
+}
+
+.wingBloom,
+.wingRail,
+.wingParticles {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.wingBloom {
+  stroke:
+    rgba(
+      210,
+      220,
+      235,
+      0.15
+    );
+
+  stroke-width: 32;
+
+  filter: url("#en-launch-blur");
+}
+
+.wingRail {
+  stroke:
+    rgba(
+      117,
+      124,
+      135,
+      0.62
+    );
+
+  stroke-width: 18;
+
+  filter:
+    drop-shadow(
+      0 0 6px
+      rgba(220, 228, 240, 0.12)
+    );
+}
+
+.wingParticles {
+  stroke:
+    rgba(
+      250,
+      252,
+      255,
+      0.70
+    );
+
+  stroke-width: 2.1;
+
+  stroke-dasharray:
+    0.5 6;
+
+  animation:
+    wingParticleMove 900ms
+    linear infinite;
+}
+
+.exchangeArrows {
+  fill: none;
+
+  stroke:
+    rgba(
+      248,
+      250,
+      253,
+      0.92
+    );
+
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  opacity: 0;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(255, 255, 255, 0.5)
+    );
+
+  animation:
+    arrowTimeline 3000ms
+    linear both;
+}
+
+.eyeHalo {
+  opacity: 0;
+
+  animation:
+    eyeHaloTimeline 3000ms
+    linear both;
+}
+
+.exchangePulse {
+  fill: none;
+
+  stroke:
+    rgba(
+      250,
+      252,
+      255,
+      0.84
+    );
+
+  stroke-width: 2;
+
+  opacity: 0;
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  filter:
+    drop-shadow(
+      0 0 6px
+      rgba(255, 255, 255, 0.7)
+    )
+    drop-shadow(
+      0 0 18px
+      rgba(198, 214, 239, 0.38)
+    );
+
+  animation:
+    pulseTimeline 3000ms
+    linear both;
+}
+
+/* =========================================================
+   05 — EXCHANGE NOTES
+   ========================================================= */
+
+.wordmark {
+  position: absolute;
+
+  z-index: 5;
+
+  left: 50%;
+  top: 60.8%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width:
+    min(86vw, 440px);
+
+  transform:
+    translateX(-50%);
+}
+
+.exchangeWord {
+  opacity: 0;
+
+  color:
+    rgba(
+      247,
+      246,
+      242,
+      0.97
+    );
+
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:
+    clamp(
+      19px,
+      5.6vw,
+      31px
+    );
+
+  font-weight: 400;
+  line-height: 1;
+
+  letter-spacing:
+    0.34em;
+
+  padding-left:
+    0.34em;
+
+  animation:
+    exchangeWordTimeline 3000ms
+    linear both;
+}
+
+.notesWord {
+  margin-top:
+    clamp(
+      13px,
+      3vw,
+      18px
+    );
+
+  opacity: 0;
+
+  color:
+    rgba(
+      240,
+      240,
+      237,
+      0.80
+    );
+
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:
+    clamp(
+      9px,
+      2.5vw,
+      13px
+    );
+
+  font-weight: 400;
+  line-height: 1;
+
+  letter-spacing:
+    0.70em;
+
+  padding-left:
+    0.70em;
+
+  animation:
+    notesWordTimeline 3000ms
+    linear both;
+}
+
+/* =========================================================
+   HORIZON
+   ========================================================= */
+
+.horizon {
+  position: absolute;
+
+  z-index: 2;
+
+  left: 50%;
+  bottom: -10.5%;
+
+  width:
+    max(128vw, 700px);
+
+  height: 22%;
+
+  opacity: 0;
+
+  transform:
+    translateX(-50%);
+
+  border-radius:
+    50% 50% 0 0 /
+    100% 100% 0 0;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(73, 78, 88, 0.34),
+      rgba(30, 33, 39, 0.82) 36%,
+      #0e1014 75%
+    );
+
+  animation:
+    horizonTimeline 3000ms
+    linear both;
+}
+
+.horizonEdge {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 0;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(208, 214, 224, 0.08) 18%,
+      rgba(242, 244, 248, 0.38) 50%,
+      rgba(208, 214, 224, 0.08) 82%,
+      transparent
+    );
+
+  box-shadow:
+    0 -1px 10px
+    rgba(222, 230, 242, 0.07);
+}
+
+.beacon {
+  position: absolute;
+
+  left: 50%;
+  top: -2px;
+
+  width: 2px;
+  height: 56px;
+
+  transform:
+    translateX(-50%);
+}
+
+.beaconGlow {
+  position: absolute;
+
+  left: 50%;
+  top: -14px;
+
+  width: 34px;
+  height: 34px;
+
+  transform:
+    translateX(-50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.5),
+      rgba(211, 222, 239, 0.14) 35%,
+      transparent 74%
+    );
+
+  filter:
+    blur(4px);
+}
+
+.beaconHead {
+  position: absolute;
+
+  left: 50%;
+  top: -2px;
+
+  width: 4px;
+  height: 4px;
+
+  transform:
+    translateX(-50%);
+
+  border-radius: 50%;
+  background: #ffffff;
+
+  box-shadow:
+    0 0 4px white,
+    0 0 11px
+    rgba(215, 226, 245, 0.60);
+}
+
+.beaconStem {
+  position: absolute;
+
+  left: 50%;
+  top: 2px;
+
+  width: 1px;
+  height: 100%;
+
+  transform:
+    translateX(-50%);
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.76),
+      rgba(204, 217, 237, 0.16) 60%,
+      transparent
+    );
+}
+
+/* =========================================================
+   REVIEW CONTROLS
+   ========================================================= */
+
+.reviewControls {
+  position: absolute;
+
+  z-index: 100;
+
+  left: 50%;
+
+  bottom:
+    calc(
+      20px +
+      env(safe-area-inset-bottom)
+    );
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, 7px);
+
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+
+  pointer-events: none;
+}
+
+.reviewControlsVisible {
+  opacity: 1;
+
+  transform:
+    translate(-50%, 0);
+
+  pointer-events: auto;
+}
+
+.reviewLabel {
+  display: none;
+
+  color:
+    rgba(255,255,255,0.32);
+
+  font-family:
+    var(--font-geist-mono),
+    monospace;
+
+  font-size: 10px;
+
+  letter-spacing:
+    0.07em;
+}
+
+.replayButton {
+  appearance: none;
+
+  padding:
+    9px 16px;
+
+  border:
+    1px solid
+    rgba(255,255,255,0.16);
+
+  border-radius: 999px;
+
+  color:
+    rgba(255,255,255,0.78);
+
+  background:
+    rgba(16,18,22,0.74);
+
+  backdrop-filter:
+    blur(14px);
+
+  cursor: pointer;
+
+  font:
+    500 11px/1
+    var(--font-geist-sans),
+    sans-serif;
+
+  letter-spacing:
+    0.10em;
+}
+
+.replayButton:hover {
+  border-color:
+    rgba(255,255,255,0.30);
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   MASTER 3.000 SECOND TIMELINE
+   ========================================================= */
+
+@keyframes markTimeline {
+  0% {
+    opacity: 0;
+  }
+
+  3% {
+    opacity: 0;
+  }
+
+  9% {
+    opacity: 0.44;
+  }
+
+  17.3% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes stageTimeline {
+  0% {
+    transform:
+      translate(-50%, -50%)
+      scale(0.92);
+  }
+
+  17.3% {
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+  }
+
+  57% {
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+  }
+
+  73% {
+    transform:
+      translate(-50%, calc(-50% - 74px))
+      scale(0.56);
+  }
+
+  100% {
+    transform:
+      translate(-50%, calc(-50% - 74px))
+      scale(0.56);
+  }
+}
+
+@keyframes railWakeTimeline {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 100;
+  }
+
+  2% {
+    opacity: 0;
+  }
+
+  7% {
+    opacity: 0.75;
+  }
+
+  17.3% {
+    opacity: 0.86;
+    stroke-dashoffset: 0;
+  }
+
+  42% {
+    opacity: 0.34;
+  }
+
+  70% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes railParticleTimeline {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+
+  7% {
+    opacity: 0;
+  }
+
+  14% {
+    opacity: 0.48;
+  }
+
+  38% {
+    opacity: 0.82;
+    stroke-dashoffset: -58;
+  }
+
+  58% {
+    opacity: 0.42;
+    stroke-dashoffset: -92;
+  }
+
+  72% {
+    opacity: 0;
+    stroke-dashoffset: -110;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes connectorTimeline {
+  0%,
+  12% {
+    opacity: 0;
+    stroke-dashoffset: 100;
+  }
+
+  19% {
+    opacity: 0.82;
+  }
+
+  35% {
+    opacity: 1;
+    stroke-dashoffset: -20;
+  }
+
+  42% {
+    opacity: 0;
+    stroke-dashoffset: -80;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes beamTimeline {
+  0%,
+  12% {
+    opacity: 0;
+    stroke-dashoffset: 100;
+  }
+
+  18% {
+    opacity: 0.52;
+  }
+
+  29% {
+    opacity: 1;
+    stroke-dashoffset: 5;
+  }
+
+  38.7% {
+    opacity: 0;
+    stroke-dashoffset: -80;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes leftWingTimeline {
+  0%,
+  35% {
+    opacity: 0;
+    transform:
+      translateX(-115px)
+      scale(0.94);
+  }
+
+  43% {
+    opacity: 0.82;
+    transform:
+      translateX(0)
+      scale(1);
+  }
+
+  55% {
+    opacity: 0.88;
+    transform:
+      translateX(0)
+      scale(1);
+  }
+
+  68% {
+    opacity: 0;
+    transform:
+      translateX(-135px)
+      scale(1.05);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes rightWingTimeline {
+  0%,
+  35% {
+    opacity: 0;
+    transform:
+      translateX(115px)
+      scale(0.94);
+  }
+
+  43% {
+    opacity: 0.82;
+    transform:
+      translateX(0)
+      scale(1);
+  }
+
+  55% {
+    opacity: 0.88;
+    transform:
+      translateX(0)
+      scale(1);
+  }
+
+  68% {
+    opacity: 0;
+    transform:
+      translateX(135px)
+      scale(1.05);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes wingParticleMove {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes arrowTimeline {
+  0%,
+  40% {
+    opacity: 0;
+  }
+
+  44% {
+    opacity: 0.78;
+  }
+
+  52% {
+    opacity: 0.78;
+  }
+
+  56% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulseTimeline {
+  0%,
+  46.5% {
+    opacity: 0;
+    transform: scale(0.90);
+  }
+
+  49.3% {
+    opacity: 0.88;
+    transform: scale(1.34);
+  }
+
+  53% {
+    opacity: 0;
+    transform: scale(1.48);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes eyeHaloTimeline {
+  0%,
+  46% {
+    opacity: 0;
+  }
+
+  49.3% {
+    opacity: 0.82;
+  }
+
+  54% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes exchangeWordTimeline {
+  0%,
+  72% {
+    opacity: 0;
+    transform:
+      translateY(9px);
+    filter: blur(5px);
+  }
+
+  82% {
+    opacity: 1;
+    transform:
+      translateY(0);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform:
+      translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes notesWordTimeline {
+  0%,
+  76% {
+    opacity: 0;
+    transform:
+      translateY(8px);
+    filter: blur(5px);
+  }
+
+  86% {
+    opacity: 1;
+    transform:
+      translateY(0);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform:
+      translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes horizonTimeline {
+  0%,
+  76% {
+    opacity: 0;
+  }
+
+  90% {
+    opacity: 0.80;
+  }
+
+  100% {
+    opacity: 0.80;
+  }
+}
+
+@media (min-width: 740px) {
+  .reviewLabel {
+    display: inline;
+  }
+}
+
+@media (max-height: 690px) {
+  .stage {
+    top: 40%;
+    width: min(54vh, 330px);
+  }
+
+  .wordmark {
+    top: 61%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backEffects,
+  .frontEffects {
+    display: none;
+  }
+
+  .stage {
+    animation:
+      reducedStage 1200ms
+      ease-out both;
+  }
+
+  .mark {
+    animation:
+      reducedMark 1200ms
+      ease-out both;
+  }
+
+  .exchangeWord {
+    animation:
+      reducedWord 1200ms
+      ease-out both;
+  }
+
+  .notesWord {
+    animation:
+      reducedWord 1200ms
+      ease-out both;
+  }
+
+  .horizon {
+    animation:
+      reducedHorizon 1200ms
+      ease-out both;
+  }
+}
+
+@keyframes reducedMark {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reducedStage {
+  from {
+    transform:
+      translate(-50%, -50%)
+      scale(0.60);
+  }
+
+  to {
+    transform:
+      translate(-50%, calc(-50% - 74px))
+      scale(0.56);
+  }
+}
+
+@keyframes reducedWord {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reducedHorizon {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.80;
+  }
+}
