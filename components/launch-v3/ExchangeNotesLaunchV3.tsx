@@ -214,6 +214,20 @@ export default function ExchangeNotesLaunchV3({
               <path d="M 341 169 L 353 180 L 341 191" />
             </g>
 
+            <g className={styles.eyeShutter}>
+              <ellipse
+                className={styles.eyeCover}
+                cx="285"
+                cy="180"
+                rx="41"
+                ry="41"
+              />
+              <path
+                className={styles.eyeSeam}
+                d="M 255 181 Q 285 177 315 181"
+              />
+            </g>
+
             <g className={styles.completeEye}>
               <circle
                 className={styles.eyeShell}

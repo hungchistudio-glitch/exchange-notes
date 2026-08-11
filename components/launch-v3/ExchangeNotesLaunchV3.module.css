@@ -1294,3 +1294,192 @@
     opacity: 0.78;
   }
 }
+
+
+/* =========================================================
+   STORYBOARD REVISION — LATE EYE OPEN + PUPIL MOVE
+   ========================================================= */
+
+.eyeShutter {
+  animation:
+    eyeShutterTimeline 3000ms
+    linear both;
+}
+
+.eyeCover {
+  fill: #f4f2ec;
+  stroke: #0a0b0d;
+  stroke-width: 7.5;
+
+  filter:
+    drop-shadow(
+      0 4px 8px rgba(0, 0, 0, 0.26)
+    );
+}
+
+.eyeSeam {
+  fill: none;
+
+  stroke: rgba(25, 27, 31, 0.88);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+
+  filter:
+    drop-shadow(
+      0 0 1px rgba(255, 255, 255, 0.08)
+    );
+}
+
+.completeEye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    eyeTimeline 3000ms
+    linear both;
+}
+
+.eyeShell {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.eyeIris,
+.eyePupil,
+.eyeCatchlight {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.eyeIris {
+  animation:
+    irisMoveTimeline 3000ms
+    linear both;
+}
+
+.eyePupil {
+  animation:
+    pupilMoveTimeline 3000ms
+    linear both;
+}
+
+.eyeCatchlight {
+  animation:
+    catchlightTimeline 3000ms
+    linear both;
+}
+
+@keyframes eyeShutterTimeline {
+  0%,
+  82% {
+    opacity: 1;
+  }
+
+  86% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes eyeTimeline {
+  0%,
+  80% {
+    opacity: 0;
+    transform: scaleY(0.10);
+  }
+
+  84% {
+    opacity: 0.92;
+    transform: scaleY(0.14);
+  }
+
+  89% {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+
+  93% {
+    opacity: 1;
+    transform: scaleY(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes irisMoveTimeline {
+  0%,
+  82% {
+    opacity: 0;
+    transform: translate(-8px, 8px) scale(0.84);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translate(8px, -4px) scale(1.06);
+  }
+
+  92% {
+    opacity: 1;
+    transform: translate(1px, -1px) scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes pupilMoveTimeline {
+  0%,
+  82% {
+    opacity: 0;
+    transform: translate(-10px, 10px) scale(0.76);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translate(10px, -6px) scale(1.08);
+  }
+
+  92% {
+    opacity: 1;
+    transform: translate(2px, -1px) scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes catchlightTimeline {
+  0%,
+  84% {
+    opacity: 0;
+    transform: translate(-6px, 6px) scale(0.7);
+  }
+
+  89% {
+    opacity: 1;
+    transform: translate(4px, -2px) scale(1.06);
+  }
+
+  95% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
