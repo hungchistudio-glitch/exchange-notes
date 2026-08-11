@@ -1070,8 +1070,8 @@ const traditionalChinese: TranslationDictionary = {
       learning: "學習中",
       mastered: "已掌握",
 
-      searchPlaceholder: "搜尋已儲存的單字",
-      searchAriaLabel: "搜尋已儲存的單字",
+      searchPlaceholder: "查任何字",
+      searchAriaLabel: "查任何字",
       clearSearch: "清除搜尋",
       cancel: "取消",
       clear: "清除",

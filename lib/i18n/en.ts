@@ -1090,8 +1090,11 @@ const english: TranslationDictionary = {
       learning: "learning",
       mastered: "mastered",
 
-      searchPlaceholder: "Search saved vocabulary",
-      searchAriaLabel: "Search saved vocabulary",
+      /* Not "search saved vocabulary": this field also looks up words that are
+         not in the list yet, so describing it as a filter over what is already
+         saved understated what it does and hid the lookup entirely. */
+      searchPlaceholder: "Look up any word",
+      searchAriaLabel: "Look up any word",
       clearSearch: "Clear vocabulary search",
       cancel: "Cancel",
       clear: "Clear",
