@@ -432,22 +432,23 @@ export default function OmniLexiconConsole({
           </button>
         )}
 
-        {/* Camera and image go to the capture flow that already owns
-            recognition, rather than a second pipeline living here. */}
-        <Link
-          href="/capture?source=camera&from=deck"
-          transitionTypes={["room-scanner"]}
-          className={styles.mode}
-        >
+        {/*
+          Camera and image go to the capture flow that already owns
+          recognition, rather than a second pipeline living here.
+
+          Deliberately untagged, so no view transition runs. Two reasons. The
+          camera opening its own lens is the transition; wrapping that in a
+          second aperture animation is the same gesture twice. And a view
+          transition that does not settle leaves its snapshot on top of the
+          page — everything visible, nothing clickable — which is a far worse
+          failure on a full-screen camera than a missing flourish.
+        */}
+        <Link href="/capture?source=camera&from=deck" className={styles.mode}>
           <Camera size={17} strokeWidth={1.7} aria-hidden="true" />
           <span className={styles.modeLabel}>{copy.inputCamera}</span>
         </Link>
 
-        <Link
-          href="/capture?source=library&from=deck"
-          transitionTypes={["room-scanner"]}
-          className={styles.mode}
-        >
+        <Link href="/capture?source=library&from=deck" className={styles.mode}>
           <ImageIcon size={17} strokeWidth={1.7} aria-hidden="true" />
           <span className={styles.modeLabel}>{copy.inputImage}</span>
         </Link>

@@ -283,9 +283,23 @@ export default function CommandDeck() {
                 <div className={styles.nodeInner}>
                   <Link
                     href={room.href}
-                    // The type is what the route stage reads to decide which
-                    // of the six arrivals to play. See CosmicRouteStage.
-                    transitionTypes={[`room-${room.key}`]}
+                    /*
+                     * The type is what the route stage reads to decide which
+                     * of the six arrivals to play. See CosmicRouteStage.
+                     *
+                     * Scanner Bay is the exception: it lands on a full-screen
+                     * camera, which opens its own lens — that is already the
+                     * transition. And a view transition that fails to settle
+                     * leaves its snapshot above the page, so the camera would
+                     * be visible with none of its controls responding. Not
+                     * worth the risk for a flourish nobody sees behind a
+                     * viewfinder.
+                     */
+                    transitionTypes={
+                      room.key === "scanner"
+                        ? undefined
+                        : [`room-${room.key}`]
+                    }
                     onPointerDown={(event) => lockRoom(room.key, event)}
                     onPointerUp={() => setLockedRoom(null)}
                     onPointerCancel={() => setLockedRoom(null)}
