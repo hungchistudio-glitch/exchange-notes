@@ -54,7 +54,16 @@ export default function MissionCompleteStage({
       ))}
 
       <div className={styles.yumi} aria-hidden="true">
-        <ExchangeNotesMark />
+        {/*
+          The same refit Yumi wears on the deck — this screen is inside Cosmic
+          Mode, and a Yumi that loses its shell and seam on the way to the
+          celebration would read as a different character arriving.
+
+          Energy is at the top of its range here, and this is the moment the
+          brief reserved it for: finishing a mission is the notable event, so
+          the seam and the constellation are allowed to be bright.
+        */}
+        <ExchangeNotesMark cosmic energy={1} />
       </div>
 
       <div className={styles.result}>{children}</div>

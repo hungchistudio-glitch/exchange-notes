@@ -8,6 +8,21 @@ type ExchangeNotesMarkProps = {
   surfaceColor?: string;
   highlightColor?: string;
   withTile?: boolean;
+  /*
+   * Yumi's cosmic refit. Off by default, and that default is the whole point:
+   * this mark is the app's identity and appears on the standard home, in
+   * Messages and on the splash. Cosmic Mode adds layers on top of the same
+   * body, eye and constellation rather than swapping the character out.
+   */
+  cosmic?: boolean;
+  /*
+   * How lit the energy seam and the active constellation points are, 0–1.
+   * Idle sits low on purpose; only genuinely notable moments go high, so the
+   * brightness still means something when it arrives.
+   */
+  energy?: number;
+  /** Lets the consumer animate the iris — see the pupilClassName precedent. */
+  irisClassName?: string;
 };
 
 export default function ExchangeNotesMark({
@@ -18,6 +33,9 @@ export default function ExchangeNotesMark({
   surfaceColor = "#f5f3ed",
   highlightColor = "#ffffff",
   withTile = false,
+  cosmic = false,
+  energy = 0,
+  irisClassName,
 }: ExchangeNotesMarkProps) {
   const rawId = useId();
   const idBase = rawId.replace(/:/g, "");
@@ -28,6 +46,21 @@ export default function ExchangeNotesMark({
   const nebulaGradientId = `exchange-notes-nebula-${idBase}`;
   const nebulaBlurId = `exchange-notes-nebula-blur-${idBase}`;
   const inkColor = "#09090b";
+
+  // The refit's own ids, so two marks on one screen never share a gradient.
+  const shellGradientId = `exchange-notes-shell-${idBase}`;
+  const seamGradientId = `exchange-notes-seam-${idBase}`;
+
+  /*
+   * Clamped, then mapped onto the brief's two bands: 10–18% at rest and up to
+   * 50% when something is actually happening. Nothing here reaches full
+   * opacity — a seam at 100% stops reading as contained energy and starts
+   * reading as a light strip stuck to the body.
+   */
+  const energyLevel = Math.max(0, Math.min(1, energy));
+  const seamOpacity = 0.1 + energyLevel * 0.4;
+  const platingOpacity = cosmic ? 0.055 + energyLevel * 0.035 : 0;
+  const cosmicCyan = "#4de3f0";
 
   return (
     <svg
@@ -115,6 +148,46 @@ export default function ExchangeNotesMark({
           />
         </mask>
 
+        {cosmic && (
+          <>
+            {/*
+              Black titanium rather than a new colour: the body is already
+              near-black, so the refit is a shift in *temperature* and in the
+              sharpness of the highlight, not a repaint. Warm graphite becomes
+              cool gunmetal with a harder chrome edge.
+            */}
+            <linearGradient
+              id={shellGradientId}
+              x1="75"
+              y1="62"
+              x2="318"
+              y2="330"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0" stopColor="#04060a" />
+              <stop offset="0.34" stopColor="#1b2330" />
+              <stop offset="0.52" stopColor="#2b3546" />
+              <stop offset="0.7" stopColor="#0d131c" />
+              <stop offset="1" stopColor="#020407" />
+            </linearGradient>
+
+            {/* The seam is brightest where the C turns hardest — that is where
+                a real energy channel would be under the most load. */}
+            <linearGradient
+              id={seamGradientId}
+              x1="300"
+              y1="70"
+              x2="120"
+              y2="320"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0" stopColor={cosmicCyan} stopOpacity="0.25" />
+              <stop offset="0.45" stopColor={cosmicCyan} stopOpacity="1" />
+              <stop offset="1" stopColor={cosmicCyan} stopOpacity="0.3" />
+            </linearGradient>
+          </>
+        )}
+
         <clipPath id={eyeClipId}>
           <circle cx="285" cy="180" r="39" />
         </clipPath>
@@ -198,6 +271,56 @@ export default function ExchangeNotesMark({
           strokeLinecap="round"
         />
 
+        {cosmic && (
+          <>
+            {/* The cool shell, laid over the warm body inside the same mask so
+                the silhouette cannot change by a single pixel. */}
+            <path
+              d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
+              fill="none"
+              stroke={`url(#${shellGradientId})`}
+              strokeWidth="52"
+              strokeLinecap="round"
+              strokeOpacity="0.82"
+            />
+
+            {/*
+              Segmented plating.
+              
+              Drawn on a stroke narrower than the body (34 against 52) so the
+              seams only cross the middle band and the tube keeps smooth edges.
+              At full width the dashes spanned the whole tube and read as ladder
+              rungs — a zip down Yumi's back, which is exactly the robot the
+              brief rules out. Confined to the centre they read as panel lines
+              catching the light, and the silhouette stays soft.
+            */}
+            <path
+              d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
+              fill="none"
+              stroke="white"
+              strokeOpacity={platingOpacity}
+              strokeWidth="34"
+              strokeDasharray="0.9 13"
+              strokeLinecap="butt"
+            />
+
+            {/*
+              The energy seam, on the inner wall of the C. Offset toward the
+              inside and held there by the body mask, so it runs along the
+              channel instead of floating over the middle of the tube.
+            */}
+            <path
+              d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
+              fill="none"
+              stroke={`url(#${seamGradientId})`}
+              strokeOpacity={seamOpacity}
+              strokeWidth="4.4"
+              strokeLinecap="round"
+              transform="translate(13 0)"
+            />
+          </>
+        )}
+
         <g
           fill="none"
           stroke="white"
@@ -236,8 +359,22 @@ export default function ExchangeNotesMark({
             cx={cx}
             cy={cy}
             r={radius}
-            fill="white"
-            fillOpacity="0.86"
+            /*
+             * Two of the constellation take on the energy colour and grow very
+             * slightly — the same seven points, reporting. Lighting all of them
+             * would read as a string of fairy lights rather than as a system
+             * with something to say.
+             */
+            fill={
+              cosmic && energyLevel > 0.35 && (cx === 101 || cx === 205)
+                ? cosmicCyan
+                : "white"
+            }
+            fillOpacity={
+              cosmic && energyLevel > 0.35 && (cx === 101 || cx === 205)
+                ? 1
+                : 0.86
+            }
           />
         ))}
       </g>
@@ -245,6 +382,52 @@ export default function ExchangeNotesMark({
       <circle cx="285" cy="180" r="40" fill={surfaceColor} />
 
       <g clipPath={`url(#${eyeClipId})`}>
+        {/*
+          The optics go *under* the pupil group, so the eye is still an eye
+          with instrumentation behind it rather than a lens with a dot painted
+          on. Order is the whole difference: sclera, then rings, then the
+          living pupil and its catchlight on top.
+        */}
+        {cosmic && (
+          <g className={irisClassName} style={{ transformOrigin: "285px 180px" }}>
+            {/* Iris ring — one hairline, close in. */}
+            <circle
+              cx="285"
+              cy="180"
+              r="27"
+              fill="none"
+              stroke={cosmicCyan}
+              strokeOpacity={0.16 + energyLevel * 0.34}
+              strokeWidth="1"
+            />
+
+            {/* Micro focusing rings: four arcs, not four circles. A broken
+                ring is a mechanism finding focus; a closed one is a target. */}
+            <circle
+              cx="285"
+              cy="180"
+              r="33"
+              fill="none"
+              stroke={cosmicCyan}
+              strokeOpacity={0.12 + energyLevel * 0.28}
+              strokeWidth="0.9"
+              strokeDasharray="9 8"
+            />
+
+            {/* Scanner aperture — the outermost, faintest trace. */}
+            <circle
+              cx="285"
+              cy="180"
+              r="37"
+              fill="none"
+              stroke={cosmicCyan}
+              strokeOpacity={0.08 + energyLevel * 0.22}
+              strokeWidth="0.8"
+              strokeDasharray="2 6"
+            />
+          </g>
+        )}
+
         <g className={pupilClassName}>
           <circle cx="294" cy="172" r="14" fill={inkColor} />
           <circle cx="300" cy="166" r="5" fill={highlightColor} />

@@ -253,9 +253,28 @@ export default function CommandDeck() {
 
           <div className={styles.core} data-omni={omniState}>
             <span className={styles.coreGlow} aria-hidden="true" />
+            <span className={styles.coreHalo} aria-hidden="true" />
+            <span className={styles.coreHaloInner} aria-hidden="true" />
+
             <ExchangeNotesMark
+              cosmic
+              /*
+               * Energy follows what Yumi is actually doing, and the resting
+               * value is deliberately low. A seam that is always bright says
+               * nothing when the moment it was meant to mark arrives.
+               */
+              energy={
+                omniState === "scanning"
+                  ? 1
+                  : omniState === "listening"
+                    ? 0.65
+                    : omniState === "typing"
+                      ? 0.4
+                      : 0.12
+              }
               className={styles.coreMark}
               pupilClassName={styles.pupil}
+              irisClassName={styles.iris}
               upperLidClassName={styles.upperLid}
               lowerLidClassName={styles.lowerLid}
             />

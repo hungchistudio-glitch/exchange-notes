@@ -530,3 +530,69 @@
     transition: none;
   }
 }
+
+/* =========================================================
+   Yumi's cosmic refit
+   ========================================================= */
+
+/*
+ * Two hairline rings behind Yumi, distinct from the big orbit the six controls
+ * ride on. They belong to Yumi rather than to the deck — much tighter, much
+ * slower, and turning in opposite directions so they never look like one
+ * mechanism. A full revolution takes the better part of a quarter minute; the
+ * intent is presence, not motion you can watch.
+ */
+.coreHalo,
+.coreHaloInner {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+  pointer-events: none;
+}
+
+.coreHalo {
+  inset: -14%;
+  animation: coreHaloSpin 17s linear infinite;
+}
+
+.coreHaloInner {
+  inset: -4%;
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 10%, transparent);
+  animation: coreHaloSpin 12s linear infinite reverse;
+}
+
+@keyframes coreHaloSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * The iris only turns while Yumi is working something out. At rest it is
+ * still — a permanently rotating iris is a loading spinner wearing an eye,
+ * and it would make Yumi look busy even when nothing is happening.
+ */
+.iris {
+  transform-box: view-box;
+}
+
+.core[data-omni="scanning"] .iris {
+  animation: irisFocus 2.6s linear infinite;
+}
+
+@keyframes irisFocus {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The rings stay — they are part of Yumi's shape now. Only the turning and
+     the iris search stop. */
+  .coreHalo,
+  .coreHaloInner,
+  .core[data-omni="scanning"] .iris {
+    animation: none;
+  }
+}
