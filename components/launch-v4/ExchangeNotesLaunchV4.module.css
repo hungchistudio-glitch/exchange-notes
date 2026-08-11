@@ -1,0 +1,1082 @@
+.launch {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+
+  overflow: hidden;
+
+  min-height: 100dvh;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 39%,
+      #171a1f 0%,
+      #101318 34%,
+      #0a0c10 68%,
+      #07080b 100%
+    );
+
+  color: #f5f4ef;
+
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.reviewMode {
+  z-index: 2147483000;
+}
+
+.ambientBloom {
+  position: absolute;
+
+  left: 50%;
+  top: 39%;
+
+  width: min(920px, 120vw);
+  aspect-ratio: 1;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(208, 217, 231, 0.055),
+      rgba(140, 152, 171, 0.020) 35%,
+      transparent 70%
+    );
+}
+
+.impactBloom {
+  position: absolute;
+
+  left: 50%;
+  top: 42%;
+
+  width: 36vmin;
+  height: 36vmin;
+
+  transform:
+    translate(-50%, -50%)
+    scale(
+      calc(
+        0.75 + var(--impact) * 0.65
+      )
+    );
+
+  opacity:
+    calc(
+      var(--impact) * 0.48
+    );
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.70),
+      rgba(198, 210, 229, 0.16) 25%,
+      transparent 70%
+    );
+
+  filter: blur(12px);
+
+  pointer-events: none;
+}
+
+.grain {
+  position: absolute;
+  inset: -25%;
+
+  opacity: 0.025;
+
+  background-image:
+    repeating-radial-gradient(
+      circle at 29% 37%,
+      rgba(255, 255, 255, 0.25) 0,
+      rgba(255, 255, 255, 0.25) 0.3px,
+      transparent 0.45px,
+      transparent 2.4px
+    );
+
+  background-size: 5px 5px;
+
+  mix-blend-mode: soft-light;
+
+  pointer-events: none;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 39%,
+      rgba(0, 0, 0, 0.24) 72%,
+      rgba(0, 0, 0, 0.72) 100%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   MASTER OBJECT
+   ========================================================= */
+
+.stage {
+  position: absolute;
+
+  left: 50%;
+  top: 42%;
+
+  width:
+    clamp(
+      290px,
+      66vw,
+      390px
+    );
+
+  aspect-ratio: 1;
+
+  transform:
+    translate(
+      -50%,
+      calc(
+        -50% +
+        var(--stage-y)
+      )
+    )
+    scale(
+      var(--stage-scale)
+    );
+
+  transform-origin: center;
+
+  will-change: transform;
+}
+
+.canonicalMark,
+.exchangeField,
+.energyField {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+}
+
+.exchangeField {
+  z-index: 1;
+
+  pointer-events: none;
+}
+
+.canonicalMark {
+  z-index: 2;
+
+  filter:
+    brightness(
+      var(--body-brightness)
+    )
+    contrast(1.08)
+    saturate(0.86)
+    drop-shadow(
+      0 14px 24px
+      rgba(0, 0, 0, 0.52)
+    )
+    drop-shadow(
+      0 0 8px
+      rgba(210, 220, 236, 0.06)
+    );
+}
+
+.energyField {
+  z-index: 3;
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   MATERIAL RAIL
+   ========================================================= */
+
+.railUnderGlow {
+  fill: none;
+
+  stroke:
+    rgba(
+      205,
+      216,
+      233,
+      0.20
+    );
+
+  stroke-width: 12;
+
+  stroke-linecap: round;
+
+  opacity:
+    calc(
+      var(--rail-opacity) * 0.52
+    );
+
+  filter: blur(5px);
+}
+
+.railSpecular {
+  fill: none;
+
+  stroke:
+    rgba(
+      243,
+      247,
+      252,
+      0.92
+    );
+
+  stroke-width: 1.45;
+
+  stroke-linecap: round;
+
+  stroke-dasharray: 100;
+
+  stroke-dashoffset:
+    var(--rail-offset);
+
+  opacity:
+    var(--rail-opacity);
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(255, 255, 255, 0.86)
+    )
+    drop-shadow(
+      0 0 8px
+      rgba(192, 207, 231, 0.28)
+    );
+}
+
+.railParticles {
+  fill: none;
+
+  stroke: #ffffff;
+  stroke-width: 3;
+
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    0.28 6.8;
+
+  stroke-dashoffset:
+    var(--particle-offset);
+
+  opacity:
+    var(--particle-opacity);
+
+  filter:
+    drop-shadow(
+      0 0 3px #ffffff
+    )
+    drop-shadow(
+      0 0 7px
+      rgba(203, 216, 236, 0.38)
+    );
+}
+
+.railNodes {
+  fill: #ffffff;
+
+  opacity:
+    calc(
+      var(--rail-opacity) * 0.86
+    );
+
+  filter:
+    drop-shadow(
+      0 0 3px white
+    )
+    drop-shadow(
+      0 0 7px
+      rgba(203, 218, 240, 0.52)
+    );
+}
+
+/* =========================================================
+   FLOW
+   ========================================================= */
+
+.beamBloom,
+.beamCore {
+  fill: none;
+
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    24 76;
+
+  stroke-dashoffset:
+    var(--beam-offset);
+
+  opacity:
+    var(--beam-opacity);
+}
+
+.beamBloom {
+  stroke:
+    rgba(
+      211,
+      221,
+      238,
+      0.31
+    );
+
+  stroke-width: 28;
+
+  filter: blur(9px);
+}
+
+.beamCore {
+  stroke: #ffffff;
+
+  stroke-width: 1.6;
+
+  filter:
+    drop-shadow(
+      0 0 3px white
+    )
+    drop-shadow(
+      0 0 9px
+      rgba(207, 220, 241, 0.76)
+    );
+}
+
+/* =========================================================
+   EXCHANGE HERO SHOT
+   ========================================================= */
+
+.leftSystem,
+.rightSystem {
+  opacity:
+    var(--exchange-opacity);
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.leftSystem {
+  transform:
+    translateX(
+      var(--left-wing-x)
+    );
+}
+
+.rightSystem {
+  transform:
+    translateX(
+      var(--right-wing-x)
+    );
+}
+
+.wingBloom,
+.wingBody,
+.wingSpec {
+  fill: none;
+
+  stroke-linecap: round;
+}
+
+.wingBloom {
+  stroke:
+    rgba(
+      211,
+      221,
+      238,
+      0.18
+    );
+
+  stroke-width: 36;
+
+  filter:
+    blur(11px);
+}
+
+.wingBody {
+  stroke:
+    url("#v4-wing-metal");
+
+  stroke-width: 22;
+
+  opacity: 0.70;
+
+  filter:
+    drop-shadow(
+      0 10px 18px
+      rgba(0, 0, 0, 0.55)
+    );
+}
+
+.wingSpec {
+  stroke:
+    rgba(
+      246,
+      249,
+      253,
+      0.72
+    );
+
+  stroke-width: 1.3;
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(255, 255, 255, 0.42)
+    );
+}
+
+.exchangeArrows {
+  fill: none;
+
+  stroke:
+    rgba(
+      239,
+      243,
+      249,
+      0.80
+    );
+
+  stroke-width: 2.3;
+
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  opacity:
+    calc(
+      var(--exchange-opacity) * 0.82
+    );
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(255, 255, 255, 0.35)
+    );
+}
+
+.coreHalo {
+  opacity:
+    calc(
+      var(--impact) * 0.92
+    );
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  transform:
+    scale(
+      calc(
+        0.74 +
+        var(--impact) * 0.54
+      )
+    );
+}
+
+.impactRing {
+  fill: none;
+
+  stroke:
+    rgba(
+      250,
+      252,
+      255,
+      0.88
+    );
+
+  stroke-width: 1.7;
+
+  opacity:
+    var(--impact);
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  transform:
+    scale(
+      calc(
+        0.72 +
+        var(--impact) * 0.85
+      )
+    );
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(255, 255, 255, 0.58)
+    )
+    drop-shadow(
+      0 0 16px
+      rgba(195, 211, 235, 0.34)
+    );
+}
+
+/* =========================================================
+   SEALED CORE → FINAL EYE
+   ========================================================= */
+
+.eyeCover {
+  opacity:
+    var(--eye-cover-opacity);
+}
+
+.sealedLens {
+  fill:
+    rgba(
+      238,
+      239,
+      237,
+      0.96
+    );
+
+  stroke: #0a0b0e;
+  stroke-width: 8;
+
+  filter:
+    drop-shadow(
+      0 5px 10px
+      rgba(0, 0, 0, 0.38)
+    );
+}
+
+.sealedSeam {
+  fill: none;
+
+  stroke:
+    rgba(
+      32,
+      35,
+      41,
+      0.90
+    );
+
+  stroke-width: 3;
+
+  stroke-linecap: round;
+
+  filter:
+    drop-shadow(
+      0 0 1px
+      rgba(255, 255, 255, 0.12)
+    );
+}
+
+.finalEye {
+  opacity:
+    var(--eye-open);
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  transform:
+    scaleY(
+      var(--eye-open-scale)
+    );
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.eyeShell {
+  fill: #f5f3ed;
+
+  stroke: #090a0c;
+  stroke-width: 8;
+
+  filter:
+    drop-shadow(
+      0 4px 8px
+      rgba(0, 0, 0, 0.34)
+    );
+}
+
+.pupilGroup {
+  transform:
+    translate(
+      var(--pupil-x),
+      var(--pupil-y)
+    );
+
+  will-change: transform;
+}
+
+.eyeIris {
+  fill: #343840;
+
+  stroke:
+    rgba(
+      119,
+      127,
+      139,
+      0.30
+    );
+
+  stroke-width: 0.8;
+}
+
+.eyePupil {
+  fill: #050608;
+}
+
+.eyeCatchlight {
+  fill: #ffffff;
+
+  filter:
+    drop-shadow(
+      0 0 3px
+      rgba(255, 255, 255, 0.76)
+    );
+}
+
+/* =========================================================
+   FINAL IDENTITY
+   ========================================================= */
+
+.identity {
+  position: absolute;
+
+  z-index: 6;
+
+  left: 50%;
+  top: 60.5%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width:
+    min(
+      86vw,
+      430px
+    );
+
+  transform:
+    translateX(-50%);
+
+  pointer-events: none;
+}
+
+.exchangeWord {
+  opacity:
+    var(--identity-opacity);
+
+  transform:
+    translateY(
+      calc(
+        8px *
+        (
+          1 -
+          var(--identity-opacity)
+        )
+      )
+    );
+
+  color:
+    rgba(
+      247,
+      246,
+      242,
+      0.96
+    );
+
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:
+    clamp(
+      18px,
+      5.2vw,
+      29px
+    );
+
+  font-weight: 400;
+
+  line-height: 1;
+
+  letter-spacing: 0.34em;
+
+  padding-left: 0.34em;
+}
+
+.notesWord {
+  margin-top:
+    clamp(
+      12px,
+      2.8vw,
+      17px
+    );
+
+  opacity:
+    var(--notes-opacity);
+
+  color:
+    rgba(
+      235,
+      236,
+      234,
+      0.74
+    );
+
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:
+    clamp(
+      8px,
+      2.2vw,
+      12px
+    );
+
+  font-weight: 400;
+
+  line-height: 1;
+
+  letter-spacing: 0.72em;
+
+  padding-left: 0.72em;
+}
+
+/* =========================================================
+   HORIZON
+   ========================================================= */
+
+.horizon {
+  position: absolute;
+
+  z-index: 2;
+
+  left: 50%;
+  bottom: -12%;
+
+  width:
+    max(
+      132vw,
+      720px
+    );
+
+  height: 22%;
+
+  opacity:
+    calc(
+      var(--horizon-opacity) * 0.82
+    );
+
+  transform:
+    translateX(-50%);
+
+  border-radius:
+    50% 50% 0 0 /
+    100% 100% 0 0;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(70, 75, 85, 0.26),
+      rgba(25, 28, 34, 0.72) 35%,
+      #0a0c10 72%
+    );
+
+  pointer-events: none;
+}
+
+.horizonEdge {
+  position: absolute;
+
+  left: 7%;
+  right: 7%;
+  top: 0;
+
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(213, 219, 229, 0.05) 22%,
+      rgba(246, 248, 251, 0.42) 50%,
+      rgba(213, 219, 229, 0.05) 78%,
+      transparent
+    );
+
+  box-shadow:
+    0 -1px 9px
+    rgba(220, 229, 243, 0.055);
+}
+
+.beacon {
+  position: absolute;
+
+  left: 50%;
+  top: -2px;
+
+  width: 2px;
+  height: 52px;
+
+  transform:
+    translateX(-50%);
+}
+
+.beaconGlow {
+  position: absolute;
+
+  left: 50%;
+  top: -14px;
+
+  width: 32px;
+  height: 32px;
+
+  transform:
+    translateX(-50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.50),
+      rgba(202, 215, 236, 0.13) 36%,
+      transparent 72%
+    );
+
+  filter: blur(4px);
+}
+
+.beaconPoint {
+  position: absolute;
+
+  left: 50%;
+  top: -2px;
+
+  width: 4px;
+  height: 4px;
+
+  transform:
+    translateX(-50%);
+
+  border-radius: 50%;
+
+  background: white;
+
+  box-shadow:
+    0 0 4px white,
+    0 0 10px
+    rgba(205, 220, 244, 0.58);
+}
+
+.beaconStem {
+  position: absolute;
+
+  left: 50%;
+  top: 2px;
+
+  width: 1px;
+  height: 100%;
+
+  transform:
+    translateX(-50%);
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.68),
+      rgba(201, 216, 239, 0.13) 62%,
+      transparent
+    );
+}
+
+/* =========================================================
+   REVIEW CONTROLS
+   ========================================================= */
+
+.reviewPanel {
+  position: absolute;
+
+  z-index: 100;
+
+  left: 50%;
+
+  bottom:
+    calc(
+      18px +
+      env(safe-area-inset-bottom)
+    );
+
+  width:
+    min(
+      calc(100vw - 28px),
+      520px
+    );
+
+  transform:
+    translateX(-50%);
+
+  padding:
+    11px 13px 10px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
+
+  border-radius: 16px;
+
+  background:
+    rgba(
+      10,
+      12,
+      16,
+      0.70
+    );
+
+  backdrop-filter:
+    blur(18px);
+
+  box-shadow:
+    0 14px 35px
+    rgba(0, 0, 0, 0.24);
+}
+
+.reviewTop {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 8px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.52
+    );
+
+  font:
+    500 10px/1
+    var(--font-geist-mono),
+    monospace;
+
+  letter-spacing: 0.04em;
+}
+
+.reviewTop span {
+  margin-right: auto;
+
+  min-width: 58px;
+}
+
+.reviewTop button,
+.checkpoints button {
+  appearance: none;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
+
+  border-radius: 999px;
+
+  color:
+    rgba(255, 255, 255, 0.70);
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  cursor: pointer;
+
+  font:
+    500 9px/1
+    var(--font-geist-sans),
+    sans-serif;
+}
+
+.reviewTop button {
+  padding:
+    6px 10px;
+}
+
+.scrubber {
+  display: block;
+
+  width: 100%;
+
+  margin: 0;
+
+  accent-color:
+    #dce3ed;
+}
+
+.checkpoints {
+  display: flex;
+
+  gap: 5px;
+
+  margin-top: 8px;
+}
+
+.checkpoints button {
+  flex: 1;
+
+  padding:
+    6px 2px;
+
+  color:
+    rgba(255, 255, 255, 0.48);
+}
+
+.reviewTop button:hover,
+.checkpoints button:hover {
+  color: #ffffff;
+
+  border-color:
+    rgba(255, 255, 255, 0.28);
+}
+
+@media (max-height: 700px) {
+  .stage {
+    top: 39%;
+
+    width:
+      min(
+        55vh,
+        340px
+      );
+  }
+
+  .identity {
+    top: 59%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .impactBloom,
+  .railParticles,
+  .beamBloom,
+  .beamCore,
+  .exchangeField {
+    display: none;
+  }
+}
