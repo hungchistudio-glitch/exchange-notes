@@ -435,6 +435,7 @@ const traditionalChinese: TranslationDictionary = {
       selectedObjectAlt: "已選擇的物品",
       chooseAnother: "選擇其他照片",
       focusHint: "將物品對準中央",
+      opening: "正在開啟相機…",
     },
 
     analysis: {

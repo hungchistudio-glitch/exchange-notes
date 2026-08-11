@@ -441,6 +441,7 @@ const english: TranslationDictionary = {
       selectedObjectAlt: "Selected object",
       chooseAnother: "Choose another",
       focusHint: "Center the object",
+      opening: "Opening the camera…",
     },
 
     analysis: {

@@ -1109,7 +1109,18 @@ function CaptureContent() {
   return (
     <main className="min-h-[100dvh] bg-surface text-neutral-950">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col px-4">
-        {!cameraActive && (
+        {/*
+          Hidden while the camera is coming up, not only while it is up.
+
+          getUserMedia takes a permission prompt and a stream to resolve, and
+          during that beat this page used to show its whole landing screen —
+          header, title, hero copy — behind a prompt for a camera the user has
+          already asked for. Reaching the viewfinder felt like passing through
+          an unrelated page. cameraStarting is a safe condition to gate on
+          because it always resolves: either cameraActive turns true or the
+          catch sets an error, and both bring this back.
+        */}
+        {!cameraActive && !cameraStarting && (
           <header
             className="flex h-14 shrink-0 items-center justify-between"
             style={{
@@ -1137,7 +1148,7 @@ function CaptureContent() {
           </header>
         )}
 
-        {!cameraActive && !imageData && (
+        {!cameraActive && !cameraStarting && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
               English × 繁體中文
@@ -1188,6 +1199,24 @@ function CaptureContent() {
               </p>
             )}
           </section>
+        )}
+
+        {/*
+          The hold between the tap and the lens. Black rather than the page
+          surface, so what the user sees is the camera arriving rather than the
+          app going blank — and no view transition is involved, which is what
+          once left the viewfinder visible with every control dead.
+        */}
+        {cameraStarting && (
+          <div
+            className="fixed inset-0 z-[90] grid place-items-center bg-black"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-xs font-medium tracking-wide text-white/70">
+              {capture.camera.opening}
+            </p>
+          </div>
         )}
 
         {cameraActive && !imageData && (

@@ -368,6 +368,7 @@ export type TranslationDictionary = {
       selectedObjectAlt: string;
       chooseAnother: string;
       focusHint: string;
+      opening: string;
     };
 
     analysis: {
