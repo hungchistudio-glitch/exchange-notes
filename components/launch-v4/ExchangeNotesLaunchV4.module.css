@@ -1265,3 +1265,9 @@
       0 0 7px rgba(201, 217, 243, 0.22)
     );
 }
+
+
+/* V4 cleanup — remove closed-eye seam entirely */
+.sealedSeam {
+  display: none !important;
+}

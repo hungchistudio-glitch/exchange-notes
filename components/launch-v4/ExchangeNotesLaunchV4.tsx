@@ -488,11 +488,6 @@ export default function ExchangeNotesLaunchV4({
               rx="41"
               ry="41"
             />
-
-            <path
-              className={styles.sealedSeam}
-              d="M 255 180 Q 285 176 315 180"
-            />
           </g>
 
           <g className={styles.finalEye}>
