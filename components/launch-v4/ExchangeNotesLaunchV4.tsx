@@ -157,7 +157,7 @@ export default function ExchangeNotesLaunchV4({
   );
 
   const eyeOpen = smooth(
-    phase(time, 2720, 2860),
+    phase(time, 2760, 2920),
   );
 
   const impact = smooth(

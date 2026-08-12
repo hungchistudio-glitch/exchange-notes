@@ -1080,3 +1080,188 @@
     display: none;
   }
 }
+
+/* =========================================================
+   V4 ROBOTIC POWER-ON EYE REVISION
+   Closed state = dark sensor
+   Power-on state = bright slit
+   Final state = clean robotic eye opening
+   ========================================================= */
+
+.eyeCover {
+  opacity: calc((1 - var(--eye-open)) * 0.985);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform:
+    scale(
+      calc(
+        0.95 + (1 - var(--eye-open)) * 0.04
+      )
+    );
+  will-change: transform, opacity;
+}
+
+.sealedLens {
+  fill:
+    rgba(
+      7,
+      8,
+      12,
+      0.985
+    );
+
+  stroke:
+    rgba(
+      226,
+      233,
+      244,
+      0.10
+    );
+
+  stroke-width: 3.6;
+
+  filter:
+    drop-shadow(
+      0 0 1px rgba(255, 255, 255, 0.08)
+    )
+    drop-shadow(
+      0 0 9px rgba(164, 184, 219, 0.12)
+    )
+    drop-shadow(
+      0 8px 16px rgba(0, 0, 0, 0.48)
+    );
+}
+
+.sealedSeam {
+  fill: none;
+
+  stroke:
+    rgba(
+      239,
+      245,
+      255,
+      0.94
+    );
+
+  stroke-width: 2.5;
+  stroke-linecap: round;
+
+  opacity:
+    calc(
+      0.18 + (1 - var(--eye-open)) * 0.82
+    );
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  transform:
+    scaleX(
+      calc(
+        0.18 + (1 - var(--eye-open)) * 0.82
+      )
+    )
+    translateY(
+      calc(
+        (1 - var(--eye-open)) * -0.5px
+      )
+    );
+
+  filter:
+    drop-shadow(
+      0 0 3px rgba(255, 255, 255, 0.68)
+    )
+    drop-shadow(
+      0 0 10px rgba(176, 200, 238, 0.52)
+    )
+    drop-shadow(
+      0 0 16px rgba(95, 128, 196, 0.30)
+    );
+}
+
+.finalEye {
+  opacity: var(--eye-open);
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  transform:
+    scaleY(
+      calc(
+        0.02 + var(--eye-open) * 0.98
+      )
+    )
+    scaleX(
+      calc(
+        0.92 + var(--eye-open) * 0.08
+      )
+    );
+
+  filter:
+    drop-shadow(
+      0 0 4px rgba(255, 255, 255, 0.08)
+    );
+
+  will-change: transform, opacity;
+}
+
+.eyeShell {
+  fill: #f5f3ed;
+
+  stroke: #07080b;
+  stroke-width: 8;
+
+  opacity:
+    calc(
+      0.15 + var(--eye-open) * 0.85
+    );
+
+  filter:
+    drop-shadow(
+      0 4px 8px rgba(0, 0, 0, 0.34)
+    );
+}
+
+.pupilGroup {
+  transform:
+    translate(
+      var(--pupil-x),
+      var(--pupil-y)
+    );
+
+  opacity:
+    calc(
+      var(--eye-open) * var(--eye-open)
+    );
+
+  will-change: transform, opacity;
+}
+
+.eyeIris {
+  fill: #2a2e35;
+
+  stroke:
+    rgba(
+      122,
+      131,
+      145,
+      0.26
+    );
+
+  stroke-width: 0.8;
+}
+
+.eyePupil {
+  fill: #020305;
+}
+
+.eyeCatchlight {
+  fill: #ffffff;
+
+  filter:
+    drop-shadow(
+      0 0 3px rgba(255, 255, 255, 0.78)
+    )
+    drop-shadow(
+      0 0 7px rgba(201, 217, 243, 0.22)
+    );
+}
