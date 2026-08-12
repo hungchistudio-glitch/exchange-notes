@@ -817,3 +817,517 @@
     top: 57.8%;
   }
 }
+
+
+/* =========================================================
+   V5_CONTINUOUS_RADAR_OPTIMIZATION_20260811
+
+   - continuous radar independent from 3s narrative clock
+   - transform/opacity based motion for smoother compositing
+   - narrower Yumi
+   - layered detection field
+   ========================================================= */
+
+/* ---------- slimmer Yumi ---------- */
+
+.stage {
+  top: 39.7%;
+  width: clamp(236px, 53vw, 308px);
+
+  transform:
+    translate(
+      -50%,
+      calc(-50% + var(--stage-y))
+    )
+    scale(var(--stage-scale));
+}
+
+.upperGroup {
+  transform:
+    translate(
+      var(--upper-x),
+      var(--upper-y)
+    )
+    rotate(var(--upper-r))
+    scaleX(0.86);
+
+  will-change: transform, opacity;
+}
+
+.lowerGroup {
+  transform:
+    translate(
+      var(--lower-x),
+      var(--lower-y)
+    )
+    rotate(var(--lower-r))
+    scaleX(0.86);
+
+  will-change: transform, opacity;
+}
+
+.connectorGroup {
+  transform:
+    scaleX(var(--connector-scale));
+
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+.eyeHousingGroup {
+  transform:
+    translateX(-14px)
+    scale(var(--ring-scale));
+
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.identity {
+  top: 58.5%;
+}
+
+/* ---------- permanent cinematic radar field ---------- */
+
+.radarBackground {
+  opacity: 0.58;
+
+  contain:
+    layout
+    paint
+    style;
+
+  will-change: opacity;
+
+  animation:
+    radarFieldBreath 6.8s
+    ease-in-out
+    infinite;
+}
+
+.radarSweep {
+  inset: 4%;
+
+  transform-origin: 50% 50%;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 315deg,
+      rgba(171, 193, 226, 0.025) 320deg,
+      rgba(205, 220, 241, 0.12) 334deg,
+      rgba(242, 247, 255, 0.26) 344deg,
+      rgba(204, 220, 244, 0.08) 352deg,
+      transparent 360deg
+    );
+
+  opacity: 0.72;
+
+  filter: blur(7px);
+
+  mix-blend-mode: screen;
+
+  will-change: transform, opacity;
+
+  animation:
+    radarSweepContinuous 4.6s
+    linear
+    infinite;
+}
+
+.radarRing {
+  border-color:
+    rgba(
+      201,
+      216,
+      240,
+      0.075
+    );
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.radarRingOuter {
+  animation:
+    radarRingOuterPulse 6.4s
+    ease-in-out
+    infinite;
+}
+
+.radarRingMid {
+  animation:
+    radarRingMidPulse 5.2s
+    ease-in-out
+    infinite;
+}
+
+.radarRingInner {
+  animation:
+    radarRingInnerPulse 4.1s
+    ease-in-out
+    infinite;
+}
+
+/* two independent detector sweeps */
+
+.scanBeamLeft {
+  opacity: 0.34;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSweepLeft 5.6s
+    cubic-bezier(0.42, 0, 0.22, 1)
+    infinite;
+}
+
+.scanBeamRight {
+  opacity: 0.26;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSweepRight 6.3s
+    cubic-bezier(0.42, 0, 0.22, 1)
+    -2.1s
+    infinite;
+}
+
+.scanSparkLeft {
+  left: 34%;
+  top: 43%;
+
+  opacity: 0;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSparkLeft 5.6s
+    ease-in-out
+    infinite;
+}
+
+.scanSparkRight {
+  left: 61%;
+  top: 56%;
+
+  opacity: 0;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSparkRight 6.3s
+    ease-in-out
+    -2.1s
+    infinite;
+}
+
+/* expanding radar pings */
+
+.radarBackground::before,
+.radarBackground::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 18%;
+  height: 18%;
+
+  border:
+    1px solid
+    rgba(
+      215,
+      228,
+      248,
+      0.16
+    );
+
+  border-radius: 50%;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.6);
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    radarPing 4.2s
+    cubic-bezier(0.18, 0.72, 0.30, 1)
+    infinite;
+}
+
+.radarBackground::after {
+  animation-delay: -2.1s;
+}
+
+/* calmer final horizon */
+
+.horizon {
+  bottom: -8.4%;
+  height: 23%;
+
+  opacity:
+    calc(
+      var(--horizon-opacity) * 0.82
+    );
+}
+
+/* ---------- continuous keyframes ---------- */
+
+@keyframes radarSweepContinuous {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radarFieldBreath {
+  0%,
+  100% {
+    opacity: 0.46;
+  }
+
+  50% {
+    opacity: 0.62;
+  }
+}
+
+@keyframes radarRingOuterPulse {
+  0%,
+  100% {
+    opacity: 0.26;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.985);
+  }
+
+  50% {
+    opacity: 0.48;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.015);
+  }
+}
+
+@keyframes radarRingMidPulse {
+  0%,
+  100% {
+    opacity: 0.32;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.975);
+  }
+
+  50% {
+    opacity: 0.58;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.02);
+  }
+}
+
+@keyframes radarRingInnerPulse {
+  0%,
+  100% {
+    opacity: 0.38;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.965);
+  }
+
+  50% {
+    opacity: 0.68;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.025);
+  }
+}
+
+@keyframes detectorSweepLeft {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate3d(-170px, -50%, 0)
+      scaleX(0.58);
+  }
+
+  18% {
+    opacity: 0.18;
+  }
+
+  48% {
+    opacity: 0.46;
+
+    transform:
+      translate3d(46px, -50%, 0)
+      scaleX(1);
+  }
+
+  72% {
+    opacity: 0.15;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(178px, -50%, 0)
+      scaleX(0.64);
+  }
+}
+
+@keyframes detectorSweepRight {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate3d(172px, -50%, 0)
+      scaleX(0.60);
+  }
+
+  20% {
+    opacity: 0.12;
+  }
+
+  52% {
+    opacity: 0.38;
+
+    transform:
+      translate3d(-40px, -50%, 0)
+      scaleX(1);
+  }
+
+  76% {
+    opacity: 0.12;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(-182px, -50%, 0)
+      scaleX(0.62);
+  }
+}
+
+@keyframes detectorSparkLeft {
+  0%,
+  10% {
+    opacity: 0;
+
+    transform:
+      translate3d(-120px, -18px, 0)
+      scale(0.5);
+  }
+
+  42% {
+    opacity: 0.76;
+
+    transform:
+      translate3d(10px, 3px, 0)
+      scale(1);
+  }
+
+  66% {
+    opacity: 0.28;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(128px, 22px, 0)
+      scale(0.55);
+  }
+}
+
+@keyframes detectorSparkRight {
+  0%,
+  12% {
+    opacity: 0;
+
+    transform:
+      translate3d(118px, 18px, 0)
+      scale(0.48);
+  }
+
+  46% {
+    opacity: 0.68;
+
+    transform:
+      translate3d(-8px, -3px, 0)
+      scale(1);
+  }
+
+  70% {
+    opacity: 0.24;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(-126px, -20px, 0)
+      scale(0.54);
+  }
+}
+
+@keyframes radarPing {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.55);
+  }
+
+  14% {
+    opacity: 0.24;
+  }
+
+  72% {
+    opacity: 0.045;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(4.8);
+  }
+}

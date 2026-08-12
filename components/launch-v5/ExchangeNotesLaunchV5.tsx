@@ -48,6 +48,7 @@ export default function ExchangeNotesLaunchV5({
 
   const frameRef = useRef(0);
   const startRef = useRef(0);
+  const timeRef = useRef(0);
   const completedRef = useRef(false);
 
   useEffect(() => {
@@ -56,11 +57,12 @@ export default function ExchangeNotesLaunchV5({
       return;
     }
 
-    startRef.current = performance.now() - time;
+    startRef.current = performance.now() - timeRef.current;
 
     const tick = (now: number) => {
       const next = Math.min(DURATION, now - startRef.current);
 
+      timeRef.current = next;
       setTime(next);
 
       if (next >= DURATION) {
@@ -84,17 +86,19 @@ export default function ExchangeNotesLaunchV5({
     return () => {
       cancelAnimationFrame(frameRef.current);
     };
-  }, [playing, time, reviewMode, onComplete]);
+  }, [playing, reviewMode, onComplete]);
 
   const replay = useCallback(() => {
     completedRef.current = false;
+    timeRef.current = 0;
     setTime(0);
     setPlaying(true);
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (time >= DURATION) {
+    if (timeRef.current >= DURATION) {
       completedRef.current = false;
+      timeRef.current = 0;
       setTime(0);
       setPlaying(true);
       return;
@@ -104,8 +108,11 @@ export default function ExchangeNotesLaunchV5({
   }, [time]);
 
   const seek = useCallback((value: number) => {
+    const next = clamp(value, 0, DURATION);
+
+    timeRef.current = next;
     setPlaying(false);
-    setTime(clamp(value, 0, DURATION));
+    setTime(next);
   }, []);
 
   /*
@@ -228,7 +235,7 @@ export default function ExchangeNotesLaunchV5({
 
     "--connector-opacity": connector,
     "--connector-glow": connectorGlow,
-    "--connector-scale": 0.08 + connector * 0.92,
+    "--connector-scale": 0.07 + connector * 0.77,
 
     "--ring-opacity": housingOpacity,
     "--ring-scale": 0.72 + ring * 0.28,
