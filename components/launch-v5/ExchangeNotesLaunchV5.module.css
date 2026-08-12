@@ -615,3 +615,205 @@
     display: none;
   }
 }
+
+
+/* =========================================================
+   V5 HOLLYWOOD PASS — NARROWER YUMI + RADAR BACKGROUND
+   ========================================================= */
+
+.stage {
+  top: 40%;
+  width: clamp(248px, 57vw, 332px);
+}
+
+.upperGroup {
+  transform:
+    translate(var(--upper-x), var(--upper-y))
+    rotate(var(--upper-r))
+    scaleX(0.92);
+}
+
+.lowerGroup {
+  transform:
+    translate(var(--lower-x), var(--lower-y))
+    rotate(var(--lower-r))
+    scaleX(0.92);
+}
+
+.connectorGroup {
+  transform: scaleX(calc(var(--connector-scale) * 0.88));
+}
+
+.eyeHousingGroup {
+  transform:
+    translateX(-10px)
+    scale(var(--ring-scale));
+}
+
+.exchangeField {
+  transform:
+    translateX(-10px)
+    scaleX(0.92);
+  transform-origin: center;
+}
+
+.identity {
+  top: 58.8%;
+}
+
+.exchangeWord {
+  font-size: clamp(18px, 4.8vw, 27px);
+}
+
+.notesWord {
+  margin-top: clamp(10px, 2.2vw, 15px);
+}
+
+.horizon {
+  bottom: -9%;
+  height: 24%;
+  opacity: calc(var(--horizon-opacity) * 0.96);
+}
+
+.horizonEdge {
+  box-shadow:
+    0 -1px 12px rgba(220, 229, 243, 0.09);
+}
+
+/* Radar / signal field */
+
+.radarBackground {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(92vw, 760px);
+  height: min(92vw, 760px);
+  transform: translate(-50%, -50%);
+  opacity: calc(var(--radar-opacity) * 0.82);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.radarRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(208, 220, 240, 0.08);
+  box-shadow:
+    0 0 14px rgba(200, 214, 237, 0.03),
+    inset 0 0 22px rgba(255, 255, 255, 0.01);
+}
+
+.radarRingOuter {
+  width: 86%;
+  height: 86%;
+  opacity: 0.44;
+}
+
+.radarRingMid {
+  width: 62%;
+  height: 62%;
+  opacity: 0.54;
+}
+
+.radarRingInner {
+  width: 38%;
+  height: 38%;
+  opacity: 0.68;
+}
+
+.radarSweep {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  transform: rotate(var(--radar-rotate));
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(255, 255, 255, 0) 0deg,
+      rgba(202, 214, 235, 0.00) 300deg,
+      rgba(230, 237, 247, 0.22) 332deg,
+      rgba(255, 255, 255, 0.06) 347deg,
+      rgba(255, 255, 255, 0) 360deg
+    );
+  mix-blend-mode: screen;
+  filter: blur(10px);
+  opacity: calc(var(--radar-opacity) * 0.84);
+}
+
+.scanBeamLeft,
+.scanBeamRight {
+  position: absolute;
+  top: 50%;
+  width: 34%;
+  height: 1px;
+  opacity: calc(var(--detector-opacity) * 0.72);
+  filter:
+    blur(0.2px)
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.24))
+    drop-shadow(0 0 18px rgba(188, 208, 239, 0.18));
+}
+
+.scanBeamLeft {
+  left: 14%;
+  transform:
+    translateY(-50%)
+    translateX(var(--scan-left-x));
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(234, 240, 249, 0.72) 50%,
+      transparent
+    );
+}
+
+.scanBeamRight {
+  right: 14%;
+  transform:
+    translateY(-50%)
+    translateX(var(--scan-right-x));
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(234, 240, 249, 0.72) 50%,
+      transparent
+    );
+}
+
+.scanSparkLeft,
+.scanSparkRight {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: calc(var(--detector-opacity) * 0.82);
+  background: #ffffff;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.86))
+    drop-shadow(0 0 16px rgba(190, 210, 240, 0.34));
+}
+
+.scanSparkLeft {
+  left: calc(50% + var(--scan-left-x) - 120px);
+  top: calc(50% - 42px);
+}
+
+.scanSparkRight {
+  left: calc(50% + var(--scan-right-x) + 112px);
+  top: calc(50% + 36px);
+}
+
+@media (max-height: 700px) {
+  .stage {
+    top: 38.4%;
+    width: min(53vh, 315px);
+  }
+
+  .identity {
+    top: 57.8%;
+  }
+}

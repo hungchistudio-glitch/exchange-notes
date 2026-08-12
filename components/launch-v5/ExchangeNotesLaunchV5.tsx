@@ -137,6 +137,32 @@ export default function ExchangeNotesLaunchV5({
   const horizon = smooth(phase(time, 2740, 3000));
   const impact = smooth(bell(time, 1600, 180));
 
+  const radar = clamp(
+    smooth(phase(time, 180, 2400)) * (1 - eyeOpen * 0.12),
+  );
+
+  const radarRotate = lerp(
+    -38,
+    232,
+    smooth(phase(time, 180, 2320)),
+  );
+
+  const scanLeft = lerp(
+    -160,
+    60,
+    smooth(phase(time, 680, 1680)),
+  );
+
+  const scanRight = lerp(
+    160,
+    -60,
+    smooth(phase(time, 940, 1860)),
+  );
+
+  const detector = clamp(
+    exchange * 0.92 + settle * 0.30 + identity * 0.22,
+  );
+
   const stageScale =
     time < 1980 ? lerp(0.94, 1, seed) : lerp(1, 0.58, settle);
 
@@ -182,6 +208,12 @@ export default function ExchangeNotesLaunchV5({
   const vars: Vars = {
     "--stage-scale": stageScale,
     "--stage-y": `${stageY}px`,
+
+    "--radar-opacity": radar,
+    "--radar-rotate": `${radarRotate}deg`,
+    "--scan-left-x": `${scanLeft}px`,
+    "--scan-right-x": `${scanRight}px`,
+    "--detector-opacity": detector,
 
     "--seed": seed,
     "--upper-opacity": upper,
@@ -232,6 +264,17 @@ export default function ExchangeNotesLaunchV5({
       <div className={styles.exchangeBloom} />
       <div className={styles.grain} />
       <div className={styles.vignette} />
+
+      <div className={styles.radarBackground} aria-hidden="true">
+        <div className={`${styles.radarRing} ${styles.radarRingOuter}`} />
+        <div className={`${styles.radarRing} ${styles.radarRingMid}`} />
+        <div className={`${styles.radarRing} ${styles.radarRingInner}`} />
+        <div className={styles.radarSweep} />
+        <div className={styles.scanBeamLeft} />
+        <div className={styles.scanBeamRight} />
+        <div className={styles.scanSparkLeft} />
+        <div className={styles.scanSparkRight} />
+      </div>
 
       <div className={styles.stage}>
         <svg
