@@ -145,15 +145,19 @@ export default function ExchangeNotesLaunchV6({
   const impact = smooth(bell(time, 1600, 180));
 
   const materialSweep = smooth(
-    phase(time, 930, 1840),
+    phase(time, 920, 1840),
   );
 
   const materialSweepOpacity = smooth(
-    bell(time, 1480, 620),
+    bell(time, 1480, 610),
   );
 
-  const finalResponse = smooth(
-    bell(time, 2760, 190),
+  const connectorResponse = smooth(
+    bell(time, 1380, 125),
+  );
+
+  const eyeResponse = smooth(
+    bell(time, 2760, 175),
   );
 
   const radar = clamp(
@@ -277,14 +281,18 @@ export default function ExchangeNotesLaunchV6({
 
     "--material-sweep-offset": lerp(
       118,
-      -24,
+      -26,
       materialSweep,
     ),
 
     "--material-sweep-opacity":
       materialSweepOpacity,
 
-    "--final-response": finalResponse,
+    "--connector-response":
+      connectorResponse,
+
+    "--eye-response":
+      eyeResponse,
 
     "--rail-opacity": railOpacity,
     "--rail-offset": `${lerp(100, -15, smooth(phase(time, 280, 1700)))}`,
@@ -308,7 +316,7 @@ export default function ExchangeNotesLaunchV6({
       className={`${styles.launch} ${reviewMode ? styles.reviewMode : ""}`}
       style={vars}
       role="status"
-      aria-label="Exchange Notes cinematic evolution opening"
+      aria-label="Exchange Notes assembly opening"
     >
       <div className={styles.ambientBloom} />
       <div className={styles.exchangeBloom} />
@@ -326,10 +334,7 @@ export default function ExchangeNotesLaunchV6({
         <div className={styles.scanSparkRight} />
       </div>
 
-      <div
-        className={styles.cinematicDepth}
-        aria-hidden="true"
-      >
+      <div className={styles.cinematicDepth} aria-hidden="true">
         <div className={styles.searchlightA} />
         <div className={styles.searchlightB} />
       </div>
@@ -485,7 +490,7 @@ export default function ExchangeNotesLaunchV6({
                 className={styles.eyeGlass}
                 cx="286"
                 cy="180"
-                r="20.4"
+                r="20.2"
               />
 
               <g className={styles.pupilGroup}>
@@ -493,19 +498,19 @@ export default function ExchangeNotesLaunchV6({
                   className={styles.eyeIris}
                   cx="298"
                   cy="173"
-                  r="9.5"
+                  r="9.4"
                 />
                 <circle
                   className={styles.eyePupil}
                   cx="298"
                   cy="173"
-                  r="5.8"
+                  r="5.7"
                 />
                 <circle
                   className={styles.eyeCatchlight}
                   cx="302"
                   cy="169"
-                  r="2.1"
+                  r="2.0"
                 />
               </g>
             </g>
