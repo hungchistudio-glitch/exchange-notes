@@ -6,6 +6,10 @@ import {
   friendInvitePath,
   PENDING_FRIEND_INVITE_COOKIE,
 } from "@/lib/friends";
+import {
+  POST_LOGIN_SPLASH_COOKIE,
+  POST_LOGIN_SPLASH_MAX_AGE_SECONDS,
+} from "@/lib/postLoginSplash";
 import { normalizeExchangeId } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -13,6 +17,8 @@ export async function GET(request: NextRequest) {
 
   const code = requestUrl.searchParams.get("code");
   const cookieStore = await cookies();
+
+  let didAuthenticate = false;
 
   if (code) {
 
@@ -33,7 +39,10 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    didAuthenticate = !exchangeError;
   }
 
   /*
@@ -55,6 +64,19 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(
     new URL(destination, request.url),
   );
+
+  if (didAuthenticate) {
+    response.cookies.set(
+      POST_LOGIN_SPLASH_COOKIE,
+      "1",
+      {
+        path: "/",
+        maxAge:
+          POST_LOGIN_SPLASH_MAX_AGE_SECONDS,
+        sameSite: "lax",
+      },
+    );
+  }
 
   // Cleared whenever it was set, not only when it was usable, so a value that
   // fails normalization cannot sit around redirecting later sign-ins.

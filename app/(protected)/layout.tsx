@@ -1,13 +1,16 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
+import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
+import { POST_LOGIN_SPLASH_COOKIE } from "@/lib/postLoginSplash";
 import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
 import { createClient } from "@/lib/supabase/server";
 import type { AppLanguage } from "@/lib/types/app";
@@ -45,6 +48,13 @@ export default async function ProtectedLayout({
     redirect("/onboarding");
   }
 
+  const cookieStore = await cookies();
+
+  const showPostLoginSplash =
+    cookieStore.get(
+      POST_LOGIN_SPLASH_COOKIE,
+    )?.value === "1";
+
   const initialLearningLanguage: AppLanguage =
     profile?.learning_language === "traditional-chinese"
       ? "traditional-chinese"
@@ -65,6 +75,9 @@ export default async function ProtectedLayout({
       <LearningLanguageProvider
         initialLearningLanguage={initialLearningLanguage}
       >
+        <SplashGate
+          initialShow={showPostLoginSplash}
+        />
         {/*
           Only rendered on the rare disagreement above — a device that has not
           seen this account before. It runs while the browser is still parsing,
