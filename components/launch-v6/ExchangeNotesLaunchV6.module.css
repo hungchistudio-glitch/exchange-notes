@@ -1,0 +1,2011 @@
+.launch {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+
+  overflow: hidden;
+  min-height: 100dvh;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 39%,
+      #171a1f 0%,
+      #101318 34%,
+      #0a0c10 68%,
+      #07080b 100%
+    );
+
+  color: #f5f4ef;
+
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.reviewMode {
+  z-index: 2147483000;
+}
+
+.ambientBloom {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(920px, 120vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(208, 217, 231, 0.055),
+      rgba(140, 152, 171, 0.018) 35%,
+      transparent 70%
+    );
+  pointer-events: none;
+}
+
+.exchangeBloom {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 38vmin;
+  height: 38vmin;
+  transform:
+    translate(-50%, -50%)
+    scale(calc(0.74 + var(--impact) * 0.78));
+  opacity: calc(var(--impact) * 0.42);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.72),
+      rgba(202, 214, 233, 0.16) 26%,
+      transparent 70%
+    );
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+.grain {
+  position: absolute;
+  inset: -25%;
+  opacity: 0.025;
+  background-image:
+    repeating-radial-gradient(
+      circle at 29% 37%,
+      rgba(255, 255, 255, 0.25) 0,
+      rgba(255, 255, 255, 0.25) 0.3px,
+      transparent 0.45px,
+      transparent 2.4px
+    );
+  background-size: 5px 5px;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 39%,
+      rgba(0, 0, 0, 0.24) 72%,
+      rgba(0, 0, 0, 0.72) 100%
+    );
+  pointer-events: none;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: clamp(290px, 66vw, 390px);
+  aspect-ratio: 1;
+  transform:
+    translate(-50%, calc(-50% + var(--stage-y)))
+    scale(var(--stage-scale));
+  transform-origin: center;
+  will-change: transform;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Seed */
+
+.seedTrace {
+  fill: none;
+  stroke: rgba(245, 248, 252, 0.88);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--seed) * 100);
+  opacity: var(--seed-trace-opacity);
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.76))
+    drop-shadow(0 0 8px rgba(191, 206, 229, 0.30));
+}
+
+.signalNode {
+  fill: #ffffff;
+  opacity: var(--signal-node-opacity);
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.88))
+    drop-shadow(0 0 18px rgba(192, 207, 233, 0.34));
+}
+
+/* Upper / lower body assembly */
+
+.upperGroup,
+.lowerGroup {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.upperGroup {
+  opacity: var(--upper-opacity);
+  transform:
+    translate(var(--upper-x), var(--upper-y))
+    rotate(var(--upper-r));
+}
+
+.lowerGroup {
+  opacity: var(--lower-opacity);
+  transform:
+    translate(var(--lower-x), var(--lower-y))
+    rotate(var(--lower-r));
+}
+
+.arcBloom,
+.arcBody,
+.arcSpec {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.arcBloom {
+  stroke: rgba(210, 221, 237, 0.18);
+  stroke-width: 34;
+  filter: blur(10px);
+}
+
+.arcBody {
+  stroke: url("#v5-body-grad");
+  stroke-width: 30;
+  filter:
+    drop-shadow(0 10px 18px rgba(0, 0, 0, 0.54))
+    drop-shadow(0 0 8px rgba(205, 220, 239, 0.06));
+}
+
+.arcSpec {
+  stroke: rgba(246, 249, 253, 0.68);
+  stroke-width: 1.4;
+  filter:
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.34));
+}
+
+/* Rail energy */
+
+.railLight {
+  fill: none;
+  stroke: rgba(248, 250, 255, 0.92);
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: var(--rail-offset);
+  opacity: var(--rail-opacity);
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.88))
+    drop-shadow(0 0 8px rgba(193, 209, 233, 0.30));
+}
+
+.railParticles {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-dasharray: 0.34 7.1;
+  stroke-dashoffset: var(--particle-offset);
+  opacity: calc(var(--rail-opacity) * 0.92);
+  filter:
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.88))
+    drop-shadow(0 0 7px rgba(201, 216, 240, 0.42));
+}
+
+/* Connector lock */
+
+.connectorGroup {
+  opacity: var(--connector-opacity);
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(var(--connector-scale));
+  will-change: transform, opacity;
+}
+
+.connectorGlow {
+  fill: rgba(255, 255, 255, 0.16);
+  opacity: var(--connector-glow);
+  filter: blur(8px);
+}
+
+.connectorBody {
+  fill: url("#v5-bar-grad");
+  filter:
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.06))
+    drop-shadow(0 4px 10px rgba(0, 0, 0, 0.32));
+}
+
+.connectorSpec {
+  fill: rgba(255, 255, 255, 0.56);
+}
+
+/* Eye housing */
+
+.eyeHousingGroup {
+  opacity: var(--ring-opacity);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(var(--ring-scale));
+  will-change: transform, opacity;
+}
+
+.coreHalo {
+  opacity: calc(var(--impact) * 0.84);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(calc(0.72 + var(--impact) * 0.66));
+}
+
+.eyeRing {
+  fill: none;
+  stroke: #06070a;
+  stroke-width: 7.5;
+  filter:
+    drop-shadow(0 4px 9px rgba(0, 0, 0, 0.40));
+}
+
+.darkLens {
+  fill: rgba(7, 8, 12, 0.985);
+  opacity: var(--dark-lens-opacity);
+  filter:
+    drop-shadow(0 0 1px rgba(255, 255, 255, 0.06))
+    drop-shadow(0 0 7px rgba(166, 184, 218, 0.08));
+}
+
+.finalEye {
+  opacity: var(--final-eye-opacity);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform:
+    scaleY(var(--eye-open-scale-y))
+    scaleX(var(--eye-open-scale-x));
+  will-change: transform, opacity;
+}
+
+.eyeWhite {
+  fill: #f5f3ed;
+  stroke: rgba(255, 255, 255, 0.38);
+  stroke-width: 0.8;
+  filter:
+    drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
+.pupilGroup {
+  transform: translate(var(--pupil-x), var(--pupil-y));
+  will-change: transform;
+}
+
+.eyeIris {
+  fill: #343840;
+  stroke: rgba(119, 127, 139, 0.30);
+  stroke-width: 0.8;
+}
+
+.eyePupil {
+  fill: #050608;
+}
+
+.eyeCatchlight {
+  fill: #ffffff;
+  filter:
+    drop-shadow(0 0 3px rgba(255, 255, 255, 0.76));
+}
+
+/* Exchange / calibration */
+
+.exchangeField {
+  opacity: var(--exchange-opacity);
+  pointer-events: none;
+}
+
+.exchangeWing {
+  fill: none;
+  stroke: rgba(230, 237, 247, 0.72);
+  stroke-width: 16;
+  stroke-linecap: round;
+  filter:
+    blur(0.4px)
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.28))
+    drop-shadow(0 0 16px rgba(194, 210, 234, 0.18));
+}
+
+.leftExchange,
+.rightExchange {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.leftExchange {
+  transform: translateX(calc(-64px * (1 - var(--exchange-opacity))));
+}
+
+.rightExchange {
+  transform: translateX(calc(64px * (1 - var(--exchange-opacity))));
+}
+
+.exchangeArrows {
+  fill: none;
+  stroke: rgba(241, 245, 250, 0.84);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: calc(var(--exchange-opacity) * 0.88);
+  filter:
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.34));
+}
+
+.exchangePulse {
+  fill: none;
+  stroke: rgba(250, 252, 255, 0.88);
+  stroke-width: 1.8;
+  opacity: var(--impact);
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(calc(0.72 + var(--impact) * 0.84));
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.56))
+    drop-shadow(0 0 16px rgba(195, 211, 235, 0.34));
+}
+
+/* Final identity */
+
+.identity {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 60.5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(86vw, 430px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.exchangeWord {
+  opacity: var(--identity-opacity);
+  transform: translateY(calc(8px * (1 - var(--identity-opacity))));
+  color: rgba(247, 246, 242, 0.96);
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: clamp(18px, 5.2vw, 29px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.34em;
+  padding-left: 0.34em;
+}
+
+.notesWord {
+  margin-top: clamp(12px, 2.8vw, 17px);
+  opacity: var(--notes-opacity);
+  color: rgba(235, 236, 234, 0.74);
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-size: clamp(8px, 2.2vw, 12px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.72em;
+  padding-left: 0.72em;
+}
+
+/* Horizon */
+
+.horizon {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: -12%;
+  width: max(132vw, 720px);
+  height: 22%;
+  opacity: calc(var(--horizon-opacity) * 0.82);
+  transform: translateX(-50%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(70, 75, 85, 0.26),
+      rgba(25, 28, 34, 0.72) 35%,
+      #0a0c10 72%
+    );
+  pointer-events: none;
+}
+
+.horizonEdge {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 0;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(213, 219, 229, 0.05) 22%,
+      rgba(246, 248, 251, 0.42) 50%,
+      rgba(213, 219, 229, 0.05) 78%,
+      transparent
+    );
+  box-shadow:
+    0 -1px 9px rgba(220, 229, 243, 0.055);
+}
+
+.beacon {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 2px;
+  height: 52px;
+  transform: translateX(-50%);
+}
+
+.beaconGlow {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 32px;
+  height: 32px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.50),
+      rgba(202, 215, 236, 0.13) 36%,
+      transparent 72%
+    );
+  filter: blur(4px);
+}
+
+.beaconPoint {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: white;
+  box-shadow:
+    0 0 4px white,
+    0 0 10px rgba(205, 220, 244, 0.58);
+}
+
+.beaconStem {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 1px;
+  height: 100%;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.68),
+      rgba(201, 216, 239, 0.13) 62%,
+      transparent
+    );
+}
+
+/* Review controls */
+
+.reviewPanel {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: min(calc(100vw - 28px), 540px);
+  transform: translateX(-50%);
+  padding: 11px 13px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(10, 12, 16, 0.70);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.24);
+}
+
+.reviewTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.52);
+  font:
+    500 10px/1
+    var(--font-geist-mono),
+    monospace;
+  letter-spacing: 0.04em;
+}
+
+.reviewTop span {
+  margin-right: auto;
+  min-width: 58px;
+}
+
+.reviewTop button,
+.checkpoints button {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.70);
+  background: rgba(255, 255, 255, 0.035);
+  cursor: pointer;
+  font:
+    500 9px/1
+    var(--font-geist-sans),
+    sans-serif;
+}
+
+.reviewTop button {
+  padding: 6px 10px;
+}
+
+.scrubber {
+  display: block;
+  width: 100%;
+  margin: 0;
+  accent-color: #dce3ed;
+}
+
+.checkpoints {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.checkpoints button {
+  flex: 1;
+  padding: 6px 2px;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.reviewTop button:hover,
+.checkpoints button:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+@media (max-height: 700px) {
+  .stage {
+    top: 39%;
+    width: min(55vh, 340px);
+  }
+
+  .identity {
+    top: 59%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exchangeBloom,
+  .railParticles,
+  .exchangeField {
+    display: none;
+  }
+}
+
+
+/* =========================================================
+   V5 HOLLYWOOD PASS — NARROWER YUMI + RADAR BACKGROUND
+   ========================================================= */
+
+.stage {
+  top: 40%;
+  width: clamp(248px, 57vw, 332px);
+}
+
+.upperGroup {
+  transform:
+    translate(var(--upper-x), var(--upper-y))
+    rotate(var(--upper-r))
+    scaleX(0.92);
+}
+
+.lowerGroup {
+  transform:
+    translate(var(--lower-x), var(--lower-y))
+    rotate(var(--lower-r))
+    scaleX(0.92);
+}
+
+.connectorGroup {
+  transform: scaleX(calc(var(--connector-scale) * 0.88));
+}
+
+.eyeHousingGroup {
+  transform:
+    translateX(-10px)
+    scale(var(--ring-scale));
+}
+
+.exchangeField {
+  transform:
+    translateX(-10px)
+    scaleX(0.92);
+  transform-origin: center;
+}
+
+.identity {
+  top: 58.8%;
+}
+
+.exchangeWord {
+  font-size: clamp(18px, 4.8vw, 27px);
+}
+
+.notesWord {
+  margin-top: clamp(10px, 2.2vw, 15px);
+}
+
+.horizon {
+  bottom: -9%;
+  height: 24%;
+  opacity: calc(var(--horizon-opacity) * 0.96);
+}
+
+.horizonEdge {
+  box-shadow:
+    0 -1px 12px rgba(220, 229, 243, 0.09);
+}
+
+/* Radar / signal field */
+
+.radarBackground {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: min(92vw, 760px);
+  height: min(92vw, 760px);
+  transform: translate(-50%, -50%);
+  opacity: calc(var(--radar-opacity) * 0.82);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.radarRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(208, 220, 240, 0.08);
+  box-shadow:
+    0 0 14px rgba(200, 214, 237, 0.03),
+    inset 0 0 22px rgba(255, 255, 255, 0.01);
+}
+
+.radarRingOuter {
+  width: 86%;
+  height: 86%;
+  opacity: 0.44;
+}
+
+.radarRingMid {
+  width: 62%;
+  height: 62%;
+  opacity: 0.54;
+}
+
+.radarRingInner {
+  width: 38%;
+  height: 38%;
+  opacity: 0.68;
+}
+
+.radarSweep {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  transform: rotate(var(--radar-rotate));
+  background:
+    conic-gradient(
+      from 0deg,
+      rgba(255, 255, 255, 0) 0deg,
+      rgba(202, 214, 235, 0.00) 300deg,
+      rgba(230, 237, 247, 0.22) 332deg,
+      rgba(255, 255, 255, 0.06) 347deg,
+      rgba(255, 255, 255, 0) 360deg
+    );
+  mix-blend-mode: screen;
+  filter: blur(10px);
+  opacity: calc(var(--radar-opacity) * 0.84);
+}
+
+.scanBeamLeft,
+.scanBeamRight {
+  position: absolute;
+  top: 50%;
+  width: 34%;
+  height: 1px;
+  opacity: calc(var(--detector-opacity) * 0.72);
+  filter:
+    blur(0.2px)
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.24))
+    drop-shadow(0 0 18px rgba(188, 208, 239, 0.18));
+}
+
+.scanBeamLeft {
+  left: 14%;
+  transform:
+    translateY(-50%)
+    translateX(var(--scan-left-x));
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(234, 240, 249, 0.72) 50%,
+      transparent
+    );
+}
+
+.scanBeamRight {
+  right: 14%;
+  transform:
+    translateY(-50%)
+    translateX(var(--scan-right-x));
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(234, 240, 249, 0.72) 50%,
+      transparent
+    );
+}
+
+.scanSparkLeft,
+.scanSparkRight {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: calc(var(--detector-opacity) * 0.82);
+  background: #ffffff;
+  filter:
+    drop-shadow(0 0 5px rgba(255, 255, 255, 0.86))
+    drop-shadow(0 0 16px rgba(190, 210, 240, 0.34));
+}
+
+.scanSparkLeft {
+  left: calc(50% + var(--scan-left-x) - 120px);
+  top: calc(50% - 42px);
+}
+
+.scanSparkRight {
+  left: calc(50% + var(--scan-right-x) + 112px);
+  top: calc(50% + 36px);
+}
+
+@media (max-height: 700px) {
+  .stage {
+    top: 38.4%;
+    width: min(53vh, 315px);
+  }
+
+  .identity {
+    top: 57.8%;
+  }
+}
+
+
+/* =========================================================
+   V5_CONTINUOUS_RADAR_OPTIMIZATION_20260811
+
+   - continuous radar independent from 3s narrative clock
+   - transform/opacity based motion for smoother compositing
+   - narrower Yumi
+   - layered detection field
+   ========================================================= */
+
+/* ---------- slimmer Yumi ---------- */
+
+.stage {
+  top: 39.7%;
+  width: clamp(236px, 53vw, 308px);
+
+  transform:
+    translate(
+      -50%,
+      calc(-50% + var(--stage-y))
+    )
+    scale(var(--stage-scale));
+}
+
+.upperGroup {
+  transform:
+    translate(
+      var(--upper-x),
+      var(--upper-y)
+    )
+    rotate(var(--upper-r))
+    scaleX(0.86);
+
+  will-change: transform, opacity;
+}
+
+.lowerGroup {
+  transform:
+    translate(
+      var(--lower-x),
+      var(--lower-y)
+    )
+    rotate(var(--lower-r))
+    scaleX(0.86);
+
+  will-change: transform, opacity;
+}
+
+.connectorGroup {
+  transform:
+    scaleX(var(--connector-scale));
+
+  transform-origin: left center;
+  will-change: transform, opacity;
+}
+
+.eyeHousingGroup {
+  transform:
+    translateX(-14px)
+    scale(var(--ring-scale));
+
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.identity {
+  top: 58.5%;
+}
+
+/* ---------- permanent cinematic radar field ---------- */
+
+.radarBackground {
+  opacity: 0.58;
+
+  contain:
+    layout
+    paint
+    style;
+
+  will-change: opacity;
+
+  animation:
+    radarFieldBreath 6.8s
+    ease-in-out
+    infinite;
+}
+
+.radarSweep {
+  inset: 4%;
+
+  transform-origin: 50% 50%;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 315deg,
+      rgba(171, 193, 226, 0.025) 320deg,
+      rgba(205, 220, 241, 0.12) 334deg,
+      rgba(242, 247, 255, 0.26) 344deg,
+      rgba(204, 220, 244, 0.08) 352deg,
+      transparent 360deg
+    );
+
+  opacity: 0.72;
+
+  filter: blur(7px);
+
+  mix-blend-mode: screen;
+
+  will-change: transform, opacity;
+
+  animation:
+    radarSweepContinuous 4.6s
+    linear
+    infinite;
+}
+
+.radarRing {
+  border-color:
+    rgba(
+      201,
+      216,
+      240,
+      0.075
+    );
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.radarRingOuter {
+  animation:
+    radarRingOuterPulse 6.4s
+    ease-in-out
+    infinite;
+}
+
+.radarRingMid {
+  animation:
+    radarRingMidPulse 5.2s
+    ease-in-out
+    infinite;
+}
+
+.radarRingInner {
+  animation:
+    radarRingInnerPulse 4.1s
+    ease-in-out
+    infinite;
+}
+
+/* two independent detector sweeps */
+
+.scanBeamLeft {
+  opacity: 0.34;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSweepLeft 5.6s
+    cubic-bezier(0.42, 0, 0.22, 1)
+    infinite;
+}
+
+.scanBeamRight {
+  opacity: 0.26;
+
+  transform-origin: center;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSweepRight 6.3s
+    cubic-bezier(0.42, 0, 0.22, 1)
+    -2.1s
+    infinite;
+}
+
+.scanSparkLeft {
+  left: 34%;
+  top: 43%;
+
+  opacity: 0;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSparkLeft 5.6s
+    ease-in-out
+    infinite;
+}
+
+.scanSparkRight {
+  left: 61%;
+  top: 56%;
+
+  opacity: 0;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    detectorSparkRight 6.3s
+    ease-in-out
+    -2.1s
+    infinite;
+}
+
+/* expanding radar pings */
+
+.radarBackground::before,
+.radarBackground::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 18%;
+  height: 18%;
+
+  border:
+    1px solid
+    rgba(
+      215,
+      228,
+      248,
+      0.16
+    );
+
+  border-radius: 50%;
+
+  transform:
+    translate(-50%, -50%)
+    scale(0.6);
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  will-change:
+    transform,
+    opacity;
+
+  animation:
+    radarPing 4.2s
+    cubic-bezier(0.18, 0.72, 0.30, 1)
+    infinite;
+}
+
+.radarBackground::after {
+  animation-delay: -2.1s;
+}
+
+/* calmer final horizon */
+
+.horizon {
+  bottom: -8.4%;
+  height: 23%;
+
+  opacity:
+    calc(
+      var(--horizon-opacity) * 0.82
+    );
+}
+
+/* ---------- continuous keyframes ---------- */
+
+@keyframes radarSweepContinuous {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radarFieldBreath {
+  0%,
+  100% {
+    opacity: 0.46;
+  }
+
+  50% {
+    opacity: 0.62;
+  }
+}
+
+@keyframes radarRingOuterPulse {
+  0%,
+  100% {
+    opacity: 0.26;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.985);
+  }
+
+  50% {
+    opacity: 0.48;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.015);
+  }
+}
+
+@keyframes radarRingMidPulse {
+  0%,
+  100% {
+    opacity: 0.32;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.975);
+  }
+
+  50% {
+    opacity: 0.58;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.02);
+  }
+}
+
+@keyframes radarRingInnerPulse {
+  0%,
+  100% {
+    opacity: 0.38;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.965);
+  }
+
+  50% {
+    opacity: 0.68;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.025);
+  }
+}
+
+@keyframes detectorSweepLeft {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate3d(-170px, -50%, 0)
+      scaleX(0.58);
+  }
+
+  18% {
+    opacity: 0.18;
+  }
+
+  48% {
+    opacity: 0.46;
+
+    transform:
+      translate3d(46px, -50%, 0)
+      scaleX(1);
+  }
+
+  72% {
+    opacity: 0.15;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(178px, -50%, 0)
+      scaleX(0.64);
+  }
+}
+
+@keyframes detectorSweepRight {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate3d(172px, -50%, 0)
+      scaleX(0.60);
+  }
+
+  20% {
+    opacity: 0.12;
+  }
+
+  52% {
+    opacity: 0.38;
+
+    transform:
+      translate3d(-40px, -50%, 0)
+      scaleX(1);
+  }
+
+  76% {
+    opacity: 0.12;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(-182px, -50%, 0)
+      scaleX(0.62);
+  }
+}
+
+@keyframes detectorSparkLeft {
+  0%,
+  10% {
+    opacity: 0;
+
+    transform:
+      translate3d(-120px, -18px, 0)
+      scale(0.5);
+  }
+
+  42% {
+    opacity: 0.76;
+
+    transform:
+      translate3d(10px, 3px, 0)
+      scale(1);
+  }
+
+  66% {
+    opacity: 0.28;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(128px, 22px, 0)
+      scale(0.55);
+  }
+}
+
+@keyframes detectorSparkRight {
+  0%,
+  12% {
+    opacity: 0;
+
+    transform:
+      translate3d(118px, 18px, 0)
+      scale(0.48);
+  }
+
+  46% {
+    opacity: 0.68;
+
+    transform:
+      translate3d(-8px, -3px, 0)
+      scale(1);
+  }
+
+  70% {
+    opacity: 0.24;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate3d(-126px, -20px, 0)
+      scale(0.54);
+  }
+}
+
+@keyframes radarPing {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(0.55);
+  }
+
+  14% {
+    opacity: 0.24;
+  }
+
+  72% {
+    opacity: 0.045;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(4.8);
+  }
+}
+
+
+/* V5_SEED_ARTIFACT_HARD_KILL */
+
+.launch {
+  --seed-trace-opacity: 0;
+  --signal-node-opacity: 0;
+}
+
+.seedTrace {
+  opacity: var(--seed-trace-opacity);
+}
+
+.signalNode {
+  opacity: var(--signal-node-opacity);
+}
+
+/* =========================================================
+   V6 CINEMATIC POLISH PASS
+   ========================================================= */
+
+.launch {
+  --material-sweep-offset: 118;
+  --material-sweep-opacity: 0;
+  --final-response: 0;
+}
+
+/* =========================================================
+   01 — FINAL COMPOSITION
+   Larger symbol, tighter identity hierarchy
+   ========================================================= */
+
+.stage {
+  top: 39.2%;
+
+  width:
+    clamp(
+      252px,
+      56vw,
+      330px
+    );
+}
+
+.identity {
+  top: 57.8%;
+}
+
+.exchangeWord {
+  font-size:
+    clamp(
+      17px,
+      4.45vw,
+      24.5px
+    );
+
+  letter-spacing: 0.32em;
+  padding-left: 0.32em;
+
+  color:
+    rgba(
+      244,
+      244,
+      241,
+      0.91
+    );
+}
+
+.notesWord {
+  margin-top:
+    clamp(
+      9px,
+      2vw,
+      13px
+    );
+
+  font-size:
+    clamp(
+      7.5px,
+      1.95vw,
+      10.5px
+    );
+
+  color:
+    rgba(
+      232,
+      233,
+      231,
+      0.66
+    );
+}
+
+/* =========================================================
+   02 — RADAR BECOMES ENVIRONMENT, NOT HUD
+   ========================================================= */
+
+.radarBackground {
+  width:
+    min(
+      112vw,
+      920px
+    );
+
+  height:
+    min(
+      112vw,
+      920px
+    );
+
+  opacity: 0.46;
+
+  transform:
+    translate3d(
+      -50%,
+      -50%,
+      0
+    )
+    scaleY(0.86);
+
+  transform-origin: center;
+}
+
+.radarRing {
+  border-color:
+    rgba(
+      191,
+      207,
+      231,
+      0.055
+    );
+
+  box-shadow: none;
+}
+
+.radarSweep {
+  opacity: 0.58;
+
+  background:
+    conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 318deg,
+      rgba(155, 181, 218, 0.018) 323deg,
+      rgba(190, 210, 239, 0.075) 336deg,
+      rgba(236, 243, 253, 0.16) 345deg,
+      rgba(182, 205, 238, 0.045) 353deg,
+      transparent 360deg
+    );
+
+  filter: blur(3px);
+}
+
+/* =========================================================
+   03 — CINEMATIC VOLUMETRIC SEARCHLIGHTS
+   No huge blur filters; transform-driven
+   ========================================================= */
+
+.cinematicDepth {
+  position: absolute;
+
+  z-index: 0;
+
+  inset: -18%;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  opacity: 0.72;
+}
+
+.searchlightA,
+.searchlightB {
+  position: absolute;
+
+  top: -28%;
+
+  width: 48%;
+  height: 156%;
+
+  transform-origin: 50% 0%;
+
+  mix-blend-mode: screen;
+
+  will-change:
+    transform,
+    opacity;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(
+        163,
+        188,
+        225,
+        0.00
+      ) 26%,
+      rgba(
+        195,
+        215,
+        243,
+        0.055
+      ) 49%,
+      rgba(
+        226,
+        236,
+        250,
+        0.018
+      ) 57%,
+      transparent 100%
+    );
+}
+
+.searchlightA {
+  left: 13%;
+
+  animation:
+    v6SearchlightA
+    11.5s
+    ease-in-out
+    infinite;
+}
+
+.searchlightB {
+  right: 8%;
+
+  opacity: 0.42;
+
+  animation:
+    v6SearchlightB
+    13.4s
+    ease-in-out
+    -4.6s
+    infinite;
+}
+
+@keyframes v6SearchlightA {
+  0%,
+  100% {
+    opacity: 0.18;
+
+    transform:
+      translate3d(
+        -10%,
+        -2%,
+        0
+      )
+      rotate(-15deg);
+  }
+
+  44% {
+    opacity: 0.52;
+
+    transform:
+      translate3d(
+        11%,
+        1%,
+        0
+      )
+      rotate(8deg);
+  }
+
+  72% {
+    opacity: 0.26;
+
+    transform:
+      translate3d(
+        4%,
+        0,
+        0
+      )
+      rotate(2deg);
+  }
+}
+
+@keyframes v6SearchlightB {
+  0%,
+  100% {
+    opacity: 0.10;
+
+    transform:
+      translate3d(
+        12%,
+        -2%,
+        0
+      )
+      rotate(14deg);
+  }
+
+  52% {
+    opacity: 0.36;
+
+    transform:
+      translate3d(
+        -13%,
+        1%,
+        0
+      )
+      rotate(-9deg);
+  }
+}
+
+/* =========================================================
+   04 — MATERIAL LIGHT INTERACTION
+   Reflection is caused by the system event
+   ========================================================= */
+
+.materialSweepUpper,
+.materialSweepLower {
+  fill: none;
+
+  stroke:
+    rgba(
+      249,
+      252,
+      255,
+      0.94
+    );
+
+  stroke-width: 2.1;
+
+  stroke-linecap: round;
+
+  stroke-dasharray:
+    15 85;
+
+  stroke-dashoffset:
+    var(--material-sweep-offset);
+
+  opacity:
+    var(--material-sweep-opacity);
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(
+        255,
+        255,
+        255,
+        0.78
+      )
+    )
+    drop-shadow(
+      0 0 7px
+      rgba(
+        186,
+        208,
+        240,
+        0.32
+      )
+    );
+
+  pointer-events: none;
+}
+
+/* Make permanent highlights less painted-on */
+
+.arcSpec {
+  stroke:
+    rgba(
+      236,
+      242,
+      250,
+      0.46
+    );
+
+  stroke-width: 1.15;
+}
+
+/* =========================================================
+   05 — OPTICAL EYE
+   Less mascot, more machine intelligence
+   ========================================================= */
+
+.eyeWhite {
+  fill: #eeede8;
+
+  stroke:
+    rgba(
+      241,
+      244,
+      248,
+      0.26
+    );
+
+  stroke-width: 0.7;
+}
+
+.eyeGlass {
+  fill: none;
+
+  stroke:
+    rgba(
+      210,
+      223,
+      242,
+      0.20
+    );
+
+  stroke-width: 1.05;
+
+  opacity:
+    var(--final-eye-opacity);
+
+  filter:
+    drop-shadow(
+      0 0 4px
+      rgba(
+        179,
+        202,
+        236,
+        0.12
+      )
+    );
+}
+
+.eyeIris {
+  fill: #282c32;
+
+  stroke:
+    rgba(
+      116,
+      126,
+      141,
+      0.20
+    );
+
+  stroke-width: 0.65;
+}
+
+.eyePupil {
+  fill: #010204;
+}
+
+.eyeCatchlight {
+  opacity: 0.72;
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(
+        255,
+        255,
+        255,
+        0.54
+      )
+    );
+}
+
+/* =========================================================
+   06 — FINAL EYE EVENT AFFECTS THE WHOLE WORLD
+   ========================================================= */
+
+.stage::after {
+  content: "";
+
+  position: absolute;
+
+  z-index: 7;
+
+  left: 71.5%;
+  top: 45%;
+
+  width: 88px;
+  height: 88px;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    )
+    scale(
+      1.08
+    );
+
+  border-radius: 50%;
+
+  opacity:
+    var(--final-response);
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        255,
+        255,
+        255,
+        0.13
+      ) 0%,
+      rgba(
+        188,
+        210,
+        241,
+        0.055
+      ) 27%,
+      transparent 69%
+    );
+
+  pointer-events: none;
+}
+
+.cinematicDepth::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 39%;
+
+  width: 44vmin;
+  height: 44vmin;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border-radius: 50%;
+
+  opacity:
+    var(--final-response);
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        203,
+        220,
+        245,
+        0.075
+      ),
+      transparent 66%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   07 — HORIZON BECOMES ATMOSPHERIC
+   ========================================================= */
+
+.horizon {
+  bottom: -9.6%;
+  height: 21.5%;
+
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(
+        70,
+        77,
+        89,
+        0.20
+      ),
+      rgba(
+        24,
+        28,
+        34,
+        0.64
+      ) 34%,
+      #090b0f 74%
+    );
+}
+
+.horizonEdge {
+  opacity: 0.72;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        203,
+        215,
+        233,
+        0.025
+      ) 25%,
+      rgba(
+        239,
+        245,
+        253,
+        0.28
+      ) 50%,
+      rgba(
+        203,
+        215,
+        233,
+        0.025
+      ) 75%,
+      transparent
+    );
+}
+
+.horizon::before {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: -34px;
+
+  width: 150px;
+  height: 72px;
+
+  transform:
+    translateX(-50%);
+
+  opacity:
+    var(--final-response);
+
+  background:
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(
+        211,
+        226,
+        248,
+        0.14
+      ),
+      transparent 69%
+    );
+
+  pointer-events: none;
+}
+
+.beaconGlow {
+  width: 38px;
+  height: 38px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(
+        255,
+        255,
+        255,
+        0.40
+      ),
+      rgba(
+        202,
+        219,
+        244,
+        0.105
+      ) 35%,
+      transparent 74%
+    );
+}
+
+/* =========================================================
+   PERFORMANCE LIMITS
+   ========================================================= */
+
+.materialSweepUpper,
+.materialSweepLower,
+.searchlightA,
+.searchlightB {
+  backface-visibility: hidden;
+}
+
+@media (max-width: 520px) {
+  .searchlightB {
+    display: none;
+  }
+
+  .radarSweep {
+    filter: blur(2px);
+  }
+
+  .stage {
+    width:
+      clamp(
+        252px,
+        62vw,
+        318px
+      );
+  }
+}
