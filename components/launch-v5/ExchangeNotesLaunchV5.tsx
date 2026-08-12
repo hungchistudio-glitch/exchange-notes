@@ -105,7 +105,7 @@ export default function ExchangeNotesLaunchV5({
     }
 
     setPlaying((value) => !value);
-  }, [time]);
+  }, []);
 
   const seek = useCallback((value: number) => {
     const next = clamp(value, 0, DURATION);
@@ -180,6 +180,24 @@ export default function ExchangeNotesLaunchV5({
   const upperY = lerp(-40, 0, upper);
   const upperR = lerp(-18, 0, upper);
 
+  const seedTraceOpacity =
+    seed *
+    (
+      1 -
+      smooth(
+        phase(time, 420, 680),
+      )
+    );
+
+  const signalNodeOpacity =
+    seed *
+    (
+      1 -
+      smooth(
+        phase(time, 500, 760),
+      )
+    );
+
   const lowerX = lerp(52, 0, lower);
   const lowerY = lerp(42, 0, lower);
   const lowerR = lerp(18, 0, lower);
@@ -223,6 +241,8 @@ export default function ExchangeNotesLaunchV5({
     "--detector-opacity": detector,
 
     "--seed": seed,
+    "--seed-trace-opacity": seedTraceOpacity,
+    "--signal-node-opacity": signalNodeOpacity,
     "--upper-opacity": upper,
     "--upper-x": `${upperX}px`,
     "--upper-y": `${upperY}px`,

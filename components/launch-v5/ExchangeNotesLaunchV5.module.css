@@ -126,7 +126,7 @@
   stroke-linecap: round;
   stroke-dasharray: 100;
   stroke-dashoffset: calc(100 - var(--seed) * 100);
-  opacity: calc(var(--seed) * (1 - var(--upper-opacity) * 0.9));
+  opacity: var(--seed-trace-opacity);
   filter:
     drop-shadow(0 0 2px rgba(255, 255, 255, 0.76))
     drop-shadow(0 0 8px rgba(191, 206, 229, 0.30));
@@ -134,7 +134,7 @@
 
 .signalNode {
   fill: #ffffff;
-  opacity: calc(var(--seed) * (1 - var(--upper-opacity) * 0.88));
+  opacity: var(--signal-node-opacity);
   filter:
     drop-shadow(0 0 5px rgba(255, 255, 255, 0.88))
     drop-shadow(0 0 18px rgba(192, 207, 233, 0.34));
@@ -1330,4 +1330,20 @@
       translate(-50%, -50%)
       scale(4.8);
   }
+}
+
+
+/* V5_SEED_ARTIFACT_HARD_KILL */
+
+.launch {
+  --seed-trace-opacity: 0;
+  --signal-node-opacity: 0;
+}
+
+.seedTrace {
+  opacity: var(--seed-trace-opacity);
+}
+
+.signalNode {
+  opacity: var(--signal-node-opacity);
 }
