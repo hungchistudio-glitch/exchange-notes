@@ -25,7 +25,7 @@ const v8Serif = Bodoni_Moda({
   variable: "--font-v8-serif",
 });
 
-const DURATION = 3000;
+const DURATION = 3800;
 
 const clamp = (value: number, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
@@ -185,24 +185,147 @@ export default function ExchangeNotesLaunchV8({
     phase(time, 1680, 2240),
   );
 
+  /*
+   * V8.1 Couture Lock:
+   * identity resolves first, then the entire world settles,
+   * and Yumi's eye becomes the final emotional beat.
+   */
   const identity = smooth(
-    phase(time, 2240, 2480),
+    phase(time, 2200, 2460),
   );
 
   const notesReveal = smooth(
-    phase(time, 2320, 2580),
+    phase(time, 2340, 2580),
   );
 
   const horizon = smooth(
-    phase(time, 2380, 2820),
+    phase(time, 2400, 2800),
   );
 
   const eyeOpen = smooth(
-    phase(time, 2600, 2810),
+    phase(time, 2660, 2880),
   );
 
+  /*
+   * V8.4 — Slow Cinematic Gaze
+   *
+   * 2.66–2.88  eye opens into center
+   * 2.88–3.14  slow look left
+   * 3.14–3.24  HOLD LEFT
+   * 3.24–3.50  slow travel right
+   * 3.50–3.60  HOLD RIGHT
+   * 3.60–3.73  return to center
+   * 3.73–3.80  conscious final hold
+   */
+
+  const trueCenterX = -12;
+  const trueCenterY = 7.0;
+
+  const leftGazeX = -18.4;
+  const leftGazeY = 7.45;
+
+  const rightGazeX = -6.5;
+  const rightGazeY = 6.45;
+
+  let pupilX = trueCenterX;
+  let pupilY = trueCenterY;
+
+  if (time >= 2880 && time < 3140) {
+    const lookLeft = smooth(
+      phase(time, 2880, 3140),
+    );
+
+    pupilX = lerp(
+      trueCenterX,
+      leftGazeX,
+      lookLeft,
+    );
+
+    pupilY = lerp(
+      trueCenterY,
+      leftGazeY,
+      lookLeft,
+    );
+
+  } else if (time >= 3140 && time < 3240) {
+    /*
+     * Hold the gaze.
+     * Premium animation needs moments where nothing moves.
+     */
+    pupilX = leftGazeX;
+    pupilY = leftGazeY;
+
+  } else if (time >= 3240 && time < 3500) {
+    const lookRight = smooth(
+      phase(time, 3240, 3500),
+    );
+
+    pupilX = lerp(
+      leftGazeX,
+      rightGazeX,
+      lookRight,
+    );
+
+    pupilY = lerp(
+      leftGazeY,
+      rightGazeY,
+      lookRight,
+    );
+
+  } else if (time >= 3500 && time < 3600) {
+    pupilX = rightGazeX;
+    pupilY = rightGazeY;
+
+  } else if (time >= 3600) {
+    const returnCenter = smooth(
+      phase(time, 3600, 3730),
+    );
+
+    pupilX = lerp(
+      rightGazeX,
+      trueCenterX,
+      returnCenter,
+    );
+
+    pupilY = lerp(
+      rightGazeY,
+      trueCenterY,
+      returnCenter,
+    );
+  }
+
   const focusLock = smooth(
-    phase(time, 2760, 2910),
+    phase(time, 3710, 3780),
+  );
+
+  const pupilScale =
+    lerp(
+      1.018,
+      0.985,
+      focusLock,
+    );
+
+  const eyeBreath =
+    1 +
+    cinematicPulse(
+      time,
+      2850,
+      3700,
+    ) * 0.004;
+
+  const titleExposure = smooth(
+    phase(time, 2190, 2460),
+  );
+
+  const titleGlint =
+    cinematicPulse(
+      time,
+      2260,
+      2520,
+    );
+
+  const finalStillness = smooth(
+    phase(time, 2860, 2980),
   );
 
   const materialArrival =
@@ -259,7 +382,8 @@ export default function ExchangeNotesLaunchV8({
     );
 
   const radar = clamp(
-    smooth(phase(time, 180, 2400)) * (1 - eyeOpen * 0.12),
+    smooth(phase(time, 180, 2400)) *
+      (1 - finalStillness * 0.72),
   );
 
   const radarRotate = lerp(
@@ -359,45 +483,6 @@ export default function ExchangeNotesLaunchV8({
   const darkLensOpacity = clamp(1 - eyeOpen * 1.05);
   const finalEyeOpacity = eyeOpen;
 
-  let pupilX = -3.0;
-  let pupilY = 1.0;
-
-  if (eyeOpen > 0.16) {
-    const acquire = smooth(
-      phase(time, 2680, 2820),
-    );
-
-    pupilX = lerp(
-      -3.0,
-      1.45,
-      acquire,
-    );
-
-    pupilY = lerp(
-      1.0,
-      -0.4,
-      acquire,
-    );
-  }
-
-  pupilX = lerp(
-    pupilX,
-    0,
-    focusLock,
-  );
-
-  pupilY = lerp(
-    pupilY,
-    0,
-    focusLock,
-  );
-
-  const pupilScale =
-    lerp(
-      1.05,
-      0.92,
-      focusLock,
-    );
 
   const vars: Vars = {
     "--stage-scale": stageScale,
@@ -413,6 +498,12 @@ export default function ExchangeNotesLaunchV8({
 
     "--lock-pulse": lockPulse,
     "--focus-lock": focusLock,
+
+    "--eye-breath": eyeBreath,
+
+    "--title-exposure": titleExposure,
+    "--title-glint": titleGlint,
+    "--final-stillness": finalStillness,
 
     "--radar-opacity": radar,
     "--radar-rotate": `${radarRotate}deg`,
@@ -725,8 +816,15 @@ export default function ExchangeNotesLaunchV8({
       </div>
 
       <div className={styles.identity} aria-hidden="true">
-        <div className={styles.exchangeWord}>EXCHANGE</div>
-        <div className={styles.notesWord}>NOTES</div>
+        <div className={styles.exchangeWord}>
+          <span className={styles.exchangeWordInner}>
+            EXCHANGE
+          </span>
+        </div>
+
+        <div className={styles.notesWord}>
+          NOTES
+        </div>
       </div>
 
       <div className={styles.horizon} aria-hidden="true">
@@ -770,10 +868,16 @@ export default function ExchangeNotesLaunchV8({
               [1230, "1.23"],
               [1460, "1.46"],
               [1680, "1.68"],
-              [2240, "2.24"],
-              [2600, "2.60"],
-              [2810, "2.81"],
-              [3000, "3.00"],
+              [2200, "2.20"],
+              [2460, "2.46"],
+              [2660, "2.66"],
+              [2880, "2.88"],
+              [3140, "3.14"],
+              [3240, "3.24"],
+              [3500, "3.50"],
+              [3600, "3.60"],
+              [3730, "3.73"],
+              [3800, "3.80"],
             ].map(([value, label]) => (
               <button
                 key={value}
