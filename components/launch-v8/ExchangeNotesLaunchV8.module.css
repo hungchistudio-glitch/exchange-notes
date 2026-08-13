@@ -2382,3 +2382,483 @@
       );
   }
 }
+
+
+/* =========================================================
+   V8 — ORBITAL COUTURE
+   Luxury editorial typography × precision space technology
+   ========================================================= */
+
+
+/* No meaningless opening tail */
+
+.seedTrace {
+  display: none;
+}
+
+
+/* ---------------------------------------------------------
+   Deep-space environment
+   Only transform + opacity move.
+   --------------------------------------------------------- */
+
+.v8Space {
+  position: absolute;
+  inset: 0;
+
+  overflow: hidden;
+
+  opacity: var(--space-opacity);
+
+  transform:
+    translate3d(
+      var(--space-x),
+      var(--space-y),
+      0
+    );
+
+  pointer-events: none;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+.v8Stars {
+  position: absolute;
+  inset: -5%;
+
+  opacity: 0.19;
+
+  background-image:
+    radial-gradient(
+      circle,
+      rgba(239, 244, 252, 0.78) 0 0.55px,
+      transparent 0.85px
+    ),
+    radial-gradient(
+      circle,
+      rgba(166, 190, 224, 0.42) 0 0.45px,
+      transparent 0.78px
+    ),
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.44) 0 0.4px,
+      transparent 0.74px
+    );
+
+  background-size:
+    149px 137px,
+    229px 211px,
+    347px 307px;
+
+  background-position:
+    17px 33px,
+    91px 17px,
+    153px 103px;
+}
+
+.v8OrbitA {
+  position: absolute;
+
+  left: -34%;
+  top: 48%;
+
+  width: 150vw;
+  height: 104vw;
+
+  border:
+    1px solid
+    rgba(180, 202, 232, 0.038);
+
+  border-radius: 50%;
+
+  transform:
+    rotate(
+      calc(
+        -13deg +
+        var(--space-rotate)
+      )
+    );
+
+  opacity: 0.72;
+
+  will-change: transform;
+}
+
+.v8OrbitB {
+  position: absolute;
+
+  right: -47%;
+  top: -24%;
+
+  width: 108vw;
+  height: 108vw;
+
+  border:
+    1px solid
+    rgba(156, 183, 220, 0.023);
+
+  border-radius: 50%;
+
+  transform:
+    rotate(
+      calc(
+        18deg -
+        var(--space-rotate)
+      )
+    );
+
+  opacity: 0.62;
+
+  will-change: transform;
+}
+
+.v8Sweep {
+  position: absolute;
+
+  left: 48%;
+  top: 37%;
+
+  width: 108vmax;
+  aspect-ratio: 1;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(
+      calc(
+        18deg +
+        var(--space-rotate)
+      )
+    );
+
+  border-radius: 50%;
+
+  opacity: 0.045;
+
+  background:
+    conic-gradient(
+      from 222deg,
+      transparent 0deg,
+      transparent 20deg,
+      rgba(190, 215, 248, 0.16) 31deg,
+      rgba(213, 228, 248, 0.035) 42deg,
+      transparent 54deg,
+      transparent 360deg
+    );
+
+  pointer-events: none;
+
+  will-change: transform;
+}
+
+
+/* Existing radar is atmospheric, never the hero */
+
+.radarBackground {
+  opacity:
+    calc(
+      var(--radar-opacity) * 0.32
+    );
+}
+
+.cinematicDepth {
+  opacity: 0.52;
+}
+
+
+/* ---------------------------------------------------------
+   Material discovery
+   --------------------------------------------------------- */
+
+.arcBloom {
+  stroke:
+    rgba(196, 214, 239, 0.11);
+
+  stroke-width: 27;
+
+  filter: blur(6px);
+}
+
+.arcBody {
+  filter:
+    drop-shadow(
+      0 12px 19px
+      rgba(0, 0, 0, 0.60)
+    )
+    drop-shadow(
+      0 0 6px
+      rgba(205, 222, 247, 0.055)
+    );
+}
+
+.arcSpec {
+  stroke:
+    rgba(250, 251, 253, 0.79);
+
+  stroke-width: 1.05;
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(238, 246, 255, 0.19)
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Magnetic connector
+   --------------------------------------------------------- */
+
+.connectorGlow {
+  opacity:
+    calc(
+      var(--connector-glow) *
+      (
+        0.54 +
+        var(--lock-pulse) * 0.30
+      )
+    );
+
+  filter: blur(5px);
+}
+
+.connectorBody {
+  filter:
+    drop-shadow(
+      0 3px 8px
+      rgba(0, 0, 0, 0.38)
+    )
+    drop-shadow(
+      0 0 6px
+      rgba(244, 248, 255, 0.05)
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Exchange is a single event, not a HUD diagram
+   --------------------------------------------------------- */
+
+.exchangeWing,
+.exchangeArrows {
+  display: none;
+}
+
+.exchangePulse {
+  stroke-width: 0.9;
+
+  opacity:
+    calc(
+      var(--impact) * 0.68
+    );
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(255, 255, 255, 0.38)
+    )
+    drop-shadow(
+      0 0 13px
+      rgba(185, 211, 247, 0.17)
+    );
+}
+
+.stage::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 45%;
+
+  width: 72%;
+  height: 1px;
+
+  transform:
+    translate(-50%, -50%)
+    scaleX(
+      calc(
+        0.12 +
+        var(--impact) * 0.88
+      )
+    );
+
+  opacity:
+    calc(
+      var(--impact) * 0.80
+    );
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(201, 220, 247, 0.05) 15%,
+      rgba(250, 252, 255, 0.92) 50%,
+      rgba(201, 220, 247, 0.05) 85%,
+      transparent
+    );
+
+  box-shadow:
+    0 0 6px
+      rgba(238, 246, 255, 0.28);
+
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   Final eye performance
+   --------------------------------------------------------- */
+
+.pupilGroup {
+  transform:
+    translate(
+      var(--pupil-x),
+      var(--pupil-y)
+    )
+    scale(var(--pupil-scale));
+
+  transform-origin:
+    298px 173px;
+
+  will-change: transform;
+}
+
+.eyeWhite {
+  fill: #f3f0e9;
+
+  filter:
+    drop-shadow(
+      0 2px 5px
+      rgba(0, 0, 0, 0.14)
+    );
+}
+
+.eyeIris {
+  fill: #30343b;
+}
+
+.eyePupil {
+  fill: #020305;
+}
+
+.eyeCatchlight {
+  opacity:
+    calc(
+      0.44 +
+      var(--focus-lock) * 0.56
+    );
+
+  filter:
+    drop-shadow(
+      0 0 2px
+      rgba(255, 255, 255, 0.88)
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Luxury editorial brand lockup
+   --------------------------------------------------------- */
+
+.identity {
+  top: 59.0%;
+}
+
+.exchangeWord {
+  font-family:
+    var(--font-v8-serif),
+    Didot,
+    "Bodoni 72",
+    serif;
+
+  font-size:
+    clamp(
+      28px,
+      7.0vw,
+      44px
+    );
+
+  font-weight: 400;
+
+  line-height: 0.94;
+
+  letter-spacing: 0.145em;
+
+  padding-left: 0.145em;
+
+  color:
+    rgba(
+      242,
+      241,
+      237,
+      0.96
+    );
+
+  transform:
+    translateY(
+      calc(
+        7px *
+        (1 - var(--identity-opacity))
+      )
+    );
+}
+
+.notesWord {
+  margin-top:
+    clamp(
+      11px,
+      2.4vw,
+      16px
+    );
+
+  font-family:
+    var(--font-geist-sans),
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+
+  font-size:
+    clamp(
+      8px,
+      1.9vw,
+      11px
+    );
+
+  font-weight: 400;
+
+  letter-spacing: 0.62em;
+
+  padding-left: 0.62em;
+
+  color:
+    rgba(
+      218,
+      222,
+      229,
+      0.64
+    );
+}
+
+
+/* ---------------------------------------------------------
+   Final environment hierarchy
+   --------------------------------------------------------- */
+
+.horizon {
+  opacity:
+    calc(
+      var(--horizon-opacity) * 0.52
+    );
+}
+
+.grain {
+  opacity: 0.018;
+}
+
+@media (max-height: 700px) {
+  .identity {
+    top: 58.4%;
+  }
+}

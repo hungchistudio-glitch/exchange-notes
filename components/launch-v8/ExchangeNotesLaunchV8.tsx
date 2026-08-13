@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { Bodoni_Moda } from "next/font/google";
 
 import styles from "./ExchangeNotesLaunchV8.module.css";
 
@@ -16,6 +17,13 @@ type Props = {
 };
 
 type Vars = CSSProperties & Record<`--${string}`, string | number>;
+
+const v8Serif = Bodoni_Moda({
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+  variable: "--font-v8-serif",
+});
 
 const DURATION = 3000;
 
@@ -38,6 +46,17 @@ const lerp = (a: number, b: number, t: number) =>
 
 const bell = (time: number, center: number, radius: number) =>
   clamp(1 - Math.abs(time - center) / radius);
+
+const cinematicPulse = (
+  time: number,
+  start: number,
+  end: number,
+) => {
+  const t = phase(time, start, end);
+  const s = Math.sin(Math.PI * t);
+
+  return s * s;
+};
 
 export default function ExchangeNotesLaunchV8({
   reviewMode = false,
@@ -116,56 +135,127 @@ export default function ExchangeNotesLaunchV8({
   }, []);
 
   /*
-    V5 Assembly Narrative
+    V8 — ORBITAL COUTURE
 
-    0.00–0.35  Seed / signal
-    0.35–0.90  Upper + lower body form separately
-    0.90–1.40  Connector locks
-    1.40–1.95  Exchange / calibration
-    1.95–2.55  Body resolved / still dark eye
-    2.55–2.88  Eye opens
-    2.88–3.00  Identity hold
+    0.00–0.24  Silence / acquisition
+    0.24–0.82  Material discovery
+    0.82–1.23  Magnetic precision lock
+    1.23–1.68  Exchange event
+    1.68–2.24  Cinematic camera reveal
+    2.24–2.58  Brand title resolves
+    2.60–2.81  Yumi eye awakens
+    2.76–2.91  Focus acquisition
+    2.91–3.00  Conscious hold
   */
 
-  const seed = smooth(phase(time, 0, 350));
-  const upper = smooth(phase(time, 320, 760));
-  const lower = smooth(phase(time, 460, 920));
-  const connector = smooth(phase(time, 900, 1400));
-  const ring = smooth(phase(time, 1050, 1480));
+  const seed = smooth(
+    phase(time, 180, 420),
+  );
 
-  const exchangeIn = easeOut(phase(time, 1380, 1560));
-  const exchangeOut = 1 - smooth(phase(time, 1700, 1960));
-  const exchange = clamp(exchangeIn * exchangeOut);
+  const upper = smooth(
+    phase(time, 250, 740),
+  );
 
-  const settle = smooth(phase(time, 1950, 2550));
-  const eyeOpen = smooth(phase(time, 2550, 2880));
-  const identity = smooth(phase(time, 2720, 3000));
-  const notesReveal = smooth(phase(time, 2780, 3000));
-  const horizon = smooth(phase(time, 2740, 3000));
+  const lower = smooth(
+    phase(time, 330, 820),
+  );
+
+  const connector = easeOut(
+    phase(time, 820, 1230),
+  );
+
+  const ring = smooth(
+    phase(time, 950, 1280),
+  );
+
+  const exchangeIn = easeOut(
+    phase(time, 1230, 1410),
+  );
+
+  const exchangeOut =
+    1 -
+    smooth(
+      phase(time, 1500, 1680),
+    );
+
+  const exchange =
+    clamp(exchangeIn * exchangeOut);
+
+  const settle = smooth(
+    phase(time, 1680, 2240),
+  );
+
+  const identity = smooth(
+    phase(time, 2240, 2480),
+  );
+
+  const notesReveal = smooth(
+    phase(time, 2320, 2580),
+  );
+
+  const horizon = smooth(
+    phase(time, 2380, 2820),
+  );
+
+  const eyeOpen = smooth(
+    phase(time, 2600, 2810),
+  );
+
+  const focusLock = smooth(
+    phase(time, 2760, 2910),
+  );
+
+  const materialArrival =
+    cinematicPulse(
+      time,
+      560,
+      900,
+    );
+
+  const lockPulse =
+    cinematicPulse(
+      time,
+      1120,
+      1320,
+    );
+
+  const spaceProgress = smooth(
+    phase(time, 0, DURATION),
+  );
+
+  const spaceReveal = smooth(
+    phase(time, 0, 560),
+  );
+
   const impact = smooth(
-    bell(time, 1600, 118),
+    bell(time, 1460, 90),
   );
 
   const materialSweep = smooth(
-    phase(time, 920, 1840),
+    phase(time, 280, 1120),
   );
 
-  const materialSweepOpacity = smooth(
-    bell(time, 1480, 610),
-  );
+  const materialSweepOpacity =
+    clamp(
+      cinematicPulse(
+        time,
+        280,
+        1180,
+      ) * 0.92,
+    );
 
   const connectorResponse = smooth(
-    bell(time, 1380, 125),
+    bell(time, 1230, 86),
   );
 
   const eyeResponse = smooth(
-    bell(time, 2760, 175),
+    bell(time, 2810, 145),
   );
 
   const calibrationOpacity =
     1 -
     smooth(
-      phase(time, 2220, 2480),
+      phase(time, 1840, 2140),
     );
 
   const radar = clamp(
@@ -195,14 +285,26 @@ export default function ExchangeNotesLaunchV8({
   );
 
   const stageScale =
-    time < 1980 ? lerp(0.94, 1, seed) : lerp(1, 0.70, settle);
+    time < 1640
+      ? lerp(0.965, 1, seed)
+      : lerp(1, 0.765, settle);
 
   const stageY =
-    time < 1980 ? 0 : lerp(0, -66, settle);
+    time < 1640
+      ? 0
+      : lerp(0, -54, settle);
 
-  const upperX = lerp(-52, 0, upper);
-  const upperY = lerp(-40, 0, upper);
-  const upperR = lerp(-18, 0, upper);
+  const upperX =
+    lerp(-44, 0, upper) +
+    materialArrival * 1.45;
+
+  const upperY =
+    lerp(-31, 0, upper) -
+    materialArrival * 0.85;
+
+  const upperR =
+    lerp(-12, 0, upper) +
+    materialArrival * 0.5;
 
   const seedTraceOpacity =
     seed *
@@ -222,12 +324,28 @@ export default function ExchangeNotesLaunchV8({
       )
     );
 
-  const lowerX = lerp(52, 0, lower);
-  const lowerY = lerp(42, 0, lower);
-  const lowerR = lerp(18, 0, lower);
+  const lowerX =
+    lerp(44, 0, lower) -
+    materialArrival * 1.35;
+
+  const lowerY =
+    lerp(32, 0, lower) +
+    materialArrival * 0.8;
+
+  const lowerR =
+    lerp(12, 0, lower) -
+    materialArrival * 0.48;
 
   const railOpacity = clamp(
-    smooth(phase(time, 260, 1200)) * (1 - phase(time, 2200, 2850) * 0.35),
+    smooth(
+      phase(time, 260, 1040),
+    ) *
+      (
+        1 -
+        smooth(
+          phase(time, 1700, 2240),
+        ) * 0.52
+      ),
   );
 
   const connectorGlow = clamp(
@@ -241,22 +359,60 @@ export default function ExchangeNotesLaunchV8({
   const darkLensOpacity = clamp(1 - eyeOpen * 1.05);
   const finalEyeOpacity = eyeOpen;
 
-  let pupilX = -5;
-  let pupilY = 2;
+  let pupilX = -3.0;
+  let pupilY = 1.0;
 
-  if (eyeOpen > 0.28 && eyeOpen <= 0.68) {
-    const move = smooth(phase(eyeOpen, 0.28, 0.68));
-    pupilX = lerp(-5, 4, move);
-    pupilY = lerp(2, -1, move);
-  } else if (eyeOpen > 0.68) {
-    const settlePupil = smooth(phase(eyeOpen, 0.68, 1));
-    pupilX = lerp(4, 0, settlePupil);
-    pupilY = lerp(-1, 0, settlePupil);
+  if (eyeOpen > 0.16) {
+    const acquire = smooth(
+      phase(time, 2680, 2820),
+    );
+
+    pupilX = lerp(
+      -3.0,
+      1.45,
+      acquire,
+    );
+
+    pupilY = lerp(
+      1.0,
+      -0.4,
+      acquire,
+    );
   }
+
+  pupilX = lerp(
+    pupilX,
+    0,
+    focusLock,
+  );
+
+  pupilY = lerp(
+    pupilY,
+    0,
+    focusLock,
+  );
+
+  const pupilScale =
+    lerp(
+      1.05,
+      0.92,
+      focusLock,
+    );
 
   const vars: Vars = {
     "--stage-scale": stageScale,
     "--stage-y": `${stageY}px`,
+
+    "--space-opacity": spaceReveal,
+    "--space-x":
+      `${lerp(-5, 5, spaceProgress)}px`,
+    "--space-y":
+      `${lerp(3, -3, spaceProgress)}px`,
+    "--space-rotate":
+      `${lerp(-2.2, 2.2, spaceProgress)}deg`,
+
+    "--lock-pulse": lockPulse,
+    "--focus-lock": focusLock,
 
     "--radar-opacity": radar,
     "--radar-rotate": `${radarRotate}deg`,
@@ -316,6 +472,7 @@ export default function ExchangeNotesLaunchV8({
 
     "--pupil-x": `${pupilX}px`,
     "--pupil-y": `${pupilY}px`,
+    "--pupil-scale": pupilScale,
 
     "--identity-opacity": identity,
     "--notes-opacity": notesReveal,
@@ -324,11 +481,21 @@ export default function ExchangeNotesLaunchV8({
 
   return (
     <div
-      className={`${styles.launch} ${reviewMode ? styles.reviewMode : ""}`}
+      className={`${styles.launch} ${v8Serif.variable} ${reviewMode ? styles.reviewMode : ""}`}
       style={vars}
       role="status"
       aria-label="Exchange Notes assembly opening"
     >
+      <div
+        className={styles.v8Space}
+        aria-hidden="true"
+      >
+        <div className={styles.v8Stars} />
+        <div className={styles.v8OrbitA} />
+        <div className={styles.v8OrbitB} />
+        <div className={styles.v8Sweep} />
+      </div>
+
       <div className={styles.ambientBloom} />
       <div className={styles.exchangeBloom} />
       <div className={styles.grain} />
@@ -360,10 +527,10 @@ export default function ExchangeNotesLaunchV8({
         >
           <defs>
             <linearGradient id="v5-body-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#1f2328" />
-              <stop offset="0.48" stopColor="#4b515b" />
-              <stop offset="0.52" stopColor="#747b85" />
-              <stop offset="1" stopColor="#090a0d" />
+              <stop offset="0" stopColor="#0b0e13" />
+              <stop offset="0.48" stopColor="#29303a" />
+              <stop offset="0.52" stopColor="#7b8592" />
+              <stop offset="1" stopColor="#030407" />
             </linearGradient>
 
             <linearGradient id="v5-bar-grad" x1="0" y1="0" x2="1" y2="0">
@@ -598,12 +765,14 @@ export default function ExchangeNotesLaunchV8({
 
           <div className={styles.checkpoints}>
             {[
-              [350, "0.35"],
-              [900, "0.90"],
-              [1400, "1.40"],
-              [1600, "1.60"],
-              [2550, "2.55"],
-              [2880, "2.88"],
+              [240, "0.24"],
+              [820, "0.82"],
+              [1230, "1.23"],
+              [1460, "1.46"],
+              [1680, "1.68"],
+              [2240, "2.24"],
+              [2600, "2.60"],
+              [2810, "2.81"],
               [3000, "3.00"],
             ].map(([value, label]) => (
               <button
