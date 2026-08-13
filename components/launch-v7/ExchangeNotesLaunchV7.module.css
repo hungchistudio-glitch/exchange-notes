@@ -2382,3 +2382,208 @@
       );
   }
 }
+
+
+/* =========================================================
+   V7 FAST SPACE
+   Performance-first cinematic environment
+   ========================================================= */
+
+.fastSpace {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  opacity: var(--space-opacity);
+
+  transform:
+    translate3d(
+      var(--space-x),
+      var(--space-y),
+      0
+    );
+
+  pointer-events: none;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+
+/* Static star texture — no animated background-position */
+
+.fastStars {
+  position: absolute;
+  inset: -6%;
+
+  opacity: 0.28;
+
+  background-image:
+    radial-gradient(
+      circle,
+      rgba(230, 238, 249, 0.72) 0 0.55px,
+      transparent 0.8px
+    ),
+    radial-gradient(
+      circle,
+      rgba(176, 197, 226, 0.44) 0 0.45px,
+      transparent 0.75px
+    ),
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.48) 0 0.4px,
+      transparent 0.72px
+    );
+
+  background-size:
+    127px 127px,
+    191px 191px,
+    283px 283px;
+
+  background-position:
+    17px 31px,
+    83px 11px,
+    141px 97px;
+}
+
+
+/* One large orbital ellipse */
+
+.fastOrbitA {
+  position: absolute;
+
+  left: 50%;
+  top: 39%;
+
+  width: min(138vmin, 1080px);
+  height: min(88vmin, 690px);
+
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--space-rotate));
+
+  border:
+    1px solid
+    rgba(183, 204, 232, 0.045);
+
+  border-radius: 50%;
+
+  opacity: 0.62;
+
+  will-change: transform;
+}
+
+
+/* One off-axis orbit creates scale without clutter */
+
+.fastOrbitB {
+  position: absolute;
+
+  left: 18%;
+  top: 55%;
+
+  width: min(118vmin, 920px);
+  height: min(118vmin, 920px);
+
+  transform:
+    translate(-50%, -50%)
+    rotate(
+      calc(
+        var(--space-rotate) * -0.55
+      )
+    );
+
+  border:
+    1px solid
+    rgba(159, 185, 220, 0.025);
+
+  border-radius: 50%;
+
+  opacity: 0.48;
+
+  will-change: transform;
+}
+
+
+/* Static atmosphere — blur never changes */
+
+.fastGlow {
+  position: absolute;
+
+  left: 50%;
+  top: 38%;
+
+  width: min(92vw, 880px);
+  height: min(68vw, 660px);
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  opacity: 0.38;
+
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(96, 121, 158, 0.11) 0%,
+      rgba(53, 70, 96, 0.045) 38%,
+      transparent 72%
+    );
+
+  filter: blur(32px);
+}
+
+
+/* Reduce original heavy environment intensity */
+
+.radarBackground {
+  opacity:
+    calc(
+      var(--radar-opacity) * 0.56
+    );
+}
+
+.exchangeWing {
+  stroke-width: 11;
+
+  opacity:
+    calc(
+      var(--exchange-opacity) * 0.76
+    );
+}
+
+
+/* Promote hero sharpness */
+
+.arcBloom {
+  filter: blur(8px);
+}
+
+.connectorGlow {
+  filter: blur(6px);
+}
+
+.exchangeBloom {
+  filter: blur(9px);
+}
+
+
+/* Prefer GPU compositing */
+
+.stage,
+.scene,
+.fastSpace,
+.fastOrbitA,
+.fastOrbitB {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fastOrbitA,
+  .fastOrbitB {
+    transform: none;
+  }
+}

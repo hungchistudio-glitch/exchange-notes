@@ -142,6 +142,20 @@ export default function ExchangeNotesLaunchV7({
   const identity = smooth(phase(time, 2720, 3000));
   const notesReveal = smooth(phase(time, 2780, 3000));
   const horizon = smooth(phase(time, 2740, 3000));
+
+  /*
+   * V7 Fast Space:
+   * only transform + opacity animate.
+   * No animated blur, background-position, masks, or giant repaint layers.
+   */
+  const spaceProgress = smooth(
+    phase(time, 0, DURATION),
+  );
+
+  const spaceReveal = smooth(
+    phase(time, 0, 650),
+  );
+
   const impact = smooth(
     bell(time, 1600, 118),
   );
@@ -258,6 +272,17 @@ export default function ExchangeNotesLaunchV7({
     "--stage-scale": stageScale,
     "--stage-y": `${stageY}px`,
 
+    "--space-opacity": spaceReveal,
+
+    "--space-x":
+      `${lerp(-5, 5, spaceProgress)}px`,
+
+    "--space-y":
+      `${lerp(3, -3, spaceProgress)}px`,
+
+    "--space-rotate":
+      `${lerp(-2.5, 2.5, spaceProgress)}deg`,
+
     "--radar-opacity": radar,
     "--radar-rotate": `${radarRotate}deg`,
     "--scan-left-x": `${scanLeft}px`,
@@ -329,6 +354,16 @@ export default function ExchangeNotesLaunchV7({
       role="status"
       aria-label="Exchange Notes assembly opening"
     >
+      <div
+        className={styles.fastSpace}
+        aria-hidden="true"
+      >
+        <div className={styles.fastStars} />
+        <div className={styles.fastOrbitA} />
+        <div className={styles.fastOrbitB} />
+        <div className={styles.fastGlow} />
+      </div>
+
       <div className={styles.ambientBloom} />
       <div className={styles.exchangeBloom} />
       <div className={styles.grain} />
