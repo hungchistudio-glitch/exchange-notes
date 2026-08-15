@@ -2,9 +2,15 @@
 
 import { useSyncExternalStore } from "react";
 
-import AppSplash from "./AppSplash";
+import ExchangeNotesLaunch from "@/components/launch/ExchangeNotesLaunch";
 
-const SESSION_KEY = "exchange-notes:splash-seen-v2";
+/*
+ * Bumped from v2 when the launch moved behind authentication: the flag now
+ * means "this signed-in session has seen the opening", not "this browser tab
+ * has loaded the app", so a session carrying the old key should still get the
+ * new animation once.
+ */
+const SESSION_KEY = "exchange-notes:splash-seen-v3";
 
 /**
  * Whether the splash has already played this session is sessionStorage
@@ -59,5 +65,5 @@ export default function SplashGate() {
 
   if (seen) return null;
 
-  return <AppSplash onComplete={markSplashSeen} />;
+  return <ExchangeNotesLaunch onComplete={markSplashSeen} />;
 }

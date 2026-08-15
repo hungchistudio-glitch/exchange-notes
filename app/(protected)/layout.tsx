@@ -5,6 +5,7 @@ import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
+import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
@@ -79,6 +80,14 @@ export default async function ProtectedLayout({
             )}`}
           />
         )}
+
+        {/*
+          Here rather than in the root layout so the opening only ever plays
+          for a signed-in visitor, on the far side of the Google redirect.
+          This is a layout, so it survives soft navigation between protected
+          pages — the animation mounts once per app load, not once per route.
+        */}
+        <SplashGate />
 
         <CosmicRouteStage>{children}</CosmicRouteStage>
 

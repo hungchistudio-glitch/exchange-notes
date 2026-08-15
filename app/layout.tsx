@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
-import SplashGate from "@/components/ui/SplashGate";
 import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
 
 import "./globals.css";
@@ -111,7 +110,14 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <SplashGate />
+        {/*
+          The opening animation is deliberately not here. Mounted at the root
+          it played over the sign-in page — the first thing a signed-out
+          visitor saw was a 2.5s brand film in front of a login form, and by
+          the time they were actually inside the app the session flag said it
+          had already run. It lives in the protected layout instead, so the
+          order is: sign in, opening, home.
+        */}
         <OrbitField />
         {children}
         <ServiceWorkerRegister />
