@@ -81,6 +81,16 @@ revoke all on function public.unregister_web_push_subscription(text)
 grant execute on function public.unregister_web_push_subscription(text)
   to authenticated;
 
+-- ---------- get_total_unread_count ----------
+--
+-- The nav bar's unread badge. It counts strictly from auth.uid(), so an anon
+-- caller can only ever get 0 back — the grant buys nothing and publishes one
+-- more SECURITY DEFINER function at /rest/v1/rpc. authenticated keeps it:
+-- lib/friends.ts calls it on every nav render.
+
+revoke all on function public.get_total_unread_count() from public, anon;
+grant execute on function public.get_total_unread_count() to authenticated;
+
 comment on function public.handle_new_user() is
   'Trigger function for auth.users inserts. Not callable over the REST API: EXECUTE is revoked from anon, authenticated, and PUBLIC. Triggers do not check EXECUTE when they fire.';
 
