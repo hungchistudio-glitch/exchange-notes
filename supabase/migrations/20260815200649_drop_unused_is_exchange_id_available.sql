@@ -1,0 +1,39 @@
+-- Drop is_exchange_id_available: an unused account-enumeration endpoint.
+--
+-- The function was never wired up. It appears in no migration, in no branch,
+-- and nowhere in git history — it was written straight into the SQL editor and
+-- left there. The onboarding and profile screens check availability by querying
+-- public.profiles directly (components/onboarding/steps/NameStep.tsx,
+-- components/settings/EditProfileSheet.tsx), never through this RPC.
+--
+-- Leaving it in place is worse than dropping it. As a SECURITY DEFINER function
+-- in the public schema it is published at /rest/v1/rpc/is_exchange_id_available
+-- and was callable by anon, so an unauthenticated caller could probe, without
+-- limit, whether any given exchange_id is already registered — account
+-- enumeration against a table anon cannot otherwise read (the profiles select
+-- policy is `to authenticated`).
+--
+-- Nothing in the database depends on it: no policy, view, constraint, column
+-- default, trigger, or other function referenced it.
+--
+-- To restore it, recreate it exactly as it was and grant only `authenticated`:
+--
+--   create or replace function public.is_exchange_id_available(
+--     requested_exchange_id text
+--   )
+--   returns boolean
+--   language sql
+--   stable security definer
+--   set search_path to 'public'
+--   as $function$
+--     select not exists (
+--       select 1
+--       from public.profiles
+--       where exchange_id = lower(requested_exchange_id)
+--     );
+--   $function$;
+--
+--   revoke all on function public.is_exchange_id_available(text) from public, anon;
+--   grant execute on function public.is_exchange_id_available(text) to authenticated;
+
+drop function if exists public.is_exchange_id_available(text);
