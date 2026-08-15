@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
 import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
@@ -55,6 +56,21 @@ export default async function ProtectedLayout({
   // almost always already right. The profile is what makes the choice follow
   // the account — to a new phone, a new browser, a fresh login — so where the
   // two disagree the account wins.
+  /*
+   * Fetched separately from the select above, and allowed to fail.
+   *
+   * app_preferences arrived in a later migration than this code path, and the
+   * app and the database do not deploy together. Folding the column into the
+   * main profile query would mean a missing column takes down every protected
+   * page; asking for it on its own means the worst case is that settings do
+   * not sync until the migration lands.
+   */
+  const { data: preferencesRow } = await supabase
+    .from("profiles")
+    .select("app_preferences")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const cookieInterfaceMode = await getServerInterfaceMode();
 
   const interfaceMode = isInterfaceMode(profile?.interface_mode)
@@ -87,6 +103,11 @@ export default async function ProtectedLayout({
           This is a layout, so it survives soft navigation between protected
           pages — the animation mounts once per app load, not once per route.
         */}
+        <AccountPreferencesSync
+          userId={user.id}
+          stored={preferencesRow?.app_preferences ?? null}
+        />
+
         <SplashGate />
 
         <CosmicRouteStage>{children}</CosmicRouteStage>

@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { notifyConversationRead } from "@/lib/messages/unreadSignal";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { normalizeExchangeId } from "@/lib/utils";
 
@@ -535,7 +536,7 @@ export async function listConversationSummaries(
     }
   }
 
-  return friends.map((friend) => {
+  const summaries = friends.map((friend) => {
     const conversationId = conversationByFriendId.get(friend.id) ?? null;
 
     return {
@@ -554,6 +555,28 @@ export async function listConversationSummaries(
         ? mutedAtByConversationId.get(conversationId) ?? null
         : null,
     };
+  });
+
+  /*
+   * Most recent conversation first.
+   *
+   * These used to come back in friend order, which is the order friendships
+   * were accepted in — so a friend who had never sent a message sat above a
+   * thread with something unread in it, and a new message never moved its
+   * conversation anywhere. The list is sorted by activity now, which is what
+   * a messages list is for.
+   *
+   * Friends with no messages yet keep their relative order at the bottom:
+   * they are people you could write to, not conversations you are having.
+   */
+  return summaries.sort((a, b) => {
+    const aAt = a.lastMessage?.createdAt ?? null;
+    const bAt = b.lastMessage?.createdAt ?? null;
+
+    if (aAt && bAt) return bAt.localeCompare(aAt);
+    if (aAt) return -1;
+    if (bAt) return 1;
+    return 0;
   });
 }
 
@@ -669,6 +692,10 @@ export async function markConversationRead(
     .eq("user_id", currentUserId);
 
   if (error) throw error;
+
+  // Announced here rather than at the call site so every caller — now and
+  // later — brings the badge down with it.
+  notifyConversationRead(conversationId);
 }
 
 /**

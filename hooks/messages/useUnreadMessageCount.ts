@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { getTotalUnreadCount } from "@/lib/friends";
+import { subscribeToConversationRead } from "@/lib/messages/unreadSignal";
 import { createClient } from "@/lib/supabase/client";
 
 type MessageRow = {
@@ -52,6 +53,25 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
     let cancelled = false;
     let channel: RealtimeChannel | null = null;
 
+    /*
+     * Re-derives the count from the database rather than adjusting it
+     * locally: "how many of the unread messages did that read just clear"
+     * is not knowable client-side without redoing the whole calculation.
+     */
+    const recount = () => {
+      void getTotalUnreadCount(supabase)
+        .then((count) => {
+          if (cancelled) return;
+          setUnreadCount((previous) => {
+            if (count > previous) setPulseToken((token) => token + 1);
+            return count;
+          });
+        })
+        .catch(() => {
+          // Leave the badge as it is rather than guessing.
+        });
+    };
+
     async function init() {
       const {
         data: { user },
@@ -89,23 +109,28 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
             table: "conversation_members",
             filter: `user_id=eq.${user.id}`,
           },
-          () => {
-            void getTotalUnreadCount(supabase).then((count) => {
-              if (cancelled) return;
-              setUnreadCount((previous) => {
-                if (count > previous) setPulseToken((token) => token + 1);
-                return count;
-              });
-            });
-          },
+          recount,
         )
         .subscribe();
     }
 
     void init();
 
+    /*
+     * The same recount, driven locally by whichever tab did the reading.
+     *
+     * The Realtime subscription above covers reads made on another device,
+     * but it only fires if `conversation_members` is in the
+     * `supabase_realtime` publication — and it was not, so the badge counted
+     * up on every incoming message and never came back down. This path does
+     * not depend on that, and it reacts as soon as the thread is opened
+     * instead of after a server round trip.
+     */
+    const unsubscribe = subscribeToConversationRead(recount);
+
     return () => {
       cancelled = true;
+      unsubscribe();
       if (channel) void supabase.removeChannel(channel);
     };
   }, [channelTopic]);

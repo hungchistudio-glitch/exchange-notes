@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { useRouter } from "next/navigation";
 
 import ProgressHud from "@/components/cosmic/ProgressHud";
 import AppHeader from "@/components/foundation/layout/AppHeader";
@@ -54,7 +53,6 @@ type ProfileForm = {
 };
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { t } = useTranslation();
   const { refresh: refreshLearningLanguage } = useLearningLanguageContext();
   const { isCosmic } = useInterfaceMode();
@@ -320,11 +318,20 @@ export default function ProfilePage() {
     const supabase = createClient();
 
     await disableNativePushRegistration();
-    await supabase.auth.signOut();
 
-    // Send the user back to the Google sign-in screen.
-    router.replace("/login");
-    router.refresh();
+    // "global" revokes every refresh token for the account, not just this
+    // tab's — a session left open on another device should not survive a
+    // deliberate sign-out here.
+    await supabase.auth.signOut({ scope: "global" });
+
+    /*
+     * A full document load rather than router.replace, which is a soft
+     * navigation: the React tree, the router cache and every client component
+     * still holding the previous user's data would otherwise survive into the
+     * signed-out state. Signing out should leave nothing of the old session in
+     * memory, and the cheapest way to guarantee that is a new document.
+     */
+    window.location.assign("/login");
   }
 
   return (

@@ -23,6 +23,24 @@ export default function GoogleLoginButton() {
       provider: "google",
       options: {
         redirectTo,
+        /*
+         * Always show the account chooser.
+         *
+         * Without this, Google decides whether to prompt — and when there is
+         * one signed-in Google account that has already granted consent, it
+         * approves silently and redirects straight back. Signing out of
+         * Exchange Notes and tapping sign-in then returned the user to the
+         * app without a single screen in between, which reads as "logging out
+         * did nothing" and means a shared device can be re-entered by whoever
+         * picks it up next.
+         *
+         * `select_account` puts that decision back in the user's hands every
+         * time. It does not re-prompt for consent to the scopes, so returning
+         * users still just tap their account.
+         */
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { BellOff, EyeOff, Search } from "lucide-react";
 
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
@@ -15,6 +16,7 @@ import {
   type ConversationSummary,
 } from "@/lib/friends";
 import { decodeWordCardMessage } from "@/lib/messages/wordCard";
+import { subscribeToConversationRead } from "@/lib/messages/unreadSignal";
 import { createClient } from "@/lib/supabase/client";
 
 type MessagesCopy = TranslationDictionary["messages"];
@@ -87,6 +89,12 @@ export default function ConversationList() {
   const copy = t.messages;
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  /*
+   * Mirrors currentUserId for the subscriptions below, which are set up once
+   * and must not be torn down and rebuilt every time the id resolves.
+   */
+  const currentUserIdRef = useRef<string | null>(null);
   const [summaries, setSummaries] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -102,6 +110,7 @@ export default function ConversationList() {
       setLoading(true);
       setErrorMessage("");
       setCurrentUserId(userId);
+      currentUserIdRef.current = userId;
 
       try {
         const rows = await listConversationSummaries(supabase, userId);
@@ -119,16 +128,55 @@ export default function ConversationList() {
       }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
+    let channel: RealtimeChannel | null = null;
 
-      if (session?.user) {
-        void loadForUser(session.user.id);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted || !session?.user) return;
+
+      const userId = session.user.id;
+      void loadForUser(userId);
+
+      /*
+       * Re-derives the list when a message lands anywhere.
+       *
+       * The whole list is refetched rather than patched in place: ordering,
+       * the preview line and the unread count all depend on the message, and
+       * `listConversationSummaries` already resolves them together. A message
+       * arriving used to leave the list untouched until the page was
+       * reloaded, so a new conversation neither surfaced nor moved.
+       */
+      channel = supabase
+        .channel(`conversation-list:${userId}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          () => {
+            void refreshQuietly(userId);
+          },
+        )
+        .subscribe();
     });
+
+    // Reading a thread changes its unread count; the list should not still be
+    // showing a badge when the user comes back to it.
+    const unsubscribeRead = subscribeToConversationRead(() => {
+      if (currentUserIdRef.current) void refreshQuietly(currentUserIdRef.current);
+    });
+
+    async function refreshQuietly(userId: string) {
+      try {
+        const rows = await listConversationSummaries(supabase, userId);
+        if (isMounted) setSummaries(rows);
+      } catch (error) {
+        // A background refresh failing should not replace what is on screen.
+        console.error(error);
+      }
+    }
 
     return () => {
       isMounted = false;
+      unsubscribeRead();
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [copy.errors.loadConversations]);
 
