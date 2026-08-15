@@ -25,14 +25,10 @@ type Props = {
 /** How long the launch takes to dissolve into the app underneath it. */
 const EXIT_MS = 420;
 
-/** How long the finished frame is held before exiting, for reduced motion. */
-const REDUCED_HOLD_MS = 700;
-
 /*
- * A backstop for the case rAF never runs to completion — a tab backgrounded
- * for the whole animation, or a device that throttles timers hard. Without
- * it the overlay would sit on top of the app forever, because completion is
- * driven by frames rather than by the clock.
+ * A backstop for a loop that starts but never finishes — a device that
+ * throttles timers hard, or a tab hidden mid-animation. Measured from the
+ * first painted frame, not from mount.
  */
 const SAFETY_MS = LAUNCH_DURATION_MS + EXIT_MS + 4000;
 
@@ -55,6 +51,7 @@ export default function ExchangeNotesLaunch({
 
   const [playing, setPlaying] = useState(true);
   const [exiting, setExiting] = useState(false);
+  const [done, setDone] = useState(false);
 
   /*
    * Held in a ref rather than read from props inside the loop's effect. As a
@@ -107,6 +104,12 @@ export default function ExchangeNotesLaunch({
     }
   }, []);
 
+  /*
+   * Fades out, then removes itself. Unmounting matters: left in the DOM the
+   * overlay is invisible and click-through, but its ambient loops — the radar
+   * sweep, the pings, the searchlights — would keep animating underneath the
+   * app for as long as the page lived.
+   */
   const finish = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
@@ -114,14 +117,21 @@ export default function ExchangeNotesLaunch({
     if (reviewMode) return;
 
     setExiting(true);
-    window.setTimeout(() => onCompleteRef.current?.(), EXIT_MS);
+
+    window.setTimeout(() => {
+      setDone(true);
+      onCompleteRef.current?.();
+    }, EXIT_MS);
   }, [reviewMode]);
 
   /*
-   * Reduced motion: resolve straight to the final frame, hold it long enough
-   * to read, then hand over. Declared before the loop below so the ref is set
-   * by the time the loop's effect decides whether to start — the review
-   * harness opts out entirely, since its whole purpose is to show the motion.
+   * Reduced motion still takes the full duration — it just does not move.
+   *
+   * The animation is a handover, not decoration: cutting it to a brief hold
+   * meant the app arrived at a different moment for these users, and it was
+   * indistinguishable from the opening being skipped. The resolved frame is
+   * shown for the same 2.5s and fades out on the same beat; the stylesheet
+   * silences the ambient loops.
    */
   const reducedRef = useRef(false);
 
@@ -134,7 +144,7 @@ export default function ExchangeNotesLaunch({
     timeRef.current = LAUNCH_DURATION_MS;
     paint(LAUNCH_DURATION_MS);
 
-    const timer = window.setTimeout(finish, REDUCED_HOLD_MS);
+    const timer = window.setTimeout(finish, LAUNCH_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, [finish, paint, reviewMode]);
 
@@ -142,9 +152,27 @@ export default function ExchangeNotesLaunch({
   useEffect(() => {
     if (!playing || reducedRef.current) return;
 
-    originRef.current = performance.now() - timeRef.current;
+    /*
+     * The clock starts on the first frame that actually runs, not here.
+     *
+     * Anchoring it to the effect was a real bug: requestAnimationFrame does
+     * not fire in a backgrounded tab, and it can be deferred for a long time
+     * behind a slow first paint. When the first frame finally arrived, the
+     * elapsed wall-clock time had already consumed the whole timeline, so it
+     * clamped straight to the end and handed over — the opening was skipped
+     * without a single frame of it being drawn. Measured here at over eight
+     * seconds of delay, which the timeline swallowed instantly.
+     *
+     * Starting from the first real frame means a delayed or backgrounded
+     * start delays the animation rather than eating it.
+     */
+    originRef.current = 0;
 
     const tick = (now: number) => {
+      if (originRef.current === 0) {
+        originRef.current = now - timeRef.current;
+      }
+
       const time = Math.min(LAUNCH_DURATION_MS, now - originRef.current);
 
       timeRef.current = time;
@@ -164,19 +192,59 @@ export default function ExchangeNotesLaunch({
     return () => cancelAnimationFrame(frameRef.current);
   }, [playing, paint, finish]);
 
+  /*
+   * The clock stops while the app is in the background and picks up where it
+   * left off on return.
+   *
+   * Same failure as the delayed start, later in the timeline: the elapsed
+   * time is wall-clock, so being away for ten seconds mid-animation would
+   * clamp straight to the end and the rest of the opening would be lost.
+   * Zeroing the origin makes the next frame re-anchor to the time already
+   * played, which is the same mechanism the lazy start uses.
+   *
+   * This matters most in an installed PWA, where switching apps and coming
+   * back is ordinary rather than exceptional.
+   */
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") originRef.current = 0;
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  /*
+   * A backstop for a loop that never completes. Armed on the first painted
+   * frame rather than on mount, so it measures the animation's own life and
+   * cannot expire while the page is still waiting to draw anything — which is
+   * how it used to cut a not-yet-started opening short.
+   */
   useEffect(() => {
     if (reviewMode) return;
 
-    const timer = window.setTimeout(finish, SAFETY_MS);
-    return () => window.clearTimeout(timer);
-  }, [finish, reviewMode]);
+    /*
+     * Counts only time the animation was both started and on screen, rather
+     * than running as a plain timeout. A fixed timer would keep burning down
+     * while the app sat in the background and could expire during a pause,
+     * cutting off the opening it exists to protect.
+     */
+    let visibleMs = 0;
+    const STEP = 250;
 
-  /* Tapping anywhere cuts to the app — a 2.5s hold is worth skipping. */
-  const skip = useCallback(() => {
-    if (reviewMode) return;
-    cancelAnimationFrame(frameRef.current);
-    setPlaying(false);
-    finish();
+    const poll = window.setInterval(() => {
+      if (originRef.current === 0 || document.visibilityState !== "visible") {
+        return;
+      }
+
+      visibleMs += STEP;
+      if (visibleMs >= SAFETY_MS) {
+        window.clearInterval(poll);
+        finish();
+      }
+    }, STEP);
+
+    return () => window.clearInterval(poll);
   }, [finish, reviewMode]);
 
   /* --- review harness ------------------------------------------------ */
@@ -215,6 +283,8 @@ export default function ExchangeNotesLaunch({
     [paint],
   );
 
+  if (done) return null;
+
   return (
     <div
       ref={rootRef}
@@ -227,7 +297,6 @@ export default function ExchangeNotesLaunch({
        */
       style={asStyle(FIRST_FRAME)}
       data-exiting={exiting ? "" : undefined}
-      onPointerDown={skip}
       role="status"
       aria-label="Opening Exchange Notes"
     >
