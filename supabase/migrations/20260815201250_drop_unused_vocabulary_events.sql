@@ -1,0 +1,47 @@
+-- Drop vocabulary_events: an empty table nothing has ever written to.
+--
+-- Same provenance as is_exchange_id_available — it appears in no migration, on
+-- no branch, and nowhere in git history. Created in the SQL editor and never
+-- wired up: 0 rows, no triggers, no function references, no inbound foreign
+-- keys, and no mention anywhere in the application code.
+--
+-- It is dropped rather than left alone because of how its privileges were set
+-- up. RLS is enabled with zero policies, which denies anon and authenticated
+-- today, but both roles still hold SELECT, INSERT, UPDATE, DELETE and TRUNCATE
+-- on the table. Every other server-only table here (ai_usage_daily,
+-- vocabulary_lookup_cache, web_push_event_deliveries, yumi_reminder_deliveries,
+-- scriptable_yumi_*) has those grants revoked as well, so the deny is enforced
+-- twice. This one leans on RLS alone.
+--
+-- That is a trap rather than a live hole: the moment anyone adds a policy to
+-- make the table readable, the full grant set behind it activates at once —
+-- including DELETE for unauthenticated callers. TRUNCATE is not subject to RLS
+-- at all; it is only out of reach because PostgREST does not expose it.
+--
+-- To restore it, recreate it and follow the convention of the other
+-- server-only tables (revoke the client grants, keep RLS on with no policy):
+--
+--   create table public.vocabulary_events (
+--     id uuid not null default gen_random_uuid(),
+--     user_id uuid not null,
+--     vocabulary_id uuid,
+--     event_type text not null,
+--     search_text text,
+--     created_at timestamptz not null default now(),
+--     constraint vocabulary_events_pkey primary key (id),
+--     constraint vocabulary_events_user_id_fkey
+--       foreign key (user_id) references auth.users (id) on delete cascade,
+--     constraint vocabulary_events_vocabulary_id_fkey
+--       foreign key (vocabulary_id) references public.vocabulary_items (id) on delete cascade,
+--     constraint vocabulary_events_event_type_check check (
+--       event_type = any (array['view', 'search', 'speak', 'share', 'send', 'learning', 'mastered'])
+--     )
+--   );
+--
+--   create index vocabulary_events_user_id_idx on public.vocabulary_events (user_id);
+--   create index vocabulary_events_vocabulary_id_idx on public.vocabulary_events (vocabulary_id);
+--
+--   alter table public.vocabulary_events enable row level security;
+--   revoke all privileges on table public.vocabulary_events from anon, authenticated;
+
+drop table if exists public.vocabulary_events;
