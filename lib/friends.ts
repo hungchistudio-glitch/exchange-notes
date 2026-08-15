@@ -53,7 +53,20 @@ type ProfileRow = {
 function toFriendProfile(row: ProfileRow): FriendProfile {
   return {
     id: row.id,
-    displayName: row.display_name,
+
+    /*
+     * An empty display name is normalised to null here rather than at the
+     * places that render it.
+     *
+     * Every one of those falls back with `displayName ?? exchangeId`, which
+     * only catches null — and the column holds "" for accounts that finished
+     * sign-up without typing a name. The result was a conversation row with
+     * no name and no handle at all: blank where the person should be. Doing
+     * it once, at the point the row becomes a FriendProfile, fixes the
+     * message list, the thread header and the friend picker together, and
+     * keeps the existing `??` at each of those sites correct.
+     */
+    displayName: row.display_name?.trim() ? row.display_name.trim() : null,
     exchangeId: row.exchange_id,
     avatarUrl: row.avatar_url,
     nativeLanguage: row.native_language,
