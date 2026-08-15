@@ -177,6 +177,14 @@
 
   filter: blur(12px);
   pointer-events: none;
+
+  /*
+   * Promoted so the blur is rasterised once and the impact flash is a
+   * composite. Without this, a blurred element that changes transform and
+   * opacity re-runs the blur every frame — and this one does both, right at
+   * the busiest moment in the timeline.
+   */
+  will-change: transform, opacity;
 }
 
 .grain {
@@ -193,7 +201,13 @@
   );
   background-size: 5px 5px;
 
-  mix-blend-mode: soft-light;
+  /*
+   * No blend mode. A full-screen blended layer forces everything beneath it
+   * to be re-composited through the blend whenever any of it repaints, and
+   * during this animation something is repainting on every frame. At 0.018
+   * opacity over a near-black ground, soft-light and normal compositing
+   * resolve to the same pixels — this layer is texture, not colour.
+   */
   pointer-events: none;
 }
 
@@ -640,6 +654,17 @@
     drop-shadow(0 0 8px rgba(193, 209, 233, 0.3));
 }
 
+/*
+ * One drop-shadow, not two.
+ *
+ * This path is the only thing in the scene whose geometry changes on every
+ * single frame of the animation — `--particle-offset` moves the dash pattern
+ * continuously — and a filtered SVG path cannot be composited through a
+ * geometry change, so the whole bounding box, which spans the entire mark, is
+ * re-rasterised each frame. Each additional shadow is another full pass over
+ * that area. The near shadow is what reads as the glow; the wide one was
+ * mostly paying for itself in area.
+ */
 .railParticles {
   fill: none;
   stroke: #ffffff;
@@ -648,9 +673,7 @@
   stroke-dasharray: 0.34 7.1;
   stroke-dashoffset: var(--particle-offset);
   opacity: calc(var(--rail-opacity) * 0.92);
-  filter:
-    drop-shadow(0 0 3px rgba(255, 255, 255, 0.88))
-    drop-shadow(0 0 7px rgba(201, 216, 240, 0.42));
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9));
 }
 
 .connectorGroup {
@@ -659,17 +682,31 @@
   transform-origin: left center;
   transform: scaleX(var(--connector-scale));
 
-  /* Flexes brighter for a beat as it seats into the body. */
-  filter: drop-shadow(
-    0 0 calc(2px + var(--connector-response) * 7px) rgba(218, 231, 249, 0.16)
-  );
+  /*
+   * A fixed radius, deliberately.
+   *
+   * This used to interpolate the blur radius itself —
+   * `calc(2px + var(--connector-response) * 7px)` — and a filter whose
+   * parameters change cannot be composited: the subtree is re-rasterised on
+   * every frame the value moves. The flex it was drawing is already carried
+   * by .connectorGlow, whose opacity animates on the same beat and only
+   * costs a composite.
+   */
+  filter: drop-shadow(0 0 4px rgba(218, 231, 249, 0.16));
 
   will-change: transform, opacity;
 }
 
+/*
+ * Carries the seating flex that used to live in .connectorGroup's filter
+ * radius, as opacity on an already-blurred rect. Same beat, composite only.
+ */
 .connectorGlow {
   fill: rgba(255, 255, 255, 0.16);
-  opacity: calc(var(--connector-glow) * (0.54 + var(--lock-pulse) * 0.3));
+  opacity: calc(
+    var(--connector-glow) *
+    (0.54 + var(--lock-pulse) * 0.3 + var(--connector-response) * 0.34)
+  );
   filter: blur(5px);
 }
 
