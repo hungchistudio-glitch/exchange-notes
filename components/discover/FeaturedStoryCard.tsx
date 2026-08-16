@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import Image from "next/image";
 import { ZoomIn } from "lucide-react";
 
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -78,17 +79,31 @@ export default function FeaturedStoryCard({
         // fixed ~38% share of the card rather than a locked aspect ratio,
         // since summary length varies. Placeholder fill + opacity fade-in
         // on load avoids a layout jump without needing real blurhash data.
-        <img
-          src={card.imageUrl}
-          alt={card.englishCaption ?? card.englishTitle}
-          loading="eager"
-          onClick={onOpen}
-          onLoad={(event) => {
-            event.currentTarget.style.opacity = "1";
-          }}
-          className="h-[165px] w-full cursor-pointer object-cover opacity-0 transition-opacity duration-500"
+        // `fill` needs a positioned box of its own, which is also where the
+        // placeholder colour now lives. It used to sit on the image itself,
+        // where opacity-0 made it invisible until the moment it was covered by
+        // the loaded image — so the fill it describes never actually showed.
+        <div
+          className="relative h-[165px] w-full"
           style={{ backgroundColor: DISCOVER_COLORS.divider }}
-        />
+        >
+          <Image
+            src={card.imageUrl}
+            alt={card.englishCaption ?? card.englishTitle}
+            fill
+            // Full-bleed inside the card, which is itself capped at the
+            // reading column, so one breakpoint is enough.
+            sizes="(max-width: 768px) 100vw, 768px"
+            // This is the LCP element on Discover. priority preloads it
+            // instead of leaving it to be discovered during layout.
+            priority
+            onClick={onOpen}
+            onLoad={(event) => {
+              event.currentTarget.style.opacity = "1";
+            }}
+            className="cursor-pointer object-cover opacity-0 transition-opacity duration-500"
+          />
+        </div>
       ) : (
         <EditorialMark />
       )}

@@ -74,6 +74,22 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* eslint-disable @next/next/no-page-custom-font --
+            The rule wants font <link>s moved out of a page and into the
+            document, and in the App Router this file *is* that document —
+            a root layout is the one place these belong. It fires anyway
+            because the rule predates the App Router and only recognises
+            pages/_document.
+
+            Its other suggestion, next/font, cannot express what the three
+            links below need. next/font has no `text` option (see
+            node_modules/next/dist/docs/01-app/03-api-reference/02-components/font.md
+            — src, weight, style, subsets, axes, display, preload, fallback,
+            adjustFontFallback, variable, declarations), so the character
+            pinning two of them depend on has no equivalent, and it
+            self-hosts, which is the opposite of what the CJK family wants.
+            Each link is deliberate for a reason given below it. */}
+
         {/* Noto Sans TC fallback for Traditional Chinese on platforms
             without a refined native CJK font (e.g. Windows without
             JhengHei, Linux, some Android builds). Loaded from Google's
@@ -108,6 +124,7 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&text=abdefghijklmnoprstuvwz%C3%A6%C3%B0%C5%8B%C9%91%C9%94%C9%99%C9%9B%C9%9C%C9%A1%C9%AA%CA%83%CA%8A%CA%8C%CA%92%CB%90%CE%B8&display=swap"
           rel="stylesheet"
         />
+        {/* eslint-enable @next/next/no-page-custom-font */}
       </head>
       <body className="min-h-full flex flex-col">
         {/*

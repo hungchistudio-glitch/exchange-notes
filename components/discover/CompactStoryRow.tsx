@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { DISCOVER_COLORS, categoryAccent, type DailyNewsCard } from "./types";
 
 type CompactStoryRowProps = {
@@ -34,12 +36,17 @@ export default function CompactStoryRow({
       }
     >
       <div className={hasThumbnail ? "flex items-start gap-3" : undefined}>
-        {hasThumbnail ? (
+        {showThumbnail && card.imageUrl ? (
           // ~38/62 split — thumbnail carries some of the context, so these
           // rows skip the summary line entirely (see the text column below).
-          <img
-            src={card.imageUrl ?? undefined}
+          // width/height are the rendered size: the row is a fixed 108x84, so
+          // the optimizer can serve exactly that instead of a full-size
+          // Guardian thumbnail scaled down in the browser.
+          <Image
+            src={card.imageUrl}
             alt=""
+            width={108}
+            height={84}
             loading="lazy"
             onLoad={(event) => {
               event.currentTarget.style.opacity = "1";
