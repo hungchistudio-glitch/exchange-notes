@@ -50,6 +50,16 @@ type ProfileRow = {
   learning_language: "english" | "traditional-chinese";
 };
 
+/**
+ * public.profiles is owner-only, so reading anyone else goes through this
+ * view. It carries exactly the columns below and nothing private — see the
+ * migration that creates it. Every lookup here is about someone other than
+ * the signed-in user, which is why none of them touch the table directly.
+ */
+const PUBLIC_PROFILES = "public_profiles";
+const PUBLIC_PROFILE_COLUMNS =
+  "id, display_name, exchange_id, avatar_url, native_language, learning_language";
+
 function toFriendProfile(row: ProfileRow): FriendProfile {
   return {
     id: row.id,
@@ -161,8 +171,8 @@ export async function getProfileById(
   userId: string
 ): Promise<FriendProfile | null> {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .eq("id", userId)
     .maybeSingle();
 
@@ -179,8 +189,8 @@ export async function findProfileByExchangeId(
   if (!clean) return null;
 
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .ilike("exchange_id", clean)
     .maybeSingle();
 
@@ -387,8 +397,8 @@ export async function listFriends(
   );
 
   const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .in("id", otherIds);
 
   if (profilesError) throw profilesError;

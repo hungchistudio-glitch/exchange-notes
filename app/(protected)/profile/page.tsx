@@ -105,7 +105,7 @@ export default function ProfilePage() {
         const { data, error: fetchError } = await supabase
           .from("profiles")
           .select(
-            "display_name, exchange_id, native_language, learning_language, email, avatar_url",
+            "display_name, exchange_id, native_language, learning_language, avatar_url",
           )
           .eq("id", user.id)
           .single();
@@ -128,7 +128,10 @@ export default function ProfilePage() {
             (data?.learning_language as AppLanguage) ?? "traditional-chinese",
         });
 
-        setEmail(data?.email ?? user.email ?? "");
+        // From the session, not the profiles row. The address is the same one
+        // either way, and SELECT on profiles.email is revoked from the client
+        // so it cannot be read back out of the API by anyone, for any row.
+        setEmail(user.email ?? "");
         setAvatarUrl(data?.avatar_url ?? null);
       } catch {
         if (isMounted) {
