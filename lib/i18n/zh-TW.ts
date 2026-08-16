@@ -901,6 +901,12 @@ const traditionalChinese: TranslationDictionary = {
       degradedNotice:
         "智慧搜尋忙碌中，這筆結果來自離線字典。單字和翻譯都正確，只有例句是通用範本。",
       degradedRetry: "再試一次以取得真實例句",
+      translationUnavailable: "翻譯尚未載入",
+      translationUnavailableDetail:
+        "目前連不上翻譯服務，通常是網路不穩或斷線造成的。這個單字本身沒有問題，等連線恢復後再試一次即可。",
+      translationUnavailableRetry: "再試一次",
+      translationUnavailableSaveBlocked:
+        "翻譯載入前會暫停儲存，避免這個單字在沒有字義的情況下進入你的單字庫。",
       english: "英文",
       chinese: "繁體中文",
       englishExample: "英文例句",

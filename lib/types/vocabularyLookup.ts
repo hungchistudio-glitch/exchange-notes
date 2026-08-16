@@ -14,6 +14,22 @@ export type VocabularyLookupResult = {
   chineseExample: string;
   confidence: "high" | "medium" | "low";
   category: VocabularyCategory;
+  /**
+   * The lookup reached the offline dictionary and the word was not in it, so
+   * there is no translation to show — the side of the pair being translated
+   * into is an empty string, as is the example that would have quoted it.
+   *
+   * This exists because the alternative was worse: the offline path used to
+   * fill that gap with the literal string "待確認" and build a sentence around
+   * it, which read as an answer. It was spoken by the audio button, given
+   * pinyin and zhuyin of its own, and saved into the learner's vocabulary as
+   * the word's meaning. A flag lets every surface say "not yet" instead of
+   * quietly inventing one.
+   *
+   * Model results never set this. Neither do offline hits, which have a real
+   * translation and only lack a real example.
+   */
+  translationUnavailable?: boolean;
 };
 
 /**
@@ -26,6 +42,8 @@ export type VocabularyLookupPreview = {
   chineseName: string;
   partOfSpeech: string;
   category: VocabularyCategory;
+  /** Same meaning as on the full result. */
+  translationUnavailable?: boolean;
 };
 
 /**

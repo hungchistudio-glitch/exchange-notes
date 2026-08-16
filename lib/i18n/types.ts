@@ -826,6 +826,10 @@ export type TranslationDictionary = {
       error: string;
       degradedNotice: string;
       degradedRetry: string;
+      translationUnavailable: string;
+      translationUnavailableDetail: string;
+      translationUnavailableRetry: string;
+      translationUnavailableSaveBlocked: string;
       english: string;
       chinese: string;
       englishExample: string;

@@ -387,6 +387,40 @@
   color: color-mix(in oklab, var(--color-black) 45%, transparent);
 }
 
+/* Stands where the translation would be. Deliberately not styled like the
+   translation it replaces — amber rather than the console's cyan, and set in
+   the body stack rather than the display one, so a glance can tell a status
+   message from an answer. */
+.pending {
+  margin-top: 0.35rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--cosmic-amber, #f0b429) 26%, transparent);
+  background: color-mix(in oklab, var(--cosmic-amber, #f0b429) 8%, transparent);
+}
+
+.pendingTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--cosmic-amber, #f0b429) 82%, var(--color-black));
+}
+
+.pendingDetail {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+}
+
+.pendingRetry {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: color-mix(in oklab, var(--cosmic-amber, #f0b429) 82%, var(--color-black));
+}
+
 .error {
   margin-top: 0.7rem;
   padding-top: 0.7rem;

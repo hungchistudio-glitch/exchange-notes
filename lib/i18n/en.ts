@@ -917,6 +917,12 @@ const english: TranslationDictionary = {
       degradedNotice:
         "Smart search is busy, so this came from the offline dictionary. The word and translation are correct — only the examples are generic.",
       degradedRetry: "Try again for real examples",
+      translationUnavailable: "Translation not loaded yet",
+      translationUnavailableDetail:
+        "Yumi could not reach the translation service — usually a weak or dropped connection. Nothing is missing from the word itself, so try again once you are back online.",
+      translationUnavailableRetry: "Try again",
+      translationUnavailableSaveBlocked:
+        "Saving is paused until the translation loads, so this word does not enter your vocabulary without its meaning.",
       english: "English",
       chinese: "Traditional Chinese",
       englishExample: "English example",

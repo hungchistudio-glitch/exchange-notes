@@ -200,11 +200,21 @@ export default function VocabularyLookupModal({
                   : lookupPreview.englishName}
               </p>
 
-              <p className="mt-1 text-[15px] text-black/45">
-                {isLearningChinese
-                  ? lookupPreview.englishName
-                  : lookupPreview.chineseName}
-              </p>
+              {/* The offline dictionary may not know this word, in which case
+                  this side is empty. It stays a skeleton rather than being
+                  filled with a stand-in, since the real lookup may still
+                  land. */}
+              {(isLearningChinese
+                ? lookupPreview.englishName
+                : lookupPreview.chineseName) ? (
+                <p className="mt-1 text-[15px] text-black/45">
+                  {isLearningChinese
+                    ? lookupPreview.englishName
+                    : lookupPreview.chineseName}
+                </p>
+              ) : (
+                <div className="mt-2 h-4 w-2/5 animate-pulse rounded-full bg-black/[0.06]" />
+              )}
 
               {/* Examples are still loading. The offline dictionary only
                   invents them, so nothing is shown here until the real
@@ -236,10 +246,37 @@ export default function VocabularyLookupModal({
             </div>
           )}
 
-          {lookupStatus === "result" && lookupDegraded && (
+          {/* Two different degraded states, and they need different sentences.
+              degradedNotice promises "the word and translation are correct —
+              only the examples are generic", which holds when the offline
+              dictionary knew the word. When it did not, there is no
+              translation at all, and that promise would be the misleading
+              part. */}
+          {lookupStatus === "result" &&
+            lookupDegraded &&
+            !lookupResult?.translationUnavailable && (
+              <div className="mt-5 rounded-[20px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-4">
+                <p className="text-[13px] leading-5 text-[var(--accent-amber-deep)]">
+                  {t.vocabulary.lookup.degradedNotice}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={onLookupWord}
+                  className="mt-2 text-[13px] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
+                >
+                  {t.vocabulary.lookup.degradedRetry}
+                </button>
+              </div>
+            )}
+
+          {lookupStatus === "result" && lookupResult?.translationUnavailable && (
             <div className="mt-5 rounded-[20px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-4">
-              <p className="text-[13px] leading-5 text-[var(--accent-amber-deep)]">
-                {t.vocabulary.lookup.degradedNotice}
+              <p className="text-[13px] font-semibold leading-5 text-[var(--accent-amber-deep)]">
+                {t.vocabulary.lookup.translationUnavailable}
+              </p>
+              <p className="mt-1 text-[13px] leading-5 text-[var(--accent-amber-deep)]/85">
+                {t.vocabulary.lookup.translationUnavailableDetail}
               </p>
 
               <button
@@ -247,12 +284,18 @@ export default function VocabularyLookupModal({
                 onClick={onLookupWord}
                 className="mt-2 text-[13px] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
               >
-                {t.vocabulary.lookup.degradedRetry}
+                {t.vocabulary.lookup.translationUnavailableRetry}
               </button>
             </div>
           )}
 
-          {lookupStatus === "result" && lookupResult && (
+          {/* Without a translation this card would be a shell — an empty
+              Traditional Chinese section, empty example sections, and a Save
+              button that would file the word with no meaning. The notice above
+              carries the state and the retry instead. */}
+          {lookupStatus === "result" &&
+            lookupResult &&
+            !lookupResult.translationUnavailable && (
             <article className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="p-5 sm:p-6">
                 <div className="space-y-6">

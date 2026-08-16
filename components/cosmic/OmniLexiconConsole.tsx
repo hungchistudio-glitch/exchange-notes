@@ -189,6 +189,10 @@ export default function OmniLexiconConsole({
 
   useEffect(() => {
     if (!lookupResult) return;
+    // Half a pair cannot be pronounced. Asking anyway is what produced pinyin
+    // and zhuyin for the placeholder that used to stand in for the missing
+    // translation, presenting an invented reading as the word's own.
+    if (lookupResult.translationUnavailable) return;
 
     const key = `${lookupResult.englishName}|${lookupResult.chineseName}`;
 
@@ -273,6 +277,9 @@ export default function OmniLexiconConsole({
 
   async function handleSave() {
     if (!lookupResult || !resultKey || saveState !== "idle") return;
+    // Guarded here and not only on the button: this is what keeps a word with
+    // no meaning out of the vocabulary table, which reviews read from.
+    if (lookupResult.translationUnavailable) return;
 
     setSavingKey(resultKey);
 
@@ -319,6 +326,11 @@ export default function OmniLexiconConsole({
     : "";
   const primaryLang = isLearningChinese ? "zh-TW" : "en-US";
   const secondaryLang = isLearningChinese ? "en-US" : "zh-TW";
+
+  // Shared with the standard-mode lookup sheet rather than restated in the
+  // cosmic vocabulary: the explanation is about the network, not the theme.
+  const pendingCopy = t.vocabulary.lookup;
+  const translationUnavailable = Boolean(shown?.translationUnavailable);
 
   return (
     <section
@@ -473,17 +485,38 @@ export default function OmniLexiconConsole({
             </button>
           </div>
 
-          <div className={styles.resultRow}>
-            <p className={styles.resultTranslation}>{secondary}</p>
-            <button
-              type="button"
-              className={`cosmic-sonar ${styles.speak}`}
-              aria-label={copy.playTranslation}
-              onClick={() => speak(secondary, secondaryLang)}
-            >
-              <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
-            </button>
-          </div>
+          {/* A missing translation is stated, not filled in. The console used
+              to print a placeholder here that looked exactly like an answer,
+              so the learner had no way to tell a real meaning from a failed
+              request. The retry is offered inline because that is the whole
+              remedy — the word was fine, the connection was not. */}
+          {translationUnavailable ? (
+            <div className={styles.pending} role="status">
+              <p className={styles.pendingTitle}>{pendingCopy.translationUnavailable}</p>
+              <p className={styles.pendingDetail}>
+                {pendingCopy.translationUnavailableDetail}
+              </p>
+              <button
+                type="button"
+                className={styles.pendingRetry}
+                onClick={() => lookupWord()}
+              >
+                {pendingCopy.translationUnavailableRetry}
+              </button>
+            </div>
+          ) : (
+            <div className={styles.resultRow}>
+              <p className={styles.resultTranslation}>{secondary}</p>
+              <button
+                type="button"
+                className={`cosmic-sonar ${styles.speak}`}
+                aria-label={copy.playTranslation}
+                onClick={() => speak(secondary, secondaryLang)}
+              >
+                <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
           {/* Pinyin, zhuyin and IPA. Each gets its own font stack: forcing
               zhuyin or IPA through the Latin stack is what produced the
@@ -511,7 +544,9 @@ export default function OmniLexiconConsole({
             )}
           </div>
 
-          {lookupResult && (
+          {/* Empty when the translation never arrived — there is nothing
+              truthful to put in a sentence about the word's meaning. */}
+          {lookupResult && lookupResult.englishExample && lookupResult.chineseExample && (
             <div className={styles.examples}>
               <div className={styles.resultRow}>
                 <p className={styles.resultExample}>
@@ -576,9 +611,24 @@ export default function OmniLexiconConsole({
                 type="button"
                 className={`cosmic-lock ${styles.action}`}
                 data-saved={saveState === "saved"}
-                disabled={saveState !== "idle"}
-                aria-label={saveState === "saved" ? copy.saved : copy.save}
-                title={saveState === "saved" ? copy.saved : copy.save}
+                // A word with no meaning attached is worse in the vocabulary
+                // than not saved at all: it comes back in review with nothing
+                // to review against.
+                disabled={saveState !== "idle" || translationUnavailable}
+                aria-label={
+                  translationUnavailable
+                    ? pendingCopy.translationUnavailableSaveBlocked
+                    : saveState === "saved"
+                      ? copy.saved
+                      : copy.save
+                }
+                title={
+                  translationUnavailable
+                    ? pendingCopy.translationUnavailableSaveBlocked
+                    : saveState === "saved"
+                      ? copy.saved
+                      : copy.save
+                }
                 onClick={handleSave}
               >
                 {saveState === "saving" ? (

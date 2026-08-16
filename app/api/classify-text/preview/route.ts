@@ -51,6 +51,9 @@ export async function POST(request: Request) {
       chineseName: offline.chineseName,
       partOfSpeech: offline.partOfSpeech,
       category: offline.category,
+      // Without this the preview would render one side blank with nothing to
+      // explain it, which is the same misleading gap in a quieter form.
+      translationUnavailable: offline.translationUnavailable,
     });
   } catch {
     // The caller treats any failure as "no preview available".

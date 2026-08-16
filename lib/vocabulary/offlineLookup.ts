@@ -134,16 +134,10 @@ async function lookupEnglish(
 
   if (!dictionaryEntry && !tuple) return null;
 
-  const base = tuple
-    ? resultFromTuple(tuple)
-    : {
-        englishName: query.slice(0, 80),
-        chineseName: "待確認",
-        partOfSpeech: "other",
-        ...createExamples(query.slice(0, 80), "待確認"),
-        confidence: "low" as const,
-        category: "other" as const,
-      };
+  // No tuple means the offline index has no Chinese for this word. The
+  // dictionary API can still supply the part of speech and a real example, so
+  // that half is kept — but the translation stays empty rather than invented.
+  const base = tuple ? resultFromTuple(tuple) : createUnresolvedResult(query);
 
   const englishName = (dictionaryEntry?.word || base.englishName).slice(0, 80);
 
@@ -155,22 +149,38 @@ async function lookupEnglish(
       base.partOfSpeech,
     englishExample:
       dictionaryEntry?.example?.slice(0, 200) ||
-      createExamples(englishName, base.chineseName).englishExample,
+      (base.translationUnavailable
+        ? // Nothing to quote a translation against, and a generic English
+          // sentence next to a blank meaning reads as a half-loaded answer.
+          ""
+        : createExamples(englishName, base.chineseName).englishExample),
   };
 }
 
-function createLastResortResult(query: string): VocabularyLookupResult {
+/**
+ * The word is not in the offline index and the model never answered, so the
+ * only thing known is what the learner typed. That side is echoed back and the
+ * other side is left empty for the UI to explain.
+ *
+ * This used to return "待確認" (or "Meaning to confirm" going the other way)
+ * in the empty slot and wrap a sentence around it. Nothing downstream could
+ * tell that apart from a real translation: it was read aloud, given its own
+ * pinyin and zhuyin, and written into the learner's vocabulary as the meaning
+ * of the word they had just looked up.
+ */
+function createUnresolvedResult(query: string): VocabularyLookupResult {
   const isChinese = HAN_PATTERN.test(query);
-  const englishName = isChinese ? "Meaning to confirm" : query.slice(0, 80);
-  const chineseName = isChinese ? query.slice(0, 80) : "待確認";
+  const term = query.slice(0, 80);
 
   return {
-    englishName,
-    chineseName,
+    englishName: isChinese ? "" : term,
+    chineseName: isChinese ? term : "",
     partOfSpeech: "other",
-    ...createExamples(englishName, chineseName),
+    englishExample: "",
+    chineseExample: "",
     confidence: "low",
     category: "other",
+    translationUnavailable: true,
   };
 }
 
@@ -179,11 +189,11 @@ export async function lookupOffline(query: string): Promise<VocabularyLookupResu
 
   if (HAN_PATTERN.test(query)) {
     const tuple = index.chinese[query];
-    return tuple ? resultFromTuple(tuple) : createLastResortResult(query);
+    return tuple ? resultFromTuple(tuple) : createUnresolvedResult(query);
   }
 
   const tuple = index.english[normalizeLookupText(query)];
-  return (await lookupEnglish(query, tuple)) ?? createLastResortResult(query);
+  return (await lookupEnglish(query, tuple)) ?? createUnresolvedResult(query);
 }
 
 export function clearOfflineLookupIndexForTests() {
