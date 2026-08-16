@@ -52,7 +52,16 @@ type RealtimeStatus = "connecting" | "connected" | "disconnected";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
-const MOBILE_NAV_OFFSET = "7.25rem";
+/*
+ * Clears the floating dock, which is measurable rather than guessed:
+ * BottomNavigation is p-2 around a 52px row, then 0.625rem of its own bottom
+ * padding — 8 + 52 + 8 + 10 = 78px — and the safe-area inset is added by both
+ * it and the composer separately, so it is not part of this number.
+ *
+ * 5.625rem is that 78px plus a 12px gap. It was 7.25rem, which left a 38px
+ * band of empty surface between the composer and the dock on every phone.
+ */
+const MOBILE_NAV_OFFSET = "5.625rem";
 
 function BackIcon() {
   return (
@@ -1152,14 +1161,18 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
               </button>
             </div>
 
-            <div className="flex items-center justify-between px-3 pt-1.5">
-              <span className="text-[10px] text-neutral-400">Shift + Enter for a new line</span>
-              {newMessage.length > MAX_MESSAGE_LENGTH * 0.8 && (
+            {/* The "Shift + Enter for a new line" hint that used to sit here
+                was hardcoded English, and on the phone this screen is built
+                for there is no Shift key to press. The row now appears only
+                when the counter has something to say — near the 2000-character
+                limit — instead of reserving height on every render. */}
+            {newMessage.length > MAX_MESSAGE_LENGTH * 0.8 && (
+              <div className="flex items-center justify-end px-3 pt-1.5">
                 <span className={`text-[10px] ${newMessage.length >= MAX_MESSAGE_LENGTH ? "text-red-500" : "text-neutral-400"}`}>
                   {newMessage.length}/{MAX_MESSAGE_LENGTH}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </form>
           )}
         </div>
