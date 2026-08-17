@@ -7,8 +7,10 @@
 }
 
 .logoShell {
-  width: 84px;
-  height: 84px;
+  /* Sized by whoever places it — the comms hero gives it more room than the
+     84px it had when it was a signature off to one side. */
+  width: var(--mood-logo-size, 84px);
+  height: var(--mood-logo-size, 84px);
   color: var(--msg-ink);
   transform-origin: 48% 58%;
 }

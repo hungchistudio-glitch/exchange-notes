@@ -1,0 +1,393 @@
+/*
+ * The Cosmic Mode comms hero: an orbital observation deck above Earth.
+ *
+ * Every animation here is transform or opacity only — no box-shadow, no
+ * background-position, no particle simulation. This sits at the top of a
+ * scrolling list, so it has to cost nothing to composite while that list
+ * moves. `contain: paint` keeps the layers from inflating the page's paint
+ * area, and the whole thing is aria-hidden decoration.
+ *
+ * The starfield is two fixed sets of radial gradients rather than DOM nodes:
+ * 60 elements that only ever twinkle are 60 elements the compositor has to
+ * carry, and a seeded generator gives the same sky on every build.
+ *
+ * Nothing in this file is reachable outside Cosmic Mode — MessagesHub does
+ * not render the components that use it in Standard Mode at all.
+ */
+
+.hero {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  contain: paint;
+  pointer-events: none;
+}
+
+/* Distant, sharp, and many. */
+.starsFar {
+  background-image:
+    radial-gradient(1.25px 1.25px at 45.24% 53.74%, rgba(220,233,255,0.54) 0%, transparent 100%),
+    radial-gradient(0.81px 0.81px at 50.78% 56.39%, rgba(220,233,255,0.55) 0%, transparent 100%),
+    radial-gradient(0.76px 0.76px at 62.99% 76.13%, rgba(220,233,255,0.47) 0%, transparent 100%),
+    radial-gradient(1.12px 1.12px at 9.07% 77.73%, rgba(220,233,255,0.37) 0%, transparent 100%),
+    radial-gradient(1.09px 1.09px at 98.22% 92.62%, rgba(220,233,255,0.6) 0%, transparent 100%),
+    radial-gradient(1.02px 1.02px at 15.75% 1.44%, rgba(220,233,255,0.37) 0%, transparent 100%),
+    radial-gradient(0.72px 0.72px at 19.02% 23.23%, rgba(220,233,255,0.54) 0%, transparent 100%),
+    radial-gradient(1.01px 1.01px at 44.05% 80.87%, rgba(220,233,255,0.61) 0%, transparent 100%),
+    radial-gradient(0.97px 0.97px at 49.98% 63.6%, rgba(220,233,255,0.46) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 99.77% 95.59%, rgba(220,233,255,0.63) 0%, transparent 100%),
+    radial-gradient(0.87px 0.87px at 31.53% 22.05%, rgba(220,233,255,0.38) 0%, transparent 100%),
+    radial-gradient(1.21px 1.21px at 76.63% 38.44%, rgba(220,233,255,0.5) 0%, transparent 100%),
+    radial-gradient(0.7px 0.7px at 95.8% 81.34%, rgba(220,233,255,0.43) 0%, transparent 100%),
+    radial-gradient(1.29px 1.29px at 91.03% 45.12%, rgba(220,233,255,0.51) 0%, transparent 100%),
+    radial-gradient(1.17px 1.17px at 7.3% 60.43%, rgba(220,233,255,0.46) 0%, transparent 100%),
+    radial-gradient(1.28px 1.28px at 8.71% 31.93%, rgba(220,233,255,0.65) 0%, transparent 100%),
+    radial-gradient(0.76px 0.76px at 11.8% 23.65%, rgba(220,233,255,0.37) 0%, transparent 100%),
+    radial-gradient(1.04px 1.04px at 79.7% 17.06%, rgba(220,233,255,0.53) 0%, transparent 100%),
+    radial-gradient(0.78px 0.78px at 19.07% 70.26%, rgba(220,233,255,0.61) 0%, transparent 100%),
+    radial-gradient(0.83px 0.83px at 11.65% 40.39%, rgba(220,233,255,0.46) 0%, transparent 100%),
+    radial-gradient(0.88px 0.88px at 97.09% 77.13%, rgba(220,233,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.21px 1.21px at 21.07% 37.85%, rgba(220,233,255,0.61) 0%, transparent 100%),
+    radial-gradient(0.83px 0.83px at 10.03% 94.97%, rgba(220,233,255,0.45) 0%, transparent 100%),
+    radial-gradient(0.88px 0.88px at 77.27% 31.58%, rgba(220,233,255,0.38) 0%, transparent 100%),
+    radial-gradient(0.85px 0.85px at 9.01% 55.94%, rgba(220,233,255,0.59) 0%, transparent 100%),
+    radial-gradient(1.28px 1.28px at 37.17% 43.51%, rgba(220,233,255,0.54) 0%, transparent 100%),
+    radial-gradient(0.81px 0.81px at 57.46% 83.19%, rgba(220,233,255,0.41) 0%, transparent 100%),
+    radial-gradient(0.85px 0.85px at 90.84% 78.51%, rgba(220,233,255,0.43) 0%, transparent 100%),
+    radial-gradient(0.82px 0.82px at 73.94% 90.28%, rgba(220,233,255,0.73) 0%, transparent 100%),
+    radial-gradient(0.95px 0.95px at 88.22% 57.94%, rgba(220,233,255,0.39) 0%, transparent 100%),
+    radial-gradient(0.84px 0.84px at 3.87% 92.42%, rgba(220,233,255,0.63) 0%, transparent 100%),
+    radial-gradient(1.06px 1.06px at 25.7% 79.08%, rgba(220,233,255,0.47) 0%, transparent 100%),
+    radial-gradient(0.74px 0.74px at 17.54% 69.15%, rgba(220,233,255,0.44) 0%, transparent 100%),
+    radial-gradient(1.07px 1.07px at 55.94% 81.83%, rgba(220,233,255,0.46) 0%, transparent 100%),
+    radial-gradient(0.71px 0.71px at 91.74% 19.58%, rgba(220,233,255,0.46) 0%, transparent 100%),
+    radial-gradient(0.81px 0.81px at 44.57% 5.8%, rgba(220,233,255,0.5) 0%, transparent 100%),
+    radial-gradient(0.92px 0.92px at 57.22% 12.63%, rgba(220,233,255,0.71) 0%, transparent 100%),
+    radial-gradient(1.11px 1.11px at 98.05% 63.07%, rgba(220,233,255,0.58) 0%, transparent 100%),
+    radial-gradient(0.71px 0.71px at 14.03% 3.37%, rgba(220,233,255,0.71) 0%, transparent 100%),
+    radial-gradient(0.71px 0.71px at 70.1% 92.43%, rgba(220,233,255,0.6) 0%, transparent 100%),
+    radial-gradient(0.89px 0.89px at 48.22% 70.13%, rgba(220,233,255,0.75) 0%, transparent 100%),
+    radial-gradient(1.14px 1.14px at 7.53% 52.43%, rgba(220,233,255,0.71) 0%, transparent 100%),
+    radial-gradient(1.18px 1.18px at 73.71% 67.55%, rgba(220,233,255,0.72) 0%, transparent 100%),
+    radial-gradient(1.24px 1.24px at 35.18% 65.77%, rgba(220,233,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.22px 1.22px at 41.72% 75.89%, rgba(220,233,255,0.58) 0%, transparent 100%),
+    radial-gradient(1.05px 1.05px at 62.5% 36.7%, rgba(220,233,255,0.59) 0%, transparent 100%);
+}
+
+/* Nearer, softly blurred, and few — this is what gives the field depth. */
+.starsNear {
+  background-image:
+    radial-gradient(3.39px 3.39px at 8.02% 56.27%, rgba(220,233,255,0.21) 0%, transparent 100%),
+    radial-gradient(3.03px 3.03px at 72.82% 34.18%, rgba(220,233,255,0.17) 0%, transparent 100%),
+    radial-gradient(2.12px 2.12px at 44.05% 73.78%, rgba(220,233,255,0.19) 0%, transparent 100%),
+    radial-gradient(2.67px 2.67px at 2.98% 52.91%, rgba(220,233,255,0.13) 0%, transparent 100%),
+    radial-gradient(2.86px 2.86px at 69.83% 43.76%, rgba(220,233,255,0.21) 0%, transparent 100%),
+    radial-gradient(2.42px 2.42px at 25.58% 1.0%, rgba(220,233,255,0.18) 0%, transparent 100%),
+    radial-gradient(3.27px 3.27px at 20.26% 14.93%, rgba(220,233,255,0.18) 0%, transparent 100%),
+    radial-gradient(2.46px 2.46px at 44.19% 78.47%, rgba(220,233,255,0.18) 0%, transparent 100%),
+    radial-gradient(3.13px 3.13px at 19.85% 37.92%, rgba(220,233,255,0.21) 0%, transparent 100%),
+    radial-gradient(2.82px 2.82px at 88.03% 33.83%, rgba(220,233,255,0.14) 0%, transparent 100%),
+    radial-gradient(3.17px 3.17px at 13.62% 43.69%, rgba(220,233,255,0.2) 0%, transparent 100%),
+    radial-gradient(2.39px 2.39px at 71.12% 83.6%, rgba(220,233,255,0.12) 0%, transparent 100%),
+    radial-gradient(2.3px 2.3px at 45.06% 24.21%, rgba(220,233,255,0.15) 0%, transparent 100%),
+    radial-gradient(2.44px 2.44px at 62.57% 43.46%, rgba(220,233,255,0.2) 0%, transparent 100%);
+}
+
+
+.starsFar,
+.starsNear {
+  position: absolute;
+  inset: -10%;
+  animation: twinkle 14s ease-in-out infinite;
+}
+
+.starsNear {
+  animation-duration: 21s;
+  animation-direction: alternate-reverse;
+  filter: blur(1.5px);
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
+}
+
+/* Communication lanes. Faint by contract: they must never compete with Yumi. */
+.lanes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  animation: laneBreathe 18s ease-in-out infinite;
+}
+
+@keyframes laneBreathe {
+  0%, 100% { opacity: 0.34; }
+  50%      { opacity: 0.62; }
+}
+
+/*
+ * Earth.
+ *
+ * One positioned group defines the planet's circle; the three layers are
+ * concentric insets within it. Doing it this way rather than giving each layer
+ * its own top/width is what keeps them aligned: a percentage `top` resolves
+ * against the band's height while `width` resolves against its width, so three
+ * independently-positioned circles drift apart the moment the band changes
+ * shape.
+ *
+ * The group is pushed off the bottom-right corner so only the upper-left of
+ * its arc enters the frame — a limb rising from the right and falling away
+ * past the corner. The whole globe would be both too literal and too heavy,
+ * and the peak is kept clear of the centre so it never sits behind Yumi.
+ */
+.earthGroup {
+  position: absolute;
+  right: -34%;
+  top: 76%;
+  width: 96%;
+  aspect-ratio: 1;
+}
+
+.earthBloom,
+.earthHalo,
+.earth {
+  position: absolute;
+  border-radius: 50%;
+}
+
+/* The wide atmospheric bloom that blends into the dark sky. */
+.earthBloom {
+  inset: -3%;
+  border: 12px solid color-mix(in oklab, var(--msg-accent) 18%, transparent);
+  filter: blur(26px);
+  animation: bloom 16s ease-in-out infinite;
+}
+
+@keyframes bloom {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.012); }
+}
+
+/* The tighter cyan halo diffusing outward from the surface. */
+.earthHalo {
+  inset: -0.5%;
+  border: 3px solid color-mix(in oklab, var(--msg-accent) 40%, transparent);
+  filter: blur(6px);
+}
+
+/*
+ * Body and limb in one element.
+ *
+ * The bright edge is this circle's own border, not a stop in the background
+ * gradient. A gradient stop at 50% sits exactly where `border-radius: 50%`
+ * clips, so the rim was antialiased down to nothing; a border is painted inside
+ * the border-box and survives the clip. The background then fills only the
+ * padding box, which leaves the border reading as a hard-lit limb with the
+ * planet falling away beneath it.
+ */
+.earth {
+  inset: 0;
+  border: 1.5px solid #dcf6ff;
+  box-shadow:
+    0 0 14px 0 color-mix(in oklab, var(--msg-accent) 55%, transparent),
+    0 0 44px 4px color-mix(in oklab, var(--msg-accent) 18%, transparent);
+  background:
+    /* City-light hints just inside the terminator. Enough to read as a
+       connected world, not enough to look at an individual city. */
+    radial-gradient(1.5px 1.5px at 40% 1.6%, rgba(255, 216, 162, 0.6) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 45% 1.2%, rgba(255, 216, 162, 0.44) 0%, transparent 100%),
+    radial-gradient(1.7px 1.7px at 52% 1.9%, rgba(255, 226, 182, 0.36) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 58% 2.9%, rgba(255, 216, 162, 0.28) 0%, transparent 100%),
+    radial-gradient(1.3px 1.3px at 34% 2.5%, rgba(255, 216, 162, 0.26) 0%, transparent 100%),
+    /* Continental mass and cloud, suggested rather than mapped. */
+    radial-gradient(20% 5% at 34% 4.2%, color-mix(in oklab, var(--msg-accent) 16%, transparent) 0%, transparent 100%),
+    radial-gradient(15% 4% at 60% 3.8%, rgba(127, 212, 255, 0.14) 0%, transparent 100%),
+    radial-gradient(28% 4.5% at 47% 7%, rgba(120, 190, 240, 0.08) 0%, transparent 100%),
+    /*
+     * Dark, all the way to the edge.
+     *
+     * Only a shallow band of this circle is ever on screen — the visible slice
+     * is a few percent of a radius that is many hundreds of pixels — so a
+     * gradient that brightens over its outer few percent brightens everything
+     * you can see, and the planet came out as a flat teal mass. The lighting is
+     * the border and the box-shadow above; the fill's only job is to be the
+     * dark side of a world.
+     */
+    radial-gradient(
+      circle at 50% 50%,
+      #04101b 0%,
+      #04101b 49.2%,
+      color-mix(in oklab, var(--msg-accent) 14%, #04101b) 49.85%,
+      color-mix(in oklab, var(--msg-accent) 30%, #04101b) 50%
+    );
+}
+
+/*
+ * Orbital rings. Circles flattened to ellipses, each in a wrapper that turns
+ * at its own slow rate — the ring and its signal node rotate together, so the
+ * node stays on the path it appears to travel.
+ */
+/*
+ * Matches the figure's own box rather than being centred inside a zero-sized
+ * one, so the ring and halo percentages below resolve against Yumi's width.
+ * Overflow is left visible on purpose: the rings are wider than the figure and
+ * must not claim layout space for it on a narrow screen.
+ */
+.orbit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ringWrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  animation: orbit 34s linear infinite;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--msg-accent) 52%, transparent);
+  transform: scaleY(0.28);
+}
+
+/* Each ring is a different flattening as well as a different speed, which is
+   what stops three concentric ellipses reading as one thick smudge. */
+.ringTwo .ring {
+  transform: scaleY(0.5) rotate(18deg);
+  border-color: color-mix(in oklab, var(--msg-accent) 30%, transparent);
+}
+
+.ringThree .ring {
+  transform: scaleY(0.16) rotate(-9deg);
+  border-color: color-mix(in oklab, var(--msg-accent) 20%, transparent);
+}
+
+.ringTwo   { animation-duration: 48s; animation-direction: reverse; }
+.ringThree { animation-duration: 62s; }
+
+@keyframes orbit {
+  from { rotate: 0deg; }
+  to   { rotate: 360deg; }
+}
+
+/* Sparse by design. A node per ring reads as live traffic; a dozen reads as
+   a screensaver. */
+.node {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: #dffaff;
+  box-shadow: 0 0 6px 1px color-mix(in oklab, var(--msg-accent) 70%, transparent);
+}
+
+.nodeTrailing {
+  left: auto;
+  right: 0;
+  margin-left: 0;
+  margin-right: -2px;
+  width: 3px;
+  height: 3px;
+  opacity: 0.7;
+}
+
+/*
+ * Yumi's own light. Two sources, which is what puts the figure in the scene
+ * rather than on top of it: cool cyan from the field above, and a fainter
+ * warm bounce from the Earth below.
+ */
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 190%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 34%, color-mix(in oklab, var(--msg-accent) 26%, transparent) 0%, transparent 62%),
+    radial-gradient(circle at 50% 78%, rgba(140, 200, 255, 0.13) 0%, transparent 58%);
+  animation: haloPulse 13s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0%, 100% { opacity: 0.74; transform: scale(0.985); }
+  50%      { opacity: 1;    transform: scale(1.015); }
+}
+
+/* Float and drift are separate elements so neither transform fights the other. */
+.float { animation: float 7.5s ease-in-out infinite; }
+.drift { animation: drift 11s ease-in-out infinite; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(-4px); }
+  50%      { transform: translateY(4px); }
+}
+
+@keyframes drift {
+  0%, 100% { transform: rotate(-1.1deg); }
+  50%      { transform: rotate(1.1deg); }
+}
+
+/*
+ * A local darkening gradient behind the title block, so the brightest part of
+ * the field never decides whether "Messages" is readable. Required by the
+ * brief: the visual can be rich, the content still has to win.
+ */
+.textShield {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--msg-page) 94%, transparent) 0%,
+    color-mix(in oklab, var(--msg-page) 62%, transparent) 42%,
+    transparent 72%
+  );
+}
+
+/*
+ * Reduced motion: everything that moves stops. The two glow layers keep a very
+ * slow, low-amplitude breath, because the brief asks for near-static lighting
+ * rather than a dead scene — and a still frame of this composition is already
+ * the composition.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .starsFar,
+  .starsNear,
+  .lanes,
+  .ringWrap,
+  .float,
+  .drift {
+    animation: none;
+  }
+
+  .earthBloom,
+  .halo {
+    animation-duration: 24s;
+    transform: none;
+  }
+
+  .earthBloom { animation-name: bloomStill; }
+  .halo { animation-name: haloStill; }
+}
+
+@keyframes bloomStill {
+  0%, 100% { opacity: 0.78; }
+  50%      { opacity: 0.94; }
+}
+
+@keyframes haloStill {
+  0%, 100% { opacity: 0.84; }
+  50%      { opacity: 1; }
+}

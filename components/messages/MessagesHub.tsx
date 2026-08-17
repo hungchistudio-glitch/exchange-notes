@@ -22,7 +22,12 @@ import {
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import ConversationRow from "@/components/messages/ConversationRow";
+import {
+  CosmicCommsBackdrop,
+  CosmicYumiOrbit,
+} from "@/components/messages/CosmicCommsHero";
 import MoodLogoSwiper from "@/components/messages/MoodLogoSwiper";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   getArchivedConversationCount,
@@ -68,6 +73,7 @@ function conversationHref(summary: ConversationSummary): string {
 
 export default function MessagesHub() {
   const { t } = useTranslation();
+  const { isCosmic } = useInterfaceMode();
   const copy = t.messages;
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -85,6 +91,7 @@ export default function MessagesHub() {
   const [errorMessage, setErrorMessage] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [realtimeLive, setRealtimeLive] = useState(false);
 
   /*
    * Defaulted here and restored in the layout effect below, rather than read
@@ -199,7 +206,10 @@ export default function MessagesHub() {
             void refreshQuietly(userId);
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (!isMounted) return;
+          setRealtimeLive(status === "SUBSCRIBED");
+        });
     });
 
     // Reading a thread changes its unread count; the list should not still be
@@ -440,54 +450,113 @@ export default function MessagesHub() {
       <div className="mx-auto w-full max-w-[720px] lg:max-w-[900px]">
         <div style={{ paddingTop: "env(safe-area-inset-top)" }} />
 
-        <header className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p
-              className="text-[11px] font-semibold uppercase tracking-[0.18em]"
-              style={{ color: "var(--msg-accent)" }}
-            >
-              {copy.hub.eyebrow}
-            </p>
-            <h1 className="mt-1.5 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
-              {copy.title}
-            </h1>
-            <p
-              className="mt-2 text-sm leading-6"
-              style={{ color: "var(--msg-ink-soft)" }}
-            >
-              {copy.hub.subtitleFirst}
-              <br />
-              {copy.hub.subtitleSecond}
-            </p>
-          </div>
+        {/*
+          The hero band. In Cosmic Mode this is an orbital observation deck
+          above Earth; in Standard Mode it is a header with a logo in it, and
+          deliberately nothing more — the brief asks the standard shell to stay
+          lighter, and gating in React rather than CSS means it ships none of
+          the cosmic DOM.
+        */}
+        <div
+          className={`relative ${
+            isCosmic
+              ? // Full-bleed to the page's padding edge, because the planet's
+                // limb has to reach the right edge to read as a horizon, and
+                // deep enough below the header to have somewhere to rise from.
+                "-mx-4 overflow-hidden px-4 pb-14 pt-2 sm:-mx-6 sm:px-6 sm:pb-16"
+              : ""
+          }`}
+        >
+          {isCosmic && <CosmicCommsBackdrop />}
 
           {/*
-            The orbital identity stays, a size down and off to the side. This
-            page is for finding a person, so the mark is a signature here
-            rather than the performance it is on the Command Deck.
+            Three columns so Yumi is centred against the band, not merely
+            placed between two blocks of unequal width. The side columns are
+            1fr each and the middle is content-sized, so the figure holds the
+            centre line whatever the title wraps to.
           */}
-          <div className="flex shrink-0 flex-col items-end gap-3">
-            <div className="w-[104px] sm:w-[128px]">
-              <MoodLogoSwiper />
+          <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-start gap-2 sm:gap-4">
+            {/*
+              Above the orbit. The rings are wider than the column Yumi sits
+              in and reach across the title on a narrow screen; they are faint,
+              but "faint over the word Messages" is still a thing the brief
+              rules out. Raising the text is cheaper than shrinking the scene.
+            */}
+            <div className="relative z-20 min-w-0">
+              <p
+                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: "var(--msg-accent)" }}
+              >
+                {copy.hub.eyebrow}
+              </p>
+              <h1 className="mt-1.5 text-[26px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
+                {copy.title}
+              </h1>
+              <p
+                className="mt-2 text-[13px] leading-5 sm:text-sm sm:leading-6"
+                style={{ color: "var(--msg-ink-soft)" }}
+              >
+                {copy.hub.subtitleFirst}
+                <br />
+                {copy.hub.subtitleSecond}
+              </p>
             </div>
 
-            <Link
-              href="/friends"
-              onClick={() => persist({})}
-              aria-label={copy.hub.newConversation}
-              title={copy.hub.newConversation}
-              className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors"
-              style={{
-                background: "var(--msg-surface)",
-                borderColor: "var(--msg-line)",
-                color: "var(--msg-accent)",
-                boxShadow: "var(--msg-glow)",
-              }}
-            >
-              <SquarePen size={17} strokeWidth={1.9} />
-            </Link>
-          </div>
-        </header>
+            <div className="flex w-[76px] justify-center [--mood-logo-size:76px] sm:w-[112px] sm:[--mood-logo-size:104px]">
+              {isCosmic ? (
+                <CosmicYumiOrbit>
+                  <MoodLogoSwiper />
+                </CosmicYumiOrbit>
+              ) : (
+                <MoodLogoSwiper />
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              {/*
+                A real readout, not a decorative badge: it reports whether this
+                page's realtime subscription is actually live, so it can say
+                "offline" and mean it.
+              */}
+              <span
+                className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] min-[420px]:flex"
+                style={{
+                  background: "var(--msg-surface)",
+                  borderColor: "var(--msg-line)",
+                  color: "var(--msg-ink-soft)",
+                }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{
+                    background: realtimeLive
+                      ? "var(--msg-presence)"
+                      : "var(--msg-ink-faint)",
+                  }}
+                />
+                {realtimeLive
+                  ? copy.room.connectionConnected
+                  : copy.room.connectionConnecting}
+              </span>
+
+              <Link
+                href="/friends"
+                onClick={() => persist({})}
+                aria-label={copy.hub.newConversation}
+                title={copy.hub.newConversation}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors"
+                style={{
+                  background: "var(--msg-surface)",
+                  borderColor: "var(--msg-line)",
+                  color: "var(--msg-accent)",
+                  boxShadow: "var(--msg-glow)",
+                }}
+              >
+                <SquarePen size={17} strokeWidth={1.9} />
+              </Link>
+            </div>
+          </header>
+        </div>
 
         <div
           className="mt-7 flex items-center gap-2.5 rounded-full border px-4 py-3"
