@@ -39,7 +39,10 @@ import {
   type ConversationSummary,
   type IncomingRequest,
 } from "@/lib/friends";
-import { decodeWordCardMessage } from "@/lib/messages/wordCard";
+import {
+  searchConversationMessages,
+  type MessageSearchHit,
+} from "@/lib/messages/search";
 import {
   DEFAULT_HUB_STATE,
   readHubState,
@@ -92,6 +95,22 @@ export default function MessagesHub() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [realtimeLive, setRealtimeLive] = useState(false);
+
+  /*
+   * Remote message hits, tagged with the term that produced them.
+   *
+   * Carrying the term is what makes "still searching" derivable instead of a
+   * second piece of state, and it is also correctness: results are only used
+   * when their term matches the box, so a reply for "hello" can never be shown
+   * against "world" while the newer request is still out.
+   *
+   * People are matched locally from data already on screen, so that half of
+   * the results is instant; message bodies are not on the client.
+   */
+  const [messageHits, setMessageHits] = useState<{
+    term: string;
+    hits: MessageSearchHit[];
+  }>({ term: "", hits: [] });
 
   /*
    * Defaulted here and restored in the layout effect below, rather than read
@@ -336,16 +355,87 @@ export default function MessagesHub() {
   const isSearching = trimmedQuery.length > 0;
 
   /*
-   * Search runs across everything the page holds, grouped by what was
-   * matched rather than flattened into one list. Language content is part of
-   * the corpus: the body of the latest message and the word on a shared card
-   * both match, which is what makes "search a word you remember" work.
+   * Remote search, debounced into the 200–300ms the brief asks for.
+   *
+   * Keyed on the raw term rather than on each keystroke's request, and every
+   * in-flight response checks `cancelled` before it lands, so a slow reply for
+   * "he" can never overwrite the results for "hello".
+   */
+  /*
+   * A stable key for "which conversations are searchable".
+   *
+   * The effect below cannot depend on `summaries` itself: that array is a new
+   * reference after every realtime refresh, so a busy conversation would
+   * restart the 250ms debounce on each incoming message and the search would
+   * never fire. This only changes when the set of conversations actually does.
+   */
+  const searchableConversationIds = useMemo(
+    () =>
+      summaries
+        .map((summary) => summary.conversationId)
+        .filter((id): id is string => Boolean(id))
+        .join(","),
+    [summaries],
+  );
+
+  useEffect(() => {
+    if (!isSearching) return;
+
+    const conversationIds = searchableConversationIds
+      .split(",")
+      .filter(Boolean);
+
+    let cancelled = false;
+
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const hits =
+            conversationIds.length === 0
+              ? []
+              : await searchConversationMessages(
+                  createClient(),
+                  conversationIds,
+                  trimmedQuery,
+                );
+          if (!cancelled) setMessageHits({ term: trimmedQuery, hits });
+        } catch (error) {
+          // A failed search shows no message results rather than replacing the
+          // page with an error — the people half still works.
+          console.error(error);
+          if (!cancelled) setMessageHits({ term: trimmedQuery, hits: [] });
+        }
+      })();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isSearching, trimmedQuery, searchableConversationIds]);
+
+  /** Still waiting on the server for the term currently in the box. */
+  const searching = isSearching && messageHits.term !== trimmedQuery;
+
+  /*
+   * Three groups, as the brief lays them out: who you might mean, what was
+   * said, and the language that changed hands. A conversation appears in at
+   * most one of them — matching the person is the strongest signal, so those
+   * are removed from the message groups rather than listed twice.
    */
   const searchResults = useMemo(() => {
-    if (!isSearching) return { people: [], conversations: [] };
+    if (!isSearching) {
+      return { people: [], conversations: [], language: [] };
+    }
+
+    const byConversationId = new Map(
+      summaries
+        .filter((summary) => summary.conversationId)
+        .map((summary) => [summary.conversationId as string, summary]),
+    );
 
     const people: ConversationSummary[] = [];
-    const conversations: ConversationSummary[] = [];
+    const matchedPeople = new Set<string>();
 
     for (const summary of summaries) {
       const name = (
@@ -355,22 +445,33 @@ export default function MessagesHub() {
 
       if (name.includes(trimmedQuery) || handle.includes(trimmedQuery)) {
         people.push(summary);
-        continue;
-      }
-
-      const body = summary.lastMessage?.body ?? "";
-      const card = decodeWordCardMessage(body);
-      const haystack = (
-        card ? `${card.word} ${card.translation}` : body
-      ).toLowerCase();
-
-      if (haystack.includes(trimmedQuery)) {
-        conversations.push(summary);
+        if (summary.conversationId) matchedPeople.add(summary.conversationId);
       }
     }
 
-    return { people, conversations };
-  }, [isSearching, summaries, trimmedQuery]);
+    // One row per conversation: the newest matching message wins, and the
+    // query already came back newest-first.
+    const seen = new Set<string>();
+    const conversations: { summary: ConversationSummary; hit: MessageSearchHit }[] =
+      [];
+    const language: { summary: ConversationSummary; hit: MessageSearchHit }[] =
+      [];
+
+    const hits = messageHits.term === trimmedQuery ? messageHits.hits : [];
+
+    for (const hit of hits) {
+      if (seen.has(hit.conversationId)) continue;
+      if (matchedPeople.has(hit.conversationId)) continue;
+
+      const summary = byConversationId.get(hit.conversationId);
+      if (!summary) continue;
+
+      seen.add(hit.conversationId);
+      (hit.isWordCard ? language : conversations).push({ summary, hit });
+    }
+
+    return { people, conversations, language };
+  }, [isSearching, messageHits, summaries, trimmedQuery]);
 
   const recentSummaries = useMemo(
     () => summaries.filter((summary) => summary.lastMessage),
@@ -675,56 +776,80 @@ export default function MessagesHub() {
 
         {hasLoadedOnce && !loading && (
           <div className="mt-6">
-            {isSearching ? (
-              searchResults.people.length === 0 &&
-              searchResults.conversations.length === 0 ? (
-                <div className="mt-10 text-center">
-                  <p className="text-base font-semibold">
-                    {copy.hub.noResultsTitle}
-                  </p>
-                  <p
-                    className="mt-1.5 text-sm"
-                    style={{ color: "var(--msg-ink-soft)" }}
-                  >
-                    {copy.hub.noResultsDescription}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-7">
-                  {searchResults.people.length > 0 && (
-                    <section>
-                      <h2
-                        className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
-                        style={{ color: "var(--msg-ink-faint)" }}
-                      >
-                        {copy.hub.resultGroupPeople}
-                      </h2>
-                      <div className="mt-2.5 space-y-2.5">
-                        {searchResults.people.map((summary) =>
-                          renderRow(summary, false),
-                        )}
-                      </div>
-                    </section>
-                  )}
+            {isSearching ? (() => {
+              const groups = [
+                {
+                  key: "people",
+                  label: copy.hub.resultGroupPeople,
+                  rows: searchResults.people.map((summary) => ({
+                    summary,
+                    preview: undefined as string | undefined,
+                  })),
+                },
+                {
+                  key: "conversations",
+                  label: copy.hub.resultGroupConversations,
+                  rows: searchResults.conversations.map(({ summary, hit }) => ({
+                    summary,
+                    preview: hit.snippet,
+                  })),
+                },
+                {
+                  key: "language",
+                  label: copy.hub.resultGroupLanguage,
+                  rows: searchResults.language.map(({ summary, hit }) => ({
+                    summary,
+                    preview: hit.snippet,
+                  })),
+                },
+              ].filter((group) => group.rows.length > 0);
 
-                  {searchResults.conversations.length > 0 && (
-                    <section>
+              if (groups.length === 0) {
+                return (
+                  <div className="mt-10 text-center">
+                    <p className="text-base font-semibold">
+                      {searching ? copy.hub.searching : copy.hub.noResultsTitle}
+                    </p>
+                    {!searching && (
+                      <p
+                        className="mt-1.5 text-sm"
+                        style={{ color: "var(--msg-ink-soft)" }}
+                      >
+                        {copy.hub.noResultsDescription}
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-7">
+                  {groups.map((group) => (
+                    <section key={group.key}>
                       <h2
                         className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
                         style={{ color: "var(--msg-ink-faint)" }}
                       >
-                        {copy.hub.resultGroupConversations}
+                        {group.label}
                       </h2>
                       <div className="mt-2.5 space-y-2.5">
-                        {searchResults.conversations.map((summary) =>
-                          renderRow(summary, false),
-                        )}
+                        {group.rows.map(({ summary, preview }) => (
+                          <ConversationRow
+                            key={summary.friend.id}
+                            summary={summary}
+                            href={conversationHref(summary)}
+                            currentUserId={currentUserId}
+                            copy={copy}
+                            previewOverride={preview}
+                            onOpen={() => persist({})}
+                          />
+                        ))}
                       </div>
                     </section>
-                  )}
+                  ))}
                 </div>
-              )
-            ) : tab === "requests" ? (
+              );
+            })() : tab === "requests" ? (
               requests.length === 0 ? (
                 <p
                   className="mt-10 text-center text-sm"

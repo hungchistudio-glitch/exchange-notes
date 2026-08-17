@@ -673,6 +673,8 @@ export type TranslationDictionary = {
 
       resultGroupPeople: string;
       resultGroupConversations: string;
+      resultGroupLanguage: string;
+      searching: string;
 
       newConversation: string;
       openConversation: string;

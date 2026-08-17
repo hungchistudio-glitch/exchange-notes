@@ -165,9 +165,18 @@
   animation: bloom 16s ease-in-out infinite;
 }
 
+/*
+ * Opacity only, deliberately.
+ *
+ * This layer carries a 26px blur, and a transform on a filtered layer can make
+ * the browser re-rasterise the blur each frame instead of compositing a cached
+ * one. Opacity composites either way. The scale it used to animate was worth
+ * about a percent of size and cost the whole filter — see the note on
+ * .earthSheenBar for the same trade made the other way.
+ */
 @keyframes bloom {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%      { opacity: 0.95; transform: scale(1.012); }
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 0.95; }
 }
 
 /* The tighter cyan halo diffusing outward from the surface. */
@@ -246,18 +255,29 @@
 .earthSheenBar {
   position: absolute;
   top: -10%;
-  left: -60%;
-  width: 60%;
+  left: -76%;
+  width: 76%;
   height: 120%;
+  /*
+   * Soft by gradient rather than by filter.
+   *
+   * This is the one layer that moves continuously, and it used to translate
+   * with a 14px blur on it — a filtered layer under a running transform, at
+   * the top of a list that scrolls, which is exactly the cost §9 rules out.
+   * The stops below are spread wide enough to be indistinguishable from the
+   * blurred version, and a plain translate on an unfiltered layer is a
+   * compositor job.
+   */
   background: linear-gradient(
     100deg,
     transparent 0%,
-    color-mix(in oklab, var(--msg-accent) 8%, transparent) 38%,
-    color-mix(in oklab, #dff6ff 14%, transparent) 52%,
-    color-mix(in oklab, var(--msg-accent) 7%, transparent) 66%,
+    color-mix(in oklab, var(--msg-accent) 5%, transparent) 22%,
+    color-mix(in oklab, var(--msg-accent) 9%, transparent) 40%,
+    color-mix(in oklab, #dff6ff 13%, transparent) 52%,
+    color-mix(in oklab, var(--msg-accent) 8%, transparent) 64%,
+    color-mix(in oklab, var(--msg-accent) 4%, transparent) 80%,
     transparent 100%
   );
-  filter: blur(14px);
   animation: sheen 19s linear infinite;
 }
 
@@ -543,6 +563,9 @@
     animation-duration: 24s;
     transform: none;
   }
+
+  /* .earthSheenBar and .meteor are handled above; .starsNear keeps its blur
+     but only ever animated opacity, which is safe to leave running. */
 
   .earthBloom { animation-name: bloomStill; }
   .halo { animation-name: haloStill; }

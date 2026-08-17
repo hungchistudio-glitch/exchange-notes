@@ -750,6 +750,8 @@ const english: TranslationDictionary = {
 
       resultGroupPeople: "People",
       resultGroupConversations: "Conversations",
+      resultGroupLanguage: "Language",
+      searching: "Searching…",
 
       newConversation: "New conversation",
       openConversation: "Open conversation with {name}",

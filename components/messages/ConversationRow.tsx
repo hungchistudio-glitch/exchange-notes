@@ -56,6 +56,11 @@ type ConversationRowProps = {
   currentUserId: string | null;
   copy: MessagesCopy;
   onOpen?: () => void;
+  /*
+   * Replaces the latest-message line. Search results use it to show the line
+   * that actually matched, which is rarely the newest one.
+   */
+  previewOverride?: string;
 };
 
 export default function ConversationRow({
@@ -64,6 +69,7 @@ export default function ConversationRow({
   currentUserId,
   copy,
   onOpen,
+  previewOverride,
 }: ConversationRowProps) {
   const name = summary.friend.displayName ?? summary.friend.exchangeId;
   const initial = name.charAt(0).toUpperCase();
@@ -154,7 +160,7 @@ export default function ConversationRow({
               color: hasUnread ? "var(--msg-ink)" : "var(--msg-ink-soft)",
             }}
           >
-            {previewText(summary, currentUserId, copy)}
+            {previewOverride ?? previewText(summary, currentUserId, copy)}
           </span>
 
           <span className="flex shrink-0 items-center gap-1.5">

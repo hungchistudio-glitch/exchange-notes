@@ -737,6 +737,8 @@ const traditionalChinese: TranslationDictionary = {
 
       resultGroupPeople: "好友",
       resultGroupConversations: "對話",
+      resultGroupLanguage: "語言內容",
+      searching: "搜尋中…",
 
       newConversation: "建立新對話",
       openConversation: "開啟與 {name} 的對話",
