@@ -30,13 +30,13 @@ export type ConversationSummary = {
   mutedAt: string | null;
 
   /*
-   * How many shared word cards this conversation has in the recent window —
-   * the "1 Phrase" chip on a conversation row.
+   * How many shared word cards this conversation holds — the "1 phrase" chip
+   * on a conversation row.
    *
-   * Counted from the same bounded message window the previews come from, so
-   * it costs nothing extra to produce. It is deliberately a count of language
-   * that actually changed hands rather than a prediction: nothing here claims
-   * a phrase is worth learning, only that one was sent.
+   * Deliberately a count of language that actually changed hands rather than a
+   * prediction: nothing here claims a phrase is worth learning, only that one
+   * was sent. 0 when the count could not be read, which is why the chip is
+   * hidden rather than shown as zero.
    */
   learningSignalCount: number;
 };
@@ -542,28 +542,61 @@ export async function listConversationSummaries(
   // count a friends-based 1:1 messaging app is likely to have.
   const lastMessageByConversationId = new Map<string, LastMessagePreview>();
 
-  // Shared word cards seen in the same window, per conversation. See the note
-  // on ConversationSummary.learningSignalCount for why this is counted here.
+  /*
+   * Shared word cards per conversation, from their own query rather than from
+   * the preview window above.
+   *
+   * Counting them inside that window looked free and was wrong: the window is
+   * the newest 500 messages across *all* of the user's conversations, which is
+   * enough to guarantee a latest message for each one but says nothing about
+   * how many cards each holds. Past 500 messages in total, a quiet
+   * conversation's count silently fell to zero, and any conversation's count
+   * changed when an unrelated one got busy.
+   *
+   * This query is bounded by the number of cards rather than the number of
+   * messages — a far smaller and slower-growing quantity — and runs alongside
+   * the preview fetch so it costs no extra latency.
+   */
   const learningSignalByConversationId = new Map<string, number>();
 
   if (relevantConversationIds.length > 0) {
-    const { data: recentMessages, error: recentMessagesError } = await supabase
-      .from("messages")
-      .select("conversation_id, sender_id, body, created_at, attachment_type")
-      .in("conversation_id", relevantConversationIds)
-      .order("created_at", { ascending: false })
-      .limit(500);
+    const [
+      { data: recentMessages, error: recentMessagesError },
+      { data: wordCardRows, error: wordCardError },
+    ] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("conversation_id, sender_id, body, created_at, attachment_type")
+        .in("conversation_id", relevantConversationIds)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase
+        .from("messages")
+        .select("conversation_id")
+        .in("conversation_id", relevantConversationIds)
+        .like("body", `${WORD_CARD_MARKER}%`)
+        .limit(2000),
+    ]);
 
     if (recentMessagesError) throw recentMessagesError;
 
-    for (const message of recentMessages ?? []) {
-      if (message.body.startsWith(WORD_CARD_MARKER)) {
+    /*
+     * Tolerated rather than thrown. The count drives one decorative chip; the
+     * conversation list is the page. A chip that fails to appear is a smaller
+     * problem than a Messages screen that will not load.
+     */
+    if (wordCardError) {
+      console.warn("Could not count shared phrases:", wordCardError);
+    } else {
+      for (const row of wordCardRows ?? []) {
         learningSignalByConversationId.set(
-          message.conversation_id,
-          (learningSignalByConversationId.get(message.conversation_id) ?? 0) + 1
+          row.conversation_id,
+          (learningSignalByConversationId.get(row.conversation_id) ?? 0) + 1
         );
       }
+    }
 
+    for (const message of recentMessages ?? []) {
       if (lastMessageByConversationId.has(message.conversation_id)) continue;
 
       lastMessageByConversationId.set(message.conversation_id, {

@@ -60,6 +60,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   clearPendingSharedVocabulary,
   getPendingSharedVocabulary,
+  setPendingSharedVocabulary,
 } from "@/lib/vocabularyDraft";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
 
@@ -210,6 +211,15 @@ export default function ConversationRoom({
   const [sending, setSending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  /*
+   * True only once this conversation has actually opened.
+   *
+   * "Not loading any more" is not the same thing — a failed open also stops
+   * loading, and the queued-word-card effect below must not treat that as its
+   * cue to fire.
+   */
+  const [conversationReady, setConversationReady] = useState(false);
+
   /**
    * The outcome the channel last reported, tagged with the conversation it
    * belongs to. Tagging matters because a status callback from a channel that
@@ -281,10 +291,55 @@ export default function ConversationRoom({
     null,
   );
   const messagesRef = useRef<Message[]>([]);
+  const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  /*
+   * Advance conversation_members.last_read_at for messages that arrive while
+   * this thread is on screen.
+   *
+   * The per-message path already treats an open thread as read — markMessagesRead
+   * runs on every incoming message below. last_read_at was not keeping up, and
+   * it is what the conversation list computes its unread badge from, so a
+   * message you watched arrive came back as unread the moment you pressed back.
+   *
+   * Debounced because a burst of messages should cost one write, not one per
+   * message, and flushed on the way out so leaving immediately still counts.
+   */
+  const scheduleConversationRead = useCallback(() => {
+    if (!currentUserId) return;
+
+    if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+    markReadTimerRef.current = setTimeout(() => {
+      markReadTimerRef.current = null;
+      markConversationRead(supabase, currentUserId, conversationId).catch(
+        (error) => {
+          console.warn("Could not mark conversation as read:", error);
+        },
+      );
+    }, 900);
+  }, [conversationId, currentUserId, supabase]);
+
+  useEffect(
+    () => () => {
+      if (!markReadTimerRef.current) return;
+      clearTimeout(markReadTimerRef.current);
+      markReadTimerRef.current = null;
+      if (!currentUserId) return;
+
+      // Fire-and-forget: the request outlives this component, which is the
+      // point — the user is on their way back to the list that reads it.
+      markConversationRead(supabase, currentUserId, conversationId).catch(
+        (error) => {
+          console.warn("Could not mark conversation as read:", error);
+        },
+      );
+    },
+    [conversationId, currentUserId, supabase],
+  );
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     bottomRef.current?.scrollIntoView({
@@ -329,6 +384,7 @@ export default function ConversationRoom({
       setLoading(true);
       setErrorMessage("");
       setMessages([]);
+      setConversationReady(false);
 
       const {
         data: { user },
@@ -400,6 +456,7 @@ export default function ConversationRoom({
         );
         setMessages(visibleMessages);
         setLoading(false);
+        setConversationReady(true);
 
         window.requestAnimationFrame(() => {
           scrollToBottom("auto");
@@ -495,6 +552,8 @@ export default function ConversationRoom({
             ]).catch((readError) => {
               console.warn("Could not mark incoming message as read:", readError);
             });
+
+            scheduleConversationRead();
           }
         },
       )
@@ -515,7 +574,7 @@ export default function ConversationRoom({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [conversationId, currentUserId, supabase]);
+  }, [conversationId, currentUserId, scheduleConversationRead, supabase]);
 
   // Listens for the friend's receipt writes on OUR sent messages (they opened
   // the thread, or their client marked something delivered) so our own
@@ -667,11 +726,23 @@ export default function ConversationRoom({
   // thread is ready, then clears the queue so it can never resend on a later
   // visit to a different conversation.
   useEffect(() => {
-    if (!currentUserId || loading) return;
+    /*
+     * Gated on the conversation having opened, not merely on loading having
+     * finished. A failed open also clears `loading`, and this effect used to
+     * take that as its cue: it consumed the queued card, tried to post it into
+     * a conversation it could not read, and replaced the real "not available"
+     * error with a misleading one. The card was gone either way.
+     */
+    if (!currentUserId || !conversationReady) return;
 
     const pendingVocabulary = getPendingSharedVocabulary();
     if (!pendingVocabulary) return;
 
+    /*
+     * Cleared before the insert rather than after, so a re-render cannot send
+     * the same card twice — and put back below if the insert fails, so a
+     * failure costs the user a retry instead of the word they chose.
+     */
     clearPendingSharedVocabulary();
 
     const cardBody = encodeWordCardMessage(pendingVocabulary);
@@ -688,6 +759,7 @@ export default function ConversationRoom({
         .single();
 
       if (error) {
+        setPendingSharedVocabulary(pendingVocabulary);
         setErrorMessage(copy.errors.shareWord);
         return;
       }
@@ -701,7 +773,13 @@ export default function ConversationRoom({
         return alreadyExists ? currentMessages : [...currentMessages, data];
       });
     })();
-  }, [conversationId, currentUserId, loading, supabase, copy.errors.shareWord]);
+  }, [
+    conversationId,
+    currentUserId,
+    conversationReady,
+    supabase,
+    copy.errors.shareWord,
+  ]);
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
