@@ -101,12 +101,20 @@ export default function MessagesHub() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const hasRestoredScroll = useRef(false);
+  const scrollFlushRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useIsomorphicLayoutEffect(() => {
     const stored = readHubState();
     setTab(stored.tab);
     setQuery(stored.query);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (scrollFlushRef.current) clearTimeout(scrollFlushRef.current);
+    },
+    [],
+  );
 
   const persist = useCallback(
     (next: Partial<{ tab: MessagesHubTab; query: string }>) => {
@@ -411,6 +419,21 @@ export default function MessagesHub() {
   return (
     <main
       ref={scrollRef}
+      /*
+       * Tapping a conversation row is not the only way to leave this page —
+       * the dock, the new-conversation button and the browser's own back all
+       * do too, and every one of them should be returnable-to. So the scroll
+       * position is saved shortly after scrolling stops rather than only in a
+       * link's onClick. Debounced because otherwise this is a sessionStorage
+       * write per frame for the length of a flick.
+       */
+      onScroll={(event) => {
+        const scrollTop = event.currentTarget.scrollTop;
+        if (scrollFlushRef.current) clearTimeout(scrollFlushRef.current);
+        scrollFlushRef.current = setTimeout(() => {
+          writeHubState({ tab, query, scrollTop });
+        }, 150);
+      }}
       className="h-[100dvh] overflow-y-auto overscroll-contain px-4 pb-32 pt-6 sm:px-6"
       style={{ background: "var(--msg-page)", color: "var(--msg-ink)" }}
     >
@@ -450,6 +473,7 @@ export default function MessagesHub() {
 
             <Link
               href="/friends"
+              onClick={() => persist({})}
               aria-label={copy.hub.newConversation}
               title={copy.hub.newConversation}
               className="flex h-10 w-10 items-center justify-center rounded-full border transition-colors"
@@ -727,6 +751,7 @@ export default function MessagesHub() {
                     </p>
                     <Link
                       href="/friends"
+                      onClick={() => persist({})}
                       className="mt-5 inline-flex h-11 items-center justify-center rounded-full px-5 text-sm font-semibold"
                       style={{
                         background: "var(--msg-accent)",

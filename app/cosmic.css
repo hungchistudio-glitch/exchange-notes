@@ -105,33 +105,72 @@ html[data-interface-mode="yumi-cosmic"] {
   --discover-category-politics: #b9b5ac;
 
   /*
-   * Messages in deep space. The reference design for the two-page rebuild is
-   * a Cosmic Mode design, so this is where it actually lands: a near-black
-   * page, panels lifted just off it, cyan for anything the system considers
-   * live, and electric blue for the messages you sent.
+   * Messages in deep space, on the Messages V2 spec's own palette (§36).
+   *
+   * These eight values are the spec's, quoted rather than approximated:
+   *
+   *   background        #020A16     primary cyan      #32DDF8
+   *   elevated surface  #07172A     electric blue     #315FFF
+   *   secondary surface #0A1D33     primary text      #F4F7FB
+   *   presence green    #25DF82     secondary text    #8F9EB5
+   *
+   * The spec does not name a line colour, a glow, a second gradient stop or
+   * an ink to sit on cyan, so none of those are invented here either — each
+   * one is mixed or dimmed from the values above, which is why the file has
+   * no ninth hex in it. color-mix in oklab is already how Tailwind v4 renders
+   * every `black/40` in this app, so it costs nothing new.
+   *
+   * Deliberately its own cyan. --cosmic-cyan (#4de3f0) still paints the
+   * Command Deck and the dock; Messages is a shade cooler because the spec
+   * says so. If the two should converge, this is the line to change.
    */
-  --msg-page: #050a16;
-  --msg-surface: #0b1a2f;
-  --msg-surface-soft: #102340;
-  --msg-line: rgba(77, 227, 240, 0.14);
-  --msg-ink: #eaf3ff;
-  --msg-ink-soft: #8ba0c6;
-  --msg-ink-faint: #63769a;
+  --msg-page: #020a16;
+  --msg-surface: #07172a;
+  --msg-surface-soft: #0a1d33;
+  --msg-line: color-mix(in oklab, #32ddf8 14%, transparent);
+  --msg-ink: #f4f7fb;
+  --msg-ink-soft: #8f9eb5;
 
-  --msg-accent: var(--cosmic-cyan);
-  --msg-accent-soft: rgba(77, 227, 240, 0.12);
-  --msg-accent-ink: #04121c;
+  /*
+   * The spec has two text tiers; the design needs a third for timestamps and
+   * @handles. Dimming the secondary is the honest way to get one, and 0.82 is
+   * where it still clears WCAG AA on both the page and an elevated surface
+   * (4.8:1 against #07172A, the worse of the two). Anything dimmer looks
+   * better and fails §50.
+   */
+  --msg-ink-faint: color-mix(in oklab, #8f9eb5 82%, transparent);
 
-  --msg-bubble-in: linear-gradient(180deg, #12233d, #0d1b31);
-  --msg-bubble-in-ink: #eaf3ff;
-  --msg-bubble-in-line: rgba(77, 227, 240, 0.16);
-  --msg-bubble-out: linear-gradient(140deg, #3f6dff, #2748d8);
-  --msg-bubble-out-ink: #f4f8ff;
-  --msg-bubble-out-meta: rgba(244, 248, 255, 0.62);
+  --msg-accent: #32ddf8;
+  --msg-accent-soft: color-mix(in oklab, #32ddf8 12%, transparent);
+  /* On cyan, the page colour is the most readable ink available — 12.2:1. */
+  --msg-accent-ink: #020a16;
+
+  /* Incoming: the two neutral navy surfaces. Outgoing: electric blue, with
+     its second stop mixed toward the page so the gradient has somewhere to
+     go. Both inks are the spec's primary text (15.8:1 and 4.7:1). */
+  --msg-bubble-in: linear-gradient(180deg, #0a1d33, #07172a);
+  --msg-bubble-in-ink: #f4f7fb;
+  --msg-bubble-in-line: color-mix(in oklab, #32ddf8 16%, transparent);
+  --msg-bubble-out: linear-gradient(
+    140deg,
+    #315fff,
+    color-mix(in oklab, #315fff 78%, #020a16)
+  );
+  --msg-bubble-out-ink: #f4f7fb;
+
+  /*
+   * Not dimmed, and it cannot be. Electric blue is light enough that primary
+   * text on it is 4.64:1 — over AA, but with 0.14 to spare. Taking any opacity
+   * out drops it straight through the floor (0.95 → 4.33, 0.62 → 2.71), and a
+   * dark ink is worse still (3.98 at full strength). So the timestamp and
+   * receipt glyph inside your own bubble are the same colour as the message,
+   * and the hierarchy is carried by 10px against 15px instead.
+   */
+  --msg-bubble-out-meta: #f4f7fb;
 
   --msg-presence: #25df82;
-  --msg-glow: 0 0 24px rgba(77, 227, 240, 0.12);
-  --msg-header: rgba(5, 10, 22, 0.82);
+  --msg-glow: 0 0 24px color-mix(in oklab, #32ddf8 12%, transparent);
+  --msg-header: color-mix(in oklab, #020a16 82%, transparent);
 
   /* Cosmic-only. The cyan that marks an active system, and the field colours
      the Command Deck and dock draw their rings and glow from. */

@@ -102,8 +102,19 @@
   --msg-surface-soft: #faf9f5;
   --msg-line: rgba(0, 0, 0, 0.06);
   --msg-ink: #171717;
-  --msg-ink-soft: rgba(0, 0, 0, 0.46);
-  --msg-ink-faint: rgba(0, 0, 0, 0.32);
+
+  /*
+   * 0.55 and 0.62, not the 0.45/0.35 the old screens used.
+   *
+   * Those came from `text-black/45` and `text-black/35`, which are 3.4:1 and
+   * 2.2:1 on this paper — under WCAG AA for the 11–14px they were carrying
+   * (message previews, @handles, timestamps). 0.55 is the lowest that clears
+   * 4.5:1 on all three light surfaces here; 0.62 keeps the two tiers visibly
+   * apart. The same two alphas are still in use outside Messages and have the
+   * same problem there — this only fixes what these tokens reach.
+   */
+  --msg-ink-soft: rgba(0, 0, 0, 0.62);
+  --msg-ink-faint: rgba(0, 0, 0, 0.55);
 
   /* The colour that marks something live or selected. */
   --msg-accent: var(--accent-amber);

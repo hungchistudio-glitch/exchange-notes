@@ -80,6 +80,7 @@ export type TranslationDictionary = {
     };
   };
   common: {
+    back: string;
     close: string;
     cancel: string;
     confirm: string;

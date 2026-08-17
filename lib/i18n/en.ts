@@ -80,6 +80,7 @@ const english: TranslationDictionary = {
     },
   },
   common: {
+    back: "Back",
     close: "Close",
     cancel: "Cancel",
     confirm: "Confirm",

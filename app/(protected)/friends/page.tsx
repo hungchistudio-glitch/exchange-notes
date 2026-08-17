@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
@@ -32,6 +32,7 @@ function FriendsPageContent() {
   const supabase = createClient();
   const { t } = useTranslation();
   const copy = t.friends;
+  const router = useRouter();
   const searchParams = useSearchParams();
   const invitedExchangeId = normalizeExchangeId(
     searchParams.get(FRIEND_INVITE_PARAM) ?? "",
@@ -140,6 +141,16 @@ function FriendsPageContent() {
    * field visible — leaving the user on the camera view after a successful
    * read looks like nothing happened.
    */
+  function handleBack() {
+    // history.length is 1 only on a cold entry — a push notification or a
+    // pasted URL — where there is nowhere to go back to.
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  }
+
   function handleScannedExchangeId(scannedExchangeId: string) {
     setAddMode("id");
     setExchangeId(scannedExchangeId);
@@ -258,13 +269,23 @@ function FriendsPageContent() {
     <main className="min-h-screen bg-surface px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
       <div className="mx-auto max-w-2xl">
         <header>
-          <Link
-            href="/"
-            aria-label="Back to Home"
+          {/*
+            Goes back, rather than going home.
+            This used to be a hard link to "/", which was wrong from every
+            entry point that is not Home — arriving from the Messages list and
+            pressing back dropped you on the Command Deck instead of back in
+            the list you came from. There is no history to return to when a
+            push notification opens the app directly on this page, which is
+            what the fallback is for.
+          */}
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label={t.common.back}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-black transition hover:bg-black/[0.04]"
           >
             ←
-          </Link>
+          </button>
 
           <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
             {copy.eyebrow}

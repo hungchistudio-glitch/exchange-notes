@@ -78,6 +78,7 @@ const traditionalChinese: TranslationDictionary = {
     },
   },
   common: {
+    back: "返回",
     close: "關閉",
     cancel: "取消",
     confirm: "確認",
