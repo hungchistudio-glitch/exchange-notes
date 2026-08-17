@@ -652,12 +652,6 @@ export type TranslationDictionary = {
     statusDelivered: string;
     statusRead: string;
 
-    moodCalm: string;
-    moodCurious: string;
-    moodSleepy: string;
-    moodSurprised: string;
-    moodHappy: string;
-
     /*
      * The two pages of the messaging architecture, kept apart here the same
      * way they are kept apart on screen. `hub` answers "who do I want to talk

@@ -721,12 +721,6 @@ const traditionalChinese: TranslationDictionary = {
     statusDelivered: "已送達",
     statusRead: "已讀",
 
-    moodCalm: "平靜",
-    moodCurious: "好奇",
-    moodSleepy: "想睡",
-    moodSurprised: "驚訝",
-    moodHappy: "開心",
-
     hub: {
       eyebrow: "通訊艙",
       subtitleFirst: "真實的對話。",

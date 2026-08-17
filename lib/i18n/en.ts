@@ -734,12 +734,6 @@ const english: TranslationDictionary = {
     statusDelivered: "Delivered",
     statusRead: "Read",
 
-    moodCalm: "Calm",
-    moodCurious: "Curious",
-    moodSleepy: "Sleepy",
-    moodSurprised: "Surprised",
-    moodHappy: "Happy",
-
     hub: {
       eyebrow: "Comms deck",
       subtitleFirst: "Real conversations.",

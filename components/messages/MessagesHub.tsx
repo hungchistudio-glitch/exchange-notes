@@ -26,7 +26,7 @@ import {
   CosmicCommsBackdrop,
   CosmicYumiOrbit,
 } from "@/components/messages/CosmicCommsHero";
-import MoodLogoSwiper from "@/components/messages/MoodLogoSwiper";
+import YumiCommsMark from "@/components/messages/YumiCommsMark";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
@@ -502,13 +502,13 @@ export default function MessagesHub() {
               </p>
             </div>
 
-            <div className="flex w-[76px] justify-center [--mood-logo-size:76px] sm:w-[112px] sm:[--mood-logo-size:104px]">
+            <div className="flex w-[76px] justify-center [--yumi-mark-size:76px] sm:w-[112px] sm:[--yumi-mark-size:104px]">
               {isCosmic ? (
                 <CosmicYumiOrbit>
-                  <MoodLogoSwiper />
+                  <YumiCommsMark cosmic />
                 </CosmicYumiOrbit>
               ) : (
-                <MoodLogoSwiper />
+                <YumiCommsMark />
               )}
             </div>
 
