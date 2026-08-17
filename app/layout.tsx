@@ -41,6 +41,22 @@ export async function generateViewport(): Promise<Viewport> {
 
   return {
     themeColor: interfaceMode === "yumi-cosmic" ? "#060a14" : "#f5f3ed",
+    /*
+     * Not per-mode, unlike themeColor above, and that is the point.
+     *
+     * On a cold launch of the installed app the OS fades from its splash to
+     * the web view, and the web view has nothing painted yet. Its canvas is
+     * whatever the user agent picks, which without this is white — a screen
+     * recording of the launch shows the splash reach black, then ramp up
+     * through grey to near-white, then cut to the app. This tells the agent
+     * to pick a dark canvas for that gap instead.
+     *
+     * Dark is right in both modes because the first thing the app draws is
+     * always the opening animation, which is near-black either way (SplashGate
+     * renders it on every load of a signed-in page). Standard Mode turns cream
+     * only once the opening has finished, seconds later.
+     */
+    colorScheme: "dark",
   };
 }
 
@@ -72,6 +88,22 @@ export default async function RootLayout({
        */
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      /*
+       * Inline, and on <html> rather than in a stylesheet, because the moment
+       * this covers is the one before any stylesheet has applied. An attribute
+       * on the element is in effect as the document is parsed; globals.css
+       * arrives later, and the three Google Fonts links in <head> below are
+       * render-blocking third-party requests that can push that later still on
+       * a cold start.
+       *
+       * #07080b is the outer stop of the opening animation's backdrop, the
+       * same value the manifest splash uses, so the whole launch — splash,
+       * this gap, then the opening itself — is one continuous colour.
+       *
+       * body's own background covers this the moment globals.css lands, in
+       * whichever mode is active, so nothing downstream is affected.
+       */
+      style={{ backgroundColor: "#07080b" }}
     >
       <head>
         {/* eslint-disable @next/next/no-page-custom-font --
