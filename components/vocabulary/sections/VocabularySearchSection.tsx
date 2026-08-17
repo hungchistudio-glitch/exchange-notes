@@ -75,7 +75,7 @@ export default function VocabularySearchSection({
     <section className="mt-4">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/35">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-faint">
             {search.vocabulary}
           </p>
 
@@ -83,7 +83,7 @@ export default function VocabularySearchSection({
             {search.yourWords}
           </h2>
 
-          <p className="mt-1 text-[13px] text-black/45">
+          <p className="mt-1 text-[13px] text-ink-soft">
             {totalWords} {search.saved} · {learningWords} {search.learning} ·{" "}
             {masteredWords} {search.mastered}
           </p>
@@ -110,7 +110,7 @@ export default function VocabularySearchSection({
 
       {(sortMode === "for-you" || sortMode === "trending") &&
         (rankingLoading || rankingError) && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[11px] font-medium text-black/45">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[11px] font-medium text-ink-soft">
             <span className="min-w-0">
               {rankingLoading
                 ? search.personalizing.replace(

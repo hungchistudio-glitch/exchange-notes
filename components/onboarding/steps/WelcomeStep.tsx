@@ -19,7 +19,7 @@ export default function WelcomeStep({ onContinue }: WelcomeStepProps) {
         {copy.title}
       </h1>
 
-      <p className="mt-2.5 max-w-xs text-[15px] leading-6 text-black/50">
+      <p className="mt-2.5 max-w-xs text-[15px] leading-6 text-ink-soft">
         {copy.subtitle}
       </p>
 

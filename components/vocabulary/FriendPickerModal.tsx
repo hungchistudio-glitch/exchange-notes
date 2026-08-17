@@ -69,7 +69,7 @@ export default function FriendPickerModal({
         <div className="flex shrink-0 items-center justify-between px-6 pb-3 pt-3">
           <h2
             id="send-to-partner-title"
-            className="text-base font-semibold tracking-tight text-black/90"
+            className="text-base font-semibold tracking-tight text-black"
           >
             傳送給夥伴
           </h2>
@@ -78,7 +78,7 @@ export default function FriendPickerModal({
             type="button"
             onClick={motion.requestClose}
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/5 hover:text-black"
           >
             <X size={15} />
           </button>
@@ -118,7 +118,7 @@ export default function FriendPickerModal({
           )}
 
           {!loading && !errorMessage && friends.length === 0 && (
-            <p className="px-2 py-8 text-center text-sm text-black/40">
+            <p className="px-2 py-8 text-center text-sm text-ink-faint">
               還沒有朋友——先加一位才能分享單字。
             </p>
           )}
@@ -137,18 +137,18 @@ export default function FriendPickerModal({
                   disabled={isDisabled}
                   className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-ink-strong">
                     {(friend.displayName ?? friend.exchangeId)
                       .slice(0, 1)
                       .toUpperCase()}
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-black/85">
+                    <p className="truncate text-sm font-medium text-black">
                       {friend.displayName ?? `@${friend.exchangeId}`}
                     </p>
 
-                    <p className="truncate text-xs text-black/40">
+                    <p className="truncate text-xs text-ink-faint">
                       @{friend.exchangeId}
                     </p>
                   </div>
@@ -156,7 +156,7 @@ export default function FriendPickerModal({
                   {isSending && (
                     <LoaderCircle
                       size={16}
-                      className="shrink-0 animate-spin text-black/40"
+                      className="shrink-0 animate-spin text-ink-faint"
                     />
                   )}
                 </button>

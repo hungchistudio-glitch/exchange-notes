@@ -168,7 +168,7 @@ export default function NameStep({
       ? "text-emerald-600"
       : idStatus === "taken" || idStatus === "error"
         ? "text-red-600"
-        : "text-black/45";
+        : "text-ink-soft";
 
   const canContinue =
     displayName.trim().length > 0 &&
@@ -213,7 +213,7 @@ export default function NameStep({
         </div>
 
         <label className="mt-7 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.displayNameLabel}
           </span>
 
@@ -224,7 +224,7 @@ export default function NameStep({
               onChange={(event) => onChangeDisplayName(event.target.value)}
               placeholder={copy.displayNamePlaceholder}
               autoComplete="name"
-              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black focus:bg-white"
+              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-ink-faint focus:border-black focus:bg-white"
             />
             {displayName && (
               <ClearFieldButton floating onClear={() => onChangeDisplayName("")} />
@@ -233,12 +233,12 @@ export default function NameStep({
         </label>
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.usernameLabel}
           </span>
 
           <div className="flex items-center rounded-2xl border border-transparent bg-black/[0.035] pl-1.5 pr-4 transition-colors focus-within:border-black focus-within:bg-white">
-            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-black/50">
+            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-ink-soft">
               @
             </span>
 
@@ -252,7 +252,7 @@ export default function NameStep({
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-neutral-400"
+              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-ink-faint"
             />
 
             {exchangeId && (
@@ -260,7 +260,7 @@ export default function NameStep({
             )}
 
             {idStatus === "checking" ? (
-              <LoaderCircle size={15} className="shrink-0 animate-spin text-black/30" />
+              <LoaderCircle size={15} className="shrink-0 animate-spin text-ink-faint" />
             ) : null}
           </div>
 

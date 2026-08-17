@@ -24,7 +24,7 @@ type ChoiceRowProps = {
 function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/35">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
         {label}
       </p>
 
@@ -139,7 +139,7 @@ export default function TutorialLanguageSetup() {
           {error}
         </p>
       ) : (
-        <p className="text-[12.5px] leading-6 text-black/35">{copy.note}</p>
+        <p className="text-[12.5px] leading-6 text-ink-faint">{copy.note}</p>
       )}
     </div>
   );

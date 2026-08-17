@@ -46,7 +46,7 @@ export default function VocabularyTranslation({
             // size, so the demoted Chinese line needs to sit a step lower
             // than the demoted English line (see VocabularyWord) to read
             // as genuinely secondary rather than as a second headline.
-            : "min-w-0 flex-1 break-words text-[20px] font-normal leading-[1.45] tracking-[-0.01em] text-black/35"
+            : "min-w-0 flex-1 break-words text-[20px] font-normal leading-[1.45] tracking-[-0.01em] text-ink-faint"
         }
       >
         {normalizedText}

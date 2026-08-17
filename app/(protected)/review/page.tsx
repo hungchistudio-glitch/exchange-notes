@@ -228,14 +228,14 @@ export default function ReviewPage() {
             type="button"
             onClick={() => setPhase("landing")}
             aria-label="Back"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
           >
             <BackIcon />
           </button>
 
           <div className="mt-3 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.sessionEyebrow}
               </p>
               <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
@@ -248,7 +248,7 @@ export default function ReviewPage() {
             </p>
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-sm text-black/50">
+          <div className="mt-4 flex items-center justify-between text-sm text-ink-soft">
             <span>{copy.remaining.replace("{count}", String(remaining))}</span>
             <span>{progress}%</span>
           </div>
@@ -262,7 +262,7 @@ export default function ReviewPage() {
 
           <div className="mt-6 rounded-[28px] border border-line bg-white p-6">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.vocabulary}
               </p>
               <button
@@ -383,7 +383,7 @@ export default function ReviewPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
           ✓
         </div>
-        <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {isCosmic
             ? t.cosmic.mission.completeEyebrow
             : mode === "due"
@@ -391,7 +391,7 @@ export default function ReviewPage() {
               : copy.freePractice}
         </p>
         <h1 className="mt-1 text-2xl font-bold">{copy.completeTitle}</h1>
-        <p className="mt-2 max-w-xs text-black/50">
+        <p className="mt-2 max-w-xs text-ink-soft">
           {copy.completedReviews.replace("{count}", String(queue.length))}
           {" "}
           {copy.completeDescription}
@@ -435,18 +435,18 @@ export default function ReviewPage() {
           href="/"
           transitionTypes={isCosmic ? ["deck-return"] : undefined}
           aria-label="Back"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />
         </Link>
 
-        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {copy.eyebrow}
         </p>
         <h1 className="mt-1 text-[28px] font-bold tracking-[-0.02em]">
           {copy.title}
         </h1>
-        <p className="mt-1 text-black/50">{copy.subtitle}</p>
+        <p className="mt-1 text-ink-soft">{copy.subtitle}</p>
 
         {errorMessage && (
           <p className="mt-4 text-sm font-semibold text-red-600">
@@ -461,16 +461,16 @@ export default function ReviewPage() {
           className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
               {copy.today}
             </p>
-            <p className="text-xs text-white/40">{copy.introLineOne}</p>
+            <p className="text-xs text-ink-invert-faint">{copy.introLineOne}</p>
           </div>
 
           <p className="mt-3 text-[40px] font-bold leading-none">
             {loading ? "…" : dueWords.length}
           </p>
-          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
             {copy.cardsReady}
           </p>
 
@@ -488,7 +488,7 @@ export default function ReviewPage() {
             <p className="text-lg font-bold">{copy.freePractice}</p>
           </div>
 
-          <p className="mt-2 text-sm text-black/50">
+          <p className="mt-2 text-sm text-ink-soft">
             {copy.freePracticeDescription}
           </p>
 
@@ -504,19 +504,19 @@ export default function ReviewPage() {
         </div>
 
         <div className="mt-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.queueData}
           </p>
 
           <div className="mt-2 divide-y divide-line border-y border-line">
             <div className="flex items-center justify-between py-3 text-sm">
-              <span className="text-black/50">{copy.ready}</span>
+              <span className="text-ink-soft">{copy.ready}</span>
               <span className="font-bold">
                 {loading ? "…" : dueWords.length}
               </span>
             </div>
             <div className="flex items-center justify-between py-3 text-sm">
-              <span className="text-black/50">{copy.freePractice}</span>
+              <span className="text-ink-soft">{copy.freePractice}</span>
               <span className="font-bold">
                 {loading ? "…" : allWords.length}
               </span>

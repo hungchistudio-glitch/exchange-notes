@@ -18,7 +18,7 @@ export default function PronunciationHub() {
         </div>
 
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {t.home.pronunciation.eyebrow}
           </p>
 
@@ -26,7 +26,7 @@ export default function PronunciationHub() {
             {t.home.pronunciation.title}
           </h2>
 
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-ink-soft">
             {t.home.pronunciation.description}
           </p>
         </div>
@@ -34,7 +34,7 @@ export default function PronunciationHub() {
 
       <ChevronRight
         size={21}
-        className="shrink-0 text-neutral-500"
+        className="shrink-0 text-ink-soft"
       />
     </Link>
   );

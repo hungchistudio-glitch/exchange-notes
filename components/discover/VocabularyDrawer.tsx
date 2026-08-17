@@ -40,7 +40,7 @@ function SpeakerButton({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+      className="cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
     >
       <Volume2
         size={14}
@@ -74,7 +74,7 @@ function SaveWordButton({
       className={`cosmic-lock flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 disabled:active:scale-100 ${
         saved
           ? "bg-emerald-50 text-emerald-700"
-          : "bg-black/[0.04] text-black/60"
+          : "bg-black/[0.04] text-ink-soft"
       }`}
     >
       {saving ? (
@@ -197,7 +197,7 @@ export default function VocabularyDrawer({
                     <span
                       className={
                         isLearningChinese
-                          ? "text-sm text-black/50"
+                          ? "text-sm text-ink-soft"
                           : "text-[17px] font-semibold text-black"
                       }
                     >
@@ -205,7 +205,7 @@ export default function VocabularyDrawer({
                     </span>
 
                     {!isLearningChinese && (
-                      <span className="text-[11px] text-black/40">
+                      <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
                         ]}
@@ -214,7 +214,7 @@ export default function VocabularyDrawer({
                   </div>
 
                   {pronunciation?.englishPronunciation ? (
-                    <p className="mt-0.5 text-[12px] text-black/40">
+                    <p className="mt-0.5 text-[12px] text-ink-faint">
                       {pronunciation.englishPronunciation}
                     </p>
                   ) : null}
@@ -262,14 +262,14 @@ export default function VocabularyDrawer({
                       className={
                         isLearningChinese
                           ? "text-[17px] font-semibold text-black"
-                          : "text-sm text-black/50"
+                          : "text-sm text-ink-soft"
                       }
                     >
                       {item.translation}
                     </p>
 
                     {isLearningChinese && (
-                      <span className="text-[11px] text-black/40">
+                      <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
                         ]}
@@ -278,7 +278,7 @@ export default function VocabularyDrawer({
                   </div>
 
                   {pronunciation?.pinyin || pronunciation?.zhuyin ? (
-                    <p className="mt-0.5 text-[11px] text-black/35">
+                    <p className="mt-0.5 text-[11px] text-ink-faint">
                       {[pronunciation?.pinyin, pronunciation?.zhuyin]
                         .filter(Boolean)
                         .join("  ")}
@@ -326,7 +326,7 @@ export default function VocabularyDrawer({
                 key="english-example"
                 className="flex items-start gap-2"
               >
-                <p className="min-w-0 flex-1 text-sm leading-6 text-black/70">
+                <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
                   {item.englishExample}
                 </p>
 
@@ -349,7 +349,7 @@ export default function VocabularyDrawer({
                 key="chinese-example"
                 className="flex items-start gap-2"
               >
-                <p className="min-w-0 flex-1 text-sm leading-6 text-black/45">
+                <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
                   {item.chineseExample}
                 </p>
 
