@@ -756,7 +756,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 <div className="min-w-0">
                   <h1 className="truncate text-[17px] font-semibold tracking-[-0.015em]">{friendName}</h1>
 
-                  <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-neutral-500">
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-soft">
                     <span className={`h-1.5 w-1.5 rounded-full ${realtimeStatus === "connected" ? "bg-emerald-500" : realtimeStatus === "connecting" ? "bg-amber-400" : "bg-neutral-300"}`} />
                     <span>{realtimeStatus === "connected" ? "Connected" : realtimeStatus === "connecting" ? "Connecting" : "Offline"}</span>
                   </div>
@@ -784,7 +784,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
         <section aria-live="polite" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5" style={{ paddingBottom: "1.5rem" }}>
           {loading && (
             <div className="flex h-full items-center justify-center">
-              <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <div className="flex items-center gap-2 text-sm text-ink-soft">
                 <Spinner />
                 <span>{copy.loadingMessages}</span>
               </div>
@@ -804,7 +804,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                   <ShieldIcon />
                 </div>
                 <h2 className="mt-4 text-base font-semibold">{copy.startConversationTitle}</h2>
-                <p className="mt-1.5 text-sm leading-6 text-neutral-500">{copy.startConversationDescription}</p>
+                <p className="mt-1.5 text-sm leading-6 text-ink-soft">{copy.startConversationDescription}</p>
                 <p className="mt-3 text-[11px] leading-5 text-neutral-400">
                   Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.
                 </p>
@@ -825,7 +825,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 <div key={message.id}>
                   {showDateDivider && (
                     <div className="flex justify-center py-4">
-                      <span className="rounded-full bg-black/[0.04] px-3 py-1 text-[11px] font-medium text-neutral-500">
+                      <span className="rounded-full bg-black/[0.04] px-3 py-1 text-[11px] font-medium text-ink-soft">
                         {formatDateLabel(message.created_at, copy.today, copy.yesterday)}
                       </span>
                     </div>
@@ -849,7 +849,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
                       return (
                         <article className="w-full max-w-[320px] rounded-[22px] border border-black/[0.06] bg-white p-4 shadow-sm">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                             📰 News
                           </span>
 
@@ -886,7 +886,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs leading-5 text-black/45">{newsCard.chineseSummary}</p>
                                 {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
-                                  <p className="mt-0.5 text-[10px] leading-4 text-black/35">
+                                  <p className="mt-0.5 text-[10px] leading-4 text-ink-faint">
                                     {[summaryPronunciation.pinyin, summaryPronunciation.zhuyin].filter(Boolean).join("  ")}
                                   </p>
                                 )}
@@ -899,7 +899,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
                           {newsCard.vocabulary.length > 0 && (
                             <div className="mt-3 border-t border-black/[0.06] pt-3">
-                              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">Vocabulary / 學習單字</span>
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Vocabulary / 學習單字</span>
 
                               <div className="mt-1.5 space-y-1.5">
                                 {newsCard.vocabulary.map((item, index) => {
@@ -917,7 +917,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                                         <div className="min-w-0">
                                           <p className="truncate text-xs text-black/60">{item.translation}</p>
                                           {(wordPronunciation.pinyin || wordPronunciation.zhuyin) && (
-                                            <p className="text-[10px] text-black/35">
+                                            <p className="text-[10px] text-ink-faint">
                                               {[wordPronunciation.pinyin, wordPronunciation.zhuyin].filter(Boolean).join("  ")}
                                             </p>
                                           )}
@@ -946,7 +946,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                             ) : (
                               <span className="min-w-0 truncate text-[10px] text-black/40">{newsCard.sourceName}</span>
                             )}
-                            <time dateTime={message.created_at} className="shrink-0 text-[10px] text-black/35">{formatMessageTime(message.created_at)}</time>
+                            <time dateTime={message.created_at} className="shrink-0 text-[10px] text-ink-faint">{formatMessageTime(message.created_at)}</time>
                           </div>
                         </article>
                       );
@@ -962,7 +962,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                       const englishBlock = (
                         <div key="english">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">English</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">English</span>
                           </div>
                           <div className="mt-1 flex items-center justify-between gap-2">
                             <p className={englishIsPrimary ? primaryWordClass : secondaryWordClass}>{wordCard.word}</p>
@@ -980,7 +980,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
 
                       const chineseBlock = (
                         <div key="chinese">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">中文</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">中文</span>
                           <div className="mt-1 flex items-center justify-between gap-2">
                             <p className={englishIsPrimary ? secondaryWordClass : primaryWordClass}>{wordCard.translation}</p>
                             <button
@@ -1058,7 +1058,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                         )}
 
                         <div className="mt-2.5 flex items-center justify-between">
-                          <time dateTime={message.created_at} className="text-[10px] text-black/35">{formatMessageTime(message.created_at)}</time>
+                          <time dateTime={message.created_at} className="text-[10px] text-ink-faint">{formatMessageTime(message.created_at)}</time>
                           <div className="flex items-center gap-1.5">
                           {/* Forwarding a card someone sent you is how a good
                               word travels. The picker holds the card itself,
@@ -1140,7 +1140,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
           ) : (
           <form onSubmit={sendMessage}>
             <div className="flex items-end gap-2 rounded-[26px] border border-black/[0.06] bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
-              <Link href={`/capture?source=library&with=${friendId}`} aria-label="Add a photo" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.04] hover:text-neutral-900 active:bg-black/[0.07]">
+              <Link href={`/capture?source=library&with=${friendId}`} aria-label="Add a photo" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/[0.04] hover:text-neutral-900 active:bg-black/[0.07]">
                 <Plus size={20} strokeWidth={1.9} aria-hidden="true" />
               </Link>
 
