@@ -805,7 +805,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 </div>
                 <h2 className="mt-4 text-base font-semibold">{copy.startConversationTitle}</h2>
                 <p className="mt-1.5 text-sm leading-6 text-ink-soft">{copy.startConversationDescription}</p>
-                <p className="mt-3 text-[11px] leading-5 text-neutral-400">
+                <p className="mt-3 text-[11px] leading-5 text-ink-faint">
                   Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.
                 </p>
               </div>
@@ -1087,7 +1087,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                     })() : (
                       <article className={`max-w-[78%] px-4 py-2.5 sm:max-w-[72%] ${isMine ? "rounded-[22px] rounded-br-[6px] bg-neutral-950 text-white" : "rounded-[22px] rounded-bl-[6px] border border-black/[0.04] bg-white text-neutral-950"}`}>
                         <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.45]">{message.body}</p>
-                        <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${isMine ? "text-white/50" : "text-neutral-400"}`}>
+                        <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${isMine ? "text-ink-invert-faint" : "text-ink-faint"}`}>
                           <time dateTime={message.created_at}>{formatMessageTime(message.created_at)}</time>
                           {isMine && (() => {
                             const status = getReceiptStatus(receiptsByMessageId.get(message.id));
@@ -1153,7 +1153,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 maxLength={MAX_MESSAGE_LENGTH}
                 placeholder={copy.inputPlaceholder}
                 aria-label={copy.inputPlaceholder}
-                className="min-h-10 flex-1 resize-none bg-transparent px-1 py-2.5 text-[16px] leading-5 text-neutral-950 outline-none placeholder:text-neutral-400"
+                className="min-h-10 flex-1 resize-none bg-transparent px-1 py-2.5 text-[16px] leading-5 text-neutral-950 outline-none placeholder:text-ink-faint"
               />
 
               <button type="submit" disabled={!canSend} aria-label="Send message" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-150 ${canSend ? "bg-neutral-950 text-white active:scale-90" : "bg-black/[0.05] text-neutral-300"}`}>
@@ -1168,7 +1168,7 @@ export default function ConversationThread({ friendId }: ConversationThreadProps
                 limit — instead of reserving height on every render. */}
             {newMessage.length > MAX_MESSAGE_LENGTH * 0.8 && (
               <div className="flex items-center justify-end px-3 pt-1.5">
-                <span className={`text-[10px] ${newMessage.length >= MAX_MESSAGE_LENGTH ? "text-red-500" : "text-neutral-400"}`}>
+                <span className={`text-[10px] ${newMessage.length >= MAX_MESSAGE_LENGTH ? "text-red-500" : "text-ink-faint"}`}>
                   {newMessage.length}/{MAX_MESSAGE_LENGTH}
                 </span>
               </div>
