@@ -776,6 +776,47 @@ const english: TranslationDictionary = {
       neverMessaged: "No messages yet",
     },
 
+    decode: {
+      label: "Decoded by Yumi",
+      whyThis: "Why this?",
+      whyThisBody:
+        "Yumi picks out expressions a learner tends to trip on, and skips anything you have already saved.",
+      close: "Close",
+      open: "What did this mean?",
+      reading: "Yumi is reading this…",
+      tone: "Tone",
+      toneUncertain: "Yumi isn't sure of the tone here.",
+      types: {
+        expression: "Expression",
+        abbreviation: "Abbreviation",
+        phrase: "Phrase",
+        slang: "Slang",
+        idiom: "Idiom",
+      },
+      listen: "Listen",
+      savePhrase: "Save phrase",
+      savedPhrase: "Saved",
+      saveFailed: "Could not save this phrase. Please try again.",
+      replyCoach: "Reply Coach",
+    },
+
+    coach: {
+      title: "Reply Coach",
+      subtitle: "Three ways to answer. Tap one to put it in the box.",
+      drafting: "Drafting replies…",
+      failed: "Couldn't draft replies right now.",
+      retry: "Try again",
+      close: "Close Reply Coach",
+      insert: "Use this reply",
+      inserted: "Added to your message",
+      ownership: "Nothing sends until you send it.",
+      directions: {
+        friendly: "Friendly",
+        casual: "Casual",
+        natural: "More natural",
+      },
+    },
+
     room: {
       back: "Back to Messages",
       connectionConnected: "Connected",

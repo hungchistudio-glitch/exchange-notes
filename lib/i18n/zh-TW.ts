@@ -763,6 +763,47 @@ const traditionalChinese: TranslationDictionary = {
       neverMessaged: "還沒有訊息",
     },
 
+    decode: {
+      label: "Yumi 解析",
+      whyThis: "為什麼提示這個？",
+      whyThisBody:
+        "Yumi 會挑出學習者容易卡住的說法，已經存過的字就不再重複解釋。",
+      close: "關閉",
+      open: "這句是什麼意思？",
+      reading: "Yumi 正在讀這句…",
+      tone: "語氣",
+      toneUncertain: "Yumi 不太確定這裡的語氣。",
+      types: {
+        expression: "表達方式",
+        abbreviation: "縮寫",
+        phrase: "片語",
+        slang: "俚語",
+        idiom: "慣用語",
+      },
+      listen: "聆聽",
+      savePhrase: "儲存片語",
+      savedPhrase: "已儲存",
+      saveFailed: "無法儲存這個片語，請再試一次。",
+      replyCoach: "回覆教練",
+    },
+
+    coach: {
+      title: "回覆教練",
+      subtitle: "三種回法。點一下就放進輸入框。",
+      drafting: "正在草擬回覆…",
+      failed: "目前無法草擬回覆。",
+      retry: "再試一次",
+      close: "關閉回覆教練",
+      insert: "使用這個回覆",
+      inserted: "已加入你的訊息",
+      ownership: "在你按下送出之前，什麼都不會寄出。",
+      directions: {
+        friendly: "友善",
+        casual: "輕鬆",
+        natural: "更自然",
+      },
+    },
+
     room: {
       back: "返回訊息",
       connectionConnected: "已連線",

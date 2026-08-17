@@ -41,7 +41,17 @@ type InsertVocabulary = {
   user_id: string;
   word: string;
   translation: string;
-  language: "english" | "traditional_chinese";
+  /*
+   * Hyphen, matching the database.
+   *
+   * This said "traditional_chinese" with an underscore, which the column's
+   * check constraint has never accepted — it allows 'english' and
+   * 'traditional-chinese'. No caller had ever passed it, because every write
+   * so far has been an English word, so the type was wrong in a branch nothing
+   * took. Saving a phrase out of a Chinese message is the first call that
+   * would have used it, and it would have been rejected.
+   */
+  language: "english" | "traditional-chinese";
   part_of_speech: string | null;
   example_sentence: string | null;
   translated_example: string | null;
