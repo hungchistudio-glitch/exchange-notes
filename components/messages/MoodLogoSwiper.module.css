@@ -9,7 +9,7 @@
 .logoShell {
   width: 84px;
   height: 84px;
-  color: #111111;
+  color: var(--msg-ink);
   transform-origin: 48% 58%;
 }
 

@@ -86,6 +86,42 @@
   --discover-category-health: #2e6b5e;
   --discover-category-environment: #5b6b35;
   --discover-category-politics: #55524a;
+
+  /*
+   * Messages. The two-page architecture gave the conversation room to be its
+   * own environment, and an environment needs its own surfaces rather than
+   * borrowing whichever grey was nearest.
+   *
+   * Named here so Cosmic Mode can repaint the whole of Messages by
+   * redefining them in app/cosmic.css — the same mechanism the rest of the
+   * app already uses. Standard Mode keeps the warm paper look it has always
+   * had, so nothing about these values is a change for existing users.
+   */
+  --msg-page: var(--surface);
+  --msg-surface: #ffffff;
+  --msg-surface-soft: #faf9f5;
+  --msg-line: rgba(0, 0, 0, 0.06);
+  --msg-ink: #171717;
+  --msg-ink-soft: rgba(0, 0, 0, 0.46);
+  --msg-ink-faint: rgba(0, 0, 0, 0.32);
+
+  /* The colour that marks something live or selected. */
+  --msg-accent: var(--accent-amber);
+  --msg-accent-soft: var(--accent-amber-wash);
+  --msg-accent-ink: #ffffff;
+
+  /* Bubbles. Written as gradients in both shells so the outgoing side can
+     carry depth in Cosmic Mode without a second set of rules here. */
+  --msg-bubble-in: linear-gradient(180deg, #ffffff, #ffffff);
+  --msg-bubble-in-ink: #171717;
+  --msg-bubble-in-line: rgba(0, 0, 0, 0.05);
+  --msg-bubble-out: linear-gradient(180deg, #23231f, #131311);
+  --msg-bubble-out-ink: #ffffff;
+  --msg-bubble-out-meta: rgba(255, 255, 255, 0.55);
+
+  --msg-presence: var(--success);
+  --msg-glow: none;
+  --msg-header: rgba(245, 243, 237, 0.88);
 }
 
 @theme inline {

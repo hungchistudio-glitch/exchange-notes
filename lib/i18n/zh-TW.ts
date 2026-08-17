@@ -726,6 +726,66 @@ const traditionalChinese: TranslationDictionary = {
     moodSurprised: "驚訝",
     moodHappy: "開心",
 
+    hub: {
+      eyebrow: "通訊艙",
+      subtitleFirst: "真實的對話。",
+      subtitleSecond: "真實的語言。",
+      searchPlaceholder: "搜尋好友、對話或語言內容…",
+      searchLabel: "搜尋訊息",
+      clearSearch: "清除搜尋",
+
+      tabs: {
+        recent: "最近",
+        friends: "好友",
+        requests: "邀請",
+      },
+
+      resultGroupPeople: "好友",
+      resultGroupConversations: "對話",
+
+      newConversation: "建立新對話",
+      openConversation: "開啟與 {name} 的對話",
+      archived: "封存",
+      archivedTitle: "封存",
+      archivedSubtitle: "你收起來的對話。",
+      archivedEmpty: "沒有封存的對話。",
+      archive: "封存",
+      unarchive: "取消封存",
+      backToMessages: "返回訊息",
+
+      emptyFriendsTitle: "還沒有學習夥伴",
+      emptyFriendsDescription:
+        "使用 Exchange ID 或 QR Code 新增好友，就可以開始聊天。",
+      emptyRequests: "沒有收到的邀請。",
+      noResultsTitle: "找不到符合的結果",
+      noResultsDescription: "試試名字、@帳號，或你記得的某個字。",
+
+      phraseSignal: "{count} 個片語",
+      phraseSignalPlural: "{count} 個片語",
+      unreadLabel: "{count} 則未讀",
+      neverMessaged: "還沒有訊息",
+    },
+
+    room: {
+      back: "返回訊息",
+      connectionConnected: "已連線",
+      connectionConnecting: "連線中…",
+      connectionOffline: "離線",
+      privateLabel: "私密",
+      privateHint: "由你的帳號與資料庫存取規則保護，目前尚未啟用端對端加密。",
+      privateNote: "訊息由你的帳號與資料庫存取規則保護，目前尚未啟用端對端加密。",
+      newMessages: "新訊息",
+      jumpToLatest: "跳到最新訊息",
+      composerHint: "Shift + Enter 換行",
+      options: "對話選項",
+      closeOptions: "關閉選項",
+      addPhoto: "新增照片",
+      sendMessage: "傳送訊息",
+      unknownParticipant: "已解除的夥伴",
+      notLoggedIn: "你尚未登入。",
+      sendFailed: "訊息無法送出，請再試一次。",
+    },
+
     errors: {
       loadConversations: "無法載入你的對話。",
       removeFriend: "無法移除此好友。",
@@ -734,6 +794,7 @@ const traditionalChinese: TranslationDictionary = {
       openConversation: "無法開啟這個對話，請再試一次。",
       saveWord: "無法儲存這個單字，請再試一次。",
       updateConversation: "無法更新這個對話，請再試一次。",
+      conversationNotFound: "這個對話目前無法開啟。",
     },
   },
   friends: {

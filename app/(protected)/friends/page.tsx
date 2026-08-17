@@ -497,7 +497,7 @@ function FriendsPageContent() {
                     </div>
 
                     <Link
-                      href={`/messages?with=${friend.id}`}
+                      href={`/messages/new?friend=${encodeURIComponent(friend.id)}`}
                       className="shrink-0 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white"
                     >
                       {t.messages.chatFallback}

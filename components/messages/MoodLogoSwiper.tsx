@@ -97,8 +97,8 @@ export default function MoodLogoSwiper() {
                 pupilClassName={mood.pupil}
                 upperLidClassName={mood.upperLid}
                 lowerLidClassName={mood.lowerLid}
-                surfaceColor="#f5f3ed"
-                highlightColor="#ffffff"
+                surfaceColor="var(--msg-surface-soft)"
+                highlightColor="var(--msg-surface)"
               />
             </div>
           </div>

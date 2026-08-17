@@ -104,6 +104,35 @@ html[data-interface-mode="yumi-cosmic"] {
   --discover-category-environment: #b6cd85;
   --discover-category-politics: #b9b5ac;
 
+  /*
+   * Messages in deep space. The reference design for the two-page rebuild is
+   * a Cosmic Mode design, so this is where it actually lands: a near-black
+   * page, panels lifted just off it, cyan for anything the system considers
+   * live, and electric blue for the messages you sent.
+   */
+  --msg-page: #050a16;
+  --msg-surface: #0b1a2f;
+  --msg-surface-soft: #102340;
+  --msg-line: rgba(77, 227, 240, 0.14);
+  --msg-ink: #eaf3ff;
+  --msg-ink-soft: #8ba0c6;
+  --msg-ink-faint: #63769a;
+
+  --msg-accent: var(--cosmic-cyan);
+  --msg-accent-soft: rgba(77, 227, 240, 0.12);
+  --msg-accent-ink: #04121c;
+
+  --msg-bubble-in: linear-gradient(180deg, #12233d, #0d1b31);
+  --msg-bubble-in-ink: #eaf3ff;
+  --msg-bubble-in-line: rgba(77, 227, 240, 0.16);
+  --msg-bubble-out: linear-gradient(140deg, #3f6dff, #2748d8);
+  --msg-bubble-out-ink: #f4f8ff;
+  --msg-bubble-out-meta: rgba(244, 248, 255, 0.62);
+
+  --msg-presence: #25df82;
+  --msg-glow: 0 0 24px rgba(77, 227, 240, 0.12);
+  --msg-header: rgba(5, 10, 22, 0.82);
+
   /* Cosmic-only. The cyan that marks an active system, and the field colours
      the Command Deck and dock draw their rings and glow from. */
   --cosmic-cyan: #4de3f0;
