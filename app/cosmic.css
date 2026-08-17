@@ -172,6 +172,11 @@ html[data-interface-mode="yumi-cosmic"] {
   --msg-glow: 0 0 24px color-mix(in oklab, #32ddf8 12%, transparent);
   --msg-header: color-mix(in oklab, #020a16 82%, transparent);
 
+  /* Still light — see the note in globals.css — but cooled to match the field
+     it is lit by, rather than carrying warm paper into deep space. */
+  --msg-mark-surface: #e6f2ff;
+  --msg-mark-highlight: #ffffff;
+
   /* Cosmic-only. The cyan that marks an active system, and the field colours
      the Command Deck and dock draw their rings and glow from. */
   --cosmic-cyan: #4de3f0;

@@ -225,6 +225,144 @@
 }
 
 /*
+ * The atmosphere's terminator, drifting.
+ *
+ * §3 asks for motion the eye does not catch it looking at: no visible
+ * rotation, just light moving slowly across the limb over 12–20 seconds. This
+ * is one wide, soft highlight translating inside a circular clip — a transform
+ * on one layer, which costs nothing, rather than anything that would need the
+ * planet itself to redraw.
+ */
+.earthSheen {
+  /* Inset past the limb: this layer is the atmosphere moving *on* the planet,
+     and covering the 1.5px border would dull the one hard-lit edge in the
+     scene. */
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.earthSheenBar {
+  position: absolute;
+  top: -10%;
+  left: -60%;
+  width: 60%;
+  height: 120%;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in oklab, var(--msg-accent) 8%, transparent) 38%,
+    color-mix(in oklab, #dff6ff 14%, transparent) 52%,
+    color-mix(in oklab, var(--msg-accent) 7%, transparent) 66%,
+    transparent 100%
+  );
+  filter: blur(14px);
+  animation: sheen 19s linear infinite;
+}
+
+@keyframes sheen {
+  from { transform: translateX(0); }
+  to   { transform: translateX(320%); }
+}
+
+/*
+ * Meteors. Intermittent by construction: each one is visible for about a
+ * second of a long cycle and idle for the rest, and the three cycles are
+ * different lengths with different delays so they never fire together. The
+ * brief's alternative was a planet transit, which would have to cross the
+ * whole band and would compete with Yumi for the eye; a streak that is gone
+ * before you can look straight at it does not.
+ */
+/*
+ * Two elements per meteor, and it has to be two.
+ *
+ * The tail's angle is a rotation and the flight is a translation, and CSS
+ * composes those as translate-then-rotate in the *parent's* axes — so a single
+ * rotated element animating translateX slides horizontally while pointing
+ * diagonally. Rotating the wrapper puts the child's travel into the rotated
+ * frame, which is the only way the streak moves along its own tail.
+ */
+.meteor {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.meteorBody {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0;
+  box-shadow: 0 0 5px 1px color-mix(in oklab, var(--msg-accent) 80%, transparent);
+  animation: meteorRun 17s linear infinite;
+}
+
+.meteorBody::after {
+  content: "";
+  position: absolute;
+  right: 1px;
+  top: 50%;
+  width: 78px;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    270deg,
+    color-mix(in oklab, #eafaff 85%, transparent) 0%,
+    color-mix(in oklab, var(--msg-accent) 35%, transparent) 40%,
+    transparent 100%
+  );
+}
+
+.meteorOne {
+  top: 12%;
+  left: 4%;
+  rotate: 24deg;
+}
+
+.meteorTwo {
+  top: 3%;
+  left: 30%;
+  rotate: 31deg;
+}
+
+.meteorTwo .meteorBody {
+  animation-duration: 23s;
+  animation-delay: 6.5s;
+}
+
+.meteorThree {
+  top: 28%;
+  left: 50%;
+  rotate: 16deg;
+}
+
+.meteorThree .meteorBody {
+  animation-duration: 29s;
+  animation-delay: 14s;
+}
+
+@keyframes meteorRun {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  1.5% {
+    opacity: 0.95;
+  }
+  6% {
+    opacity: 0;
+    transform: translate3d(320px, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(320px, 0, 0);
+  }
+}
+
+/*
  * Orbital rings. Circles flattened to ellipses, each in a wrapper that turns
  * at its own slow rate — the ring and its signal node rotate together, so the
  * node stays on the path it appears to travel.
@@ -341,6 +479,26 @@
 }
 
 /*
+ * The band's bottom edge.
+ *
+ * The scene is clipped by the band, and a straight horizontal cut through a
+ * glowing planet reads as a crop rather than a horizon. This dissolves the last
+ * few pixels into the page colour so the deck ends instead of being guillotined.
+ */
+.bandFade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 34px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--msg-page) 55%, transparent) 55%,
+    var(--msg-page) 100%
+  );
+}
+
+/*
  * A local darkening gradient behind the title block, so the brightest part of
  * the field never decides whether "Messages" is readable. Required by the
  * brief: the visual can be rich, the content still has to win.
@@ -368,8 +526,16 @@
   .lanes,
   .ringWrap,
   .float,
-  .drift {
+  .drift,
+  .earthSheenBar,
+  .meteorBody {
     animation: none;
+  }
+
+  /* A streak frozen mid-flight is a smear, so the meteors do not appear at
+     all rather than appearing stopped. */
+  .meteor {
+    display: none;
   }
 
   .earthBloom,

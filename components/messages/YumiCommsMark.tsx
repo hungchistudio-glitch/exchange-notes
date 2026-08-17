@@ -45,8 +45,8 @@ export default function YumiCommsMark({ cosmic = false }: YumiCommsMarkProps) {
          * the seam and two constellation points, and no more.
          */
         energy={cosmic ? 0.5 : 0}
-        surfaceColor="var(--msg-surface-soft)"
-        highlightColor="var(--msg-surface)"
+        surfaceColor="var(--msg-mark-surface)"
+        highlightColor="var(--msg-mark-highlight)"
       />
     </div>
   );

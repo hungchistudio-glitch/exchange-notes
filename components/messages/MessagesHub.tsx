@@ -470,6 +470,21 @@ export default function MessagesHub() {
           {isCosmic && <CosmicCommsBackdrop />}
 
           {/*
+            Centred on the band, above the backdrop and below the text, with
+            pointer events off so it never intercepts a tap meant for the
+            header controls beside it.
+          */}
+          <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center [--yumi-mark-size:76px] sm:[--yumi-mark-size:104px]">
+            {isCosmic ? (
+              <CosmicYumiOrbit>
+                <YumiCommsMark cosmic />
+              </CosmicYumiOrbit>
+            ) : (
+              <YumiCommsMark />
+            )}
+          </div>
+
+          {/*
             Three columns so Yumi is centred against the band, not merely
             placed between two blocks of unequal width. The side columns are
             1fr each and the middle is content-sized, so the figure holds the
@@ -502,15 +517,15 @@ export default function MessagesHub() {
               </p>
             </div>
 
-            <div className="flex w-[76px] justify-center [--yumi-mark-size:76px] sm:w-[112px] sm:[--yumi-mark-size:104px]">
-              {isCosmic ? (
-                <CosmicYumiOrbit>
-                  <YumiCommsMark cosmic />
-                </CosmicYumiOrbit>
-              ) : (
-                <YumiCommsMark />
-              )}
-            </div>
+            {/*
+              A spacer, not the figure. Yumi is absolutely centred in the band
+              below, because the band is taller than this header row — it has
+              to be, for the planet to have somewhere to rise from — and
+              sitting in the row would pin the figure to the top of the scene
+              rather than the middle of it. The spacer is what still reserves
+              the column so the title never grows into the centre.
+            */}
+            <div className="w-[76px] sm:w-[112px]" aria-hidden="true" />
 
             <div className="flex items-center justify-end gap-2">
               {/*

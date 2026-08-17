@@ -133,6 +133,18 @@
   --msg-presence: var(--success);
   --msg-glow: none;
   --msg-header: rgba(245, 243, 237, 0.88);
+
+  /*
+   * Yumi's own surfaces, kept apart from the page's.
+   *
+   * ExchangeNotesMark uses one `surfaceColor` for both the sclera and the
+   * eyelids — the lids are the same colour as the eye white, which is how a
+   * blink works without a second mask. So this value has to stay light in
+   * every shell: pointing it at a page surface token meant Cosmic Mode
+   * redefined it to deep navy and Yumi lost the whites of its eye.
+   */
+  --msg-mark-surface: #f5f3ed;
+  --msg-mark-highlight: #ffffff;
 }
 
 @theme inline {

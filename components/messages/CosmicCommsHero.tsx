@@ -64,9 +64,21 @@ export function CosmicCommsBackdrop() {
         <div className={styles.earthBloom} />
         <div className={styles.earthHalo} />
         <div className={styles.earth} />
+        <div className={styles.earthSheen}>
+          <div className={styles.earthSheenBar} />
+        </div>
       </div>
 
+      {[styles.meteorOne, styles.meteorTwo, styles.meteorThree].map(
+        (position, index) => (
+          <span key={index} className={`${styles.meteor} ${position}`}>
+            <span className={styles.meteorBody} />
+          </span>
+        ),
+      )}
+
       <div className={styles.textShield} />
+      <div className={styles.bandFade} />
     </div>
   );
 }
