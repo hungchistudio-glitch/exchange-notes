@@ -92,6 +92,7 @@ export type TranslationDictionary = {
     source: string;
     loading: string;
     error: string;
+    clearField: string;
   };
 
   auth: {

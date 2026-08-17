@@ -92,6 +92,7 @@ const english: TranslationDictionary = {
     source: "Source",
     loading: "Loading…",
     error: "Something went wrong",
+    clearField: "Clear",
   },
 
   auth: {

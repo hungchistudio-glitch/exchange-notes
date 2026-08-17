@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { BellOff, EyeOff, Search } from "lucide-react";
 
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import MoodLogoSwiper from "@/components/messages/MoodLogoSwiper";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -247,6 +248,9 @@ export default function ConversationList() {
             placeholder={copy.searchPlaceholder}
             className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/35"
           />
+          {searchQuery && (
+            <ClearFieldButton onClear={() => setSearchQuery("")} />
+          )}
         </div>
 
         {(!hasLoadedOnce || loading) && (

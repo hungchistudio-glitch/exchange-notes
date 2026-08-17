@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useMemo } from "react";
 
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -98,8 +99,16 @@ export default function VocabularyFilterPanel({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={translations.searchPlaceholder}
             aria-label={translations.searchAriaLabel}
-            className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
+            className="w-full border-0 bg-transparent py-2 pl-8 pr-10 text-xl outline-none placeholder:text-neutral-300"
           />
+
+          {search && (
+            <ClearFieldButton
+              floating
+              className="!right-5"
+              onClear={() => onSearchChange("")}
+            />
+          )}
         </div>
       </header>
 

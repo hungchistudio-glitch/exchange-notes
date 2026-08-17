@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import AppButton from "@/components/ui/AppButton";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "./types";
@@ -184,29 +185,37 @@ export default function VocabularyEditModal({
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block text-sm font-medium text-neutral-800">
               {edit.english}
-              <input
-                value={word}
-                onChange={(event) =>
-                  setWord(event.target.value)
-                }
-                className={inputClassName}
-                placeholder="{edit.english} word or phrase"
-                autoFocus
-              />
+              <div className="relative">
+                <input
+                  value={word}
+                  onChange={(event) =>
+                    setWord(event.target.value)
+                  }
+                  className={`${inputClassName} pr-11`}
+                  placeholder="{edit.english} word or phrase"
+                  autoFocus
+                />
+                {word && <ClearFieldButton floating onClear={() => setWord("")} />}
+              </div>
             </label>
 
             <label className="block text-sm font-medium text-neutral-800">
               {edit.traditionalChinese}
-              <input
-                value={translation}
-                onChange={(event) =>
-                  setTranslation(
-                    event.target.value,
-                  )
-                }
-                className={inputClassName}
-                placeholder={edit.chinesePlaceholder}
-              />
+              <div className="relative">
+                <input
+                  value={translation}
+                  onChange={(event) =>
+                    setTranslation(
+                      event.target.value,
+                    )
+                  }
+                  className={`${inputClassName} pr-11`}
+                  placeholder={edit.chinesePlaceholder}
+                />
+                {translation && (
+                  <ClearFieldButton floating onClear={() => setTranslation("")} />
+                )}
+              </div>
             </label>
           </div>
 
@@ -214,30 +223,48 @@ export default function VocabularyEditModal({
 
           <label className="block text-sm font-medium text-neutral-800">
             {edit.englishExample}
-            <textarea
-              value={exampleSentence}
-              onChange={(event) =>
-                setExampleSentence(
-                  event.target.value,
-                )
-              }
-              className={`${inputClassName} min-h-28 resize-y`}
-              placeholder="Use the word in an {edit.english} sentence."
-            />
+            <div className="relative">
+              <textarea
+                value={exampleSentence}
+                onChange={(event) =>
+                  setExampleSentence(
+                    event.target.value,
+                  )
+                }
+                className={`${inputClassName} min-h-28 resize-y pr-11`}
+                placeholder="Use the word in an {edit.english} sentence."
+              />
+              {exampleSentence && (
+                <ClearFieldButton
+                  floating
+                  className="!top-3 !translate-y-0"
+                  onClear={() => setExampleSentence("")}
+                />
+              )}
+            </div>
           </label>
 
           <label className="block text-sm font-medium text-neutral-800">
             {edit.chineseExample}
-            <textarea
-              value={translatedExample}
-              onChange={(event) =>
-                setTranslatedExample(
-                  event.target.value,
-                )
-              }
-              className={`${inputClassName} min-h-28 resize-y`}
-              placeholder={edit.chineseExamplePlaceholder}
-            />
+            <div className="relative">
+              <textarea
+                value={translatedExample}
+                onChange={(event) =>
+                  setTranslatedExample(
+                    event.target.value,
+                  )
+                }
+                className={`${inputClassName} min-h-28 resize-y pr-11`}
+                placeholder={edit.chineseExamplePlaceholder}
+              />
+              {translatedExample && (
+                <ClearFieldButton
+                  floating
+                  className="!top-3 !translate-y-0"
+                  onClear={() => setTranslatedExample("")}
+                />
+              )}
+            </div>
           </label>
 
           {error ? (

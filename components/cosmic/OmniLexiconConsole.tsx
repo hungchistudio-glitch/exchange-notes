@@ -26,6 +26,7 @@ import {
 
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
@@ -151,6 +152,11 @@ export default function OmniLexiconConsole({
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     submit(query);
+  }
+
+  function handleClear() {
+    setQuery("");
+    resetLookup();
   }
 
   function handleChange(value: string) {
@@ -401,6 +407,14 @@ export default function OmniLexiconConsole({
             autoComplete="off"
             className={styles.input}
           />
+
+          {/* copy.clear has existed in the dictionary since this console was
+              built; nothing ever rendered it. Sitting before the submit
+              button keeps the destructive one away from the thumb's path to
+              Identify. */}
+          {query && (
+            <ClearFieldButton onClear={handleClear} label={copy.clear} />
+          )}
 
           <button
             type="submit"

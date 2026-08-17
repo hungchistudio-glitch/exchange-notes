@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   COLLECTION_EMOJI_PRESETS,
@@ -290,12 +291,27 @@ export default function CollectionPickerSheet({
               ))}
             </div>
 
-            <input
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder={copy.namePlaceholder}
-              className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none"
-            />
+            <div className="relative mt-3">
+
+              <input
+
+                value={newName}
+
+                onChange={(event) => setNewName(event.target.value)}
+
+                placeholder={copy.namePlaceholder}
+
+                className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-11 text-sm outline-none"
+
+              />
+
+              {newName && (
+
+                <ClearFieldButton floating onClear={() => setNewName("")} />
+
+              )}
+
+            </div>
 
             <div className="mt-3 flex gap-2">
               <button

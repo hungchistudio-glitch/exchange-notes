@@ -90,6 +90,7 @@ const traditionalChinese: TranslationDictionary = {
     source: "來源",
     loading: "載入中…",
     error: "發生錯誤",
+    clearField: "清除",
   },
 
   auth: {

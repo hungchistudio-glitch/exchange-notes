@@ -7,6 +7,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Avatar from "@/components/foundation/media/Avatar";
 import FriendQrScanner from "@/components/friends/FriendQrScanner";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePageOrigin from "@/hooks/usePageOrigin";
 import { UserX } from "lucide-react";
@@ -315,6 +316,9 @@ function FriendsPageContent() {
                   placeholder={copy.add.placeholder}
                   className="w-full bg-transparent text-black outline-none placeholder:text-black/30"
                 />
+                {exchangeId && (
+                  <ClearFieldButton onClear={() => setExchangeId("")} />
+                )}
               </div>
 
               <button

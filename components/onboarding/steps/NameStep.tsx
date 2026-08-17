@@ -4,6 +4,7 @@ import { Camera, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { findProfileByExchangeId } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
@@ -216,14 +217,19 @@ export default function NameStep({
             {copy.displayNameLabel}
           </span>
 
-          <input
-            required
-            value={displayName}
-            onChange={(event) => onChangeDisplayName(event.target.value)}
-            placeholder={copy.displayNamePlaceholder}
-            autoComplete="name"
-            className="w-full rounded-2xl border border-transparent bg-black/[0.035] px-4 py-3.5 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black focus:bg-white"
-          />
+          <div className="relative">
+            <input
+              required
+              value={displayName}
+              onChange={(event) => onChangeDisplayName(event.target.value)}
+              placeholder={copy.displayNamePlaceholder}
+              autoComplete="name"
+              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black focus:bg-white"
+            />
+            {displayName && (
+              <ClearFieldButton floating onClear={() => onChangeDisplayName("")} />
+            )}
+          </div>
         </label>
 
         <label className="mt-4 block">
@@ -248,6 +254,10 @@ export default function NameStep({
               spellCheck={false}
               className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-neutral-400"
             />
+
+            {exchangeId && (
+              <ClearFieldButton onClear={() => onChangeExchangeId("")} />
+            )}
 
             {idStatus === "checking" ? (
               <LoaderCircle size={15} className="shrink-0 animate-spin text-black/30" />
