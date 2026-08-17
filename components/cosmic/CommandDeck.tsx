@@ -69,6 +69,55 @@ const STARS: Array<[left: string, top: string, delay: string]> = [
   ["57%", "5%", "4.2s"],
 ];
 
+/*
+ * Signal traffic on the field.
+ *
+ * Three points of light, each riding its own radius. The two periods per
+ * signal are deliberately unrelated to each other: a point that takes 14s to
+ * go round but is only visible for a fifth of every 17s comes back at a
+ * different place on the ring every time, and the pair does not return to its
+ * starting arrangement for nearly four minutes. That is the whole trick behind
+ * the brief's "no repetition inside a short cycle" — nothing here is random,
+ * and nothing here loops anywhere the eye can follow.
+ *
+ * Negative delays so the field already has traffic on it when the deck opens,
+ * rather than three dots waiting to set off together.
+ *
+ * The angle is where each one starts, and it is the reason reduced motion can
+ * simply stop the rotation: three signals frozen at 34°, 158° and 262° are
+ * scattered around the field, where three frozen at 0° would be stacked in a
+ * line directly above Yumi and read as a fault.
+ */
+const SIGNALS: Array<{
+  orbit: string;
+  cycle: string;
+  radius: number;
+  angle: string;
+  delay: string;
+}> = [
+  { orbit: "14s", cycle: "17s", radius: 0.31, angle: "34deg", delay: "-3.4s" },
+  { orbit: "23s", cycle: "13s", radius: 0.25, angle: "158deg", delay: "-9.1s" },
+  { orbit: "19s", cycle: "21s", radius: 0.4, angle: "262deg", delay: "-15.6s" },
+];
+
+/*
+ * Where Yumi looks when a system is locked.
+ *
+ * The six nodes sit at 60° intervals with the first one straight up, so the
+ * direction to the one being pressed is just its angle — and the eye can be
+ * pointed at it with the same two numbers the ring was built from. The travel
+ * is in the mark's own 400-unit space, and it is wider than it is tall because
+ * that is the shape of the room the pupil has to move in.
+ */
+function lookAt(index: number) {
+  const radians = ((360 / ROOMS.length) * index * Math.PI) / 180;
+
+  return {
+    "--look-x": `${(Math.sin(radians) * 8).toFixed(2)}px`,
+    "--look-y": `${(-Math.cos(radians) * 5).toFixed(2)}px`,
+  } as CSSProperties;
+}
+
 /**
  * The Yumi Command Deck — the home of Yumi Cosmic Mode.
  *
@@ -251,33 +300,84 @@ export default function CommandDeck() {
           <span className={styles.field} aria-hidden="true" />
           <span className={styles.fieldInner} aria-hidden="true" />
 
-          <div className={styles.core} data-omni={omniState}>
+          {SIGNALS.map((signal) => (
+            <span
+              key={signal.orbit}
+              className={styles.signal}
+              aria-hidden="true"
+              style={
+                {
+                  "--signal-orbit": signal.orbit,
+                  "--signal-cycle": signal.cycle,
+                  "--signal-radius": signal.radius,
+                  "--signal-angle": signal.angle,
+                  "--signal-delay": signal.delay,
+                } as CSSProperties
+              }
+            >
+              <span className={styles.signalDot} />
+            </span>
+          ))}
+
+          <div
+            className={styles.core}
+            data-omni={omniState}
+            // The acknowledgement in §9 of the brief. It has a real trigger
+            // already: the same press that locks a system — so Yumi answers
+            // the press with a ripple and by turning to look at whichever of
+            // its six systems the finger is on.
+            data-lock={lockedRoom ? "true" : "false"}
+            style={
+              lockedRoom
+                ? lookAt(ROOMS.findIndex((room) => room.key === lockedRoom))
+                : undefined
+            }
+          >
+            <span className={styles.coreAura} aria-hidden="true" />
             <span className={styles.coreGlow} aria-hidden="true" />
             <span className={styles.coreHalo} aria-hidden="true" />
             <span className={styles.coreHaloInner} aria-hidden="true" />
+            <span className={styles.coreArc} aria-hidden="true" />
+            <span className={styles.coreRipple} aria-hidden="true" />
 
-            <ExchangeNotesMark
-              cosmic
-              /*
-               * Energy follows what Yumi is actually doing, and the resting
-               * value is deliberately low. A seam that is always bright says
-               * nothing when the moment it was meant to mark arrives.
-               */
-              energy={
-                omniState === "scanning"
-                  ? 1
-                  : omniState === "listening"
-                    ? 0.65
-                    : omniState === "typing"
-                      ? 0.4
-                      : 0.12
-              }
-              className={styles.coreMark}
-              pupilClassName={styles.pupil}
-              irisClassName={styles.iris}
-              upperLidClassName={styles.upperLid}
-              lowerLidClassName={styles.lowerLid}
-            />
+            {/*
+              Three wrappers, one transform each, because an element can only
+              run one transform animation at a time and this needs four on
+              different clocks: the optical correction (static), the drift, the
+              tilt, and the breath on the mark itself. Nesting is what lets
+              them layer instead of overwrite. See the module CSS.
+            */}
+            <div className={styles.coreBody}>
+              <div className={styles.coreDrift}>
+                <div className={styles.coreTilt}>
+                  <ExchangeNotesMark
+                    cosmic
+                    /*
+                     * Energy follows what Yumi is actually doing, and the
+                     * resting value is deliberately low. A seam that is always
+                     * bright says nothing when the moment it was meant to mark
+                     * arrives.
+                     */
+                    energy={
+                      omniState === "scanning"
+                        ? 1
+                        : omniState === "listening"
+                          ? 0.65
+                          : omniState === "typing"
+                            ? 0.4
+                            : 0.12
+                    }
+                    className={styles.coreMark}
+                    pupilClassName={styles.pupil}
+                    irisClassName={styles.iris}
+                    upperLidClassName={styles.upperLid}
+                    lowerLidClassName={styles.lowerLid}
+                    sweepClassName={styles.coreSweep}
+                    gleamClassName={styles.coreGleam}
+                  />
+                </div>
+              </div>
+            </div>
             <span className="sr-only">{copy.deck.coreLabel}</span>
           </div>
 

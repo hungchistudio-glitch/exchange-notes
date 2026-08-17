@@ -23,6 +23,17 @@ type ExchangeNotesMarkProps = {
   energy?: number;
   /** Lets the consumer animate the iris — see the pupilClassName precedent. */
   irisClassName?: string;
+  /*
+   * Two more animation handles, on the same precedent and cosmic-only.
+   *
+   * Both exist here rather than as overlays in the consumer because both have
+   * to be clipped by shapes only this file knows: the sweep by the body mask,
+   * so a band of light crosses Yumi's silhouette instead of a square around
+   * it, and the gleam by the eye's own clip, so a reflection stays on the
+   * lens. Neither is reachable from outside the SVG.
+   */
+  sweepClassName?: string;
+  gleamClassName?: string;
 };
 
 export default function ExchangeNotesMark({
@@ -36,6 +47,8 @@ export default function ExchangeNotesMark({
   cosmic = false,
   energy = 0,
   irisClassName,
+  sweepClassName,
+  gleamClassName,
 }: ExchangeNotesMarkProps) {
   const rawId = useId();
   const idBase = rawId.replace(/:/g, "");
@@ -50,6 +63,8 @@ export default function ExchangeNotesMark({
   // The refit's own ids, so two marks on one screen never share a gradient.
   const shellGradientId = `exchange-notes-shell-${idBase}`;
   const seamGradientId = `exchange-notes-seam-${idBase}`;
+  const sweepGradientId = `exchange-notes-sweep-${idBase}`;
+  const gleamGradientId = `exchange-notes-gleam-${idBase}`;
 
   /*
    * Clamped, then mapped onto the brief's two bands: 10–18% at rest and up to
@@ -184,6 +199,25 @@ export default function ExchangeNotesMark({
               <stop offset="0" stopColor={cosmicCyan} stopOpacity="0.25" />
               <stop offset="0.45" stopColor={cosmicCyan} stopOpacity="1" />
               <stop offset="1" stopColor={cosmicCyan} stopOpacity="0.3" />
+            </linearGradient>
+
+            {/* The scan pass: cyan at the edges with a near-white core, so the
+                band reads as light travelling through the shell rather than a
+                flat cyan rectangle sliding over it. */}
+            <linearGradient id={sweepGradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor={cosmicCyan} stopOpacity="0" />
+              <stop offset="0.4" stopColor={cosmicCyan} stopOpacity="0.5" />
+              <stop offset="0.52" stopColor="#eafcff" stopOpacity="0.92" />
+              <stop offset="0.64" stopColor={cosmicCyan} stopOpacity="0.45" />
+              <stop offset="1" stopColor={cosmicCyan} stopOpacity="0" />
+            </linearGradient>
+
+            {/* The gleam is white rather than cyan. It is a reflection off the
+                lens, not something the lens is emitting. */}
+            <linearGradient id={gleamGradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
+              <stop offset="0.5" stopColor="#ffffff" stopOpacity="0.55" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
           </>
         )}
@@ -377,6 +411,31 @@ export default function ExchangeNotesMark({
             }
           />
         ))}
+
+        {/*
+          The scan pass, last inside the mask so it crosses everything on the
+          body — shell, plating, seam and constellation alike — and nothing
+          outside it. Tilted to run with the diagonal the seam gradient
+          already established rather than straight down the screen.
+
+          It renders at zero opacity and stays there unless a consumer passes a
+          class that animates it. A mark on the splash screen or in Messages
+          gets no sweep, which is correct: this is the deck's behaviour, not
+          the identity's.
+        */}
+        {cosmic && (
+          <g transform="rotate(-14 200 200)">
+            <rect
+              className={sweepClassName}
+              x="140"
+              y="-120"
+              width="118"
+              height="640"
+              fill={`url(#${sweepGradientId})`}
+              opacity="0"
+            />
+          </g>
+        )}
       </g>
 
       <circle cx="285" cy="180" r="40" fill={surfaceColor} />
@@ -432,6 +491,26 @@ export default function ExchangeNotesMark({
           <circle cx="294" cy="172" r="14" fill={inkColor} />
           <circle cx="300" cy="166" r="5" fill={highlightColor} />
         </g>
+
+        {/*
+          The gleam sits above the pupil and below the lids, which is the only
+          order that reads correctly: a reflection is on the front of the lens,
+          so it passes over the pupil — but an eyelid closes in front of the
+          lens, so it passes over the reflection.
+        */}
+        {cosmic && (
+          <g transform="rotate(-22 285 180)">
+            <rect
+              className={gleamClassName}
+              x="273"
+              y="118"
+              width="24"
+              height="124"
+              fill={`url(#${gleamGradientId})`}
+              opacity="0"
+            />
+          </g>
+        )}
 
         <rect
           className={upperLidClassName}
