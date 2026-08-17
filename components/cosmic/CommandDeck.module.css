@@ -593,6 +593,178 @@
   }
 }
 
+/* =========================================================
+   The sky behind the deck
+   ========================================================= */
+
+/*
+ * Three kinds of thing live in here, at three distances: planets that never
+ * really move, stars that breathe in place, and meteors that cross and are
+ * gone. Everything is aria-hidden and none of it is interactive.
+ *
+ * The layer is the deck's, not the page's. It reaches a quarter of the stage's
+ * height below the deck to take in the empty band between Comms and the dock —
+ * that gap is the only real sky on this screen, and leaving it out would have
+ * made this a strip of decoration across the middle rather than a background.
+ * It does not reach upwards, because upwards is the HUD and the console, and a
+ * meteor crossing a readout is an artefact rather than an effect. Above the
+ * deck the field painted on the body in app/cosmic.css is still the backdrop.
+ *
+ * overflow: hidden is load-bearing twice over: it crops the planets so they
+ * read as bodies too large to fit rather than as circles, and it keeps the
+ * meteors from ever painting outside the deck.
+ */
+.sky {
+  position: absolute;
+  inset: 0 0 -26% 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/*
+ * The near planet: a limb rising along the bottom edge.
+ *
+ * 160% of the deck's width and positioned so only the top sixty pixels of its
+ * arc are inside the layer. That crop is the whole illusion — a circle you can
+ * see all of is a ball, and an arc too big to fit is a world.
+ *
+ * The rim is a hairline of atmosphere at the very edge of the disc rather than
+ * a gradient across its face, because at this crop the face is barely visible
+ * and the edge is nearly all of what you get.
+ */
+.planetNear {
+  position: absolute;
+  left: -30%;
+  top: 85%;
+  width: 160%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 48.6%,
+      color-mix(in oklab, var(--accent-cool) 30%, transparent) 49.2%,
+      transparent 50.4%
+    ),
+    radial-gradient(
+      circle at 42% 12%,
+      color-mix(in oklab, var(--cosmic-violet) 12%, transparent) 0%,
+      transparent 34%
+    ),
+    #050b16;
+  box-shadow: 0 -20px 44px -12px color-mix(in oklab, var(--cosmic-cyan) 16%, transparent);
+  animation: planetDrift 137s ease-in-out infinite;
+}
+
+/*
+ * Two far planets, small enough to be read as bodies rather than as stars only
+ * because they are lit from one side. Placed in the two pockets of the layer
+ * the ring and its labels do not reach.
+ */
+.planetFar {
+  position: absolute;
+  border-radius: 9999px;
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      color-mix(in oklab, var(--accent-cool) 52%, transparent) 0%,
+      color-mix(in oklab, var(--accent-cool) 14%, transparent) 46%,
+      transparent 72%
+    ),
+    #070e1c;
+  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-cool) 10%, transparent);
+  opacity: 0.75;
+}
+
+.planetFarUpper {
+  left: 9%;
+  top: 7%;
+  width: 15px;
+  height: 15px;
+  animation: planetDrift 78s ease-in-out infinite;
+}
+
+.planetFarLower {
+  right: 5%;
+  top: 79%;
+  width: 9px;
+  height: 9px;
+  opacity: 0.55;
+  animation: planetDrift 104s ease-in-out infinite reverse;
+}
+
+/*
+ * Long enough that nobody watches it happen, large enough that the sky is
+ * never the same twice. Three planets on 78s, 104s and 137s do not return to
+ * the same arrangement for about seven hours.
+ */
+@keyframes planetDrift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-6px, 3px);
+  }
+}
+
+/*
+ * Meteors.
+ *
+ * Four, each on its own clock, and each visible for about a quarter of it. The
+ * arithmetic is the point: four streaks at 26% of their cycle means an average
+ * of a little over one on screen at any moment, so there is almost always a
+ * meteor somewhere and almost never a shower. Continuous, not constant.
+ *
+ * They also carry the only real depth in the sky. Length, travel, speed and
+ * brightness all step together across the four — the near one is 86px long and
+ * covers 250px a second, the far one is 42px and covers 70 — so they read as
+ * four distances rather than four copies.
+ *
+ * The rotation is baked into the keyframes rather than sitting on a wrapper.
+ * Normally that is the fragile choice, but a meteor is nothing except its
+ * travel: if the animation is ever cancelled the right answer is for it to be
+ * gone, not to be a diagonal scratch parked on the sky.
+ */
+.meteor {
+  position: absolute;
+  left: var(--meteor-x);
+  top: var(--meteor-y);
+  width: var(--meteor-length);
+  height: 1px;
+  border-radius: 9999px;
+  /* Bright at the leading end, gone at the tail — the trail is behind the head
+     the way it is on a real one, which is why the gradient is not symmetric. */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--cosmic-star) 45%, transparent) 58%,
+    var(--cosmic-star) 100%
+  );
+  opacity: 0;
+  animation: meteorFall var(--meteor-duration) linear infinite var(--meteor-delay);
+}
+
+@keyframes meteorFall {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--meteor-angle)) translateX(0);
+  }
+  4% {
+    opacity: var(--meteor-peak);
+  }
+  20% {
+    opacity: var(--meteor-peak);
+  }
+  /* Burning out rather than leaving the frame. A meteor that reaches the edge
+     and vanishes there tells you where the edge is. */
+  26%,
+  100% {
+    opacity: 0;
+    transform: rotate(var(--meteor-angle)) translateX(var(--meteor-travel));
+  }
+}
+
 /*
  * Ambient stars.
  *
@@ -600,12 +772,6 @@
  * field: a dozen composited dots cost nothing, and the count cannot drift
  * upwards later the way a "density" parameter invites.
  */
-.stars {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
 
 .star {
   position: absolute;
@@ -653,8 +819,21 @@
   .coreDrift,
   .coreTilt,
   .pupil,
-  .signal {
+  .signal,
+  .planetNear,
+  .planetFar {
     animation: none;
+  }
+
+  /*
+   * The meteors go, and they are the only thing on the deck that is removed
+   * rather than stilled. Everything else here has a shape worth keeping when
+   * it stops — a ring is still a ring, a planet is still a planet. A meteor is
+   * nothing but its travel, so a stopped one is not a calmer meteor, it is a
+   * diagonal scratch on the sky.
+   */
+  .meteor {
+    display: none;
   }
 
   /*
@@ -975,36 +1154,36 @@
 /*
  * The scan pass.
  *
- * Twenty-six seconds, of which the band is on screen for about one and a half.
- * The other twenty-four and a half are the point — this is the layer that has
+ * Thirty-five seconds, of which the band is on screen for about one and a half.
+ * The other thirty-three and a half are the point — this is the layer that has
  * to feel like something Yumi did rather than something the page does, and
- * anything that happens often enough to be expected cannot do that. The brief
- * asks for 18–40s; this sits low in that band because at 26s a user who opens
- * the deck, reads it and taps will usually see exactly one, which is the right
- * number.
+ * anything that happens often enough to be expected cannot do that. Sitting
+ * near the top of the brief's 18–40s band means most visits to the deck get one
+ * pass and some get none, which is the correct trade: a pass you might miss is
+ * worth more than one you can wait for.
  *
  * The band is parked off the body for the whole quiet stretch and only travels
- * during the last 6% of the cycle, so nothing is interpolating in between.
+ * during the last 4% of the cycle, so nothing is interpolating in between.
  */
 .coreSweep {
   transform-box: view-box;
-  animation: coreSweep 26s linear infinite 5s;
+  animation: coreSweep 35s linear infinite 5s;
 }
 
 @keyframes coreSweep {
   0%,
-  93.8% {
+  95.7% {
     opacity: 0;
     transform: translateX(-250px);
   }
-  /* Held below full strength. At 1 the white core of the band flares and the
-     pass stops reading as light inside the shell and starts reading as a
-     highlight sliding over the top of it. */
-  95.2% {
-    opacity: 0.82;
+  /* Held well below full strength. Bright enough to register as light moving
+     inside the shell, dim enough that it never becomes the brightest thing on
+     the screen — which is what separates a scan from a flash. */
+  96.7% {
+    opacity: 0.55;
   }
-  98.4% {
-    opacity: 0.82;
+  98.9% {
+    opacity: 0.55;
   }
   100% {
     opacity: 0;
