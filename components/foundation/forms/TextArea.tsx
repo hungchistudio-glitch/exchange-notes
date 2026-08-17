@@ -23,7 +23,7 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
           "w-full resize-none rounded-2xl border bg-white px-4 py-3",
           "text-sm leading-6 text-neutral-950",
           "outline-none transition-colors",
-          "placeholder:text-neutral-400",
+          "placeholder:text-ink-faint",
           "focus:border-neutral-400",
           "disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400",
           error

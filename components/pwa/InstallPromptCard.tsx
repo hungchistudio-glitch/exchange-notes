@@ -47,7 +47,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
                 {index === 0 ? <Share size={12} strokeWidth={2} /> : index + 1}
               </span>
-              <span className="text-[14px] leading-6 text-black/75">{stepText}</span>
+              <span className="text-[14px] leading-6 text-ink-strong">{stepText}</span>
             </li>
           ))}
         </ol>
@@ -80,7 +80,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         {copy.title}
       </h2>
 
-      <p className="mt-1.5 max-w-xs text-[14px] leading-6 text-black/50">
+      <p className="mt-1.5 max-w-xs text-[14px] leading-6 text-ink-soft">
         {copy.subtitle}
       </p>
 
@@ -104,7 +104,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         <button
           type="button"
           onClick={onDismiss}
-          className="mt-2.5 flex h-10 w-full items-center justify-center text-[13px] font-medium text-black/40 transition-colors hover:text-black/60"
+          className="mt-2.5 flex h-10 w-full items-center justify-center text-[13px] font-medium text-ink-faint transition-colors hover:text-ink-soft"
         >
           {copy.maybeLater}
         </button>
@@ -124,12 +124,12 @@ function Benefit({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/70">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-strong">
         {icon}
       </span>
       <span>
         <span className="block text-[14px] font-semibold text-black">{title}</span>
-        <span className="block text-[13px] leading-5 text-black/45">{description}</span>
+        <span className="block text-[13px] leading-5 text-ink-soft">{description}</span>
       </span>
     </div>
   );

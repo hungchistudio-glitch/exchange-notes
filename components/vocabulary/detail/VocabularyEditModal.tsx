@@ -122,7 +122,7 @@ export default function VocabularyEditModal({
   }
 
   const inputClassName =
-    "mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-neutral-950/5";
+    "mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base text-neutral-950 outline-none transition placeholder:text-ink-faint focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-neutral-950/5";
 
   return (
     <div
@@ -160,7 +160,7 @@ export default function VocabularyEditModal({
               {edit.title}
             </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-ink-soft">
               {edit.subtitle}
             </p>
           </div>

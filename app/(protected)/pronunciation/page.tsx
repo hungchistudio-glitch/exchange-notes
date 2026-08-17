@@ -119,7 +119,7 @@ function playbackButtonClass(phase: PlaybackPhase | undefined) {
   if (phase === "error") return `${base} border-red-300 bg-red-50 text-red-600`;
   if (phase === "done") return `${base} border-emerald-300 bg-emerald-50 text-emerald-700`;
   if (phase === "playing") return `${base} border-black bg-black text-white`;
-  if (phase === "loading") return `${base} border-line bg-white text-black/70`;
+  if (phase === "loading") return `${base} border-line bg-white text-ink-strong`;
   return `${base} border-line text-black`;
 }
 
@@ -563,7 +563,7 @@ export default function PronunciationLabPage() {
         <Link
           href="/"
           aria-label={copy.backHome}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />
         </Link>
@@ -571,14 +571,14 @@ export default function PronunciationLabPage() {
         <h1 className="mt-3 text-[26px] font-bold tracking-[-0.02em]">
           {copy.title}
         </h1>
-        <p className="mt-1 text-black/50">{copy.subtitle}</p>
+        <p className="mt-1 text-ink-soft">{copy.subtitle}</p>
 
         <div className="mt-5 grid grid-cols-2 gap-1 rounded-full border border-line bg-white p-1">
           <button
             type="button"
             onClick={() => setMode("english")}
             className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-              resolvedMode === "english" ? "bg-black text-white" : "text-black/50"
+              resolvedMode === "english" ? "bg-black text-white" : "text-ink-soft"
             }`}
           >
             {copy.modes.english}
@@ -587,7 +587,7 @@ export default function PronunciationLabPage() {
             type="button"
             onClick={() => setMode("zhuyin")}
             className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-              resolvedMode === "zhuyin" ? "bg-black text-white" : "text-black/50"
+              resolvedMode === "zhuyin" ? "bg-black text-white" : "text-ink-soft"
             }`}
           >
             {copy.modes.zhuyin}
@@ -614,7 +614,7 @@ export default function PronunciationLabPage() {
                   className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
                     active
                       ? "border-black bg-black text-white"
-                      : "border-line bg-white text-black/60"
+                      : "border-line bg-white text-ink-soft"
                   }`}
                 >
                   {copy.filters[filter.labelKey]}
@@ -647,12 +647,12 @@ export default function PronunciationLabPage() {
                       {letter.letter}
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                         {letter.category === "vowel" ? copy.filters.vowels : copy.filters.consonants}
                       </p>
                       <p className="text-[17px] font-bold">
                         {letter.letter}
-                        <span className="font-phonetic ml-1.5 text-sm font-medium text-black/40">
+                        <span className="font-phonetic ml-1.5 text-sm font-medium text-ink-faint">
                           {letter.letterName.kk}
                         </span>
                       </p>
@@ -661,7 +661,7 @@ export default function PronunciationLabPage() {
 
                   {hasMultipleSounds ? (
                     <div className="mt-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/30">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                         {copy.cards.moreSounds}
                       </p>
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -675,7 +675,7 @@ export default function PronunciationLabPage() {
                             className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                               sound.id === value.id
                                 ? "border-black bg-black text-white"
-                                : "border-line bg-white text-black/60"
+                                : "border-line bg-white text-ink-soft"
                             }`}
                           >
                             {value.label[language]}
@@ -685,7 +685,7 @@ export default function PronunciationLabPage() {
                     </div>
                   ) : null}
 
-                  <p className="font-phonetic mt-2 text-xs text-black/40">
+                  <p className="font-phonetic mt-2 text-xs text-ink-faint">
                     {sound.ipa} · {copy.cards.kk} {sound.kk}
                   </p>
 
@@ -700,14 +700,14 @@ export default function PronunciationLabPage() {
                   />
 
                   <div className="mt-3 rounded-2xl bg-surface p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                       {copy.cards.howToSayIt}
                     </p>
 
                     <div className="mt-2 space-y-1.5">
                       {sound.guidance.map((point, index) => (
-                        <p key={index} className="flex gap-2 text-sm leading-6 text-black/70">
-                          <span className="font-cjk shrink-0 font-semibold text-black/45">
+                        <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
+                          <span className="font-cjk shrink-0 font-semibold text-ink-soft">
                             {point.label[language]}
                           </span>
                           <span className="font-cjk">{point.text[language]}</span>
@@ -718,7 +718,7 @@ export default function PronunciationLabPage() {
                     <button
                       type="button"
                       onClick={() => toggleSet(setExpandedGuidance, practiceId)}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-black/50"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-ink-soft"
                     >
                       {guidanceOpen ? copy.cards.showLessGuidance : copy.cards.showMoreGuidance}
                       {guidanceOpen ? (
@@ -729,7 +729,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-black/60">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
                     ) : null}
                   </div>
 
@@ -780,11 +780,11 @@ export default function PronunciationLabPage() {
                       <span className="font-zhuyin">{sound.symbol}</span>
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                         {zhuyinCategoryLabel(sound.category, copy)}
                       </p>
                       <p className="font-zhuyin text-[17px] font-bold">{sound.title}</p>
-                      <p className="text-xs text-black/40">
+                      <p className="text-xs text-ink-faint">
                         {copy.cards.romanizationHint}: {sound.romanization}
                       </p>
                     </div>
@@ -802,14 +802,14 @@ export default function PronunciationLabPage() {
                   />
 
                   <div className="mt-3 rounded-2xl bg-surface p-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                       {copy.cards.pronunciationMethod}
                     </p>
 
                     <div className="mt-2 space-y-1.5">
                       {sound.guidance.map((point, index) => (
-                        <p key={index} className="flex gap-2 text-sm leading-6 text-black/70">
-                          <span className="font-cjk shrink-0 font-semibold text-black/45">
+                        <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
+                          <span className="font-cjk shrink-0 font-semibold text-ink-soft">
                             {point.label[language]}
                           </span>
                           <span className="font-cjk">{point.text[language]}</span>
@@ -820,7 +820,7 @@ export default function PronunciationLabPage() {
                     <button
                       type="button"
                       onClick={() => toggleSet(setExpandedGuidance, sound.id)}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-black/50"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-ink-soft"
                     >
                       {guidanceOpen ? copy.cards.showLessGuidance : copy.cards.showMoreGuidance}
                       {guidanceOpen ? (
@@ -831,7 +831,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-black/60">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
                     ) : null}
                   </div>
 
@@ -855,11 +855,11 @@ export default function PronunciationLabPage() {
                         >
                           <span className="font-cjk">
                             {example.word}
-                            <span className="font-zhuyin ml-2 text-xs text-black/40">
+                            <span className="font-zhuyin ml-2 text-xs text-ink-faint">
                               {span ? (
                                 <>
                                   {span.before}
-                                  <span className="font-semibold text-black/70">{span.match}</span>
+                                  <span className="font-semibold text-ink-strong">{span.match}</span>
                                   {span.after}
                                 </>
                               ) : (
@@ -1120,7 +1120,7 @@ function TeachingStage({
           />
         ) : (
           <div
-            className="flex h-[88px] w-[88px] items-center justify-center rounded-full border border-dashed border-line/60 text-black/20"
+            className="flex h-[88px] w-[88px] items-center justify-center rounded-full border border-dashed border-line/60 text-ink-faint"
             aria-hidden="true"
           >
             <Volume2 size={22} strokeWidth={1.5} />
@@ -1130,7 +1130,7 @@ function TeachingStage({
 
       <div className="min-w-0 w-full flex-1">
         {active && !everPlayed ? (
-          <p className="mb-1.5 text-[11px] font-medium text-black/40">{copy.yumi.tapToHear}</p>
+          <p className="mb-1.5 text-[11px] font-medium text-ink-faint">{copy.yumi.tapToHear}</p>
         ) : null}
 
         <div className="space-y-1">
@@ -1140,12 +1140,12 @@ function TeachingStage({
               <p
                 key={step.key}
                 className={`text-sm leading-6 transition-colors ${
-                  isCurrent ? "text-black" : "text-black/35"
+                  isCurrent ? "text-black" : "text-ink-faint"
                 }`}
               >
                 <span
                   className={`mr-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
-                    isCurrent ? "text-black/60" : "text-black/30"
+                    isCurrent ? "text-ink-soft" : "text-ink-faint"
                   }`}
                 >
                   {stepLabel(step.key, copy)}

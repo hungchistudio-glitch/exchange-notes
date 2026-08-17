@@ -78,7 +78,7 @@ export default function BottomSheet({
             </h2>
 
             {description ? (
-              <p className="mt-1 text-sm leading-5 text-black/45">
+              <p className="mt-1 text-sm leading-5 text-ink-soft">
                 {description}
               </p>
             ) : null}
@@ -91,7 +91,7 @@ export default function BottomSheet({
             onClick={motion.requestClose}
             className={[
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-              "bg-black/[0.05] text-black/55",
+              "bg-black/[0.05] text-ink-soft",
               "transition-all hover:bg-black/[0.08] active:scale-95",
             ].join(" ")}
           >

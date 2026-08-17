@@ -61,10 +61,10 @@ export default function LanguagesStep({
         </h1>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.nativeLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-black/45">
+          <p className="mt-1 text-[13px] leading-5 text-ink-soft">
             {copy.nativeDescription}
           </p>
 
@@ -82,10 +82,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.learningLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-black/45">
+          <p className="mt-1 text-[13px] leading-5 text-ink-soft">
             {copy.learningDescription}
           </p>
 
@@ -103,10 +103,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-6 rounded-2xl bg-black/[0.035] px-4 py-3.5">
-          <p className="text-[13px] leading-6 text-black/60">
+          <p className="text-[13px] leading-6 text-ink-soft">
             {copy.previewPrimary.replace("{language}", learningLabel)}
           </p>
-          <p className="mt-1 text-[13px] leading-6 text-black/45">
+          <p className="mt-1 text-[13px] leading-6 text-ink-soft">
             {copy.previewSecondary.replace("{language}", nativeLabel)}
           </p>
         </div>

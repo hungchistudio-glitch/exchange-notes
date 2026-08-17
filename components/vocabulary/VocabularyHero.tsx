@@ -24,7 +24,7 @@ type MetricProps = {
 function Metric({ label, value }: MetricProps) {
   return (
     <div className="flex items-center justify-between border-t border-white/10 py-3">
-      <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">
+      <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-ink-invert-faint">
         {label}
       </span>
 
@@ -71,7 +71,7 @@ export default function VocabularyHero({
     <section className="overflow-hidden rounded-[22px] bg-black px-5 py-5 text-white sm:px-6 sm:py-6">
       <div className="flex items-start justify-between gap-5">
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
+          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink-invert-faint">
             {hero.vocabulary}
           </p>
 
@@ -80,18 +80,18 @@ export default function VocabularyHero({
               {todayProgress}
             </h1>
 
-            <span className="text-sm font-medium text-white/35">
+            <span className="text-sm font-medium text-ink-invert-faint">
               / {todayGoal}
             </span>
           </div>
 
-          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/40">
+          <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-invert-faint">
             {hero.todayProgress}
           </p>
         </div>
 
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-ink-invert-faint">
             {hero.completion}
           </p>
 
@@ -108,7 +108,7 @@ export default function VocabularyHero({
         />
       </div>
 
-      <p className="mt-4 text-xs leading-5 text-white/45">
+      <p className="mt-4 text-xs leading-5 text-ink-invert-faint">
         {goalCompleted
           ? hero.dailyTargetCompleted
           : remainingMessage}
@@ -130,7 +130,7 @@ export default function VocabularyHero({
           className="group flex min-w-0 items-center justify-between border-r border-white/10 py-4 pr-4"
         >
           <span>
-            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+            <span className="block text-[10px] uppercase tracking-[0.22em] text-ink-invert-faint">
               {hero.today}
             </span>
 
@@ -142,7 +142,7 @@ export default function VocabularyHero({
           <ArrowUpRight
             size={15}
             strokeWidth={1.6}
-            className="text-white/35 transition group-hover:text-white"
+            className="text-ink-invert-faint transition group-hover:text-white"
           />
         </Link>
 
@@ -151,7 +151,7 @@ export default function VocabularyHero({
           className="group flex min-w-0 items-center justify-between py-4 pl-4"
         >
           <span>
-            <span className="block text-[10px] uppercase tracking-[0.22em] text-white/35">
+            <span className="block text-[10px] uppercase tracking-[0.22em] text-ink-invert-faint">
               {hero.library}
             </span>
 
@@ -163,7 +163,7 @@ export default function VocabularyHero({
           <ArrowUpRight
             size={15}
             strokeWidth={1.6}
-            className="text-white/35 transition group-hover:text-white"
+            className="text-ink-invert-faint transition group-hover:text-white"
           />
         </Link>
       </div>

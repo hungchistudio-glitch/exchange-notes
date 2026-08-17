@@ -108,7 +108,7 @@ export default function CollectionDetailPage() {
         <Link
           href="/vocabulary/collections"
           aria-label={copy.backToCollections}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <ArrowLeft size={20} strokeWidth={1.9} />
         </Link>
@@ -123,7 +123,7 @@ export default function CollectionDetailPage() {
         </div>
 
         {!loading && items.length > 0 && (
-          <p className="mt-2 text-sm text-black/40">
+          <p className="mt-2 text-sm text-ink-faint">
             {items.length} {items.length === 1 ? copy.word : copy.words}{" "}
             {copy.inCollection}
           </p>
@@ -136,18 +136,18 @@ export default function CollectionDetailPage() {
         )}
 
         {loading && (
-          <p className="mt-10 text-center text-sm text-black/40">
+          <p className="mt-10 text-center text-sm text-ink-faint">
             {copy.loading}
           </p>
         )}
 
         {!loading && items.length === 0 && (
           <div className="mt-10 rounded-[24px] bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/50">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
               <BookOpen size={22} strokeWidth={1.7} />
             </div>
             <p className="mt-4 text-lg font-bold">{copy.emptyTitle}</p>
-            <p className="mt-1 text-sm leading-6 text-black/50">
+            <p className="mt-1 text-sm leading-6 text-ink-soft">
               {copy.emptyDescription}
             </p>
             <Link

@@ -28,7 +28,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
           {copy.title}
         </h1>
 
-        <p className="mt-2 text-[15px] leading-6 text-black/50">
+        <p className="mt-2 text-[15px] leading-6 text-ink-soft">
           {copy.subtitle}
         </p>
 
@@ -44,7 +44,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
           ))}
         </div>
 
-        <p className="mt-4 text-xs leading-5 text-black/35">{copy.note}</p>
+        <p className="mt-4 text-xs leading-5 text-ink-faint">{copy.note}</p>
       </div>
 
       <button

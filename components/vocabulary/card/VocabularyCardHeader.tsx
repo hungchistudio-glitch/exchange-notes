@@ -41,12 +41,12 @@ export default function VocabularyCardHeader({
   return (
     <header className="min-w-0">
       <div className="space-y-1.5">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/45">
+        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-soft">
           {statusLabels[item.status]}
         </p>
 
         {partOfSpeechLabel ? (
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-black/30">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-faint">
             {partOfSpeechLabel}
           </p>
         ) : null}

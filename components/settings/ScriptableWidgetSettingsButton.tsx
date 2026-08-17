@@ -466,7 +466,7 @@ export default function ScriptableWidgetSettingsButton() {
             <button
               type="button"
               onClick={handleClose}
-              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-black/50 transition-all active:scale-[0.985]"
+              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-ink-soft transition-all active:scale-[0.985]"
             >
               {copy.close}
             </button>
@@ -502,7 +502,7 @@ export default function ScriptableWidgetSettingsButton() {
                 {copy.oneTimeTitle}
               </h3>
 
-              <p className="mt-1 text-xs leading-5 text-black/55">
+              <p className="mt-1 text-xs leading-5 text-ink-soft">
                 {copy.oneTimeDescription}
               </p>
 
@@ -605,21 +605,21 @@ export default function ScriptableWidgetSettingsButton() {
           {token && (
             <dl className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white text-sm">
               <div className="flex items-center justify-between border-b border-black/[0.05] px-4 py-3">
-                <dt className="text-black/50">{copy.tokenPrefixLabel}</dt>
+                <dt className="text-ink-soft">{copy.tokenPrefixLabel}</dt>
                 <dd className="font-mono text-[13px] text-black">
                   {token.prefix}…
                 </dd>
               </div>
 
               <div className="flex items-center justify-between border-b border-black/[0.05] px-4 py-3">
-                <dt className="text-black/50">{copy.createdLabel}</dt>
+                <dt className="text-ink-soft">{copy.createdLabel}</dt>
                 <dd className="text-black">
                   {formatMoment(token.createdAt)}
                 </dd>
               </div>
 
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-black/50">{copy.lastUsedLabel}</dt>
+                <dt className="text-ink-soft">{copy.lastUsedLabel}</dt>
                 <dd className="text-black">
                   {formatMoment(token.lastUsedAt)}
                 </dd>

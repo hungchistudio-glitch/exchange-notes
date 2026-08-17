@@ -241,12 +241,12 @@ export default function ConversationList() {
         </h1>
 
         <div className="mt-6 flex items-center gap-2 rounded-full bg-white px-4 py-3 shadow-sm">
-          <Search size={17} strokeWidth={1.8} className="shrink-0 text-black/35" />
+          <Search size={17} strokeWidth={1.8} className="shrink-0 text-ink-faint" />
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={copy.searchPlaceholder}
-            className="w-full bg-transparent text-sm text-black outline-none placeholder:text-black/35"
+            className="w-full bg-transparent text-sm text-black outline-none placeholder:text-ink-faint"
           />
           {searchQuery && (
             <ClearFieldButton onClear={() => setSearchQuery("")} />
@@ -254,7 +254,7 @@ export default function ConversationList() {
         </div>
 
         {(!hasLoadedOnce || loading) && (
-          <div className="mt-10 flex items-center justify-center text-sm text-neutral-500">
+          <div className="mt-10 flex items-center justify-center text-sm text-ink-soft">
             {copy.loadingConversations}
           </div>
         )}
@@ -354,7 +354,7 @@ export default function ConversationList() {
                         {summary.lastMessage && (
                           <time
                             dateTime={summary.lastMessage.createdAt}
-                            className="text-[11px] text-black/35"
+                            className="text-[11px] text-ink-faint"
                           >
                             {formatConversationTime(summary.lastMessage.createdAt)}
                           </time>

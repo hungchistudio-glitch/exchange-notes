@@ -72,7 +72,12 @@
   --discover-page: #f3f0e8;
   --discover-card: #fbfaf6;
   --discover-text: #151515;
-  --discover-text-secondary: #77736c;
+  /* Was #77736c, which is 4.52:1 on --discover-card but only 4.14:1 on
+     --discover-page behind it — Discover's bylines and kickers sit on both.
+     #6f6b64 is the nearest value that clears 4.5:1 on the page too (4.65:1),
+     and it keeps the warm grey the editorial surface was designed around.
+     Cosmic's #8ba0c6 already clears it on all three (5.98:1 at worst). */
+  --discover-text-secondary: #6f6b64;
   --discover-divider: #e7e2d9;
   --discover-divider-soft: rgba(231, 226, 217, 0.28);
   --discover-accent: #244b3a;
@@ -86,6 +91,70 @@
   --discover-category-health: #2e6b5e;
   --discover-category-environment: #5b6b35;
   --discover-category-politics: #55524a;
+
+  /*
+   * The two muted ink tiers — secondary text and tertiary text.
+   *
+   * These replace `text-black/45` and `text-black/35` (and the eleven other
+   * alphas between 20 and 55 that had drifted in around them). Measured
+   * against the surfaces they actually sit on, 45 is 3.28–3.35:1 and 35 is
+   * 2.36–2.44:1, both under the 4.5:1 WCAG AA asks of the 10–14px they carry:
+   * @handles, timestamps, captions, helper text, empty-state copy.
+   *
+   * 0.55 is the lowest alpha that clears 4.5:1 on every light surface in the
+   * app — 4.76:1 on white, 4.64:1 on --surface, 4.61:1 on the darkest of them
+   * (--discover-page). 0.62 sits far enough above it to still read as two
+   * tiers rather than one (6.20:1 / 5.99:1 / 5.94:1).
+   *
+   * Written against --color-black rather than as literal rgba, because that is
+   * the variable app/cosmic.css remaps to #dce9ff. Both tokens therefore
+   * invert on their own, exactly as the `black/x` utilities they replace did,
+   * and they clear AA on the dark shell at the same two alphas — 4.82:1 and
+   * 5.73:1 on its worst surface. One definition, correct in both modes.
+   *
+   * AA compresses what used to be four muted tiers into these two. Anything
+   * at 0.60 and above already passed and is left alone, which does mean a
+   * screen that paired 50 with 60 now reads as one weight; that distinction
+   * only existed because the lighter half was too light to read.
+   */
+  --ink-soft: color-mix(in oklab, var(--color-black, #000) 62%, transparent);
+  --ink-faint: color-mix(in oklab, var(--color-black, #000) 55%, transparent);
+
+  /*
+   * The emphasis tier, and the reason there are exactly three.
+   *
+   * Raising the floor to 0.55 was not enough on its own: the app already had
+   * 0.60, 0.65, 0.70, 0.75, 0.80, 0.85 and 0.90 scattered above it, and on
+   * white those are 5.74:1, 6.98:1, 8.52:1, 10.41:1, 12.63:1, 15.08:1 and
+   * 17.49:1. The first three are indistinguishable from --ink-soft and from
+   * each other — nine steps where the eye can resolve four. Same drift the
+   * --surface comment above describes, in alpha rather than in hex.
+   *
+   * So the ramp is deliberate now, and geometric: 4.76:1, 6.20:1, 10.41:1,
+   * 21:1 on white — each step roughly 1.3x to 2x the last, which is about the
+   * smallest gap that still reads as a different weight. 0.75 is the median of
+   * the 0.70/0.75/0.80 band it absorbs, so most of those call sites do not
+   * move at all. Everything at 0.85 and up folds into plain `text-black`,
+   * which is what it was already pretending to be.
+   */
+  --ink-strong: color-mix(in oklab, var(--color-black, #000) 75%, transparent);
+
+  /*
+   * The same two tiers for text on the black cards — the review tile, the
+   * vocabulary hero, the daily focus card, the quick-start links. Those wrote
+   * `text-white/35` through `text-white/50`, which is 3.0:1 to 5.3:1 on
+   * `bg-black`; the lower half of that range fails the same way the paper side
+   * did. 0.48 is the lowest that clears 4.5:1 here (4.92:1) and 0.62 gives the
+   * second tier (7.85:1).
+   *
+   * Unlike --ink-soft/--ink-faint these need a separate Cosmic definition, and
+   * the reason is worth stating: `bg-black` and `text-white` both invert, so in
+   * Cosmic these cards are a pale blue panel carrying deep navy text. That is a
+   * genuinely different pairing rather than the same one flipped, and it needs
+   * more alpha to reach the same ratio — see app/cosmic.css.
+   */
+  --ink-invert-soft: color-mix(in oklab, var(--color-white, #fff) 62%, transparent);
+  --ink-invert-faint: color-mix(in oklab, var(--color-white, #fff) 48%, transparent);
 }
 
 @theme inline {
@@ -93,6 +162,15 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-line: var(--line);
+
+  /* Exposed as utilities (text-ink-soft / text-ink-faint) the same way
+     --surface and --line are, so call sites stay as short as the
+     `text-black/45` they replace. */
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-invert-soft: var(--ink-invert-soft);
+  --color-ink-invert-faint: var(--ink-invert-faint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

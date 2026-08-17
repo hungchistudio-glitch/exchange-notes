@@ -28,7 +28,7 @@ export default function LoginPage() {
           <GoogleLoginButton />
         </div>
 
-        <p className="mt-6 text-center text-xs leading-5 text-neutral-500">
+        <p className="mt-6 text-center text-xs leading-5 text-ink-soft">
           {copy.consentNotice}
         </p>
       </section>

@@ -788,7 +788,7 @@ export default function DailyNews() {
         <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
           <p className="text-sm font-semibold">{copy.emptyTitle}</p>
 
-          <p className="mt-1 text-sm leading-6 text-neutral-500">
+          <p className="mt-1 text-sm leading-6 text-ink-soft">
             {copy.emptyDescription}
           </p>
         </div>

@@ -52,7 +52,7 @@ export default function PronunciationBlock({
         aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
           text: spokenText,
         })}
-        className="block max-w-full rounded-md text-left transition-colors hover:text-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
+        className="block max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
       >
         {label}
       </button>
@@ -61,7 +61,7 @@ export default function PronunciationBlock({
 
   return (
     <div
-      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-black/45 ${className}`}
+      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
       {showEnglish && pronunciation.english
         ? pronunciationButton(pronunciation.english, pronunciation.english, "en-US")
