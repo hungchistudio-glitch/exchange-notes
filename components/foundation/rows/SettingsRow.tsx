@@ -10,7 +10,7 @@ export type SettingsRowTone =
   | "red";
 
 const TONE_CLASSES: Record<SettingsRowTone, string> = {
-  neutral: "bg-black/[0.05] text-black/60",
+  neutral: "bg-black/[0.05] text-ink-soft",
   blue: "bg-blue-100 text-blue-600",
   amber: "bg-amber-100 text-amber-600",
   emerald: "bg-emerald-100 text-emerald-600",
@@ -85,7 +85,7 @@ function RowContent({
       </span>
 
       {value ? (
-        <span className="max-w-[42%] truncate text-sm font-medium text-black/60">
+        <span className="max-w-[42%] truncate text-sm font-medium text-ink-soft">
           {value}
         </span>
       ) : null}

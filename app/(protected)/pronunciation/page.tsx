@@ -119,7 +119,7 @@ function playbackButtonClass(phase: PlaybackPhase | undefined) {
   if (phase === "error") return `${base} border-red-300 bg-red-50 text-red-600`;
   if (phase === "done") return `${base} border-emerald-300 bg-emerald-50 text-emerald-700`;
   if (phase === "playing") return `${base} border-black bg-black text-white`;
-  if (phase === "loading") return `${base} border-line bg-white text-black/70`;
+  if (phase === "loading") return `${base} border-line bg-white text-ink-strong`;
   return `${base} border-line text-black`;
 }
 
@@ -563,7 +563,7 @@ export default function PronunciationLabPage() {
         <Link
           href="/"
           aria-label={copy.backHome}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />
         </Link>
@@ -614,7 +614,7 @@ export default function PronunciationLabPage() {
                   className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors ${
                     active
                       ? "border-black bg-black text-white"
-                      : "border-line bg-white text-black/60"
+                      : "border-line bg-white text-ink-soft"
                   }`}
                 >
                   {copy.filters[filter.labelKey]}
@@ -675,7 +675,7 @@ export default function PronunciationLabPage() {
                             className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                               sound.id === value.id
                                 ? "border-black bg-black text-white"
-                                : "border-line bg-white text-black/60"
+                                : "border-line bg-white text-ink-soft"
                             }`}
                           >
                             {value.label[language]}
@@ -706,7 +706,7 @@ export default function PronunciationLabPage() {
 
                     <div className="mt-2 space-y-1.5">
                       {sound.guidance.map((point, index) => (
-                        <p key={index} className="flex gap-2 text-sm leading-6 text-black/70">
+                        <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
                             {point.label[language]}
                           </span>
@@ -729,7 +729,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-black/60">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
                     ) : null}
                   </div>
 
@@ -808,7 +808,7 @@ export default function PronunciationLabPage() {
 
                     <div className="mt-2 space-y-1.5">
                       {sound.guidance.map((point, index) => (
-                        <p key={index} className="flex gap-2 text-sm leading-6 text-black/70">
+                        <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
                             {point.label[language]}
                           </span>
@@ -831,7 +831,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-black/60">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
                     ) : null}
                   </div>
 
@@ -859,7 +859,7 @@ export default function PronunciationLabPage() {
                               {span ? (
                                 <>
                                   {span.before}
-                                  <span className="font-semibold text-black/70">{span.match}</span>
+                                  <span className="font-semibold text-ink-strong">{span.match}</span>
                                   {span.after}
                                 </>
                               ) : (
@@ -1145,7 +1145,7 @@ function TeachingStage({
               >
                 <span
                   className={`mr-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
-                    isCurrent ? "text-black/60" : "text-ink-faint"
+                    isCurrent ? "text-ink-soft" : "text-ink-faint"
                   }`}
                 >
                   {stepLabel(step.key, copy)}

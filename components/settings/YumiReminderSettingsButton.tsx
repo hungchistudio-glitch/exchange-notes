@@ -320,7 +320,7 @@ export default function YumiReminderSettingsButton() {
               {copy.timezone}
             </p>
 
-            <p className="mt-1 break-all text-sm text-black/70">
+            <p className="mt-1 break-all text-sm text-ink-strong">
               {timeZone}
             </p>
           </div>

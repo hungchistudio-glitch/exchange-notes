@@ -197,7 +197,7 @@ export default function EditProfileSheet({
         ) : null}
 
         <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.yourName}
           </span>
 
@@ -215,7 +215,7 @@ export default function EditProfileSheet({
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.exchangeId}
           </span>
 

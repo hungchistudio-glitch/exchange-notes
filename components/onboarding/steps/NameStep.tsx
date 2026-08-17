@@ -213,7 +213,7 @@ export default function NameStep({
         </div>
 
         <label className="mt-7 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.displayNameLabel}
           </span>
 
@@ -233,7 +233,7 @@ export default function NameStep({
         </label>
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
             {copy.usernameLabel}
           </span>
 

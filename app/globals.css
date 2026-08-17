@@ -121,6 +121,25 @@
   --ink-faint: color-mix(in oklab, var(--color-black, #000) 55%, transparent);
 
   /*
+   * The emphasis tier, and the reason there are exactly three.
+   *
+   * Raising the floor to 0.55 was not enough on its own: the app already had
+   * 0.60, 0.65, 0.70, 0.75, 0.80, 0.85 and 0.90 scattered above it, and on
+   * white those are 5.74:1, 6.98:1, 8.52:1, 10.41:1, 12.63:1, 15.08:1 and
+   * 17.49:1. The first three are indistinguishable from --ink-soft and from
+   * each other — nine steps where the eye can resolve four. Same drift the
+   * --surface comment above describes, in alpha rather than in hex.
+   *
+   * So the ramp is deliberate now, and geometric: 4.76:1, 6.20:1, 10.41:1,
+   * 21:1 on white — each step roughly 1.3x to 2x the last, which is about the
+   * smallest gap that still reads as a different weight. 0.75 is the median of
+   * the 0.70/0.75/0.80 band it absorbs, so most of those call sites do not
+   * move at all. Everything at 0.85 and up folds into plain `text-black`,
+   * which is what it was already pretending to be.
+   */
+  --ink-strong: color-mix(in oklab, var(--color-black, #000) 75%, transparent);
+
+  /*
    * The same two tiers for text on the black cards — the review tile, the
    * vocabulary hero, the daily focus card, the quick-start links. Those wrote
    * `text-white/35` through `text-white/50`, which is 3.0:1 to 5.3:1 on
@@ -149,6 +168,7 @@
      `text-black/45` they replace. */
   --color-ink-soft: var(--ink-soft);
   --color-ink-faint: var(--ink-faint);
+  --color-ink-strong: var(--ink-strong);
   --color-ink-invert-soft: var(--ink-invert-soft);
   --color-ink-invert-faint: var(--ink-invert-faint);
   --font-sans: var(--font-geist-sans);

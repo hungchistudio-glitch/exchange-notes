@@ -108,7 +108,7 @@ export default function CollectionDetailPage() {
         <Link
           href="/vocabulary/collections"
           aria-label={copy.backToCollections}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <ArrowLeft size={20} strokeWidth={1.9} />
         </Link>

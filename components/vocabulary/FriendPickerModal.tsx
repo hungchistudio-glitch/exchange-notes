@@ -69,7 +69,7 @@ export default function FriendPickerModal({
         <div className="flex shrink-0 items-center justify-between px-6 pb-3 pt-3">
           <h2
             id="send-to-partner-title"
-            className="text-base font-semibold tracking-tight text-black/90"
+            className="text-base font-semibold tracking-tight text-black"
           >
             傳送給夥伴
           </h2>
@@ -137,14 +137,14 @@ export default function FriendPickerModal({
                   disabled={isDisabled}
                   className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04] disabled:opacity-50"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-black/70">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-sm font-semibold text-ink-strong">
                     {(friend.displayName ?? friend.exchangeId)
                       .slice(0, 1)
                       .toUpperCase()}
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-black/85">
+                    <p className="truncate text-sm font-medium text-black">
                       {friend.displayName ?? `@${friend.exchangeId}`}
                     </p>
 

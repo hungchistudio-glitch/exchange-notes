@@ -335,7 +335,7 @@ export default function CollectionPickerSheet({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 py-3 text-sm font-semibold text-black/60"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 py-3 text-sm font-semibold text-ink-soft"
           >
             + {copy.newCollection}
           </button>

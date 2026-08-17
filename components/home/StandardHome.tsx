@@ -427,7 +427,7 @@ export default function StandardHome() {
                           type="button"
                           onClick={() => speak(note.english, "en-US")}
                           aria-label="Play English note"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-black/60 transition-transform active:scale-90"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-90"
                         >
                           <Volume2 size={14} strokeWidth={1.8} />
                         </button>
@@ -443,7 +443,7 @@ export default function StandardHome() {
                           type="button"
                           onClick={() => speak(note.chinese, "zh-TW")}
                           aria-label="播放中文筆記"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-black/60 transition-transform active:scale-90"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-90"
                         >
                           <Volume2 size={14} strokeWidth={1.8} />
                         </button>

@@ -91,10 +91,10 @@ export default function NativeWidgetSettingsButton() {
                     key={step}
                     className="flex items-center gap-3 border-b border-black/[0.05] px-4 py-3.5 last:border-b-0"
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/60">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft">
                       <StepIcon size={15} strokeWidth={1.9} />
                     </span>
-                    <span className="text-sm font-medium leading-5 text-black/75">
+                    <span className="text-sm font-medium leading-5 text-ink-strong">
                       {step}
                     </span>
                   </li>
@@ -112,7 +112,7 @@ export default function NativeWidgetSettingsButton() {
                 className="mt-0.5 shrink-0 text-ink-soft"
               />
               <div>
-                <h3 className="text-sm font-semibold text-black/75">
+                <h3 className="text-sm font-semibold text-ink-strong">
                   {copy.behaviorTitle}
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-ink-soft">

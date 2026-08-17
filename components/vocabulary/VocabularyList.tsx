@@ -206,7 +206,7 @@ function VocabularyList({
 
       const englishExampleRow = lookupResult.englishExample ? (
         <div key="english-example" className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 text-[14px] leading-6 text-black/80">
+          <p className="min-w-0 flex-1 text-[14px] leading-6 text-ink-strong">
             {lookupResult.englishExample}
           </p>
 
@@ -244,7 +244,7 @@ function VocabularyList({
 
       return (
         <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/60">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
             <BookmarkPlus size={22} strokeWidth={1.7} />
           </div>
 

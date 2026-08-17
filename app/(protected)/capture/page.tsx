@@ -1213,7 +1213,7 @@ function CaptureContent() {
             role="status"
             aria-live="polite"
           >
-            <p className="text-xs font-medium tracking-wide text-white/70">
+            <p className="text-xs font-medium tracking-wide text-ink-invert-soft">
               {capture.camera.opening}
             </p>
           </div>
@@ -1348,13 +1348,13 @@ function CaptureContent() {
                   {(() => {
                     const englishIsPrimary = !isLearningChinese;
                     const primaryValueClass =
-                      "mt-0.5 block break-words text-[16px] font-semibold text-black/90";
+                      "mt-0.5 block break-words text-[16px] font-semibold text-black";
                     const secondaryValueClass =
                       "mt-0.5 block break-words text-[14px] font-normal text-ink-soft";
                     const primaryButtonClass =
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90";
                     const secondaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90";
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90";
 
                     const englishBox = (
                       <div
@@ -1474,7 +1474,7 @@ function CaptureContent() {
                                 aria-label={
                                   capture.result.playEnglishAriaLabel
                                 }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
                               >
                                 <SpeakerIcon
                                   speaking={speakingLang === "en"}
@@ -1502,7 +1502,7 @@ function CaptureContent() {
                                 aria-label={
                                   capture.result.playChineseAriaLabel
                                 }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
                               >
                                 <SpeakerIcon
                                   speaking={speakingLang === "zh"}

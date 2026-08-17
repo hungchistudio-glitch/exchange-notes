@@ -52,7 +52,7 @@ export default function PronunciationBlock({
         aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
           text: spokenText,
         })}
-        className="block max-w-full rounded-md text-left transition-colors hover:text-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
+        className="block max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
       >
         {label}
       </button>

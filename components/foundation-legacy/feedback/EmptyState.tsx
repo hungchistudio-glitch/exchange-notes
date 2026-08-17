@@ -25,7 +25,7 @@ export default function EmptyState({
         .join(" ")}
     >
       {icon && (
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/60">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
           {icon}
         </div>
       )}

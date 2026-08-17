@@ -88,7 +88,7 @@ function SensesRow() {
       {senses.map((Glyph, index) => (
         <span
           key={index}
-          className="flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white text-black/70"
+          className="flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white text-ink-strong"
           style={{ transform: `rotate(${(index % 2 === 0 ? -1 : 1) * 4}deg)` }}
         >
           <Glyph size={24} strokeWidth={1.6} aria-hidden="true" />

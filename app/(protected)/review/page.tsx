@@ -228,7 +228,7 @@ export default function ReviewPage() {
             type="button"
             onClick={() => setPhase("landing")}
             aria-label="Back"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
           >
             <BackIcon />
           </button>
@@ -435,7 +435,7 @@ export default function ReviewPage() {
           href="/"
           transitionTypes={isCosmic ? ["deck-return"] : undefined}
           aria-label="Back"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />
         </Link>

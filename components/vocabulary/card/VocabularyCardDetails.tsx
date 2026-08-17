@@ -38,7 +38,7 @@ export default function VocabularyCardDetails({ item }: Props) {
       <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-[18px] bg-black/[0.025] px-4 py-3.5 text-[11px]">
         <div className="min-w-0">
           <dt className="text-ink-faint">{detail.reviews}</dt>
-          <dd className="mt-0.5 font-semibold text-black/65">
+          <dd className="mt-0.5 font-semibold text-ink-soft">
             {item.review_count ?? 0}
           </dd>
         </div>
@@ -46,7 +46,7 @@ export default function VocabularyCardDetails({ item }: Props) {
           <dt className="text-ink-faint">
             {detail.reviewDetails.lastReviewed}
           </dt>
-          <dd className="mt-0.5 break-words font-semibold text-black/65">
+          <dd className="mt-0.5 break-words font-semibold text-ink-soft">
             {reviewed ?? detail.reviewDetails.never}
           </dd>
         </div>

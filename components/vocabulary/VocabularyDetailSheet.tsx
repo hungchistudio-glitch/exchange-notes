@@ -55,7 +55,7 @@ function SpeechRow({
         <span
           className={`mt-0.5 block break-words ${
             size === "md" ? "text-[15px] font-medium" : "text-sm"
-          } text-black/85`}
+          } text-black`}
         >
           {text}
         </span>
@@ -65,7 +65,7 @@ function SpeechRow({
         type="button"
         onClick={() => speak(text, lang)}
         aria-label={listenAriaLabel}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
       >
         <Volume2 size={16} strokeWidth={1.8} />
       </button>

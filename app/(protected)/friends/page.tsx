@@ -274,7 +274,7 @@ function FriendsPageContent() {
             {copy.title}
           </h1>
 
-          <p className="mt-2 text-black/60">{copy.subtitle}</p>
+          <p className="mt-2 text-ink-soft">{copy.subtitle}</p>
         </header>
 
         <section className="mt-6 rounded-[24px] border border-line bg-white p-6 shadow-sm">
@@ -339,7 +339,7 @@ function FriendsPageContent() {
                   {copy.profileQr.title}
                 </h3>
 
-                <p className="mt-1 text-center text-sm text-black/60">
+                <p className="mt-1 text-center text-sm text-ink-soft">
                   {copy.profileQr.description}
                 </p>
 
@@ -370,7 +370,7 @@ function FriendsPageContent() {
           )}
 
           {message && (
-            <p className="mt-4 text-sm font-semibold text-black/60">
+            <p className="mt-4 text-sm font-semibold text-ink-soft">
               {message}
             </p>
           )}

@@ -40,7 +40,7 @@ function SpeakerButton({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+      className="cosmic-sonar flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
     >
       <Volume2
         size={14}
@@ -74,7 +74,7 @@ function SaveWordButton({
       className={`cosmic-lock flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 disabled:active:scale-100 ${
         saved
           ? "bg-emerald-50 text-emerald-700"
-          : "bg-black/[0.04] text-black/60"
+          : "bg-black/[0.04] text-ink-soft"
       }`}
     >
       {saving ? (
@@ -326,7 +326,7 @@ export default function VocabularyDrawer({
                 key="english-example"
                 className="flex items-start gap-2"
               >
-                <p className="min-w-0 flex-1 text-sm leading-6 text-black/70">
+                <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
                   {item.englishExample}
                 </p>
 

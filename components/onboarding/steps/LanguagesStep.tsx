@@ -103,7 +103,7 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-6 rounded-2xl bg-black/[0.035] px-4 py-3.5">
-          <p className="text-[13px] leading-6 text-black/60">
+          <p className="text-[13px] leading-6 text-ink-soft">
             {copy.previewPrimary.replace("{language}", learningLabel)}
           </p>
           <p className="mt-1 text-[13px] leading-6 text-ink-soft">
