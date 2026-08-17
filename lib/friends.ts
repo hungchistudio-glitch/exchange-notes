@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { WORD_CARD_MARKER } from "@/lib/messages/wordCard";
 import { notifyConversationRead } from "@/lib/messages/unreadSignal";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { normalizeExchangeId } from "@/lib/utils";
@@ -27,6 +28,26 @@ export type ConversationSummary = {
   unreadCount: number;
   lastMessage: LastMessagePreview | null;
   mutedAt: string | null;
+
+  /*
+   * How many shared word cards this conversation holds — the "1 phrase" chip
+   * on a conversation row.
+   *
+   * Deliberately a count of language that actually changed hands rather than a
+   * prediction: nothing here claims a phrase is worth learning, only that one
+   * was sent. 0 when the count could not be read, which is why the chip is
+   * hidden rather than shown as zero.
+   */
+  learningSignalCount: number;
+};
+
+/** A conversation opened by its own id, rather than by who it is with. */
+export type ConversationContext = {
+  conversationId: string;
+  friend: FriendProfile | null;
+  mutedAt: string | null;
+  archivedAt: string | null;
+  lastReadAt: string | null;
 };
 
 export type IncomingRequest = {
@@ -412,9 +433,20 @@ export async function listFriends(
     .filter((profile): profile is FriendProfile => Boolean(profile));
 }
 
+/**
+ * Which shelf of the message list to build.
+ *
+ * "active" is the Recent list on /messages; "archived" is the separate
+ * /messages/archived screen. They are the same query against opposite sides
+ * of `hidden_at`, so they share one implementation rather than drifting into
+ * two subtly different definitions of what a conversation is.
+ */
+export type ConversationScope = "active" | "archived";
+
 export async function listConversationSummaries(
   supabase: SupabaseClient,
-  currentUserId: string
+  currentUserId: string,
+  scope: ConversationScope = "active"
 ): Promise<ConversationSummary[]> {
   const friends = await listFriends(supabase, currentUserId);
 
@@ -422,15 +454,27 @@ export async function listConversationSummaries(
     return [];
   }
 
-  const { data: myMemberships, error: membershipsError } = await supabase
+  const membershipQuery = supabase
     .from("conversation_members")
     .select("conversation_id, last_read_at, hidden_at, muted_at")
-    .eq("user_id", currentUserId)
-    .is("hidden_at", null);
+    .eq("user_id", currentUserId);
+
+  const { data: myMemberships, error: membershipsError } =
+    scope === "archived"
+      ? await membershipQuery.not("hidden_at", "is", null)
+      : await membershipQuery.is("hidden_at", null);
 
   if (membershipsError) throw membershipsError;
 
   if (!myMemberships || myMemberships.length === 0) {
+    /*
+     * An archived list with no archived memberships is empty, full stop.
+     * The active list still has something to say: every friend you have not
+     * written to yet is someone you could write to, which is what makes the
+     * Friends tab and the empty-state list useful on a new account.
+     */
+    if (scope === "archived") return [];
+
     return friends.map((friend) => ({
       friend,
       conversationId: null,
@@ -438,6 +482,7 @@ export async function listConversationSummaries(
       unreadCount: 0,
       lastMessage: null,
       mutedAt: null,
+      learningSignalCount: 0,
     }));
   }
 
@@ -497,15 +542,59 @@ export async function listConversationSummaries(
   // count a friends-based 1:1 messaging app is likely to have.
   const lastMessageByConversationId = new Map<string, LastMessagePreview>();
 
+  /*
+   * Shared word cards per conversation, from their own query rather than from
+   * the preview window above.
+   *
+   * Counting them inside that window looked free and was wrong: the window is
+   * the newest 500 messages across *all* of the user's conversations, which is
+   * enough to guarantee a latest message for each one but says nothing about
+   * how many cards each holds. Past 500 messages in total, a quiet
+   * conversation's count silently fell to zero, and any conversation's count
+   * changed when an unrelated one got busy.
+   *
+   * This query is bounded by the number of cards rather than the number of
+   * messages — a far smaller and slower-growing quantity — and runs alongside
+   * the preview fetch so it costs no extra latency.
+   */
+  const learningSignalByConversationId = new Map<string, number>();
+
   if (relevantConversationIds.length > 0) {
-    const { data: recentMessages, error: recentMessagesError } = await supabase
-      .from("messages")
-      .select("conversation_id, sender_id, body, created_at, attachment_type")
-      .in("conversation_id", relevantConversationIds)
-      .order("created_at", { ascending: false })
-      .limit(500);
+    const [
+      { data: recentMessages, error: recentMessagesError },
+      { data: wordCardRows, error: wordCardError },
+    ] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("conversation_id, sender_id, body, created_at, attachment_type")
+        .in("conversation_id", relevantConversationIds)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase
+        .from("messages")
+        .select("conversation_id")
+        .in("conversation_id", relevantConversationIds)
+        .like("body", `${WORD_CARD_MARKER}%`)
+        .limit(2000),
+    ]);
 
     if (recentMessagesError) throw recentMessagesError;
+
+    /*
+     * Tolerated rather than thrown. The count drives one decorative chip; the
+     * conversation list is the page. A chip that fails to appear is a smaller
+     * problem than a Messages screen that will not load.
+     */
+    if (wordCardError) {
+      console.warn("Could not count shared phrases:", wordCardError);
+    } else {
+      for (const row of wordCardRows ?? []) {
+        learningSignalByConversationId.set(
+          row.conversation_id,
+          (learningSignalByConversationId.get(row.conversation_id) ?? 0) + 1
+        );
+      }
+    }
 
     for (const message of recentMessages ?? []) {
       if (lastMessageByConversationId.has(message.conversation_id)) continue;
@@ -559,26 +648,35 @@ export async function listConversationSummaries(
     }
   }
 
-  const summaries = friends.map((friend) => {
-    const conversationId = conversationByFriendId.get(friend.id) ?? null;
+  const summaries = friends
+    // An archived conversation is a conversation. A friend you have simply
+    // never written to has nothing to un-archive, so they do not belong here.
+    .filter(
+      (friend) => scope === "active" || conversationByFriendId.has(friend.id)
+    )
+    .map((friend) => {
+      const conversationId = conversationByFriendId.get(friend.id) ?? null;
 
-    return {
-      friend,
-      conversationId,
-      lastReadAt: conversationId
-        ? lastReadByConversationId.get(conversationId) ?? null
-        : null,
-      unreadCount: conversationId
-        ? unreadCountByConversationId.get(conversationId) ?? 0
-        : 0,
-      lastMessage: conversationId
-        ? lastMessageByConversationId.get(conversationId) ?? null
-        : null,
-      mutedAt: conversationId
-        ? mutedAtByConversationId.get(conversationId) ?? null
-        : null,
-    };
-  });
+      return {
+        friend,
+        conversationId,
+        lastReadAt: conversationId
+          ? lastReadByConversationId.get(conversationId) ?? null
+          : null,
+        unreadCount: conversationId
+          ? unreadCountByConversationId.get(conversationId) ?? 0
+          : 0,
+        lastMessage: conversationId
+          ? lastMessageByConversationId.get(conversationId) ?? null
+          : null,
+        mutedAt: conversationId
+          ? mutedAtByConversationId.get(conversationId) ?? null
+          : null,
+        learningSignalCount: conversationId
+          ? learningSignalByConversationId.get(conversationId) ?? 0
+          : 0,
+      };
+    });
 
   /*
    * Most recent conversation first.
@@ -758,6 +856,128 @@ export async function hideConversationForUser(
     .eq("user_id", currentUserId);
 
   if (error) throw error;
+}
+
+/**
+ * Whether these two accounts are actually friends.
+ *
+ * Conversation creation is reachable by URL now that /messages/new resolves a
+ * friend id server-side, so the thing it creates a conversation with is worth
+ * checking rather than assuming. The friendships table is the same source
+ * listFriends reads; this only asks about one row.
+ */
+export async function areFriends(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  otherUserId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("user_one_id, user_two_id")
+    .or(
+      `and(user_one_id.eq.${currentUserId},user_two_id.eq.${otherUserId}),` +
+        `and(user_one_id.eq.${otherUserId},user_two_id.eq.${currentUserId})`
+    )
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/**
+ * How many conversations the current user has archived.
+ *
+ * The Archived entry on /messages needs a number, not a list — building the
+ * full archived list just to call `.length` on it would pull every friend
+ * profile and a window of messages for a count shown in an 11px chip.
+ */
+export async function getArchivedConversationCount(
+  supabase: SupabaseClient,
+  currentUserId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("conversation_members")
+    .select("conversation_id", { count: "exact", head: true })
+    .eq("user_id", currentUserId)
+    .not("hidden_at", "is", null);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Return a hidden conversation to the main list.
+ *
+ * The counterpart to hideConversationForUser, and the reason Archive is a
+ * place rather than a one-way door.
+ */
+export async function unhideConversationForUser(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_members")
+    .update({ hidden_at: null })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId);
+
+  if (error) throw error;
+}
+
+/**
+ * Resolve a conversation from its own id — who it is with, and the current
+ * user's state in it.
+ *
+ * This is what the two-page architecture needs and the friend-keyed lookups
+ * above cannot give: /messages/[conversationId] arrives knowing only the
+ * conversation, so everything else has to be derived from it.
+ *
+ * Returns null when the conversation does not exist or the current user is
+ * not a member. RLS already refuses to return other people's conversations,
+ * so a null here is a 404 for this user regardless of which of the two it is.
+ */
+export async function getConversationContext(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string
+): Promise<ConversationContext | null> {
+  const { data: membership, error: membershipError } = await supabase
+    .from("conversation_members")
+    .select("conversation_id, last_read_at, hidden_at, muted_at")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId)
+    .maybeSingle();
+
+  if (membershipError) throw membershipError;
+  if (!membership) return null;
+
+  const { data: others, error: othersError } = await supabase
+    .from("conversation_members")
+    .select("user_id")
+    .eq("conversation_id", conversationId)
+    .neq("user_id", currentUserId);
+
+  if (othersError) throw othersError;
+
+  const otherUserId = others?.[0]?.user_id ?? null;
+
+  /*
+   * A conversation with no other member is not corrupt — a friendship can be
+   * removed while its history stays readable. The thread still opens; it just
+   * has nobody on the other end, and the page says so instead of failing.
+   */
+  const friend = otherUserId
+    ? await getProfileById(supabase, otherUserId)
+    : null;
+
+  return {
+    conversationId,
+    friend,
+    mutedAt: membership.muted_at,
+    archivedAt: membership.hidden_at,
+    lastReadAt: membership.last_read_at,
+  };
 }
 
 /**

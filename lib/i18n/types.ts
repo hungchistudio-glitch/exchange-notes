@@ -80,6 +80,7 @@ export type TranslationDictionary = {
     };
   };
   common: {
+    back: string;
     close: string;
     cancel: string;
     confirm: string;
@@ -651,11 +652,70 @@ export type TranslationDictionary = {
     statusDelivered: string;
     statusRead: string;
 
-    moodCalm: string;
-    moodCurious: string;
-    moodSleepy: string;
-    moodSurprised: string;
-    moodHappy: string;
+    /*
+     * The two pages of the messaging architecture, kept apart here the same
+     * way they are kept apart on screen. `hub` answers "who do I want to talk
+     * to?"; `room` answers "what are we saying to each other?".
+     */
+    hub: {
+      eyebrow: string;
+      subtitleFirst: string;
+      subtitleSecond: string;
+      searchPlaceholder: string;
+      searchLabel: string;
+      clearSearch: string;
+
+      tabs: {
+        recent: string;
+        friends: string;
+        requests: string;
+      };
+
+      resultGroupPeople: string;
+      resultGroupConversations: string;
+      resultGroupLanguage: string;
+      searching: string;
+
+      newConversation: string;
+      openConversation: string;
+      archived: string;
+      archivedTitle: string;
+      archivedSubtitle: string;
+      archivedEmpty: string;
+      archive: string;
+      unarchive: string;
+      backToMessages: string;
+
+      emptyFriendsTitle: string;
+      emptyFriendsDescription: string;
+      emptyRequests: string;
+      noResultsTitle: string;
+      noResultsDescription: string;
+
+      phraseSignal: string;
+      phraseSignalPlural: string;
+      unreadLabel: string;
+      neverMessaged: string;
+    };
+
+    room: {
+      back: string;
+      connectionConnected: string;
+      connectionConnecting: string;
+      connectionOffline: string;
+      privateLabel: string;
+      privateHint: string;
+      privateNote: string;
+      newMessages: string;
+      jumpToLatest: string;
+      options: string;
+      closeOptions: string;
+      addPhoto: string;
+      sendMessage: string;
+      unknownParticipant: string;
+      notLoggedIn: string;
+      sendFailed: string;
+    };
 
     errors: {
       loadConversations: string;
@@ -665,6 +725,7 @@ export type TranslationDictionary = {
       openConversation: string;
       saveWord: string;
       updateConversation: string;
+      conversationNotFound: string;
     };
   };
   friends: {

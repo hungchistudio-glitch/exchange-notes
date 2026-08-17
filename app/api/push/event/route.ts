@@ -490,10 +490,10 @@ async function handleMessageEvent(
         recipientUserId: recipient.user_id,
         payload: {
           ...visible,
-          url:
-            `/messages?with=${encodeURIComponent(
-              authenticatedUserId,
-            )}`,
+          // Straight to the conversation. The id is already on the message
+          // being notified about, so there is no need to send the recipient
+          // through a friend-to-conversation lookup on arrival.
+          url: `/messages/${message.conversation_id}`,
           tag: `message-${message.id}`,
           renotify: true,
           data: {

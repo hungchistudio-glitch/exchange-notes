@@ -455,7 +455,7 @@ function CaptureContent() {
       : null;
 
   const messagesHref = withParam
-    ? `/messages?with=${withParam}`
+    ? `/messages/new?friend=${encodeURIComponent(withParam)}`
     : "/messages";
 
   /**
@@ -1077,7 +1077,7 @@ function CaptureContent() {
       englishExample: result.englishExample,
       chineseExample: result.chineseExample,
     });
-    router.push(`/messages?with=${encodeURIComponent(friendId)}`);
+    router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
   function chooseAnotherImage() {

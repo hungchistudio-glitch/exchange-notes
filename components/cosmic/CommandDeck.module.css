@@ -233,9 +233,9 @@
  * someone living in the deck rather than a logo parked in the middle of it.
  *
  * The rest positions (-82px / 12px) are the same ones the mark's other idles
- * use — see components/messages/MoodLogoSwiper.module.css. They are what
- * holds the lids clear of the eye, so an animation here must always return to
- * them or Yumi is left with its eye shut.
+ * use — see components/messages/YumiCommsMark.module.css. They are what holds
+ * the lids clear of the eye, so an animation here must always return to them
+ * or Yumi is left with its eye shut.
  */
 .coreMark {
   animation: coreBreath 4.2s ease-in-out infinite;

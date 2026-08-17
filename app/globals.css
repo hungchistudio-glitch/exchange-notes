@@ -155,6 +155,65 @@
    */
   --ink-invert-soft: color-mix(in oklab, var(--color-white, #fff) 62%, transparent);
   --ink-invert-faint: color-mix(in oklab, var(--color-white, #fff) 48%, transparent);
+
+  /*
+   * Messages. The two-page architecture gave the conversation room to be its
+   * own environment, and an environment needs its own surfaces rather than
+   * borrowing whichever grey was nearest.
+   *
+   * Named here so Cosmic Mode can repaint the whole of Messages by
+   * redefining them in app/cosmic.css — the same mechanism the rest of the
+   * app already uses. Standard Mode keeps the warm paper look it has always
+   * had, so nothing about these values is a change for existing users.
+   */
+  --msg-page: var(--surface);
+  --msg-surface: #ffffff;
+  --msg-surface-soft: #faf9f5;
+  --msg-line: rgba(0, 0, 0, 0.06);
+  --msg-ink: #171717;
+
+  /*
+   * The app-wide tiers, not a second pair at the same alphas.
+   *
+   * These started here as literal rgba(0,0,0,0.62)/0.55 — the lowest values
+   * that clear WCAG AA on this page's surfaces. The app-wide sweep above
+   * landed on exactly the same two alphas for exactly the same reason, so
+   * pointing at it removes a duplicate that only agreed by coincidence and
+   * would drift the moment either was retuned. Cosmic Mode still overrides
+   * both in app/cosmic.css, where Messages has its own palette.
+   */
+  --msg-ink-soft: var(--ink-soft);
+  --msg-ink-faint: var(--ink-faint);
+
+  /* The colour that marks something live or selected. */
+  --msg-accent: var(--accent-amber);
+  --msg-accent-soft: var(--accent-amber-wash);
+  --msg-accent-ink: #ffffff;
+
+  /* Bubbles. Written as gradients in both shells so the outgoing side can
+     carry depth in Cosmic Mode without a second set of rules here. */
+  --msg-bubble-in: linear-gradient(180deg, #ffffff, #ffffff);
+  --msg-bubble-in-ink: #171717;
+  --msg-bubble-in-line: rgba(0, 0, 0, 0.05);
+  --msg-bubble-out: linear-gradient(180deg, #23231f, #131311);
+  --msg-bubble-out-ink: #ffffff;
+  --msg-bubble-out-meta: rgba(255, 255, 255, 0.55);
+
+  --msg-presence: var(--success);
+  --msg-glow: none;
+  --msg-header: rgba(245, 243, 237, 0.88);
+
+  /*
+   * Yumi's own surfaces, kept apart from the page's.
+   *
+   * ExchangeNotesMark uses one `surfaceColor` for both the sclera and the
+   * eyelids — the lids are the same colour as the eye white, which is how a
+   * blink works without a second mask. So this value has to stay light in
+   * every shell: pointing it at a page surface token meant Cosmic Mode
+   * redefined it to deep navy and Yumi lost the whites of its eye.
+   */
+  --msg-mark-surface: #f5f3ed;
+  --msg-mark-highlight: #ffffff;
 }
 
 @theme inline {

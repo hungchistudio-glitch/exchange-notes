@@ -80,6 +80,7 @@ const english: TranslationDictionary = {
     },
   },
   common: {
+    back: "Back",
     close: "Close",
     cancel: "Cancel",
     confirm: "Confirm",
@@ -733,11 +734,68 @@ const english: TranslationDictionary = {
     statusDelivered: "Delivered",
     statusRead: "Read",
 
-    moodCalm: "Calm",
-    moodCurious: "Curious",
-    moodSleepy: "Sleepy",
-    moodSurprised: "Surprised",
-    moodHappy: "Happy",
+    hub: {
+      eyebrow: "Comms deck",
+      subtitleFirst: "Real conversations.",
+      subtitleSecond: "Real language.",
+      searchPlaceholder: "Search people, conversations, or language…",
+      searchLabel: "Search messages",
+      clearSearch: "Clear search",
+
+      tabs: {
+        recent: "Recent",
+        friends: "Friends",
+        requests: "Requests",
+      },
+
+      resultGroupPeople: "People",
+      resultGroupConversations: "Conversations",
+      resultGroupLanguage: "Language",
+      searching: "Searching…",
+
+      newConversation: "New conversation",
+      openConversation: "Open conversation with {name}",
+      archived: "Archived",
+      archivedTitle: "Archived",
+      archivedSubtitle: "Conversations you have put away.",
+      archivedEmpty: "Nothing archived.",
+      archive: "Archive",
+      unarchive: "Unarchive",
+      backToMessages: "Back to Messages",
+
+      emptyFriendsTitle: "No learning partners yet",
+      emptyFriendsDescription:
+        "Add someone by Exchange ID or QR code to start talking.",
+      emptyRequests: "No incoming requests.",
+      noResultsTitle: "Nothing matched",
+      noResultsDescription: "Try a name, an @handle, or a word you remember.",
+
+      phraseSignal: "{count} phrase",
+      phraseSignalPlural: "{count} phrases",
+      unreadLabel: "{count} unread",
+      neverMessaged: "No messages yet",
+    },
+
+    room: {
+      back: "Back to Messages",
+      connectionConnected: "Connected",
+      connectionConnecting: "Connecting…",
+      connectionOffline: "Offline",
+      privateLabel: "Private",
+      privateHint:
+        "Protected by your account and database access rules. End-to-end encryption is not yet enabled.",
+      privateNote:
+        "Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.",
+      newMessages: "New messages",
+      jumpToLatest: "Jump to latest",
+      options: "Conversation options",
+      closeOptions: "Close options",
+      addPhoto: "Add a photo",
+      sendMessage: "Send message",
+      unknownParticipant: "Former partner",
+      notLoggedIn: "You are not logged in.",
+      sendFailed: "Message could not be sent. Please try again.",
+    },
 
     errors: {
       loadConversations: "Couldn't load your conversations.",
@@ -747,6 +805,7 @@ const english: TranslationDictionary = {
       openConversation: "Could not open this conversation. Please try again.",
       saveWord: "Could not save this word. Please try again.",
       updateConversation: "Could not update this conversation. Please try again.",
+      conversationNotFound: "This conversation is not available.",
     },
   },
   friends: {

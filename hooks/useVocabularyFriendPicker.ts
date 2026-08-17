@@ -107,7 +107,7 @@ export default function useVocabularyFriendPicker() {
 
       setSendingFriendId(friendId);
       setPendingSharedVocabulary(pendingCard);
-      router.push(`/messages?with=${encodeURIComponent(friendId)}`);
+      router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
     },
     [pendingCard, router, sendingFriendId],
   );
