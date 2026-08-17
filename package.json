@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:widget": "node scripts/verify-scriptable-widget.mjs",
+    "test:contrast": "node scripts/verify-contrast.mjs",
     "generate:native": "bash native/apple/scripts/generate-project.sh",
     "test:native-personal": "bash native/apple/scripts/verify-personal-build.sh"
   },
