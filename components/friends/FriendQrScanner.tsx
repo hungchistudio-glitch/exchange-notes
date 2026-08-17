@@ -236,7 +236,7 @@ export default function FriendQrScanner({
 
       {scanning ? (
         <div className="mt-4 flex items-center gap-3">
-          <span className="text-sm font-semibold text-black/50">
+          <span className="text-sm font-semibold text-ink-soft">
             {copy.scanning}
           </span>
 
@@ -250,7 +250,7 @@ export default function FriendQrScanner({
           </button>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-semibold text-black/50">
+        <p className="mt-3 text-sm font-semibold text-ink-soft">
           {copy.start}
         </p>
       )}

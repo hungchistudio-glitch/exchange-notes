@@ -35,7 +35,7 @@ export default function EmptyState({
       </h3>
 
       {description && (
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/50">
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-soft">
           {description}
         </p>
       )}

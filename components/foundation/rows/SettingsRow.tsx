@@ -78,7 +78,7 @@ function RowContent({
         </span>
 
         {description ? (
-          <span className="mt-0.5 block truncate text-[13px] leading-5 text-black/45">
+          <span className="mt-0.5 block truncate text-[13px] leading-5 text-ink-soft">
             {description}
           </span>
         ) : null}
@@ -95,7 +95,7 @@ function RowContent({
           aria-hidden="true"
           size={17}
           strokeWidth={1.8}
-          className="shrink-0 text-black/25"
+          className="shrink-0 text-ink-faint"
         />
       ) : null}
     </>

@@ -61,7 +61,7 @@ export default function PronunciationBlock({
 
   return (
     <div
-      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-black/45 ${className}`}
+      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
       {showEnglish && pronunciation.english
         ? pronunciationButton(pronunciation.english, pronunciation.english, "en-US")

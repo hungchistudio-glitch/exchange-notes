@@ -41,7 +41,7 @@ export default function VocabularyExampleBlock({
 
   const chineseBlock = chinese?.trim() ? (
     <div key="chinese" className="flex items-start gap-3 px-5 py-5">
-      <p className="flex-1 text-[15px] leading-6 text-neutral-500">
+      <p className="flex-1 text-[15px] leading-6 text-ink-soft">
         {chinese}
       </p>
 

@@ -106,7 +106,7 @@ function ExchangeMark() {
         yu
       </span>
 
-      <span className="text-2xl font-bold text-black/25">+</span>
+      <span className="text-2xl font-bold text-ink-faint">+</span>
 
       <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-black/15 text-2xl font-bold text-black">
         mi
@@ -230,7 +230,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       className="fixed inset-0 z-[120] flex flex-col bg-surface"
     >
       <header className="flex shrink-0 items-center justify-between px-7 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-black/30">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
           {insertValues(copy.stepLabel, {
             current: index + 1,
             total: STEP_ORDER.length,
@@ -240,7 +240,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         <button
           type="button"
           onClick={dismiss}
-          className="-mr-3 shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold text-black/40 transition-transform active:scale-95"
+          className="-mr-3 shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold text-ink-faint transition-transform active:scale-95"
         >
           {isLast ? copy.close : copy.skip}
         </button>
@@ -273,7 +273,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
               frame around everything. */}
           <SketchUnderline className="mt-2.5 h-2 w-32 text-amber-500/70" />
 
-          <p className="mt-5 max-w-[30rem] text-[14.5px] leading-[1.85] text-black/50">
+          <p className="mt-5 max-w-[30rem] text-[14.5px] leading-[1.85] text-ink-soft">
             {stepCopy.body}
           </p>
 
@@ -290,7 +290,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
           )}
 
           {isLast && (
-            <p className="mt-7 text-[13px] leading-6 text-black/35">
+            <p className="mt-7 text-[13px] leading-6 text-ink-faint">
               {copy.replay}
             </p>
           )}
@@ -304,7 +304,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             onClick={() => setIndex((current) => Math.max(0, current - 1))}
             disabled={isFirst}
             aria-label={copy.back}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/10 text-black/45 transition-transform active:scale-[0.94] disabled:invisible"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/10 text-ink-soft transition-transform active:scale-[0.94] disabled:invisible"
           >
             <ChevronLeft size={19} strokeWidth={1.9} aria-hidden="true" />
           </button>

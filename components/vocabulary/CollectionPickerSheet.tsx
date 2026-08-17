@@ -200,7 +200,7 @@ export default function CollectionPickerSheet({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
               {copy.title}
             </p>
             <h2 className="mt-0.5 truncate text-lg font-bold">{item.word}</h2>
@@ -210,7 +210,7 @@ export default function CollectionPickerSheet({
             type="button"
             onClick={motion.requestClose}
             aria-label={copy.close}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/50 hover:bg-black/[0.04]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft hover:bg-black/[0.04]"
           >
             ✕
           </button>
@@ -224,13 +224,13 @@ export default function CollectionPickerSheet({
 
         <div className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto">
           {loading && (
-            <p className="py-6 text-center text-sm text-black/40">
+            <p className="py-6 text-center text-sm text-ink-faint">
               {t.common.loading}
             </p>
           )}
 
           {!loading && collections.length === 0 && (
-            <p className="py-6 text-center text-sm text-black/40">
+            <p className="py-6 text-center text-sm text-ink-faint">
               {copy.noCollectionsYet}
             </p>
           )}
@@ -255,7 +255,7 @@ export default function CollectionPickerSheet({
                     <span className="block truncate text-sm font-semibold">
                       {collection.name}
                     </span>
-                    <span className="block text-xs text-black/40">
+                    <span className="block text-xs text-ink-faint">
                       {collection.word_count ?? 0} {copy.words}
                     </span>
                   </span>

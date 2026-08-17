@@ -149,7 +149,7 @@ export default function BottomNavigation({
               className={`z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 item.active
                   ? "scale-[1.05] text-[var(--dock-active-ink)]"
-                  : "text-black/40 hover:text-black/70"
+                  : "text-ink-faint hover:text-black/70"
               }`}
             >
               <span className="relative inline-flex">

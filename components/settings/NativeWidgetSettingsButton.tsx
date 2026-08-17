@@ -70,7 +70,7 @@ export default function NativeWidgetSettingsButton() {
                 <h3 className="text-[15px] font-semibold text-black">
                   {copy.nativeTitle}
                 </h3>
-                <p className="mt-1 text-sm leading-5 text-black/55">
+                <p className="mt-1 text-sm leading-5 text-ink-soft">
                   {copy.nativeDescription}
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function NativeWidgetSettingsButton() {
           </section>
 
           <section>
-            <h3 className="px-1 text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
+            <h3 className="px-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
               {copy.addTitle}
             </h3>
 
@@ -109,19 +109,19 @@ export default function NativeWidgetSettingsButton() {
                 aria-hidden="true"
                 size={18}
                 strokeWidth={1.8}
-                className="mt-0.5 shrink-0 text-black/55"
+                className="mt-0.5 shrink-0 text-ink-soft"
               />
               <div>
                 <h3 className="text-sm font-semibold text-black/75">
                   {copy.behaviorTitle}
                 </h3>
-                <p className="mt-1 text-sm leading-5 text-black/50">
+                <p className="mt-1 text-sm leading-5 text-ink-soft">
                   {copy.behaviorDescription}
                 </p>
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 border-t border-black/[0.05] pt-3 text-xs font-medium text-black/45">
+            <div className="mt-3 flex items-center gap-2 border-t border-black/[0.05] pt-3 text-xs font-medium text-ink-soft">
               <Plus size={14} strokeWidth={1.9} />
               <Camera size={14} strokeWidth={1.9} />
               <span>{copy.openAppNote}</span>

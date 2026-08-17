@@ -48,7 +48,7 @@ function SpeechRow({
     <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-left">
       <span className="min-w-0">
         {eyebrow && (
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
             {eyebrow}
           </span>
         )}
@@ -166,7 +166,7 @@ export default function VocabularyDetailSheet({
                     <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
                       {item.translation}
                     </h2>
-                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-black/45">
+                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
                       {item.word}
                     </p>
                   </>
@@ -175,7 +175,7 @@ export default function VocabularyDetailSheet({
                     <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
                       {item.word}
                     </h2>
-                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-black/45">
+                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
                       {item.translation}
                     </p>
                   </>
@@ -254,7 +254,7 @@ export default function VocabularyDetailSheet({
 
             {(item.example_sentence || item.translated_example) && (
               <div className="mt-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
                   {detail.example}
                 </p>
 
@@ -317,7 +317,7 @@ export default function VocabularyDetailSheet({
             )}
 
             <div className="mt-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
                 {detail.learningStatusLabel}
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 rounded-[20px] bg-surface p-1.5">
@@ -330,7 +330,7 @@ export default function VocabularyDetailSheet({
                     className={`min-h-[44px] rounded-[15px] px-2 text-[12px] font-semibold transition-all disabled:opacity-40 ${
                       item.status === status
                         ? "bg-black text-white shadow-sm"
-                        : "text-black/45"
+                        : "text-ink-soft"
                     }`}
                   >
                     {detail.levels[status]}
@@ -339,7 +339,7 @@ export default function VocabularyDetailSheet({
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-black/45">
+            <div className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-ink-soft">
               <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
                 <Clock3 size={15} />
                 <span>

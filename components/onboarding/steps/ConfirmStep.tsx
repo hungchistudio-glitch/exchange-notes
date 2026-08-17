@@ -46,7 +46,7 @@ export default function ConfirmStep({
           <SummaryRow label={copy.learningLabelSummary} value={learningLabel} />
         </div>
 
-        <p className="mt-4 max-w-xs text-xs leading-5 text-black/40">{copy.note}</p>
+        <p className="mt-4 max-w-xs text-xs leading-5 text-ink-faint">{copy.note}</p>
 
         {error ? (
           <p className="mt-4 max-w-xs text-xs leading-5 text-red-600">{error}</p>
@@ -69,7 +69,7 @@ export default function ConfirmStep({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-[13px] text-black/45">{label}</span>
+      <span className="text-[13px] text-ink-soft">{label}</span>
       <span className="truncate text-[14px] font-semibold text-black">{value}</span>
     </div>
   );

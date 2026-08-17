@@ -400,7 +400,7 @@ export default function ProfilePage() {
                     : form.display_name || copy.languageLearner}
                 </h2>
 
-                <p className="mt-1 truncate text-[14px] leading-5 text-black/45">
+                <p className="mt-1 truncate text-[14px] leading-5 text-ink-soft">
                   {email || copy.accountFallback}
                 </p>
 
@@ -418,7 +418,7 @@ export default function ProfilePage() {
                       className={`flex shrink-0 items-center justify-center rounded-full p-1.5 transition-colors ${
                         copied
                           ? "bg-green-100 text-green-600"
-                          : "bg-black/[0.045] text-black/55 hover:bg-black/[0.08]"
+                          : "bg-black/[0.045] text-ink-soft hover:bg-black/[0.08]"
                       }`}
                     >
                       <span className="relative flex h-[11px] w-[11px] items-center justify-center">
@@ -444,7 +444,7 @@ export default function ProfilePage() {
                       onClick={() => setQrOpen(true)}
                       aria-label={copy.viewQr}
                       title={copy.viewQr}
-                      className="flex shrink-0 items-center justify-center rounded-full bg-black/[0.045] p-1.5 text-black/55 transition-colors hover:bg-black/[0.08]"
+                      className="flex shrink-0 items-center justify-center rounded-full bg-black/[0.045] p-1.5 text-ink-soft transition-colors hover:bg-black/[0.08]"
                     >
                       <QrCode size={11} strokeWidth={2} />
                     </button>
@@ -463,7 +463,7 @@ export default function ProfilePage() {
 
             <div className="px-6 py-4">
               {loading ? (
-                <div className="flex items-center gap-2 text-sm font-medium text-black/45">
+                <div className="flex items-center gap-2 text-sm font-medium text-ink-soft">
                   <LoaderCircle size={16} className="animate-spin" />
                   {copy.loadingProfile}
                 </div>
@@ -493,7 +493,7 @@ export default function ProfilePage() {
 
           {/* Learning setup */}
           <section>
-            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               {t.settings.learningSetup}
             </p>
 
@@ -528,7 +528,7 @@ export default function ProfilePage() {
 
           {/* Experience */}
           <section>
-            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               {copy.preferences}
             </p>
 
@@ -548,7 +548,7 @@ export default function ProfilePage() {
 
           {/* Account actions */}
           <section>
-            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-black/40">
+            <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
               {copy.account}
             </p>
 
@@ -597,14 +597,14 @@ export default function ProfilePage() {
                 aria-label={qrCopy.imageAlt}
               />
             ) : (
-              <span className="text-center text-sm text-black/40">
+              <span className="text-center text-sm text-ink-faint">
                 {qrCopy.loading}
               </span>
             )}
           </div>
 
           {form.exchange_id && (
-            <p className="mt-3 text-sm font-semibold text-black/50">
+            <p className="mt-3 text-sm font-semibold text-ink-soft">
               @{form.exchange_id}
             </p>
           )}
@@ -641,7 +641,7 @@ export default function ProfilePage() {
           </div>
         }
       >
-        <p className="text-sm leading-6 text-black/50">
+        <p className="text-sm leading-6 text-ink-soft">
           {email || copy.accountFallback}
         </p>
       </BottomSheet>

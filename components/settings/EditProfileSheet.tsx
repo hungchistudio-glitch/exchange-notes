@@ -165,7 +165,7 @@ export default function EditProfileSheet({
       ? "text-emerald-600"
       : idStatus === "taken" || idStatus === "error"
         ? "text-red-600"
-        : "text-black/45";
+        : "text-ink-soft";
 
   return (
     <BottomSheet
@@ -208,7 +208,7 @@ export default function EditProfileSheet({
               onChange={(event) => setName(event.target.value)}
               placeholder={copy.namePlaceholder}
               autoComplete="name"
-              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black focus:bg-white"
+              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-ink-faint focus:border-black focus:bg-white"
             />
             {name && <ClearFieldButton floating onClear={() => setName("")} />}
           </div>
@@ -220,7 +220,7 @@ export default function EditProfileSheet({
           </span>
 
           <div className="flex items-center rounded-2xl border border-transparent bg-black/[0.035] pl-1.5 pr-4 transition-colors focus-within:border-black focus-within:bg-white">
-            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-black/50">
+            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-ink-soft">
               @
             </span>
 
@@ -236,7 +236,7 @@ export default function EditProfileSheet({
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-neutral-400"
+              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-ink-faint"
             />
 
             {exchangeId && idStatus !== "checking" ? (
@@ -244,7 +244,7 @@ export default function EditProfileSheet({
             ) : null}
 
             {idStatus === "checking" ? (
-              <LoaderCircle size={15} className="shrink-0 animate-spin text-black/30" />
+              <LoaderCircle size={15} className="shrink-0 animate-spin text-ink-faint" />
             ) : null}
           </div>
 

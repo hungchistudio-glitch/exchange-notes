@@ -80,7 +80,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         {copy.title}
       </h2>
 
-      <p className="mt-1.5 max-w-xs text-[14px] leading-6 text-black/50">
+      <p className="mt-1.5 max-w-xs text-[14px] leading-6 text-ink-soft">
         {copy.subtitle}
       </p>
 
@@ -104,7 +104,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         <button
           type="button"
           onClick={onDismiss}
-          className="mt-2.5 flex h-10 w-full items-center justify-center text-[13px] font-medium text-black/40 transition-colors hover:text-black/60"
+          className="mt-2.5 flex h-10 w-full items-center justify-center text-[13px] font-medium text-ink-faint transition-colors hover:text-black/60"
         >
           {copy.maybeLater}
         </button>
@@ -129,7 +129,7 @@ function Benefit({
       </span>
       <span>
         <span className="block text-[14px] font-semibold text-black">{title}</span>
-        <span className="block text-[13px] leading-5 text-black/45">{description}</span>
+        <span className="block text-[13px] leading-5 text-ink-soft">{description}</span>
       </span>
     </div>
   );

@@ -109,7 +109,7 @@ export default function VocabularyCollectionsPage() {
             <h1 className="text-[26px] font-bold tracking-[-0.02em]">
               {copy.title}
             </h1>
-            <p className="mt-1 text-black/50">{copy.description}</p>
+            <p className="mt-1 text-ink-soft">{copy.description}</p>
           </div>
 
           <button
@@ -191,16 +191,16 @@ export default function VocabularyCollectionsPage() {
         )}
 
         {loading && (
-          <p className="mt-10 text-center text-sm text-black/40">Loading…</p>
+          <p className="mt-10 text-center text-sm text-ink-faint">Loading…</p>
         )}
 
         {!loading && collections.length === 0 && (
           <div className="mt-10 rounded-[24px] bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/50">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
               <FolderPlus size={22} strokeWidth={1.7} />
             </div>
             <p className="mt-4 text-lg font-bold">{copy.emptyTitle}</p>
-            <p className="mt-1 text-sm leading-6 text-black/50">
+            <p className="mt-1 text-sm leading-6 text-ink-soft">
               {copy.emptyDescription}
             </p>
           </div>
@@ -221,7 +221,7 @@ export default function VocabularyCollectionsPage() {
                   {collection.emoji}
                 </span>
                 <p className="mt-3 truncate font-bold">{collection.name}</p>
-                <p className="mt-0.5 text-xs text-black/40">
+                <p className="mt-0.5 text-xs text-ink-faint">
                   {collection.word_count ?? 0}{" "}
                   {(collection.word_count ?? 0) === 1 ? copy.word : copy.words}
                 </p>

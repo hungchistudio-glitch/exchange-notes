@@ -102,11 +102,11 @@ function StatTile({
 }) {
   return (
     <Card className={`border p-4 ${STAT_TILE_TONES[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
         {label}
       </p>
       <p className="mt-1 text-2xl font-bold tracking-[-0.02em]">{value}</p>
-      <p className="mt-0.5 text-xs text-black/40">{sublabel}</p>
+      <p className="mt-0.5 text-xs text-ink-faint">{sublabel}</p>
     </Card>
   );
 }
@@ -254,7 +254,7 @@ export default function StandardHome() {
         className="px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/35">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {greeting}
         </p>
       </div>
@@ -267,7 +267,7 @@ export default function StandardHome() {
         <h1 className="text-[26px] font-bold tracking-[-0.02em]">
           {heroCopy.title}
         </h1>
-        <p className="mt-1 text-black/50">{heroCopy.description}</p>
+        <p className="mt-1 text-ink-soft">{heroCopy.description}</p>
       </div>
 
       <div id="daily-focus-card" className="px-4 pt-4 scroll-mt-6">
@@ -284,7 +284,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.quickStart.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.quickStart.title}</h2>
@@ -296,7 +296,7 @@ export default function StandardHome() {
           >
             <BookIcon className="h-5 w-5" />
             <p className="mt-6 font-bold">{t.home.quickStart.review}</p>
-            <p className="mt-0.5 text-xs text-white/50">
+            <p className="mt-0.5 text-xs text-ink-invert-faint">
               {itemsLoading ? "…" : `${reviewStats.due} words ready`}
             </p>
           </Link>
@@ -307,7 +307,7 @@ export default function StandardHome() {
           >
             <CameraIcon className="h-5 w-5" />
             <p className="mt-6 font-bold">{t.home.quickStart.capture}</p>
-            <p className="mt-0.5 text-xs text-black/40">
+            <p className="mt-0.5 text-xs text-ink-faint">
               {t.home.quickStart.captureDescription}
             </p>
           </Link>
@@ -319,13 +319,13 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.progress.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.progress.title}</h2>
 
         <Card className="mt-4 p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {t.home.progress.todaysReview}
           </p>
           <p className="mt-1 text-2xl font-bold">
@@ -337,7 +337,7 @@ export default function StandardHome() {
                     : t.home.progress.words
                 }`}
           </p>
-          <p className="mt-1 text-sm text-black/50">
+          <p className="mt-1 text-sm text-ink-soft">
             {t.home.progress.readyDescription}
           </p>
 
@@ -382,7 +382,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.community.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.community.title}</h2>
@@ -393,7 +393,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.notes.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.notes.title}</h2>
@@ -405,7 +405,7 @@ export default function StandardHome() {
             {notes.length === 0 && (
               <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
                 <p className="text-sm font-semibold">{t.home.notes.emptyTitle}</p>
-                <p className="mt-1 text-sm leading-6 text-neutral-500">
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
                   {t.home.notes.emptyDescription}
                 </p>
               </div>
@@ -436,7 +436,7 @@ export default function StandardHome() {
 
                     {note.chinese && (
                       <div className="mt-2 flex items-start justify-between gap-3">
-                        <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-6 text-neutral-500">
+                        <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-6 text-ink-soft">
                           {note.chinese}
                         </p>
                         <button
@@ -450,7 +450,7 @@ export default function StandardHome() {
                       </div>
                     )}
 
-                    <p className="mt-4 text-[10px] text-neutral-400">
+                    <p className="mt-4 text-[10px] text-ink-faint">
                       {formatNoteDate(note.createdAt)}
                     </p>
                   </div>
@@ -459,7 +459,7 @@ export default function StandardHome() {
                     type="button"
                     onClick={() => deleteNote(note.id)}
                     aria-label={t.home.notes.deleteNote}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-transform hover:bg-red-50 hover:text-red-600 active:scale-90"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-transform hover:bg-red-50 hover:text-red-600 active:scale-90"
                   >
                     <TrashIcon />
                   </button>

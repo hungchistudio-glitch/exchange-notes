@@ -48,7 +48,7 @@ export default function SettingsChoiceCard({
           <span
             className={[
               "mt-0.5 block text-xs leading-5",
-              selected ? "text-white/70" : "text-black/45",
+              selected ? "text-white/70" : "text-ink-soft",
             ].join(" ")}
           >
             {description}

@@ -47,7 +47,7 @@ export default function ClearFieldButton({
       onClick={onClear}
       aria-label={label ?? t.common.clearField}
       title={label ?? t.common.clearField}
-      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/50 transition-transform active:scale-95 ${
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-transform active:scale-95 ${
         floating ? "absolute right-3 top-1/2 -translate-y-1/2" : ""
       } ${className}`}
     >

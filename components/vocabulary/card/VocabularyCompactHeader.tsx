@@ -34,13 +34,13 @@ export default function VocabularyCompactHeader({ item }: Props) {
             <h3 className="min-w-0 break-words text-[17px] font-semibold leading-6 tracking-[-0.025em] text-black">
               {primary || item.word}
             </h3>
-            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.13em] text-black/28">
+            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.13em] text-ink-faint">
               {statusLabels[item.status]}
             </span>
           </div>
 
           {secondary ? (
-            <p className="mt-0.5 break-words text-[13px] leading-5 text-black/45">
+            <p className="mt-0.5 break-words text-[13px] leading-5 text-ink-soft">
               {secondary}
             </p>
           ) : null}

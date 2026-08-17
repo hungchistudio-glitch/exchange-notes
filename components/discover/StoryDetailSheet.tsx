@@ -155,7 +155,7 @@ export default function StoryDetailSheet({
                   type="button"
                   disabled
                   title={copy.quizSoonTitle}
-                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black/35"
+                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-ink-faint"
                 >
                   <Sparkles size={15} strokeWidth={1.8} />
                   {copy.quizSoon}
@@ -272,7 +272,7 @@ export default function StoryDetailSheet({
           </div>
 
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[14px] leading-[1.7] text-black/50">
+            <p className="min-w-0 flex-1 text-[14px] leading-[1.7] text-ink-soft">
               {card.chineseSummary}
             </p>
 
@@ -306,7 +306,7 @@ export default function StoryDetailSheet({
               String(card.vocabulary.length)
             )}
             {card.vocabulary.length > 0 ? (
-              <span className="text-black/40">
+              <span className="text-ink-faint">
                 {" · "}
                 {card.vocabulary
                   .map((item) => item.word)
@@ -318,7 +318,7 @@ export default function StoryDetailSheet({
           <ChevronRight
             size={16}
             strokeWidth={1.8}
-            className="shrink-0 text-black/30"
+            className="shrink-0 text-ink-faint"
           />
         </button>
       </div>

@@ -316,7 +316,7 @@ export default function YumiReminderSettingsButton() {
       >
         <div className="space-y-4">
           <div className="rounded-[22px] border border-black/[0.06] bg-black/[0.025] px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-[0.13em] text-black/40">
+            <p className="text-xs font-medium uppercase tracking-[0.13em] text-ink-faint">
               {copy.timezone}
             </p>
 

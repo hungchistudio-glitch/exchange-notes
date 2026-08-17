@@ -411,7 +411,7 @@ export default function WebPushSettingsButton() {
                       : copy.sendTest}
                   </button>
 
-                  <p className="px-3 text-center text-[11px] leading-4 text-black/40">
+                  <p className="px-3 text-center text-[11px] leading-4 text-ink-faint">
                     {copy.testDescription}
                   </p>
                 </>

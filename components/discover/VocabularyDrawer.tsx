@@ -197,7 +197,7 @@ export default function VocabularyDrawer({
                     <span
                       className={
                         isLearningChinese
-                          ? "text-sm text-black/50"
+                          ? "text-sm text-ink-soft"
                           : "text-[17px] font-semibold text-black"
                       }
                     >
@@ -205,7 +205,7 @@ export default function VocabularyDrawer({
                     </span>
 
                     {!isLearningChinese && (
-                      <span className="text-[11px] text-black/40">
+                      <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
                         ]}
@@ -214,7 +214,7 @@ export default function VocabularyDrawer({
                   </div>
 
                   {pronunciation?.englishPronunciation ? (
-                    <p className="mt-0.5 text-[12px] text-black/40">
+                    <p className="mt-0.5 text-[12px] text-ink-faint">
                       {pronunciation.englishPronunciation}
                     </p>
                   ) : null}
@@ -262,14 +262,14 @@ export default function VocabularyDrawer({
                       className={
                         isLearningChinese
                           ? "text-[17px] font-semibold text-black"
-                          : "text-sm text-black/50"
+                          : "text-sm text-ink-soft"
                       }
                     >
                       {item.translation}
                     </p>
 
                     {isLearningChinese && (
-                      <span className="text-[11px] text-black/40">
+                      <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
                         ]}
@@ -278,7 +278,7 @@ export default function VocabularyDrawer({
                   </div>
 
                   {pronunciation?.pinyin || pronunciation?.zhuyin ? (
-                    <p className="mt-0.5 text-[11px] text-black/35">
+                    <p className="mt-0.5 text-[11px] text-ink-faint">
                       {[pronunciation?.pinyin, pronunciation?.zhuyin]
                         .filter(Boolean)
                         .join("  ")}
@@ -349,7 +349,7 @@ export default function VocabularyDrawer({
                 key="chinese-example"
                 className="flex items-start gap-2"
               >
-                <p className="min-w-0 flex-1 text-sm leading-6 text-black/45">
+                <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
                   {item.chineseExample}
                 </p>
 

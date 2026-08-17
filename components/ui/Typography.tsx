@@ -61,7 +61,7 @@ export function Caption({ children, className }: Props) {
   return (
     <p
       className={cn(
-        "text-[13px] leading-6 text-neutral-500",
+        "text-[13px] leading-6 text-ink-soft",
         className,
       )}
     >
@@ -74,7 +74,7 @@ export function Label({ children, className }: Props) {
   return (
     <p
       className={cn(
-        "text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400",
+        "text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint",
         className,
       )}
     >
