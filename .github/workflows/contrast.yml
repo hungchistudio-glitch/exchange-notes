@@ -1,0 +1,44 @@
+# Checks the ink ramp still clears WCAG AA.
+#
+# Scoped to the one thing nothing else would catch. Vercel already builds every
+# pull request, so this does not run `next build` — a second copy of that would
+# cost minutes to tell us what the Preview deploy is telling us anyway. What no
+# build reports is whether `--ink-faint` still resolves to 4.76:1 or has drifted
+# back to 2.4:1, because both compile perfectly and look identical in a diff.
+#
+# Also on `push: main`, not just on pull requests, and that is the important
+# half. The failure this was written for happens *during a merge*: two branches
+# appending token blocks at the same point in :root share the `/*` that opens
+# the first comment, so keeping both sides — the correct resolution — can drop
+# one `/*` and swallow every token below the seam. That resolution is committed
+# straight to main and never appears in anyone's pull request.
+#
+# scripts/verify-contrast.mjs imports nothing outside node: builtins, so there
+# is no install step. The whole job is a few seconds.
+
+name: Contrast
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contrast:
+    name: Ink ramp clears AA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # --debug prints all 54 pairings with their ratios. On a green run that
+      # is the log worth having: it is the arithmetic behind the token values,
+      # and the only place it is written down outside the comments in
+      # app/globals.css.
+      - run: npm run test:contrast -- --debug
