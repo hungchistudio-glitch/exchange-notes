@@ -1521,7 +1521,7 @@ export default function ConversationRoom({
                   )}
             </button>
           ) : (
-            <form onSubmit={sendMessage}>
+            <form onSubmit={sendMessage} className="pb-3">
               <div
                 className="flex items-end gap-2 rounded-[26px] border p-1.5"
                 style={{
@@ -1577,28 +1577,17 @@ export default function ConversationRoom({
               </div>
 
               {/*
-                This row used to reserve height on every screen to hold a
-                hardcoded "Shift + Enter" hint, which a phone has no Shift key
-                to honour. It is now translated, desktop-only, and the row
-                collapses entirely on a phone until the counter has something
-                to say — the counter only appears near the 2000-character
-                limit. On the screen with the least vertical space, an empty
-                band under the input is the last thing worth keeping.
+                Nothing under the composer unless there is something to say.
+                The keyboard hint that used to live here named a key the phone
+                this screen is built for does not have, and reserving a band
+                for it cost vertical space on the screen with the least of it.
+                The counter only appears near the 2000-character limit, so the
+                row it sits in appears with it.
               */}
-              <div
-                className={`${
-                  showCharacterCount ? "flex" : "hidden sm:flex"
-                } items-center justify-between px-3 pb-2 pt-1.5`}
-              >
-                <span
-                  className="hidden text-[10px] sm:inline"
-                  style={{ color: "var(--msg-ink-faint)" }}
-                >
-                  {copy.room.composerHint}
-                </span>
-                {showCharacterCount && (
+              {showCharacterCount && (
+                <div className="flex justify-end px-3 pt-1.5">
                   <span
-                    className="ml-auto text-[10px]"
+                    className="text-[10px]"
                     style={{
                       color:
                         newMessage.length >= MAX_MESSAGE_LENGTH
@@ -1608,8 +1597,8 @@ export default function ConversationRoom({
                   >
                     {newMessage.length}/{MAX_MESSAGE_LENGTH}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </form>
           )}
         </div>

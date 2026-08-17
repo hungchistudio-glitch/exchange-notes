@@ -773,7 +773,6 @@ const traditionalChinese: TranslationDictionary = {
       privateNote: "訊息由你的帳號與資料庫存取規則保護，目前尚未啟用端對端加密。",
       newMessages: "新訊息",
       jumpToLatest: "跳到最新訊息",
-      composerHint: "Shift + Enter 換行",
       options: "對話選項",
       closeOptions: "關閉選項",
       addPhoto: "新增照片",

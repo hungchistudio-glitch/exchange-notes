@@ -708,7 +708,6 @@ export type TranslationDictionary = {
       privateNote: string;
       newMessages: string;
       jumpToLatest: string;
-      composerHint: string;
       options: string;
       closeOptions: string;
       addPhoto: string;

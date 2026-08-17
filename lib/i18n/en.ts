@@ -788,7 +788,6 @@ const english: TranslationDictionary = {
         "Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.",
       newMessages: "New messages",
       jumpToLatest: "Jump to latest",
-      composerHint: "Shift + Enter for a new line",
       options: "Conversation options",
       closeOptions: "Close options",
       addPhoto: "Add a photo",
