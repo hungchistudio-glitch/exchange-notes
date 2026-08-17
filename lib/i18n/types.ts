@@ -698,6 +698,51 @@ export type TranslationDictionary = {
       neverMessaged: string;
     };
 
+    /*
+     * Yumi's language layer. Kept apart from `room` because it is a distinct
+     * subject — what a message meant, and how to answer it — rather than more
+     * chrome for the conversation screen.
+     */
+    decode: {
+      label: string;
+      whyThis: string;
+      whyThisBody: string;
+      close: string;
+      open: string;
+      reading: string;
+      tone: string;
+      toneUncertain: string;
+      types: {
+        expression: string;
+        abbreviation: string;
+        phrase: string;
+        slang: string;
+        idiom: string;
+      };
+      listen: string;
+      savePhrase: string;
+      savedPhrase: string;
+      saveFailed: string;
+      replyCoach: string;
+    };
+
+    coach: {
+      title: string;
+      subtitle: string;
+      drafting: string;
+      failed: string;
+      retry: string;
+      close: string;
+      insert: string;
+      inserted: string;
+      ownership: string;
+      directions: {
+        friendly: string;
+        casual: string;
+        natural: string;
+      };
+    };
+
     room: {
       back: string;
       connectionConnected: string;

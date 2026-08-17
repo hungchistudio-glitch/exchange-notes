@@ -22,12 +22,15 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import HighlightedMessageBody from "@/components/messages/HighlightedMessageBody";
 import NewsCardMessage from "@/components/messages/NewsCardMessage";
+import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
 import WordCardMessage from "@/components/messages/WordCardMessage";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -40,6 +43,13 @@ import {
   setConversationMuted,
   type FriendProfile,
 } from "@/lib/friends";
+import {
+  isWorthAnalysing,
+  listAnalysisForMessages,
+  requestMessageAnalysis,
+  type DetectedPhrase,
+  type MessageAnalysis,
+} from "@/lib/messages/decode";
 import { formatDateLabel, formatMessageTime } from "@/lib/messages/format";
 import { hideMessagesForUser, listHiddenMessageIds } from "@/lib/messages/hiddenMessages";
 import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
@@ -231,6 +241,23 @@ export default function ConversationRoom({
     status: Exclude<RealtimeStatus, "connecting">;
   } | null>(null);
 
+  /*
+   * Yumi's reading of the messages on screen.
+   *
+   * Absent until it arrives and absent forever if it never does. Nothing in
+   * the timeline waits on this map — the messages render, and cards appear
+   * beside them later or not at all (§45).
+   */
+  const [analysisByMessageId, setAnalysisByMessageId] = useState<
+    Map<number, MessageAnalysis>
+  >(new Map());
+  const [openDecodeId, setOpenDecodeId] = useState<number | null>(null);
+  const [savedPhraseIds, setSavedPhraseIds] = useState<Set<string>>(new Set());
+  const [savingPhraseId, setSavingPhraseId] = useState<string | null>(null);
+
+  /** Messages already asked about, so a re-render never asks twice. */
+  const requestedAnalysisRef = useRef<Set<number>>(new Set());
+
   const [savedCardIds, setSavedCardIds] = useState<Set<number>>(new Set());
   const [savingCardId, setSavingCardId] = useState<number | null>(null);
 
@@ -385,6 +412,10 @@ export default function ConversationRoom({
       setErrorMessage("");
       setMessages([]);
       setConversationReady(false);
+      setAnalysisByMessageId(new Map());
+      setOpenDecodeId(null);
+      setSavedPhraseIds(new Set());
+      requestedAnalysisRef.current = new Set();
 
       const {
         data: { user },
@@ -780,6 +811,134 @@ export default function ConversationRoom({
     supabase,
     copy.errors.shareWord,
   ]);
+
+  /*
+   * Load whatever Yumi has already read, then ask about what it has not.
+   *
+   * Runs after the messages are on screen, never before — the timeline does
+   * not wait on this, which is the whole of §45. Requests go out one at a time
+   * rather than as a burst: a conversation opened for the first time can hold
+   * dozens of unanalysed messages, and firing dozens of model calls at once is
+   * how a daily quota disappears in a single scroll.
+   */
+  useEffect(() => {
+    if (!currentUserId || !conversationReady || messages.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      // Only the most recent window. §43: older enrichment is not bundled by
+      // default, and a card nobody has scrolled to is a call nobody needed.
+      const window = messages.slice(-30);
+      const ids = window.map((message) => message.id);
+
+      try {
+        const stored = await listAnalysisForMessages(supabase, currentUserId, ids);
+        if (cancelled) return;
+
+        if (stored.size > 0) {
+          setAnalysisByMessageId((current) => {
+            const next = new Map(current);
+            for (const [messageId, analysis] of stored) next.set(messageId, analysis);
+            return next;
+          });
+        }
+
+        const pending = window.filter(
+          (message) =>
+            message.sender_id !== currentUserId &&
+            isWorthAnalysing(message.body) &&
+            !stored.has(message.id) &&
+            !requestedAnalysisRef.current.has(message.id),
+        );
+
+        for (const message of pending) {
+          if (cancelled) return;
+
+          /*
+           * Claimed before the call so two overlapping runs cannot both ask
+           * about the same message, and released again on anything other than
+           * success.
+           *
+           * Releasing is the part that matters. This effect re-runs whenever a
+           * message arrives, which cancels the loop mid-flight; without the
+           * release, every message the cancelled run had claimed but not yet
+           * answered would stay claimed forever and never get a card.
+           */
+          requestedAnalysisRef.current.add(message.id);
+
+          const analysis = await requestMessageAnalysis(message.id);
+
+          if (cancelled || !analysis) {
+            requestedAnalysisRef.current.delete(message.id);
+            if (cancelled) return;
+            continue;
+          }
+
+          setAnalysisByMessageId((current) =>
+            new Map(current).set(message.id, analysis),
+          );
+        }
+      } catch (error) {
+        // Enrichment failing is not something to put on screen mid-conversation.
+        console.warn("Could not load language help:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationReady, currentUserId, messages, supabase]);
+
+  async function handleSavePhrase(phrase: DetectedPhrase) {
+    if (!currentUserId || savingPhraseId || savedPhraseIds.has(phrase.id)) return;
+
+    setSavingPhraseId(phrase.id);
+
+    try {
+      await insertVocabulary({
+        user_id: currentUserId,
+        word: phrase.phrase,
+        translation: phrase.meaning,
+        /*
+         * The phrase is in the language being learned — it came out of a
+         * message written in it — so that is what this row's language is.
+         * Saving it into vocabulary rather than a parallel store is what puts
+         * it into review alongside everything else, and what lets §46's
+         * "already known" list be the vocabulary the user actually has.
+         */
+        language: isLearningChinese ? "traditional-chinese" : "english",
+        part_of_speech: "phrase",
+        example_sentence: null,
+        translated_example: phrase.expanded ?? null,
+        confidence: "medium",
+        category: "other",
+        status: "new",
+      });
+
+      setSavedPhraseIds((current) => new Set(current).add(phrase.id));
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(copy.decode.saveFailed);
+    } finally {
+      setSavingPhraseId(null);
+    }
+  }
+
+  /*
+   * A chosen reply lands in the composer and stops there. §24 is explicit that
+   * the user owns the final message, so this fills the box and focuses it —
+   * sending is still a thing they have to do.
+   */
+  function handleInsertReply(text: string) {
+    setNewMessage(text);
+    window.requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(text.length, text.length);
+    });
+  }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1287,6 +1446,13 @@ export default function ConversationRoom({
                 ? null
                 : decodeNewsCardMessage(message.body);
 
+              const analysis = analysisByMessageId.get(message.id);
+              const hasDecode =
+                !isMine &&
+                analysis?.status === "ready" &&
+                analysis.phrases.length > 0;
+              const decodeOpen = hasDecode && openDecodeId === message.id;
+
               return (
                 <div key={message.id}>
                   {showDateDivider && (
@@ -1377,9 +1543,17 @@ export default function ConversationRoom({
                               }
                         }
                       >
-                        <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.55]">
-                          {message.body}
-                        </p>
+                        {hasDecode && analysis ? (
+                          <HighlightedMessageBody
+                            body={message.body}
+                            phrases={analysis.phrases}
+                            onSelectPhrase={() => setOpenDecodeId(message.id)}
+                          />
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.55]">
+                            {message.body}
+                          </p>
+                        )}
                         <div
                           className="mt-1.5 flex items-center justify-end gap-1 text-[10px]"
                           style={{
@@ -1413,6 +1587,49 @@ export default function ConversationRoom({
                       </article>
                     )}
                   </div>
+
+                  {/*
+                    The Decode card, inline under the message it explains and
+                    wider than the bubble above it — §19. Only for the friend's
+                    messages, only when Yumi actually found something, and only
+                    while the reader has asked for it.
+                  */}
+                  {hasDecode && analysis && !selectMode && (
+                    <div className="mb-4 flex justify-start">
+                      {decodeOpen ? (
+                        <YumiDecodeCard
+                          analysis={analysis}
+                          conversationId={conversationId}
+                          speechLanguage={isLearningChinese ? "zh-TW" : "en-US"}
+                          savedPhraseIds={savedPhraseIds}
+                          savingPhraseId={savingPhraseId}
+                          onSavePhrase={(phrase) => void handleSavePhrase(phrase)}
+                          onInsertReply={handleInsertReply}
+                          onClose={() => setOpenDecodeId(null)}
+                        />
+                      ) : (
+                        /*
+                          Closed, the offer is one quiet line. §18 asks for a
+                          conversation that still reads as a conversation, and a
+                          card that opens itself under every message would be
+                          the opposite of that.
+                        */
+                        <button
+                          type="button"
+                          onClick={() => setOpenDecodeId(message.id)}
+                          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium"
+                          style={{
+                            borderColor: "var(--msg-line)",
+                            color: "var(--msg-accent)",
+                            background: "var(--msg-accent-soft)",
+                          }}
+                        >
+                          <Sparkles size={13} strokeWidth={1.9} />
+                          {copy.decode.open}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
