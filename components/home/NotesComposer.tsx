@@ -83,7 +83,7 @@ export default function NotesComposer({
     <>
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {copy.spaceEyebrow}
           </p>
 
@@ -91,7 +91,7 @@ export default function NotesComposer({
             {copy.spaceTitle}
           </h2>
 
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-ink-soft">
             {copy.spaceDescription}
           </p>
         </div>
@@ -110,7 +110,7 @@ export default function NotesComposer({
       {isOpen && (
         <Card className="mt-5 p-4">
           <label className="block">
-            <span className="text-xs font-semibold text-neutral-500">
+            <span className="text-xs font-semibold text-ink-soft">
               English
             </span>
 
@@ -127,7 +127,7 @@ export default function NotesComposer({
           </label>
 
           <label className="mt-4 block">
-            <span className="text-xs font-semibold text-neutral-500">
+            <span className="text-xs font-semibold text-ink-soft">
               繁體中文
             </span>
 
@@ -170,7 +170,7 @@ export default function NotesComposer({
 
           {(Boolean(englishDraft.trim()) !== Boolean(chineseDraft.trim())) &&
             !translateError && (
-              <p className="mt-3 text-xs text-neutral-400">
+              <p className="mt-3 text-xs text-ink-faint">
                 Saving will auto-translate the other language for you.
               </p>
             )}

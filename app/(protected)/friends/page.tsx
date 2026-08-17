@@ -287,7 +287,7 @@ function FriendsPageContent() {
             ←
           </button>
 
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.eyebrow}
           </p>
 
@@ -295,7 +295,7 @@ function FriendsPageContent() {
             {copy.title}
           </h1>
 
-          <p className="mt-2 text-black/60">{copy.subtitle}</p>
+          <p className="mt-2 text-ink-soft">{copy.subtitle}</p>
         </header>
 
         <section className="mt-6 rounded-[24px] border border-line bg-white p-6 shadow-sm">
@@ -306,7 +306,7 @@ function FriendsPageContent() {
               type="button"
               onClick={() => setAddMode("id")}
               className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-                addMode === "id" ? "bg-black text-white" : "text-black/50"
+                addMode === "id" ? "bg-black text-white" : "text-ink-soft"
               }`}
             >
               {copy.add.exchangeId}
@@ -316,7 +316,7 @@ function FriendsPageContent() {
               type="button"
               onClick={() => setAddMode("qr")}
               className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-                addMode === "qr" ? "bg-black text-white" : "text-black/50"
+                addMode === "qr" ? "bg-black text-white" : "text-ink-soft"
               }`}
             >
               {copy.add.scanQr}
@@ -330,12 +330,12 @@ function FriendsPageContent() {
               </label>
 
               <div className="mt-2 flex items-center rounded-2xl border border-line bg-white px-4 py-3">
-                <span className="mr-1 text-black/40">@</span>
+                <span className="mr-1 text-ink-faint">@</span>
                 <input
                   value={exchangeId}
                   onChange={(event) => setExchangeId(event.target.value)}
                   placeholder={copy.add.placeholder}
-                  className="w-full bg-transparent text-black outline-none placeholder:text-black/30"
+                  className="w-full bg-transparent text-black outline-none placeholder:text-ink-faint"
                 />
                 {exchangeId && (
                   <ClearFieldButton onClear={() => setExchangeId("")} />
@@ -360,7 +360,7 @@ function FriendsPageContent() {
                   {copy.profileQr.title}
                 </h3>
 
-                <p className="mt-1 text-center text-sm text-black/60">
+                <p className="mt-1 text-center text-sm text-ink-soft">
                   {copy.profileQr.description}
                 </p>
 
@@ -375,14 +375,14 @@ function FriendsPageContent() {
                       aria-label={copy.profileQr.imageAlt}
                     />
                   ) : (
-                    <span className="text-center text-sm text-black/40">
+                    <span className="text-center text-sm text-ink-faint">
                       {copy.profileQr.loading}
                     </span>
                   )}
                 </div>
 
                 {ownProfile && (
-                  <p className="mt-3 text-sm font-semibold text-black/50">
+                  <p className="mt-3 text-sm font-semibold text-ink-soft">
                     @{ownProfile.exchangeId}
                   </p>
                 )}
@@ -391,7 +391,7 @@ function FriendsPageContent() {
           )}
 
           {message && (
-            <p className="mt-4 text-sm font-semibold text-black/60">
+            <p className="mt-4 text-sm font-semibold text-ink-soft">
               {message}
             </p>
           )}
@@ -426,7 +426,7 @@ function FriendsPageContent() {
                         {request.sender.displayName ??
                           request.sender.exchangeId}
                       </p>
-                      <p className="truncate text-sm text-black/50">
+                      <p className="truncate text-sm text-ink-soft">
                         @{request.sender.exchangeId}
                       </p>
                     </div>
@@ -475,7 +475,7 @@ function FriendsPageContent() {
 
           {loading ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
-              <p className="text-black/50">{copy.list.loading}</p>
+              <p className="text-ink-soft">{copy.list.loading}</p>
             </div>
           ) : friends.length === 0 ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
@@ -511,7 +511,7 @@ function FriendsPageContent() {
                         <p className="truncate text-lg font-bold text-black">
                           {friend.displayName ?? friend.exchangeId}
                         </p>
-                        <p className="truncate text-sm text-black/50">
+                        <p className="truncate text-sm text-ink-soft">
                           @{friend.exchangeId}
                         </p>
                       </div>

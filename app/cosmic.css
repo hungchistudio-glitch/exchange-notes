@@ -81,6 +81,24 @@ html[data-interface-mode="yumi-cosmic"] {
   --dock-indicator-halo: var(--cosmic-glow);
   --dock-active-ink: var(--cosmic-cyan);
 
+  /*
+   * The muted tiers for text on the black cards, raised for this mode.
+   *
+   * --ink-soft and --ink-faint need no entry here: they are written against
+   * --color-black, which the top of this file already repoints at #dce9ff, so
+   * they invert on their own and clear AA on the dark shell at the alphas they
+   * were chosen for (4.82:1 and 5.73:1 on --surface, this mode's worst).
+   *
+   * The invert pair is the case where that is not enough. `bg-black` and
+   * `text-white` both flip, so a `bg-black` card here is a pale #dce9ff panel
+   * carrying #101a30 text — dark ink on light, where Standard has light ink on
+   * dark. Composited over that much brighter panel the same alpha loses roughly
+   * half its ratio (0.48 gives 4.92:1 in Standard and only 3.11:1 here), so
+   * both tiers step up: 0.64 for 4.82:1 and 0.78 for 7.54:1.
+   */
+  --ink-invert-soft: color-mix(in oklab, var(--color-white) 78%, transparent);
+  --ink-invert-faint: color-mix(in oklab, var(--color-white) 64%, transparent);
+
   --discover-page: #060a14;
   --discover-card: #101a30;
   --discover-text: #dce9ff;

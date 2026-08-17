@@ -1129,7 +1129,7 @@ function CaptureContent() {
           >
             <Link
               href={cancelHref}
-              className="min-w-14 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+              className="min-w-14 text-sm font-medium text-ink-soft transition-colors hover:text-neutral-900"
             >
               {capture.camera.cancel}
             </Link>
@@ -1141,7 +1141,7 @@ function CaptureContent() {
             <button
               type="button"
               onClick={reset}
-              className="min-w-14 text-right text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+              className="min-w-14 text-right text-sm font-medium text-ink-soft transition-colors hover:text-neutral-900"
             >
               {capture.reset}
             </button>
@@ -1150,7 +1150,7 @@ function CaptureContent() {
 
         {!cameraActive && !cameraStarting && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
               English × 繁體中文
             </p>
 
@@ -1158,7 +1158,7 @@ function CaptureContent() {
               {capture.source.title}
             </h2>
 
-            <p className="mt-2 max-w-[260px] text-sm leading-6 text-neutral-500">
+            <p className="mt-2 max-w-[260px] text-sm leading-6 text-ink-soft">
               {capture.source.description}
             </p>
 
@@ -1194,7 +1194,7 @@ function CaptureContent() {
             </div>
 
             {!cameraSupported && (
-              <p className="mt-8 max-w-xs text-xs leading-5 text-neutral-400">
+              <p className="mt-8 max-w-xs text-xs leading-5 text-ink-faint">
                 {capture.source.unsupported}
               </p>
             )}
@@ -1213,7 +1213,7 @@ function CaptureContent() {
             role="status"
             aria-live="polite"
           >
-            <p className="text-xs font-medium tracking-wide text-white/70">
+            <p className="text-xs font-medium tracking-wide text-ink-invert-soft">
               {capture.camera.opening}
             </p>
           </div>
@@ -1256,7 +1256,7 @@ function CaptureContent() {
             </div>
 
             {!result && fileName && (
-              <p className="mt-2 truncate px-2 text-center text-[11px] text-neutral-400">
+              <p className="mt-2 truncate px-2 text-center text-[11px] text-ink-faint">
                 {fileName}
               </p>
             )}
@@ -1301,11 +1301,11 @@ function CaptureContent() {
             {result && (
               <div className="flex flex-1 flex-col pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                     {capture.result.eyebrow}
                   </span>
 
-                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-neutral-500">
+                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-ink-soft">
                     {insertValues(capture.result.confidence, {
                       value:
                         result.confidence === "high"
@@ -1322,7 +1322,7 @@ function CaptureContent() {
                     <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
                       {result.chineseName}
                     </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-neutral-400">
+                    <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
                       {result.englishName}
                     </p>
                   </>
@@ -1331,12 +1331,12 @@ function CaptureContent() {
                     <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
                       {result.englishName}
                     </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-neutral-400">
+                    <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
                       {result.chineseName}
                     </p>
                   </>
                 )}
-                <p className="mt-1 text-xs text-neutral-400">
+                <p className="mt-1 text-xs text-ink-faint">
                   {
                     t.vocabulary.detail.partOfSpeech[
                       normalizePartOfSpeech(result.partOfSpeech)
@@ -1348,13 +1348,13 @@ function CaptureContent() {
                   {(() => {
                     const englishIsPrimary = !isLearningChinese;
                     const primaryValueClass =
-                      "mt-0.5 block break-words text-[16px] font-semibold text-black/90";
+                      "mt-0.5 block break-words text-[16px] font-semibold text-black";
                     const secondaryValueClass =
-                      "mt-0.5 block break-words text-[14px] font-normal text-black/45";
+                      "mt-0.5 block break-words text-[14px] font-normal text-ink-soft";
                     const primaryButtonClass =
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90";
                     const secondaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90";
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90";
 
                     const englishBox = (
                       <div
@@ -1362,7 +1362,7 @@ function CaptureContent() {
                         className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                       >
                         <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                             English
                           </span>
                           <span
@@ -1375,7 +1375,7 @@ function CaptureContent() {
                             {result.englishName}
                           </span>
                           {pronunciation?.englishPronunciation && (
-                            <span className="mt-0.5 block text-[12px] text-black/40">
+                            <span className="mt-0.5 block text-[12px] text-ink-faint">
                               {pronunciation.englishPronunciation}
                             </span>
                           )}
@@ -1404,7 +1404,7 @@ function CaptureContent() {
                         className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                       >
                         <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
+                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                             中文
                           </span>
                           <span
@@ -1417,7 +1417,7 @@ function CaptureContent() {
                             {result.chineseName}
                           </span>
                           {(pronunciation?.pinyin || pronunciation?.zhuyin) && (
-                            <span className="mt-0.5 block text-[12px] text-black/40">
+                            <span className="mt-0.5 block text-[12px] text-ink-faint">
                               {[pronunciation?.pinyin, pronunciation?.zhuyin]
                                 .filter(Boolean)
                                 .join("  ")}
@@ -1450,7 +1450,7 @@ function CaptureContent() {
 
                 {(result.englishExample || result.chineseExample) && (
                   <div className="mt-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
                       {t.vocabulary.detail.example}
                     </p>
 
@@ -1474,7 +1474,7 @@ function CaptureContent() {
                                 aria-label={
                                   capture.result.playEnglishAriaLabel
                                 }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
                               >
                                 <SpeakerIcon
                                   speaking={speakingLang === "en"}
@@ -1489,7 +1489,7 @@ function CaptureContent() {
                             key="chinese-example"
                             className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                           >
-                            <span className="min-w-0 break-words text-sm leading-6 text-neutral-500">
+                            <span className="min-w-0 break-words text-sm leading-6 text-ink-soft">
                               {result.chineseExample}
                             </span>
 
@@ -1502,7 +1502,7 @@ function CaptureContent() {
                                 aria-label={
                                   capture.result.playChineseAriaLabel
                                 }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
                               >
                                 <SpeakerIcon
                                   speaking={speakingLang === "zh"}
@@ -1606,7 +1606,7 @@ function CaptureLoading() {
 
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-surface text-neutral-950">
-      <div className="flex items-center gap-2 text-sm text-neutral-500">
+      <div className="flex items-center gap-2 text-sm text-ink-soft">
         <SpinnerIcon />
         {t.common.loading}
       </div>

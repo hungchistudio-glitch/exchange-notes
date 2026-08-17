@@ -139,7 +139,7 @@ export default function PronunciationSettingsButton() {
                   {copy.readingSpeed}
                 </h3>
 
-                <p className="mt-1 text-xs leading-5 text-black/45">
+                <p className="mt-1 text-xs leading-5 text-ink-soft">
                   {copy.readingSpeedDescription}
                 </p>
               </div>
@@ -160,7 +160,7 @@ export default function PronunciationSettingsButton() {
               className="mt-5 w-full accent-blue-600"
             />
 
-            <div className="mt-2 flex justify-between text-[10px] font-medium text-black/30">
+            <div className="mt-2 flex justify-between text-[10px] font-medium text-ink-faint">
               <span>{copy.slower}</span>
               <span>{copy.faster}</span>
             </div>
@@ -200,7 +200,7 @@ export default function PronunciationSettingsButton() {
               {copy.voice}
             </h3>
 
-            <p className="mt-1 text-xs leading-5 text-black/45">
+            <p className="mt-1 text-xs leading-5 text-ink-soft">
               {copy.voiceDescription}
             </p>
 
@@ -234,7 +234,7 @@ export default function PronunciationSettingsButton() {
               {copy.voicesOnDevice}
             </h3>
 
-            <p className="mt-1 text-xs leading-5 text-black/45">
+            <p className="mt-1 text-xs leading-5 text-ink-soft">
               {copy.voicesOnDeviceDescription}
             </p>
 
@@ -244,14 +244,14 @@ export default function PronunciationSettingsButton() {
 
               return (
                 <div key={language} className="mt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black/35">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                     {language === "zh-TW"
                       ? t.vocabulary.lookup.chinese
                       : t.vocabulary.lookup.english}
                   </p>
 
                   {voices.length === 0 ? (
-                    <p className="mt-2 text-xs leading-5 text-black/40">
+                    <p className="mt-2 text-xs leading-5 text-ink-faint">
                       {copy.noVoicesInstalled}
                     </p>
                   ) : (
@@ -300,7 +300,7 @@ export default function PronunciationSettingsButton() {
                             <span
                               className={[
                                 "shrink-0 font-mono text-[10px]",
-                                selected ? "text-white/70" : "text-black/35",
+                                selected ? "text-white" : "text-ink-faint",
                               ].join(" ")}
                             >
                               {voice.lang}

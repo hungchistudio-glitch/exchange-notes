@@ -107,7 +107,7 @@ export default function VocabularyLookupModal({
 
         <header className="flex items-center justify-between border-b border-black/10 px-5 pb-4 pt-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
               {t.vocabulary.lookup.search}
             </p>
 
@@ -140,7 +140,7 @@ export default function VocabularyLookupModal({
               <Search
                 size={17}
                 strokeWidth={2}
-                className="shrink-0 text-neutral-500"
+                className="shrink-0 text-ink-soft"
               />
 
               <input
@@ -149,7 +149,7 @@ export default function VocabularyLookupModal({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={t.vocabulary.lookup.inputPlaceholder}
-                className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-neutral-400"
+                className="h-11 min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
               />
 
               {query && (
@@ -188,7 +188,7 @@ export default function VocabularyLookupModal({
               aria-busy="true"
               className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)] sm:p-6"
             >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                 {isLearningChinese
                   ? t.vocabulary.lookup.chinese
                   : t.vocabulary.lookup.english}
@@ -207,7 +207,7 @@ export default function VocabularyLookupModal({
               {(isLearningChinese
                 ? lookupPreview.englishName
                 : lookupPreview.chineseName) ? (
-                <p className="mt-1 text-[15px] text-black/45">
+                <p className="mt-1 text-[15px] text-ink-soft">
                   {isLearningChinese
                     ? lookupPreview.englishName
                     : lookupPreview.chineseName}
@@ -232,7 +232,7 @@ export default function VocabularyLookupModal({
                 <Zap size={21} strokeWidth={1.8} />
               </div>
 
-              <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-neutral-500">
+              <p className="mx-auto mt-4 max-w-xs text-[13px] leading-6 text-ink-soft">
                 {t.vocabulary.lookup.description}
               </p>
             </div>
@@ -302,7 +302,7 @@ export default function VocabularyLookupModal({
                   {(() => {
                     const englishSection = (
                       <section key="english">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                           {t.vocabulary.lookup.english}
                         </p>
 
@@ -310,7 +310,7 @@ export default function VocabularyLookupModal({
                           <p
                             className={
                               isLearningChinese
-                                ? "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-black/45"
+                                ? "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-ink-soft"
                                 : "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
                             }
                           >
@@ -337,7 +337,7 @@ export default function VocabularyLookupModal({
                               chinese={lookupResult.chineseName}
                             />
 
-                            <p className="mt-2 text-[11px] tracking-[0.04em] text-neutral-400">
+                            <p className="mt-2 text-[11px] tracking-[0.04em] text-ink-faint">
                               {t.vocabulary.detail.partOfSpeech[
                                 normalizePartOfSpeech(
                                   lookupResult.partOfSpeech,
@@ -351,7 +351,7 @@ export default function VocabularyLookupModal({
 
                     const chineseSection = (
                       <section key="chinese">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/35">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                           {t.vocabulary.lookup.chinese}
                         </p>
 
@@ -360,7 +360,7 @@ export default function VocabularyLookupModal({
                             className={
                               isLearningChinese
                                 ? "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
-                                : "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-black/45"
+                                : "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-ink-soft"
                             }
                           >
                             {lookupResult.chineseName}
@@ -392,7 +392,7 @@ export default function VocabularyLookupModal({
                               chinese={lookupResult.chineseName}
                             />
 
-                            <p className="mt-2 text-[11px] tracking-[0.04em] text-neutral-400">
+                            <p className="mt-2 text-[11px] tracking-[0.04em] text-ink-faint">
                               {t.vocabulary.detail.partOfSpeech[
                                 normalizePartOfSpeech(
                                   lookupResult.partOfSpeech,
@@ -419,7 +419,7 @@ export default function VocabularyLookupModal({
                       >
                         <div className="flex items-start gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
                               {t.vocabulary.lookup.englishExample}
                             </p>
 
@@ -450,7 +450,7 @@ export default function VocabularyLookupModal({
                       >
                         <div className="flex items-start gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-black/35">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">
                               {t.vocabulary.lookup.chineseExample}
                             </p>
 

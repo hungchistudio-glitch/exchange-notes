@@ -90,7 +90,7 @@ export default function VocabularyFilterPanel({
         <div className="relative border-t border-black/10 px-5 py-4">
           <Search
             size={18}
-            className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400"
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-ink-faint"
           />
 
           <input
@@ -99,7 +99,7 @@ export default function VocabularyFilterPanel({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={translations.searchPlaceholder}
             aria-label={translations.searchAriaLabel}
-            className="w-full border-0 bg-transparent py-2 pl-8 pr-10 text-xl outline-none placeholder:text-neutral-300"
+            className="w-full border-0 bg-transparent py-2 pl-8 pr-10 text-xl outline-none placeholder:text-ink-faint"
           />
 
           {search && (
@@ -113,7 +113,7 @@ export default function VocabularyFilterPanel({
       </header>
 
       <div className="mx-auto grid max-w-xl grid-cols-[72px_1fr] gap-5 px-5 py-8">
-        <aside className="text-xs uppercase leading-5 text-neutral-500">
+        <aside className="text-xs uppercase leading-5 text-ink-soft">
           <p>{String(items.length).padStart(2, "0")}</p>
           <p>
             {items.length === 1
@@ -124,7 +124,7 @@ export default function VocabularyFilterPanel({
 
         <div className="space-y-10">
           {letters.length === 0 ? (
-            <p className="text-neutral-400">
+            <p className="text-ink-faint">
               {translations.noMatchingWords}
             </p>
           ) : (
@@ -144,7 +144,7 @@ export default function VocabularyFilterPanel({
                         {item.word}
                       </span>
 
-                      <span className="mt-1 block text-sm text-neutral-400">
+                      <span className="mt-1 block text-sm text-ink-faint">
                         {item.translation} · {statusLabels[item.status]}
                       </span>
                     </button>
@@ -156,7 +156,7 @@ export default function VocabularyFilterPanel({
         </div>
       </div>
 
-      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-neutral-400 sm:flex">
+      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-ink-faint sm:flex">
         {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
           <a key={letter} href={`#letter-${letter}`}>
             {letter}

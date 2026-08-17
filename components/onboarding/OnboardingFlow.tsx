@@ -155,7 +155,7 @@ export default function OnboardingFlow({
             type="button"
             onClick={goBack}
             aria-label={copy.back}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/[0.05] hover:text-black"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/[0.05] hover:text-black"
           >
             <ChevronLeft size={20} strokeWidth={1.8} />
           </button>

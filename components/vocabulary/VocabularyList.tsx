@@ -102,7 +102,7 @@ function VocabularyList({
         aria-live="polite"
         className="mt-6 flex min-h-40 items-center justify-center rounded-[24px] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
       >
-        <div className="flex flex-col items-center gap-3 text-black/40">
+        <div className="flex flex-col items-center gap-3 text-ink-faint">
           <LoaderCircle
             className="animate-spin"
             size={24}
@@ -147,11 +147,11 @@ function VocabularyList({
       const heroTextClass =
         "min-w-0 break-words text-[27px] font-semibold tracking-[-0.04em] text-black";
       const supportTextClass =
-        "min-w-0 break-words text-xl font-normal text-black/45";
+        "min-w-0 break-words text-xl font-normal text-ink-soft";
       const speakerBase =
         "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-90";
       const heroSpeakerClass = `${speakerBase} bg-black text-white`;
-      const supportSpeakerClass = `${speakerBase} bg-black/[0.05] text-black/55`;
+      const supportSpeakerClass = `${speakerBase} bg-black/[0.05] text-ink-soft`;
 
       const englishRow = (
         <div
@@ -202,11 +202,11 @@ function VocabularyList({
       );
 
       const exampleSpeakerClass =
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-black/55 transition active:scale-90";
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft transition active:scale-90";
 
       const englishExampleRow = lookupResult.englishExample ? (
         <div key="english-example" className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 text-[14px] leading-6 text-black/80">
+          <p className="min-w-0 flex-1 text-[14px] leading-6 text-ink-strong">
             {lookupResult.englishExample}
           </p>
 
@@ -225,7 +225,7 @@ function VocabularyList({
 
       const chineseExampleRow = lookupResult.chineseExample ? (
         <div key="chinese-example" className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 text-[14px] leading-6 text-black/50">
+          <p className="min-w-0 flex-1 text-[14px] leading-6 text-ink-soft">
             {lookupResult.chineseExample}
           </p>
 
@@ -244,11 +244,11 @@ function VocabularyList({
 
       return (
         <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/60">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
             <BookmarkPlus size={22} strokeWidth={1.7} />
           </div>
 
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/35">
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {lookup.wordFound}
           </p>
 
@@ -263,7 +263,7 @@ function VocabularyList({
             className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
           />
 
-          <p className="mt-2 text-[11px] font-medium tracking-[0.06em] text-black/35">
+          <p className="mt-2 text-[11px] font-medium tracking-[0.06em] text-ink-faint">
             {t.vocabulary.detail.partOfSpeech[
               normalizePartOfSpeech(lookupResult.partOfSpeech)
             ]}

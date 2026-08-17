@@ -184,7 +184,7 @@ export default function CommandDeck() {
         <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
           {copy.deck.title}
         </h1>
-        <p className="mt-1 text-black/50">{copy.deck.subtitle}</p>
+        <p className="mt-1 text-ink-soft">{copy.deck.subtitle}</p>
 
         {/*
           The bridge readout, in place of the reference's side panels — there

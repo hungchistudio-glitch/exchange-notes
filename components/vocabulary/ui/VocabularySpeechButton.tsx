@@ -39,7 +39,7 @@ export default function VocabularySpeechButton({
   const prominenceClasses =
     prominence === "primary"
       ? "border border-black bg-black text-white hover:bg-black/85"
-      : "border border-black/[0.07] bg-black/[0.035] text-black/65 hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black";
+      : "border border-black/[0.07] bg-black/[0.035] text-ink-soft hover:border-black/[0.12] hover:bg-black/[0.07] hover:text-black";
 
   return (
     <button

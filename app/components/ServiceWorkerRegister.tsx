@@ -88,7 +88,7 @@ export default function ServiceWorkerRegister() {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="shrink-0 rounded-full px-3 py-1.5 text-[13px] text-white/60 transition active:scale-95"
+        className="shrink-0 rounded-full px-3 py-1.5 text-[13px] text-ink-invert-soft transition active:scale-95"
       >
         {copy.updateReadyDismiss}
       </button>

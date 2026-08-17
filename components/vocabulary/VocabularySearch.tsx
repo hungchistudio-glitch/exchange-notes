@@ -71,7 +71,7 @@ export default function VocabularySearch({
     });
 
   const lookupButtonClass =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/45 transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
 
   const sortLabels: Record<SortMode, string> = {
     new: search.sortOptions.new,
@@ -91,7 +91,7 @@ export default function VocabularySearch({
           <Search
             size={17}
             strokeWidth={1.8}
-            className="shrink-0 text-black/35"
+            className="shrink-0 text-ink-faint"
           />
 
           <input
@@ -100,7 +100,7 @@ export default function VocabularySearch({
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={search.searchPlaceholder}
             aria-label={search.searchAriaLabel}
-            className="h-full min-w-0 flex-1 bg-transparent font-sans text-[14px] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-black/30"
+            className="h-full min-w-0 flex-1 bg-transparent font-sans text-[14px] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-ink-faint"
           />
 
           {query && (
@@ -108,7 +108,7 @@ export default function VocabularySearch({
               type="button"
               onClick={onClear}
               aria-label={search.clearSearch}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-black/50 transition-transform active:scale-95"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-transform active:scale-95"
             >
               <X size={13} strokeWidth={2} />
             </button>
@@ -181,7 +181,11 @@ export default function VocabularySearch({
               onClick={() => onQuickFilterChange(filter.value)}
             >
               <span>{filter.label}</span>
-              <span className={selected ? "text-[var(--accent-amber-ink)]/50" : "text-black/25"}>
+              {/* The selected count keeps the full --accent-amber-ink: at /50
+                  it composited to 2.36:1 on the gold fill. Undimmed it is
+                  5.98:1, and the fill alone already separates it from the
+                  unselected pills. */}
+              <span className={selected ? "text-[var(--accent-amber-ink)]" : "text-ink-faint"}>
                 {filter.count}
               </span>
             </Pill>
@@ -194,10 +198,10 @@ export default function VocabularySearch({
             icon-only form left `title` as the sole indication — and a title
             tooltip never fires on touch, so on a phone there was no way to
             see which sort was active without opening the sheet. */}
-        <p className="min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-black/35">
+        <p className="min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-ink-faint">
           {visibleCount} {visibleCount === 1 ? search.word : search.words}
           <span aria-hidden="true"> · </span>
-          <span className="text-black/50">{sortLabels[sortMode]}</span>
+          <span className="text-ink-soft">{sortLabels[sortMode]}</span>
         </p>
 
         <div
@@ -210,7 +214,7 @@ export default function VocabularySearch({
             onClick={onOpenSort}
             aria-label={`${search.sort}: ${sortLabels[sortMode]}`}
             title={sortLabels[sortMode]}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <SlidersHorizontal size={16} strokeWidth={1.8} />
             {sortMode !== DEFAULT_SORT_MODE && (
@@ -226,7 +230,7 @@ export default function VocabularySearch({
             onClick={onOpenCollections}
             aria-label={search.openCollections}
             title={search.openCollections}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <FolderHeart size={16} strokeWidth={1.8} />
           </button>
@@ -241,7 +245,7 @@ export default function VocabularySearch({
               viewMode === "cards" ? search.compactView : search.cardsView
             }
             aria-pressed={viewMode === "compact"}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-black/55 transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             {viewMode === "cards" ? (
               <List size={16} strokeWidth={1.8} />

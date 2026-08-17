@@ -75,7 +75,7 @@ export default function InterfaceModeSettingsButton() {
           everything, and the answer — that it is not — is worth more here
           than any amount of description of how the deck looks.
         */}
-        <p className="mt-4 text-xs leading-5 text-black/45">
+        <p className="mt-4 text-xs leading-5 text-ink-soft">
           {copy.sharedDataNote}
         </p>
       </BottomSheet>

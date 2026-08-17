@@ -25,7 +25,7 @@ export default function Pill({
         "transition active:scale-[0.98]",
         selected
           ? "bg-gradient-to-br from-[var(--accent-amber-soft)] to-[var(--accent-amber)] text-[var(--accent-amber-ink)] shadow-[0_2px_10px_rgba(201,150,46,0.35)]"
-          : "border border-black/[0.07] bg-white text-black/50",
+          : "border border-black/[0.07] bg-white text-ink-soft",
         className,
       ]
         .filter(Boolean)
