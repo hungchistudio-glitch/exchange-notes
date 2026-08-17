@@ -10,12 +10,29 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // Matches viewport.themeColor in app/layout.tsx — these two used to
-    // disagree (manifest said black, viewport said the warm surface tone),
-    // which showed up as an inconsistent status-bar/splash color depending
-    // on which one a given platform reads.
-    background_color: "#f5f3ed",
-    theme_color: "#f5f3ed",
+    /*
+     * These two describe what the OS paints *before* the document exists, so
+     * they have to match the app's first frame rather than its resting state.
+     *
+     * That first frame is always the opening animation: SplashGate renders it
+     * on every load of a signed-in page, in both interface modes, and it is
+     * server-rendered — `.launch` is fixed, inset-0 and dark from the initial
+     * paint, so nothing of the page shows behind it. Its backdrop is a radial
+     * gradient from #171a1f at the centre out to #07080b, and #07080b is the
+     * tone that reaches the edges, which is what a flat splash fill sits next
+     * to.
+     *
+     * They used to be #f5f3ed, the Standard Mode surface. On an installed PWA
+     * that produced a cream flash on every launch — the OS splash painting the
+     * resting colour of one mode, immediately replaced by a near-black opening.
+     *
+     * This is deliberately not viewport.themeColor, which these once tracked.
+     * That is now per-mode (see generateViewport in app/layout.tsx) and takes
+     * over as soon as the document loads; a static manifest cannot follow it,
+     * and the pre-document moment belongs to the opening either way.
+     */
+    background_color: "#07080b",
+    theme_color: "#07080b",
     icons: [
       {
         src: "/api/icon?size=192",
