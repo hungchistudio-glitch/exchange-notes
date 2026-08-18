@@ -205,6 +205,41 @@
   }
 }
 
+/*
+ * Yumi's idle, handed over from the arrival.
+ *
+ * Every period here is delayed by 1500ms — the exact length of yumiNotice — so
+ * the idle starts on the frame the hop finishes rather than fighting it. One
+ * property does all five, because they all wait for the same thing.
+ *
+ * The shapes are the app's shared vocabulary (app/yumi-motion.css) and the
+ * periods are this screen's: all slower than the Messages mark's, because this
+ * is a moment that has just finished rather than a room being waited in.
+ */
+.yumiIdle {
+  display: block;
+  width: 100%;
+
+  --yumi-delay: 1500ms;
+  --yumi-breath: 6.2s;
+  --yumi-glance: 19s;
+  --yumi-blink: 12.5s;
+  --yumi-iris: 9.5s;
+
+  /*
+   * One pass, and only one. This uses the continuous shape rather than the
+   * rare one because it is not a cycle at all: it fires once, 1.7s in, so the
+   * light crosses Yumi just after it settles — the systems check that follows
+   * the landing. Repeating it would turn a beat into a loading indicator on a
+   * screen whose whole message is that the work is finished.
+   */
+  --yumi-sweep: 1.1s;
+  --yumi-sweep-delay: 1700ms;
+  --yumi-sweep-count: 1;
+  --yumi-sweep-fill: both;
+  --yumi-sweep-peak: 0.8;
+}
+
 /* The real result waits for the alignment, then arrives plainly. */
 .result {
   position: relative;
@@ -226,7 +261,8 @@
  * with nothing behind it but a ring, and the session underneath is already
  * running. Completion keeps its structure and its result, and simply stops
  * moving: no alignment sweep, no wave, no sparks, no hop. The words reviewed
- * are the point and they are still right there.
+ * are the point and they are still right there. Yumi keeps its open eye and
+ * its bright seam; what it loses is the breath, the glance and the pass.
  */
 @media (prefers-reduced-motion: reduce) {
   .launch {
@@ -241,6 +277,9 @@
   .result {
     animation: none;
   }
+
+  /* Yumi's own idle needs nothing here — every animation on the mark is a
+     shared class, and app/yumi-motion.css stops all of them in one place. */
 
   .wave,
   .spark {

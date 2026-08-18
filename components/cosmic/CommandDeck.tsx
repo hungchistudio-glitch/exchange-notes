@@ -367,13 +367,26 @@ export default function CommandDeck() {
                             ? 0.4
                             : 0.12
                     }
-                    className={styles.coreMark}
+                    className={`${styles.coreMark} ${styles.coreTiming}`}
                     pupilClassName={styles.pupil}
                     irisClassName={styles.iris}
-                    upperLidClassName={styles.upperLid}
-                    lowerLidClassName={styles.lowerLid}
-                    sweepClassName={styles.coreSweep}
-                    gleamClassName={styles.coreGleam}
+                    /*
+                     * The blink, the pass and the gleam are the app's shared
+                     * ones (app/yumi-motion.css); the module class beside each
+                     * carries only this screen's timing. They have to be
+                     * applied as global class names — a CSS module scopes any
+                     * animation-name it sees, so a module referring to a
+                     * shared keyframe compiles to a name that matches nothing
+                     * and silently stops animating.
+                     */
+                    upperLidClassName="yumi-blink-upper"
+                    lowerLidClassName="yumi-blink-lower"
+                    sweepClassName={
+                      omniState === "scanning"
+                        ? `yumi-sweep-active ${styles.coreSweepActive}`
+                        : `yumi-sweep ${styles.coreSweep}`
+                    }
+                    gleamClassName={`yumi-gleam ${styles.coreGleam}`}
                   />
                 </div>
               </div>

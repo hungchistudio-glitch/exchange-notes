@@ -452,9 +452,7 @@
   animation: coreBreath 7.4s ease-in-out infinite;
 }
 
-.pupil,
-.upperLid,
-.lowerLid {
+.pupil {
   transform-box: fill-box;
   transform-origin: center;
   will-change: transform;
@@ -464,14 +462,18 @@
   animation: coreLook 17s ease-in-out infinite;
 }
 
-.upperLid {
-  transform: translateY(-82px);
-  animation: coreUpperBlink 5.6s linear infinite;
-}
-
-.lowerLid {
-  transform: translateY(12px);
-  animation: coreLowerBlink 5.6s linear infinite;
+/*
+ * The blink, the scan pass and the gleam are the app's shared ones now — the
+ * classes come from app/yumi-motion.css and this file only sets their pace.
+ *
+ * The blink changed with the move: it used to be one evenly-spaced blink every
+ * 5.6s, which is the most reliable way to make a character look like a loop.
+ * The shared rhythm is a double, then a single, then a long pause, and 11s is
+ * what gives that pause somewhere to happen.
+ */
+.coreTiming {
+  --yumi-blink: 11s;
+  --yumi-sweep-peak: 0.55;
 }
 
 /* Only the scale is left here. The travel moved to .coreDrift so the two can
@@ -567,32 +569,6 @@
   }
 }
 
-@keyframes coreUpperBlink {
-  0%,
-  46%,
-  52%,
-  100% {
-    transform: translateY(-82px);
-  }
-  48%,
-  50% {
-    transform: translateY(0);
-  }
-}
-
-@keyframes coreLowerBlink {
-  0%,
-  46%,
-  52%,
-  100% {
-    transform: translateY(12px);
-  }
-  48%,
-  50% {
-    transform: translateY(-28px);
-  }
-}
-
 /*
  * Ambient stars.
  *
@@ -684,18 +660,6 @@
   .signalDot {
     animation: none;
     opacity: 0.55;
-  }
-
-  /* The lids stop blinking but keep their rest transform, so Yumi's eye is
-     open rather than closed on whatever frame the animation was cancelled. */
-  .upperLid {
-    animation: none;
-    transform: translateY(-82px);
-  }
-
-  .lowerLid {
-    animation: none;
-    transform: translateY(12px);
   }
 
   .nodeLink,
@@ -992,29 +956,8 @@
  * during the last 4% of the cycle, so nothing is interpolating in between.
  */
 .coreSweep {
-  transform-box: view-box;
-  animation: coreSweep 35s linear infinite 5s;
-}
-
-@keyframes coreSweep {
-  0%,
-  95.7% {
-    opacity: 0;
-    transform: translateX(-250px);
-  }
-  /* Held well below full strength. Bright enough to register as light moving
-     inside the shell, dim enough that it never becomes the brightest thing on
-     the screen — which is what separates a scan from a flash. */
-  96.7% {
-    opacity: 0.55;
-  }
-  98.9% {
-    opacity: 0.55;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(250px);
-  }
+  --yumi-sweep: 35s;
+  --yumi-sweep-delay: 5s;
 }
 
 /*
@@ -1023,26 +966,14 @@
  * clearest statement this interface can make that the wait is Yumi thinking
  * and not the page hanging.
  */
-.core[data-omni="scanning"] .coreSweep {
-  animation: coreSweepActive 2.2s linear infinite;
-}
-
-@keyframes coreSweepActive {
-  0% {
-    opacity: 0;
-    transform: translateX(-250px);
-  }
-  14% {
-    opacity: 0.95;
-  }
-  72% {
-    opacity: 0.95;
-  }
-  86%,
-  100% {
-    opacity: 0;
-    transform: translateX(250px);
-  }
+/*
+ * While identifying, the component swaps the rare pass for the continuous one
+ * — see CommandDeck.tsx. It is a class swap rather than an attribute selector
+ * because the shared animation lives on the class, and the deck already knows
+ * this state in React.
+ */
+.coreSweepActive {
+  --yumi-sweep: 2.2s;
 }
 
 /*
@@ -1051,26 +982,8 @@
  * is not reliably down when it passes.
  */
 .coreGleam {
-  transform-box: view-box;
-  animation: coreGleam 15s ease-in-out infinite 2.4s;
-}
-
-@keyframes coreGleam {
-  0%,
-  89% {
-    opacity: 0;
-    transform: translateX(-58px);
-  }
-  92% {
-    opacity: 1;
-  }
-  97% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(58px);
-  }
+  --yumi-gleam: 15s;
+  --yumi-gleam-delay: 2.4s;
 }
 
 /* =========================================================
@@ -1124,10 +1037,7 @@
   .coreHaloInner,
   .coreArc,
   .iris,
-  .core[data-omni="scanning"] .iris,
-  .coreSweep,
-  .core[data-omni="scanning"] .coreSweep,
-  .coreGleam {
+  .core[data-omni="scanning"] .iris {
     animation: none;
   }
 
