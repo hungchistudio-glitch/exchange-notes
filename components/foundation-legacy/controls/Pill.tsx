@@ -19,6 +19,11 @@ export default function Pill({
   return (
     <button
       type={type}
+      /* Exposed so a stylesheet can tell the two states apart without the
+         caller passing two different class names. Cosmic Mode is the first
+         consumer (see .cosmic-chip in app/cosmic.css); nothing reads it in
+         Standard Mode, where the classes below already say everything. */
+      data-selected={selected ? "true" : "false"}
       className={[
         "flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5",
         "font-sans text-[12px] font-medium tracking-[-0.01em]",

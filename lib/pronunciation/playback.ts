@@ -46,6 +46,10 @@ export function speakText(
   const voice = getVoiceForLanguage(lang);
   if (voice) {
     utterance.voice = voice;
+    // Same rule as speak() in lib/speech.ts: once a voice is assigned, the
+    // utterance's language must be that voice's own, or WebKit can resolve
+    // the two against each other and play nothing at all.
+    utterance.lang = voice.lang;
   }
 
   window.speechSynthesis.speak(utterance);

@@ -576,6 +576,10 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
             copy={cookieCopy}
             maxVisible={3}
             hideHint
+            /* The corner tray is three cookies wide and has a stage beside
+               it; opening the full inventory in place would push Yumi off
+               its own home screen. "+N more" stays a label here. */
+            expandable={false}
           />
         </div>
       </div>

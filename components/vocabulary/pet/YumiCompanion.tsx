@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import useYumiOrbitMenu from "@/hooks/pet/useYumiOrbitMenu";
@@ -39,12 +40,48 @@ type YumiCompanionProps = {
   onStartReview: () => void;
   onAddWord: () => void;
   onOpenCamera: () => void;
+  onOpenPronunciation: () => void;
+  onOpenCollections: () => void;
 };
 
 const REACTION_DURATION_MS = 3900;
 // Fallback duration, slightly longer than the CSS animation it backs up:
 // onAnimationEnd never fires when prefers-reduced-motion disables it.
 const WAKE_FALLBACK_MS = 2000;
+
+/*
+ * Lights one token inside a translated sentence.
+ *
+ * The brief asks for Yumi's name in cyan inside the greeting and the status
+ * line, and for the numbers in the daily summary — but both are translated
+ * strings, so neither can be split on position or reassembled from fragments
+ * without giving a translator four half-sentences to make sense of. Finding
+ * the token instead keeps every string whole and grammatical in both locales
+ * ("Hello, Yumi." and "哈囉，Yumi。" both contain exactly one "Yumi"), and a
+ * string that somehow does not contain it simply renders unhighlighted rather
+ * than breaking.
+ *
+ * Standard Mode passes no class and gets the plain text back, so this costs
+ * that shell nothing at all.
+ */
+function highlight(
+  text: string,
+  token: string,
+  className?: string,
+): ReactNode {
+  if (!className) return text;
+
+  const index = text.indexOf(token);
+  if (index === -1) return text;
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className={className}>{token}</span>
+      {text.slice(index + token.length)}
+    </>
+  );
+}
 
 // Replaces the old data-dashboard at the top of the Vocabulary page: Yumi
 // is fed one "cookie" per saved word and grows/reacts over time, so every
@@ -58,11 +95,18 @@ export default function YumiCompanion({
   onStartReview,
   onAddWord,
   onOpenCamera,
+  onOpenPronunciation,
+  onOpenCollections,
 }: YumiCompanionProps) {
   const { t } = useTranslation();
+  const { isCosmic } = useInterfaceMode();
   const copy = t.vocabulary.mascot;
 
   const [petState, setPetState] = useState<PetState | null>(null);
+  // A Core is inside Yumi's attraction zone. Held here rather than inside the
+  // tray because it is Yumi that has to answer it, and the tray has no way to
+  // reach across.
+  const [coreAttracted, setCoreAttracted] = useState(false);
   const [daysSinceLastOpen, setDaysSinceLastOpen] = useState(0);
   const [isWaking, setIsWaking] = useState(true);
   const [glanceDown, setGlanceDown] = useState(false);
@@ -267,6 +311,10 @@ export default function YumiCompanion({
     );
   }
 
+  const handleCoreAttractChange = useCallback((attracted: boolean) => {
+    setCoreAttracted(attracted);
+  }, []);
+
   const handleCookieDragPoint = useCallback(
     (point: { x: number; y: number } | null) => {
       const zone = yumiZoneRef.current;
@@ -308,7 +356,22 @@ export default function YumiCompanion({
     "{count}",
     String(streak.currentStreak),
   );
-  const summaryLine = `${wordsText} · ${cookiesText} · ${streakText} · ${copy.moodShort[mood]}`;
+  /*
+   * The daily line, as parts rather than one string.
+   *
+   * Same four facts, same order, same separators as before — but each one is
+   * paired with the number inside it so Cosmic Mode can light the figures and
+   * leave the labels quiet, which is the brief's rule for this line: cyan is
+   * for high-value numbers, not for the words around them. Standard Mode
+   * passes no class and the parts render as the plain sentence they always
+   * were.
+   */
+  const summaryParts: Array<{ text: string; value?: string }> = [
+    { text: wordsText, value: String(dailyProgress) },
+    { text: cookiesText, value: String(totalCookiesFed) },
+    { text: streakText, value: String(streak.currentStreak) },
+    { text: copy.moodShort[mood] },
+  ];
   const moodStatus = (() => {
     if (orbit.isOpen && feeding.phase === "idle") return copy.menuPrompt;
 
@@ -328,8 +391,14 @@ export default function YumiCompanion({
   })();
 
   return (
-    <section className={styles.section} data-menu-open={orbit.isVisible}>
-      <p className={styles.greeting}>{greeting}</p>
+    <section
+      className={styles.section}
+      data-menu-open={orbit.isVisible}
+      data-cosmic={isCosmic ? "true" : "false"}
+    >
+      <p className={styles.greeting}>
+        {highlight(greeting, "Yumi", isCosmic ? styles.nameLit : undefined)}
+      </p>
 
       <div ref={yumiZoneRef} className={styles.yumiZone}>
         <button
@@ -360,23 +429,43 @@ export default function YumiCompanion({
               isTrackingFood || isTrackingTouch ? "food" : orbit.lookTarget
             }
             onWakeAnimationEnd={handleWakeEnd}
+            cosmic={isCosmic}
+            attracted={coreAttracted}
           />
         </button>
 
         <YumiOrbitMenu
           phase={orbit.phase}
-          showHints={orbit.showHints}
           copy={copy}
+          surface="vocabulary"
           onClose={orbit.close}
           onLook={orbit.lookAt}
           onReview={onStartReview}
           onAddWord={onAddWord}
           onCamera={onOpenCamera}
+          onSpeak={onOpenPronunciation}
+          onCollect={onOpenCollections}
         />
       </div>
 
-      <p className={styles.moodStatus}>{moodStatus}</p>
-      <p className={styles.summaryLine}>{summaryLine}</p>
+      <p className={styles.moodStatus}>
+        {highlight(moodStatus, "Yumi", isCosmic ? styles.nameLit : undefined)}
+      </p>
+
+      <p className={styles.summaryLine}>
+        {summaryParts.map((part, index) => (
+          <span key={part.text}>
+            {index > 0 ? <span aria-hidden="true"> · </span> : null}
+            {part.value
+              ? highlight(
+                  part.text,
+                  part.value,
+                  isCosmic ? styles.metric : undefined,
+                )
+              : part.text}
+          </span>
+        ))}
+      </p>
 
       <div className={styles.foodZone}>
         <CookieTray
@@ -388,6 +477,8 @@ export default function YumiCompanion({
           disabled={!petState || feeding.isFeeding}
           copy={copy}
           onDragPoint={handleCookieDragPoint}
+          cosmic={isCosmic}
+          onAttractChange={handleCoreAttractChange}
         />
       </div>
 

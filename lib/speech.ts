@@ -339,6 +339,32 @@ function narrowToGender(
 }
 
 /**
+ * Prefer voices whose region tag is the one that was actually asked for.
+ *
+ * Without this, "en-US" means nothing beyond "starts with en": every English
+ * voice on the device is an equal candidate, and which one wins is decided by
+ * the order the platform happens to list them in. On a Mac with the full voice
+ * set that hands en-US requests a British voice, which is both wrong and — see
+ * the note in speak() — a way to get no sound at all on iOS.
+ *
+ * Chinese does not use this; it has its own richer tiering below, because for
+ * zh the wrong region is a different pronunciation rather than a different
+ * accent.
+ */
+function narrowToRequestedRegion(
+  candidates: SpeechSynthesisVoice[],
+  lang: SpeechLanguage
+): SpeechSynthesisVoice[] {
+  const wanted = lang.toLowerCase();
+
+  const exact = candidates.filter(
+    (voice) => voice.lang.toLowerCase().replace("_", "-") === wanted
+  );
+
+  return exact.length > 0 ? exact : candidates;
+}
+
+/**
  * For Chinese, "starts with zh" alone isn't enough — zh-CN and zh-HK voices
  * match that same prefix but use Mandarin/Cantonese pronunciation that reads
  * as mispronunciation to a zh-TW learner. Prefer an exact zh-TW tag, then any
@@ -399,7 +425,9 @@ export function selectVoice(
   if (candidates.length === 0) return null;
 
   const dialectMatched =
-    lang === "zh-TW" ? narrowToTraditionalChinese(candidates) : candidates;
+    lang === "zh-TW"
+      ? narrowToTraditionalChinese(candidates)
+      : narrowToRequestedRegion(candidates, lang);
 
   return pickBestQualityVoice(narrowToGender(dialectMatched, gender));
 }
@@ -496,7 +524,17 @@ export function speak(
 
   const sequence = ++speakSequence;
 
-  window.speechSynthesis.cancel();
+  /*
+   * Whether anything is actually in the queue right now.
+   *
+   * Read before cancel(), because cancel() is what makes it false — and the
+   * answer decides which of the two paths at the bottom of this function is
+   * taken. See the note there.
+   */
+  const wasBusy =
+    window.speechSynthesis.speaking || window.speechSynthesis.pending;
+
+  if (wasBusy) window.speechSynthesis.cancel();
 
   const settings = getSpeechSettings();
 
@@ -507,6 +545,18 @@ export function speak(
   const voice = selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang as SpeechLanguage]);
   if (voice) {
     utterance.voice = voice;
+
+    /*
+     * The utterance's language has to be the assigned voice's own.
+     *
+     * Leaving `lang` at what the caller asked for while handing the utterance
+     * a voice from a different region is not a harmless mismatch — on WebKit
+     * it is one of the documented ways to get silence with no error event,
+     * because the platform resolves a voice from `lang` and then finds the
+     * explicitly assigned one inconsistent with it. Once a voice has been
+     * chosen it is the more specific answer, so it wins.
+     */
+    utterance.lang = voice.lang;
   }
 
   // Cheap, always-on diagnostic: if playback ever sounds wrong again,
@@ -527,17 +577,39 @@ export function speak(
   if (callbacks?.onEnd) utterance.onend = () => callbacks.onEnd?.();
   if (callbacks?.onError) utterance.onerror = () => callbacks.onError?.();
 
-  // Chrome/Edge/Safari have a well-known race: calling speak() in the same
-  // tick as cancel() can silently drop the new utterance, or let whatever
-  // was *just* cancelled keep making sound for a moment before the new one
-  // actually starts. When tapping between different sound cards quickly,
-  // that reads as "I tapped F but heard something else" — the previous
-  // card's audio bleeding through, or the new one never starting so the
-  // old one's tail is the last thing heard. A short delay after cancel()
-  // before queuing gives every browser's speech queue time to actually
-  // clear first. If a newer speak() call has started in the meantime (the
-  // user tapped something else during the delay), this one bails instead
-  // of firing late and stepping on it.
+  /*
+   * Two paths, and which one is taken decides whether iOS makes any sound at
+   * all.
+   *
+   * The delayed path exists for a real race: Chrome, Edge and Safari can
+   * silently drop an utterance queued in the same tick as cancel(), or let
+   * whatever was just cancelled keep sounding for a moment before the new one
+   * starts. Tapping quickly between sound cards then reads as "I tapped F and
+   * heard something else" — the previous card bleeding through. A short delay
+   * after cancel() gives the queue time to clear.
+   *
+   * But that delay also breaks WebKit's other rule: the first
+   * speechSynthesis.speak() of a session has to happen inside the task the
+   * user's tap started. Deferring it by even 60ms severs that association, and
+   * WebKit's response is to do nothing — no sound, no error event, nothing in
+   * the console. Every later tap goes down the same path, so the engine never
+   * unlocks and the whole screen stays mute for the session. That is what made
+   * the Pronunciation Lab's English letters silent while its Zhuyin sounds
+   * played perfectly: Zhuyin has recorded audio files and never touches speech
+   * synthesis at all, so it was never subject to either rule.
+   *
+   * The two only conflict when both apply, and they cannot: the race needs
+   * something already in the queue, and the gesture rule only binds when
+   * nothing is. So the queue's own state picks the path — speak immediately
+   * when there is nothing to cancel, defer when there is.
+   */
+  if (!wasBusy) {
+    window.speechSynthesis.speak(utterance);
+    return;
+  }
+
+  // If a newer speak() call has started during the delay — the user tapped
+  // something else — this one bails rather than firing late and stepping on it.
   window.setTimeout(() => {
     if (sequence !== speakSequence) return;
     window.speechSynthesis.speak(utterance);

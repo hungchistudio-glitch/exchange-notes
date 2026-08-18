@@ -37,6 +37,15 @@ const EXIT = {
   "room-earth": "deck-depart",
   "room-memory": "deck-depart",
   "deck-return": "room-depart",
+  /*
+   * Room to room, rather than room to deck.
+   *
+   * A review session started from the vocabulary page returns to the
+   * vocabulary page, so it releases the room it was in and the lexicon
+   * arrives — where "deck-return" would release the same room and then bring
+   * back the Command Deck, which is not where the user is going.
+   */
+  "lexicon-return": "room-depart",
   "dock-move": "dock-move",
   default: "none",
 } as const;
@@ -51,6 +60,7 @@ const ENTER = {
   "room-earth": "room-earth",
   "room-memory": "room-memory",
   "deck-return": "deck-arrive",
+  "lexicon-return": "room-lexicon",
   "dock-move": "dock-move",
   default: "none",
 } as const;

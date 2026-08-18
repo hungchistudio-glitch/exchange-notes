@@ -209,6 +209,59 @@ html[data-interface-mode="yumi-cosmic"] {
   --cosmic-violet: #8b5cf6;
   --cosmic-violet-dim: rgba(139, 92, 246, 0.35);
   --cosmic-amber: #f0b64a;
+
+  /*
+   * The one hue the deck never needed and the vocabulary tray does.
+   *
+   * Cyan already means "live" and violet already means "progress", which
+   * leaves the most common state of all — a word that has simply been saved
+   * and not yet worked on — with nothing to wear. A true blue is far enough
+   * from this file's cyan to be a different answer at a glance and close
+   * enough to belong to the same instrument.
+   */
+  --cosmic-blue: #3187ff;
+
+  /*
+   * The fifth signal, and the last one this palette needs: the teal the
+   * Command Halo's legend gives to memory and reinforcement. Green-shifted
+   * far enough from --cosmic-cyan to be a different answer at a glance —
+   * which is the whole test a fifth hue has to pass on a screen that already
+   * has four.
+   */
+  --cosmic-teal: #2fd6b0;
+
+  /*
+   * Learning Core tones.
+   *
+   * Four states, four tokens, and the names are the vocabulary lifecycle's
+   * rather than the palette's — see cosmicCoreTone in lib/pet/moodEngine.ts
+   * for what resolves to what and in which order.
+   *
+   * Every value is one of the four hues this file already defines. Nothing
+   * new is mixed here on purpose: a fifth cosmic hue invented for the tray
+   * would drift away from the deck and the dock the first time either of them
+   * was retuned, and the whole reason Cosmic Mode holds together across
+   * fifteen screens is that they all read from these same few lines.
+   *
+   * The -lift pair is each hue raised toward white. It lights the glyph and
+   * the centre of the chamber, where the base hue alone sits too dark to read
+   * against the housing around it.
+   */
+  --core-tone-new: var(--cosmic-blue);
+  --core-tone-new-lift: #a9cbff;
+  --core-tone-learning: var(--cosmic-cyan);
+  --core-tone-learning-lift: #c2f6fb;
+  --core-tone-due: var(--cosmic-violet);
+  --core-tone-due-lift: #cfb4ff;
+  --core-tone-mastered: var(--cosmic-amber);
+  --core-tone-mastered-lift: #ffdda2;
+
+  /* The housing the tones sit in. Cool gunmetal against the warm-neutral the
+     standard cookie uses, and one dark fill deep enough that a lit chamber
+     has somewhere to be lit against. */
+  --core-chassis-lit: #46536b;
+  --core-chassis-seam: #222b3c;
+  --core-chamber: #060d1c;
 }
 
 /*
@@ -561,6 +614,192 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-lock[data-saved="true"] {
      travelling rings stop, since a ring that expands is pure movement. */
   html[data-interface-mode="yumi-cosmic"] .cosmic-sonar:active,
   html[data-interface-mode="yumi-cosmic"] .cosmic-lock:active {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   Mission Control — the vocabulary panel's instruments
+   ========================================================= */
+
+/*
+ * Everything in this section is a class applied unconditionally at its call
+ * site and defined only under this selector, which is the same arrangement
+ * .hud-label and .cosmic-sonar already use. It is worth restating why, because
+ * it is the reason the vocabulary page has no `isCosmic ?` in its markup: a
+ * class that resolves to nothing in Standard Mode costs that shell one unused
+ * token in an attribute and cannot regress it, while a ternary in the
+ * component costs a branch on every render and a second layout to keep in
+ * step forever.
+ *
+ * The division of labour with the hero above is deliberate. Yumi and the
+ * Learning Cores are objects and live in modules of their own; these are
+ * *surfaces* — a field, some chips, three round buttons — and every one of
+ * them is shared with pages outside this one. They belong here.
+ */
+
+/*
+ * The search field.
+ *
+ * Four layers doing what the brief asks for in order: a dark translucent
+ * ground, a hairline in cyan rather than gold, an internal gradient that
+ * lights the top edge, and — only on focus — a glow. The resting state is
+ * quiet on purpose; a field that glows before it is touched is competing with
+ * the hero for the one bright thing on the screen.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-console {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 26%, transparent);
+  background-color: rgba(9, 18, 36, 0.72);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--cosmic-cyan) 7%, transparent),
+    transparent 62%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    border-color 200ms ease,
+    box-shadow 240ms ease;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 18%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 22%, transparent),
+    0 0 22px color-mix(in oklab, var(--cosmic-cyan) 16%, transparent);
+}
+
+/*
+ * The round controls: the three lookup shortcuts inside the field, and the
+ * three tools beneath it.
+ *
+ * Outlined, not filled, and identical to each other. The dock's rule applies
+ * here too — only the thing that is currently active earns light, and none of
+ * these is ever "active", they are all doors. Filling six discs with cyan
+ * would put six competing beacons under the one panel that is supposed to be
+ * the calm half of this page.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-instrument {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 20%, transparent);
+  background-color: rgba(9, 18, 36, 0.55);
+  color: color-mix(in oklab, var(--cosmic-cyan) 78%, transparent);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-instrument:hover {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 44%, transparent);
+  background-color: color-mix(in oklab, var(--cosmic-cyan) 10%, transparent);
+  color: var(--cosmic-cyan);
+}
+
+/*
+ * Filter chips.
+ *
+ * The unselected ones go dark and restrained; only the selected one is lit,
+ * and it is lit with an outline and a low-strength fill rather than the gold
+ * gradient Standard Mode uses — there is no gold surface on this page for
+ * dark ink to sit on, and a solid cyan pill would be brighter than anything
+ * in the panel above it.
+ *
+ * background-image is cleared explicitly because Tailwind's gradient
+ * utilities paint there rather than in background-color, so a colour alone
+ * would leave the gold ramp sitting on top of it.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-chip {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
+  background-color: rgba(9, 18, 36, 0.6);
+  color: color-mix(in oklab, var(--color-black) 62%, transparent);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-chip[data-selected="true"] {
+  background-image: none;
+  background-color: color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 58%, transparent);
+  color: var(--cosmic-cyan);
+  box-shadow: 0 0 16px color-mix(in oklab, var(--cosmic-cyan) 18%, transparent);
+}
+
+/* The count inside a selected chip. Standard Mode puts near-black ink on the
+   gold fill; there is no fill here to be dark against, so it takes the chip's
+   own cyan at full strength and is separated from the label by weight. */
+html[data-interface-mode="yumi-cosmic"]
+  .cosmic-chip[data-selected="true"]
+  .cosmic-chip-count {
+  color: var(--cosmic-cyan);
+  font-weight: 600;
+}
+
+/* A figure that changed since yesterday. Used for the panel's saved /
+   learning / mastered counts, on the same rule as the hero's daily line:
+   cyan is spent on numbers, never on the words around them. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-metric {
+  color: var(--cosmic-cyan);
+  font-weight: 600;
+}
+
+/* The panel that holds the field and the chips: glass rather than the solid
+   navy every other `bg-white` card becomes, because this one sits directly
+   under the hero and a hard edge there would cut the field in half. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-panel {
+  background-color: rgba(11, 20, 40, 0.66);
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 13%, transparent);
+  box-shadow: 0 18px 40px rgba(1, 4, 12, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/*
+ * The panel's instrument mark: two orbits and a point of light, drawn with
+ * borders on one element and its two pseudo-elements so it adds no DOM beyond
+ * the span the markup already carries.
+ *
+ * `display: block` is what reveals it — the element ships with Tailwind's
+ * `hidden` on it, so Standard Mode never renders it at all and there is no
+ * mode check in the component to keep in step.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark {
+  display: block;
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 26%, transparent);
+  opacity: 0.75;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in oklab, var(--cosmic-cyan) 34%, transparent);
+  animation: cosmicOrbitMarkSpin 26s linear infinite;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--cosmic-cyan);
+  box-shadow: 0 0 9px 2px var(--cosmic-cyan-dim);
+}
+
+@keyframes cosmicOrbitMarkSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::before {
     animation: none;
   }
 }

@@ -1,0 +1,352 @@
+/*
+ * The Learning Core's shell.
+ *
+ * Six layers, one 12-sided footprint, and not a single raster asset: a
+ * machined chassis, a rim, an energy chamber, the glyph, a specular sheen and
+ * a projected pad. Sixteen cores can be on screen at once, so every layer here
+ * had to be a gradient rather than an image — a core costs no request, no
+ * decode and no memory beyond its own box.
+ *
+ * The twelve-sided outline is the whole silhouette decision. A circle is a
+ * cookie and a hexagon is a crypto token; a dodecagon reads as something
+ * machined, keeps a friendly round mass at 52px, and is the shape the brief's
+ * "collectible artifact, not a casino chip" actually points at. It is applied
+ * as clip-path from one custom property so the chassis, rim and sheen cannot
+ * drift out of register with each other.
+ */
+
+.core {
+  /*
+   * Twelve vertices, first one at the top. Held in a custom property because
+   * three layers clip to it and a fourth is inset inside it — one definition
+   * is the only way they stay concentric.
+   */
+  --facet: polygon(
+    50% 0%,
+    25% 6.7%,
+    6.7% 25%,
+    0% 50%,
+    6.7% 75%,
+    25% 93.3%,
+    50% 100%,
+    75% 93.3%,
+    93.3% 75%,
+    100% 50%,
+    93.3% 25%,
+    75% 6.7%
+  );
+
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* The pad is projected below the chassis and must not be cut off. */
+  overflow: visible;
+}
+
+/*
+ * The four tones, each pointing at a token rather than a literal — see the
+ * --core-tone-* block in app/cosmic.css for what they mean and why there are
+ * exactly four. The state names are the vocabulary lifecycle's, not the
+ * palette's, so a colour here can never be chosen before its meaning.
+ */
+.core[data-tone="new"] {
+  --tone: var(--core-tone-new);
+  --tone-lift: var(--core-tone-new-lift);
+}
+
+.core[data-tone="learning"] {
+  --tone: var(--core-tone-learning);
+  --tone-lift: var(--core-tone-learning-lift);
+}
+
+.core[data-tone="due"] {
+  --tone: var(--core-tone-due);
+  --tone-lift: var(--core-tone-due-lift);
+}
+
+.core[data-tone="mastered"] {
+  --tone: var(--core-tone-mastered);
+  --tone-lift: var(--core-tone-mastered-lift);
+}
+
+/*
+ * The chassis: machined plating under a single light.
+ *
+ * Two backgrounds on one element rather than two elements with a blend mode.
+ * The lower one is a repeating conic gradient — twelve plates, one per facet,
+ * with a dark seam between each — and the upper one is the lighting, a
+ * translucent sweep from top-left that has to sit *over* the plates or the
+ * seams would be lit as brightly as the faces and the whole thing would go
+ * flat. `from 15deg` lands each seam on a vertex instead of across a face.
+ */
+.chassis {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--facet);
+  background:
+    linear-gradient(
+      158deg,
+      rgba(255, 255, 255, 0.32) 0%,
+      rgba(255, 255, 255, 0.04) 34%,
+      rgba(0, 0, 0, 0.28) 62%,
+      rgba(0, 0, 0, 0.5) 100%
+    ),
+    repeating-conic-gradient(
+      from 15deg at 50% 50%,
+      var(--core-chassis-lit) 0deg 25deg,
+      var(--core-chassis-seam) 25deg 30deg
+    );
+}
+
+/*
+ * The rim. Inset far enough to leave the chassis showing as a metal edge, and
+ * filled with the tone at low strength so the machined frame is lit from the
+ * energy it contains rather than being a grey ring with a coloured dot in it.
+ */
+.rim {
+  position: absolute;
+  inset: 3px;
+  clip-path: var(--facet);
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--tone) 12%, var(--core-chamber)) 0%,
+    var(--core-chamber) 74%
+  );
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tone) 34%, transparent);
+}
+
+/*
+ * The chamber: the part that is actually alight.
+ *
+ * Round inside the twelve-sided frame, because the contrast between the two
+ * is what sells the frame as a housing built around something. Lit from its
+ * own centre outward and ringed on the inside, so the light reads as
+ * contained — a chamber that glowed hardest at its rim would be a lamp.
+ */
+.chamber {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  /*
+   * An annulus, not a disc.
+   *
+   * The first version filled the chamber with light and it cost the glyph its
+   * contrast — a pale symbol on a bright field, which is the one thing the
+   * middle of a Learning Core must not be, since the glyph is the only part of
+   * it that says which word this is. So the light was moved off centre and out
+   * to the wall: dark glass in the middle, a bright ring around three-quarters
+   * of the radius, and a soft bloom near the top where the sheen falls. The
+   * chamber reads brighter than before and the glyph now sits in a dark pupil
+   * of its own.
+   */
+  background:
+    radial-gradient(
+      ellipse 74% 52% at 50% 22%,
+      color-mix(in oklab, var(--tone-lift) 24%, transparent) 0%,
+      transparent 68%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklab, var(--tone) 7%, transparent) 0%,
+      color-mix(in oklab, var(--tone) 3%, transparent) 48%,
+      color-mix(in oklab, var(--tone-lift) 40%, transparent) 76%,
+      color-mix(in oklab, var(--tone) 22%, transparent) 90%,
+      transparent 100%
+    );
+  box-shadow:
+    inset 0 0 7px color-mix(in oklab, var(--tone) 46%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--tone) 40%, transparent),
+    0 0 11px color-mix(in oklab, var(--tone) 24%, transparent);
+  /*
+   * The resting ember. Opacity only, no transform, and the stagger is what it
+   * is for: --core-index turns one 7.4s animation into sixteen that are never
+   * in phase, so the tray breathes without any core appearing to lead.
+   *
+   * This is the *only* animation a resting core runs. Everything richer —
+   * the lift, the wider glow, the pad's spin — waits until a core is actually
+   * in the user's hand, which is what keeps a full tray affordable.
+   */
+  animation: coreEmber 7.4s ease-in-out infinite;
+  animation-delay: calc(var(--core-index, 0) * -0.83s);
+}
+
+@keyframes coreEmber {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, "SF Mono", "Menlo", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  /* Brighter than the ring around it by a clear step, so the symbol is read
+     before the hardware is. The glow is the tone's, which is what keeps a
+     near-white glyph from reading as a different colour on every core. */
+  color: color-mix(in oklab, var(--tone-lift) 72%, #ffffff);
+  text-shadow:
+    0 0 10px color-mix(in oklab, var(--tone) 85%, transparent),
+    0 0 3px color-mix(in oklab, var(--tone-lift) 70%, transparent),
+    0 1px 2px rgba(2, 8, 22, 0.8);
+}
+
+/*
+ * The sheen. A single soft highlight in the top-left quadrant, clipped to the
+ * same facets, sitting above everything else on the face — this is a
+ * reflection off the outside of the housing, so it passes over the chamber
+ * and the glyph rather than under them.
+ */
+.gloss {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--facet);
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 62% 46% at 30% 20%,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.07) 42%,
+    transparent 72%
+  );
+}
+
+/*
+ * NEW.
+ *
+ * Deliberately the only badge a core can wear. The brief lists five status
+ * fields and then says not to show them all at once, which is right: the hue
+ * already carries the lifecycle, so the badge is spent on the one fact the
+ * hue cannot express — that this word arrived today. Everything else waits
+ * for the detail view.
+ */
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -7px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in oklab, var(--tone) 55%, transparent);
+  background: color-mix(in oklab, var(--core-chamber) 88%, var(--tone));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  color: var(--tone-lift);
+  pointer-events: none;
+}
+
+/*
+ * The pad: a projected ring the core appears to hover over.
+ *
+ * Flattened hard (its height is a sixth of its width) because that is what
+ * a circle drawn on a surface below eye level looks like, and it is the whole
+ * reason the tray reads as objects standing in a space rather than icons
+ * printed on a page. Faint enough to disappear against a busy background,
+ * which is correct — a projection would.
+ */
+.pad {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 66%;
+  height: 11px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--tone) 26%, transparent);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--tone) 14%, transparent);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   Lifted — the core in the user's hand
+   --------------------------------------------------------------- */
+
+/*
+ * The brief's 1.06–1.10, taken at the top of the range: a core lifted off the
+ * tray has to clear its neighbours visibly or the pickup does not register as
+ * having happened at all. Scale, glow and shadow together, since one of them
+ * alone reads as a hover rather than as something picked up.
+ */
+.core[data-state="lifted"] {
+  transform: scale(1.09);
+  filter: drop-shadow(0 10px 16px rgba(1, 4, 12, 0.55));
+}
+
+.core[data-state="lifted"] .chamber {
+  animation: none;
+  opacity: 1;
+  box-shadow:
+    inset 0 0 8px color-mix(in oklab, var(--tone) 62%, transparent),
+    0 0 22px color-mix(in oklab, var(--tone) 46%, transparent);
+}
+
+.core[data-state="lifted"] .rim {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tone) 66%, transparent);
+}
+
+/* The pad turns only while the core is held. At rest it is a still ellipse,
+   which is what a projection sitting on a shelf should be; in the hand it is
+   a device doing something. */
+.core[data-state="lifted"] .pad {
+  border-color: color-mix(in oklab, var(--tone) 46%, transparent);
+  border-style: dashed;
+  animation: corePadSpin 2.8s linear infinite;
+}
+
+@keyframes corePadSpin {
+  to {
+    transform: translateX(-50%) rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Absorbing — the last few hundred milliseconds before Yumi has it
+   --------------------------------------------------------------- */
+
+/*
+ * Contracting rather than exploding. The core is being taken *into* something,
+ * and the chamber outliving the chassis by a moment is the detail that says
+ * what was actually absorbed: the energy, not the housing.
+ */
+.core[data-state="absorbing"] .chassis,
+.core[data-state="absorbing"] .rim,
+.core[data-state="absorbing"] .gloss,
+.core[data-state="absorbing"] .pad {
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+
+.core[data-state="absorbing"] .chamber {
+  animation: none;
+  box-shadow:
+    inset 0 0 10px color-mix(in oklab, var(--tone) 80%, transparent),
+    0 0 26px color-mix(in oklab, var(--tone) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * The ember and the pad's rotation stop; the lift does not. Scale on a
+   * picked-up object is not ambience, it is the only confirmation that the
+   * press was received, and removing it would leave a drag with no feedback
+   * at all. Everything that loops is gone.
+   */
+  .chamber,
+  .core[data-state="lifted"] .pad {
+    animation: none;
+  }
+
+  .chamber {
+    opacity: 1;
+  }
+}

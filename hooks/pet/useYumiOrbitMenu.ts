@@ -13,17 +13,22 @@ export type YumiLookTarget =
   | "review"
   | "add"
   | "camera"
+  | "speak"
+  | "collect"
   | "food";
 
-const OPEN_COMPLETE_MS = 460;
-const CLOSE_COMPLETE_MS = 330;
-const ORBIT_HINT_STORAGE_KEY = "exchange-notes:yumi-orbit-hint-seen";
+/*
+ * Long enough to cover the halo's own arrival — the last capability node
+ * lands at 470ms (see YumiOrbitMenu.module.css) — so the phase does not flip
+ * to "open" while the ring is still assembling.
+ */
+const OPEN_COMPLETE_MS = 540;
+const CLOSE_COMPLETE_MS = 260;
 
 export default function useYumiOrbitMenu() {
   const [phase, setPhase] = useState<YumiOrbitPhase>("closed");
   const [lookTarget, setLookTarget] =
     useState<YumiLookTarget>("viewer");
-  const [showHints, setShowHints] = useState(false);
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const phaseRef = useRef<YumiOrbitPhase>("closed");
 
@@ -45,23 +50,25 @@ export default function useYumiOrbitMenu() {
     setPhase("opening");
     setLookTarget("viewer");
 
-    try {
-      const shouldShowHints =
-        window.localStorage.getItem(ORBIT_HINT_STORAGE_KEY) !== "1";
-      setShowHints(shouldShowHints);
-
-      if (shouldShowHints) {
-        window.localStorage.setItem(ORBIT_HINT_STORAGE_KEY, "1");
-        schedule(() => setShowHints(false), 2_450);
-      }
-    } catch {
-      setShowHints(false);
-    }
-
-    schedule(() => setLookTarget("review"), 70);
-    schedule(() => setLookTarget("add"), 145);
-    schedule(() => setLookTarget("camera"), 225);
-    schedule(() => setLookTarget("viewer"), 360);
+    /*
+     * Yumi watches its own capabilities arrive.
+     *
+     * The delays match the halo's stagger (120ms, then 45ms apart), so the eye
+     * reaches each station as that node appears rather than sweeping on an
+     * unrelated clock — which is what turns "Yumi looked around" into "Yumi
+     * brought these out".
+     *
+     * There is no first-run tooltip flash any more, and no localStorage key
+     * behind it: every node now carries its name and a line saying what it
+     * does, permanently. A hint that has to be remembered per device only
+     * existed because the labels were hidden.
+     */
+    schedule(() => setLookTarget("review"), 130);
+    schedule(() => setLookTarget("add"), 175);
+    schedule(() => setLookTarget("camera"), 220);
+    schedule(() => setLookTarget("speak"), 265);
+    schedule(() => setLookTarget("collect"), 310);
+    schedule(() => setLookTarget("viewer"), 440);
     schedule(() => {
       phaseRef.current = "open";
       setPhase("open");
@@ -74,11 +81,11 @@ export default function useYumiOrbitMenu() {
     clearTimers();
     phaseRef.current = "closing";
     setPhase("closing");
-    setLookTarget("camera");
+    setLookTarget("collect");
 
-    schedule(() => setLookTarget("add"), 70);
-    schedule(() => setLookTarget("review"), 140);
-    schedule(() => setLookTarget("viewer"), 220);
+    schedule(() => setLookTarget("camera"), 55);
+    schedule(() => setLookTarget("review"), 110);
+    schedule(() => setLookTarget("viewer"), 170);
     schedule(() => {
       phaseRef.current = "closed";
       setPhase("closed");
@@ -128,7 +135,6 @@ export default function useYumiOrbitMenu() {
     lookTarget,
     isVisible: phase !== "closed",
     isOpen: phase === "open" || phase === "opening",
-    showHints,
     open,
     close,
     toggle,

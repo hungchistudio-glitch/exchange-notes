@@ -180,6 +180,9 @@ export function buildAvailableCookies(
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
+  const todayKey = toLocalDateKey(new Date());
+  const now = Date.now();
+
   return sorted
     .map((item, index) => {
       const type = cookieTypeForIndex(index);
@@ -189,7 +192,50 @@ export function buildAvailableCookies(
         word: item.word,
         type,
         glyph: glyphForCookie(item, type),
+        status: item.status,
+        isNew: toLocalDateKey(new Date(item.created_at)) === todayKey,
+        reviewDue: Boolean(
+          item.last_reviewed_at
+            && item.next_review_at
+            && new Date(item.next_review_at).getTime() <= now,
+        ),
       };
     })
     .filter((cookie) => !fedSet.has(cookie.id));
+}
+
+/*
+ * What colour a cookie is, once Cosmic Mode has repainted it as a Learning
+ * Core. Presentation, but not arbitrary presentation — which is why it lives
+ * next to the thing it reads rather than inside a stylesheet.
+ *
+ * Four tones, resolved in order, and the order is the point: a core wears the
+ * single most useful thing its word currently has to say, not a blend of
+ * everything true about it.
+ *
+ *   mastered  gold. The rarest state and the one worth celebrating, so it
+ *             outranks everything else a mastered word could also be.
+ *   due       violet. The one tone that is a request: this word has been
+ *             practised before, its return is overdue, and dragging it onto
+ *             Yumi is the answer.
+ *   learning  cyan, matching the colour the rest of Cosmic Mode uses for a
+ *             system that is live.
+ *   new       blue, and the resting state of the tray.
+ *
+ * The tone is named for the state rather than the hue on purpose. A palette
+ * whose values are called "blue" and "gold" invites the next change to pick a
+ * colour first and find a meaning for it afterwards, which is precisely how a
+ * semantic system stops being one.
+ *
+ * Deliberately not keyed on letter/zhuyin. That split decides the glyph, and
+ * a palette that repeated it would spend all four hues saying something the
+ * symbol in the middle of the core already says perfectly well.
+ */
+export type CoreTone = "mastered" | "due" | "learning" | "new";
+
+export function cosmicCoreTone(cookie: Cookie): CoreTone {
+  if (cookie.status === "mastered") return "mastered";
+  if (cookie.reviewDue) return "due";
+  if (cookie.status === "learning") return "learning";
+  return "new";
 }

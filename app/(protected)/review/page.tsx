@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import MissionCompleteStage from "@/components/cosmic/MissionCompleteStage";
 import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
@@ -115,6 +116,29 @@ export default function ReviewPage() {
   const { t } = useTranslation();
   const copy = t.review;
   const { isCosmic } = useInterfaceMode();
+  const searchParams = useSearchParams();
+
+  /**
+   * Where leaving this page goes back to.
+   *
+   * Both back affordances used to be a hard-coded "/", which sent every entry
+   * from the vocabulary page — the Yumi Command Halo's Practice node and the
+   * hero's own review button, both of which have always passed
+   * ?from=vocabulary — to the home screen instead of the list the session was
+   * started from. The parameter was being sent and never read.
+   *
+   * Matched against a fixed set rather than used as a path, on the same
+   * reading as the capture page's Cancel: the value comes from the query
+   * string, and treating it as a destination would be an open redirect.
+   */
+  const cameFromVocabulary = searchParams.get("from") === "vocabulary";
+  const exitHref = cameFromVocabulary ? "/vocabulary" : "/";
+  /*
+   * The arrival has to match the destination too. "deck-return" plays the
+   * Command Deck coming back, which is the wrong room entirely when the
+   * destination is the lexicon — see CosmicRouteStage for the pairing.
+   */
+  const exitTransition = cameFromVocabulary ? "lexicon-return" : "deck-return";
 
   const [phase, setPhase] = useState<Phase>("landing");
   const [mode, setMode] = useState<Mode>("due");
@@ -398,11 +422,11 @@ export default function ReviewPage() {
         </p>
 
         <Link
-          href="/"
-          transitionTypes={isCosmic ? ["deck-return"] : undefined}
+          href={exitHref}
+          transitionTypes={isCosmic ? [exitTransition] : undefined}
           className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white"
         >
-          {copy.backToHome}
+          {cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
         </Link>
       </>
     );
@@ -432,9 +456,9 @@ export default function ReviewPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
       >
         <Link
-          href="/"
-          transitionTypes={isCosmic ? ["deck-return"] : undefined}
-          aria-label="Back"
+          href={exitHref}
+          transitionTypes={isCosmic ? [exitTransition] : undefined}
+          aria-label={cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />

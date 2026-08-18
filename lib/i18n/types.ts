@@ -909,6 +909,19 @@ export type TranslationDictionary = {
       cookieTrayHint: string;
       cookieTrayMore: string;
       feedAriaLabel: string;
+      /* Cosmic Mode only — the same cookies, addressed as Learning Cores. */
+      coreTrayEmpty: string;
+      coreTrayHint: string;
+      coreTrayShowLess: string;
+      coreTrayShowAllAriaLabel: string;
+      coreNewBadge: string;
+      coreAriaLabel: string;
+      coreState: {
+        new: string;
+        learning: string;
+        due: string;
+        mastered: string;
+      };
       cookieTypeLetter: string;
       cookieTypeZhuyin: string;
       feedingAnticipating: string;
@@ -922,6 +935,24 @@ export type TranslationDictionary = {
       reviewActionLabel: string;
       addWordActionLabel: string;
       cameraActionLabel: string;
+      /*
+       * The Command Halo names each capability twice: a one-word name for the
+       * node, and a short line saying what it does. The longer *ActionLabel
+       * above stays the accessible name — a screen reader wants "Start
+       * review", not "Practice".
+       */
+      haloReviewName: string;
+      haloReviewBlurb: string;
+      haloAddName: string;
+      haloAddBlurb: string;
+      haloCameraName: string;
+      haloCameraBlurb: string;
+      haloSpeakName: string;
+      haloSpeakBlurb: string;
+      haloCollectName: string;
+      haloCollectBlurb: string;
+      speakActionLabel: string;
+      collectActionLabel: string;
     };
 
     lookup: {
@@ -1180,6 +1211,7 @@ export type TranslationDictionary = {
     completeTitle: string;
     completeDescription: string;
     completedReviews: string;
+    backToVocabulary: string;
     backToHome: string;
     grades: {
       again: {
