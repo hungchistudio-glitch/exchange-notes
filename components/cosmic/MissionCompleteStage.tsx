@@ -55,15 +55,41 @@ export default function MissionCompleteStage({
 
       <div className={styles.yumi} aria-hidden="true">
         {/*
-          The same refit Yumi wears on the deck — this screen is inside Cosmic
-          Mode, and a Yumi that loses its shell and seam on the way to the
-          celebration would read as a different character arriving.
-
-          Energy is at the top of its range here, and this is the moment the
-          brief reserved it for: finishing a mission is the notable event, so
-          the seam and the constellation are allowed to be bright.
+          The idle wrapper exists because .yumi is already spending its
+          transform on the arrival hop, and that hop runs once. Without a
+          second element Yumi lands and then holds perfectly still for as long
+          as the result is on screen, which is most of the time anyone spends
+          here — the entrance was animated and the character was not.
         */}
-        <ExchangeNotesMark cosmic energy={1} />
+        <div className={`${styles.yumiIdle} yumi-breath`}>
+          {/*
+            The same refit Yumi wears on the deck — this screen is inside
+            Cosmic Mode, and a Yumi that loses its shell and seam on the way to
+            the celebration would read as a different character arriving.
+
+            Energy is at the top of its range here, and this is the moment the
+            brief reserved it for: finishing a mission is the notable event, so
+            the seam and the constellation are allowed to be bright.
+
+            The eye is new. It had none at all before: no pupil drift, no
+            blink, no iris, so Yumi arrived at its own celebration and stared.
+
+            These are the app's shared idle classes (app/yumi-motion.css),
+            applied as global names — a CSS module scopes every animation-name
+            it sees, so a module referring to a shared keyframe compiles to a
+            name that matches nothing and silently stops. The pace comes from
+            custom properties on .yumiIdle.
+          */}
+          <ExchangeNotesMark
+            cosmic
+            energy={1}
+            pupilClassName="yumi-glance"
+            upperLidClassName="yumi-blink-upper"
+            lowerLidClassName="yumi-blink-lower"
+            irisClassName="yumi-iris"
+            sweepClassName="yumi-sweep-active"
+          />
+        </div>
       </div>
 
       <div className={styles.result}>{children}</div>

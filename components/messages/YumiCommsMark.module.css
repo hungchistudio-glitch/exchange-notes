@@ -7,15 +7,21 @@
  * rather than as life.
  *
  * The trick to "continuous" is that nothing here shares a period. Breath runs
- * at 5.5s, the glance at 17s, the blink at 11s; the combination takes minutes
- * to come back around, so the figure never visibly loops the way a single
- * 3-second mood did. That is the whole difference between a looping asset and
- * something that appears to be alive.
+ * at 5.5s, the glance at 17s, the blink at 11s, the iris at 8.5s and the scan
+ * pass at 28s; the combination takes minutes to come back around, so the
+ * figure never visibly loops the way a single 3-second mood did. That is the
+ * whole difference between a looping asset and something that appears to be
+ * alive.
  *
- * Lid geometry is inherited from the mark itself: the upper lid rests at
- * -82px and the lower at 12px, and a blink is both of them meeting near -2px.
- * Those three numbers are the mark's, not this file's — see
- * components/ui/ExchangeNotesMark.tsx.
+ * Those five numbers are now the only animation content in this file. The
+ * shapes they drive moved to app/yumi-motion.css when the Command Deck and the
+ * mission-complete stage turned out to want the same ones — this screen had
+ * them first and had them right, so the app adopted these rather than the
+ * other way round. What is left here is the pace, which is the part that is
+ * genuinely about Messages.
+ *
+ * They are set on .shell and inherit, so a single element carries the timing
+ * for animations running on five different nodes inside the SVG.
  */
 
 .shell {
@@ -23,7 +29,21 @@
   height: var(--yumi-mark-size, 84px);
   color: var(--msg-ink);
   transform-origin: 48% 58%;
-  animation: breath 5.5s cubic-bezier(0.37, 0, 0.24, 1) infinite;
+
+  --yumi-breath: 5.5s;
+  --yumi-glance: 17s;
+  --yumi-blink: 11s;
+  --yumi-iris: 8.5s;
+
+  /*
+   * 28s rather than the deck's 35 so the two never look like one clock, and a
+   * dimmer peak because this mark is a third the size and Messages is already
+   * a bright cyan room — the brightness that reads as contained energy at
+   * 120px reads as a flare at 84.
+   */
+  --yumi-sweep: 28s;
+  --yumi-sweep-delay: 9s;
+  --yumi-sweep-peak: 0.45;
 }
 
 .logo {
@@ -35,162 +55,14 @@
 
 /* In deep space the drop shadow becomes a light source instead. */
 .shellCosmic .logo {
-  filter: drop-shadow(0 6px 22px color-mix(in oklab, var(--msg-accent) 26%, transparent));
-}
-
-.pupil,
-.upperLid,
-.lowerLid,
-.iris {
-  transform-box: fill-box;
-  transform-origin: center;
+  filter: drop-shadow(
+    0 6px 22px color-mix(in oklab, var(--msg-accent) 26%, transparent)
+  );
 }
 
 /*
- * A slow settle rather than a pulse: up on the inhale, and the easing spends
- * most of the cycle near the top, which is what keeps it from feeling like a
- * heartbeat.
+ * Reduced motion needs nothing here any more. Every animation on this mark is
+ * a shared class, and app/yumi-motion.css stops all of them in one place —
+ * including restoring the lids to their open position, which is the part that
+ * was worth centralising.
  */
-@keyframes breath {
-  0%,
-  100% {
-    transform: translateY(0) scaleX(1) scaleY(1);
-  }
-  48% {
-    transform: translateY(-3px) scaleX(1.011) scaleY(1.016);
-  }
-}
-
-/*
- * The glance. Long holds at each position and a long return to centre — this
- * is a figure noticing things, not scanning. 17s against the 11s blink is what
- * keeps the two from ever pairing up the same way twice.
- */
-.pupil {
-  animation: glance 17s ease-in-out infinite;
-}
-
-@keyframes glance {
-  0%,
-  14% {
-    transform: translate(0, 0);
-  }
-  22%,
-  34% {
-    transform: translate(-7px, 1px);
-  }
-  44%,
-  52% {
-    transform: translate(0, 0);
-  }
-  60%,
-  74% {
-    transform: translate(6.5px, 0.5px);
-  }
-  84%,
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-/*
- * Blinks at 29%, 32% and 71% of an 11s cycle: a double, then a single, then a
- * long pause. Real eyes do not blink on a metronome, and one evenly-spaced
- * blink per loop was the single thing that gave the old moods away.
- */
-.upperLid {
-  transform: translateY(-82px);
-  animation: blinkUpper 11s linear infinite;
-}
-
-.lowerLid {
-  transform: translateY(12px);
-  animation: blinkLower 11s linear infinite;
-}
-
-@keyframes blinkUpper {
-  0%,
-  28.4%,
-  30%,
-  31.4%,
-  33%,
-  70.4%,
-  72%,
-  100% {
-    transform: translateY(-82px);
-  }
-  29%,
-  29.4% {
-    transform: translateY(-2px);
-  }
-  32%,
-  32.4% {
-    transform: translateY(-2px);
-  }
-  71%,
-  71.4% {
-    transform: translateY(-2px);
-  }
-}
-
-@keyframes blinkLower {
-  0%,
-  28.4%,
-  30%,
-  31.4%,
-  33%,
-  70.4%,
-  72%,
-  100% {
-    transform: translateY(12px);
-  }
-  29%,
-  29.4% {
-    transform: translateY(-2px);
-  }
-  32%,
-  32.4% {
-    transform: translateY(-2px);
-  }
-  71%,
-  71.4% {
-    transform: translateY(-2px);
-  }
-}
-
-/*
- * Cosmic only. The mark's own iris instrumentation, breathing on yet another
- * period — the optics finding focus rather than a light being switched.
- */
-.iris {
-  animation: focus 8.5s ease-in-out infinite;
-}
-
-@keyframes focus {
-  0%,
-  100% {
-    opacity: 0.72;
-    transform: scale(0.985);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-}
-
-/*
- * Reduced motion: the figure holds still.
- *
- * Everything above is either a transform or a blink, and none of it survives.
- * The lids keep their resting transforms because those are the open-eye
- * position — dropping them would leave Yumi with its eye shut.
- */
-@media (prefers-reduced-motion: reduce) {
-  .shell,
-  .pupil,
-  .upperLid,
-  .lowerLid,
-  .iris {
-    animation: none;
-  }
-}

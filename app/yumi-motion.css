@@ -1,0 +1,344 @@
+/*
+ * Yumi's shared idle vocabulary.
+ *
+ * Global rather than a CSS module, and classes rather than bare keyframes.
+ *
+ * The class part is not a style preference, it is the only form that works. A
+ * CSS module scopes every `animation-name` it sees, including names it cannot
+ * find a local `@keyframes` for — so a module writing `animation: yumiBlink…`
+ * compiles to `animation: Module__hash__yumiBlink…`, which matches nothing and
+ * silently stops. The animation does not error; it just never runs. Sharing
+ * has to happen on this side of that boundary, with both the keyframes and the
+ * declaration that uses them living out here together.
+ *
+ * The split that *is* a design decision is what a consumer still controls:
+ * *what* a blink is belongs to the character and should be identical
+ * everywhere, while *how often* Yumi blinks on a given screen belongs to that
+ * screen. So every duration below reads from a custom property, and a consumer
+ * sets those in its own module on any ancestor.
+ *
+ * Consumers apply these by name, the way `hud-label` is applied — usually
+ * alongside a module class that carries the custom properties:
+ *
+ *   sweepClassName={`yumi-sweep ${styles.coreSweep}`}
+ *
+ * The defaults are the Messages mark's, which is where these rhythms were
+ * first tuned and got them right.
+ *
+ * Only the pieces that are genuinely the same creature are here. Breath,
+ * drift, tilt and the pupil's stations are not, and deliberately: they scale
+ * with how large Yumi is rendered and with what the screen is for. A 120px
+ * hero at rest on the Command Deck and an 84px mark in a Messages header want
+ * different amplitudes, and pretending otherwise would mean parameterising
+ * every keyframe until none of them could be read.
+ *
+ * Lid geometry is the mark's, not this file's: the upper lid rests at -82px
+ * and the lower at 12px, and a blink is both of them meeting near -2px. See
+ * components/ui/ExchangeNotesMark.tsx. Any animation of the lids must return
+ * to those rest values or Yumi is left with its eye shut.
+ *
+ * Reduced motion is handled here too, once, rather than in each consumer's own
+ * media query — the previous arrangement had four files each remembering to
+ * restore the lids to their open position, which is four chances to leave Yumi
+ * with its eye shut.
+ *
+ * Everything here animates transform or opacity only.
+ */
+
+/* Lid and pupil transforms resolve against the element's own box; the sweep
+   and gleam are positioned in the mark's 400-unit view box instead. */
+.yumi-blink-upper,
+.yumi-blink-lower,
+.yumi-glance,
+.yumi-iris {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.yumi-sweep,
+.yumi-sweep-active,
+.yumi-gleam {
+  transform-box: view-box;
+}
+
+/*
+ * The lids must be given the same duration or the eye tears itself in half,
+ * which is why one property drives both.
+ */
+.yumi-blink-upper {
+  transform: translateY(-82px);
+  animation: yumiBlinkUpper var(--yumi-blink, 11s) linear infinite
+    var(--yumi-delay, 0s);
+}
+
+.yumi-blink-lower {
+  transform: translateY(12px);
+  animation: yumiBlinkLower var(--yumi-blink, 11s) linear infinite
+    var(--yumi-delay, 0s);
+}
+
+.yumi-glance {
+  animation: yumiGlance var(--yumi-glance, 17s) ease-in-out infinite
+    var(--yumi-delay, 0s);
+}
+
+.yumi-iris {
+  animation: yumiIrisFocus var(--yumi-iris, 8.5s) ease-in-out infinite
+    var(--yumi-delay, 0s);
+}
+
+.yumi-breath {
+  animation: yumiBreath var(--yumi-breath, 5.5s) cubic-bezier(0.37, 0, 0.24, 1)
+    infinite var(--yumi-delay, 0s);
+}
+
+.yumi-sweep {
+  animation: yumiSweep var(--yumi-sweep, 32s) linear infinite
+    var(--yumi-sweep-delay, 0s);
+}
+
+/*
+ * The continuous variant. Two consumers, for opposite reasons: the deck runs it
+ * on a loop while the console is actually identifying something, and the
+ * mission stage fires it exactly once as a one-shot. Iteration count is the
+ * consumer's, not this file's.
+ */
+.yumi-sweep-active {
+  animation: yumiSweepActive var(--yumi-sweep, 2.2s) linear
+    var(--yumi-sweep-delay, 0s) var(--yumi-sweep-count, infinite)
+    var(--yumi-sweep-fill, none);
+}
+
+.yumi-gleam {
+  animation: yumiGleam var(--yumi-gleam, 15s) ease-in-out infinite
+    var(--yumi-gleam-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yumi-glance,
+  .yumi-iris,
+  .yumi-breath,
+  .yumi-sweep,
+  .yumi-sweep-active,
+  .yumi-gleam {
+    animation: none;
+  }
+
+  /* The lids stop blinking but keep their rest transforms. Without this Yumi is
+     left with its eye shut on whatever frame the animation was cancelled. */
+  .yumi-blink-upper {
+    animation: none;
+    transform: translateY(-82px);
+  }
+
+  .yumi-blink-lower {
+    animation: none;
+    transform: translateY(12px);
+  }
+}
+
+/*
+ * The blink.
+ *
+ * A double, then a single, then a long pause — at 29%, 32% and 71% of the
+ * cycle. Real eyes do not blink on a metronome, and one evenly-spaced blink
+ * per loop is the single thing that gives a looping character away. This
+ * rhythm came from the Messages mark, which had it first and had it right.
+ *
+ * The percentages are the rhythm, so the two lids must always be given the
+ * same duration by the consumer or the eye tears itself in half.
+ */
+@keyframes yumiBlinkUpper {
+  0%,
+  28.4%,
+  30%,
+  31.4%,
+  33%,
+  70.4%,
+  72%,
+  100% {
+    transform: translateY(-82px);
+  }
+  29%,
+  29.4% {
+    transform: translateY(-2px);
+  }
+  32%,
+  32.4% {
+    transform: translateY(-2px);
+  }
+  71%,
+  71.4% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes yumiBlinkLower {
+  0%,
+  28.4%,
+  30%,
+  31.4%,
+  33%,
+  70.4%,
+  72%,
+  100% {
+    transform: translateY(12px);
+  }
+  29%,
+  29.4% {
+    transform: translateY(-2px);
+  }
+  32%,
+  32.4% {
+    transform: translateY(-2px);
+  }
+  71%,
+  71.4% {
+    transform: translateY(-2px);
+  }
+}
+
+/*
+ * The breath. A slow settle rather than a pulse: up on the inhale, with the
+ * easing spending most of the cycle near the top, which is what keeps it from
+ * reading as a heartbeat. The horizontal scale is slightly less than the
+ * vertical because a body that inflates equally in both directions is a
+ * balloon.
+ *
+ * Not used by the Command Deck, which decomposes its breath into a scale here
+ * and a separate two-axis drift on its own clock — a hero at rest can afford
+ * the extra layer, and a mark in a header cannot.
+ */
+@keyframes yumiBreath {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1) scaleY(1);
+  }
+  48% {
+    transform: translateY(-3px) scaleX(1.011) scaleY(1.016);
+  }
+}
+
+/*
+ * The glance: two stations either side of centre, each held for a couple of
+ * seconds, with a long return in between. This is a figure noticing things
+ * rather than scanning, and the holds are what buy that read — a pupil that
+ * slides continuously between positions is a decoration, one that flicks to
+ * something and stays on it is attention.
+ *
+ * The Command Deck has its own six-station version, because it genuinely has
+ * six instruments for Yumi to look at.
+ */
+@keyframes yumiGlance {
+  0%,
+  14% {
+    transform: translate(0, 0);
+  }
+  22%,
+  34% {
+    transform: translate(-7px, 1px);
+  }
+  44%,
+  52% {
+    transform: translate(0, 0);
+  }
+  60%,
+  74% {
+    transform: translate(6.5px, 0.5px);
+  }
+  84%,
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/*
+ * The iris finding focus. Cosmic only, since the iris optics only exist behind
+ * the mark's `cosmic` prop. Opacity carries most of it — at the sizes Yumi
+ * renders at, the eye is around 20px across and a 3% scale on the rings inside
+ * it is sub-pixel, so brightness is what actually reads.
+ */
+@keyframes yumiIrisFocus {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+/*
+ * The scan pass: a band of light crossing the shell, clipped to Yumi's
+ * silhouette by the mark's own body mask.
+ *
+ * Parked off the body for all but the last few percent of the cycle, so
+ * nothing is interpolating in between and the consumer can make the pass as
+ * rare as it likes just by lengthening the duration. --yumi-sweep-peak is the
+ * one thing worth varying per screen: how bright the pass is allowed to get.
+ */
+@keyframes yumiSweep {
+  0%,
+  95.7% {
+    opacity: 0;
+    transform: translateX(-250px);
+  }
+  96.7% {
+    opacity: var(--yumi-sweep-peak, 0.55);
+  }
+  98.9% {
+    opacity: var(--yumi-sweep-peak, 0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+  }
+}
+
+/*
+ * The same pass, but continuous — for the one state where Yumi is genuinely
+ * working something out and the wait needs to read as thinking rather than as
+ * a page that has stopped responding.
+ */
+@keyframes yumiSweepActive {
+  0% {
+    opacity: 0;
+    transform: translateX(-250px);
+  }
+  14% {
+    opacity: 0.95;
+  }
+  72% {
+    opacity: 0.95;
+  }
+  86%,
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+  }
+}
+
+/*
+ * The gleam: a reflection travelling across the lens, clipped to the eye.
+ * Worth having only where the eye is large enough to see it — below about
+ * 100px of mark it is a couple of pixels and costs more than it returns.
+ */
+@keyframes yumiGleam {
+  0%,
+  89% {
+    opacity: 0;
+    transform: translateX(-58px);
+  }
+  92% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(58px);
+  }
+}
