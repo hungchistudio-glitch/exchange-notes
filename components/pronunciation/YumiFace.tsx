@@ -299,8 +299,8 @@ export default function YumiFace({
             <circle cx="294" cy="172" r="14" fill="#1c1a16" />
             <circle cx="300" cy="166" r="5" fill="#ffffff" />
           </g>
-          <rect className={styles.upperLid} x="245" y="100" width="80" height="120" fill="#faf7f0" />
-          <rect className={styles.lowerLid} x="245" y="215" width="80" height="25" fill="#faf7f0" />
+          <rect className={`yumi-blink-upper ${styles.upperLid}`} x="245" y="100" width="80" height="120" fill="#faf7f0" />
+          <rect className={`yumi-blink-lower ${styles.lowerLid}`} x="245" y="215" width="80" height="25" fill="#faf7f0" />
         </g>
         <circle cx="285" cy="180" r="40" fill="none" stroke="#1c1a16" strokeWidth="12" />
 

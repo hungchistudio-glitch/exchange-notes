@@ -37,6 +37,14 @@
  * components/ui/ExchangeNotesMark.tsx. Any animation of the lids must return
  * to those rest values or Yumi is left with its eye shut.
  *
+ * The lids are hidden two ways at rest — translated outside the eye's clip
+ * circle *and* transparent. That is belt and suspenders, and it is not
+ * superstition: some browsers do not reliably clip these rects to the circular
+ * clip-path while they are also being transformed, which left a visible
+ * rectangular sliver above and below the eye at the fully retracted position.
+ * Opacity does not depend on clip-path support. The rule came from the
+ * vocabulary companion, which hit the bug first.
+ *
  * Reduced motion is handled here too, once, rather than in each consumer's own
  * media query — the previous arrangement had four files each remembering to
  * restore the lids to their open position, which is four chances to leave Yumi
@@ -67,12 +75,14 @@
  */
 .yumi-blink-upper {
   transform: translateY(-82px);
+  opacity: 0;
   animation: yumiBlinkUpper var(--yumi-blink, 11s) linear infinite
     var(--yumi-delay, 0s);
 }
 
 .yumi-blink-lower {
   transform: translateY(12px);
+  opacity: 0;
   animation: yumiBlinkLower var(--yumi-blink, 11s) linear infinite
     var(--yumi-delay, 0s);
 }
@@ -114,6 +124,25 @@
     var(--yumi-gleam-delay, 0s);
 }
 
+/*
+ * Reduced motion. Everything stops except the blink.
+ *
+ * That exception is a decision, and it settles a disagreement the app was
+ * already having with itself: the home stage kept Yumi blinking here on
+ * purpose — "reduced motion means no large translation, rotation or scale
+ * swings, not completely frozen; Yumi should always read as alive" — while
+ * four other screens stopped it. One shared class cannot hold both answers,
+ * and the home stage had the better one.
+ *
+ * It is also the defensible reading of the preference. prefers-reduced-motion
+ * exists for vestibular triggers: travel, parallax, spin, scale. A lid moving
+ * a few pixels across a twenty-pixel eye, twice in eleven seconds, is none of
+ * those. What it is, is the one signal that separates a character from an
+ * illustration — and taking it away is exactly the visual downgrade
+ * accessibility is not supposed to mean.
+ *
+ * Everything that actually travels or changes size is still gone.
+ */
 @media (prefers-reduced-motion: reduce) {
   .yumi-glance,
   .yumi-iris,
@@ -122,18 +151,6 @@
   .yumi-sweep-active,
   .yumi-gleam {
     animation: none;
-  }
-
-  /* The lids stop blinking but keep their rest transforms. Without this Yumi is
-     left with its eye shut on whatever frame the animation was cancelled. */
-  .yumi-blink-upper {
-    animation: none;
-    transform: translateY(-82px);
-  }
-
-  .yumi-blink-lower {
-    animation: none;
-    transform: translateY(12px);
   }
 }
 
@@ -158,18 +175,22 @@
   72%,
   100% {
     transform: translateY(-82px);
+    opacity: 0;
   }
   29%,
   29.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
   32%,
   32.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
   71%,
   71.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 
@@ -183,18 +204,22 @@
   72%,
   100% {
     transform: translateY(12px);
+    opacity: 0;
   }
   29%,
   29.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
   32%,
   32.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
   71%,
   71.4% {
     transform: translateY(-2px);
+    opacity: 1;
   }
 }
 

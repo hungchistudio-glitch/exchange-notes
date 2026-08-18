@@ -550,8 +550,8 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
               <ExchangeNotesMark
                 className={styles.logo}
                 pupilClassName={styles.pupil}
-                upperLidClassName={styles.upperLid}
-                lowerLidClassName={styles.lowerLid}
+                upperLidClassName={`yumi-blink-upper ${styles.upperLid}`}
+                lowerLidClassName={`yumi-blink-lower ${styles.lowerLid}`}
                 surfaceColor="#faf7f0"
                 highlightColor="#ffffff"
               />

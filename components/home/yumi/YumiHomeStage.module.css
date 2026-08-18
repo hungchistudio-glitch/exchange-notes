@@ -173,6 +173,8 @@
 }
 
 .figure {
+  /* This screen's blink pace; the shape is app/yumi-motion.css's. */
+  --yumi-blink: 5s;
   position: relative;
   width: min(26vw, 96px);
   height: min(26vw, 96px);
@@ -196,24 +198,9 @@
   will-change: transform;
 }
 
-/* Eyelids are hidden by BOTH being translated well outside the eye's clip
-   circle AND opacity — belt and suspenders. Some browsers don't reliably
-   clip these rects to the circular clip-path when they're also being
-   transformed, which was leaving a visible rectangular sliver above/below
-   the eye even at the "resting" (fully retracted) position. Opacity does
-   not depend on clip-path support, so it stays hidden regardless. */
-.upperLid {
-  transform: translateY(-82px);
-  opacity: 0;
-  animation: homeBaseBlink 5s linear infinite;
-}
-
-.lowerLid {
-  transform: translateY(12px);
-  opacity: 0;
-  animation: homeBaseBlinkLower 5s linear infinite;
-}
-
+/* The blink — including the belt-and-braces opacity that keeps the lid rects
+   from showing as slivers where clip-path is unreliable — is the app's shared
+   one now. See app/yumi-motion.css; this file only sets its pace. */
 @keyframes homeIdleFloat {
   0%,
   100% {
@@ -221,36 +208,6 @@
   }
   50% {
     transform: translateY(-5px) rotate(-0.8deg);
-  }
-}
-
-@keyframes homeBaseBlink {
-  0%,
-  46%,
-  52%,
-  100% {
-    transform: translateY(-82px);
-    opacity: 0;
-  }
-  48%,
-  49% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-}
-
-@keyframes homeBaseBlinkLower {
-  0%,
-  46%,
-  52%,
-  100% {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  48%,
-  49% {
-    transform: translateY(-2px);
-    opacity: 1;
   }
 }
 
@@ -867,8 +824,6 @@
   .figure[data-mood="sleeping"],
   .figure[data-mood="welcomeBack"],
   .waking,
-  .waking .upperLid,
-  .waking .lowerLid,
   .figure[data-feeding="anticipating"],
   .figure[data-feeding="biting"],
   .figure[data-feeding="chewing"],
@@ -883,13 +838,9 @@
     animation: none !important;
   }
 
-  .upperLid {
-    animation: homeBaseBlink 5s linear infinite !important;
-  }
-
-  .lowerLid {
-    animation: homeBaseBlinkLower 5s linear infinite !important;
-  }
+  /* The blink is not listed above and needs no override here: the shared
+     class keeps it running under reduced motion, which is the position this
+     file argued for first. See app/yumi-motion.css. */
 
   /* Reduced motion means no large translation/rotation/scale swings, not
      "completely frozen" — Yumi should always read as alive. A very
