@@ -999,6 +999,12 @@ const traditionalChinese: TranslationDictionary = {
       reviewActionLabel: "開始複習",
       addWordActionLabel: "使用 AI 新增單字",
       cameraActionLabel: "使用相機辨識",
+      haloReviewName: "練習",
+      haloReviewBlurb: "智慧複習與測驗",
+      haloAddName: "建立",
+      haloAddBlurb: "用 AI 新增任何單字",
+      haloCameraName: "掃描",
+      haloCameraBlurb: "辨識眼前的東西",
     },
 
     lookup: {

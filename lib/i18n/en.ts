@@ -1017,6 +1017,12 @@ const english: TranslationDictionary = {
       reviewActionLabel: "Start review",
       addWordActionLabel: "Add a word with AI",
       cameraActionLabel: "Identify with camera",
+      haloReviewName: "Practice",
+      haloReviewBlurb: "Smart review & quizzes",
+      haloAddName: "Create",
+      haloAddBlurb: "Add any word with AI",
+      haloCameraName: "Scan",
+      haloCameraBlurb: "Recognise anything",
     },
 
     lookup: {

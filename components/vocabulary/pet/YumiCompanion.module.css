@@ -278,3 +278,30 @@
 .section[data-cosmic="true"] .yumiButton:focus-visible {
   outline-color: var(--cosmic-cyan);
 }
+
+/*
+ * Yumi steps back when its Command Halo opens.
+ *
+ * 4.5%, and inward rather than outward, which is the opposite of what an
+ * expanding menu usually does to the thing it expands from. A character that
+ * swells as its options appear is claiming the moment; one that settles a
+ * little is making room for them — and it also buys the halo a few real pixels
+ * of clearance from the body it surrounds.
+ *
+ * On .yumiButton rather than on the mark, so it cannot collide with the idle
+ * float, the mood animations or the feeding sequence, all of which own
+ * transforms further in.
+ */
+.yumiButton {
+  transition: scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.section[data-menu-open="true"] .yumiButton {
+  scale: 0.955;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yumiButton {
+    transition: none;
+  }
+}

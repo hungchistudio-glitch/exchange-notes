@@ -935,6 +935,18 @@ export type TranslationDictionary = {
       reviewActionLabel: string;
       addWordActionLabel: string;
       cameraActionLabel: string;
+      /*
+       * The Command Halo names each capability twice: a one-word name for the
+       * node, and a short line saying what it does. The longer *ActionLabel
+       * above stays the accessible name — a screen reader wants "Start
+       * review", not "Practice".
+       */
+      haloReviewName: string;
+      haloReviewBlurb: string;
+      haloAddName: string;
+      haloAddBlurb: string;
+      haloCameraName: string;
+      haloCameraBlurb: string;
     };
 
     lookup: {

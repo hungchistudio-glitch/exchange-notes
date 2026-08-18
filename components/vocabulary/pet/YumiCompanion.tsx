@@ -432,8 +432,8 @@ export default function YumiCompanion({
 
         <YumiOrbitMenu
           phase={orbit.phase}
-          showHints={orbit.showHints}
           copy={copy}
+          surface="vocabulary"
           onClose={orbit.close}
           onLook={orbit.lookAt}
           onReview={onStartReview}
