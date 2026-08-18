@@ -25,7 +25,6 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import CompactStoryRow from "@/components/discover/CompactStoryRow";
 import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
-import SpeechSpeedControl from "@/components/discover/SpeechSpeedControl";
 import StoryDetailSheet from "@/components/discover/StoryDetailSheet";
 import VocabularyDrawer from "@/components/discover/VocabularyDrawer";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
@@ -818,14 +817,15 @@ export default function DailyNews() {
         </div>
       </div>
 
-      <div className="mb-7">
-        <SpeechSpeedControl
-          value={speechRate}
-          onChange={setSpeechRate}
-          copy={copy}
-        />
-      </div>
-
+      {/*
+        Speech speed used to sit here as a labelled row under the title.
+        
+        It moved into the Signal Controls sheet rather than being duplicated
+        there: it is a preference, not a piece of the page, and a preference
+        that is always on screen costs a row of vertical space on every visit
+        to serve the handful where it is actually changed. The header is what
+        the radar and the controls button are for.
+      */}
       <SignalControlSheet
         open={controlsOpen}
         onClose={() => setControlsOpen(false)}
