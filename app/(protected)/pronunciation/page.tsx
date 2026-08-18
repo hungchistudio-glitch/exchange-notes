@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Check,
   ChevronDown,
@@ -169,6 +170,23 @@ export default function PronunciationLabPage() {
   const { t, language } = useTranslation();
   const copy = t.pronunciation;
   const { learningLanguage } = useLearningLanguageContext();
+  const searchParams = useSearchParams();
+
+  /**
+   * Where the back arrow goes.
+   *
+   * This lab has two front doors and they belong to different places: the
+   * standard home screen's Pronunciation card, and the Yumi Command Halo's
+   * Speak node on the vocabulary page. A hard-coded "/" served the first and
+   * stranded the second on the home screen — the same defect the review page
+   * had, arriving here the day the halo gave this room its second entrance.
+   *
+   * Matched against a fixed set rather than used as a path, on the same
+   * reading as the capture page's Cancel: the value comes from the query
+   * string, and treating it as a destination would be an open redirect.
+   */
+  const cameFromVocabulary = searchParams.get("from") === "vocabulary";
+  const exitHref = cameFromVocabulary ? "/vocabulary" : "/";
 
   // Defaults to whichever language the user is actually learning (section 1
   // of the brief: "Learning language 決定主要學習內容") but stays a plain
@@ -561,8 +579,8 @@ export default function PronunciationLabPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}
       >
         <Link
-          href="/"
-          aria-label={copy.backHome}
+          href={exitHref}
+          aria-label={cameFromVocabulary ? copy.backToVocabulary : copy.backHome}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >
           <BackIcon />

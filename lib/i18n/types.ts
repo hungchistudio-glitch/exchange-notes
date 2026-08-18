@@ -568,6 +568,7 @@ export type TranslationDictionary = {
   };
 
   pronunciation: {
+    backToVocabulary: string;
     backHome: string;
     title: string;
     subtitle: string;

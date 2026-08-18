@@ -636,6 +636,7 @@ const traditionalChinese: TranslationDictionary = {
   },
 
   pronunciation: {
+    backToVocabulary: "回到單字頁",
     backHome: "返回首頁",
     title: "發音練習室",
     subtitle: "點一下喇叭即可播放發音。",
