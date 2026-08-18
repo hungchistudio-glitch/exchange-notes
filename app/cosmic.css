@@ -288,10 +288,22 @@ html[data-interface-mode="yumi-cosmic"] {
  * expanding from behind Yumi, a halftone dot grid over the top — and three
  * planets.
  *
- * Painted onto the body rather than added as an element, so it costs no DOM
- * and no hydration anywhere in the app. `background-attachment: fixed` keeps
- * it still while pages scroll, which is what makes it read as the space the
- * ship is in rather than as wallpaper glued to the content.
+ * Painted by a pseudo-element on the body rather than by a component, so it
+ * still costs no DOM and no hydration anywhere in the app — and by a *fixed*
+ * pseudo-element rather than by the body's own background, which is the part
+ * that changed.
+ *
+ * `background-attachment: fixed` held it still while pages scroll and that is
+ * exactly what it should do; the trouble is how. A fixed attachment cannot be
+ * promoted, so the browser repaints these eight gradient layers on every
+ * scroll frame, for the whole height of every page in the app — and on mobile
+ * WebKit that is one of the most reliable ways to make a page feel heavy. A
+ * `position: fixed` element gets the identical result by being composited once
+ * and never repainted again, because it genuinely does not move.
+ *
+ * The geometry is unchanged: `background-attachment: fixed` resolves its
+ * gradients against the viewport, and a fixed element inset to 0 *is* the
+ * viewport, so every vh and vw below means what it meant before.
  *
  * The planets are here, in the background, rather than in a layer of their own
  * for one reason that decides it: a planet has to be *behind* the page. The
@@ -307,7 +319,18 @@ html[data-interface-mode="yumi-cosmic"] {
  * is what makes the numbers below readable — 95.6% is "almost at the edge of
  * this planet", not a position on the screen.
  */
-html[data-interface-mode="yumi-cosmic"] body {
+html[data-interface-mode="yumi-cosmic"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /*
+   * Behind the page's content, in front of the body's own fill. `main` is
+   * transparent in this mode (see the rule below), so the field shows through
+   * everywhere reading happens, and every card keeps its own opaque surface —
+   * which is what should occlude something this far away.
+   */
+  z-index: -1;
+  pointer-events: none;
   background-image:
     repeating-radial-gradient(
       circle at 50% 38%,
@@ -368,7 +391,6 @@ html[data-interface-mode="yumi-cosmic"] body {
       rgba(139, 92, 246, 0.2) 0%,
       transparent 66%
     );
-  background-attachment: fixed;
 }
 
 /*
