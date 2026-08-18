@@ -10,6 +10,15 @@ type SpeechSpeedControlProps = {
   value: SpeechRate;
   onChange: (rate: SpeechRate) => void;
   copy: TranslationDictionary["discover"];
+  /*
+   * Whether the control names itself.
+   *
+   * It used to sit on the page as a labelled row, which is why it carries its
+   * own label. Inside the Signal Controls sheet the section heading already
+   * says "Speech speed", so keeping this on printed the words twice, one line
+   * apart.
+   */
+  showLabel?: boolean;
 };
 
 const OPTIONS: {
@@ -26,15 +35,24 @@ export default function SpeechSpeedControl({
   value,
   onChange,
   copy,
+  showLabel = true,
 }: SpeechSpeedControlProps) {
   return (
-    <div className="flex items-center justify-between">
-      <span
-        className="text-[12px] font-medium"
-        style={{ color: DISCOVER_COLORS.textSecondary }}
-      >
-        {copy.speechSpeed}
-      </span>
+    <div
+      className={
+        showLabel
+          ? "flex items-center justify-between"
+          : "flex items-center justify-start"
+      }
+    >
+      {showLabel ? (
+        <span
+          className="text-[12px] font-medium"
+          style={{ color: DISCOVER_COLORS.textSecondary }}
+        >
+          {copy.speechSpeed}
+        </span>
+      ) : null}
 
       {/* Soft "glass" surface — icon-only segments (label + multiplier are
           screen-reader/title text only, not rendered), selected segment

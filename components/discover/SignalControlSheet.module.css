@@ -1,0 +1,102 @@
+/*
+ * The Signal Controls sheet's motion.
+ *
+ * A sheet that appears is a different object from a sheet that arrives. This
+ * one used to do the former — mounted on open, unmounted on close, no travel
+ * either way — and the result reads as a screenshot being swapped in rather
+ * than as a surface being pulled up from the bottom of the screen.
+ *
+ * Everything here animates transform or opacity only, so the panel is
+ * composited for the whole gesture and the blurred backdrop behind it is never
+ * re-rastered mid-travel.
+ */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+}
+
+.root[data-phase="open"] .scrim {
+  opacity: 1;
+}
+
+/*
+ * The panel.
+ *
+ * --drag is the live offset while a finger is on it, and it is the reason the
+ * transition is switched off during a drag: a transition on a value being
+ * written every pointermove fights the finger and the sheet lags behind it.
+ */
+.panel {
+  position: relative;
+  width: 100%;
+  translate: 0 100%;
+  transition: translate 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: translate;
+}
+
+.root[data-phase="open"] .panel {
+  translate: 0 0;
+}
+
+/* Following a finger. No transition, no easing — the sheet is the finger. */
+.root[data-dragging="true"] .panel {
+  translate: 0 var(--drag, 0px);
+  transition: none;
+}
+
+/*
+ * Leaving.
+ *
+ * Faster than the entrance, which is the usual asymmetry: arriving is the
+ * interesting half and departing should be over before it is noticed.
+ */
+.root[data-phase="closing"] .panel {
+  translate: 0 100%;
+  transition: translate 240ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+/*
+ * The grab handle.
+ *
+ * Its job is entirely discoverability — the whole panel is draggable, not just
+ * this — so it is a hairline rather than a control, and it is hidden from
+ * assistive technology because "drag me down" is not how the sheet is closed
+ * there. The close button and the scrim are.
+ */
+.handle {
+  display: block;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--discover-text-secondary) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * The sheet still arrives and still leaves; it simply does not travel.
+   * Opacity carries both, which keeps the two states distinguishable without
+   * moving a full-height surface across the screen.
+   */
+  .panel,
+  .root[data-phase="closing"] .panel {
+    transition: opacity 160ms ease;
+    translate: 0 0;
+    opacity: 0;
+  }
+
+  .root[data-phase="open"] .panel {
+    opacity: 1;
+  }
+
+  .root[data-dragging="true"] .panel {
+    translate: 0 0;
+  }
+}
