@@ -29,6 +29,26 @@
      top of Yumi. */
   --deck-radius: calc(var(--deck-size) * 0.42);
 
+  /*
+   * Yumi's optical correction.
+   *
+   * The stage, the field rings and the six nodes are all concentric on the
+   * geometric centre and stay there. Yumi is the one thing that does not,
+   * because Yumi is not optically centred inside its own artwork: the body is
+   * a dark C, and every bright element on it — the chrome connector and the
+   * eye — sits in the right-hand third. Measured against the mark's 400-unit
+   * box the luminous mass lands roughly 35 units right of the geometric
+   * centre, which is why a mathematically centred Yumi reads as sitting
+   * slightly to the right of where it should.
+   *
+   * 4% of the stage is what puts the bright mass back over the middle. It is
+   * the smallest move that fixes it and the largest that nobody notices — past
+   * about 6% Yumi stops looking corrected and starts looking off-centre in the
+   * other direction, which is a worse failure because it draws attention to
+   * itself.
+   */
+  --core-shift: calc(var(--deck-size) * -0.04);
+
   position: relative;
   width: var(--deck-size);
   aspect-ratio: 1;
@@ -53,16 +73,106 @@
   animation: deckSpin 44s linear infinite;
 }
 
+/*
+ * The inner ring is the deck's answer to Yumi rather than a ring of its own.
+ * Its brightness runs on 20.4s against the core glow's 6.8s — exactly three
+ * to one, the only locked relationship in the file. Everything else here is
+ * deliberately out of phase with everything else; this one is not, because a
+ * field that lifts on every third breath of the thing at its centre is the
+ * cheapest honest way to say the two are one system.
+ */
 .fieldInner {
   inset: 22%;
   border: 1px solid transparent;
   border-top-color: var(--cosmic-cyan-dim);
-  animation: deckSpin 19s linear infinite reverse;
+  animation:
+    deckSpin 19s linear infinite reverse,
+    fieldEcho 20.4s ease-in-out infinite;
 }
 
 @keyframes deckSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes fieldEcho {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+ * Signal traffic.
+ *
+ * Two elements per signal and one animated property each: the wrapper turns,
+ * the dot fades. Neither ever touches layout, and three signals cost three
+ * composited rotations — which is why the field can carry moving traffic on a
+ * phone that is also running everything else on this page.
+ *
+ * The glow travels on the dot rather than sitting on the ring. That is the
+ * honest version of the brief's "the local ring intensifies as a particle
+ * passes": nothing brightens the ring, a light simply moves along it, and the
+ * ring is lit wherever the light currently is.
+ */
+.signal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  /* Its own keyframes rather than deckSpin, so the start angle survives: a
+     turn from --signal-angle to --signal-angle + 360°, which leaves the
+     element sitting at its angle the moment the animation is taken away. */
+  transform: rotate(var(--signal-angle));
+  animation: signalOrbit var(--signal-orbit) linear infinite var(--signal-delay);
+  pointer-events: none;
+}
+
+@keyframes signalOrbit {
+  from {
+    transform: rotate(var(--signal-angle));
+  }
+  to {
+    transform: rotate(calc(var(--signal-angle) + 360deg));
+  }
+}
+
+.signalDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--cosmic-cyan);
+  box-shadow: 0 0 7px 1px var(--cosmic-cyan-dim);
+  /* A length, not a percentage — a percentage here would resolve against the
+     dot's own 3px and leave all three sitting on top of Yumi. Same trap as
+     --deck-radius, and the same fix. */
+  transform: translateY(calc(var(--deck-size) * var(--signal-radius) * -1));
+  opacity: 0;
+  /* Opacity only, so the transform above survives the animation. */
+  animation: signalPass var(--signal-cycle) ease-in-out infinite
+    var(--signal-delay);
+}
+
+/*
+ * Visible for a fifth of the cycle, dark for the rest. The dark part is what
+ * makes it an event: a dot that is always on is a bead on a wire, and a bead
+ * on a wire has an orbital period you can time.
+ */
+@keyframes signalPass {
+  0%,
+  24%,
+  100% {
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.9;
+  }
+  18% {
+    opacity: 0.8;
   }
 }
 
@@ -80,6 +190,22 @@
   place-items: center;
 }
 
+/*
+ * Yumi breathes on two lungs, and this is the single most important thing in
+ * the file. Cheap animation repeats; the tell is a glow you can count.
+ *
+ * So there are two blooms, not one: a tight one at 6.8s and a wide, much
+ * fainter one at 11.5s. Neither is doing anything clever on its own. Their sum
+ * is: the two run about seventeen seconds out of step with each other and do
+ * not return to the same arrangement for a little over thirteen minutes, which
+ * is far longer than anyone looks at a home screen. Nothing random, nothing
+ * scripted, and no third layer needed to hide the loop — two periods that do
+ * not divide is enough.
+ *
+ * Both are centred on the stage rather than on Yumi's shifted body, which is
+ * the correct read once the correction above is applied: after the shift,
+ * Yumi's luminous mass IS the centre, so the light it throws belongs there.
+ */
 .coreGlow {
   position: absolute;
   inset: -18%;
@@ -89,7 +215,23 @@
     var(--cosmic-glow) 0%,
     transparent 68%
   );
-  animation: corePulse 6.5s ease-in-out infinite;
+  animation: corePulse 6.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.coreAura {
+  position: absolute;
+  inset: -52%;
+  border-radius: 9999px;
+  /* Base values on every layer that animates opacity, so a cancelled
+     animation leaves a sensible still frame rather than full strength. */
+  opacity: 0.6;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--cosmic-cyan) 7%, transparent) 0%,
+    transparent 64%
+  );
+  animation: coreAura 11.5s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -102,6 +244,30 @@
   50% {
     opacity: 1;
     transform: scale(1.03);
+  }
+}
+
+@keyframes coreAura {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+
+/* Opacity only. See the reduced-motion block below for why this one survives
+   when everything else on the core stops. */
+@keyframes coreGlowCalm {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.95;
   }
 }
 
@@ -228,17 +394,62 @@
 }
 
 /*
- * Yumi's idle at the centre of the deck: breathing, a slow blink and a pupil
- * that drifts across the systems around it. Yumi is meant to feel like
- * someone living in the deck rather than a logo parked in the middle of it.
+ * Yumi's idle at the centre of the deck: suspension, a rebalancing tilt, a
+ * breath, a slow blink, and a pupil that looks at the systems around it. Yumi
+ * is meant to feel like someone living in the deck rather than a logo parked
+ * in the middle of it.
  *
  * The rest positions (-82px / 12px) are the same ones the mark's other idles
  * use — see components/messages/YumiCommsMark.module.css. They are what holds
  * the lids clear of the eye, so an animation here must always return to them
  * or Yumi is left with its eye shut.
+ *
+ * ---
+ *
+ * The three wrappers below carry the body motion, outermost first.
+ *
+ * They exist because `transform` is one property: an element running a drift
+ * cannot also run a tilt, the second simply replaces the first. Nesting is how
+ * you get four transforms on four clocks — 9.5s, 21s, 7.4s and one that never
+ * moves at all — and four clocks is the difference between a character that is
+ * alive and a character on a loop.
+ *
+ * The widths are not decoration. Yumi's SVG has no intrinsic size, so it takes
+ * the width of whatever box it is in; without these it would fall back to the
+ * replaced-element default and arrive at the wrong scale.
  */
+.coreBody,
+.coreDrift,
+.coreTilt {
+  display: block;
+  width: 100%;
+}
+
+/* Static, never animated — see --core-shift on .stage. Kept on its own
+   element so no reduced-motion rule can switch the correction off by
+   cancelling an animation that happened to be carrying it. */
+.coreBody {
+  transform: translateX(var(--core-shift));
+}
+
+/*
+ * Suspension. Both axes, because a body that only moves up and down is on a
+ * spring; one that also corrects sideways is holding a position. Under 4px in
+ * total on a mark around 120px wide, which is the brief's range and is about
+ * as far as this can go before Yumi looks like it is drifting off station.
+ */
+.coreDrift {
+  animation: coreDrift 9.5s ease-in-out infinite;
+}
+
+/* Rebalancing, well under the 1.5° ceiling and on a period more than twice the
+   drift's, so the two never reach their extremes together. */
+.coreTilt {
+  animation: coreTilt 21s ease-in-out infinite;
+}
+
 .coreMark {
-  animation: coreBreath 4.2s ease-in-out infinite;
+  animation: coreBreath 7.4s ease-in-out infinite;
 }
 
 .pupil,
@@ -250,7 +461,7 @@
 }
 
 .pupil {
-  animation: coreLook 9s ease-in-out infinite;
+  animation: coreLook 17s ease-in-out infinite;
 }
 
 .upperLid {
@@ -263,29 +474,96 @@
   animation: coreLowerBlink 5.6s linear infinite;
 }
 
+/* Only the scale is left here. The travel moved to .coreDrift so the two can
+   run on different clocks. */
 @keyframes coreBreath {
   0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-3px) scale(1.014);
+    transform: scale(1.016);
   }
 }
 
-@keyframes coreLook {
+/*
+ * Four stops rather than two, at intervals that are not quarters. A drift that
+ * turns around at the halfway mark is a pendulum however slow you make it;
+ * uneven stops are what make it read as a body holding itself still against
+ * something.
+ */
+@keyframes coreDrift {
   0%,
   100% {
+    transform: translate(0, 1.6px);
+  }
+  24% {
+    transform: translate(-1.2px, -1.9px);
+  }
+  51% {
+    transform: translate(1px, 0.4px);
+  }
+  76% {
+    transform: translate(-0.4px, -2.4px);
+  }
+}
+
+@keyframes coreTilt {
+  0%,
+  100% {
+    transform: rotate(-0.5deg);
+  }
+  38% {
+    transform: rotate(0.55deg);
+  }
+  71% {
+    transform: rotate(-0.18deg);
+  }
+}
+
+/*
+ * Looking, rather than drifting.
+ *
+ * Every position is held for two or three seconds and reached in well under
+ * one — the paired stops are what buy the hold. A pupil that slides
+ * continuously between positions is a decoration; a pupil that flicks to
+ * something and then stays on it is attention, and attention is the only thing
+ * on this screen that can make Yumi read as intelligent rather than animated.
+ *
+ * Four stations and a rest, so over a cycle Yumi has been round most of its own
+ * instruments and come back. In user units on a 400 box: nothing here moves the
+ * pupil more than 2% of the mark.
+ */
+@keyframes coreLook {
+  0%,
+  9% {
     transform: translate(0, 0);
   }
-  22% {
+  13%,
+  27% {
     transform: translate(-7px, 3px);
   }
-  48% {
+  31%,
+  44% {
     transform: translate(6px, -2px);
   }
-  74% {
+  /* A short correction rather than a new target — the small adjustment an eye
+     makes while it is still on the same thing. */
+  47%,
+  53% {
+    transform: translate(5px, -4px);
+  }
+  57%,
+  71% {
     transform: translate(-3px, -4px);
+  }
+  75%,
+  89% {
+    transform: translate(-8px, 1px);
+  }
+  93%,
+  100% {
+    transform: translate(0, 0);
   }
 }
 
@@ -321,6 +599,11 @@
  * A deliberately small fixed set placed by hand rather than a generated
  * field: a dozen composited dots cost nothing, and the count cannot drift
  * upwards later the way a "density" parameter invites.
+ *
+ * This is the deck's own texture and stops at the deck's edges. The sky proper
+ * — planets and meteors — is not here: it belongs to every Cosmic Mode page
+ * rather than to this one, so it lives on the app's single full-viewport
+ * ambience layer. See components/foundation/ambience/OrbitField.module.css.
  */
 .stars {
   position: absolute;
@@ -353,18 +636,54 @@
 
 /*
  * Reduced motion keeps every ring, every node and every star exactly where it
- * is — they are the shape of the deck, not decoration on top of it. Only the
- * turning, the pulsing and the breathing stop, so nothing a finger is aiming
- * at is ever in a different place than it looks.
+ * is — they are the shape of the deck, not decoration on top of it. What stops
+ * is everything that travels, turns or changes size, so nothing a finger is
+ * aiming at is ever in a different place than it looks.
+ *
+ * What survives is one slow change in brightness on the core, and it is the
+ * only thing in the file that does. The reasoning is under .coreGlow below; the
+ * short version is that a calmer deck is the goal and a dead one is not.
+ *
+ * Yumi's optical correction is untouched here, and deliberately so: it is a
+ * composition decision that happens to be written as a transform, not motion.
+ * It lives on .coreBody, which never animates, precisely so no rule in this
+ * block can switch it off by accident.
  */
 @media (prefers-reduced-motion: reduce) {
   .field,
   .fieldInner,
-  .coreGlow,
+  .coreAura,
   .star,
   .coreMark,
-  .pupil {
+  .coreDrift,
+  .coreTilt,
+  .pupil,
+  .signal {
     animation: none;
+  }
+
+  /*
+   * One exception, and it is deliberate: the core glow keeps breathing.
+   *
+   * Reduced motion is a request to stop things moving, not a request for a
+   * dead screen, and this is the layer that carries Yumi's presence. What it
+   * loses is the part that is actually motion — the scale — leaving a slow
+   * change in brightness at less than half the speed. Nothing travels, nothing
+   * changes size, and Yumi is still visibly alive.
+   */
+  .coreGlow {
+    animation: coreGlowCalm 14s ease-in-out infinite;
+  }
+
+  /*
+   * The signals stop travelling but stay lit, each at the angle it starts
+   * from. Three fixed points of light on the field is instrumentation at rest;
+   * removing them would take the field's depth away from the one user who
+   * cannot have it back in any other form.
+   */
+  .signalDot {
+    animation: none;
+    opacity: 0.55;
   }
 
   /* The lids stop blinking but keep their rest transform, so Yumi's eye is
@@ -511,8 +830,10 @@
   animation-duration: 9s;
 }
 
+/* Two durations, because .fieldInner runs two animations — one value here
+   would speed the echo up with the spin and break its lock to the core. */
 .deck[data-omni="scanning"] .fieldInner {
-  animation-duration: 4s;
+  animation-duration: 4s, 20.4s;
 }
 
 /* Listening: concentric sensing rings on the core instead of a faster orbit —
@@ -562,9 +883,51 @@
   animation: coreHaloSpin 12s linear infinite reverse;
 }
 
+/*
+ * A third ring, and the only one that is not a ring.
+ *
+ * Two of its four borders are coloured, so what turns is an arc of about 180°.
+ * The bright half is the right-hand border and the faint half is the top one,
+ * which under a clockwise turn puts the bright end in front: a trace being
+ * drawn, with what has already been drawn fading out behind it. It also fades
+ * as a whole, on a period unrelated to its rotation, so it is usually not there
+ * at all — and something that is sometimes absent is the layer that stops the
+ * other two from reading as a fixed diagram.
+ *
+ * The radius is measured, not chosen by eye. There are two things it must not
+ * touch: .fieldInner ends at 56% of the stage and the node discs begin at 70%,
+ * and landing on either reads as a rendering fault rather than a fourth ring.
+ * -33% puts it at 63%, which is the midpoint — about eleven pixels of clearance
+ * on each side at phone size.
+ */
+.coreArc {
+  position: absolute;
+  inset: -33%;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  border-right-color: color-mix(in oklab, var(--cosmic-cyan) 34%, transparent);
+  border-top-color: color-mix(in oklab, var(--cosmic-cyan) 11%, transparent);
+  opacity: 0.55;
+  animation:
+    coreHaloSpin 27s linear infinite,
+    coreArcFade 11s ease-in-out infinite;
+  pointer-events: none;
+}
+
 @keyframes coreHaloSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes coreArcFade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  38%,
+  62% {
+    opacity: 1;
   }
 }
 
@@ -572,13 +935,36 @@
  * The iris only turns while Yumi is working something out. At rest it is
  * still — a permanently rotating iris is a loading spinner wearing an eye,
  * and it would make Yumi look busy even when nothing is happening.
+ *
+ * What it does do at rest is refocus: once every thirteen seconds the rings
+ * tighten a few percent and brighten, then settle. One event, most of a cycle
+ * apart, so it is something Yumi occasionally does rather than something the
+ * eye is permanently doing.
  */
 .iris {
   transform-box: view-box;
+  animation: irisIdle 13s ease-in-out infinite;
 }
 
 .core[data-omni="scanning"] .iris {
   animation: irisFocus 2.6s linear infinite;
+}
+
+@keyframes irisIdle {
+  0%,
+  62%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.93);
+  }
+  84% {
+    opacity: 0.88;
+    transform: scale(1.02);
+  }
 }
 
 @keyframes irisFocus {
@@ -587,12 +973,173 @@
   }
 }
 
+/* =========================================================
+   The two cinematic passes
+   ========================================================= */
+
+/*
+ * The scan pass.
+ *
+ * Thirty-five seconds, of which the band is on screen for about one and a half.
+ * The other thirty-three and a half are the point — this is the layer that has
+ * to feel like something Yumi did rather than something the page does, and
+ * anything that happens often enough to be expected cannot do that. Sitting
+ * near the top of the brief's 18–40s band means most visits to the deck get one
+ * pass and some get none, which is the correct trade: a pass you might miss is
+ * worth more than one you can wait for.
+ *
+ * The band is parked off the body for the whole quiet stretch and only travels
+ * during the last 4% of the cycle, so nothing is interpolating in between.
+ */
+.coreSweep {
+  transform-box: view-box;
+  animation: coreSweep 35s linear infinite 5s;
+}
+
+@keyframes coreSweep {
+  0%,
+  95.7% {
+    opacity: 0;
+    transform: translateX(-250px);
+  }
+  /* Held well below full strength. Bright enough to register as light moving
+     inside the shell, dim enough that it never becomes the brightest thing on
+     the screen — which is what separates a scan from a flash. */
+  96.7% {
+    opacity: 0.55;
+  }
+  98.9% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+  }
+}
+
+/*
+ * Identifying is the one time the pass stops being rare. While the console is
+ * actually working something out the band runs continuously, which is the
+ * clearest statement this interface can make that the wait is Yumi thinking
+ * and not the page hanging.
+ */
+.core[data-omni="scanning"] .coreSweep {
+  animation: coreSweepActive 2.2s linear infinite;
+}
+
+@keyframes coreSweepActive {
+  0% {
+    opacity: 0;
+    transform: translateX(-250px);
+  }
+  14% {
+    opacity: 0.95;
+  }
+  72% {
+    opacity: 0.95;
+  }
+  86%,
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+  }
+}
+
+/*
+ * The gleam. Fifteen seconds, on for well under one of them, and out of step
+ * with everything else on Yumi — most importantly with the blink, so the lid
+ * is not reliably down when it passes.
+ */
+.coreGleam {
+  transform-box: view-box;
+  animation: coreGleam 15s ease-in-out infinite 2.4s;
+}
+
+@keyframes coreGleam {
+  0%,
+  89% {
+    opacity: 0;
+    transform: translateX(-58px);
+  }
+  92% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(58px);
+  }
+}
+
+/* =========================================================
+   Yumi answers a press
+   ========================================================= */
+
+/*
+ * One ring leaving the core, and the eye turning to the system being pressed.
+ *
+ * Both are acknowledgement rather than decoration: the ripple says the deck
+ * heard the press, the look says which of the six it heard. They are also the
+ * only motion on this page with a cause outside itself, which is what keeps
+ * them from reading as more ambience.
+ */
+.coreRipple {
+  position: absolute;
+  inset: -10%;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.core[data-lock="true"] .coreRipple {
+  animation: coreRipple 620ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes coreRipple {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+/* The look wins over the console's, and over the idle drift, because a finger
+   on a control is the most specific thing anyone on this page is doing. */
+.core[data-lock="true"] .pupil {
+  animation: none;
+  transform: translate(var(--look-x, 0), var(--look-y, 0));
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  /* The rings stay — they are part of Yumi's shape now. Only the turning and
-     the iris search stop. */
+  /* The rings stay — they are part of Yumi's shape now. What stops is the
+     turning, the arc's fade, the iris search and both cinematic passes. */
   .coreHalo,
   .coreHaloInner,
-  .core[data-omni="scanning"] .iris {
+  .coreArc,
+  .iris,
+  .core[data-omni="scanning"] .iris,
+  .coreSweep,
+  .core[data-omni="scanning"] .coreSweep,
+  .coreGleam {
     animation: none;
+  }
+
+  /* Same reading as the node lock: the feedback still happens, it just arrives
+     at its final size instead of travelling there. It holds for as long as the
+     finger is down, which is the honest version of a ring that expands. */
+  .core[data-lock="true"] .coreRipple {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .core[data-lock="true"] .pupil {
+    transition: none;
   }
 }
