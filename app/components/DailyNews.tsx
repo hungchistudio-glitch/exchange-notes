@@ -1,6 +1,10 @@
 "use client";
 
 import { LoaderCircle, RefreshCw } from "lucide-react";
+
+import YumiSignalRadar from "@/components/discover/YumiSignalRadar";
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import useSignalRadar from "@/hooks/discover/useSignalRadar";
 import {
   useCallback,
   useEffect,
@@ -184,6 +188,7 @@ function createPartnerMessage(card: DailyNewsCard) {
 
 export default function DailyNews() {
   const { t } = useTranslation();
+  const { isCosmic } = useInterfaceMode();
   const copy = t.discover;
 
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
@@ -292,6 +297,23 @@ export default function DailyNews() {
     },
     [copy]
   );
+
+  /*
+   * The radar is a reader of this component's state, not a participant in it.
+   *
+   * It is handed the same three facts the refresh button already used —
+   * refreshing, loading, error — plus the function that starts a scan, and it
+   * cannot delay, retry or swallow a request. Everything it needs that the
+   * feed has no reason to know (connection, reduced motion, the short windows
+   * after a scan lands) lives in the hook. See §39 of the brief: animation
+   * state must not become business state.
+   */
+  const radar = useSignalRadar({
+    refreshing,
+    loading,
+    error: Boolean(error),
+    onScan: () => void loadNews(true),
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -725,25 +747,37 @@ export default function DailyNews() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void loadNews(true)}
-          disabled={refreshing}
-          aria-label={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          title={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-50"
-          style={{
-            border: `1px solid ${DISCOVER_COLORS.divider}`,
-            color: DISCOVER_COLORS.accent,
-            backgroundColor: DISCOVER_COLORS.card,
-          }}
-        >
-          {refreshing ? (
-            <LoaderCircle size={14} strokeWidth={2} className="animate-spin" />
-          ) : (
-            <RefreshCw size={14} strokeWidth={2} />
-          )}
-        </button>
+        {/*
+          One control, two presentations, one refresh path.
+
+          Cosmic Mode gets the Signal Radar; every other shell keeps the plain
+          refresh button it has always had. Both call the same loadNews — the
+          radar is a presentation and interaction layer over this feed, not a
+          second way to fetch it.
+        */}
+        {isCosmic ? (
+          <YumiSignalRadar controller={radar} copy={copy} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => void loadNews(true)}
+            disabled={refreshing}
+            aria-label={refreshing ? copy.loadingNewStories : copy.refreshAction}
+            title={refreshing ? copy.loadingNewStories : copy.refreshAction}
+            className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-50"
+            style={{
+              border: `1px solid ${DISCOVER_COLORS.divider}`,
+              color: DISCOVER_COLORS.accent,
+              backgroundColor: DISCOVER_COLORS.card,
+            }}
+          >
+            {refreshing ? (
+              <LoaderCircle size={14} strokeWidth={2} className="animate-spin" />
+            ) : (
+              <RefreshCw size={14} strokeWidth={2} />
+            )}
+          </button>
+        )}
       </div>
 
       <div className="mb-7">

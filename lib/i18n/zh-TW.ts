@@ -385,6 +385,13 @@ const traditionalChinese: TranslationDictionary = {
     vocabularyDrawerTitle: "重點單字",
     vocabularyDrawerDescription: "點擊單字即可聆聽發音。",
 
+    radarLabel: "Yumi 訊號雷達。",
+    radarIdle: "正在接收訊號。",
+    radarScanning: "正在掃描新內容。",
+    radarSyncing: "正在與內容同步。",
+    radarSuccess: "已接收到新訊號。",
+    radarError: "掃描失敗。",
+    radarOffline: "目前離線。",
     refreshAction: "更新",
     playFullStory: "播放全文",
     stopStory: "停止",

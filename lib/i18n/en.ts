@@ -390,6 +390,13 @@ const english: TranslationDictionary = {
     vocabularyDrawerTitle: "Key vocabulary",
     vocabularyDrawerDescription: "Tap a word to hear it.",
 
+    radarLabel: "Yumi signal radar.",
+    radarIdle: "Receiving signals.",
+    radarScanning: "Scanning for new stories.",
+    radarSyncing: "Syncing with the feed.",
+    radarSuccess: "New signals received.",
+    radarError: "Scan failed.",
+    radarOffline: "Offline.",
     refreshAction: "Refresh",
     playFullStory: "Play full story",
     stopStory: "Stop",

@@ -1,0 +1,520 @@
+/*
+ * The Yumi Cosmic Signal Radar.
+ *
+ * Ten layers are specified; five ever animate at once, and that ceiling is the
+ * design rather than a compromise against it. Past four or five moving layers
+ * a control stops reading as a precise instrument and starts reading as a
+ * screensaver, so each state spends the same small budget on different things:
+ * idle spends it on presence, scanning spends it on intent.
+ *
+ * Everything animated here is a transform or an opacity. No layer animates a
+ * colour, a size, a shadow or a filter — the whole control is composited, which
+ * is what lets it run continuously beside a scrolling feed.
+ */
+
+.radar {
+  /*
+   * 48px of touch target around a 44px instrument, which is the brief's
+   * minimum without inflating what is actually drawn. The halo reaches past
+   * both and is not hit-testable — see .ambient and .halo.
+   */
+  --radar-size: 44px;
+
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--radar-cyan-primary);
+  transition: scale 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 80–120ms, and a controlled return rather than a bounce: this is an
+   instrument being pressed, not a toy. */
+.radar:active {
+  scale: 0.965;
+}
+
+.radar:focus-visible {
+  outline: 2px solid var(--radar-cyan-primary);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.radar > * {
+  grid-area: 1 / 1;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------
+   L0 — Ambient field
+   --------------------------------------------------------------- */
+
+/*
+ * Reaches well past the control so the radar sits in something rather than on
+ * it. Static: the separation it creates does not need to move, and this is the
+ * largest layer on screen — animating it would be the most expensive way to
+ * say the least.
+ */
+.ambient {
+  width: 210%;
+  height: 210%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--radar-cyan-primary) 12%, transparent) 0%,
+    transparent 62%
+  );
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------
+   L1 — Outer halo
+   --------------------------------------------------------------- */
+
+/*
+ * The breath. 6.4s, which is inside the brief's 5.5–8s and — more usefully —
+ * shares no factor with the core's 8.9s, so the two never peak together and
+ * the pair does not return to the same arrangement for minutes.
+ */
+.halo {
+  width: 148%;
+  height: 148%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--radar-cyan-primary) 16%, transparent) 0%,
+    transparent 58%
+  );
+  opacity: 0.7;
+  animation: radarHalo 6.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes radarHalo {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+/* ---------------------------------------------------------------
+   L2 — Structural orb
+   --------------------------------------------------------------- */
+
+/*
+ * The only opaque layer, and the one carrying the material.
+ *
+ * Dark glass: a near-black sphere lit from the upper left, with a cool rim
+ * where the light wraps and a faint blue bounce inside the lower right. Three
+ * gradients and an inset ring, all static — the material does not need to move
+ * for the object to feel physical, and holding it still is what makes the
+ * light that does move read as light rather than as texture.
+ */
+.orb {
+  width: var(--radar-size);
+  height: var(--radar-size);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 32% 26%,
+      rgba(255, 255, 255, 0.16) 0%,
+      transparent 44%
+    ),
+    radial-gradient(
+      circle at 72% 78%,
+      color-mix(in oklab, var(--radar-blue-secondary) 24%, transparent) 0%,
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 50% 40%,
+      #0d1b30 0%,
+      var(--radar-core-bg) 72%
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--radar-cyan-primary) 22%, transparent),
+    inset 0 6px 12px rgba(0, 0, 0, 0.55),
+    0 6px 16px rgba(1, 4, 12, 0.5);
+}
+
+/* ---------------------------------------------------------------
+   L3 — Core energy
+   --------------------------------------------------------------- */
+
+/*
+ * The brand's C, and the brightest stable thing here.
+ *
+ * Opacity only. A glow that changes size reads as a pulse and a pulse means an
+ * event; this is presence, so it changes brightness and stays exactly where it
+ * is. 8.9s against the halo's 6.4s.
+ */
+.core {
+  width: 42%;
+  height: 42%;
+  overflow: visible;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--radar-cyan-primary) 60%, transparent));
+  animation: radarCore 8.9s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes radarCore {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------
+   L4–L5 — Inner orbit and scanning ring
+   --------------------------------------------------------------- */
+
+.innerOrbit,
+.scanRing {
+  border-radius: 50%;
+  will-change: transform;
+}
+
+/* Close in, slow, and continuous — the receiver idling. */
+.innerOrbit {
+  width: 68%;
+  height: 68%;
+  border: 1px solid color-mix(in oklab, var(--radar-cyan-primary) 26%, transparent);
+  animation: radarSpin 19s linear infinite;
+}
+
+/*
+ * The scanning ring.
+ *
+ * Two of its four borders carry colour, so what turns is an arc rather than a
+ * hoop: the bright edge leads and the faint one trails, which reads as a trace
+ * being drawn. Uneven by construction, which is the difference between this
+ * and a loading spinner — and the reason its period never goes below about
+ * two seconds in any state.
+ */
+.scanRing {
+  width: 96%;
+  height: 96%;
+  border: 1px solid transparent;
+  border-top-color: color-mix(in oklab, var(--radar-cyan-primary) 55%, transparent);
+  border-right-color: color-mix(in oklab, var(--radar-cyan-primary) 18%, transparent);
+  opacity: 0.55;
+}
+
+/*
+ * It turns only while scanning, and that is a decision about meaning before it
+ * is one about cost.
+ *
+ * A ring named for scanning that turns whether or not anything is being
+ * scanned says nothing when a scan actually starts — the state change has to
+ * arrive as a change. Holding it still at rest also keeps idle inside the
+ * motion budget: four moving layers there, five while scanning, which is
+ * exactly the range past which an instrument starts reading as a screensaver.
+ */
+.radar[data-state="scanning"] .scanRing,
+.radar[data-state="syncing"] .scanRing {
+  animation: radarSpin 3.4s linear infinite;
+}
+
+@keyframes radarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------
+   L6 — Signal nodes
+   --------------------------------------------------------------- */
+
+/*
+ * Two elements per node and one animated property each: the wrapper turns, the
+ * dot fades. Neither ever touches layout, and the start angle lives in the
+ * keyframes rather than in a delay so each dot stays at its own angle the
+ * moment the animation is taken away.
+ */
+.signal {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--signal-angle));
+  animation: radarSignalOrbit var(--signal-orbit) linear infinite
+    var(--signal-delay);
+  will-change: transform;
+}
+
+@keyframes radarSignalOrbit {
+  from {
+    transform: rotate(var(--signal-angle));
+  }
+  to {
+    transform: rotate(calc(var(--signal-angle) + 360deg));
+  }
+}
+
+.signalDot {
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  background: var(--radar-cyan-primary);
+  box-shadow: 0 0 6px 1px color-mix(in oklab, var(--radar-cyan-primary) 55%, transparent);
+  /* A length, not a percentage — a percentage would resolve against the dot's
+     own 2.5px and stack all three on the core. */
+  transform: translateY(
+    calc(var(--radar-size) * var(--signal-radius) * -1)
+  );
+  opacity: 0;
+  animation: radarSignalPass var(--signal-cycle) ease-in-out infinite
+    var(--signal-delay);
+}
+
+/* Lit for about a fifth of its cycle. The dark part is what makes it an event
+   rather than a bead on a wire. */
+@keyframes radarSignalPass {
+  0%,
+  26%,
+  100% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.95;
+  }
+  20% {
+    opacity: 0.7;
+  }
+}
+
+/* ---------------------------------------------------------------
+   L7 — Scan sweep
+   --------------------------------------------------------------- */
+
+/*
+ * A narrow wedge of light travelling round the orb, drawn as a conic gradient
+ * clipped to the disc. Mounted only while scanning, which is the whole reason
+ * it stays cinematic — a sweep you see on every glance is a texture.
+ */
+.sweep {
+  width: var(--radar-size);
+  height: var(--radar-size);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 300deg,
+    color-mix(in oklab, var(--radar-cyan-primary) 34%, transparent) 348deg,
+    transparent 360deg
+  );
+  animation: radarSpin 3.4s linear infinite;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------------
+   L8 — Signal pulse
+   --------------------------------------------------------------- */
+
+/* One ring, once, on a completed scan. Fast out and slow to fade, which is
+   what an emission looks like. */
+.pulse {
+  width: var(--radar-size);
+  height: var(--radar-size);
+  border-radius: 50%;
+  border: 1px solid var(--radar-success);
+  opacity: 0;
+  animation: radarPulse 620ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes radarPulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+/* ---------------------------------------------------------------
+   States
+   --------------------------------------------------------------- */
+
+/*
+ * Scanning: the ring accelerates into the brief's 2.8–4.5s band and the core
+ * brightens. The inner orbit stops — not to save work but to keep the count
+ * honest, since the sweep it makes room for is the layer that says "looking".
+ */
+.radar[data-state="scanning"] .scanRing,
+.radar[data-state="syncing"] .scanRing {
+  opacity: 1;
+  border-top-color: var(--radar-cyan-primary);
+}
+
+.radar[data-state="scanning"] .innerOrbit,
+.radar[data-state="syncing"] .innerOrbit {
+  animation: none;
+  opacity: 0.35;
+}
+
+.radar[data-state="scanning"] .core,
+.radar[data-state="syncing"] .core {
+  animation: none;
+  opacity: 1;
+}
+
+/* Syncing is reconciliation rather than search, so its ring turns the other
+   way and its core holds perfectly steady — the brief's "controlled and
+   precise" against scanning's outward intent. */
+.radar[data-state="syncing"] .scanRing {
+  animation-direction: reverse;
+}
+
+.radar[data-state="success"] .core {
+  animation: none;
+  opacity: 1;
+  color: var(--radar-success);
+}
+
+/*
+ * Error stays calm. No shake, no red flash — the glow drops, the ring stops,
+ * and a single amber edge appears. The feed carries the explanation; a 44px
+ * control should not try to.
+ */
+.radar[data-state="error"] .scanRing,
+.radar[data-state="error"] .innerOrbit {
+  animation: none;
+}
+
+.radar[data-state="error"] .orb {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--radar-warning) 55%, transparent),
+    inset 0 6px 12px rgba(0, 0, 0, 0.55),
+    0 6px 16px rgba(1, 4, 12, 0.5);
+}
+
+.radar[data-state="error"] .core {
+  animation: none;
+  opacity: 0.6;
+}
+
+.radar[data-state="error"] .halo {
+  animation: none;
+  opacity: 0.3;
+}
+
+/*
+ * Offline: recognisably the same instrument, with nothing running. Everything
+ * that says "receiving" is gone, and what is left is a dark orb with the
+ * faintest core — which is precisely the message.
+ */
+.radar[data-state="offline"] .scanRing,
+.radar[data-state="offline"] .innerOrbit,
+.radar[data-state="offline"] .halo,
+.radar[data-state="offline"] .core,
+.radar[data-state="offline"] .signal,
+.radar[data-state="offline"] .signalDot {
+  animation: none;
+}
+
+.radar[data-state="offline"] .signalDot {
+  opacity: 0;
+}
+
+.radar[data-state="offline"] .core {
+  opacity: 0.34;
+  color: var(--radar-cyan-primary);
+  filter: none;
+}
+
+.radar[data-state="offline"] .halo,
+.radar[data-state="offline"] .ambient {
+  opacity: 0.18;
+}
+
+.radar[data-state="offline"] .scanRing {
+  opacity: 0.28;
+}
+
+/* ---------------------------------------------------------------
+   Quality tiers
+   --------------------------------------------------------------- */
+
+/* Balanced drops the ambient field's reach and softens the halo. The
+   instrument is unchanged; the light around it costs less. */
+.radar[data-tier="balanced"] .ambient {
+  width: 170%;
+  height: 170%;
+}
+
+/*
+ * Efficient keeps the object and stops the ambience. Signal nodes are already
+ * absent at this tier (see RADAR_NODE_COUNT), the halo holds still, and the
+ * core keeps breathing — because a radar that has stopped entirely reads as
+ * broken rather than as considerate.
+ */
+.radar[data-tier="efficient"] .halo {
+  animation: none;
+  opacity: 0.6;
+}
+
+.radar[data-tier="efficient"] .innerOrbit {
+  animation: none;
+}
+
+.radar[data-tier="efficient"] .sweep {
+  display: none;
+}
+
+/* ---------------------------------------------------------------
+   Reduced motion
+   --------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Everything that travels stops; brightness carries the states instead.
+   *
+   * Scanning is the case that matters: it is expressed as a lit ring and a
+   * bright core rather than as rotation, so the control still says it is
+   * working. Function is identical — the same tap, the same request, the same
+   * confirmation — and the pulse still fires once, because a single expanding
+   * ring on a deliberate action is a confirmation rather than ambience.
+   */
+  .halo,
+  .core,
+  .innerOrbit,
+  .scanRing,
+  .signal,
+  .signalDot,
+  .sweep,
+  .radar[data-state="scanning"] .scanRing,
+  .radar[data-state="syncing"] .scanRing {
+    animation: none;
+  }
+
+  .signalDot {
+    opacity: 0.55;
+  }
+
+  .radar[data-state="scanning"] .scanRing,
+  .radar[data-state="syncing"] .scanRing {
+    opacity: 1;
+    border-color: color-mix(in oklab, var(--radar-cyan-primary) 45%, transparent);
+  }
+
+  .radar {
+    transition: none;
+  }
+}

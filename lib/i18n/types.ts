@@ -320,6 +320,13 @@ export type TranslationDictionary = {
     vocabularyDrawerTitle: string;
     vocabularyDrawerDescription: string;
 
+    radarLabel: string;
+    radarIdle: string;
+    radarScanning: string;
+    radarSyncing: string;
+    radarSuccess: string;
+    radarError: string;
+    radarOffline: string;
     refreshAction: string;
     playFullStory: string;
     stopStory: string;
