@@ -648,6 +648,7 @@ const english: TranslationDictionary = {
   },
 
   pronunciation: {
+    backToVocabulary: "Back to your words",
     backHome: "Back to Home",
     title: "Pronunciation Lab",
     subtitle: "Tap any speaker to hear the pronunciation.",

@@ -260,7 +260,8 @@ export default function useVocabularyPage({
      * switching to Cosmic Mode hid a whole room. Same destination, second
      * door — not a second lab.
      */
-    onOpenPronunciation: () => router.push("/pronunciation"),
+    onOpenPronunciation: () =>
+      router.push("/pronunciation?from=vocabulary"),
     onOpenCollections: openCollections,
   };
 
