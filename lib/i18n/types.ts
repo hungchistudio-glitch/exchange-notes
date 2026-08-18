@@ -320,6 +320,13 @@ export type TranslationDictionary = {
     vocabularyDrawerTitle: string;
     vocabularyDrawerDescription: string;
 
+    signalControlsEyebrow: string;
+    signalControlsTitle: string;
+    signalControlsClose: string;
+    signalControlsSpeed: string;
+    signalControlsTopics: string;
+    signalControlsAllTopics: string;
+    signalControlsOpen: string;
     radarLabel: string;
     radarIdle: string;
     radarScanning: string;

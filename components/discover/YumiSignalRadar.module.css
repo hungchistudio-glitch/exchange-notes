@@ -155,21 +155,41 @@
    --------------------------------------------------------------- */
 
 /*
- * The brand's C, and the brightest stable thing here.
+ * Yumi, and the brightest stable thing here.
  *
- * Opacity only. A glow that changes size reads as a pulse and a pulse means an
- * event; this is presence, so it changes brightness and stays exactly where it
- * is. 8.9s against the halo's 6.4s.
+ * Two nested elements because they run on two clocks: the wrapper carries the
+ * app's shared breath, the mark inside it carries this control's own slow
+ * brightness. Nesting is what lets both exist — an element runs one transform
+ * animation at a time, and a single node trying to hold the breath and the
+ * glow would lose whichever was declared first.
+ *
+ * The blink is the mark's own, and its pace is set here rather than inherited:
+ * a 30px face wants a shorter pause between blinks than a 292px one, or it
+ * reads as having stopped.
  */
 .core {
-  width: 42%;
-  height: 42%;
+  --yumi-blink: 6.5s;
+  --yumi-breath: 7.2s;
+
+  width: 46%;
+  height: 46%;
+  display: block;
+  will-change: transform;
+}
+
+.coreMark {
+  display: block;
+  width: 100%;
+  height: 100%;
   overflow: visible;
   filter: drop-shadow(0 0 4px color-mix(in oklab, var(--radar-cyan-primary) 60%, transparent));
   animation: radarCore 8.9s ease-in-out infinite;
   will-change: opacity;
 }
 
+/* Opacity only. A glow that changes size reads as a pulse and a pulse means an
+   event; this is presence, so it changes brightness and stays where it is.
+   8.9s against the halo's 6.4s, so the two never peak together. */
 @keyframes radarCore {
   0%,
   100% {
@@ -369,8 +389,8 @@
   opacity: 0.35;
 }
 
-.radar[data-state="scanning"] .core,
-.radar[data-state="syncing"] .core {
+.radar[data-state="scanning"] .coreMark,
+.radar[data-state="syncing"] .coreMark {
   animation: none;
   opacity: 1;
 }
@@ -382,7 +402,7 @@
   animation-direction: reverse;
 }
 
-.radar[data-state="success"] .core {
+.radar[data-state="success"] .coreMark {
   animation: none;
   opacity: 1;
   color: var(--radar-success);
@@ -405,7 +425,7 @@
     0 6px 16px rgba(1, 4, 12, 0.5);
 }
 
-.radar[data-state="error"] .core {
+.radar[data-state="error"] .coreMark {
   animation: none;
   opacity: 0.6;
 }
@@ -423,7 +443,7 @@
 .radar[data-state="offline"] .scanRing,
 .radar[data-state="offline"] .innerOrbit,
 .radar[data-state="offline"] .halo,
-.radar[data-state="offline"] .core,
+.radar[data-state="offline"] .coreMark,
 .radar[data-state="offline"] .signal,
 .radar[data-state="offline"] .signalDot {
   animation: none;
@@ -433,7 +453,7 @@
   opacity: 0;
 }
 
-.radar[data-state="offline"] .core {
+.radar[data-state="offline"] .coreMark {
   opacity: 0.34;
   color: var(--radar-cyan-primary);
   filter: none;
@@ -494,6 +514,7 @@
    */
   .halo,
   .core,
+  .coreMark,
   .innerOrbit,
   .scanRing,
   .signal,

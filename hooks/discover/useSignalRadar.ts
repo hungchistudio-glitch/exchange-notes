@@ -2,12 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { track } from "@/lib/analytics/track";
 import {
+  downgradeTier,
   resolveMotionPolicy,
   resolveVisualState,
   type RadarMotionPolicy,
   type RadarVisualState,
 } from "@/lib/discover/signalRadar";
+
+import useFrameStability from "./useFrameStability";
 
 /*
  * The three windows the radar owns that the feed does not.
@@ -22,11 +26,35 @@ const SUCCESS_HOLD_MS = 520;
 const ERROR_HOLD_MS = 2200;
 const SCAN_COOLDOWN_MS = 1100;
 
+/*
+ * Long press, at the low end of the brief's 450–600ms.
+ *
+ * A press that has to be held longer than half a second past the point of
+ * recognition stops feeling like a gesture and starts feeling like the control
+ * is deciding whether to believe you.
+ */
+const LONG_PRESS_MS = 460;
+
+/*
+ * Haptics, where the platform has them.
+ *
+ * Silently inert on iOS Safari, which exposes no Vibration API even in an
+ * installed PWA — so every beat it marks is also carried visually. Where it
+ * does fire, the platform already honours the system's own haptic setting.
+ */
+function haptic(pattern: number | number[]) {
+  if (typeof navigator === "undefined") return;
+  if (typeof navigator.vibrate !== "function") return;
+
+  navigator.vibrate(pattern);
+}
+
 type UseSignalRadarOptions = {
   refreshing: boolean;
   loading: boolean;
   error: boolean;
   onScan: () => void;
+  onOpenControls: () => void;
 };
 
 export type SignalRadarController = {
@@ -34,6 +62,17 @@ export type SignalRadarController = {
   policy: RadarMotionPolicy;
   /** Fires a scan, or absorbs the tap if one is already running or cooling. */
   scan: () => void;
+  /*
+   * Pointer handlers for the press-and-hold gesture. Returned as a bundle so
+   * the component spreads them onto the button rather than reassembling the
+   * timing rules next to the markup.
+   */
+  pressHandlers: {
+    onPointerDown: () => void;
+    onPointerUp: () => void;
+    onPointerLeave: () => void;
+    onPointerCancel: () => void;
+  };
 };
 
 /**
@@ -49,6 +88,7 @@ export default function useSignalRadar({
   loading,
   error,
   onScan,
+  onOpenControls,
 }: UseSignalRadarOptions): SignalRadarController {
   const [online, setOnline] = useState(true);
   const [policy, setPolicy] = useState<RadarMotionPolicy>({
@@ -76,6 +116,18 @@ export default function useSignalRadar({
   } | null>(null);
 
   const cooldownUntilRef = useRef(0);
+
+  /*
+   * Set the moment a long press is recognised, and read by the tap handler
+   * that fires afterwards.
+   *
+   * A press-and-hold on a button still produces a click on release, so without
+   * this the gesture would open the controls and start a scan. The flag is a
+   * ref rather than state because the click arrives in the same tick and must
+   * see the value the timer wrote, not the one from the last render.
+   */
+  const longPressedRef = useRef(false);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /*
    * Connection, and the motion policy that depends on the same environment.
@@ -142,6 +194,37 @@ export default function useSignalRadar({
   }
 
   /*
+   * The confirmation beats, emitted from an effect rather than from the render
+   * above — a render may run more than once for the same change, and a haptic
+   * or an analytics event that fires twice for one scan is simply wrong.
+   */
+  useEffect(() => {
+    if (!outcome) return;
+
+    if (outcome.kind === "error") {
+      haptic([0, 12, 60, 12]);
+      track("radar.scan_failed");
+      return;
+    }
+
+    haptic(14);
+    track("radar.sync_completed");
+  }, [outcome]);
+
+  useEffect(() => {
+    track(online ? "radar.online_restored" : "radar.offline");
+  }, [online]);
+
+  /*
+   * What the device can actually sustain.
+   *
+   * Measured only while the radar is allowed to animate at all — there is
+   * nothing to learn about frame pacing from a control that is holding still,
+   * and sampling would be the only thing running.
+   */
+  const frameHealth = useFrameStability(!policy.reducedMotion);
+
+  /*
    * The window that outcome is held open for. The write happens in the timer,
    * never in the effect body — the effect's job is to schedule and to clean up
    * after itself, not to change anything on the spot.
@@ -157,7 +240,53 @@ export default function useSignalRadar({
     return () => clearTimeout(timer);
   }, [outcome]);
 
+  /*
+   * The gesture.
+   *
+   * Recognition happens on a timer rather than on release, so the haptic and
+   * the sheet arrive while the finger is still down — which is what makes a
+   * long press feel like it was recognised rather than merely tolerated.
+   */
+  const cancelPress = useCallback(() => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = null;
+    }
+  }, []);
+
+  const pressHandlers = useMemo(
+    () => ({
+      onPointerDown: () => {
+        longPressedRef.current = false;
+        cancelPress();
+
+        pressTimerRef.current = setTimeout(() => {
+          longPressedRef.current = true;
+          haptic([0, 18]);
+          track("radar.long_press");
+          onOpenControls();
+        }, LONG_PRESS_MS);
+      },
+      onPointerUp: cancelPress,
+      onPointerLeave: cancelPress,
+      onPointerCancel: () => {
+        cancelPress();
+        longPressedRef.current = false;
+      },
+    }),
+    [cancelPress, onOpenControls],
+  );
+
+  useEffect(() => cancelPress, [cancelPress]);
+
   const scan = useCallback(() => {
+    // The click that follows a recognised long press is the tail of that
+    // gesture, not a tap.
+    if (longPressedRef.current) {
+      longPressedRef.current = false;
+      return;
+    }
+
     const now = Date.now();
 
     // Absorbed rather than queued. A second tap during a scan is the user
@@ -167,6 +296,9 @@ export default function useSignalRadar({
 
     cooldownUntilRef.current = now + SCAN_COOLDOWN_MS;
     setOutcome(null);
+    haptic(8);
+    track("radar.tap");
+    track("radar.scan_started");
     onScan();
   }, [loading, onScan, refreshing]);
 
@@ -182,5 +314,18 @@ export default function useSignalRadar({
     [loading, online, outcome, refreshing],
   );
 
-  return { state, policy, scan };
+  /*
+   * The policy the component actually gets: what the environment asked for,
+   * stepped down by what the device turned out to manage. One-way — see
+   * useFrameStability for why a measured downgrade is never reversed.
+   */
+  const effectivePolicy = useMemo<RadarMotionPolicy>(
+    () => ({
+      ...policy,
+      tier: downgradeTier(policy.tier, frameHealth),
+    }),
+    [frameHealth, policy],
+  );
+
+  return { state, policy: effectivePolicy, scan, pressHandlers };
 }

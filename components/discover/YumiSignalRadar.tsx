@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 
 import { RADAR_NODE_COUNT } from "@/lib/discover/signalRadar";
 import type { SignalRadarController } from "@/hooks/discover/useSignalRadar";
@@ -59,7 +59,10 @@ export default function YumiSignalRadar({
   controller,
   copy,
 }: YumiSignalRadarProps) {
-  const { state, policy, scan } = controller;
+  const { state, policy, scan, pressHandlers } = controller;
+
+  // Scoped so two radars on one screen can never share a clip path.
+  const eyeClipId = `radar-eye-${useId().replace(/:/g, "")}`;
 
   const busy = state === "scanning" || state === "syncing";
 
@@ -86,6 +89,7 @@ export default function YumiSignalRadar({
     <button
       type="button"
       onClick={scan}
+      {...pressHandlers}
       /*
        * Never disabled, even mid-scan.
        *
@@ -143,25 +147,72 @@ export default function YumiSignalRadar({
       ) : null}
 
       {/*
-        L3: the core.
+        L3: the core, which is Yumi.
         
-        The brand's own open C, stroked in the signal colour rather than drawn
-        as a new mark — at 20px the full ExchangeNotesMark is four gradients
-        inside a 4px stroke, and this is the same silhouette with none of that.
+        Drawn here rather than by ExchangeNotesMark, and that is a size
+        decision rather than a shortcut. The full mark is four gradients, a
+        mask, a seventeen-point constellation and a gaussian blur, authored
+        against a 400-unit box for hero sizes; at the 30px this core renders
+        at, every one of those is invisible and all of them still cost — the
+        same filter-on-an-animating-element that had to come off the vocabulary
+        hero for dropping frames.
+        
+        So this is the same creature at the size available: the mark's own body
+        geometry, its eye where the mark puts it, and its blink on the app's
+        shared rhythm (app/yumi-motion.css — the identical keyframes the splash,
+        Messages and the Command Deck use). What is left out is only detail that
+        could not be seen.
       */}
-      <svg
-        className={styles.core}
-        viewBox="0 0 400 400"
-        aria-hidden="true"
-      >
-        <path
-          d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="58"
-          strokeLinecap="round"
-        />
-      </svg>
+      <span className={`${styles.core} yumi-breath`}>
+        <svg className={styles.coreMark} viewBox="0 0 400 400" aria-hidden="true">
+          <defs>
+            <clipPath id={eyeClipId}>
+              <circle cx="285" cy="180" r="40" />
+            </clipPath>
+          </defs>
+
+          {/* The open C — Yumi's body, in the signal colour. */}
+          <path
+            d="M 300,70 Q 110,70 100,180 Q 110,320 300,320"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="58"
+            strokeLinecap="round"
+          />
+
+          {/*
+            The eye. A dark socket with a bright pupil rather than the mark's
+            pale sclera: at this size a light disc with a dark dot inside it
+            collapses into a grey smudge, where a lit point in a dark socket
+            stays a lit point.
+          */}
+          <circle cx="285" cy="180" r="40" fill="var(--radar-core-bg)" />
+
+          <g clipPath={`url(#${eyeClipId})`}>
+            <circle cx="290" cy="176" r="17" fill="currentColor" />
+
+            {/* Lids, on the mark's own geometry and the app's own blink. Both
+                must carry the same duration or the eye tears in half — which
+                is why one custom property drives them. */}
+            <rect
+              className="yumi-blink-upper"
+              x="245"
+              y="100"
+              width="80"
+              height="120"
+              fill="var(--radar-core-bg)"
+            />
+            <rect
+              className="yumi-blink-lower"
+              x="245"
+              y="215"
+              width="80"
+              height="25"
+              fill="var(--radar-core-bg)"
+            />
+          </g>
+        </svg>
+      </span>
     </button>
   );
 }

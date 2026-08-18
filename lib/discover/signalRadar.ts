@@ -120,6 +120,29 @@ export const RADAR_NODE_COUNT: Record<RadarQualityTier, number> = {
 };
 
 /**
+ * Steps a tier down to what the device is actually managing.
+ *
+ * The brief asks the radar to degrade when the device is thermally stressed,
+ * and no browser reports that. What is reportable is frame pacing, which is
+ * the thing thermal state was standing in for: a hot device throttles, a
+ * throttled device drops frames, and dropped frames can be counted. See
+ * hooks/discover/useFrameStability.
+ *
+ * Only ever downward. A device that recovered would ramp the animation back
+ * up, drop frames again and oscillate, and a control that visibly hunts is
+ * worse than one that stays calm.
+ */
+export function downgradeTier(
+  tier: RadarQualityTier,
+  health: "good" | "strained" | "poor",
+): RadarQualityTier {
+  if (health === "poor") return "efficient";
+  if (health === "strained" && tier === "high") return "balanced";
+
+  return tier;
+}
+
+/**
  * Picks a tier from what the platform is willing to tell us.
  *
  * Deliberately conservative and deliberately small. Save-Data is a direct

@@ -390,6 +390,13 @@ const english: TranslationDictionary = {
     vocabularyDrawerTitle: "Key vocabulary",
     vocabularyDrawerDescription: "Tap a word to hear it.",
 
+    signalControlsEyebrow: "Signal controls",
+    signalControlsTitle: "Tune your signal",
+    signalControlsClose: "Close signal controls",
+    signalControlsSpeed: "Speech speed",
+    signalControlsTopics: "Topics",
+    signalControlsAllTopics: "All",
+    signalControlsOpen: "Open signal controls",
     radarLabel: "Yumi signal radar.",
     radarIdle: "Receiving signals.",
     radarScanning: "Scanning for new stories.",
