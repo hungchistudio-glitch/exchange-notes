@@ -30,7 +30,7 @@ import type { YumiLookTarget } from "@/hooks/pet/useYumiOrbitMenu";
  * instead, which costs nothing and works at every width.
  */
 export const PRIMARY_ORBIT = 1.32;
-export const UTILITY_ORBIT = 1.52;
+export const UTILITY_ORBIT = 1.46;
 
 /*
  * The 270° halo, and the two bands inside it that nodes may actually occupy.
@@ -51,20 +51,26 @@ export const UTILITY_ORBIT = 1.52;
  * Stations are listed in fill order, so a surface with two capabilities gets a
  * balanced pair rather than the first two of five.
  *
- * Five stations is what this hero can actually hold, and the arrangement is
- * 2-left / 3-right rather than symmetric because symmetry is not available:
- * with the top and bottom sectors both out, each flank is a 95° band, and a
- * node plus its label needs roughly 96px of vertical room. The left flank
- * takes two primaries with full labels; the right takes one primary and both
- * utilities, which are icon-and-name only and therefore pack closer.
+ * Five stations is what this hero can hold, and the arrangement is 2-right /
+ * 3-left rather than symmetric because symmetry is not available: with the top
+ * and bottom sectors both out, each flank is a 95° band and everything has to
+ * be stacked inside it.
  *
- * Every one of these numbers was checked against the tightest case the app
- * renders — a 320px viewport, where Yumi is at its clamp floor and its centre
- * sits 150px below the top of the screen. That is the width that decides them;
- * at 375 and above there is room to spare.
+ * The left flank carries three — one primary with a full two-line label and
+ * both utilities, which show their name only at rest and therefore pack
+ * closer. The right carries two primaries with full labels, which is exactly
+ * what a flank holds when both of them are that tall.
+ *
+ * Every number here was solved against the tightest case the app renders: a
+ * 320px viewport, where Yumi is at its clamp floor and its centre sits 150px
+ * below the top of the screen. Two inequalities decide the utility stations —
+ * they have to stay far enough round the ring not to leave the side of the
+ * screen, and far enough apart that the upper one's label clears the lower
+ * one's node. -100° and -132° is the pair that satisfies both with room to
+ * spare; the band between them is narrower than it looks.
  */
 const PRIMARY_STATIONS = [-54, 54, 118];
-const UTILITY_STATIONS = [-112, -146];
+const UTILITY_STATIONS = [-100, -132];
 
 /*
  * How many capabilities get the larger node.

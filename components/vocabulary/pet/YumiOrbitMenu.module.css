@@ -51,18 +51,36 @@
    * lib/pet/commandHalo.ts, which is where the stations that ride them live.
    */
   --halo-orbit-primary: 1.32;
-  --halo-orbit-utility: 1.52;
+  --halo-orbit-utility: 1.46;
   /*
-   * How far an outer station's label leans back toward Yumi.
+   * How far a utility's label leans back toward Yumi.
    *
-   * A label centred under a node on the far flank of the halo runs off the
-   * side of a small phone — measured at 320px, the lower-left utility's label
-   * started 20px past the left edge and lost the first letter of its own
-   * blurb. The lean is proportional to how far out along the horizontal the
-   * station actually is, so a node near the vertical axis is untouched and
-   * only the ones with a problem are moved.
+   * A label centred under a node on the far flank runs off the side of a small
+   * phone — measured at 320px, the upper utility's label started 10px past the
+   * left edge and lost the first letter of its own name. The lean is
+   * proportional to how far out along the horizontal the station actually is,
+   * so the ones nearer the vertical are barely moved.
+   *
+   * Utilities only, and that is the correction to the first version of this.
+   * Applying it to every node pulled the primaries' labels *inward* as well,
+   * and inward is where Yumi is: at 320px the Create blurb ended up printed
+   * across the eye. The primaries have never needed it — their stations are
+   * nearer the vertical, and their labels sit inside the viewport unaided at
+   * every width the page renders.
    */
   --halo-label-pull: 10px;
+  /*
+   * And how far a primary's label leans the other way — outward, away from
+   * Yumi.
+   *
+   * A label hangs straight down from a node that is itself out on an arc, so
+   * the further round the flank the station is, the more the label ends up
+   * sitting inboard of it, over the character. 8px of outward lean is what
+   * clears the Create blurb off the eye without pushing the Scan label into
+   * the right edge. Zero below 380px, where there is no margin on the right to
+   * spend.
+   */
+  --halo-label-push: 8px;
 
   position: absolute;
   z-index: 74;
@@ -101,15 +119,15 @@
   pointer-events: none;
   -webkit-mask-image: conic-gradient(
     from 0deg,
-    #000 0deg 146deg,
-    transparent 146deg 214deg,
-    #000 214deg 360deg
+    #000 0deg 135deg,
+    transparent 135deg 225deg,
+    #000 225deg 360deg
   );
   mask-image: conic-gradient(
     from 0deg,
-    #000 0deg 146deg,
-    transparent 146deg 214deg,
-    #000 214deg 360deg
+    #000 0deg 135deg,
+    transparent 135deg 225deg,
+    #000 225deg 360deg
   );
   animation: haloRingIn 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
@@ -309,8 +327,8 @@
   position: absolute;
   top: calc(100% + 6px);
   left: 50%;
-  translate: calc(-50% - var(--halo-x) * var(--halo-label-pull)) 0;
   width: var(--halo-label-width);
+  translate: calc(-50% + var(--halo-x) * var(--halo-label-push)) 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -357,6 +375,7 @@
  */
 .node[data-tier="utility"] .label {
   width: 66px;
+  translate: calc(-50% - var(--halo-x) * var(--halo-label-pull)) 0;
 }
 
 .node[data-tier="utility"] .blurb {
@@ -504,19 +523,26 @@
 /*
  * Below this width the flanks are close enough to the screen edge that the
  * default lean is not enough, the labels have to give up a few pixels, and
- * the outer orbit has to come in.
+ * the outer orbit has to come almost all the way in.
  *
- * 1.42R is the tightest the utility ring can be pulled and still clear the
- * body — its nodes' inner edges land at 131px against a 104px radius — and
- * the widest it can be and still keep the mid-flank station on a 320px
- * screen. There is no room either side of that number, which is why it is
- * written here rather than guessed at the call site.
+ * 1.34R is what keeps the upper utility on a 320px screen at its station,
+ * without taking a millimetre off its touch target. The cost is that the two
+ * orbits are then 2% apart, which is not a second ring — it is the first one
+ * drawn twice — so the outer trace is dropped at this width rather than
+ * rendered as a hairline fault two pixels outside its neighbour. The tiers
+ * still read: the nodes are 48px against 38px, and that difference does not
+ * depend on the rings at all.
  */
 @media (max-width: 380px) {
   .halo {
     --halo-label-width: 72px;
-    --halo-label-pull: 22px;
-    --halo-orbit-utility: 1.42;
+    --halo-label-pull: 18px;
+    --halo-label-push: 0px;
+    --halo-orbit-utility: 1.34;
+  }
+
+  .ringOuter {
+    display: none;
   }
 }
 
