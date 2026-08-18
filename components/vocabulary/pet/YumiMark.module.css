@@ -8,6 +8,8 @@
 }
 
 .shell {
+  /* This screen's blink pace; the shape is app/yumi-motion.css's. */
+  --yumi-blink: 4.2s;
   position: relative;
   width: min(56vw, 216px);
   height: min(56vw, 216px);
@@ -78,24 +80,9 @@
   will-change: transform;
 }
 
-/* Eyelids are hidden by BOTH being translated well outside the eye's clip
-   circle AND opacity — belt and suspenders. Some browsers don't reliably
-   clip these rects to the circular clip-path when they're also being
-   transformed, which was leaving a visible rectangular sliver above/below
-   the eye even at the "resting" (fully retracted) position. Opacity does
-   not depend on clip-path support, so it stays hidden regardless. */
-.upperLid {
-  transform: translateY(-82px);
-  opacity: 0;
-  animation: baseUpperBlink 4.2s linear infinite;
-}
-
-.lowerLid {
-  transform: translateY(12px);
-  opacity: 0;
-  animation: baseLowerBlink 4.2s linear infinite;
-}
-
+/* The blink — including the belt-and-braces opacity that keeps the lid rects
+   from showing as slivers where clip-path is unreliable — is the app's shared
+   one now. See app/yumi-motion.css; this file only sets its pace. */
 @keyframes baseFloat {
   0%,
   100% {
@@ -103,36 +90,6 @@
   }
   50% {
     transform: translateY(-6px) scaleX(1.012) scaleY(1.02) rotate(-0.6deg);
-  }
-}
-
-@keyframes baseUpperBlink {
-  0%,
-  44%,
-  50%,
-  100% {
-    transform: translateY(-82px);
-    opacity: 0;
-  }
-  46%,
-  47% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-}
-
-@keyframes baseLowerBlink {
-  0%,
-  44%,
-  50%,
-  100% {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  46%,
-  47% {
-    transform: translateY(-2px);
-    opacity: 1;
   }
 }
 
@@ -871,8 +828,6 @@
   .shell[data-waking="true"],
   .shell[data-glance="true"] .pupil,
   .shell .pupil,
-  .shell .upperLid,
-  .shell .lowerLid,
   .shell[data-feeding="anticipating"],
   .shell[data-feeding="biting"],
   .shell[data-feeding="chewing"],
