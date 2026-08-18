@@ -203,6 +203,25 @@ html[data-interface-mode="yumi-cosmic"] {
   --cosmic-glow: rgba(77, 227, 240, 0.14);
   --cosmic-star: rgba(220, 233, 255, 0.75);
 
+  /*
+   * The Signal Radar's palette.
+   *
+   * Six tokens, and every one of them points at a hue this file already
+   * defines — the radar is a new instrument, not a new colour language. The
+   * only value mixed here is the core's body, which needs to be darker than
+   * any surface in the app so that a lit core has something to be lit against.
+   *
+   * Named for what they mean on the radar rather than for the state that uses
+   * them, because several states share one: success and idle are both cyan,
+   * and what separates them is timing, not hue.
+   */
+  --radar-core-bg: #050c1a;
+  --radar-cyan-primary: var(--cosmic-cyan);
+  --radar-blue-secondary: var(--cosmic-blue);
+  --radar-violet-accent: var(--cosmic-violet);
+  --radar-success: var(--cosmic-teal);
+  --radar-warning: var(--cosmic-amber);
+
   /* The second signal colour. Cyan alone reads as a single-hue skin; the
      violet is what gives the deck depth, and it carries a different meaning —
      cyan is a system that is live, violet is a measure of progress. */

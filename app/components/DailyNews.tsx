@@ -1,6 +1,12 @@
 "use client";
 
-import { LoaderCircle, RefreshCw } from "lucide-react";
+
+import { SlidersHorizontal } from "lucide-react";
+
+import SignalControlSheet from "@/components/discover/SignalControlSheet";
+import YumiSignalRadar from "@/components/discover/YumiSignalRadar";
+import useSignalRadar from "@/hooks/discover/useSignalRadar";
+import { track } from "@/lib/analytics/track";
 import {
   useCallback,
   useEffect,
@@ -19,7 +25,6 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import CompactStoryRow from "@/components/discover/CompactStoryRow";
 import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
-import SpeechSpeedControl from "@/components/discover/SpeechSpeedControl";
 import StoryDetailSheet from "@/components/discover/StoryDetailSheet";
 import VocabularyDrawer from "@/components/discover/VocabularyDrawer";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
@@ -202,6 +207,17 @@ export default function DailyNews() {
   // than persisting a dismissal.
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
 
+  /*
+   * The Signal Controls surface, and the one filter it carries that is real.
+   *
+   * Topics are a view over the cards already loaded rather than a request
+   * parameter — the feed is a single daily batch, so filtering it locally is
+   * both instant and honest. An empty set means no filter at all, which is why
+   * everything downstream tests for size rather than membership.
+   */
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
+
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
   // Decoupled from detailCardId so the featured card's "Explore this
   // image" action can open the vocabulary drawer directly, without also
@@ -292,6 +308,27 @@ export default function DailyNews() {
     },
     [copy]
   );
+
+  /*
+   * The radar is a reader of this component's state, not a participant in it.
+   *
+   * It is handed the same three facts the refresh button already used —
+   * refreshing, loading, error — plus the function that starts a scan, and it
+   * cannot delay, retry or swallow a request. Everything it needs that the
+   * feed has no reason to know (connection, reduced motion, the short windows
+   * after a scan lands) lives in the hook. See §39 of the brief: animation
+   * state must not become business state.
+   */
+  const radar = useSignalRadar({
+    refreshing,
+    loading,
+    error: Boolean(error),
+    onScan: () => void loadNews(true),
+    onOpenControls: () => {
+      track("radar.controls_opened");
+      setControlsOpen(true);
+    },
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -677,7 +714,26 @@ export default function DailyNews() {
     return <LoadingHero />;
   }
 
-  const visibleCards = cards.filter((card) => !hiddenIds.has(card.id));
+  /*
+   * Every topic the current batch actually contains, in the order it first
+   * appears. Derived rather than a fixed list, so a category the feed stops
+   * publishing stops being offered instead of becoming a filter that returns
+   * nothing.
+   */
+  const topics = Array.from(
+    new Set(
+      cards
+        .filter((card) => !hiddenIds.has(card.id))
+        .map((card) => card.category.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const visibleCards = cards.filter(
+    (card) =>
+      !hiddenIds.has(card.id) &&
+      (selectedTopics.size === 0 || selectedTopics.has(card.category.trim())),
+  );
   const featuredCard = visibleCards[0] ?? null;
   const latestCards = visibleCards.slice(1);
   const detailCard =
@@ -725,34 +781,69 @@ export default function DailyNews() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void loadNews(true)}
-          disabled={refreshing}
-          aria-label={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          title={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-50"
-          style={{
-            border: `1px solid ${DISCOVER_COLORS.divider}`,
-            color: DISCOVER_COLORS.accent,
-            backgroundColor: DISCOVER_COLORS.card,
-          }}
-        >
-          {refreshing ? (
-            <LoaderCircle size={14} strokeWidth={2} className="animate-spin" />
-          ) : (
-            <RefreshCw size={14} strokeWidth={2} />
-          )}
-        </button>
+        {/*
+          One control, every shell.
+
+          The plain refresh button is gone — not hidden behind a mode, gone.
+          Keeping a second control alive for Standard Mode would have meant two
+          things to change every time refreshing gains a state, and the radar
+          says strictly more than the button did: the button could report
+          "spinning", where this reports offline, scanning, syncing, succeeded
+          and failed. What differs between shells is six colour tokens.
+        */}
+        <div className="mt-1 flex shrink-0 items-center gap-1">
+          <YumiSignalRadar controller={radar} copy={copy} />
+
+          {/*
+            The same sheet the long press opens, reachable without a gesture.
+            A press-and-hold is undiscoverable and unavailable to anyone driving
+            the page from a keyboard or a switch, so the controls get an
+            ordinary button as well — §43's accessible alternative, not a
+            duplicate feature.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              track("radar.controls_opened");
+              setControlsOpen(true);
+            }}
+            aria-label={copy.signalControlsOpen}
+            title={copy.signalControlsOpen}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity"
+            style={{ color: DISCOVER_COLORS.textSecondary }}
+          >
+            <SlidersHorizontal size={15} strokeWidth={1.9} />
+          </button>
+        </div>
       </div>
 
-      <div className="mb-7">
-        <SpeechSpeedControl
-          value={speechRate}
-          onChange={setSpeechRate}
-          copy={copy}
-        />
-      </div>
+      {/*
+        Speech speed used to sit here as a labelled row under the title.
+        
+        It moved into the Signal Controls sheet rather than being duplicated
+        there: it is a preference, not a piece of the page, and a preference
+        that is always on screen costs a row of vertical space on every visit
+        to serve the handful where it is actually changed. The header is what
+        the radar and the controls button are for.
+      */}
+      <SignalControlSheet
+        open={controlsOpen}
+        onClose={() => setControlsOpen(false)}
+        copy={copy}
+        speechRate={speechRate}
+        onSpeechRateChange={setSpeechRate}
+        topics={topics}
+        selectedTopics={selectedTopics}
+        onToggleTopic={(topic) =>
+          setSelectedTopics((current) => {
+            const next = new Set(current);
+            if (next.has(topic)) next.delete(topic);
+            else next.add(topic);
+            return next;
+          })
+        }
+        onClearTopics={() => setSelectedTopics(new Set())}
+      />
 
       {notice && !error && (
         <div

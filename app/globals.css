@@ -28,6 +28,24 @@
 
   /* The app's gold. Categories, highlights, selected chips, Yumi's warmth. */
   --accent-amber: #c9962e;
+
+  /*
+   * The Signal Radar's palette, Standard Mode.
+   *
+   * The radar is the only refresh control Discover has now, in every shell, so
+   * it needs a set of these outside Cosmic Mode too. Same six token names, so
+   * the component never asks which mode it is in — only the values differ, and
+   * they differ completely: here the instrument sits on paper rather than in
+   * deep space, so the orb is a warm near-black and the signal colour is the
+   * app's own accent rather than a cyan that would have nothing else on the
+   * page to belong to.
+   */
+  --radar-core-bg: #26241f;
+  --radar-cyan-primary: #c9962e;
+  --radar-blue-secondary: #8aa6c4;
+  --radar-violet-accent: #8b5cf6;
+  --radar-success: #2f9e6b;
+  --radar-warning: #c9962e;
   --accent-amber-ink: #2b2013;
   --accent-amber-deep: #6b4e1f;
   --accent-amber-soft: #f3d998;
