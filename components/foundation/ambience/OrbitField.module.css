@@ -1,6 +1,7 @@
 /*
- * Ambient orbital lines, mounted once in the root layout so every route and
- * sub-route carries them without any page opting in.
+ * Ambient orbital lines — and, in Cosmic Mode, meteors — mounted once in the
+ * root layout so every route and sub-route carries them without any page
+ * opting in.
  *
  * Above the page surface rather than behind it. Screen paints an opaque
  * bg-surface and twenty-seven other files paint their own, so a backdrop at
@@ -13,10 +14,17 @@
  * what enters the frame is a shallow arc through a corner. Reading happens in
  * the middle of the screen; this happens at the edges.
  *
- * Cost is three composited transforms. No JavaScript runs per frame, nothing
- * reads layout, and only transform and opacity animate — the properties that
- * stay off the main thread. Yumi's idle budget was hard-won and this does not
- * spend it.
+ * The planets of Cosmic Mode are deliberately *not* here. A hairline can be
+ * painted over the page; a body large enough to read as a world cannot, and
+ * would sit on top of cards. They are painted into the body's background in
+ * app/cosmic.css instead, which is the one place that is genuinely behind
+ * everything.
+ *
+ * Cost is three composited transforms in Standard Mode, eight in Cosmic — the
+ * three arcs and five meteors. No JavaScript runs per frame, nothing reads
+ * layout, and only transform and opacity animate: the properties that stay off
+ * the main thread. Yumi's idle budget was hard-won and this does not spend
+ * it.
  */
 
 .field {
@@ -144,6 +152,72 @@
   }
 }
 
+/* =========================================================
+   Cosmic Mode: meteors
+   ========================================================= */
+
+/*
+ * Hidden by default and switched on by the attribute the root layout writes on
+ * <html>, which is what lets this file stay a Server Component with no context
+ * and no mode prop. In Standard Mode these are five elements that are
+ * display: none and animate nothing.
+ *
+ * They share the mask above deliberately. It is the app's existing answer to
+ * "where may ambience appear", and a meteor that ignored it would be a second
+ * layer in this file arguing with the first about the same question. What that
+ * costs is the middle of the screen, which is why the paths in the component
+ * are shallow and start in the top and bottom bands.
+ *
+ * The rotation is baked into the keyframes rather than sitting on a wrapper.
+ * Normally that is the fragile choice, but a meteor is nothing except its
+ * travel: if the animation is ever cancelled the right answer is for it to be
+ * gone, not to be a diagonal scratch parked on the sky.
+ */
+.meteor {
+  display: none;
+}
+
+html[data-interface-mode="yumi-cosmic"] .meteor {
+  display: block;
+  position: absolute;
+  left: var(--meteor-x);
+  top: var(--meteor-y);
+  width: var(--meteor-length);
+  height: 1px;
+  border-radius: 9999px;
+  /* Bright at the leading end, gone at the tail — the trail is behind the head
+     the way it is on a real one, which is why the gradient is not symmetric. */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--cosmic-star) 45%, transparent) 58%,
+    var(--cosmic-star) 100%
+  );
+  opacity: 0;
+  animation: meteorFall var(--meteor-duration) linear infinite
+    var(--meteor-delay);
+}
+
+@keyframes meteorFall {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--meteor-angle)) translateX(0);
+  }
+  4% {
+    opacity: var(--meteor-peak);
+  }
+  20% {
+    opacity: var(--meteor-peak);
+  }
+  /* Burning out rather than leaving the frame. A meteor that reaches the edge
+     and vanishes there tells you where the edge is. */
+  26%,
+  100% {
+    opacity: 0;
+    transform: rotate(var(--meteor-angle)) translateX(var(--meteor-travel));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .orbitA,
   .orbitB,
@@ -154,5 +228,19 @@
   /* The lines stay. It is the movement that was the problem, not the look. */
   .comet {
     box-shadow: none;
+  }
+
+  /*
+   * The meteors go, and they are the only thing here that is removed rather
+   * than stilled: an arc still has a shape worth keeping when it stops, and a
+   * meteor is nothing but its travel, so a stopped one is not a calmer meteor,
+   * it is a diagonal scratch on the sky.
+   *
+   * The selector carries the mode with it because the rule that switches them
+   * on does. A bare `.meteor` here would lose to it on specificity and the
+   * meteors would keep falling.
+   */
+  html[data-interface-mode="yumi-cosmic"] .meteor {
+    display: none;
   }
 }

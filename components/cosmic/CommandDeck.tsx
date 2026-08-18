@@ -101,74 +101,6 @@ const SIGNALS: Array<{
 ];
 
 /*
- * Meteors, near to far.
- *
- * Every value in a row is doing the same job — selling one distance. The near
- * one is long, fast and bright and crosses 520px in two seconds; the far one is
- * short, slow and dim and takes four and a half to cover 320. Read down any
- * column and the ramp is monotonic, which is what stops the four from looking
- * like one meteor drawn four times.
- *
- * The angles differ by a few degrees rather than pointing anywhere, so they
- * read as a shower with its radiant somewhere off the top-left of the screen.
- *
- * Negative delays, staggered against four durations that do not divide, so the
- * sky already has traffic on arrival and the pattern does not come back around
- * for the better part of an hour.
- */
-const METEORS: Array<{
-  x: string;
-  y: string;
-  angle: string;
-  length: string;
-  travel: string;
-  peak: string;
-  duration: string;
-  delay: string;
-}> = [
-  {
-    x: "-18%",
-    y: "-8%",
-    angle: "30deg",
-    length: "86px",
-    travel: "520px",
-    peak: "0.9",
-    duration: "8s",
-    delay: "-2.2s",
-  },
-  {
-    x: "30%",
-    y: "-14%",
-    angle: "26deg",
-    length: "68px",
-    travel: "440px",
-    peak: "0.78",
-    duration: "11s",
-    delay: "-7.4s",
-  },
-  {
-    x: "-25%",
-    y: "34%",
-    angle: "22deg",
-    length: "54px",
-    travel: "380px",
-    peak: "0.66",
-    duration: "14s",
-    delay: "-11.9s",
-  },
-  {
-    x: "55%",
-    y: "-10%",
-    angle: "34deg",
-    length: "42px",
-    travel: "320px",
-    peak: "0.52",
-    duration: "17.5s",
-    delay: "-16.1s",
-  },
-];
-
-/*
  * Where Yumi looks when a system is locked.
  *
  * The six nodes sit at 60° intervals with the first one straight up, so the
@@ -354,41 +286,12 @@ export default function CommandDeck() {
         aria-label={copy.deck.roomsLabel}
         data-omni={omniState}
       >
-        {/*
-          The sky, back to front: planets, then stars, then meteors. It sits
-          before the stage in the markup and is positioned, so everything in it
-          paints behind Yumi and behind the six systems — a meteor crossing the
-          deck passes behind the ring rather than over it.
-        */}
-        <div className={styles.sky} aria-hidden="true">
-          <span className={styles.planetNear} />
-          <span className={`${styles.planetFar} ${styles.planetFarUpper}`} />
-          <span className={`${styles.planetFar} ${styles.planetFarLower}`} />
-
+        <div className={styles.stars} aria-hidden="true">
           {STARS.map(([left, top, delay]) => (
             <span
               key={`${left}-${top}`}
               className={styles.star}
               style={{ left, top, animationDelay: delay }}
-            />
-          ))}
-
-          {METEORS.map((meteor) => (
-            <span
-              key={meteor.duration}
-              className={styles.meteor}
-              style={
-                {
-                  "--meteor-x": meteor.x,
-                  "--meteor-y": meteor.y,
-                  "--meteor-angle": meteor.angle,
-                  "--meteor-length": meteor.length,
-                  "--meteor-travel": meteor.travel,
-                  "--meteor-peak": meteor.peak,
-                  "--meteor-duration": meteor.duration,
-                  "--meteor-delay": meteor.delay,
-                } as CSSProperties
-              }
             />
           ))}
         </div>
@@ -512,9 +415,7 @@ export default function CommandDeck() {
                      * viewfinder.
                      */
                     transitionTypes={
-                      room.key === "scanner"
-                        ? undefined
-                        : [`room-${room.key}`]
+                      room.key === "scanner" ? undefined : [`room-${room.key}`]
                     }
                     onPointerDown={(event) => lockRoom(room.key, event)}
                     onPointerUp={() => setLockedRoom(null)}
@@ -550,7 +451,6 @@ export default function CommandDeck() {
           })}
         </div>
       </nav>
-
     </Screen>
   );
 }

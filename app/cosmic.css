@@ -213,12 +213,27 @@ html[data-interface-mode="yumi-cosmic"] {
 
 /*
  * The field the deck floats in: a deep violet bloom, faint concentric rings
- * expanding from behind Yumi, and a halftone dot grid over the top.
+ * expanding from behind Yumi, a halftone dot grid over the top — and three
+ * planets.
  *
  * Painted onto the body rather than added as an element, so it costs no DOM
  * and no hydration anywhere in the app. `background-attachment: fixed` keeps
  * it still while pages scroll, which is what makes it read as the space the
  * ship is in rather than as wallpaper glued to the content.
+ *
+ * The planets are here, in the background, rather than in a layer of their own
+ * for one reason that decides it: a planet has to be *behind* the page. The
+ * app's one full-viewport ambience layer (OrbitField) is deliberately in front
+ * of it, which is right for a hairline arc at the margin and wrong for a body
+ * large enough to read as a world — that would sit on top of cards. Nothing
+ * gets behind an opaque body background except the background itself, so the
+ * planets became part of it. Cards occlude them, which is what should happen
+ * to something a long way behind. They also do not move, and that is not a
+ * compromise: at this distance, nothing would.
+ *
+ * Stop positions in a radial gradient are percentages of its own radius, which
+ * is what makes the numbers below readable — 95.6% is "almost at the edge of
+ * this planet", not a position on the screen.
  */
 html[data-interface-mode="yumi-cosmic"] body {
   background-image:
@@ -226,6 +241,45 @@ html[data-interface-mode="yumi-cosmic"] body {
       circle at 50% 38%,
       transparent 0 46px,
       rgba(77, 227, 240, 0.035) 46px 47px
+    ),
+    /*
+     * The near planet: a limb rising along the bottom of the screen. The
+     * circle is 88vw in radius with its centre pushed that far below 82vh, so
+     * what lands on screen is the top of an arc far too large to fit — and the
+     * crop is the whole illusion, since a circle you can see all of is a ball
+     * and an arc too big to fit is a world.
+     *
+     * The gradient's radius is 92vw rather than 88 so there is room past the
+     * rim for the atmosphere to fade out into. The rim itself is the half a
+     * percent between them: a hairline, because at this crop the edge is
+     * nearly all of what you get to see.
+     */
+    radial-gradient(
+        circle 92vw at 50% calc(82vh + 88vw),
+        #050b16 0 95.6%,
+        rgba(158, 201, 238, 0.34) 95.9% 96.4%,
+        rgba(77, 227, 240, 0.08) 97.6%,
+        transparent 100%
+      ),
+    /*
+     * Two far planets. Each is one gradient whose centre is offset up and left
+     * of the body it draws, so the bright stops land on one side and the dark
+     * ones wrap the other — a lit sphere out of a single circle rather than a
+     * flat dot with a highlight pasted on.
+     */
+    radial-gradient(
+        circle 11px at calc(6vw - 3px) calc(41vh - 3px),
+        rgba(186, 217, 246, 0.5) 0 22%,
+        rgba(120, 160, 205, 0.2) 44%,
+        rgba(8, 15, 30, 0.92) 64% 80%,
+        transparent 84%
+      ),
+    radial-gradient(
+      circle 7px at calc(93vw - 2px) calc(64vh - 2px),
+      rgba(186, 217, 246, 0.34) 0 24%,
+      rgba(120, 160, 205, 0.14) 46%,
+      rgba(8, 15, 30, 0.85) 66% 80%,
+      transparent 84%
     ),
     radial-gradient(
       circle at 22% 12%,
@@ -483,13 +537,16 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-lock:active {
 
 @keyframes cosmicLockAcquire {
   0% {
-    box-shadow: 0 0 0 12px color-mix(in oklab, var(--cosmic-cyan) 0%, transparent);
+    box-shadow: 0 0 0 12px
+      color-mix(in oklab, var(--cosmic-cyan) 0%, transparent);
   }
   55% {
-    box-shadow: 0 0 0 4px color-mix(in oklab, var(--cosmic-cyan) 40%, transparent);
+    box-shadow: 0 0 0 4px
+      color-mix(in oklab, var(--cosmic-cyan) 40%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 55%, transparent);
+    box-shadow: 0 0 0 1px
+      color-mix(in oklab, var(--cosmic-cyan) 55%, transparent);
   }
 }
 
