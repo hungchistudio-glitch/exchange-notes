@@ -907,16 +907,33 @@
  * Deck and in Messages, rather than a fourth interpretation of it.
  */
 
+/*
+ * One shadow, not three.
+ *
+ * This SVG is never still: it floats on baseFloat, breathes, blinks, runs the
+ * scan pass and turns its iris. Every filter on it is re-run on every frame of
+ * all of that — and it carried three gaussian blurs, the widest at 38px, over
+ * a mark that renders up to 292px across. That is the most expensive thing on
+ * the page and it was paying for the same look twice: the cyan bloom it threw
+ * is already in front of it as .halo and .haloWide, which are plain radial
+ * gradients on their own layers and cost nothing to keep lit.
+ *
+ * So the character keeps the one shadow only it can cast — the dark one that
+ * traces its actual silhouette — and the light around it stays where it was
+ * already being drawn.
+ */
 .stage[data-cosmic="true"] .logo {
-  /* The warm drop shadow would sit under a body in deep space as a brown
-     smudge. Cool, and much deeper, so Yumi reads as lit from in front of a
-     dark field rather than pasted onto it. */
-  filter: drop-shadow(0 22px 38px rgba(2, 8, 22, 0.55))
-    /* Two throws rather than one: a tight rim that traces the silhouette, and
-       a wide bloom that puts light into the field around it. A single wide
-       shadow reads as fog; a single tight one reads as a sticker outline. */
-    drop-shadow(0 0 4px color-mix(in oklab, var(--cosmic-cyan) 26%, transparent))
-    drop-shadow(0 0 26px color-mix(in oklab, var(--cosmic-cyan) 14%, transparent));
+  filter: drop-shadow(0 18px 30px rgba(2, 8, 22, 0.55));
+}
+
+/* The halo is the cyan Yumi used to throw from its own filter. A touch
+   stronger now that it is carrying that job alone. */
+.stage[data-cosmic="true"] .halo {
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--cosmic-cyan) 17%, transparent) 0%,
+    transparent 68%
+  );
 }
 
 /*
@@ -975,6 +992,7 @@
   position: absolute;
   inset: 0;
   border-radius: 9999px;
+  will-change: transform;
   border: 1px dashed var(--cosmic-ring);
   animation: yumiOrbitSpin var(--orbit-spin) linear infinite;
   animation-direction: var(--orbit-direction);
@@ -1026,6 +1044,7 @@
   inset: 0;
   display: grid;
   place-items: center;
+  will-change: transform;
   transform: rotate(var(--signal-angle));
   animation: yumiSignalOrbit var(--signal-spin) linear infinite
     var(--signal-delay);

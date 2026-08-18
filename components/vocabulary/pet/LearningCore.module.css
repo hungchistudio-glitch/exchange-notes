@@ -171,6 +171,12 @@
   animation-delay: calc(var(--core-index, 0) * -0.83s);
 }
 
+/* Past the rows the tray shows by default, a Core is still a Core — it just
+   stops breathing. See the `animated` prop in LearningCore.tsx. */
+.core[data-animated="false"] .chamber {
+  animation: none;
+}
+
 @keyframes coreEmber {
   0%,
   100% {
@@ -278,12 +284,14 @@
  * having happened at all. Scale, glow and shadow together, since one of them
  * alone reads as a hover rather than as something picked up.
  */
-.core[data-state="lifted"] {
+.core[data-state="lifted"],
+.core[data-state="attracted"] {
   transform: scale(1.09);
   filter: drop-shadow(0 10px 16px rgba(1, 4, 12, 0.55));
 }
 
-.core[data-state="lifted"] .chamber {
+.core[data-state="lifted"] .chamber,
+.core[data-state="attracted"] .chamber {
   animation: none;
   opacity: 1;
   box-shadow:
@@ -291,14 +299,16 @@
     0 0 22px color-mix(in oklab, var(--tone) 46%, transparent);
 }
 
-.core[data-state="lifted"] .rim {
+.core[data-state="lifted"] .rim,
+.core[data-state="attracted"] .rim {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tone) 66%, transparent);
 }
 
 /* The pad turns only while the core is held. At rest it is a still ellipse,
    which is what a projection sitting on a shelf should be; in the hand it is
    a device doing something. */
-.core[data-state="lifted"] .pad {
+.core[data-state="lifted"] .pad,
+.core[data-state="attracted"] .pad {
   border-color: color-mix(in oklab, var(--tone) 46%, transparent);
   border-style: dashed;
   animation: corePadSpin 2.8s linear infinite;
@@ -308,6 +318,26 @@
   to {
     transform: translateX(-50%) rotate(360deg);
   }
+}
+
+/*
+ * Inside Yumi's attraction zone.
+ *
+ * The chamber and the glyph brighten; nothing else changes, and deliberately
+ * nothing here is a filter. The Core is being moved every frame at this point,
+ * and a drop-shadow on a moving element re-runs a blur on each of those
+ * frames — which is what this replaced. A box-shadow on one small round layer
+ * repaints once, when the state flips.
+ */
+.core[data-state="attracted"] .chamber {
+  box-shadow:
+    inset 0 0 10px color-mix(in oklab, var(--tone) 75%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, var(--tone-lift) 60%, transparent),
+    0 0 30px color-mix(in oklab, var(--tone) 60%, transparent);
+}
+
+.core[data-state="attracted"] .glyph {
+  color: #ffffff;
 }
 
 /* ---------------------------------------------------------------

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from "react";
 import { createPortal } from "react-dom";
 
 import { cosmicCoreTone } from "@/lib/pet/moodEngine";
@@ -397,7 +403,11 @@ export default function CookieTray({
 
   // The ghost and the tray slots draw the same object, so the face is one
   // function rather than two that have to be kept looking alike.
-  function face(cookie: Cookie, index: number, state: "resting" | "lifted" | "absorbing") {
+  function face(
+    cookie: Cookie,
+    index: number,
+    state: "resting" | "lifted" | "attracted" | "absorbing",
+  ) {
     if (!cosmic) return <span className={styles.glyphText}>{cookie.glyph}</span>;
 
     return (
@@ -406,6 +416,9 @@ export default function CookieTray({
         tone={cosmicCoreTone(cookie)}
         state={state}
         index={index}
+        // The ember is ambience for the tray as it normally appears. Expanded,
+        // the rows past that are still Cores — they just stop breathing.
+        animated={index < maxVisible}
         newBadgeLabel={copy.coreNewBadge}
       />
     );
@@ -498,7 +511,24 @@ export default function CookieTray({
                     : styles.ghostDragging
               }`}
               data-attracted={drag.attracted ? "true" : "false"}
-              style={{ left: drag.x, top: drag.y }}
+              /*
+               * Position as a transform, not as left/top.
+               *
+               * This element is moved on every pointermove of a drag. Written
+               * to left/top that is a layout pass, a paint and a composite per
+               * frame — for a fixed-position element the browser cannot skip
+               * any of the three, and on a phone it is the difference between
+               * a Core that follows the finger and one that lags behind it.
+               * As a translate it is composited only, and the flight and the
+               * spring back become GPU transitions rather than animated
+               * geometry. See .ghost in the module CSS.
+               */
+              style={
+                {
+                  "--ghost-x": `${drag.x}px`,
+                  "--ghost-y": `${drag.y}px`,
+                } as CSSProperties
+              }
               onTransitionEnd={
                 drag.phase === "releasing"
                   ? settleRelease
@@ -510,7 +540,11 @@ export default function CookieTray({
               {face(
                 drag.cookie,
                 0,
-                drag.phase === "releasing" ? "absorbing" : "lifted",
+                drag.phase === "releasing"
+                  ? "absorbing"
+                  : drag.attracted
+                    ? "attracted"
+                    : "lifted",
               )}
             </div>,
             document.body,
