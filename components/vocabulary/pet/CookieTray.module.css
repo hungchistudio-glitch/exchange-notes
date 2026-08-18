@@ -126,13 +126,26 @@
   text-shadow: 0 0 7px rgba(217, 183, 104, 0.6);
 }
 
+/*
+ * The ghost's position is a transform.
+ *
+ * left/top on a fixed element is a layout pass, a paint and a composite —
+ * every frame, for the whole length of a drag. The `translate` property is
+ * composited on its own and, being independent of `transform`, leaves scale
+ * free for the lift and the contraction without the two having to be composed
+ * into one declaration that both phases would then have to restate.
+ */
 .ghost {
   position: fixed;
   z-index: 60;
+  left: 0;
+  top: 0;
+  translate: var(--ghost-x) var(--ghost-y);
   width: 46px;
   height: 46px;
   margin: -23px 0 0 -23px;
   border-radius: 9999px;
+  will-change: translate;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -147,8 +160,7 @@
 
 .ghostFlying {
   transition:
-    left 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
-    top 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+    translate 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
     transform 0.5s ease,
     opacity 0.5s ease 0.15s;
   transform: scale(0.4);
@@ -362,22 +374,31 @@
 .ghostCore {
   position: fixed;
   z-index: 60;
+  left: 0;
+  top: 0;
+  translate: var(--ghost-x) var(--ghost-y);
   width: 52px;
   height: 52px;
   margin: -26px 0 0 -26px;
   pointer-events: none;
+  will-change: translate;
 }
 
 /*
- * Inside the attraction zone, the Core leans toward what is pulling it.
+ * Inside the attraction zone the Core brightens — see .core[data-attracted] in
+ * LearningCore.module.css, which lights the chamber rather than putting a
+ * filter on this element.
  *
- * Small on purpose. The magnetism is mostly Yumi's job — the rings tighten
- * and the halo lifts over there — and a Core that visibly lurches would take
- * the moment away from the character it is being given to.
+ * A drop-shadow here was the obvious way to do it and the wrong one: a filter
+ * on the element that is being moved every frame means the browser re-runs a
+ * gaussian blur on every frame of the drag, which is exactly the moment there
+ * is no budget for one. Lighting a layer inside it costs a repaint of one
+ * small box, once, when the state changes.
+ *
+ * Small either way, on purpose. The magnetism is mostly Yumi's job — the rings
+ * tighten and the halo lifts over there — and a Core that visibly lurched
+ * would take the moment away from the character it is being given to.
  */
-.ghostCore[data-attracted="true"] {
-  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--cosmic-cyan) 45%, transparent));
-}
 
 /*
  * Absorption: 500ms, inside the brief's 450–700 band.
@@ -389,8 +410,7 @@
  */
 .ghostCore.ghostFlying {
   transition:
-    left 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
-    top 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+    translate 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
     transform 0.5s cubic-bezier(0.5, 0, 0.75, 0) 0.17s,
     opacity 0.34s ease-in 0.1s;
   transform: scale(0.28);
@@ -405,8 +425,7 @@
  */
 .ghostReturning {
   transition:
-    left 0.3s cubic-bezier(0.34, 1.32, 0.64, 1),
-    top 0.3s cubic-bezier(0.34, 1.32, 0.64, 1),
+    translate 0.3s cubic-bezier(0.34, 1.32, 0.64, 1),
     transform 0.3s ease-out,
     opacity 0.3s ease-out;
   transform: scale(1);

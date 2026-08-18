@@ -16,7 +16,7 @@ type LearningCoreProps = {
    * purpose — see the note in the module CSS. Only the core in the user's
    * hand gets the lift, the brighter chamber and the wider glow.
    */
-  state?: "resting" | "lifted" | "absorbing";
+  state?: "resting" | "lifted" | "attracted" | "absorbing";
   /*
    * Rendered only when the word was added today, and passed in rather than
    * read from a dictionary here so this file stays pure presentation.
@@ -28,6 +28,16 @@ type LearningCoreProps = {
    * playing eight times.
    */
   index?: number;
+  /*
+   * Whether this Core runs its resting ember at all.
+   *
+   * Expanding the tray can put every unfed word on screen at once, and past
+   * the first screenful the ember is a composited layer breathing where nobody
+   * is looking. The tray turns it off beyond the rows it shows by default —
+   * see CookieTray — which keeps the cost of the collection flat no matter how
+   * far behind on feeding the user is.
+   */
+  animated?: boolean;
 };
 
 /*
@@ -51,12 +61,14 @@ export default function LearningCore({
   state = "resting",
   newBadgeLabel,
   index = 0,
+  animated = true,
 }: LearningCoreProps) {
   return (
     <span
       className={styles.core}
       data-tone={tone}
       data-state={state}
+      data-animated={animated ? "true" : "false"}
       style={{ "--core-index": index } as CSSProperties}
     >
       <span className={styles.chassis} aria-hidden="true" />
