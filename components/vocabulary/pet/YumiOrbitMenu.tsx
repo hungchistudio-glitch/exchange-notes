@@ -1,6 +1,6 @@
 "use client";
 
-import { Brain, ScanLine, Sparkles, X } from "lucide-react";
+import { AudioLines, Brain, FolderHeart, ScanLine, Sparkles, X } from "lucide-react";
 import { useState, type ComponentType, type CSSProperties } from "react";
 
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -29,6 +29,8 @@ type YumiOrbitMenuProps = {
   onReview: () => void;
   onAddWord: () => void;
   onCamera: () => void;
+  onSpeak: () => void;
+  onCollect: () => void;
 };
 
 const ICONS: Record<
@@ -38,6 +40,10 @@ const ICONS: Record<
   review: Brain,
   add: Sparkles,
   camera: ScanLine,
+  speak: AudioLines,
+  // The same glyph the vocabulary toolbar already uses for collections, so
+  // the halo is a second door onto a room rather than a second room.
+  collect: FolderHeart,
 };
 
 /*
@@ -69,6 +75,8 @@ export default function YumiOrbitMenu({
   onReview,
   onAddWord,
   onCamera,
+  onSpeak,
+  onCollect,
 }: YumiOrbitMenuProps) {
   /*
    * Which node the finger or the focus ring is currently on. Held here rather
@@ -84,24 +92,32 @@ export default function YumiOrbitMenu({
     review: onReview,
     add: onAddWord,
     camera: onCamera,
+    speak: onSpeak,
+    collect: onCollect,
   };
 
   const names: Record<HaloCapabilityKey, string> = {
     review: copy.haloReviewName,
     add: copy.haloAddName,
     camera: copy.haloCameraName,
+    speak: copy.haloSpeakName,
+    collect: copy.haloCollectName,
   };
 
   const blurbs: Record<HaloCapabilityKey, string> = {
     review: copy.haloReviewBlurb,
     add: copy.haloAddBlurb,
     camera: copy.haloCameraBlurb,
+    speak: copy.haloSpeakBlurb,
+    collect: copy.haloCollectBlurb,
   };
 
   const labels: Record<HaloCapabilityKey, string> = {
     review: copy.reviewActionLabel,
     add: copy.addWordActionLabel,
     camera: copy.cameraActionLabel,
+    speak: copy.speakActionLabel,
+    collect: copy.collectActionLabel,
   };
 
   const capabilities = placeCapabilities(surface);
@@ -153,12 +169,8 @@ export default function YumiOrbitMenu({
             aria-hidden="true"
             data-active={focused === capability.key ? "true" : "false"}
             data-category={capability.category}
-            style={
-              {
-                "--halo-angle": `${capability.angle}deg`,
-                "--halo-orbit": capability.orbit,
-              } as CSSProperties
-            }
+            data-tier={capability.tier}
+            style={{ "--halo-angle": `${capability.angle}deg` } as CSSProperties}
           />
         ))}
 
@@ -177,7 +189,6 @@ export default function YumiOrbitMenu({
                 {
                   "--halo-x": capability.x,
                   "--halo-y": capability.y,
-                  "--halo-orbit": capability.orbit,
                   // Nodes arrive in ranked order, so the eye lands on the most
                   // relevant capability first.
                   "--halo-delay": `${120 + index * 45}ms`,

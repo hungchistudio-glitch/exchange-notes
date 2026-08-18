@@ -1023,6 +1023,12 @@ const english: TranslationDictionary = {
       haloAddBlurb: "Add any word with AI",
       haloCameraName: "Scan",
       haloCameraBlurb: "Recognise anything",
+      haloSpeakName: "Speak",
+      haloSpeakBlurb: "Sound out every letter",
+      haloCollectName: "Collect",
+      haloCollectBlurb: "Group words into sets",
+      speakActionLabel: "Open the Pronunciation Lab",
+      collectActionLabel: "Open collections",
     },
 
     lookup: {
@@ -1295,6 +1301,7 @@ const english: TranslationDictionary = {
     completeTitle: "Nice work.",
     completeDescription: "Your review schedule has been updated.",
     completedReviews: "You completed {count} reviews.",
+    backToVocabulary: "Back to your words",
     backToHome: "Back to Home",
     grades: {
       again: {

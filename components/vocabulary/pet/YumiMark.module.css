@@ -439,10 +439,25 @@
   transition: transform 170ms cubic-bezier(0.2, 0.85, 0.3, 1);
 }
 
+/*
+ * Where Yumi looks, station by station.
+ *
+ * These are not five arbitrary offsets — each one points at where that
+ * capability actually sits on the Command Halo, so the eye and the node agree.
+ * See PRIMARY_STATIONS and UTILITY_STATIONS in lib/pet/commandHalo.ts; if a
+ * station moves, its line here moves with it.
+ */
 .shell[data-look="viewer"] .pupil { transform: translate(0, 0) scale(1.08); }
-.shell[data-look="review"] .pupil { transform: translate(-8px, 1px) scale(1.12); }
-.shell[data-look="add"] .pupil { transform: translate(7px, -5px) scale(1.13); }
-.shell[data-look="camera"] .pupil { transform: translate(8px, 6px) scale(1.12); }
+/* -54°, upper-left */
+.shell[data-look="review"] .pupil { transform: translate(-7px, -4px) scale(1.12); }
+/* +54°, upper-right */
+.shell[data-look="add"] .pupil { transform: translate(7px, -4px) scale(1.13); }
+/* +118°, lower-right */
+.shell[data-look="camera"] .pupil { transform: translate(8px, 5px) scale(1.12); }
+/* -118°, lower-left */
+.shell[data-look="speak"] .pupil { transform: translate(-8px, 5px) scale(1.12); }
+/* -140°, lower-left and further down */
+.shell[data-look="collect"] .pupil { transform: translate(-5px, 7px) scale(1.11); }
 .shell[data-look="food"] .pupil {
   transform: translate(
       var(--yumi-gaze-x, 0px),

@@ -1005,6 +1005,12 @@ const traditionalChinese: TranslationDictionary = {
       haloAddBlurb: "用 AI 新增任何單字",
       haloCameraName: "掃描",
       haloCameraBlurb: "辨識眼前的東西",
+      haloSpeakName: "發音",
+      haloSpeakBlurb: "把每個音唸清楚",
+      haloCollectName: "收藏",
+      haloCollectBlurb: "把單字分成幾組",
+      speakActionLabel: "開啟發音教室",
+      collectActionLabel: "開啟單字分類",
     },
 
     lookup: {
@@ -1269,6 +1275,7 @@ const traditionalChinese: TranslationDictionary = {
     completeTitle: "做得很好",
     completeDescription: "系統已根據你的回答更新下次複習時間。",
     completedReviews: "你已完成 {count} 個單字複習。",
+    backToVocabulary: "回到單字頁",
     backToHome: "返回首頁",
     grades: {
       again: {

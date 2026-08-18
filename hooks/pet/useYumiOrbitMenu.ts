@@ -13,6 +13,8 @@ export type YumiLookTarget =
   | "review"
   | "add"
   | "camera"
+  | "speak"
+  | "collect"
   | "food";
 
 /*
@@ -20,7 +22,7 @@ export type YumiLookTarget =
  * lands at 470ms (see YumiOrbitMenu.module.css) — so the phase does not flip
  * to "open" while the ring is still assembling.
  */
-const OPEN_COMPLETE_MS = 480;
+const OPEN_COMPLETE_MS = 540;
 const CLOSE_COMPLETE_MS = 260;
 
 export default function useYumiOrbitMenu() {
@@ -62,9 +64,11 @@ export default function useYumiOrbitMenu() {
      * existed because the labels were hidden.
      */
     schedule(() => setLookTarget("review"), 130);
-    schedule(() => setLookTarget("add"), 180);
-    schedule(() => setLookTarget("camera"), 230);
-    schedule(() => setLookTarget("viewer"), 380);
+    schedule(() => setLookTarget("add"), 175);
+    schedule(() => setLookTarget("camera"), 220);
+    schedule(() => setLookTarget("speak"), 265);
+    schedule(() => setLookTarget("collect"), 310);
+    schedule(() => setLookTarget("viewer"), 440);
     schedule(() => {
       phaseRef.current = "open";
       setPhase("open");
@@ -77,11 +81,11 @@ export default function useYumiOrbitMenu() {
     clearTimers();
     phaseRef.current = "closing";
     setPhase("closing");
-    setLookTarget("camera");
+    setLookTarget("collect");
 
-    schedule(() => setLookTarget("add"), 60);
-    schedule(() => setLookTarget("review"), 115);
-    schedule(() => setLookTarget("viewer"), 175);
+    schedule(() => setLookTarget("camera"), 55);
+    schedule(() => setLookTarget("review"), 110);
+    schedule(() => setLookTarget("viewer"), 170);
     schedule(() => {
       phaseRef.current = "closed";
       setPhase("closed");

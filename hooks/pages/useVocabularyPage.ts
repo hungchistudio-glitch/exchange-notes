@@ -241,6 +241,10 @@ export default function useVocabularyPage({
   const searchHasNoResults =
     query.trim().length > 0 && !loading && visibleItems.length === 0;
 
+  /* One destination, two doors: the search toolbar's folder button and the
+     Command Halo's Collect node. Shared so they can never drift apart. */
+  const openCollections = () => router.push("/vocabulary/collections");
+
   const yumiProps = {
     items: uniqueItems,
     dailyGoal,
@@ -250,6 +254,14 @@ export default function useVocabularyPage({
     onStartReview: () => router.push("/review?from=vocabulary"),
     onAddWord: openAiSearch,
     onOpenCamera: () => router.push("/capture?source=camera&from=vocabulary"),
+    /*
+     * The Pronunciation Lab's only other entry point is on the standard home
+     * screen (see PronunciationHub), so before the Command Halo carried it,
+     * switching to Cosmic Mode hid a whole room. Same destination, second
+     * door — not a second lab.
+     */
+    onOpenPronunciation: () => router.push("/pronunciation"),
+    onOpenCollections: openCollections,
   };
 
   const searchProps = buildVocabularySearchProps({
@@ -274,7 +286,7 @@ export default function useVocabularyPage({
       setQuickFilter(value);
     },
     setSortOpen,
-    openCollections: () => router.push("/vocabulary/collections"),
+    openCollections,
     toggleViewMode,
   });
 

@@ -30,7 +30,7 @@ import type { YumiLookTarget } from "@/hooks/pet/useYumiOrbitMenu";
  * instead, which costs nothing and works at every width.
  */
 export const PRIMARY_ORBIT = 1.32;
-export const UTILITY_ORBIT = 1.5;
+export const UTILITY_ORBIT = 1.52;
 
 /*
  * The 270° halo, and the two bands inside it that nodes may actually occupy.
@@ -50,9 +50,21 @@ export const UTILITY_ORBIT = 1.5;
  *
  * Stations are listed in fill order, so a surface with two capabilities gets a
  * balanced pair rather than the first two of five.
+ *
+ * Five stations is what this hero can actually hold, and the arrangement is
+ * 2-left / 3-right rather than symmetric because symmetry is not available:
+ * with the top and bottom sectors both out, each flank is a 95° band, and a
+ * node plus its label needs roughly 96px of vertical room. The left flank
+ * takes two primaries with full labels; the right takes one primary and both
+ * utilities, which are icon-and-name only and therefore pack closer.
+ *
+ * Every one of these numbers was checked against the tightest case the app
+ * renders — a 320px viewport, where Yumi is at its clamp floor and its centre
+ * sits 150px below the top of the screen. That is the width that decides them;
+ * at 375 and above there is room to spare.
  */
-const PRIMARY_STATIONS = [-62, 62, 118];
-const UTILITY_STATIONS = [-118, 118, -95];
+const PRIMARY_STATIONS = [-54, 54, 118];
+const UTILITY_STATIONS = [-112, -146];
 
 /*
  * How many capabilities get the larger node.
@@ -68,17 +80,26 @@ function primaryCount(total: number) {
 
 /*
  * The five capability categories and their colours, from the design's own
- * legend. Only the three the app can actually perform are here — assist
- * (詢問/幫助, blue) and memory (記憶/強化, teal) join this union on the day
- * there is something behind them to open, and not before. A category with no
- * capability is a colour looking for a meaning, which is the failure mode the
- * Learning Core palette was built to avoid.
+ * legend: active cyan, practice violet, create amber, assist blue, memory
+ * teal. All five are here because all five now have something behind them —
+ * a category with no capability would be a colour looking for a meaning,
+ * which is the failure mode the Learning Core palette was built to avoid.
  */
-export type HaloCategory = "active" | "practice" | "create";
+export type HaloCategory =
+  | "active"
+  | "practice"
+  | "create"
+  | "assist"
+  | "memory";
 
 export type HaloTier = "primary" | "utility";
 
-export type HaloCapabilityKey = "review" | "add" | "camera";
+export type HaloCapabilityKey =
+  | "review"
+  | "add"
+  | "camera"
+  | "speak"
+  | "collect";
 
 /** Which surface the halo was opened from. Decides the ranking below. */
 export type HaloSurface = "vocabulary";
@@ -90,15 +111,24 @@ export type HaloSurface = "vocabulary";
  * matters where the user currently is. Today there is one surface, so there is
  * one row; the shape is what matters, because a Messages halo leading with
  * Decode and Reply Coach is a new row here and nothing else anywhere.
+ *
+ * The vocabulary order is the page's own loop first — practise what is due,
+ * add something new, capture something in front of you — then the two that
+ * are reach rather than rhythm. Speak earns its place partly because the
+ * Pronunciation Lab has no entry point at all in Cosmic Mode: its only link
+ * lives on the standard home screen, so until now switching shells hid a
+ * whole room.
  */
 const RANKING: Record<HaloSurface, HaloCapabilityKey[]> = {
-  vocabulary: ["review", "add", "camera"],
+  vocabulary: ["review", "add", "camera", "speak", "collect"],
 };
 
 const CATEGORY: Record<HaloCapabilityKey, HaloCategory> = {
   review: "practice",
   add: "create",
   camera: "active",
+  speak: "assist",
+  collect: "memory",
 };
 
 /* The eye's station for each capability. See .shell[data-look] in
@@ -108,6 +138,8 @@ const LOOK: Record<HaloCapabilityKey, YumiLookTarget> = {
   review: "review",
   add: "add",
   camera: "camera",
+  speak: "speak",
+  collect: "collect",
 };
 
 export type HaloPlacement = {

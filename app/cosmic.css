@@ -222,6 +222,15 @@ html[data-interface-mode="yumi-cosmic"] {
   --cosmic-blue: #3187ff;
 
   /*
+   * The fifth signal, and the last one this palette needs: the teal the
+   * Command Halo's legend gives to memory and reinforcement. Green-shifted
+   * far enough from --cosmic-cyan to be a different answer at a glance —
+   * which is the whole test a fifth hue has to pass on a screen that already
+   * has four.
+   */
+  --cosmic-teal: #2fd6b0;
+
+  /*
    * Learning Core tones.
    *
    * Four states, four tokens, and the names are the vocabulary lifecycle's

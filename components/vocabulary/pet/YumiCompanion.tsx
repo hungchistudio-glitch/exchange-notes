@@ -40,6 +40,8 @@ type YumiCompanionProps = {
   onStartReview: () => void;
   onAddWord: () => void;
   onOpenCamera: () => void;
+  onOpenPronunciation: () => void;
+  onOpenCollections: () => void;
 };
 
 const REACTION_DURATION_MS = 3900;
@@ -93,6 +95,8 @@ export default function YumiCompanion({
   onStartReview,
   onAddWord,
   onOpenCamera,
+  onOpenPronunciation,
+  onOpenCollections,
 }: YumiCompanionProps) {
   const { t } = useTranslation();
   const { isCosmic } = useInterfaceMode();
@@ -439,6 +443,8 @@ export default function YumiCompanion({
           onReview={onStartReview}
           onAddWord={onAddWord}
           onCamera={onOpenCamera}
+          onSpeak={onOpenPronunciation}
+          onCollect={onOpenCollections}
         />
       </div>
 

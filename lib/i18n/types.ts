@@ -947,6 +947,12 @@ export type TranslationDictionary = {
       haloAddBlurb: string;
       haloCameraName: string;
       haloCameraBlurb: string;
+      haloSpeakName: string;
+      haloSpeakBlurb: string;
+      haloCollectName: string;
+      haloCollectBlurb: string;
+      speakActionLabel: string;
+      collectActionLabel: string;
     };
 
     lookup: {
@@ -1205,6 +1211,7 @@ export type TranslationDictionary = {
     completeTitle: string;
     completeDescription: string;
     completedReviews: string;
+    backToVocabulary: string;
     backToHome: string;
     grades: {
       again: {
