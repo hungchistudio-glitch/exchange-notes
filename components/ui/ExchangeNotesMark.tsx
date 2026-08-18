@@ -539,6 +539,32 @@ export default function ExchangeNotesMark({
         stroke={inkColor}
         strokeWidth="12"
       />
+
+      {/*
+        The illuminated ring, outside the housing.
+
+        Last in the file because it is the outermost thing on the eye: a
+        hairline of light hugging the black bezel, the way a lens assembly is
+        lit from the inside of the body it is set into. It sits just past the
+        housing's outer edge (r 40 + half of a 12-wide stroke = 46) so the two
+        touch without the cyan bleeding over the black.
+
+        This is the one part of the eye that reports state. Its brightness is
+        the same `energy` every other lit surface on Yumi reads, so the ring,
+        the seam and the constellation rise and fall together — one system
+        answering, rather than three effects that happen to be cyan.
+      */}
+      {cosmic && (
+        <circle
+          cx="285"
+          cy="180"
+          r="47.2"
+          fill="none"
+          stroke={cosmicCyan}
+          strokeOpacity={0.3 + energyLevel * 0.5}
+          strokeWidth="2"
+        />
+      )}
     </svg>
   );
 }

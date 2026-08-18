@@ -4,6 +4,14 @@
    on top of the vocabulary list. Yumi lives in the page, not in a frame
    around it. */
 .section {
+  /*
+   * Yumi's size, in one place.
+   *
+   * The button, the stage, the mark and the signal dots' orbital radius all
+   * resolve against it, so the hero can be retuned per shell by changing this
+   * line and nothing else. Standard Mode keeps the value it has always had.
+   */
+  --yumi-size: min(56vw, 216px);
   position: relative;
   z-index: 0;
   isolation: isolate;
@@ -62,7 +70,7 @@
 .yumiZone {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: calc(var(--yumi-size) + 4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,8 +80,8 @@
 .yumiButton {
   position: relative;
   z-index: 76;
-  width: min(56vw, 216px);
-  height: min(56vw, 216px);
+  width: var(--yumi-size);
+  height: var(--yumi-size);
   display: grid;
   place-items: center;
   padding: 0;
@@ -127,4 +135,146 @@
   .section::after {
     transform: none;
   }
+}
+
+/* =========================================================
+   Cosmic Mode — the hero stage
+   ========================================================= */
+
+/*
+ * Yumi grows, and the band it was sitting in gets out of the way.
+ *
+ * clamp rather than a bare vw, because the brief's "45–55% of hero width" and
+ * a raw viewport multiplier stop agreeing at both ends: 58vw is 186px on a
+ * 320px phone, where Yumi would shrink below the point where the eye and the
+ * seam read at all, and 700px on a desktop. The floor protects the character;
+ * the ceiling stops the hero from eating a tablet.
+ *
+ * Small phones lose Yumi before they lose type — that is the ordering the
+ * brief asks for and it is what the floor at 208px encodes: below the width
+ * where 58vw would drop under it, Yumi simply stops scaling and the page
+ * scrolls a little more instead of the copy getting smaller.
+ */
+.section[data-cosmic="true"] {
+  --yumi-size: clamp(208px, 58vw, 292px);
+  /*
+   * The one thing the orbital system needs from its container.
+   *
+   * A ring is painted as a circle, but its *box* is a square, and the box is
+   * what the browser adds to the page's scrollable area. Rotate that square
+   * and its corners sweep out to 1.41× its width — so three rings turning
+   * inside a 208px hero were quietly giving the whole app a horizontal
+   * scrollbar on a 320px phone, while nothing visibly overflowed at all,
+   * because the corners doing the overflowing have nothing painted in them.
+   *
+   * `clip` rather than `hidden`: hidden would make this a scroll container,
+   * which changes how the page scrolls and what `position: fixed` means
+   * inside it. `clip` on one axis with `visible` on the other is exactly the
+   * supported combination for "stop the box from counting, change nothing
+   * else" — and the vertical axis has to stay visible or the orbit menu that
+   * opens above Yumi would be cut in half.
+   *
+   * Nothing visible is lost. At every width the page renders at, the widest
+   * painted ellipse still clears the section's edges; only the empty corners
+   * of the turning boxes are trimmed.
+   */
+  overflow: clip visible;
+  /*
+   * The wash goes. In Standard Mode it is a cream band Yumi sits on; here the
+   * page already has a field — stars, orbits, a planet limb along the bottom
+   * — painted on the body (see app/cosmic.css), and laying an opaque navy
+   * band over the top of it would hide exactly the part of the sky that is
+   * directly behind the hero.
+   *
+   * What replaces it is a bloom rather than a fill: light coming off Yumi
+   * into the space around it, fading out entirely well before the vocabulary
+   * panel starts. The field shows through everywhere the bloom is not.
+   */
+  background: radial-gradient(
+    ellipse 78% 62% at 50% 42%,
+    color-mix(in oklab, var(--cosmic-cyan) 7%, transparent) 0%,
+    color-mix(in oklab, var(--cosmic-violet) 5%, transparent) 42%,
+    transparent 72%
+  );
+}
+
+/*
+ * The two hand-drawn rings that suggested an orbit in Standard Mode are
+ * retired here. Yumi has three real orbital planes now, on their own clocks
+ * and at their own tilts, and a pair of static ellipses cutting across them
+ * reads as a fourth ring that forgot to move.
+ */
+.section[data-cosmic="true"]::before,
+.section[data-cosmic="true"]::after {
+  display: none;
+}
+
+/* The name, lit. One word in the greeting and one in the status line, which
+   is the whole extent of it — a sentence with several bright words in it has
+   no emphasis, only noise. */
+.nameLit {
+  color: var(--cosmic-cyan);
+  font-weight: 600;
+}
+
+/* The figures in the daily line. Cyan is spent on the numbers because the
+   numbers are what changed since yesterday; the labels around them are the
+   same every day and stay quiet. */
+.metric {
+  color: var(--cosmic-cyan);
+  font-weight: 600;
+}
+
+.section[data-cosmic="true"] .greeting {
+  color: color-mix(in oklab, var(--color-black) 62%, transparent);
+}
+
+.section[data-cosmic="true"] .moodStatus {
+  /* A shade larger than Standard's, because it is now the caption under a
+     hero rather than a line in a header band, and at 13px it was being lost
+     under a Yumi half again as large. */
+  font-size: 14.5px;
+  color: color-mix(in oklab, var(--color-black) 88%, transparent);
+}
+
+.section[data-cosmic="true"] .summaryLine {
+  font-size: 12px;
+  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+  /* Four facts on a narrow phone will not hold one line, and the brief is
+     explicit that they should wrap rather than be shrunk into it. */
+  text-wrap: pretty;
+}
+
+/*
+ * The tray's shelf, as a seam rather than a rule.
+ *
+ * Two hairlines that fade out at both ends instead of running edge to edge —
+ * on a dark field a full-width line reads as a divider between two pages,
+ * and this is one stage with a shelf across it.
+ */
+.section[data-cosmic="true"] .foodZone {
+  margin-top: 20px;
+  border-top: 0;
+  border-bottom: 0;
+  background:
+    linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in oklab, var(--cosmic-cyan) 26%, transparent) 22%,
+        color-mix(in oklab, var(--cosmic-cyan) 26%, transparent) 78%,
+        transparent
+      )
+      top / 100% 1px no-repeat,
+    linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in oklab, var(--cosmic-cyan) 16%, transparent) 30%,
+        color-mix(in oklab, var(--cosmic-cyan) 16%, transparent) 70%,
+        transparent
+      )
+      bottom / 100% 1px no-repeat;
+}
+
+.section[data-cosmic="true"] .yumiButton:focus-visible {
+  outline-color: var(--cosmic-cyan);
 }

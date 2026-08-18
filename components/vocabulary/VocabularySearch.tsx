@@ -70,8 +70,19 @@ export default function VocabularySearch({
       onResult: onQueryChange,
     });
 
+  /*
+   * 36px, and deliberately not the 44pt a standalone control would get.
+   *
+   * These three live *inside* the search field, which is 44 tall — so the
+   * vertical dimension is at guidance and only the horizontal is short. Widen
+   * them and the placeholder stops fitting: three 44px discs plus the field's
+   * own padding and the search icon leave under 90px for the input on a 375px
+   * phone, which is not enough to read the word you are typing. A control you
+   * can hit but cannot see the result of is the worse trade, so the width
+   * stays and the row's full height carries the target.
+   */
   const lookupButtonClass =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
+    "cosmic-instrument flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
 
   const sortLabels: Record<SortMode, string> = {
     new: search.sortOptions.new,
@@ -87,7 +98,10 @@ export default function VocabularySearch({
   return (
     <section className="mt-4">
       <div className="flex items-center">
-        <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[var(--accent-amber)]/[0.18] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition-colors focus-within:border-[var(--accent-amber)]/45">
+        {/* cosmic-console turns the field into the brief's glass-tech control
+            — cyan hairline, internal gradient, a glow that arrives on focus —
+            and does nothing at all in Standard Mode. See app/cosmic.css. */}
+        <label className="cosmic-console flex h-11 min-w-0 flex-1 items-center gap-3 rounded-full border border-[var(--accent-amber)]/[0.18] bg-white px-4 shadow-[0_8px_22px_rgba(0,0,0,0.04)] transition-colors focus-within:border-[var(--accent-amber)]/45">
           <Search
             size={17}
             strokeWidth={1.8}
@@ -178,14 +192,20 @@ export default function VocabularySearch({
             <Pill
               key={filter.value}
               selected={selected}
+              className="cosmic-chip"
               onClick={() => onQuickFilterChange(filter.value)}
             >
               <span>{filter.label}</span>
               {/* The selected count keeps the full --accent-amber-ink: at /50
                   it composited to 2.36:1 on the gold fill. Undimmed it is
                   5.98:1, and the fill alone already separates it from the
-                  unselected pills. */}
-              <span className={selected ? "text-[var(--accent-amber-ink)]" : "text-ink-faint"}>
+                  unselected pills. Cosmic Mode has no gold fill to sit on, so
+                  it takes the chip's own cyan instead — see .cosmic-chip. */}
+              <span
+                className={`cosmic-chip-count ${
+                  selected ? "text-[var(--accent-amber-ink)]" : "text-ink-faint"
+                }`}
+              >
                 {filter.count}
               </span>
             </Pill>
@@ -214,7 +234,7 @@ export default function VocabularySearch({
             onClick={onOpenSort}
             aria-label={`${search.sort}: ${sortLabels[sortMode]}`}
             title={sortLabels[sortMode]}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="cosmic-instrument relative flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <SlidersHorizontal size={16} strokeWidth={1.8} />
             {sortMode !== DEFAULT_SORT_MODE && (
@@ -230,7 +250,7 @@ export default function VocabularySearch({
             onClick={onOpenCollections}
             aria-label={search.openCollections}
             title={search.openCollections}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="cosmic-instrument flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             <FolderHeart size={16} strokeWidth={1.8} />
           </button>
@@ -245,7 +265,7 @@ export default function VocabularySearch({
               viewMode === "cards" ? search.compactView : search.cardsView
             }
             aria-pressed={viewMode === "compact"}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+            className="cosmic-instrument flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
           >
             {viewMode === "cards" ? (
               <List size={16} strokeWidth={1.8} />

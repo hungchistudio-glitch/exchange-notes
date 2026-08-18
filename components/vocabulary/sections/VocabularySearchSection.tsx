@@ -75,7 +75,11 @@ export default function VocabularySearchSection({
     <section className="mt-4">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-faint">
+          {/* hud-label is the app's shared Cosmic micro-label (app/cosmic.css)
+              and is inert in every other shell, so the eyebrow becomes an
+              instrument readout in deep space and stays a plain caption
+              everywhere else — no branch, no second component. */}
+          <p className="hud-label text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-faint">
             {search.vocabulary}
           </p>
 
@@ -83,15 +87,29 @@ export default function VocabularySearchSection({
             {search.yourWords}
           </h2>
 
+          {/* The three figures are lit in Cosmic Mode and left alone in
+              Standard — see .cosmic-metric in app/cosmic.css. They were
+              already separate expressions, so this costs a span each and no
+              change to the sentence a translator sees. */}
           <p className="mt-1 text-[13px] text-ink-soft">
-            {totalWords} {search.saved} · {learningWords} {search.learning} ·{" "}
-            {masteredWords} {search.mastered}
+            <span className="cosmic-metric">{totalWords}</span> {search.saved} ·{" "}
+            <span className="cosmic-metric">{learningWords}</span>{" "}
+            {search.learning} ·{" "}
+            <span className="cosmic-metric">{masteredWords}</span>{" "}
+            {search.mastered}
           </p>
         </div>
 
+        {/*
+          The panel's own instrument mark: a small orbit diagram that pairs
+          Mission Control below with the field above it. Hidden by default and
+          revealed only by the Cosmic rule, which is one class rather than a
+          mode check — see .cosmic-orbit-mark in app/cosmic.css.
+        */}
+        <span aria-hidden="true" className="hidden cosmic-orbit-mark" />
       </div>
 
-      <div className="rounded-[24px] bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+      <div className="cosmic-panel rounded-[24px] bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
         <VocabularySearch
           query={query}
           quickFilter={quickFilter}

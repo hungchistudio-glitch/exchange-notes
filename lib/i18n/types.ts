@@ -909,6 +909,19 @@ export type TranslationDictionary = {
       cookieTrayHint: string;
       cookieTrayMore: string;
       feedAriaLabel: string;
+      /* Cosmic Mode only — the same cookies, addressed as Learning Cores. */
+      coreTrayEmpty: string;
+      coreTrayHint: string;
+      coreTrayShowLess: string;
+      coreTrayShowAllAriaLabel: string;
+      coreNewBadge: string;
+      coreAriaLabel: string;
+      coreState: {
+        new: string;
+        learning: string;
+        due: string;
+        mastered: string;
+      };
       cookieTypeLetter: string;
       cookieTypeZhuyin: string;
       feedingAnticipating: string;

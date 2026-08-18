@@ -11,8 +11,13 @@
   /* This screen's blink pace; the shape is app/yumi-motion.css's. */
   --yumi-blink: 4.2s;
   position: relative;
-  width: min(56vw, 216px);
-  height: min(56vw, 216px);
+  /* Set by whichever section is hosting Yumi (see YumiCompanion.module.css),
+     because the hero is a different size in each shell and the size has to be
+     one number: the button, the stage and the mark all read it, and a body
+     that disagreed with the button around it would be untappable at its
+     edges. The fallback is Standard Mode's original value. */
+  width: var(--yumi-size, min(56vw, 216px));
+  height: var(--yumi-size, min(56vw, 216px));
   color: #1c1a16;
   transform-origin: 48% 58%;
   animation: baseFloat 3.6s ease-in-out infinite;
@@ -867,5 +872,432 @@
   50% {
     opacity: 0.94;
     transform: scale(1.015);
+  }
+}
+
+/* =========================================================
+   Cosmic Mode — Yumi as a body suspended in a field
+   ========================================================= */
+
+/*
+ * Everything below applies only under data-cosmic, and nothing above it was
+ * moved to make room. Standard Mode's Yumi — the warm mark on a cream wash,
+ * with its gold glow ring, its twinkles and its crown — is untouched, and can
+ * be read without reading any of this.
+ *
+ * The refit divides cleanly in two. The mark itself is the mark's own job and
+ * arrives through its `cosmic` prop; this file supplies the *space around it*:
+ * three orbital planes, signal traffic on them, two halos and a landing pad.
+ * That division is why Yumi looks the same creature here as on the Command
+ * Deck and in Messages, rather than a fourth interpretation of it.
+ */
+
+.stage[data-cosmic="true"] .logo {
+  /* The warm drop shadow would sit under a body in deep space as a brown
+     smudge. Cool, and much deeper, so Yumi reads as lit from in front of a
+     dark field rather than pasted onto it. */
+  filter: drop-shadow(0 22px 38px rgba(2, 8, 22, 0.55))
+    /* Two throws rather than one: a tight rim that traces the silhouette, and
+       a wide bloom that puts light into the field around it. A single wide
+       shadow reads as fog; a single tight one reads as a sticker outline. */
+    drop-shadow(0 0 4px color-mix(in oklab, var(--cosmic-cyan) 26%, transparent))
+    drop-shadow(0 0 26px color-mix(in oklab, var(--cosmic-cyan) 14%, transparent));
+}
+
+/*
+ * This screen's pace for the shared motion classes.
+ *
+ * Slower than the deck's across the board, and that is the point: the deck is
+ * a place you pass through and this is a page you sit on while adding words,
+ * so a pass every 35 seconds would be caught on almost every visit while one
+ * every 44 is something you occasionally notice. The blink stays at this
+ * file's own 4.2s — Yumi is much larger here than anywhere else and a
+ * long-pause rhythm on a face this size reads as a stall.
+ */
+.cosmicTiming {
+  --yumi-sweep: 44s;
+  --yumi-sweep-delay: 7s;
+  --yumi-sweep-peak: 0.4;
+  --yumi-gleam: 19s;
+  --yumi-gleam-delay: 3.5s;
+  --yumi-iris: 11s;
+}
+
+/*
+ * The field. Behind the mark, in front of the page.
+ *
+ * z-index: -1 against the stage's own stacking context, which .section
+ * already isolates — so the rings pass behind Yumi without escaping upward
+ * over the cards below the hero.
+ */
+.orbits {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/*
+ * One orbital plane: a static wrapper that tilts and foreshortens, and a ring
+ * inside it that turns.
+ *
+ * Both halves are needed. The wrapper cannot turn, because turning it would
+ * sweep the tilt around with it and the plane would wobble instead of orbit;
+ * the ring cannot tilt, because it is already using its transform to spin.
+ * Squashing the wrapper also squashes the ring's border, which thins along the
+ * top and bottom of the ellipse exactly the way a foreshortened edge should.
+ */
+.orbit {
+  position: absolute;
+  inset: var(--orbit-inset);
+  transform: rotate(var(--orbit-tilt)) scaleY(var(--orbit-squash));
+  transform-origin: 50% 50%;
+  /* Rings converge on Yumi as a Core comes in — see the attract block. */
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.orbitRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px dashed var(--cosmic-ring);
+  animation: yumiOrbitSpin var(--orbit-spin) linear infinite;
+  animation-direction: var(--orbit-direction);
+  transition:
+    border-color 320ms ease,
+    opacity 320ms ease;
+}
+
+/* Dashed, on the same reasoning as the deck's field: a solid ring that turns
+   looks identical to one that does not, so the dashes are the only thing
+   making the rotation visible at all. */
+.orbit[data-ring="primary"] .orbitRing {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 26%, transparent);
+}
+
+/*
+ * The near plane, and the only solid one. Its colour is on two borders rather
+ * than four, so what turns is a bright arc with a faint remainder — a trace
+ * being drawn rather than a hoop.
+ */
+.orbit[data-ring="secondary"] .orbitRing {
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: color-mix(in oklab, #cfe6ff 30%, transparent);
+  border-right-color: color-mix(in oklab, #cfe6ff 12%, transparent);
+}
+
+.orbit[data-ring="deep"] .orbitRing {
+  border-color: color-mix(in oklab, var(--cosmic-violet) 20%, transparent);
+}
+
+@keyframes yumiOrbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * Signal traffic on the planes.
+ *
+ * Lifted wholesale from the Command Deck, including the reason the start
+ * angle lives in its own keyframes rather than in a delay: a turn from
+ * --signal-angle to --signal-angle + 360° leaves each dot sitting at its own
+ * angle the moment the animation is taken away, so reduced motion gets three
+ * points scattered around Yumi instead of three stacked in a line above it.
+ */
+.signal {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--signal-angle));
+  animation: yumiSignalOrbit var(--signal-spin) linear infinite
+    var(--signal-delay);
+}
+
+@keyframes yumiSignalOrbit {
+  from {
+    transform: rotate(var(--signal-angle));
+  }
+  to {
+    transform: rotate(calc(var(--signal-angle) + 360deg));
+  }
+}
+
+.signalDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--cosmic-cyan);
+  box-shadow: 0 0 8px 1px var(--cosmic-cyan-dim);
+  /* A length, not a percentage — a percentage would resolve against the dot's
+     own 3px and leave all three sitting on Yumi's face. */
+  transform: translateY(
+    calc(var(--yumi-size, 216px) * var(--signal-radius) * -1)
+  );
+  opacity: 0;
+  /* Opacity only, so the transform above survives the animation. */
+  animation: yumiSignalPass var(--signal-cycle) ease-in-out infinite
+    var(--signal-delay);
+}
+
+/* Lit for about a fifth of its cycle. The dark part is what makes it an
+   event rather than a bead on a wire with a period you can time. */
+@keyframes yumiSignalPass {
+  0%,
+  24%,
+  100% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.9;
+  }
+  18% {
+    opacity: 0.75;
+  }
+}
+
+/*
+ * Two halos, on periods that do not divide.
+ *
+ * The same trick the deck breathes with, and the single most important thing
+ * about it: one glow you can count is what gives a cheap animation away.
+ * 6.8s and 11.5s drift about seventeen seconds apart and do not return to the
+ * same arrangement for over thirteen minutes.
+ */
+.halo,
+.haloWide {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.halo {
+  inset: 8%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--cosmic-cyan) 13%, transparent) 0%,
+    transparent 66%
+  );
+  opacity: 0.75;
+  animation: yumiHaloPulse 6.8s ease-in-out infinite;
+}
+
+.haloWide {
+  inset: -26%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--cosmic-violet) 9%, transparent) 0%,
+    transparent 62%
+  );
+  opacity: 0.5;
+  animation: yumiHaloDrift 11.5s ease-in-out infinite;
+}
+
+@keyframes yumiHaloPulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes yumiHaloDrift {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.06);
+  }
+}
+
+/*
+ * The pad Yumi hovers over.
+ *
+ * Two concentric ellipses and a bloom between them, all flattened to a tenth
+ * of their width — the same foreshortening as the orbital planes, so the
+ * ground plane and the orbits agree about where the viewer is standing. It is
+ * what stops a floating body from reading as a sticker: something suspended
+ * needs a surface to be suspended above.
+ */
+.pad {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  width: 62%;
+  height: 6.2%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 22%, transparent);
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    color-mix(in oklab, var(--cosmic-cyan) 16%, transparent) 0%,
+    transparent 72%
+  );
+  box-shadow: 0 0 0 9px
+    color-mix(in oklab, var(--cosmic-cyan) 5%, transparent);
+  opacity: 0.7;
+  animation: yumiPadBreath 9.3s ease-in-out infinite;
+}
+
+@keyframes yumiPadBreath {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* ---------------------------------------------------------------
+   A Core is inside the attraction zone
+   --------------------------------------------------------------- */
+
+/*
+ * The brief's "orbital rings should tighten or brighten" — both, and the
+ * tightening is the half that carries it. Brightness alone reads as Yumi
+ * noticing; a field drawing in reads as Yumi pulling, which is what is
+ * actually happening to the object in the user's hand.
+ *
+ * 6% is small enough that nothing appears to jump and large enough to be seen
+ * across all three planes at once.
+ */
+.stage[data-cosmic="true"][data-attract="true"] .orbit {
+  transform: rotate(var(--orbit-tilt)) scaleY(var(--orbit-squash)) scale(0.94);
+}
+
+.stage[data-cosmic="true"][data-attract="true"] .orbitRing {
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 55%, transparent);
+}
+
+.stage[data-cosmic="true"][data-attract="true"] .halo {
+  opacity: 1;
+}
+
+.stage[data-cosmic="true"][data-attract="true"] .haloWide {
+  opacity: 0.95;
+}
+
+/* ---------------------------------------------------------------
+   Absorption
+   --------------------------------------------------------------- */
+
+/*
+ * The outward ripple that answers a Core arriving, keyed straight off the
+ * feeding sequence the page already runs — so it cannot fire without a word
+ * actually having been fed, and it cannot be missed when one has.
+ *
+ * Cyan into gold across its life: cyan is the system, gold is the reward, and
+ * the crossfade in a single ring is the shortest way to say a Core became
+ * progress. 620ms, so it has finished well before the chew does and never
+ * outlasts the thing it is celebrating.
+ */
+.stage[data-cosmic="true"][data-feeding="anticipating"]::after,
+.stage[data-cosmic="true"][data-feeding="biting"]::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 9999px;
+  border: 1px solid var(--cosmic-cyan);
+  pointer-events: none;
+  animation: yumiAbsorbRipple 620ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+@keyframes yumiAbsorbRipple {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.88);
+    border-color: var(--cosmic-cyan);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+    border-color: var(--cosmic-amber);
+  }
+}
+
+/* ---------------------------------------------------------------
+   Standard Mode's warm decorations, re-lit for deep space
+   --------------------------------------------------------------- */
+
+/*
+ * These are the growth rewards — the glow ring at stage 2, the twinkles from
+ * stage 1, the streak crown, the feeding sparkles. They are earned, so they
+ * are not removed in Cosmic Mode; they are re-lit. Gold on cream becomes gold
+ * on cyan-lit black, and the two that were pure gold pick up the field's
+ * colours so they belong to the same light as everything else here.
+ */
+.stage[data-cosmic="true"] .glowRing {
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--cosmic-cyan) 20%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.stage[data-cosmic="true"] .particle {
+  background: radial-gradient(
+    circle,
+    #fff 0%,
+    var(--cosmic-cyan) 60%,
+    transparent 100%
+  );
+}
+
+.stage[data-cosmic="true"] .sparkleBurst span {
+  box-shadow: 0 0 12px 2px color-mix(in oklab, var(--cosmic-cyan) 75%, transparent);
+}
+
+/* The cast shadow goes. Yumi is not standing on anything here — the pad above
+   is the whole ground plane, and a blurred dark ellipse under a body in space
+   is a shadow with no floor to fall on. */
+.stage[data-cosmic="true"] .groundShadow {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * The field stays; the turning stops.
+   *
+   * This is the same call the deck made and for the same reason: the rings,
+   * the halos and the pad are Yumi's shape in this mode, not decoration laid
+   * over it, and removing them would leave the accessible version looking
+   * unfinished rather than calmer. What goes is everything that travels — the
+   * orbits, the signal traffic, the breathing glow — and the signals keep
+   * their scattered start angles rather than collapsing into a stack.
+   */
+  .orbitRing,
+  .signal,
+  .signalDot,
+  .halo,
+  .haloWide,
+  .pad {
+    animation: none;
+  }
+
+  /* A dot whose fade has been cancelled would be invisible at its 0% frame,
+     so the three become steady points instead of passing ones. */
+  .signalDot {
+    opacity: 0.65;
+  }
+
+  /* The ripple arrives at its final size rather than travelling there, which
+     is the honest still version of a ring that expands — the feed is still
+     acknowledged, it just does not move. */
+  .stage[data-cosmic="true"][data-feeding="anticipating"]::after,
+  .stage[data-cosmic="true"][data-feeding="biting"]::after {
+    animation: none;
+    opacity: 0.4;
+    transform: scale(1.2);
   }
 }

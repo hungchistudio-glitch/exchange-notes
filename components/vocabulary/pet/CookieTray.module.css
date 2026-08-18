@@ -173,3 +173,256 @@
     animation: none;
   }
 }
+
+/* =========================================================
+   Cosmic Mode — the same tray, holding Learning Cores
+   ========================================================= */
+
+/*
+ * Everything below is scoped under the tray's own data attribute rather than
+ * under html[data-interface-mode], because this is a decision the component
+ * was handed rather than one it should re-derive from the document. The two
+ * always agree today; if a second surface ever wants cores without the whole
+ * shell, this is already the right shape.
+ */
+
+.wrap[data-cosmic="true"] .tray {
+  /* Wider than the cookie tray's 10px: a core carries a projected pad and a
+     NEW badge that both sit outside its own box, and at 10px those touched
+     the neighbour. The pad also needs somewhere to fall, hence the bottom
+     padding — the row would otherwise clip it against the divider below. */
+  gap: 13px;
+  padding-bottom: 12px;
+}
+
+/*
+ * The slot is the control; the Core is what is in it.
+ *
+ * Nothing here paints — no border, no fill, no shadow — because every one of
+ * those belongs to the object rather than to the button holding it. That
+ * split is what lets the ghost render an identical Core with no button around
+ * it at all.
+ */
+.slot {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  /* The pad and the badge live outside the box on purpose. */
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.slot:active {
+  cursor: grabbing;
+  transform: scale(0.94);
+}
+
+.slot:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.slot:focus-visible {
+  outline: 1px solid var(--cosmic-cyan);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/*
+ * "+N more" as a docking bay rather than a core.
+ *
+ * Deliberately the one tile in the row that is not round and not lit: it is a
+ * door, not an object, and giving it a chamber of its own would put a
+ * thirteenth thing in the tray that looks collectable and cannot be dragged.
+ * The corner brackets are the deck's own idiom — see .hud-frame in
+ * app/cosmic.css, which this matches by eye rather than by import because a
+ * 52px tile wants tighter insets than a panel does.
+ */
+.moreCore {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 22%, transparent);
+  background: color-mix(in oklab, var(--cosmic-cyan) 6%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--cosmic-cyan);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.moreCore::before,
+.moreCore::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--cosmic-cyan);
+  border-style: solid;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.moreCore::before {
+  top: 4px;
+  left: 4px;
+  border-width: 1px 0 0 1px;
+}
+
+.moreCore::after {
+  right: 4px;
+  bottom: 4px;
+  border-width: 0 1px 1px 0;
+}
+
+.moreCore:active {
+  background: color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 42%, transparent);
+}
+
+/* The Standard Mode equivalent: the same affordance, none of the hardware.
+   It inherits .more's metrics so the row's rhythm is unchanged from when
+   this was a passive label. */
+.moreButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  color: color-mix(in oklab, var(--color-black) 40%, transparent);
+  cursor: pointer;
+}
+
+.collapse {
+  display: block;
+  margin: 2px auto 0;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklab, var(--color-black) 45%, transparent);
+  cursor: pointer;
+}
+
+.wrap[data-cosmic="true"] .collapse {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cosmic-cyan);
+  opacity: 0.75;
+}
+
+/* The instruction that makes the signature interaction discoverable, marked
+   either side the way the deck marks a readout. */
+.wrap[data-cosmic="true"] .hint {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
+}
+
+.wrap[data-cosmic="true"] .hint::before,
+.wrap[data-cosmic="true"] .hint::after {
+  content: "◆";
+  margin: 0 7px;
+  font-size: 6px;
+  vertical-align: middle;
+  opacity: 0.5;
+}
+
+/*
+ * The ghost: the Core between the tray and Yumi.
+ *
+ * A bare positioned box, because the Core inside it already carries the lift,
+ * the brighter chamber and the turning pad — see LearningCore.module.css.
+ * This element only decides where it is.
+ */
+.ghostCore {
+  position: fixed;
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  pointer-events: none;
+}
+
+/*
+ * Inside the attraction zone, the Core leans toward what is pulling it.
+ *
+ * Small on purpose. The magnetism is mostly Yumi's job — the rings tighten
+ * and the halo lifts over there — and a Core that visibly lurches would take
+ * the moment away from the character it is being given to.
+ */
+.ghostCore[data-attracted="true"] {
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--cosmic-cyan) 45%, transparent));
+}
+
+/*
+ * Absorption: 500ms, inside the brief's 450–700 band.
+ *
+ * The scale and the fade are held back behind the travel (0.34 and 0.2 of the
+ * way in) so the Core arrives at Yumi and *then* disappears into it, rather
+ * than evaporating on the way and leaving the last third of the journey
+ * carrying nothing.
+ */
+.ghostCore.ghostFlying {
+  transition:
+    left 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+    top 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
+    transform 0.5s cubic-bezier(0.5, 0, 0.75, 0) 0.17s,
+    opacity 0.34s ease-in 0.1s;
+  transform: scale(0.28);
+  opacity: 0;
+}
+
+/*
+ * The return, for a drag let go anywhere else. 300ms, and the overshoot in
+ * the curve is the "restrained damping" the brief asks for: it settles past
+ * the slot and comes back once, which reads as weight rather than as a
+ * rubber band.
+ */
+.ghostReturning {
+  transition:
+    left 0.3s cubic-bezier(0.34, 1.32, 0.64, 1),
+    top 0.3s cubic-bezier(0.34, 1.32, 0.64, 1),
+    transform 0.3s ease-out,
+    opacity 0.3s ease-out;
+  transform: scale(1);
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * The travel goes; the outcome does not. A feed still ends with the Core
+   * gone and Yumi fed, and a cancel still ends with it back in its slot —
+   * both simply arrive rather than fly, which is the accessible version of
+   * the same event and not a lesser one.
+   */
+  .slot,
+  .ghostCore.ghostFlying,
+  .ghostReturning {
+    transition: none;
+  }
+}
