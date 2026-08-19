@@ -240,9 +240,9 @@ const traditionalChinese: TranslationDictionary = {
         description: "今天該練的單字",
       },
       scanner: {
-        name: "掃描艙",
+        name: "菜單翻譯",
         familiar: "掃描 · 翻譯",
-        description: "讀懂一份菜單，或學會任何東西的說法",
+        description: "讀懂看不懂的菜單，連價格一起",
       },
       comms: {
         name: "通訊艙",
@@ -1313,20 +1313,7 @@ const traditionalChinese: TranslationDictionary = {
   },
 
   scanner: {
-    bayTitle: "掃描艙",
-    baySubtitle: "掃描 · 翻譯 · 理解",
-    bayIntro: "把 Yumi 對準這個世界，換成你看得懂的語言回來。",
     back: "回到指揮艙",
-
-    menuTool: {
-      title: "菜單翻譯",
-      description: "看懂原本看不懂的菜單，連價格一起",
-      badge: "旗艦",
-    },
-    objectTool: {
-      title: "物件與標籤掃描",
-      description: "對準一個東西，學會它的說法",
-    },
 
     menu: {
       title: "菜單翻譯",

@@ -10,7 +10,7 @@ import {
 import Link from "next/link";
 
 import BookIcon from "@/components/foundation/icons/BookIcon";
-import CameraIcon from "@/components/foundation/icons/CameraIcon";
+import MenuScanIcon from "@/components/foundation/icons/MenuScanIcon";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
@@ -46,7 +46,15 @@ type Room = {
 const ROOMS: Room[] = [
   { key: "lexicon", href: "/vocabulary", Icon: NavVocabularyIcon },
   { key: "mission", href: "/review", Icon: BookIcon },
-  { key: "scanner", href: "/scanner", Icon: CameraIcon },
+  /*
+   * Straight into the Menu Translator, with no bay in between.
+   *
+   * The room used to be a landing page offering a choice between reading a
+   * menu and photographing an object — but the deck's own console already
+   * has camera and image inputs two taps away, so the choice was a screen
+   * asking a question the deck had already answered.
+   */
+  { key: "scanner", href: "/scanner/menu", Icon: MenuScanIcon },
   { key: "comms", href: "/messages", Icon: NavMessagesIcon },
   { key: "earth", href: "/discover", Icon: NavDiscoverIcon },
   { key: "memory", href: "/profile", Icon: NavSettingsIcon },

@@ -244,9 +244,9 @@ const english: TranslationDictionary = {
         description: "Today's words to practise",
       },
       scanner: {
-        name: "Scanner Bay",
+        name: "Menu Translator",
         familiar: "Scan · Translate",
-        description: "Read a menu, or learn the word for anything",
+        description: "Read a menu you cannot read, prices and all",
       },
       comms: {
         name: "Comms",
@@ -1339,20 +1339,7 @@ const english: TranslationDictionary = {
   },
 
   scanner: {
-    bayTitle: "Scanner Bay",
-    baySubtitle: "Scan · Translate · Understand",
-    bayIntro: "Point Yumi at the world and get it back in a language you read.",
     back: "Back to the deck",
-
-    menuTool: {
-      title: "Menu Translator",
-      description: "Read a menu you cannot read, prices and all",
-      badge: "Flagship",
-    },
-    objectTool: {
-      title: "Object & Label Scan",
-      description: "Point at a thing and learn the word for it",
-    },
 
     menu: {
       title: "Menu Translator",

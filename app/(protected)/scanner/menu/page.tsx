@@ -133,7 +133,7 @@ export default function MenuTranslatorPage() {
         onCaptured={(image, quality) =>
           dispatch({ type: "captured", image, quality })
         }
-        onClose={() => router.push("/scanner")}
+        onClose={() => router.push("/")}
         onCameraError={(message) =>
           dispatch({ type: "failed", failure: "camera", message })
         }
@@ -224,8 +224,8 @@ export default function MenuTranslatorPage() {
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader
           title={copy.title}
-          backHref="/scanner"
-          backLabel={t.scanner.bayTitle}
+          backHref="/"
+          backLabel={t.scanner.back}
         />
 
         <div className="flex-1 space-y-4 px-5 pt-5 sm:px-6">

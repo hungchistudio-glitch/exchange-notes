@@ -1249,18 +1249,12 @@ export type TranslationDictionary = {
   };
 
   /*
-   * Scanner Bay. The camera stops being "a camera" and becomes the things it
-   * can actually do — of which reading a menu you cannot read is the one
-   * worth building a room around.
+   * The Menu Translator. The deck's camera node stopped being "a camera" and
+   * became the one thing worth pointing a camera at that this app can do
+   * better than the phone's own: reading a menu you cannot read.
    */
   scanner: {
-    bayTitle: string;
-    baySubtitle: string;
-    bayIntro: string;
     back: string;
-
-    menuTool: { title: string; description: string; badge: string };
-    objectTool: { title: string; description: string };
 
     menu: {
       title: string;
