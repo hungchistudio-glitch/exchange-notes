@@ -88,6 +88,7 @@ const MENU_RESULT_SCHEMA = {
                 translatedDescription: { type: "string", maxLength: 340 },
                 price: { type: "string", maxLength: 24 },
                 currency: { type: "string", maxLength: 8 },
+                ipa: { type: "string", maxLength: 120 },
                 region: REGION_SCHEMA,
                 ocrConfidence: CONFIDENCE_SCHEMA,
                 translationConfidence: CONFIDENCE_SCHEMA,
@@ -99,6 +100,7 @@ const MENU_RESULT_SCHEMA = {
                 "translatedDescription",
                 "price",
                 "currency",
+                "ipa",
                 "region",
                 "ocrConfidence",
                 "translationConfidence",
@@ -150,20 +152,22 @@ function stripJsonCodeFence(text: string) {
 
 function buildPrompt(targetLanguageName: string) {
   return `
-You are reading a photograph of a restaurant menu for a traveller who does not
-speak the language it is printed in. Return the whole menu as structured data,
-translated into ${targetLanguageName}.
+You are reading a photograph of a printed list for someone who does not speak
+the language it is written in — most often a restaurant menu, but equally a
+price list, a shop's shelf card, or a handwritten shopping list. Return the
+whole list as structured data, translated into ${targetLanguageName}.
 
 Layout rules:
-- Group items under the section headings the menu itself uses. If the menu has
-  no headings, return one section with an empty title.
+- Group items under the section headings the list itself uses. If it has no
+  headings, return one section with an empty title.
 - Keep every price with the item it belongs to, exactly as printed, including
-  the currency symbol or word. Never convert, round, or invent a price. If an
-  item has no visible price, return an empty string.
+  the currency symbol or word. Never convert, round, or invent a price. A
+  shopping list usually has no prices at all: return an empty string for
+  those rather than estimating one.
 - Report every region as normalised coordinates between 0 and 1, where x and y
   are the top-left corner, relative to the whole image. An item's region must
   cover its name and its price as printed.
-- Read the menu in the order a person would: top to bottom within a column,
+- Read the list in the order a person would: top to bottom within a column,
   then column by column.
 
 Translation rules:
@@ -178,6 +182,10 @@ Translation rules:
   description, write a concise one naming the main ingredients you can infer
   from the dish name, or return an empty string if you cannot.
 - Never state or imply that a dish is safe for an allergy or a diet.
+- ipa is the IPA transcription of the dish's English name, written without
+  surrounding slashes. Give the pronunciation a native English speaker would
+  use, including for borrowed names like Okonomiyaki. Return an empty string
+  if the name has no English form at all.
 
 Confidence rules:
 - Use low ocrConfidence for text that is blurred, cut off, glared over,
@@ -187,8 +195,10 @@ Confidence rules:
 - Do not raise confidence to look helpful. A marked uncertainty is useful; a
   confident mistake is not.
 
-If the photograph is not a menu, price list, or food board, return isMenu
-false with an empty sections array.
+If the photograph contains no list of written items at all — a landscape, a
+person, a single object, a page of prose — return isMenu false with an empty
+sections array. Anything that is a list of named things, priced or not,
+should be read.
 `.trim();
 }
 
@@ -263,6 +273,7 @@ function readMenuDocument(
             translatedDescription: readString(item.translatedDescription, 340),
             price: readString(item.price, 24),
             currency: readString(item.currency, 8),
+            ipa: readString(item.ipa, 120),
             region: readRegion(item.region),
             ocrConfidence: readConfidence(item.ocrConfidence),
             translationConfidence: readConfidence(item.translationConfidence),

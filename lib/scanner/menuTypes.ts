@@ -27,6 +27,15 @@ export type MenuItem = {
   // more than one this app can do arithmetic with.
   price: string;
   currency: string;
+  /*
+   * IPA for the English form of the name, without slashes.
+   *
+   * From the model rather than the dictionary the rest of the app uses:
+   * dish names are phrases, and a dictionary lookup for "Onion Ring & Meat
+   * Sauce Burger" returns nothing. The sheet still prefers a real dictionary
+   * answer when there is one — this is what fills the gap.
+   */
+  ipa: string;
   region: MenuRegion;
   ocrConfidence: MenuConfidence;
   translationConfidence: MenuConfidence;

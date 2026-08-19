@@ -129,6 +129,8 @@ export default function MenuResultViewer({
       <MenuItemInsightSheet
         item={selected}
         cuisine={menu.detectedCuisine}
+        sourceLanguage={menu.sourceLanguage}
+        targetLanguage={menu.targetLanguage}
         onClose={() => setSelected(null)}
       />
     </div>

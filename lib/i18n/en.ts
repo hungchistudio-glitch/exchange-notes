@@ -1378,7 +1378,7 @@ const english: TranslationDictionary = {
       modeList: "List",
       viewMode: "View",
 
-      itemCount: "{count} dishes",
+      itemCount: "{count} items",
       sourceLanguage: "From {language}",
       unknownLanguage: "an unknown language",
       partialTitle: "Read with low confidence",
@@ -1388,10 +1388,10 @@ const english: TranslationDictionary = {
       noPrice: "No price printed",
       untitledSection: "Menu",
 
-      notMenuTitle: "That doesn't look like a menu",
+      notMenuTitle: "There is no list in that photo",
       notMenuBody:
-        "Point at a printed menu, a price list, or a food board and try again.",
-      emptyTitle: "No dishes could be read",
+        "Point at a menu, a price list, a shelf card, or a shopping list and try again.",
+      emptyTitle: "Nothing could be read",
       emptyBody:
         "The text was too small, too dark, or at too steep an angle. Try one page, filling the frame.",
       errorTitle: "The menu could not be read",
@@ -1401,7 +1401,7 @@ const english: TranslationDictionary = {
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
       zoomLevel: "Zoom {level}×",
-      overlayHint: "Tap a dish for what it is",
+      overlayHint: "Tap an item for what it is",
 
       originalLabel: "On the menu",
       priceLabel: "Price",
@@ -1409,6 +1409,13 @@ const english: TranslationDictionary = {
       cuisineLabel: "Cuisine",
       listen: "Listen",
       listening: "Playing…",
+      saveWord: "Save to my words",
+      saving: "Saving…",
+      saved: "Saved",
+      saveFailed: "That dish could not be saved.",
+      share: "Send to a friend",
+      shareLoginRequired: "Please sign in before sharing.",
+      friendsError: "Your partners could not be loaded.",
       confidenceNote: "Yumi wasn't fully sure of this one.",
       askRestaurant:
         "Ingredients are Yumi's reading of the name, not the kitchen's. Ask the restaurant about anything you must avoid.",

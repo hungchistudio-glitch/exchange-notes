@@ -1317,6 +1317,13 @@ export type TranslationDictionary = {
       cuisineLabel: string;
       listen: string;
       listening: string;
+      saveWord: string;
+      saving: string;
+      saved: string;
+      saveFailed: string;
+      share: string;
+      shareLoginRequired: string;
+      friendsError: string;
       confidenceNote: string;
       askRestaurant: string;
     };
