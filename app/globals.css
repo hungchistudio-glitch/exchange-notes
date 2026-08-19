@@ -330,3 +330,44 @@ html {
     font-size: 16px;
   }
 }
+
+/*
+ * Reduced Motion for Tailwind's animation utilities.
+ *
+ * Every stylesheet in this app carries its own prefers-reduced-motion block —
+ * all twenty-seven of them. The utilities did not, and there is no way for a
+ * component to add one: `animate-spin` compiles to `animation:
+ * var(--animate-spin)` with no media query anywhere near it, so fifty-six
+ * spinners, pulses and bounces across the app kept turning for a user who had
+ * asked the whole system to stop moving things.
+ *
+ * A spinner is the case that decides how this is written. Simply cancelling
+ * the animation leaves a frozen spinner, which reads as a hung request rather
+ * than as a considerate one — so rotation and translation are *replaced*
+ * rather than removed, by the one thing reduced motion permits: a slow change
+ * in opacity. The control still says "working", it just stops travelling.
+ *
+ * `animate-pulse` is deliberately absent. Tailwind implements it as an opacity
+ * fade with no movement at all, so it already is the substitute the others are
+ * being given.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes reducedMotionWorking {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: reducedMotionWorking 1.6s ease-in-out infinite;
+    /* The utilities also set transform on some of these; neutralising it
+       stops a half-finished rotation being frozen into place. */
+    transform: none;
+  }
+}
