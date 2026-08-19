@@ -385,7 +385,9 @@ html {
  * underneath.
  */
 .settings-anchor {
-  scroll-margin-top: 104px;
+  /* The sticky header is 64px plus the safe-area inset — on a notched phone a
+     fixed 104px lands the row underneath it. */
+  scroll-margin-top: calc(env(safe-area-inset-top) + 5rem);
 }
 
 @keyframes settingsAnchorFound {

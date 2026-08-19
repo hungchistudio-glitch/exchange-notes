@@ -70,6 +70,7 @@ export default function SegmentedControl<Value extends string>({
               fill ? "flex-1" : "",
               "text-[13px] font-semibold tracking-[-0.01em]",
               "transition-[background-color,color] duration-200 ease-out",
+              "motion-reduce:transition-none",
               selected
                 ? "bg-black text-white"
                 : "text-ink-soft hover:text-black",

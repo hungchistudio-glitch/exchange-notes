@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, useId } from "react";
 
 import SettingsSwitch from "@/components/foundation/forms/SettingsSwitch";
 
@@ -98,7 +98,12 @@ function RowText({
   title,
   description,
   danger = false,
-}: Pick<SharedProps, "title" | "description" | "danger">) {
+  titleId,
+  descriptionId,
+}: Pick<SharedProps, "title" | "description" | "danger"> & {
+  titleId?: string;
+  descriptionId?: string;
+}) {
   return (
     <span className="min-w-0 flex-1">
       {/*
@@ -107,6 +112,7 @@ function RowText({
         a title clipped to "Devices & Widg…" is not the setting's name.
       */}
       <span
+        id={titleId}
         className={[
           "block text-[16px] font-semibold leading-[21px] tracking-[-0.02em]",
           danger ? "text-red-600" : "text-black",
@@ -118,7 +124,10 @@ function RowText({
       {description ? (
         // Wraps rather than truncates: a row is allowed to grow for a
         // sentence that is worth reading in full.
-        <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft">
+        <span
+          id={descriptionId}
+          className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft"
+        >
           {description}
         </span>
       ) : null}
@@ -156,12 +165,20 @@ export default function SettingsRow(props: SettingsRowProps) {
         danger={props.danger}
       />
       <RowValue value={props.value} />
-      <ChevronRight
-        aria-hidden="true"
-        size={17}
-        strokeWidth={1.8}
-        className="shrink-0 text-ink-faint"
-      />
+
+      {/*
+        No chevron on a disabled row. The chevron promises another screen, and
+        a row that cannot be tapped is not offering one — the installed state
+        of "Install Exchange Notes" is the case that proves it.
+      */}
+      {disabled ? null : (
+        <ChevronRight
+          aria-hidden="true"
+          size={17}
+          strokeWidth={1.8}
+          className="shrink-0 text-ink-faint"
+        />
+      )}
     </>
   );
 
@@ -222,12 +239,24 @@ export function SettingsToggleRow({
   className = "",
   id,
 }: SettingsToggleRowProps) {
+  /*
+   * The switch is named by its title and described by its sentence, rather
+   * than named by both. "Yumi reminders, switch, on" is the announcement
+   * worth having; the sentence follows as description instead of being read
+   * out as part of the control's name every time focus lands on it.
+   */
+  const generatedId = useId();
+  const titleId = `${generatedId}-title`;
+  const descriptionId = description ? `${generatedId}-description` : undefined;
+
   return (
     <button
       id={id}
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={[
@@ -239,7 +268,12 @@ export function SettingsToggleRow({
         .join(" ")}
     >
       <RowIcon icon={icon} tone={tone} />
-      <RowText title={title} description={description} />
+      <RowText
+        title={title}
+        description={description}
+        titleId={titleId}
+        descriptionId={descriptionId}
+      />
       <SettingsSwitch checked={checked} busy={busy} />
     </button>
   );

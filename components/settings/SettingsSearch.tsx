@@ -29,6 +29,7 @@ export default function SettingsSearch() {
   const [query, setQuery] = useState("");
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   // Rebuilt only when the interface language changes, not on every keystroke.
   const entries = useMemo(() => buildSettingsSearchIndex(t), [t]);
@@ -39,12 +40,27 @@ export default function SettingsSearch() {
 
     inputRef.current?.focus();
 
+    // Captured now rather than read in the cleanup: the button this returns
+    // focus to is the one that was on screen when the overlay opened.
+    const trigger = triggerRef.current;
+
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+
+      /*
+       * Focus goes back to the magnifier it came from. Closing an overlay
+       * that took focus and then dropping it on the document body leaves a
+       * keyboard user at the top of the page, which is a long way from where
+       * they were.
+       */
+      trigger?.focus();
+    };
   }, [open]);
 
   function handleSelect(entry: SettingsSearchEntry) {
@@ -81,9 +97,11 @@ export default function SettingsSearch() {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label={copy.open}
+        aria-expanded={open}
         className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-strong transition-colors duration-100 hover:bg-black/[0.03] active:bg-black/[0.06]"
       >
         <Search size={17} strokeWidth={1.9} />
@@ -148,7 +166,12 @@ export default function SettingsSearch() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 pb-10">
+          {/*
+            overscroll-contain rather than a body lock: the page behind is
+            covered anyway, and locking the body would still be lifting when
+            the scroll to the chosen row runs a frame later.
+          */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-10">
             {!query.trim() ? (
               <p className="px-1.5 pt-2 text-[13px] leading-6 text-ink-soft">
                 {copy.hint}

@@ -22,7 +22,7 @@ export default function SettingsSwitch({
       aria-hidden="true"
       className={[
         "relative flex h-[31px] w-[51px] shrink-0 items-center rounded-full",
-        "transition-colors duration-200 ease-out",
+        "transition-colors duration-200 ease-out motion-reduce:transition-none",
         checked ? "bg-blue-600" : "bg-black/[0.14]",
         busy ? "opacity-60" : "",
       ]
@@ -38,7 +38,9 @@ export default function SettingsSwitch({
         className={[
           "h-[27px] w-[27px] rounded-full bg-[#ffffff]",
           "shadow-[0_1px_3px_rgba(0,0,0,0.18)]",
-          "transition-transform duration-200 ease-out",
+          // The colour change alone still says on or off, so reduced
+          // motion loses the travel and keeps the answer.
+          "transition-transform duration-200 ease-out motion-reduce:transition-none",
           checked ? "translate-x-[22px]" : "translate-x-[2px]",
         ].join(" ")}
       />
