@@ -269,6 +269,8 @@ Return at most ${MAX_PHRASES} items, and usually fewer. Rules:
 - "tone" is a short human label read from the whole conversation, not the one
   sentence — for example "Casual · Friendly". If you cannot tell, use an empty
   string and set toneConfidence to "unknown". Do not guess at feelings.
+- Any Chinese you write must be Traditional as written in Taiwan. Never a
+  Simplified character, anywhere, for any reason.
       `.trim(),
       response_format: {
         type: "text",

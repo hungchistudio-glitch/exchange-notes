@@ -520,6 +520,10 @@ For EACH article above, in the same order, produce:
 - chineseCaption: a natural Traditional Chinese translation of
   englishCaption.
 
+Every Chinese string above must use Traditional characters as written in
+Taiwan. Never return a Simplified character, including in vocabulary meanings
+and example translations.
+
 Return exactly ${articles.length} cards, in the same order as the articles
 above, matching the required JSON schema.
 `.trim();

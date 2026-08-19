@@ -205,6 +205,8 @@ Rules:
 - Answer what was actually said. Do not change the subject, do not invent
   plans, and do not commit them to anything the conversation has not raised.
 - No greetings-for-the-sake-of-it and no sign-offs.
+- Any Chinese you write, in a reply or in a gloss, must be Traditional as
+  written in Taiwan. Never a Simplified character, anywhere, for any reason.
       `.trim(),
       response_format: {
         type: "text",

@@ -4,6 +4,7 @@ import {
   getMenuModelCandidates,
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
+import { toTraditional } from "@/lib/chinese/toTraditional";
 import {
   normaliseRegion,
   type MenuConfidence,
@@ -170,7 +171,23 @@ Layout rules:
 - Read the list in the order a person would: top to bottom within a column,
   then column by column.
 
+Chinese script rule. It outranks every other rule here, including fidelity to
+the photograph and the identical-name rule below:
+- Every Chinese character you return, in every field — sourceName and
+  sourceDescription included — must be Traditional as written in Taiwan.
+- When the list is printed in Simplified characters, sourceName is the
+  Traditional transcription of what it says, not a copy of the glyphs. 电视机
+  is returned as 電視機; 开水器 as 開水器; 灭蝇灯 as 滅蠅燈.
+- There is no field, and no reason, for which a Simplified character is
+  acceptable. The reader of this app reads Traditional Chinese and nothing
+  else.
+
 Translation rules:
+- If the list is already written in ${targetLanguageName}, there is nothing to
+  translate: return translatedName identical to the sourceName you produced
+  above — which is to say, the Traditional form for Chinese — and use
+  translatedDescription for a short explanation. Never quietly translate into
+  a third language because the first two matched.
 - Translate the dish name into ${targetLanguageName} when a real equivalent
   exists.
 - When a dish is culturally specific and a literal translation would mislead
@@ -249,6 +266,25 @@ function readMenuDocument(
 
   const candidate = value as Record<string, unknown>;
   const isMenu = candidate.isMenu !== false;
+  const sourceLanguage = readString(candidate.sourceLanguage, 32) || "unknown";
+
+  /*
+   * The prompt asks for Traditional everywhere; this makes it true.
+   *
+   * Applied per side and only to Chinese, because the converter works on
+   * characters: a Japanese menu shares glyphs with Simplified Chinese (学,
+   * 会, 焼) and rewriting those would turn correct Japanese into nonsense.
+   * So the printed side is converted only when the list is Chinese, and the
+   * translated side only when we asked for Chinese back.
+   */
+  const traditionalSource = /^zh/i.test(sourceLanguage)
+    ? toTraditional
+    : (text: string) => text;
+
+  const traditionalTarget =
+    targetLanguage === "traditional-chinese"
+      ? toTraditional
+      : (text: string) => text;
 
   const rawSections = (
     Array.isArray(candidate.sections) ? candidate.sections : []
@@ -267,10 +303,16 @@ function readMenuDocument(
 
           return {
             id: `s${sectionIndex}-i${itemIndex}`,
-            sourceName: readString(item.sourceName, 120),
-            translatedName: readString(item.translatedName, 140),
-            sourceDescription: readString(item.sourceDescription, 300),
-            translatedDescription: readString(item.translatedDescription, 340),
+            sourceName: traditionalSource(readString(item.sourceName, 120)),
+            translatedName: traditionalTarget(
+              readString(item.translatedName, 140),
+            ),
+            sourceDescription: traditionalSource(
+              readString(item.sourceDescription, 300),
+            ),
+            translatedDescription: traditionalTarget(
+              readString(item.translatedDescription, 340),
+            ),
             price: readString(item.price, 24),
             currency: readString(item.currency, 8),
             ipa: readString(item.ipa, 120),
@@ -285,8 +327,10 @@ function readMenuDocument(
 
       return {
         id: `s${sectionIndex}`,
-        title: readString(section.title, 80),
-        translatedTitle: readString(section.translatedTitle, 100),
+        title: traditionalSource(readString(section.title, 80)),
+        translatedTitle: traditionalTarget(
+          readString(section.translatedTitle, 100),
+        ),
         region: readRegion(section.region),
         items,
       };
@@ -300,7 +344,7 @@ function readMenuDocument(
   return {
     isMenu,
     document: {
-      sourceLanguage: readString(candidate.sourceLanguage, 32) || "unknown",
+      sourceLanguage,
       targetLanguage,
       detectedCuisine: readString(candidate.detectedCuisine, 60),
       overallConfidence: readConfidence(candidate.overallConfidence),
@@ -377,10 +421,27 @@ function isRateLimitError(error: unknown) {
   );
 }
 
+/*
+ * A timeout, and not merely a failure that used the word "aborted".
+ *
+ * The distinction reaches the user: a timeout tells them to try a tighter
+ * photo of one page, which is good advice for a slow read and useless advice
+ * for a 500 from the model. Matching loosely on the message sent them to
+ * re-shoot a photograph that was never the problem.
+ */
 function isTimeoutError(error: unknown) {
+  if (getErrorStatus(error) === 504) return true;
+
+  if (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  ) {
+    return true;
+  }
+
   return (
     error instanceof Error &&
-    /timeout|timed out|aborted|deadline/i.test(error.message)
+    /\btimed? ?out\b|deadline exceeded/i.test(error.message)
   );
 }
 
