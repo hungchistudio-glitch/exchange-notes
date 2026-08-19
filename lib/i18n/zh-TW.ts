@@ -1314,8 +1314,43 @@ const traditionalChinese: TranslationDictionary = {
 
   settings: {
     title: "設定",
-    preferences: "使用體驗",
-    learningSetup: "學習設定",
+
+    sections: {
+      learning: "學習",
+      yumi: "Yumi",
+      app: "App",
+      devices: "裝置與小工具",
+      help: "說明與關於",
+      account: "帳號",
+    },
+
+    search: {
+      open: "搜尋設定",
+      placeholder: "搜尋設定",
+      cancel: "取消",
+      resultsLabel: "符合的設定",
+      empty: "設定中找不到符合「{query}」的項目。",
+      hint: "試試「widget」、「發音」、「語言」、「星航」或「通知」。",
+    },
+
+    devices: {
+      rowTitle: "裝置與小工具",
+      rowDescription: "管理你的裝置、小工具與整合",
+      connectedCount: "{count} 個已連接",
+      notConnected: "尚未設定",
+      pageTitle: "裝置與小工具",
+      pageDescription:
+        "把 Exchange Notes 安裝到這台裝置，並連接讓 Yumi 留在主畫面的小工具。",
+      back: "回到設定",
+    },
+
+    help: {
+      rowTitle: "說明與關於",
+      rowDescription: "使用教學，以及 Exchange Notes 的運作方式",
+      pageTitle: "說明與關於",
+      pageDescription: "隨時都能重看一次教學 —— 只有從這裡開啟才會出現。",
+      back: "回到設定",
+    },
 
     profile: {
       pageTitle: "設定",
@@ -1338,8 +1373,6 @@ const traditionalChinese: TranslationDictionary = {
       learningLanguageDescription: "你正在練習的語言",
       saveChanges: "儲存變更",
       saving: "儲存中…",
-      preferences: "偏好設定",
-      account: "帳號",
       logout: "登出",
       logoutDescription: "登出此裝置",
       logoutConfirm: "確定要登出嗎？",
@@ -1388,16 +1421,28 @@ const traditionalChinese: TranslationDictionary = {
       traditionalChineseDescription: "以繁體中文顯示 App 介面。",
     },
 
+    yumiReminders: {
+      rowTitle: "Yumi 呼喚",
+      rowDescription: "當你今天還沒餵 Yumi 單字餅乾時，讓牠提醒你。",
+      loadError: "無法讀取 Yumi 呼喚設定。",
+      saveError: "無法儲存 Yumi 呼喚設定。",
+      timezoneLabel: "裝置時區",
+      testTitle: "Yumi 呼喚",
+      testDescription:
+        "每天最多一次。已餵過 Yumi、最近才打開 App，或處於安靜時段時不會呼喚。",
+      test: "傳送 Yumi 測試通知",
+      testing: "傳送中…",
+      testSent: "Yumi 測試通知已送出。",
+      testError: "無法傳送 Yumi 測試通知。",
+    },
+
     interfaceMode: {
       rowTitle: "介面模式",
       rowDescription: "標準模式，或 Yumi 星際指揮艙",
-      sheetTitle: "介面模式",
-      sheetDescription: "選擇 Exchange Notes 的外觀與操作方式。",
       standardTitle: "標準模式",
-      standardDescription: "你熟悉的 Exchange Notes，簡潔而快速。",
+      standardShort: "標準",
       cosmicTitle: "Yumi 星航模式",
-      cosmicDescription:
-        "進入 Yumi 的星際指揮艙，所有功能都圍繞著 Yumi 排列。",
+      cosmicShort: "Yumi 星航",
       sharedDataNote:
         "兩種模式都是同一個 Exchange Notes。你的單字、訊息、好友與學習進度完全不會改變，隨時都可以切換回來。",
     },
@@ -1552,24 +1597,11 @@ const traditionalChinese: TranslationDictionary = {
     fontSize: {
       rowTitle: "字體大小",
       rowDescription: "調整 App 內的文字大小",
-      sheetTitle: "字體大小",
-      sheetDescription: "選擇 Exchange Notes 全站使用的文字大小。",
 
       options: {
-        small: {
-          label: "小",
-          description: "畫面可以顯示更多資訊。",
-        },
-
-        medium: {
-          label: "中",
-          description: "平衡且舒適的預設大小。",
-        },
-
-        large: {
-          label: "大",
-          description: "文字更大，閱讀更輕鬆。",
-        },
+        small: { label: "小" },
+        medium: { label: "中" },
+        large: { label: "大" },
       },
     },
 

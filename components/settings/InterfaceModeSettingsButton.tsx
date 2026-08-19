@@ -1,84 +1,54 @@
 "use client";
 
 import { Orbit } from "lucide-react";
-import { useState } from "react";
 
-import BottomSheet from "@/components/foundation/overlays/BottomSheet";
-import SettingsRow from "@/components/foundation/rows/SettingsRow";
-import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
+import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
+import { SettingsControlRow } from "@/components/foundation/rows/SettingsRow";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
 
-export default function InterfaceModeSettingsButton() {
-  const [open, setOpen] = useState(false);
+/**
+ * The one setting that changes the whole app, decided in place.
+ *
+ * It used to open a sheet to show two cards that said what the row already
+ * said. Switching is the point, and switching is now one tap — the crossfade
+ * between the two themes is handled by ModeTransitionStage, so the route and
+ * the scroll position both survive it.
+ */
+export default function InterfaceModeSettingsButton({ id }: { id?: string }) {
   const { t } = useTranslation();
   const { interfaceMode, setInterfaceMode } = useInterfaceMode();
   const copy = t.settings.interfaceMode;
 
-  const options: Array<{
-    value: InterfaceMode;
-    badge: string;
-    title: string;
-    description: string;
-  }> = [
-    {
-      value: "standard",
-      badge: "◎",
-      title: copy.standardTitle,
-      description: copy.standardDescription,
-    },
-    {
-      value: "yumi-cosmic",
-      badge: "✦",
-      title: copy.cosmicTitle,
-      description: copy.cosmicDescription,
-    },
-  ];
-
-  const currentLabel =
-    interfaceMode === "yumi-cosmic" ? copy.cosmicTitle : copy.standardTitle;
-
   return (
-    <>
-      <SettingsRow
-        title={copy.rowTitle}
-        description={copy.rowDescription}
-        value={currentLabel}
-        tone="emerald"
-        icon={<Orbit size={17} strokeWidth={1.8} />}
-        onClick={() => setOpen(true)}
-      />
-
-      <BottomSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title={copy.sheetTitle}
-        description={copy.sheetDescription}
-      >
-        <div className="space-y-3">
-          {options.map((option) => (
-            <SettingsChoiceCard
-              key={option.value}
-              selected={interfaceMode === option.value}
-              badge={<span className="text-[15px]">{option.badge}</span>}
-              title={option.title}
-              description={option.description}
-              onClick={() => setInterfaceMode(option.value)}
-            />
-          ))}
-        </div>
-
-        {/*
-          Said plainly, and on the screen where the choice is made. The one
-          question a second interface raises is whether it is a second copy of
-          everything, and the answer — that it is not — is worth more here
-          than any amount of description of how the deck looks.
-        */}
-        <p className="mt-4 text-xs leading-5 text-ink-soft">
-          {copy.sharedDataNote}
-        </p>
-      </BottomSheet>
-    </>
+    <SettingsControlRow
+      id={id}
+      title={copy.rowTitle}
+      description={copy.rowDescription}
+      icon={<Orbit size={16} strokeWidth={1.8} />}
+      tone="blue"
+      stacked
+      control={
+        <SegmentedControl<InterfaceMode>
+          fill
+          groupLabel={copy.rowTitle}
+          value={interfaceMode}
+          onChange={setInterfaceMode}
+          options={[
+            {
+              value: "standard",
+              content: copy.standardShort,
+              label: copy.standardTitle,
+            },
+            {
+              value: "yumi-cosmic",
+              content: copy.cosmicShort,
+              label: copy.cosmicTitle,
+            },
+          ]}
+        />
+      }
+    />
   );
 }

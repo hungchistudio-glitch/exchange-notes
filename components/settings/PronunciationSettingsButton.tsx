@@ -111,7 +111,6 @@ export default function PronunciationSettingsButton() {
         title={copy.rowTitle}
         description={copy.rowDescription}
         value={`${voiceLabel} · ${rate.toFixed(2)}×`}
-        tone="blue"
         icon={<Volume2 size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />

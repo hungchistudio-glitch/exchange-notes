@@ -45,7 +45,6 @@ export default function AppLanguageSettingsButton() {
         title={copy.rowTitle}
         description={copy.rowDescription}
         value={currentLabel}
-        tone="emerald"
         icon={<Languages size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />

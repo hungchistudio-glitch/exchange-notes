@@ -17,6 +17,7 @@ import SettingsRow, {
   type SettingsRowTone,
 } from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { setDeviceConnection } from "@/lib/settings/deviceConnections";
 
 /*
  * The Scriptable widget authenticates with a bearer token that only this
@@ -152,6 +153,18 @@ export default function ScriptableWidgetSettingsButton() {
       active = false;
     };
   }, []);
+
+  /*
+   * Settings' Devices & Widgets row says how many integrations are connected
+   * without loading any of them. This is where that number comes from: the
+   * one screen that knows the answer records it, and the row reads the cache.
+   * "unavailable" is not an answer, so it is not recorded.
+   */
+  useEffect(() => {
+    if (state.kind === "loading" || state.kind === "unavailable") return;
+
+    setDeviceConnection("iphoneWidget", state.kind === "active");
+  }, [state.kind]);
 
   async function refreshStatus() {
     try {
@@ -306,14 +319,17 @@ export default function ScriptableWidgetSettingsButton() {
             ? copy.statusNotConfigured
             : copy.statusUnavailable;
 
+  /*
+   * Connected is worth a colour, and a token that was revoked is worth a
+   * warning. "Not set up yet" is the ordinary state of this row and gets the
+   * ordinary treatment.
+   */
   const rowTone: SettingsRowTone =
     state.kind === "active"
       ? "emerald"
       : state.kind === "revoked"
         ? "amber"
-        : state.kind === "empty"
-          ? "blue"
-          : "neutral";
+        : "neutral";
 
   const stateContent =
     state.kind === "active"

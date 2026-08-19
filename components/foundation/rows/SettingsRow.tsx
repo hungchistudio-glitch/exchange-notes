@@ -2,6 +2,19 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { ReactNode } from "react";
 
+import SettingsSwitch from "@/components/foundation/forms/SettingsSwitch";
+
+/*
+ * One row system for the whole of Settings, in the variants the page actually
+ * needs: navigation (value + chevron), toggle (a switch, and the whole row is
+ * the switch), control (an inline segmented control), summary (a count and a
+ * chevron) and destructive (log out).
+ *
+ * A chevron means one thing here and only one thing: there is another screen
+ * behind this row. Anything that can be decided in place is decided in place,
+ * which is why a boolean never gets one.
+ */
+
 export type SettingsRowTone =
   | "neutral"
   | "blue"
@@ -9,13 +22,27 @@ export type SettingsRowTone =
   | "emerald"
   | "red";
 
+/*
+ * Colour is meaning, not decoration. Neutral is the default and covers most
+ * of the page; blue belongs to Yumi, emerald says a device is actually
+ * connected, red is destructive. Amber survives for the states that are
+ * genuinely a warning (a widget that needs re-connecting).
+ */
 const TONE_CLASSES: Record<SettingsRowTone, string> = {
-  neutral: "bg-black/[0.05] text-ink-soft",
-  blue: "bg-blue-100 text-blue-600",
-  amber: "bg-amber-100 text-amber-600",
-  emerald: "bg-emerald-100 text-emerald-600",
-  red: "bg-red-100 text-red-600",
+  neutral: "bg-black/[0.05] text-ink-strong",
+  blue: "bg-blue-50 text-blue-600",
+  amber: "bg-amber-50 text-amber-600",
+  emerald: "bg-emerald-50 text-emerald-600",
+  red: "bg-red-50 text-red-600",
 };
+
+const ROW_BASE =
+  "flex min-h-[62px] w-full items-center gap-3.5 px-4 py-3 text-left";
+
+// 100ms and a 3.5% darkening: enough that a tap is acknowledged before the
+// screen it opens arrives, quiet enough that a list of them never flickers.
+const ROW_INTERACTIVE =
+  "transition-colors duration-100 ease-out hover:bg-black/[0.02] active:bg-black/[0.035]";
 
 type SharedProps = {
   title: string;
@@ -26,6 +53,9 @@ type SharedProps = {
   danger?: boolean;
   disabled?: boolean;
   className?: string;
+  // Anchors the row for Settings search, which scrolls to a result and
+  // pulses it rather than opening it on the user's behalf.
+  id?: string;
 };
 
 type LinkRowProps = SharedProps & {
@@ -45,79 +75,100 @@ type StaticRowProps = SharedProps & {
 
 type SettingsRowProps = LinkRowProps | ButtonRowProps | StaticRowProps;
 
-function RowContent({
-  title,
-  description,
+function RowIcon({
   icon,
-  value,
   tone = "neutral",
   danger = false,
-  interactive = false,
-}: SharedProps & { interactive?: boolean }) {
+}: Pick<SharedProps, "icon" | "tone" | "danger">) {
+  if (!icon) return null;
+
   return (
-    <>
-      {icon ? (
-        <span
-          className={[
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-            danger ? "bg-red-100 text-red-600" : TONE_CLASSES[tone],
-          ].join(" ")}
-        >
-          {icon}
-        </span>
-      ) : null}
+    <span
+      className={[
+        "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full",
+        danger ? TONE_CLASSES.red : TONE_CLASSES[tone],
+      ].join(" ")}
+    >
+      {icon}
+    </span>
+  );
+}
 
-      <span className="min-w-0 flex-1">
-        <span
-          className={[
-            "block truncate text-[16px] font-semibold tracking-[-0.02em]",
-            danger ? "text-red-600" : "text-black",
-          ].join(" ")}
-        >
-          {title}
-        </span>
-
-        {description ? (
-          <span className="mt-0.5 block truncate text-[13px] leading-5 text-ink-soft">
-            {description}
-          </span>
-        ) : null}
+function RowText({
+  title,
+  description,
+  danger = false,
+}: Pick<SharedProps, "title" | "description" | "danger">) {
+  return (
+    <span className="min-w-0 flex-1">
+      {/*
+        Wraps rather than truncates. "Devices & Widgets" beside a value does
+        not fit on one line at 375 points, and a row is allowed to be taller —
+        a title clipped to "Devices & Widg…" is not the setting's name.
+      */}
+      <span
+        className={[
+          "block text-[16px] font-semibold leading-[21px] tracking-[-0.02em]",
+          danger ? "text-red-600" : "text-black",
+        ].join(" ")}
+      >
+        {title}
       </span>
 
-      {value ? (
-        <span className="max-w-[42%] truncate text-sm font-medium text-ink-soft">
-          {value}
+      {description ? (
+        // Wraps rather than truncates: a row is allowed to grow for a
+        // sentence that is worth reading in full.
+        <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft">
+          {description}
         </span>
       ) : null}
+    </span>
+  );
+}
 
-      {interactive ? (
-        <ChevronRight
-          aria-hidden="true"
-          size={17}
-          strokeWidth={1.8}
-          className="shrink-0 text-ink-faint"
-        />
-      ) : null}
-    </>
+function RowValue({ value }: Pick<SharedProps, "value">) {
+  if (!value) return null;
+
+  return (
+    <span className="max-w-[42%] shrink-0 truncate text-[14px] font-medium text-ink-soft">
+      {value}
+    </span>
   );
 }
 
 export default function SettingsRow(props: SettingsRowProps) {
-  const { disabled = false, className = "" } = props;
+  const { disabled = false, className = "", id } = props;
 
   const sharedClassName = [
-    "flex min-h-[60px] w-full items-center gap-3 px-5 py-3 text-left",
-    "transition-colors",
-    disabled ? "cursor-not-allowed opacity-40" : "hover:bg-black/[0.02]",
+    ROW_BASE,
+    disabled ? "cursor-not-allowed opacity-40" : ROW_INTERACTIVE,
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
+  const content = (
+    <>
+      <RowIcon icon={props.icon} tone={props.tone} danger={props.danger} />
+      <RowText
+        title={props.title}
+        description={props.description}
+        danger={props.danger}
+      />
+      <RowValue value={props.value} />
+      <ChevronRight
+        aria-hidden="true"
+        size={17}
+        strokeWidth={1.8}
+        className="shrink-0 text-ink-faint"
+      />
+    </>
+  );
+
   if ("href" in props && props.href) {
     return (
-      <Link href={props.href} className={sharedClassName}>
-        <RowContent {...props} interactive />
+      <Link id={id} href={props.href} className={sharedClassName}>
+        {content}
       </Link>
     );
   }
@@ -125,19 +176,127 @@ export default function SettingsRow(props: SettingsRowProps) {
   if ("onClick" in props && props.onClick) {
     return (
       <button
+        id={id}
         type="button"
         onClick={props.onClick}
         disabled={disabled}
         className={sharedClassName}
       >
-        <RowContent {...props} interactive />
+        {content}
       </button>
     );
   }
 
   return (
-    <div className={sharedClassName}>
-      <RowContent {...props} />
+    <div id={id} className={sharedClassName}>
+      <RowIcon icon={props.icon} tone={props.tone} danger={props.danger} />
+      <RowText
+        title={props.title}
+        description={props.description}
+        danger={props.danger}
+      />
+      <RowValue value={props.value} />
+    </div>
+  );
+}
+
+type SettingsToggleRowProps = Omit<SharedProps, "value"> & {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  busy?: boolean;
+};
+
+/**
+ * A boolean. The entire row is the switch — there is nothing else to hit —
+ * so the target is the full width of the surface rather than 51 pixels of it.
+ */
+export function SettingsToggleRow({
+  title,
+  description,
+  icon,
+  tone = "neutral",
+  checked,
+  onChange,
+  busy = false,
+  disabled = false,
+  className = "",
+  id,
+}: SettingsToggleRowProps) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={[
+        ROW_BASE,
+        disabled ? "cursor-not-allowed opacity-40" : ROW_INTERACTIVE,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <RowIcon icon={icon} tone={tone} />
+      <RowText title={title} description={description} />
+      <SettingsSwitch checked={checked} busy={busy} />
+    </button>
+  );
+}
+
+type SettingsControlRowProps = Omit<SharedProps, "value" | "danger"> & {
+  // The control owns its own interaction, so the row around it is inert.
+  control: ReactNode;
+  /*
+   * Puts the control on its own line under the label. Two segments of real
+   * words — "Standard" and "Yumi Cosmic" — plus a sentence of description do
+   * not both fit across 375 points, and a title that truncates to "Inte…" is
+   * not a trade worth making. Narrow controls (three letters of font size)
+   * stay beside their label.
+   */
+  stacked?: boolean;
+};
+
+/**
+ * A setting whose control fits on the row: a segmented control, today. The
+ * row itself is not clickable — everything it can do, the control does.
+ */
+export function SettingsControlRow({
+  title,
+  description,
+  icon,
+  tone = "neutral",
+  control,
+  stacked = false,
+  className = "",
+  id,
+}: SettingsControlRowProps) {
+  if (stacked) {
+    return (
+      <div
+        id={id}
+        className={["w-full px-4 py-3.5", className].filter(Boolean).join(" ")}
+      >
+        <div className="flex items-center gap-3.5">
+          <RowIcon icon={icon} tone={tone} />
+          <RowText title={title} description={description} />
+        </div>
+
+        {/* Indented to the text column, so the group still reads as rows. */}
+        <div className="mt-3 pl-[48px]">{control}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      id={id}
+      className={[ROW_BASE, "gap-3", className].filter(Boolean).join(" ")}
+    >
+      <RowIcon icon={icon} tone={tone} />
+      <RowText title={title} description={description} />
+      {control}
     </div>
   );
 }

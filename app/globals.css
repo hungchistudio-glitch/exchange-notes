@@ -371,3 +371,44 @@ html {
     transform: none;
   }
 }
+
+/*
+ * Settings search: what "found it" looks like.
+ *
+ * A result does not open the setting for you — it takes you to the row and
+ * points at it for a moment. The pointing is a background wash that fades
+ * out, and the whole mechanism is the URL fragment: no state, no scroll
+ * maths, and it survives the route change into Devices & Widgets or
+ * Help & About.
+ *
+ * scroll-margin-top clears the sticky header the row would otherwise land
+ * underneath.
+ */
+.settings-anchor {
+  scroll-margin-top: 104px;
+}
+
+@keyframes settingsAnchorFound {
+  0%,
+  55% {
+    background-color: color-mix(in oklab, var(--color-black, #000) 6%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.settings-anchor:target {
+  animation: settingsAnchorFound 1.4s ease-out 1;
+}
+
+/*
+ * Reduced motion keeps the marker and drops the fade: the point is to say
+ * "here", and a wash that simply stays says it without anything moving.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .settings-anchor:target {
+    animation: none;
+    background-color: color-mix(in oklab, var(--color-black, #000) 6%, transparent);
+  }
+}

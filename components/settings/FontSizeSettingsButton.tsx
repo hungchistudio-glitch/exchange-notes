@@ -1,11 +1,10 @@
 "use client";
 
 import { Type } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
-import BottomSheet from "@/components/foundation/overlays/BottomSheet";
-import SettingsRow from "@/components/foundation/rows/SettingsRow";
-import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
+import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
+import { SettingsControlRow } from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   getAppFontSize,
@@ -14,18 +13,17 @@ import {
   type AppFontSize,
 } from "@/lib/appPreferences";
 
-const FONT_SIZE_OPTIONS: Array<{
-  value: AppFontSize;
-  previewClassName: string;
-}> = [
-  { value: "small", previewClassName: "text-[14px]" },
-  { value: "medium", previewClassName: "text-[16px]" },
-  { value: "large", previewClassName: "text-[18px]" },
-];
+const FONT_SIZE_CLASSES: Record<AppFontSize, string> = {
+  small: "text-[13px]",
+  medium: "text-[15px]",
+  large: "text-[18px]",
+};
 
-export default function FontSizeSettingsButton() {
-  const [open, setOpen] = useState(false);
-
+/**
+ * Three sizes, shown at their own size. A row that demonstrates the setting
+ * is worth more than a screen that describes it.
+ */
+export default function FontSizeSettingsButton({ id }: { id?: string }) {
   /**
    * The stored preference is an external store, not component state, so it is
    * read through useSyncExternalStore rather than copied in on mount. Both
@@ -41,44 +39,29 @@ export default function FontSizeSettingsButton() {
   const { t } = useTranslation();
   const copy = t.settings.fontSize;
 
-  function handleSelect(value: AppFontSize) {
-    setAppFontSize(value);
-  }
-
   return (
-    <>
-      <SettingsRow
-        title={copy.rowTitle}
-        description={copy.rowDescription}
-        value={copy.options[fontSize].label}
-        tone="amber"
-        icon={<Type size={17} strokeWidth={1.8} />}
-        onClick={() => setOpen(true)}
-      />
-
-      <BottomSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        title={copy.sheetTitle}
-        description={copy.sheetDescription}
-      >
-        <div className="space-y-3">
-          {FONT_SIZE_OPTIONS.map((option) => {
-            const optionCopy = copy.options[option.value];
-
-            return (
-              <SettingsChoiceCard
-                key={option.value}
-                selected={fontSize === option.value}
-                badge={<span className={option.previewClassName}>Aa</span>}
-                title={optionCopy.label}
-                description={optionCopy.description}
-                onClick={() => handleSelect(option.value)}
-              />
-            );
-          })}
-        </div>
-      </BottomSheet>
-    </>
+    <SettingsControlRow
+      id={id}
+      title={copy.rowTitle}
+      description={copy.rowDescription}
+      icon={<Type size={16} strokeWidth={1.8} />}
+      stacked
+      control={
+        <SegmentedControl<AppFontSize>
+          groupLabel={copy.rowTitle}
+          value={fontSize}
+          onChange={setAppFontSize}
+          options={(["small", "medium", "large"] as const).map((value) => ({
+            value,
+            content: (
+              <span className={`${FONT_SIZE_CLASSES[value]} leading-none`}>
+                A
+              </span>
+            ),
+            label: copy.options[value].label,
+          }))}
+        />
+      }
+    />
   );
 }

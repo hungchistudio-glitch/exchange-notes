@@ -24,7 +24,6 @@ export default function TutorialSettingsButton() {
         title={copy.rowTitle}
         description={copy.rowDescription}
         value={copy.rowValue}
-        tone="amber"
         icon={<Sparkles size={16} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />

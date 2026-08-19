@@ -1340,8 +1340,44 @@ const english: TranslationDictionary = {
 
   settings: {
     title: "Settings",
-    preferences: "Experience",
-    learningSetup: "Learning setup",
+
+    sections: {
+      learning: "Learning",
+      yumi: "Yumi",
+      app: "App",
+      devices: "Devices & Widgets",
+      help: "Help & About",
+      account: "Account",
+    },
+
+    search: {
+      open: "Search settings",
+      placeholder: "Search settings",
+      cancel: "Cancel",
+      resultsLabel: "Matching settings",
+      empty: "Nothing in Settings matches “{query}”.",
+      hint: "Try “widget”, “voice”, “language”, “cosmic” or “notifications”.",
+    },
+
+    devices: {
+      rowTitle: "Devices & Widgets",
+      rowDescription: "Manage your devices, widgets, and integrations",
+      connectedCount: "{count} connected",
+      notConnected: "Not set up",
+      pageTitle: "Devices & Widgets",
+      pageDescription:
+        "Install Exchange Notes on this device, and connect the widgets that keep Yumi on your Home Screen.",
+      back: "Back to Settings",
+    },
+
+    help: {
+      rowTitle: "Help & About",
+      rowDescription: "The tour, and how Exchange Notes works",
+      pageTitle: "Help & About",
+      pageDescription:
+        "Take the tour again whenever you want it — it never opens on its own from here.",
+      back: "Back to Settings",
+    },
 
     profile: {
       pageTitle: "Settings",
@@ -1364,8 +1400,6 @@ const english: TranslationDictionary = {
       learningLanguageDescription: "The language you're practicing",
       saveChanges: "Save changes",
       saving: "Saving…",
-      preferences: "Preferences",
-      account: "Account",
       logout: "Log out",
       logoutDescription: "Sign out of this device",
       logoutConfirm: "Are you sure you want to log out?",
@@ -1417,18 +1451,29 @@ const english: TranslationDictionary = {
         "Display the app interface in Traditional Chinese.",
     },
 
+    yumiReminders: {
+      rowTitle: "Yumi reminders",
+      rowDescription:
+        "Let Yumi call you when no word cookie has been fed today.",
+      loadError: "Yumi reminder settings could not be loaded.",
+      saveError: "Yumi reminder settings could not be saved.",
+      timezoneLabel: "Device timezone",
+      testTitle: "Yumi reminders",
+      testDescription:
+        "At most once per day. Yumi stays quiet after being fed, after a recent app visit, or during quiet hours.",
+      test: "Send Yumi test notification",
+      testing: "Sending…",
+      testSent: "Yumi test notification sent.",
+      testError: "The Yumi test notification could not be sent.",
+    },
+
     interfaceMode: {
       rowTitle: "Interface mode",
       rowDescription: "Standard, or Yumi's Command Deck",
-      sheetTitle: "Interface mode",
-      sheetDescription:
-        "Choose how Exchange Notes looks and how you move around it.",
       standardTitle: "Standard Mode",
-      standardDescription:
-        "The quick, quiet Exchange Notes you already know.",
+      standardShort: "Standard",
       cosmicTitle: "Yumi Cosmic Mode",
-      cosmicDescription:
-        "Step into Yumi's command deck, with every feature arranged around Yumi.",
+      cosmicShort: "Yumi Cosmic",
       sharedDataNote:
         "Both modes are the same Exchange Notes. Your words, messages, friends and progress stay exactly where they are, and you can switch back any time.",
     },
@@ -1583,24 +1628,11 @@ const english: TranslationDictionary = {
     fontSize: {
       rowTitle: "Font size",
       rowDescription: "Adjust text throughout the app",
-      sheetTitle: "Font size",
-      sheetDescription: "Choose the text size used throughout Exchange Notes.",
 
       options: {
-        small: {
-          label: "Small",
-          description: "Fits more information on screen.",
-        },
-
-        medium: {
-          label: "Medium",
-          description: "The balanced default size.",
-        },
-
-        large: {
-          label: "Large",
-          description: "Easier and more comfortable to read.",
-        },
+        small: { label: "Small" },
+        medium: { label: "Medium" },
+        large: { label: "Large" },
       },
     },
 

@@ -1250,8 +1250,47 @@ export type TranslationDictionary = {
 
   settings: {
     title: string;
-    preferences: string;
-    learningSetup: string;
+
+    /*
+     * The six groups the Settings page is built from. Rendered as small
+     * uppercase labels above each surface, so they are stored in natural
+     * case and uppercased in CSS — Chinese has no uppercase to apply.
+     */
+    sections: {
+      learning: string;
+      yumi: string;
+      app: string;
+      devices: string;
+      help: string;
+      account: string;
+    };
+
+    search: {
+      open: string;
+      placeholder: string;
+      cancel: string;
+      resultsLabel: string;
+      empty: string;
+      hint: string;
+    };
+
+    devices: {
+      rowTitle: string;
+      rowDescription: string;
+      connectedCount: string;
+      notConnected: string;
+      pageTitle: string;
+      pageDescription: string;
+      back: string;
+    };
+
+    help: {
+      rowTitle: string;
+      rowDescription: string;
+      pageTitle: string;
+      pageDescription: string;
+      back: string;
+    };
 
     profile: {
       pageTitle: string;
@@ -1274,8 +1313,6 @@ export type TranslationDictionary = {
       learningLanguageDescription: string;
       saveChanges: string;
       saving: string;
-      preferences: string;
-      account: string;
       logout: string;
       logoutDescription: string;
       logoutConfirm: string;
@@ -1324,15 +1361,34 @@ export type TranslationDictionary = {
       traditionalChineseDescription: string;
     };
 
+    /*
+     * Yumi's own reminder push. Lived inline in the component until the
+     * reminder became an inline switch and its diagnostics moved into the
+     * Notifications sheet — two components, so one dictionary.
+     */
+    yumiReminders: {
+      rowTitle: string;
+      rowDescription: string;
+      loadError: string;
+      saveError: string;
+      timezoneLabel: string;
+      testTitle: string;
+      testDescription: string;
+      test: string;
+      testing: string;
+      testSent: string;
+      testError: string;
+    };
+
     interfaceMode: {
       rowTitle: string;
       rowDescription: string;
-      sheetTitle: string;
-      sheetDescription: string;
+      // The full names are the accessible names of the two segments; the
+      // short ones are what fits inside them.
       standardTitle: string;
-      standardDescription: string;
+      standardShort: string;
       cosmicTitle: string;
-      cosmicDescription: string;
+      cosmicShort: string;
       sharedDataNote: string;
     };
 
@@ -1449,27 +1505,19 @@ export type TranslationDictionary = {
       testNetworkError: string;
     };
 
+    /*
+     * The three sizes are chosen on the row itself now, by a control that
+     * shows each size at its own size — so the labels survive as the
+     * accessible names of the segments, and the sheet's prose does not.
+     */
     fontSize: {
       rowTitle: string;
       rowDescription: string;
-      sheetTitle: string;
-      sheetDescription: string;
 
       options: {
-        small: {
-          label: string;
-          description: string;
-        };
-
-        medium: {
-          label: string;
-          description: string;
-        };
-
-        large: {
-          label: string;
-          description: string;
-        };
+        small: { label: string };
+        medium: { label: string };
+        large: { label: string };
       };
     };
 
