@@ -39,7 +39,6 @@ type MenuCameraProps = {
     quality: "dark" | "glare" | "blur" | null,
   ) => void;
   onClose: () => void;
-  onCameraError: (message: string) => void;
 };
 
 /*
@@ -61,7 +60,6 @@ export default function MenuCamera({
   onDetectionChange,
   onCaptured,
   onClose,
-  onCameraError,
 }: MenuCameraProps) {
   const { t } = useTranslation();
   const copy = t.scanner.menu;
@@ -73,6 +71,14 @@ export default function MenuCamera({
   const detectedRef = useRef(detected);
 
   const [ready, setReady] = useState(false);
+  /*
+   * A camera that would not open is reported here rather than on a screen of
+   * its own, because the answer to it is on this screen: the photo picker in
+   * the corner works with no camera permission at all, and sending someone to
+   * an error page with a "try again" button takes that away from them.
+   */
+  const [cameraError, setCameraError] = useState("");
+  const [importError, setImportError] = useState("");
   const [torchAvailable, setTorchAvailable] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -92,7 +98,7 @@ export default function MenuCamera({
 
     async function start() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        onCameraError(copy.cameraUnavailable);
+        setCameraError(copy.cameraUnavailable);
         return;
       }
 
@@ -130,7 +136,7 @@ export default function MenuCamera({
           (error.name === "NotAllowedError" ||
             error.name === "PermissionDeniedError");
 
-        onCameraError(
+        setCameraError(
           denied ? copy.cameraPermissionDenied : copy.cameraUnavailable,
         );
       }
@@ -146,6 +152,31 @@ export default function MenuCamera({
     // Started once for the life of the screen. The copy strings are only read
     // on failure, and re-running this would mean a second permission prompt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /*
+   * The preview comes back when the screen does.
+   *
+   * Opening the photo picker, taking a call, or switching apps suspends the
+   * video element on iOS, and it does not always resume itself — leaving a
+   * frozen frame that looks exactly like a working camera pointed at
+   * something that is not moving.
+   */
+  useEffect(() => {
+    function resume() {
+      const video = videoRef.current;
+      if (!video || document.hidden || !video.paused) return;
+
+      void video.play().catch(() => {});
+    }
+
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("focus", resume);
+
+    return () => {
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("focus", resume);
+    };
   }, []);
 
   /*
@@ -245,50 +276,98 @@ export default function MenuCamera({
     setCapturing(false);
   }, [capturing, onCaptured]);
 
-  function importPhoto(file: File) {
-    const reader = new FileReader();
+  /**
+   * Decodes a chosen photo into something drawable.
+   *
+   * createImageBitmap first: it hands back a decoded image without the base64
+   * round trip a FileReader forces, which on a 12-megapixel HEIC is the
+   * difference between a pause and a stall. FileReader stays as the fallback
+   * for browsers without it.
+   */
+  async function decodePhoto(
+    file: File,
+  ): Promise<ImageBitmap | HTMLImageElement> {
+    if (typeof createImageBitmap === "function") {
+      try {
+        return await createImageBitmap(file);
+      } catch {
+        // A format this browser cannot decode, or a corrupt file. The path
+        // below fails the same way, and reports it once.
+      }
+    }
 
-    reader.onload = () => {
-      const source = typeof reader.result === "string" ? reader.result : "";
-      if (!source) return;
+    const source = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        typeof reader.result === "string"
+          ? resolve(reader.result)
+          : reject(new Error("unreadable"));
+      reader.onerror = () => reject(new Error("unreadable"));
+      reader.readAsDataURL(file);
+    });
 
+    return await new Promise<HTMLImageElement>((resolve, reject) => {
       const image = new Image();
-
-      image.onload = () => {
-        const scale = Math.min(
-          1,
-          CAPTURE_MAX_EDGE / Math.max(image.width, image.height),
-        );
-
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
-
-        const context = canvas.getContext("2d");
-        if (!context) return;
-
-        context.imageSmoothingEnabled = true;
-        context.imageSmoothingQuality = "high";
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-        const quality = assessQuality(
-          analyseFrame(canvas, canvas.width, canvas.height),
-        );
-
-        onCaptured(
-          canvas.toDataURL("image/jpeg", CAPTURE_QUALITY),
-          quality.usable ? null : quality.reason,
-        );
-      };
-
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("undecodable"));
       image.src = source;
-    };
+    });
+  }
 
-    reader.readAsDataURL(file);
+  async function importPhoto(file: File) {
+    setImportError("");
+
+    try {
+      const decoded = await decodePhoto(file);
+
+      const scale = Math.min(
+        1,
+        CAPTURE_MAX_EDGE / Math.max(decoded.width, decoded.height),
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(decoded.width * scale));
+      canvas.height = Math.max(1, Math.round(decoded.height * scale));
+
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("no-canvas");
+
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(decoded, 0, 0, canvas.width, canvas.height);
+
+      if (typeof ImageBitmap !== "undefined" && decoded instanceof ImageBitmap) {
+        decoded.close();
+      }
+
+      const quality = assessQuality(
+        analyseFrame(canvas, canvas.width, canvas.height),
+      );
+
+      onCaptured(
+        canvas.toDataURL("image/jpeg", CAPTURE_QUALITY),
+        quality.usable ? null : quality.reason,
+      );
+    } catch {
+      /*
+       * Reported on the camera rather than by throwing the user to an error
+       * screen: they are one tap from either choosing a different photo or
+       * taking the shot themselves, and both beat a dead end.
+       */
+      setImportError(copy.importFailed);
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+    <div
+      /*
+       * Literal black and white throughout this screen. Cosmic Mode repoints
+       * --color-black and --color-white at its own palette — which is right
+       * for every panel in the app and wrong for a viewfinder, where black is
+       * the absence of picture and white is the shutter.
+       */
+      className="fixed inset-0 z-40 flex flex-col bg-[#000000]"
+    >
       <video
         ref={videoRef}
         playsInline
@@ -317,7 +396,7 @@ export default function MenuCamera({
           type="button"
           onClick={onClose}
           aria-label={copy.close}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#000000]/45 text-[#ffffff] backdrop-blur-md"
         >
           <X size={19} strokeWidth={2} />
         </button>
@@ -327,7 +406,7 @@ export default function MenuCamera({
             groupLabel={copy.targetLanguage}
             value={targetLanguage}
             onChange={onTargetLanguageChange}
-            className="!bg-black/45 backdrop-blur-md"
+            className="!bg-[#000000]/45 backdrop-blur-md"
             options={[
               { value: "english", content: "EN", label: "English" },
               { value: "traditional-chinese", content: "中", label: "繁體中文" },
@@ -340,7 +419,7 @@ export default function MenuCamera({
               onClick={() => void toggleTorch()}
               aria-label={torchOn ? copy.torchOff : copy.torchOn}
               aria-pressed={torchOn}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#000000]/45 text-[#ffffff] backdrop-blur-md"
             >
               {torchOn ? (
                 <Zap size={18} strokeWidth={2} />
@@ -361,11 +440,17 @@ export default function MenuCamera({
       >
         <p
           aria-live="polite"
-          className={`mb-5 text-center text-[13px] font-medium tracking-[0.02em] transition-colors duration-200 ${
-            detected ? "text-[#6fd6ff]" : "text-white/70"
+          className={`mb-5 text-center text-[13px] font-medium leading-5 tracking-[0.02em] transition-colors duration-200 ${
+            importError || cameraError
+              ? "text-amber-300"
+              : detected
+                ? "text-[#6fd6ff]"
+                : "text-[#ffffff]/70"
           }`}
         >
-          {detected ? copy.detected : copy.cameraHint}
+          {importError ||
+            cameraError ||
+            (detected ? copy.detected : copy.cameraHint)}
         </p>
 
         <div className="flex items-center justify-between">
@@ -373,7 +458,7 @@ export default function MenuCamera({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             aria-label={copy.gallery}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-transform active:scale-95"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffffff]/10 text-[#ffffff] backdrop-blur-md transition-transform active:scale-95"
           >
             <Images size={20} strokeWidth={1.8} />
           </button>
@@ -388,11 +473,11 @@ export default function MenuCamera({
             onClick={capture}
             disabled={!ready || capturing}
             aria-label={copy.capture}
-            className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-white/85 transition-transform active:scale-95 disabled:opacity-40"
+            className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-[#ffffff]/85 transition-transform active:scale-95 disabled:opacity-40"
           >
             <span
               className={`h-[58px] w-[58px] rounded-full transition-colors duration-200 ${
-                detected ? "bg-[#6fd6ff]" : "bg-white"
+                detected ? "bg-[#6fd6ff]" : "bg-[#ffffff]"
               }`}
             />
           </button>
@@ -403,12 +488,18 @@ export default function MenuCamera({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          /*
+           * image/* rather than a list of formats. An iPhone's library is
+           * HEIC, and an accept list that leaves it out does not filter the
+           * picker — it greys nearly every photo in it out. Whatever comes
+           * back is re-encoded to JPEG on the canvas anyway.
+           */
+          accept="image/*"
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = "";
-            if (file) importPhoto(file);
+            if (file) void importPhoto(file);
           }}
         />
       </div>

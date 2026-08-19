@@ -1325,6 +1325,7 @@ const traditionalChinese: TranslationDictionary = {
       torchOn: "開啟補光",
       torchOff: "關閉補光",
       gallery: "從相簿選擇",
+      importFailed: "無法開啟這張照片，換一張，或直接在這裡拍。",
       targetLanguage: "翻譯成",
       cameraPermissionDenied:
         "Exchange Notes 沒有相機權限。請到瀏覽器設定開啟，或改從相簿選一張照片。",

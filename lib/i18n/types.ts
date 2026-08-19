@@ -1266,6 +1266,7 @@ export type TranslationDictionary = {
       torchOn: string;
       torchOff: string;
       gallery: string;
+      importFailed: string;
       targetLanguage: string;
       cameraPermissionDenied: string;
       cameraUnavailable: string;

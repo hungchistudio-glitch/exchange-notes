@@ -45,7 +45,7 @@ export default function MenuProcessing({
   ];
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+    <div className="fixed inset-0 z-40 flex flex-col bg-[#000000]">
       {image ? (
         // The photo stays on screen, dimmed, so the wait is visibly about
         // the thing the user just pointed at.
@@ -68,12 +68,12 @@ export default function MenuProcessing({
 
         <p
           aria-live="polite"
-          className="mt-8 text-[19px] font-semibold tracking-[-0.02em] text-white"
+          className="mt-8 text-[19px] font-semibold tracking-[-0.02em] text-[#ffffff]"
         >
           {phaseLabels[phase]}
         </p>
 
-        <p className="mt-2 text-center text-[13px] leading-5 text-white/55">
+        <p className="mt-2 text-center text-[13px] leading-5 text-[#ffffff]/55">
           {copy.processingHint}
         </p>
       </div>
@@ -85,7 +85,7 @@ export default function MenuProcessing({
         <button
           type="button"
           onClick={onCancel}
-          className="min-h-11 rounded-full bg-white/10 px-6 text-sm font-semibold text-white transition-transform active:scale-[0.98]"
+          className="min-h-11 rounded-full bg-[#ffffff]/10 px-6 text-sm font-semibold text-[#ffffff] transition-transform active:scale-[0.98]"
         >
           {copy.cancel}
         </button>

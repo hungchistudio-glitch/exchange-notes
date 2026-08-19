@@ -134,16 +134,13 @@ export default function MenuTranslatorPage() {
           dispatch({ type: "captured", image, quality })
         }
         onClose={() => router.push("/")}
-        onCameraError={(message) =>
-          dispatch({ type: "failed", failure: "camera", message })
-        }
       />
     );
   }
 
   if (session.state === "capturing" && session.image) {
     return (
-      <div className="fixed inset-0 z-40 flex flex-col bg-black">
+      <div className="fixed inset-0 z-40 flex flex-col bg-[#000000]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={session.image}
@@ -206,11 +203,6 @@ export default function MenuTranslatorPage() {
         return { title: copy.notMenuTitle, body: copy.notMenuBody };
       case "no_items_found":
         return { title: copy.emptyTitle, body: copy.emptyBody };
-      case "camera":
-        return {
-          title: copy.errorTitle,
-          body: session.errorMessage || copy.cameraUnavailable,
-        };
       default:
         return {
           title: copy.errorTitle,

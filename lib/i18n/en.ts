@@ -1351,6 +1351,8 @@ const english: TranslationDictionary = {
       torchOn: "Turn on the light",
       torchOff: "Turn off the light",
       gallery: "Choose a photo",
+      importFailed:
+        "That photo could not be opened. Try another one, or take the shot here.",
       targetLanguage: "Translate into",
       cameraPermissionDenied:
         "Camera access is off for Exchange Notes. Turn it on in your browser settings, or choose a photo instead.",

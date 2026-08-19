@@ -38,7 +38,6 @@ export type ScanFailure =
   | "timeout"
   | "offline"
   | "unavailable"
-  | "camera"
   | "unknown";
 
 export type ScanSession = {
