@@ -222,7 +222,16 @@ export default function MenuCamera({
        * picker fires no event of its own on every browser, which is why this
        * hangs off visibility rather than off the input.
        */
-      if (!streamRef.current && !pickingRef.current && !cameraError) {
+      if (!streamRef.current && !cameraError) {
+        /*
+         * Cleared here as well as on the input's own events: a browser with
+         * neither a cancel event nor a change event — an older Safari, a
+         * picker dismissed by a system interruption — would otherwise leave
+         * this set forever and the camera off for the rest of the session.
+         * Restarting a camera that was about to unmount costs nothing;
+         * leaving a dead preview costs the whole screen.
+         */
+        pickingRef.current = false;
         void startCamera();
         return;
       }

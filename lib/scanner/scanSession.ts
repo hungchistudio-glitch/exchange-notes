@@ -122,6 +122,14 @@ export function scanSessionReducer(
       };
 
     case "analyzed": {
+      /*
+       * A result that arrives after the user walked away is stale.
+       * Cancelling during processing puts the camera back, and the request
+       * that was already in flight cannot be recalled — so the answer is
+       * dropped here rather than reopening a screen nobody asked for.
+       */
+      if (session.state !== "ocr_processing") return session;
+
       const { response } = action;
 
       if (!response.document) {
@@ -145,6 +153,8 @@ export function scanSessionReducer(
     }
 
     case "failed":
+      if (session.state !== "ocr_processing") return session;
+
       return {
         ...session,
         state: "failed",

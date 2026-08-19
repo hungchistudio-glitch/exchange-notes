@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import AppHeader from "@/components/foundation/layout/AppHeader";
 import MenuCamera from "@/components/scanner/MenuCamera";
@@ -49,6 +49,11 @@ export default function MenuTranslatorPage() {
 
   const [targetLanguage, setTargetLanguage] =
     useState<InterfaceLanguage>(interfaceLanguage);
+
+  // The photo already sent for reading. Scanning is the one action in this
+  // app that costs real money per call, and an effect that runs twice — in
+  // development it always does — would pay for the same menu twice.
+  const analysedImageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isCosmic) router.replace("/capture");
@@ -103,9 +108,11 @@ export default function MenuTranslatorPage() {
   // handler, so the one path into it also covers "continue anyway" after a
   // quality warning.
   useEffect(() => {
-    if (session.state === "preprocessing" && session.image) {
-      void analyze(session.image);
-    }
+    if (session.state !== "preprocessing" || !session.image) return;
+    if (analysedImageRef.current === session.image) return;
+
+    analysedImageRef.current = session.image;
+    void analyze(session.image);
   }, [session.state, session.image, analyze]);
 
   if (!isCosmic) return null;

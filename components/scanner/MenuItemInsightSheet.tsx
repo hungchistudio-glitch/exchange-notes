@@ -155,14 +155,20 @@ export default function MenuItemInsightSheet({
   const friendsRequestedRef = useRef(false);
 
   /*
-   * Clearing the last dish's phonetics is a render-time adjustment rather
-   * than an effect: it follows directly from which dish is open, and React
-   * documents this as the alternative to an effect that exists only to reset
-   * state when a prop changes.
+   * Everything that belongs to one dish is dropped when a different dish
+   * opens — a render-time adjustment rather than an effect, which is React's
+   * documented alternative to an effect that exists only to reset state when
+   * a prop changes.
+   *
+   * The save button is the one that mattered: left alone, saving one dish
+   * and opening the next showed "Saved" on a dish that had not been, with
+   * the button disabled so it could not be.
    */
   if (item && phoneticsFor !== item.id) {
     setPhoneticsFor(item.id);
     setPhonetics(null);
+    setSaveState("idle");
+    setActionError("");
   }
 
   useEffect(() => {
@@ -222,7 +228,10 @@ export default function MenuItemInsightSheet({
   }
 
   async function handleSave() {
-    if (!pair || saveState !== "idle") return;
+    // Captured before the first await: `item` is a prop, and TypeScript
+    // cannot keep it narrowed across the asynchronous boundary.
+    const dish = item;
+    if (!dish || !pair || saveState !== "idle") return;
 
     setSaveState("saving");
     setActionError("");
@@ -248,7 +257,7 @@ export default function MenuItemInsightSheet({
         translated_example: pair.chineseExample,
         // The read's own confidence travels with the word: a dish the model
         // was unsure of should not arrive in review looking certain.
-        confidence: item ? item.translationConfidence : null,
+        confidence: dish.translationConfidence,
         status: "new",
       });
 
