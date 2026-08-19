@@ -245,8 +245,8 @@ const english: TranslationDictionary = {
       },
       scanner: {
         name: "Scanner Bay",
-        familiar: "Camera",
-        description: "Point at anything and learn it",
+        familiar: "Scan · Translate",
+        description: "Read a menu, or learn the word for anything",
       },
       comms: {
         name: "Comms",
@@ -1335,6 +1335,94 @@ const english: TranslationDictionary = {
         label: "Easy",
         description: "Very easy",
       },
+    },
+  },
+
+  scanner: {
+    bayTitle: "Scanner Bay",
+    baySubtitle: "Scan · Translate · Understand",
+    bayIntro: "Point Yumi at the world and get it back in a language you read.",
+    back: "Back to the deck",
+
+    menuTool: {
+      title: "Menu Translator",
+      description: "Read a menu you cannot read, prices and all",
+      badge: "Flagship",
+    },
+    objectTool: {
+      title: "Object & Label Scan",
+      description: "Point at a thing and learn the word for it",
+    },
+
+    menu: {
+      title: "Menu Translator",
+      cameraHint: "Fill the frame with one page of the menu",
+      detecting: "Looking for a menu",
+      detected: "Menu detected",
+      capture: "Capture",
+      close: "Close",
+      torchOn: "Turn on the light",
+      torchOff: "Turn off the light",
+      gallery: "Choose a photo",
+      targetLanguage: "Translate into",
+      cameraPermissionDenied:
+        "Camera access is off for Exchange Notes. Turn it on in your browser settings, or choose a photo instead.",
+      cameraUnavailable:
+        "This device's camera could not be opened. You can still choose a photo.",
+      cameraRetry: "Try the camera again",
+
+      qualityTitle: "Some text may be hard to read",
+      qualityBody:
+        "The photo is dark, blurred, or at a steep angle. A straighter, closer shot reads far better.",
+      retake: "Retake",
+      continueAnyway: "Continue anyway",
+
+      phaseReading: "Reading",
+      phaseUnderstanding: "Understanding",
+      phaseTranslating: "Translating",
+      phaseFinishing: "Laying it out",
+      processingHint: "Yumi is working through the whole page.",
+      cancel: "Cancel",
+
+      modeTranslated: "Translated",
+      modeOriginal: "Original",
+      modeList: "List",
+      viewMode: "View",
+
+      itemCount: "{count} dishes",
+      sourceLanguage: "From {language}",
+      unknownLanguage: "an unknown language",
+      partialTitle: "Read with low confidence",
+      partialBody:
+        "Yumi was unsure of parts of this menu. Check anything that matters with the restaurant.",
+      lowConfidence: "Yumi isn't fully sure about this text.",
+      noPrice: "No price printed",
+      untitledSection: "Menu",
+
+      notMenuTitle: "That doesn't look like a menu",
+      notMenuBody:
+        "Point at a printed menu, a price list, or a food board and try again.",
+      emptyTitle: "No dishes could be read",
+      emptyBody:
+        "The text was too small, too dark, or at too steep an angle. Try one page, filling the frame.",
+      errorTitle: "The menu could not be read",
+      tryAgain: "Try again",
+      scanAnother: "Scan another menu",
+
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      zoomLevel: "Zoom {level}×",
+      overlayHint: "Tap a dish for what it is",
+
+      originalLabel: "On the menu",
+      priceLabel: "Price",
+      aboutLabel: "What it is",
+      cuisineLabel: "Cuisine",
+      listen: "Listen",
+      listening: "Playing…",
+      confidenceNote: "Yumi wasn't fully sure of this one.",
+      askRestaurant:
+        "Ingredients are Yumi's reading of the name, not the kitchen's. Ask the restaurant about anything you must avoid.",
     },
   },
 

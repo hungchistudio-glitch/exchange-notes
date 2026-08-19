@@ -1,0 +1,85 @@
+/*
+ * The processing core.
+ *
+ * Not a spinner: a spinner says "waiting", and this is a machine reading a
+ * page — three rings at different speeds around a core that pulses once per
+ * phase, with the phase named underneath. Naming the phase is the part that
+ * matters; a user who knows it is translating will wait, and one watching an
+ * anonymous circle will not.
+ */
+
+.core {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--color-black, #000) 14%, transparent);
+  border-top-color: var(--scanner-corner-active, #6fd6ff);
+  animation: menuCoreSpin 2.4s linear infinite;
+}
+
+.ringMiddle {
+  inset: 16px;
+  animation-duration: 3.6s;
+  animation-direction: reverse;
+  opacity: 0.75;
+}
+
+.ringInner {
+  inset: 32px;
+  animation-duration: 1.8s;
+  opacity: 0.5;
+}
+
+.pupil {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--scanner-corner-active, #6fd6ff);
+  box-shadow: 0 0 24px color-mix(in oklab, var(--scanner-corner-active, #6fd6ff) 55%, transparent);
+  animation: menuCorePulse 1.9s ease-in-out infinite;
+}
+
+@keyframes menuCoreSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes menuCorePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(0.82);
+    opacity: 0.65;
+  }
+}
+
+/*
+ * Reduced Motion: nothing turns and nothing breathes. The phase label is
+ * already the real progress indicator, so what is lost here is decoration —
+ * the rings stay as a static instrument, at a fixed opacity that still reads
+ * as "working" beside changing text.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .ringMiddle,
+  .ringInner,
+  .pupil {
+    animation: none;
+  }
+
+  .pupil {
+    opacity: 0.85;
+  }
+}

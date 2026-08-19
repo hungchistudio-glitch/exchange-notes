@@ -1248,6 +1248,85 @@ export type TranslationDictionary = {
     };
   };
 
+  /*
+   * Scanner Bay. The camera stops being "a camera" and becomes the things it
+   * can actually do — of which reading a menu you cannot read is the one
+   * worth building a room around.
+   */
+  scanner: {
+    bayTitle: string;
+    baySubtitle: string;
+    bayIntro: string;
+    back: string;
+
+    menuTool: { title: string; description: string; badge: string };
+    objectTool: { title: string; description: string };
+
+    menu: {
+      title: string;
+      cameraHint: string;
+      detecting: string;
+      detected: string;
+      capture: string;
+      close: string;
+      torchOn: string;
+      torchOff: string;
+      gallery: string;
+      targetLanguage: string;
+      cameraPermissionDenied: string;
+      cameraUnavailable: string;
+      cameraRetry: string;
+
+      qualityTitle: string;
+      qualityBody: string;
+      retake: string;
+      continueAnyway: string;
+
+      phaseReading: string;
+      phaseUnderstanding: string;
+      phaseTranslating: string;
+      phaseFinishing: string;
+      processingHint: string;
+      cancel: string;
+
+      modeTranslated: string;
+      modeOriginal: string;
+      modeList: string;
+      viewMode: string;
+
+      itemCount: string;
+      sourceLanguage: string;
+      unknownLanguage: string;
+      partialTitle: string;
+      partialBody: string;
+      lowConfidence: string;
+      noPrice: string;
+      untitledSection: string;
+
+      notMenuTitle: string;
+      notMenuBody: string;
+      emptyTitle: string;
+      emptyBody: string;
+      errorTitle: string;
+      tryAgain: string;
+      scanAnother: string;
+
+      zoomIn: string;
+      zoomOut: string;
+      zoomLevel: string;
+      overlayHint: string;
+
+      originalLabel: string;
+      priceLabel: string;
+      aboutLabel: string;
+      cuisineLabel: string;
+      listen: string;
+      listening: string;
+      confidenceNote: string;
+      askRestaurant: string;
+    };
+  };
+
   settings: {
     title: string;
 

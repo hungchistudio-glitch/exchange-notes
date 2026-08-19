@@ -46,7 +46,7 @@ type Room = {
 const ROOMS: Room[] = [
   { key: "lexicon", href: "/vocabulary", Icon: NavVocabularyIcon },
   { key: "mission", href: "/review", Icon: BookIcon },
-  { key: "scanner", href: "/capture", Icon: CameraIcon },
+  { key: "scanner", href: "/scanner", Icon: CameraIcon },
   { key: "comms", href: "/messages", Icon: NavMessagesIcon },
   { key: "earth", href: "/discover", Icon: NavDiscoverIcon },
   { key: "memory", href: "/profile", Icon: NavSettingsIcon },

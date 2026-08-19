@@ -241,8 +241,8 @@ const traditionalChinese: TranslationDictionary = {
       },
       scanner: {
         name: "掃描艙",
-        familiar: "相機",
-        description: "對準任何東西，直接學會它",
+        familiar: "掃描 · 翻譯",
+        description: "讀懂一份菜單，或學會任何東西的說法",
       },
       comms: {
         name: "通訊艙",
@@ -1309,6 +1309,88 @@ const traditionalChinese: TranslationDictionary = {
         label: "簡單",
         description: "非常熟悉",
       },
+    },
+  },
+
+  scanner: {
+    bayTitle: "掃描艙",
+    baySubtitle: "掃描 · 翻譯 · 理解",
+    bayIntro: "把 Yumi 對準這個世界，換成你看得懂的語言回來。",
+    back: "回到指揮艙",
+
+    menuTool: {
+      title: "菜單翻譯",
+      description: "看懂原本看不懂的菜單，連價格一起",
+      badge: "旗艦",
+    },
+    objectTool: {
+      title: "物件與標籤掃描",
+      description: "對準一個東西，學會它的說法",
+    },
+
+    menu: {
+      title: "菜單翻譯",
+      cameraHint: "讓菜單的其中一頁填滿畫面",
+      detecting: "尋找菜單中",
+      detected: "已偵測菜單",
+      capture: "拍攝",
+      close: "關閉",
+      torchOn: "開啟補光",
+      torchOff: "關閉補光",
+      gallery: "從相簿選擇",
+      targetLanguage: "翻譯成",
+      cameraPermissionDenied:
+        "Exchange Notes 沒有相機權限。請到瀏覽器設定開啟，或改從相簿選一張照片。",
+      cameraUnavailable: "無法開啟這台裝置的相機，你仍然可以從相簿選擇照片。",
+      cameraRetry: "再試一次相機",
+
+      qualityTitle: "部分文字可能較難辨識",
+      qualityBody: "照片偏暗、模糊或角度太斜。拍得正一點、近一點，辨識會好很多。",
+      retake: "重新拍攝",
+      continueAnyway: "仍然繼續",
+
+      phaseReading: "讀取中",
+      phaseUnderstanding: "理解中",
+      phaseTranslating: "翻譯中",
+      phaseFinishing: "排版中",
+      processingHint: "Yumi 正在讀完整頁菜單。",
+      cancel: "取消",
+
+      modeTranslated: "翻譯",
+      modeOriginal: "原文",
+      modeList: "列表",
+      viewMode: "檢視方式",
+
+      itemCount: "{count} 道菜",
+      sourceLanguage: "來自{language}",
+      unknownLanguage: "未知語言",
+      partialTitle: "辨識信心偏低",
+      partialBody: "Yumi 對這份菜單的部分內容沒有把握，重要的部分請再和餐廳確認。",
+      lowConfidence: "Yumi 對這段文字沒有完全把握。",
+      noPrice: "菜單上沒有標價",
+      untitledSection: "菜單",
+
+      notMenuTitle: "這看起來不是菜單",
+      notMenuBody: "請對準印刷菜單、價目表或餐點看板再試一次。",
+      emptyTitle: "沒有讀到任何菜色",
+      emptyBody: "文字太小、太暗，或角度太斜。試著只拍一頁，並讓它填滿畫面。",
+      errorTitle: "無法讀取這份菜單",
+      tryAgain: "再試一次",
+      scanAnother: "掃描另一份菜單",
+
+      zoomIn: "放大",
+      zoomOut: "縮小",
+      zoomLevel: "放大 {level} 倍",
+      overlayHint: "點一道菜看它是什麼",
+
+      originalLabel: "菜單原文",
+      priceLabel: "價格",
+      aboutLabel: "這是什麼",
+      cuisineLabel: "料理類型",
+      listen: "聆聽",
+      listening: "播放中…",
+      confidenceNote: "Yumi 對這一項沒有完全把握。",
+      askRestaurant: "食材是 Yumi 依菜名推測的，不是廚房的說法。必須避開的成分請直接向餐廳確認。",
     },
   },
 
