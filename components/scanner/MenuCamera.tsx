@@ -69,6 +69,9 @@ export default function MenuCamera({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const agreeingFramesRef = useRef(0);
   const detectedRef = useRef(detected);
+  const startingRef = useRef(false);
+  const closedRef = useRef(false);
+  const pickingRef = useRef(false);
 
   const [ready, setReady] = useState(false);
   /*
@@ -93,66 +96,113 @@ export default function MenuCamera({
     detectedRef.current = detected;
   }, [detected]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
 
-    async function start() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError(copy.cameraUnavailable);
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+    }
+
+    setReady(false);
+    setTorchOn(false);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    if (streamRef.current || startingRef.current) return;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(copy.cameraUnavailable);
+      return;
+    }
+
+    startingRef.current = true;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 2560 },
+          height: { ideal: 1440 },
+        },
+        audio: false,
+      });
+
+      if (closedRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
         return;
       }
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 2560 },
-            height: { ideal: 1440 },
-          },
-          audio: false,
-        });
+      streamRef.current = stream;
+      setCameraError("");
 
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
+      const [track] = stream.getVideoTracks() as unknown as TorchTrack[];
+      setTorchAvailable(Boolean(track?.getCapabilities?.().torch));
 
-        streamRef.current = stream;
-
-        const [track] = stream.getVideoTracks() as unknown as TorchTrack[];
-        setTorchAvailable(Boolean(track?.getCapabilities?.().torch));
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play().catch(() => {});
-        }
-
-        setReady(true);
-      } catch (error) {
-        if (cancelled) return;
-
-        const denied =
-          error instanceof DOMException &&
-          (error.name === "NotAllowedError" ||
-            error.name === "PermissionDeniedError");
-
-        setCameraError(
-          denied ? copy.cameraPermissionDenied : copy.cameraUnavailable,
-        );
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(() => {});
       }
-    }
 
-    void start();
+      setReady(true);
+    } catch (error) {
+      if (closedRef.current) return;
+
+      const denied =
+        error instanceof DOMException &&
+        (error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError");
+
+      setCameraError(
+        denied ? copy.cameraPermissionDenied : copy.cameraUnavailable,
+      );
+    } finally {
+      startingRef.current = false;
+    }
+  }, [copy.cameraPermissionDenied, copy.cameraUnavailable]);
+
+  useEffect(() => {
+    closedRef.current = false;
+
+    // Deferred a tick: starting the camera sets state, and doing that
+    // synchronously in an effect body trips this project's cascading-render
+    // rule. The permission prompt lands in the same frame either way.
+    queueMicrotask(() => {
+      void startCamera();
+    });
 
     return () => {
-      cancelled = true;
+      closedRef.current = true;
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     };
-    // Started once for the life of the screen. The copy strings are only read
-    // on failure, and re-running this would mean a second permission prompt.
+    // Started once for the life of the screen. startCamera guards against a
+    // second stream, but re-running this on every identity change would still
+    // mean a needless teardown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /*
+   * Cancelling the picker, precisely.
+   *
+   * The visibility handler below is the fallback that works everywhere; this
+   * is the exact signal where it exists (Safari 16.4+, Chrome 113+), so the
+   * camera is back before the sheet has finished sliding away.
+   */
+  useEffect(() => {
+    const input = fileInputRef.current;
+    if (!input) return;
+
+    function onCancel() {
+      pickingRef.current = false;
+      void startCamera();
+    }
+
+    input.addEventListener("cancel", onCancel);
+    return () => input.removeEventListener("cancel", onCancel);
+  }, [startCamera]);
 
   /*
    * The preview comes back when the screen does.
@@ -164,8 +214,21 @@ export default function MenuCamera({
    */
   useEffect(() => {
     function resume() {
+      if (document.hidden) return;
+
+      /*
+       * Coming back from the picker with no photo chosen: the stream was
+       * released to let the picker open, so take it back. Cancelling a file
+       * picker fires no event of its own on every browser, which is why this
+       * hangs off visibility rather than off the input.
+       */
+      if (!streamRef.current && !pickingRef.current && !cameraError) {
+        void startCamera();
+        return;
+      }
+
       const video = videoRef.current;
-      if (!video || document.hidden || !video.paused) return;
+      if (!video || !video.paused) return;
 
       void video.play().catch(() => {});
     }
@@ -177,7 +240,7 @@ export default function MenuCamera({
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("focus", resume);
     };
-  }, []);
+  }, [cameraError, startCamera]);
 
   /*
    * Detection, with hysteresis in frames rather than a timer: two agreeing
@@ -312,6 +375,20 @@ export default function MenuCamera({
       image.onerror = () => reject(new Error("undecodable"));
       image.src = source;
     });
+  }
+
+  /**
+   * Opens the photo picker, with the camera released first.
+   *
+   * iOS will not present a file picker while a getUserMedia stream is live —
+   * the tap does nothing at all, which is exactly what it looked like. Both
+   * calls stay inside the click handler so the user activation that permits a
+   * picker is still the one the tap created.
+   */
+  function openPicker() {
+    pickingRef.current = true;
+    stopCamera();
+    fileInputRef.current?.click();
   }
 
   async function importPhoto(file: File) {
@@ -456,7 +533,7 @@ export default function MenuCamera({
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={openPicker}
             aria-label={copy.gallery}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffffff]/10 text-[#ffffff] backdrop-blur-md transition-transform active:scale-95"
           >
@@ -485,6 +562,11 @@ export default function MenuCamera({
           <span className="h-12 w-12" aria-hidden="true" />
         </div>
 
+        {/*
+          Visually hidden rather than display:none, and rendered rather than
+          removed. Safari will not open a file picker for an input it does not
+          consider laid out, which is the whole of "the button does nothing".
+        */}
         <input
           ref={fileInputRef}
           type="file"
@@ -495,11 +577,18 @@ export default function MenuCamera({
            * back is re-encoded to JPEG on the canvas anyway.
            */
           accept="image/*"
-          className="hidden"
+          aria-label={copy.gallery}
+          className="absolute bottom-0 left-0 h-px w-px opacity-0"
           onChange={(event) => {
             const file = event.target.files?.[0];
             event.target.value = "";
-            if (file) void importPhoto(file);
+            pickingRef.current = false;
+
+            if (file) {
+              void importPhoto(file);
+            } else {
+              void startCamera();
+            }
           }}
         />
       </div>
