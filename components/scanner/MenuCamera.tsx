@@ -443,7 +443,14 @@ export default function MenuCamera({
        * for every panel in the app and wrong for a viewfinder, where black is
        * the absence of picture and white is the shutter.
        */
-      className="fixed inset-0 z-40 flex flex-col bg-[#000000]"
+      /*
+       * Above the dock, which is fixed across the whole bottom of the screen
+       * at z-40 and renders after the page. At an equal z-index it won and
+       * took every tap in the bottom strip with it — including the photo
+       * picker in the corner, which is why that button did nothing at all.
+       * Still below sheets and modals at z-100.
+       */
+      className="fixed inset-0 z-50 flex flex-col bg-[#000000]"
     >
       <video
         ref={videoRef}

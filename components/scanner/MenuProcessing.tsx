@@ -45,7 +45,7 @@ export default function MenuProcessing({
   ];
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-[#000000]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#000000]">
       {image ? (
         // The photo stays on screen, dimmed, so the wait is visibly about
         // the thing the user just pointed at.

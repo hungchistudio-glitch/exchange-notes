@@ -140,7 +140,7 @@ export default function MenuTranslatorPage() {
 
   if (session.state === "capturing" && session.image) {
     return (
-      <div className="fixed inset-0 z-40 flex flex-col bg-[#000000]">
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#000000]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={session.image}
