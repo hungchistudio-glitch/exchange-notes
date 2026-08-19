@@ -8,6 +8,13 @@ export type VocabularyItem = {
 
 export type DailyNewsCard = {
   id: string;
+  /*
+   * The pool row this card came from — the key the per-reader seen table
+   * uses. Optional because a card can reach the UI from somewhere other than
+   * the pool (a saved article, a shared word card), and those have no pool
+   * row to mark as read.
+   */
+  itemId?: string;
   category: string;
   englishTitle: string;
   chineseTitle: string;

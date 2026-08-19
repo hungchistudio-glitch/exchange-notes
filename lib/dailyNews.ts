@@ -34,6 +34,12 @@ export type VocabularyItem = {
 
 export type DailyNewsCard = {
   id: string;
+  /*
+   * The pool row this card came from, which is what the seen table keys on.
+   * Absent on cards read from anywhere but the pool, which is why it is
+   * optional rather than required.
+   */
+  itemId?: string;
   category: string;
   englishTitle: string;
   chineseTitle: string;
@@ -85,18 +91,95 @@ const ALLOWED_PARTS_OF_SPEECH = new Set([
   "phrase",
 ]);
 
-// One Guardian section per slot. Kept small and diverse rather than trying
-// to replicate the old 5-region (US/Taiwan/international/Europe/culture)
-// design, since a single-publisher source can't credibly claim that kind of
-// geographic breadth. Maps cleanly onto the category labels already used in
-// the UI.
-const GUARDIAN_SECTIONS: { section: string; category: string }[] = [
+/*
+ * The daily slate.
+ *
+ * Twelve slots rather than five, because the feed is now a pool the reader
+ * draws from over days instead of a batch replaced every morning — see the
+ * daily_news_pool migration. Twelve a day against a fourteen-day retention
+ * settles at roughly a hundred and seventy cards, which is more than any
+ * reader gets through, so "show me something I have not read" always has an
+ * answer.
+ *
+ * All of them are Guardian sections, which is the only free source measured
+ * to give full body text under terms that permit this use. Twelve sections
+ * cost twelve API calls a day against a five-hundred-a-day free allowance.
+ *
+ * A slot may also be a query rather than a section. Taiwan is the reason:
+ * the Guardian has no Taiwan section, and the tag carries roughly two
+ * articles a week — measured, not assumed. Asking for more Taiwan slots than
+ * that would not produce more Taiwan news, it would produce the same two
+ * articles again, and the pool's unique constraint on source_url would
+ * reject them anyway. So Taiwan takes one slot and the pool takes whatever
+ * genuinely new Taiwan coverage exists on the day; on days with none the
+ * slot simply yields nothing and the other eleven still land.
+ *
+ * Raising Taiwan's share needs a Taiwan source, not a bigger number here.
+ * Taipei Times publishes fifty headlines a day with no body text in its feed
+ * and disallows AI crawlers outright in robots.txt; NewsAPI's free tier is
+ * licensed for development only. Neither is usable, which is why this list
+ * looks the way it does.
+ */
+type NewsSlot = {
+  category: string;
+  /** A Guardian section, for the general-interest slots. */
+  section?: string;
+  /** A free-text query, for subjects the Guardian files under no section. */
+  query?: string;
+  /*
+   * Words the headline must contain for a query slot's result to count.
+   *
+   * A free-text search matches the body, so `q=Taiwan` returns anything that
+   * mentions Taiwan once in passing — the first run of this pulled an
+   * Australian daily briefing about GST reform into the Taiwan category
+   * because the digest happened to name Taiwan somewhere in the middle. A
+   * card filed under Taiwan that is about Australian tax policy is worse
+   * than no Taiwan card at all, so the headline has to be about the subject
+   * too, not merely the article.
+   */
+  headlineMustMention?: string[];
+};
+
+const NEWS_SLOTS: NewsSlot[] = [
   { section: "world", category: "World" },
   { section: "business", category: "Business" },
   { section: "technology", category: "Technology" },
   { section: "science", category: "Science" },
   { section: "culture", category: "Culture" },
+  { section: "environment", category: "Environment" },
+  { section: "society", category: "Society" },
+  { section: "global-development", category: "Development" },
+  { section: "education", category: "Education" },
+  { section: "film", category: "Film" },
+  { section: "books", category: "Books" },
+  {
+    query: "Taiwan",
+    category: "Taiwan",
+    headlineMustMention: ["taiwan", "taipei", "taiwanese"],
+  },
 ];
+
+/*
+ * How many candidates to pull per slot.
+ *
+ * More than one, because the freshest article in a section is often one the
+ * pool already holds — the Guardian's "newest in business" does not change
+ * every twenty-four hours. Eight gives the caller room to skip past what it
+ * has already ingested without a second round trip, and costs nothing extra:
+ * it is the same single request either way.
+ */
+const CANDIDATES_PER_SLOT = 8;
+
+/*
+ * How many articles go into one Gemini call.
+ *
+ * The cron job runs on Vercel's Hobby plan, where a function is killed at
+ * sixty seconds and cannot be raised. One call carrying all twelve articles
+ * is the version that risks that ceiling; two calls of six run in parallel
+ * and finish in roughly half the wall time for the same tokens. Well inside
+ * the free tier's request-per-minute allowance either way.
+ */
+const ARTICLES_PER_BATCH = 6;
 
 const MINIMUM_BODY_LENGTH = 300;
 const EXCERPT_BODY_LENGTH = 1200;
@@ -160,15 +243,31 @@ type GuardianApiResult = {
   fields?: GuardianApiFields;
 };
 
-async function fetchGuardianArticle(
-  section: string,
-  category: string,
+/**
+ * Every usable article a slot currently offers, freshest first.
+ *
+ * Returns a list rather than a single article so the caller can skip the
+ * ones already in the pool without asking the Guardian again. A slot that
+ * yields nothing usable returns an empty array rather than throwing: on any
+ * given day the Taiwan query legitimately has no new coverage, and one empty
+ * slot must not cost the other eleven their run.
+ */
+async function fetchSlotCandidates(
+  slot: NewsSlot,
   apiKey: string
-): Promise<GuardianArticle | null> {
+): Promise<GuardianArticle[]> {
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("section", section);
+
+  if (slot.section) {
+    url.searchParams.set("section", slot.section);
+  }
+
+  if (slot.query) {
+    url.searchParams.set("q", slot.query);
+  }
+
   url.searchParams.set("order-by", "newest");
-  url.searchParams.set("page-size", "5");
+  url.searchParams.set("page-size", String(CANDIDATES_PER_SLOT));
   url.searchParams.set("show-fields", "trailText,bodyText,thumbnail");
   url.searchParams.set("api-key", apiKey);
 
@@ -180,9 +279,9 @@ async function fetchGuardianArticle(
 
   if (!response.ok) {
     console.error(
-      `Guardian API request failed for section "${section}": ${response.status}`
+      `Guardian API request failed for slot "${slot.category}": ${response.status}`
     );
-    return null;
+    return [];
   }
 
   const data = (await response.json()) as {
@@ -190,10 +289,19 @@ async function fetchGuardianArticle(
   };
 
   const results = data.response?.results ?? [];
+  const articles: GuardianArticle[] = [];
 
   for (const result of results) {
     if (result.type !== "article") {
       continue;
+    }
+
+    if (slot.headlineMustMention) {
+      const headline = (result.webTitle ?? "").toLowerCase();
+
+      if (!slot.headlineMustMention.some((term) => headline.includes(term))) {
+        continue;
+      }
     }
 
     const bodyText = stripHtml(result.fields?.bodyText ?? "");
@@ -204,8 +312,8 @@ async function fetchGuardianArticle(
 
     const trailText = stripHtml(result.fields?.trailText ?? "");
 
-    return {
-      category,
+    articles.push({
+      category: slot.category,
       title: normalizeText(result.webTitle, 200),
       url: result.webUrl,
       publishedAt: result.webPublicationDate,
@@ -217,10 +325,10 @@ async function fetchGuardianArticle(
         result.fields.thumbnail.trim()
           ? result.fields.thumbnail.trim()
           : null,
-    };
+    });
   }
 
-  return null;
+  return articles;
 }
 
 function validateVocabularyItem(value: unknown): VocabularyItem | null {
@@ -417,49 +525,64 @@ above, matching the required JSON schema.
 `.trim();
 }
 
+/** One card, with the article it came from — what the pool stores. */
+export type DailyNewsPoolItem = {
+  card: DailyNewsCard;
+  category: string;
+  sourceUrl: string;
+  publishedAt: string;
+};
+
 /**
- * Fetches real articles from The Guardian's free Open Platform API, then
- * makes exactly one (non-grounded) Gemini call to produce bilingual
- * learning content for them. Throws on any failure — callers (the cron
- * route) are responsible for catching and reporting errors.
+ * Picks today's articles, one per slot, skipping anything already ingested.
+ *
+ * The dedupe happens here rather than after generation, and that ordering is
+ * the point: a repeat article that reached Gemini would spend tokens
+ * producing a card the pool then rejects on its unique constraint. Asking
+ * `isIngested` first means a slow news day costs one Guardian request and
+ * nothing else.
  */
-export async function generateDailyNews(): Promise<{
-  cards: DailyNewsCard[];
-  generatedAt: string;
-}> {
+export async function selectTodaysArticles(
+  isIngested: (url: string) => boolean
+): Promise<GuardianArticle[]> {
   const guardianApiKey = process.env.GUARDIAN_API_KEY;
 
   if (!guardianApiKey) {
     throw new Error("GUARDIAN_API_KEY is not configured on the server.");
   }
 
-  const articles = (
-    await Promise.all(
-      GUARDIAN_SECTIONS.map((entry) =>
-        fetchGuardianArticle(entry.section, entry.category, guardianApiKey)
-      )
-    )
-  ).filter((article): article is GuardianArticle => article !== null);
+  const candidateLists = await Promise.all(
+    NEWS_SLOTS.map((slot) => fetchSlotCandidates(slot, guardianApiKey))
+  );
 
-  if (articles.length === 0) {
-    throw new Error(
-      "The Guardian API did not return any usable articles today."
+  const chosen: GuardianArticle[] = [];
+  const takenThisRun = new Set<string>();
+
+  for (const candidates of candidateLists) {
+    // A query slot and a section slot can surface the same article — the
+    // Taiwan query returns whatever section that story was filed under — so
+    // this run's own picks are checked alongside the pool's.
+    const pick = candidates.find(
+      (article) => !isIngested(article.url) && !takenThisRun.has(article.url)
     );
+
+    if (!pick) continue;
+
+    takenThisRun.add(pick.url);
+    chosen.push(pick);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  return chosen;
+}
 
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured on the server.");
-  }
-
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
-
-  const client = new GoogleGenAI({ apiKey });
-
+async function buildLearningBatch(
+  articles: GuardianArticle[],
+  model: string,
+  client: GoogleGenAI
+): Promise<DailyNewsPoolItem[]> {
   // Deliberately no `tools` field here — this call never touches Google
   // Search grounding, so it only ever draws on the normal (non-grounded)
-  // Gemini free tier, which we've confirmed works reliably with this key.
+  // Gemini free tier.
   const interaction = await client.interactions.create({
     model,
     input: createLearningPrompt(articles),
@@ -475,9 +598,7 @@ export async function generateDailyNews(): Promise<{
   });
 
   const outputText =
-    typeof interaction.output_text === "string"
-      ? interaction.output_text
-      : "";
+    typeof interaction.output_text === "string" ? interaction.output_text : "";
 
   if (!outputText.trim()) {
     throw new Error("Gemini returned an empty response.");
@@ -489,40 +610,86 @@ export async function generateDailyNews(): Promise<{
 
   const rawLearningItems = Array.isArray(parsed.cards) ? parsed.cards : [];
 
-  const cards: DailyNewsCard[] = [];
+  const items: DailyNewsPoolItem[] = [];
 
   articles.forEach((article, index) => {
     const learning = validateLearningItem(rawLearningItems[index]);
 
-    if (!learning) {
-      return;
-    }
+    if (!learning) return;
 
-    cards.push({
-      id: createStableId(article.url),
+    items.push({
       category: article.category,
-      englishTitle: learning.englishTitle,
-      chineseTitle: learning.chineseTitle,
-      englishSummary: learning.englishSummary,
-      chineseSummary: learning.chineseSummary,
-      sourceName: "The Guardian",
       sourceUrl: article.url,
       publishedAt: article.publishedAt,
-      vocabulary: learning.vocabulary,
-      imageUrl: article.imageUrl,
-      englishCaption: learning.englishCaption,
-      chineseCaption: learning.chineseCaption,
+      card: {
+        id: article.url,
+        category: article.category,
+        englishTitle: learning.englishTitle,
+        chineseTitle: learning.chineseTitle,
+        englishSummary: learning.englishSummary,
+        chineseSummary: learning.chineseSummary,
+        englishCaption: learning.englishCaption,
+        chineseCaption: learning.chineseCaption,
+        vocabulary: learning.vocabulary,
+        imageUrl: article.imageUrl,
+        sourceName: "The Guardian",
+        sourceUrl: article.url,
+        publishedAt: article.publishedAt,
+      },
     });
   });
 
-  if (cards.length === 0) {
-    throw new Error(
-      "Gemini did not return any valid learning content for today's articles."
-    );
+  return items;
+}
+
+/**
+ * Turns chosen articles into pool items.
+ *
+ * Split into parallel batches because the cron job runs on Vercel's Hobby
+ * plan, where sixty seconds is a hard ceiling that cannot be raised: two
+ * calls of six finish in roughly half the wall time of one call of twelve,
+ * for the same number of tokens.
+ *
+ * A batch that fails does not take the others down. Losing six cards on a
+ * day the model hiccups is a thinner pool; losing all twelve because one
+ * request failed is a day with no news at all.
+ */
+export async function buildLearningCards(
+  articles: GuardianArticle[]
+): Promise<DailyNewsPoolItem[]> {
+  if (articles.length === 0) return [];
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured on the server.");
   }
 
-  return {
-    cards,
-    generatedAt: new Date().toISOString(),
-  };
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+  const client = new GoogleGenAI({ apiKey });
+
+  const batches: GuardianArticle[][] = [];
+  for (let i = 0; i < articles.length; i += ARTICLES_PER_BATCH) {
+    batches.push(articles.slice(i, i + ARTICLES_PER_BATCH));
+  }
+
+  const settled = await Promise.allSettled(
+    batches.map((batch) => buildLearningBatch(batch, model, client))
+  );
+
+  const items: DailyNewsPoolItem[] = [];
+
+  settled.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      items.push(...result.value);
+      return;
+    }
+
+    console.error(
+      `Daily news batch ${index + 1}/${batches.length} failed:`,
+      result.reason
+    );
+  });
+
+  return items;
 }

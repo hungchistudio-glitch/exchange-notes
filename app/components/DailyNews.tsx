@@ -39,7 +39,34 @@ import {
 type DailyNewsResponse = {
   cards: DailyNewsCard[];
   generatedAt: string;
+  /* True when the pool has nothing this reader has not already been shown. */
+  exhausted?: boolean;
 };
+
+/**
+ * Tells the server which cards this reader has now been shown.
+ *
+ * Fire-and-forget on purpose. It is bookkeeping that makes the *next*
+ * refresh better, and a reader should never wait on it or see it fail — the
+ * cost of losing one call is a card repeating later, which is smaller than
+ * any error it could raise instead.
+ */
+function recordSeen(cards: DailyNewsCard[]) {
+  const itemIds = cards
+    .map((card) => card.itemId)
+    .filter((id): id is string => typeof id === "string");
+
+  if (itemIds.length === 0) return;
+
+  void fetch("/api/daily-news/seen", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemIds }),
+    keepalive: true,
+  }).catch(() => {
+    // Deliberately silent — see above.
+  });
+}
 
 /*
  * Deliberately touches no state, so both the mount effect and the refresh
@@ -278,16 +305,22 @@ export default function DailyNews() {
           copy.loadNewsError
         );
 
-        if (
-          isRefresh &&
-          lastGeneratedAtRef.current === payload.generatedAt
-        ) {
+        /*
+         * The feed used to compare generatedAt against the last batch to
+         * decide whether anything had changed, because there was only ever
+         * one batch a day to compare. The pool answers the question directly
+         * now: `exhausted` means this reader has been shown everything it
+         * holds, which is the only case where a refresh genuinely cannot
+         * produce something new.
+         */
+        if (isRefresh && payload.exhausted) {
           setNotice(copy.sameBatchNotice);
         }
 
         lastGeneratedAtRef.current = payload.generatedAt;
 
         setCards(payload.cards);
+        recordSeen(payload.cards);
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -348,6 +381,7 @@ export default function DailyNews() {
         lastGeneratedAtRef.current = payload.generatedAt;
 
         setCards(payload.cards);
+        recordSeen(payload.cards);
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
