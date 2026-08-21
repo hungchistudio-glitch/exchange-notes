@@ -1344,7 +1344,8 @@ const traditionalChinese: TranslationDictionary = {
       processingHint: "Yumi 正在讀完整頁菜單。",
       cancel: "取消",
 
-      modeTranslated: "翻譯",
+      modeRebuilt: "重建",
+      modeTranslated: "覆蓋",
       modeOriginal: "原文",
       modeList: "列表",
       viewMode: "檢視方式",
@@ -1354,6 +1355,7 @@ const traditionalChinese: TranslationDictionary = {
       unknownLanguage: "未知語言",
       partialTitle: "辨識信心偏低",
       partialBody: "Yumi 對這份菜單的部分內容沒有把握，重要的部分請再和餐廳確認。",
+      rebuildUnavailable: "這張照片無法乾淨地重建，改用翻譯覆蓋在原圖上顯示。",
       lowConfidence: "Yumi 對這段文字沒有完全把握。",
       noPrice: "菜單上沒有標價",
       untitledSection: "菜單",

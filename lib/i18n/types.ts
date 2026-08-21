@@ -1284,6 +1284,7 @@ export type TranslationDictionary = {
       processingHint: string;
       cancel: string;
 
+      modeRebuilt: string;
       modeTranslated: string;
       modeOriginal: string;
       modeList: string;
@@ -1294,6 +1295,7 @@ export type TranslationDictionary = {
       unknownLanguage: string;
       partialTitle: string;
       partialBody: string;
+      rebuildUnavailable: string;
       lowConfidence: string;
       noPrice: string;
       untitledSection: string;

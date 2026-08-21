@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
 import MenuItemInsightSheet from "@/components/scanner/MenuItemInsightSheet";
 import MenuListView from "@/components/scanner/MenuListView";
 import MenuOverlayView from "@/components/scanner/MenuOverlayView";
+import MenuRebuiltView from "@/components/scanner/MenuRebuiltView";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { countMenuItems, type MenuDocument, type MenuItem } from "@/lib/scanner/menuTypes";
 
-type ViewMode = "translated" | "original" | "list";
+type ViewMode = "rebuilt" | "translated" | "original" | "list";
 
 type MenuResultViewerProps = {
   image: string;
@@ -46,8 +47,19 @@ export default function MenuResultViewer({
   const { t, language } = useTranslation();
   const copy = t.scanner.menu;
 
-  const [mode, setMode] = useState<ViewMode>("translated");
+  const [mode, setMode] = useState<ViewMode>("rebuilt");
   const [selected, setSelected] = useState<MenuItem | null>(null);
+  /*
+   * A rebuild that could not replace enough of the page falls back to the
+   * overlay rather than showing a photograph with a few patches on it. The
+   * user is told, once, and can still switch back to try it.
+   */
+  const [rebuildFailed, setRebuildFailed] = useState(false);
+
+  const handleRebuildUnavailable = useCallback(() => {
+    setRebuildFailed(true);
+    setMode((current) => (current === "rebuilt" ? "translated" : current));
+  }, []);
 
   const itemCount = countMenuItems(menu);
   const locale = language === "traditional-chinese" ? "zh-TW" : "en";
@@ -90,6 +102,11 @@ export default function MenuResultViewer({
         onChange={setMode}
         options={[
           {
+            value: "rebuilt",
+            content: copy.modeRebuilt,
+            label: copy.modeRebuilt,
+          },
+          {
             value: "translated",
             content: copy.modeTranslated,
             label: copy.modeTranslated,
@@ -103,8 +120,29 @@ export default function MenuResultViewer({
         ]}
       />
 
+      {mode === "rebuilt" ? (
+        <MenuRebuiltView
+          image={image}
+          document={menu}
+          onSelect={setSelected}
+          onUnavailable={handleRebuildUnavailable}
+        />
+      ) : null}
+
       {mode === "translated" ? (
-        <MenuOverlayView image={image} document={menu} onSelect={setSelected} />
+        <>
+          {rebuildFailed ? (
+            <p className="rounded-[18px] border border-black/[0.06] bg-black/[0.02] px-4 py-3 text-[13px] leading-5 text-ink-soft">
+              {copy.rebuildUnavailable}
+            </p>
+          ) : null}
+
+          <MenuOverlayView
+            image={image}
+            document={menu}
+            onSelect={setSelected}
+          />
+        </>
       ) : null}
 
       {mode === "original" ? (

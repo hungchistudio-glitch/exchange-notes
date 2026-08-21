@@ -1373,7 +1373,8 @@ const english: TranslationDictionary = {
       processingHint: "Yumi is working through the whole page.",
       cancel: "Cancel",
 
-      modeTranslated: "Translated",
+      modeRebuilt: "Rebuilt",
+      modeTranslated: "Overlay",
       modeOriginal: "Original",
       modeList: "List",
       viewMode: "View",
@@ -1384,6 +1385,8 @@ const english: TranslationDictionary = {
       partialTitle: "Read with low confidence",
       partialBody:
         "Yumi was unsure of parts of this menu. Check anything that matters with the restaurant.",
+      rebuildUnavailable:
+        "This photo could not be rebuilt cleanly, so the translation is shown over it instead.",
       lowConfidence: "Yumi isn't fully sure about this text.",
       noPrice: "No price printed",
       untitledSection: "Menu",
