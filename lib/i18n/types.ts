@@ -1,5 +1,11 @@
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
+/**
+ * Dictionaries are keyed by interface language, so this equation is correct
+ * — and confined to the interface axis. Do not extend it to the learning
+ * language: a user learning Spanish still reads the app in English or
+ * Chinese, and `LanguageCode` (lib/languages.ts) carries no dictionary.
+ */
 export type TranslationLanguage = InterfaceLanguage;
 
 export type TranslationDictionary = {
