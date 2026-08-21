@@ -1,4 +1,10 @@
 export type PronunciationResult = {
+  /**
+   * Annotations keyed by system, absent for a system the language does not
+   * use. Prefer this over the three fields below, which are the same answer
+   * flattened into English/Chinese field names.
+   */
+  phonetics: Partial<Record<"ipa" | "pinyin" | "zhuyin", string>>;
   englishPronunciation: string;
   pinyin: string;
   zhuyin: string;

@@ -40,6 +40,12 @@ export type LanguageCode = "en" | "zh-TW" | "es" | "fr" | "it";
  */
 export type PhoneticSystem = "ipa" | "pinyin" | "zhuyin";
 
+/**
+ * The BCP-47 tags handed to speechSynthesis, as a closed union so a caller
+ * cannot ask for a language the app has no voice strategy for.
+ */
+export type SpeechTag = "en-US" | "zh-TW" | "es-ES" | "fr-FR" | "it-IT";
+
 export type LanguageMetadata = {
   code: LanguageCode;
 
@@ -63,7 +69,19 @@ export type LanguageMetadata = {
    * (see the voice-matching notes in lib/speech.ts) while the document
    * language is better expressed as the script subtag "zh-Hant".
    */
-  speechTag: string;
+  speechTag: SpeechTag;
+
+  /**
+   * Tag fragments that still count as this language when no voice carries its
+   * exact tag, tried in order before falling back to every voice sharing the
+   * primary subtag.
+   *
+   * Empty for most languages, where a different region is an accent. Chinese
+   * is why this exists: zh-CN and zh-HK voices match the "zh" prefix but read
+   * Traditional text with Mandarin or Cantonese pronunciation, which a zh-TW
+   * learner hears as a mispronunciation rather than an accent.
+   */
+  voiceTagFallbacks: readonly string[];
 
   /** Value for `<html lang>` / `root.lang`. */
   htmlLang: string;
@@ -117,6 +135,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "English",
     badge: "En",
     speechTag: "en-US",
+    voiceTagFallbacks: [],
     htmlLang: "en",
     direction: "ltr",
     fontVariable: "--font-latin",
@@ -134,6 +153,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "繁體中文",
     badge: "中",
     speechTag: "zh-TW",
+    voiceTagFallbacks: ["tw", "hant"],
     htmlLang: "zh-Hant",
     direction: "ltr",
     fontVariable: "--font-cjk",
@@ -151,6 +171,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Español",
     badge: "Es",
     speechTag: "es-ES",
+    voiceTagFallbacks: [],
     htmlLang: "es",
     direction: "ltr",
     fontVariable: "--font-latin",
@@ -168,6 +189,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Français",
     badge: "Fr",
     speechTag: "fr-FR",
+    voiceTagFallbacks: [],
     htmlLang: "fr",
     direction: "ltr",
     fontVariable: "--font-latin",
@@ -185,6 +207,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Italiano",
     badge: "It",
     speechTag: "it-IT",
+    voiceTagFallbacks: [],
     htmlLang: "it",
     direction: "ltr",
     fontVariable: "--font-latin",
@@ -236,6 +259,59 @@ export function hasPhonetics(
   system: PhoneticSystem,
 ): boolean {
   return LANGUAGES[code].phonetics.includes(system);
+}
+
+/** Every speech tag the app knows, in table order. */
+export const SPEECH_TAGS = LANGUAGE_CODES.map(
+  (code) => LANGUAGES[code].speechTag,
+);
+
+const BY_SPEECH_TAG = new Map<string, LanguageMetadata>(
+  LANGUAGE_CODES.map((code) => [LANGUAGES[code].speechTag, LANGUAGES[code]]),
+);
+
+/**
+ * The language a speech tag belongs to.
+ *
+ * Speech tags carry a region ("en-US") while language codes mostly do not
+ * ("en"), so the two are not interchangeable even though zh-TW happens to be
+ * spelled the same in both.
+ */
+export function getLanguageBySpeechTag(tag: SpeechTag): LanguageMetadata {
+  const language = BY_SPEECH_TAG.get(tag);
+  if (!language) throw new Error(`Unknown speech tag: ${tag}`);
+  return language;
+}
+
+/**
+ * Whether Simplified-to-Traditional normalization applies to any language the
+ * app can currently teach.
+ *
+ * Asked of the whole set rather than one language for the places that work
+ * across a user's saved material: their words can be Chinese from an earlier
+ * pairing regardless of what they are studying today.
+ */
+export function anyLearningLanguageNeedsTraditional(): boolean {
+  return getLearningLanguages().some(
+    (language) => language.requiresTraditionalNormalization,
+  );
+}
+
+/**
+ * Whether text reported under a BCP-47 tag needs Simplified-to-Traditional
+ * normalization. Matches on the primary subtag, so "zh", "zh-CN" and
+ * "zh-Hant-TW" all resolve to Chinese.
+ */
+export function tagNeedsTraditionalNormalization(tag: string): boolean {
+  const primary = tag.toLowerCase().split("-")[0];
+
+  return LANGUAGE_CODES.some((code) => {
+    const language = LANGUAGES[code];
+    return (
+      language.requiresTraditionalNormalization &&
+      language.code.toLowerCase().split("-")[0] === primary
+    );
+  });
 }
 
 /* =========================================================

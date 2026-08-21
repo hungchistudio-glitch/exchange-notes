@@ -1,6 +1,20 @@
+import {
+  SPEECH_TAGS,
+  getLanguageBySpeechTag,
+  type SpeechTag,
+} from "@/lib/languages";
+
 export type VoiceGender = "female" | "male";
 
-export type SpeechLanguage = "zh-TW" | "en-US";
+/**
+ * The languages speech can be asked for.
+ *
+ * An alias of SpeechTag rather than its own list: every per-language decision
+ * below — which tags count as this language, how its voices are ordered — is
+ * read from lib/languages.ts, so a language becomes speakable by gaining a row
+ * there rather than by being spelled out again here.
+ */
+export type SpeechLanguage = SpeechTag;
 
 export type SpeechSettings = {
   rate: number;
@@ -47,7 +61,7 @@ function readSettingsFromStorage(): SpeechSettings {
     const voiceURIs: Partial<Record<SpeechLanguage, string>> = {};
 
     if (parsed.voiceURIs && typeof parsed.voiceURIs === "object") {
-      for (const language of ["zh-TW", "en-US"] as const) {
+      for (const language of SPEECH_TAGS) {
         const uri = (parsed.voiceURIs as Record<string, unknown>)[language];
         if (typeof uri === "string" && uri) voiceURIs[language] = uri;
       }
@@ -339,19 +353,25 @@ function narrowToGender(
 }
 
 /**
- * Prefer voices whose region tag is the one that was actually asked for.
+ * Narrows voices sharing a primary subtag to the ones that are actually this
+ * language, in order of how well they match.
  *
- * Without this, "en-US" means nothing beyond "starts with en": every English
- * voice on the device is an equal candidate, and which one wins is decided by
- * the order the platform happens to list them in. On a Mac with the full voice
- * set that hands en-US requests a British voice, which is both wrong and — see
- * the note in speak() — a way to get no sound at all on iOS.
+ * Two behaviours that used to be separate functions, now one table lookup.
  *
- * Chinese does not use this; it has its own richer tiering below, because for
- * zh the wrong region is a different pronunciation rather than a different
- * accent.
+ * For most languages this is only about region: without it, "en-US" means
+ * nothing beyond "starts with en", every English voice on the device is an
+ * equal candidate, and which one wins is decided by the order the platform
+ * happens to list them in. On a Mac with the full voice set that hands en-US
+ * requests a British voice, which is both wrong and — see the note in speak()
+ * — a way to get no sound at all on iOS.
+ *
+ * For Chinese it is about script, which is why the fallbacks exist: zh-CN and
+ * zh-HK voices match the same prefix but read Traditional text with
+ * Mandarin or Cantonese pronunciation. An exact zh-TW tag wins, then any tag
+ * mentioning "tw" or "hant", then whatever zh voice exists rather than
+ * playing nothing. Those fragments live in lib/languages.ts now, not here.
  */
-function narrowToRequestedRegion(
+function narrowToLanguageTag(
   candidates: SpeechSynthesisVoice[],
   lang: SpeechLanguage
 ): SpeechSynthesisVoice[] {
@@ -360,32 +380,30 @@ function narrowToRequestedRegion(
   const exact = candidates.filter(
     (voice) => voice.lang.toLowerCase().replace("_", "-") === wanted
   );
+  if (exact.length > 0) return exact;
 
-  return exact.length > 0 ? exact : candidates;
+  for (const fragment of getLanguageBySpeechTag(lang).voiceTagFallbacks) {
+    const matching = candidates.filter((voice) =>
+      voice.lang.toLowerCase().includes(fragment)
+    );
+    if (matching.length > 0) return matching;
+  }
+
+  return candidates;
 }
 
 /**
- * For Chinese, "starts with zh" alone isn't enough — zh-CN and zh-HK voices
- * match that same prefix but use Mandarin/Cantonese pronunciation that reads
- * as mispronunciation to a zh-TW learner. Prefer an exact zh-TW tag, then any
- * tag mentioning "tw" or "hant", then fall back to whatever zh voice exists
- * rather than playing nothing.
+ * The primary subtag — "en" from "en-US", "zh" from "zh-TW".
+ *
+ * Matching by prefix rather than the full tag is what actually makes Chinese
+ * playback reliable: many devices register their Traditional Chinese voice
+ * under "zh-TW", "zh-Hant-TW", or even "cmn-Hant-TW" rather than the literal
+ * string we ask for, and browsers often play nothing at all — no error — when
+ * utterance.lang doesn't exactly match an installed voice and no explicit
+ * voice is set.
  */
-function narrowToTraditionalChinese(
-  candidates: SpeechSynthesisVoice[]
-): SpeechSynthesisVoice[] {
-  const exactTw = candidates.filter(
-    (voice) => voice.lang.toLowerCase() === "zh-tw"
-  );
-  if (exactTw.length > 0) return exactTw;
-
-  const traditional = candidates.filter((voice) => {
-    const tag = voice.lang.toLowerCase();
-    return tag.includes("tw") || tag.includes("hant");
-  });
-  if (traditional.length > 0) return traditional;
-
-  return candidates;
+function primarySubtag(lang: SpeechLanguage): string {
+  return lang.toLowerCase().split("-")[0];
 }
 
 /**
@@ -403,7 +421,7 @@ function narrowToTraditionalChinese(
  * within whatever is left.
  */
 export function selectVoice(
-  lang: "zh-TW" | "en-US",
+  lang: SpeechLanguage,
   gender: VoiceGender,
   preferredVoiceURI?: string
 ): SpeechSynthesisVoice | null {
@@ -416,18 +434,15 @@ export function selectVoice(
     if (chosen) return chosen;
   }
 
-  const langPrefix = lang.slice(0, 2).toLowerCase();
+  const prefix = primarySubtag(lang);
 
   const candidates = voices.filter((voice) =>
-    voice.lang.toLowerCase().startsWith(langPrefix)
+    voice.lang.toLowerCase().startsWith(prefix)
   );
 
   if (candidates.length === 0) return null;
 
-  const dialectMatched =
-    lang === "zh-TW"
-      ? narrowToTraditionalChinese(candidates)
-      : narrowToRequestedRegion(candidates, lang);
+  const dialectMatched = narrowToLanguageTag(candidates, lang);
 
   return pickBestQualityVoice(narrowToGender(dialectMatched, gender));
 }
@@ -437,7 +452,7 @@ export function selectVoice(
  * Existing callers keep their signature and pick up the setting for free.
  */
 export function getVoiceForLanguage(
-  lang: "zh-TW" | "en-US"
+  lang: SpeechLanguage
 ): SpeechSynthesisVoice | null {
   const settings = getSpeechSettings();
   return selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang]);
@@ -456,10 +471,10 @@ export function hasVoiceForGender(
   lang: SpeechLanguage,
   gender: VoiceGender
 ): boolean {
-  const langPrefix = lang.slice(0, 2).toLowerCase();
+  const prefix = primarySubtag(lang);
 
   const candidates = getAvailableVoices().filter((voice) =>
-    voice.lang.toLowerCase().startsWith(langPrefix)
+    voice.lang.toLowerCase().startsWith(prefix)
   );
 
   return candidates.some((voice) => isNamedForGender(voice, gender));
@@ -473,7 +488,7 @@ export function hasVoiceForGender(
 export function listVoicesForLanguage(
   lang: SpeechLanguage
 ): SpeechSynthesisVoice[] {
-  const langPrefix = lang.slice(0, 2).toLowerCase();
+  const prefix = primarySubtag(lang);
 
   // iOS Safari reports some voices twice with the same voiceURI, which showed
   // up as duplicate rows that both highlighted when either was picked — and
@@ -481,22 +496,28 @@ export function listVoicesForLanguage(
   const seen = new Set<string>();
 
   const candidates = getAvailableVoices().filter((voice) => {
-    if (!voice.lang.toLowerCase().startsWith(langPrefix)) return false;
+    if (!voice.lang.toLowerCase().startsWith(prefix)) return false;
     if (seen.has(voice.voiceURI)) return false;
 
     seen.add(voice.voiceURI);
     return true;
   });
 
-  if (lang !== "zh-TW") return candidates;
+  // Only languages with script fallbacks are reordered — for the rest a
+  // different region is an accent, and the platform's own order is as good an
+  // answer as any. Today that means Chinese and nothing else, which is what
+  // this did before the condition was read from the table.
+  if (getLanguageBySpeechTag(lang).voiceTagFallbacks.length === 0) {
+    return candidates;
+  }
 
   // Traditional-first, but every zh voice is still listed: a user who only
   // has zh-CN voices should be able to see and choose one rather than find
   // the list empty.
-  const traditional = narrowToTraditionalChinese(candidates);
-  const rest = candidates.filter((voice) => !traditional.includes(voice));
+  const preferred = narrowToLanguageTag(candidates, lang);
+  const rest = candidates.filter((voice) => !preferred.includes(voice));
 
-  return [...traditional, ...rest];
+  return [...preferred, ...rest];
 }
 
 export type SpeechCallbacks = {
@@ -512,7 +533,7 @@ let speakSequence = 0;
 
 export function speak(
   text: string,
-  lang: "zh-TW" | "en-US",
+  lang: SpeechLanguage,
   callbacks?: SpeechCallbacks,
   rate?: number,
 ) {
@@ -542,7 +563,7 @@ export function speak(
   utterance.lang = lang;
   utterance.rate = rate ?? settings.rate;
 
-  const voice = selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang as SpeechLanguage]);
+  const voice = selectVoice(lang, settings.voiceGender, settings.voiceURIs[lang]);
   if (voice) {
     utterance.voice = voice;
 

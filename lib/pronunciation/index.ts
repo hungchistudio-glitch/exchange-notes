@@ -1,6 +1,7 @@
 import { pinyin } from "pinyin-pro";
 import { p2z } from "pinyin-to-zhuyin";
 import { toPinyin } from "@/lib/pinyin";
+import { hasPhonetics, type LanguageCode } from "@/lib/languages";
 
 export type PronunciationData = {
   english: string | null;
@@ -8,26 +9,66 @@ export type PronunciationData = {
   zhuyin: string | null;
 };
 
+/**
+ * Phonetic annotations for one piece of text, keyed by system.
+ *
+ * A system is absent when the language does not use it — not empty. Spanish
+ * has no pinyin key at all rather than an empty one, so a caller cannot
+ * render a blank pinyin row for a language that has never had pinyin.
+ */
+export type Phonetics = Partial<Record<"pinyin" | "zhuyin", string>>;
+
+/**
+ * The annotations this app can compute locally for a language.
+ *
+ * Gated on the language first and the text second. The text check is not
+ * redundant: a Chinese vocabulary row can hold a Latin loanword, and the
+ * converters have nothing to say about it. IPA is not here — it comes from a
+ * network dictionary, not from a local table.
+ */
+export function getPhonetics(text: string, code: LanguageCode): Phonetics {
+  const trimmed = text.trim();
+  if (!trimmed) return {};
+
+  if (!hasPhonetics(code, "pinyin") && !hasPhonetics(code, "zhuyin")) {
+    return {};
+  }
+
+  const { pinyin: pinyinText, zhuyin: zhuyinText } =
+    computeChinesePronunciation(trimmed);
+
+  const phonetics: Phonetics = {};
+  if (pinyinText && hasPhonetics(code, "pinyin")) phonetics.pinyin = pinyinText;
+  if (zhuyinText && hasPhonetics(code, "zhuyin")) phonetics.zhuyin = zhuyinText;
+
+  return phonetics;
+}
+
 type GetPronunciationDataInput = {
   english?: string | null;
   chinese?: string | null;
 };
 
-export function getPronunciationData({
-  english,
-  chinese,
-}: GetPronunciationDataInput): PronunciationData {
-  const trimmedChinese = chinese?.trim() ?? "";
-  const hasChinese = /[\u4e00-\u9fff]/.test(trimmedChinese);
+/**
+ * Pinyin and zhuyin for Chinese text. Chinese-specific by construction, and
+ * deliberately not generalized into a "phonetic system" abstraction — what
+ * Spanish, French and Italian need is stress placement and liaison, which is
+ * not an analogue of pinyin.
+ */
+function computeChinesePronunciation(text: string): {
+  pinyin: string | null;
+  zhuyin: string | null;
+} {
+  const hasChinese = /[\u4e00-\u9fff]/.test(text);
 
   let pinyinText: string | null = null;
   let zhuyinText: string | null = null;
 
   if (hasChinese) {
-    pinyinText = toPinyin(trimmedChinese);
+    pinyinText = toPinyin(text);
 
     try {
-      const numberedPinyin = pinyin(trimmedChinese, {
+      const numberedPinyin = pinyin(text, {
         toneType: "num",
         type: "string",
       });
@@ -46,6 +87,23 @@ export function getPronunciationData({
       zhuyinText = null;
     }
   }
+
+  return { pinyin: pinyinText, zhuyin: zhuyinText };
+}
+
+/**
+ * Legacy entry point: the Chinese half of a pair, named by language.
+ *
+ * Kept while the callers that pass `{ chinese }` are migrated to text plus a
+ * language code. The field name is the declaration — `chinese` can only ever
+ * have been zh-TW.
+ */
+export function getPronunciationData({
+  english,
+  chinese,
+}: GetPronunciationDataInput): PronunciationData {
+  const { pinyin: pinyinText, zhuyin: zhuyinText } =
+    computeChinesePronunciation(chinese?.trim() ?? "");
 
   return {
     english: english?.trim() || null,

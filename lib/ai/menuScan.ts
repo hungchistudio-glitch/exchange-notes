@@ -5,6 +5,7 @@ import {
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
 import { toTraditional } from "@/lib/chinese/toTraditional";
+import { tagNeedsTraditionalNormalization } from "@/lib/languages";
 import {
   normaliseRegion,
   type MenuConfidence,
@@ -301,7 +302,7 @@ function readMenuDocument(
    * So the printed side is converted only when the list is Chinese, and the
    * translated side only when we asked for Chinese back.
    */
-  const traditionalSource = /^zh/i.test(sourceLanguage)
+  const traditionalSource = tagNeedsTraditionalNormalization(sourceLanguage)
     ? toTraditional
     : (text: string) => text;
 
