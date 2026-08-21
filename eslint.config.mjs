@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Claude Code scaffolding: `.claude/worktrees/**` holds full checkouts of
+    // this repo, so linting it re-reports every finding once per worktree.
+    ".claude/**",
   ]),
 ]);
 

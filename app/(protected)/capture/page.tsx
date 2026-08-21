@@ -540,6 +540,10 @@ function CaptureContent() {
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
+    // Only the copy for the failure message is missing here. Depending on it
+    // would re-assign video.srcObject on a language change, which restarts the
+    // media element and flickers the live preview.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraActive]);
 
   useEffect(() => {
@@ -566,6 +570,11 @@ function CaptureContent() {
 
       return () => window.clearTimeout(timeout);
     }
+    // Handled once per screen, guarded by sourceHandledRef. Depending on
+    // startCamera — a fresh identity every render — would re-run this, and the
+    // cleanup above would clear the library picker's timeout before it fires
+    // while the guard blocks re-arming it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
   function speak(text: string, language: "en" | "zh") {

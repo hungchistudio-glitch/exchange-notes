@@ -188,6 +188,10 @@ export default function ReviewPage() {
     return () => {
       active = false;
     };
+    // Loaded once on mount. Only the copy for the failure message is missing,
+    // and depending on it would re-fetch the whole review set every time the
+    // language changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startSession = useCallback(
