@@ -5,6 +5,8 @@ import { ChevronRight } from "lucide-react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   hasLowConfidence,
+  itemNames,
+  sectionTitle,
   type MenuDocument,
   type MenuItem,
 } from "@/lib/scanner/menuTypes";
@@ -35,11 +37,18 @@ export default function MenuListView({
       {menu.sections.map((section) => (
         <section key={section.id}>
           <h2 className="mb-2 px-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-            {section.translatedTitle || section.title || copy.untitledSection}
+            {sectionTitle(section, menu.targetLanguage) ||
+              copy.untitledSection}
           </h2>
 
           <ul className="divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
-            {section.items.map((item) => (
+            {section.items.map((item) => {
+              const { primary, secondary, primaryDescription } = itemNames(
+                item,
+                menu.targetLanguage,
+              );
+
+              return (
               <li key={item.id}>
                 <button
                   type="button"
@@ -57,19 +66,24 @@ export default function MenuListView({
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      {item.translatedName || item.sourceName}
+                      {primary}
                     </span>
 
-                    {item.sourceName &&
-                    item.sourceName !== item.translatedName ? (
+                    {/*
+                      The other language, on every row. A word you can read
+                      but not say back in the language you are learning is
+                      half a word — and which half you get should not depend
+                      on what the list happened to be printed in.
+                    */}
+                    {secondary && secondary !== primary ? (
                       <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft">
-                        {item.sourceName}
+                        {secondary}
                       </span>
                     ) : null}
 
-                    {item.translatedDescription ? (
+                    {primaryDescription ? (
                       <span className="mt-1 block text-[13px] leading-[19px] text-ink-faint">
-                        {item.translatedDescription}
+                        {primaryDescription}
                       </span>
                     ) : null}
                   </span>
@@ -88,7 +102,8 @@ export default function MenuListView({
                   </span>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </section>
       ))}

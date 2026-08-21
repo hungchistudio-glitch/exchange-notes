@@ -18,24 +18,30 @@ export type MenuRegion = {
 
 export type MenuItem = {
   id: string;
+  // The line exactly as printed, in the language of the list itself —
+  // normalised to Traditional characters when that language is Chinese.
   sourceName: string;
-  translatedName: string;
+  /*
+   * Both languages, always, whatever the list was written in.
+   *
+   * This app is English against Traditional Chinese: a word card has two
+   * sides, a review session asks in one and answers in the other, and a
+   * friend receives both. A dish that arrived with only one of them was a
+   * dish you could read but not learn — and scanning a Chinese menu with the
+   * app set to Chinese produced exactly that.
+   */
+  englishName: string;
+  chineseName: string;
+  // IPA for englishName, without slashes.
+  ipa: string;
   sourceDescription: string;
-  translatedDescription: string;
+  englishDescription: string;
+  chineseDescription: string;
   // Kept as written on the menu ("¥1,200", "12,50") rather than parsed into a
   // number: a price the user can match against the physical menu is worth
   // more than one this app can do arithmetic with.
   price: string;
   currency: string;
-  /*
-   * IPA for the English form of the name, without slashes.
-   *
-   * From the model rather than the dictionary the rest of the app uses:
-   * dish names are phrases, and a dictionary lookup for "Onion Ring & Meat
-   * Sauce Burger" returns nothing. The sheet still prefers a real dictionary
-   * answer when there is one — this is what fills the gap.
-   */
-  ipa: string;
   region: MenuRegion;
   ocrConfidence: MenuConfidence;
   translationConfidence: MenuConfidence;
@@ -43,8 +49,9 @@ export type MenuItem = {
 
 export type MenuSection = {
   id: string;
-  title: string;
-  translatedTitle: string;
+  sourceTitle: string;
+  englishTitle: string;
+  chineseTitle: string;
   region: MenuRegion;
   items: MenuItem[];
 };
@@ -94,6 +101,36 @@ export function countMenuItems(document: MenuDocument | null): number {
 
 export function hasLowConfidence(item: MenuItem): boolean {
   return item.ocrConfidence === "low" || item.translationConfidence === "low";
+}
+
+/**
+ * Which of the two languages leads, and which follows.
+ *
+ * The one the user asked for is the headline; the other is always shown
+ * underneath rather than hidden, because seeing both is the point.
+ */
+export function itemNames(item: MenuItem, targetLanguage: string) {
+  const chineseFirst = targetLanguage === "traditional-chinese";
+
+  return {
+    primary: (chineseFirst ? item.chineseName : item.englishName) || item.sourceName,
+    secondary: chineseFirst ? item.englishName : item.chineseName,
+    primaryDescription: chineseFirst
+      ? item.chineseDescription
+      : item.englishDescription,
+  };
+}
+
+export function sectionTitle(
+  section: MenuSection,
+  targetLanguage: string,
+): string {
+  const chineseFirst = targetLanguage === "traditional-chinese";
+
+  return (
+    (chineseFirst ? section.chineseTitle : section.englishTitle) ||
+    section.sourceTitle
+  );
 }
 
 /**

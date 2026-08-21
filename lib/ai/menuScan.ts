@@ -74,8 +74,9 @@ const MENU_RESULT_SCHEMA = {
         type: "object",
         additionalProperties: false,
         properties: {
-          title: { type: "string", maxLength: 80 },
-          translatedTitle: { type: "string", maxLength: 100 },
+          sourceTitle: { type: "string", maxLength: 80 },
+          englishTitle: { type: "string", maxLength: 100 },
+          chineseTitle: { type: "string", maxLength: 100 },
           region: REGION_SCHEMA,
           items: {
             type: "array",
@@ -84,9 +85,11 @@ const MENU_RESULT_SCHEMA = {
               additionalProperties: false,
               properties: {
                 sourceName: { type: "string", maxLength: 120 },
-                translatedName: { type: "string", maxLength: 140 },
+                englishName: { type: "string", maxLength: 140 },
+                chineseName: { type: "string", maxLength: 140 },
                 sourceDescription: { type: "string", maxLength: 300 },
-                translatedDescription: { type: "string", maxLength: 340 },
+                englishDescription: { type: "string", maxLength: 340 },
+                chineseDescription: { type: "string", maxLength: 340 },
                 price: { type: "string", maxLength: 24 },
                 currency: { type: "string", maxLength: 8 },
                 ipa: { type: "string", maxLength: 120 },
@@ -96,9 +99,11 @@ const MENU_RESULT_SCHEMA = {
               },
               required: [
                 "sourceName",
-                "translatedName",
+                "englishName",
+                "chineseName",
                 "sourceDescription",
-                "translatedDescription",
+                "englishDescription",
+                "chineseDescription",
                 "price",
                 "currency",
                 "ipa",
@@ -109,7 +114,13 @@ const MENU_RESULT_SCHEMA = {
             },
           },
         },
-        required: ["title", "translatedTitle", "region", "items"],
+        required: [
+          "sourceTitle",
+          "englishTitle",
+          "chineseTitle",
+          "region",
+          "items",
+        ],
       },
     },
   },
@@ -151,12 +162,25 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-function buildPrompt(targetLanguageName: string) {
+/*
+ * One prompt, no target language in it.
+ *
+ * The reader asks for both languages every time, so which of the two leads on
+ * screen is the viewer's decision rather than the model's — and a scan is the
+ * same scan whichever way the app is set.
+ */
+function buildPrompt() {
   return `
-You are reading a photograph of a printed list for someone who does not speak
-the language it is written in — most often a restaurant menu, but equally a
-price list, a shop's shelf card, or a handwritten shopping list. Return the
-whole list as structured data, translated into ${targetLanguageName}.
+You are reading a photograph of a printed list for someone learning English
+and Traditional Chinese — most often a restaurant menu, but equally a price
+list, a shop's shelf card, or a handwritten shopping list. Return the whole
+list as structured data.
+
+Every item comes back in BOTH English and Traditional Chinese, whatever
+language the list itself is written in. Their app is the two languages
+against each other, so a Chinese list read by a Chinese reader still needs its
+English, and an English list still needs its Chinese. Never leave either side
+empty because it felt redundant.
 
 Layout rules:
 - Group items under the section headings the list itself uses. If it has no
@@ -172,9 +196,10 @@ Layout rules:
   then column by column.
 
 Chinese script rule. It outranks every other rule here, including fidelity to
-the photograph and the identical-name rule below:
-- Every Chinese character you return, in every field — sourceName and
-  sourceDescription included — must be Traditional as written in Taiwan.
+the photograph:
+- Every Chinese character you return, in every field — sourceName,
+  chineseName and both descriptions included — must be Traditional as written
+  in Taiwan.
 - When the list is printed in Simplified characters, sourceName is the
   Traditional transcription of what it says, not a copy of the glyphs. 电视机
   is returned as 電視機; 开水器 as 開水器; 灭蝇灯 as 滅蠅燈.
@@ -182,27 +207,26 @@ the photograph and the identical-name rule below:
   acceptable. The reader of this app reads Traditional Chinese and nothing
   else.
 
-Translation rules:
-- If the list is already written in ${targetLanguageName}, there is nothing to
-  translate: return translatedName identical to the sourceName you produced
-  above — which is to say, the Traditional form for Chinese — and use
-  translatedDescription for a short explanation. Never quietly translate into
-  a third language because the first two matched.
-- Translate the dish name into ${targetLanguageName} when a real equivalent
-  exists.
+Naming rules:
+- sourceName is the line exactly as printed, in the language of the list.
+- englishName is the item's name in English. chineseName is its name in
+  Traditional Chinese. One of the two is usually a translation of the other;
+  when the list is already in that language, it is simply the same name.
+- If the list is already written in English or in Chinese, that side repeats
+  the printed name rather than being left empty or invented anew.
 - When a dish is culturally specific and a literal translation would mislead
   (Okonomiyaki, Bibimbap, Cacio e Pepe), keep the original or transliterated
-  name as translatedName and put a short plain explanation in
-  translatedDescription instead. A recognisable name plus an explanation beats
-  a literal translation that means nothing.
-- translatedDescription must stay one short sentence. If the menu prints no
-  description, write a concise one naming the main ingredients you can infer
-  from the dish name, or return an empty string if you cannot.
-- Never state or imply that a dish is safe for an allergy or a diet.
-- ipa is the IPA transcription of the dish's English name, written without
-  surrounding slashes. Give the pronunciation a native English speaker would
-  use, including for borrowed names like Okonomiyaki. Return an empty string
-  if the name has no English form at all.
+  name and put a short plain explanation in the descriptions instead. A
+  recognisable name plus an explanation beats a literal translation that means
+  nothing.
+- englishDescription and chineseDescription are one short sentence each,
+  saying the same thing in the two languages. If the list prints a
+  description, translate it; if it does not, name the main ingredients you can
+  infer from the name, or return empty strings if you cannot.
+- ipa is the IPA transcription of englishName, written without surrounding
+  slashes. Give the pronunciation a native English speaker would use,
+  including for borrowed names like Okonomiyaki.
+- Never state or imply that an item is safe for an allergy or a diet.
 
 Confidence rules:
 - Use low ocrConfidence for text that is blurred, cut off, glared over,
@@ -281,10 +305,8 @@ function readMenuDocument(
     ? toTraditional
     : (text: string) => text;
 
-  const traditionalTarget =
-    targetLanguage === "traditional-chinese"
-      ? toTraditional
-      : (text: string) => text;
+  // The Chinese side is always Chinese now, so it is always converted.
+  const traditionalChinese = toTraditional;
 
   const rawSections = (
     Array.isArray(candidate.sections) ? candidate.sections : []
@@ -304,14 +326,14 @@ function readMenuDocument(
           return {
             id: `s${sectionIndex}-i${itemIndex}`,
             sourceName: traditionalSource(readString(item.sourceName, 120)),
-            translatedName: traditionalTarget(
-              readString(item.translatedName, 140),
-            ),
+            englishName: readString(item.englishName, 140),
+            chineseName: traditionalChinese(readString(item.chineseName, 140)),
             sourceDescription: traditionalSource(
               readString(item.sourceDescription, 300),
             ),
-            translatedDescription: traditionalTarget(
-              readString(item.translatedDescription, 340),
+            englishDescription: readString(item.englishDescription, 340),
+            chineseDescription: traditionalChinese(
+              readString(item.chineseDescription, 340),
             ),
             price: readString(item.price, 24),
             currency: readString(item.currency, 8),
@@ -323,14 +345,17 @@ function readMenuDocument(
         })
         // A row with neither an original nor a translated name is a row the
         // model invented out of a smudge.
-        .filter((item) => item.sourceName || item.translatedName);
+        // A row with no name in any of the three is a row the model
+        // invented out of a smudge.
+        .filter(
+          (item) => item.sourceName || item.englishName || item.chineseName,
+        );
 
       return {
         id: `s${sectionIndex}`,
-        title: traditionalSource(readString(section.title, 80)),
-        translatedTitle: traditionalTarget(
-          readString(section.translatedTitle, 100),
-        ),
+        sourceTitle: traditionalSource(readString(section.sourceTitle, 80)),
+        englishTitle: readString(section.englishTitle, 100),
+        chineseTitle: traditionalChinese(readString(section.chineseTitle, 100)),
         region: readRegion(section.region),
         items,
       };
@@ -359,13 +384,12 @@ async function scanWithModel(
   imageBase64: string,
   mediaType: string,
   targetLanguage: string,
-  targetLanguageName: string,
 ) {
   const interaction = await client.interactions.create(
     {
       model,
       input: [
-        { type: "text", text: buildPrompt(targetLanguageName) },
+        { type: "text", text: buildPrompt() },
         {
           type: "image",
           data: imageBase64,
@@ -449,7 +473,6 @@ export async function scanMenu(
   imageBase64: string,
   mediaType: string,
   targetLanguage: string,
-  targetLanguageName: string,
 ): Promise<{ document: MenuDocument | null; isMenu: boolean }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new MenuScanUnavailableError();
@@ -475,7 +498,6 @@ export async function scanMenu(
         imageBase64,
         mediaType,
         targetLanguage,
-        targetLanguageName,
       );
     } catch (error) {
       if (isRateLimitError(error)) {

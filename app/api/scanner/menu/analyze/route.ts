@@ -32,11 +32,6 @@ const MAX_REQUESTS_PER_DAY = readBoundedInteger(
   100,
 );
 
-const TARGET_LANGUAGE_NAMES: Record<string, string> = {
-  english: "English",
-  "traditional-chinese": "Traditional Chinese (繁體中文)",
-};
-
 type RequestWindow = {
   count: number;
   resetsAt: number;
@@ -208,7 +203,6 @@ export async function POST(request: Request) {
       imageBase64,
       mediaType,
       targetLanguage,
-      TARGET_LANGUAGE_NAMES[targetLanguage],
     );
 
     if (!document) {

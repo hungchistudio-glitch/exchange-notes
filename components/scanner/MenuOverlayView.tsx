@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   hasLowConfidence,
+  itemNames,
+  sectionTitle,
   type MenuDocument,
   type MenuItem,
 } from "@/lib/scanner/menuTypes";
@@ -103,7 +105,7 @@ export default function MenuOverlayView({
           />
 
           {menu.sections.map((section) => {
-            const heading = section.translatedTitle || section.title;
+            const heading = sectionTitle(section, menu.targetLanguage);
 
             return (
               <div key={section.id}>
@@ -130,6 +132,10 @@ export default function MenuOverlayView({
 
                 {section.items.map((item) => {
                   const uncertain = hasLowConfidence(item);
+                  // The overlay is read against the paper, so it carries the
+                  // one name the reader asked for; both are on the row in the
+                  // list, and both are in the sheet a tap away.
+                  const { primary } = itemNames(item, menu.targetLanguage);
 
                   /*
                    * Centred on the row it belongs to, and one line tall.
@@ -146,8 +152,8 @@ export default function MenuOverlayView({
                       key={item.id}
                       type="button"
                       onClick={() => onSelect(item)}
-                      title={item.translatedName || item.sourceName}
-                      aria-label={`${item.translatedName || item.sourceName}${
+                      title={primary}
+                      aria-label={`${primary}${
                         item.price ? `, ${item.price}` : ""
                       }`}
                       className="absolute flex items-center gap-[0.4em] rounded-[0.3em] bg-white/95 px-[0.4em] py-[0.14em] text-left shadow-[0_1px_5px_rgba(0,0,0,0.2)] transition-transform duration-100 active:scale-[0.98]"
@@ -177,7 +183,7 @@ export default function MenuOverlayView({
                           .filter(Boolean)
                           .join(" ")}
                       >
-                        {item.translatedName || item.sourceName}
+                        {primary}
                       </span>
 
                       {item.price ? (

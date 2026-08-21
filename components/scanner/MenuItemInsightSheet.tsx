@@ -10,97 +10,16 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { getPronunciation } from "@/lib/pronunciation/getPronunciation";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
-import { hasLowConfidence, type MenuItem } from "@/lib/scanner/menuTypes";
+import { hasLowConfidence, itemNames, type MenuItem } from "@/lib/scanner/menuTypes";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuItemInsightSheetProps = {
   item: MenuItem | null;
   cuisine: string;
-  sourceLanguage: string;
   targetLanguage: string;
   onClose: () => void;
 };
-
-/**
- * The device can only speak two languages, and it is worth being exact about
- * which: everything this app pronounces is either Traditional Chinese or
- * English. A Japanese dish name gets no speaker rather than a bad one.
- */
-function toSpeechLanguage(code: string): SpeechLanguage | null {
-  if (/^zh/i.test(code)) return "zh-TW";
-  if (/^en/i.test(code)) return "en-US";
-  return null;
-}
-
-/**
- * The English/Chinese pair behind a dish, or null.
- *
- * Vocabulary in this app is one English word against one Traditional Chinese
- * one — that is what a word card is, what a review session asks, and what a
- * friend receives. A menu that is Japanese on one side and English on the
- * other has no such pair, and inventing one by dropping Japanese into the
- * Chinese column would quietly corrupt the learner's own vocabulary.
- */
-function vocabularyPair(
-  item: MenuItem,
-  sourceLanguage: string,
-  targetLanguage: string,
-) {
-  const source = toSpeechLanguage(sourceLanguage);
-  const targetIsChinese = targetLanguage === "traditional-chinese";
-
-  if (source === "zh-TW" && !targetIsChinese) {
-    return {
-      word: item.translatedName,
-      translation: item.sourceName,
-      englishExample: item.translatedDescription || null,
-      chineseExample: item.sourceDescription || null,
-    };
-  }
-
-  if (source === "en-US" && targetIsChinese) {
-    return {
-      word: item.sourceName,
-      translation: item.translatedName,
-      englishExample: item.sourceDescription || null,
-      chineseExample: item.translatedDescription || null,
-    };
-  }
-
-  return null;
-}
-
-/**
- * Which side of the dish is English and which is Chinese, if either is.
- *
- * Looser than vocabularyPair on purpose: saving a word needs both halves,
- * but a Japanese menu translated into English still has an English name
- * worth pronouncing.
- */
-function phoneticSides(
-  item: MenuItem,
-  sourceLanguage: string,
-  targetLanguage: string,
-) {
-  const source = toSpeechLanguage(sourceLanguage);
-  const targetIsChinese = targetLanguage === "traditional-chinese";
-
-  return {
-    english:
-      source === "en-US"
-        ? item.sourceName
-        : targetIsChinese
-          ? ""
-          : item.translatedName,
-    chinese:
-      source === "zh-TW"
-        ? item.sourceName
-        : targetIsChinese
-          ? item.translatedName
-          : "",
-  };
-}
 
 // The dictionary and the model both return bare transcriptions, but a stray
 // pair of slashes from either would end up doubled by the markup below.
@@ -109,22 +28,21 @@ function stripSlashes(value: string) {
 }
 
 /**
- * What one dish is, and what you can do with it.
+ * What one item is, in both languages, and what you can do with it.
  *
- * Everything shown here was already read from the menu — opening a dish costs
- * no second request. What the sheet adds is room for the full name the
- * overlay had to clip, both pronunciations, and the two things a language
- * app should obviously offer for a word you just met: keep it, or send it to
- * the person you are learning with.
+ * Every scan now carries an English name and a Traditional Chinese one
+ * whatever the list was written in, which is what lets this sheet be the same
+ * sheet every time: two pronunciations, both scripts, and a word card that can
+ * always be saved or sent — none of it conditional on which way round the
+ * languages happened to fall.
  */
 export default function MenuItemInsightSheet({
   item,
   cuisine,
-  sourceLanguage,
   targetLanguage,
   onClose,
 }: MenuItemInsightSheetProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const copy = t.scanner.menu;
   const router = useRouter();
 
@@ -133,12 +51,12 @@ export default function MenuItemInsightSheet({
   const [actionError, setActionError] = useState("");
 
   /*
-   * Pinyin, zhuyin and IPA for the dish that is open.
+   * Pinyin, zhuyin and IPA for the item that is open.
    *
-   * Fetched per dish rather than for all twenty-three at scan time: the
-   * endpoint computes the Chinese phonetics on the server for free and looks
-   * the English up in a dictionary, and only the dish someone actually opens
-   * is worth either.
+   * Fetched per item rather than for all of them at scan time: the endpoint
+   * computes the Chinese phonetics on the server for free and looks the
+   * English up in a dictionary, and only the item someone opens is worth
+   * either.
    */
   const [phonetics, setPhonetics] = useState<{
     pinyin: string;
@@ -155,14 +73,12 @@ export default function MenuItemInsightSheet({
   const friendsRequestedRef = useRef(false);
 
   /*
-   * Everything that belongs to one dish is dropped when a different dish
-   * opens — a render-time adjustment rather than an effect, which is React's
+   * Everything belonging to one item is dropped when a different one opens —
+   * a render-time adjustment rather than an effect, which is React's
    * documented alternative to an effect that exists only to reset state when
-   * a prop changes.
-   *
-   * The save button is the one that mattered: left alone, saving one dish
-   * and opening the next showed "Saved" on a dish that had not been, with
-   * the button disabled so it could not be.
+   * a prop changes. The save button is the one that mattered: left alone,
+   * saving one item and opening the next showed "Saved" on an item that had
+   * not been, with the button disabled so it could not be.
    */
   if (item && phoneticsFor !== item.id) {
     setPhoneticsFor(item.id);
@@ -173,27 +89,20 @@ export default function MenuItemInsightSheet({
 
   useEffect(() => {
     if (!item) return;
-
-    const { english, chinese } = phoneticSides(
-      item,
-      sourceLanguage,
-      targetLanguage,
-    );
-
-    if (!english && !chinese) return;
+    if (!item.englishName && !item.chineseName) return;
 
     let cancelled = false;
 
     void (async () => {
-      const result = await getPronunciation(english, chinese);
+      const result = await getPronunciation(item.englishName, item.chineseName);
       if (cancelled) return;
 
       setPhonetics({
         pinyin: result?.pinyin ?? "",
         zhuyin: result?.zhuyin ?? "",
-        // The dictionary is the better answer when it has one; a dish name
-        // is usually a phrase it has never heard of, and that is what the
-        // model's transcription is for.
+        // The dictionary is the better answer when it has one; an item name is
+        // usually a phrase it has never heard of, and that is what the model's
+        // transcription is for.
         ipa: stripSlashes(result?.englishPronunciation || item.ipa || ""),
       });
     })();
@@ -201,20 +110,14 @@ export default function MenuItemInsightSheet({
     return () => {
       cancelled = true;
     };
-  }, [item, sourceLanguage, targetLanguage]);
+  }, [item]);
 
   if (!item) return null;
 
-  const sourceSpeech = toSpeechLanguage(sourceLanguage);
-  const targetSpeech: SpeechLanguage =
-    language === "traditional-chinese" ? "zh-TW" : "en-US";
-
-  const pair = vocabularyPair(item, sourceLanguage, targetLanguage);
-  const canSave = Boolean(pair && pair.word && pair.translation);
-
-  function languageLabel(speech: SpeechLanguage) {
-    return speech === "zh-TW" ? "中文" : "English";
-  }
+  const { primary, secondary, primaryDescription } = itemNames(
+    item,
+    targetLanguage,
+  );
 
   function handleListen(text: string, speech: SpeechLanguage) {
     if (!text || speaking) return;
@@ -231,7 +134,8 @@ export default function MenuItemInsightSheet({
     // Captured before the first await: `item` is a prop, and TypeScript
     // cannot keep it narrowed across the asynchronous boundary.
     const dish = item;
-    if (!dish || !pair || saveState !== "idle") return;
+    if (!dish || saveState !== "idle") return;
+    if (!dish.englishName || !dish.chineseName) return;
 
     setSaveState("saving");
     setActionError("");
@@ -250,12 +154,12 @@ export default function MenuItemInsightSheet({
 
       const { error } = await supabase.from("vocabulary_items").insert({
         user_id: user.id,
-        word: pair.word.trim(),
-        translation: pair.translation.trim(),
+        word: dish.englishName.trim(),
+        translation: dish.chineseName.trim(),
         language: "english",
-        example_sentence: pair.englishExample,
-        translated_example: pair.chineseExample,
-        // The read's own confidence travels with the word: a dish the model
+        example_sentence: dish.englishDescription || null,
+        translated_example: dish.chineseDescription || null,
+        // The read's own confidence travels with the word: an item the model
         // was unsure of should not arrive in review looking certain.
         confidence: dish.translationConfidence,
         status: "new",
@@ -302,39 +206,50 @@ export default function MenuItemInsightSheet({
   }
 
   function handlePickFriend(friendId: string) {
-    if (!pair || sendingFriendId) return;
+    if (!item || sendingFriendId) return;
 
     setSendingFriendId(friendId);
 
     /*
      * The same queue every other "share a word" entry point in this app
-     * writes to, so a dish arrives in Messages as the same word card a
+     * writes to, so an item arrives in Messages as the same word card a
      * captured object or a saved vocabulary item would.
      */
     setPendingSharedVocabulary({
-      word: pair.word,
-      translation: pair.translation,
-      englishExample: pair.englishExample,
-      chineseExample: pair.chineseExample,
+      word: item.englishName,
+      translation: item.chineseName,
+      englishExample: item.englishDescription || null,
+      chineseExample: item.chineseDescription || null,
     });
 
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
+
+  const canKeep = Boolean(item.englishName && item.chineseName);
 
   return (
     <>
       <BottomSheet
         open={Boolean(item)}
         onClose={onClose}
-        title={item.translatedName || item.sourceName}
-        description={item.translatedDescription || undefined}
+        title={primary}
+        description={primaryDescription || undefined}
       >
         <div className="space-y-3">
           {/*
-            Pinyin, zhuyin and IPA, each in the font stack that has the
-            glyphs for it — pushing zhuyin or IPA through the Latin stack is
-            what produced the missing-glyph boxes this app has fixed once
-            already.
+            The other language, always present and never hidden — the whole
+            point of scanning inside a language app rather than a translator.
+          */}
+          {secondary ? (
+            <p className="px-1 text-[16px] font-semibold tracking-[-0.02em] text-ink-strong">
+              {secondary}
+            </p>
+          ) : null}
+
+          {/*
+            Pinyin, zhuyin and IPA, each in the font stack that has the glyphs
+            for it — pushing zhuyin or IPA through the Latin stack is what
+            produced the missing-glyph boxes this app has fixed once already.
           */}
           {phonetics &&
           (phonetics.pinyin || phonetics.zhuyin || phonetics.ipa) ? (
@@ -357,53 +272,45 @@ export default function MenuItemInsightSheet({
             One speaker per language, named. A single "Listen" button on a
             bilingual card leaves the user guessing which of the two they are
             about to hear — and both are worth hearing: one to recognise on
-            the menu, one to say to the waiter.
+            the list, one to say out loud.
           */}
           <div className="flex gap-2">
-            {sourceSpeech && item.sourceName ? (
+            {item.chineseName ? (
               <button
                 type="button"
-                onClick={() => handleListen(item.sourceName, sourceSpeech)}
+                onClick={() => handleListen(item.chineseName, "zh-TW")}
                 disabled={speaking !== null}
-                aria-label={`${copy.listen} ${languageLabel(sourceSpeech)}`}
+                aria-label={`${copy.listen} 中文`}
                 className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
               >
-                {speaking === sourceSpeech ? (
+                {speaking === "zh-TW" ? (
                   <LoaderCircle size={16} className="animate-spin" />
                 ) : (
                   <Volume2 size={16} strokeWidth={1.9} />
                 )}
-                {languageLabel(sourceSpeech)}
+                中文
               </button>
             ) : null}
 
-            <button
-              type="button"
-              onClick={() =>
-                handleListen(
-                  item.translatedName || item.sourceName,
-                  targetSpeech,
-                )
-              }
-              disabled={speaking !== null}
-              aria-label={`${copy.listen} ${languageLabel(targetSpeech)}`}
-              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-            >
-              {speaking === targetSpeech ? (
-                <LoaderCircle size={16} className="animate-spin" />
-              ) : (
-                <Volume2 size={16} strokeWidth={1.9} />
-              )}
-              {languageLabel(targetSpeech)}
-            </button>
+            {item.englishName ? (
+              <button
+                type="button"
+                onClick={() => handleListen(item.englishName, "en-US")}
+                disabled={speaking !== null}
+                aria-label={`${copy.listen} English`}
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
+              >
+                {speaking === "en-US" ? (
+                  <LoaderCircle size={16} className="animate-spin" />
+                ) : (
+                  <Volume2 size={16} strokeWidth={1.9} />
+                )}
+                English
+              </button>
+            ) : null}
           </div>
 
-          {/*
-            Save and share are offered only when the dish actually forms an
-            English/Chinese pair, which is the only shape this app's word
-            cards and review sessions understand.
-          */}
-          {canSave ? (
+          {canKeep ? (
             <div className="flex gap-2">
               <button
                 type="button"
@@ -451,7 +358,9 @@ export default function MenuItemInsightSheet({
           ) : null}
 
           <dl className="divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
-            {item.sourceName ? (
+            {item.sourceName &&
+            item.sourceName !== primary &&
+            item.sourceName !== secondary ? (
               <div className="flex items-start justify-between gap-4 px-4 py-3">
                 <dt className="shrink-0 text-[13px] text-ink-soft">
                   {copy.originalLabel}
@@ -498,7 +407,7 @@ export default function MenuItemInsightSheet({
           ) : null}
 
           {/*
-            Said on every dish, not only the ones that mention an allergen:
+            Said on every item, not only the ones that mention an allergen:
             the ingredients here are read off a name, and the only place that
             knows what is in the pan is the kitchen.
           */}
