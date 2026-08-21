@@ -1,3 +1,5 @@
+import type { LanguageCode } from "@/lib/languages";
+
 /**
  * The learning-language axis as the database currently stores it.
  *
@@ -41,7 +43,19 @@ export type VocabularyItem = {
   user_id: string;
   word: string;
   translation: string;
+  /**
+   * Legacy: the language of `word`, in the prose encoding. Superseded by the
+   * pair below, which names both halves instead of leaving the second one
+   * implied by there being only two languages. Every writer still sets it.
+   */
   language: AppLanguage;
+  /**
+   * The pair, stated outright. Present on every row and returned by the
+   * `select("*")` reads, so they are not optional — the database backfilled
+   * them and holds them NOT NULL.
+   */
+  word_language: LanguageCode;
+  translation_language: LanguageCode;
   category: VocabularyCategory;
   favorite: boolean;
   part_of_speech: string | null;
