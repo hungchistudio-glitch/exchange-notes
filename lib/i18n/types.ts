@@ -1448,6 +1448,7 @@ export type TranslationDictionary = {
       sheetDescription: string;
       englishDescription: string;
       traditionalChineseDescription: string;
+      spanishDescription: string;
     };
 
     /*

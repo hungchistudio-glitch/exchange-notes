@@ -1,5 +1,6 @@
 "use client";
 
+import { localize } from "@/lib/pronunciation/localizedText";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -696,7 +697,7 @@ export default function PronunciationLabPage() {
                                 : "border-line bg-white text-ink-soft"
                             }`}
                           >
-                            {value.label[language]}
+                            {localize(value.label, language)}
                           </button>
                         ))}
                       </div>
@@ -726,9 +727,9 @@ export default function PronunciationLabPage() {
                       {sound.guidance.map((point, index) => (
                         <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
-                            {point.label[language]}
+                            {localize(point.label, language)}
                           </span>
-                          <span className="font-cjk">{point.text[language]}</span>
+                          <span className="font-cjk">{localize(point.text, language)}</span>
                         </p>
                       ))}
                     </div>
@@ -747,7 +748,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{localize(sound.tip, language)}</p>
                     ) : null}
                   </div>
 
@@ -828,9 +829,9 @@ export default function PronunciationLabPage() {
                       {sound.guidance.map((point, index) => (
                         <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
-                            {point.label[language]}
+                            {localize(point.label, language)}
                           </span>
-                          <span className="font-cjk">{point.text[language]}</span>
+                          <span className="font-cjk">{localize(point.text, language)}</span>
                         </p>
                       ))}
                     </div>
@@ -849,7 +850,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{localize(sound.tip, language)}</p>
                     ) : null}
                   </div>
 
@@ -920,7 +921,7 @@ export default function PronunciationLabPage() {
                       {trapOpen ? (
                         <div className="mt-2">
                           <p className="font-cjk text-sm leading-6 text-amber-800">
-                            {sound.commonMistake.explanation[language]}
+                            {localize(sound.commonMistake.explanation, language)}
                           </p>
 
                           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1168,7 +1169,7 @@ function TeachingStage({
                 >
                   {stepLabel(step.key, copy)}
                 </span>
-                <span className="font-cjk">{step.text[language]}</span>
+                <span className="font-cjk">{localize(step.text, language)}</span>
               </p>
             );
           })}

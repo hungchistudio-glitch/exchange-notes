@@ -1,3 +1,5 @@
+import { getInterfaceLanguageMeta } from "@/lib/languages";
+
 export type AppFontSize = "small" | "medium" | "large";
 
 const FONT_SIZE_STORAGE_KEY = "exchange-notes-font-size";
@@ -214,7 +216,10 @@ export function subscribeToDailyGoalWords(
    Interface language
    ========================================================= */
 
-export type InterfaceLanguage = "english" | "traditional-chinese";
+export type InterfaceLanguage =
+  | "english"
+  | "traditional-chinese"
+  | "spanish";
 
 const INTERFACE_LANGUAGE_STORAGE_KEY =
   "exchange-notes-interface-language";
@@ -229,7 +234,8 @@ export function isInterfaceLanguage(
 ): value is InterfaceLanguage {
   return (
     value === "english" ||
-    value === "traditional-chinese"
+    value === "traditional-chinese" ||
+    value === "spanish"
   );
 }
 
@@ -255,10 +261,9 @@ export function applyInterfaceLanguage(
   const root = document.documentElement;
 
   root.dataset.interfaceLanguage = language;
-  root.lang =
-    language === "traditional-chinese"
-      ? "zh-Hant"
-      : "en";
+  // Read from the language table rather than decided here, so a fourth
+  // interface language needs a row and not an extra branch.
+  root.lang = getInterfaceLanguageMeta(language).htmlLang;
 }
 
 export function setInterfaceLanguage(

@@ -7,21 +7,69 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
+import {
+  INTERFACE_LANGUAGE_CODE,
+  getInterfaceLanguages,
+  getLearningLanguages,
+  toAppLanguage,
+  toLanguageCode,
+} from "@/lib/languages";
 import type { AppLanguage } from "@/lib/types/app";
 
-const OPTIONS: Array<{ value: AppLanguage; label: string }> = [
-  { value: "english", label: "English" },
-  { value: "traditional-chinese", label: "繁體中文" },
-];
-
-type ChoiceRowProps = {
+/*
+ * One row, two axes — which is exactly why it takes its options rather than
+ * owning them.
+ *
+ * This component used to hold a single hardcoded list typed as AppLanguage
+ * and hand it to both rows, which is the conflation the whole language split
+ * was about: the app can be read in Spanish without Spanish being a language
+ * anyone here is learning, and the two lists stopped being the same list the
+ * moment that was true.
+ */
+type ChoiceRowProps<T extends string> = {
   label: string;
-  value: AppLanguage;
-  onSelect: (value: AppLanguage) => void;
+  options: ReadonlyArray<{ value: T; label: string }>;
+  value: T;
+  onSelect: (value: T) => void;
   disabled?: boolean;
 };
 
-function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
+const INTERFACE_OPTIONS: ReadonlyArray<{
+  value: InterfaceLanguage;
+  label: string;
+}> = (
+  Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[]
+).filter((language) =>
+  getInterfaceLanguages().some(
+    (meta) => meta.code === INTERFACE_LANGUAGE_CODE[language],
+  ),
+).map((language) => ({
+  value: language,
+  label: getInterfaceLanguages().find(
+    (meta) => meta.code === INTERFACE_LANGUAGE_CODE[language],
+  )!.endonym,
+}));
+
+/*
+ * Only the languages the old two-value column can still express. Widening
+ * that column is a separate migration; offering a pair it cannot store would
+ * fail on save rather than in the picker.
+ */
+const LEARNING_OPTIONS: ReadonlyArray<{ value: AppLanguage; label: string }> =
+  getLearningLanguages()
+    .map((meta) => ({ value: toAppLanguage(meta.code), label: meta.endonym }))
+    .filter((option): option is { value: AppLanguage; label: string } =>
+      option.value !== null,
+    );
+
+function ChoiceRow<T extends string>({
+  label,
+  options,
+  value,
+  onSelect,
+  disabled,
+}: ChoiceRowProps<T>) {
   return (
     <div>
       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
@@ -29,7 +77,7 @@ function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
       </p>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {OPTIONS.map((option) => {
+        {options.map((option) => {
           const active = option.value === value;
 
           return (
@@ -123,12 +171,14 @@ export default function TutorialLanguageSetup() {
     <div className="mt-7 space-y-5">
       <ChoiceRow
         label={copy.appLanguageLabel}
+        options={INTERFACE_OPTIONS}
         value={interfaceLanguage}
         onSelect={setInterfaceLanguage}
       />
 
       <ChoiceRow
         label={copy.learningLabel}
+        options={LEARNING_OPTIONS}
         value={learningLanguage}
         onSelect={(value) => void handleLearningChange(value)}
         disabled={saving}

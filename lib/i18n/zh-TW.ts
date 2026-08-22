@@ -1498,6 +1498,7 @@ const traditionalChinese: TranslationDictionary = {
       sheetDescription: "選擇 Exchange Notes 的介面顯示語言。",
       englishDescription: "以英文顯示 App 介面。",
       traditionalChineseDescription: "以繁體中文顯示 App 介面。",
+      spanishDescription: "以西班牙文使用 Exchange Notes",
     },
 
     yumiReminders: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { toWidgetLanguage } from "@/lib/widget/yumiWidgetBridge";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
@@ -448,7 +449,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
       pinyin: widgetWord?.pinyin ?? "",
       zhuyin: widgetWord?.zhuyin ?? "",
       words: widgetWordPayloads,
-      interfaceLanguage: language,
+      interfaceLanguage: toWidgetLanguage(language),
       learningLanguage,
       moodKey: displayMood,
       localizedText: {

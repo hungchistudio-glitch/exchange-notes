@@ -131,6 +131,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     name: {
       english: "English",
       "traditional-chinese": "英文",
+      spanish: "Inglés",
     },
     endonym: "English",
     badge: "En",
@@ -149,6 +150,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     name: {
       english: "Traditional Chinese",
       "traditional-chinese": "繁體中文",
+      spanish: "Chino tradicional",
     },
     endonym: "繁體中文",
     badge: "中",
@@ -167,6 +169,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     name: {
       english: "Spanish",
       "traditional-chinese": "西班牙文",
+      spanish: "Español",
     },
     endonym: "Español",
     badge: "Es",
@@ -177,7 +180,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     fontVariable: "--font-latin",
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
-    availableAsInterface: false,
+    availableAsInterface: true,
     availableAsLearning: false,
   },
   fr: {
@@ -185,6 +188,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     name: {
       english: "French",
       "traditional-chinese": "法文",
+      spanish: "Francés",
     },
     endonym: "Français",
     badge: "Fr",
@@ -203,6 +207,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     name: {
       english: "Italian",
       "traditional-chinese": "義大利文",
+      spanish: "Italiano",
     },
     endonym: "Italiano",
     badge: "It",
@@ -437,4 +442,20 @@ export const INTERFACE_LANGUAGE_CODE: Record<InterfaceLanguage, LanguageCode> =
   {
     english: "en",
     "traditional-chinese": "zh-TW",
+    spanish: "es",
   };
+
+/**
+ * Everything about an interface language, via its code.
+ *
+ * The interface axis keeps its own spelled-out values ("english", "spanish")
+ * rather than moving to BCP-47 with the learning axis. They are stored in
+ * localStorage and in profiles.app_preferences on every account, and changing
+ * the encoding of a setting that is already written down buys nothing here —
+ * the two axes were separated precisely so one of them could stay put.
+ */
+export function getInterfaceLanguageMeta(
+  language: InterfaceLanguage,
+): LanguageMetadata {
+  return LANGUAGES[INTERFACE_LANGUAGE_CODE[language]];
+}

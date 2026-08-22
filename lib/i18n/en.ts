@@ -1536,6 +1536,7 @@ const english: TranslationDictionary = {
       englishDescription: "Display the app interface in English.",
       traditionalChineseDescription:
         "Display the app interface in Traditional Chinese.",
+      spanishDescription: "Display the app interface in Spanish.",
     },
 
     yumiReminders: {
