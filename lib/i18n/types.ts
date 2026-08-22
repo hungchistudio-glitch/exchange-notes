@@ -219,8 +219,14 @@ export type TranslationDictionary = {
     omni: {
       label: string;
       placeholder: string;
-      placeholderChinese: string;
-      placeholderEnglish: string;
+      /*
+       * Two ways of not understanding a language, chosen by the language
+       * rather than by which of two it is. A script you cannot sound out is
+       * something you *saw*; one you can read but not follow is something you
+       * *heard*. Both take the language's own localized name.
+       */
+      placeholderUnreadable: string;
+      placeholderHeard: string;
       inputText: string;
       inputVoice: string;
       inputCamera: string;

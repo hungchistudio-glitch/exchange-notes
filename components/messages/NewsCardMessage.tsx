@@ -1,6 +1,6 @@
 "use client";
 
-import { getLanguage } from "@/lib/languages";
+import { getLanguage, resolveDisplayPair } from "@/lib/languages";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { Volume2 } from "lucide-react";
 
@@ -56,7 +56,16 @@ function SpeakerButton({
 
 export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProps) {
   const { languagePair } = useLearningLanguageContext();
-  const [primaryLanguage, secondaryLanguage] = languagePair;
+  /*
+   * Preferred, not assumed. The pool is one shared set of cards generated in
+   * one pairing, so a reader studying something else would index it by a
+   * language it does not have and get a blank card. Falling back to the
+   * languages the card actually carries shows it as what it is.
+   */
+  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
+    card?.titles ?? {},
+    languagePair,
+  );
 
   const titlePronunciation = getPhonetics(
     card.titles[secondaryLanguage] ?? "",

@@ -282,8 +282,8 @@ const spanish: TranslationDictionary = {
     omni: {
       label: "OmniLéxico de Yumi",
       placeholder: "Busca, habla, escanea o enséñale algo a Yumi",
-      placeholderChinese: "¿Algo que no sabes leer?",
-      placeholderEnglish: "¿Algo que has oído?",
+      placeholderUnreadable: "¿Algo en {language} que no sabes leer?",
+      placeholderHeard: "¿Algo en {language} que has oído?",
       inputText: "Escribir",
       inputVoice: "Voz",
       inputCamera: "Escanear",

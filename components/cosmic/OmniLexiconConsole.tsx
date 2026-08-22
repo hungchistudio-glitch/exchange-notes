@@ -36,7 +36,12 @@ import {
   getPronunciation,
   type PronunciationResult,
 } from "@/lib/pronunciation/getPronunciation";
+import {
+  getLanguageName,
+  isUnreadableScript,
+} from "@/lib/languages";
 import { speak } from "@/lib/speech";
+import { insertValues } from "@/lib/utils";
 import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
 
 import styles from "./OmniLexiconConsole.module.css";
@@ -81,7 +86,7 @@ const WAVE_BARS = 12;
 export default function OmniLexiconConsole({
   onStateChange,
 }: OmniLexiconConsoleProps) {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic.omni;
   const { isLearningChinese, languagePair } = useLearningLanguageContext();
 
@@ -174,9 +179,14 @@ export default function OmniLexiconConsole({
    * spell". It is chosen once per render from a stable input, never rotated on
    * a timer.
    */
-  const placeholder = isLearningChinese
-    ? copy.placeholderChinese
-    : copy.placeholderEnglish;
+  const learningLanguage = languagePair[0];
+
+  const placeholder = insertValues(
+    isUnreadableScript(learningLanguage)
+      ? copy.placeholderUnreadable
+      : copy.placeholderHeard,
+    { language: getLanguageName(learningLanguage, interfaceLanguage) },
+  );
 
   // The offline dictionary can answer before the model does; showing that
   // early answer is better than an empty console, as long as it is labelled.

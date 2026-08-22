@@ -1,79 +1,80 @@
 "use client";
 
 import { useMemo } from "react";
-import { getPronunciationData } from "@/lib/pronunciation";
+import { getPhonetics } from "@/lib/pronunciation";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { insertValues } from "@/lib/utils";
 
+/**
+ * The phonetic annotations for one or more pieces of text, each in its own
+ * language.
+ *
+ * This used to take `english` and `chinese` and render IPA under the first
+ * and pinyin/zhuyin under the second — correct for exactly one pairing, and
+ * silent for every other. It takes languages now, and each one contributes
+ * whatever annotations it actually has: Chinese brings pinyin and zhuyin,
+ * a Latin language brings nothing this component can compute locally, and
+ * neither is asked for the other's.
+ */
+export type PronunciationEntry = {
+  text: string | null | undefined;
+  language: LanguageCode;
+  /** Pre-fetched IPA, which only a network dictionary can supply. */
+  ipa?: string | null;
+};
+
 type PronunciationBlockProps = {
-  english?: string | null;
-  chinese?: string | null;
-  showEnglish?: boolean;
+  entries: PronunciationEntry[];
   className?: string;
 };
 
 export default function PronunciationBlock({
-  english,
-  chinese,
-  showEnglish = false,
+  entries,
   className = "",
 }: PronunciationBlockProps) {
   const { t } = useTranslation();
-  const pronunciation = useMemo(
+
+  const rows = useMemo(
     () =>
-      getPronunciationData({
-        english,
-        chinese,
+      entries.flatMap((entry) => {
+        const text = entry.text?.trim() ?? "";
+        if (!text) return [];
+
+        const phonetics = getPhonetics(text, entry.language);
+        const speechTag = getLanguage(entry.language).speechTag;
+
+        return [entry.ipa?.trim(), phonetics.pinyin, phonetics.zhuyin]
+          .filter((label): label is string => Boolean(label))
+          .map((label) => ({ label, text, speechTag }));
       }),
-    [english, chinese],
+    [entries],
   );
 
-  const hasContent =
-    pronunciation.pinyin ||
-    pronunciation.zhuyin ||
-    (showEnglish && pronunciation.english);
-
-  if (!hasContent) return null;
-
-  function pronunciationButton(
-    label: string,
-    spokenText: string,
-    language: "en-US" | "zh-TW",
-  ) {
-    return (
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          speak(spokenText, language);
-        }}
-        aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-          text: spokenText,
-        })}
-        className="block max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
-      >
-        {label}
-      </button>
-    );
-  }
+  if (rows.length === 0) return null;
 
   return (
     <div
       className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
-      {showEnglish && pronunciation.english
-        ? pronunciationButton(pronunciation.english, pronunciation.english, "en-US")
-        : null}
-
-      {pronunciation.pinyin && chinese
-        ? pronunciationButton(pronunciation.pinyin, chinese, "zh-TW")
-        : null}
-
-      {pronunciation.zhuyin && chinese
-        ? pronunciationButton(pronunciation.zhuyin, chinese, "zh-TW")
-        : null}
+      {rows.map((row) => (
+        <button
+          key={`${row.speechTag}-${row.label}`}
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            speak(row.text, row.speechTag);
+          }}
+          aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+            text: row.text,
+          })}
+          className="block max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
+        >
+          {row.label}
+        </button>
+      ))}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import AppBadge from "@/components/ui/AppBadge";
 import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { speak } from "@/lib/speech";
@@ -97,7 +98,8 @@ export default function VocabularyDetailSheet({
   onEdit: () => void;
 }) {
   const { t, isTraditionalChinese } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, learningLanguage } = useLearningLanguageContext();
+  const sides = getVocabularyCardSides(item, learningLanguage);
   const detail = t.vocabulary.detail;
   const motion = useSheetMotion({ open, onClose });
 
@@ -182,9 +184,13 @@ export default function VocabularyDetailSheet({
                 )}
 
                 <PronunciationBlock
-                  english={item.word}
-                  chinese={item.translation}
-                  showEnglish
+                  entries={[
+                    { text: sides.primary.text, language: sides.primary.language },
+                    {
+                      text: sides.secondary.text,
+                      language: sides.secondary.language,
+                    },
+                  ]}
                   className="mt-3"
                 />
               </div>

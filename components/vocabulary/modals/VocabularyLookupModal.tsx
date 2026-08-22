@@ -66,7 +66,7 @@ export default function VocabularyLookupModal({
   onSend,
 }: VocabularyLookupModalProps) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, languagePair } = useLearningLanguageContext();
   const motion = useSheetMotion({ open, onClose });
 
   if (!motion.rendered) return null;
@@ -333,8 +333,16 @@ export default function VocabularyLookupModal({
                         {!isLearningChinese && (
                           <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
                             <PronunciationBlock
-                              english={lookupResult.englishName}
-                              chinese={lookupResult.chineseName}
+                              entries={[
+                                {
+                                  text: lookupResult.englishName,
+                                  language: languagePair[0],
+                                },
+                                {
+                                  text: lookupResult.chineseName,
+                                  language: languagePair[1],
+                                },
+                              ]}
                             />
 
                             <p className="mt-2 text-[11px] tracking-[0.04em] text-ink-faint">
@@ -388,8 +396,16 @@ export default function VocabularyLookupModal({
                         {isLearningChinese && (
                           <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
                             <PronunciationBlock
-                              english={lookupResult.englishName}
-                              chinese={lookupResult.chineseName}
+                              entries={[
+                                {
+                                  text: lookupResult.englishName,
+                                  language: languagePair[0],
+                                },
+                                {
+                                  text: lookupResult.chineseName,
+                                  language: languagePair[1],
+                                },
+                              ]}
                             />
 
                             <p className="mt-2 text-[11px] tracking-[0.04em] text-ink-faint">

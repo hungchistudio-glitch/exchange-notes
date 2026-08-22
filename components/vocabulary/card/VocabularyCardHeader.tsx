@@ -1,6 +1,7 @@
 "use client";
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -20,7 +21,7 @@ export default function VocabularyCardHeader({
   item,
 }: Props) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage } = useLearningLanguageContext();
   const search = t.vocabulary.search;
   const detail = t.vocabulary.detail;
 
@@ -30,7 +31,13 @@ export default function VocabularyCardHeader({
     mastered: search.statuses.mastered,
   };
 
-  const translation = item.translation?.trim() || "";
+  /*
+   * Which side leads comes from the row's own two languages against the one
+   * being learned, not from a yes/no about Chinese. A word saved under a
+   * different pairing keeps the order it was saved in rather than being
+   * relabelled by today's profile.
+   */
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage);
 
   const partOfSpeechLabel = item.part_of_speech?.trim()
     ? detail.partOfSpeech[
@@ -52,47 +59,23 @@ export default function VocabularyCardHeader({
         ) : null}
       </div>
 
-      {isLearningChinese ? (
-        <>
-          {translation ? (
-            <VocabularyTranslation
-              text={translation}
-              variant="primary"
-              className="mt-6"            />
-          ) : null}
+      <VocabularyWord word={primary.text} className="mt-6" />
 
-          <PronunciationBlock
-            english={item.word}
-            chinese={translation}
-            showEnglish
-            className="mt-4"
-          />
+      <PronunciationBlock
+        entries={[
+          { text: primary.text, language: primary.language },
+          { text: secondary.text, language: secondary.language },
+        ]}
+        className="mt-4"
+      />
 
-          <VocabularyWord
-            word={item.word}
-            variant="secondary"
-            className="mt-5 border-t border-black/[0.06] pt-5"          />
-        </>
-      ) : (
-        <>
-          <VocabularyWord
-            word={item.word}
-            className="mt-6"          />
+      {secondary.text ? (
+        <VocabularyTranslation
+          text={secondary.text}
+          className="mt-5 border-t border-black/[0.06] pt-5"
+        />
+      ) : null}
 
-          <PronunciationBlock
-            english={item.word}
-            chinese={translation}
-            showEnglish
-            className="mt-4"
-          />
-
-          {translation ? (
-            <VocabularyTranslation
-              text={translation}
-              className="mt-5 border-t border-black/[0.06] pt-5"            />
-          ) : null}
-        </>
-      )}
     </header>
   );
 }

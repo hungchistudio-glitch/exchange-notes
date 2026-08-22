@@ -278,8 +278,8 @@ const traditionalChinese: TranslationDictionary = {
     omni: {
       label: "全域單字辨識",
       placeholder: "搜尋、說出、拍攝或上傳任何單字",
-      placeholderChinese: "看到不懂的中文？",
-      placeholderEnglish: "聽到不懂的英文？",
+      placeholderUnreadable: "看到不懂的{language}？",
+      placeholderHeard: "聽到不懂的{language}？",
       inputText: "文字",
       inputVoice: "語音",
       inputCamera: "拍攝",

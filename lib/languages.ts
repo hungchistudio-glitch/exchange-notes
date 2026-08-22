@@ -258,6 +258,31 @@ export function pickLanguage<T>(
   return undefined;
 }
 
+/**
+ * The two languages to actually show for a piece of content.
+ *
+ * Prefers the reader's own pair and falls back to whatever the content
+ * carries. Content is not always in the reader's languages: Daily News is one
+ * shared pool generated in one pairing, and a word card arrives in the
+ * languages its sender was using. Indexing such content by the reader's pair
+ * and taking the miss at face value renders an empty card — which is worse
+ * than showing it in the languages it is actually in.
+ *
+ * Returns at most two, in preference order, and never invents a language the
+ * content does not have.
+ */
+export function resolveDisplayPair(
+  available: ByLanguage,
+  preferred: readonly LanguageCode[],
+): readonly LanguageCode[] {
+  const present = LANGUAGE_CODES.filter((code) => available[code]);
+
+  const wanted = preferred.filter((code) => present.includes(code));
+  const rest = present.filter((code) => !wanted.includes(code));
+
+  return [...wanted, ...rest].slice(0, 2);
+}
+
 /** Drops empty and absent entries, so a record never carries blank strings. */
 export function compactByLanguage(value: ByLanguage): ByLanguage {
   const out: ByLanguage = {};
@@ -299,6 +324,21 @@ export function getLearningLanguages(): LanguageMetadata[] {
 export function getInterfaceLanguages(): LanguageMetadata[] {
   return LANGUAGE_CODES.map(getLanguage).filter(
     (language) => language.availableAsInterface,
+  );
+}
+
+/**
+ * Whether this language's writing is something a learner has to decode
+ * rather than sound out.
+ *
+ * Answered from the phonetic systems the language carries: pinyin and zhuyin
+ * exist precisely because the script does not tell you how to say the word,
+ * while IPA is an aid for a script you can already read aloud. It is the
+ * difference between meeting a language on a page and meeting it in the air.
+ */
+export function isUnreadableScript(code: LanguageCode): boolean {
+  return LANGUAGES[code].phonetics.some(
+    (system) => system === "pinyin" || system === "zhuyin",
   );
 }
 

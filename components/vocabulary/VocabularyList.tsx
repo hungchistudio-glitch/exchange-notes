@@ -92,7 +92,7 @@ function VocabularyList({
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, languagePair } = useLearningLanguageContext();
   const lookup = t.vocabulary.lookup;
 
   if (loading) {
@@ -257,9 +257,10 @@ function VocabularyList({
             : [chineseRow, englishRow]}
 
           <PronunciationBlock
-            english={lookupResult.englishName}
-            chinese={lookupResult.chineseName}
-            showEnglish
+            entries={[
+              { text: lookupResult.englishName, language: languagePair[0] },
+              { text: lookupResult.chineseName, language: languagePair[1] },
+            ]}
             className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
           />
 
