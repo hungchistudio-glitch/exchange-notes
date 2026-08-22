@@ -15,6 +15,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { readLanguageCode, type LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
+import { useVocabularyLanguageFill } from "@/hooks/useVocabularyLanguageFill";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 
 type VocabularyContextType = {
@@ -26,6 +27,15 @@ type VocabularyContextType = {
   loading: boolean;
   error: string;
   setError: Dispatch<SetStateAction<string>>;
+
+  /**
+   * Whether the missing side of some words is being filled in right now.
+   *
+   * Exposed so a screen can say so quietly. A half-translated list with no
+   * explanation looks broken; the same list with a word about it looks like
+   * work in progress, which is what it is.
+   */
+  fillingLanguage: boolean;
 
   refresh(): Promise<void>;
   addItem(item: VocabularyItem): void;
@@ -176,11 +186,25 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  /*
+   * Mounted here rather than on a screen, because the words belong to the
+   * account and not to whichever page happens to be open. Switching language
+   * anywhere leaves the library in the wrong one, and this is what walks it
+   * over without anyone having to ask.
+   */
+  const { filling: fillingLanguage } = useVocabularyLanguageFill({
+    items,
+    learningLanguage,
+    loading,
+    onFilled: refresh,
+  });
+
   const value = useMemo<VocabularyContextType>(
     () => ({
       items,
       setItems,
       learningLanguage,
+      fillingLanguage,
       loading,
       error,
       setError,
@@ -190,6 +214,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       updateItem,
     }),
     [
+      fillingLanguage,
       items,
       learningLanguage,
       loading,
