@@ -200,6 +200,16 @@ export default function PronunciationLabPage() {
   // every render at English and fetched afterwards, so a Chinese learner got
   // one frame of the English tab before it swapped to zhuyin.
   const [mode, setMode] = useState<Mode | null>(null);
+  /*
+   * The one place this boolean is still the right question.
+   *
+   * The Lab is 26 English letters and the zhuyin symbols — two sets of
+   * teaching material written for one specific pair, not a frame any language
+   * drops into. "Which of these two" has an answer here in a way it does not
+   * anywhere else, and a learner of a third language gets the English set
+   * because that is the one that exists, not because they were mistaken for
+   * an English learner.
+   */
   const resolvedMode: Mode = mode ?? (isLearningChinese ? "zhuyin" : "english");
 
   const [englishFilter, setEnglishFilter] = useState<"all" | EnglishCategory>("all");

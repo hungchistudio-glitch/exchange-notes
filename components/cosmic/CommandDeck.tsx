@@ -21,6 +21,7 @@ import OmniLexiconConsole, {
 } from "@/components/cosmic/OmniLexiconConsole";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguageName } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
@@ -135,11 +136,11 @@ function lookAt(index: number) {
  * here invents a reading to look technical.
  */
 export default function CommandDeck() {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic;
   // Which language is being learned, not which one the interface is in — the
   // two stay separate here as everywhere else.
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage } = useLearningLanguageContext();
 
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
@@ -262,9 +263,9 @@ export default function CommandDeck() {
             },
             {
               label: copy.deck.readoutLearning,
-              value: isLearningChinese
-                ? copy.deck.languageChinese
-                : copy.deck.languageEnglish,
+              // The language actually being learned, named in the language
+              // the reader is reading. It used to be one of two constants.
+              value: getLanguageName(learningLanguage, interfaceLanguage),
             },
           ].map((readout) => (
             <div key={readout.label}>

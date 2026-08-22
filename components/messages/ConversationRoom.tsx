@@ -34,6 +34,7 @@ import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
 import WordCardMessage from "@/components/messages/WordCardMessage";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguage } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import {
@@ -208,7 +209,7 @@ export default function ConversationRoom({
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const { t } = useTranslation();
-  const { isLearningChinese, languagePair } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const copy = t.messages;
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1615,7 +1616,7 @@ export default function ConversationRoom({
                         <YumiDecodeCard
                           analysis={analysis}
                           conversationId={conversationId}
-                          speechLanguage={isLearningChinese ? "zh-TW" : "en-US"}
+                          speechLanguage={getLanguage(languagePair[0]).speechTag}
                           savedPhraseIds={savedPhraseIds}
                           savingPhraseId={savingPhraseId}
                           onSavePhrase={(phrase) => void handleSavePhrase(phrase)}

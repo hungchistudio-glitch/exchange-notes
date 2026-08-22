@@ -25,6 +25,11 @@ type LearningLanguageContextType = {
    * only works while exactly two languages exist.
    */
   languagePair: readonly [LanguageCode, LanguageCode];
+  /**
+   * Kept for the Pronunciation Lab, which is the one screen where "which of
+   * these two" is a real question — it holds English letters and zhuyin and
+   * nothing else. Everywhere else, ask the content what language it is in.
+   */
   isLearningChinese: boolean;
   isLearningEnglish: boolean;
   loading: boolean;

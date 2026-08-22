@@ -99,7 +99,7 @@ export default function VocabularyDrawer({
   onSpeak,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
-  const { isLearningChinese, languagePair } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const [primaryLanguage, secondaryLanguage] = languagePair;
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 
@@ -199,16 +199,12 @@ export default function VocabularyDrawer({
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span
-                      className={
-                        isLearningChinese
-                          ? "text-sm text-ink-soft"
-                          : "text-[17px] font-semibold text-black"
-                      }
+                      className="text-[17px] font-semibold text-black"
                     >
                       {item.word}
                     </span>
 
-                    {!isLearningChinese && (
+                    {(
                       <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
@@ -225,7 +221,7 @@ export default function VocabularyDrawer({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {!isLearningChinese && (
+                  {(
                     <SaveWordButton
                       onClick={() => void handleSaveWord(wordKey, item)}
                       saving={savingWordKey === wordKey}
@@ -263,22 +259,12 @@ export default function VocabularyDrawer({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <p
-                      className={
-                        isLearningChinese
-                          ? "text-[17px] font-semibold text-black"
-                          : "text-sm text-ink-soft"
-                      }
+                      className="text-sm text-ink-soft"
                     >
                       {item.translation}
                     </p>
 
-                    {isLearningChinese && (
-                      <span className="text-[11px] text-ink-faint">
-                        {partOfSpeechLabels[
-                          normalizePartOfSpeech(item.partOfSpeech)
-                        ]}
-                      </span>
-                    )}
+
                   </div>
 
                   {pronunciation?.pinyin || pronunciation?.zhuyin ? (
@@ -291,22 +277,6 @@ export default function VocabularyDrawer({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {isLearningChinese && (
-                    <SaveWordButton
-                      onClick={() => void handleSaveWord(wordKey, item)}
-                      saving={savingWordKey === wordKey}
-                      saved={savedWordKeys.has(wordKey)}
-                      ariaLabel={
-                        savedWordKeys.has(wordKey)
-                          ? copy.addedToVocabulary
-                          : copy.addToVocabularyAriaLabel.replace(
-                              "{word}",
-                              item.word
-                            )
-                      }
-                    />
-                  )}
-
                   <SpeakerButton
                     onClick={() =>
                       onSpeak(
@@ -374,15 +344,13 @@ export default function VocabularyDrawer({
             return (
               <div key={baseKey}>
                 <div className="space-y-1">
-                  {isLearningChinese
-                    ? [translationBlock, wordBlock]
-                    : [wordBlock, translationBlock]}
+                  {/* Pair order already: the word is the hero, the
+                      translation the support. */}
+                  {[wordBlock, translationBlock]}
                 </div>
 
                 <div className="mt-2.5 space-y-1">
-                  {isLearningChinese
-                    ? [chineseExampleBlock, englishExampleBlock]
-                    : [englishExampleBlock, chineseExampleBlock]}
+                  {[englishExampleBlock, chineseExampleBlock]}
                 </div>
 
                 {index < card.vocabulary.length - 1 ? (

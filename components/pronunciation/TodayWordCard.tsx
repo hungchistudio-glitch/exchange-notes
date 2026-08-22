@@ -21,7 +21,9 @@ import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import { getPronunciationData } from "@/lib/pronunciation";
+import { getPhonetics, getPronunciationData } from "@/lib/pronunciation";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
 import type { VocabularyItem } from "@/lib/types/app";
 import {
@@ -120,7 +122,7 @@ function DeckWordCard({
   tone,
   copy,
   vocabularyCopy,
-  isLearningChinese,
+  learningLanguage,
 }: {
   item: VocabularyItem;
   index: number;
@@ -129,7 +131,7 @@ function DeckWordCard({
   tone: CardTone;
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
-  isLearningChinese: boolean;
+  learningLanguage: LanguageCode;
 }) {
   const word = item.word?.trim() || copy.untitledWord;
   const translation = item.translation?.trim() || "";
@@ -137,12 +139,14 @@ function DeckWordCard({
     english: word,
     chinese: translation,
   });
-  const primaryWord = isLearningChinese
-    ? translation || word
-    : word;
-  const secondaryWord = isLearningChinese
-    ? word
-    : translation;
+  /*
+   * The row records its own two languages, so which side leads is read from
+   * it rather than from a yes/no about Chinese — a question with no answer
+   * for a word saved under a different pairing.
+   */
+  const sides = getVocabularyCardSides(item, learningLanguage);
+  const primaryWord = sides.primary.text || word;
+  const secondaryWord = sides.secondary.text;
   const primaryWordLength = Array.from(primaryWord).length;
   const primaryWordSize = primaryWordLength >= 20
     ? "extra-long"
@@ -211,66 +215,41 @@ function DeckWordCard({
           </p>
         </div>
 
+        {/*
+          One button per side, each showing whatever annotation its own
+          language has: zhuyin under Chinese, the word itself under a
+          language whose spelling already tells you how to say it. The
+          labels used to be two dictionary keys named after two languages.
+        */}
         <div className={styles.soundGrid}>
-          <button
-            type="button"
-            disabled={!interactive}
-            tabIndex={interactive ? 0 : -1}
-            onClick={() => speakText(
-              isLearningChinese ? translation : word,
-              isLearningChinese ? "zh-TW" : "en-US",
-            )}
-            aria-label={
-              isLearningChinese
-                ? `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
-                : `${copy.englishPronunciation}: ${word}`
-            }
-            className={styles.soundButton}
-          >
-            <span className={styles.soundCopy}>
-              <span className={styles.soundLabel}>
-                {isLearningChinese ? copy.zhuyin : copy.englishPronunciation}
-              </span>
-              <span
-                className={styles.soundValue}
-                data-script={isLearningChinese ? "zhuyin" : "english"}
-              >
-                {isLearningChinese
-                  ? pronunciation.zhuyin || translation
-                  : word}
-              </span>
-            </span>
-          </button>
+          {[sides.primary, sides.secondary].map((side) => {
+            const language = getLanguage(side.language);
+            const phonetics = getPhonetics(side.text, side.language);
+            const annotation = phonetics.zhuyin || side.text;
+            const label = language.endonym;
 
-          <button
-            type="button"
-            disabled={!interactive || !secondaryWord}
-            tabIndex={interactive ? 0 : -1}
-            onClick={() => speakText(
-              isLearningChinese ? word : translation,
-              isLearningChinese ? "en-US" : "zh-TW",
-            )}
-            aria-label={
-              isLearningChinese
-                ? `${copy.englishPronunciation}: ${word}`
-                : `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
-            }
-            className={styles.soundButton}
-          >
-            <span className={styles.soundCopy}>
-              <span className={styles.soundLabel}>
-                {isLearningChinese ? copy.englishPronunciation : copy.zhuyin}
-              </span>
-              <span
-                className={styles.soundValue}
-                data-script={isLearningChinese ? "english" : "zhuyin"}
+            return (
+              <button
+                key={side.language}
+                type="button"
+                disabled={!interactive || !side.text}
+                tabIndex={interactive ? 0 : -1}
+                onClick={() => speakText(side.text, language.speechTag)}
+                aria-label={`${label}: ${annotation}`}
+                className={styles.soundButton}
               >
-                {isLearningChinese
-                  ? word
-                  : pronunciation.zhuyin || translation}
-              </span>
-            </span>
-          </button>
+                <span className={styles.soundCopy}>
+                  <span className={styles.soundLabel}>{label}</span>
+                  <span
+                    className={styles.soundValue}
+                    data-script={phonetics.zhuyin ? "zhuyin" : "english"}
+                  >
+                    {annotation}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <footer className={styles.cardFooter}>
@@ -341,12 +320,12 @@ export function TodayWordDeck({
   items,
   copy,
   vocabularyCopy,
-  isLearningChinese,
+  learningLanguage,
 }: {
   items: VocabularyItem[];
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
-  isLearningChinese: boolean;
+  learningLanguage: LanguageCode;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -502,7 +481,7 @@ export function TodayWordDeck({
                   tone={toneForCard(index)}
                   copy={copy}
                   vocabularyCopy={vocabularyCopy}
-                  isLearningChinese={isLearningChinese}
+                  learningLanguage={learningLanguage}
                 />
               </div>
             </div>
@@ -545,7 +524,7 @@ export function TodayWordDeck({
 
 export default function TodayWordCard() {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage } = useLearningLanguageContext();
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -594,7 +573,7 @@ export default function TodayWordCard() {
       items={items}
       copy={t.home.todayWord}
       vocabularyCopy={t.vocabulary}
-      isLearningChinese={isLearningChinese}
+      learningLanguage={learningLanguage}
     />
   );
 }

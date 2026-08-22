@@ -37,6 +37,7 @@ import {
   type PronunciationResult,
 } from "@/lib/pronunciation/getPronunciation";
 import {
+  getLanguage,
   getLanguageName,
   isUnreadableScript,
 } from "@/lib/languages";
@@ -88,7 +89,7 @@ export default function OmniLexiconConsole({
 }: OmniLexiconConsoleProps) {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic.omni;
-  const { isLearningChinese, languagePair } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
 
   const [query, setQuery] = useState("");
   const {
@@ -138,7 +139,8 @@ export default function OmniLexiconConsole({
   // user just heard something in and cannot spell.
   const { supported: voiceSupported, listening, toggle: toggleVoice } =
     useVoiceInput({
-      lang: isLearningChinese ? "zh-TW" : "en-US",
+      // Dictation listens in the language being learned.
+      lang: getLanguage(languagePair[0]).speechTag,
       onResult: submit,
     });
 
@@ -333,18 +335,15 @@ export default function OmniLexiconConsole({
 
   // The learning language leads everywhere in the app, and this is no
   // exception — the console does not get a hierarchy of its own.
-  const primary = shown
-    ? isLearningChinese
-      ? shown.chineseName
-      : shown.englishName
-    : "";
-  const secondary = shown
-    ? isLearningChinese
-      ? shown.englishName
-      : shown.chineseName
-    : "";
-  const primaryLang = isLearningChinese ? "zh-TW" : "en-US";
-  const secondaryLang = isLearningChinese ? "en-US" : "zh-TW";
+  /*
+   * A lookup answers in the pair's own order, learning first, so the hero is
+   * the first field rather than whichever of two languages this happens to
+   * be. The console does not get a hierarchy of its own.
+   */
+  const primary = shown ? shown.englishName : "";
+  const secondary = shown ? shown.chineseName : "";
+  const primaryLang = getLanguage(languagePair[0]).speechTag;
+  const secondaryLang = getLanguage(languagePair[1]).speechTag;
 
   // Shared with the standard-mode lookup sheet rather than restated in the
   // cosmic vocabulary: the explanation is about the network, not the theme.
@@ -577,9 +576,7 @@ export default function OmniLexiconConsole({
             <div className={styles.examples}>
               <div className={styles.resultRow}>
                 <p className={styles.resultExample}>
-                  {isLearningChinese
-                    ? lookupResult.chineseExample
-                    : lookupResult.englishExample}
+                  {lookupResult.englishExample}
                 </p>
                 <button
                   type="button"
@@ -587,9 +584,7 @@ export default function OmniLexiconConsole({
                   aria-label={copy.playExampleLearning}
                   onClick={() =>
                     speak(
-                      isLearningChinese
-                        ? lookupResult.chineseExample
-                        : lookupResult.englishExample,
+                      lookupResult.englishExample,
                       primaryLang,
                     )
                   }
@@ -600,9 +595,7 @@ export default function OmniLexiconConsole({
 
               <div className={styles.resultRow}>
                 <p className={styles.resultExample}>
-                  {isLearningChinese
-                    ? lookupResult.englishExample
-                    : lookupResult.chineseExample}
+                  {lookupResult.chineseExample}
                 </p>
                 <button
                   type="button"
@@ -610,9 +603,7 @@ export default function OmniLexiconConsole({
                   aria-label={copy.playExampleTranslation}
                   onClick={() =>
                     speak(
-                      isLearningChinese
-                        ? lookupResult.englishExample
-                        : lookupResult.chineseExample,
+                      lookupResult.chineseExample,
                       secondaryLang,
                     )
                   }

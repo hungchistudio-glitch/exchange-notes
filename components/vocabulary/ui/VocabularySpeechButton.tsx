@@ -13,7 +13,7 @@ type VocabularySpeechButtonProps = {
   /** "secondary" (default) is the current subtle ghost style, used
    * everywhere that isn't language-hierarchy-aware. "primary" is a
    * solid, higher-contrast treatment for whichever language is the
-   * current visual hero (see isLearningChinese) — the demoted language's
+   * current visual hero (see getVocabularyCardSides) — the demoted language's
    * button should stay "secondary". */
   prominence?: "primary" | "secondary";
 };

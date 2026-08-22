@@ -1,3 +1,5 @@
+import type { SpeechLanguage } from "@/lib/speech";
+
 import { getSpeechSettings, getVoiceForLanguage } from "@/lib/speech";
 
 let currentAudio: HTMLAudioElement | null = null;
@@ -17,10 +19,7 @@ export function stopSpeech() {
   }
 }
 
-export function speakText(
-  text: string,
-  lang: "en-US" | "zh-TW",
-) {
+export function speakText(text: string, lang: SpeechLanguage) {
   if (
     typeof window === "undefined" ||
     !("speechSynthesis" in window)
