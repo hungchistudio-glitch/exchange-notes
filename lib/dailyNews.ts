@@ -1,4 +1,9 @@
 import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
+import {
+  DEFAULT_LEARNING_PAIR,
+  compactByLanguage,
+} from "@/lib/languages";
+import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
 /**
@@ -25,41 +30,9 @@ import { GoogleGenAI } from "@google/genai";
  * on a user page load.
  */
 
-export type VocabularyItem = {
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-};
+export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 
-export type DailyNewsCard = {
-  id: string;
-  /*
-   * The pool row this card came from, which is what the seen table keys on.
-   * Absent on cards read from anywhere but the pool, which is why it is
-   * optional rather than required.
-   */
-  itemId?: string;
-  category: string;
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string;
-  vocabulary: VocabularyItem[];
-  // Straight from Guardian's own thumbnail field — never AI-generated, so
-  // it's never a hallucinated image. Null when Guardian doesn't have one
-  // for that article (common for text-only pieces).
-  imageUrl: string | null;
-  // Gemini has no vision access to the actual photo, so this is
-  // deliberately NOT "a description of what's in the photo" — see the
-  // prompt instructions below for why it's scoped to scene/context only.
-  englishCaption: string | null;
-  chineseCaption: string | null;
-};
+const [FIRST_CODE, SECOND_CODE] = DEFAULT_LEARNING_PAIR;
 
 type GuardianArticle = {
   category: string;
@@ -342,20 +315,28 @@ function validateVocabularyItem(value: unknown): VocabularyItem | null {
   const word = normalizeText(candidate.word, 45);
   const translation = normalizeText(candidate.translation, 40);
   const partOfSpeech = normalizeText(candidate.partOfSpeech, 20);
-  const englishExample = normalizeMultilineText(candidate.englishExample, 180);
-  const chineseExample = normalizeMultilineText(candidate.chineseExample, 130);
+  const firstExample = normalizeMultilineText(candidate.englishExample, 180);
+  const secondExample = normalizeMultilineText(candidate.chineseExample, 130);
 
   if (
     !word ||
     !translation ||
     !ALLOWED_PARTS_OF_SPEECH.has(partOfSpeech) ||
-    !englishExample ||
-    !chineseExample
+    !firstExample ||
+    !secondExample
   ) {
     return null;
   }
 
-  return { word, translation, partOfSpeech, englishExample, chineseExample };
+  return {
+    word,
+    translation,
+    partOfSpeech,
+    examples: compactByLanguage({
+      [FIRST_CODE]: firstExample,
+      [SECOND_CODE]: secondExample,
+    }),
+  };
 }
 
 function validateLearningItem(value: unknown): LearningItem | null {
@@ -365,6 +346,12 @@ function validateLearningItem(value: unknown): LearningItem | null {
 
   const candidate = value as Record<string, unknown>;
 
+  /*
+   * The model answers in fields named for two languages, because that is its
+   * schema. Which languages they hold is set by the pair the prompt was built
+   * with — see buildDailyNewsPrompt — so the mapping happens here and nothing
+   * downstream reads a language out of a field name.
+   */
   const englishTitle = normalizeText(candidate.englishTitle, 120);
   const chineseTitle = normalizeText(candidate.chineseTitle, 80);
   const englishSummary = normalizeMultilineText(candidate.englishSummary, 320);
@@ -578,12 +565,18 @@ async function buildLearningBatch(
       card: {
         id: article.url,
         category: article.category,
-        englishTitle: learning.englishTitle,
-        chineseTitle: learning.chineseTitle,
-        englishSummary: learning.englishSummary,
-        chineseSummary: learning.chineseSummary,
-        englishCaption: learning.englishCaption,
-        chineseCaption: learning.chineseCaption,
+        titles: compactByLanguage({
+          [FIRST_CODE]: learning.englishTitle,
+          [SECOND_CODE]: learning.chineseTitle,
+        }),
+        summaries: compactByLanguage({
+          [FIRST_CODE]: learning.englishSummary,
+          [SECOND_CODE]: learning.chineseSummary,
+        }),
+        captions: compactByLanguage({
+          [FIRST_CODE]: learning.englishCaption,
+          [SECOND_CODE]: learning.chineseCaption,
+        }),
         vocabulary: learning.vocabulary,
         imageUrl: article.imageUrl,
         sourceName: "The Guardian",

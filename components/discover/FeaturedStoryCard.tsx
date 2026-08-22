@@ -56,7 +56,7 @@ export default function FeaturedStoryCard({
   onExploreImage,
 }: FeaturedStoryCardProps) {
   const accent = categoryAccent(card.category);
-  const caption = [card.englishCaption, card.chineseCaption]
+  const caption = [(card.captions.en ?? ""), (card.captions["zh-TW"] ?? "")]
     .filter(Boolean)
     .join(" · ");
 
@@ -89,7 +89,7 @@ export default function FeaturedStoryCard({
         >
           <Image
             src={card.imageUrl}
-            alt={card.englishCaption ?? card.englishTitle}
+            alt={(card.captions.en ?? "") ?? (card.titles.en ?? "")}
             fill
             // Full-bleed inside the card, which is itself capped at the
             // reading column, so one breakpoint is enough.
@@ -167,14 +167,14 @@ export default function FeaturedStoryCard({
           className="mt-4 line-clamp-3 text-[30px] font-bold leading-[1.16] tracking-[-0.02em]"
           style={{ color: DISCOVER_COLORS.text }}
         >
-          {card.englishTitle}
+          {(card.titles.en ?? "")}
         </h2>
 
         <p
           className="mt-2.5 text-[16px] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseTitle}
+          {(card.titles["zh-TW"] ?? "")}
         </p>
 
         {/* Short summary */}
@@ -182,14 +182,14 @@ export default function FeaturedStoryCard({
           className="mt-4 line-clamp-2 text-[15px] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.englishSummary}
+          {(card.summaries.en ?? "")}
         </p>
 
         <p
           className="mt-1 line-clamp-1 text-[13.5px] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseSummary}
+          {(card.summaries["zh-TW"] ?? "")}
         </p>
       </div>
 

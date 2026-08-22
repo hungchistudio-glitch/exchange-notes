@@ -129,8 +129,8 @@ export default function VocabularyDrawer({
         translation: item.translation.trim(),
         language: "english",
         part_of_speech: item.partOfSpeech?.trim() || null,
-        example_sentence: item.englishExample?.trim() || null,
-        translated_example: item.chineseExample?.trim() || null,
+        example_sentence: (item.examples.en ?? "")?.trim() || null,
+        translated_example: (item.examples["zh-TW"] ?? "")?.trim() || null,
         confidence: "medium",
         category: "other",
         status: "new",
@@ -327,14 +327,14 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
-                  {item.englishExample}
+                  {(item.examples.en ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       englishExampleKey,
-                      item.englishExample,
+                      (item.examples.en ?? ""),
                       "en-US"
                     )
                   }
@@ -350,14 +350,14 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
-                  {item.chineseExample}
+                  {(item.examples["zh-TW"] ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       chineseExampleKey,
-                      item.chineseExample,
+                      (item.examples["zh-TW"] ?? ""),
                       "zh-TW"
                     )
                   }

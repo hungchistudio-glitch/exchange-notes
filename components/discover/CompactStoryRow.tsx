@@ -79,14 +79,14 @@ export default function CompactStoryRow({
             }`}
             style={{ color: DISCOVER_COLORS.text }}
           >
-            {card.englishTitle}
+            {(card.titles.en ?? "")}
           </h3>
 
           <p
             className="mt-0.5 line-clamp-1 text-[14px] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
-            {card.chineseTitle}
+            {(card.titles["zh-TW"] ?? "")}
           </p>
 
           {hasThumbnail ? null : (
@@ -94,7 +94,7 @@ export default function CompactStoryRow({
               className="mt-1.5 line-clamp-1 text-[13.5px] leading-[1.5]"
               style={{ color: DISCOVER_COLORS.textSecondary }}
             >
-              {card.englishSummary}
+              {(card.summaries.en ?? "")}
             </p>
           )}
         </div>

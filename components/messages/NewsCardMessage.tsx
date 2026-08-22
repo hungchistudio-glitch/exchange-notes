@@ -53,9 +53,9 @@ function SpeakerButton({
 }
 
 export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProps) {
-  const titlePronunciation = getPronunciationData({ chinese: card.chineseTitle });
+  const titlePronunciation = getPronunciationData({ chinese: (card.titles["zh-TW"] ?? "") });
   const summaryPronunciation = getPronunciationData({
-    chinese: card.chineseSummary,
+    chinese: (card.summaries["zh-TW"] ?? ""),
   });
 
   return (
@@ -76,12 +76,12 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
 
       <div className="mt-1.5 flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-[16px] font-bold leading-[1.3]">
-          {card.englishTitle}
+          {(card.titles.en ?? "")}
         </p>
         <SpeakerButton
-          text={card.englishTitle}
+          text={(card.titles.en ?? "")}
           language="en-US"
-          label={card.englishTitle}
+          label={(card.titles.en ?? "")}
         />
       </div>
 
@@ -91,7 +91,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             className="text-[14px] font-medium leading-[1.5]"
             style={{ color: "var(--msg-ink-soft)" }}
           >
-            {card.chineseTitle}
+            {(card.titles["zh-TW"] ?? "")}
           </p>
           {(titlePronunciation.pinyin || titlePronunciation.zhuyin) && (
             <p
@@ -105,9 +105,9 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           )}
         </div>
         <SpeakerButton
-          text={card.chineseTitle}
+          text={(card.titles["zh-TW"] ?? "")}
           language="zh-TW"
-          label={card.chineseTitle}
+          label={(card.titles["zh-TW"] ?? "")}
         />
       </div>
 
@@ -117,12 +117,12 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
       >
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 flex-1 text-xs leading-5">
-            {card.englishSummary}
+            {(card.summaries.en ?? "")}
           </p>
           <SpeakerButton
-            text={card.englishSummary}
+            text={(card.summaries.en ?? "")}
             language="en-US"
-            label={card.englishSummary}
+            label={(card.summaries.en ?? "")}
           />
         </div>
 
@@ -132,7 +132,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
               className="text-xs leading-5"
               style={{ color: "var(--msg-ink-soft)" }}
             >
-              {card.chineseSummary}
+              {(card.summaries["zh-TW"] ?? "")}
             </p>
             {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
               <p
@@ -146,9 +146,9 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             )}
           </div>
           <SpeakerButton
-            text={card.chineseSummary}
+            text={(card.summaries["zh-TW"] ?? "")}
             language="zh-TW"
-            label={card.chineseSummary}
+            label={(card.summaries["zh-TW"] ?? "")}
           />
         </div>
       </div>

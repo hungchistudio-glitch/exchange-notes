@@ -169,16 +169,16 @@ function categoryLabel(
 
 function createNoteContent(card: DailyNewsCard) {
   const englishVocabulary = card.vocabulary
-    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`)
+    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${(item.examples.en ?? "")}`)
     .join("\n");
 
   const chineseVocabulary = card.vocabulary
-    .map((item) => `• ${item.word}：${item.translation}\n  ${item.chineseExample}`)
+    .map((item) => `• ${item.word}：${item.translation}\n  ${(item.examples["zh-TW"] ?? "")}`)
     .join("\n");
 
-  const english = `📰 ${card.englishTitle}
+  const english = `📰 ${(card.titles.en ?? "")}
 
-${card.englishSummary}
+${(card.summaries.en ?? "")}
 
 Vocabulary
 ${englishVocabulary}
@@ -186,9 +186,9 @@ ${englishVocabulary}
 Source: ${card.sourceName}
 ${card.sourceUrl}`;
 
-  const chinese = `${card.chineseTitle}
+  const chinese = `${(card.titles["zh-TW"] ?? "")}
 
-${card.chineseSummary}
+${(card.summaries["zh-TW"] ?? "")}
 
 學習單字
 ${chineseVocabulary}`;
@@ -198,16 +198,14 @@ ${chineseVocabulary}`;
 
 function createPartnerMessage(card: DailyNewsCard) {
   return encodeNewsCardMessage({
-    englishTitle: card.englishTitle,
-    chineseTitle: card.chineseTitle,
-    englishSummary: card.englishSummary,
-    chineseSummary: card.chineseSummary,
+    titles: card.titles,
+    summaries: card.summaries,
     vocabulary: card.vocabulary.map((item) => ({
       word: item.word,
       translation: item.translation,
       partOfSpeech: item.partOfSpeech,
-      englishExample: item.englishExample,
-      chineseExample: item.chineseExample,
+      englishExample: (item.examples.en ?? ""),
+      chineseExample: (item.examples["zh-TW"] ?? ""),
     })),
     sourceName: card.sourceName,
     sourceUrl: card.sourceUrl,
@@ -478,13 +476,13 @@ export default function DailyNews() {
       audioMode === "en"
         ? [
             {
-              text: `${card.englishTitle}. ${card.englishSummary}`,
+              text: `${(card.titles.en ?? "")}. ${(card.summaries.en ?? "")}`,
               lang: "en-US",
             },
           ]
         : [
             {
-              text: `${card.chineseTitle}。${card.chineseSummary}`,
+              text: `${(card.titles["zh-TW"] ?? "")}。${(card.summaries["zh-TW"] ?? "")}`,
               lang: "zh-TW",
             },
           ];
@@ -706,8 +704,8 @@ export default function DailyNews() {
 
   async function shareStory(card: DailyNewsCard) {
     const shareData = {
-      title: card.englishTitle,
-      text: card.chineseTitle,
+      title: (card.titles.en ?? ""),
+      text: (card.titles["zh-TW"] ?? ""),
       url: card.sourceUrl,
     };
 
