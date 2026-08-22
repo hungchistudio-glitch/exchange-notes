@@ -4,12 +4,15 @@
 -- prose values the app used to write, and the BCP-47 codes it writes now.
 -- This converts what is left and closes the door behind it.
 --
--- ORDER MATTERS, AND NOT ONLY INSIDE THIS FILE. Every reader of these two
--- columns has to already take either encoding before this runs. Applied
--- against a deployment that still compares against 'traditional-chinese',
--- this silently turns every Chinese learner into an English one — the
--- comparison does not error, it just stops being true. The code that reads
--- both shipped first, deliberately.
+-- ORDER MATTERED, AND NOT ONLY INSIDE THIS FILE. Every reader of these two
+-- columns had to already take either encoding before this ran. Applied
+-- against a deployment that still compared against 'traditional-chinese',
+-- this would have silently turned every Chinese learner into an English one —
+-- the comparison does not error, it just stops being true.
+--
+-- Which is why it waited: the code that reads both shipped in PR #48, and
+-- this ran once that was live in production. Fifteen profiles, thirteen
+-- converted, two already codes, nothing failing the narrowed constraints.
 
 /* =========================================================
    Backfill
