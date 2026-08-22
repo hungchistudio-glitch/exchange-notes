@@ -13,14 +13,15 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
+import { readLanguageCode, type LanguageCode } from "@/lib/languages";
+import type { VocabularyItem } from "@/lib/types/app";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 
 type VocabularyContextType = {
   items: VocabularyItem[];
   setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
 
-  learningLanguage: AppLanguage | null;
+  learningLanguage: LanguageCode | null;
 
   loading: boolean;
   error: string;
@@ -36,7 +37,7 @@ const VocabularyContext = createContext<VocabularyContextType | null>(null);
 
 type VocabularySnapshot = {
   items: VocabularyItem[];
-  learningLanguage: AppLanguage | null;
+  learningLanguage: LanguageCode | null;
 };
 
 /*
@@ -65,9 +66,7 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
 
   return {
     items: rows as VocabularyItem[],
-    learningLanguage: profile?.learning_language
-      ? (profile.learning_language as AppLanguage)
-      : null,
+    learningLanguage: readLanguageCode(profile?.learning_language),
   };
 }
 
@@ -79,7 +78,7 @@ function loadErrorMessage(error: unknown) {
 
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+  const [learningLanguage, setLearningLanguage] = useState<LanguageCode | null>(
     null,
   );
   const [loading, setLoading] = useState(true);

@@ -12,7 +12,6 @@ import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
 import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
 import { createClient } from "@/lib/supabase/server";
-import type { AppLanguage } from "@/lib/types/app";
 
 type ProtectedLayoutProps = {
   children: ReactNode;
@@ -47,10 +46,9 @@ export default async function ProtectedLayout({
     redirect("/onboarding");
   }
 
-  const initialLearningLanguage: AppLanguage =
-    profile?.learning_language === "traditional-chinese"
-      ? "traditional-chinese"
-      : "english";
+  // Passed through as stored. The provider reads either encoding, so this
+  // does not need to know which one this row happens to carry.
+  const initialLearningLanguage = profile?.learning_language ?? null;
 
   // The cookie is what the root layout rendered from, and on this device it is
   // almost always already right. The profile is what makes the choice follow

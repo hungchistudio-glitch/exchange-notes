@@ -11,10 +11,14 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage } from "@/lib/types/app";
+import {
+  DEFAULT_LEARNING_PAIR,
+  readLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
 
 type LearningLanguageContextType = {
-  learningLanguage: AppLanguage;
+  learningLanguage: LanguageCode;
   isLearningChinese: boolean;
   isLearningEnglish: boolean;
   loading: boolean;
@@ -24,8 +28,15 @@ type LearningLanguageContextType = {
 const LearningLanguageContext =
   createContext<LearningLanguageContextType | null>(null);
 
-function normalizeLearningLanguage(value: unknown): AppLanguage {
-  return value === "traditional-chinese" ? "traditional-chinese" : "english";
+/*
+ * The column holds prose values on rows written before the migration and
+ * language codes on rows written after it, so this reads either and answers
+ * in codes. An unreadable value becomes the language the app has always
+ * taught rather than nothing, because a screen full of word cards needs a
+ * side to lead with.
+ */
+function normalizeLearningLanguage(value: unknown): LanguageCode {
+  return readLanguageCode(value) ?? DEFAULT_LEARNING_PAIR[0];
 }
 
 /**
@@ -53,10 +64,10 @@ export function LearningLanguageProvider({
   initialLearningLanguage,
 }: {
   children: ReactNode;
-  initialLearningLanguage: AppLanguage;
+  initialLearningLanguage: unknown;
 }) {
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage>(
-    initialLearningLanguage,
+  const [learningLanguage, setLearningLanguage] = useState<LanguageCode>(() =>
+    normalizeLearningLanguage(initialLearningLanguage),
   );
   const [loading, setLoading] = useState(false);
 
@@ -85,8 +96,7 @@ export function LearningLanguageProvider({
 
       setLearningLanguage(
         normalizeLearningLanguage(
-          (data as { learning_language: AppLanguage | null } | null)
-            ?.learning_language,
+          (data as { learning_language: unknown } | null)?.learning_language,
         ),
       );
     } finally {
@@ -120,8 +130,8 @@ export function LearningLanguageProvider({
   const value = useMemo<LearningLanguageContextType>(
     () => ({
       learningLanguage,
-      isLearningChinese: learningLanguage === "traditional-chinese",
-      isLearningEnglish: learningLanguage === "english",
+      isLearningChinese: learningLanguage === "zh-TW",
+      isLearningEnglish: learningLanguage === "en",
       loading,
       refresh,
     }),

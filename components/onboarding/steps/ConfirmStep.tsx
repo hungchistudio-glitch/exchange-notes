@@ -4,17 +4,16 @@ import { LoaderCircle } from "lucide-react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import OnboardingYumi from "@/components/onboarding/OnboardingYumi";
-import type { AppLanguage } from "@/lib/types/app";
 import {
   getInterfaceLanguageMeta,
   getLanguage,
-  toLanguageCode,
+  type LanguageCode,
 } from "@/lib/languages";
 
 type ConfirmStepProps = {
   displayName: string;
-  nativeLanguage: AppLanguage;
-  learningLanguage: AppLanguage;
+  nativeLanguage: LanguageCode;
+  learningLanguage: LanguageCode;
   completing: boolean;
   error: string;
   onStart: () => void;
@@ -38,8 +37,8 @@ export default function ConfirmStep({
    * Each is named in its own language, from the table.
    */
   const appLanguageLabel = getInterfaceLanguageMeta(language).endonym;
-  const nativeLabel = getLanguage(toLanguageCode(nativeLanguage)).endonym;
-  const learningLabel = getLanguage(toLanguageCode(learningLanguage)).endonym;
+  const nativeLabel = getLanguage(nativeLanguage).endonym;
+  const learningLabel = getLanguage(learningLanguage).endonym;
 
   return (
     <div className="flex flex-1 flex-col items-center">

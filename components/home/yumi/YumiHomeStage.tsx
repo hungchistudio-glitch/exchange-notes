@@ -450,7 +450,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
       zhuyin: widgetWord?.zhuyin ?? "",
       words: widgetWordPayloads,
       interfaceLanguage: toWidgetLanguage(language),
-      learningLanguage,
+      learningLanguage: toWidgetLanguage(learningLanguage),
       moodKey: displayMood,
       localizedText: {
         headline: lines.primary,

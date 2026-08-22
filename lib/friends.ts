@@ -10,8 +10,9 @@ export type FriendProfile = {
   displayName: string | null;
   exchangeId: string;
   avatarUrl: string | null;
-  nativeLanguage: "english" | "traditional-chinese";
-  learningLanguage: "english" | "traditional-chinese";
+  /* As stored — see the note on the row type below. */
+  nativeLanguage: string | null;
+  learningLanguage: string | null;
 };
 
 export type LastMessagePreview = {
@@ -67,8 +68,13 @@ type ProfileRow = {
   display_name: string | null;
   exchange_id: string;
   avatar_url: string | null;
-  native_language: "english" | "traditional-chinese";
-  learning_language: "english" | "traditional-chinese";
+  /*
+   * As stored, which is either encoding while the migration is in flight.
+   * Nothing here compares them; a caller that needs to should go through
+   * readLanguageCode rather than matching a literal.
+   */
+  native_language: string | null;
+  learning_language: string | null;
 };
 
 /**

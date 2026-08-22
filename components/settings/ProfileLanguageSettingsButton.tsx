@@ -5,12 +5,10 @@ import { ReactNode, useState } from "react";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import type { AppLanguage } from "@/lib/types/app";
 import {
   getLanguage,
   getLearningLanguages,
-  toAppLanguage,
-  toLanguageCode,
+  type LanguageCode,
 } from "@/lib/languages";
 
 /*
@@ -20,19 +18,14 @@ import {
  * save instead of in the picker. Widening that column widens this list.
  */
 const LANGUAGE_OPTIONS: Array<{
-  value: AppLanguage;
+  value: LanguageCode;
   label: string;
   badge: string;
-}> = getLearningLanguages()
-  .map((meta) => ({
-    value: toAppLanguage(meta.code),
-    label: meta.endonym,
-    badge: meta.badge,
-  }))
-  .filter(
-    (option): option is { value: AppLanguage; label: string; badge: string } =>
-      option.value !== null,
-  );
+}> = getLearningLanguages().map((meta) => ({
+  value: meta.code,
+  label: meta.endonym,
+  badge: meta.badge,
+}));
 
 type ProfileLanguageSettingsButtonProps = {
   rowTitle: string;
@@ -40,8 +33,8 @@ type ProfileLanguageSettingsButtonProps = {
   sheetTitle: string;
   sheetDescription: string;
   icon: ReactNode;
-  value: AppLanguage;
-  onChange: (value: AppLanguage) => void;
+  value: LanguageCode;
+  onChange: (value: LanguageCode) => void;
 };
 
 export default function ProfileLanguageSettingsButton({
@@ -56,9 +49,9 @@ export default function ProfileLanguageSettingsButton({
   const [open, setOpen] = useState(false);
 
   const currentLabel =
-    getLanguage(toLanguageCode(value)).endonym;
+    getLanguage(value).endonym;
 
-  function handleSelect(next: AppLanguage) {
+  function handleSelect(next: LanguageCode) {
     onChange(next);
     setOpen(false);
   }

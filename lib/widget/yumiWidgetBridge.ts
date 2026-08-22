@@ -13,10 +13,12 @@ export type YumiWidgetLanguage =
  * the widget would fall back anyway, and saying so here keeps the reason
  * visible instead of leaving it to a normaliser three files away.
  */
-export function toWidgetLanguage(
-  language: "english" | "traditional-chinese" | string,
-): YumiWidgetLanguage {
-  return language === "traditional-chinese" ? "traditional-chinese" : "english";
+export function toWidgetLanguage(language: string): YumiWidgetLanguage {
+  // Takes either encoding: interface languages are still spelled out, the
+  // learning language is a code, and both arrive here.
+  return language === "traditional-chinese" || language === "zh-TW"
+    ? "traditional-chinese"
+    : "english";
 }
 
 export type YumiWidgetLocalizedText = {

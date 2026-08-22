@@ -2,19 +2,17 @@
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import type { AppLanguage } from "@/lib/types/app";
 import {
   getLanguage,
   getLearningLanguages,
-  toAppLanguage,
-  toLanguageCode,
+  type LanguageCode,
 } from "@/lib/languages";
 
 type LanguagesStepProps = {
-  nativeLanguage: AppLanguage;
-  learningLanguage: AppLanguage;
-  onChangeNativeLanguage: (value: AppLanguage) => void;
-  onChangeLearningLanguage: (value: AppLanguage) => void;
+  nativeLanguage: LanguageCode;
+  learningLanguage: LanguageCode;
+  onChangeNativeLanguage: (value: LanguageCode) => void;
+  onChangeLearningLanguage: (value: LanguageCode) => void;
   onContinue: () => void;
 };
 
@@ -25,24 +23,21 @@ type LanguagesStepProps = {
  * save instead of in the picker. Widening that column widens this list.
  */
 const LANGUAGE_OPTIONS: Array<{
-  value: AppLanguage;
+  value: LanguageCode;
   label: string;
   badge: string;
-}> = getLearningLanguages()
-  .map((meta) => ({
-    value: toAppLanguage(meta.code),
-    label: meta.endonym,
-    badge: meta.badge,
-  }))
-  .filter(
-    (option): option is { value: AppLanguage; label: string; badge: string } =>
-      option.value !== null,
-  );
+}> = getLearningLanguages().map((meta) => ({
+  value: meta.code,
+  label: meta.endonym,
+  badge: meta.badge,
+}));
 
-const OPPOSITE_LANGUAGE: Record<AppLanguage, AppLanguage> = {
-  english: "traditional-chinese",
-  "traditional-chinese": "english",
-};
+/* Only meaningful while exactly two languages can be learned. */
+function oppositeLanguage(code: LanguageCode): LanguageCode {
+  return (
+    LANGUAGE_OPTIONS.find((option) => option.value !== code)?.value ?? code
+  );
+}
 
 export default function LanguagesStep({
   nativeLanguage,
@@ -58,22 +53,22 @@ export default function LanguagesStep({
   // equal — picking a value that collides with the other field flips that
   // field to the remaining language instead, exactly like the Settings
   // page fix (never lets the DB's "must differ" check get tripped).
-  function handlePickNative(value: AppLanguage) {
+  function handlePickNative(value: LanguageCode) {
     onChangeNativeLanguage(value);
     if (value === learningLanguage) {
-      onChangeLearningLanguage(OPPOSITE_LANGUAGE[value]);
+      onChangeLearningLanguage(oppositeLanguage(value));
     }
   }
 
-  function handlePickLearning(value: AppLanguage) {
+  function handlePickLearning(value: LanguageCode) {
     onChangeLearningLanguage(value);
     if (value === nativeLanguage) {
-      onChangeNativeLanguage(OPPOSITE_LANGUAGE[value]);
+      onChangeNativeLanguage(oppositeLanguage(value));
     }
   }
 
-  const learningLabel = getLanguage(toLanguageCode(learningLanguage)).endonym;
-  const nativeLabel = getLanguage(toLanguageCode(nativeLanguage)).endonym;
+  const learningLabel = getLanguage(learningLanguage).endonym;
+  const nativeLabel = getLanguage(nativeLanguage).endonym;
 
   return (
     <div className="flex flex-1 flex-col">

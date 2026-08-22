@@ -9,13 +9,12 @@ import { setInterfaceLanguage } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import {
+  DEFAULT_LEARNING_PAIR,
   INTERFACE_LANGUAGE_CODE,
   getInterfaceLanguages,
   getLearningLanguages,
-  toAppLanguage,
-  toLanguageCode,
+  type LanguageCode,
 } from "@/lib/languages";
-import type { AppLanguage } from "@/lib/types/app";
 
 /*
  * One row, two axes — which is exactly why it takes its options rather than
@@ -56,12 +55,11 @@ const INTERFACE_OPTIONS: ReadonlyArray<{
  * that column is a separate migration; offering a pair it cannot store would
  * fail on save rather than in the picker.
  */
-const LEARNING_OPTIONS: ReadonlyArray<{ value: AppLanguage; label: string }> =
-  getLearningLanguages()
-    .map((meta) => ({ value: toAppLanguage(meta.code), label: meta.endonym }))
-    .filter((option): option is { value: AppLanguage; label: string } =>
-      option.value !== null,
-    );
+const LEARNING_OPTIONS: ReadonlyArray<{ value: LanguageCode; label: string }> =
+  getLearningLanguages().map((meta) => ({
+    value: meta.code,
+    label: meta.endonym,
+  }));
 
 function ChoiceRow<T extends string>({
   label,
@@ -119,20 +117,25 @@ export default function TutorialLanguageSetup() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLearningChange(next: AppLanguage) {
+  async function handleLearningChange(next: LanguageCode) {
     if (saving || next === learningLanguage) return;
 
     setSaving(true);
     setError("");
 
     /*
-     * Only two languages exist, and the database rejects a profile whose
-     * native and learning language match (check constraint 23514). So the
-     * other field always flips in the same update rather than being left to
-     * collide — the same rule the profile screen follows.
+     * The database rejects a profile whose native and learning language match
+     * (check constraint 23514), so the other field flips in the same update
+     * rather than being left to collide — the same rule the profile screen
+     * follows.
+     *
+     * "The other one" only means something while exactly two languages can be
+     * learned. A third makes the native language a choice of its own rather
+     * than the leftover, and this becomes a real picker.
      */
-    const nextNative: AppLanguage =
-      next === "english" ? "traditional-chinese" : "english";
+    const nextNative: LanguageCode =
+      LEARNING_OPTIONS.find((option) => option.value !== next)?.value ??
+      DEFAULT_LEARNING_PAIR[1];
 
     try {
       const supabase = createClient();

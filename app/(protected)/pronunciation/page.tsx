@@ -170,7 +170,7 @@ function highlightedWord(
 export default function PronunciationLabPage() {
   const { t, language } = useTranslation();
   const copy = t.pronunciation;
-  const { learningLanguage } = useLearningLanguageContext();
+  const { isLearningChinese } = useLearningLanguageContext();
   const searchParams = useSearchParams();
 
   /**
@@ -200,7 +200,7 @@ export default function PronunciationLabPage() {
   // every render at English and fetched afterwards, so a Chinese learner got
   // one frame of the English tab before it swapped to zhuyin.
   const [mode, setMode] = useState<Mode | null>(null);
-  const resolvedMode: Mode = mode ?? (learningLanguage === "traditional-chinese" ? "zhuyin" : "english");
+  const resolvedMode: Mode = mode ?? (isLearningChinese ? "zhuyin" : "english");
 
   const [englishFilter, setEnglishFilter] = useState<"all" | EnglishCategory>("all");
   const [zhuyinFilter, setZhuyinFilter] = useState<"all" | ZhuyinCategory>("all");
