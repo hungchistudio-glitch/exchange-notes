@@ -18,7 +18,6 @@ import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useScanSession, type ScanFailure } from "@/lib/scanner/scanSession";
 import type { MenuAnalyzeResponse } from "@/lib/scanner/menuTypes";
-import type { InterfaceLanguage } from "@/lib/appPreferences";
 
 function failureFromResponse(
   response: MenuAnalyzeResponse | null,
