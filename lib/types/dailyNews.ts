@@ -5,8 +5,13 @@ import {
 } from "@/lib/languages";
 
 export type VocabularyItem = {
-  word: string;
-  translation: string;
+  /**
+   * The word itself, in each language the card carries.
+   *
+   * Was `word` and `translation` — two slots, which is why a card generated
+   * for one pairing was useless to a reader with a different one.
+   */
+  texts: ByLanguage;
   partOfSpeech: string;
   /** The example sentence in each language it exists in. */
   examples: ByLanguage;
@@ -57,6 +62,7 @@ type LegacyVocabularyItem = {
   englishExample?: string;
   chineseExample?: string;
   examples?: ByLanguage;
+  texts?: ByLanguage;
 };
 
 type LegacyNewsCard = {
@@ -121,8 +127,12 @@ export function readDailyNewsCard(value: unknown): DailyNewsCard | null {
         typeof item.translation === "string",
     )
     .map((item) => ({
-      word: item.word as string,
-      translation: item.translation as string,
+      texts: item.texts
+        ? compactByLanguage(item.texts)
+        : compactByLanguage({
+            [FIRST]: item.word ?? "",
+            [SECOND]: item.translation ?? "",
+          }),
       partOfSpeech: item.partOfSpeech ?? "",
       examples: item.examples
         ? compactByLanguage(item.examples)

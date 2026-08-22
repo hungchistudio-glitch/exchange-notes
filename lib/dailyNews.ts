@@ -1,7 +1,8 @@
 import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
 import {
   DEFAULT_LEARNING_PAIR,
-  compactByLanguage,
+  type ByLanguage,
+  type LanguageCode,
 } from "@/lib/languages";
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
@@ -32,8 +33,6 @@ import { GoogleGenAI } from "@google/genai";
 
 export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 
-const [FIRST_CODE, SECOND_CODE] = DEFAULT_LEARNING_PAIR;
-
 type GuardianArticle = {
   category: string;
   title: string;
@@ -44,13 +43,10 @@ type GuardianArticle = {
 };
 
 type LearningItem = {
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
+  titles: ByLanguage;
+  summaries: ByLanguage;
+  captions: ByLanguage;
   vocabulary: VocabularyItem[];
-  englishCaption: string;
-  chineseCaption: string;
 };
 
 type GeminiLearningResponse = {
@@ -294,41 +290,62 @@ async function fetchSlotCandidates(
   return articles;
 }
 
-function validateVocabularyItem(value: unknown): VocabularyItem | null {
+function validateVocabularyItem(
+  value: unknown,
+  languages: readonly LanguageCode[],
+): VocabularyItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   const candidate = value as Record<string, unknown>;
 
-  const word = normalizeText(candidate.word, 45);
-  const translation = normalizeText(candidate.translation, 40);
+  const texts = readLanguageMap(candidate.texts, 45, languages);
+  const examples = readLanguageMap(candidate.examples, 180, languages);
   const partOfSpeech = normalizeText(candidate.partOfSpeech, 20);
-  const firstExample = normalizeMultilineText(candidate.englishExample, 180);
-  const secondExample = normalizeMultilineText(candidate.chineseExample, 130);
 
+  // Every language the pool covers, or the word is not usable: a card that
+  // teaches three languages and can only name the word in two of them leaves
+  // one reader looking at a blank.
   if (
-    !word ||
-    !translation ||
     !ALLOWED_PARTS_OF_SPEECH.has(partOfSpeech) ||
-    !firstExample ||
-    !secondExample
+    languages.some((language) => !texts[language])
   ) {
     return null;
   }
 
-  return {
-    word,
-    translation,
-    partOfSpeech,
-    examples: compactByLanguage({
-      [FIRST_CODE]: firstExample,
-      [SECOND_CODE]: secondExample,
-    }),
-  };
+  return { texts, examples, partOfSpeech };
 }
 
-function validateLearningItem(value: unknown): LearningItem | null {
+/**
+ * Reads one of the model's language-keyed objects.
+ *
+ * Absent and empty are the same answer here — a language with nothing in it
+ * is a language the card does not carry — so the result never holds a blank
+ * string for a reader to be shown.
+ */
+function readLanguageMap(
+  value: unknown,
+  maxLength: number,
+  languages: readonly LanguageCode[],
+): ByLanguage {
+  if (!value || typeof value !== "object") return {};
+
+  const record = value as Record<string, unknown>;
+  const out: ByLanguage = {};
+
+  for (const language of languages) {
+    const text = normalizeMultilineText(record[language], maxLength);
+    if (text) out[language] = text;
+  }
+
+  return out;
+}
+
+function validateLearningItem(
+  value: unknown,
+  languages: readonly LanguageCode[],
+): LearningItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
@@ -336,51 +353,58 @@ function validateLearningItem(value: unknown): LearningItem | null {
   const candidate = value as Record<string, unknown>;
 
   /*
-   * The model answers in fields named for two languages, because that is its
-   * schema. Which languages they hold is set by the pair the prompt was built
-   * with — see buildDailyNewsPrompt — so the mapping happens here and nothing
-   * downstream reads a language out of a field name.
+   * Read by language rather than by field name. The model answers in maps
+   * now, one entry per language the pool serves, so nothing here has to know
+   * which two languages a card "really" is — there is no such pair any more.
    */
-  const englishTitle = normalizeText(candidate.englishTitle, 120);
-  const chineseTitle = normalizeText(candidate.chineseTitle, 80);
-  const englishSummary = normalizeMultilineText(candidate.englishSummary, 320);
-  const chineseSummary = normalizeMultilineText(candidate.chineseSummary, 220);
-  const englishCaption = normalizeText(candidate.englishCaption, 90);
-  const chineseCaption = normalizeText(candidate.chineseCaption, 60);
+  const titles = readLanguageMap(candidate.titles, 120, languages);
+  const summaries = readLanguageMap(candidate.summaries, 320, languages);
+  const captions = readLanguageMap(candidate.captions, 90, languages);
 
   const rawVocabulary = Array.isArray(candidate.vocabulary)
     ? candidate.vocabulary
     : [];
 
   const vocabulary = rawVocabulary
-    .map(validateVocabularyItem)
+    .map((item) => validateVocabularyItem(item, languages))
     .filter((item): item is VocabularyItem => item !== null)
     .slice(0, 3);
 
+  // A card missing a language is dropped rather than served half-written:
+  // the pool is shared, and one reader's blank is everyone's blank.
   if (
-    !englishTitle ||
-    !chineseTitle ||
-    !englishSummary ||
-    !chineseSummary ||
-    !englishCaption ||
-    !chineseCaption ||
+    languages.some(
+      (language) => !titles[language] || !summaries[language],
+    ) ||
     vocabulary.length !== 3
   ) {
     return null;
   }
 
-  return {
-    englishTitle,
-    chineseTitle,
-    englishSummary,
-    chineseSummary,
-    vocabulary,
-    englishCaption,
-    chineseCaption,
-  };
+  return { titles, summaries, captions, vocabulary };
 }
 
-function buildLearningSchema(count: number) {
+/*
+ * The schema is built from the language list rather than naming two.
+ *
+ * Every card carries the story in each language the pool needs, keyed by
+ * code, and so does every vocabulary word. Asking for a fixed pair is what
+ * made Daily News the one screen where switching language changed nothing:
+ * the content had never been asked to change.
+ */
+function buildLearningSchema(count: number, languages: LanguageCode[]) {
+  const byLanguage = (minLength: number, maxLength: number) => ({
+    type: "object",
+    additionalProperties: false,
+    properties: Object.fromEntries(
+      languages.map((language) => [
+        language,
+        { type: "string", minLength, maxLength },
+      ]),
+    ),
+    required: [...languages],
+  });
+
   return {
     type: "object",
     additionalProperties: false,
@@ -393,12 +417,9 @@ function buildLearningSchema(count: number) {
           type: "object",
           additionalProperties: false,
           properties: {
-            englishTitle: { type: "string", minLength: 8, maxLength: 120 },
-            chineseTitle: { type: "string", minLength: 4, maxLength: 80 },
-            englishSummary: { type: "string", minLength: 40, maxLength: 320 },
-            chineseSummary: { type: "string", minLength: 20, maxLength: 220 },
-            englishCaption: { type: "string", minLength: 8, maxLength: 90 },
-            chineseCaption: { type: "string", minLength: 4, maxLength: 60 },
+            titles: byLanguage(4, 120),
+            summaries: byLanguage(20, 320),
+            captions: byLanguage(4, 90),
             vocabulary: {
               type: "array",
               minItems: 3,
@@ -407,51 +428,23 @@ function buildLearningSchema(count: number) {
                 type: "object",
                 additionalProperties: false,
                 properties: {
-                  word: { type: "string", minLength: 2, maxLength: 45 },
-                  translation: {
-                    type: "string",
-                    minLength: 1,
-                    maxLength: 40,
-                  },
+                  texts: byLanguage(1, 45),
                   partOfSpeech: {
                     type: "string",
                     enum: ["noun", "verb", "adjective", "adverb", "phrase"],
                   },
-                  englishExample: {
-                    type: "string",
-                    minLength: 10,
-                    maxLength: 180,
-                  },
-                  chineseExample: {
-                    type: "string",
-                    minLength: 5,
-                    maxLength: 130,
-                  },
+                  examples: byLanguage(5, 180),
                 },
-                required: [
-                  "word",
-                  "translation",
-                  "partOfSpeech",
-                  "englishExample",
-                  "chineseExample",
-                ],
+                required: ["texts", "partOfSpeech", "examples"],
               },
             },
           },
-          required: [
-            "englishTitle",
-            "chineseTitle",
-            "englishSummary",
-            "chineseSummary",
-            "englishCaption",
-            "chineseCaption",
-            "vocabulary",
-          ],
+          required: ["titles", "summaries", "captions", "vocabulary"],
         },
       },
     },
     required: ["cards"],
-  } as const;
+  };
 }
 
 
@@ -508,18 +501,19 @@ export async function selectTodaysArticles(
 async function buildLearningBatch(
   articles: GuardianArticle[],
   model: string,
-  client: GoogleGenAI
+  client: GoogleGenAI,
+  languages: readonly LanguageCode[],
 ): Promise<DailyNewsPoolItem[]> {
   // Deliberately no `tools` field here — this call never touches Google
   // Search grounding, so it only ever draws on the normal (non-grounded)
   // Gemini free tier.
   const interaction = await client.interactions.create({
     model,
-    input: buildDailyNewsPrompt(articles),
+    input: buildDailyNewsPrompt(articles, languages),
     response_format: {
       type: "text",
       mime_type: "application/json",
-      schema: buildLearningSchema(articles.length),
+      schema: buildLearningSchema(articles.length, [...languages]),
     },
     generation_config: {
       thinking_level: "low",
@@ -543,7 +537,7 @@ async function buildLearningBatch(
   const items: DailyNewsPoolItem[] = [];
 
   articles.forEach((article, index) => {
-    const learning = validateLearningItem(rawLearningItems[index]);
+    const learning = validateLearningItem(rawLearningItems[index], languages);
 
     if (!learning) return;
 
@@ -554,18 +548,9 @@ async function buildLearningBatch(
       card: {
         id: article.url,
         category: article.category,
-        titles: compactByLanguage({
-          [FIRST_CODE]: learning.englishTitle,
-          [SECOND_CODE]: learning.chineseTitle,
-        }),
-        summaries: compactByLanguage({
-          [FIRST_CODE]: learning.englishSummary,
-          [SECOND_CODE]: learning.chineseSummary,
-        }),
-        captions: compactByLanguage({
-          [FIRST_CODE]: learning.englishCaption,
-          [SECOND_CODE]: learning.chineseCaption,
-        }),
+        titles: learning.titles,
+        summaries: learning.summaries,
+        captions: learning.captions,
         vocabulary: learning.vocabulary,
         imageUrl: article.imageUrl,
         sourceName: "The Guardian",
@@ -591,7 +576,13 @@ async function buildLearningBatch(
  * request failed is a day with no news at all.
  */
 export async function buildLearningCards(
-  articles: GuardianArticle[]
+  articles: GuardianArticle[],
+  /*
+   * The languages the pool should be written in, read from the accounts by
+   * the caller. Defaulted so a caller with no opinion still produces the pool
+   * that has always existed rather than none at all.
+   */
+  languages: readonly LanguageCode[] = DEFAULT_LEARNING_PAIR,
 ): Promise<DailyNewsPoolItem[]> {
   if (articles.length === 0) return [];
 
@@ -610,7 +601,7 @@ export async function buildLearningCards(
   }
 
   const settled = await Promise.allSettled(
-    batches.map((batch) => buildLearningBatch(batch, model, client))
+    batches.map((batch) => buildLearningBatch(batch, model, client, languages))
   );
 
   const items: DailyNewsPoolItem[] = [];

@@ -180,11 +180,17 @@ function createNoteContent(
   [primaryLanguage, secondaryLanguage]: readonly [LanguageCode, LanguageCode],
 ) {
   const englishVocabulary = card.vocabulary
-    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${(item.examples[primaryLanguage] ?? "")}`)
+    .map(
+      (item) =>
+        `• ${item.texts[primaryLanguage] ?? ""} (${item.partOfSpeech}) — ${item.examples[primaryLanguage] ?? ""}`,
+    )
     .join("\n");
 
   const chineseVocabulary = card.vocabulary
-    .map((item) => `• ${item.word}：${item.translation}\n  ${(item.examples[secondaryLanguage] ?? "")}`)
+    .map(
+      (item) =>
+        `• ${item.texts[primaryLanguage] ?? ""}：${item.texts[secondaryLanguage] ?? ""}\n  ${item.examples[secondaryLanguage] ?? ""}`,
+    )
     .join("\n");
 
   const english = `📰 ${(card.titles[primaryLanguage] ?? "")}
@@ -212,8 +218,7 @@ function createPartnerMessage(card: DailyNewsCard) {
     titles: card.titles,
     summaries: card.summaries,
     vocabulary: card.vocabulary.map((item) => ({
-      word: item.word,
-      translation: item.translation,
+      texts: item.texts,
       partOfSpeech: item.partOfSpeech,
       examples: item.examples,
     })),

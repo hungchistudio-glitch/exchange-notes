@@ -325,7 +325,7 @@ export default function StoryDetailSheet({
               <span className="text-ink-faint">
                 {" · "}
                 {card.vocabulary
-                  .map((item) => item.word)
+                  .map((item) => (item.texts[primaryLanguage] ?? ""))
                   .join(" · ")}
               </span>
             ) : null}

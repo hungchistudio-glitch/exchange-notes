@@ -197,24 +197,24 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                * whichever field happened to be called "chinese".
                */
               const wordPronunciation = getPhonetics(
-                item.translation,
+                (item.texts[secondaryLanguage] ?? ""),
                 secondaryLanguage,
               );
 
               return (
                 <div
-                  key={`${item.word}-${index}`}
+                  key={`${(item.texts[primaryLanguage] ?? "")}-${index}`}
                   className="rounded-xl p-2.5"
                   style={{ background: "var(--msg-surface-soft)" }}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="min-w-0 truncate text-xs font-semibold">
-                      {item.word}
+                      {(item.texts[primaryLanguage] ?? "")}
                     </p>
                     <SpeakerButton
-                      text={item.word}
+                      text={(item.texts[primaryLanguage] ?? "")}
                       language={getLanguage(primaryLanguage).speechTag}
-                      label={item.word}
+                      label={(item.texts[primaryLanguage] ?? "")}
                       size="sm"
                     />
                   </div>
@@ -224,7 +224,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                         className="truncate text-xs"
                         style={{ color: "var(--msg-ink-soft)" }}
                       >
-                        {item.translation}
+                        {(item.texts[secondaryLanguage] ?? "")}
                       </p>
                       {(wordPronunciation.pinyin ||
                         wordPronunciation.zhuyin) && (
@@ -239,9 +239,9 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                       )}
                     </div>
                     <SpeakerButton
-                      text={item.translation}
+                      text={(item.texts[secondaryLanguage] ?? "")}
                       language={getLanguage(secondaryLanguage).speechTag}
-                      label={item.translation}
+                      label={(item.texts[secondaryLanguage] ?? "")}
                       size="sm"
                     />
                   </div>

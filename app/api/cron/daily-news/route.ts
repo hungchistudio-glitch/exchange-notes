@@ -4,6 +4,7 @@ import {
   buildLearningCards,
   selectTodaysArticles,
 } from "@/lib/dailyNews";
+import { getDailyNewsLanguages } from "@/lib/news/languagesInUse";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -83,7 +84,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const items = await buildLearningCards(articles);
+    /*
+     * The pool is written in the languages the accounts actually use, not in
+     * a pair chosen at build time. It is one batch a day shared by everyone,
+     * which is exactly the case where covering more languages is worth the
+     * output — the cost is paid once and divided by every reader.
+     */
+    const languages = await getDailyNewsLanguages();
+
+    const items = await buildLearningCards(articles, languages);
 
     if (items.length === 0) {
       throw new Error(

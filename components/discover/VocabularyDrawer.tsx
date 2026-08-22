@@ -128,8 +128,8 @@ export default function VocabularyDrawer({
 
       await insertVocabulary({
         user_id: user.id,
-        word: item.word.trim(),
-        translation: item.translation.trim(),
+        word: (item.texts[primaryLanguage] ?? "").trim(),
+        translation: (item.texts[secondaryLanguage] ?? "").trim(),
         word_language: languagePair[0],
         translation_language: languagePair[1],
         part_of_speech: item.partOfSpeech?.trim() || null,
@@ -159,7 +159,7 @@ export default function VocabularyDrawer({
 
       requestedKeysRef.current.add(cacheKey);
 
-      void getPronunciation(item.word, item.translation).then((result) => {
+      void getPronunciation((item.texts[primaryLanguage] ?? ""), (item.texts[secondaryLanguage] ?? "")).then((result) => {
         if (cancelled || !result) return;
 
         setPronunciations((current) => ({
@@ -172,7 +172,7 @@ export default function VocabularyDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, card]);
+  }, [open, card, primaryLanguage, secondaryLanguage]);
 
   return (
     <BottomSheet
@@ -201,7 +201,7 @@ export default function VocabularyDrawer({
                     <span
                       className="text-[17px] font-semibold text-black"
                     >
-                      {item.word}
+                      {(item.texts[primaryLanguage] ?? "")}
                     </span>
 
                     {(
@@ -231,7 +231,7 @@ export default function VocabularyDrawer({
                           ? copy.addedToVocabulary
                           : copy.addToVocabularyAriaLabel.replace(
                               "{word}",
-                              item.word
+                              (item.texts[primaryLanguage] ?? "")
                             )
                       }
                     />
@@ -239,12 +239,12 @@ export default function VocabularyDrawer({
 
                   <SpeakerButton
                     onClick={() =>
-                      onSpeak(wordKey, item.word, getLanguage(primaryLanguage).speechTag)
+                      onSpeak(wordKey, (item.texts[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
                     }
                     active={speakingKey === wordKey}
                     ariaLabel={copy.readVocabWordAriaLabel.replace(
                       "{word}",
-                      item.word
+                      (item.texts[primaryLanguage] ?? "")
                     )}
                   />
                 </div>
@@ -261,7 +261,7 @@ export default function VocabularyDrawer({
                     <p
                       className="text-sm text-ink-soft"
                     >
-                      {item.translation}
+                      {(item.texts[secondaryLanguage] ?? "")}
                     </p>
 
 
@@ -281,14 +281,14 @@ export default function VocabularyDrawer({
                     onClick={() =>
                       onSpeak(
                         translationKey,
-                        item.translation,
+                        (item.texts[secondaryLanguage] ?? ""),
                         getLanguage(secondaryLanguage).speechTag
                       )
                     }
                     active={speakingKey === translationKey}
                     ariaLabel={copy.readVocabChineseAriaLabel.replace(
                       "{translation}",
-                      item.translation
+                      (item.texts[secondaryLanguage] ?? "")
                     )}
                   />
                 </div>

@@ -9,8 +9,8 @@ import { readDailyNewsCard } from "@/lib/types/dailyNews";
 export const NEWS_CARD_MARKER = "⟧EXCHANGE_NOTES_NEWS⟨";
 
 export type SharedNewsVocabularyItem = {
-  word: string;
-  translation: string;
+  /** The word in each language the card carries — not a pair. */
+  texts: ByLanguage;
   partOfSpeech?: string | null;
   examples?: ByLanguage;
 };
@@ -69,8 +69,7 @@ export function decodeNewsCardMessage(body: string): SharedNewsCard | null {
       titles: card.titles,
       summaries: card.summaries,
       vocabulary: card.vocabulary.map((item) => ({
-        word: item.word,
-        translation: item.translation,
+        texts: item.texts,
         partOfSpeech: item.partOfSpeech || null,
         examples: item.examples,
       })),
