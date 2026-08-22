@@ -402,7 +402,7 @@ function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, languagePair } = useLearningLanguageContext();
   const capture = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -984,7 +984,8 @@ function CaptureContent() {
           user_id: user.id,
           word: result.englishName.trim(),
           translation: result.chineseName.trim(),
-          language: "english",
+          word_language: languagePair[0],
+          translation_language: languagePair[1],
           part_of_speech:
             result.partOfSpeech.trim() || null,
           example_sentence:

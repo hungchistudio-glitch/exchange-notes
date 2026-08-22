@@ -1,5 +1,6 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { useCallback } from "react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +16,8 @@ export default function useVocabularyLookupPartnerShare({
   lookupResult,
   onSendToPartner,
 }: UseVocabularyLookupPartnerShareOptions) {
+  const { languagePair } = useLearningLanguageContext();
+
   const sendLookupToPartner = useCallback(async () => {
     if (!lookupResult) return;
 
@@ -30,9 +33,9 @@ export default function useVocabularyLookupPartnerShare({
       user_id: user?.id ?? "",
       word: lookupResult.englishName,
       translation: lookupResult.chineseName,
-      language: "english",
-      word_language: "en",
-      translation_language: "zh-TW",
+      language: languagePair[0],
+      word_language: languagePair[0],
+      translation_language: languagePair[1],
       part_of_speech: lookupResult.partOfSpeech || null,
       example_sentence: lookupResult.englishExample || null,
       translated_example: lookupResult.chineseExample || null,
@@ -46,7 +49,7 @@ export default function useVocabularyLookupPartnerShare({
     };
 
     onSendToPartner(item);
-  }, [lookupResult, onSendToPartner]);
+  }, [lookupResult, onSendToPartner, languagePair]);
 
   return {
     sendLookupToPartner,

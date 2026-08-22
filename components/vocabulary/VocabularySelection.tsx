@@ -1,5 +1,6 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import {
   type ReactNode,
   useCallback,
@@ -27,6 +28,8 @@ export default function VocabularySelection({
 }: VocabularySelectionProps) {
   const { addItem } = useVocabulary();
   const contentRef = useRef<HTMLDivElement>(null);
+  const { languagePair } = useLearningLanguageContext();
+
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
@@ -39,7 +42,7 @@ export default function VocabularySelection({
 
     try {
       const data = await classifyText(text);
-      const result = await saveClassifiedVocabulary(data, text);
+      const result = await saveClassifiedVocabulary(data, text, languagePair);
 
       if (result.item) {
         addItem(result.item);
@@ -63,6 +66,7 @@ export default function VocabularySelection({
     addingWord,
     selection,
     setSelection,
+    languagePair,
   ]);
 
   const handleSelectionSendToPartner = useCallback(async () => {
@@ -82,7 +86,9 @@ export default function VocabularySelection({
         id: `selection-${crypto.randomUUID()}`,
         word: (data.englishName ?? selectedText).trim(),
         translation: (data.chineseName ?? "").trim(),
-        language: "english",
+        language: languagePair[0],
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: data.partOfSpeech?.trim() || null,
         example_sentence: data.englishExample?.trim() || null,
         translated_example: data.chineseExample?.trim() || null,
@@ -111,6 +117,7 @@ export default function VocabularySelection({
     onSendToPartner,
     selection,
     setSelection,
+    languagePair,
   ]);
 
   return (

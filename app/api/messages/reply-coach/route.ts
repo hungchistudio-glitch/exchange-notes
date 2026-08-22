@@ -2,7 +2,7 @@ import {
   promptLanguageName,
   whenScriptRuleApplies,
 } from "@/lib/ai/languagePrompt";
-import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
+import { toLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
@@ -162,10 +162,10 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .maybeSingle();
 
-    const learningCode =
-      readLanguageCode(profile?.learning_language) ?? DEFAULT_LEARNING_PAIR[0];
-    const nativeCode =
-      readLanguageCode(profile?.native_language) ?? DEFAULT_LEARNING_PAIR[1];
+    const [learningCode, nativeCode] = toLearningPair(
+      profile?.learning_language,
+      profile?.native_language,
+    );
 
     const learningLanguage = promptLanguageName(learningCode);
     const nativeLanguage = promptLanguageName(nativeCode);

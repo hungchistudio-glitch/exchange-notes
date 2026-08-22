@@ -7,6 +7,7 @@ import {
   vocabularyExists,
 } from "@/lib/vocabulary/repository";
 import { recordInteraction } from "@/lib/vocabulary/helpers";
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 
 type SaveClassifiedVocabularyResult = {
@@ -17,6 +18,13 @@ type SaveClassifiedVocabularyResult = {
 export async function saveClassifiedVocabulary(
   classified: ClassifiedVocabulary,
   fallbackText: string,
+  /*
+   * The pair the result was produced in, learning first. The classifier's two
+   * fields are still named for two languages; which languages they hold is
+   * decided by the prompt this pair built, so it has to travel with the
+   * result rather than being guessed at the point it is saved.
+   */
+  languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<SaveClassifiedVocabularyResult> {
   const { user } = await getCurrentUser();
 
@@ -44,7 +52,8 @@ export async function saveClassifiedVocabulary(
     user_id: user.id,
     word,
     translation,
-    language: "english",
+    word_language: languagePair[0],
+    translation_language: languagePair[1],
     part_of_speech:
       classified.partOfSpeech?.trim() || null,
     example_sentence:

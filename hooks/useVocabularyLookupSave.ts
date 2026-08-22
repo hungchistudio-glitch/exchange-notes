@@ -1,5 +1,6 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import {
   useCallback,
   useState,
@@ -41,6 +42,8 @@ export default function useVocabularyLookupSave({
   resetLookup,
   messages,
 }: UseVocabularyLookupSaveOptions) {
+  const { languagePair } = useLearningLanguageContext();
+
   const [savingLookup, setSavingLookup] = useState(false);
 
   const saveLookupResult = useCallback(async () => {
@@ -93,7 +96,8 @@ export default function useVocabularyLookupSave({
           user_id: user.id,
           word,
           translation,
-          language: "english",
+          word_language: languagePair[0],
+          translation_language: languagePair[1],
           part_of_speech: lookupResult.partOfSpeech.trim() || null,
           example_sentence: lookupResult.englishExample.trim() || null,
           translated_example: lookupResult.chineseExample.trim() || null,
@@ -131,6 +135,7 @@ export default function useVocabularyLookupSave({
     setAiSearchOpen,
     setError,
     setQuery,
+    languagePair,
   ]);
 
   return {

@@ -83,7 +83,7 @@ export default function OmniLexiconConsole({
 }: OmniLexiconConsoleProps) {
   const { t } = useTranslation();
   const copy = t.cosmic.omni;
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, languagePair } = useLearningLanguageContext();
 
   const [query, setQuery] = useState("");
   const {
@@ -303,7 +303,8 @@ export default function OmniLexiconConsole({
         user_id: user.id,
         word: lookupResult.englishName.trim(),
         translation: lookupResult.chineseName.trim(),
-        language: "english",
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: lookupResult.partOfSpeech?.trim() || null,
         example_sentence: lookupResult.englishExample?.trim() || null,
         translated_example: lookupResult.chineseExample?.trim() || null,

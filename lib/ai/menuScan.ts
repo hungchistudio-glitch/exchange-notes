@@ -7,7 +7,6 @@ import {
 import { toTraditional } from "@/lib/chinese/toTraditional";
 import { buildMenuScanPrompt } from "@/lib/ai/prompts/menuScan";
 import {
-  DEFAULT_LEARNING_PAIR,
   compactByLanguage,
   tagNeedsTraditionalNormalization,
   type LanguageCode,
@@ -332,12 +331,13 @@ async function scanWithModel(
   imageBase64: string,
   mediaType: string,
   targetLanguage: LanguageCode,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const interaction = await client.interactions.create(
     {
       model,
       input: [
-        { type: "text", text: buildMenuScanPrompt(DEFAULT_LEARNING_PAIR) },
+        { type: "text", text: buildMenuScanPrompt(languagePair) },
         {
           type: "image",
           data: imageBase64,
@@ -373,7 +373,7 @@ async function scanWithModel(
   return readMenuDocument(
     JSON.parse(stripJsonCodeFence(outputText)) as unknown,
     targetLanguage,
-    DEFAULT_LEARNING_PAIR,
+    languagePair,
   );
 }
 
@@ -422,6 +422,7 @@ export async function scanMenu(
   imageBase64: string,
   mediaType: string,
   targetLanguage: LanguageCode,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<{ document: MenuDocument | null; isMenu: boolean }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new MenuScanUnavailableError();
@@ -447,6 +448,7 @@ export async function scanMenu(
         imageBase64,
         mediaType,
         targetLanguage,
+        languagePair,
       );
     } catch (error) {
       if (isRateLimitError(error)) {

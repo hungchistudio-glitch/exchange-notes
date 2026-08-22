@@ -44,11 +44,15 @@ export type VocabularyItem = {
   word: string;
   translation: string;
   /**
-   * Legacy: the language of `word`, in the prose encoding. Superseded by the
-   * pair below, which names both halves instead of leaving the second one
-   * implied by there being only two languages. Every writer still sets it.
+   * Legacy: the language of `word`, as stored. Superseded by the pair below,
+   * which names both halves instead of leaving the second one implied by
+   * there being only two languages.
+   *
+   * Typed as stored rather than as a union, because it is written by one
+   * place now (the repository, from word_language) and read by none. It goes
+   * when the column does.
    */
-  language: AppLanguage;
+  language: string;
   /**
    * The pair, stated outright. Present on every row and returned by the
    * `select("*")` reads, so they are not optional — the database backfilled

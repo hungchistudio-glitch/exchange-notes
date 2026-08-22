@@ -11,14 +11,20 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import {
-  DEFAULT_LEARNING_PAIR,
-  readLanguageCode,
-  type LanguageCode,
-} from "@/lib/languages";
+import type { LanguageCode } from "@/lib/languages";
+import { toLearningPair } from "@/lib/profile/languagePair";
 
 type LearningLanguageContextType = {
   learningLanguage: LanguageCode;
+  nativeLanguage: LanguageCode;
+  /**
+   * Both, in the order everything else uses: learning first, native second.
+   *
+   * Anything saving a word needs both — which language the word is in and
+   * which the translation is in — and deriving the second from the first
+   * only works while exactly two languages exist.
+   */
+  languagePair: readonly [LanguageCode, LanguageCode];
   isLearningChinese: boolean;
   isLearningEnglish: boolean;
   loading: boolean;
@@ -27,17 +33,6 @@ type LearningLanguageContextType = {
 
 const LearningLanguageContext =
   createContext<LearningLanguageContextType | null>(null);
-
-/*
- * The column holds prose values on rows written before the migration and
- * language codes on rows written after it, so this reads either and answers
- * in codes. An unreadable value becomes the language the app has always
- * taught rather than nothing, because a screen full of word cards needs a
- * side to lead with.
- */
-function normalizeLearningLanguage(value: unknown): LanguageCode {
-  return readLanguageCode(value) ?? DEFAULT_LEARNING_PAIR[0];
-}
 
 /**
  * App-wide source of truth for "which language is the user learning"
@@ -62,13 +57,17 @@ function normalizeLearningLanguage(value: unknown): LanguageCode {
 export function LearningLanguageProvider({
   children,
   initialLearningLanguage,
+  initialNativeLanguage,
 }: {
   children: ReactNode;
   initialLearningLanguage: unknown;
+  initialNativeLanguage?: unknown;
 }) {
-  const [learningLanguage, setLearningLanguage] = useState<LanguageCode>(() =>
-    normalizeLearningLanguage(initialLearningLanguage),
+  const [pair, setPair] = useState<readonly [LanguageCode, LanguageCode]>(() =>
+    toLearningPair(initialLearningLanguage, initialNativeLanguage),
   );
+
+  const [learningLanguage, nativeLanguage] = pair;
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -85,7 +84,7 @@ export function LearningLanguageProvider({
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("learning_language")
+        .select("learning_language, native_language")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -94,11 +93,12 @@ export function LearningLanguageProvider({
         return;
       }
 
-      setLearningLanguage(
-        normalizeLearningLanguage(
-          (data as { learning_language: unknown } | null)?.learning_language,
-        ),
-      );
+      const row = data as {
+        learning_language: unknown;
+        native_language: unknown;
+      } | null;
+
+      setPair(toLearningPair(row?.learning_language, row?.native_language));
     } finally {
       setLoading(false);
     }
@@ -130,12 +130,14 @@ export function LearningLanguageProvider({
   const value = useMemo<LearningLanguageContextType>(
     () => ({
       learningLanguage,
+      nativeLanguage,
+      languagePair: pair,
       isLearningChinese: learningLanguage === "zh-TW",
       isLearningEnglish: learningLanguage === "en",
       loading,
       refresh,
     }),
-    [learningLanguage, loading, refresh],
+    [learningLanguage, nativeLanguage, pair, loading, refresh],
   );
 
   return (

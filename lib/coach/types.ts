@@ -2,7 +2,8 @@ export type CoachWord = {
   id: string;
   word: string;
   translation: string;
-  language: "english" | "traditional-chinese";
+  /** As stored — see VocabularyItem.language. Not read. */
+  language: string;
   partOfSpeech: string | null;
   exampleSentence: string | null;
   status: "new" | "learning" | "mastered";

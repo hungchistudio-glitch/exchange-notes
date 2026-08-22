@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { buildTranslateNotePrompt } from "@/lib/ai/prompts/translateNote";
-import { DEFAULT_LEARNING_PAIR } from "@/lib/languages";
+import { readLearningPair } from "@/lib/profile/languagePair";
 
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
@@ -135,11 +135,13 @@ export async function POST(request: Request) {
 
     const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 
+    const languagePair = await readLearningPair(supabase, user.id);
+
     const client = new GoogleGenAI({ apiKey });
 
     const interaction = await client.interactions.create({
       model,
-      input: buildTranslateNotePrompt(text, DEFAULT_LEARNING_PAIR),
+      input: buildTranslateNotePrompt(text, languagePair),
       response_format: {
         type: "text",
         mime_type: "application/json",

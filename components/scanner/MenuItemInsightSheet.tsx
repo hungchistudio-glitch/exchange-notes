@@ -1,5 +1,6 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { BookmarkCheck, BookmarkPlus, LoaderCircle, Send, Volume2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -51,6 +52,9 @@ export default function MenuItemInsightSheet({
   const copy = t.scanner.menu;
   const router = useRouter();
 
+  const { languagePair } = useLearningLanguageContext();
+
+
   const [speaking, setSpeaking] = useState<SpeechLanguage | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [actionError, setActionError] = useState("");
@@ -94,7 +98,7 @@ export default function MenuItemInsightSheet({
 
   useEffect(() => {
     if (!item) return;
-    if (!item.names.en && !item.names["zh-TW"]) return;
+    if (!item.names[languagePair[0]] && !item.names[languagePair[1]]) return;
 
     let cancelled = false;
 
@@ -118,7 +122,7 @@ export default function MenuItemInsightSheet({
     return () => {
       cancelled = true;
     };
-  }, [item]);
+  }, [item, languagePair]);
 
   if (!item) return null;
 
@@ -143,7 +147,7 @@ export default function MenuItemInsightSheet({
     // cannot keep it narrowed across the asynchronous boundary.
     const dish = item;
     if (!dish || saveState !== "idle") return;
-    if (!dish.names.en || !dish.names["zh-TW"]) return;
+    if (!dish.names[languagePair[0]] || !dish.names[languagePair[1]]) return;
 
     setSaveState("saving");
     setActionError("");
@@ -162,11 +166,12 @@ export default function MenuItemInsightSheet({
 
       const { error } = await supabase.from("vocabulary_items").insert({
         user_id: user.id,
-        word: dish.names.en.trim(),
-        translation: dish.names["zh-TW"].trim(),
-        language: "english",
-        example_sentence: dish.descriptions.en || null,
-        translated_example: dish.descriptions["zh-TW"] || null,
+        word: (dish.names[languagePair[0]] ?? "").trim(),
+        translation: (dish.names[languagePair[1]] ?? "").trim(),
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
+        example_sentence: dish.descriptions[languagePair[0]] || null,
+        translated_example: dish.descriptions[languagePair[1]] || null,
         // The read's own confidence travels with the word: an item the model
         // was unsure of should not arrive in review looking certain.
         confidence: dish.translationConfidence,
@@ -224,15 +229,19 @@ export default function MenuItemInsightSheet({
      * captured object or a saved vocabulary item would.
      */
     setPendingSharedVocabulary({
-      word: item.names.en ?? "",
-      translation: item.names["zh-TW"] ?? "",
+      word: item.names[languagePair[0]] ?? "",
+      translation: item.names[languagePair[1]] ?? "",
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
       examples: item.descriptions,
     });
 
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
-  const canKeep = Boolean(item.names.en && item.names["zh-TW"]);
+  const canKeep = Boolean(
+    item.names[languagePair[0]] && item.names[languagePair[1]],
+  );
 
   return (
     <>

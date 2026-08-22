@@ -97,7 +97,7 @@ export default function VocabularyDrawer({
   onSpeak,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { isLearningChinese, languagePair } = useLearningLanguageContext();
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 
   // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
@@ -127,10 +127,11 @@ export default function VocabularyDrawer({
         user_id: user.id,
         word: item.word.trim(),
         translation: item.translation.trim(),
-        language: "english",
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: item.partOfSpeech?.trim() || null,
-        example_sentence: (item.examples.en ?? "")?.trim() || null,
-        translated_example: (item.examples["zh-TW"] ?? "")?.trim() || null,
+        example_sentence: item.examples[languagePair[0]]?.trim() || null,
+        translated_example: item.examples[languagePair[1]]?.trim() || null,
         confidence: "medium",
         category: "other",
         status: "new",

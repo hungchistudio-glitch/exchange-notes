@@ -1,3 +1,4 @@
+import { readLearningPair } from "@/lib/profile/languagePair";
 import { NextResponse } from "next/server";
 
 import {
@@ -152,7 +153,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const cached = getCachedObjectIdentification(imageBase64);
+    const languagePair = await readLearningPair(supabase, user.id);
+
+    const cached = getCachedObjectIdentification(imageBase64, languagePair);
 
     if (cached) {
       return NextResponse.json(cached, {
@@ -184,7 +187,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await identifyObject(imageBase64, mediaType);
+    const result = await identifyObject(imageBase64, mediaType, languagePair);
     return NextResponse.json(result, {
       headers: {
         "Cache-Control": "private, no-store",
