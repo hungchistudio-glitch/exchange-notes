@@ -220,6 +220,49 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
 
 export const LANGUAGE_CODES = Object.keys(LANGUAGES) as LanguageCode[];
 
+/**
+ * A value in each language it exists in.
+ *
+ * The shape that replaces paired fields named after languages —
+ * englishExample/chineseExample, englishTitle/chineseTitle. Those names put
+ * the language in the schema, which meant a third language needed a third
+ * field and a fourth needed a fourth, and nothing could hold Spanish at all.
+ *
+ * Partial, and meaningfully so: a missing key is "this text does not exist in
+ * that language", which a renderer should skip rather than draw empty. An
+ * entry never holds a placeholder for a language that has no answer.
+ */
+export type ByLanguage<T = string> = Partial<Record<LanguageCode, T>>;
+
+/**
+ * Reads a language-keyed value, preferring the first language that has one.
+ *
+ * Callers pass the order they want to show, so the same record renders
+ * "learning language first" on one screen and "native first" on another
+ * without either of them knowing which languages those are.
+ */
+export function pickLanguage<T>(
+  value: ByLanguage<T> | undefined,
+  order: readonly LanguageCode[],
+): T | undefined {
+  if (!value) return undefined;
+  for (const code of order) {
+    const found = value[code];
+    if (found !== undefined && found !== "") return found;
+  }
+  return undefined;
+}
+
+/** Drops empty and absent entries, so a record never carries blank strings. */
+export function compactByLanguage(value: ByLanguage): ByLanguage {
+  const out: ByLanguage = {};
+  for (const code of LANGUAGE_CODES) {
+    const text = value[code];
+    if (typeof text === "string" && text.trim()) out[code] = text;
+  }
+  return out;
+}
+
 export function isLanguageCode(value: unknown): value is LanguageCode {
   // Object.hasOwn, not `in`: this guard validates values arriving from the
   // database, localStorage and model output, and `in` walks the prototype

@@ -248,8 +248,10 @@ export default function OmniLexiconConsole({
       word: lookupResult.englishName,
       translation: lookupResult.chineseName,
       partOfSpeech: lookupResult.partOfSpeech,
-      englishExample: lookupResult.englishExample,
-      chineseExample: lookupResult.chineseExample,
+      examples: {
+        en: lookupResult.englishExample,
+        "zh-TW": lookupResult.chineseExample,
+      },
     });
   }
 

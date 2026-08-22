@@ -7,6 +7,7 @@ import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import { getPronunciationData } from "@/lib/pronunciation";
+import { getLanguage } from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { insertValues } from "@/lib/utils";
@@ -139,11 +140,20 @@ export default function WordCardMessage({
     ? [chineseBlock, englishBlock]
     : [englishBlock, chineseBlock];
 
-  const [firstExample, secondExample] = isLearningChinese
-    ? [card.chineseExample, card.englishExample]
-    : [card.englishExample, card.chineseExample];
-  const firstExampleLang = isLearningChinese ? "zh-TW" : "en-US";
-  const secondExampleLang = isLearningChinese ? "en-US" : "zh-TW";
+  /*
+   * Which language leads is the reader's setting; which languages exist is
+   * the card's own business. A card sent from a different pair still renders
+   * both of its sides — it just cannot promise either of them is the one
+   * this reader is studying.
+   */
+  const [firstCode, secondCode] = isLearningChinese
+    ? (["zh-TW", "en"] as const)
+    : (["en", "zh-TW"] as const);
+
+  const firstExample = card.examples?.[firstCode];
+  const secondExample = card.examples?.[secondCode];
+  const firstExampleLang = getLanguage(firstCode).speechTag;
+  const secondExampleLang = getLanguage(secondCode).speechTag;
 
   function renderExample(
     text: string,

@@ -928,8 +928,7 @@ function CaptureContent() {
       word: result.englishName,
       translation: result.chineseName,
       partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
+      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
     });
   }
 
@@ -1074,8 +1073,7 @@ function CaptureContent() {
       word: result.englishName,
       translation: result.chineseName,
       partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
+      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
     });
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }

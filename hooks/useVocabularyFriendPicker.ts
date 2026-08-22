@@ -44,8 +44,12 @@ export default function useVocabularyFriendPicker() {
       word: item.word,
       translation: item.translation,
       partOfSpeech: item.part_of_speech,
-      englishExample: item.example_sentence,
-      chineseExample: item.translated_example,
+      wordLanguage: item.word_language,
+      translationLanguage: item.translation_language,
+      examples: {
+        [item.word_language]: item.example_sentence ?? "",
+        [item.translation_language]: item.translated_example ?? "",
+      },
     });
   }, []);
 

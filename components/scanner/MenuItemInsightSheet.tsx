@@ -218,8 +218,10 @@ export default function MenuItemInsightSheet({
     setPendingSharedVocabulary({
       word: item.englishName,
       translation: item.chineseName,
-      englishExample: item.englishDescription || null,
-      chineseExample: item.chineseDescription || null,
+      examples: {
+        en: item.englishDescription,
+        "zh-TW": item.chineseDescription,
+      },
     });
 
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
