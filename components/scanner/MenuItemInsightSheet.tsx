@@ -11,13 +11,18 @@ import { listFriends, type FriendProfile } from "@/lib/friends";
 import { getPronunciation } from "@/lib/pronunciation/getPronunciation";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { hasLowConfidence, itemNames, type MenuItem } from "@/lib/scanner/menuTypes";
+import {
+  LANGUAGE_CODES,
+  getLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuItemInsightSheetProps = {
   item: MenuItem | null;
   cuisine: string;
-  targetLanguage: string;
+  targetLanguage: LanguageCode;
   onClose: () => void;
 };
 
@@ -89,12 +94,15 @@ export default function MenuItemInsightSheet({
 
   useEffect(() => {
     if (!item) return;
-    if (!item.englishName && !item.chineseName) return;
+    if (!item.names.en && !item.names["zh-TW"]) return;
 
     let cancelled = false;
 
     void (async () => {
-      const result = await getPronunciation(item.englishName, item.chineseName);
+      const result = await getPronunciation(
+        item.names.en ?? "",
+        item.names["zh-TW"] ?? "",
+      );
       if (cancelled) return;
 
       setPhonetics({
@@ -103,7 +111,7 @@ export default function MenuItemInsightSheet({
         // The dictionary is the better answer when it has one; an item name is
         // usually a phrase it has never heard of, and that is what the model's
         // transcription is for.
-        ipa: stripSlashes(result?.englishPronunciation || item.ipa || ""),
+        ipa: stripSlashes(result?.englishPronunciation || item.ipa.en || ""),
       });
     })();
 
@@ -135,7 +143,7 @@ export default function MenuItemInsightSheet({
     // cannot keep it narrowed across the asynchronous boundary.
     const dish = item;
     if (!dish || saveState !== "idle") return;
-    if (!dish.englishName || !dish.chineseName) return;
+    if (!dish.names.en || !dish.names["zh-TW"]) return;
 
     setSaveState("saving");
     setActionError("");
@@ -154,11 +162,11 @@ export default function MenuItemInsightSheet({
 
       const { error } = await supabase.from("vocabulary_items").insert({
         user_id: user.id,
-        word: dish.englishName.trim(),
-        translation: dish.chineseName.trim(),
+        word: dish.names.en.trim(),
+        translation: dish.names["zh-TW"].trim(),
         language: "english",
-        example_sentence: dish.englishDescription || null,
-        translated_example: dish.chineseDescription || null,
+        example_sentence: dish.descriptions.en || null,
+        translated_example: dish.descriptions["zh-TW"] || null,
         // The read's own confidence travels with the word: an item the model
         // was unsure of should not arrive in review looking certain.
         confidence: dish.translationConfidence,
@@ -216,18 +224,15 @@ export default function MenuItemInsightSheet({
      * captured object or a saved vocabulary item would.
      */
     setPendingSharedVocabulary({
-      word: item.englishName,
-      translation: item.chineseName,
-      examples: {
-        en: item.englishDescription,
-        "zh-TW": item.chineseDescription,
-      },
+      word: item.names.en ?? "",
+      translation: item.names["zh-TW"] ?? "",
+      examples: item.descriptions,
     });
 
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
-  const canKeep = Boolean(item.englishName && item.chineseName);
+  const canKeep = Boolean(item.names.en && item.names["zh-TW"]);
 
   return (
     <>
@@ -277,39 +282,28 @@ export default function MenuItemInsightSheet({
             the list, one to say out loud.
           */}
           <div className="flex gap-2">
-            {item.chineseName ? (
-              <button
-                type="button"
-                onClick={() => handleListen(item.chineseName, "zh-TW")}
-                disabled={speaking !== null}
-                aria-label={`${copy.listen} 中文`}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-              >
-                {speaking === "zh-TW" ? (
-                  <LoaderCircle size={16} className="animate-spin" />
-                ) : (
-                  <Volume2 size={16} strokeWidth={1.9} />
-                )}
-                中文
-              </button>
-            ) : null}
+            {LANGUAGE_CODES.filter((code) => item.names[code]).map((code) => {
+              const language = getLanguage(code);
+              const tag = language.speechTag;
 
-            {item.englishName ? (
-              <button
-                type="button"
-                onClick={() => handleListen(item.englishName, "en-US")}
-                disabled={speaking !== null}
-                aria-label={`${copy.listen} English`}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-              >
-                {speaking === "en-US" ? (
-                  <LoaderCircle size={16} className="animate-spin" />
-                ) : (
-                  <Volume2 size={16} strokeWidth={1.9} />
-                )}
-                English
-              </button>
-            ) : null}
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => handleListen(item.names[code] ?? "", tag)}
+                  disabled={speaking !== null}
+                  aria-label={`${copy.listen} ${language.endonym}`}
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
+                >
+                  {speaking === tag ? (
+                    <LoaderCircle size={16} className="animate-spin" />
+                  ) : (
+                    <Volume2 size={16} strokeWidth={1.9} />
+                  )}
+                  {language.endonym}
+                </button>
+              );
+            })}
           </div>
 
           {canKeep ? (

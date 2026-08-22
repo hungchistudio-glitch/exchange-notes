@@ -1,3 +1,4 @@
+import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
 import { NextResponse } from "next/server";
 
 import {
@@ -177,11 +178,10 @@ export async function POST(request: Request) {
       return failed("The photo is too large to read.", "image_too_large", 413);
     }
 
+    // The client still sends the prose encoding; readLanguageCode takes
+    // either that or a code, so the two can cross over independently.
     const targetLanguage =
-      body.targetLanguage === "english" ||
-      body.targetLanguage === "traditional-chinese"
-        ? body.targetLanguage
-        : "english";
+      readLanguageCode(body.targetLanguage) ?? DEFAULT_LEARNING_PAIR[0];
 
     if (!consumeMinuteRequest(user.id)) {
       return failed(

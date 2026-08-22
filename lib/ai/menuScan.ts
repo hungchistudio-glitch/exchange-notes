@@ -8,7 +8,9 @@ import { toTraditional } from "@/lib/chinese/toTraditional";
 import { buildMenuScanPrompt } from "@/lib/ai/prompts/menuScan";
 import {
   DEFAULT_LEARNING_PAIR,
+  compactByLanguage,
   tagNeedsTraditionalNormalization,
+  type LanguageCode,
 } from "@/lib/languages";
 import {
   normaliseRegion,
@@ -206,7 +208,8 @@ function readRegion(value: unknown): MenuRegion {
  */
 function readMenuDocument(
   value: unknown,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
+  [firstCode, secondCode]: readonly [LanguageCode, LanguageCode],
 ): { document: MenuDocument | null; isMenu: boolean } {
   if (!value || typeof value !== "object") {
     return { document: null, isMenu: false };
@@ -250,18 +253,34 @@ function readMenuDocument(
           return {
             id: `s${sectionIndex}-i${itemIndex}`,
             sourceName: traditionalSource(readString(item.sourceName, 120)),
-            englishName: readString(item.englishName, 140),
-            chineseName: traditionalChinese(readString(item.chineseName, 140)),
+            /*
+             * The model still answers in fields named for two languages,
+             * because that is its schema. Which languages those fields
+             * actually hold is decided by the pair the prompt was built with
+             * — see buildMenuScanPrompt — so the mapping happens here, once,
+             * rather than the names being believed downstream.
+             */
+            names: compactByLanguage({
+              [firstCode]: readString(item.englishName, 140),
+              [secondCode]: traditionalChinese(
+                readString(item.chineseName, 140),
+              ),
+            }),
             sourceDescription: traditionalSource(
               readString(item.sourceDescription, 300),
             ),
-            englishDescription: readString(item.englishDescription, 340),
-            chineseDescription: traditionalChinese(
-              readString(item.chineseDescription, 340),
-            ),
+            descriptions: compactByLanguage({
+              [firstCode]: readString(item.englishDescription, 340),
+              [secondCode]: traditionalChinese(
+                readString(item.chineseDescription, 340),
+              ),
+            }),
             price: readString(item.price, 24),
             currency: readString(item.currency, 8),
-            ipa: readString(item.ipa, 120),
+            // The transcription belongs to the side it was written for.
+            ipa: compactByLanguage({
+              [firstCode]: readString(item.ipa, 120),
+            }),
             region: readRegion(item.region),
             ocrConfidence: readConfidence(item.ocrConfidence),
             translationConfidence: readConfidence(item.translationConfidence),
@@ -272,14 +291,19 @@ function readMenuDocument(
         // A row with no name in any of the three is a row the model
         // invented out of a smudge.
         .filter(
-          (item) => item.sourceName || item.englishName || item.chineseName,
+          (item) =>
+            item.sourceName || Object.keys(item.names).length > 0,
         );
 
       return {
         id: `s${sectionIndex}`,
         sourceTitle: traditionalSource(readString(section.sourceTitle, 80)),
-        englishTitle: readString(section.englishTitle, 100),
-        chineseTitle: traditionalChinese(readString(section.chineseTitle, 100)),
+        titles: compactByLanguage({
+          [firstCode]: readString(section.englishTitle, 100),
+          [secondCode]: traditionalChinese(
+            readString(section.chineseTitle, 100),
+          ),
+        }),
         region: readRegion(section.region),
         items,
       };
@@ -307,7 +331,7 @@ async function scanWithModel(
   model: string,
   imageBase64: string,
   mediaType: string,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
 ) {
   const interaction = await client.interactions.create(
     {
@@ -349,6 +373,7 @@ async function scanWithModel(
   return readMenuDocument(
     JSON.parse(stripJsonCodeFence(outputText)) as unknown,
     targetLanguage,
+    DEFAULT_LEARNING_PAIR,
   );
 }
 
@@ -396,7 +421,7 @@ function isTimeoutError(error: unknown) {
 export async function scanMenu(
   imageBase64: string,
   mediaType: string,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
 ): Promise<{ document: MenuDocument | null; isMenu: boolean }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new MenuScanUnavailableError();
