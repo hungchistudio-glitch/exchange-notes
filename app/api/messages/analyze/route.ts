@@ -1,3 +1,8 @@
+import {
+  promptLanguageName,
+  whenScriptRuleApplies,
+} from "@/lib/ai/languagePrompt";
+import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
@@ -112,10 +117,8 @@ async function consumeDailyQuota(
   return rows?.[0]?.allowed === true;
 }
 
-const LANGUAGE_NAMES: Record<string, string> = {
-  english: "English",
-  "traditional-chinese": "Traditional Chinese",
-};
+const SCRIPT_RULE = `\n- Any Chinese you write must be Traditional as written in Taiwan. Never a
+  Simplified character, anywhere, for any reason.`;
 
 export async function POST(request: Request) {
   try {
@@ -179,8 +182,15 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .maybeSingle();
 
-    const learningLanguage = LANGUAGE_NAMES[profile?.learning_language ?? ""] ?? "English";
-    const nativeLanguage = LANGUAGE_NAMES[profile?.native_language ?? ""] ?? "Traditional Chinese";
+    const learningCode =
+      readLanguageCode(profile?.learning_language) ?? DEFAULT_LEARNING_PAIR[0];
+    const nativeCode =
+      readLanguageCode(profile?.native_language) ?? DEFAULT_LEARNING_PAIR[1];
+
+    const learningLanguage = promptLanguageName(learningCode);
+    const nativeLanguage = promptLanguageName(nativeCode);
+
+    const scriptRule = whenScriptRuleApplies([learningCode, nativeCode], SCRIPT_RULE);
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -269,8 +279,7 @@ Return at most ${MAX_PHRASES} items, and usually fewer. Rules:
 - "tone" is a short human label read from the whole conversation, not the one
   sentence — for example "Casual · Friendly". If you cannot tell, use an empty
   string and set toneConfidence to "unknown". Do not guess at feelings.
-- Any Chinese you write must be Traditional as written in Taiwan. Never a
-  Simplified character, anywhere, for any reason.
+${scriptRule}
       `.trim(),
       response_format: {
         type: "text",

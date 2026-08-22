@@ -1,3 +1,5 @@
+import { buildIdentifyObjectPrompt } from "@/lib/ai/prompts/identifyObject";
+import { DEFAULT_LEARNING_PAIR } from "@/lib/languages";
 import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
@@ -165,26 +167,7 @@ async function identifyWithModel(
       input: [
         {
           type: "text",
-          text: `
-Identify the physical object that the learner intentionally placed closest to
-the exact center of this image. This is for an English and Traditional Chinese
-language-learning app.
-
-Rules:
-- Give the everyday generic name of the centered object, not its color,
-  material, brand, background, container, photo, or screen.
-- Prefer the centered object over larger background objects. If the center is
-  empty, choose the largest clear non-person object.
-- Never identify a person or infer private or sensitive traits.
-- Use a concise singular English headword when natural.
-- The Traditional Chinese name must mean the same object and must never use
-  Simplified Chinese.
-- Base the answer only on visible shape and details. Do not invent obscured
-  details.
-- Keep both example sentences short, natural, and semantically equivalent.
-- Use low confidence whenever the object is blurry, partly hidden, ambiguous,
-  or too small.
-          `.trim(),
+          text: buildIdentifyObjectPrompt(DEFAULT_LEARNING_PAIR),
         },
         {
           type: "image",

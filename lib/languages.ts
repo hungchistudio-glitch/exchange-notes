@@ -291,6 +291,18 @@ export function getLanguageBySpeechTag(tag: SpeechTag): LanguageMetadata {
  * across a user's saved material: their words can be Chinese from an earlier
  * pairing regardless of what they are studying today.
  */
+/**
+ * The pair the app has always taught, and what a prompt assumes when its
+ * caller does not yet know the user's own pair.
+ *
+ * Written down once so the assumption is greppable. Every use of it is a
+ * place that still needs the real pair threaded through.
+ */
+export const DEFAULT_LEARNING_PAIR: readonly [LanguageCode, LanguageCode] = [
+  "en",
+  "zh-TW",
+];
+
 export function anyLearningLanguageNeedsTraditional(): boolean {
   return getLearningLanguages().some(
     (language) => language.requiresTraditionalNormalization,
@@ -341,6 +353,24 @@ const CODE_TO_LEGACY: Partial<Record<LanguageCode, AppLanguage>> = {
 /** Legacy stored value → language code. Total, and lossless. */
 export function toLanguageCode(language: AppLanguage): LanguageCode {
   return LEGACY_TO_CODE[language];
+}
+
+/**
+ * Reads a language out of a database column, in whichever encoding it holds.
+ *
+ * Both are live: the columns still mostly carry the prose values, and the
+ * allowlist now also admits codes. A caller that assumes one encoding will
+ * silently mis-read rows written under the other, so every read of
+ * native_language / learning_language should come through here. Returns null
+ * for an empty column or an unrecognised value rather than guessing.
+ */
+export function readLanguageCode(value: unknown): LanguageCode | null {
+  if (typeof value !== "string" || !value) return null;
+  if (isLanguageCode(value)) return value;
+  if (value === "english" || value === "traditional-chinese") {
+    return LEGACY_TO_CODE[value];
+  }
+  return null;
 }
 
 /**

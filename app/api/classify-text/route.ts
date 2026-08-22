@@ -1,3 +1,5 @@
+import { buildClassifyTextPrompt } from "@/lib/ai/prompts/classifyText";
+import { DEFAULT_LEARNING_PAIR } from "@/lib/languages";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
@@ -146,21 +148,7 @@ async function lookupWithModel(
   const interaction = await client.interactions.create(
     {
       model,
-      input: `
-The user typed this into an English and Traditional Chinese language-learning
-app: ${JSON.stringify(query)}
-
-It may be an English word/phrase, a Traditional Chinese word/phrase, or a
-misspelling of either. Identify what it most likely means and return the
-requested fields.
-
-Rules:
-- Use Traditional Chinese, never Simplified Chinese.
-- If the input is already Traditional Chinese, treat it as the source word
-  and translate it into English.
-- If uncertain what was meant, make your best guess and use low confidence.
-- Keep both examples natural, short, and semantically equivalent.
-      `.trim(),
+      input: buildClassifyTextPrompt(query, DEFAULT_LEARNING_PAIR),
       response_format: {
         type: "text",
         mime_type: "application/json",

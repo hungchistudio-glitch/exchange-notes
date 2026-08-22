@@ -1,3 +1,4 @@
+import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
 /**
@@ -477,57 +478,6 @@ function buildLearningSchema(count: number) {
   } as const;
 }
 
-function createLearningPrompt(articles: GuardianArticle[]) {
-  const articleBlocks = articles
-    .map(
-      (article, index) => `
-Article ${index + 1} (category: ${article.category}):
-Headline: ${article.title}
-Excerpt: ${article.excerpt}
-`.trim()
-    )
-    .join("\n\n---\n\n");
-
-  return `
-You are building a bilingual (English / Traditional Chinese) vocabulary
-lesson from ${articles.length} real news articles published by The Guardian.
-Use ONLY the facts, names, and numbers stated in each excerpt below. Do not
-invent or add any detail, quote, or claim that is not present in the given
-text.
-
-${articleBlocks}
-
-For EACH article above, in the same order, produce:
-- englishTitle: a clear, natural CEFR B1-B2 English headline. You may
-  lightly simplify difficult vocabulary from the original headline, but the
-  meaning must stay the same.
-- chineseTitle: a natural Traditional Chinese translation as used in Taiwan.
-- englishSummary: a concise 2-3 sentence English summary using only facts
-  present in the excerpt.
-- chineseSummary: an accurate Traditional Chinese translation of that
-  summary.
-- vocabulary: exactly 3 useful CEFR B1-B2 English vocabulary items drawn
-  from the headline or excerpt. For each: give its Traditional Chinese
-  meaning, its part of speech, one original English example sentence, and
-  that example's Traditional Chinese translation. Examples must not
-  introduce new claims about the article.
-- englishCaption: a short one-line caption (max ~12 words) that could sit
-  beneath a generic editorial photo illustrating this story's general
-  topic or setting (e.g. "Demonstrators gather in a city square" for a
-  protest story). You have NOT seen the actual photo, so do not claim to
-  describe specific visual details, people, or exact numbers — only the
-  general scene/context implied by the story's subject matter.
-- chineseCaption: a natural Traditional Chinese translation of
-  englishCaption.
-
-Every Chinese string above must use Traditional characters as written in
-Taiwan. Never return a Simplified character, including in vocabulary meanings
-and example translations.
-
-Return exactly ${articles.length} cards, in the same order as the articles
-above, matching the required JSON schema.
-`.trim();
-}
 
 /** One card, with the article it came from — what the pool stores. */
 export type DailyNewsPoolItem = {
@@ -589,7 +539,7 @@ async function buildLearningBatch(
   // Gemini free tier.
   const interaction = await client.interactions.create({
     model,
-    input: createLearningPrompt(articles),
+    input: buildDailyNewsPrompt(articles),
     response_format: {
       type: "text",
       mime_type: "application/json",
