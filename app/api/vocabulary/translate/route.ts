@@ -93,21 +93,33 @@ export async function POST(request: Request) {
       ? body.language
       : learning;
 
+    /*
+     * Every row, and only the four small columns needed to decide.
+     *
+     * There was a page limit here, and no ordering to go with it — so each
+     * call re-read whichever rows the database felt like returning, filled
+     * the ones that were missing, and eventually reported "done" while words
+     * it had never looked at were still untranslated. A library stopped
+     * halfway and said it had finished.
+     *
+     * The columns are tiny (a word and a sentence per language), so reading
+     * all of them costs less than the paging that was getting this wrong.
+     */
     const { data, error } = await supabase
       .from("vocabulary_items")
       .select("id, part_of_speech, texts, examples")
       .eq("user_id", user.id)
-      .not("texts", "cs", JSON.stringify({ [target]: "" }))
-      .limit(200);
+      .order("created_at", { ascending: true });
 
     if (error) throw new Error(error.message);
 
-    // Filtering here rather than in SQL: "has no key for this language" is
-    // awkward to express against jsonb and trivial to express here, and the
-    // page size is small enough that the difference is not worth the query.
-    const missing = ((data ?? []) as Row[])
-      .filter((row) => !row.texts?.[target]?.trim())
-      .slice(0, BATCH_SIZE);
+    // "Has no key for this language" is awkward to express against jsonb
+    // through the client and trivial to express here.
+    const outstanding = ((data ?? []) as Row[]).filter(
+      (row) => !row.texts?.[target]?.trim(),
+    );
+
+    const missing = outstanding.slice(0, BATCH_SIZE);
 
     if (missing.length === 0) {
       return NextResponse.json({ filled: 0, remaining: 0, done: true });
@@ -186,15 +198,19 @@ export async function POST(request: Request) {
       if (!updateError) filled += 1;
     }
 
-    const { count } = await supabase
-      .from("vocabulary_items")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
+    /*
+     * What is actually left, not "everything minus this batch" — which is
+     * what this used to answer, and which meant the caller could never tell
+     * how far along it was.
+     *
+     * `done` still keys on filling nothing rather than on the count reaching
+     * zero: a batch that comes back empty is a batch that is not going to
+     * succeed on retry either, and stopping is better than a loop.
+     */
     return NextResponse.json({
       filled,
       language: target,
-      remaining: Math.max((count ?? 0) - filled, 0),
+      remaining: Math.max(outstanding.length - filled, 0),
       done: filled === 0,
     });
   } catch (error) {

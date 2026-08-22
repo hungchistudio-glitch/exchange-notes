@@ -98,6 +98,7 @@ export function useVocabularyLanguageFill({
 
         const result = (await response.json()) as {
           filled?: number;
+          remaining?: number;
           done?: boolean;
         };
 
@@ -105,8 +106,13 @@ export function useVocabularyLanguageFill({
 
         batches.current += 1;
 
-        if (result.done || !result.filled) {
+        // Nothing left, or nothing achieved. The second is the important one:
+        // a batch that filled nothing will not fill anything on a retry
+        // either, and looping on it is how a quiet background task becomes a
+        // quiet background problem.
+        if (result.done || !result.filled || result.remaining === 0) {
           stoppedFor.current = learningLanguage;
+          onFilled();
           return;
         }
 
