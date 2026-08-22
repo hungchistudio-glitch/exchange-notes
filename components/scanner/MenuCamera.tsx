@@ -13,6 +13,8 @@ import {
   DETECTION_RELEASE_FRAMES,
 } from "@/lib/scanner/imageAnalysis";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
+import { getLearningLanguages, toAppLanguage } from "@/lib/languages";
+import type { AppLanguage } from "@/lib/types/app";
 
 /*
  * The long edge of the photo that gets sent for reading.
@@ -52,6 +54,18 @@ type TorchCapabilities = { torch?: boolean };
 type TorchTrack = Omit<MediaStreamTrack, "getCapabilities"> & {
   getCapabilities?: () => TorchCapabilities;
 };
+
+/* Same source as every other language list; the badge doubles as the glyph. */
+const TARGET_LANGUAGE_OPTIONS = getLearningLanguages()
+  .map((meta) => ({
+    value: toAppLanguage(meta.code),
+    content: meta.badge,
+    label: meta.endonym,
+  }))
+  .filter(
+    (option): option is { value: AppLanguage; content: string; label: string } =>
+      option.value !== null,
+  );
 
 export default function MenuCamera({
   detected,
@@ -500,10 +514,7 @@ export default function MenuCamera({
             value={targetLanguage}
             onChange={onTargetLanguageChange}
             className="!bg-[#000000]/45 backdrop-blur-md"
-            options={[
-              { value: "english", content: "EN", label: "English" },
-              { value: "traditional-chinese", content: "中", label: "繁體中文" },
-            ]}
+            options={TARGET_LANGUAGE_OPTIONS}
           />
 
           {torchAvailable ? (

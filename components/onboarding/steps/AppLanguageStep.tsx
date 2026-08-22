@@ -3,19 +3,30 @@
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
+import {
+  INTERFACE_LANGUAGE_CODE,
+  getInterfaceLanguageMeta,
+} from "@/lib/languages";
 
 type AppLanguageStepProps = {
   onContinue: () => void;
 };
 
+/*
+ * Read from the language table, like the Settings picker is. Typed out here,
+ * this list was the reason a language could ship a full dictionary and still
+ * be unreachable for anyone signing up.
+ */
 const LANGUAGE_OPTIONS: Array<{
   value: InterfaceLanguage;
   label: string;
   badge: string;
-}> = [
-  { value: "english", label: "English", badge: "En" },
-  { value: "traditional-chinese", label: "繁體中文", badge: "中" },
-];
+}> = (Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[])
+  .filter((value) => getInterfaceLanguageMeta(value).availableAsInterface)
+  .map((value) => {
+    const meta = getInterfaceLanguageMeta(value);
+    return { value, label: meta.endonym, badge: meta.badge };
+  });
 
 export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
   const { t, language } = useTranslation();

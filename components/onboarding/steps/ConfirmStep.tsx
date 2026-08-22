@@ -5,6 +5,11 @@ import { LoaderCircle } from "lucide-react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import OnboardingYumi from "@/components/onboarding/OnboardingYumi";
 import type { AppLanguage } from "@/lib/types/app";
+import {
+  getInterfaceLanguageMeta,
+  getLanguage,
+  toLanguageCode,
+} from "@/lib/languages";
 
 type ConfirmStepProps = {
   displayName: string;
@@ -26,9 +31,15 @@ export default function ConfirmStep({
   const { t, language } = useTranslation();
   const copy = t.onboarding.confirm;
 
-  const appLanguageLabel = language === "traditional-chinese" ? "繁體中文" : "English";
-  const nativeLabel = nativeLanguage === "traditional-chinese" ? "繁體中文" : "English";
-  const learningLabel = learningLanguage === "traditional-chinese" ? "繁體中文" : "English";
+  /*
+   * Three labels, two axes. The first is the language the app is being read
+   * in — which is now a set of three, so a ternary against Chinese answered
+   * "English" for a Spanish reader. The other two are the pair being learned.
+   * Each is named in its own language, from the table.
+   */
+  const appLanguageLabel = getInterfaceLanguageMeta(language).endonym;
+  const nativeLabel = getLanguage(toLanguageCode(nativeLanguage)).endonym;
+  const learningLabel = getLanguage(toLanguageCode(learningLanguage)).endonym;
 
   return (
     <div className="flex flex-1 flex-col items-center">
