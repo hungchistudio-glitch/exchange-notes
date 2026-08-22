@@ -36,7 +36,7 @@ const spanish: TranslationDictionary = {
       cta: "Empezar",
     },
     name: {
-      title: "Cómo quieres que te llamemos?",
+      title: "¿Cómo quieres que te llamemos?",
       displayNameLabel: "Nombre visible",
       displayNamePlaceholder: "Tu nombre",
       usernameLabel: "Nombre de usuario",
@@ -59,7 +59,7 @@ const spanish: TranslationDictionary = {
       note: "El idioma de la app solo controla la interfaz: no cambia cuál es el idioma principal de tus tarjetas de vocabulario.",
     },
     languages: {
-      title: "Qué idioma quieres aprender?",
+      title: "¿Qué idioma quieres aprender?",
       nativeLabel: "Ya sé",
       nativeDescription: "Se usa para las traducciones y las explicaciones.",
       learningLabel: "Estoy aprendiendo",
@@ -282,8 +282,8 @@ const spanish: TranslationDictionary = {
     omni: {
       label: "OmniLéxico de Yumi",
       placeholder: "Busca, habla, escanea o enséñale algo a Yumi",
-      placeholderChinese: "Algo que no sabes leer?",
-      placeholderEnglish: "Algo que has oído?",
+      placeholderChinese: "¿Algo que no sabes leer?",
+      placeholderEnglish: "¿Algo que has oído?",
       inputText: "Escribir",
       inputVoice: "Voz",
       inputCamera: "Escanear",
@@ -723,8 +723,8 @@ const spanish: TranslationDictionary = {
       "Comparte una palabra, una frase o una pregunta con tu pareja.",
     deleteSelectedMessage: "Eliminar {count} mensaje",
     deleteSelectedMessages: "Eliminar {count} mensajes",
-    deleteDialogMessage: "Eliminar {count} mensaje?",
-    deleteDialogMessages: "Eliminar {count} mensajes?",
+    deleteDialogMessage: "¿Eliminar {count} mensaje?",
+    deleteDialogMessages: "¿Eliminar {count} mensajes?",
     deleteDialogDescription:
       "Estos mensajes se quitarán solo de tu vista. Las demás personas de la conversación seguirán viéndolos.",
     closeDeleteConfirmation: "Cerrar la confirmación de borrado",
@@ -793,11 +793,11 @@ const spanish: TranslationDictionary = {
 
     decode: {
       label: "Descifrado por Yumi",
-      whyThis: "Por qué esto?",
+      whyThis: "¿Por qué esto?",
       whyThisBody:
         "Yumi señala las expresiones con las que suele tropezar quien aprende, y se salta las que ya has guardado.",
       close: "Cerrar",
-      open: "Qué significaba esto?",
+      open: "¿Qué significaba esto?",
       reading: "Yumi lo está leyendo…",
       tone: "Tono",
       toneUncertain: "Yumi no tiene claro el tono aquí.",
@@ -978,7 +978,7 @@ const spanish: TranslationDictionary = {
     },
 
     mascot: {
-      greetingDefault: "Hola, Yumi. Qué vas a aprender hoy?",
+      greetingDefault: "Hola, Yumi. ¿Qué vas a aprender hoy?",
       greetingWaiting: "Yumi espera una palabra nueva.",
       moodStatus: {
         hungry: "Yumi tiene hambre.",
@@ -1028,7 +1028,7 @@ const spanish: TranslationDictionary = {
       openActionsAriaLabel: "Abrir las acciones de Yumi",
       closeActionsAriaLabel: "Cerrar las acciones de Yumi",
       actionMenuAriaLabel: "Acciones de aprendizaje de Yumi",
-      menuPrompt: "Por dónde quieres empezar?",
+      menuPrompt: "¿Por dónde quieres empezar?",
       reviewActionLabel: "Empezar el repaso",
       addWordActionLabel: "Añadir una palabra con IA",
       cameraActionLabel: "Identificar con la cámara",
@@ -1184,7 +1184,7 @@ const spanish: TranslationDictionary = {
 
       reviewPanel: {
         title: "Repasa esta palabra",
-        description: "Cómo de bien la recordabas?",
+        description: "¿Cómo de bien la recordabas?",
         again: "Otra vez",
         hard: "Difícil",
         good: "Bien",
@@ -1486,7 +1486,7 @@ const spanish: TranslationDictionary = {
       saving: "Guardando…",
       logout: "Cerrar sesión",
       logoutDescription: "Salir de este dispositivo",
-      logoutConfirm: "Seguro que quieres cerrar sesión?",
+      logoutConfirm: "¿Seguro que quieres cerrar sesión?",
       photoImageError: "Elige un archivo de imagen.",
       photoSizeError: "Las fotos de perfil deben pesar menos de 5 MB.",
       photoUpdated: "¡Foto de perfil actualizada!",
@@ -1599,14 +1599,14 @@ const spanish: TranslationDictionary = {
       generateSuccess: "Tu nuevo token de Scriptable está listo.",
       rotate: "Sustituir el token privado",
       rotating: "Sustituyendo…",
-      rotateConfirmTitle: "Sustituir el token actual?",
+      rotateConfirmTitle: "¿Sustituir el token actual?",
       rotateConfirmDescription:
         "El token actual dejará de funcionar de inmediato. Tendrás que actualizar el token guardado en Scriptable.",
       confirmRotate: "Sustituir el token",
       revoke: "Desconectar el widget",
       revoking: "Desconectando…",
       revokeSuccess: "Se ha revocado la conexión del widget de Scriptable.",
-      revokeConfirmTitle: "Desconectar el widget?",
+      revokeConfirmTitle: "¿Desconectar el widget?",
       revokeConfirmDescription:
         "Scriptable ya no podrá cargar los datos de tu widget de Yumi con el token actual.",
       confirmRevoke: "Desconectar",
