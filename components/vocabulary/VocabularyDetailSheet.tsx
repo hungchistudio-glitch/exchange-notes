@@ -100,8 +100,8 @@ export default function VocabularyDetailSheet({
   onEdit: () => void;
 }) {
   const { t, isTraditionalChinese } = useTranslation();
-  const { learningLanguage } = useLearningLanguageContext();
-  const sides = getVocabularyCardSides(item, learningLanguage);
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
   const detail = t.vocabulary.detail;
   const motion = useSheetMotion({ open, onClose });
 

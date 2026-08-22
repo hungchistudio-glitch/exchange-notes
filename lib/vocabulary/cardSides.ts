@@ -49,6 +49,12 @@ export function getVocabularyCardSides(
     | "translated_example"
   >,
   learningLanguage: LanguageCode,
+  /**
+   * The reader's own language, used only when neither side is the one being
+   * learned. Optional so a caller that genuinely has no profile still gets an
+   * answer rather than an error.
+   */
+  nativeLanguage?: LanguageCode,
 ): VocabularyCardSides {
   const wordLanguage = item.word_language ?? DEFAULT_LEARNING_PAIR[0];
   const translationLanguage =
@@ -66,7 +72,28 @@ export function getVocabularyCardSides(
     example: item.translated_example?.trim() ?? "",
   };
 
-  const translationLeads = translationLanguage === learningLanguage;
+  /*
+   * Three rules, in order.
+   *
+   * The side in the language being learned leads — which is why switching
+   * from English to Chinese flips a card without touching it.
+   *
+   * When neither side is that language — an English/Chinese word still in the
+   * list after switching to Spanish — the side that is *not* the reader's own
+   * language leads instead. It is still the word; the other side is still the
+   * gloss. Promoting someone's own language to hero on a vocabulary card
+   * would be showing them the answer.
+   *
+   * Failing both, the row keeps the order it was saved in. Nothing here
+   * rewrites it: a word saved as French → Traditional Chinese stays that,
+   * whatever the profile says today.
+   */
+  const translationLeads =
+    translationLanguage === learningLanguage ||
+    (wordLanguage !== learningLanguage &&
+      nativeLanguage !== undefined &&
+      wordLanguage === nativeLanguage &&
+      translationLanguage !== nativeLanguage);
 
   return {
     primary: translationLeads ? translationSide : wordSide,

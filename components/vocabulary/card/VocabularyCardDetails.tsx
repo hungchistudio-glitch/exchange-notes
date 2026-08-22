@@ -23,8 +23,8 @@ function formatDate(value: string | null | undefined, locale: string) {
 }
 
 export default function VocabularyCardDetails({ item }: Props) {
-  const { learningLanguage } = useLearningLanguageContext();
-  const sides = getVocabularyCardSides(item, learningLanguage);
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
 
   const { t, isTraditionalChinese } = useTranslation();
   const detail = t.vocabulary.detail;

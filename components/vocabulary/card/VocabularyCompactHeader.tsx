@@ -12,13 +12,13 @@ type Props = {
 
 export default function VocabularyCompactHeader({ item }: Props) {
   const { t } = useTranslation();
-  const { learningLanguage } = useLearningLanguageContext();
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
   const statusLabels: Record<VocabularyStatus, string> = {
     new: t.vocabulary.search.statuses.new,
     learning: t.vocabulary.search.statuses.learning,
     mastered: t.vocabulary.search.statuses.mastered,
   };
-  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage);
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
 
   return (
     <header className="min-w-0 px-4 py-3.5">

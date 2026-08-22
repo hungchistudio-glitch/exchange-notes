@@ -21,7 +21,7 @@ export default function VocabularyCardHeader({
   item,
 }: Props) {
   const { t } = useTranslation();
-  const { learningLanguage } = useLearningLanguageContext();
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
   const search = t.vocabulary.search;
   const detail = t.vocabulary.detail;
 
@@ -37,7 +37,7 @@ export default function VocabularyCardHeader({
    * different pairing keeps the order it was saved in rather than being
    * relabelled by today's profile.
    */
-  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage);
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
 
   const partOfSpeechLabel = item.part_of_speech?.trim()
     ? detail.partOfSpeech[
