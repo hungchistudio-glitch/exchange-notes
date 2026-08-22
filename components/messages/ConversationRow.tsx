@@ -93,6 +93,10 @@ export default function ConversationRow({
     >
       <span className="relative shrink-0">
         {summary.friend.avatarUrl ? (
+          // Avatar hosts vary per account (any OAuth provider a friend signed
+          // up with), and next.config's remotePatterns is pinned to one host on
+          // purpose, so next/image can't serve these.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={summary.friend.avatarUrl}
             alt=""

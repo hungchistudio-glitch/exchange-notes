@@ -1237,6 +1237,10 @@ export default function ConversationRoom({
 
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 {friend?.avatarUrl ? (
+                  // Avatar hosts vary per account (any OAuth provider a friend
+                  // signed up with), and next.config's remotePatterns is pinned
+                  // to one host on purpose, so next/image can't serve these.
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={friend.avatarUrl}
                     alt=""
