@@ -12,7 +12,7 @@ import {
   DETECTION_LOCK_FRAMES,
   DETECTION_RELEASE_FRAMES,
 } from "@/lib/scanner/imageAnalysis";
-import type { InterfaceLanguage } from "@/lib/appPreferences";
+import { getLearningLanguages, type LanguageCode } from "@/lib/languages";
 
 /*
  * The long edge of the photo that gets sent for reading.
@@ -31,8 +31,8 @@ const DETECTION_INTERVAL_MS = 200;
 
 type MenuCameraProps = {
   detected: boolean;
-  targetLanguage: InterfaceLanguage;
-  onTargetLanguageChange: (language: InterfaceLanguage) => void;
+  targetLanguage: LanguageCode;
+  onTargetLanguageChange: (language: LanguageCode) => void;
   onDetectionChange: (detected: boolean) => void;
   onCaptured: (
     image: string,
@@ -52,6 +52,13 @@ type TorchCapabilities = { torch?: boolean };
 type TorchTrack = Omit<MediaStreamTrack, "getCapabilities"> & {
   getCapabilities?: () => TorchCapabilities;
 };
+
+/* Same source as every other language list; the badge doubles as the glyph. */
+const TARGET_LANGUAGE_OPTIONS = getLearningLanguages().map((meta) => ({
+  value: meta.code,
+  content: meta.badge,
+  label: meta.endonym,
+}));
 
 export default function MenuCamera({
   detected,
@@ -495,15 +502,12 @@ export default function MenuCamera({
         </button>
 
         <div className="flex flex-col items-end gap-2">
-          <SegmentedControl<InterfaceLanguage>
+          <SegmentedControl<LanguageCode>
             groupLabel={copy.targetLanguage}
             value={targetLanguage}
             onChange={onTargetLanguageChange}
             className="!bg-[#000000]/45 backdrop-blur-md"
-            options={[
-              { value: "english", content: "EN", label: "English" },
-              { value: "traditional-chinese", content: "中", label: "繁體中文" },
-            ]}
+            options={TARGET_LANGUAGE_OPTIONS}
           />
 
           {torchAvailable ? (

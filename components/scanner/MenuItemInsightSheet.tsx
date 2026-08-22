@@ -1,5 +1,6 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { BookmarkCheck, BookmarkPlus, LoaderCircle, Send, Volume2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -8,16 +9,21 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
-import { getPronunciation } from "@/lib/pronunciation/getPronunciation";
+import { getPhoneticsFor } from "@/lib/pronunciation/getPronunciation";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { hasLowConfidence, itemNames, type MenuItem } from "@/lib/scanner/menuTypes";
+import {
+  LANGUAGE_CODES,
+  getLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 
 type MenuItemInsightSheetProps = {
   item: MenuItem | null;
   cuisine: string;
-  targetLanguage: string;
+  targetLanguage: LanguageCode;
   onClose: () => void;
 };
 
@@ -45,6 +51,9 @@ export default function MenuItemInsightSheet({
   const { t } = useTranslation();
   const copy = t.scanner.menu;
   const router = useRouter();
+
+  const { languagePair } = useLearningLanguageContext();
+
 
   const [speaking, setSpeaking] = useState<SpeechLanguage | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
@@ -89,28 +98,40 @@ export default function MenuItemInsightSheet({
 
   useEffect(() => {
     if (!item) return;
-    if (!item.englishName && !item.chineseName) return;
+    if (!item.names[languagePair[0]] && !item.names[languagePair[1]]) return;
 
     let cancelled = false;
 
     void (async () => {
-      const result = await getPronunciation(item.englishName, item.chineseName);
+      /*
+       * Each side asked about in its own language, so the answers are the
+       * systems those languages actually use rather than the two this sheet
+       * used to assume. Chinese comes back with pinyin and zhuyin, a Latin
+       * language with IPA, and neither is asked for what it does not have.
+       */
+      const [primary, secondary] = await Promise.all([
+        getPhoneticsFor(item.names[languagePair[0]] ?? "", languagePair[0]),
+        getPhoneticsFor(item.names[languagePair[1]] ?? "", languagePair[1]),
+      ]);
+
       if (cancelled) return;
 
+      const merged = { ...secondary, ...primary };
+
       setPhonetics({
-        pinyin: result?.pinyin ?? "",
-        zhuyin: result?.zhuyin ?? "",
+        pinyin: merged.pinyin ?? "",
+        zhuyin: merged.zhuyin ?? "",
         // The dictionary is the better answer when it has one; an item name is
         // usually a phrase it has never heard of, and that is what the model's
         // transcription is for.
-        ipa: stripSlashes(result?.englishPronunciation || item.ipa || ""),
+        ipa: stripSlashes(merged.ipa || item.ipa[languagePair[0]] || ""),
       });
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [item]);
+  }, [item, languagePair]);
 
   if (!item) return null;
 
@@ -135,7 +156,7 @@ export default function MenuItemInsightSheet({
     // cannot keep it narrowed across the asynchronous boundary.
     const dish = item;
     if (!dish || saveState !== "idle") return;
-    if (!dish.englishName || !dish.chineseName) return;
+    if (!dish.names[languagePair[0]] || !dish.names[languagePair[1]]) return;
 
     setSaveState("saving");
     setActionError("");
@@ -154,11 +175,12 @@ export default function MenuItemInsightSheet({
 
       const { error } = await supabase.from("vocabulary_items").insert({
         user_id: user.id,
-        word: dish.englishName.trim(),
-        translation: dish.chineseName.trim(),
-        language: "english",
-        example_sentence: dish.englishDescription || null,
-        translated_example: dish.chineseDescription || null,
+        word: (dish.names[languagePair[0]] ?? "").trim(),
+        translation: (dish.names[languagePair[1]] ?? "").trim(),
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
+        example_sentence: dish.descriptions[languagePair[0]] || null,
+        translated_example: dish.descriptions[languagePair[1]] || null,
         // The read's own confidence travels with the word: an item the model
         // was unsure of should not arrive in review looking certain.
         confidence: dish.translationConfidence,
@@ -216,16 +238,19 @@ export default function MenuItemInsightSheet({
      * captured object or a saved vocabulary item would.
      */
     setPendingSharedVocabulary({
-      word: item.englishName,
-      translation: item.chineseName,
-      englishExample: item.englishDescription || null,
-      chineseExample: item.chineseDescription || null,
+      word: item.names[languagePair[0]] ?? "",
+      translation: item.names[languagePair[1]] ?? "",
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
+      examples: item.descriptions,
     });
 
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
-  const canKeep = Boolean(item.englishName && item.chineseName);
+  const canKeep = Boolean(
+    item.names[languagePair[0]] && item.names[languagePair[1]],
+  );
 
   return (
     <>
@@ -275,39 +300,28 @@ export default function MenuItemInsightSheet({
             the list, one to say out loud.
           */}
           <div className="flex gap-2">
-            {item.chineseName ? (
-              <button
-                type="button"
-                onClick={() => handleListen(item.chineseName, "zh-TW")}
-                disabled={speaking !== null}
-                aria-label={`${copy.listen} 中文`}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-              >
-                {speaking === "zh-TW" ? (
-                  <LoaderCircle size={16} className="animate-spin" />
-                ) : (
-                  <Volume2 size={16} strokeWidth={1.9} />
-                )}
-                中文
-              </button>
-            ) : null}
+            {LANGUAGE_CODES.filter((code) => item.names[code]).map((code) => {
+              const language = getLanguage(code);
+              const tag = language.speechTag;
 
-            {item.englishName ? (
-              <button
-                type="button"
-                onClick={() => handleListen(item.englishName, "en-US")}
-                disabled={speaking !== null}
-                aria-label={`${copy.listen} English`}
-                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
-              >
-                {speaking === "en-US" ? (
-                  <LoaderCircle size={16} className="animate-spin" />
-                ) : (
-                  <Volume2 size={16} strokeWidth={1.9} />
-                )}
-                English
-              </button>
-            ) : null}
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => handleListen(item.names[code] ?? "", tag)}
+                  disabled={speaking !== null}
+                  aria-label={`${copy.listen} ${language.endonym}`}
+                  className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-black/[0.05] px-3 text-sm font-semibold text-black transition-transform active:scale-[0.98] disabled:opacity-50"
+                >
+                  {speaking === tag ? (
+                    <LoaderCircle size={16} className="animate-spin" />
+                  ) : (
+                    <Volume2 size={16} strokeWidth={1.9} />
+                  )}
+                  {language.endonym}
+                </button>
+              );
+            })}
           </div>
 
           {canKeep ? (

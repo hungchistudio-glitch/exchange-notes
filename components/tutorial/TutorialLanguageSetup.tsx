@@ -7,21 +7,67 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage } from "@/lib/types/app";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
+import {
+  DEFAULT_LEARNING_PAIR,
+  INTERFACE_LANGUAGE_CODE,
+  getInterfaceLanguages,
+  getLearningLanguages,
+  type LanguageCode,
+} from "@/lib/languages";
 
-const OPTIONS: Array<{ value: AppLanguage; label: string }> = [
-  { value: "english", label: "English" },
-  { value: "traditional-chinese", label: "繁體中文" },
-];
-
-type ChoiceRowProps = {
+/*
+ * One row, two axes — which is exactly why it takes its options rather than
+ * owning them.
+ *
+ * This component used to hold a single hardcoded list typed as AppLanguage
+ * and hand it to both rows, which is the conflation the whole language split
+ * was about: the app can be read in Spanish without Spanish being a language
+ * anyone here is learning, and the two lists stopped being the same list the
+ * moment that was true.
+ */
+type ChoiceRowProps<T extends string> = {
   label: string;
-  value: AppLanguage;
-  onSelect: (value: AppLanguage) => void;
+  options: ReadonlyArray<{ value: T; label: string }>;
+  value: T;
+  onSelect: (value: T) => void;
   disabled?: boolean;
 };
 
-function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
+const INTERFACE_OPTIONS: ReadonlyArray<{
+  value: InterfaceLanguage;
+  label: string;
+}> = (
+  Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[]
+).filter((language) =>
+  getInterfaceLanguages().some(
+    (meta) => meta.code === INTERFACE_LANGUAGE_CODE[language],
+  ),
+).map((language) => ({
+  value: language,
+  label: getInterfaceLanguages().find(
+    (meta) => meta.code === INTERFACE_LANGUAGE_CODE[language],
+  )!.endonym,
+}));
+
+/*
+ * Only the languages the old two-value column can still express. Widening
+ * that column is a separate migration; offering a pair it cannot store would
+ * fail on save rather than in the picker.
+ */
+const LEARNING_OPTIONS: ReadonlyArray<{ value: LanguageCode; label: string }> =
+  getLearningLanguages().map((meta) => ({
+    value: meta.code,
+    label: meta.endonym,
+  }));
+
+function ChoiceRow<T extends string>({
+  label,
+  options,
+  value,
+  onSelect,
+  disabled,
+}: ChoiceRowProps<T>) {
   return (
     <div>
       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
@@ -29,7 +75,7 @@ function ChoiceRow({ label, value, onSelect, disabled }: ChoiceRowProps) {
       </p>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {OPTIONS.map((option) => {
+        {options.map((option) => {
           const active = option.value === value;
 
           return (
@@ -71,20 +117,25 @@ export default function TutorialLanguageSetup() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleLearningChange(next: AppLanguage) {
+  async function handleLearningChange(next: LanguageCode) {
     if (saving || next === learningLanguage) return;
 
     setSaving(true);
     setError("");
 
     /*
-     * Only two languages exist, and the database rejects a profile whose
-     * native and learning language match (check constraint 23514). So the
-     * other field always flips in the same update rather than being left to
-     * collide — the same rule the profile screen follows.
+     * The database rejects a profile whose native and learning language match
+     * (check constraint 23514), so the other field flips in the same update
+     * rather than being left to collide — the same rule the profile screen
+     * follows.
+     *
+     * "The other one" only means something while exactly two languages can be
+     * learned. A third makes the native language a choice of its own rather
+     * than the leftover, and this becomes a real picker.
      */
-    const nextNative: AppLanguage =
-      next === "english" ? "traditional-chinese" : "english";
+    const nextNative: LanguageCode =
+      LEARNING_OPTIONS.find((option) => option.value !== next)?.value ??
+      DEFAULT_LEARNING_PAIR[1];
 
     try {
       const supabase = createClient();
@@ -123,12 +174,14 @@ export default function TutorialLanguageSetup() {
     <div className="mt-7 space-y-5">
       <ChoiceRow
         label={copy.appLanguageLabel}
+        options={INTERFACE_OPTIONS}
         value={interfaceLanguage}
         onSelect={setInterfaceLanguage}
       />
 
       <ChoiceRow
         label={copy.learningLabel}
+        options={LEARNING_OPTIONS}
         value={learningLanguage}
         onSelect={(value) => void handleLearningChange(value)}
         disabled={saving}

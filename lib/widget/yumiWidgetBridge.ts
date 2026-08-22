@@ -4,6 +4,23 @@ export type YumiWidgetLanguage =
   | "english"
   | "traditional-chinese";
 
+/**
+ * The interface language, narrowed to what the widget itself can render.
+ *
+ * The Scriptable widget is a separate program with its own copy of a handful
+ * of strings, so the languages it speaks are its own list and not the app's.
+ * A language it has no strings for is sent as English rather than as itself:
+ * the widget would fall back anyway, and saying so here keeps the reason
+ * visible instead of leaving it to a normaliser three files away.
+ */
+export function toWidgetLanguage(language: string): YumiWidgetLanguage {
+  // Takes either encoding: interface languages are still spelled out, the
+  // learning language is a code, and both arrive here.
+  return language === "traditional-chinese" || language === "zh-TW"
+    ? "traditional-chinese"
+    : "english";
+}
+
 export type YumiWidgetLocalizedText = {
   headline: string;
   hint: string;

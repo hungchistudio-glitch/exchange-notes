@@ -34,6 +34,7 @@ import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
 import WordCardMessage from "@/components/messages/WordCardMessage";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguage } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import {
@@ -208,7 +209,7 @@ export default function ConversationRoom({
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const copy = t.messages;
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -907,7 +908,8 @@ export default function ConversationRoom({
          * it into review alongside everything else, and what lets §46's
          * "already known" list be the vocabulary the user actually has.
          */
-        language: isLearningChinese ? "traditional-chinese" : "english",
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: "phrase",
         example_sentence: null,
         translated_example: phrase.expanded ?? null,
@@ -1056,15 +1058,25 @@ export default function ConversationRoom({
 
     setSavingCardId(messageId);
 
+    const cardWordLanguage = card.wordLanguage ?? languagePair[0];
+    const cardTranslationLanguage = card.translationLanguage ?? languagePair[1];
+
     try {
       await insertVocabulary({
         user_id: currentUserId,
         word: card.word.trim(),
         translation: card.translation.trim(),
-        language: "english",
+        /*
+         * The card says which languages its two sides are in, so the saved
+         * row keeps them rather than assuming the receiver's own pair. A card
+         * from someone learning something else is still a real word.
+         */
+        word_language: cardWordLanguage,
+        translation_language: cardTranslationLanguage,
         part_of_speech: card.partOfSpeech?.trim() || null,
-        example_sentence: card.englishExample?.trim() || null,
-        translated_example: card.chineseExample?.trim() || null,
+        example_sentence: card.examples?.[cardWordLanguage]?.trim() || null,
+        translated_example:
+          card.examples?.[cardTranslationLanguage]?.trim() || null,
         confidence: "medium",
         category: "other",
         status: "new",
@@ -1516,7 +1528,7 @@ export default function ConversationRoom({
                       <WordCardMessage
                         card={wordCard}
                         createdAt={message.created_at}
-                        isLearningChinese={isLearningChinese}
+                        learningLanguage={languagePair[0]}
                         t={t}
                         saved={savedCardIds.has(message.id)}
                         saving={savingCardId === message.id}
@@ -1604,7 +1616,7 @@ export default function ConversationRoom({
                         <YumiDecodeCard
                           analysis={analysis}
                           conversationId={conversationId}
-                          speechLanguage={isLearningChinese ? "zh-TW" : "en-US"}
+                          speechLanguage={getLanguage(languagePair[0]).speechTag}
                           savedPhraseIds={savedPhraseIds}
                           savingPhraseId={savingPhraseId}
                           onSavePhrase={(phrase) => void handleSavePhrase(phrase)}

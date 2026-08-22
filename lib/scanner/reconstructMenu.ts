@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/languages";
 import {
   itemNames,
   sectionTitle,
@@ -199,7 +200,7 @@ export type ReconstructionResult = {
 export function reconstructMenu(
   image: HTMLImageElement,
   document_: MenuDocument,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
 ): ReconstructionResult | null {
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;

@@ -1,5 +1,7 @@
 "use client";
 
+import { getLanguage } from "@/lib/languages";
+import type { SpeechLanguage } from "@/lib/speech";
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
@@ -22,7 +24,7 @@ type VocabularyDrawerProps = {
   onSpeak: (
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) => void;
 };
 
@@ -97,7 +99,8 @@ export default function VocabularyDrawer({
   onSpeak,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
+  const [primaryLanguage, secondaryLanguage] = languagePair;
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 
   // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
@@ -125,12 +128,13 @@ export default function VocabularyDrawer({
 
       await insertVocabulary({
         user_id: user.id,
-        word: item.word.trim(),
-        translation: item.translation.trim(),
-        language: "english",
+        word: (item.texts[primaryLanguage] ?? "").trim(),
+        translation: (item.texts[secondaryLanguage] ?? "").trim(),
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: item.partOfSpeech?.trim() || null,
-        example_sentence: item.englishExample?.trim() || null,
-        translated_example: item.chineseExample?.trim() || null,
+        example_sentence: item.examples[languagePair[0]]?.trim() || null,
+        translated_example: item.examples[languagePair[1]]?.trim() || null,
         confidence: "medium",
         category: "other",
         status: "new",
@@ -155,7 +159,7 @@ export default function VocabularyDrawer({
 
       requestedKeysRef.current.add(cacheKey);
 
-      void getPronunciation(item.word, item.translation).then((result) => {
+      void getPronunciation((item.texts[primaryLanguage] ?? ""), (item.texts[secondaryLanguage] ?? "")).then((result) => {
         if (cancelled || !result) return;
 
         setPronunciations((current) => ({
@@ -168,7 +172,7 @@ export default function VocabularyDrawer({
     return () => {
       cancelled = true;
     };
-  }, [open, card]);
+  }, [open, card, primaryLanguage, secondaryLanguage]);
 
   return (
     <BottomSheet
@@ -195,16 +199,12 @@ export default function VocabularyDrawer({
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span
-                      className={
-                        isLearningChinese
-                          ? "text-sm text-ink-soft"
-                          : "text-[17px] font-semibold text-black"
-                      }
+                      className="text-[17px] font-semibold text-black"
                     >
-                      {item.word}
+                      {(item.texts[primaryLanguage] ?? "")}
                     </span>
 
-                    {!isLearningChinese && (
+                    {(
                       <span className="text-[11px] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
@@ -221,7 +221,7 @@ export default function VocabularyDrawer({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {!isLearningChinese && (
+                  {(
                     <SaveWordButton
                       onClick={() => void handleSaveWord(wordKey, item)}
                       saving={savingWordKey === wordKey}
@@ -231,7 +231,7 @@ export default function VocabularyDrawer({
                           ? copy.addedToVocabulary
                           : copy.addToVocabularyAriaLabel.replace(
                               "{word}",
-                              item.word
+                              (item.texts[primaryLanguage] ?? "")
                             )
                       }
                     />
@@ -239,12 +239,12 @@ export default function VocabularyDrawer({
 
                   <SpeakerButton
                     onClick={() =>
-                      onSpeak(wordKey, item.word, "en-US")
+                      onSpeak(wordKey, (item.texts[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
                     }
                     active={speakingKey === wordKey}
                     ariaLabel={copy.readVocabWordAriaLabel.replace(
                       "{word}",
-                      item.word
+                      (item.texts[primaryLanguage] ?? "")
                     )}
                   />
                 </div>
@@ -259,22 +259,12 @@ export default function VocabularyDrawer({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-2">
                     <p
-                      className={
-                        isLearningChinese
-                          ? "text-[17px] font-semibold text-black"
-                          : "text-sm text-ink-soft"
-                      }
+                      className="text-sm text-ink-soft"
                     >
-                      {item.translation}
+                      {(item.texts[secondaryLanguage] ?? "")}
                     </p>
 
-                    {isLearningChinese && (
-                      <span className="text-[11px] text-ink-faint">
-                        {partOfSpeechLabels[
-                          normalizePartOfSpeech(item.partOfSpeech)
-                        ]}
-                      </span>
-                    )}
+
                   </div>
 
                   {pronunciation?.pinyin || pronunciation?.zhuyin ? (
@@ -287,34 +277,18 @@ export default function VocabularyDrawer({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {isLearningChinese && (
-                    <SaveWordButton
-                      onClick={() => void handleSaveWord(wordKey, item)}
-                      saving={savingWordKey === wordKey}
-                      saved={savedWordKeys.has(wordKey)}
-                      ariaLabel={
-                        savedWordKeys.has(wordKey)
-                          ? copy.addedToVocabulary
-                          : copy.addToVocabularyAriaLabel.replace(
-                              "{word}",
-                              item.word
-                            )
-                      }
-                    />
-                  )}
-
                   <SpeakerButton
                     onClick={() =>
                       onSpeak(
                         translationKey,
-                        item.translation,
-                        "zh-TW"
+                        (item.texts[secondaryLanguage] ?? ""),
+                        getLanguage(secondaryLanguage).speechTag
                       )
                     }
                     active={speakingKey === translationKey}
                     ariaLabel={copy.readVocabChineseAriaLabel.replace(
                       "{translation}",
-                      item.translation
+                      (item.texts[secondaryLanguage] ?? "")
                     )}
                   />
                 </div>
@@ -327,15 +301,15 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
-                  {item.englishExample}
+                  {(item.examples[primaryLanguage] ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       englishExampleKey,
-                      item.englishExample,
-                      "en-US"
+                      (item.examples[primaryLanguage] ?? ""),
+                      getLanguage(primaryLanguage).speechTag
                     )
                   }
                   active={speakingKey === englishExampleKey}
@@ -350,15 +324,15 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
-                  {item.chineseExample}
+                  {(item.examples[secondaryLanguage] ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       chineseExampleKey,
-                      item.chineseExample,
-                      "zh-TW"
+                      (item.examples[secondaryLanguage] ?? ""),
+                      getLanguage(secondaryLanguage).speechTag
                     )
                   }
                   active={speakingKey === chineseExampleKey}
@@ -370,15 +344,13 @@ export default function VocabularyDrawer({
             return (
               <div key={baseKey}>
                 <div className="space-y-1">
-                  {isLearningChinese
-                    ? [translationBlock, wordBlock]
-                    : [wordBlock, translationBlock]}
+                  {/* Pair order already: the word is the hero, the
+                      translation the support. */}
+                  {[wordBlock, translationBlock]}
                 </div>
 
                 <div className="mt-2.5 space-y-1">
-                  {isLearningChinese
-                    ? [chineseExampleBlock, englishExampleBlock]
-                    : [englishExampleBlock, chineseExampleBlock]}
+                  {[englishExampleBlock, chineseExampleBlock]}
                 </div>
 
                 {index < card.vocabulary.length - 1 ? (

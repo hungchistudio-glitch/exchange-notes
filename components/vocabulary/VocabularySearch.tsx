@@ -20,6 +20,7 @@ import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguage } from "@/lib/languages";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
@@ -59,14 +60,15 @@ export default function VocabularySearch({
   onToggleView,
 }: VocabularySearchProps) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage } = useLearningLanguageContext();
   const search = t.vocabulary.search;
 
   // Dictate in the language being learned — that's what the user is
   // searching their vocabulary for.
   const { supported: voiceSupported, listening, toggle: toggleVoice } =
     useVoiceInput({
-      lang: isLearningChinese ? "zh-TW" : "en-US",
+      // Dictation listens in the language being learned, whichever it is.
+      lang: getLanguage(learningLanguage).speechTag,
       onResult: onQueryChange,
     });
 

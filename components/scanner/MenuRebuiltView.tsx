@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { reconstructMenu } from "@/lib/scanner/reconstructMenu";
-import { type MenuDocument, type MenuItem } from "@/lib/scanner/menuTypes";
+import { itemNames, type MenuDocument, type MenuItem } from "@/lib/scanner/menuTypes";
 
 const ZOOM_STEPS = [1, 1.6, 2.4, 3.2];
 
@@ -101,7 +101,7 @@ export default function MenuRebuiltView({
                 key={item.id}
                 type="button"
                 onClick={() => onSelect(item)}
-                aria-label={item.englishName || item.sourceName}
+                aria-label={itemNames(item, menu.targetLanguage).primary}
                 className="absolute rounded-[2px] focus-visible:outline focus-visible:outline-2"
                 style={{
                   left: `${item.region.x * 100}%`,

@@ -1,3 +1,5 @@
+import { readLanguageCode } from "@/lib/languages";
+import { readLearningPair } from "@/lib/profile/languagePair";
 import { NextResponse } from "next/server";
 
 import {
@@ -177,11 +179,22 @@ export async function POST(request: Request) {
       return failed("The photo is too large to read.", "image_too_large", 413);
     }
 
+    /*
+     * Two languages come back from a scan — the user's own pair — and the
+     * target decides which of them leads on screen. Clamped to that pair
+     * rather than trusted: leading with a language the scan does not contain
+     * shows the printed line where a translation should be.
+     *
+     * The client still sends the prose encoding, and readLanguageCode takes
+     * either that or a code, so the two can cross over independently.
+     */
+    const languagePair = await readLearningPair(supabase, user.id);
+
+    const requested = readLanguageCode(body.targetLanguage);
     const targetLanguage =
-      body.targetLanguage === "english" ||
-      body.targetLanguage === "traditional-chinese"
-        ? body.targetLanguage
-        : "english";
+      requested && languagePair.includes(requested)
+        ? requested
+        : languagePair[0];
 
     if (!consumeMinuteRequest(user.id)) {
       return failed(
@@ -203,6 +216,7 @@ export async function POST(request: Request) {
       imageBase64,
       mediaType,
       targetLanguage,
+      languagePair,
     );
 
     if (!document) {

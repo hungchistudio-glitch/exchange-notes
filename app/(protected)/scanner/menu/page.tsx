@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  DEFAULT_LEARNING_PAIR,
+  INTERFACE_LANGUAGE_CODE,
+  getLearningLanguages,
+  type LanguageCode,
+} from "@/lib/languages";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -12,7 +18,6 @@ import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useScanSession, type ScanFailure } from "@/lib/scanner/scanSession";
 import type { MenuAnalyzeResponse } from "@/lib/scanner/menuTypes";
-import type { InterfaceLanguage } from "@/lib/appPreferences";
 
 function failureFromResponse(
   response: MenuAnalyzeResponse | null,
@@ -47,8 +52,20 @@ export default function MenuTranslatorPage() {
 
   const { session, dispatch } = useScanSession();
 
-  const [targetLanguage, setTargetLanguage] =
-    useState<InterfaceLanguage>(interfaceLanguage);
+  /*
+   * Which language the menu comes back in — a learning language, not the
+   * interface one. Seeded from the interface language because reading the app
+   * in a language is a good guess at wanting the menu in it, then clamped to
+   * what the scanner can actually produce: a Spanish interface should not ask
+   * for a scan the pipeline cannot answer yet.
+   */
+  const [targetLanguage, setTargetLanguage] = useState<LanguageCode>(() => {
+    const preferred = INTERFACE_LANGUAGE_CODE[interfaceLanguage];
+
+    return getLearningLanguages().some((meta) => meta.code === preferred)
+      ? preferred
+      : DEFAULT_LEARNING_PAIR[0];
+  });
 
   // The photo already sent for reading. Scanning is the one action in this
   // app that costs real money per call, and an effect that runs twice — in

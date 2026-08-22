@@ -1,6 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
+import { buildTranslateNotePrompt } from "@/lib/ai/prompts/translateNote";
+import { readLearningPair } from "@/lib/profile/languagePair";
+
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 
@@ -132,24 +135,13 @@ export async function POST(request: Request) {
 
     const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 
+    const languagePair = await readLearningPair(supabase, user.id);
+
     const client = new GoogleGenAI({ apiKey });
 
     const interaction = await client.interactions.create({
       model,
-      input: `
-The user wrote this note in a bilingual English / Traditional Chinese
-language-learning app: "${text}"
-
-It may be written in English, in Traditional Chinese, or a mix of both.
-Return both a natural English version and a natural Traditional Chinese
-version of the same note.
-
-Rules:
-- Use Traditional Chinese, never Simplified Chinese.
-- If the note is already bilingual, keep each language's own wording
-  rather than re-translating it from the other.
-- Keep the tone and meaning as close to the original as possible.
-      `.trim(),
+      input: buildTranslateNotePrompt(text, languagePair),
       response_format: {
         type: "text",
         mime_type: "application/json",

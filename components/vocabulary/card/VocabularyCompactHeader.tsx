@@ -1,6 +1,7 @@
 "use client";
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -11,15 +12,13 @@ type Props = {
 
 export default function VocabularyCompactHeader({ item }: Props) {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
   const statusLabels: Record<VocabularyStatus, string> = {
     new: t.vocabulary.search.statuses.new,
     learning: t.vocabulary.search.statuses.learning,
     mastered: t.vocabulary.search.statuses.mastered,
   };
-  const translation = item.translation?.trim() ?? "";
-  const primary = isLearningChinese ? translation : item.word;
-  const secondary = isLearningChinese ? item.word : translation;
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
 
   return (
     <header className="min-w-0 px-4 py-3.5">
@@ -32,23 +31,24 @@ export default function VocabularyCompactHeader({ item }: Props) {
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-baseline justify-between gap-3">
             <h3 className="min-w-0 break-words text-[17px] font-semibold leading-6 tracking-[-0.025em] text-black">
-              {primary || item.word}
+              {primary.text || item.word}
             </h3>
             <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.13em] text-ink-faint">
               {statusLabels[item.status]}
             </span>
           </div>
 
-          {secondary ? (
+          {secondary.text ? (
             <p className="mt-0.5 break-words text-[13px] leading-5 text-ink-soft">
-              {secondary}
+              {secondary.text}
             </p>
           ) : null}
 
           <PronunciationBlock
-            english={item.word}
-            chinese={translation}
-            showEnglish
+            entries={[
+              { text: primary.text, language: primary.language },
+              { text: secondary.text, language: secondary.language },
+            ]}
             className="mt-2 flex flex-wrap gap-x-3 gap-y-1"
           />
         </div>

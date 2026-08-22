@@ -282,8 +282,8 @@ const english: TranslationDictionary = {
     omni: {
       label: "Yumi OmniLexicon",
       placeholder: "Search, speak, scan, or show Yumi anything",
-      placeholderChinese: "Something you can't read?",
-      placeholderEnglish: "Something you heard?",
+      placeholderUnreadable: "Something in {language} you can't read?",
+      placeholderHeard: "Some {language} you heard?",
       inputText: "Type",
       inputVoice: "Voice",
       inputCamera: "Scan",
@@ -1536,6 +1536,7 @@ const english: TranslationDictionary = {
       englishDescription: "Display the app interface in English.",
       traditionalChineseDescription:
         "Display the app interface in Traditional Chinese.",
+      spanishDescription: "Display the app interface in Spanish.",
     },
 
     yumiReminders: {

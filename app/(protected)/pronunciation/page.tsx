@@ -1,5 +1,6 @@
 "use client";
 
+import { localize } from "@/lib/pronunciation/localizedText";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -169,7 +170,7 @@ function highlightedWord(
 export default function PronunciationLabPage() {
   const { t, language } = useTranslation();
   const copy = t.pronunciation;
-  const { learningLanguage } = useLearningLanguageContext();
+  const { isLearningChinese } = useLearningLanguageContext();
   const searchParams = useSearchParams();
 
   /**
@@ -199,7 +200,17 @@ export default function PronunciationLabPage() {
   // every render at English and fetched afterwards, so a Chinese learner got
   // one frame of the English tab before it swapped to zhuyin.
   const [mode, setMode] = useState<Mode | null>(null);
-  const resolvedMode: Mode = mode ?? (learningLanguage === "traditional-chinese" ? "zhuyin" : "english");
+  /*
+   * The one place this boolean is still the right question.
+   *
+   * The Lab is 26 English letters and the zhuyin symbols — two sets of
+   * teaching material written for one specific pair, not a frame any language
+   * drops into. "Which of these two" has an answer here in a way it does not
+   * anywhere else, and a learner of a third language gets the English set
+   * because that is the one that exists, not because they were mistaken for
+   * an English learner.
+   */
+  const resolvedMode: Mode = mode ?? (isLearningChinese ? "zhuyin" : "english");
 
   const [englishFilter, setEnglishFilter] = useState<"all" | EnglishCategory>("all");
   const [zhuyinFilter, setZhuyinFilter] = useState<"all" | ZhuyinCategory>("all");
@@ -696,7 +707,7 @@ export default function PronunciationLabPage() {
                                 : "border-line bg-white text-ink-soft"
                             }`}
                           >
-                            {value.label[language]}
+                            {localize(value.label, language)}
                           </button>
                         ))}
                       </div>
@@ -726,9 +737,9 @@ export default function PronunciationLabPage() {
                       {sound.guidance.map((point, index) => (
                         <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
-                            {point.label[language]}
+                            {localize(point.label, language)}
                           </span>
-                          <span className="font-cjk">{point.text[language]}</span>
+                          <span className="font-cjk">{localize(point.text, language)}</span>
                         </p>
                       ))}
                     </div>
@@ -747,7 +758,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{localize(sound.tip, language)}</p>
                     ) : null}
                   </div>
 
@@ -828,9 +839,9 @@ export default function PronunciationLabPage() {
                       {sound.guidance.map((point, index) => (
                         <p key={index} className="flex gap-2 text-sm leading-6 text-ink-strong">
                           <span className="font-cjk shrink-0 font-semibold text-ink-soft">
-                            {point.label[language]}
+                            {localize(point.label, language)}
                           </span>
-                          <span className="font-cjk">{point.text[language]}</span>
+                          <span className="font-cjk">{localize(point.text, language)}</span>
                         </p>
                       ))}
                     </div>
@@ -849,7 +860,7 @@ export default function PronunciationLabPage() {
                     </button>
 
                     {guidanceOpen ? (
-                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{sound.tip[language]}</p>
+                      <p className="font-cjk mt-2 text-sm leading-6 text-ink-soft">{localize(sound.tip, language)}</p>
                     ) : null}
                   </div>
 
@@ -920,7 +931,7 @@ export default function PronunciationLabPage() {
                       {trapOpen ? (
                         <div className="mt-2">
                           <p className="font-cjk text-sm leading-6 text-amber-800">
-                            {sound.commonMistake.explanation[language]}
+                            {localize(sound.commonMistake.explanation, language)}
                           </p>
 
                           <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1168,7 +1179,7 @@ function TeachingStage({
                 >
                   {stepLabel(step.key, copy)}
                 </span>
-                <span className="font-cjk">{step.text[language]}</span>
+                <span className="font-cjk">{localize(step.text, language)}</span>
               </p>
             );
           })}

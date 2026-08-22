@@ -1,5 +1,7 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { resolveDisplayPair } from "@/lib/languages";
 import Image from "next/image";
 
 import { DISCOVER_COLORS, categoryAccent, type DailyNewsCard } from "./types";
@@ -21,6 +23,18 @@ export default function CompactStoryRow({
   showThumbnail,
   onOpen,
 }: CompactStoryRowProps) {
+  const { languagePair } = useLearningLanguageContext();
+  /*
+   * Preferred, not assumed. The pool is one shared set of cards generated in
+   * one pairing, so a reader studying something else would index it by a
+   * language it does not have and get a blank card. Falling back to the
+   * languages the card actually carries shows it as what it is.
+   */
+  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
+    card?.titles ?? {},
+    languagePair,
+  );
+
   const accent = categoryAccent(card.category);
   const hasThumbnail = showThumbnail && Boolean(card.imageUrl);
 
@@ -79,14 +93,14 @@ export default function CompactStoryRow({
             }`}
             style={{ color: DISCOVER_COLORS.text }}
           >
-            {card.englishTitle}
+            {(card.titles[primaryLanguage] ?? "")}
           </h3>
 
           <p
             className="mt-0.5 line-clamp-1 text-[14px] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
-            {card.chineseTitle}
+            {(card.titles[secondaryLanguage] ?? "")}
           </p>
 
           {hasThumbnail ? null : (
@@ -94,7 +108,7 @@ export default function CompactStoryRow({
               className="mt-1.5 line-clamp-1 text-[13.5px] leading-[1.5]"
               style={{ color: DISCOVER_COLORS.textSecondary }}
             >
-              {card.englishSummary}
+              {(card.summaries[primaryLanguage] ?? "")}
             </p>
           )}
         </div>

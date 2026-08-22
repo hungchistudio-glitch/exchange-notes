@@ -40,13 +40,18 @@ import {
   getServerDeviceConnections,
   subscribeToDeviceConnections,
 } from "@/lib/settings/deviceConnections";
-import type { AppLanguage } from "@/lib/types/app";
+import {
+  DEFAULT_LEARNING_PAIR,
+  getLearningLanguages,
+  readLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
 
 type ProfileForm = {
   display_name: string;
   exchange_id: string;
-  native_language: AppLanguage;
-  learning_language: AppLanguage;
+  native_language: LanguageCode;
+  learning_language: LanguageCode;
 };
 
 /**
@@ -73,8 +78,8 @@ export default function ProfilePage() {
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
-    native_language: "english",
-    learning_language: "traditional-chinese",
+    native_language: DEFAULT_LEARNING_PAIR[0],
+    learning_language: DEFAULT_LEARNING_PAIR[1],
   });
 
   const [email, setEmail] = useState("");
@@ -142,9 +147,11 @@ export default function ProfilePage() {
           display_name: data?.display_name ?? "",
           exchange_id: data?.exchange_id ?? "",
           native_language:
-            (data?.native_language as AppLanguage) ?? "english",
+            readLanguageCode(data?.native_language) ??
+              DEFAULT_LEARNING_PAIR[0],
           learning_language:
-            (data?.learning_language as AppLanguage) ?? "traditional-chinese",
+            readLanguageCode(data?.learning_language) ??
+              DEFAULT_LEARNING_PAIR[1],
         });
 
         // From the session, not the profiles row. The address is the same one
@@ -173,7 +180,7 @@ export default function ProfilePage() {
 
   async function handleLanguageChange(
     field: "native_language" | "learning_language",
-    value: AppLanguage,
+    value: LanguageCode,
   ) {
     if (!userId) return;
 
@@ -186,11 +193,14 @@ export default function ProfilePage() {
     // with the other field, flip that field to the remaining language in
     // the same update instead of sending a lone change that would violate
     // the constraint.
-    const nextOtherValue: AppLanguage =
+    /*
+     * "The remaining language" is only a single answer while exactly two can
+     * be learned. A third turns this into a choice rather than a leftover.
+     */
+    const nextOtherValue: LanguageCode =
       value === form[otherField]
-        ? value === "english"
-          ? "traditional-chinese"
-          : "english"
+        ? (getLearningLanguages().find((meta) => meta.code !== value)?.code ??
+          form[otherField])
         : form[otherField];
 
     setForm((current) => ({

@@ -1,33 +1,7 @@
-export type VocabularyItem = {
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-};
-
-export type DailyNewsCard = {
-  id: string;
-  /*
-   * The pool row this card came from — the key the per-reader seen table
-   * uses. Optional because a card can reach the UI from somewhere other than
-   * the pool (a saved article, a shared word card), and those have no pool
-   * row to mark as read.
-   */
-  itemId?: string;
-  category: string;
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string;
-  vocabulary: VocabularyItem[];
-  imageUrl: string | null;
-  englishCaption: string | null;
-  chineseCaption: string | null;
-};
+export type {
+  DailyNewsCard,
+  VocabularyItem,
+} from "@/lib/types/dailyNews";
 
 // Categories worth illustrating — protests, cultural events, and science
 // discoveries read well as photos; abstract finance/market and technology

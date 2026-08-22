@@ -1,3 +1,15 @@
+import type { ByLanguage, LanguageCode } from "@/lib/languages";
+
+/**
+ * The learning-language axis as the database currently stores it.
+ *
+ * This is the *storage encoding*, not the language model: profiles'
+ * native_language / learning_language columns carry these exact strings
+ * under a CHECK constraint that only permits these two. New code should
+ * take `LanguageCode` (lib/languages.ts) and convert at the database edge
+ * with toLanguageCode / toAppLanguage; this type shrinks to a deprecated
+ * alias once the column is widened and backfilled.
+ */
 export type AppLanguage = "english" | "traditional-chinese";
 
 export type Profile = {
@@ -31,7 +43,33 @@ export type VocabularyItem = {
   user_id: string;
   word: string;
   translation: string;
-  language: AppLanguage;
+  /**
+   * Legacy: the language of `word`, as stored. Superseded by the pair below,
+   * which names both halves instead of leaving the second one implied by
+   * there being only two languages.
+   *
+   * Typed as stored rather than as a union, because it is written by one
+   * place now (the repository, from word_language) and read by none. It goes
+   * when the column does.
+   */
+  language: string;
+  /**
+   * The pair, stated outright. Present on every row and returned by the
+   * `select("*")` reads, so they are not optional — the database backfilled
+   * them and holds them NOT NULL.
+   */
+  word_language: LanguageCode;
+  translation_language: LanguageCode;
+  /**
+   * The word, and its example, in every language it is known in.
+   *
+   * This is what a saved word actually is now — one concept, not a pair. The
+   * four fields above are the pair it was stored as before, kept while
+   * readers migrate and derived from these afterwards. A language present in
+   * `texts` but absent from `examples` simply has no example yet.
+   */
+  texts: ByLanguage;
+  examples: ByLanguage;
   category: VocabularyCategory;
   favorite: boolean;
   part_of_speech: string | null;

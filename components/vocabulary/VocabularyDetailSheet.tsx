@@ -1,5 +1,6 @@
 "use client";
 
+import type { SpeechLanguage } from "@/lib/speech";
 import {
   Check,
   Clock3,
@@ -16,6 +17,8 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import AppBadge from "@/components/ui/AppBadge";
 import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { getLanguage } from "@/lib/languages";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { speak } from "@/lib/speech";
@@ -40,7 +43,7 @@ function SpeechRow({
 }: {
   eyebrow?: string;
   text: string;
-  lang: "en-US" | "zh-TW";
+  lang: SpeechLanguage;
   size?: "md" | "sm";
   listenAriaLabel: string;
 }) {
@@ -97,7 +100,8 @@ export default function VocabularyDetailSheet({
   onEdit: () => void;
 }) {
   const { t, isTraditionalChinese } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
   const detail = t.vocabulary.detail;
   const motion = useSheetMotion({ open, onClose });
 
@@ -161,30 +165,21 @@ export default function VocabularyDetailSheet({
                   )}
                 </div>
 
-                {isLearningChinese ? (
-                  <>
-                    <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
-                      {item.translation}
-                    </h2>
-                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
-                      {item.word}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
-                      {item.word}
-                    </h2>
-                    <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
-                      {item.translation}
-                    </p>
-                  </>
-                )}
+                <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
+                  {sides.primary.text}
+                </h2>
+                <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
+                  {sides.secondary.text}
+                </p>
 
                 <PronunciationBlock
-                  english={item.word}
-                  chinese={item.translation}
-                  showEnglish
+                  entries={[
+                    { text: sides.primary.text, language: sides.primary.language },
+                    {
+                      text: sides.secondary.text,
+                      language: sides.secondary.language,
+                    },
+                  ]}
                   className="mt-3"
                 />
               </div>
@@ -211,45 +206,17 @@ export default function VocabularyDetailSheet({
             </div>
 
             <div className="mt-5 space-y-2">
-              {isLearningChinese ? (
-                <>
-                  <SpeechRow
-                    eyebrow="中文"
-                    text={item.translation}
-                    lang="zh-TW"
-                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
-                      text: item.translation,
-                    })}
-                  />
-                  <SpeechRow
-                    eyebrow="English"
-                    text={item.word}
-                    lang="en-US"
-                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
-                      text: item.word,
-                    })}
-                  />
-                </>
-              ) : (
-                <>
-                  <SpeechRow
-                    eyebrow="English"
-                    text={item.word}
-                    lang="en-US"
-                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
-                      text: item.word,
-                    })}
-                  />
-                  <SpeechRow
-                    eyebrow="中文"
-                    text={item.translation}
-                    lang="zh-TW"
-                    listenAriaLabel={insertValues(detail.listenAriaLabel, {
-                      text: item.translation,
-                    })}
-                  />
-                </>
-              )}
+              {[sides.primary, sides.secondary].map((side) => (
+                <SpeechRow
+                  key={side.language}
+                  eyebrow={getLanguage(side.language).endonym}
+                  text={side.text}
+                  lang={getLanguage(side.language).speechTag}
+                  listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                    text: side.text,
+                  })}
+                />
+              ))}
             </div>
 
             {(item.example_sentence || item.translated_example) && (
@@ -259,58 +226,18 @@ export default function VocabularyDetailSheet({
                 </p>
 
                 <div className="mt-2 space-y-2">
-                  {isLearningChinese ? (
-                    <>
-                      {item.translated_example && (
-                        <SpeechRow
-                          text={item.translated_example}
-                          lang="zh-TW"
-                          size="sm"
-                          listenAriaLabel={insertValues(
-                            detail.listenAriaLabel,
-                            { text: item.translated_example },
-                          )}
-                        />
-                      )}
-
-                      {item.example_sentence && (
-                        <SpeechRow
-                          text={item.example_sentence}
-                          lang="en-US"
-                          size="sm"
-                          listenAriaLabel={insertValues(
-                            detail.listenAriaLabel,
-                            { text: item.example_sentence },
-                          )}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {item.example_sentence && (
-                        <SpeechRow
-                          text={item.example_sentence}
-                          lang="en-US"
-                          size="sm"
-                          listenAriaLabel={insertValues(
-                            detail.listenAriaLabel,
-                            { text: item.example_sentence },
-                          )}
-                        />
-                      )}
-
-                      {item.translated_example && (
-                        <SpeechRow
-                          text={item.translated_example}
-                          lang="zh-TW"
-                          size="sm"
-                          listenAriaLabel={insertValues(
-                            detail.listenAriaLabel,
-                            { text: item.translated_example },
-                          )}
-                        />
-                      )}
-                    </>
+                  {[sides.primary, sides.secondary].map((side) =>
+                    side.example ? (
+                      <SpeechRow
+                        key={`example-${side.language}`}
+                        text={side.example}
+                        lang={getLanguage(side.language).speechTag}
+                        size="sm"
+                        listenAriaLabel={insertValues(detail.listenAriaLabel, {
+                          text: side.example,
+                        })}
+                      />
+                    ) : null,
                   )}
                 </div>
               </div>

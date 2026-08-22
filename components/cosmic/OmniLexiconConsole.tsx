@@ -36,7 +36,13 @@ import {
   getPronunciation,
   type PronunciationResult,
 } from "@/lib/pronunciation/getPronunciation";
+import {
+  getLanguage,
+  getLanguageName,
+  isUnreadableScript,
+} from "@/lib/languages";
 import { speak } from "@/lib/speech";
+import { insertValues } from "@/lib/utils";
 import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
 
 import styles from "./OmniLexiconConsole.module.css";
@@ -81,9 +87,9 @@ const WAVE_BARS = 12;
 export default function OmniLexiconConsole({
   onStateChange,
 }: OmniLexiconConsoleProps) {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic.omni;
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
 
   const [query, setQuery] = useState("");
   const {
@@ -133,7 +139,8 @@ export default function OmniLexiconConsole({
   // user just heard something in and cannot spell.
   const { supported: voiceSupported, listening, toggle: toggleVoice } =
     useVoiceInput({
-      lang: isLearningChinese ? "zh-TW" : "en-US",
+      // Dictation listens in the language being learned.
+      lang: getLanguage(languagePair[0]).speechTag,
       onResult: submit,
     });
 
@@ -174,9 +181,14 @@ export default function OmniLexiconConsole({
    * spell". It is chosen once per render from a stable input, never rotated on
    * a timer.
    */
-  const placeholder = isLearningChinese
-    ? copy.placeholderChinese
-    : copy.placeholderEnglish;
+  const learningLanguage = languagePair[0];
+
+  const placeholder = insertValues(
+    isUnreadableScript(learningLanguage)
+      ? copy.placeholderUnreadable
+      : copy.placeholderHeard,
+    { language: getLanguageName(learningLanguage, interfaceLanguage) },
+  );
 
   // The offline dictionary can answer before the model does; showing that
   // early answer is better than an empty console, as long as it is labelled.
@@ -248,8 +260,10 @@ export default function OmniLexiconConsole({
       word: lookupResult.englishName,
       translation: lookupResult.chineseName,
       partOfSpeech: lookupResult.partOfSpeech,
-      englishExample: lookupResult.englishExample,
-      chineseExample: lookupResult.chineseExample,
+      examples: {
+        en: lookupResult.englishExample,
+        "zh-TW": lookupResult.chineseExample,
+      },
     });
   }
 
@@ -301,7 +315,8 @@ export default function OmniLexiconConsole({
         user_id: user.id,
         word: lookupResult.englishName.trim(),
         translation: lookupResult.chineseName.trim(),
-        language: "english",
+        word_language: languagePair[0],
+        translation_language: languagePair[1],
         part_of_speech: lookupResult.partOfSpeech?.trim() || null,
         example_sentence: lookupResult.englishExample?.trim() || null,
         translated_example: lookupResult.chineseExample?.trim() || null,
@@ -320,18 +335,15 @@ export default function OmniLexiconConsole({
 
   // The learning language leads everywhere in the app, and this is no
   // exception — the console does not get a hierarchy of its own.
-  const primary = shown
-    ? isLearningChinese
-      ? shown.chineseName
-      : shown.englishName
-    : "";
-  const secondary = shown
-    ? isLearningChinese
-      ? shown.englishName
-      : shown.chineseName
-    : "";
-  const primaryLang = isLearningChinese ? "zh-TW" : "en-US";
-  const secondaryLang = isLearningChinese ? "en-US" : "zh-TW";
+  /*
+   * A lookup answers in the pair's own order, learning first, so the hero is
+   * the first field rather than whichever of two languages this happens to
+   * be. The console does not get a hierarchy of its own.
+   */
+  const primary = shown ? shown.englishName : "";
+  const secondary = shown ? shown.chineseName : "";
+  const primaryLang = getLanguage(languagePair[0]).speechTag;
+  const secondaryLang = getLanguage(languagePair[1]).speechTag;
 
   // Shared with the standard-mode lookup sheet rather than restated in the
   // cosmic vocabulary: the explanation is about the network, not the theme.
@@ -564,9 +576,7 @@ export default function OmniLexiconConsole({
             <div className={styles.examples}>
               <div className={styles.resultRow}>
                 <p className={styles.resultExample}>
-                  {isLearningChinese
-                    ? lookupResult.chineseExample
-                    : lookupResult.englishExample}
+                  {lookupResult.englishExample}
                 </p>
                 <button
                   type="button"
@@ -574,9 +584,7 @@ export default function OmniLexiconConsole({
                   aria-label={copy.playExampleLearning}
                   onClick={() =>
                     speak(
-                      isLearningChinese
-                        ? lookupResult.chineseExample
-                        : lookupResult.englishExample,
+                      lookupResult.englishExample,
                       primaryLang,
                     )
                   }
@@ -587,9 +595,7 @@ export default function OmniLexiconConsole({
 
               <div className={styles.resultRow}>
                 <p className={styles.resultExample}>
-                  {isLearningChinese
-                    ? lookupResult.englishExample
-                    : lookupResult.chineseExample}
+                  {lookupResult.chineseExample}
                 </p>
                 <button
                   type="button"
@@ -597,9 +603,7 @@ export default function OmniLexiconConsole({
                   aria-label={copy.playExampleTranslation}
                   onClick={() =>
                     speak(
-                      isLearningChinese
-                        ? lookupResult.englishExample
-                        : lookupResult.chineseExample,
+                      lookupResult.chineseExample,
                       secondaryLang,
                     )
                   }

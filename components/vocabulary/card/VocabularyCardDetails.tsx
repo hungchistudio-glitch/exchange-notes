@@ -1,5 +1,7 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExampleBlock";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -21,6 +23,9 @@ function formatDate(value: string | null | undefined, locale: string) {
 }
 
 export default function VocabularyCardDetails({ item }: Props) {
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+
   const { t, isTraditionalChinese } = useTranslation();
   const detail = t.vocabulary.detail;
   const locale = isTraditionalChinese ? "zh-TW" : "en-US";
@@ -30,8 +35,11 @@ export default function VocabularyCardDetails({ item }: Props) {
   return (
     <div className="border-t border-black/[0.055] px-5 pb-5 pt-1">
       <VocabularyExampleBlock
-        english={item.example_sentence}
-        chinese={item.translated_example}
+        primary={{ text: sides.primary.example, language: sides.primary.language }}
+        secondary={{
+          text: sides.secondary.example,
+          language: sides.secondary.language,
+        }}
         className="mt-4"
       />
 

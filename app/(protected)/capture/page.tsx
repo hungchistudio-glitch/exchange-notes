@@ -402,7 +402,7 @@ function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const capture = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -937,8 +937,7 @@ function CaptureContent() {
       word: result.englishName,
       translation: result.chineseName,
       partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
+      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
     });
   }
 
@@ -985,7 +984,8 @@ function CaptureContent() {
           user_id: user.id,
           word: result.englishName.trim(),
           translation: result.chineseName.trim(),
-          language: "english",
+          word_language: languagePair[0],
+          translation_language: languagePair[1],
           part_of_speech:
             result.partOfSpeech.trim() || null,
           example_sentence:
@@ -1083,8 +1083,7 @@ function CaptureContent() {
       word: result.englishName,
       translation: result.chineseName,
       partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
+      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
     });
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
@@ -1326,25 +1325,16 @@ function CaptureContent() {
                   </span>
                 </div>
 
-                {isLearningChinese ? (
-                  <>
-                    <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                      {result.chineseName}
-                    </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
-                      {result.englishName}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                      {result.englishName}
-                    </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
-                      {result.chineseName}
-                    </p>
-                  </>
-                )}
+                {/*
+                  Pair order already: the identification answers in the
+                  learner's own two languages, learning first.
+                */}
+                <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
+                  {result.englishName}
+                </h2>
+                <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
+                  {result.chineseName}
+                </p>
                 <p className="mt-1 text-xs text-ink-faint">
                   {
                     t.vocabulary.detail.partOfSpeech[
@@ -1355,7 +1345,7 @@ function CaptureContent() {
 
                 <div className="mt-2.5 space-y-1.5">
                   {(() => {
-                    const englishIsPrimary = !isLearningChinese;
+                    const englishIsPrimary = true;
                     const primaryValueClass =
                       "mt-0.5 block break-words text-[16px] font-semibold text-black";
                     const secondaryValueClass =
@@ -1451,9 +1441,7 @@ function CaptureContent() {
                       </div>
                     );
 
-                    return isLearningChinese
-                      ? [chineseBox, englishBox]
-                      : [englishBox, chineseBox];
+                    return [englishBox, chineseBox];
                   })()}
                 </div>
 
@@ -1521,9 +1509,7 @@ function CaptureContent() {
                           </div>
                         ) : null;
 
-                        return isLearningChinese
-                          ? [chineseExampleBox, englishExampleBox]
-                          : [englishExampleBox, chineseExampleBox];
+                        return [englishExampleBox, chineseExampleBox];
                       })()}
                     </div>
                   </div>

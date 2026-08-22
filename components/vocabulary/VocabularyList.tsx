@@ -17,6 +17,7 @@ import Link from "next/link";
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import { EmptyState } from "@/components/foundation-legacy";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
@@ -92,7 +93,7 @@ function VocabularyList({
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const lookup = t.vocabulary.lookup;
 
   if (loading) {
@@ -137,13 +138,15 @@ function VocabularyList({
 
   if (items.length === 0) {
     if (lookupStatus === "result" && lookupResult) {
-      // The looked-up word gets the same hierarchy treatment as saved
-      // word cards: the language being learned is the hero (larger, darker,
-      // solid speaker button), the other language is the supporting
-      // translation. Order flips with the learning language too, so the
-      // reading flow of the target language is never interrupted.
-      const englishIsPrimary = !isLearningChinese;
-
+      /*
+       * The looked-up word gets the same hierarchy as a saved card: the
+       * language being learned is the hero, the other is the support.
+       *
+       * There is no "is English primary" any more, and there does not need to
+       * be — the result's two sides arrive in the pair's own order, learning
+       * first, so the first one is the hero by construction rather than by a
+       * question about which of two languages this happens to be.
+       */
       const heroTextClass =
         "min-w-0 break-words text-[27px] font-semibold tracking-[-0.04em] text-black";
       const supportTextClass =
@@ -153,48 +156,24 @@ function VocabularyList({
       const heroSpeakerClass = `${speakerBase} bg-black text-white`;
       const supportSpeakerClass = `${speakerBase} bg-black/[0.05] text-ink-soft`;
 
-      const englishRow = (
+      const wordRow = (
+        text: string,
+        language: LanguageCode,
+        hero: boolean,
+      ) => (
         <div
-          key="english"
+          key={language}
           className="mt-2 flex items-center justify-center gap-2.5"
         >
-          <h2 className={englishIsPrimary ? heroTextClass : supportTextClass}>
-            {lookupResult.englishName}
-          </h2>
+          <h2 className={hero ? heroTextClass : supportTextClass}>{text}</h2>
 
           <button
             type="button"
-            onClick={() => speak(lookupResult.englishName, "en-US")}
+            onClick={() => speak(text, getLanguage(language).speechTag)}
             aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-              text: lookupResult.englishName,
+              text,
             })}
-            className={
-              englishIsPrimary ? heroSpeakerClass : supportSpeakerClass
-            }
-          >
-            <Volume2 size={15} strokeWidth={1.8} />
-          </button>
-        </div>
-      );
-
-      const chineseRow = (
-        <div
-          key="chinese"
-          className="mt-2 flex items-center justify-center gap-2.5"
-        >
-          <h2 className={englishIsPrimary ? supportTextClass : heroTextClass}>
-            {lookupResult.chineseName}
-          </h2>
-
-          <button
-            type="button"
-            onClick={() => speak(lookupResult.chineseName, "zh-TW")}
-            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-              text: lookupResult.chineseName,
-            })}
-            className={
-              englishIsPrimary ? supportSpeakerClass : heroSpeakerClass
-            }
+            className={hero ? heroSpeakerClass : supportSpeakerClass}
           >
             <Volume2 size={15} strokeWidth={1.8} />
           </button>
@@ -204,43 +183,33 @@ function VocabularyList({
       const exampleSpeakerClass =
         "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft transition active:scale-90";
 
-      const englishExampleRow = lookupResult.englishExample ? (
-        <div key="english-example" className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 text-[14px] leading-6 text-ink-strong">
-            {lookupResult.englishExample}
-          </p>
+      const exampleRow = (
+        text: string | null | undefined,
+        language: LanguageCode,
+        hero: boolean,
+      ) =>
+        text ? (
+          <div key={`example-${language}`} className="flex items-start gap-3">
+            <p
+              className={`min-w-0 flex-1 text-[14px] leading-6 ${
+                hero ? "text-ink-strong" : "text-ink-soft"
+              }`}
+            >
+              {text}
+            </p>
 
-          <button
-            type="button"
-            onClick={() => speak(lookupResult.englishExample, "en-US")}
-            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-              text: lookupResult.englishExample,
-            })}
-            className={exampleSpeakerClass}
-          >
-            <Volume2 size={14} strokeWidth={1.8} />
-          </button>
-        </div>
-      ) : null;
-
-      const chineseExampleRow = lookupResult.chineseExample ? (
-        <div key="chinese-example" className="flex items-start gap-3">
-          <p className="min-w-0 flex-1 text-[14px] leading-6 text-ink-soft">
-            {lookupResult.chineseExample}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => speak(lookupResult.chineseExample, "zh-TW")}
-            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-              text: lookupResult.chineseExample,
-            })}
-            className={exampleSpeakerClass}
-          >
-            <Volume2 size={14} strokeWidth={1.8} />
-          </button>
-        </div>
-      ) : null;
+            <button
+              type="button"
+              onClick={() => speak(text, getLanguage(language).speechTag)}
+              aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+                text,
+              })}
+              className={exampleSpeakerClass}
+            >
+              <Volume2 size={14} strokeWidth={1.8} />
+            </button>
+          </div>
+        ) : null;
 
       return (
         <section className="mt-6 rounded-[24px] bg-white p-5 text-center shadow-[0_8px_22px_rgba(0,0,0,0.04)]">
@@ -252,14 +221,16 @@ function VocabularyList({
             {lookup.wordFound}
           </p>
 
-          {englishIsPrimary
-            ? [englishRow, chineseRow]
-            : [chineseRow, englishRow]}
+          {[
+            wordRow(lookupResult.englishName, languagePair[0], true),
+            wordRow(lookupResult.chineseName, languagePair[1], false),
+          ]}
 
           <PronunciationBlock
-            english={lookupResult.englishName}
-            chinese={lookupResult.chineseName}
-            showEnglish
+            entries={[
+              { text: lookupResult.englishName, language: languagePair[0] },
+              { text: lookupResult.chineseName, language: languagePair[1] },
+            ]}
             className="mt-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1"
           />
 
@@ -270,9 +241,10 @@ function VocabularyList({
           </p>
 
           <div className="mt-5 space-y-2 rounded-[20px] bg-surface p-4 text-left">
-            {englishIsPrimary
-              ? [englishExampleRow, chineseExampleRow]
-              : [chineseExampleRow, englishExampleRow]}
+            {[
+              exampleRow(lookupResult.englishExample, languagePair[0], true),
+              exampleRow(lookupResult.chineseExample, languagePair[1], false),
+            ]}
           </div>
 
           {/* Share sits beside Add rather than after it: sending a word to a

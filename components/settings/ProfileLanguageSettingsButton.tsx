@@ -5,16 +5,27 @@ import { ReactNode, useState } from "react";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import type { AppLanguage } from "@/lib/types/app";
+import {
+  getLanguage,
+  getLearningLanguages,
+  type LanguageCode,
+} from "@/lib/languages";
 
+/*
+ * The languages this app can currently teach, read from the table rather than
+ * typed out. Narrower than the table on purpose: the profile columns still
+ * hold the old two-value encoding, so a pair they cannot store would fail on
+ * save instead of in the picker. Widening that column widens this list.
+ */
 const LANGUAGE_OPTIONS: Array<{
-  value: AppLanguage;
+  value: LanguageCode;
   label: string;
   badge: string;
-}> = [
-  { value: "english", label: "English", badge: "En" },
-  { value: "traditional-chinese", label: "繁體中文", badge: "中" },
-];
+}> = getLearningLanguages().map((meta) => ({
+  value: meta.code,
+  label: meta.endonym,
+  badge: meta.badge,
+}));
 
 type ProfileLanguageSettingsButtonProps = {
   rowTitle: string;
@@ -22,8 +33,8 @@ type ProfileLanguageSettingsButtonProps = {
   sheetTitle: string;
   sheetDescription: string;
   icon: ReactNode;
-  value: AppLanguage;
-  onChange: (value: AppLanguage) => void;
+  value: LanguageCode;
+  onChange: (value: LanguageCode) => void;
 };
 
 export default function ProfileLanguageSettingsButton({
@@ -38,9 +49,9 @@ export default function ProfileLanguageSettingsButton({
   const [open, setOpen] = useState(false);
 
   const currentLabel =
-    value === "traditional-chinese" ? "繁體中文" : "English";
+    getLanguage(value).endonym;
 
-  function handleSelect(next: AppLanguage) {
+  function handleSelect(next: LanguageCode) {
     onChange(next);
     setOpen(false);
   }

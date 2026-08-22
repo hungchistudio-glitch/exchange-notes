@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage } from "@/lib/types/app";
+import {
+  DEFAULT_LEARNING_PAIR,
+  getLearningLanguages,
+  readLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
 
 import WelcomeStep from "./steps/WelcomeStep";
 import NameStep from "./steps/NameStep";
@@ -27,8 +32,8 @@ type OnboardingFlowProps = {
   initialDisplayName: string;
   initialExchangeId: string;
   initialAvatarUrl: string | null;
-  initialNativeLanguage: AppLanguage | null;
-  initialLearningLanguage: AppLanguage | null;
+  initialNativeLanguage: unknown;
+  initialLearningLanguage: unknown;
   initialStep: string | null;
 };
 
@@ -55,13 +60,24 @@ export default function OnboardingFlow({
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [exchangeId, setExchangeId] = useState(initialExchangeId);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
-  const [nativeLanguage, setNativeLanguage] = useState<AppLanguage>(
-    initialNativeLanguage ?? "english",
+  /*
+   * Read through the normaliser: a half-finished profile from before the
+   * migration carries the prose values, a newer one carries codes, and this
+   * screen is exactly where someone returns to a half-finished profile.
+   */
+  const [nativeLanguage, setNativeLanguage] = useState<LanguageCode>(
+    () => readLanguageCode(initialNativeLanguage) ?? DEFAULT_LEARNING_PAIR[0],
   );
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage>(
-    initialLearningLanguage ??
-      (initialNativeLanguage === "english" ? "traditional-chinese" : "english"),
-  );
+  const [learningLanguage, setLearningLanguage] = useState<LanguageCode>(() => {
+    const stored = readLanguageCode(initialLearningLanguage);
+    if (stored) return stored;
+
+    const native = readLanguageCode(initialNativeLanguage);
+    return (
+      getLearningLanguages().find((meta) => meta.code !== native)?.code ??
+      DEFAULT_LEARNING_PAIR[1]
+    );
+  });
 
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState("");

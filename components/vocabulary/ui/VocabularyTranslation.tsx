@@ -10,7 +10,7 @@ type Props = {
   className?: string;
   /** "secondary" (default) renders as the smaller supporting line; "primary"
    * renders as the large hero headline. Callers flip this based on which
-   * language the user is learning (see isLearningChinese from
+   * language the user is learning (see getVocabularyCardSides and
    * LearningLanguageContext) — NOT the interface display language. */
   variant?: "primary" | "secondary";
   showSpeechButton?: boolean;

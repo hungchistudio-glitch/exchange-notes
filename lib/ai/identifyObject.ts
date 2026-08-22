@@ -1,3 +1,5 @@
+import { buildIdentifyObjectPrompt } from "@/lib/ai/prompts/identifyObject";
+import type { LanguageCode } from "@/lib/languages";
 import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
@@ -118,8 +120,22 @@ function isRateLimitError(error: unknown) {
   );
 }
 
-function cacheKey(imageBase64: string) {
-  return createHash("sha256").update(imageBase64).digest("base64url");
+/**
+ * The same photograph answered for two different learners is two different
+ * answers, so the pair is part of the key.
+ *
+ * Keyed on the image alone, whoever photographed a cup first would decide
+ * what everyone else's card said, in their languages rather than the
+ * photographer's.
+ */
+function cacheKey(
+  imageBase64: string,
+  [learning, native]: readonly [LanguageCode, LanguageCode],
+) {
+  return createHash("sha256")
+    .update(`${learning}+${native}:`)
+    .update(imageBase64)
+    .digest("base64url");
 }
 
 function getCachedResult(key: string) {
@@ -149,8 +165,11 @@ function cacheResult(key: string, result: ObjectIdentificationResult) {
   }
 }
 
-export function getCachedObjectIdentification(imageBase64: string) {
-  return getCachedResult(cacheKey(imageBase64));
+export function getCachedObjectIdentification(
+  imageBase64: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
+) {
+  return getCachedResult(cacheKey(imageBase64, languagePair));
 }
 
 async function identifyWithModel(
@@ -158,6 +177,7 @@ async function identifyWithModel(
   model: string,
   imageBase64: string,
   mediaType: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const interaction = await client.interactions.create(
     {
@@ -165,26 +185,7 @@ async function identifyWithModel(
       input: [
         {
           type: "text",
-          text: `
-Identify the physical object that the learner intentionally placed closest to
-the exact center of this image. This is for an English and Traditional Chinese
-language-learning app.
-
-Rules:
-- Give the everyday generic name of the centered object, not its color,
-  material, brand, background, container, photo, or screen.
-- Prefer the centered object over larger background objects. If the center is
-  empty, choose the largest clear non-person object.
-- Never identify a person or infer private or sensitive traits.
-- Use a concise singular English headword when natural.
-- The Traditional Chinese name must mean the same object and must never use
-  Simplified Chinese.
-- Base the answer only on visible shape and details. Do not invent obscured
-  details.
-- Keep both example sentences short, natural, and semantically equivalent.
-- Use low confidence whenever the object is blurry, partly hidden, ambiguous,
-  or too small.
-          `.trim(),
+          text: buildIdentifyObjectPrompt(languagePair),
         },
         {
           type: "image",
@@ -229,6 +230,7 @@ Rules:
 async function identifyWithFallback(
   imageBase64: string,
   mediaType: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new ObjectIdentificationUnavailableError();
@@ -253,6 +255,7 @@ async function identifyWithFallback(
         model,
         imageBase64,
         mediaType,
+        languagePair,
       );
 
       if (result.confidence !== "low") return result;
@@ -282,15 +285,16 @@ async function identifyWithFallback(
 export async function identifyObject(
   imageBase64: string,
   mediaType: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
-  const key = cacheKey(imageBase64);
+  const key = cacheKey(imageBase64, languagePair);
   const cached = getCachedResult(key);
   if (cached) return cached;
 
   const existingRequest = inFlightIdentifications.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = identifyWithFallback(imageBase64, mediaType)
+  const request = identifyWithFallback(imageBase64, mediaType, languagePair)
     .then((result) => {
       cacheResult(key, result);
       return result;

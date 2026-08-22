@@ -1,4 +1,5 @@
 import english from "@/lib/i18n/en";
+import spanish from "@/lib/i18n/es";
 import traditionalChinese from "@/lib/i18n/zh-TW";
 import type {
   TranslationDictionary,
@@ -11,6 +12,7 @@ const DICTIONARIES: Record<
 > = {
   english,
   "traditional-chinese": traditionalChinese,
+  spanish,
 };
 
 export function getTranslations(
@@ -21,6 +23,7 @@ export function getTranslations(
 
 export {
   english,
+  spanish,
   traditionalChinese,
 };
 

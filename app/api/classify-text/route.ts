@@ -1,3 +1,6 @@
+import { buildClassifyTextPrompt } from "@/lib/ai/prompts/classifyText";
+import type { LanguageCode } from "@/lib/languages";
+import { readLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
@@ -81,8 +84,25 @@ function normalizeQuery(value: string) {
   return value.normalize("NFKC").trim().replace(/\s+/g, " ");
 }
 
-function getCacheKey(query: string) {
-  return query.toLocaleLowerCase("en-US");
+/**
+ * The cache key is the query *and* the pair it was answered in.
+ *
+ * Both caches here are shared — the in-memory one across every request an
+ * instance serves, the table across the whole app — and the answer is no
+ * longer the same for everyone. Keyed on the query alone, the first person to
+ * look up "bicycle" would decide what everyone else got back, in their
+ * language rather than the asker's.
+ *
+ * Old rows keyed without a pair simply never match again and age out; a
+ * cache miss costs a lookup, which is the failure this module is built to
+ * take. A query long enough to push the key past the column's 80-character
+ * ceiling skips the shared cache the same way — see MAX_KEY_LENGTH there.
+ */
+function getCacheKey(
+  query: string,
+  [learning, native]: readonly [LanguageCode, LanguageCode],
+) {
+  return `${learning}+${native}:${query.toLocaleLowerCase("en-US")}`;
 }
 
 function getCachedResult(key: string) {
@@ -142,25 +162,12 @@ async function lookupWithModel(
   client: GoogleGenAI,
   model: string,
   query: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const interaction = await client.interactions.create(
     {
       model,
-      input: `
-The user typed this into an English and Traditional Chinese language-learning
-app: ${JSON.stringify(query)}
-
-It may be an English word/phrase, a Traditional Chinese word/phrase, or a
-misspelling of either. Identify what it most likely means and return the
-requested fields.
-
-Rules:
-- Use Traditional Chinese, never Simplified Chinese.
-- If the input is already Traditional Chinese, treat it as the source word
-  and translate it into English.
-- If uncertain what was meant, make your best guess and use low confidence.
-- Keep both examples natural, short, and semantically equivalent.
-      `.trim(),
+      input: buildClassifyTextPrompt(query, languagePair),
       response_format: {
         type: "text",
         mime_type: "application/json",
@@ -195,7 +202,10 @@ Rules:
   return result;
 }
 
-async function lookupWithModelFallback(query: string) {
+async function lookupWithModelFallback(
+  query: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
+) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -212,7 +222,7 @@ async function lookupWithModelFallback(query: string) {
     if (cooldownUntil > Date.now()) continue;
 
     try {
-      const result = await lookupWithModel(client, model, query);
+      const result = await lookupWithModel(client, model, query, languagePair);
       return { result, model };
     } catch (error) {
       const status = getErrorStatus(error);
@@ -235,6 +245,7 @@ async function lookupWithModelFallback(query: string) {
 async function performLookup(
   query: string,
   key: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<ResolvedLookup> {
   // Any word another user has already looked up costs nothing and returns in
   // a single round trip, so this runs ahead of the model.
@@ -243,7 +254,7 @@ async function performLookup(
     return { result: shared, origin: "shared", fromModel: true };
   }
 
-  const modelResult = await lookupWithModelFallback(query);
+  const modelResult = await lookupWithModelFallback(query, languagePair);
   if (modelResult) {
     // Not awaited: persisting for other users must not delay this response,
     // and a cache that cannot be written is not a failed lookup.
@@ -263,8 +274,11 @@ async function performLookup(
   };
 }
 
-async function lookupVocabulary(query: string): Promise<ResolvedLookup> {
-  const key = getCacheKey(query);
+async function lookupVocabulary(
+  query: string,
+  languagePair: readonly [LanguageCode, LanguageCode],
+): Promise<ResolvedLookup> {
+  const key = getCacheKey(query, languagePair);
 
   const cached = getCachedResult(key);
   if (cached) return { result: cached, origin: "memory", fromModel: true };
@@ -272,7 +286,7 @@ async function lookupVocabulary(query: string): Promise<ResolvedLookup> {
   const existingRequest = inFlightLookups.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = performLookup(query, key)
+  const request = performLookup(query, key, languagePair)
     .then((resolved) => {
       if (resolved.fromModel) cacheResult(key, resolved.result);
       return resolved;
@@ -316,7 +330,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const resolved = await lookupVocabulary(query);
+    const languagePair = await readLearningPair(supabase, user.id);
+
+    const resolved = await lookupVocabulary(query, languagePair);
 
     return NextResponse.json(
       {

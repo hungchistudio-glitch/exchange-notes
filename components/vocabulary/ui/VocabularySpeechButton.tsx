@@ -1,18 +1,19 @@
 "use client";
 
+import type { SpeechLanguage } from "@/lib/speech";
 import { Volume2 } from "lucide-react";
 import { speak } from "@/lib/speech";
 
 type VocabularySpeechButtonProps = {
   text: string | null | undefined;
-  language: "en-US" | "zh-TW";
+  language: SpeechLanguage;
   label: string;
   size?: "sm" | "md";
   className?: string;
   /** "secondary" (default) is the current subtle ghost style, used
    * everywhere that isn't language-hierarchy-aware. "primary" is a
    * solid, higher-contrast treatment for whichever language is the
-   * current visual hero (see isLearningChinese) — the demoted language's
+   * current visual hero (see getVocabularyCardSides) — the demoted language's
    * button should stay "secondary". */
   prominence?: "primary" | "secondary";
 };

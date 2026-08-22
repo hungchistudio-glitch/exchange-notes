@@ -5,6 +5,12 @@ import {
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
 import { toTraditional } from "@/lib/chinese/toTraditional";
+import { buildMenuScanPrompt } from "@/lib/ai/prompts/menuScan";
+import {
+  compactByLanguage,
+  tagNeedsTraditionalNormalization,
+  type LanguageCode,
+} from "@/lib/languages";
 import {
   normaliseRegion,
   type MenuConfidence,
@@ -162,87 +168,6 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-/*
- * One prompt, no target language in it.
- *
- * The reader asks for both languages every time, so which of the two leads on
- * screen is the viewer's decision rather than the model's — and a scan is the
- * same scan whichever way the app is set.
- */
-function buildPrompt() {
-  return `
-You are reading a photograph of a printed list for someone learning English
-and Traditional Chinese — most often a restaurant menu, but equally a price
-list, a shop's shelf card, or a handwritten shopping list. Return the whole
-list as structured data.
-
-Every item comes back in BOTH English and Traditional Chinese, whatever
-language the list itself is written in. Their app is the two languages
-against each other, so a Chinese list read by a Chinese reader still needs its
-English, and an English list still needs its Chinese. Never leave either side
-empty because it felt redundant.
-
-Layout rules:
-- Group items under the section headings the list itself uses. If it has no
-  headings, return one section with an empty title.
-- Keep every price with the item it belongs to, exactly as printed, including
-  the currency symbol or word. Never convert, round, or invent a price. A
-  shopping list usually has no prices at all: return an empty string for
-  those rather than estimating one.
-- Report every region as normalised coordinates between 0 and 1, where x and y
-  are the top-left corner, relative to the whole image. An item's region must
-  cover its name and its price as printed.
-- Read the list in the order a person would: top to bottom within a column,
-  then column by column.
-
-Chinese script rule. It outranks every other rule here, including fidelity to
-the photograph:
-- Every Chinese character you return, in every field — sourceName,
-  chineseName and both descriptions included — must be Traditional as written
-  in Taiwan.
-- When the list is printed in Simplified characters, sourceName is the
-  Traditional transcription of what it says, not a copy of the glyphs. 电视机
-  is returned as 電視機; 开水器 as 開水器; 灭蝇灯 as 滅蠅燈.
-- There is no field, and no reason, for which a Simplified character is
-  acceptable. The reader of this app reads Traditional Chinese and nothing
-  else.
-
-Naming rules:
-- sourceName is the line exactly as printed, in the language of the list.
-- englishName is the item's name in English. chineseName is its name in
-  Traditional Chinese. One of the two is usually a translation of the other;
-  when the list is already in that language, it is simply the same name.
-- If the list is already written in English or in Chinese, that side repeats
-  the printed name rather than being left empty or invented anew.
-- When a dish is culturally specific and a literal translation would mislead
-  (Okonomiyaki, Bibimbap, Cacio e Pepe), keep the original or transliterated
-  name and put a short plain explanation in the descriptions instead. A
-  recognisable name plus an explanation beats a literal translation that means
-  nothing.
-- englishDescription and chineseDescription are one short sentence each,
-  saying the same thing in the two languages. If the list prints a
-  description, translate it; if it does not, name the main ingredients you can
-  infer from the name, or return empty strings if you cannot.
-- ipa is the IPA transcription of englishName, written without surrounding
-  slashes. Give the pronunciation a native English speaker would use,
-  including for borrowed names like Okonomiyaki.
-- Never state or imply that an item is safe for an allergy or a diet.
-
-Confidence rules:
-- Use low ocrConfidence for text that is blurred, cut off, glared over,
-  handwritten or partly hidden.
-- Use low translationConfidence when the dish name is ambiguous or you are
-  guessing at what it contains.
-- Do not raise confidence to look helpful. A marked uncertainty is useful; a
-  confident mistake is not.
-
-If the photograph contains no list of written items at all — a landscape, a
-person, a single object, a page of prose — return isMenu false with an empty
-sections array. Anything that is a list of named things, priced or not,
-should be read.
-`.trim();
-}
-
 function readConfidence(value: unknown): MenuConfidence {
   return value === "high" || value === "medium" || value === "low"
     ? value
@@ -282,7 +207,8 @@ function readRegion(value: unknown): MenuRegion {
  */
 function readMenuDocument(
   value: unknown,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
+  [firstCode, secondCode]: readonly [LanguageCode, LanguageCode],
 ): { document: MenuDocument | null; isMenu: boolean } {
   if (!value || typeof value !== "object") {
     return { document: null, isMenu: false };
@@ -301,7 +227,7 @@ function readMenuDocument(
    * So the printed side is converted only when the list is Chinese, and the
    * translated side only when we asked for Chinese back.
    */
-  const traditionalSource = /^zh/i.test(sourceLanguage)
+  const traditionalSource = tagNeedsTraditionalNormalization(sourceLanguage)
     ? toTraditional
     : (text: string) => text;
 
@@ -326,18 +252,34 @@ function readMenuDocument(
           return {
             id: `s${sectionIndex}-i${itemIndex}`,
             sourceName: traditionalSource(readString(item.sourceName, 120)),
-            englishName: readString(item.englishName, 140),
-            chineseName: traditionalChinese(readString(item.chineseName, 140)),
+            /*
+             * The model still answers in fields named for two languages,
+             * because that is its schema. Which languages those fields
+             * actually hold is decided by the pair the prompt was built with
+             * — see buildMenuScanPrompt — so the mapping happens here, once,
+             * rather than the names being believed downstream.
+             */
+            names: compactByLanguage({
+              [firstCode]: readString(item.englishName, 140),
+              [secondCode]: traditionalChinese(
+                readString(item.chineseName, 140),
+              ),
+            }),
             sourceDescription: traditionalSource(
               readString(item.sourceDescription, 300),
             ),
-            englishDescription: readString(item.englishDescription, 340),
-            chineseDescription: traditionalChinese(
-              readString(item.chineseDescription, 340),
-            ),
+            descriptions: compactByLanguage({
+              [firstCode]: readString(item.englishDescription, 340),
+              [secondCode]: traditionalChinese(
+                readString(item.chineseDescription, 340),
+              ),
+            }),
             price: readString(item.price, 24),
             currency: readString(item.currency, 8),
-            ipa: readString(item.ipa, 120),
+            // The transcription belongs to the side it was written for.
+            ipa: compactByLanguage({
+              [firstCode]: readString(item.ipa, 120),
+            }),
             region: readRegion(item.region),
             ocrConfidence: readConfidence(item.ocrConfidence),
             translationConfidence: readConfidence(item.translationConfidence),
@@ -348,14 +290,19 @@ function readMenuDocument(
         // A row with no name in any of the three is a row the model
         // invented out of a smudge.
         .filter(
-          (item) => item.sourceName || item.englishName || item.chineseName,
+          (item) =>
+            item.sourceName || Object.keys(item.names).length > 0,
         );
 
       return {
         id: `s${sectionIndex}`,
         sourceTitle: traditionalSource(readString(section.sourceTitle, 80)),
-        englishTitle: readString(section.englishTitle, 100),
-        chineseTitle: traditionalChinese(readString(section.chineseTitle, 100)),
+        titles: compactByLanguage({
+          [firstCode]: readString(section.englishTitle, 100),
+          [secondCode]: traditionalChinese(
+            readString(section.chineseTitle, 100),
+          ),
+        }),
         region: readRegion(section.region),
         items,
       };
@@ -383,13 +330,14 @@ async function scanWithModel(
   model: string,
   imageBase64: string,
   mediaType: string,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const interaction = await client.interactions.create(
     {
       model,
       input: [
-        { type: "text", text: buildPrompt() },
+        { type: "text", text: buildMenuScanPrompt(languagePair) },
         {
           type: "image",
           data: imageBase64,
@@ -425,6 +373,7 @@ async function scanWithModel(
   return readMenuDocument(
     JSON.parse(stripJsonCodeFence(outputText)) as unknown,
     targetLanguage,
+    languagePair,
   );
 }
 
@@ -472,7 +421,8 @@ function isTimeoutError(error: unknown) {
 export async function scanMenu(
   imageBase64: string,
   mediaType: string,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
+  languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<{ document: MenuDocument | null; isMenu: boolean }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new MenuScanUnavailableError();
@@ -498,6 +448,7 @@ export async function scanMenu(
         imageBase64,
         mediaType,
         targetLanguage,
+        languagePair,
       );
     } catch (error) {
       if (isRateLimitError(error)) {

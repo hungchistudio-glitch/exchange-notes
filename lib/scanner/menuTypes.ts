@@ -7,6 +7,13 @@
  * thumbnail — nothing downstream needs to know what size the photo was.
  */
 
+import {
+  LANGUAGE_CODES,
+  pickLanguage,
+  type ByLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
+
 export type MenuConfidence = "high" | "medium" | "low";
 
 export type MenuRegion = {
@@ -22,21 +29,23 @@ export type MenuItem = {
   // normalised to Traditional characters when that language is Chinese.
   sourceName: string;
   /*
-   * Both languages, always, whatever the list was written in.
+   * The name in every language the scan returned, keyed by language.
    *
-   * This app is English against Traditional Chinese: a word card has two
-   * sides, a review session asks in one and answers in the other, and a
-   * friend receives both. A dish that arrived with only one of them was a
+   * Both sides arrive, always, whatever the list was written in: a word card
+   * has two sides, a review session asks in one and answers in the other, and
+   * a friend receives both. A dish that arrived with only one of them was a
    * dish you could read but not learn — and scanning a Chinese menu with the
    * app set to Chinese produced exactly that.
+   *
+   * A map rather than a field per language because the field names were the
+   * limit: englishName and chineseName could not hold a Spanish dish however
+   * well the model read one.
    */
-  englishName: string;
-  chineseName: string;
-  // IPA for englishName, without slashes.
-  ipa: string;
+  names: ByLanguage;
+  // IPA per language, without slashes, for the languages that have one.
+  ipa: ByLanguage;
   sourceDescription: string;
-  englishDescription: string;
-  chineseDescription: string;
+  descriptions: ByLanguage;
   // Kept as written on the menu ("¥1,200", "12,50") rather than parsed into a
   // number: a price the user can match against the physical menu is worth
   // more than one this app can do arithmetic with.
@@ -50,15 +59,14 @@ export type MenuItem = {
 export type MenuSection = {
   id: string;
   sourceTitle: string;
-  englishTitle: string;
-  chineseTitle: string;
+  titles: ByLanguage;
   region: MenuRegion;
   items: MenuItem[];
 };
 
 export type MenuDocument = {
   sourceLanguage: string;
-  targetLanguage: string;
+  targetLanguage: LanguageCode;
   detectedCuisine: string;
   overallConfidence: MenuConfidence;
   sections: MenuSection[];
@@ -109,28 +117,26 @@ export function hasLowConfidence(item: MenuItem): boolean {
  * The one the user asked for is the headline; the other is always shown
  * underneath rather than hidden, because seeing both is the point.
  */
-export function itemNames(item: MenuItem, targetLanguage: string) {
-  const chineseFirst = targetLanguage === "traditional-chinese";
+export function itemNames(item: MenuItem, targetLanguage: LanguageCode) {
+  // Whatever else the scan returned, in table order. Derived rather than
+  // named, so a scan carrying three languages shows the other two instead of
+  // whichever one the code happened to know about.
+  const others = LANGUAGE_CODES.filter(
+    (code) => code !== targetLanguage && item.names[code],
+  );
 
   return {
-    primary: (chineseFirst ? item.chineseName : item.englishName) || item.sourceName,
-    secondary: chineseFirst ? item.englishName : item.chineseName,
-    primaryDescription: chineseFirst
-      ? item.chineseDescription
-      : item.englishDescription,
+    primary: item.names[targetLanguage] || item.sourceName,
+    secondary: pickLanguage(item.names, others) ?? "",
+    primaryDescription: item.descriptions[targetLanguage] ?? "",
   };
 }
 
 export function sectionTitle(
   section: MenuSection,
-  targetLanguage: string,
+  targetLanguage: LanguageCode,
 ): string {
-  const chineseFirst = targetLanguage === "traditional-chinese";
-
-  return (
-    (chineseFirst ? section.chineseTitle : section.englishTitle) ||
-    section.sourceTitle
-  );
+  return section.titles[targetLanguage] || section.sourceTitle;
 }
 
 /**

@@ -11,15 +11,27 @@ import {
   setInterfaceLanguage,
   type InterfaceLanguage,
 } from "@/lib/appPreferences";
+import {
+  INTERFACE_LANGUAGE_CODE,
+  getInterfaceLanguageMeta,
+} from "@/lib/languages";
 
+/*
+ * Built from the language table rather than typed out, so an interface
+ * language appears here by shipping a dictionary and nothing else. Each is
+ * labelled in its own language: someone looking for Spanish is looking for
+ * "Español", not for whatever the app currently calls Spanish.
+ */
 const LANGUAGE_OPTIONS: Array<{
   value: InterfaceLanguage;
   label: string;
   badge: string;
-}> = [
-  { value: "english", label: "English", badge: "En" },
-  { value: "traditional-chinese", label: "繁體中文", badge: "中" },
-];
+}> = (Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[])
+  .filter((value) => getInterfaceLanguageMeta(value).availableAsInterface)
+  .map((value) => {
+    const meta = getInterfaceLanguageMeta(value);
+    return { value, label: meta.endonym, badge: meta.badge };
+  });
 
 export default function AppLanguageSettingsButton() {
   const [open, setOpen] = useState(false);
@@ -31,13 +43,12 @@ export default function AppLanguageSettingsButton() {
   }
 
   function getOptionDescription(value: InterfaceLanguage) {
-    return value === "english"
-      ? copy.englishDescription
-      : copy.traditionalChineseDescription;
+    if (value === "traditional-chinese") return copy.traditionalChineseDescription;
+    if (value === "spanish") return copy.spanishDescription;
+    return copy.englishDescription;
   }
 
-  const currentLabel =
-    language === "traditional-chinese" ? "繁體中文" : "English";
+  const currentLabel = getInterfaceLanguageMeta(language).endonym;
 
   return (
     <>

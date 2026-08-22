@@ -1,5 +1,7 @@
 "use client";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { resolveDisplayPair } from "@/lib/languages";
 import type { MouseEvent } from "react";
 import Image from "next/image";
 import { ZoomIn } from "lucide-react";
@@ -55,8 +57,20 @@ export default function FeaturedStoryCard({
   onToggleAudio,
   onExploreImage,
 }: FeaturedStoryCardProps) {
+  const { languagePair } = useLearningLanguageContext();
+  /*
+   * Preferred, not assumed. The pool is one shared set of cards generated in
+   * one pairing, so a reader studying something else would index it by a
+   * language it does not have and get a blank card. Falling back to the
+   * languages the card actually carries shows it as what it is.
+   */
+  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
+    card?.titles ?? {},
+    languagePair,
+  );
+
   const accent = categoryAccent(card.category);
-  const caption = [card.englishCaption, card.chineseCaption]
+  const caption = [(card.captions[primaryLanguage] ?? ""), (card.captions[secondaryLanguage] ?? "")]
     .filter(Boolean)
     .join(" · ");
 
@@ -89,7 +103,7 @@ export default function FeaturedStoryCard({
         >
           <Image
             src={card.imageUrl}
-            alt={card.englishCaption ?? card.englishTitle}
+            alt={(card.captions[primaryLanguage] ?? "") ?? (card.titles[primaryLanguage] ?? "")}
             fill
             // Full-bleed inside the card, which is itself capped at the
             // reading column, so one breakpoint is enough.
@@ -167,14 +181,14 @@ export default function FeaturedStoryCard({
           className="mt-4 line-clamp-3 text-[30px] font-bold leading-[1.16] tracking-[-0.02em]"
           style={{ color: DISCOVER_COLORS.text }}
         >
-          {card.englishTitle}
+          {(card.titles[primaryLanguage] ?? "")}
         </h2>
 
         <p
           className="mt-2.5 text-[16px] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseTitle}
+          {(card.titles[secondaryLanguage] ?? "")}
         </p>
 
         {/* Short summary */}
@@ -182,14 +196,14 @@ export default function FeaturedStoryCard({
           className="mt-4 line-clamp-2 text-[15px] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.englishSummary}
+          {(card.summaries[primaryLanguage] ?? "")}
         </p>
 
         <p
           className="mt-1 line-clamp-1 text-[13.5px] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseSummary}
+          {(card.summaries[secondaryLanguage] ?? "")}
         </p>
       </div>
 

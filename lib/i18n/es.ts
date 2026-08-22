@@ -1,0 +1,1752 @@
+import type { TranslationDictionary } from "@/lib/i18n/types";
+
+const spanish: TranslationDictionary = {
+  pwa: {
+    title: "Exchange Notes está listo",
+    subtitle:
+      "Añade Exchange Notes a tu pantalla de inicio para acceder más rápido, recibir notificaciones y usarlo a pantalla completa.",
+    benefitInstantTitle: "Ábrelo al instante",
+    benefitInstantDescription: "Abre Exchange Notes directamente desde tu pantalla de inicio.",
+    benefitConnectedTitle: "Mantente al día",
+    benefitConnectedDescription: "Recibe notificaciones de aprendizaje y de mensajes.",
+    benefitAnywhereTitle: "Aprende donde sea",
+    benefitAnywhereDescription:
+      "Conserva las partes esenciales de la app disponibles cuando la conexión falle.",
+    installCta: "Instalar Exchange Notes",
+    maybeLater: "Quizá más tarde",
+    gotIt: "Entendido",
+    iosStepsTitle: "Añadir a la pantalla de inicio",
+    iosStep1: "Toca el botón Compartir en Safari.",
+    iosStep2: "Elige «Añadir a pantalla de inicio».",
+    iosStep3: "Activa «Abrir como app web».",
+    iosStep4: "Toca «Añadir».",
+    settingsRowTitle: "Instalar Exchange Notes",
+    settingsRowDescription: "Añade la app a tu pantalla de inicio",
+    installedRowTitle: "Exchange Notes está instalado",
+    updateReadyTitle: "Hay una versión nueva",
+    updateReadyAction: "Recargar",
+    updateReadyDismiss: "Ahora no",
+  },
+  onboarding: {
+    back: "Atrás",
+    continue: "Continuar",
+    welcome: {
+      title: "Te damos la bienvenida a Exchange Notes",
+      subtitle: "Vamos a personalizar tu experiencia de aprendizaje.",
+      cta: "Empezar",
+    },
+    name: {
+      title: "¿Cómo quieres que te llamemos?",
+      displayNameLabel: "Nombre visible",
+      displayNamePlaceholder: "Tu nombre",
+      usernameLabel: "Nombre de usuario",
+      usernamePlaceholder: "tunombre",
+      usernameHint: "Sirve para que tus amistades te encuentren, para tu código QR y para Mensajes.",
+      checkingAvailability: "Comprobando disponibilidad…",
+      idAvailable: "El nombre de usuario está libre",
+      idTaken: "Este nombre de usuario ya está en uso",
+      idCheckError: "No se pudo comprobar la disponibilidad. Inténtalo de nuevo.",
+      addPhoto: "Añadir foto",
+      changePhoto: "Cambiar foto",
+      photoImageError: "Elige un archivo de imagen.",
+      photoSizeError: "La foto debe pesar menos de 5 MB.",
+      photoUploadError: "No se pudo subir la foto. Inténtalo de nuevo.",
+      saveError: "No se pudo guardar tu nombre. Inténtalo de nuevo.",
+    },
+    appLanguage: {
+      title: "Elige el idioma de la app",
+      subtitle: "Cambia los menús, los botones y las instrucciones.",
+      note: "El idioma de la app solo controla la interfaz: no cambia cuál es el idioma principal de tus tarjetas de vocabulario.",
+    },
+    languages: {
+      title: "¿Qué idioma quieres aprender?",
+      nativeLabel: "Ya sé",
+      nativeDescription: "Se usa para las traducciones y las explicaciones.",
+      learningLabel: "Estoy aprendiendo",
+      learningDescription: "Será el eje de las palabras, las noticias y la práctica de pronunciación.",
+      previewPrimary: "{language} será el contenido principal de tus tarjetas y noticias.",
+      previewSecondary: "{language} aparecerá como traducción y explicación.",
+      sameLanguageHint: "Elige un idioma de aprendizaje distinto de tu idioma nativo.",
+      completeError: "No se pudieron guardar tus preferencias de idioma. Inténtalo de nuevo.",
+    },
+    confirm: {
+      title: "Todo en orden",
+      nameLabel: "Nombre",
+      appLanguageLabel: "Idioma de la app",
+      nativeLabelSummary: "Idioma nativo",
+      learningLabelSummary: "Idioma de aprendizaje",
+      note: "Puedes cambiarlo cuando quieras en Ajustes.",
+      cta: "Empezar a aprender",
+    },
+  },
+  common: {
+    back: "Atrás",
+    close: "Cerrar",
+    cancel: "Cancelar",
+    confirm: "Confirmar",
+    save: "Guardar",
+    saving: "Guardando…",
+    delete: "Eliminar",
+    edit: "Editar",
+    share: "Compartir",
+    send: "Enviar",
+    source: "Fuente",
+    loading: "Cargando…",
+    error: "Algo ha salido mal",
+    clearField: "Borrar",
+  },
+
+  auth: {
+    language: {
+      eyebrow: "Exchange Notes",
+      title: "Elige tu idioma",
+      subtitle: "Selecciona el idioma que se usará en toda la app.",
+      englishTitle: "Inglés",
+      englishDescription: "Usar Exchange Notes en inglés",
+      traditionalChineseDescription: "Usar Exchange Notes en chino tradicional",
+      continue: "Continuar",
+    },
+
+    login: {
+      eyebrow: "Inglés × Chino tradicional",
+      title: "Exchange Notes",
+      subtitle: "Entra en tu espacio privado de aprendizaje.",
+      googleSubtitle:
+        "Aprende idiomas con naturalidad, a través de conversaciones reales y de la vida diaria.",
+      consentNotice:
+        "Al continuar, aceptas iniciar sesión de forma segura con tu cuenta de Google.",
+      googleSubmit: "Continuar con Google",
+      googleSubmitting: "Conectando…",
+      email: "Correo electrónico",
+      genericError: "No se pudo iniciar sesión. Inténtalo de nuevo.",
+    },
+  },
+
+  tutorial: {
+    rowTitle: "Cómo usar Exchange Notes",
+    rowDescription: "Yumi te lo enseña",
+    rowValue: "Visita",
+    homeButton: "Yumi puede enseñarte cómo va esto",
+    open: "Enséñamelo",
+    skip: "Ahora no",
+    back: "Atrás",
+    next: "Siguiente",
+    finish: "Empezar a aprender",
+    close: "Cerrar",
+    stepLabel: "{current} de {total}",
+    replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
+
+    steps: {
+      meet: {
+        title: "Hola, soy Yumi",
+        body:
+          "Vivo en esta app y estoy aprendiendo igual que tú: una cosa nueva cada vez. Deja que te enseñe para qué sirve todo. Es cosa de un minuto.",
+      },
+      setup: {
+        title: "Primero, dos idiomas",
+        body:
+          "Uno es el idioma en el que te hablo. El otro es el que has venido a aprender. Elígelos ahora y el resto de la visita llegará en tu idioma.",
+        appLanguageLabel: "Háblame en",
+        learningLabel: "He venido a aprender",
+        note: "Los dos se pueden cambiar después en Ajustes.",
+        saveError: "No he podido guardarlo. Inténtalo dentro de un momento.",
+      },
+      name: {
+        title: "yu y mi",
+        body:
+          "Exchange Notes son en realidad dos personas. yu eres tú. mi soy yo. Tú apuntas una palabra en tu idioma, yo apunto una en el mío, y las intercambiamos. Ese intercambio es toda la app: acabamos los dos hablando con soltura la lengua materna del otro.",
+      },
+      senses: {
+        title: "La primera vez cuenta",
+        body:
+          "Una palabra se te queda por cómo la conociste: el tacto de la cosa, su aspecto, el sonido, hasta a qué olía el aire. Yo guardo esos primeros encuentros por ti. Volver a ellos, un poco cada día, es donde la paciencia se convierte sin ruido en soltura.",
+      },
+      home: {
+        title: "En Inicio es donde te espero",
+        body:
+          "Aquí estoy yo. Verás el foco de hoy, la palabra que he elegido para ti y un sitio para anotar algo rápido. Dame una galleta cuando termines un repaso y me pondré muy contenta contigo.",
+      },
+      vocabulary: {
+        title: "Todo lo que has ido reuniendo",
+        body:
+          "Cada palabra que guardas aterriza aquí, agrupada en colecciones. Las que estás a punto de olvidar suben arriba para repasarlas: esa es la parte que hace que se queden.",
+      },
+      capture: {
+        title: "Apunta a lo que sea",
+        body:
+          "Toca la cámara y enséñame algo que tengas delante. Te diré qué es en los dos idiomas, con una frase de ejemplo que puedas decir de verdad. Es el camino más rápido a tu primera palabra.",
+        action: "Añadir así mi primera palabra",
+      },
+      discover: {
+        title: "Las historias de hoy",
+        body:
+          "Noticias reales, reescritas para que puedas leerlas a tu nivel. Toca cualquier palabra que no conozcas y te la guardo. Esta es la otra buena manera de conseguir tu primera palabra.",
+        action: "Buscar mi primera palabra en una historia",
+      },
+      messages: {
+        title: "Donde ocurre el intercambio",
+        body:
+          "Envía una palabra a tu pareja de aprendizaje y le llegará la tarjeta, con pronunciación. Cuando te devuelva una en su idioma, eso es el intercambio funcionando exactamente como debe.",
+      },
+      friends: {
+        title: "Tráete a alguien",
+        body:
+          "Añade a alguien por su Exchange ID, o deja que escanee tu código QR. Aprender un idioma en solitario es difícil; aprenderlo con alguien que necesita el tuyo es mucho más fácil.",
+        action: "Añadir a mi primera pareja",
+      },
+      settings: {
+        title: "Hazlo tuyo",
+        body:
+          "En Ajustes están tu nombre y tu foto, tu objetivo diario, el widget y los dos controles de idioma: en cuál habla la app y cuál has venido a aprender. Cambia el que quieras cuando quieras.",
+        action: "Abrir Ajustes",
+      },
+      done: {
+        title: "Y ya está",
+        body:
+          "Empieza hoy con una palabra. De verdad que es suficiente: la app está hecha para que una palabra al día gane a una hora una vez al mes. Estaré en la pantalla de inicio cuando quieras.",
+      },
+    },
+  },
+
+  navigation: {
+    vocabulary: "Vocabulario",
+    messages: "Mensajes",
+    home: "Inicio",
+    discover: "Descubrir",
+    settings: "Ajustes",
+    primaryLabel: "Navegación principal",
+  },
+
+  cosmic: {
+    modeName: "Modo Cósmico de Yumi",
+    deck: {
+      eyebrow: "Puente de mando",
+      title: "Puente de mando de Yumi",
+      subtitle: "Todos los sistemas en línea. Elige adónde ir.",
+      coreLabel: "Núcleo de Yumi",
+      dockLabel: "Navegación cósmica",
+      roomsLabel: "Controles de mando",
+      readoutLexicon: "Léxico",
+      readoutDue: "Pendientes",
+      readoutLearning: "Aprendiendo",
+      languageEnglish: "Inglés",
+      languageChinese: "Chino",
+    },
+    rooms: {
+      lexicon: {
+        name: "Núcleo Léxico",
+        familiar: "Vocabulario",
+        description: "Tus palabras guardadas y tus colecciones",
+      },
+      mission: {
+        name: "Control de Misión",
+        familiar: "Repaso",
+        description: "Las palabras de hoy para practicar",
+      },
+      scanner: {
+        name: "Traductor de Menús",
+        familiar: "Escanear · Traducir",
+        description: "Lee un menú que no puedes leer, precios incluidos",
+      },
+      comms: {
+        name: "Comunicaciones",
+        familiar: "Mensajes",
+        description: "Habla con tus parejas de intercambio",
+      },
+      earth: {
+        name: "Señal Terrestre",
+        familiar: "Descubrir",
+        description: "Noticias diarias en tu idioma de aprendizaje",
+      },
+      memory: {
+        name: "Cubierta de Memoria",
+        familiar: "Perfil",
+        description: "Progreso, perfil y ajustes",
+      },
+    },
+    status: {
+      wordsSaved: "{count} guardadas",
+      dueNow: "{count} pendientes",
+      nothingDue: "Todo al día",
+      unreadMessages: "{count} sin leer",
+      loading: "…",
+    },
+    transition: {
+      entering: "Activando el puente de mando",
+      leaving: "Desactivando el puente de mando",
+    },
+    mission: {
+      launching: "Iniciando misión",
+      completeEyebrow: "Misión cumplida",
+    },
+    omni: {
+      label: "OmniLéxico de Yumi",
+      placeholder: "Busca, habla, escanea o enséñale algo a Yumi",
+      placeholderUnreadable: "¿Algo en {language} que no sabes leer?",
+      placeholderHeard: "¿Algo en {language} que has oído?",
+      inputText: "Escribir",
+      inputVoice: "Voz",
+      inputCamera: "Escanear",
+      inputImage: "Imagen",
+      submit: "Identificar",
+      clear: "Borrar",
+      listening: "Escuchando…",
+      scanning: "Identificando…",
+      acquired: "Palabra identificada",
+      noMatch: "Yumi no ha sabido situar esa",
+      noMatchHint: "Prueba con otra grafía, dilo en voz alta o enséñale una foto a Yumi.",
+      degraded: "Resultado del diccionario sin conexión",
+      addToVocabulary: "Añadir al vocabulario",
+      recentSignals: "Señales recientes",
+      playLearning: "Reproducir la palabra",
+      playTranslation: "Reproducir la traducción",
+      playExampleLearning: "Reproducir el ejemplo",
+      playExampleTranslation: "Reproducir el ejemplo traducido",
+      save: "Añadir al vocabulario",
+      saved: "Guardada",
+      share: "Compartir",
+      copied: "Copiado",
+      sendToFriend: "Enviar a alguien",
+    },
+    hud: {
+      eyebrow: "Perfil de aprendizaje",
+      title: "HUD de progreso",
+      accuracy: "Acierto",
+      retention: "Retención",
+      dailyGoal: "Objetivo diario",
+      mastered: "Palabras dominadas",
+      reviewed: "Repasos hechos",
+    },
+  },
+
+  discover: {
+    title: "Descubrir",
+    eyebrow: "Exchange Notes",
+    subtitle: "Aprende con las historias más importantes de hoy.",
+
+    dailyNewsTitle: "Noticias del día",
+    speechSpeed: "Velocidad de lectura",
+
+    vocabulary: "Vocabulario",
+
+    saveToNotes: "Guardar en Notas",
+    saving: "Guardando",
+    saved: "Guardada",
+    saveError: "No se ha podido guardar esta historia. Inténtalo de nuevo.",
+    sendToPartner: "Enviar a mi pareja",
+    sentToPartner: "Enviado a tu pareja",
+    quizSoon: "Test · Pronto",
+    quizSoonTitle: "El test llegará en la próxima fase.",
+
+    sameBatchNotice:
+      "Ya estás viendo las historias de hoy: se publica una tanda nueva una vez al día.",
+    tryAgain: "Reintentar",
+    loadFallbackError: "Las noticias del día no están disponibles ahora mismo.",
+
+    justNow: "Justo ahora",
+    minutesAgo: "hace {count} min",
+    hoursAgo: "hace {count} h",
+    recently: "Hace poco",
+
+    readEnglishAriaLabel: "Leer la historia en inglés en voz alta",
+    readChineseAriaLabel: "Leer la historia en chino en voz alta",
+    readVocabWordAriaLabel: "Leer {word} y su ejemplo",
+    readVocabChineseAriaLabel: "Leer {translation} y su ejemplo en chino",
+
+    loadingNewStories: "Cargando",
+    sendToFriendAriaLabel: "Enviar a alguien",
+    loginRequiredError: "No has iniciado sesión. Entra para compartir con tu pareja.",
+    loadFriendsError: "No se han podido cargar tus contactos. Inténtalo de nuevo.",
+    loadNewsError: "No se han podido cargar las noticias del día.",
+
+    loading: "Cargando las lecciones de hoy…",
+
+    emptyTitle: "Ahora mismo no hay noticias",
+    emptyDescription: "Vuelve a intentarlo dentro de unos minutos.",
+
+    categories: {
+      world: "Internacional",
+      business: "Economía",
+      technology: "Tecnología",
+      science: "Ciencia",
+      health: "Salud",
+      culture: "Cultura",
+      environment: "Medioambiente",
+      politics: "Política",
+      general: "Actualidad",
+    },
+
+    latestStoriesLabel: "Últimas historias",
+    keyWordsLabel: "{count} palabras clave",
+    moreActionsAriaLabel: "Más acciones",
+    openSource: "Abrir la fuente",
+    shareStory: "Compartir",
+    shareCopied: "Enlace copiado",
+    hideStory: "Ocultar la historia",
+    save: "Guardar",
+    speedSlow: "Lenta",
+    speedNatural: "Natural",
+    speedFast: "Rápida",
+    vocabularyDrawerTitle: "Vocabulario clave",
+    vocabularyDrawerDescription: "Toca una palabra para oírla.",
+
+    signalControlsEyebrow: "Controles de señal",
+    signalControlsTitle: "Ajusta tu señal",
+    signalControlsClose: "Cerrar los controles de señal",
+    signalControlsSpeed: "Velocidad de lectura",
+    signalControlsTopics: "Temas",
+    signalControlsAllTopics: "Todos",
+    signalControlsOpen: "Abrir los controles de señal",
+    radarLabel: "Radar de señales de Yumi.",
+    radarIdle: "Recibiendo señales.",
+    radarScanning: "Buscando historias nuevas.",
+    radarSyncing: "Sincronizando con el feed.",
+    radarSuccess: "Señales nuevas recibidas.",
+    radarError: "El barrido ha fallado.",
+    radarOffline: "Sin conexión.",
+    refreshAction: "Actualizar",
+    playFullStory: "Reproducir la historia entera",
+    stopStory: "Parar",
+    playFullStoryAriaLabel: "Leer la historia entera en voz alta",
+    languageEnglish: "Inglés",
+    languageChinese: "中文",
+    languageEnglishShort: "EN",
+    languageChineseShort: "ZH",
+
+    addToVocabulary: "Añadir al vocabulario",
+    addedToVocabulary: "Añadida",
+    addToVocabularyAriaLabel: "Añadir {word} al vocabulario",
+
+    exploreImageLabel: "Explorar esta imagen · {count} palabras",
+  },
+
+  capture: {
+    backToVocabulary: "Volver al vocabulario",
+    backToHome: "Volver al inicio",
+    eyebrow: "Captura de vocabulario con IA",
+    title: "Descubrir",
+    description:
+      "Fotografía algo, revisa el resultado bilingüe y guárdalo como palabra.",
+    reset: "Reiniciar",
+    identify: "Identificar",
+    identifying: "Identificando",
+
+    progress: {
+      ariaLabel: "Progreso de la captura",
+      photo: "Foto",
+      review: "Revisar",
+      save: "Guardar",
+    },
+
+    source: {
+      eyebrow: "Inglés × Chino tradicional",
+      title: "Convierte la vida en palabras",
+      description:
+        "Fotografía un objeto o elige una imagen. La IA creará una tarjeta de vocabulario bilingüe que podrás revisar antes de guardarla.",
+      useCamera: "Usar la cámara",
+      photoLibrary: "Fototeca",
+      cameraStarting: "Abriendo la cámara…",
+      unsupported:
+        "La vista previa en directo no está disponible en este navegador. La cámara del dispositivo todavía puede abrirse desde el selector de fotos.",
+    },
+
+    camera: {
+      cancel: "Cancelar",
+      captureAriaLabel: "Hacer la foto",
+      closeCameraAriaLabel: "Cerrar la cámara",
+      selectedObjectAlt: "Objeto seleccionado",
+      chooseAnother: "Elegir otra",
+      focusHint: "Centra el objeto",
+      opening: "Abriendo la cámara…",
+    },
+
+    analysis: {
+      title: "Analizando tu foto",
+      description:
+        "La IA está identificando el objeto y preparando ejemplos en inglés y en chino tradicional.",
+    },
+
+    result: {
+      eyebrow: "Resultado de la IA",
+      title: "Revisa antes de guardar",
+      confidence: "confianza {value}",
+      englishWord: "Palabra en inglés",
+      traditionalChinese: "Chino tradicional",
+      playEnglishAriaLabel: "Reproducir la pronunciación en inglés",
+      playChineseAriaLabel: "Reproducir la pronunciación en chino",
+      partOfSpeech: "Categoría gramatical",
+      collection: "Colección",
+      englishExample: "Ejemplo en inglés",
+      chineseExample: "Ejemplo en chino",
+      saving: "Guardando",
+      saved: "Guardada en Vocabulario",
+      saveToVocabulary: "Guardar en Vocabulario",
+      sendToPartner: "Enviar a mi pareja",
+    },
+
+    categories: {
+      people: "Personas",
+      other: "Otros",
+    },
+
+    partners: {
+      eyebrow: "Parejas de aprendizaje",
+      title: "Enviar esta palabra a",
+      closeAriaLabel: "Cerrar el selector de parejas",
+    },
+
+    errors: {
+      cameraPermissionDenied:
+        "Se ha denegado el permiso de cámara. Actívalo en los ajustes de tu navegador o elige una imagen.",
+      noCamera: "No se ha encontrado ninguna cámara en este dispositivo.",
+      cameraInUse: "La cámara ya la está usando otra aplicación.",
+      cameraUnavailable:
+        "No se puede acceder a la cámara. Prueba a elegir una imagen.",
+      cameraPreview: "No se ha podido iniciar la vista previa. Inténtalo de nuevo.",
+      processImage: "No se ha podido procesar esta imagen.",
+      selectImage: "Selecciona un archivo de imagen.",
+      imageTooLarge: "Elige una imagen de menos de 10 MB.",
+      cameraNotReady: "La cámara aún no está lista.",
+      captureImage: "No se ha podido hacer la foto.",
+      identifyImage: "No se ha podido identificar esta imagen.",
+      identifyBusy: "La visión por IA está ocupada. Inténtalo dentro de un momento.",
+      identifyDailyLimit:
+        "Has agotado los reconocimientos de imagen gratuitos de hoy. Inténtalo mañana.",
+      identifyTimeout:
+        "El reconocimiento ha tardado demasiado. Prueba con una foto nítida y más cerca del objeto.",
+      loginBeforeSave: "Inicia sesión antes de guardar una palabra.",
+      duplicateWord: "Esta palabra ya está en tu vocabulario.",
+      saveWord: "No se ha podido guardar esta palabra.",
+      loginBeforeShare: "Inicia sesión antes de compartir una palabra.",
+      loadPartners: "No se han podido cargar tus parejas de aprendizaje.",
+    },
+  },
+
+  home: {
+    greeting: {
+      morning: "Buenos días",
+      afternoon: "Buenas tardes",
+      evening: "Buenas noches",
+    },
+
+    hero: {
+      title: "Sigue aprendiendo",
+      description: "Construye vocabulario útil a partir del mundo que te rodea.",
+      titleCurious: "Buen comienzo",
+      descriptionCurious: "Yumi tiene curiosidad por tu palabra nueva.",
+      titleCelebrate: "Muy bien",
+      descriptionCelebrate: "Yumi está contenta y llena.",
+      titleDancing: "Yumi está bailando",
+      descriptionDancing: "3 palabras nuevas han desatado un baile.",
+      titleWelcomeBack: "Qué bien verte otra vez",
+      descriptionWelcomeBack: "Una palabra pequeña es un gran comienzo.",
+    },
+
+    yumi: {
+      statusWaiting: "Yumi espera una palabra nueva.",
+      hintWaiting: "Aprende una palabra y harás sonreír a Yumi.",
+      statusCurious: "Yumi tiene curiosidad.",
+      hintOneWord: "1 palabra nueva hoy",
+      statusHappy: "Yumi se está emocionando.",
+      hintWordsToday: "{count} palabras nuevas hoy",
+      statusDancing: "¡Yumi está bailando!",
+      hintThreeWords: "Hoy has aprendido 3 palabras nuevas.",
+      statusExcited: "Yumi está orgullosa de ti.",
+      hintWordsCount: "{count} palabras hoy",
+      statusHungry: "Yumi tiene un poco de hambre.",
+      hintHungry: "Añade una palabra para dar de comer a Yumi.",
+      statusSad: "Yumi echa de menos aprender contigo.",
+      hintSad: "Yumi te está esperando.",
+      statusGrumpy: "Yumi está de mal humor.",
+      hintGrumpy: "Una palabra nueva puede animar a Yumi.",
+      statusLonely: "Yumi se siente sola.",
+      hintLonely: "Yumi te echa de menos.",
+      statusSleeping: "Yumi está descansando.",
+      hintSleeping: "Aprende una palabra nueva para despertar a Yumi.",
+      statusWelcomeBack: "Yumi se alegra de verte.",
+      hintWelcomeBack: "Qué bien verte. Yumi te echaba de menos.",
+      reactionCurious: "Yumi siente curiosidad.",
+      reactionHappy: "Yumi se siente feliz.",
+    },
+
+    dailyFocus: {
+      eyebrow: "Hoy",
+      cardEyebrow: "Foco del día",
+      wordReady: "1 palabra lista",
+      wordsReady: "{count} palabras listas",
+      caughtUp: "Estás al día",
+      reviewDescription:
+        "Repasa las palabras que tocan hoy para mantener fresca la memoria.",
+      caughtUpDescription:
+        "Explora palabras nuevas y sigue ampliando tu vocabulario.",
+      retention: "Retención",
+      accuracy: "Acierto",
+      continueReview: "Seguir repasando",
+      exploreVocabulary: "Explorar el vocabulario",
+    },
+
+    todayWord: {
+      eyebrow: "Primero el vocabulario",
+      title: "La palabra de hoy",
+      allWords: "Todas las palabras",
+      continueLearning: "Seguir aprendiendo",
+      englishPronunciation: "Pronunciación en inglés",
+      zhuyin: "Zhuyin",
+      example: "Ejemplo",
+      untitledWord: "Palabra sin título",
+      emptyHeading: "Empieza tu primera lección",
+      emptyDescription: "Añade una palabra y aparecerá aquí.",
+      previousWord: "Palabra anterior",
+      nextWord: "Palabra siguiente",
+      swipeHint: "Desliza para ver las tarjetas de vocabulario",
+    },
+
+    quickStart: {
+      eyebrow: "Inicio rápido",
+      title: "Seguir aprendiendo",
+      review: "Repasar",
+      capture: "Capturar",
+      wordReady: "1 palabra lista",
+      wordsReady: "{count} palabras listas",
+      caughtUp: "Estás al día",
+      captureDescription: "Aprende una palabra a partir de una foto",
+    },
+
+    pronunciation: {
+      eyebrow: "Práctica diaria",
+      title: "Laboratorio de pronunciación",
+      description: "Practica los sonidos del inglés y el zhuyin.",
+    },
+
+    progress: {
+      eyebrow: "Tu progreso",
+      title: "Resumen de aprendizaje",
+      todaysReview: "Repaso de hoy",
+      word: "palabra",
+      words: "palabras",
+      readyDescription: "Tu vocabulario está listo para repasar.",
+      caughtUpDescription: "Por ahora estás al día.",
+      continueReview: "Seguir repasando",
+      accuracy: "Acierto",
+      retention: "Retención",
+      mastered: "Dominadas",
+      practice: "Practicar",
+      totalReviews: "{count} repasos en total",
+      memoryStrength: "Fuerza de la memoria",
+      wordsCompleted: "Palabras completadas",
+      wordsToRevisit: "Palabras que repasar",
+    },
+
+    community: {
+      eyebrow: "Comunidad",
+      title: "Parejas de aprendizaje",
+      findFriends: "Buscar contactos",
+      description: "Añade a alguien por su Exchange ID o su código QR.",
+      partnerLabel: "Pareja de aprendizaje",
+      partnerTagline: "Practicad juntos cada día",
+      pendingRequestsBadge: "{count} solicitud(es) de amistad pendiente(s)",
+    },
+
+    notes: {
+      eyebrow: "Personal",
+      title: "Tus notas",
+      spaceEyebrow: "Espacio personal de aprendizaje",
+      spaceTitle: "Notas",
+      spaceDescription: "Guarda palabras, frases e ideas que te sirvan.",
+      newNote: "Nota nueva",
+      emptyTitle: "Todavía no hay notas",
+      emptyDescription: "Guarda una palabra o una idea de lo que aprendas hoy.",
+      deleteNote: "Eliminar la nota",
+      translateError: "No se ha podido traducir esta nota. Inténtalo de nuevo.",
+    },
+  },
+
+  pronunciation: {
+    backToVocabulary: "Volver a tus palabras",
+    backHome: "Volver al inicio",
+    title: "Laboratorio de pronunciación",
+    subtitle: "Toca cualquier altavoz para oír la pronunciación.",
+
+    modes: {
+      english: "Foco en inglés",
+      zhuyin: "Foco en zhuyin",
+    },
+
+    filters: {
+      all: "Todos",
+      vowels: "Vocales",
+      consonants: "Consonantes",
+      initial: "Iniciales",
+      medial: "Mediales",
+      final: "Finales",
+    },
+
+    cards: {
+      howToSayIt: "Cómo se dice",
+      pronunciationMethod: "Guía de pronunciación",
+      playWord: "Reproducir {word}",
+      correct: "Correcto",
+      incorrect: "Error habitual",
+      commonMistake: "Trampa de pronunciación habitual",
+      showMoreGuidance: "Más indicaciones",
+      showLessGuidance: "Ver menos",
+      commonTrapSummary: "Puede que pronuncies {symbol} como {confusedWith}.",
+      playbackFailed: "No se ha podido reproducir. Toca para reintentar.",
+      kk: "KK",
+      moreSounds: "Variantes de pronunciación",
+      romanizationHint: "Pinyin más cercano",
+    },
+
+    yumi: {
+      mouth: "Boca",
+      tongue: "Lengua",
+      airflow: "Aire",
+      voice: "Voz",
+      demoAriaLabel: "Yumi mostrando la posición de boca y lengua para este sonido",
+      tapToHear: "Toca a Yumi para oír y ver este sonido.",
+    },
+  },
+
+  messages: {
+    title: "Mensajes",
+    searchPlaceholder: "Buscar conversaciones",
+    loadingConversations: "Cargando…",
+    loadingMessages: "Cargando mensajes…",
+    today: "Hoy",
+    yesterday: "Ayer",
+    inputPlaceholder: "Escribe un mensaje",
+    chatFallback: "Chat",
+    selectedCount: "{count} seleccionados",
+    selectAll: "Seleccionar todo",
+    startConversationTitle: "Empieza tu primera conversación",
+    startConversationDescription:
+      "Comparte una palabra, una frase o una pregunta con tu pareja.",
+    deleteSelectedMessage: "Eliminar {count} mensaje",
+    deleteSelectedMessages: "Eliminar {count} mensajes",
+    deleteDialogMessage: "¿Eliminar {count} mensaje?",
+    deleteDialogMessages: "¿Eliminar {count} mensajes?",
+    deleteDialogDescription:
+      "Estos mensajes se quitarán solo de tu vista. Las demás personas de la conversación seguirán viéndolos.",
+    closeDeleteConfirmation: "Cerrar la confirmación de borrado",
+    send: "Enviar",
+    selectMessages: "Seleccionar mensajes",
+    delete: "Eliminar",
+    deleting: "Eliminando…",
+    cancel: "Cancelar",
+    deleteFriend: "Eliminar contacto",
+    english: "Inglés",
+    traditionalChinese: "Chino tradicional",
+
+    youPrefix: "Tú: ",
+    attachmentLabel: "Foto",
+    voiceLabel: "Mensaje de voz",
+    muted: "Silenciada",
+    muteConversation: "Silenciar",
+    unmuteConversation: "Dejar de silenciar",
+    noConversationsFound: "No se han encontrado conversaciones.",
+    typingIndicator: "{name} está escribiendo…",
+    statusSent: "Enviado",
+    statusDelivered: "Entregado",
+    statusRead: "Leído",
+
+    hub: {
+      eyebrow: "Cubierta de comunicaciones",
+      subtitleFirst: "Conversaciones de verdad.",
+      subtitleSecond: "Idioma de verdad.",
+      searchPlaceholder: "Busca personas, conversaciones o idioma…",
+      searchLabel: "Buscar mensajes",
+      clearSearch: "Borrar la búsqueda",
+
+      tabs: {
+        recent: "Recientes",
+        friends: "Contactos",
+        requests: "Solicitudes",
+      },
+
+      resultGroupPeople: "Personas",
+      resultGroupConversations: "Conversaciones",
+      resultGroupLanguage: "Idioma",
+      searching: "Buscando…",
+
+      newConversation: "Conversación nueva",
+      openConversation: "Abrir la conversación con {name}",
+      archived: "Archivadas",
+      archivedTitle: "Archivadas",
+      archivedSubtitle: "Conversaciones que has guardado.",
+      archivedEmpty: "No hay nada archivado.",
+      archive: "Archivar",
+      unarchive: "Desarchivar",
+      backToMessages: "Volver a Mensajes",
+
+      emptyFriendsTitle: "Todavía no tienes parejas de aprendizaje",
+      emptyFriendsDescription:
+        "Añade a alguien por Exchange ID o código QR para empezar a hablar.",
+      emptyRequests: "No hay solicitudes entrantes.",
+      noResultsTitle: "No hay coincidencias",
+      noResultsDescription: "Prueba con un nombre, un @usuario o una palabra que recuerdes.",
+
+      phraseSignal: "{count} expresión",
+      phraseSignalPlural: "{count} expresiones",
+      unreadLabel: "{count} sin leer",
+      neverMessaged: "Todavía no hay mensajes",
+    },
+
+    decode: {
+      label: "Descifrado por Yumi",
+      whyThis: "¿Por qué esto?",
+      whyThisBody:
+        "Yumi señala las expresiones con las que suele tropezar quien aprende, y se salta las que ya has guardado.",
+      close: "Cerrar",
+      open: "¿Qué significaba esto?",
+      reading: "Yumi lo está leyendo…",
+      tone: "Tono",
+      toneUncertain: "Yumi no tiene claro el tono aquí.",
+      types: {
+        expression: "Expresión",
+        abbreviation: "Abreviatura",
+        phrase: "Locución",
+        slang: "Jerga",
+        idiom: "Modismo",
+      },
+      listen: "Escuchar",
+      savePhrase: "Guardar la expresión",
+      savedPhrase: "Guardada",
+      saveFailed: "No se ha podido guardar esta expresión. Inténtalo de nuevo.",
+      replyCoach: "Entrenador de respuestas",
+    },
+
+    coach: {
+      title: "Entrenador de respuestas",
+      subtitle: "Tres maneras de contestar. Toca una para ponerla en el cuadro.",
+      drafting: "Redactando respuestas…",
+      failed: "No se han podido redactar respuestas ahora mismo.",
+      retry: "Reintentar",
+      close: "Cerrar el entrenador de respuestas",
+      insert: "Usar esta respuesta",
+      inserted: "Añadida a tu mensaje",
+      ownership: "No se envía nada hasta que lo envíes tú.",
+      directions: {
+        friendly: "Cercana",
+        casual: "Informal",
+        natural: "Más natural",
+      },
+    },
+
+    room: {
+      back: "Volver a Mensajes",
+      connectionConnected: "Conectado",
+      connectionConnecting: "Conectando…",
+      connectionOffline: "Sin conexión",
+      privateLabel: "Privado",
+      privateHint:
+        "Protegido por tu cuenta y por las reglas de acceso a la base de datos. El cifrado de extremo a extremo todavía no está activado.",
+      privateNote:
+        "Los mensajes están protegidos por tu cuenta y por las reglas de acceso a la base de datos. El cifrado de extremo a extremo todavía no está activado.",
+      newMessages: "Mensajes nuevos",
+      jumpToLatest: "Ir al último",
+      options: "Opciones de la conversación",
+      closeOptions: "Cerrar las opciones",
+      addPhoto: "Añadir una foto",
+      sendMessage: "Enviar el mensaje",
+      unknownParticipant: "Antigua pareja",
+      notLoggedIn: "No has iniciado sesión.",
+      sendFailed: "No se ha podido enviar el mensaje. Inténtalo de nuevo.",
+    },
+
+    errors: {
+      loadConversations: "No se han podido cargar tus conversaciones.",
+      removeFriend: "No se ha podido eliminar a este contacto.",
+      deleteSelected: "No se han podido eliminar los mensajes seleccionados.",
+      shareWord: "No se ha podido compartir esta palabra. Inténtalo de nuevo.",
+      openConversation: "No se ha podido abrir esta conversación. Inténtalo de nuevo.",
+      saveWord: "No se ha podido guardar esta palabra. Inténtalo de nuevo.",
+      updateConversation: "No se ha podido actualizar esta conversación. Inténtalo de nuevo.",
+      conversationNotFound: "Esta conversación no está disponible.",
+    },
+  },
+  friends: {
+    backHome: "Volver al inicio",
+    eyebrow: "Parejas de aprendizaje",
+    title: "Contactos",
+    subtitle: "Añade a alguien por su Exchange ID o su código QR.",
+    loginRequired: "Inicia sesión para añadir y gestionar contactos.",
+    deleteFriend: "Eliminar contacto",
+
+    add: {
+      title: "Añadir a alguien",
+      exchangeId: "Exchange ID",
+      scanQr: "Escanear QR",
+      fieldLabel: "Exchange ID de tu contacto",
+      placeholder: "nombredetucontacto",
+      sendRequest: "Enviar solicitud",
+      sending: "Enviando…",
+    },
+
+    scanner: {
+      title: "Escanea el código QR de tu contacto",
+      description: "Apunta con la cámara a un código QR de Exchange Notes.",
+      start: "Encender la cámara",
+      stop: "Apagar la cámara",
+      scanning: "Escaneando…",
+    },
+
+    profileQr: {
+      eyebrow: "Código QR",
+      title: "Comparte tu perfil",
+      description: "Quien lo escanee te añadirá al instante.",
+      imageAlt: "Tu código QR de contacto de Exchange Notes",
+      loading: "Cargando…",
+    },
+
+    incoming: {
+      title: "Solicitudes de amistad",
+      empty: "No hay solicitudes entrantes.",
+      accept: "Aceptar",
+      decline: "Rechazar",
+      responding: "Actualizando…",
+    },
+
+    outgoing: {
+      title: "Solicitudes enviadas",
+      empty: "No hay solicitudes enviadas pendientes.",
+      cancel: "Cancelar",
+    },
+
+    list: {
+      title: "Tus contactos",
+      loading: "Cargando contactos…",
+      emptyTitle: "Todavía no tienes contactos",
+      emptyDescription: "Añade a alguien por Exchange ID o escanea su código QR.",
+    },
+
+    banners: {
+      enterExchangeId: "Escribe el Exchange ID de alguien para enviarle una solicitud.",
+      invitePrefilled:
+        "Has escaneado @{exchangeId}. Envía la solicitud para conectar.",
+      profileNotFound:
+        "No se ha encontrado «@{exchangeId}». Los Exchange ID van en minúsculas y sin espacios. Compruébalo con tu contacto.",
+      ownExchangeId: "Ese es tu propio Exchange ID. Prueba con el de otra persona.",
+      alreadyFriends: "@{exchangeId} y tú ya sois contactos.",
+      alreadyPending: "Ya enviada. Esperando a que @{exchangeId} la acepte.",
+      requestSent:
+        "Solicitud enviada a @{exchangeId}. La verá la próxima vez que abra Contactos.",
+      sendFailed:
+        "Algo ha ido mal al enviar la solicitud. Inténtalo dentro de un momento.",
+      respondFailed: "No se ha podido actualizar la solicitud. Inténtalo de nuevo.",
+      loadFailed: "No se han podido cargar tus contactos ahora mismo. Prueba en un rato.",
+      removeFriendFailed: "No se ha podido eliminar a este contacto. Inténtalo de nuevo.",
+    },
+
+    errors: {
+      invalidQr: "Ese código QR no es un código de contacto de Exchange Notes.",
+      secureContext:
+        "El acceso a la cámara requiere HTTPS o localhost. Abre la versión segura de esta app.",
+      unsupportedCamera: "Este navegador no admite el escaneo con cámara.",
+      cameraPermissionDenied:
+        "Se ha denegado el permiso de cámara. Actívalo en los ajustes de tu navegador y vuelve a intentarlo.",
+      noCamera: "No se ha encontrado ninguna cámara en este dispositivo.",
+      cameraInUse:
+        "La cámara ya la está usando otra app. Ciérrala y vuelve a intentarlo.",
+      cameraUnavailable: "No se ha podido abrir la cámara.",
+    },
+  },
+
+  vocabulary: {
+    hero: {
+      vocabulary: "Vocabulario",
+      todayProgress: "Progreso de hoy",
+      completion: "Completado",
+      dailyTargetCompleted: "Objetivo diario cumplido.",
+      wordRemaining: "Queda {count} palabra.",
+      wordsRemaining: "Quedan {count} palabras.",
+      dueToday: "Toca hoy",
+      retention: "Retención",
+      accuracy: "Acierto",
+      weakWords: "Palabras flojas",
+      totalWords: "Total de palabras",
+      learning: "Aprendiendo",
+      mastered: "Dominadas",
+      today: "Hoy",
+      startReview: "Empezar el repaso",
+      library: "Biblioteca",
+      collections: "Colecciones",
+    },
+
+    dashboard: {
+      eyebrow: "Sistema de aprendizaje",
+      title: "Panel",
+    },
+
+    mascot: {
+      greetingDefault: "Hola, Yumi. ¿Qué vas a aprender hoy?",
+      greetingWaiting: "Yumi espera una palabra nueva.",
+      moodStatus: {
+        hungry: "Yumi tiene hambre.",
+        curious: "Yumi tiene curiosidad.",
+        happy: "Yumi está contenta.",
+        excited: "Yumi está emocionada.",
+        proud: "Yumi está orgullosa de ti.",
+        missingYou: "Yumi te echaba de menos.",
+        confused: "Yumi parece desconcertada.",
+      },
+      moodShort: {
+        hungry: "Hambrienta",
+        curious: "Curiosa",
+        happy: "Contenta",
+        excited: "Emocionada",
+        proud: "Orgullosa",
+        missingYou: "Nostálgica",
+        confused: "Perpleja",
+      },
+      summaryWordSingular: "{count} palabra hoy",
+      summaryWordPlural: "{count} palabras hoy",
+      summaryCookieSingular: "{count} galleta",
+      summaryCookiePlural: "{count} galletas",
+      summaryStreak: "racha de {count} días",
+      cookieTrayEmpty: "Añade una palabra para ganarle una galleta a Yumi.",
+      cookieTrayHint: "Arrastra una galleta hasta Yumi",
+      cookieTrayMore: "+{count} más",
+      feedAriaLabel: "Darle {word} a Yumi",
+      coreTrayEmpty: "Añade una palabra para forjar un Núcleo de Aprendizaje.",
+      coreTrayHint: "Arrastra un núcleo hasta Yumi",
+      coreTrayShowLess: "Ver menos",
+      coreTrayShowAllAriaLabel: "Ver los {count} núcleos",
+      coreNewBadge: "NUEVO",
+      coreAriaLabel: "{word}, {state}. Dáselo a Yumi o arrástralo hasta ella.",
+      coreState: {
+        new: "palabra nueva",
+        learning: "aprendiendo",
+        due: "toca repasar",
+        mastered: "dominada",
+      },
+      cookieTypeLetter: "Galleta de letra",
+      cookieTypeZhuyin: "Galleta de zhuyin",
+      feedingAnticipating: "Yumi abre la boca con ganas.",
+      feedingEating: "Yumi mastica despacio.",
+      feedingSwallowing: "Yumi se traga la energía de la palabra.",
+      feedingSatisfied: "Yumi está llena y satisfecha.",
+      openActionsAriaLabel: "Abrir las acciones de Yumi",
+      closeActionsAriaLabel: "Cerrar las acciones de Yumi",
+      actionMenuAriaLabel: "Acciones de aprendizaje de Yumi",
+      menuPrompt: "¿Por dónde quieres empezar?",
+      reviewActionLabel: "Empezar el repaso",
+      addWordActionLabel: "Añadir una palabra con IA",
+      cameraActionLabel: "Identificar con la cámara",
+      haloReviewName: "Practicar",
+      haloReviewBlurb: "Repaso inteligente y tests",
+      haloAddName: "Crear",
+      haloAddBlurb: "Añade cualquier palabra con IA",
+      haloCameraName: "Escanear",
+      haloCameraBlurb: "Reconoce lo que sea",
+      haloSpeakName: "Hablar",
+      haloSpeakBlurb: "Pronuncia cada letra",
+      haloCollectName: "Coleccionar",
+      haloCollectBlurb: "Agrupa palabras en conjuntos",
+      speakActionLabel: "Abrir el Laboratorio de pronunciación",
+      collectActionLabel: "Abrir las colecciones",
+    },
+
+    lookup: {
+      title: "Busca cualquier palabra",
+      placeholder: "Inglés o chino tradicional",
+      search: "Búsqueda inteligente",
+      searching: "Buscando",
+      description:
+        "Busca cualquier palabra en inglés o en chino tradicional para ver su traducción, su categoría gramatical y ejemplos naturales.",
+      error: "No se ha podido buscar esa palabra.",
+      degradedNotice:
+        "La búsqueda inteligente está ocupada, así que esto viene del diccionario sin conexión. La palabra y la traducción son correctas; solo los ejemplos son genéricos.",
+      degradedRetry: "Reintentar para obtener ejemplos reales",
+      translationUnavailable: "La traducción aún no se ha cargado",
+      translationUnavailableDetail:
+        "Yumi no ha podido conectar con el servicio de traducción, normalmente por una conexión débil o caída. A la palabra en sí no le falta nada, así que vuelve a intentarlo cuando tengas conexión.",
+      translationUnavailableRetry: "Reintentar",
+      translationUnavailableSaveBlocked:
+        "Guardar está en pausa hasta que cargue la traducción, para que esta palabra no entre en tu vocabulario sin su significado.",
+      english: "Inglés",
+      chinese: "Chino tradicional",
+      englishExample: "Ejemplo en inglés",
+      chineseExample: "Ejemplo en chino",
+      share: "Compartir",
+      send: "Enviar",
+      saving: "Guardando",
+      addToVocabulary: "Añadir al vocabulario",
+      unsavedTitle: "Esta palabra todavía no está guardada",
+      noMatchingTitle: "No hay palabras que coincidan",
+      unsavedDescription:
+        "Búscala para ver su significado y sus ejemplos, y guárdala en tu vocabulario.",
+      noMatchingDescription:
+        "Prueba con otra búsqueda o elige otro estado de aprendizaje.",
+      lookingUp: "Buscando",
+      lookUpWord: 'Buscar «{word}»',
+      wordFound: "Palabra encontrada",
+      shareWithFriend: "Enviar a alguien",
+      closeSearchAriaLabel: "Cerrar la búsqueda de palabras",
+      inputPlaceholder: "Inglés o chino tradicional",
+      clearSearchAriaLabel: "Borrar la búsqueda",
+      lowConfidenceNotice:
+        "Yumi no está del todo segura. Revisa el resultado antes de guardarlo.",
+    },
+
+    collections: {
+      title: "Colecciones",
+      description: "Organiza el vocabulario en espacios de estudio sencillos.",
+      backToVocabulary: "Volver al vocabulario",
+      createCollection: "Crear una colección",
+      createCollectionAria: "Crear una colección nueva",
+      loadingError: "No se han podido cargar tus colecciones.",
+      createError: "No se ha podido crear la colección.",
+      toggleError: "No se ha podido actualizar esta colección. Inténtalo de nuevo.",
+      emptyTitle: "Todavía no hay colecciones",
+      emptyDescription:
+        "Crea un espacio de estudio para las palabras que quieras trabajar juntas.",
+      listAriaLabel: "Colecciones de vocabulario",
+      newCollection: "Colección nueva",
+      close: "Cerrar",
+      emojiLabel: "Emoji de la colección",
+      namePlaceholder: "Nombre de la colección",
+      creating: "Creando",
+      create: "Crear",
+      noCollectionsYet: "Todavía no tienes ninguna colección.",
+      word: "palabra",
+      words: "palabras",
+      examples: {
+        home: "Casa",
+      },
+
+      detail: {
+        fallbackTitle: "Colección",
+        removeError: "No se ha podido quitar esta palabra. Inténtalo de nuevo.",
+        backToCollections: "Volver a las colecciones",
+        loadingError: "No se ha podido cargar esta colección.",
+        loading: "Cargando la colección…",
+        emptyTitle: "Aquí todavía no hay palabras",
+        emptyDescription:
+          "Abre una tarjeta de vocabulario y elige Colecciones para añadirla aquí.",
+        browseVocabulary: "Ver el vocabulario",
+        removeWordAriaLabel: "Quitar la palabra de la colección",
+        word: "palabra",
+        words: "palabras",
+        inCollection: "en esta colección",
+      },
+    },
+
+    detail: {
+      vocabulary: "Vocabulario",
+      backToVocabulary: "Volver al vocabulario",
+      translation: "Traducción",
+      example: "Ejemplo",
+
+      accuracy: "Acierto",
+      reviews: "Repasos",
+      nextReview: "Próximo repaso",
+
+      levels: {
+        new: "Nueva",
+        learning: "Aprendiendo",
+        familiar: "Familiar",
+        strong: "Sólida",
+        mastered: "Dominada",
+      },
+
+      partOfSpeech: {
+        noun: "Sustantivo",
+        verb: "Verbo",
+        adjective: "Adjetivo",
+        adverb: "Adverbio",
+        pronoun: "Pronombre",
+        preposition: "Preposición",
+        conjunction: "Conjunción",
+        interjection: "Interjección",
+        phrase: "Locución",
+        other: "Otra",
+      },
+
+      closeDetailsAriaLabel: "Cerrar los detalles de la palabra",
+      expandDetailsAriaLabel: "Desplegar los detalles de {word}",
+      collapseDetailsAriaLabel: "Plegar los detalles de {word}",
+      openFullDetailsAriaLabel: "Abrir todos los detalles de {word}",
+      editWordAriaLabel: "Editar la palabra",
+      closeAriaLabel: "Cerrar",
+      learningStatusLabel: "Estado de aprendizaje",
+      addedLabel: "Añadida el {date}",
+      confidenceLabel: "confianza {confidence}",
+      confidenceHigh: "Alta",
+      confidenceMedium: "Media",
+      confidenceLow: "Baja",
+      addToCollectionsAriaLabel: "Añadir a colecciones",
+      sendToFriendAriaLabel: "Enviar a alguien",
+      shareWordAriaLabel: "Compartir la palabra",
+      deleteWordAriaLabel: "Eliminar la palabra",
+      listenAriaLabel: "Escuchar: {text}",
+      markAsMastered: "Marcar como dominada",
+      markAsLearning: "Pasar a aprendiendo",
+
+      reviewPanel: {
+        title: "Repasa esta palabra",
+        description: "¿Cómo de bien la recordabas?",
+        again: "Otra vez",
+        hard: "Difícil",
+        good: "Bien",
+        easy: "Fácil",
+      },
+
+      reviewDetails: {
+        title: "Detalles del repaso",
+        lastReviewed: "Último repaso",
+        never: "Nunca",
+        day: "día",
+        days: "días",
+      },
+
+      edit: {
+        title: "Editar el vocabulario",
+        subtitle: "Actualiza la palabra y los ejemplos.",
+        english: "Inglés",
+        traditionalChinese: "Chino tradicional",
+        chinesePlaceholder: "Traducción al chino tradicional",
+        englishExample: "Ejemplo en inglés",
+        chineseExample: "Ejemplo en chino tradicional",
+        chineseExamplePlaceholder: "Escribe un ejemplo en chino tradicional.",
+        close: "Cerrar la edición del vocabulario",
+        cancel: "Cancelar",
+        save: "Guardar los cambios",
+        saving: "Guardando...",
+        englishRequired: "La palabra en inglés no puede estar vacía.",
+        chineseRequired: "La traducción al chino tradicional no puede estar vacía.",
+        saveFailed: "No se han podido guardar los cambios.",
+      },
+
+      actions: {
+        edit: "Editar el vocabulario",
+        share: "Compartir el vocabulario",
+        copied: "Copiado",
+      },
+
+      page: {
+        loadError: "No se ha podido cargar esta palabra.",
+      },
+    },
+
+    search: {
+      vocabulary: "Vocabulario",
+      yourWords: "Tus palabras",
+      addWord: "Añadir palabra",
+
+      saved: "guardadas",
+      learning: "aprendiendo",
+      mastered: "dominadas",
+
+      searchPlaceholder: "Busca cualquier palabra",
+      searchAriaLabel: "Busca cualquier palabra",
+      clearSearch: "Borrar la búsqueda de vocabulario",
+      cancel: "Cancelar",
+      clear: "Borrar",
+      noMatchingWords: "No hay palabras que coincidan.",
+      loadingVocabulary: "Cargando tus palabras",
+      firstWordTitle: "Tu primera palabra empieza ahí fuera",
+      firstWordDescription:
+        "Fotografía algo de la vida diaria y guarda su significado en inglés y en chino tradicional.",
+      discoverWord: "Descubrir una palabra",
+
+      statuses: {
+        all: "Todas",
+        new: "Nuevas",
+        learning: "Aprendiendo",
+        mastered: "Dominadas",
+      },
+
+      word: "palabra",
+      words: "palabras",
+
+      sort: "Ordenar",
+      openCollections: "Abrir las colecciones",
+      toolbarAriaLabel: "Herramientas de vocabulario",
+      lookupToolbarAriaLabel: "Buscar una palabra",
+      cameraLookup: "Identificar con la cámara",
+      photoLookup: "Identificar desde una foto",
+      voiceSearch: "Buscar por voz",
+      voiceListening: "Escuchando: toca para parar",
+      cardsView: "Usar la vista de tarjetas clásica",
+      compactView: "Usar la vista de lista compacta",
+      closeSortMenu: "Cerrar el menú de orden",
+
+      sortOptions: {
+        new: "Palabras nuevas",
+        old: "Las más antiguas primero",
+        alphabetical: "De la A a la Z",
+        reverseAlphabetical: "De la Z a la A",
+        recentlyReviewed: "Repasadas hace poco",
+        leastReviewed: "Menos repasadas",
+        forYou: "Para ti",
+        trending: "En racha",
+      },
+
+      personalizing: "Personalizando {sort}…",
+    },
+  },
+
+  review: {
+    backHome: "Volver al inicio",
+    eyebrow: "Repaso diario",
+    title: "Repaso",
+    subtitle: "Refuerza las palabras que tocan hoy.",
+    today: "Hoy",
+    cardsReady: "Tarjetas listas",
+    introLineOne: "Repasa primero las tarjetas pendientes.",
+    startReview: "Empezar el repaso",
+    freePractice: "Práctica libre",
+    freePracticeDescription:
+      "Practica todas las palabras guardadas cuando quieras, sin límite diario.",
+    practiceAllWords: "Practicar todas las palabras",
+    queueData: "La cola de hoy",
+    ready: "Listas",
+    loadError: "No se ha podido cargar el repaso de hoy.",
+    caughtUpDescription: "Ahora mismo no hay tarjetas pendientes.",
+    sessionEyebrow: "Repaso diario",
+    sessionTitle: "Sesión en curso",
+    remaining: "quedan {count}",
+    vocabulary: "Vocabulario",
+    revealAnswer: "Ver la respuesta",
+    saving: "Guardando el repaso…",
+    saveError: "No se ha podido guardar este repaso.",
+    completeTitle: "Buen trabajo.",
+    completeDescription: "Se ha actualizado tu calendario de repasos.",
+    completedReviews: "Has completado {count} repasos.",
+    backToVocabulary: "Volver a tus palabras",
+    backToHome: "Volver al inicio",
+    grades: {
+      again: {
+        label: "Otra vez",
+        description: "No me acordé",
+      },
+      hard: {
+        label: "Difícil",
+        description: "Me costó",
+      },
+      good: {
+        label: "Bien",
+        description: "Me acordé",
+      },
+      easy: {
+        label: "Fácil",
+        description: "Muy fácil",
+      },
+    },
+  },
+
+  scanner: {
+    back: "Volver al puente",
+
+    menu: {
+      title: "Traductor de menús",
+      cameraHint: "Llena el encuadre con una página del menú",
+      detecting: "Buscando un menú",
+      detected: "Menú detectado",
+      capture: "Capturar",
+      close: "Cerrar",
+      torchOn: "Encender la luz",
+      torchOff: "Apagar la luz",
+      gallery: "Elegir una foto",
+      importFailed:
+        "No se ha podido abrir esa foto. Prueba con otra o haz la foto aquí.",
+      targetLanguage: "Traducir a",
+      cameraPermissionDenied:
+        "El acceso a la cámara está desactivado para Exchange Notes. Actívalo en los ajustes de tu navegador o elige una foto.",
+      cameraUnavailable:
+        "No se ha podido abrir la cámara de este dispositivo. Aún puedes elegir una foto.",
+      cameraRetry: "Volver a probar con la cámara",
+
+      qualityTitle: "Puede que algo del texto cueste de leer",
+      qualityBody:
+        "La foto está oscura, movida o muy inclinada. Una toma más recta y más cerca se lee mucho mejor.",
+      retake: "Repetir la foto",
+      continueAnyway: "Continuar igualmente",
+
+      phaseReading: "Leyendo",
+      phaseUnderstanding: "Entendiendo",
+      phaseTranslating: "Traduciendo",
+      phaseFinishing: "Maquetando",
+      processingHint: "Yumi está repasando la página entera.",
+      cancel: "Cancelar",
+
+      modeRebuilt: "Reconstruido",
+      modeTranslated: "Superpuesto",
+      modeOriginal: "Original",
+      modeList: "Lista",
+      viewMode: "Vista",
+
+      itemCount: "{count} platos",
+      sourceLanguage: "De {language}",
+      unknownLanguage: "un idioma desconocido",
+      partialTitle: "Leído con poca confianza",
+      partialBody:
+        "Yumi no ha tenido claras algunas partes de este menú. Consulta con el restaurante lo que te importe.",
+      rebuildUnavailable:
+        "Esta foto no se ha podido reconstruir con limpieza, así que la traducción se muestra encima.",
+      lowConfidence: "Yumi no está del todo segura de este texto.",
+      noPrice: "Sin precio impreso",
+      untitledSection: "Menú",
+
+      notMenuTitle: "En esa foto no hay ninguna lista",
+      notMenuBody:
+        "Apunta a un menú, una lista de precios, una etiqueta de estante o una lista de la compra y vuelve a intentarlo.",
+      emptyTitle: "No se ha podido leer nada",
+      emptyBody:
+        "El texto era demasiado pequeño, demasiado oscuro o estaba muy inclinado. Prueba con una página que llene el encuadre.",
+      errorTitle: "No se ha podido leer el menú",
+      tryAgain: "Reintentar",
+      scanAnother: "Escanear otro menú",
+
+      zoomIn: "Acercar",
+      zoomOut: "Alejar",
+      zoomLevel: "Zoom {level}×",
+      overlayHint: "Toca un plato para ver qué es",
+
+      originalLabel: "En el menú",
+      priceLabel: "Precio",
+      aboutLabel: "Qué es",
+      cuisineLabel: "Cocina",
+      listen: "Escuchar",
+      listening: "Reproduciendo…",
+      saveWord: "Guardar en mis palabras",
+      saving: "Guardando…",
+      saved: "Guardado",
+      saveFailed: "No se ha podido guardar ese plato.",
+      share: "Enviar a alguien",
+      shareLoginRequired: "Inicia sesión antes de compartir.",
+      friendsError: "No se han podido cargar tus parejas.",
+      confidenceNote: "Yumi no estaba del todo segura de este.",
+      askRestaurant:
+        "Los ingredientes son la lectura que Yumi hace del nombre, no lo que dice la cocina. Pregunta en el restaurante por cualquier cosa que debas evitar.",
+    },
+  },
+
+  settings: {
+    title: "Ajustes",
+
+    sections: {
+      learning: "Aprendizaje",
+      yumi: "Yumi",
+      app: "App",
+      devices: "Dispositivos y widgets",
+      help: "Ayuda e información",
+      account: "Cuenta",
+    },
+
+    search: {
+      open: "Buscar en Ajustes",
+      placeholder: "Buscar en Ajustes",
+      cancel: "Cancelar",
+      resultsLabel: "Ajustes que coinciden",
+      empty: "Nada en Ajustes coincide con «{query}».",
+      hint: "Prueba con «widget», «voz», «idioma», «cósmico» o «notificaciones».",
+    },
+
+    devices: {
+      rowTitle: "Dispositivos y widgets",
+      rowDescription: "Gestiona tus dispositivos, widgets e integraciones",
+      connectedCount: "{count} conectados",
+      notConnected: "Sin configurar",
+      pageTitle: "Dispositivos y widgets",
+      pageDescription:
+        "Instala Exchange Notes en este dispositivo y conecta los widgets que mantienen a Yumi en tu pantalla de inicio.",
+      back: "Volver a Ajustes",
+    },
+
+    help: {
+      rowTitle: "Ayuda e información",
+      rowDescription: "La visita guiada y cómo funciona Exchange Notes",
+      pageTitle: "Ayuda e información",
+      pageDescription:
+        "Repite la visita cuando quieras: desde aquí nunca se abre sola.",
+      back: "Volver a Ajustes",
+    },
+
+    profile: {
+      pageTitle: "Ajustes",
+      loading: "Cargando…",
+      languageLearner: "Aprendiz de idiomas",
+      accountFallback: "Cuenta de Exchange Notes",
+      changePhoto: "Cambiar la foto",
+      addPhoto: "Añadir foto",
+      removePhoto: "Quitar la foto de perfil",
+      loadingProfile: "Cargando tu perfil…",
+      profile: "Perfil",
+      yourName: "Tu nombre",
+      namePlaceholder: "Tu nombre",
+      exchangeId: "Exchange ID",
+      exchangeIdDescription: "De 3 a 24 letras minúsculas, números o guiones bajos.",
+      exchangeIdPlaceholder: "tunombre",
+      nativeLanguage: "Idioma nativo",
+      learningLanguage: "Idioma de aprendizaje",
+      nativeLanguageDescription: "El idioma que ya hablas",
+      learningLanguageDescription: "El idioma que estás practicando",
+      saveChanges: "Guardar los cambios",
+      saving: "Guardando…",
+      logout: "Cerrar sesión",
+      logoutDescription: "Salir de este dispositivo",
+      logoutConfirm: "¿Seguro que quieres cerrar sesión?",
+      photoImageError: "Elige un archivo de imagen.",
+      photoSizeError: "Las fotos de perfil deben pesar menos de 5 MB.",
+      photoUpdated: "¡Foto de perfil actualizada!",
+      photoUploadError: "No se ha podido subir tu foto de perfil.",
+      loginRequired: "Tienes que haber iniciado sesión.",
+      photoRemoved: "Foto de perfil eliminada.",
+      photoRemoveError: "No se ha podido quitar tu foto de perfil.",
+      profileUpdated: "¡Perfil actualizado!",
+      profileUpdateError: "No se ha podido actualizar el perfil. Inténtalo de nuevo.",
+      languagesMustDifferError: "El idioma nativo y el de aprendizaje deben ser distintos.",
+      editProfile: "Editar el perfil",
+      copyHandle: "Copiar",
+      copied: "¡Copiado!",
+      viewQr: "Código QR",
+      checkingAvailability: "Comprobando disponibilidad…",
+      idAvailable: "Este Exchange ID está libre.",
+      idTaken: "Este Exchange ID ya está en uso.",
+      idCheckError: "No se ha podido comprobar la disponibilidad.",
+    },
+
+    dailyGoal: {
+      rowTitle: "Objetivo diario",
+      rowDescription: "Cuántas palabras nuevas al día",
+      sheetTitle: "Objetivo diario",
+      sheetDescription:
+        "Elige cuántas palabras nuevas quieres conocer cada día. Las galletas de Yumi se van llenando a medida que lo cumples.",
+      wordsLabel: "palabras",
+
+      options: {
+        three: "3 palabras",
+        five: "5 palabras",
+        ten: "10 palabras",
+        twenty: "20 palabras",
+        thirtyThree: "33 palabras",
+      },
+    },
+
+    appLanguage: {
+      rowTitle: "Idioma de la app",
+      rowDescription: "Elige el idioma de la interfaz",
+      sheetTitle: "Idioma de la app",
+      sheetDescription:
+        "Elige el idioma que usa la interfaz de Exchange Notes.",
+      englishDescription: "Mostrar la interfaz en inglés.",
+      traditionalChineseDescription:
+        "Mostrar la interfaz en chino tradicional.",
+      spanishDescription: "Mostrar la interfaz en español.",
+    },
+
+    yumiReminders: {
+      rowTitle: "Recordatorios de Yumi",
+      rowDescription:
+        "Deja que Yumi te avise cuando no le hayas dado ninguna galleta hoy.",
+      loadError: "No se han podido cargar los ajustes de recordatorios de Yumi.",
+      saveError: "No se han podido guardar los ajustes de recordatorios de Yumi.",
+      timezoneLabel: "Zona horaria del dispositivo",
+      testTitle: "Recordatorios de Yumi",
+      testDescription:
+        "Como mucho una vez al día. Yumi calla si ya ha comido, si has abierto la app hace poco o durante las horas de silencio.",
+      test: "Enviar notificación de prueba de Yumi",
+      testing: "Enviando…",
+      testSent: "Notificación de prueba de Yumi enviada.",
+      testError: "No se ha podido enviar la notificación de prueba de Yumi.",
+    },
+
+    interfaceMode: {
+      rowTitle: "Modo de interfaz",
+      rowDescription: "Estándar, o el puente de mando de Yumi",
+      standardTitle: "Modo estándar",
+      standardShort: "Estándar",
+      cosmicTitle: "Modo Cósmico de Yumi",
+      cosmicShort: "Cósmico",
+      sharedDataNote:
+        "Los dos modos son el mismo Exchange Notes. Tus palabras, mensajes, contactos y progreso siguen exactamente donde están, y puedes volver cuando quieras.",
+    },
+
+    scriptableWidget: {
+      rowTitle: "Widget para iPhone",
+      rowDescription: "Conecta Yumi con Scriptable",
+      statusReady: "Conectado",
+      statusNotConfigured: "Sin configurar",
+      statusRevoked: "Desconectado",
+      statusLoading: "Comprobando…",
+      statusUnavailable: "No disponible",
+      sheetTitle: "Widget de Scriptable para iPhone",
+      sheetDescription:
+        "Crea un token privado para que la app Scriptable pueda cargar de forma segura tu progreso más reciente con Yumi.",
+      activeTitle: "La conexión del widget está activa",
+      activeDescription:
+        "Scriptable puede cargar de forma segura el ánimo de Yumi, tus galletas y tu vocabulario más recientes.",
+      emptyTitle: "El widget no está conectado",
+      emptyDescription:
+        "Genera un token privado, cópialo una vez y guárdalo dentro de la app Scriptable de tu iPhone.",
+      revokedTitle: "Se ha revocado la conexión del widget",
+      revokedDescription:
+        "El token anterior ya no puede acceder a los datos de tu widget de Yumi.",
+      unavailableTitle: "Los ajustes del widget no están disponibles",
+      unavailableDescription:
+        "No se ha podido contactar con el servicio del widget de Scriptable. Comprueba tu conexión e inténtalo de nuevo.",
+      tokenPrefixLabel: "Token",
+      createdLabel: "Creado",
+      lastUsedLabel: "Último uso",
+      neverUsed: "Nunca",
+      notAvailable: "No disponible",
+      oneTimeTitle: "Copia este token ahora",
+      oneTimeDescription:
+        "Por seguridad, el token completo se muestra una sola vez. Exchange Notes solo guarda su hash SHA-256.",
+      generate: "Generar un token privado",
+      generating: "Generando…",
+      generateSuccess: "Tu nuevo token de Scriptable está listo.",
+      rotate: "Sustituir el token privado",
+      rotating: "Sustituyendo…",
+      rotateConfirmTitle: "¿Sustituir el token actual?",
+      rotateConfirmDescription:
+        "El token actual dejará de funcionar de inmediato. Tendrás que actualizar el token guardado en Scriptable.",
+      confirmRotate: "Sustituir el token",
+      revoke: "Desconectar el widget",
+      revoking: "Desconectando…",
+      revokeSuccess: "Se ha revocado la conexión del widget de Scriptable.",
+      revokeConfirmTitle: "¿Desconectar el widget?",
+      revokeConfirmDescription:
+        "Scriptable ya no podrá cargar los datos de tu widget de Yumi con el token actual.",
+      confirmRevoke: "Desconectar",
+      refresh: "Actualizar el estado",
+      close: "Hecho",
+      copy: "Copiar el token",
+      copied: "Copiado",
+      cancel: "Cancelar",
+      authenticationError:
+        "Tu sesión ha caducado. Vuelve a iniciar sesión antes de gestionar el widget.",
+      loadError:
+        "No se ha podido cargar el estado del widget. Inténtalo de nuevo.",
+      actionError:
+        "No se ha podido actualizar la conexión del widget. Inténtalo de nuevo.",
+      copyError:
+        "No se ha podido copiar el token. Selecciónalo y cópialo a mano.",
+    },
+
+    iphoneWidget: {
+      rowTitle: "Widget de Yumi para iPhone",
+      rowDescription: "Widget nativo de Exchange Notes con sincronización automática",
+      statusNative: "Nativo",
+      sheetTitle: "Widget de Yumi para iPhone",
+      sheetDescription:
+        "Este widget viene dentro de la compilación nativa de la app. Si no la estás usando, recurre al widget de Scriptable de arriba.",
+      nativeTitle: "El widget nativo está listo",
+      nativeDescription:
+        "Abre Exchange Notes para sincronizar de forma segura a Yumi y tu vocabulario más reciente con la pantalla de inicio del iPhone.",
+      addTitle: "Añadir a la pantalla de inicio",
+      stepOne: "Mantén pulsada una zona vacía de la pantalla de inicio del iPhone.",
+      stepTwo: "Toca Editar y elige Añadir widget.",
+      stepThree: "Busca Exchange Notes o Yumi.",
+      stepFour: "Elige el tamaño pequeño, mediano o grande y añádelo.",
+      behaviorTitle: "Comportamiento de los botones",
+      behaviorDescription:
+        "A y ㄅ reproducen la pronunciación sin abrir la app. Al tocar la palabra se abre su ficha de vocabulario.",
+      openAppNote: "+ y el reconocimiento con cámara abren sus funciones dentro de la app.",
+      done: "Hecho",
+    },
+
+    webPush: {
+      rowTitle: "Notificaciones",
+      rowDescription: "Novedades de mensajes y aprendizaje",
+      sheetTitle: "Notificaciones",
+      sheetDescription:
+        "Elige si Exchange Notes puede enviar notificaciones a este dispositivo.",
+      statusOn: "Activadas",
+      statusOff: "Desactivadas",
+      statusLoading: "Comprobando…",
+      statusNeedsHomeScreen: "Instálalo primero",
+      statusUnsupported: "No compatible",
+      statusBlocked: "Bloqueadas",
+      statusUnavailable: "No disponibles",
+      enabledTitle: "Las notificaciones están activadas",
+      enabledDescription:
+        "Este dispositivo puede recibir notificaciones de mensajes y de aprendizaje.",
+      disabledTitle: "Las notificaciones están desactivadas",
+      disabledDescription:
+        "Actívalas para recibir novedades cuando Exchange Notes no esté abierto.",
+      needsHomeScreenTitle: "Añade Exchange Notes a tu pantalla de inicio",
+      needsHomeScreenDescription:
+        "En iPhone o iPad, usa la opción Instalar Exchange Notes de esta sección y luego abre la app desde tu pantalla de inicio.",
+      unsupportedTitle: "Las notificaciones no son compatibles",
+      unsupportedDescription:
+        "Este navegador o dispositivo no puede recibir notificaciones Web Push.",
+      blockedTitle: "Las notificaciones están bloqueadas",
+      blockedDescription:
+        "Permite las notificaciones de Exchange Notes en los ajustes de tu navegador o dispositivo y vuelve aquí.",
+      unavailableTitle: "Las notificaciones no están disponibles",
+      unavailableDescription:
+        "Web Push no está disponible en esta versión de Exchange Notes.",
+      enable: "Activar las notificaciones",
+      enabling: "Activando…",
+      disable: "Desactivar las notificaciones",
+      disabling: "Desactivando…",
+      authenticationError:
+        "Vuelve a iniciar sesión antes de cambiar los ajustes de notificaciones.",
+      permissionDismissedError:
+        "No se ha concedido el permiso de notificaciones. Inténtalo cuando quieras.",
+      subscriptionError:
+        "No se han podido activar las notificaciones. Inténtalo de nuevo.",
+      unsubscribeError:
+        "No se han podido desactivar las notificaciones. Inténtalo de nuevo.",
+      statusError:
+        "No se ha podido comprobar el estado de las notificaciones. Inténtalo de nuevo.",
+      sendTest: "Enviar una notificación de prueba",
+      testing: "Enviando la prueba…",
+      testDescription:
+        "La prueba se envía a todos los dispositivos activos de Exchange Notes de tu cuenta.",
+      testSuccess:
+        "Se ha enviado una notificación de prueba a tus dispositivos activos de Exchange Notes.",
+      testAuthenticationError:
+        "Tu sesión ha caducado. Vuelve a iniciar sesión antes de enviar una prueba.",
+      testNoSubscriptionError:
+        "No se ha encontrado ninguna suscripción activa en el servidor. Desactiva y vuelve a activar las notificaciones.",
+      testExpiredError:
+        "Tu suscripción de notificaciones guardada ha caducado. Desactiva y vuelve a activar las notificaciones.",
+      testDeliveryError:
+        "No se ha podido entregar la notificación de prueba. Inténtalo de nuevo.",
+      testNetworkError:
+        "No se ha podido contactar con el servicio de pruebas. Comprueba tu conexión e inténtalo de nuevo.",
+    },
+
+    fontSize: {
+      rowTitle: "Tamaño del texto",
+      rowDescription: "Ajusta el texto de toda la app",
+
+      options: {
+        small: { label: "Pequeño" },
+        medium: { label: "Mediano" },
+        large: { label: "Grande" },
+      },
+    },
+
+    pronunciation: {
+      rowTitle: "Pronunciación",
+      rowDescription: "Voz y velocidad de lectura",
+      sheetTitle: "Pronunciación",
+      sheetDescription:
+        "Elige la voz y la velocidad de lectura que se usan en Exchange Notes.",
+      readingSpeed: "Velocidad de lectura",
+      readingSpeedDescription:
+        "Ajusta a qué velocidad se leen las palabras y los ejemplos.",
+      readingSpeedAriaLabel: "Velocidad de lectura",
+      slower: "Más lenta",
+      faster: "Más rápida",
+      voice: "Voz",
+      voiceDescription: "Elige la voz que prefieras para la pronunciación.",
+      female: "Femenina",
+      male: "Masculina",
+      testVoice: "Probar la voz",
+      genderUnavailable:
+        "Safari no tiene una voz {gender} en {language}, así que se usa {fallback}. Descargar más voces en los ajustes de iOS no ayuda: iOS las reserva para las apps nativas y solo ofrece a Safari las dos voces de chino integradas.",
+      voicesOnDevice: "Voces de este dispositivo",
+      voicesOnDeviceDescription:
+        "Elige una voz por su nombre para saber con certeza cuál te toca. Sin elección, la app la deduce del nombre, y eso no siempre acierta con el género que has pedido.",
+      voiceAutomatic: "Automática",
+      noVoicesInstalled: "Este dispositivo no tiene ninguna voz instalada para este idioma.",
+    },
+  },
+};
+
+export default spanish;

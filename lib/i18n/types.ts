@@ -1,5 +1,11 @@
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
+/**
+ * Dictionaries are keyed by interface language, so this equation is correct
+ * — and confined to the interface axis. Do not extend it to the learning
+ * language: a user learning Spanish still reads the app in English or
+ * Chinese, and `LanguageCode` (lib/languages.ts) carries no dictionary.
+ */
 export type TranslationLanguage = InterfaceLanguage;
 
 export type TranslationDictionary = {
@@ -213,8 +219,14 @@ export type TranslationDictionary = {
     omni: {
       label: string;
       placeholder: string;
-      placeholderChinese: string;
-      placeholderEnglish: string;
+      /*
+       * Two ways of not understanding a language, chosen by the language
+       * rather than by which of two it is. A script you cannot sound out is
+       * something you *saw*; one you can read but not follow is something you
+       * *heard*. Both take the language's own localized name.
+       */
+      placeholderUnreadable: string;
+      placeholderHeard: string;
       inputText: string;
       inputVoice: string;
       inputCamera: string;
@@ -1442,6 +1454,7 @@ export type TranslationDictionary = {
       sheetDescription: string;
       englishDescription: string;
       traditionalChineseDescription: string;
+      spanishDescription: string;
     };
 
     /*

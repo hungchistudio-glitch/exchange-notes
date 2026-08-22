@@ -10,7 +10,8 @@ import { isVocabularyLookupResult } from "@/lib/types/vocabularyLookup";
  * call. This layer makes a word a one-time cost for the entire app.
  *
  * The cached rows hold no user data — the key is a normalized query string
- * and the value is dictionary content — so a leak of this table would reveal
+ * prefixed with the language pair it was answered in, and the value is
+ * dictionary content — so a leak of this table would reveal
  * nothing a user could not obtain by performing the lookup themselves. That
  * is what makes reaching it from a user-facing (but authenticated) route with
  * the service role acceptable, provided access stays behind this module's two
@@ -26,6 +27,16 @@ const TABLE = "vocabulary_lookup_cache";
 /** Bump when VocabularyLookupResult changes shape. */
 const CACHE_SCHEMA_VERSION = 1;
 
+/*
+ * Matches the column's own check constraint, so an over-long key is refused
+ * here rather than at the database.
+ *
+ * The key is a language-pair prefix plus the query, and the query is allowed
+ * to be as long as this on its own — so the longest queries now fall past the
+ * ceiling and skip this cache entirely. That is a miss, not a wrong answer,
+ * and a miss is the failure this module is built to take. Widening the column
+ * would close the gap; a word worth looking up is rarely seventy characters.
+ */
 const MAX_KEY_LENGTH = 80;
 
 /** Mirrors the size ceiling enforced by the table's own check constraint. */

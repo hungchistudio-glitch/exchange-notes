@@ -278,8 +278,8 @@ const traditionalChinese: TranslationDictionary = {
     omni: {
       label: "全域單字辨識",
       placeholder: "搜尋、說出、拍攝或上傳任何單字",
-      placeholderChinese: "看到不懂的中文？",
-      placeholderEnglish: "聽到不懂的英文？",
+      placeholderUnreadable: "看到不懂的{language}？",
+      placeholderHeard: "聽到不懂的{language}？",
       inputText: "文字",
       inputVoice: "語音",
       inputCamera: "拍攝",
@@ -1498,6 +1498,7 @@ const traditionalChinese: TranslationDictionary = {
       sheetDescription: "選擇 Exchange Notes 的介面顯示語言。",
       englishDescription: "以英文顯示 App 介面。",
       traditionalChineseDescription: "以繁體中文顯示 App 介面。",
+      spanishDescription: "以西班牙文使用 Exchange Notes",
     },
 
     yumiReminders: {

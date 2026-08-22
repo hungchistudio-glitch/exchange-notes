@@ -1,3 +1,4 @@
+import { readDailyNewsCard } from "@/lib/types/dailyNews";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -118,9 +119,21 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        // The card's own id is the article URL; the pool row id is what the
-        // seen table keys on, so both travel together.
-        cards: rows.map((row) => ({ ...(row.card as object), itemId: row.id })),
+        /*
+         * Every stored card goes through the reader, which takes either
+         * shape. The pool holds cards written before titles were keyed by
+         * language and will until the fourteen-day retention has turned it
+         * over; reading them raw would empty the feed for that fortnight.
+         *
+         * The card's own id is the article URL; the pool row id is what the
+         * seen table keys on, so both travel together.
+         */
+        cards: rows
+          .map((row) => {
+            const card = readDailyNewsCard(row.card);
+            return card ? { ...card, itemId: row.id as string } : null;
+          })
+          .filter((card): card is NonNullable<typeof card> => card !== null),
         generatedAt: rows[0].published_at,
         exhausted,
       },
