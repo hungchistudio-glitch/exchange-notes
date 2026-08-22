@@ -1,5 +1,7 @@
 "use client";
 
+import { getLanguage } from "@/lib/languages";
+import type { SpeechLanguage } from "@/lib/speech";
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
@@ -22,7 +24,7 @@ type VocabularyDrawerProps = {
   onSpeak: (
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) => void;
 };
 
@@ -98,6 +100,7 @@ export default function VocabularyDrawer({
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
   const { isLearningChinese, languagePair } = useLearningLanguageContext();
+  const [primaryLanguage, secondaryLanguage] = languagePair;
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 
   // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
@@ -240,7 +243,7 @@ export default function VocabularyDrawer({
 
                   <SpeakerButton
                     onClick={() =>
-                      onSpeak(wordKey, item.word, "en-US")
+                      onSpeak(wordKey, item.word, getLanguage(primaryLanguage).speechTag)
                     }
                     active={speakingKey === wordKey}
                     ariaLabel={copy.readVocabWordAriaLabel.replace(
@@ -309,7 +312,7 @@ export default function VocabularyDrawer({
                       onSpeak(
                         translationKey,
                         item.translation,
-                        "zh-TW"
+                        getLanguage(secondaryLanguage).speechTag
                       )
                     }
                     active={speakingKey === translationKey}
@@ -328,15 +331,15 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-strong">
-                  {(item.examples.en ?? "")}
+                  {(item.examples[primaryLanguage] ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       englishExampleKey,
-                      (item.examples.en ?? ""),
-                      "en-US"
+                      (item.examples[primaryLanguage] ?? ""),
+                      getLanguage(primaryLanguage).speechTag
                     )
                   }
                   active={speakingKey === englishExampleKey}
@@ -351,15 +354,15 @@ export default function VocabularyDrawer({
                 className="flex items-start gap-2"
               >
                 <p className="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
-                  {(item.examples["zh-TW"] ?? "")}
+                  {(item.examples[secondaryLanguage] ?? "")}
                 </p>
 
                 <SpeakerButton
                   onClick={() =>
                     onSpeak(
                       chineseExampleKey,
-                      (item.examples["zh-TW"] ?? ""),
-                      "zh-TW"
+                      (item.examples[secondaryLanguage] ?? ""),
+                      getLanguage(secondaryLanguage).speechTag
                     )
                   }
                   active={speakingKey === chineseExampleKey}

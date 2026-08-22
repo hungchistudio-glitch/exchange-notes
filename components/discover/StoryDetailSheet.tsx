@@ -1,5 +1,8 @@
 "use client";
 
+import { getLanguage } from "@/lib/languages";
+import type { SpeechLanguage } from "@/lib/speech";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { useState } from "react";
 import {
   Check,
@@ -33,7 +36,7 @@ type StoryDetailSheetProps = {
   onSpeak: (
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) => void;
   onSave: () => void;
   onSend: () => void;
@@ -62,6 +65,10 @@ export default function StoryDetailSheet({
   onHide,
 }: StoryDetailSheetProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Above the early return: a hook cannot be called conditionally.
+  const { languagePair } = useLearningLanguageContext();
+  const [primaryLanguage, secondaryLanguage] = languagePair;
 
   if (!card) {
     return (
@@ -206,13 +213,13 @@ export default function StoryDetailSheet({
         <div>
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 text-[21px] font-bold leading-[1.25] tracking-[-0.02em] text-black">
-              {(card.titles.en ?? "")}
+              {(card.titles[primaryLanguage] ?? "")}
             </h3>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(titleEnKey, (card.titles.en ?? ""), "en-US")
+                onSpeak(titleEnKey, (card.titles[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
               }
               aria-label={copy.readEnglishAriaLabel}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
@@ -227,13 +234,13 @@ export default function StoryDetailSheet({
 
           <div className="mt-2 flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[15px] font-medium leading-[1.6] text-ink-soft">
-              {(card.titles["zh-TW"] ?? "")}
+              {(card.titles[secondaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(titleZhKey, (card.titles["zh-TW"] ?? ""), "zh-TW")
+                onSpeak(titleZhKey, (card.titles[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
               }
               aria-label={copy.readChineseAriaLabel}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
@@ -250,13 +257,13 @@ export default function StoryDetailSheet({
         <div className="space-y-2.5">
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[15px] leading-[1.7] text-ink-strong">
-              {(card.summaries.en ?? "")}
+              {(card.summaries[primaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(summaryEnKey, (card.summaries.en ?? ""), "en-US")
+                onSpeak(summaryEnKey, (card.summaries[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
               }
               aria-label={copy.readEnglishAriaLabel}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
@@ -273,13 +280,13 @@ export default function StoryDetailSheet({
 
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-[14px] leading-[1.7] text-ink-soft">
-              {(card.summaries["zh-TW"] ?? "")}
+              {(card.summaries[secondaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(summaryZhKey, (card.summaries["zh-TW"] ?? ""), "zh-TW")
+                onSpeak(summaryZhKey, (card.summaries[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
               }
               aria-label={copy.readChineseAriaLabel}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"

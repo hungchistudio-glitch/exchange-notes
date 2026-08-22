@@ -181,7 +181,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: true,
-    availableAsLearning: false,
+    availableAsLearning: true,
   },
   fr: {
     code: "fr",

@@ -1527,7 +1527,7 @@ export default function ConversationRoom({
                       <WordCardMessage
                         card={wordCard}
                         createdAt={message.created_at}
-                        isLearningChinese={isLearningChinese}
+                        learningLanguage={languagePair[0]}
                         t={t}
                         saved={savedCardIds.has(message.id)}
                         saving={savingCardId === message.id}

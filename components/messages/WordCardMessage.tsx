@@ -6,8 +6,12 @@ import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
-import { getPronunciationData } from "@/lib/pronunciation";
-import { getLanguage } from "@/lib/languages";
+import { getPhonetics } from "@/lib/pronunciation";
+import {
+  DEFAULT_LEARNING_PAIR,
+  getLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { insertValues } from "@/lib/utils";
@@ -23,7 +27,8 @@ import { insertValues } from "@/lib/utils";
 type WordCardMessageProps = {
   card: SharedWordCard;
   createdAt: string;
-  isLearningChinese: boolean;
+  /** The reader's own learning language, which decides which side leads. */
+  learningLanguage: LanguageCode;
   t: TranslationDictionary;
   saved: boolean;
   saving: boolean;
@@ -34,19 +39,25 @@ type WordCardMessageProps = {
 export default function WordCardMessage({
   card,
   createdAt,
-  isLearningChinese,
+  learningLanguage,
   t,
   saved,
   saving,
   onSave,
   onShare,
 }: WordCardMessageProps) {
-  const pronunciation = getPronunciationData({
-    english: card.word,
-    chinese: card.translation,
-  });
+  /*
+   * Which languages this card holds is the card's business; which of them
+   * leads is the reader's. A card whose word is in the language this reader
+   * is learning puts that first — otherwise it renders in the order it was
+   * sent, because neither side is the one they are studying and inventing a
+   * preference between two foreign languages helps nobody.
+   */
+  const wordLanguage = card.wordLanguage ?? DEFAULT_LEARNING_PAIR[0];
+  const translationLanguage =
+    card.translationLanguage ?? DEFAULT_LEARNING_PAIR[1];
 
-  const englishIsPrimary = !isLearningChinese;
+  const translationLeads = translationLanguage === learningLanguage;
 
   const primaryWordClass = "min-w-0 truncate text-xl font-bold";
   const secondaryWordClass = "min-w-0 truncate text-base font-normal";
@@ -65,90 +76,71 @@ export default function WordCardMessage({
         };
   }
 
-  const englishBlock = (
-    <div key="english">
-      <span
-        className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-        style={{ color: "var(--msg-ink-faint)" }}
-      >
-        English
-      </span>
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <p
-          className={englishIsPrimary ? primaryWordClass : secondaryWordClass}
-          style={{
-            color: englishIsPrimary ? "var(--msg-ink)" : "var(--msg-ink-soft)",
-          }}
-        >
-          {card.word}
-        </p>
-        <button
-          type="button"
-          onClick={() => speak(card.word, "en-US")}
-          aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-            text: card.word,
-          })}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
-          style={speakerStyle(englishIsPrimary)}
-        >
-          <Volume2 size={15} strokeWidth={1.8} />
-        </button>
-      </div>
-    </div>
-  );
-
-  const chineseBlock = (
-    <div key="chinese">
-      <span
-        className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-        style={{ color: "var(--msg-ink-faint)" }}
-      >
-        中文
-      </span>
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <p
-          className={englishIsPrimary ? secondaryWordClass : primaryWordClass}
-          style={{
-            color: englishIsPrimary ? "var(--msg-ink-soft)" : "var(--msg-ink)",
-          }}
-        >
-          {card.translation}
-        </p>
-        <button
-          type="button"
-          onClick={() => speak(card.translation, "zh-TW")}
-          aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-            text: card.translation,
-          })}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
-          style={speakerStyle(!englishIsPrimary)}
-        >
-          <Volume2 size={15} strokeWidth={1.8} />
-        </button>
-      </div>
-      {(pronunciation.pinyin || pronunciation.zhuyin) && (
-        <p className="mt-0.5 text-xs" style={{ color: "var(--msg-ink-faint)" }}>
-          {[pronunciation.pinyin, pronunciation.zhuyin]
-            .filter(Boolean)
-            .join("  ")}
-        </p>
-      )}
-    </div>
-  );
-
-  const [firstBlock, secondBlock] = isLearningChinese
-    ? [chineseBlock, englishBlock]
-    : [englishBlock, chineseBlock];
-
   /*
-   * Which language leads is the reader's setting; which languages exist is
-   * the card's own business. A card sent from a different pair still renders
-   * both of its sides — it just cannot promise either of them is the one
-   * this reader is studying.
+   * One block, twice, instead of one named for each of two languages. The
+   * label is what the language calls itself, and the phonetics are whatever
+   * that language actually has — pinyin and zhuyin appear under Chinese and
+   * nowhere else, which used to be true only because the second block was
+   * literally called "chinese".
    */
-  const [firstCode, secondCode] = isLearningChinese
-    ? (["zh-TW", "en"] as const)
-    : (["en", "zh-TW"] as const);
+  function languageBlock(code: LanguageCode, text: string, primary: boolean) {
+    const language = getLanguage(code);
+    const phonetics = getPhonetics(text, code);
+    const annotation = [phonetics.pinyin, phonetics.zhuyin]
+      .filter(Boolean)
+      .join("  ");
+
+    return (
+      <div key={code}>
+        <span
+          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+          style={{ color: "var(--msg-ink-faint)" }}
+        >
+          {language.endonym}
+        </span>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <p
+            className={primary ? primaryWordClass : secondaryWordClass}
+            style={{
+              color: primary ? "var(--msg-ink)" : "var(--msg-ink-soft)",
+            }}
+          >
+            {text}
+          </p>
+          <button
+            type="button"
+            onClick={() => speak(text, language.speechTag)}
+            aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text,
+            })}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border"
+            style={speakerStyle(primary)}
+          >
+            <Volume2 size={15} strokeWidth={1.8} />
+          </button>
+        </div>
+        {annotation ? (
+          <p
+            className="mt-0.5 text-xs"
+            style={{ color: "var(--msg-ink-faint)" }}
+          >
+            {annotation}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  const [firstCode, secondCode] = translationLeads
+    ? ([translationLanguage, wordLanguage] as const)
+    : ([wordLanguage, translationLanguage] as const);
+
+  const [firstText, secondText] = translationLeads
+    ? [card.translation, card.word]
+    : [card.word, card.translation];
+
+  const firstBlock = languageBlock(firstCode, firstText, true);
+  const secondBlock = languageBlock(secondCode, secondText, false);
 
   const firstExample = card.examples?.[firstCode];
   const secondExample = card.examples?.[secondCode];

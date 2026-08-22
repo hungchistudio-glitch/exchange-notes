@@ -1,6 +1,8 @@
 "use client";
 
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { SlidersHorizontal } from "lucide-react";
 
 import SignalControlSheet from "@/components/discover/SignalControlSheet";
@@ -17,7 +19,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { createNote } from "@/lib/notes/repository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
-import { getVoiceForLanguage } from "@/lib/speech";
+import { getVoiceForLanguage , type SpeechLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -167,18 +169,27 @@ function categoryLabel(
   return copy.categories[key] ?? category;
 }
 
-function createNoteContent(card: DailyNewsCard) {
+/*
+ * A note keeps both sides of the card, in the reader's own pair. The two
+ * halves were called "english" and "chinese" and now are not: whichever
+ * language leads is the first, and the language they already have is the
+ * second.
+ */
+function createNoteContent(
+  card: DailyNewsCard,
+  [primaryLanguage, secondaryLanguage]: readonly [LanguageCode, LanguageCode],
+) {
   const englishVocabulary = card.vocabulary
-    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${(item.examples.en ?? "")}`)
+    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${(item.examples[primaryLanguage] ?? "")}`)
     .join("\n");
 
   const chineseVocabulary = card.vocabulary
-    .map((item) => `• ${item.word}：${item.translation}\n  ${(item.examples["zh-TW"] ?? "")}`)
+    .map((item) => `• ${item.word}：${item.translation}\n  ${(item.examples[secondaryLanguage] ?? "")}`)
     .join("\n");
 
-  const english = `📰 ${(card.titles.en ?? "")}
+  const english = `📰 ${(card.titles[primaryLanguage] ?? "")}
 
-${(card.summaries.en ?? "")}
+${(card.summaries[primaryLanguage] ?? "")}
 
 Vocabulary
 ${englishVocabulary}
@@ -186,9 +197,9 @@ ${englishVocabulary}
 Source: ${card.sourceName}
 ${card.sourceUrl}`;
 
-  const chinese = `${(card.titles["zh-TW"] ?? "")}
+  const chinese = `${(card.titles[secondaryLanguage] ?? "")}
 
-${(card.summaries["zh-TW"] ?? "")}
+${(card.summaries[secondaryLanguage] ?? "")}
 
 學習單字
 ${chineseVocabulary}`;
@@ -204,8 +215,7 @@ function createPartnerMessage(card: DailyNewsCard) {
       word: item.word,
       translation: item.translation,
       partOfSpeech: item.partOfSpeech,
-      englishExample: (item.examples.en ?? ""),
-      chineseExample: (item.examples["zh-TW"] ?? ""),
+      examples: item.examples,
     })),
     sourceName: card.sourceName,
     sourceUrl: card.sourceUrl,
@@ -215,6 +225,9 @@ function createPartnerMessage(card: DailyNewsCard) {
 export default function DailyNews() {
   const { t } = useTranslation();
   const copy = t.discover;
+
+  const { languagePair } = useLearningLanguageContext();
+  const [primaryLanguage, secondaryLanguage] = languagePair;
 
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -412,7 +425,7 @@ export default function DailyNews() {
   function speak(
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) {
     if (
       typeof window === "undefined" ||
@@ -472,18 +485,18 @@ export default function DailyNews() {
       return;
     }
 
-    const segments: { text: string; lang: "en-US" | "zh-TW" }[] =
+    const segments: { text: string; lang: SpeechLanguage }[] =
       audioMode === "en"
         ? [
             {
-              text: `${(card.titles.en ?? "")}. ${(card.summaries.en ?? "")}`,
-              lang: "en-US",
+              text: `${(card.titles[primaryLanguage] ?? "")}. ${(card.summaries[primaryLanguage] ?? "")}`,
+              lang: getLanguage(primaryLanguage).speechTag,
             },
           ]
         : [
             {
-              text: `${(card.titles["zh-TW"] ?? "")}。${(card.summaries["zh-TW"] ?? "")}`,
-              lang: "zh-TW",
+              text: `${(card.titles[secondaryLanguage] ?? "")}。${(card.summaries[secondaryLanguage] ?? "")}`,
+              lang: getLanguage(secondaryLanguage).speechTag,
             },
           ];
 
@@ -549,7 +562,7 @@ export default function DailyNews() {
     setSavingCardId(card.id);
     setError("");
 
-    const noteContent = createNoteContent(card);
+    const noteContent = createNoteContent(card, languagePair);
 
     try {
       const supabase = createClient();
@@ -704,8 +717,8 @@ export default function DailyNews() {
 
   async function shareStory(card: DailyNewsCard) {
     const shareData = {
-      title: (card.titles.en ?? ""),
-      text: (card.titles["zh-TW"] ?? ""),
+      title: (card.titles[primaryLanguage] ?? ""),
+      text: (card.titles[secondaryLanguage] ?? ""),
       url: card.sourceUrl,
     };
 

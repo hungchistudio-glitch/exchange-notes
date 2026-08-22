@@ -9,7 +9,7 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
-import { getPronunciation } from "@/lib/pronunciation/getPronunciation";
+import { getPhoneticsFor } from "@/lib/pronunciation/getPronunciation";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { hasLowConfidence, itemNames, type MenuItem } from "@/lib/scanner/menuTypes";
 import {
@@ -103,19 +103,28 @@ export default function MenuItemInsightSheet({
     let cancelled = false;
 
     void (async () => {
-      const result = await getPronunciation(
-        item.names.en ?? "",
-        item.names["zh-TW"] ?? "",
-      );
+      /*
+       * Each side asked about in its own language, so the answers are the
+       * systems those languages actually use rather than the two this sheet
+       * used to assume. Chinese comes back with pinyin and zhuyin, a Latin
+       * language with IPA, and neither is asked for what it does not have.
+       */
+      const [primary, secondary] = await Promise.all([
+        getPhoneticsFor(item.names[languagePair[0]] ?? "", languagePair[0]),
+        getPhoneticsFor(item.names[languagePair[1]] ?? "", languagePair[1]),
+      ]);
+
       if (cancelled) return;
 
+      const merged = { ...secondary, ...primary };
+
       setPhonetics({
-        pinyin: result?.pinyin ?? "",
-        zhuyin: result?.zhuyin ?? "",
+        pinyin: merged.pinyin ?? "",
+        zhuyin: merged.zhuyin ?? "",
         // The dictionary is the better answer when it has one; an item name is
         // usually a phrase it has never heard of, and that is what the model's
         // transcription is for.
-        ipa: stripSlashes(result?.englishPronunciation || item.ipa.en || ""),
+        ipa: stripSlashes(merged.ipa || item.ipa[languagePair[0]] || ""),
       });
     })();
 

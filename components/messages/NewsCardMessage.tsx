@@ -1,10 +1,12 @@
 "use client";
 
+import { getLanguage } from "@/lib/languages";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { Volume2 } from "lucide-react";
 
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
-import { getPronunciationData } from "@/lib/pronunciation";
+import { getPhonetics } from "@/lib/pronunciation";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 
 /*
@@ -53,10 +55,17 @@ function SpeakerButton({
 }
 
 export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProps) {
-  const titlePronunciation = getPronunciationData({ chinese: (card.titles["zh-TW"] ?? "") });
-  const summaryPronunciation = getPronunciationData({
-    chinese: (card.summaries["zh-TW"] ?? ""),
-  });
+  const { languagePair } = useLearningLanguageContext();
+  const [primaryLanguage, secondaryLanguage] = languagePair;
+
+  const titlePronunciation = getPhonetics(
+    card.titles[secondaryLanguage] ?? "",
+    secondaryLanguage,
+  );
+  const summaryPronunciation = getPhonetics(
+    card.summaries[secondaryLanguage] ?? "",
+    secondaryLanguage,
+  );
 
   return (
     <article
@@ -76,12 +85,12 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
 
       <div className="mt-1.5 flex items-start justify-between gap-2">
         <p className="min-w-0 flex-1 text-[16px] font-bold leading-[1.3]">
-          {(card.titles.en ?? "")}
+          {(card.titles[primaryLanguage] ?? "")}
         </p>
         <SpeakerButton
-          text={(card.titles.en ?? "")}
-          language="en-US"
-          label={(card.titles.en ?? "")}
+          text={(card.titles[primaryLanguage] ?? "")}
+          language={getLanguage(primaryLanguage).speechTag}
+          label={(card.titles[primaryLanguage] ?? "")}
         />
       </div>
 
@@ -91,7 +100,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             className="text-[14px] font-medium leading-[1.5]"
             style={{ color: "var(--msg-ink-soft)" }}
           >
-            {(card.titles["zh-TW"] ?? "")}
+            {(card.titles[secondaryLanguage] ?? "")}
           </p>
           {(titlePronunciation.pinyin || titlePronunciation.zhuyin) && (
             <p
@@ -105,9 +114,9 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           )}
         </div>
         <SpeakerButton
-          text={(card.titles["zh-TW"] ?? "")}
-          language="zh-TW"
-          label={(card.titles["zh-TW"] ?? "")}
+          text={(card.titles[secondaryLanguage] ?? "")}
+          language={getLanguage(secondaryLanguage).speechTag}
+          label={(card.titles[secondaryLanguage] ?? "")}
         />
       </div>
 
@@ -117,12 +126,12 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
       >
         <div className="flex items-start justify-between gap-2">
           <p className="min-w-0 flex-1 text-xs leading-5">
-            {(card.summaries.en ?? "")}
+            {(card.summaries[primaryLanguage] ?? "")}
           </p>
           <SpeakerButton
-            text={(card.summaries.en ?? "")}
-            language="en-US"
-            label={(card.summaries.en ?? "")}
+            text={(card.summaries[primaryLanguage] ?? "")}
+            language={getLanguage(primaryLanguage).speechTag}
+            label={(card.summaries[primaryLanguage] ?? "")}
           />
         </div>
 
@@ -132,7 +141,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
               className="text-xs leading-5"
               style={{ color: "var(--msg-ink-soft)" }}
             >
-              {(card.summaries["zh-TW"] ?? "")}
+              {(card.summaries[secondaryLanguage] ?? "")}
             </p>
             {(summaryPronunciation.pinyin || summaryPronunciation.zhuyin) && (
               <p
@@ -146,9 +155,9 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             )}
           </div>
           <SpeakerButton
-            text={(card.summaries["zh-TW"] ?? "")}
-            language="zh-TW"
-            label={(card.summaries["zh-TW"] ?? "")}
+            text={(card.summaries[secondaryLanguage] ?? "")}
+            language={getLanguage(secondaryLanguage).speechTag}
+            label={(card.summaries[secondaryLanguage] ?? "")}
           />
         </div>
       </div>
@@ -172,10 +181,16 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           */}
           <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
             {card.vocabulary.map((item, index) => {
-              const wordPronunciation = getPronunciationData({
-                english: item.word,
-                chinese: item.translation,
-              });
+              /*
+               * The annotation belongs to the side it describes. Asking for
+               * the translation's own language means pinyin and zhuyin turn
+               * up under Chinese and nowhere else, rather than under
+               * whichever field happened to be called "chinese".
+               */
+              const wordPronunciation = getPhonetics(
+                item.translation,
+                secondaryLanguage,
+              );
 
               return (
                 <div
@@ -189,7 +204,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                     </p>
                     <SpeakerButton
                       text={item.word}
-                      language="en-US"
+                      language={getLanguage(primaryLanguage).speechTag}
                       label={item.word}
                       size="sm"
                     />
@@ -216,7 +231,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                     </div>
                     <SpeakerButton
                       text={item.translation}
-                      language="zh-TW"
+                      language={getLanguage(secondaryLanguage).speechTag}
                       label={item.translation}
                       size="sm"
                     />
