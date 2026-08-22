@@ -5,6 +5,7 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguage } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
@@ -66,7 +67,7 @@ export default function VocabularyLookupModal({
   onSend,
 }: VocabularyLookupModalProps) {
   const { t } = useTranslation();
-  const { isLearningChinese, languagePair } = useLearningLanguageContext();
+  const { languagePair } = useLearningLanguageContext();
   const motion = useSheetMotion({ open, onClose });
 
   if (!motion.rendered) return null;
@@ -188,29 +189,29 @@ export default function VocabularyLookupModal({
               aria-busy="true"
               className="mt-5 overflow-hidden rounded-[26px] border border-black/[0.08] bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)] sm:p-6"
             >
+              {/*
+                A lookup's two fields arrive in the pair's own order, learning
+                first — so the hero is the first field, full stop. Choosing
+                between them by asking whether the learner studies Chinese was
+                right while the prompt always answered in English and Chinese,
+                and became exactly backwards once it started answering in the
+                learner's own two.
+              */}
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
-                {isLearningChinese
-                  ? t.vocabulary.lookup.chinese
-                  : t.vocabulary.lookup.english}
+                {getLanguage(languagePair[0]).endonym}
               </p>
 
               <p className="mt-2 text-[24px] font-bold tracking-[-0.02em]">
-                {isLearningChinese
-                  ? lookupPreview.chineseName
-                  : lookupPreview.englishName}
+                {lookupPreview.englishName}
               </p>
 
               {/* The offline dictionary may not know this word, in which case
                   this side is empty. It stays a skeleton rather than being
                   filled with a stand-in, since the real lookup may still
                   land. */}
-              {(isLearningChinese
-                ? lookupPreview.englishName
-                : lookupPreview.chineseName) ? (
+              {lookupPreview.chineseName ? (
                 <p className="mt-1 text-[15px] text-ink-soft">
-                  {isLearningChinese
-                    ? lookupPreview.englishName
-                    : lookupPreview.chineseName}
+                  {lookupPreview.chineseName}
                 </p>
               ) : (
                 <div className="mt-2 h-4 w-2/5 animate-pulse rounded-full bg-black/[0.06]" />
@@ -303,16 +304,12 @@ export default function VocabularyLookupModal({
                     const englishSection = (
                       <section key="english">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
-                          {t.vocabulary.lookup.english}
+                          {getLanguage(languagePair[0]).endonym}
                         </p>
 
                         <div className="mt-2 flex items-center gap-3">
                           <p
-                            className={
-                              isLearningChinese
-                                ? "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-ink-soft"
-                                : "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
-                            }
+                            className="min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
                           >
                             {lookupResult.englishName}
                           </p>
@@ -320,18 +317,20 @@ export default function VocabularyLookupModal({
                           <button
                             type="button"
                             onClick={() =>
-                              speak(lookupResult.englishName, "en-US")
+                              speak(
+                                lookupResult.englishName,
+                                getLanguage(languagePair[0]).speechTag,
+                              )
                             }
-                            aria-label={t.vocabulary.lookup.english}
-                            title={t.vocabulary.lookup.english}
+                            aria-label={getLanguage(languagePair[0]).endonym}
+                            title={getLanguage(languagePair[0]).endonym}
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface transition-transform active:scale-95"
                           >
                             <Volume2 size={16} />
                           </button>
                         </div>
 
-                        {!isLearningChinese && (
-                          <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
+                        <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
                             <PronunciationBlock
                               entries={[
                                 {
@@ -353,23 +352,18 @@ export default function VocabularyLookupModal({
                               ]}
                             </p>
                           </div>
-                        )}
                       </section>
                     );
 
                     const chineseSection = (
                       <section key="chinese">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
-                          {t.vocabulary.lookup.chinese}
+                          {getLanguage(languagePair[1]).endonym}
                         </p>
 
                         <div className="mt-2 flex items-center gap-3">
                           <p
-                            className={
-                              isLearningChinese
-                                ? "min-w-0 flex-1 break-words text-[28px] font-semibold tracking-[-0.035em] text-black"
-                                : "min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-ink-soft"
-                            }
+                            className="min-w-0 flex-1 break-words text-[20px] font-normal tracking-[-0.02em] text-ink-soft"
                           >
                             {lookupResult.chineseName}
                           </p>
@@ -377,7 +371,10 @@ export default function VocabularyLookupModal({
                           <button
                             type="button"
                             onClick={() =>
-                              speak(lookupResult.chineseName, "zh-TW")
+                              speak(
+                                lookupResult.chineseName,
+                                getLanguage(languagePair[1]).speechTag,
+                              )
                             }
                             aria-label={insertValues(
                               t.vocabulary.detail.listenAriaLabel,
@@ -393,8 +390,7 @@ export default function VocabularyLookupModal({
                           </button>
                         </div>
 
-                        {isLearningChinese && (
-                          <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
+                        <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
                             <PronunciationBlock
                               entries={[
                                 {
@@ -416,13 +412,11 @@ export default function VocabularyLookupModal({
                               ]}
                             </p>
                           </div>
-                        )}
                       </section>
                     );
 
-                    return isLearningChinese
-                      ? [chineseSection, englishSection]
-                      : [englishSection, chineseSection];
+                    // Pair order already: learning first, native second.
+                    return [englishSection, chineseSection];
                   })()}
                 </div>
 
@@ -490,9 +484,7 @@ export default function VocabularyLookupModal({
                       </section>
                     );
 
-                    return isLearningChinese
-                      ? [chineseExampleSection, englishExampleSection]
-                      : [englishExampleSection, chineseExampleSection];
+                    return [englishExampleSection, chineseExampleSection];
                   })()}
                 </div>
 

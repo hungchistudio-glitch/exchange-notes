@@ -1,11 +1,12 @@
 "use client";
 
+import type { SpeechLanguage } from "@/lib/speech";
 import { Volume2 } from "lucide-react";
 import { speak } from "@/lib/speech";
 
 type VocabularySpeechButtonProps = {
   text: string | null | undefined;
-  language: "en-US" | "zh-TW";
+  language: SpeechLanguage;
   label: string;
   size?: "sm" | "md";
   className?: string;
