@@ -47,7 +47,8 @@ export function getVocabularyCardSides(
     | "translation_language"
     | "example_sentence"
     | "translated_example"
-  >,
+  > &
+    Partial<Pick<VocabularyItem, "texts" | "examples">>,
   learningLanguage: LanguageCode,
   /**
    * The reader's own language, used only when neither side is the one being
@@ -60,34 +61,76 @@ export function getVocabularyCardSides(
   const translationLanguage =
     item.translation_language ?? DEFAULT_LEARNING_PAIR[1];
 
+  /*
+   * The map is the word; the pair is how it used to be stored. Reading the
+   * map first is what lets a card show a language the pair could never hold —
+   * a third one, added later, on the same row with the same review history.
+   */
+  const texts = item.texts ?? {};
+  const examples = item.examples ?? {};
+
+  const textFor = (code: LanguageCode, fallback: string) =>
+    texts[code]?.trim() || fallback;
+  const exampleFor = (code: LanguageCode, fallback: string) =>
+    examples[code]?.trim() || fallback;
+
   const wordSide: VocabularyCardSide = {
-    text: item.word?.trim() ?? "",
+    text: textFor(wordLanguage, item.word?.trim() ?? ""),
     language: wordLanguage,
-    example: item.example_sentence?.trim() ?? "",
+    example: exampleFor(wordLanguage, item.example_sentence?.trim() ?? ""),
   };
 
   const translationSide: VocabularyCardSide = {
-    text: item.translation?.trim() ?? "",
+    text: textFor(translationLanguage, item.translation?.trim() ?? ""),
     language: translationLanguage,
-    example: item.translated_example?.trim() ?? "",
+    example: exampleFor(
+      translationLanguage,
+      item.translated_example?.trim() ?? "",
+    ),
   };
 
   /*
-   * Three rules, in order.
+   * Which language leads, in order of preference.
    *
-   * The side in the language being learned leads — which is why switching
-   * from English to Chinese flips a card without touching it.
+   * A language the row holds and the reader is learning wins, even when it is
+   * neither half of the pair the row was originally saved as — that is the
+   * whole point of the map, and it is what makes switching to Spanish show a
+   * Spanish card rather than the English one it started life as.
    *
-   * When neither side is that language — an English/Chinese word still in the
-   * list after switching to Spanish — the side that is *not* the reader's own
-   * language leads instead. It is still the word; the other side is still the
-   * gloss. Promoting someone's own language to hero on a vocabulary card
-   * would be showing them the answer.
+   * Failing that, the side that is *not* the reader's own language leads: an
+   * English/Chinese word still in the list after switching to French is not
+   * French and cannot be made to be, but one of its sides is still the word
+   * and the other is still the gloss. Promoting someone's own language on a
+   * vocabulary card is showing them the answer.
    *
-   * Failing both, the row keeps the order it was saved in. Nothing here
-   * rewrites it: a word saved as French → Traditional Chinese stays that,
-   * whatever the profile says today.
+   * Failing both, the row keeps the order it was saved in.
+   *
+   * Nothing here rewrites the row, and nothing here invents a language. A
+   * word saved as French → Traditional Chinese stays that until something
+   * actually adds a third text to it.
    */
+  const learned = texts[learningLanguage]?.trim();
+
+  if (learned && learningLanguage !== wordLanguage &&
+      learningLanguage !== translationLanguage) {
+    const support =
+      nativeLanguage && nativeLanguage !== learningLanguage
+        ? ([wordSide, translationSide].find(
+            (side) => side.language === nativeLanguage,
+          ) ?? wordSide)
+        : wordSide;
+
+    return {
+      primary: {
+        text: learned,
+        language: learningLanguage,
+        example: examples[learningLanguage]?.trim() ?? "",
+      },
+      secondary: support,
+      matchesLearningLanguage: true,
+    };
+  }
+
   const translationLeads =
     translationLanguage === learningLanguage ||
     (wordLanguage !== learningLanguage &&
@@ -98,7 +141,7 @@ export function getVocabularyCardSides(
   return {
     primary: translationLeads ? translationSide : wordSide,
     secondary: translationLeads ? wordSide : translationSide,
-    matchesLearningLanguage:
+    matchesLearningLanguage: Boolean(texts[learningLanguage]?.trim()) ||
       wordLanguage === learningLanguage ||
       translationLanguage === learningLanguage,
   };

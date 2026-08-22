@@ -36,6 +36,14 @@ export default function useVocabularyLookupPartnerShare({
       language: languagePair[0],
       word_language: languagePair[0],
       translation_language: languagePair[1],
+      texts: {
+        [languagePair[0]]: lookupResult.englishName,
+        [languagePair[1]]: lookupResult.chineseName,
+      },
+      examples: {
+        [languagePair[0]]: lookupResult.englishExample || "",
+        [languagePair[1]]: lookupResult.chineseExample || "",
+      },
       part_of_speech: lookupResult.partOfSpeech || null,
       example_sentence: lookupResult.englishExample || null,
       translated_example: lookupResult.chineseExample || null,

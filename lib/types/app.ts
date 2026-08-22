@@ -1,4 +1,4 @@
-import type { LanguageCode } from "@/lib/languages";
+import type { ByLanguage, LanguageCode } from "@/lib/languages";
 
 /**
  * The learning-language axis as the database currently stores it.
@@ -60,6 +60,16 @@ export type VocabularyItem = {
    */
   word_language: LanguageCode;
   translation_language: LanguageCode;
+  /**
+   * The word, and its example, in every language it is known in.
+   *
+   * This is what a saved word actually is now — one concept, not a pair. The
+   * four fields above are the pair it was stored as before, kept while
+   * readers migrate and derived from these afterwards. A language present in
+   * `texts` but absent from `examples` simply has no example yet.
+   */
+  texts: ByLanguage;
+  examples: ByLanguage;
   category: VocabularyCategory;
   favorite: boolean;
   part_of_speech: string | null;
