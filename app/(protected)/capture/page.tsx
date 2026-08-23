@@ -939,8 +939,22 @@ function CaptureContent() {
     return encodeWordCardMessage({
       word: result.englishName,
       translation: result.chineseName,
+      /*
+       * The result's fields are still named for the pair this app used to
+       * have; what they hold is the reader's own. Labelling them en/zh-TW
+       * filed an Italian word as English on the receiving end.
+       */
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
       partOfSpeech: result.partOfSpeech,
-      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
+      texts: {
+        [languagePair[0]]: result.englishName,
+        [languagePair[1]]: result.chineseName,
+      },
+      examples: {
+        [languagePair[0]]: result.englishExample,
+        [languagePair[1]]: result.chineseExample,
+      },
     });
   }
 
@@ -1085,8 +1099,22 @@ function CaptureContent() {
     setPendingSharedVocabulary({
       word: result.englishName,
       translation: result.chineseName,
+      /*
+       * The result's fields are still named for the pair this app used to
+       * have; what they hold is the reader's own. Labelling them en/zh-TW
+       * filed an Italian word as English on the receiving end.
+       */
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
       partOfSpeech: result.partOfSpeech,
-      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
+      texts: {
+        [languagePair[0]]: result.englishName,
+        [languagePair[1]]: result.chineseName,
+      },
+      examples: {
+        [languagePair[0]]: result.englishExample,
+        [languagePair[1]]: result.chineseExample,
+      },
     });
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }

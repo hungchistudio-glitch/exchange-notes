@@ -72,14 +72,25 @@ async function flush() {
           if (response.ok) {
             const result = (await response.json()) as {
               phonetics?: Record<string, { ipa?: string }>;
+              unavailable?: string[];
             };
 
+            /*
+             * Words the server could not look up at all — a busy model, a
+             * dropped upstream. Left out of the cache so a later render
+             * asks again; caching them would turn one busy minute into a
+             * word that is never annotated for the rest of the session.
+             */
+            const unreachable = new Set(result.unavailable ?? []);
+
             for (const text of chunk) {
+              if (unreachable.has(text)) continue;
+
               const ipa = result.phonetics?.[text]?.ipa?.trim();
               /*
-               * A miss is cached as an empty string, not left absent. The
-               * alternative is asking again for every word the sources
-               * genuinely cannot transcribe, once per render, forever.
+               * A genuine miss is cached as an empty string, not left
+               * absent. The alternative is asking again for every word the
+               * sources cannot transcribe, once per render, forever.
                */
               cache.set(key(language, text), ipa ?? "");
             }

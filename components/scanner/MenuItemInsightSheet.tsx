@@ -242,6 +242,7 @@ export default function MenuItemInsightSheet({
       translation: item.names[languagePair[1]] ?? "",
       wordLanguage: languagePair[0],
       translationLanguage: languagePair[1],
+      texts: item.names,
       examples: item.descriptions,
     });
 

@@ -1,7 +1,6 @@
 "use client";
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { resolveDisplayPair } from "@/lib/languages";
 import Image from "next/image";
 
 import { DISCOVER_COLORS, categoryAccent, type DailyNewsCard } from "./types";
@@ -29,10 +28,7 @@ export default function CompactStoryRow({
    * lead in the language being learned is filtered out upstream rather than
    * shown in a language nobody asked for.
    */
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    card?.titles ?? {},
-    pair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   const accent = categoryAccent(card.category);
   const hasThumbnail = showThumbnail && Boolean(card.imageUrl);

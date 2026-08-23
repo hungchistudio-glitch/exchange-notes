@@ -1,7 +1,7 @@
 "use client";
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage, resolveDisplayPair } from "@/lib/languages";
+import { getLanguage } from "@/lib/languages";
 import { Volume2 } from "lucide-react";
 
 import { formatMessageTime } from "@/lib/messages/format";
@@ -61,10 +61,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
    * lead in the language being learned is filtered out upstream rather than
    * shown in a language nobody asked for.
    */
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    card?.titles ?? {},
-    pair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   const titlePronunciation = getPhonetics(
     card.titles[secondaryLanguage] ?? "",

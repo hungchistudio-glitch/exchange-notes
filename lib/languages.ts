@@ -60,6 +60,16 @@ export type LanguageMetadata = {
   /** What speakers of the language call it, for language-picker rows. */
   endonym: string;
 
+  /**
+   * A sentence in this language, for previewing a voice.
+   *
+   * Written in the language rather than translated at render time: the point
+   * of the preview is hearing how a voice reads this language, and reading
+   * an English sentence with a French voice tells you nothing about how it
+   * will read French.
+   */
+  voiceSample: string;
+
   /** Short glyph badge used by the language pickers. */
   badge: string;
 
@@ -144,6 +154,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Inglese",
     },
     endonym: "English",
+    voiceSample: "Hello, welcome to Exchange Notes.",
     badge: "En",
     speechTag: "en-US",
     voiceTagFallbacks: [],
@@ -165,6 +176,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Cinese tradizionale",
     },
     endonym: "繁體中文",
+    voiceSample: "你好，歡迎使用 Exchange Notes。",
     badge: "中",
     speechTag: "zh-TW",
     voiceTagFallbacks: ["tw", "hant"],
@@ -186,6 +198,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Spagnolo",
     },
     endonym: "Español",
+    voiceSample: "Hola, te damos la bienvenida a Exchange Notes.",
     badge: "Es",
     speechTag: "es-ES",
     voiceTagFallbacks: [],
@@ -207,6 +220,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Francese",
     },
     endonym: "Français",
+    voiceSample: "Bonjour, bienvenue sur Exchange Notes.",
     badge: "Fr",
     speechTag: "fr-FR",
     voiceTagFallbacks: [],
@@ -228,6 +242,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Italiano",
     },
     endonym: "Italiano",
+    voiceSample: "Ciao, ti diamo il benvenuto su Exchange Notes.",
     badge: "It",
     speechTag: "it-IT",
     voiceTagFallbacks: [],
@@ -276,41 +291,6 @@ export function pickLanguage<T>(
   return undefined;
 }
 
-/**
- * The two languages to actually show for a piece of content.
- *
- * Prefers the reader's own pair and falls back to whatever the content
- * carries. Content is not always in the reader's languages: Daily News is one
- * shared pool generated in one pairing, and a word card arrives in the
- * languages its sender was using. Indexing such content by the reader's pair
- * and taking the miss at face value renders an empty card — which is worse
- * than showing it in the languages it is actually in.
- *
- * Returns at most two, in preference order, and never invents a language the
- * content does not have.
- */
-export function resolveDisplayPair(
-  available: ByLanguage,
-  preferred: readonly LanguageCode[],
-): readonly LanguageCode[] {
-  /*
-   * Only ever the languages asked for.
-   *
-   * This used to append whatever else the content happened to carry, on the
-   * reasoning that showing a card in *some* language beats showing a blank
-   * one. That reasoning is wrong, and it is the bug a reader hits the day
-   * they switch: the shared news pool was mostly English, so switching to
-   * Italian changed the setting and changed nothing on screen — every card
-   * fell straight back through the empty Italian slot into English and led
-   * in it, which reads as the switch having silently failed.
-   *
-   * A language nobody selected is not a fallback, it is a wrong answer.
-   * Returning fewer than two — or none — is the honest result, and it is
-   * what lets a caller filter the item out or say plainly that it is not
-   * available yet, instead of quietly showing the wrong thing.
-   */
-  return preferred.filter((code) => available[code]?.trim());
-}
 
 /**
  * Whether a stored value is one of the interface languages.

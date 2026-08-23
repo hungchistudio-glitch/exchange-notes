@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { canLeadIn, resolveDisplayPair } from "@/lib/languages";
+import { canLeadIn } from "@/lib/languages";
 
 /* =========================================================
    Which two languages a screen may render
@@ -12,30 +12,23 @@ import { canLeadIn, resolveDisplayPair } from "@/lib/languages";
    was watching a fallback quietly overrule a setting.
    ========================================================= */
 
-describe("resolveDisplayPair", () => {
-  const card = {
-    en: "Prisons",
-    "zh-TW": "監獄",
-    es: "Prisiones",
-    it: "Prigioni",
-  };
-
-  it("leads in the language being learned", () => {
-    expect(resolveDisplayPair(card, ["it", "en"])).toEqual(["it", "en"]);
-  });
-
-  it("never returns a language that was not asked for", () => {
-    // The regression: this used to append whatever else the content had,
-    // so an Italian learner reading an English-only card got English as the
-    // lead — the setting changed and the screen did not.
-    expect(resolveDisplayPair({ en: "Prisons" }, ["it", "fr"])).toEqual([]);
-    expect(resolveDisplayPair(card, ["it", "fr"])).toEqual(["it"]);
-  });
-
-  it("ignores a language present but blank", () => {
-    expect(resolveDisplayPair({ it: "   ", en: "Prisons" }, ["it", "en"])).toEqual(["en"]);
-  });
-});
+/*
+ * There is no "resolve which languages to show" step any more, and that is
+ * the fix rather than a simplification of it.
+ *
+ * The old helper took the reader's two languages and appended whatever else
+ * the content carried, which is how an Italian learner kept being shown
+ * English. Filtering it to only the languages present fixed that and broke
+ * something worse: it could return one language, or none, and every caller
+ * destructures a pair and calls getLanguage() on both halves — so a card
+ * missing one of the reader's languages crashed the screen it was on. The
+ * messages page went white for exactly that reason.
+ *
+ * The pair is now decided by the reader alone and always has two members.
+ * Whether the content has anything to put in them is a separate question,
+ * asked by canLeadIn before an item is served and answered by `?? ""` when
+ * it is rendered.
+ */
 
 describe("canLeadIn", () => {
   it("is the one question a feed has to ask", () => {

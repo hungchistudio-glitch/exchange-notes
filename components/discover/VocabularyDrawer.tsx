@@ -2,7 +2,7 @@
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage, resolveDisplayPair } from "@/lib/languages";
+import { getLanguage } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
@@ -101,28 +101,8 @@ export default function VocabularyDrawer({
   const { t } = useTranslation();
   const { pair } = useDisplayLanguages();
 
-  /*
-   * Preferred, not assumed — the same rule StoryDetailSheet already follows,
-   * and this drawer opens out of that sheet.
-   *
-   * Indexing the words by the reader's own pair meant a card the pool had
-   * not been generated in produced `texts[language] ?? ""` for every word:
-   * a list of blank rows under a story that had rendered perfectly well,
-   * because the sheet above it fell back and the drawer below it did not.
-   *
-   * Resolved against the vocabulary's own languages rather than the card's
-   * titles, so the fallback is decided by what the words can actually be
-   * shown in.
-   */
-  const vocabularyLanguages = Object.assign(
-    {},
-    ...(card?.vocabulary ?? []).map((item) => item.texts),
-  ) as Record<string, string>;
 
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    vocabularyLanguages,
-    pair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 

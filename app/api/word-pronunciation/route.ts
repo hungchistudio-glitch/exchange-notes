@@ -31,7 +31,7 @@ async function annotate(
   // never take zhuyin and pinyin down with it.
   const local = getPhonetics(trimmed, code);
 
-  const ipa = (await transcribe([trimmed], code)).get(trimmed);
+  const ipa = (await transcribe([trimmed], code)).found.get(trimmed);
 
   return ipa ? { ...local, ipa } : local;
 }
@@ -76,16 +76,23 @@ export async function POST(request: Request) {
         .filter(Boolean)
         .slice(0, 40);
 
-      const ipaByText = await transcribe(texts, language);
+      const { found, unavailable } = await transcribe(texts, language);
 
       return NextResponse.json({
         phonetics: Object.fromEntries(
           texts.map((text) => {
             const local = getPhonetics(text, language);
-            const ipa = ipaByText.get(text);
+            const ipa = found.get(text);
             return [text, ipa ? { ...local, ipa } : local];
           }),
         ),
+        /*
+         * The words the lookup could not reach, as opposed to the ones it
+         * reached and found nothing for. The caller caches the second and
+         * must not cache the first — otherwise one busy minute becomes a
+         * word that is permanently un-annotated.
+         */
+        unavailable,
       });
     }
 
@@ -113,7 +120,7 @@ export async function POST(request: Request) {
 
     const chinesePhonetics = getPhonetics(chinese, "zh-TW");
     const englishPronunciation = english
-      ? ((await transcribe([english], "en")).get(english) ?? "")
+      ? ((await transcribe([english], "en")).found.get(english) ?? "")
       : "";
 
     return NextResponse.json({

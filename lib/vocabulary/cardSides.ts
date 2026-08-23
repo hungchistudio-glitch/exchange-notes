@@ -114,12 +114,42 @@ export function getVocabularyCardSides(
 
   if (learned && learningLanguage !== wordLanguage &&
       learningLanguage !== translationLanguage) {
-    const support =
+    /*
+     * The gloss comes out of the map too, not just off the pair.
+     *
+     * This looked for the support language among the two sides the row was
+     * *saved* as and fell back to whichever came first when it was neither.
+     * So "ti amo" — a row saved as Spanish/Chinese, holding all five
+     * languages — was glossed "te amo" for a reader who had never chosen
+     * Spanish, while "I love you" sat unread in the same row.
+     *
+     * Empty rather than wrong when the row genuinely has nothing in a
+     * language the reader chose: every renderer already skips a blank
+     * gloss, and a card with one honest side beats a card with a second
+     * side in a language nobody asked for.
+     */
+    const glossLanguage =
       supportLanguage && supportLanguage !== learningLanguage
-        ? ([wordSide, translationSide].find(
-            (side) => side.language === supportLanguage,
-          ) ?? wordSide)
-        : wordSide;
+        ? supportLanguage
+        : null;
+
+    const support: VocabularyCardSide = glossLanguage
+      ? {
+          text:
+            texts[glossLanguage]?.trim() ||
+            [wordSide, translationSide].find(
+              (side) => side.language === glossLanguage,
+            )?.text ||
+            "",
+          language: glossLanguage,
+          example:
+            examples[glossLanguage]?.trim() ||
+            [wordSide, translationSide].find(
+              (side) => side.language === glossLanguage,
+            )?.example ||
+            "",
+        }
+      : { text: "", language: learningLanguage, example: "" };
 
     return {
       primary: {

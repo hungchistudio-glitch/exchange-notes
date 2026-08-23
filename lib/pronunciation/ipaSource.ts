@@ -145,63 +145,83 @@ async function fromDictionary(word: string): Promise<string> {
 async function fromModel(
   texts: string[],
   language: LanguageCode,
-): Promise<Map<string, string>> {
+): Promise<{ found: Map<string, string>; failed: boolean }> {
   const out = new Map<string, string>();
-  if (texts.length === 0 || !process.env.GEMINI_API_KEY) return out;
-
-  const meta = getLanguage(language);
-
-  try {
-    const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-    const interaction = await client.interactions.create({
-      model: getTextModelCandidates()[0],
-      input: [
-        `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,
-        ``,
-        `Rules:`,
-        `- Broad phonemic transcription, wrapped in forward slashes, e.g. /konsuˈlɛntsa/.`,
-        `- Mark primary stress with ˈ before the stressed syllable.`,
-        `- Transcribe it as ${meta.name.english}, never as English.`,
-        `- Return the words in the same order, with "text" copied exactly as given.`,
-        `- If a word is not ${meta.name.english} or you are unsure, return an empty "ipa" rather than guessing.`,
-        ``,
-        ...texts.map((text, index) => `${index + 1}. ${text}`),
-      ].join("\n"),
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: RESULT_SCHEMA,
-      },
-      generation_config: { thinking_level: "low" },
-      store: false,
-    });
-
-    const raw =
-      typeof interaction.output_text === "string" ? interaction.output_text : "";
-
-    const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
-      words?: Array<{ text?: string; ipa?: string }>;
-    };
-
-    (parsed.words ?? []).forEach((answer, index) => {
-      // Positional, with the echoed text as a cross-check: a model that
-      // renamed or reordered an entry must not have its answer filed under
-      // somebody else's word.
-      const asked = texts[index];
-      if (!asked) return;
-
-      const echoed = answer.text?.trim();
-      if (echoed && echoed !== asked) return;
-
-      const ipa = answer.ipa?.trim();
-      if (ipa) out.set(asked, ipa);
-    });
-  } catch (error) {
-    console.error("IPA transcription failed:", error);
+  if (texts.length === 0 || !process.env.GEMINI_API_KEY) {
+    return { found: out, failed: false };
   }
 
-  return out;
+  const meta = getLanguage(language);
+  const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  /*
+   * Every candidate, not just the first.
+   *
+   * The models share an API key but not a quota, so the one that is busy is
+   * usually not the only one available — and this is a small, mechanical
+   * task that the fast model does as well as the strong one. Falling
+   * through is the difference between "the annotation is a second late" and
+   * "the annotation never appears".
+   */
+  let lastError: unknown = null;
+
+  for (const model of getTextModelCandidates()) {
+    try {
+      const interaction = await client.interactions.create({
+        model,
+        input: [
+          `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,
+          ``,
+          `Rules:`,
+          `- Broad phonemic transcription, wrapped in forward slashes, e.g. /konsuˈlɛntsa/.`,
+          `- Mark primary stress with ˈ before the stressed syllable.`,
+          `- Transcribe it as ${meta.name.english}, never as English.`,
+          `- Return the words in the same order, with "text" copied exactly as given.`,
+          `- If a word is not ${meta.name.english} or you are unsure, return an empty "ipa" rather than guessing.`,
+          ``,
+          ...texts.map((text, index) => `${index + 1}. ${text}`),
+        ].join("\n"),
+        response_format: {
+          type: "text",
+          mime_type: "application/json",
+          schema: RESULT_SCHEMA,
+        },
+        generation_config: { thinking_level: "low" },
+        store: false,
+      });
+
+      const raw =
+        typeof interaction.output_text === "string"
+          ? interaction.output_text
+          : "";
+
+      const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
+        words?: Array<{ text?: string; ipa?: string }>;
+      };
+
+      (parsed.words ?? []).forEach((answer, index) => {
+        // Positional, with the echoed text as a cross-check: a model that
+        // renamed or reordered an entry must not have its answer filed under
+        // somebody else's word.
+        const asked = texts[index];
+        if (!asked) return;
+
+        const echoed = answer.text?.trim();
+        if (echoed && echoed !== asked) return;
+
+        const ipa = answer.ipa?.trim();
+        if (ipa) out.set(asked, ipa);
+      });
+
+      return { found: out, failed: false };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  console.error("IPA transcription failed:", lastError);
+
+  return { found: out, failed: true };
 }
 
 /**
@@ -213,17 +233,17 @@ async function fromModel(
 export async function transcribe(
   texts: string[],
   language: LanguageCode,
-): Promise<Map<string, string>> {
+): Promise<{ found: Map<string, string>; unavailable: string[] }> {
   const wanted = [...new Set(texts.map(cacheKey))].filter(Boolean);
 
   if (wanted.length === 0 || !hasPhonetics(language, "ipa")) {
-    return new Map();
+    return { found: new Map(), unavailable: [] };
   }
 
   const found = await readCache(language, wanted);
   const missing = wanted.filter((text) => !found.has(text));
 
-  if (missing.length === 0) return found;
+  if (missing.length === 0) return { found, unavailable: [] };
 
   if (DICTIONARY_LANGUAGES.includes(language)) {
     const fresh = new Map<string, string>();
@@ -244,13 +264,24 @@ export async function transcribe(
 
   const stillMissing = wanted.filter((text) => !found.has(text));
 
-  if (stillMissing.length > 0) {
-    const fresh = await fromModel(stillMissing, language);
+  if (stillMissing.length === 0) return { found, unavailable: [] };
 
-    for (const [text, ipa] of fresh) found.set(text, ipa);
+  const { found: fresh, failed } = await fromModel(stillMissing, language);
 
-    await writeCache(language, fresh, "model");
-  }
+  for (const [text, ipa] of fresh) found.set(text, ipa);
 
-  return found;
+  await writeCache(language, fresh, "model");
+
+  /*
+   * "We could not ask" and "there is no transcription" are different
+   * answers, and collapsing them is what made a busy minute permanent: the
+   * caller cached the silence as "this word has none" and never asked
+   * again. Only a lookup that actually ran gets to say a word has no IPA.
+   */
+  return {
+    found,
+    unavailable: failed
+      ? stillMissing.filter((text) => !fresh.has(text))
+      : [],
+  };
 }

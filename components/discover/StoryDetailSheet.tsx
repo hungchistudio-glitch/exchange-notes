@@ -1,7 +1,7 @@
 "use client";
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { getLanguage, resolveDisplayPair } from "@/lib/languages";
+import { getLanguage } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
 import {
@@ -73,10 +73,7 @@ export default function StoryDetailSheet({
    * lead in the language being learned is filtered out upstream rather than
    * shown in a language nobody asked for.
    */
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    card?.titles ?? {},
-    pair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   if (!card) {
     return (
