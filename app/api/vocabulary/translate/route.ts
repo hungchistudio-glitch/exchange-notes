@@ -143,20 +143,46 @@ export async function POST(request: Request) {
 
     const client = new GoogleGenAI({ apiKey });
 
-    const interaction = await client.interactions.create({
-      model: getTextModelCandidates()[0],
-      input: buildTranslateVocabularyPrompt(items, target),
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: RESULT_SCHEMA,
-      },
-      generation_config: { thinking_level: "low" },
-      store: false,
-    });
+    /*
+     * Every candidate, not just the first.
+     *
+     * This route was the last one still asking a single model, and it is
+     * the one production was actually failing on: twenty-four 429s in an
+     * hour, all from the same busy model, while a second one sharing the
+     * same key sat idle. A library fill is a long run of requests — the
+     * shape most likely to meet a rate limit and the least able to afford
+     * losing the batch when it does.
+     */
+    let outputText = "";
+    let lastError: unknown = null;
 
-    const outputText =
-      typeof interaction.output_text === "string" ? interaction.output_text : "";
+    for (const model of getTextModelCandidates()) {
+      try {
+        const interaction = await client.interactions.create({
+          model,
+          input: buildTranslateVocabularyPrompt(items, target),
+          response_format: {
+            type: "text",
+            mime_type: "application/json",
+            schema: RESULT_SCHEMA,
+          },
+          generation_config: { thinking_level: "low" },
+          store: false,
+        });
+
+        outputText =
+          typeof interaction.output_text === "string"
+            ? interaction.output_text
+            : "";
+
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (lastError) throw lastError;
 
     const parsed = JSON.parse(
       outputText.replace(/^```json\s*|```$/g, "").trim(),

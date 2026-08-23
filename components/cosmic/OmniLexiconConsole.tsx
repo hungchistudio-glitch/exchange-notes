@@ -135,13 +135,52 @@ export default function OmniLexiconConsole({
     setSubmitToken((token) => token + 1);
   }, []);
 
-  // Dictation happens in the language being learned — that is the language the
-  // user just heard something in and cannot spell.
+  /*
+   * The recording, when the browser heard nothing it could use.
+   *
+   * The browser has to be told a language before it listens and returns
+   * whatever its expected words sound closest to — right for dictating the
+   * language being studied, useless for holding the phone up to someone
+   * speaking something else. The model is told nothing and can hear any of
+   * them, so it gets the second turn rather than the first.
+   */
+  const handleAudio = useCallback(
+    async (audio: Blob) => {
+      const body = new FormData();
+      body.append("audio", audio, "speech.webm");
+
+      try {
+        const response = await fetch("/api/voice-lookup", {
+          method: "POST",
+          body,
+        });
+
+        if (!response.ok) return;
+
+        const result = (await response.json()) as {
+          heard?: boolean;
+          text?: string;
+        };
+
+        // An unconfident answer comes back as heard: false, and nothing is
+        // put in the field. A word invented from silence would be looked
+        // up, saved and studied, and it would be nobody's word.
+        if (result.heard && result.text) submit(result.text);
+      } catch {
+        // No connection. The offline path below is what answers here.
+      }
+    },
+    [submit],
+  );
+
   const { supported: voiceSupported, listening, toggle: toggleVoice } =
     useVoiceInput({
-      // Dictation listens in the language being learned.
+      // The browser listens in the language being learned, which is the one
+      // the reader most often cannot spell. Anything else it mishears goes
+      // to the model, which was told nothing.
       lang: getLanguage(languagePair[0]).speechTag,
       onResult: submit,
+      onAudio: handleAudio,
     });
 
   const state: OmniLexiconState = listening

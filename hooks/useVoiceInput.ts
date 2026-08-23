@@ -16,21 +16,43 @@ const getSupportedSnapshot = () => getRecognitionConstructor() !== null;
 const getServerSnapshot = () => false;
 
 /**
- * Browser-native speech-to-text for the vocabulary search field.
+ * Speech-to-text for the vocabulary search field. Fast first, then sure.
  *
- * Deliberately uses the built-in Web Speech API rather than sending audio
- * to an AI endpoint: recognition runs on-device, costs nothing per use,
- * adds no token consumption, and returns a result with far lower latency.
- * The tradeoff is that accuracy is middling and support is inconsistent
- * (notably older iOS Safari), so `supported` is exposed for callers to
- * hide the entry point entirely instead of offering a button that fails.
+ * ── Why there are two paths ───────────────────────────────────────────
+ *
+ * The Web Speech API has to be told the language before it listens, and it
+ * will not tell you it guessed wrong: it returns whatever the words it was
+ * expecting sound closest to. That is exactly right when the reader is
+ * dictating the language they study, and useless when they hold the phone
+ * up to someone speaking something else — which is the case a traveller
+ * actually has.
+ *
+ * So the browser goes first, because it is instant and free and costs no
+ * quota, and the audio is recorded alongside it. When the browser comes
+ * back with nothing — silence, an error, or a language it was not
+ * listening for — the recording goes to a model that was told nothing and
+ * can hear any of them. The reader speaks once either way.
+ *
+ * `supported` covers the browser path only. The recording path works
+ * wherever MediaRecorder does, which is nearly everywhere the other is
+ * missing, so a device without recognition is still not a device without
+ * voice search.
  */
 export default function useVoiceInput({
   lang,
   onResult,
+  onAudio,
 }: {
   lang: string;
   onResult: (transcript: string) => void;
+  /**
+   * The recording, handed over when the browser heard nothing usable.
+   *
+   * Not called at all when the fast path worked: the audio was captured
+   * for a fallback that turned out not to be needed, and uploading it
+   * anyway would spend a request on an answer already in hand.
+   */
+  onAudio?: (audio: Blob) => void;
 }) {
   const supported = useSyncExternalStore(
     emptySubscribe,
@@ -41,24 +63,96 @@ export default function useVoiceInput({
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  /** Set the moment the browser produces a transcript worth using. */
+  const heardRef = useRef(false);
+
   // Keep the latest callback in a ref so starting a session doesn't need
   // to tear down and rebuild the recognizer every time the parent
   // re-renders with a new closure.
   const onResultRef = useRef(onResult);
+  const onAudioRef = useRef(onAudio);
 
   useEffect(() => {
     onResultRef.current = onResult;
   }, [onResult]);
 
   useEffect(() => {
+    onAudioRef.current = onAudio;
+  }, [onAudio]);
+
+  const releaseMicrophone = useCallback(() => {
+    // The recording indicator stays lit until every track is stopped, and
+    // a light that does not go out reads as an app still listening.
+    for (const track of streamRef.current?.getTracks() ?? []) track.stop();
+    streamRef.current = null;
+  }, []);
+
+  useEffect(() => {
     return () => {
       recognitionRef.current?.abort();
       recognitionRef.current = null;
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.stop();
+      }
+      releaseMicrophone();
     };
-  }, []);
+  }, [releaseMicrophone]);
+
+  /**
+   * Records alongside the browser's own recognition, for the fallback.
+   *
+   * Failure here is silent and not fatal: a denied microphone or a browser
+   * without MediaRecorder simply means there is no second chance, and the
+   * fast path is unaffected.
+   */
+  const startRecording = useCallback(async () => {
+    if (!onAudioRef.current) return;
+    if (typeof MediaRecorder === "undefined") return;
+    if (!navigator.mediaDevices?.getUserMedia) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      const recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        releaseMicrophone();
+
+        // Only when the browser came back empty. The recording exists for
+        // a fallback, and a fallback that fires anyway is just a bill.
+        if (heardRef.current) return;
+
+        const audio = new Blob(chunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+
+        if (audio.size > 0) onAudioRef.current?.(audio);
+      };
+
+      recorder.start();
+      recorderRef.current = recorder;
+    } catch {
+      releaseMicrophone();
+    }
+  }, [releaseMicrophone]);
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
+
+    if (recorderRef.current?.state === "recording") {
+      recorderRef.current.stop();
+    }
   }, []);
 
   const start = useCallback(() => {
@@ -69,6 +163,9 @@ export default function useVoiceInput({
     // Restarting while a session is live throws in Chrome, so always
     // tear the previous one down first.
     recognitionRef.current?.abort();
+
+    heardRef.current = false;
+    void startRecording();
 
     const recognition = new Recognition();
 
@@ -87,6 +184,7 @@ export default function useVoiceInput({
       const trimmed = transcript.trim();
 
       if (trimmed) {
+        heardRef.current = true;
         onResultRef.current(trimmed);
       }
     };
@@ -103,6 +201,12 @@ export default function useVoiceInput({
 
     recognition.onend = () => {
       setListening(false);
+
+      // Whatever the browser made of it, the recording stops here — and
+      // its own handler decides whether anyone needs to hear it.
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.stop();
+      }
     };
 
     recognitionRef.current = recognition;
@@ -113,8 +217,12 @@ export default function useVoiceInput({
     } catch (startError) {
       console.error("Could not start speech recognition:", startError);
       setListening(false);
+
+      if (recorderRef.current?.state === "recording") {
+        recorderRef.current.stop();
+      }
     }
-  }, [lang]);
+  }, [lang, startRecording]);
 
   const toggle = useCallback(() => {
     if (listening) {

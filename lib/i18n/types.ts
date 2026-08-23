@@ -9,6 +9,22 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 export type TranslationLanguage = InterfaceLanguage;
 
 export type TranslationDictionary = {
+  /**
+   * What the app says when there is no network.
+   *
+   * Its own section rather than strings scattered through the screens that
+   * need them: being offline is one state, and a reader who meets it on
+   * three screens should be told the same thing three times, not three
+   * different things.
+   */
+  offline: {
+    title: string;
+    body: string;
+    needsConnection: string;
+    pendingOne: string;
+    pendingMany: string;
+    savedLocally: string;
+  };
   pwa: {
     title: string;
     subtitle: string;

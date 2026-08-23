@@ -1,5 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 
+/*
+ * jsdom has no IndexedDB, and the offline layer is built on it. This is a
+ * real implementation rather than a stub — the tests below assert on what
+ * actually survives a transaction, which is the whole point of testing a
+ * store that has to keep a reader's words through a closed app.
+ */
+import "fake-indexeddb/auto";
+
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 

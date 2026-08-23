@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { LanguageCode } from "@/lib/languages";
+import { TRANSLATIONS_STORE, hydrate, persist } from "@/lib/offline/annotations";
+import { isOnline } from "@/hooks/useOnline";
 
 /* =========================================================
    The reader's language, for text that predates it
@@ -28,6 +30,21 @@ const pending = new Map<string, Set<string>>();
 const listeners = new Set<() => void>();
 
 let timer: ReturnType<typeof setTimeout> | null = null;
+
+/** The device's own copy, read once per session. See usePhonetics. */
+let hydrated: Promise<void> | null = null;
+
+function hydrateOnce(): Promise<void> {
+  hydrated ??= hydrate(TRANSLATIONS_STORE).then((stored) => {
+    for (const [id, value] of stored) {
+      if (!cache.has(id)) cache.set(id, value);
+    }
+
+    notify();
+  });
+
+  return hydrated;
+}
 let snapshot: ReadonlyMap<string, string> = new Map();
 
 function key(from: LanguageCode, to: LanguageCode, text: string): string {
@@ -42,8 +59,31 @@ function notify() {
 async function flush() {
   timer = null;
 
+  await hydrateOnce();
+
   const batches = [...pending];
   pending.clear();
+
+  for (const [pair, texts] of batches) {
+    const [from, to] = pair.split(">") as [LanguageCode, LanguageCode];
+
+    for (const text of [...texts]) {
+      if (cache.has(key(from, to, text))) {
+        texts.delete(text);
+        inFlight.delete(key(from, to, text));
+      }
+    }
+  }
+
+  if (!isOnline()) {
+    for (const [pair, texts] of batches) {
+      const [from, to] = pair.split(">") as [LanguageCode, LanguageCode];
+      for (const text of texts) inFlight.delete(key(from, to, text));
+    }
+
+    notify();
+    return;
+  }
 
   await Promise.all(
     batches.map(async ([pair, texts]) => {
@@ -70,10 +110,17 @@ async function flush() {
             // model is not evidence that a phrase cannot be translated.
             const unreachable = new Set(result.unavailable ?? []);
 
+            const learned: Array<[string, string]> = [];
+
             for (const text of chunk) {
               if (unreachable.has(text)) continue;
-              cache.set(key(from, to, text), result.texts?.[text]?.trim() ?? "");
+
+              const translated = result.texts?.[text]?.trim() ?? "";
+              cache.set(key(from, to, text), translated);
+              learned.push([key(from, to, text), translated]);
             }
+
+            void persist(TRANSLATIONS_STORE, learned);
           }
         } catch {
           // Same reasoning: a dropped connection leaves no entry behind.

@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { LanguageCode } from "@/lib/languages";
+import { PHONETICS_STORE, hydrate, persist } from "@/lib/offline/annotations";
+import { isOnline } from "@/hooks/useOnline";
 
 /* =========================================================
    IPA for whatever is on screen
@@ -32,6 +34,29 @@ const listeners = new Set<() => void>();
 let timer: ReturnType<typeof setTimeout> | null = null;
 
 /*
+ * The device's own copy, read once per session.
+ *
+ * Without it a reader with no signal sees unannotated cards even for words
+ * they have looked at a hundred times. It is a few hundred short strings,
+ * which is nothing next to being useful on a train.
+ */
+let hydrated: Promise<void> | null = null;
+
+function hydrateOnce(): Promise<void> {
+  hydrated ??= hydrate(PHONETICS_STORE).then((stored) => {
+    for (const [id, value] of stored) {
+      // Never over anything this session already learned: a fresh answer
+      // outranks a remembered one.
+      if (!cache.has(id)) cache.set(id, value);
+    }
+
+    notify();
+  });
+
+  return hydrated;
+}
+
+/*
  * What subscribers read. Replaced rather than mutated on every resolved
  * batch, because useSyncExternalStore compares snapshots by identity — a map
  * that is only ever mutated in place looks unchanged forever, and callers
@@ -52,8 +77,33 @@ function notify() {
 async function flush() {
   timer = null;
 
+  await hydrateOnce();
+
   const batches = [...pending];
   pending.clear();
+
+  /*
+   * Anything the local copy already answers is answered, and not asked
+   * for. Offline that is the only answer there will be, and online it is
+   * still a request saved.
+   */
+  for (const [language, texts] of batches) {
+    for (const text of [...texts]) {
+      if (cache.has(key(language, text))) {
+        texts.delete(text);
+        inFlight.delete(key(language, text));
+      }
+    }
+  }
+
+  if (!isOnline()) {
+    for (const [language, texts] of batches) {
+      for (const text of texts) inFlight.delete(key(language, text));
+    }
+
+    notify();
+    return;
+  }
 
   await Promise.all(
     batches.map(async ([language, texts]) => {
@@ -83,6 +133,8 @@ async function flush() {
              */
             const unreachable = new Set(result.unavailable ?? []);
 
+            const learned: Array<[string, string]> = [];
+
             for (const text of chunk) {
               if (unreachable.has(text)) continue;
 
@@ -93,7 +145,12 @@ async function flush() {
                * sources cannot transcribe, once per render, forever.
                */
               cache.set(key(language, text), ipa ?? "");
+              learned.push([key(language, text), ipa ?? ""]);
             }
+
+            // Kept on the device, so the next cold start with no signal
+            // still has them.
+            void persist(PHONETICS_STORE, learned);
           }
         } catch {
           // Leave these out of the cache so a later render may retry; a

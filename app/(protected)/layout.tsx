@@ -5,6 +5,7 @@ import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSy
 import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
+import OfflineBanner from "@/components/foundation/OfflineBanner";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
@@ -110,7 +111,10 @@ export default async function ProtectedLayout({
 
         <SplashGate />
 
-        <CosmicRouteStage>{children}</CosmicRouteStage>
+        <CosmicRouteStage>
+          <OfflineBanner />
+          {children}
+        </CosmicRouteStage>
 
         <ProtectedNav />
         <ModeTransitionStage />
