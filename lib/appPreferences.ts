@@ -216,10 +216,33 @@ export function subscribeToDailyGoalWords(
    Interface language
    ========================================================= */
 
+/**
+ * The languages the app itself speaks.
+ *
+ * Spelled out rather than BCP-47, unlike the learning axis: these values are
+ * already written into localStorage and profiles.app_preferences on every
+ * account, and re-encoding a setting that is stored buys nothing. See the
+ * note at the top of lib/languages.ts on why the two axes stay apart.
+ *
+ * Adding one here is a commitment, not a flag: lib/i18n/types.ts requires a
+ * complete TranslationDictionary, so the build fails until every string
+ * exists. That is the point — an interface half in English is worse than an
+ * interface honestly in another language.
+ */
 export type InterfaceLanguage =
   | "english"
   | "traditional-chinese"
-  | "spanish";
+  | "spanish"
+  | "french"
+  | "italian";
+
+const INTERFACE_LANGUAGES: readonly InterfaceLanguage[] = [
+  "english",
+  "traditional-chinese",
+  "spanish",
+  "french",
+  "italian",
+];
 
 const INTERFACE_LANGUAGE_STORAGE_KEY =
   "exchange-notes-interface-language";
@@ -232,10 +255,13 @@ export const DEFAULT_INTERFACE_LANGUAGE: InterfaceLanguage = "english";
 export function isInterfaceLanguage(
   value: unknown,
 ): value is InterfaceLanguage {
+  // Read off the list rather than repeated as a chain of comparisons, which
+  // is how the fourth language gets added to the type and forgotten here —
+  // and a guard that has not heard of a language silently resets anyone
+  // using it back to English on their next visit.
   return (
-    value === "english" ||
-    value === "traditional-chinese" ||
-    value === "spanish"
+    typeof value === "string" &&
+    (INTERFACE_LANGUAGES as readonly string[]).includes(value)
   );
 }
 

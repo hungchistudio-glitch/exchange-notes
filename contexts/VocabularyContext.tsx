@@ -117,6 +117,28 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /*
+   * The same read, without the spinner.
+   *
+   * For work the user did not ask for and is not waiting on — the language
+   * fill re-reads after every batch so cards appear as they are translated,
+   * and a library of three hundred words is seventeen batches. Through
+   * `refresh` that is seventeen full-screen loading states in a row, which
+   * reads as a list that cannot make up its mind. A failure is swallowed for
+   * the same reason: nothing was asked for, so nothing should be reported
+   * here — the caller knows its own request failed.
+   */
+  const refreshQuietly = useCallback(async () => {
+    try {
+      const snapshot = await fetchVocabularySnapshot();
+
+      setItems(snapshot.items);
+      setLearningLanguage(snapshot.learningLanguage);
+    } catch {
+      // See above.
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
     const supabase = createClient();
@@ -196,7 +218,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     items,
     learningLanguage,
     loading,
-    onFilled: refresh,
+    onFilled: refreshQuietly,
   });
 
   const value = useMemo<VocabularyContextType>(

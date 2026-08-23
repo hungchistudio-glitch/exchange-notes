@@ -1710,9 +1710,13 @@ const traditionalChinese: TranslationDictionary = {
       rowDescription: "選擇 App 的介面顯示語言",
       sheetTitle: "App 顯示語言",
       sheetDescription: "選擇 Exchange Notes 的介面顯示語言。",
-      englishDescription: "以英文顯示 App 介面。",
-      traditionalChineseDescription: "以繁體中文顯示 App 介面。",
-      spanishDescription: "以西班牙文使用 Exchange Notes",
+      descriptions: {
+        english: "以英文顯示 App 介面。",
+        "traditional-chinese": "以繁體中文顯示 App 介面。",
+        spanish: "以西班牙文顯示 App 介面。",
+        french: "以法文顯示 App 介面。",
+        italian: "以義大利文顯示 App 介面。",
+      },
     },
 
     yumiReminders: {

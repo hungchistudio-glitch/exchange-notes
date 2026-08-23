@@ -42,12 +42,6 @@ export default function AppLanguageSettingsButton() {
     setInterfaceLanguage(value);
   }
 
-  function getOptionDescription(value: InterfaceLanguage) {
-    if (value === "traditional-chinese") return copy.traditionalChineseDescription;
-    if (value === "spanish") return copy.spanishDescription;
-    return copy.englishDescription;
-  }
-
   const currentLabel = getInterfaceLanguageMeta(language).endonym;
 
   return (
@@ -73,7 +67,7 @@ export default function AppLanguageSettingsButton() {
               selected={language === option.value}
               badge={<span className="text-[15px]">{option.badge}</span>}
               title={option.label}
-              description={getOptionDescription(option.value)}
+              description={copy.descriptions[option.value]}
               onClick={() => handleSelect(option.value)}
             />
           ))}
