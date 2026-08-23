@@ -1,5 +1,6 @@
 "use client";
 
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, resolveDisplayPair } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,6 @@ import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
@@ -99,7 +99,7 @@ export default function VocabularyDrawer({
   onSpeak,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair } = useDisplayLanguages();
 
   /*
    * Preferred, not assumed — the same rule StoryDetailSheet already follows,
@@ -121,7 +121,7 @@ export default function VocabularyDrawer({
 
   const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
     vocabularyLanguages,
-    languagePair,
+    pair,
   );
 
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;

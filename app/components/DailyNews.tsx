@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { SlidersHorizontal } from "lucide-react";
 
@@ -231,8 +231,8 @@ export default function DailyNews() {
   const { t } = useTranslation();
   const copy = t.discover;
 
-  const { languagePair } = useLearningLanguageContext();
-  const [primaryLanguage, secondaryLanguage] = languagePair;
+  const { pair } = useDisplayLanguages();
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -567,7 +567,7 @@ export default function DailyNews() {
     setSavingCardId(card.id);
     setError("");
 
-    const noteContent = createNoteContent(card, languagePair);
+    const noteContent = createNoteContent(card, pair);
 
     try {
       const supabase = createClient();

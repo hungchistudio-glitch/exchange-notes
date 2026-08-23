@@ -1,6 +1,6 @@
 "use client";
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import VocabularyExampleBlock from "@/components/vocabulary/ui/VocabularyExampleBlock";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -23,8 +23,8 @@ function formatDate(value: string | null | undefined, locale: string) {
 }
 
 export default function VocabularyCardDetails({ item }: Props) {
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
-  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
+  const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
 
   const { t, isTraditionalChinese } = useTranslation();
   const detail = t.vocabulary.detail;

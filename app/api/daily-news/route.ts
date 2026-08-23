@@ -2,6 +2,7 @@ import { readDailyNewsCard } from "@/lib/types/dailyNews";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,32 @@ export async function GET() {
      */
     let seenIds: string[] = [];
 
+    /*
+     * The language every card in this response has to be able to lead in.
+     *
+     * The pool is shared and is not written in every language on every run,
+     * so it always holds cards this reader cannot be shown. Serving them
+     * anyway is what made switching to Italian look like it had done
+     * nothing: the card arrived, had no Italian, and the screen led in
+     * English because that was all it had.
+     *
+     * Filtering here rather than in the components keeps the batch size
+     * honest — eight cards means eight readable cards, not eight rows of
+     * which some render blank.
+     */
+    let learningLanguage = DEFAULT_LEARNING_PAIR[0];
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("learning_language")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      learningLanguage =
+        readLanguageCode(profile?.learning_language) ?? learningLanguage;
+    }
+
     if (user) {
       const { data: seen, error: seenError } = await supabase
         .from("daily_news_seen")
@@ -63,9 +90,22 @@ export async function GET() {
       }
     }
 
+    /*
+     * Matches both card shapes. The language-keyed cards carry `titles`;
+     * the ones written before that carry englishTitle/chineseTitle, which
+     * only ever means English and Chinese.
+     */
+    const leadable =
+      learningLanguage === "en"
+        ? "card->titles->>en.not.is.null,card->>englishTitle.not.is.null"
+        : learningLanguage === "zh-TW"
+          ? "card->titles->>zh-TW.not.is.null,card->>chineseTitle.not.is.null"
+          : `card->titles->>${learningLanguage}.not.is.null`;
+
     let query = supabase
       .from("daily_news_items")
       .select("id, card, published_at")
+      .or(leadable)
       .order("published_at", { ascending: false })
       .limit(BATCH_SIZE);
 
@@ -97,6 +137,7 @@ export async function GET() {
       const { data: newest, error: newestError } = await supabase
         .from("daily_news_items")
         .select("id, card, published_at")
+        .or(leadable)
         .order("published_at", { ascending: false })
         .limit(BATCH_SIZE);
 

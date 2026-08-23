@@ -293,12 +293,36 @@ export function resolveDisplayPair(
   available: ByLanguage,
   preferred: readonly LanguageCode[],
 ): readonly LanguageCode[] {
-  const present = LANGUAGE_CODES.filter((code) => available[code]);
+  /*
+   * Only ever the languages asked for.
+   *
+   * This used to append whatever else the content happened to carry, on the
+   * reasoning that showing a card in *some* language beats showing a blank
+   * one. That reasoning is wrong, and it is the bug a reader hits the day
+   * they switch: the shared news pool was mostly English, so switching to
+   * Italian changed the setting and changed nothing on screen — every card
+   * fell straight back through the empty Italian slot into English and led
+   * in it, which reads as the switch having silently failed.
+   *
+   * A language nobody selected is not a fallback, it is a wrong answer.
+   * Returning fewer than two — or none — is the honest result, and it is
+   * what lets a caller filter the item out or say plainly that it is not
+   * available yet, instead of quietly showing the wrong thing.
+   */
+  return preferred.filter((code) => available[code]?.trim());
+}
 
-  const wanted = preferred.filter((code) => present.includes(code));
-  const rest = present.filter((code) => !wanted.includes(code));
-
-  return [...wanted, ...rest].slice(0, 2);
+/**
+ * Whether this content can lead in the language being learned.
+ *
+ * The one question a feed has to ask before showing something: the lead is
+ * the learning language or there is nothing worth leading with.
+ */
+export function canLeadIn(
+  available: ByLanguage,
+  learningLanguage: LanguageCode,
+): boolean {
+  return Boolean(available[learningLanguage]?.trim());
 }
 
 /** Drops empty and absent entries, so a record never carries blank strings. */

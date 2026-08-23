@@ -51,11 +51,12 @@ export function getVocabularyCardSides(
     Partial<Pick<VocabularyItem, "texts" | "examples">>,
   learningLanguage: LanguageCode,
   /**
-   * The reader's own language, used only when neither side is the one being
-   * learned. Optional so a caller that genuinely has no profile still gets an
-   * answer rather than an error.
+   * The language the card is glossed in — the interface language, resolved
+   * by useDisplayLanguages. Used only when neither side is the one being
+   * learned. Optional so a caller that genuinely has no profile still gets
+   * an answer rather than an error.
    */
-  nativeLanguage?: LanguageCode,
+  supportLanguage?: LanguageCode,
 ): VocabularyCardSides {
   const wordLanguage = item.word_language ?? DEFAULT_LEARNING_PAIR[0];
   const translationLanguage =
@@ -114,9 +115,9 @@ export function getVocabularyCardSides(
   if (learned && learningLanguage !== wordLanguage &&
       learningLanguage !== translationLanguage) {
     const support =
-      nativeLanguage && nativeLanguage !== learningLanguage
+      supportLanguage && supportLanguage !== learningLanguage
         ? ([wordSide, translationSide].find(
-            (side) => side.language === nativeLanguage,
+            (side) => side.language === supportLanguage,
           ) ?? wordSide)
         : wordSide;
 
@@ -134,9 +135,9 @@ export function getVocabularyCardSides(
   const translationLeads =
     translationLanguage === learningLanguage ||
     (wordLanguage !== learningLanguage &&
-      nativeLanguage !== undefined &&
-      wordLanguage === nativeLanguage &&
-      translationLanguage !== nativeLanguage);
+      supportLanguage !== undefined &&
+      wordLanguage === supportLanguage &&
+      translationLanguage !== supportLanguage);
 
   return {
     primary: translationLeads ? translationSide : wordSide,

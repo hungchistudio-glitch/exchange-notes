@@ -20,7 +20,7 @@ import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
@@ -100,8 +100,8 @@ export default function VocabularyDetailSheet({
   onEdit: () => void;
 }) {
   const { t, isTraditionalChinese } = useTranslation();
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
-  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
+  const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
   const detail = t.vocabulary.detail;
   const motion = useSheetMotion({ open, onClose });
 

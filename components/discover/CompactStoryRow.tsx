@@ -1,6 +1,6 @@
 "use client";
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { resolveDisplayPair } from "@/lib/languages";
 import Image from "next/image";
 
@@ -23,16 +23,15 @@ export default function CompactStoryRow({
   showThumbnail,
   onOpen,
 }: CompactStoryRowProps) {
-  const { languagePair } = useLearningLanguageContext();
+  const { pair } = useDisplayLanguages();
   /*
-   * Preferred, not assumed. The pool is one shared set of cards generated in
-   * one pairing, so a reader studying something else would index it by a
-   * language it does not have and get a blank card. Falling back to the
-   * languages the card actually carries shows it as what it is.
+   * The two languages the reader chose, and only those. A card that cannot
+   * lead in the language being learned is filtered out upstream rather than
+   * shown in a language nobody asked for.
    */
   const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
     card?.titles ?? {},
-    languagePair,
+    pair,
   );
 
   const accent = categoryAccent(card.category);

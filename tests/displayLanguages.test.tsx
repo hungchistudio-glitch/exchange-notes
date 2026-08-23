@@ -1,0 +1,126 @@
+import { render } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
+import { canLeadIn, resolveDisplayPair } from "@/lib/languages";
+
+/* =========================================================
+   Which two languages a screen may render
+
+   The rule the whole app now turns on: the lead is the language being
+   learned, the gloss is the interface language, and nothing else appears
+   anywhere. A reader who switched to Italian and kept being shown English
+   was watching a fallback quietly overrule a setting.
+   ========================================================= */
+
+describe("resolveDisplayPair", () => {
+  const card = {
+    en: "Prisons",
+    "zh-TW": "監獄",
+    es: "Prisiones",
+    it: "Prigioni",
+  };
+
+  it("leads in the language being learned", () => {
+    expect(resolveDisplayPair(card, ["it", "en"])).toEqual(["it", "en"]);
+  });
+
+  it("never returns a language that was not asked for", () => {
+    // The regression: this used to append whatever else the content had,
+    // so an Italian learner reading an English-only card got English as the
+    // lead — the setting changed and the screen did not.
+    expect(resolveDisplayPair({ en: "Prisons" }, ["it", "fr"])).toEqual([]);
+    expect(resolveDisplayPair(card, ["it", "fr"])).toEqual(["it"]);
+  });
+
+  it("ignores a language present but blank", () => {
+    expect(resolveDisplayPair({ it: "   ", en: "Prisons" }, ["it", "en"])).toEqual(["en"]);
+  });
+});
+
+describe("canLeadIn", () => {
+  it("is the one question a feed has to ask", () => {
+    expect(canLeadIn({ it: "Prigioni" }, "it")).toBe(true);
+    expect(canLeadIn({ en: "Prisons" }, "it")).toBe(false);
+    expect(canLeadIn({ it: "  " }, "it")).toBe(false);
+  });
+});
+
+/* =========================================================
+   The gloss follows the interface language
+   ========================================================= */
+
+const preferences = vi.hoisted(() => ({ interfaceLanguage: "english" }));
+const profile = vi.hoisted(() => ({ learning: "it", native: "en" }));
+
+vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
+  default: () => preferences.interfaceLanguage,
+}));
+
+vi.mock("@/contexts/LearningLanguageContext", () => ({
+  useLearningLanguageContext: () => ({
+    learningLanguage: profile.learning,
+    nativeLanguage: profile.native,
+  }),
+}));
+
+const { default: useDisplayLanguages } = await import(
+  "@/hooks/useDisplayLanguages"
+);
+
+function read() {
+  let result: ReturnType<typeof useDisplayLanguages> | null = null;
+
+  function Probe() {
+    result = useDisplayLanguages();
+    return null;
+  }
+
+  render(<Probe />);
+  return result!;
+}
+
+describe("useDisplayLanguages", () => {
+  it("glosses in the interface language, not the profile's own language", () => {
+    // Learning Italian, reading the app in French, with English still sitting
+    // in the "my language" field from months ago. French is what the reader
+    // most recently said they read comfortably, and it is what is visibly in
+    // effect everywhere else on screen.
+    profile.learning = "it";
+    profile.native = "en";
+    preferences.interfaceLanguage = "french";
+
+    expect(read().pair).toEqual(["it", "fr"]);
+  });
+
+  it("puts the language being learned first, always", () => {
+    profile.learning = "es";
+    profile.native = "en";
+    preferences.interfaceLanguage = "traditional-chinese";
+
+    const { learningLanguage, pair } = read();
+
+    expect(learningLanguage).toBe("es");
+    expect(pair).toEqual(["es", "zh-TW"]);
+  });
+
+  it("falls back to the reader's own language when the two would collide", () => {
+    // Italian app, Italian being learned: there is nothing left to gloss
+    // with, and a card whose two sides are the same text is not a card.
+    profile.learning = "it";
+    profile.native = "zh-TW";
+    preferences.interfaceLanguage = "italian";
+
+    expect(read().pair).toEqual(["it", "zh-TW"]);
+  });
+
+  it("never returns the same language twice, even when all three agree", () => {
+    profile.learning = "en";
+    profile.native = "en";
+    preferences.interfaceLanguage = "english";
+
+    const [primary, secondary] = read().pair;
+
+    expect(primary).toBe("en");
+    expect(secondary).not.toBe("en");
+  });
+});
