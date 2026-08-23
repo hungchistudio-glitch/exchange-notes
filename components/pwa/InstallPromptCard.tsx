@@ -69,7 +69,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
     <div className="flex flex-col items-center text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/api/icon?size=96"
+        src="/yumi-brand/app-icon/icon-192.png"
         alt="Exchange Notes"
         width={64}
         height={64}

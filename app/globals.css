@@ -17,6 +17,32 @@
   --line: #e3e3dc;
 
   /*
+   * The brand mark's two colours.
+   *
+   * Both pairs are declared, not just the active one, because the pair that
+   * is *not* in use still gets asked for: an app-icon preview inside the app
+   * has to paint the dark artwork on a light screen, and marketing surfaces
+   * show the two side by side. So the four literals are the palette, and
+   * --yumi-canvas / --yumi-mark are whichever pair this mode resolves to.
+   * app/cosmic.css redefines only those two.
+   *
+   * Nothing that draws the mark may write a colour of its own. The mark is
+   * always `currentColor` (see components/ui/YumiLogo.tsx), so a surface sets
+   * `color: var(--yumi-mark)` and both modes are handled — there is no
+   * second DOM, and no filter: invert().
+   */
+  --yumi-canvas-light: #ffffff;
+  /* Deep obsidian rather than #000000: against white, pure black reads as a
+     hole punched in the page, where a few points of lift reads as ink. */
+  --yumi-mark-light: #090a0c;
+  /* Jet obsidian. Softer than black, and the tone the dark app icon sits on. */
+  --yumi-canvas-dark: #0b0b0f;
+  --yumi-mark-dark: #ffffff;
+
+  --yumi-canvas: var(--yumi-canvas-light);
+  --yumi-mark: var(--yumi-mark-light);
+
+  /*
    * Accent and component colours that used to be written as raw hex at each
    * call site. Naming them is what makes Yumi Cosmic Mode possible: the mode
    * repaints the app by redefining these in one place (app/cosmic.css) rather

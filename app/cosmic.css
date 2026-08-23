@@ -39,6 +39,16 @@ html[data-interface-mode="yumi-cosmic"] {
   --surface: #16223c;
   --line: #24345a;
 
+  /*
+   * The mark flips to its dark pair, and only the pair flips — the drawing is
+   * the same one. Note that the canvas token stays jet obsidian rather than
+   * becoming this mode's deep navy: it describes the ground the *app icon* is
+   * printed on, which is fixed artwork the OS owns, not the screen behind a
+   * logo in the app.
+   */
+  --yumi-canvas: var(--yumi-canvas-dark);
+  --yumi-mark: var(--yumi-mark-dark);
+
   /* The gold survives the trip: on deep space it reads as a warm signal light
      instead of a paper highlight. Its dark inks flip to the panel colour so
      text on an amber fill stays legible. */
