@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import useOnline from "@/hooks/useOnline";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { readOutbox } from "@/lib/offline/vocabulary";
+import { readOutbox, subscribeToOutbox } from "@/lib/offline/vocabulary";
 import { insertValues } from "@/lib/utils";
 
 /**
@@ -44,22 +44,26 @@ export default function OfflineBanner() {
 
     let active = true;
 
-    void readOutbox().then((queued) => {
-      if (active) setPending(queued.length);
-    });
-
-    // While offline the count only goes up, and it goes up whenever the
-    // reader does something — which is not an event this can subscribe to,
-    // so it is read again on a slow tick rather than wired to every write.
-    const timer = setInterval(() => {
+    function count() {
       void readOutbox().then((queued) => {
         if (active) setPending(queued.length);
       });
-    }, 4000);
+    }
+
+    count();
+
+    /*
+     * Told when the queue changes rather than asking on a timer. A poll is
+     * a timer running for as long as the reader is offline — the exact
+     * situation where the phone is also short of battery — and a count up
+     * to four seconds stale on a screen someone is watching while they
+     * save something.
+     */
+    const unsubscribe = subscribeToOutbox(count);
 
     return () => {
       active = false;
-      clearInterval(timer);
+      unsubscribe();
     };
   }, [online]);
 

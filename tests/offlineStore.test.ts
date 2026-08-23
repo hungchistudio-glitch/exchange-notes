@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { STORES, clearStore, readAll } from "@/lib/offline/db";
 import {
   applyPending,
+  forgetMirror,
   draftVocabularyItem,
   forgetMutation,
   queueMutation,
@@ -40,32 +41,32 @@ describe("the mirror", () => {
   });
 
   it("keeps the reader's words across a closed app", async () => {
-    await writeMirror([word("01", { en: "prison", it: "prigione" })]);
+    await writeMirror([word("01", { en: "prison", it: "prigione" })], "u");
 
-    const kept = await readMirror();
+    const kept = await readMirror("u");
 
     expect(kept).toHaveLength(1);
     expect(kept[0].texts.it).toBe("prigione");
   });
 
   it("replaces rather than merges, so a deleted word does not come back", async () => {
-    await writeMirror([word("01", { en: "one" }), word("02", { en: "two" })]);
-    await writeMirror([word("01", { en: "one" })]);
+    await writeMirror([word("01", { en: "one" }), word("02", { en: "two" })], "u");
+    await writeMirror([word("01", { en: "one" })], "u");
 
-    expect(await readMirror()).toHaveLength(1);
+    expect(await readMirror("u")).toHaveLength(1);
   });
 
   it("is never observed empty midway through a sync", async () => {
-    await writeMirror([word("01", { en: "one" })]);
+    await writeMirror([word("01", { en: "one" })], "u");
 
     // One transaction, not clear-then-write: an interrupted sync should
     // leave yesterday's copy intact rather than nothing at all.
-    const write = writeMirror([word("02", { en: "two" }), word("03", { en: "three" })]);
-    const during = await readMirror();
+    const write = writeMirror([word("02", { en: "two" }), word("03", { en: "three" })], "u");
+    const during = await readMirror("u");
     await write;
 
     expect(during.length).toBeGreaterThan(0);
-    expect(await readMirror()).toHaveLength(2);
+    expect(await readMirror("u")).toHaveLength(2);
   });
 });
 
@@ -164,5 +165,53 @@ describe("finding a word with no connection", () => {
 
   it("finds nothing for nothing", () => {
     expect(searchLocal(library, "   ")).toEqual([]);
+  });
+});
+
+/* =========================================================
+   Whose copy it is
+
+   The mirror is read before anything has been authenticated — that is the
+   whole point of it. A shared or handed-on phone is the ordinary case, not
+   the exotic one, and without an owner recorded alongside, signing out and
+   in as somebody else showed the previous person's words on the way in,
+   from disk, before any check could run.
+   ========================================================= */
+
+describe("the mirror's owner", () => {
+  beforeEach(async () => {
+    await clearStore(STORES.vocabulary);
+    await clearStore(STORES.outbox);
+    await clearStore(STORES.kv);
+  });
+
+  it("gives a reader nothing of somebody else's", async () => {
+    await writeMirror([word("01", { en: "private" })], "first-user");
+
+    expect(await readMirror("second-user")).toEqual([]);
+  });
+
+  it("still gives a reader their own", async () => {
+    await writeMirror([word("01", { en: "mine" })], "first-user");
+
+    expect(await readMirror("first-user")).toHaveLength(1);
+  });
+
+  it("gives nothing at all when nobody is signed in", async () => {
+    await writeMirror([word("01", { en: "mine" })], "first-user");
+
+    expect(await readMirror("")).toEqual([]);
+  });
+
+  it("keeps nothing once the reader signs out", async () => {
+    await writeMirror([word("01", { en: "mine" })], "first-user");
+    await queueMutation({ kind: "delete", itemId: "01" });
+
+    await forgetMirror();
+
+    // The outbox goes too: a change made by someone who has left is not a
+    // change the next person's session should be made to send.
+    expect(await readMirror("first-user")).toEqual([]);
+    expect(await readOutbox()).toEqual([]);
   });
 });

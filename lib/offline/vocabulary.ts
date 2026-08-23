@@ -3,6 +3,7 @@
 import {
   STORES,
   appendRecord,
+  clearStore,
   deleteRecord,
   readAll,
   readRecord,
@@ -29,9 +30,29 @@ import type { VocabularyItem } from "@/lib/types/app";
 type MirrorRecord = { key: string; item: VocabularyItem };
 
 const SYNCED_AT_KEY = "vocabulary:syncedAt";
+const OWNER_KEY = "vocabulary:owner";
 
-/** Rows the server has confirmed, as of the last sync. */
-export async function readMirror(): Promise<VocabularyItem[]> {
+/**
+ * Whose copy this is.
+ *
+ * A shared or handed-on phone is the ordinary case, not the exotic one,
+ * and a mirror is read *before* anything has been authenticated — that is
+ * the whole point of it. Without an owner recorded alongside, signing out
+ * and signing in as somebody else showed the previous person's words on
+ * the way in, from disk, before any check could run.
+ *
+ * The mirror is cleared on sign-out as well. This is the second lock,
+ * for the sign-out that never completed.
+ */
+async function mirrorOwner(): Promise<string | null> {
+  const record = await readRecord<{ userId: string }>(STORES.kv, OWNER_KEY);
+  return record?.userId ?? null;
+}
+
+/** Rows the server has confirmed, as of the last sync, for this reader. */
+export async function readMirror(userId: string): Promise<VocabularyItem[]> {
+  if (!userId || (await mirrorOwner()) !== userId) return [];
+
   const records = await readAll<MirrorRecord>(STORES.vocabulary);
 
   return records
@@ -40,16 +61,39 @@ export async function readMirror(): Promise<VocabularyItem[]> {
     .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
 }
 
-export async function writeMirror(items: VocabularyItem[]): Promise<void> {
+export async function writeMirror(
+  items: VocabularyItem[],
+  userId: string,
+): Promise<void> {
   await replaceAll(
     STORES.vocabulary,
     items.map((item) => ({ key: item.id, item })),
   );
 
+  await writeRecord(STORES.kv, { key: OWNER_KEY, userId });
+
   await writeRecord(STORES.kv, {
     key: SYNCED_AT_KEY,
     at: new Date().toISOString(),
   });
+}
+
+/**
+ * Removes every trace of this device's copy.
+ *
+ * Called on sign-out. The outbox goes too: a change made by someone who
+ * has now left is not a change the next person's session should be made
+ * to send, and the server would refuse it anyway under their own row
+ * security — quietly, in the background, on a screen belonging to someone
+ * who never made it.
+ */
+export async function forgetMirror(): Promise<void> {
+  await clearStore(STORES.vocabulary);
+  await clearStore(STORES.outbox);
+  await deleteRecord(STORES.kv, OWNER_KEY);
+  await deleteRecord(STORES.kv, SYNCED_AT_KEY);
+
+  announceOutboxChange();
 }
 
 /** When the mirror was last known to match the server, if ever. */
@@ -95,11 +139,36 @@ type NewMutation<T = PendingMutation> = T extends PendingMutation
   ? Omit<T, "id" | "at">
   : never;
 
+/* ---------- knowing when the queue changes ---------- */
+
+const outboxListeners = new Set<() => void>();
+
+/**
+ * Told whenever something is added to or taken off the queue.
+ *
+ * The alternative was a four-second poll, which is a timer running for as
+ * long as a reader is offline — the exact situation where a phone is also
+ * short of battery — and a count that is up to four seconds out of date on
+ * a screen the reader is watching while they save something.
+ */
+export function subscribeToOutbox(listener: () => void): () => void {
+  outboxListeners.add(listener);
+  return () => {
+    outboxListeners.delete(listener);
+  };
+}
+
+function announceOutboxChange() {
+  for (const listener of outboxListeners) listener();
+}
+
 export async function queueMutation(mutation: NewMutation): Promise<void> {
   await appendRecord(STORES.outbox, {
     ...mutation,
     at: new Date().toISOString(),
   });
+
+  announceOutboxChange();
 }
 
 export async function readOutbox(): Promise<PendingMutation[]> {
@@ -112,6 +181,7 @@ export async function readOutbox(): Promise<PendingMutation[]> {
 
 export async function forgetMutation(id: number): Promise<void> {
   await deleteRecord(STORES.outbox, id);
+  announceOutboxChange();
 }
 
 /**

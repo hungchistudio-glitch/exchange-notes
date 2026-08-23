@@ -20,6 +20,7 @@ import {
 } from "@/hooks/useOnline";
 import {
   applyPending,
+  forgetMirror,
   readMirror,
   readOutbox,
   writeMirror,
@@ -95,7 +96,7 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
    * made of them, and if the copy fails the only cost is that the next
    * cold start with no signal is emptier than it could have been.
    */
-  void writeMirror(items);
+  void writeMirror(items, user.id);
 
   return {
     items,
@@ -112,7 +113,27 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
  * list, in order, with no hint that it is waiting.
  */
 async function readLocalSnapshot(): Promise<VocabularyItem[]> {
-  const [mirror, pending] = await Promise.all([readMirror(), readOutbox()]);
+  /*
+   * getSession, not getUser: this runs before anything is painted and
+   * getUser is a round trip, which is the exact wait the local copy exists
+   * to avoid. getSession reads the session the client already has on disk.
+   *
+   * It is not a security check — the mirror holds only what this device
+   * was already shown — but it is what stops one reader's words appearing
+   * on the way in for the next one.
+   */
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const userId = session?.user?.id;
+  if (!userId) return [];
+
+  const [mirror, pending] = await Promise.all([
+    readMirror(userId),
+    readOutbox(),
+  ]);
 
   return applyPending(mirror, pending);
 }
@@ -264,6 +285,10 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         setLearningLanguage(null);
         setError("");
         setLoading(false);
+
+        // The device's copy goes with them. A phone that is handed on, or
+        // simply shared, must not open on the last person's words.
+        void forgetMirror();
       }
     });
 

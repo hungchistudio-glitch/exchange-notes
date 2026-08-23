@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { reportNetworkFailure } from "@/hooks/useOnline";
+import { createClient } from "@/lib/supabase/client";
 import {
   applyPending,
   readMirror,
@@ -96,7 +97,18 @@ function storeCachedLookup(query: string, result: VocabularyLookupResult) {
 async function lookupFromDevice(
   query: string,
 ): Promise<VocabularyLookupResult | null> {
-  const [mirror, pending] = await Promise.all([readMirror(), readOutbox()]);
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const userId = session?.user?.id;
+  if (!userId) return null;
+
+  const [mirror, pending] = await Promise.all([
+    readMirror(userId),
+    readOutbox(),
+  ]);
   const [match] = searchLocal(applyPending(mirror, pending), query);
 
   if (!match) return null;
