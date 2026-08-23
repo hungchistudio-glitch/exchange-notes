@@ -1,6 +1,6 @@
 "use client";
 
-import { getLanguage } from "@/lib/languages";
+import { getLanguage, resolveDisplayPair } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
 import { useEffect, useRef, useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
@@ -100,7 +100,30 @@ export default function VocabularyDrawer({
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
   const { languagePair } = useLearningLanguageContext();
-  const [primaryLanguage, secondaryLanguage] = languagePair;
+
+  /*
+   * Preferred, not assumed — the same rule StoryDetailSheet already follows,
+   * and this drawer opens out of that sheet.
+   *
+   * Indexing the words by the reader's own pair meant a card the pool had
+   * not been generated in produced `texts[language] ?? ""` for every word:
+   * a list of blank rows under a story that had rendered perfectly well,
+   * because the sheet above it fell back and the drawer below it did not.
+   *
+   * Resolved against the vocabulary's own languages rather than the card's
+   * titles, so the fallback is decided by what the words can actually be
+   * shown in.
+   */
+  const vocabularyLanguages = Object.assign(
+    {},
+    ...(card?.vocabulary ?? []).map((item) => item.texts),
+  ) as Record<string, string>;
+
+  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
+    vocabularyLanguages,
+    languagePair,
+  );
+
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
 
   // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
@@ -126,15 +149,21 @@ export default function VocabularyDrawer({
 
       if (!user) return;
 
+      /*
+       * Saved under the languages on screen, not the ones the reader
+       * prefers. Where a card could not be shown in their pair, the two
+       * differ — and filing a Spanish word as Italian because Italian is
+       * what they are studying is worse than not saving it.
+       */
       await insertVocabulary({
         user_id: user.id,
         word: (item.texts[primaryLanguage] ?? "").trim(),
         translation: (item.texts[secondaryLanguage] ?? "").trim(),
-        word_language: languagePair[0],
-        translation_language: languagePair[1],
+        word_language: primaryLanguage,
+        translation_language: secondaryLanguage,
         part_of_speech: item.partOfSpeech?.trim() || null,
-        example_sentence: item.examples[languagePair[0]]?.trim() || null,
-        translated_example: item.examples[languagePair[1]]?.trim() || null,
+        example_sentence: item.examples[primaryLanguage]?.trim() || null,
+        translated_example: item.examples[secondaryLanguage]?.trim() || null,
         confidence: "medium",
         category: "other",
         status: "new",

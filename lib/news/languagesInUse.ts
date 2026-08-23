@@ -1,5 +1,6 @@
 import {
   DEFAULT_LEARNING_PAIR,
+  LANGUAGE_CODES,
   readLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
@@ -14,10 +15,18 @@ import { createServiceClient } from "@/lib/supabase/service";
  * a menu scan, where each extra language is latency a single person waits
  * through for a language they are not reading.
  *
- * Still capped. Output grows with each one, and a pool covering languages
- * nobody has chosen is spending on an audience that does not exist.
+ * Every language an account actually uses now fits, which was not true when
+ * this was four: the default pair is always forced in, so four left two
+ * discretionary slots, and a reader who switched to a fifth language got a
+ * feed that had never heard of it. Since the cap only ever bound the
+ * languages people had chosen, and there are only ever as many of those as
+ * the table has rows, the honest ceiling is the table itself.
+ *
+ * It is still a cap rather than "all of them" for the day the table grows
+ * past what one call can carry — and lib/dailyNews.ts shrinks the batch as
+ * this number rises, so the output per request stays where it was.
  */
-const MAX_LANGUAGES = 4;
+const MAX_LANGUAGES = LANGUAGE_CODES.length;
 
 /**
  * The languages the pool actually needs to be written in.

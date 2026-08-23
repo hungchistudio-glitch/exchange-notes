@@ -119,13 +119,23 @@ export function readDailyNewsCard(value: unknown): DailyNewsCard | null {
     ? (raw.vocabulary as LegacyVocabularyItem[])
     : [];
 
+  /*
+   * Mapped first, then filtered on the result.
+   *
+   * This used to require `word` and `translation` to be strings before it
+   * would look at an item at all — a test only the legacy shape could pass.
+   * The moment the pool started writing `texts`, every word on every new
+   * card was dropped on the way out of the database, and Discover's key-word
+   * list came up empty on exactly the cards that had finally been generated
+   * in the reader's own language. The titles above were already read the
+   * right way round, which is why the story rendered in Spanish while its
+   * vocabulary did not exist.
+   *
+   * The honest test is the one below: an item is usable when it can name the
+   * word in at least one language, whichever shape it arrived in.
+   */
   const vocabulary = rawVocabulary
-    .filter(
-      (item) =>
-        !!item &&
-        typeof item.word === "string" &&
-        typeof item.translation === "string",
-    )
+    .filter((item) => !!item)
     .map((item) => ({
       texts: item.texts
         ? compactByLanguage(item.texts)
@@ -140,7 +150,8 @@ export function readDailyNewsCard(value: unknown): DailyNewsCard | null {
             [FIRST]: item.englishExample ?? "",
             [SECOND]: item.chineseExample ?? "",
           }),
-    }));
+    }))
+    .filter((item) => Object.keys(item.texts).length > 0);
 
   return {
     id: typeof raw.id === "string" ? raw.id : "",
