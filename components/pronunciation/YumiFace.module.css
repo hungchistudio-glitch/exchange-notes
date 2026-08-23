@@ -109,6 +109,38 @@
 /* Sustained friction (fricatives/affricates, ㄈㄙㄒㄕ...) and the gentler
    vowel/approximant/lateral airflow: a continuous back-and-forth reading as
    air moving through a narrow gap the whole time the sound is held. */
+/*
+ * A burst that decays into a hiss, which is what an affricate is. The sharp
+ * head separates it from a fricative and the sustained tail separates it from
+ * a stop; showing only one of the two is how ㄓ and ㄕ came to look identical.
+ */
+.airflow-affricate .airflowLine {
+  animation: airflowAffricate 900ms cubic-bezier(0.2, 0.85, 0.3, 1) infinite;
+}
+
+@keyframes airflowAffricate {
+  0% {
+    opacity: 0;
+    transform: translateX(0) scaleX(0.25);
+  }
+  14% {
+    opacity: 0.95;
+    transform: translateX(5px) scaleX(1.15);
+  }
+  34% {
+    opacity: 0.55;
+    transform: translateX(9px) scaleX(0.85);
+  }
+  70% {
+    opacity: 0.4;
+    transform: translateX(13px) scaleX(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(17px) scaleX(0.55);
+  }
+}
+
 .airflow-friction .airflowLine,
 .airflow-oral_center .airflowLine,
 .airflow-oral_side .airflowLine {
