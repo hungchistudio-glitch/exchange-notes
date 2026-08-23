@@ -62,6 +62,28 @@ function Harness({ language = "it" as LanguageCode }) {
 }
 
 /**
+ * Like Harness, but the language can be changed from the outside while a
+ * run is in flight — which is the one thing that cancels a run without
+ * unmounting the component that reports on it.
+ */
+function SwitchableHarness({
+  language,
+  translated,
+}: {
+  language: LanguageCode;
+  translated: number;
+}) {
+  const { filling } = useVocabularyLanguageFill({
+    items: makeItems(translated, language),
+    learningLanguage: language,
+    loading: false,
+    onFilled: () => {},
+  });
+
+  return <span data-testid="filling">{filling ? "yes" : "no"}</span>;
+}
+
+/**
  * Lets the internal loop run as many turns as it needs.
  *
  * Timers are advanced as well as microtasks flushed, because a retry waits
@@ -163,6 +185,46 @@ describe("vocabulary language fill", () => {
     await settle(20);
 
     expect(counter.served).toBe(0);
+  });
+
+  it("settles a run that is cancelled while its batch is still in flight", async () => {
+    /*
+     * The hang: `wait` armed a timer and then cleared it when the run was
+     * already cancelled, throwing away the only thing that would ever
+     * resolve the promise. The loop never returned, its `finally` never
+     * ran, and the indicator it turns off stayed on for the life of the
+     * screen — the exact spinner the test below exists to prevent, reached
+     * by the one path that test does not walk.
+     *
+     * The window is narrow and it is the only one that matters: a batch
+     * that is cancelled *before* it fails reaches the retry with the run
+     * already dead. Cancelling any later is harmless, because by then
+     * `wait` has its timer and the timer still fires.
+     */
+    let failInFlight!: () => void;
+
+    const pending = new Promise<{ ok: boolean; status: number }>((resolve) => {
+      failInFlight = () => resolve({ ok: false, status: 500 });
+    });
+
+    vi.stubGlobal("fetch", vi.fn(() => pending));
+
+    const { getByTestId, rerender } = render(
+      <SwitchableHarness language="it" translated={0} />,
+    );
+
+    await settle(1);
+    expect(getByTestId("filling").textContent).toBe("yes");
+
+    // French is already complete, so no replacement run starts and nothing
+    // else can turn the indicator off on the cancelled run's behalf.
+    rerender(<SwitchableHarness language="fr" translated={LIBRARY_SIZE} />);
+
+    // Only now does the batch that was already in flight come back failed.
+    failInFlight();
+    await settle(20);
+
+    expect(getByTestId("filling").textContent).toBe("no");
   });
 
   it("stops reporting that it is filling once the run ends", async () => {

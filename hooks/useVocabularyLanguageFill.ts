@@ -32,12 +32,16 @@ const MAX_CONSECUTIVE_FAILURES = 3;
 const RETRY_DELAY_MS = [1500, 4000];
 
 function wait(ms: number, signal: { cancelled: boolean }): Promise<void> {
+  // Cancelled before the wait even starts: resolve now rather than arm a
+  // timer. This used to clear the timeout instead, which threw away the one
+  // thing that would ever settle the promise — so `runFill` never returned,
+  // its `finally` never ran, and the indicator it turns off stayed on for
+  // the life of the screen. The caller re-checks `cancelled` immediately
+  // after the await, so resolving early stops the loop just as firmly.
+  if (signal.cancelled) return Promise.resolve();
+
   return new Promise((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    // Nothing to unsubscribe from — the caller checks `cancelled` on the
-    // other side of the await, and a stray timer is cheaper than a
-    // subscription to tear down.
-    if (signal.cancelled) clearTimeout(timer);
+    setTimeout(resolve, ms);
   });
 }
 
