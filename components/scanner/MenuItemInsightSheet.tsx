@@ -1,6 +1,6 @@
 "use client";
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { BookmarkCheck, BookmarkPlus, LoaderCircle, Send, Volume2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -52,7 +52,7 @@ export default function MenuItemInsightSheet({
   const copy = t.scanner.menu;
   const router = useRouter();
 
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
 
 
   const [speaking, setSpeaking] = useState<SpeechLanguage | null>(null);

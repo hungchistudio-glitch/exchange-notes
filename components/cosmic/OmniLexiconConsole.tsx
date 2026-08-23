@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyLookup from "@/hooks/useVocabularyLookup";
@@ -33,7 +33,7 @@ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import {
-  getPronunciation,
+  getPronunciationForPair,
   type PronunciationResult,
 } from "@/lib/pronunciation/getPronunciation";
 import {
@@ -89,7 +89,7 @@ export default function OmniLexiconConsole({
 }: OmniLexiconConsoleProps) {
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic.omni;
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
 
   const [query, setQuery] = useState("");
   const {
@@ -221,9 +221,9 @@ export default function OmniLexiconConsole({
 
     let active = true;
 
-    void getPronunciation(
-      lookupResult.englishName,
-      lookupResult.chineseName,
+    void getPronunciationForPair(
+      { text: lookupResult.englishName, language: languagePair[0] },
+      { text: lookupResult.chineseName, language: languagePair[1] },
     ).then((result) => {
       if (active) setPronunciation(result);
     });
@@ -231,7 +231,7 @@ export default function OmniLexiconConsole({
     return () => {
       active = false;
     };
-  }, [lookupResult]);
+  }, [lookupResult, languagePair]);
 
   const { lookupCopied, shareLookupResult } = useVocabularyShare(lookupResult);
 

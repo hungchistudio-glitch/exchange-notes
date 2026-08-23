@@ -1,103 +1,95 @@
 import { NextResponse } from "next/server";
 
 import { getPhonetics, type Phonetics } from "@/lib/pronunciation";
-import { hasPhonetics, isLanguageCode, type LanguageCode } from "@/lib/languages";
+import { transcribe } from "@/lib/pronunciation/ipaSource";
+import { isLanguageCode, type LanguageCode } from "@/lib/languages";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-type DictionaryPhonetic = {
-  text?: string;
-};
-
-type DictionaryEntry = {
-  phonetic?: string;
-  phonetics?: DictionaryPhonetic[];
-};
-
-/**
- * Languages this app can actually source IPA for.
+/*
+ * Phonetic annotation for a word, in whichever systems its language uses.
  *
- * Not the same question as which languages *use* IPA — lib/languages.ts says
- * Spanish, French and Italian all do, and that is correct. It is the source
- * that is narrow: dictionaryapi.dev serves English entries only. Asking it
- * for a Spanish word returns an English miss, not Spanish IPA, so those
- * languages get no IPA rather than a wrong one until a source exists.
- */
-const IPA_SOURCE_LANGUAGES: readonly LanguageCode[] = ["en"];
-
-// Free, keyless public dictionary — deliberately NOT Gemini. This endpoint
-// can be called once per vocabulary word every time a drawer opens, so
-// routing it through the same paid/rate-limited model used elsewhere in
-// this app would reintroduce exactly the quota pressure the Daily News
-// rework was meant to eliminate. dictionaryapi.dev only covers real
-// English dictionary words (proper nouns / invented terms simply won't
-// resolve), which is an acceptable trade-off for a "best effort" IPA
-// annotation.
-async function fetchEnglishPhonetic(word: string): Promise<string> {
-  try {
-    const response = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(
-        word
-      )}`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-
-    if (!response.ok) return "";
-
-    const entries = (await response.json()) as DictionaryEntry[];
-
-    for (const entry of entries) {
-      if (entry.phonetic?.trim()) return entry.phonetic.trim();
-
-      const withText = entry.phonetics?.find((p) => p.text?.trim());
-      if (withText?.text) return withText.text.trim();
-    }
-
-    return "";
-  } catch (error) {
-    console.error("Dictionary lookup failed:", error);
-    return "";
-  }
-}
-
-/**
- * Everything this app can annotate `text` with, given its language.
+ * en / es / fr / it  →  IPA        (lib/pronunciation/ipaSource.ts)
+ * zh-TW              →  zhuyin + pinyin, computed locally
  *
- * Absent rather than empty for a system the language does not use, so a
- * caller can tell "this language has no zhuyin" from "the lookup came back
- * empty" — the first should render nothing, the second may want a retry.
+ * Signed-in only. It was open, which was fine while the only thing behind
+ * it was a free public dictionary. It now reaches a rate-limited model on a
+ * cache miss, and an open endpoint that can spend quota is an open endpoint
+ * that will.
  */
+
+/** Everything this app can annotate `text` with, given its language. */
 async function annotate(
   text: string,
-  code: LanguageCode
+  code: LanguageCode,
 ): Promise<Phonetics & { ipa?: string }> {
   const trimmed = text.trim();
   if (!trimmed) return {};
 
-  // Computed locally (no network call, no quota risk) — only the IPA lookup
-  // depends on the external dictionary, and a miss there should never take
-  // these down with it.
+  // Computed locally — no network, no quota — so a failed IPA lookup can
+  // never take zhuyin and pinyin down with it.
   const local = getPhonetics(trimmed, code);
 
-  if (!hasPhonetics(code, "ipa") || !IPA_SOURCE_LANGUAGES.includes(code)) {
-    return local;
-  }
-
-  const ipa = await fetchEnglishPhonetic(trimmed);
+  const ipa = (await transcribe([trimmed], code)).get(trimmed);
 
   return ipa ? { ...local, ipa } : local;
 }
 
+const EMPTY = {
+  phonetics: {},
+  englishPronunciation: "",
+  pinyin: "",
+  zhuyin: "",
+};
+
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = (await request.json()) as {
       text?: string;
+      texts?: unknown;
       language?: string;
       english?: string;
       chinese?: string;
     };
 
-    // Preferred form: one text, one language.
+    /*
+     * Batch form. A vocabulary drawer opens with a handful of words at
+     * once, and asking for them together is the difference between quota
+     * that scales with words and quota that scales with taps.
+     */
+    if (Array.isArray(body.texts) && isLanguageCode(body.language)) {
+      const language = body.language;
+
+      const texts = body.texts
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 40);
+
+      const ipaByText = await transcribe(texts, language);
+
+      return NextResponse.json({
+        phonetics: Object.fromEntries(
+          texts.map((text) => {
+            const local = getPhonetics(text, language);
+            const ipa = ipaByText.get(text);
+            return [text, ipa ? { ...local, ipa } : local];
+          }),
+        ),
+      });
+    }
+
+    // One text, one language.
     if (typeof body.text === "string" && isLanguageCode(body.language)) {
       const phonetics = await annotate(body.text, body.language);
 
@@ -111,15 +103,17 @@ export async function POST(request: Request) {
       });
     }
 
-    // Legacy form: the two halves of an English/Chinese pair, named by
-    // language. The field names are the declaration — `chinese` can only
-    // ever have been zh-TW.
+    /*
+     * Legacy form: the two halves of an English/Chinese pair, named by
+     * language. The field names are the declaration — `chinese` can only
+     * ever have been zh-TW.
+     */
     const english = body.english?.trim() ?? "";
     const chinese = body.chinese?.trim() ?? "";
 
     const chinesePhonetics = getPhonetics(chinese, "zh-TW");
     const englishPronunciation = english
-      ? await fetchEnglishPhonetic(english)
+      ? ((await transcribe([english], "en")).get(english) ?? "")
       : "";
 
     return NextResponse.json({
@@ -134,11 +128,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Word pronunciation lookup failed:", error);
 
-    return NextResponse.json({
-      phonetics: {},
-      englishPronunciation: "",
-      pinyin: "",
-      zhuyin: "",
-    });
+    return NextResponse.json(EMPTY);
   }
 }

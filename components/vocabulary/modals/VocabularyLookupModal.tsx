@@ -4,7 +4,7 @@ import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import { speak } from "@/lib/speech";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
@@ -67,7 +67,7 @@ export default function VocabularyLookupModal({
   onSend,
 }: VocabularyLookupModalProps) {
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
   const motion = useSheetMotion({ open, onClose });
 
   if (!motion.rendered) return null;

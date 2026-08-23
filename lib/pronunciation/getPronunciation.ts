@@ -69,3 +69,36 @@ export async function getPhoneticsFor(
     return {};
   }
 }
+
+/**
+ * Phonetics for the two sides of one lookup, each asked for in its own
+ * language.
+ *
+ * The pair form above names its fields `english` and `chinese`, which was
+ * the truth when there were two languages. Callers that still hold a
+ * primary/secondary pair should use this instead: it asks about Italian as
+ * Italian rather than sending it to an English dictionary and rendering
+ * whatever comes back.
+ *
+ * Merged into the flat shape those callers already render, with each system
+ * taken from whichever side actually has it — a language contributes only
+ * the annotations it uses, so the two never compete for the same field.
+ */
+export async function getPronunciationForPair(
+  primary: { text: string; language: LanguageCode },
+  secondary: { text: string; language: LanguageCode },
+): Promise<PronunciationResult> {
+  const [first, second] = await Promise.all([
+    getPhoneticsFor(primary.text, primary.language),
+    getPhoneticsFor(secondary.text, secondary.language),
+  ]);
+
+  const phonetics = { ...second, ...first };
+
+  return {
+    phonetics,
+    englishPronunciation: phonetics.ipa ?? "",
+    pinyin: phonetics.pinyin ?? "",
+    zhuyin: phonetics.zhuyin ?? "",
+  };
+}

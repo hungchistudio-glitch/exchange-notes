@@ -16,6 +16,17 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      /*
+       * `server-only` exists to make the *bundler* fail when a server module
+       * is pulled into a client one. There is no bundler here and no client
+       * boundary to protect, so it resolves to nothing — without this, any
+       * test that touches a server module fails on the import rather than on
+       * anything it was trying to check.
+       */
+      "server-only": new URL("./tests/serverOnlyStub.ts", import.meta.url)
+        .pathname,
+    },
   },
   test: {
     environment: "jsdom",

@@ -27,7 +27,7 @@ import type {
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -93,7 +93,7 @@ function VocabularyList({
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
   const lookup = t.vocabulary.lookup;
 
   if (loading) {

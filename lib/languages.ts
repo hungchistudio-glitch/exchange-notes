@@ -313,6 +313,49 @@ export function resolveDisplayPair(
 }
 
 /**
+ * Whether a stored value is one of the interface languages.
+ *
+ * Lives here rather than in lib/appPreferences.ts so server code can
+ * validate `app_preferences.interfaceLanguage` without importing a module
+ * built around localStorage. Object.hasOwn, not `in`: the value comes out
+ * of a JSON column, and `in` would accept "constructor".
+ */
+export function isInterfaceLanguageValue(
+  value: unknown,
+): value is InterfaceLanguage {
+  return (
+    typeof value === "string" &&
+    Object.hasOwn(INTERFACE_LANGUAGE_CODE, value)
+  );
+}
+
+/**
+ * Which language glosses the one being learned.
+ *
+ * The single definition of the rule, shared by the client hook that renders
+ * cards (hooks/useDisplayLanguages.ts) and the server helper that generates
+ * them (lib/profile/languagePair.ts). They disagreed once — the screen
+ * showed one pairing and the model was asked for another — and the only
+ * reliable way for that not to happen again is for there to be one rule.
+ *
+ * The interface language wins: it is what the reader most recently said
+ * they read comfortably, and it is visibly in effect everywhere else on
+ * screen. "My language" is the tie-breaker for someone learning the
+ * language the app is already in, and English or Chinese is the last
+ * resort — a card needs two sides, and the same text twice is not two.
+ */
+export function resolveSupportLanguage(
+  learning: LanguageCode,
+  interfaceCode: LanguageCode | null | undefined,
+  native: LanguageCode | null | undefined,
+): LanguageCode {
+  if (interfaceCode && interfaceCode !== learning) return interfaceCode;
+  if (native && native !== learning) return native;
+
+  return DEFAULT_LEARNING_PAIR.find((code) => code !== learning) ?? "en";
+}
+
+/**
  * Whether this content can lead in the language being learned.
  *
  * The one question a feed has to ask before showing something: the lead is

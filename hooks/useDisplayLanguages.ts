@@ -4,7 +4,11 @@ import { useMemo } from "react";
 
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
-import { INTERFACE_LANGUAGE_CODE, type LanguageCode } from "@/lib/languages";
+import {
+  INTERFACE_LANGUAGE_CODE,
+  resolveSupportLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 
 export type DisplayLanguages = {
   /** The language being learned. Leads every card, every time it is there. */
@@ -54,16 +58,11 @@ export default function useDisplayLanguages(): DisplayLanguages {
   const interfaceLanguage = useInterfaceLanguage();
 
   return useMemo(() => {
-    const preferred = INTERFACE_LANGUAGE_CODE[interfaceLanguage];
-
-    const supportLanguage =
-      preferred !== learningLanguage
-        ? preferred
-        : nativeLanguage !== learningLanguage
-          ? nativeLanguage
-          : learningLanguage === "en"
-            ? "zh-TW"
-            : "en";
+    const supportLanguage = resolveSupportLanguage(
+      learningLanguage,
+      INTERFACE_LANGUAGE_CODE[interfaceLanguage],
+      nativeLanguage,
+    );
 
     return {
       learningLanguage,
