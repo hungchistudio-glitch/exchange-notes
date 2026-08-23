@@ -593,29 +593,32 @@ export type TranslationDictionary = {
     };
   };
 
+  /**
+   * The /speak page — the one the Scriptable widget and a shared link open.
+   *
+   * Public, so its copy follows the interface language stored on the device
+   * rather than a profile. What it says a word *in* comes from the link.
+   */
+  speakPage: {
+    eyebrow: string;
+    noText: string;
+    ready: string;
+    playing: string;
+    complete: string;
+    blocked: string;
+    playAgain: string;
+    openLab: string;
+    backToVocabulary: string;
+  };
+
   pronunciation: {
     backToVocabulary: string;
     backHome: string;
     title: string;
     subtitle: string;
 
-    modes: {
-      english: string;
-      zhuyin: string;
-    };
-
-    filters: {
-      all: string;
-      vowels: string;
-      consonants: string;
-      initial: string;
-      medial: string;
-      final: string;
-    };
-
     cards: {
       howToSayIt: string;
-      pronunciationMethod: string;
       playWord: string;
       correct: string;
       incorrect: string;
@@ -624,9 +627,6 @@ export type TranslationDictionary = {
       showLessGuidance: string;
       commonTrapSummary: string;
       playbackFailed: string;
-      kk: string;
-      moreSounds: string;
-      romanizationHint: string;
     };
 
     yumi: {
@@ -636,6 +636,234 @@ export type TranslationDictionary = {
       voice: string;
       demoAriaLabel: string;
       tapToHear: string;
+    };
+
+    /**
+     * The Pronunciation Lab.
+     *
+     * Chrome only — every string here names a control, a state or a heading.
+     * The teaching material itself (what a sound is, how to make it, which
+     * words contain it) lives in the language packs under
+     * lib/pronunciation/lab/packs, deliberately apart from this: a lesson
+     * about Spanish trills is content in one language, and this is the app
+     * speaking in whichever language the reader chose.
+     */
+    lab: {
+      backToLab: string;
+      learningLabel: string;
+      switchLanguageHint: string;
+
+      coach: {
+        eyebrow: string;
+        calibratedFor: string;
+        idle: string;
+        demonstrating: string;
+        listening: string;
+        recording: string;
+        analyzing: string;
+        correct: string;
+        almost: string;
+        incorrect: string;
+        celebrating: string;
+        encouraging: string;
+        waiting: string;
+      };
+
+      modules: {
+        sounds: { title: string; description: string };
+        listen: { title: string; description: string };
+        speak: { title: string; description: string };
+        words: { title: string; description: string };
+        rhythm: { title: string; description: string };
+        review: { title: string; description: string };
+      };
+
+      today: {
+        eyebrow: string;
+        title: string;
+        minutes: string;
+        start: string;
+        resume: string;
+        completed: string;
+        empty: string;
+      };
+
+      progress: {
+        eyebrow: string;
+        title: string;
+        sounds: string;
+        listening: string;
+        speaking: string;
+        rhythm: string;
+        notEnough: string;
+        soundsMastered: string;
+        practisedCount: string;
+      };
+
+      mastery: {
+        new: string;
+        learning: string;
+        improving: string;
+        mastered: string;
+      };
+
+      weakness: {
+        title: string;
+        description: string;
+        strong: string;
+        improving: string;
+        needsWork: string;
+        empty: string;
+        viewAll: string;
+        attempts: string;
+      };
+
+      sounds: {
+        title: string;
+        subtitle: string;
+        all: string;
+        empty: string;
+        soundCount: string;
+      };
+
+      detail: {
+        articulation: string;
+        examples: string;
+        minimalPairs: string;
+        recordYourself: string;
+        practiceAgain: string;
+        nativeSpeed: string;
+        slowSpeed: string;
+        replay: string;
+        tongue: string;
+        lips: string;
+        jaw: string;
+        airflow: string;
+        voicing: string;
+        resonance: string;
+        writtenAs: string;
+        difficulty: string;
+        notFound: string;
+      };
+
+      listen: {
+        title: string;
+        subtitle: string;
+        prompt: string;
+        playAgain: string;
+        next: string;
+        finish: string;
+        correct: string;
+        incorrect: string;
+        empty: string;
+        roundOf: string;
+      };
+
+      speak: {
+        title: string;
+        subtitle: string;
+        listenFirst: string;
+        record: string;
+        stop: string;
+        recording: string;
+        analyzing: string;
+        retry: string;
+        continueLabel: string;
+        native: string;
+        you: string;
+        compare: string;
+        playNative: string;
+        playYours: string;
+        overall: string;
+        notAnalyzed: string;
+        notAnalyzedHint: string;
+        privacyCloud: string;
+        privacyOnDevice: string;
+        heard: string;
+        permissionDenied: string;
+        permissionHelp: string;
+        unsupported: string;
+        unsupportedHelp: string;
+        noAudio: string;
+        failed: string;
+        empty: string;
+      };
+
+      dimensions: {
+        sound: string;
+        vowel: string;
+        consonant: string;
+        consonantLength: string;
+        stress: string;
+        rhythm: string;
+        fluency: string;
+        tone: string;
+        pitch: string;
+        nasal: string;
+        liaison: string;
+        melody: string;
+      };
+
+      words: {
+        title: string;
+        subtitle: string;
+        empty: string;
+        emptyHint: string;
+        addWords: string;
+        practise: string;
+        reasonWeak: string;
+        reasonDifficult: string;
+        reasonNew: string;
+        reasonRecent: string;
+        drills: string;
+      };
+
+      rhythm: {
+        title: string;
+        subtitle: string;
+        rule: string;
+        primaryStress: string;
+        secondaryStress: string;
+        linked: string;
+        held: string;
+        toneLabel: string;
+        empty: string;
+      };
+
+      review: {
+        title: string;
+        subtitle: string;
+        due: string;
+        nothingDue: string;
+        nothingDueHint: string;
+        start: string;
+      };
+
+      session: {
+        stepOf: string;
+        skip: string;
+        next: string;
+        finish: string;
+        complete: string;
+        completeBody: string;
+        backToLab: string;
+        resumeTitle: string;
+        resumeBody: string;
+        resume: string;
+        startOver: string;
+        leaveConfirm: string;
+      };
+
+      states: {
+        loading: string;
+        error: string;
+        errorBody: string;
+        retry: string;
+        signedOut: string;
+        signedOutBody: string;
+        notSaved: string;
+        audioUnavailable: string;
+      };
     };
   };
 

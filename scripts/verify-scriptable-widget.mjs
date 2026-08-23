@@ -324,8 +324,13 @@ assert.match(
 assert.match(vocabularyPage, /openWidgetWordId/);
 assert.match(capturePage, /searchParams\.get\(["']source["']\)/);
 assert.match(capturePage, /source\s*===\s*["']camera["']/);
-assert.match(speakPage, /requestedLanguage\s*===\s*["']zh-TW["']/);
-assert.match(speakClient, /speak\(text, language/);
+// The /speak page used to compare the query value against "zh-TW" and
+// default everything else to English. It now resolves any language the app
+// knows — including the speech tags this widget actually sends — so the
+// assertion is about that resolution rather than about the old two-way
+// comparison. The deep links above still exercise both real values.
+assert.match(speakPage, /resolveLanguageCode\(requestedLanguage\)/);
+assert.match(speakClient, /speak\(text, meta\.speechTag/);
 assert.doesNotMatch(source, /exchangenotes:\/\//);
 
 console.log("PASS: Scriptable widget syntax loaded");

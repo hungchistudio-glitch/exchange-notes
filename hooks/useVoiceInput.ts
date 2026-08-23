@@ -2,50 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-/**
- * Minimal structural types for the Web Speech API. TypeScript's lib.dom
- * still ships these as vendor-prefixed-only in most versions, so we
- * declare just the surface we actually touch rather than pulling in a
- * dependency for it.
- */
-type SpeechRecognitionAlternative = { transcript: string };
-type SpeechRecognitionResult = {
-  isFinal: boolean;
-  0: SpeechRecognitionAlternative;
-};
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: {
-    length: number;
-    [index: number]: SpeechRecognitionResult;
-  };
-};
-
-type SpeechRecognitionLike = {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((event: { error: string }) => void) | null;
-  onend: (() => void) | null;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-
-function getRecognitionConstructor(): SpeechRecognitionConstructor | null {
-  if (typeof window === "undefined") return null;
-
-  const w = window as unknown as {
-    SpeechRecognition?: SpeechRecognitionConstructor;
-    webkitSpeechRecognition?: SpeechRecognitionConstructor;
-  };
-
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
+import {
+  getRecognitionConstructor,
+  type SpeechRecognitionLike,
+} from "@/lib/speechRecognition";
 
 // useSyncExternalStore rather than a setState-in-effect: support never
 // changes at runtime, and this keeps the server snapshot (false) and the
