@@ -427,14 +427,30 @@ export function selectVoice(
 ): SpeechSynthesisVoice | null {
   const voices = getAvailableVoices();
 
-  // An explicitly chosen voice is not a preference to be balanced against
-  // dialect and quality heuristics — it is the answer.
+  const prefix = primarySubtag(lang);
+
+  /*
+   * An explicitly chosen voice is not a preference to be balanced against
+   * dialect and quality heuristics — it is the answer. But it is the answer
+   * to "which voice for *this* language", and a pin only ever applies to the
+   * language it was made under.
+   *
+   * The language check is the part that was missing. Preferences are stored
+   * per language and survive everything: switching what you are learning,
+   * reinstalling voices, moving to another device. A pin left pointing at a
+   * voice the platform has since re-registered under another language would
+   * otherwise win outright and read Italian in it — the one case where
+   * honouring the setting produces the exact thing the setting exists to
+   * prevent.
+   */
   if (preferredVoiceURI) {
-    const chosen = voices.find((voice) => voice.voiceURI === preferredVoiceURI);
+    const chosen = voices.find(
+      (voice) =>
+        voice.voiceURI === preferredVoiceURI &&
+        voice.lang.toLowerCase().startsWith(prefix),
+    );
     if (chosen) return chosen;
   }
-
-  const prefix = primarySubtag(lang);
 
   const candidates = voices.filter((voice) =>
     voice.lang.toLowerCase().startsWith(prefix)

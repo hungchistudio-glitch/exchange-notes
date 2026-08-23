@@ -106,6 +106,56 @@ describe("WordCardMessage", () => {
     expect(container.textContent).not.toContain("te amo");
   });
 
+  it("annotates both sides in whatever systems their languages use", async () => {
+    /*
+     * The chat card listed pinyin and zhuyin and nothing else, so a word in
+     * a conversation carried an annotation for exactly one of the five
+     * languages the app teaches — and a reader could not tell that from the
+     * word simply not having one.
+     */
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: { body: string }) => {
+        const body = JSON.parse(init.body) as { texts: string[]; language: string };
+        return {
+          ok: true,
+          json: async () => ({
+            phonetics: Object.fromEntries(
+              body.texts.map((text) => [
+                text,
+                body.language === "it" ? { ipa: "/ti ˈamo/" } : {},
+              ]),
+            ),
+          }),
+        };
+      }),
+    );
+
+    const card = {
+      word: "ti amo",
+      translation: "I love you",
+      wordLanguage: "it" as const,
+      translationLanguage: "en" as const,
+      texts: { en: "I love you", it: "ti amo" },
+      examples: {},
+    };
+
+    const { findByText } = render(
+      <WordCardMessage
+        card={card as never}
+        createdAt="2026-08-22T00:00:00Z"
+        learningLanguage="it"
+        t={english}
+        saved={false}
+        saving={false}
+        onSave={() => {}}
+        onShare={() => {}}
+      />,
+    );
+
+    expect(await findByText("/ti ˈamo/")).toBeTruthy();
+  });
+
   it("carries every language through send and receive", () => {
     // Without this the card is two languages forever, and a reader studying
     // a third sees whichever two the sender happened to have.

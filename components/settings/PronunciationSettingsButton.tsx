@@ -5,6 +5,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   LANGUAGE_CODES,
@@ -64,6 +65,27 @@ export default function PronunciationSettingsButton() {
     getInitialVoicesVersion,
   );
 
+  const { learningLanguage } = useDisplayLanguages();
+
+  /*
+   * The language being learned comes first.
+   *
+   * Playback already follows it on its own — each card is spoken in its own
+   * language and the best installed voice for that language is chosen
+   * automatically. This is about the other half: when the automatic choice
+   * is not the one you want, or when the language has no voice installed at
+   * all, the row you need is the one at the top rather than the third one
+   * down.
+   */
+  const spokenLanguages = useMemo(() => {
+    const learningTag = getLanguage(learningLanguage).speechTag;
+
+    return [
+      learningTag,
+      ...SPOKEN_LANGUAGES.filter((tag) => tag !== learningTag),
+    ];
+  }, [learningLanguage]);
+
   /**
    * Languages where the chosen gender simply does not exist on this device.
    *
@@ -73,19 +95,19 @@ export default function PronunciationSettingsButton() {
    */
   const genderGaps = useMemo(
     () =>
-      SPOKEN_LANGUAGES.filter(
+      spokenLanguages.filter(
         (language) =>
           listVoicesForLanguage(language).length > 0
           && !hasVoiceForGender(language, voiceGender),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [voiceGender, voicesVersion],
+    [spokenLanguages, voiceGender, voicesVersion],
   );
 
   const voicesByLanguage = useMemo(
     () =>
       Object.fromEntries(
-        SPOKEN_LANGUAGES.map((language) => [
+        spokenLanguages.map((language) => [
           language,
           listVoicesForLanguage(language),
         ]),
@@ -144,7 +166,7 @@ export default function PronunciationSettingsButton() {
         footer={
           <button
             type="button"
-            onClick={() => preview(getLanguage(LANGUAGE_CODES[0]).speechTag)}
+            onClick={() => preview(getLanguage(learningLanguage).speechTag)}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition-transform active:scale-[0.985]"
           >
             {copy.testVoice}
@@ -253,7 +275,7 @@ export default function PronunciationSettingsButton() {
               {copy.voicesOnDeviceDescription}
             </p>
 
-            {SPOKEN_LANGUAGES.map((language) => {
+            {spokenLanguages.map((language) => {
               const voices = voicesByLanguage[language];
               const chosen = voiceURIs[language];
 

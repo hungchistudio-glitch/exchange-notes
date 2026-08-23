@@ -13,6 +13,7 @@ import {
   type LanguageCode,
 } from "@/lib/languages";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import usePhonetics from "@/hooks/usePhonetics";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -103,7 +104,16 @@ export default function WordCardMessage({
   function languageBlock(code: LanguageCode, text: string, primary: boolean) {
     const language = getLanguage(code);
     const phonetics = getPhonetics(text, code);
-    const annotation = [phonetics.pinyin, phonetics.zhuyin]
+
+    /*
+     * Whatever systems this language actually uses, in the order the rest of
+     * the app shows them: IPA for the Latin languages, zhuyin and pinyin for
+     * Chinese. This listed only the Chinese two, so a word card in a
+     * conversation carried an annotation for exactly one of the five
+     * languages the app teaches — and the reader had no way to tell that
+     * from the word simply not having one.
+     */
+    const annotation = [ipaFor({ text, language: code }), phonetics.pinyin, phonetics.zhuyin]
       .filter(Boolean)
       .join("  ");
 
@@ -147,6 +157,11 @@ export default function WordCardMessage({
       </div>
     );
   }
+
+  const ipaFor = usePhonetics([
+    { text: sides.primary.text, language: sides.primary.language },
+    { text: sides.secondary.text, language: sides.secondary.language },
+  ]);
 
   const [firstCode, secondCode] = [sides.primary.language, sides.secondary.language];
   const [firstText, secondText] = [sides.primary.text, sides.secondary.text];
