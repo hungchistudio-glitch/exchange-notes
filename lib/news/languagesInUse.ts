@@ -1,6 +1,7 @@
 import {
   DEFAULT_LEARNING_PAIR,
   LANGUAGE_CODES,
+  getLearningLanguages,
   readLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
@@ -43,6 +44,15 @@ const MAX_LANGUAGES = LANGUAGE_CODES.length;
  * The default pair is always included and always first. It is what the
  * existing pool is written in, and the fallback for a reader whose own
  * languages a given card does not carry.
+ *
+ * Any slot the accounts leave empty goes to a language the app offers but
+ * nobody has picked yet. This is not padding — it is the difference between
+ * switching to Italian and finding a feed that already speaks it, and
+ * switching to Italian and reading yesterday's English until tomorrow's run.
+ * The pool is built once a day and cannot be asked again on demand the way a
+ * word can, so a language that arrives the day *after* the reader does is a
+ * language that was missing when it mattered. The cap is unchanged; these
+ * only ever take room the accounts did not want.
  */
 export async function getDailyNewsLanguages(): Promise<LanguageCode[]> {
   const languages: LanguageCode[] = [...DEFAULT_LEARNING_PAIR];
@@ -76,6 +86,13 @@ export async function getDailyNewsLanguages(): Promise<LanguageCode[]> {
     for (const code of ranked) {
       if (languages.length >= MAX_LANGUAGES) break;
       if (!languages.includes(code)) languages.push(code);
+    }
+
+    // Accounts first, always: a language somebody reads in outranks one that
+    // is merely on offer, and only leftover slots reach this loop.
+    for (const meta of getLearningLanguages()) {
+      if (languages.length >= MAX_LANGUAGES) break;
+      if (!languages.includes(meta.code)) languages.push(meta.code);
     }
 
     return languages;
