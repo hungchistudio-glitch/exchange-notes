@@ -2,10 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
-import { InterfaceLanguageProvider } from "@/contexts/InterfaceLanguageContext";
+import { DevicePreferencesProvider } from "@/contexts/DevicePreferencesContext";
+import { rootFontSizeFor } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
-import { getServerInterfaceLanguage } from "@/lib/preferences/interfaceLanguageServer";
-import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
+import {
+  getServerAppFontSize,
+  getServerDailyGoalWords,
+  getServerInterfaceLanguage,
+  getServerInterfaceMode,
+} from "@/lib/preferences/serverPreferences";
 
 import "./globals.css";
 
@@ -80,9 +85,20 @@ export default async function RootLayout({
    * default while the browser knew better, React found a mismatch on the
    * first piece of text it hydrated, threw away the whole server tree and
    * rebuilt the page — an English app repainting into a Chinese one, on every
-   * single load. See lib/preferences/interfaceLanguageServer.ts.
+   * single load. See lib/preferences/serverPreferences.ts.
    */
   const interfaceLanguage = await getServerInterfaceLanguage();
+
+  /*
+   * Two more the server has to answer, for the same reason and with the same
+   * shape. Font size is the root font size, so a reader on "small" was
+   * getting the whole interface laid out at 16px and relaid at 15px on every
+   * load; the daily goal is rendered as a number, so a server that guessed
+   * the default and a browser that knew better disagreed in text — which is
+   * the mismatch that rebuilds the document.
+   */
+  const appFontSize = await getServerAppFontSize();
+  const dailyGoalWords = await getServerDailyGoalWords();
 
   return (
     <html
@@ -95,6 +111,7 @@ export default async function RootLayout({
        */
       lang={getInterfaceLanguageMeta(interfaceLanguage).htmlLang}
       data-interface-language={interfaceLanguage}
+      data-app-font-size={appFontSize}
       data-interface-mode={interfaceMode}
       /*
        * The attribute is written imperatively too, by InterfaceModeProvider,
@@ -124,7 +141,19 @@ export default async function RootLayout({
        * body's own background covers this the moment globals.css lands, in
        * whichever mode is active, so nothing downstream is affected.
        */
-      style={{ backgroundColor: "#07080b" }}
+      /*
+       * The font size is here for a different reason than the colour above:
+       * it is the root size every rem in the app is measured against, and
+       * until now it was only ever applied on the client. A reader on "small"
+       * or "large" therefore got the whole interface laid out at the default
+       * and relaid a moment later — a full reflow of every screen, on every
+       * load. Rendered here it is right from the first paint, and
+       * DevicePreferencesProvider only has to keep it in step afterwards.
+       */
+      style={{
+        backgroundColor: "#07080b",
+        fontSize: rootFontSizeFor(appFontSize),
+      }}
     >
       <head>
         {/* eslint-disable @next/next/no-page-custom-font --
@@ -189,9 +218,15 @@ export default async function RootLayout({
           order is: sign in, opening, home.
         */}
         <OrbitField />
-        <InterfaceLanguageProvider initialLanguage={interfaceLanguage}>
+        <DevicePreferencesProvider
+          initial={{
+            interfaceLanguage,
+            appFontSize,
+            dailyGoalWords,
+          }}
+        >
           {children}
-        </InterfaceLanguageProvider>
+        </DevicePreferencesProvider>
         <ServiceWorkerRegister />
         <NativePushRegister />
       </body>

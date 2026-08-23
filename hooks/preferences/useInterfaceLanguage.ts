@@ -1,6 +1,6 @@
 "use client";
 
-import { useInterfaceLanguageValue } from "@/contexts/InterfaceLanguageContext";
+import { useInterfaceLanguageValue } from "@/contexts/DevicePreferencesContext";
 
 /**
  * The interface language, as every screen in the app reads it.
@@ -10,7 +10,7 @@ import { useInterfaceLanguageValue } from "@/contexts/InterfaceLanguageContext";
  * distinction is the whole reason this file is one line: reading storage here
  * meant the server and the browser could not agree on what language the app
  * was in, and every translated string in the tree became a hydration
- * mismatch. See contexts/InterfaceLanguageContext.tsx.
+ * mismatch. See contexts/DevicePreferencesContext.tsx.
  */
 export default function useInterfaceLanguage() {
   return useInterfaceLanguageValue();
