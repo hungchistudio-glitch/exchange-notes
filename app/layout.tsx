@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
+import { InterfaceLanguageProvider } from "@/contexts/InterfaceLanguageContext";
+import { getInterfaceLanguageMeta } from "@/lib/languages";
+import { getServerInterfaceLanguage } from "@/lib/preferences/interfaceLanguageServer";
 import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
 
 import "./globals.css";
@@ -71,9 +74,27 @@ export default async function RootLayout({
   // moment after. See lib/appPreferences.ts for why the mode is a cookie.
   const interfaceMode = await getServerInterfaceMode();
 
+  /*
+   * Read on the server for the same reason as the mode, and with more at
+   * stake: this decides every translated string in the tree. Rendered from a
+   * default while the browser knew better, React found a mismatch on the
+   * first piece of text it hydrated, threw away the whole server tree and
+   * rebuilt the page — an English app repainting into a Chinese one, on every
+   * single load. See lib/preferences/interfaceLanguageServer.ts.
+   */
+  const interfaceLanguage = await getServerInterfaceLanguage();
+
   return (
     <html
-      lang="en"
+      /*
+       * From the language table rather than decided here, so a sixth
+       * interface language needs a row and not another branch. It used to be
+       * a hardcoded "en" that the client corrected after mount, which told
+       * assistive technology and the browser's own text handling the wrong
+       * language for the length of every page load.
+       */
+      lang={getInterfaceLanguageMeta(interfaceLanguage).htmlLang}
+      data-interface-language={interfaceLanguage}
       data-interface-mode={interfaceMode}
       /*
        * The attribute is written imperatively too, by InterfaceModeProvider,
@@ -168,7 +189,9 @@ export default async function RootLayout({
           order is: sign in, opening, home.
         */}
         <OrbitField />
-        {children}
+        <InterfaceLanguageProvider initialLanguage={interfaceLanguage}>
+          {children}
+        </InterfaceLanguageProvider>
         <ServiceWorkerRegister />
         <NativePushRegister />
       </body>

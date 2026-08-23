@@ -244,11 +244,33 @@ const INTERFACE_LANGUAGES: readonly InterfaceLanguage[] = [
   "italian",
 ];
 
+/*
+ * The language lives in a cookie, and in localStorage behind it.
+ *
+ * The cookie is the one the server reads. Every string in the app comes from
+ * this setting, so a server that cannot see it renders the whole interface in
+ * English and the browser then re-renders the whole interface in the reader's
+ * own language — a hydration mismatch across the entire tree, which React
+ * resolves by throwing the server's work away and rebuilding from scratch.
+ * That is what the flash on every launch was.
+ *
+ * localStorage stays as the migration path for devices that stored a language
+ * before this cookie existed, and as the answer to a cookie the browser
+ * declines to keep. Reading falls through in that order; writing does both.
+ */
+export const INTERFACE_LANGUAGE_COOKIE =
+  "exchange-notes-interface-language";
+
 const INTERFACE_LANGUAGE_STORAGE_KEY =
   "exchange-notes-interface-language";
 
 const INTERFACE_LANGUAGE_EVENT =
   "exchange-notes-interface-language-change";
+
+// A year, matching interface mode: a language choice outlives any realistic
+// gap between visits.
+const INTERFACE_LANGUAGE_COOKIE_MAX_AGE =
+  60 * 60 * 24 * 365;
 
 export const DEFAULT_INTERFACE_LANGUAGE: InterfaceLanguage = "english";
 
@@ -265,18 +287,52 @@ export function isInterfaceLanguage(
   );
 }
 
+function readInterfaceLanguageCookie(): string | null {
+  const match = document.cookie.match(
+    new RegExp(
+      `(?:^|; )${INTERFACE_LANGUAGE_COOKIE}=([^;]*)`,
+    ),
+  );
+
+  return match
+    ? decodeURIComponent(match[1])
+    : null;
+}
+
+function writeInterfaceLanguageCookie(
+  language: InterfaceLanguage,
+) {
+  document.cookie =
+    `${INTERFACE_LANGUAGE_COOKIE}=${language}; path=/; max-age=` +
+    `${INTERFACE_LANGUAGE_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
 export function getInterfaceLanguage(): InterfaceLanguage {
   if (typeof window === "undefined") {
     return DEFAULT_INTERFACE_LANGUAGE;
   }
 
+  const cookie = readInterfaceLanguageCookie();
+
+  if (isInterfaceLanguage(cookie)) return cookie;
+
   const saved = window.localStorage.getItem(
     INTERFACE_LANGUAGE_STORAGE_KEY,
   );
 
-  return isInterfaceLanguage(saved)
-    ? saved
-    : DEFAULT_INTERFACE_LANGUAGE;
+  if (!isInterfaceLanguage(saved)) {
+    return DEFAULT_INTERFACE_LANGUAGE;
+  }
+
+  /*
+   * A device that chose its language before the cookie existed. Writing it
+   * through here rather than waiting for the next visit to Settings is what
+   * makes this the *last* load that renders in the wrong language — the
+   * server can see the choice from the very next request.
+   */
+  writeInterfaceLanguageCookie(saved);
+
+  return saved;
 }
 
 export function applyInterfaceLanguage(
@@ -296,6 +352,10 @@ export function setInterfaceLanguage(
   language: InterfaceLanguage,
 ) {
   if (typeof window === "undefined") return;
+
+  // The cookie first: it is the copy the next server render reads, and the
+  // one that decides whether that render is in the right language.
+  writeInterfaceLanguageCookie(language);
 
   window.localStorage.setItem(
     INTERFACE_LANGUAGE_STORAGE_KEY,
@@ -366,16 +426,16 @@ export function subscribeToInterfaceLanguage(
 export type InterfaceMode = "standard" | "yumi-cosmic";
 
 /*
- * Alone among the preferences here, this one lives in a cookie rather than
- * localStorage.
+ * A cookie, like the interface language above and unlike the rest.
  *
- * Every other preference only ever changes how something already on screen is
- * painted, so correcting it after hydration is invisible. Interface mode picks
+ * The preferences that stay in localStorage only change how something already
+ * on screen is painted, so correcting them after hydration is invisible.
+ * These two do not: language changes every string in the app, and mode picks
  * between two different component trees — the standard home and the Command
- * Deck — which the server has to render correctly the first time. localStorage
- * does not exist during a server render; a cookie does, so the mode is already
- * decided in the HTML that arrives, and there is no mismatch to reconcile and
- * no standard-then-cosmic flash to sit through.
+ * Deck. Both have to be right in the HTML that arrives. localStorage does not
+ * exist during a server render; a cookie does, so the mode is already decided
+ * when the document lands, and there is no mismatch to reconcile and no
+ * standard-then-cosmic flash to sit through.
  */
 export const INTERFACE_MODE_COOKIE = "exchange-notes-interface-mode";
 
