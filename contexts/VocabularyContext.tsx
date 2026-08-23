@@ -14,6 +14,17 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { readLanguageCode, type LanguageCode } from "@/lib/languages";
+import {
+  reportNetworkFailure,
+  reportNetworkSuccess,
+} from "@/hooks/useOnline";
+import {
+  applyPending,
+  readMirror,
+  readOutbox,
+  writeMirror,
+} from "@/lib/offline/vocabulary";
+import { flushOutbox } from "@/lib/offline/sync";
 import type { VocabularyItem } from "@/lib/types/app";
 import { useVocabularyLanguageFill } from "@/hooks/useVocabularyLanguageFill";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
@@ -74,10 +85,36 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
     fetchVocabulary(user.id),
   ]);
 
+  reportNetworkSuccess();
+
+  const items = rows as VocabularyItem[];
+
+  /*
+   * Mirrored as it arrives. The write is not awaited by the caller: a
+   * reader who is looking at their words should not wait on a copy being
+   * made of them, and if the copy fails the only cost is that the next
+   * cold start with no signal is emptier than it could have been.
+   */
+  void writeMirror(items);
+
   return {
-    items: rows as VocabularyItem[],
+    items,
     learningLanguage: readLanguageCode(profile?.learning_language),
   };
+}
+
+/**
+ * The words as the device knows them, without asking anyone.
+ *
+ * The mirror is what the server last said; the outbox is what it has not
+ * been told yet. Together they are what the reader actually has, which is
+ * what a screen should render — a word saved on a train belongs in the
+ * list, in order, with no hint that it is waiting.
+ */
+async function readLocalSnapshot(): Promise<VocabularyItem[]> {
+  const [mirror, pending] = await Promise.all([readMirror(), readOutbox()]);
+
+  return applyPending(mirror, pending);
 }
 
 function loadErrorMessage(error: unknown) {
@@ -111,7 +148,20 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       setItems(snapshot.items);
       setLearningLanguage(snapshot.learningLanguage);
     } catch (refreshError) {
-      setError(loadErrorMessage(refreshError));
+      /*
+       * A failed read is not an empty library any more.
+       *
+       * There is a copy on the device, and falling back to it is the
+       * difference between an app that stops working in a tunnel and one
+       * that carries on. The error is only surfaced when there is nothing
+       * local either — which, after a first successful load, there never is.
+       */
+      reportNetworkFailure();
+
+      const local = await readLocalSnapshot();
+
+      if (local.length > 0) setItems(local);
+      else setError(loadErrorMessage(refreshError));
     } finally {
       setLoading(false);
     }
@@ -144,6 +194,21 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
 
     async function loadOnMount() {
+      /*
+       * The device's own copy first, always.
+       *
+       * It is on disk and needs no network, so it paints immediately —
+       * which on a cold start with a slow connection is the difference
+       * between a spinner and a library. The server's answer replaces it a
+       * moment later; where they agree, nothing moves.
+       */
+      const local = await readLocalSnapshot();
+
+      if (active && local.length > 0) {
+        setItems(local);
+        setLoading(false);
+      }
+
       try {
         const snapshot = await fetchVocabularySnapshot();
 
@@ -152,13 +217,37 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         setItems(snapshot.items);
         setLearningLanguage(snapshot.learningLanguage);
       } catch (loadError) {
-        if (active) setError(loadErrorMessage(loadError));
+        if (!active) return;
+
+        reportNetworkFailure();
+
+        // Only an error when there is nothing local either.
+        if (local.length === 0) setError(loadErrorMessage(loadError));
       } finally {
         if (active) setLoading(false);
       }
     }
 
     void loadOnMount();
+
+    /*
+     * Anything saved with no connection goes now.
+     *
+     * On mount rather than only on an "online" event, because the common
+     * case is not a reader watching the app reconnect — it is a reader who
+     * closed it in a tunnel and opened it again at the hotel.
+     */
+    void flushOutbox().then((result) => {
+      if (active && result.sent > 0) void refresh();
+    });
+
+    function handleOnline() {
+      void flushOutbox().then((result) => {
+        if (active && result.sent > 0) void refresh();
+      });
+    }
+
+    window.addEventListener("online", handleOnline);
 
     const {
       data: { subscription },
@@ -180,6 +269,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      window.removeEventListener("online", handleOnline);
       subscription.unsubscribe();
     };
   }, [refresh]);

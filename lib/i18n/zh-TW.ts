@@ -1,6 +1,14 @@
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const traditionalChinese: TranslationDictionary = {
+  offline: {
+    title: "目前離線",
+    body: "你的單字、複習和報導都在這台裝置上。任何更動都會存起來，回到連線時自動送出。",
+    needsConnection: "這項功能需要網路",
+    pendingOne: "1 筆更動等待同步",
+    pendingMany: "{count} 筆更動等待同步",
+    savedLocally: "已存在這台裝置",
+  },
   pwa: {
     title: "Exchange Notes 已經準備好了",
     subtitle: "把 Exchange Notes 加入主畫面，開啟更快、能收到通知，還有全螢幕體驗。",

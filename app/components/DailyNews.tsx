@@ -3,6 +3,7 @@
 
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
 import { SlidersHorizontal } from "lucide-react";
 
 import SignalControlSheet from "@/components/discover/SignalControlSheet";
@@ -227,6 +228,9 @@ function createPartnerMessage(card: DailyNewsCard) {
   });
 }
 
+/** Where the last batch that arrived is kept, for a reader with no signal. */
+const NEWS_CACHE_KEY = "news:lastBatch";
+
 export default function DailyNews() {
   const { t } = useTranslation();
   const copy = t.discover;
@@ -236,11 +240,41 @@ export default function DailyNews() {
 
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
 
+
   /** Which language the batch on screen was fetched for. */
   const loadedLanguageRef = useRef<LanguageCode | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  /*
+   * The last batch that arrived, kept on the device.
+   *
+   * Discover is the screen a reader opens on a train, and it used to be
+   * the emptiest one there: the pool lives on the server and the service
+   * worker deliberately does not cache API calls, so no signal meant no
+   * stories at all. Yesterday's are worth far more than an error message.
+   *
+   * Only for the language they were fetched in — a cached French feed is
+   * not an answer for someone now learning Italian, and showing it would
+   * be the same fallback this whole change removed from everywhere else.
+   * The language is passed rather than closed over so this stays stable
+   * and the mount effect is not torn down by a change it handles itself.
+   */
+  const loadFromDevice = useCallback(async (language: LanguageCode) => {
+    const stored = await readRecord<{
+      cards: DailyNewsCard[];
+      language: string;
+    }>(STORES.kv, NEWS_CACHE_KEY);
+
+    if (!stored?.cards?.length) return false;
+    if (stored.language !== language) return false;
+
+    setCards(stored.cards);
+    setLoading(false);
+    return true;
+  }, []);
   const [notice, setNotice] = useState("");
 
   const [speakingKey, setSpeakingKey] = useState<string | null>(null);
@@ -340,6 +374,12 @@ export default function DailyNews() {
 
         setCards(payload.cards);
         recordSeen(payload.cards);
+
+        void writeRecord(STORES.kv, {
+          key: NEWS_CACHE_KEY,
+          cards: payload.cards,
+          language: learningLanguage,
+        });
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -347,6 +387,10 @@ export default function DailyNews() {
         ) {
           return;
         }
+
+        // The device's own copy first: an error belongs on screen only
+        // when there is genuinely nothing to read.
+        if (await loadFromDevice(learningLanguage)) return;
 
         setError(
           requestError instanceof Error
@@ -358,7 +402,7 @@ export default function DailyNews() {
         setRefreshing(false);
       }
     },
-    [copy]
+    [copy, learningLanguage, loadFromDevice]
   );
 
   /*
@@ -425,6 +469,12 @@ export default function DailyNews() {
 
         setCards(payload.cards);
         recordSeen(payload.cards);
+
+        void writeRecord(STORES.kv, {
+          key: NEWS_CACHE_KEY,
+          cards: payload.cards,
+          language: learningLanguage,
+        });
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -432,6 +482,10 @@ export default function DailyNews() {
         ) {
           return;
         }
+
+        // The device's own copy first: an error belongs on screen only
+        // when there is genuinely nothing to read.
+        if (await loadFromDevice(learningLanguage)) return;
 
         setError(
           requestError instanceof Error
@@ -452,7 +506,7 @@ export default function DailyNews() {
       requestControllerRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
-  }, [copy, learningLanguage]);
+  }, [copy, learningLanguage, loadFromDevice]);
 
   function speak(
     key: string,

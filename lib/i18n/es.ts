@@ -1,6 +1,14 @@
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const spanish: TranslationDictionary = {
+  offline: {
+    title: "Estás sin conexión",
+    body: "Tus palabras, repasos e historias están en este dispositivo. Todo lo que cambies se guarda y se envía cuando vuelvas a tener conexión.",
+    needsConnection: "Esto necesita conexión",
+    pendingOne: "1 cambio pendiente de sincronizar",
+    pendingMany: "{count} cambios pendientes de sincronizar",
+    savedLocally: "Guardado en este dispositivo",
+  },
   pwa: {
     title: "Exchange Notes está listo",
     subtitle:

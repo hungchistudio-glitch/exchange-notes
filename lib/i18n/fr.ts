@@ -6,6 +6,14 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
  * lib/i18n/types.ts still enforces completeness at build time.
  */
 const french: TranslationDictionary = {
+  offline: {
+    title: "Vous êtes hors ligne",
+    body: "Vos mots, vos révisions et vos articles sont sur cet appareil. Tout ce que vous modifiez est enregistré et envoyé dès votre retour en ligne.",
+    needsConnection: "Cette fonction nécessite une connexion",
+    pendingOne: "1 modification en attente de synchronisation",
+    pendingMany: "{count} modifications en attente de synchronisation",
+    savedLocally: "Enregistré sur cet appareil",
+  },
   pwa: {
     title: "Exchange Notes est prêt",
     subtitle: "Ajoutez Exchange Notes à votre écran d'accueil pour un accès plus rapide, des notifications et une expérience plein écran.",

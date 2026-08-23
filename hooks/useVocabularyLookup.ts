@@ -2,6 +2,14 @@
 
 import { useCallback, useState } from "react";
 
+import { reportNetworkFailure } from "@/hooks/useOnline";
+import {
+  applyPending,
+  readMirror,
+  readOutbox,
+  searchLocal,
+} from "@/lib/offline/vocabulary";
+
 import type {
   VocabularyLookupResult,
   VocabularyLookupPreview,
@@ -76,6 +84,31 @@ function storeCachedLookup(query: string, result: VocabularyLookupResult) {
   } catch {
     // Safari private mode and managed WebViews can reject localStorage writes.
   }
+}
+
+/**
+ * A word the reader already has, shaped like a lookup result.
+ *
+ * Reads the mirror rather than the network. Returns null when the word is
+ * genuinely not there, which is an honest "I do not know this one" — far
+ * better than an invented card, and the reason nothing is guessed here.
+ */
+async function lookupFromDevice(
+  query: string,
+): Promise<VocabularyLookupResult | null> {
+  const [mirror, pending] = await Promise.all([readMirror(), readOutbox()]);
+  const [match] = searchLocal(applyPending(mirror, pending), query);
+
+  if (!match) return null;
+
+  return {
+    englishName: match.word ?? "",
+    chineseName: match.translation ?? "",
+    partOfSpeech: match.part_of_speech ?? "",
+    category: match.category ?? "other",
+    englishExample: match.example_sentence ?? "",
+    chineseExample: match.translated_example ?? "",
+  } as VocabularyLookupResult;
 }
 
 export default function useVocabularyLookup(query: string) {
@@ -177,6 +210,30 @@ export default function useVocabularyLookup(query: string) {
       setLookupDegraded(Boolean(degraded));
       setLookupStatus("result");
     } catch (lookupErrorValue) {
+      /*
+       * No connection: answer from the words the reader already has.
+       *
+       * A model cannot be reached and nothing here pretends otherwise —
+       * this will not find something new. But a reader standing in front
+       * of a menu abroad is usually reaching for a word they have met
+       * before, and that word is on the device. Finding it is the whole
+       * difference between an app that stops at the border and one that
+       * comes along.
+       */
+      reportNetworkFailure();
+
+      const local = await lookupFromDevice(cleanQuery);
+
+      if (local) {
+        setLookupResult(local);
+        // Flagged as degraded, which is what it is: a word already saved,
+        // not a fresh lookup. The screen says so rather than passing it
+        // off as the real thing.
+        setLookupDegraded(true);
+        setLookupStatus("result");
+        return;
+      }
+
       setLookupError(
         lookupErrorValue instanceof Error
           ? lookupErrorValue.message
