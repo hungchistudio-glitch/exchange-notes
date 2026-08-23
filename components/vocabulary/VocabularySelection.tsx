@@ -1,6 +1,6 @@
 "use client";
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import {
   type ReactNode,
   useCallback,
@@ -28,7 +28,7 @@ export default function VocabularySelection({
 }: VocabularySelectionProps) {
   const { addItem } = useVocabulary();
   const contentRef = useRef<HTMLDivElement>(null);
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
 
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);

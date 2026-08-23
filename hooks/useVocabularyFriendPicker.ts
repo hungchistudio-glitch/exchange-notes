@@ -46,7 +46,12 @@ export default function useVocabularyFriendPicker() {
       partOfSpeech: item.part_of_speech,
       wordLanguage: item.word_language,
       translationLanguage: item.translation_language,
+      // The whole map, not just the two sides this row was saved as: the
+      // person receiving it may be studying a third language, and this is
+      // the only chance to give them one they can read.
+      texts: item.texts,
       examples: {
+        ...(item.examples ?? {}),
         [item.word_language]: item.example_sentence ?? "",
         [item.translation_language]: item.translated_example ?? "",
       },

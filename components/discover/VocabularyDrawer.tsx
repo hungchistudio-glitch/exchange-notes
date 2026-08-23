@@ -1,14 +1,14 @@
 "use client";
 
-import { getLanguage, resolveDisplayPair } from "@/lib/languages";
+import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { getLanguage } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
-import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -99,42 +99,12 @@ export default function VocabularyDrawer({
   onSpeak,
 }: VocabularyDrawerProps) {
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair } = useDisplayLanguages();
 
-  /*
-   * Preferred, not assumed — the same rule StoryDetailSheet already follows,
-   * and this drawer opens out of that sheet.
-   *
-   * Indexing the words by the reader's own pair meant a card the pool had
-   * not been generated in produced `texts[language] ?? ""` for every word:
-   * a list of blank rows under a story that had rendered perfectly well,
-   * because the sheet above it fell back and the drawer below it did not.
-   *
-   * Resolved against the vocabulary's own languages rather than the card's
-   * titles, so the fallback is decided by what the words can actually be
-   * shown in.
-   */
-  const vocabularyLanguages = Object.assign(
-    {},
-    ...(card?.vocabulary ?? []).map((item) => item.texts),
-  ) as Record<string, string>;
 
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    vocabularyLanguages,
-    languagePair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
-
-  // Word-level IPA/zhuyin, fetched lazily per word and cached for the life
-  // of this component (it stays mounted across drawer open/close, only
-  // BottomSheet's `open` prop toggles). The ref-backed "already requested"
-  // set avoids re-fetching the same word every time the drawer reopens or
-  // the parent re-renders with a new `card` object reference.
-  const [pronunciations, setPronunciations] = useState<
-    Record<string, PronunciationResult>
-  >({});
-  const requestedKeysRef = useRef<Set<string>>(new Set());
 
   const [savedWordKeys, setSavedWordKeys] = useState<Set<string>>(new Set());
   const [savingWordKey, setSavingWordKey] = useState<string | null>(null);
@@ -177,32 +147,6 @@ export default function VocabularyDrawer({
     }
   }
 
-  useEffect(() => {
-    if (!open || !card) return;
-
-    let cancelled = false;
-
-    card.vocabulary.forEach((item, index) => {
-      const cacheKey = `${card.id}-${index}`;
-      if (requestedKeysRef.current.has(cacheKey)) return;
-
-      requestedKeysRef.current.add(cacheKey);
-
-      void getPronunciation((item.texts[primaryLanguage] ?? ""), (item.texts[secondaryLanguage] ?? "")).then((result) => {
-        if (cancelled || !result) return;
-
-        setPronunciations((current) => ({
-          ...current,
-          [cacheKey]: result,
-        }));
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, card, primaryLanguage, secondaryLanguage]);
-
   return (
     <BottomSheet
       open={open && card !== null}
@@ -218,7 +162,6 @@ export default function VocabularyDrawer({
             const translationKey = `${baseKey}-translation`;
             const englishExampleKey = `${baseKey}-en-example`;
             const chineseExampleKey = `${baseKey}-zh-example`;
-            const pronunciation = pronunciations[`${card.id}-${index}`];
 
             const wordBlock = (
               <div
@@ -242,11 +185,15 @@ export default function VocabularyDrawer({
                     )}
                   </div>
 
-                  {pronunciation?.englishPronunciation ? (
-                    <p className="mt-0.5 text-[12px] text-ink-faint">
-                      {pronunciation.englishPronunciation}
-                    </p>
-                  ) : null}
+                  <PronunciationBlock
+                    className="mt-0.5"
+                    entries={[
+                      {
+                        text: item.texts[primaryLanguage],
+                        language: primaryLanguage,
+                      },
+                    ]}
+                  />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
@@ -296,13 +243,15 @@ export default function VocabularyDrawer({
 
                   </div>
 
-                  {pronunciation?.pinyin || pronunciation?.zhuyin ? (
-                    <p className="mt-0.5 text-[11px] text-ink-faint">
-                      {[pronunciation?.pinyin, pronunciation?.zhuyin]
-                        .filter(Boolean)
-                        .join("  ")}
-                    </p>
-                  ) : null}
+                  <PronunciationBlock
+                    className="mt-0.5"
+                    entries={[
+                      {
+                        text: item.texts[secondaryLanguage],
+                        language: secondaryLanguage,
+                      },
+                    ]}
+                  />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">

@@ -5,7 +5,7 @@ import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
@@ -21,7 +21,7 @@ export default function VocabularyCardHeader({
   item,
 }: Props) {
   const { t } = useTranslation();
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const search = t.vocabulary.search;
   const detail = t.vocabulary.detail;
 
@@ -37,7 +37,7 @@ export default function VocabularyCardHeader({
    * different pairing keeps the order it was saved in rather than being
    * relabelled by today's profile.
    */
-  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, supportLanguage);
 
   const partOfSpeechLabel = item.part_of_speech?.trim()
     ? detail.partOfSpeech[

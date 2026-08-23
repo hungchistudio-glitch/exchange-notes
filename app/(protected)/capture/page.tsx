@@ -15,13 +15,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
-import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
+import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
@@ -402,7 +402,7 @@ function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
   const capture = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -503,7 +503,10 @@ function CaptureContent() {
 
     let cancelled = false;
 
-    void getPronunciation(result.englishName, result.chineseName).then(
+    void getPronunciationForPair(
+      { text: result.englishName, language: languagePair[0] },
+      { text: result.chineseName, language: languagePair[1] },
+    ).then(
       (data) => {
         if (!cancelled) setPronunciationEntry({ key: pronunciationKey, data });
       }
@@ -512,7 +515,7 @@ function CaptureContent() {
     return () => {
       cancelled = true;
     };
-  }, [result, pronunciationKey]);
+  }, [result, pronunciationKey, languagePair]);
 
   // Body scrolling is locked by the camera overlay's own useSheetMotion, which
   // now also handles overscroll. A second lock here fought it: this one lived
@@ -936,8 +939,22 @@ function CaptureContent() {
     return encodeWordCardMessage({
       word: result.englishName,
       translation: result.chineseName,
+      /*
+       * The result's fields are still named for the pair this app used to
+       * have; what they hold is the reader's own. Labelling them en/zh-TW
+       * filed an Italian word as English on the receiving end.
+       */
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
       partOfSpeech: result.partOfSpeech,
-      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
+      texts: {
+        [languagePair[0]]: result.englishName,
+        [languagePair[1]]: result.chineseName,
+      },
+      examples: {
+        [languagePair[0]]: result.englishExample,
+        [languagePair[1]]: result.chineseExample,
+      },
     });
   }
 
@@ -1082,8 +1099,22 @@ function CaptureContent() {
     setPendingSharedVocabulary({
       word: result.englishName,
       translation: result.chineseName,
+      /*
+       * The result's fields are still named for the pair this app used to
+       * have; what they hold is the reader's own. Labelling them en/zh-TW
+       * filed an Italian word as English on the receiving end.
+       */
+      wordLanguage: languagePair[0],
+      translationLanguage: languagePair[1],
       partOfSpeech: result.partOfSpeech,
-      examples: { en: result.englishExample, "zh-TW": result.chineseExample },
+      texts: {
+        [languagePair[0]]: result.englishName,
+        [languagePair[1]]: result.chineseName,
+      },
+      examples: {
+        [languagePair[0]]: result.englishExample,
+        [languagePair[1]]: result.chineseExample,
+      },
     });
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }

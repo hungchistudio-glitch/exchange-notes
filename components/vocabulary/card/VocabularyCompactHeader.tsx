@@ -2,7 +2,7 @@
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
 
@@ -12,13 +12,13 @@ type Props = {
 
 export default function VocabularyCompactHeader({ item }: Props) {
   const { t } = useTranslation();
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const statusLabels: Record<VocabularyStatus, string> = {
     new: t.vocabulary.search.statuses.new,
     learning: t.vocabulary.search.statuses.learning,
     mastered: t.vocabulary.search.statuses.mastered,
   };
-  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+  const { primary, secondary } = getVocabularyCardSides(item, learningLanguage, supportLanguage);
 
   return (
     <header className="min-w-0 px-4 py-3.5">

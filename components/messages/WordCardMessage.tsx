@@ -12,6 +12,10 @@ import {
   getLanguage,
   type LanguageCode,
 } from "@/lib/languages";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import usePhonetics from "@/hooks/usePhonetics";
+import useTranslatedTexts from "@/hooks/useTranslatedTexts";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { insertValues } from "@/lib/utils";
@@ -47,17 +51,32 @@ export default function WordCardMessage({
   onShare,
 }: WordCardMessageProps) {
   /*
-   * Which languages this card holds is the card's business; which of them
-   * leads is the reader's. A card whose word is in the language this reader
-   * is learning puts that first — otherwise it renders in the order it was
-   * sent, because neither side is the one they are studying and inventing a
-   * preference between two foreign languages helps nobody.
+   * Read by the same rule the vocabulary screens use, so a word in your
+   * history is laid out like a word in your library: the language you are
+   * learning leads, the one you read it in supports.
+   *
+   * A card sent with every language (`texts`) can satisfy any reader. One
+   * sent before that existed carries two, and if neither is yours it renders
+   * as it was sent — it is somebody's message, and showing it in the wrong
+   * order beats not showing it at all.
    */
-  const wordLanguage = card.wordLanguage ?? DEFAULT_LEARNING_PAIR[0];
-  const translationLanguage =
-    card.translationLanguage ?? DEFAULT_LEARNING_PAIR[1];
+  const { supportLanguage } = useDisplayLanguages();
 
-  const translationLeads = translationLanguage === learningLanguage;
+  const sides = getVocabularyCardSides(
+    {
+      word: card.word,
+      translation: card.translation,
+      word_language: card.wordLanguage ?? DEFAULT_LEARNING_PAIR[0],
+      translation_language:
+        card.translationLanguage ?? DEFAULT_LEARNING_PAIR[1],
+      example_sentence: null,
+      translated_example: null,
+      texts: card.texts,
+      examples: card.examples,
+    },
+    learningLanguage,
+    supportLanguage,
+  );
 
   const primaryWordClass = "min-w-0 truncate text-xl font-bold";
   const secondaryWordClass = "min-w-0 truncate text-base font-normal";
@@ -86,7 +105,16 @@ export default function WordCardMessage({
   function languageBlock(code: LanguageCode, text: string, primary: boolean) {
     const language = getLanguage(code);
     const phonetics = getPhonetics(text, code);
-    const annotation = [phonetics.pinyin, phonetics.zhuyin]
+
+    /*
+     * Whatever systems this language actually uses, in the order the rest of
+     * the app shows them: IPA for the Latin languages, zhuyin and pinyin for
+     * Chinese. This listed only the Chinese two, so a word card in a
+     * conversation carried an annotation for exactly one of the five
+     * languages the app teaches — and the reader had no way to tell that
+     * from the word simply not having one.
+     */
+    const annotation = [ipaFor({ text, language: code }), phonetics.pinyin, phonetics.zhuyin]
       .filter(Boolean)
       .join("  ");
 
@@ -131,16 +159,85 @@ export default function WordCardMessage({
     );
   }
 
-  const [firstCode, secondCode] = translationLeads
-    ? ([translationLanguage, wordLanguage] as const)
-    : ([wordLanguage, translationLanguage] as const);
+  /*
+   * What the card can be shown in, and what has to be asked for.
+   *
+   * A card sent before shared cards carried every language holds two, and
+   * they may be two this reader never chose — the screenshot case is a menu
+   * item sent as Chinese and English, read by someone learning French, who
+   * had it led in Chinese: a language absent from all three of their
+   * settings.
+   *
+   * The message is not rewritten to fix that. It belongs to whoever sent it.
+   * What is translated is the *rendering*, on the way to the screen, once
+   * and then cached for everybody.
+   *
+   * Only what is missing: a card that already holds the reader's language
+   * asks for nothing, which is every card sent since.
+   */
+  const leadMissing = sides.primary.language !== learningLanguage;
+  const glossMissing = !sides.secondary.text.trim();
 
-  const [firstText, secondText] = translationLeads
-    ? [card.translation, card.word]
-    : [card.word, card.translation];
+  /*
+   * The side being translated *from*, text and language together.
+   *
+   * They have to travel as a pair. Reading the language off one side and
+   * the text off the other sends Chinese to the model labelled as English,
+   * which is both a worse translation and a cache entry filed under a
+   * language the phrase was never in.
+   *
+   * The gloss side is preferred as the source where there is one: it is the
+   * language the reader already reads, so it is the half most likely to be
+   * well-formed, and translating out of it keeps the two sides agreeing.
+   */
+  const translateFrom = sides.secondary.text.trim()
+    ? sides.secondary
+    : sides.primary;
+
+  const leadRequest = {
+    text: leadMissing ? translateFrom.text : null,
+    from: translateFrom.language,
+    to: learningLanguage,
+  };
+
+  const glossRequest = {
+    text: glossMissing ? sides.primary.text : null,
+    from: sides.primary.language,
+    to: supportLanguage,
+  };
+
+  const translationFor = useTranslatedTexts([leadRequest, glossRequest]);
+
+  const translatedLead = leadMissing ? translationFor(leadRequest) : undefined;
+  const translatedGloss = glossMissing ? translationFor(glossRequest) : undefined;
+
+  /*
+   * Until the translation lands the card shows what it was sent as. That is
+   * a card briefly in the wrong language, which beats a card that is briefly
+   * blank — and it settles within a frame or two of opening the thread.
+   */
+  const firstCode = translatedLead ? learningLanguage : sides.primary.language;
+  const firstText = translatedLead ?? sides.primary.text;
+
+  const secondCode = translatedGloss ? supportLanguage : sides.secondary.language;
+  const secondText = translatedGloss ?? sides.secondary.text;
+
+  const ipaFor = usePhonetics([
+    { text: firstText, language: firstCode },
+    { text: secondText, language: secondCode },
+  ]);
 
   const firstBlock = languageBlock(firstCode, firstText, true);
-  const secondBlock = languageBlock(secondCode, secondText, false);
+
+  /*
+   * Absent, not blank. A card sent before shared cards carried every
+   * language may hold nothing in the language this reader glosses in, and a
+   * divider above an empty line with a speaker button that says nothing is
+   * worse than one side on its own.
+   */
+  const secondBlock = secondText.trim()
+    ? languageBlock(secondCode, secondText, false)
+    : null;
 
   const firstExample = card.examples?.[firstCode];
   const secondExample = card.examples?.[secondCode];
@@ -194,12 +291,14 @@ export default function WordCardMessage({
       }}
     >
       {firstBlock}
-      <div
-        className="mt-3 border-t pt-3"
-        style={{ borderColor: "var(--msg-line)" }}
-      >
-        {secondBlock}
-      </div>
+      {secondBlock ? (
+        <div
+          className="mt-3 border-t pt-3"
+          style={{ borderColor: "var(--msg-line)" }}
+        >
+          {secondBlock}
+        </div>
+      ) : null}
 
       {card.partOfSpeech && (
         <p className="mt-2 text-xs" style={{ color: "var(--msg-ink-faint)" }}>

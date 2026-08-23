@@ -33,7 +33,7 @@ import NewsCardMessage from "@/components/messages/NewsCardMessage";
 import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
 import WordCardMessage from "@/components/messages/WordCardMessage";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
@@ -209,7 +209,7 @@ export default function ConversationRoom({
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const { t } = useTranslation();
-  const { languagePair } = useLearningLanguageContext();
+  const { pair: languagePair } = useDisplayLanguages();
   const copy = t.messages;
 
   const [messages, setMessages] = useState<Message[]>([]);

@@ -1,8 +1,8 @@
 "use client";
 
-import { getLanguage, resolveDisplayPair } from "@/lib/languages";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { getLanguage } from "@/lib/languages";
 import type { SpeechLanguage } from "@/lib/speech";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { useState } from "react";
 import {
   Check,
@@ -67,17 +67,13 @@ export default function StoryDetailSheet({
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Above the early return: a hook cannot be called conditionally.
-  const { languagePair } = useLearningLanguageContext();
+  const { pair } = useDisplayLanguages();
   /*
-   * Preferred, not assumed. The pool is one shared set of cards generated in
-   * one pairing, so a reader studying something else would index it by a
-   * language it does not have and get a blank card. Falling back to the
-   * languages the card actually carries shows it as what it is.
+   * The two languages the reader chose, and only those. A card that cannot
+   * lead in the language being learned is filtered out upstream rather than
+   * shown in a language nobody asked for.
    */
-  const [primaryLanguage, secondaryLanguage] = resolveDisplayPair(
-    card?.titles ?? {},
-    languagePair,
-  );
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   if (!card) {
     return (

@@ -18,7 +18,7 @@ import {
 } from "react";
 
 import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { getPhonetics, getPronunciationData } from "@/lib/pronunciation";
@@ -123,7 +123,7 @@ function DeckWordCard({
   copy,
   vocabularyCopy,
   learningLanguage,
-  nativeLanguage,
+  supportLanguage,
 }: {
   item: VocabularyItem;
   index: number;
@@ -133,7 +133,7 @@ function DeckWordCard({
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
   learningLanguage: LanguageCode;
-  nativeLanguage: LanguageCode;
+  supportLanguage: LanguageCode;
 }) {
   const word = item.word?.trim() || copy.untitledWord;
   const translation = item.translation?.trim() || "";
@@ -146,7 +146,7 @@ function DeckWordCard({
    * it rather than from a yes/no about Chinese — a question with no answer
    * for a word saved under a different pairing.
    */
-  const sides = getVocabularyCardSides(item, learningLanguage, nativeLanguage);
+  const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
   const primaryWord = sides.primary.text || word;
   const secondaryWord = sides.secondary.text;
   const primaryWordLength = Array.from(primaryWord).length;
@@ -323,13 +323,13 @@ export function TodayWordDeck({
   copy,
   vocabularyCopy,
   learningLanguage,
-  nativeLanguage,
+  supportLanguage,
 }: {
   items: VocabularyItem[];
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
   learningLanguage: LanguageCode;
-  nativeLanguage: LanguageCode;
+  supportLanguage: LanguageCode;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -486,7 +486,7 @@ export function TodayWordDeck({
                   copy={copy}
                   vocabularyCopy={vocabularyCopy}
                   learningLanguage={learningLanguage}
-      nativeLanguage={nativeLanguage}
+      supportLanguage={supportLanguage}
                 />
               </div>
             </div>
@@ -529,7 +529,7 @@ export function TodayWordDeck({
 
 export default function TodayWordCard() {
   const { t } = useTranslation();
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -579,7 +579,7 @@ export default function TodayWordCard() {
       copy={t.home.todayWord}
       vocabularyCopy={t.vocabulary}
       learningLanguage={learningLanguage}
-      nativeLanguage={nativeLanguage}
+      supportLanguage={supportLanguage}
     />
   );
 }

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { getPhonetics } from "@/lib/pronunciation";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
+import usePhonetics from "@/hooks/usePhonetics";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { insertValues } from "@/lib/utils";
 
@@ -14,14 +15,28 @@ import { insertValues } from "@/lib/utils";
  * This used to take `english` and `chinese` and render IPA under the first
  * and pinyin/zhuyin under the second — correct for exactly one pairing, and
  * silent for every other. It takes languages now, and each one contributes
- * whatever annotations it actually has: Chinese brings pinyin and zhuyin,
- * a Latin language brings nothing this component can compute locally, and
- * neither is asked for the other's.
+ * whatever annotations it actually has:
+ *
+ *   en · es · fr · it   IPA
+ *   zh-TW               zhuyin and pinyin
+ *
+ * Chinese is computed locally and costs nothing. IPA has to be looked up,
+ * and this component now does that itself rather than rendering only what a
+ * caller thought to pass in — which is why a word card showed zhuyin under
+ * Chinese and nothing at all under everything else, English included.
+ *
+ * Requests from every card on screen are gathered into one per language by
+ * the hook, and answers are cached across the session and in the database,
+ * so a list of two hundred words is a request, not two hundred.
  */
 export type PronunciationEntry = {
   text: string | null | undefined;
   language: LanguageCode;
-  /** Pre-fetched IPA, which only a network dictionary can supply. */
+  /**
+   * IPA the caller already has. Optional — when it is absent this component
+   * fetches it, which is why every word card gained an annotation without
+   * every word card having to learn how to ask for one.
+   */
   ipa?: string | null;
 };
 
@@ -35,6 +50,7 @@ export default function PronunciationBlock({
   className = "",
 }: PronunciationBlockProps) {
   const { t } = useTranslation();
+  const ipaFor = usePhonetics(entries);
 
   const rows = useMemo(
     () =>
@@ -45,11 +61,15 @@ export default function PronunciationBlock({
         const phonetics = getPhonetics(text, entry.language);
         const speechTag = getLanguage(entry.language).speechTag;
 
-        return [entry.ipa?.trim(), phonetics.pinyin, phonetics.zhuyin]
+        // A caller that already has the transcription wins; everyone else
+        // gets the looked-up one.
+        const ipa = entry.ipa?.trim() || ipaFor(entry);
+
+        return [ipa, phonetics.pinyin, phonetics.zhuyin]
           .filter((label): label is string => Boolean(label))
           .map((label) => ({ label, text, speechTag }));
       }),
-    [entries],
+    [entries, ipaFor],
   );
 
   if (rows.length === 0) return null;

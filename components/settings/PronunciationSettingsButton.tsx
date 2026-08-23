@@ -5,7 +5,14 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import {
+  LANGUAGE_CODES,
+  getLanguage,
+  getLanguageName,
+  getLanguageBySpeechTag,
+} from "@/lib/languages";
 import {
   getDefaultSpeechSettings,
   getInitialVoicesVersion,
@@ -22,6 +29,18 @@ import {
 } from "@/lib/speech";
 
 const VOICE_OPTIONS: VoiceGender[] = ["female", "male"];
+
+/*
+ * Every language the app teaches, not the two it started with.
+ *
+ * This listed zh-TW and en-US, so a French or Italian learner had no voice
+ * setting at all — playback fell to whatever the platform picked, which on a
+ * device without those voices is an English one reading French, and sounds
+ * exactly as wrong as it is. There was nothing anywhere to change it with.
+ */
+const SPOKEN_LANGUAGES = LANGUAGE_CODES.map(
+  (code) => getLanguage(code).speechTag,
+);
 
 export default function PronunciationSettingsButton() {
   const [open, setOpen] = useState(false);
@@ -46,6 +65,27 @@ export default function PronunciationSettingsButton() {
     getInitialVoicesVersion,
   );
 
+  const { learningLanguage } = useDisplayLanguages();
+
+  /*
+   * The language being learned comes first.
+   *
+   * Playback already follows it on its own — each card is spoken in its own
+   * language and the best installed voice for that language is chosen
+   * automatically. This is about the other half: when the automatic choice
+   * is not the one you want, or when the language has no voice installed at
+   * all, the row you need is the one at the top rather than the third one
+   * down.
+   */
+  const spokenLanguages = useMemo(() => {
+    const learningTag = getLanguage(learningLanguage).speechTag;
+
+    return [
+      learningTag,
+      ...SPOKEN_LANGUAGES.filter((tag) => tag !== learningTag),
+    ];
+  }, [learningLanguage]);
+
   /**
    * Languages where the chosen gender simply does not exist on this device.
    *
@@ -55,28 +95,35 @@ export default function PronunciationSettingsButton() {
    */
   const genderGaps = useMemo(
     () =>
-      (["zh-TW", "en-US"] as const).filter(
+      spokenLanguages.filter(
         (language) =>
           listVoicesForLanguage(language).length > 0
           && !hasVoiceForGender(language, voiceGender),
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [voiceGender, voicesVersion],
+    [spokenLanguages, voiceGender, voicesVersion],
   );
 
   const voicesByLanguage = useMemo(
-    () => ({
-      "zh-TW": listVoicesForLanguage("zh-TW"),
-      "en-US": listVoicesForLanguage("en-US"),
-    }),
+    () =>
+      Object.fromEntries(
+        spokenLanguages.map((language) => [
+          language,
+          listVoicesForLanguage(language),
+        ]),
+      ) as Record<SpeechLanguage, SpeechSynthesisVoice[]>,
     // voicesVersion is the trigger: the browser loads voices asynchronously
     // and the list is empty on the first render of a cold page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [voicesVersion],
   );
 
-  const { t, isTraditionalChinese } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.settings.pronunciation;
+
+  /** The language's own name, in the language the reader is reading. */
+  const nameOf = (tag: SpeechLanguage) =>
+    getLanguageName(getLanguageBySpeechTag(tag).code, interfaceLanguage);
 
   function handleRateChange(value: number) {
     setSpeechSettings({ rate: value, voiceGender, voiceURIs });
@@ -95,12 +142,8 @@ export default function PronunciationSettingsButton() {
     setSpeechSettings({ rate, voiceGender, voiceURIs: nextURIs });
   }
 
-  function handleTest() {
-    const text = isTraditionalChinese
-      ? "你好，歡迎使用 Exchange Notes。"
-      : "Hello, welcome to Exchange Notes.";
-
-    speak(text, isTraditionalChinese ? "zh-TW" : "en-US");
+  function preview(language: SpeechLanguage) {
+    speak(getLanguageBySpeechTag(language).voiceSample, language);
   }
 
   const voiceLabel = voiceGender === "female" ? copy.female : copy.male;
@@ -123,7 +166,7 @@ export default function PronunciationSettingsButton() {
         footer={
           <button
             type="button"
-            onClick={handleTest}
+            onClick={() => preview(getLanguage(learningLanguage).speechTag)}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-semibold text-white transition-transform active:scale-[0.985]"
           >
             {copy.testVoice}
@@ -176,12 +219,7 @@ export default function PronunciationSettingsButton() {
                       className="text-[12px] leading-5 text-[var(--accent-amber-deep)]"
                     >
                       {copy.genderUnavailable
-                        .replace(
-                          "{language}",
-                          language === "zh-TW"
-                            ? t.vocabulary.lookup.chinese
-                            : t.vocabulary.lookup.english,
-                        )
+                        .replace("{language}", nameOf(language))
                         .replace(
                           "{gender}",
                           voiceGender === "female" ? copy.female : copy.male,
@@ -237,16 +275,14 @@ export default function PronunciationSettingsButton() {
               {copy.voicesOnDeviceDescription}
             </p>
 
-            {(["zh-TW", "en-US"] as const).map((language) => {
+            {spokenLanguages.map((language) => {
               const voices = voicesByLanguage[language];
               const chosen = voiceURIs[language];
 
               return (
                 <div key={language} className="mt-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                    {language === "zh-TW"
-                      ? t.vocabulary.lookup.chinese
-                      : t.vocabulary.lookup.english}
+                    {nameOf(language)}
                   </p>
 
                   {voices.length === 0 ? (
@@ -280,13 +316,9 @@ export default function PronunciationSettingsButton() {
                             onClick={() => {
                               handleVoiceChange(language, voice.voiceURI);
                               // Selecting is also the preview: the point of
-                              // the list is hearing which voice you picked.
-                              speak(
-                                language === "zh-TW"
-                                  ? "你好，歡迎使用 Exchange Notes。"
-                                  : "Hello, welcome to Exchange Notes.",
-                                language,
-                              );
+                              // the list is hearing which voice you picked,
+                              // reading this language rather than English.
+                              preview(language);
                             }}
                             className={[
                               "flex min-h-11 items-center justify-between gap-3 rounded-2xl px-4 text-sm transition-all active:scale-[0.99]",

@@ -71,3 +71,60 @@ describe("vocabulary card sides", () => {
     expect(sides.matchesLearningLanguage).toBe(false);
   });
 });
+
+/* =========================================================
+   The gloss comes out of the map, not off the stored pair
+   ========================================================= */
+
+describe("the supporting side", () => {
+  // The exact row from the screenshot: saved as Spanish/Chinese long before
+  // Italian was being learned, and holding all five languages since.
+  const tiAmo = {
+    word: "te amo",
+    translation: "我愛你",
+    word_language: "es" as const,
+    translation_language: "zh-TW" as const,
+    example_sentence: null,
+    translated_example: null,
+    texts: {
+      en: "I love you",
+      es: "te amo",
+      fr: "je t'aime",
+      it: "ti amo",
+      "zh-TW": "我愛你",
+    },
+    examples: {},
+  };
+
+  it("glosses in the reader's language, not the one the row was saved as", () => {
+    // The regression: this looked for the support language among the two
+    // sides the row was *saved* as and fell back to whichever came first
+    // when it was neither — so an Italian card was glossed in Spanish for a
+    // reader who had never chosen Spanish, while "I love you" sat unread in
+    // the same row.
+    const sides = getVocabularyCardSides(tiAmo, "it", "en");
+
+    expect(sides.primary.text).toBe("ti amo");
+    expect(sides.secondary.text).toBe("I love you");
+    expect(sides.secondary.language).toBe("en");
+  });
+
+  it("follows the interface language wherever it points", () => {
+    expect(getVocabularyCardSides(tiAmo, "it", "fr").secondary.text).toBe(
+      "je t'aime",
+    );
+    expect(getVocabularyCardSides(tiAmo, "es", "zh-TW").secondary.text).toBe(
+      "我愛你",
+    );
+  });
+
+  it("leaves the gloss empty rather than reaching for an unchosen language", () => {
+    const sparse = { ...tiAmo, texts: { es: "te amo", it: "ti amo" } };
+
+    const sides = getVocabularyCardSides(sparse, "it", "en");
+
+    expect(sides.primary.text).toBe("ti amo");
+    // Every renderer skips a blank gloss. None of them skips a Spanish one.
+    expect(sides.secondary.text).toBe("");
+  });
+});

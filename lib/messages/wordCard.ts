@@ -21,6 +21,19 @@ export type SharedWordCard = {
   wordLanguage?: LanguageCode;
   translationLanguage?: LanguageCode;
   partOfSpeech?: string | null;
+  /**
+   * The word in every language the sender's row held.
+   *
+   * Without this a shared card is two languages forever, and a reader
+   * studying a third sees whichever two the sender happened to have — a
+   * language they never chose, sitting in their conversation history.
+   *
+   * Optional because cards sent before this existed do not carry it, and
+   * cannot be made to: they live inside message bodies people have already
+   * sent, and rewriting someone's sent message is not a thing this app does.
+   * Those render as the pair they were sent as.
+   */
+  texts?: ByLanguage;
   /** The example sentence in each language it exists in. */
   examples?: ByLanguage;
 };
@@ -51,6 +64,7 @@ function readCode(value: unknown): LanguageCode | undefined {
 
 export function encodeWordCardMessage(card: SharedWordCard): string {
   const examples = compactByLanguage(card.examples ?? {});
+  const texts = compactByLanguage(card.texts ?? {});
 
   const [firstCode, secondCode] = DEFAULT_LEARNING_PAIR;
 
@@ -62,6 +76,7 @@ export function encodeWordCardMessage(card: SharedWordCard): string {
       wordLanguage: card.wordLanguage ?? firstCode,
       translationLanguage: card.translationLanguage ?? secondCode,
       partOfSpeech: card.partOfSpeech ?? null,
+      texts,
       examples,
       /*
        * The old fields go out alongside the new ones, and deliberately.
@@ -96,10 +111,12 @@ export function decodeWordCardMessage(body: string): SharedWordCard | null {
     }
 
     const examples = compactByLanguage(parsed.examples ?? {});
+    const texts = compactByLanguage(parsed.texts ?? {});
 
     return {
       word: parsed.word,
       translation: parsed.translation,
+      texts,
       wordLanguage: readCode(parsed.wordLanguage) ?? DEFAULT_LEARNING_PAIR[0],
       translationLanguage:
         readCode(parsed.translationLanguage) ?? DEFAULT_LEARNING_PAIR[1],

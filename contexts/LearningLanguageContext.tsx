@@ -25,6 +25,21 @@ type LearningLanguageContextType = {
    * only works while exactly two languages exist.
    */
   languagePair: readonly [LanguageCode, LanguageCode];
+  /**
+   * Applies a change the caller already knows about, without asking anyone.
+   *
+   * Settings used to save and then call refresh(), which is three round
+   * trips — the update, getUser(), and the profile read — before a single
+   * card on screen changed. The value the reader just picked is not a thing
+   * that has to be fetched; it is a thing that has to be persisted, and
+   * those are different jobs with different latencies.
+   *
+   * Persist afterwards, and call this again with the old pair if the write
+   * fails. Reconciliation with the server still happens on focus and on
+   * visibility change, so a value that somehow diverges is corrected the
+   * next time the tab is looked at.
+   */
+  apply: (learning: LanguageCode, native: LanguageCode) => void;
   loading: boolean;
   refresh: () => Promise<void>;
 };
@@ -67,6 +82,10 @@ export function LearningLanguageProvider({
 
   const [learningLanguage, nativeLanguage] = pair;
   const [loading, setLoading] = useState(false);
+
+  const apply = useCallback((learning: LanguageCode, native: LanguageCode) => {
+    setPair(toLearningPair(learning, native));
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -131,9 +150,10 @@ export function LearningLanguageProvider({
       nativeLanguage,
       languagePair: pair,
       loading,
+      apply,
       refresh,
     }),
-    [learningLanguage, nativeLanguage, pair, loading, refresh],
+    [learningLanguage, nativeLanguage, pair, loading, apply, refresh],
   );
 
   return (

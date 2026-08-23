@@ -60,6 +60,16 @@ export type LanguageMetadata = {
   /** What speakers of the language call it, for language-picker rows. */
   endonym: string;
 
+  /**
+   * A sentence in this language, for previewing a voice.
+   *
+   * Written in the language rather than translated at render time: the point
+   * of the preview is hearing how a voice reads this language, and reading
+   * an English sentence with a French voice tells you nothing about how it
+   * will read French.
+   */
+  voiceSample: string;
+
   /** Short glyph badge used by the language pickers. */
   badge: string;
 
@@ -144,6 +154,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Inglese",
     },
     endonym: "English",
+    voiceSample: "Hello, welcome to Exchange Notes.",
     badge: "En",
     speechTag: "en-US",
     voiceTagFallbacks: [],
@@ -165,6 +176,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Cinese tradizionale",
     },
     endonym: "繁體中文",
+    voiceSample: "你好，歡迎使用 Exchange Notes。",
     badge: "中",
     speechTag: "zh-TW",
     voiceTagFallbacks: ["tw", "hant"],
@@ -186,6 +198,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Spagnolo",
     },
     endonym: "Español",
+    voiceSample: "Hola, te damos la bienvenida a Exchange Notes.",
     badge: "Es",
     speechTag: "es-ES",
     voiceTagFallbacks: [],
@@ -207,6 +220,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Francese",
     },
     endonym: "Français",
+    voiceSample: "Bonjour, bienvenue sur Exchange Notes.",
     badge: "Fr",
     speechTag: "fr-FR",
     voiceTagFallbacks: [],
@@ -228,6 +242,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
       italian: "Italiano",
     },
     endonym: "Italiano",
+    voiceSample: "Ciao, ti diamo il benvenuto su Exchange Notes.",
     badge: "It",
     speechTag: "it-IT",
     voiceTagFallbacks: [],
@@ -276,29 +291,61 @@ export function pickLanguage<T>(
   return undefined;
 }
 
+
 /**
- * The two languages to actually show for a piece of content.
+ * Whether a stored value is one of the interface languages.
  *
- * Prefers the reader's own pair and falls back to whatever the content
- * carries. Content is not always in the reader's languages: Daily News is one
- * shared pool generated in one pairing, and a word card arrives in the
- * languages its sender was using. Indexing such content by the reader's pair
- * and taking the miss at face value renders an empty card — which is worse
- * than showing it in the languages it is actually in.
- *
- * Returns at most two, in preference order, and never invents a language the
- * content does not have.
+ * Lives here rather than in lib/appPreferences.ts so server code can
+ * validate `app_preferences.interfaceLanguage` without importing a module
+ * built around localStorage. Object.hasOwn, not `in`: the value comes out
+ * of a JSON column, and `in` would accept "constructor".
  */
-export function resolveDisplayPair(
+export function isInterfaceLanguageValue(
+  value: unknown,
+): value is InterfaceLanguage {
+  return (
+    typeof value === "string" &&
+    Object.hasOwn(INTERFACE_LANGUAGE_CODE, value)
+  );
+}
+
+/**
+ * Which language glosses the one being learned.
+ *
+ * The single definition of the rule, shared by the client hook that renders
+ * cards (hooks/useDisplayLanguages.ts) and the server helper that generates
+ * them (lib/profile/languagePair.ts). They disagreed once — the screen
+ * showed one pairing and the model was asked for another — and the only
+ * reliable way for that not to happen again is for there to be one rule.
+ *
+ * The interface language wins: it is what the reader most recently said
+ * they read comfortably, and it is visibly in effect everywhere else on
+ * screen. "My language" is the tie-breaker for someone learning the
+ * language the app is already in, and English or Chinese is the last
+ * resort — a card needs two sides, and the same text twice is not two.
+ */
+export function resolveSupportLanguage(
+  learning: LanguageCode,
+  interfaceCode: LanguageCode | null | undefined,
+  native: LanguageCode | null | undefined,
+): LanguageCode {
+  if (interfaceCode && interfaceCode !== learning) return interfaceCode;
+  if (native && native !== learning) return native;
+
+  return DEFAULT_LEARNING_PAIR.find((code) => code !== learning) ?? "en";
+}
+
+/**
+ * Whether this content can lead in the language being learned.
+ *
+ * The one question a feed has to ask before showing something: the lead is
+ * the learning language or there is nothing worth leading with.
+ */
+export function canLeadIn(
   available: ByLanguage,
-  preferred: readonly LanguageCode[],
-): readonly LanguageCode[] {
-  const present = LANGUAGE_CODES.filter((code) => available[code]);
-
-  const wanted = preferred.filter((code) => present.includes(code));
-  const rest = present.filter((code) => !wanted.includes(code));
-
-  return [...wanted, ...rest].slice(0, 2);
+  learningLanguage: LanguageCode,
+): boolean {
+  return Boolean(available[learningLanguage]?.trim());
 }
 
 /** Drops empty and absent entries, so a record never carries blank strings. */
