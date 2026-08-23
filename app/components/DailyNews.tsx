@@ -231,10 +231,13 @@ export default function DailyNews() {
   const { t } = useTranslation();
   const copy = t.discover;
 
-  const { pair } = useDisplayLanguages();
+  const { learningLanguage, pair } = useDisplayLanguages();
   const [primaryLanguage, secondaryLanguage] = pair;
 
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
+
+  /** Which language the batch on screen was fetched for. */
+  const loadedLanguageRef = useRef<LanguageCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -379,14 +382,38 @@ export default function DailyNews() {
     },
   });
 
+  /*
+   * Reloaded when the language changes, not only when the screen is.
+   *
+   * The pool is filtered server-side to cards that can lead in the language
+   * being learned, so the batch already on screen belongs to the language it
+   * was fetched under. Without this dependency, switching to Italian left a
+   * feed of French stories sitting there until something happened to remount
+   * the component — which, on a client-side navigation, may be never.
+   *
+   * `copy` covers the interface language for the same reason.
+   */
   useEffect(() => {
     const controller = new AbortController();
 
     requestControllerRef.current = controller;
 
-    // No spinner or clearing step here: on mount the component is already in
-    // exactly that state, which is what makes the eager half of loadNews
-    // unnecessary rather than merely inconvenient.
+    /*
+     * Cleared first on a reload, kept on the first pass.
+     *
+     * On mount the component is already empty and loading, which is what
+     * made the eager half of loadNews unnecessary. On a language change it
+     * is neither — and leaving the old batch up while the new one is
+     * fetched shows the reader stories in the language they just left,
+     * which is the exact thing they changed the setting to stop seeing.
+     */
+    if (loadedLanguageRef.current && loadedLanguageRef.current !== learningLanguage) {
+      setCards([]);
+      setLoading(true);
+    }
+
+    loadedLanguageRef.current = learningLanguage;
+
     async function loadOnMount() {
       try {
         const payload = await fetchDailyNews(
@@ -425,7 +452,7 @@ export default function DailyNews() {
       requestControllerRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
-  }, [copy]);
+  }, [copy, learningLanguage]);
 
   function speak(
     key: string,

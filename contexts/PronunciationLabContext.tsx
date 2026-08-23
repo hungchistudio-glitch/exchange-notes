@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import type { LanguageCode } from "@/lib/languages";
 import { getPronunciationPack } from "@/lib/pronunciation/lab/registry";
@@ -64,7 +64,7 @@ type ProgressState = {
 
 type PronunciationLabValue = {
   language: LanguageCode;
-  nativeLanguage: LanguageCode;
+  supportLanguage: LanguageCode;
   pack: PronunciationLanguagePack;
 
   progress: ProgressByUnit;
@@ -96,7 +96,7 @@ const PronunciationLabContext = createContext<PronunciationLabValue | null>(
 );
 
 export function PronunciationLabProvider({ children }: { children: ReactNode }) {
-  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const { items, loading: vocabularyLoading } = useVocabulary();
 
   const pack = useMemo(
@@ -213,7 +213,7 @@ export function PronunciationLabProvider({ children }: { children: ReactNode }) 
   const value = useMemo<PronunciationLabValue>(
     () => ({
       language: learningLanguage,
-      nativeLanguage,
+      supportLanguage,
       pack,
       progress,
       status,
@@ -225,7 +225,7 @@ export function PronunciationLabProvider({ children }: { children: ReactNode }) 
     }),
     [
       learningLanguage,
-      nativeLanguage,
+      supportLanguage,
       pack,
       progress,
       status,

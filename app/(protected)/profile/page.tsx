@@ -65,7 +65,10 @@ type ProfileForm = {
  */
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const { refresh: refreshLearningLanguage } = useLearningLanguageContext();
+  const {
+    apply: applyLearningLanguages,
+    languagePair: savedLanguagePair,
+  } = useLearningLanguageContext();
   const { isCosmic } = useInterfaceMode();
   const { isStandalone } = usePwaInstall();
 
@@ -211,6 +214,22 @@ export default function ProfilePage() {
     }));
     setError("");
 
+    /*
+     * Every card on screen changes now, not after the round trip.
+     *
+     * This used to save first and then refresh the shared context, which is
+     * three requests deep — the update, getUser(), and the profile read —
+     * before a single word card noticed. The value was never in doubt: the
+     * reader just picked it. Persisting it and displaying it are different
+     * jobs, and only one of them has to wait for the network.
+     */
+    const nextPair =
+      field === "learning_language"
+        ? ([value, nextOtherValue] as const)
+        : ([nextOtherValue, value] as const);
+
+    applyLearningLanguages(nextPair[0], nextPair[1]);
+
     try {
       const supabase = createClient();
 
@@ -221,6 +240,9 @@ export default function ProfilePage() {
 
       if (updateError) {
         setForm(previous);
+        // Put the cards back too: they were changed on the promise that this
+        // would be saved, and it was not.
+        applyLearningLanguages(savedLanguagePair[0], savedLanguagePair[1]);
         setError(
           updateError.code === "23514"
             ? copy.languagesMustDifferError
@@ -228,14 +250,9 @@ export default function ProfilePage() {
         );
         return;
       }
-
-      // Both fields can change here (native/learning are mutually
-      // exclusive), so always refresh the shared learning-language
-      // context — every mounted word card should reflect the new value
-      // immediately, without a full page reload.
-      void refreshLearningLanguage();
     } catch {
       setForm(previous);
+      applyLearningLanguages(savedLanguagePair[0], savedLanguagePair[1]);
       setError(copy.profileUpdateError);
     }
   }
