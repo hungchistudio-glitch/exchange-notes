@@ -1680,9 +1680,15 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
-      englishDescription: string;
-      traditionalChineseDescription: string;
-      spanishDescription: string;
+      /**
+       * One line per interface language, keyed by the language itself.
+       *
+       * A Record rather than englishDescription / spanishDescription / … so
+       * the compiler asks for the new one when a language ships. The picker
+       * used to fall through an if-chain to the English description, which
+       * meant a new language silently described itself as English.
+       */
+      descriptions: Record<TranslationLanguage, string>;
     };
 
     /*

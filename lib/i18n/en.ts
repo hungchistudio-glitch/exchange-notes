@@ -1749,10 +1749,13 @@ const english: TranslationDictionary = {
       sheetTitle: "App language",
       sheetDescription:
         "Choose the language used by the Exchange Notes interface.",
-      englishDescription: "Display the app interface in English.",
-      traditionalChineseDescription:
-        "Display the app interface in Traditional Chinese.",
-      spanishDescription: "Display the app interface in Spanish.",
+      descriptions: {
+        english: "Display the app interface in English.",
+        "traditional-chinese": "Display the app interface in Traditional Chinese.",
+        spanish: "Display the app interface in Spanish.",
+        french: "Display the app interface in French.",
+        italian: "Display the app interface in Italian.",
+      },
     },
 
     yumiReminders: {

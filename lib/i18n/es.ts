@@ -1746,10 +1746,13 @@ const spanish: TranslationDictionary = {
       sheetTitle: "Idioma de la app",
       sheetDescription:
         "Elige el idioma que usa la interfaz de Exchange Notes.",
-      englishDescription: "Mostrar la interfaz en inglés.",
-      traditionalChineseDescription:
-        "Mostrar la interfaz en chino tradicional.",
-      spanishDescription: "Mostrar la interfaz en español.",
+      descriptions: {
+        english: "Mostrar la interfaz en inglés.",
+        "traditional-chinese": "Mostrar la interfaz en chino tradicional.",
+        spanish: "Mostrar la interfaz en español.",
+        french: "Mostrar la interfaz en francés.",
+        italian: "Mostrar la interfaz en italiano.",
+      },
     },
 
     yumiReminders: {
