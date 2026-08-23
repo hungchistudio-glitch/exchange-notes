@@ -14,6 +14,7 @@ import {
 } from "@/lib/languages";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import usePhonetics from "@/hooks/usePhonetics";
+import useTranslatedTexts from "@/hooks/useTranslatedTexts";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -158,13 +159,73 @@ export default function WordCardMessage({
     );
   }
 
-  const ipaFor = usePhonetics([
-    { text: sides.primary.text, language: sides.primary.language },
-    { text: sides.secondary.text, language: sides.secondary.language },
-  ]);
+  /*
+   * What the card can be shown in, and what has to be asked for.
+   *
+   * A card sent before shared cards carried every language holds two, and
+   * they may be two this reader never chose — the screenshot case is a menu
+   * item sent as Chinese and English, read by someone learning French, who
+   * had it led in Chinese: a language absent from all three of their
+   * settings.
+   *
+   * The message is not rewritten to fix that. It belongs to whoever sent it.
+   * What is translated is the *rendering*, on the way to the screen, once
+   * and then cached for everybody.
+   *
+   * Only what is missing: a card that already holds the reader's language
+   * asks for nothing, which is every card sent since.
+   */
+  const leadMissing = sides.primary.language !== learningLanguage;
+  const glossMissing = !sides.secondary.text.trim();
 
-  const [firstCode, secondCode] = [sides.primary.language, sides.secondary.language];
-  const [firstText, secondText] = [sides.primary.text, sides.secondary.text];
+  /*
+   * The side being translated *from*, text and language together.
+   *
+   * They have to travel as a pair. Reading the language off one side and
+   * the text off the other sends Chinese to the model labelled as English,
+   * which is both a worse translation and a cache entry filed under a
+   * language the phrase was never in.
+   *
+   * The gloss side is preferred as the source where there is one: it is the
+   * language the reader already reads, so it is the half most likely to be
+   * well-formed, and translating out of it keeps the two sides agreeing.
+   */
+  const translateFrom = sides.secondary.text.trim()
+    ? sides.secondary
+    : sides.primary;
+
+  const leadRequest = {
+    text: leadMissing ? translateFrom.text : null,
+    from: translateFrom.language,
+    to: learningLanguage,
+  };
+
+  const glossRequest = {
+    text: glossMissing ? sides.primary.text : null,
+    from: sides.primary.language,
+    to: supportLanguage,
+  };
+
+  const translationFor = useTranslatedTexts([leadRequest, glossRequest]);
+
+  const translatedLead = leadMissing ? translationFor(leadRequest) : undefined;
+  const translatedGloss = glossMissing ? translationFor(glossRequest) : undefined;
+
+  /*
+   * Until the translation lands the card shows what it was sent as. That is
+   * a card briefly in the wrong language, which beats a card that is briefly
+   * blank — and it settles within a frame or two of opening the thread.
+   */
+  const firstCode = translatedLead ? learningLanguage : sides.primary.language;
+  const firstText = translatedLead ?? sides.primary.text;
+
+  const secondCode = translatedGloss ? supportLanguage : sides.secondary.language;
+  const secondText = translatedGloss ?? sides.secondary.text;
+
+  const ipaFor = usePhonetics([
+    { text: firstText, language: firstCode },
+    { text: secondText, language: secondCode },
+  ]);
 
   const firstBlock = languageBlock(firstCode, firstText, true);
 

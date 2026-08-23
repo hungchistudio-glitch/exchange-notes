@@ -156,6 +156,107 @@ describe("WordCardMessage", () => {
     expect(await findByText("/ti ˈamo/")).toBeTruthy();
   });
 
+  it("brings a card sent in two other languages into the reader's", async () => {
+    /*
+     * The screenshot: a menu item sent as Chinese and English on 19 August,
+     * read by someone learning French with an English interface. It led in
+     * Chinese — a language absent from all three of their settings — because
+     * the card carries no French and nothing asked for any.
+     *
+     * The message is not rewritten. The rendering is translated.
+     */
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: { body: string }) => {
+        if (String(url).includes("text-translate")) {
+          return {
+            ok: true,
+            json: async () => ({
+              texts: { "Classic American Burger": "Burger américain classique" },
+              unavailable: [],
+            }),
+          };
+        }
+
+        const body = JSON.parse(init.body) as { texts: string[] };
+        return {
+          ok: true,
+          json: async () => ({
+            phonetics: Object.fromEntries(body.texts.map((t) => [t, {}])),
+          }),
+        };
+      }),
+    );
+
+    const legacy = {
+      word: "美式經典漢堡",
+      translation: "Classic American Burger",
+      wordLanguage: "zh-TW" as const,
+      translationLanguage: "en" as const,
+      examples: {},
+    };
+
+    const { findByText, container } = render(
+      <WordCardMessage
+        card={legacy as never}
+        createdAt="2026-08-19T00:00:00Z"
+        learningLanguage="fr"
+        t={english}
+        saved={false}
+        saving={false}
+        onSave={() => {}}
+        onShare={() => {}}
+      />,
+    );
+
+    expect(await findByText("Burger américain classique")).toBeTruthy();
+
+    // English is the interface language and stays as the gloss. Chinese is
+    // in none of this reader's three settings and goes.
+    expect(container.textContent).toContain("Classic American Burger");
+    expect(container.textContent).not.toContain("美式經典漢堡");
+  });
+
+  it("asks for nothing when the card already holds the reader's languages", async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        asked.push(String(url));
+        return { ok: true, json: async () => ({ phonetics: {}, texts: {} }) };
+      }),
+    );
+
+    render(
+      <WordCardMessage
+        card={
+          {
+            word: "ti amo",
+            translation: "I love you",
+            wordLanguage: "it",
+            translationLanguage: "en",
+            texts: { it: "ti amo", en: "I love you" },
+            examples: {},
+          } as never
+        }
+        createdAt="2026-08-22T00:00:00Z"
+        learningLanguage="it"
+        t={english}
+        saved={false}
+        saving={false}
+        onSave={() => {}}
+        onShare={() => {}}
+      />,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    // Every card sent since shared cards started carrying every language is
+    // this one, and none of them should cost a translation.
+    expect(asked.some((url) => url.includes("text-translate"))).toBe(false);
+  });
+
   it("carries every language through send and receive", () => {
     // Without this the card is two languages forever, and a reader studying
     // a third sees whichever two the sender happened to have.
