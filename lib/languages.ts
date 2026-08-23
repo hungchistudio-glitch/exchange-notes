@@ -115,8 +115,16 @@ export type LanguageMetadata = {
   /** Whether a complete TranslationDictionary ships for this language. */
   availableAsInterface: boolean;
 
-  /** Whether the app can currently teach this language end-to-end —
-   *  prompts, speech, phonetics all verified. */
+  /**
+   * Whether the app can currently teach this language — prompts, speech and
+   * phonetics all present.
+   *
+   * Independent of `availableAsInterface`, and French and Italian are why:
+   * both are learnable now that the Pronunciation Lab has real packs for
+   * them, and neither has a TranslationDictionary. You can study French in
+   * an app that does not speak French to you, which is the whole point of
+   * keeping the two axes apart.
+   */
   availableAsLearning: boolean;
 };
 
@@ -200,7 +208,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: false,
-    availableAsLearning: false,
+    availableAsLearning: true,
   },
   it: {
     code: "it",
@@ -219,7 +227,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     phonetics: ["ipa"],
     requiresTraditionalNormalization: false,
     availableAsInterface: false,
-    availableAsLearning: false,
+    availableAsLearning: true,
   },
 };
 
@@ -459,6 +467,44 @@ export function readLanguageCode(value: unknown): LanguageCode | null {
     return LEGACY_TO_CODE[value];
   }
   return null;
+}
+
+/**
+ * A language from anything that names one.
+ *
+ * Wider than readLanguageCode on purpose, and used at a different edge.
+ * readLanguageCode reads a database column and should not accept a speech
+ * tag; this reads a URL the Scriptable widget built on someone's phone,
+ * which sends "en-US" and "zh-TW" — a speech tag and a language code that
+ * happen to look alike. Accepts a code, a legacy prose value, a speech tag,
+ * or a bare primary subtag, and returns null for anything else rather than
+ * guessing.
+ */
+export function resolveLanguageCode(value: unknown): LanguageCode | null {
+  const direct = readLanguageCode(value);
+  if (direct) return direct;
+
+  if (typeof value !== "string" || !value) return null;
+
+  const normalized = value.toLowerCase().replace("_", "-");
+
+  const byTag = LANGUAGE_CODES.find(
+    (code) => LANGUAGES[code].speechTag.toLowerCase() === normalized,
+  );
+  if (byTag) return byTag;
+
+  /*
+   * Last resort: the primary subtag. "en-GB" is English even though no row
+   * carries that tag. Chinese is deliberately reached through its own row
+   * rather than this branch — "zh" alone does not say Traditional, and the
+   * table order means the first zh row wins, which is the one we want.
+   */
+  const primary = normalized.split("-")[0];
+  return (
+    LANGUAGE_CODES.find(
+      (code) => code.toLowerCase().split("-")[0] === primary,
+    ) ?? null
+  );
 }
 
 /**

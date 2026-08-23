@@ -149,7 +149,30 @@ const CANDIDATES_PER_SLOT = 8;
  * and finish in roughly half the wall time for the same tokens. Well inside
  * the free tier's request-per-minute allowance either way.
  */
+/*
+ * How many articles one Gemini call rewrites, at the pair the app started
+ * with. Scaled down as the pool covers more languages — see articlesPerBatch.
+ */
 const ARTICLES_PER_BATCH = 6;
+
+/**
+ * Articles per request, held so the output per request does not grow with
+ * the language count.
+ *
+ * Every extra language multiplies what a single call has to write: a title,
+ * a summary, a caption and three words with examples, again. Six articles in
+ * two languages and six in five are not the same request, and the cron runs
+ * on Vercel's Hobby plan where sixty seconds is a hard ceiling. Batches run
+ * in parallel and a failed one only costs its own cards, so more, smaller
+ * requests is the cheaper way to be wrong.
+ *
+ * Floored at two: a batch of one loses the shared article context that makes
+ * the model's vocabulary picks differ from card to card.
+ */
+export function articlesPerBatch(languageCount: number): number {
+  const budget = ARTICLES_PER_BATCH * DEFAULT_LEARNING_PAIR.length;
+  return Math.max(2, Math.min(ARTICLES_PER_BATCH, Math.round(budget / Math.max(1, languageCount))));
+}
 
 const MINIMUM_BODY_LENGTH = 300;
 const EXCERPT_BODY_LENGTH = 1200;
@@ -595,9 +618,11 @@ export async function buildLearningCards(
   const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
   const client = new GoogleGenAI({ apiKey });
 
+  const perBatch = articlesPerBatch(languages.length);
+
   const batches: GuardianArticle[][] = [];
-  for (let i = 0; i < articles.length; i += ARTICLES_PER_BATCH) {
-    batches.push(articles.slice(i, i + ARTICLES_PER_BATCH));
+  for (let i = 0; i < articles.length; i += perBatch) {
+    batches.push(articles.slice(i, i + perBatch));
   }
 
   const settled = await Promise.allSettled(

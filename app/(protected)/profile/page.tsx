@@ -188,14 +188,15 @@ export default function ProfilePage() {
       field === "native_language" ? "learning_language" : "native_language";
     const previous = form;
 
-    // Only two languages exist app-wide, so native and learning can never
-    // be equal (the database enforces this too). If the new value collides
-    // with the other field, flip that field to the remaining language in
-    // the same update instead of sending a lone change that would violate
-    // the constraint.
     /*
-     * "The remaining language" is only a single answer while exactly two can
-     * be learned. A third turns this into a choice rather than a leftover.
+     * Native and learning must differ — the database enforces it too — so a
+     * value that collides with the other field flips that field in the same
+     * update rather than sending a lone change the constraint would reject.
+     *
+     * Which language it flips to is picked here rather than being the one
+     * left over: with five learnable languages there is no leftover, so the
+     * first that is not the new value stands in until the user says
+     * otherwise.
      */
     const nextOtherValue: LanguageCode =
       value === form[otherField]

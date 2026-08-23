@@ -5,10 +5,21 @@ import { ArrowLeft, BookOpen, RotateCcw, Sparkles, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Screen from "@/components/foundation/layout/Screen";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { fill } from "@/lib/i18n/format";
+import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 
 type SpeakPageClientProps = {
-  language: "en-US" | "zh-TW";
+  /**
+   * The language of `text`.
+   *
+   * A LanguageCode, not a pair of hardcoded tags: this page used to admit
+   * exactly "en-US" and "zh-TW" and describe itself with an isChinese
+   * ternary, which meant a Spanish word arriving from the widget was
+   * announced as English and read in an English voice.
+   */
+  language: LanguageCode;
   text: string;
 };
 
@@ -18,6 +29,11 @@ export default function SpeakPageClient({
   language,
   text,
 }: SpeakPageClientProps) {
+  const { t, language: interfaceLanguage } = useTranslation();
+  const copy = t.speakPage;
+
+  const meta = getLanguage(language);
+
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
   const autoPlayedRef = useRef(false);
 
@@ -28,12 +44,12 @@ export default function SpeakPageClient({
     }
 
     setPlaybackState("playing");
-    speak(text, language, {
+    speak(text, meta.speechTag, {
       onStart: () => setPlaybackState("playing"),
       onEnd: () => setPlaybackState("complete"),
       onError: () => setPlaybackState("error"),
     });
-  }, [language, text]);
+  }, [meta.speechTag, text]);
 
   useEffect(() => {
     if (autoPlayedRef.current || !text) return;
@@ -48,23 +64,14 @@ export default function SpeakPageClient({
     return () => window.speechSynthesis?.cancel();
   }, []);
 
-  const isChinese = language === "zh-TW";
   const status =
     playbackState === "playing"
-      ? isChinese
-        ? "正在播放…"
-        : "Playing…"
+      ? copy.playing
       : playbackState === "complete"
-        ? isChinese
-          ? "播放完成"
-          : "Playback complete"
+        ? copy.complete
         : playbackState === "error"
-          ? isChinese
-            ? "無法自動播放，請點擊下方按鈕再試一次。"
-            : "Automatic playback was blocked. Tap the button to try again."
-          : isChinese
-            ? "準備播放"
-            : "Ready to play";
+          ? copy.blocked
+          : copy.ready;
 
   return (
     // Every white and black below is written as a literal rather than as
@@ -94,7 +101,7 @@ export default function SpeakPageClient({
         <Link
           href="/vocabulary"
           className="flex h-11 w-11 items-center justify-center rounded-full border border-[#ffffff]/20 bg-[#ffffff]/10 text-[#ffffff] backdrop-blur"
-          aria-label={isChinese ? "返回單字本" : "Back to vocabulary"}
+          aria-label={copy.backToVocabulary}
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </Link>
@@ -107,22 +114,29 @@ export default function SpeakPageClient({
 
       <section className="relative z-10 flex min-h-[72dvh] flex-col items-center justify-center py-10 text-center">
         <div className="w-full rounded-[32px] border border-[#ffffff]/20 bg-[#ffffff]/[0.09] p-6 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl">
+          {/*
+            The badge is the language's own glyph from lib/languages.ts, so a
+            new language brings its own rather than needing a case here.
+          */}
           <div
-            className={`mx-auto flex h-20 w-20 items-center justify-center rounded-[24px] text-3xl font-black shadow-lg ${
-              isChinese
-                ? "border border-orange-300/50 bg-gradient-to-br from-[#20243b] to-[#03050d] text-[#ffffff] shadow-orange-950/30"
-                : "bg-gradient-to-br from-[#ffd147] to-[#ff730a] text-[#221508] shadow-orange-950/30"
-            }`}
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-[24px] bg-gradient-to-br from-[#ffd147] to-[#ff730a] text-3xl font-black text-[#221508] shadow-lg shadow-orange-950/30"
+            style={{ fontFamily: `var(${meta.fontVariable})` }}
           >
-            {isChinese ? "ㄅ" : "A"}
+            {meta.badge}
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.22em] text-cyan-100/70">
-            {isChinese ? "繁體中文發音" : "English pronunciation"}
+            {fill(copy.eyebrow, {
+              language: getLanguageName(language, interfaceLanguage),
+            })}
           </p>
 
-          <h1 className="mt-3 break-words text-4xl font-black leading-tight text-[#ffffff]">
-            {text || (isChinese ? "沒有可播放的文字" : "No text to play")}
+          <h1
+            className="mt-3 break-words text-4xl font-black leading-tight text-[#ffffff]"
+            style={{ fontFamily: `var(${meta.fontVariable})` }}
+            lang={meta.htmlLang}
+          >
+            {text || copy.noText}
           </h1>
 
           <p className="mt-4 min-h-6 text-sm text-[#ffffff]/65" aria-live="polite">
@@ -144,7 +158,7 @@ export default function SpeakPageClient({
                 aria-hidden="true"
               />
             )}
-            {isChinese ? "再播放一次" : "Play again"}
+            {copy.playAgain}
           </button>
         </div>
 
@@ -153,7 +167,7 @@ export default function SpeakPageClient({
           className="mt-5 flex min-h-11 items-center gap-2 rounded-full border border-[#ffffff]/15 bg-[#000000]/15 px-5 py-2.5 text-sm font-semibold text-[#ffffff]/80 backdrop-blur"
         >
           <BookOpen size={17} aria-hidden="true" />
-          {isChinese ? "前往發音練習室" : "Open pronunciation lab"}
+          {copy.openLab}
         </Link>
       </section>
     </Screen>

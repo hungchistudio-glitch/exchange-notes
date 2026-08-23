@@ -615,7 +615,7 @@ const english: TranslationDictionary = {
     pronunciation: {
       eyebrow: "Daily practice",
       title: "Pronunciation Lab",
-      description: "Practice English sounds and Zhuyin.",
+      description: "Sounds, rhythm and your own voice.",
     },
 
     progress: {
@@ -661,29 +661,26 @@ const english: TranslationDictionary = {
     },
   },
 
+  speakPage: {
+    eyebrow: "{language} pronunciation",
+    noText: "No text to play",
+    ready: "Ready to play",
+    playing: "Playing…",
+    complete: "Playback complete",
+    blocked: "Automatic playback was blocked. Tap the button to try again.",
+    playAgain: "Play again",
+    openLab: "Open the Pronunciation Lab",
+    backToVocabulary: "Back to vocabulary",
+  },
+
   pronunciation: {
     backToVocabulary: "Back to your words",
     backHome: "Back to Home",
     title: "Pronunciation Lab",
-    subtitle: "Tap any speaker to hear the pronunciation.",
-
-    modes: {
-      english: "English Focus",
-      zhuyin: "Zhuyin Focus",
-    },
-
-    filters: {
-      all: "All",
-      vowels: "Vowels",
-      consonants: "Consonants",
-      initial: "Initials",
-      medial: "Medials",
-      final: "Finals",
-    },
+    subtitle: "Sounds, rhythm and your own voice.",
 
     cards: {
       howToSayIt: "How to say it",
-      pronunciationMethod: "Pronunciation guide",
       playWord: "Play {word}",
       correct: "Correct",
       incorrect: "Common mistake",
@@ -692,9 +689,6 @@ const english: TranslationDictionary = {
       showLessGuidance: "Show less",
       commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
       playbackFailed: "Playback failed. Tap to try again.",
-      kk: "KK",
-      moreSounds: "Pronunciation variants",
-      romanizationHint: "Closest pinyin",
     },
 
     yumi: {
@@ -704,6 +698,228 @@ const english: TranslationDictionary = {
       voice: "Voice",
       demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
       tapToHear: "Tap Yumi to hear and watch this sound.",
+    },
+
+    lab: {
+      backToLab: "Back to the Lab",
+      learningLabel: "Learning {language}",
+      switchLanguageHint: "Change this in Settings.",
+
+      coach: {
+        eyebrow: "Yumi",
+        calibratedFor: "Calibrated for {instrument}",
+        idle: "Pick a sound and I'll show you how it's made.",
+        demonstrating: "Watch my mouth.",
+        listening: "Go ahead — I'm listening.",
+        recording: "Recording…",
+        analyzing: "Listening back…",
+        correct: "That's it.",
+        almost: "Close. Try once more.",
+        incorrect: "Not quite — listen again first.",
+        celebrating: "That's the whole set.",
+        encouraging: "This one takes a few goes. Everyone's does.",
+        waiting: "Ready when you are.",
+      },
+
+      modules: {
+        sounds: { title: "Sounds", description: "How each one is made" },
+        listen: { title: "Listen", description: "Tell them apart" },
+        speak: { title: "Speak", description: "Record and compare" },
+        words: { title: "Words", description: "From your own vocabulary" },
+        rhythm: { title: "Rhythm", description: "Stress, timing, melody" },
+        review: { title: "Review", description: "What's due to come back" },
+      },
+
+      today: {
+        eyebrow: "Today's training",
+        title: "A short session",
+        minutes: "{minutes} min",
+        start: "Start",
+        resume: "Resume",
+        completed: "Done for today",
+        empty: "Nothing scheduled yet — try a few sounds first.",
+      },
+
+      progress: {
+        eyebrow: "Your progress",
+        title: "Where you stand",
+        sounds: "Sounds",
+        listening: "Listening",
+        speaking: "Speaking",
+        rhythm: "Rhythm",
+        notEnough: "Not enough practice yet",
+        soundsMastered: "{mastered} of {total} mastered",
+        practisedCount: "{count} practised",
+      },
+
+      mastery: {
+        new: "Not started",
+        learning: "Learning",
+        improving: "Improving",
+        mastered: "Mastered",
+      },
+
+      weakness: {
+        title: "Weakness map",
+        description: "Built from every attempt, not from one.",
+        strong: "Strong",
+        improving: "Improving",
+        needsWork: "Needs work",
+        empty: "Practise a few sounds and this fills in.",
+        viewAll: "See all",
+        attempts: "{count} attempts",
+      },
+
+      sounds: {
+        title: "Sounds",
+        subtitle: "Tap a sound to see how it's made.",
+        all: "All",
+        empty: "No sounds in this group yet.",
+        soundCount: "{count} sounds",
+      },
+
+      detail: {
+        articulation: "Articulation",
+        examples: "Example words",
+        minimalPairs: "Easy to confuse",
+        recordYourself: "Record yourself",
+        practiceAgain: "Practise again",
+        nativeSpeed: "Native speed",
+        slowSpeed: "Slow",
+        replay: "Replay",
+        tongue: "Tongue",
+        lips: "Lips",
+        jaw: "Jaw",
+        airflow: "Airflow",
+        voicing: "Voicing",
+        resonance: "Resonance",
+        writtenAs: "Written as",
+        difficulty: "Difficulty",
+        notFound: "That sound isn't in this language's pack.",
+      },
+
+      listen: {
+        title: "Listen",
+        subtitle: "One plays. Choose which one it was.",
+        prompt: "Which one did you hear?",
+        playAgain: "Play again",
+        next: "Next",
+        finish: "Finish",
+        correct: "Correct",
+        incorrect: "That was {answer}",
+        empty: "No listening contrasts for this language yet.",
+        roundOf: "{current} of {total}",
+      },
+
+      speak: {
+        title: "Speak",
+        subtitle: "Listen, record, and hear the two side by side.",
+        listenFirst: "Listen first",
+        record: "Record",
+        stop: "Stop",
+        recording: "Recording — tap to stop",
+        analyzing: "Analyzing…",
+        retry: "Record again",
+        continueLabel: "Continue",
+        native: "Native",
+        you: "You",
+        compare: "Compare",
+        playNative: "Play the native version",
+        playYours: "Play your recording",
+        overall: "Overall",
+        notAnalyzed: "Not analyzed",
+        notAnalyzedHint:
+          "Nothing on this device can measure that yet, so no score is shown rather than a made-up one.",
+        privacyCloud:
+          "Your browser sends this recording to its own speech service to transcribe it. Exchange Notes never stores it.",
+        privacyOnDevice: "Analysis happens on this device. Nothing is uploaded.",
+        heard: "Heard as",
+        permissionDenied: "Microphone access was declined.",
+        permissionHelp:
+          "Allow the microphone for this site in your browser settings, then try again.",
+        unsupported: "This browser can't record audio.",
+        unsupportedHelp:
+          "You can still listen and follow along — recording needs a browser with microphone support.",
+        noAudio: "Nothing was recorded. Try again a little closer to the mic.",
+        failed: "Recording failed. Try again.",
+        empty: "Pick a sound to practise saying.",
+      },
+
+      dimensions: {
+        sound: "Sound accuracy",
+        vowel: "Vowels",
+        consonant: "Consonants",
+        consonantLength: "Consonant length",
+        stress: "Stress",
+        rhythm: "Rhythm",
+        fluency: "Fluency",
+        tone: "Tone",
+        pitch: "Pitch contour",
+        nasal: "Nasality",
+        liaison: "Liaison",
+        melody: "Melody",
+      },
+
+      words: {
+        title: "Words",
+        subtitle: "Your own vocabulary, sorted by what it drills.",
+        empty: "No words ready for pronunciation yet.",
+        emptyHint: "Add vocabulary in this language to start practising.",
+        addWords: "Go to Vocabulary",
+        practise: "Practise",
+        reasonWeak: "Has a sound you're working on",
+        reasonDifficult: "You've missed this one before",
+        reasonNew: "New word",
+        reasonRecent: "Added recently",
+        drills: "Drills",
+      },
+
+      rhythm: {
+        title: "Rhythm",
+        subtitle: "Where the weight falls, and how it moves.",
+        rule: "The rule",
+        primaryStress: "Primary stress",
+        secondaryStress: "Secondary stress",
+        linked: "Links to the next syllable",
+        held: "Held longer",
+        toneLabel: "Tone {tone}",
+        empty: "No rhythm lessons for this language yet.",
+      },
+
+      review: {
+        title: "Review",
+        subtitle: "Sounds that are due to come back around.",
+        due: "{count} due",
+        nothingDue: "Nothing due right now.",
+        nothingDueHint: "Come back after some practice, or start a new sound.",
+        start: "Start review",
+      },
+
+      session: {
+        stepOf: "{current} of {total}",
+        skip: "Skip",
+        next: "Next",
+        finish: "Finish",
+        complete: "Session complete",
+        completeBody: "{correct} of {answered} correct.",
+        backToLab: "Back to the Lab",
+        resumeTitle: "You left a session open",
+        resumeBody: "Pick up where you stopped, or start fresh.",
+        resume: "Resume",
+        startOver: "Start over",
+        leaveConfirm: "Leave this session? Your answers so far are saved.",
+      },
+
+      states: {
+        loading: "Loading…",
+        error: "Couldn't load your progress",
+        errorBody: "The sounds still work — only your history is missing.",
+        retry: "Try again",
+        signedOut: "Sign in to keep your progress",
+        signedOutBody: "Everything here works without an account; nothing is remembered.",
+        notSaved: "Saved on this device only.",
+        audioUnavailable: "No audio available for this yet.",
+      },
     },
   },
 

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 
+import useReducedMotion from "@/hooks/useReducedMotion";
 import {
   YUMI_IDLE_POSE,
+  isAirflowState,
+  isArticulatingState,
+  isAttendingState,
+  isContactState,
   type AirflowRig,
   type YumiAnimationState,
   type YumiRigPose,
@@ -25,45 +30,14 @@ type YumiFaceProps = {
   emphasisScale?: number;
 };
 
-// States that should show the sound's TARGET mouth/tongue shape. Everything
-// else (idle, completed, error) rests on the neutral pose — the speaker
-// button's own icon (check/retry) carries "done"/"error" meaning, the rig
-// doesn't need to.
-const ACTIVE_PHASES: YumiAnimationState[] = [
-  "preparing",
-  "articulating",
-  "holding",
-  "releasing",
-  "recording",
-  "comparing",
-];
-
-// Phases where the tongue is actually pressed against its target, not just
-// moving toward or away from it — worth a small contact flash.
-const CONTACT_PHASES: YumiAnimationState[] = ["holding", "articulating"];
-
-// Phases where air is actually moving, for the airflow streak effect —
-// slightly wider than CONTACT_PHASES since airflow (unlike a discrete
-// tongue contact) continues through the release too (a stop's burst IS the
-// release; a fricative's hiss continues right up to it).
-const AIRFLOW_PHASES: YumiAnimationState[] = ["articulating", "holding", "releasing"];
-
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    queueMicrotask(() => setReduced(query.matches));
-
-    const handler = (event: MediaQueryListEvent) => setReduced(event.matches);
-    query.addEventListener("change", handler);
-    return () => query.removeEventListener("change", handler);
-  }, []);
-
-  return reduced;
-}
+// Which states show the sound's TARGET mouth/tongue shape, which flash the
+// contact point, and which move air — all three now answered by
+// lib/pronunciation/yumiRig.ts rather than by lists kept here.
+//
+// That matters because the Pronunciation Lab added coaching states (Yumi
+// listening, analyzing, reacting) to the same union. Local lists would have
+// silently classified every one of them as "not articulating" and been
+// right by accident, until the first one that should animate.
 
 // ── Mouth ──────────────────────────────────────────────────────────────
 // A single lip shape drawn on the mark's own face, reacting to jawOpen /
@@ -196,7 +170,7 @@ export default function YumiFace({
   emphasisScale = DEFAULT_TEACHING_EMPHASIS,
 }: YumiFaceProps) {
   const reducedMotion = useReducedMotion();
-  const isActive = ACTIVE_PHASES.includes(phase);
+  const isActive = isArticulatingState(phase);
   const activePose = isActive ? pose : YUMI_IDLE_POSE;
   const rawId = useId();
   const eyeClipId = `yumi-face-eye-${rawId.replace(/:/g, "")}`;
@@ -204,13 +178,20 @@ export default function YumiFace({
   const mouth = mouthGeometry(activePose.mouth, isActive, emphasisScale);
   const tip = tongueTip(activePose);
   const showVoicing = activePose.voicing.voiced && isActive;
-  const showContact = activePose.contact.zone !== "none" && CONTACT_PHASES.includes(phase);
+  const showContact = activePose.contact.zone !== "none" && isContactState(phase);
   const mouthSpeedMs = isActive ? MOUTH_SPEED_MS[activePose.airflow.path] : 320;
-  const showAirflow = isActive && activePose.airflow.enabled && AIRFLOW_PHASES.includes(phase);
+  const showAirflow = isActive && activePose.airflow.enabled && isAirflowState(phase);
   const airflowPath = activePose.airflow.path;
   const airflowOriginPoint = airflowPath === "nasal" ? NASAL_ORIGIN : airflowOrigin(mouth);
 
-  const breathing = !reducedMotion && (phase === "idle" || phase === "entering");
+  /*
+   * Attending states breathe too, and deliberately so: while Yumi is
+   * listening or thinking she is doing nothing with her mouth, and a
+   * completely still face reads as frozen rather than as attentive.
+   */
+  const breathing =
+    !reducedMotion &&
+    (phase === "idle" || phase === "entering" || isAttendingState(phase));
 
   return (
     <div

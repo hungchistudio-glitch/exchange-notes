@@ -16,6 +16,14 @@
 
 export type Manner =
   | "stop"
+  // A single, very brief closure — Spanish "pero", the flapped t of
+  // American "water". Distinct from a stop because there is no hold and no
+  // release burst to speak of, which is exactly what learners overshoot.
+  | "tap"
+  // Repeated closures driven by airflow rather than by the tongue —
+  // Spanish "perro", Italian "carro". The tongue is passive; blowing is
+  // what makes it happen, which is why "try harder" is the wrong advice.
+  | "trill"
   | "fricative"
   | "affricate"
   | "nasal"
@@ -124,18 +132,119 @@ export interface YumiRigPose {
   contact: ContactRig;
 }
 
+/**
+ * Everything Yumi can be doing.
+ *
+ * One union, extended rather than duplicated: the articulation states below
+ * ("preparing" through "releasing") drive the mouth rig and were here first;
+ * the coaching states after them arrived with the Pronunciation Lab, where
+ * Yumi has to listen, wait, judge and react rather than only demonstrate.
+ *
+ * A component decides how to draw a state by asking the predicates below,
+ * not by listing members — so adding a state is additive.
+ */
 export type YumiAnimationState =
+  // Lifecycle
   | "entering"
   | "idle"
+  | "exiting"
+  // Demonstrating a sound
   | "preparing"
+  | "demonstrating"
   | "articulating"
   | "holding"
   | "releasing"
+  | "speaking"
   | "completed"
+  // Coaching a learner through an attempt
+  | "listening"
+  | "waiting"
   | "recording"
+  | "analyzing"
+  | "thinking"
   | "comparing"
-  | "error"
-  | "exiting";
+  | "calibrating"
+  // Reacting to one
+  | "correct"
+  | "almost"
+  | "incorrect"
+  | "celebrating"
+  | "encouraging"
+  | "error";
+
+/** States where Yumi should be holding the sound's target mouth shape. */
+const ARTICULATING_STATES: readonly YumiAnimationState[] = [
+  "preparing",
+  "demonstrating",
+  "articulating",
+  "holding",
+  "releasing",
+  "speaking",
+  "recording",
+  "comparing",
+];
+
+/** States where the tongue is actually pressed against its target. */
+const CONTACT_STATES: readonly YumiAnimationState[] = [
+  "holding",
+  "articulating",
+  "demonstrating",
+];
+
+/**
+ * States where air is moving. Wider than contact: a stop's burst *is* its
+ * release, and a fricative hisses right through it.
+ */
+const AIRFLOW_STATES: readonly YumiAnimationState[] = [
+  "articulating",
+  "demonstrating",
+  "holding",
+  "releasing",
+  "speaking",
+];
+
+/** States that report a judgement rather than a demonstration. */
+const VERDICT_STATES: readonly YumiAnimationState[] = [
+  "correct",
+  "almost",
+  "incorrect",
+  "celebrating",
+  "encouraging",
+  "error",
+];
+
+export function isArticulatingState(state: YumiAnimationState): boolean {
+  return ARTICULATING_STATES.includes(state);
+}
+
+export function isContactState(state: YumiAnimationState): boolean {
+  return CONTACT_STATES.includes(state);
+}
+
+export function isAirflowState(state: YumiAnimationState): boolean {
+  return AIRFLOW_STATES.includes(state);
+}
+
+export function isVerdictState(state: YumiAnimationState): boolean {
+  return VERDICT_STATES.includes(state);
+}
+
+/**
+ * States where Yumi is attending to the learner rather than performing.
+ *
+ * Drawn as a quiet, waiting posture — the difference between a teacher
+ * talking and a teacher listening, which is the whole reason the Lab needed
+ * more states than the sound cards did.
+ */
+export function isAttendingState(state: YumiAnimationState): boolean {
+  return (
+    state === "listening" ||
+    state === "waiting" ||
+    state === "analyzing" ||
+    state === "thinking" ||
+    state === "calibrating"
+  );
+}
 
 // Fixed durations since we have no measured per-audio timeline to drive
 // off of — see the scope note at the top of this file.
@@ -190,6 +299,8 @@ const CONTACT_POSITION: Record<ContactZone, Point2D> = {
 
 const AIRFLOW_BY_MANNER: Record<Manner, AirflowRig["path"]> = {
   stop: "burst",
+  tap: "burst",
+  trill: "burst",
   fricative: "friction",
   affricate: "friction",
   nasal: "nasal",
