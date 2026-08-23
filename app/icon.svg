@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Exchange Notes</title>
+  <style>
+    :root { color: #090a0c; }
+    @media (prefers-color-scheme: dark) { :root { color: #ffffff; } }
+  </style>
+  <g id="yumi-logo" fill="none" stroke="currentColor" stroke-width="51.42">
+    <path id="yumi-arc" d="M 335.49 114.83 A 175.89 175.89 0 1 0 335.49 392.05" stroke-linecap="round"/>
+    <path id="yumi-connector" d="M 51.31 253.44 H 342.89"/>
+    <g id="yumi-eye">
+      <circle id="yumi-eye-outer-ring" cx="403.1" cy="253.44" r="60.21" stroke-width="25.71"/>
+      <path id="yumi-eye-pupil" d="M 385.78 253.44 a 17.32 17.32 0 1 0 34.64 0 a 17.32 17.32 0 1 0 -34.64 0 Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+    </g>
+  </g>
+</svg>

@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:widget": "node scripts/verify-scriptable-widget.mjs",
+    "generate:brand": "node scripts/generate-yumi-brand.mjs",
     "generate:native": "bash native/apple/scripts/generate-project.sh",
     "test:native-personal": "bash native/apple/scripts/verify-personal-build.sh"
   },
@@ -42,6 +43,7 @@
     "eslint-config-next": "16.2.10",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
