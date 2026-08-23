@@ -112,6 +112,21 @@ export default async function RootLayout({
       lang={getInterfaceLanguageMeta(interfaceLanguage).htmlLang}
       data-interface-language={interfaceLanguage}
       data-app-font-size={appFontSize}
+      /*
+       * globals.css sets `scroll-behavior: smooth` on this element, for
+       * in-page anchors. Next 15 and earlier quietly suspended that during a
+       * route change; Next 16 stopped, and stopping is visible — a navigation
+       * away from a long screen animates the whole page up to the top instead
+       * of arriving there, which reads as the screen sliding under you rather
+       * than as having gone somewhere.
+       *
+       * This attribute asks for the old behaviour back: auto during the
+       * navigation, the stylesheet's smooth everywhere else. See
+       * node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md,
+       * "Scroll Behavior Override" — which is also the warning this silences,
+       * logged on every page load until now.
+       */
+      data-scroll-behavior="smooth"
       data-interface-mode={interfaceMode}
       /*
        * The attribute is written imperatively too, by InterfaceModeProvider,
