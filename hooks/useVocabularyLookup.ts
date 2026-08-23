@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { reportNetworkFailure } from "@/hooks/useOnline";
+import type { LanguageCode } from "@/lib/languages";
+import { toLearningPair } from "@/lib/profile/languagePair";
 import { createClient } from "@/lib/supabase/client";
 import {
   applyPending,
@@ -17,7 +21,15 @@ import type {
   VocabularyLookupStatus,
 } from "@/lib/types/vocabularyLookup";
 
-const LOOKUP_CACHE_KEY = "exchange-notes-vocabulary-lookup-v1";
+/*
+ * v2: the keys inside changed shape, so the old store is abandoned rather
+ * than migrated. Every v1 entry is a card in whatever pair the reader
+ * happened to be using when they looked the word up, with nothing recording
+ * which pair that was — there is no way to file them correctly now, and
+ * keeping them would mean serving exactly the cards this bump exists to stop
+ * serving.
+ */
+const LOOKUP_CACHE_KEY = "exchange-notes-vocabulary-lookup-v2";
 const LOOKUP_CACHE_MAX_ITEMS = 200;
 const LOOKUP_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -28,8 +40,33 @@ type StoredLookup = {
 
 type LookupCache = Record<string, StoredLookup>;
 
-function getLookupCacheKey(query: string) {
-  return query.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
+type LanguagePair = readonly [LanguageCode, LanguageCode];
+
+/**
+ * The query, and the pair it is being asked in.
+ *
+ * The pair is the half that was missing, and its absence was not a stale
+ * cache — it was a wrong answer. A lookup is not a fact about a word, it is a
+ * card: a headword in the language being learned, glossed in the language the
+ * reader is supported in. Ask for "mow" while learning French and the answer
+ * is *tondre*; switch to English and the same three letters have to come back
+ * as an English word. Keyed on the query alone the first card was handed
+ * straight back, in a language the reader had just stopped learning, and no
+ * amount of switching would shift it until the entry aged out ninety days
+ * later.
+ *
+ * Both server caches were already keyed this way — see the note in
+ * app/api/classify-text/route.ts and lib/vocabulary/sharedLookupCache.ts.
+ * This layer, closest to the reader, was the one that forgot.
+ */
+export function getLookupCacheKey(query: string, pair: LanguagePair) {
+  const normalized = query
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("en-US");
+
+  return `${pair[0]}>${pair[1]}:${normalized}`;
 }
 
 function readLookupCache() {
@@ -42,8 +79,8 @@ function readLookupCache() {
   }
 }
 
-function readCachedLookup(query: string) {
-  const key = getLookupCacheKey(query);
+function readCachedLookup(query: string, pair: LanguagePair) {
+  const key = getLookupCacheKey(query, pair);
   const cache = readLookupCache();
   const stored = cache[key];
 
@@ -64,9 +101,13 @@ function readCachedLookup(query: string) {
   return stored.result;
 }
 
-function storeCachedLookup(query: string, result: VocabularyLookupResult) {
+function storeCachedLookup(
+  query: string,
+  pair: LanguagePair,
+  result: VocabularyLookupResult,
+) {
   try {
-    const key = getLookupCacheKey(query);
+    const key = getLookupCacheKey(query, pair);
     const cache = readLookupCache();
 
     cache[key] = {
@@ -124,6 +165,30 @@ async function lookupFromDevice(
 }
 
 export default function useVocabularyLookup(query: string) {
+  const { learningLanguage, nativeLanguage } = useLearningLanguageContext();
+  const interfaceLanguage = useInterfaceLanguage();
+
+  /*
+   * Built from the same three inputs the server builds its own pair from, and
+   * with the same function, so the key this device files a card under is the
+   * pair that card was actually answered in.
+   *
+   * The interface language belongs in here alongside the two profile columns
+   * because it is what decides the gloss side: a French learner reading the
+   * app in English is asking for a different card than the same learner
+   * reading it in Chinese, and only this argument tells the two apart.
+   *
+   * The account's copy of the interface language is written on a debounce, so
+   * for a moment after the setting changes the server may still answer in the
+   * previous pair while this keys under the new one. The cost of that window
+   * is a card filed under a key it will not be asked for again — a miss later,
+   * never a wrong card now, which is the trade this whole change is about.
+   */
+  const languagePair = useMemo(
+    () => toLearningPair(learningLanguage, nativeLanguage, interfaceLanguage),
+    [learningLanguage, nativeLanguage, interfaceLanguage],
+  );
+
   const [lookupStatus, setLookupStatus] =
     useState<VocabularyLookupStatus>("idle");
   const [lookupResult, setLookupResult] =
@@ -165,7 +230,7 @@ export default function useVocabularyLookup(query: string) {
     setLookupPreview(null);
 
     try {
-      const cachedResult = readCachedLookup(cleanQuery);
+      const cachedResult = readCachedLookup(cleanQuery, languagePair);
 
       if (cachedResult) {
         setLookupResult(cachedResult);
@@ -216,7 +281,7 @@ export default function useVocabularyLookup(query: string) {
 
       // Caching a degraded result would keep the canned example sentences in
       // front of this user long after the model recovered.
-      if (!degraded) storeCachedLookup(cleanQuery, result);
+      if (!degraded) storeCachedLookup(cleanQuery, languagePair, result);
 
       setLookupResult(result);
       setLookupDegraded(Boolean(degraded));
@@ -253,7 +318,7 @@ export default function useVocabularyLookup(query: string) {
       );
       setLookupStatus("error");
     }
-  }, [lookupStatus, query]);
+  }, [languagePair, lookupStatus, query]);
 
   return {
     lookupStatus,

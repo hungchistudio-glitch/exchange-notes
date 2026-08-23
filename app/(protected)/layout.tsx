@@ -11,7 +11,7 @@ import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
-import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
+import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
 import { createClient } from "@/lib/supabase/server";
 
 type ProtectedLayoutProps = {

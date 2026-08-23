@@ -1,25 +1,16 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-
-import {
-  getDailyGoalWords,
-  subscribeToDailyGoalWords,
-} from "@/lib/appPreferences";
+import { useDailyGoalWordsValue } from "@/contexts/DevicePreferencesContext";
 
 /**
- * The stored daily goal, in new words, read as the external store it is rather than
- * copied into component state.
+ * How many new words the reader is aiming for today.
  *
- * Both snapshots use the same getter because it already returns the default
- * when there is no window, which keeps the server and client renders
- * identical. Same shape as useInterfaceLanguage — extracted here once the
- * Progress HUD needed the goal alongside the settings row that sets it.
+ * Read from the provider seeded with the request's cookie rather than from
+ * localStorage during the render: the goal is rendered as a number, on the
+ * settings row and behind Yumi's cookie tray, so a server that guessed the
+ * default while the browser knew better disagreed in text — and React answers
+ * a text mismatch by rebuilding the whole document.
  */
 export default function useDailyGoalWords() {
-  return useSyncExternalStore(
-    subscribeToDailyGoalWords,
-    getDailyGoalWords,
-    getDailyGoalWords,
-  );
+  return useDailyGoalWordsValue();
 }

@@ -1,17 +1,12 @@
 "use client";
 
 import { Type } from "lucide-react";
-import { useSyncExternalStore } from "react";
 
 import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
 import { SettingsControlRow } from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import {
-  getAppFontSize,
-  setAppFontSize,
-  subscribeToAppFontSize,
-  type AppFontSize,
-} from "@/lib/appPreferences";
+import useAppFontSize from "@/hooks/preferences/useAppFontSize";
+import { setAppFontSize, type AppFontSize } from "@/lib/appPreferences";
 
 const FONT_SIZE_CLASSES: Record<AppFontSize, string> = {
   small: "text-[13px]",
@@ -30,11 +25,7 @@ export default function FontSizeSettingsButton({ id }: { id?: string }) {
    * snapshots use getAppFontSize because it already returns the default when
    * there is no window, which keeps the server and client renders identical.
    */
-  const fontSize = useSyncExternalStore(
-    subscribeToAppFontSize,
-    getAppFontSize,
-    getAppFontSize,
-  );
+  const fontSize = useAppFontSize();
 
   const { t } = useTranslation();
   const copy = t.settings.fontSize;

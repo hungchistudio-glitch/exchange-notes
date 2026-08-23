@@ -2,7 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import OrbitField from "@/components/foundation/ambience/OrbitField";
-import { getServerInterfaceMode } from "@/lib/preferences/interfaceModeServer";
+import { DevicePreferencesProvider } from "@/contexts/DevicePreferencesContext";
+import { rootFontSizeFor } from "@/lib/appPreferences";
+import { getInterfaceLanguageMeta } from "@/lib/languages";
+import {
+  getServerAppFontSize,
+  getServerDailyGoalWords,
+  getServerInterfaceLanguage,
+  getServerInterfaceMode,
+} from "@/lib/preferences/serverPreferences";
 
 import "./globals.css";
 
@@ -71,9 +79,54 @@ export default async function RootLayout({
   // moment after. See lib/appPreferences.ts for why the mode is a cookie.
   const interfaceMode = await getServerInterfaceMode();
 
+  /*
+   * Read on the server for the same reason as the mode, and with more at
+   * stake: this decides every translated string in the tree. Rendered from a
+   * default while the browser knew better, React found a mismatch on the
+   * first piece of text it hydrated, threw away the whole server tree and
+   * rebuilt the page — an English app repainting into a Chinese one, on every
+   * single load. See lib/preferences/serverPreferences.ts.
+   */
+  const interfaceLanguage = await getServerInterfaceLanguage();
+
+  /*
+   * Two more the server has to answer, for the same reason and with the same
+   * shape. Font size is the root font size, so a reader on "small" was
+   * getting the whole interface laid out at 16px and relaid at 15px on every
+   * load; the daily goal is rendered as a number, so a server that guessed
+   * the default and a browser that knew better disagreed in text — which is
+   * the mismatch that rebuilds the document.
+   */
+  const appFontSize = await getServerAppFontSize();
+  const dailyGoalWords = await getServerDailyGoalWords();
+
   return (
     <html
-      lang="en"
+      /*
+       * From the language table rather than decided here, so a sixth
+       * interface language needs a row and not another branch. It used to be
+       * a hardcoded "en" that the client corrected after mount, which told
+       * assistive technology and the browser's own text handling the wrong
+       * language for the length of every page load.
+       */
+      lang={getInterfaceLanguageMeta(interfaceLanguage).htmlLang}
+      data-interface-language={interfaceLanguage}
+      data-app-font-size={appFontSize}
+      /*
+       * globals.css sets `scroll-behavior: smooth` on this element, for
+       * in-page anchors. Next 15 and earlier quietly suspended that during a
+       * route change; Next 16 stopped, and stopping is visible — a navigation
+       * away from a long screen animates the whole page up to the top instead
+       * of arriving there, which reads as the screen sliding under you rather
+       * than as having gone somewhere.
+       *
+       * This attribute asks for the old behaviour back: auto during the
+       * navigation, the stylesheet's smooth everywhere else. See
+       * node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md,
+       * "Scroll Behavior Override" — which is also the warning this silences,
+       * logged on every page load until now.
+       */
+      data-scroll-behavior="smooth"
       data-interface-mode={interfaceMode}
       /*
        * The attribute is written imperatively too, by InterfaceModeProvider,
@@ -103,7 +156,19 @@ export default async function RootLayout({
        * body's own background covers this the moment globals.css lands, in
        * whichever mode is active, so nothing downstream is affected.
        */
-      style={{ backgroundColor: "#07080b" }}
+      /*
+       * The font size is here for a different reason than the colour above:
+       * it is the root size every rem in the app is measured against, and
+       * until now it was only ever applied on the client. A reader on "small"
+       * or "large" therefore got the whole interface laid out at the default
+       * and relaid a moment later — a full reflow of every screen, on every
+       * load. Rendered here it is right from the first paint, and
+       * DevicePreferencesProvider only has to keep it in step afterwards.
+       */
+      style={{
+        backgroundColor: "#07080b",
+        fontSize: rootFontSizeFor(appFontSize),
+      }}
     >
       <head>
         {/* eslint-disable @next/next/no-page-custom-font --
@@ -168,7 +233,15 @@ export default async function RootLayout({
           order is: sign in, opening, home.
         */}
         <OrbitField />
-        {children}
+        <DevicePreferencesProvider
+          initial={{
+            interfaceLanguage,
+            appFontSize,
+            dailyGoalWords,
+          }}
+        >
+          {children}
+        </DevicePreferencesProvider>
         <ServiceWorkerRegister />
         <NativePushRegister />
       </body>

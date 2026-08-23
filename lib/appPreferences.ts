@@ -2,14 +2,63 @@ import { getInterfaceLanguageMeta } from "@/lib/languages";
 
 export type AppFontSize = "small" | "medium" | "large";
 
+/*
+ * A cookie, with localStorage behind it, for the same reason as the interface
+ * language further down: the server has to be able to see this one.
+ *
+ * Font size is the root font size, so it is not one element's problem — every
+ * rem in the app is measured against it. Applied only after hydration, a
+ * reader on "small" gets the whole interface laid out at 16px and then
+ * relaid at 15px, on every single load. The cookie lets the root element
+ * carry the right size in the HTML that arrives.
+ */
+export const APP_FONT_SIZE_COOKIE = "exchange-notes-font-size";
+
 const FONT_SIZE_STORAGE_KEY = "exchange-notes-font-size";
 const FONT_SIZE_EVENT = "exchange-notes-font-size-change";
+
+// A year, matching every other preference the server reads.
+const PREFERENCE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function readPreferenceCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name}=([^;]*)`),
+  );
+
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function writePreferenceCookie(
+  name: string,
+  value: string,
+) {
+  if (typeof document === "undefined") return;
+
+  document.cookie =
+    `${name}=${value}; path=/; max-age=` +
+    `${PREFERENCE_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
 
 const ROOT_FONT_SIZES: Record<AppFontSize, string> = {
   small: "15px",
   medium: "16px",
   large: "17px",
 };
+
+/**
+ * The root font size for a setting, so the server can put it on <html>
+ * itself rather than leaving the browser to correct it after hydration.
+ *
+ * Exported as a lookup rather than the table, so a caller cannot reach in
+ * with a size the type does not allow.
+ */
+export function rootFontSizeFor(
+  size: AppFontSize,
+): string {
+  return ROOT_FONT_SIZES[size];
+}
 
 export const DEFAULT_APP_FONT_SIZE: AppFontSize = "medium";
 
@@ -28,14 +77,27 @@ export function getAppFontSize(): AppFontSize {
     return DEFAULT_APP_FONT_SIZE;
   }
 
+  const cookie = readPreferenceCookie(
+    APP_FONT_SIZE_COOKIE,
+  );
+
+  if (isAppFontSize(cookie)) return cookie;
+
   const saved = window.localStorage.getItem(
     FONT_SIZE_STORAGE_KEY,
   );
 
-  return isAppFontSize(saved)
-    ? saved
-    : DEFAULT_APP_FONT_SIZE;
+  if (!isAppFontSize(saved)) {
+    return DEFAULT_APP_FONT_SIZE;
+  }
+
+  // A device that chose a size before the cookie existed, migrated on the
+  // read so this is the last load laid out at the wrong size.
+  writePreferenceCookie(APP_FONT_SIZE_COOKIE, saved);
+
+  return saved;
 }
+
 
 export function applyAppFontSize(
   size: AppFontSize,
@@ -53,6 +115,8 @@ export function setAppFontSize(
   size: AppFontSize,
 ) {
   if (typeof window === "undefined") return;
+
+  writePreferenceCookie(APP_FONT_SIZE_COOKIE, size);
 
   window.localStorage.setItem(
     FONT_SIZE_STORAGE_KEY,
@@ -147,6 +211,14 @@ export type DailyGoalWords = 3 | 5 | 10 | 20 | 33;
 const DAILY_GOAL_STORAGE_KEY = "exchange-notes-daily-word-goal";
 const DAILY_GOAL_EVENT = "exchange-notes-daily-goal-change";
 
+/*
+ * Also a cookie. The goal is rendered as a number — on the settings row, and
+ * behind Yumi's cookie tray — so a server that cannot see it renders somebody
+ * else's target and the browser corrects it, which is a hydration mismatch and
+ * therefore a whole page rebuilt to change two digits.
+ */
+export const DAILY_GOAL_COOKIE = "exchange-notes-daily-word-goal";
+
 export const DEFAULT_DAILY_GOAL_WORDS: DailyGoalWords = 10;
 
 export function isDailyGoalWords(
@@ -162,14 +234,25 @@ export function getDailyGoalWords(): DailyGoalWords {
     return DEFAULT_DAILY_GOAL_WORDS;
   }
 
+  const cookie = readPreferenceCookie(DAILY_GOAL_COOKIE);
+  const fromCookie = cookie === null ? null : Number(cookie);
+
+  if (isDailyGoalWords(fromCookie)) return fromCookie;
+
   const saved = window.localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
   const parsed = saved === null ? null : Number(saved);
 
-  return isDailyGoalWords(parsed) ? parsed : DEFAULT_DAILY_GOAL_WORDS;
+  if (!isDailyGoalWords(parsed)) return DEFAULT_DAILY_GOAL_WORDS;
+
+  writePreferenceCookie(DAILY_GOAL_COOKIE, String(parsed));
+
+  return parsed;
 }
 
 export function setDailyGoalWords(words: DailyGoalWords) {
   if (typeof window === "undefined") return;
+
+  writePreferenceCookie(DAILY_GOAL_COOKIE, String(words));
 
   window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(words));
 
@@ -244,6 +327,23 @@ const INTERFACE_LANGUAGES: readonly InterfaceLanguage[] = [
   "italian",
 ];
 
+/*
+ * The language lives in a cookie, and in localStorage behind it.
+ *
+ * The cookie is the one the server reads. Every string in the app comes from
+ * this setting, so a server that cannot see it renders the whole interface in
+ * English and the browser then re-renders the whole interface in the reader's
+ * own language — a hydration mismatch across the entire tree, which React
+ * resolves by throwing the server's work away and rebuilding from scratch.
+ * That is what the flash on every launch was.
+ *
+ * localStorage stays as the migration path for devices that stored a language
+ * before this cookie existed, and as the answer to a cookie the browser
+ * declines to keep. Reading falls through in that order; writing does both.
+ */
+export const INTERFACE_LANGUAGE_COOKIE =
+  "exchange-notes-interface-language";
+
 const INTERFACE_LANGUAGE_STORAGE_KEY =
   "exchange-notes-interface-language";
 
@@ -270,13 +370,32 @@ export function getInterfaceLanguage(): InterfaceLanguage {
     return DEFAULT_INTERFACE_LANGUAGE;
   }
 
+  const cookie = readPreferenceCookie(
+    INTERFACE_LANGUAGE_COOKIE,
+  );
+
+  if (isInterfaceLanguage(cookie)) return cookie;
+
   const saved = window.localStorage.getItem(
     INTERFACE_LANGUAGE_STORAGE_KEY,
   );
 
-  return isInterfaceLanguage(saved)
-    ? saved
-    : DEFAULT_INTERFACE_LANGUAGE;
+  if (!isInterfaceLanguage(saved)) {
+    return DEFAULT_INTERFACE_LANGUAGE;
+  }
+
+  /*
+   * A device that chose its language before the cookie existed. Writing it
+   * through here rather than waiting for the next visit to Settings is what
+   * makes this the *last* load that renders in the wrong language — the
+   * server can see the choice from the very next request.
+   */
+  writePreferenceCookie(
+    INTERFACE_LANGUAGE_COOKIE,
+    saved,
+  );
+
+  return saved;
 }
 
 export function applyInterfaceLanguage(
@@ -296,6 +415,13 @@ export function setInterfaceLanguage(
   language: InterfaceLanguage,
 ) {
   if (typeof window === "undefined") return;
+
+  // The cookie first: it is the copy the next server render reads, and the
+  // one that decides whether that render is in the right language.
+  writePreferenceCookie(
+    INTERFACE_LANGUAGE_COOKIE,
+    language,
+  );
 
   window.localStorage.setItem(
     INTERFACE_LANGUAGE_STORAGE_KEY,
@@ -366,23 +492,20 @@ export function subscribeToInterfaceLanguage(
 export type InterfaceMode = "standard" | "yumi-cosmic";
 
 /*
- * Alone among the preferences here, this one lives in a cookie rather than
- * localStorage.
+ * A cookie, like the interface language above and unlike the rest.
  *
- * Every other preference only ever changes how something already on screen is
- * painted, so correcting it after hydration is invisible. Interface mode picks
+ * The preferences that stay in localStorage only change how something already
+ * on screen is painted, so correcting them after hydration is invisible.
+ * These two do not: language changes every string in the app, and mode picks
  * between two different component trees — the standard home and the Command
- * Deck — which the server has to render correctly the first time. localStorage
- * does not exist during a server render; a cookie does, so the mode is already
- * decided in the HTML that arrives, and there is no mismatch to reconcile and
- * no standard-then-cosmic flash to sit through.
+ * Deck. Both have to be right in the HTML that arrives. localStorage does not
+ * exist during a server render; a cookie does, so the mode is already decided
+ * when the document lands, and there is no mismatch to reconcile and no
+ * standard-then-cosmic flash to sit through.
  */
 export const INTERFACE_MODE_COOKIE = "exchange-notes-interface-mode";
 
 const INTERFACE_MODE_EVENT = "exchange-notes-interface-mode-change";
-
-// A year, so the choice outlives any realistic gap between visits.
-const INTERFACE_MODE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export const DEFAULT_INTERFACE_MODE: InterfaceMode = "standard";
 
@@ -390,20 +513,12 @@ export function isInterfaceMode(value: unknown): value is InterfaceMode {
   return value === "standard" || value === "yumi-cosmic";
 }
 
-function readInterfaceModeCookie(): string | null {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|; )${INTERFACE_MODE_COOKIE}=([^;]*)`),
-  );
-
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
 export function getInterfaceMode(): InterfaceMode {
   if (typeof document === "undefined") {
     return DEFAULT_INTERFACE_MODE;
   }
 
-  const saved = readInterfaceModeCookie();
+  const saved = readPreferenceCookie(INTERFACE_MODE_COOKIE);
 
   return isInterfaceMode(saved) ? saved : DEFAULT_INTERFACE_MODE;
 }
@@ -417,9 +532,7 @@ export function applyInterfaceMode(mode: InterfaceMode) {
 export function setInterfaceMode(mode: InterfaceMode) {
   if (typeof document === "undefined") return;
 
-  document.cookie =
-    `${INTERFACE_MODE_COOKIE}=${mode}; path=/; max-age=` +
-    `${INTERFACE_MODE_COOKIE_MAX_AGE}; SameSite=Lax`;
+  writePreferenceCookie(INTERFACE_MODE_COOKIE, mode);
 
   applyInterfaceMode(mode);
 

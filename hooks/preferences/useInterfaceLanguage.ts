@@ -1,25 +1,17 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-
-import {
-  getInterfaceLanguage,
-  subscribeToInterfaceLanguage,
-} from "@/lib/appPreferences";
+import { useInterfaceLanguageValue } from "@/contexts/DevicePreferencesContext";
 
 /**
- * The stored interface language is an external store, not component state, so
- * it is read through useSyncExternalStore rather than copied in on mount.
+ * The interface language, as every screen in the app reads it.
  *
- * Both snapshots use the same getter because it already returns the default
- * when there is no window, which keeps the server and client renders
- * identical — the reason the old copy-in effect could not simply move into a
- * useState initialiser.
+ * The value comes from a provider seeded with the cookie the server rendered
+ * from, rather than being read out of localStorage during the render. That
+ * distinction is the whole reason this file is one line: reading storage here
+ * meant the server and the browser could not agree on what language the app
+ * was in, and every translated string in the tree became a hydration
+ * mismatch. See contexts/DevicePreferencesContext.tsx.
  */
 export default function useInterfaceLanguage() {
-  return useSyncExternalStore(
-    subscribeToInterfaceLanguage,
-    getInterfaceLanguage,
-    getInterfaceLanguage,
-  );
+  return useInterfaceLanguageValue();
 }

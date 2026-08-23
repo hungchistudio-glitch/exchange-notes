@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Volume2 } from "lucide-react";
 
@@ -111,6 +111,24 @@ function StatTile({
   );
 }
 
+/*
+ * The reader's hour, read the only way it can be read without lying to the
+ * server: as an external value that simply does not exist there.
+ *
+ * useSyncExternalStore hands the third argument to the server render *and* to
+ * the hydrating one, then switches to the second once hydration is done — so
+ * both sides agree on "no greeting yet" and the real one arrives a moment
+ * later, instead of the server guessing an hour and the browser disagreeing
+ * with it.
+ *
+ * Nothing subscribes: the hour does not change while a screen is being looked
+ * at, and a greeting that flips at noon under the reader's eyes would be a
+ * stranger thing than one that waits for the next render.
+ */
+const subscribeToNothing = () => () => {};
+const readLocalHour = () => new Date().getHours();
+const noHourOnTheServer = () => null;
+
 export default function StandardHome() {
   const { t } = useTranslation();
 
@@ -119,13 +137,35 @@ export default function StandardHome() {
   const { reviewStats } = useVocabularyStats(items);
   const [yumiMood, setYumiMood] = useState<HomeMood>("waiting");
 
-  const hour = new Date().getHours();
+  /*
+   * The hour is the reader's, and the server does not have it.
+   *
+   * `new Date().getHours()` during the server render is the hour where the
+   * server is standing — UTC in production — so for most of the day it
+   * disagrees with the browser, and a disagreement in rendered text is a
+   * hydration mismatch. React answers one of those by throwing away the
+   * server's tree and rebuilding the page on the client, which is a whole
+   * document repainting to correct two characters at the top of the screen.
+   *
+   * So the first render deliberately has no greeting at all, on both sides,
+   * and the reader's own clock fills it in on mount. The line holds its height
+   * either way, and on a cold load the opening animation is still covering
+   * this screen when the effect runs.
+   */
+  const hour = useSyncExternalStore(
+    subscribeToNothing,
+    readLocalHour,
+    noHourOnTheServer,
+  );
+
   const greeting =
-    hour < 12
-      ? t.home.greeting.morning
-      : hour < 18
-        ? t.home.greeting.afternoon
-        : t.home.greeting.evening;
+    hour === null
+      ? ""
+      : hour < 12
+        ? t.home.greeting.morning
+        : hour < 18
+          ? t.home.greeting.afternoon
+          : t.home.greeting.evening;
 
   // Only the notable/celebratory moods get a distinct hero title — the
   // quiet ones (waiting, hungry, sad, grumpy, lonely, sleeping) keep the
@@ -255,7 +295,11 @@ export default function StandardHome() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
         <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          {greeting}
+          {/* A non-breaking space rather than nothing while the reader's hour
+              is still unknown: an empty <p> has no line box, so the whole
+              screen below would jump down by a line the moment the greeting
+              arrived. */}
+          {greeting || "\u00A0"}
         </p>
       </div>
 
