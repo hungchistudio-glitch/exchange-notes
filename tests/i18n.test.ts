@@ -89,8 +89,14 @@ describe("translation dictionaries", () => {
     // The picker used to fall through an if-chain to the English line, so a
     // newly shipped language described itself as English.
     for (const language of Object.keys(DICTIONARIES) as TranslationLanguage[]) {
-      const descriptions = getTranslations(language).settings.appLanguage
-        .descriptions;
+      // getTranslations answers from the cache and nothing else, so it can
+      // return undefined for a language nobody has loaded. tests/setup.ts
+      // primes all five, which is what makes this a real lookup rather than
+      // a assertion about loading.
+      const dictionary = getTranslations(language);
+      expect(dictionary, `${language} was not primed`).toBeDefined();
+
+      const descriptions = dictionary!.settings.appLanguage.descriptions;
 
       expect(Object.keys(descriptions).sort()).toEqual(
         Object.keys(DICTIONARIES).sort(),
