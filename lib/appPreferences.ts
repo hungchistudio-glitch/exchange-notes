@@ -542,35 +542,6 @@ export function setInterfaceMode(mode: InterfaceMode) {
     }),
   );
 }
-
-/*
- * No "storage" listener here, unlike the sections above: cookies do not fire
- * one. Two tabs open at once therefore stay on whichever mode each was showing
- * until they next load, which is the same behaviour as any other cookie-backed
- * setting and not worth polling for.
- */
-export function subscribeToInterfaceMode(
-  listener: (mode: InterfaceMode) => void,
-) {
-  if (typeof window === "undefined") {
-    return () => undefined;
-  }
-
-  function handleChange(event: Event) {
-    const customEvent = event as CustomEvent<InterfaceMode>;
-
-    if (isInterfaceMode(customEvent.detail)) {
-      listener(customEvent.detail);
-    }
-  }
-
-  window.addEventListener(INTERFACE_MODE_EVENT, handleChange);
-
-  return () => {
-    window.removeEventListener(INTERFACE_MODE_EVENT, handleChange);
-  };
-}
-
 /* =========================================================
    Tutorial
    ========================================================= */

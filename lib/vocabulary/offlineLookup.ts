@@ -195,7 +195,3 @@ export async function lookupOffline(query: string): Promise<VocabularyLookupResu
   const tuple = index.english[normalizeLookupText(query)];
   return (await lookupEnglish(query, tuple)) ?? createUnresolvedResult(query);
 }
-
-export function clearOfflineLookupIndexForTests() {
-  offlineIndex = null;
-}

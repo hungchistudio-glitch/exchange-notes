@@ -111,15 +111,6 @@ export function computeWordStreak(items: VocabularyItem[]): WordStreak {
 
   return { currentStreak, longestStreak, addedToday };
 }
-
-export function wordsAddedToday(items: VocabularyItem[]): number {
-  const todayKey = toLocalDateKey(new Date());
-
-  return items.filter(
-    (item) => toLocalDateKey(new Date(item.created_at)) === todayKey,
-  ).length;
-}
-
 export function daysSince(dateIso: string | null): number {
   if (!dateIso) return Infinity;
 

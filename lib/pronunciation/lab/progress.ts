@@ -29,15 +29,6 @@ import type {
 export function lessonProgressKey(lessonId: string): string {
   return `lesson:${lessonId}`;
 }
-
-export function pairProgressKey(pairId: string): string {
-  return `pair:${pairId}`;
-}
-
-export function isUnitProgressKey(key: string): boolean {
-  return !key.startsWith("lesson:") && !key.startsWith("pair:");
-}
-
 /* =========================================================
    Mastery
    ========================================================= */

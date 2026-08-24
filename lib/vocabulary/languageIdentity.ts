@@ -44,24 +44,6 @@ export type LanguageMetadataSource =
   /** The reader corrected it. Outranks everything, and is never overwritten. */
   | "user-corrected";
 
-const SOURCES: readonly LanguageMetadataSource[] = [
-  "user-settings",
-  "explicit-selection",
-  "ai",
-  "auto-detected",
-  "legacy-inferred",
-  "user-corrected",
-];
-
-export function isLanguageMetadataSource(
-  value: unknown,
-): value is LanguageMetadataSource {
-  return (
-    typeof value === "string" &&
-    (SOURCES as readonly string[]).includes(value)
-  );
-}
-
 /**
  * The two languages the reader had set when this word was saved.
  *
@@ -388,18 +370,4 @@ export function relabelLanguage<T>(
   if (moved === undefined) return rest;
 
   return { ...rest, [to]: moved };
-}
-
-/** Reads a stored pair-at-creation back, or null for a row that has none. */
-export function readLanguagePairAtCreation(
-  value: unknown,
-): LanguagePairAtCreation | null {
-  if (!value || typeof value !== "object") return null;
-
-  const candidate = value as { primary?: unknown; secondary?: unknown };
-
-  if (!isLanguageCode(candidate.primary)) return null;
-  if (!isLanguageCode(candidate.secondary)) return null;
-
-  return { primary: candidate.primary, secondary: candidate.secondary };
 }

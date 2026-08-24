@@ -97,13 +97,6 @@ export async function forgetMirror(): Promise<void> {
 
   announceOutboxChange();
 }
-
-/** When the mirror was last known to match the server, if ever. */
-export async function mirrorSyncedAt(): Promise<string | null> {
-  const record = await readRecord<{ at: string }>(STORES.kv, SYNCED_AT_KEY);
-  return record?.at ?? null;
-}
-
 /* ---------- the outbox ---------- */
 
 /**

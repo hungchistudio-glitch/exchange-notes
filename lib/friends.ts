@@ -56,13 +56,6 @@ export type IncomingRequest = {
   createdAt: string;
   sender: FriendProfile;
 };
-
-export type OutgoingRequest = {
-  requestId: string;
-  createdAt: string;
-  receiver: FriendProfile;
-};
-
 type ProfileRow = {
   id: string;
   display_name: string | null;
@@ -370,43 +363,6 @@ export async function getPendingIncomingRequestCount(
   if (error) throw error;
   return count ?? 0;
 }
-
-export async function listOutgoingRequests(
-  supabase: SupabaseClient,
-  currentUserId: string
-): Promise<OutgoingRequest[]> {
-  const { data, error } = await supabase
-    .from("friend_requests")
-    .select(
-      "id, created_at, receiver:profiles!friend_requests_receiver_id_fkey(id, display_name, exchange_id, avatar_url, native_language, learning_language)"
-    )
-    .eq("sender_id", currentUserId)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  const rows = data ?? [];
-
-  return rows.map((row) => {
-    // Same fix as listIncomingRequests above: receiver_id -> profiles.id is
-    // many-to-one, so this embeds as a single object at runtime, not an
-    // array — the type is cast for the same reason (see the comment
-    // there).
-    const receiver = row.receiver as unknown as ProfileRow;
-
-    if (!receiver) {
-      throw new Error("Outgoing friend request is missing its receiver profile.");
-    }
-
-    return {
-      requestId: row.id,
-      createdAt: row.created_at,
-      receiver: toFriendProfile(receiver),
-    };
-  });
-}
-
 export async function listFriends(
   supabase: SupabaseClient,
   currentUserId: string
@@ -769,19 +725,6 @@ export async function respondToRequest(
     requestId,
   });
 }
-
-export async function cancelRequest(
-  supabase: SupabaseClient,
-  requestId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from("friend_requests")
-    .delete()
-    .eq("id", requestId);
-
-  if (error) throw error;
-}
-
 /** Remove an existing friendship (unfriend). Does not delete past messages. */
 export async function removeFriend(
   supabase: SupabaseClient,
