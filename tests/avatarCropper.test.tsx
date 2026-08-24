@@ -36,6 +36,57 @@ function open(overrides: Partial<React.ComponentProps<typeof AvatarCropper>> = {
   return { onCancel, onConfirm };
 }
 
+describe("escaping the sheet it opens from", () => {
+  /*
+   * The bug this exists for. The cropper opens from inside Edit profile,
+   * which is a BottomSheet, and a BottomSheet's panel is animated with
+   * `transform` — which makes it the containing block for any `position:
+   * fixed` descendant. Nested, the cropper's overlay was pinned to the sheet
+   * rather than to the viewport, inside that sheet's own scroll container,
+   * with its backdrop laid over its own controls. Nothing in it responded:
+   * not the photo, not the zoom slider, not the close button.
+   */
+  it("renders outside a transformed ancestor, not inside it", () => {
+    const { container } = render(
+      <div style={{ transform: "translateZ(0)" }} data-testid="sheet-panel">
+        <AvatarCropper
+          src="blob:photo"
+          busy={false}
+          onCancel={() => {}}
+          onConfirm={() => {}}
+        />
+      </div>,
+    );
+
+    const panel = container.querySelector("[data-testid='sheet-panel']")!;
+    const dialog = screen.getByRole("dialog");
+
+    expect(panel).toBeInTheDocument();
+    // The whole point: the overlay is not a descendant of the transformed
+    // element, so `fixed` means fixed.
+    expect(panel.contains(dialog)).toBe(false);
+    expect(document.body.contains(dialog)).toBe(true);
+  });
+
+  it("puts its controls where a press can reach them", async () => {
+    const onCancel = vi.fn();
+
+    render(
+      <div style={{ transform: "translateZ(0)" }}>
+        <AvatarCropper
+          src="blob:photo"
+          busy={false}
+          onCancel={onCancel}
+          onConfirm={() => {}}
+        />
+      </div>,
+    );
+
+    await userEvent.click(screen.getByText("Cancel"));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("the avatar cropper", () => {
   it("names what it is asking for", () => {
     open();
