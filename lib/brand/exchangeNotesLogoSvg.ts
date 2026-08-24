@@ -1,11 +1,17 @@
 /**
  * The Exchange Notes logo, as SVG text.
  *
- * Everything under public/brand, app/icon.svg, app/apple-icon.png and
- * app/favicon.ico is written from here by scripts/generate-brand.mjs — none of
- * it is hand-drawn, and none of it should be hand-edited. The geometry comes
- * from lib/brand/exchangeNotesLogo.ts; this file only decides how it is
- * spelled out.
+ * The vector assets under public/brand, plus app/icon.svg and app/favicon.ico,
+ * are written from here by scripts/generate-brand.mjs — none of them is
+ * hand-drawn, and none should be hand-edited. The geometry comes from
+ * lib/brand/exchangeNotesLogo.ts; this file only decides how it is spelled
+ * out.
+ *
+ * The *app icon* is no longer one of them. It is rendered artwork — a carved
+ * stone slab — and ships from public/brand/app-icon/icon-master-1024.png, so
+ * app/apple-icon.png and the PWA icons are resampled from that master rather
+ * than drawn here. renderAppIconSvg below still describes the vector form of
+ * the icon and is what the geometry tests measure.
  *
  * The React component in components/brand/ExchangeNotesLogo.tsx draws the
  * same parts as JSX rather than importing these strings, because a component
