@@ -16,23 +16,38 @@ not shrink the surrounding space.
 | `monochrome/exchange-notes-black.svg` | Single-colour pure black, for print and one-ink output. |
 | `monochrome/exchange-notes-white.svg` | Single-colour pure white, for the same. |
 | `micro/exchange-notes-micro.svg` | The 16–24px drawing. Same proportions; the catchlight is dropped because below ~24px it lands on under half a pixel. |
-| `app-icon/icon-1024-light.png` | Master app icon artwork, `#ffffff` canvas. Square, no corner mask: the OS rounds it. |
-| `app-icon/icon-1024-dark.png` | Master app icon artwork, `#0d0d11` canvas. |
-| `app-icon/icon-512.png`, `app-icon/icon-192.png` | PWA icons, referenced by `app/manifest.ts`. |
+| `app-icon/icon-master-1024.png` | **The app icon's source of truth.** Rendered artwork — a charcoal slate slab with the mark carved into it — cropped to the slab's own surface so it reaches all four edges. Not generated from the vector; see below. |
+| `app-icon/icon-512.png`, `icon-192.png` | Home Screen framing — the symbol at 74% of the canvas, so it carries the same weight as the apps beside it. Square and opaque; the platform supplies the rounding. |
+| `app-icon/maskable-512.png`, `maskable-192.png` | Android's maskable framing — pulled back so the symbol sits inside the inner 80% circle every launcher mask keeps. |
 | `favicon/favicon.svg` | The micro mark on transparency, switching ink with `prefers-color-scheme`. Shipped as `app/icon.svg`. |
 | `favicon/favicon-32.png`, `favicon/favicon-16.png` | Raster fallbacks, also bundled into `app/favicon.ico`. |
 
 Also written outside this directory, from the same geometry:
 `app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`.
 
-## Why there is no separate maskable file
+## Why the app icon is not generated from the vector
 
-The manifest's `maskable` entry points at `app-icon/icon-512.png`, the same
-file its `any` entry uses. A maskable icon has to be opaque to every edge and
-keep its artwork inside the platform's crop; this artwork is a full-bleed
-opaque square with no corner mask of its own, and the mark sits at 44% of the
-canvas — well inside every common launcher mask. A second file would be the
-same bytes under another name.
+Everything else here is drawn from `lib/brand/exchangeNotesLogo.ts`. The app
+icon is not. It is a rendered stone slab with the mark carved into it, and no
+amount of SVG would produce its texture, bevel or contact shadow — so the
+master PNG is the source and every size is a resample of that one file. That
+is what keeps the symbol identical at every resolution rather than subtly
+different per export.
+
+The favicon stays vector. At 16px a photograph of stone is mud; the vector
+mark is the same geometry in one colour, which is what survives that size.
+
+## Why the maskable icon is a separate file
+
+Measured on the master, the carved symbol is 67.8% of the canvas and reaches
+38.3% of the way out from the centre. Android guarantees only the inner 80%
+circle — 40% radius — so that framing is safe, but it reads small on an iOS
+Home Screen next to apps whose glyphs fill three quarters of their tile.
+
+The Home Screen framing zooms 1.09x to put the symbol at 74%, which takes it
+41.6% out from the centre. iOS masks with a squircle and keeps everything but
+the corners, so nothing is lost there; a circular Android mask would clip the
+arc. Hence two framings of one master rather than one file used twice.
 
 ## Why there is no PDF master
 

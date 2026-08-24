@@ -47,11 +47,15 @@ export default function manifest(): MetadataRoute.Manifest {
      * cached, and an installed app that lost its network lost its own icon
      * from any surface that re-fetched it.
      *
-     * One file serves both purposes. A maskable icon must be opaque to every
-     * edge and keep its artwork inside the OS's crop; this square is opaque
-     * with no corner mask of its own, and the mark sits well inside the safe
-     * circle at 44% of the canvas, so there is nothing for a separate
-     * maskable drawing to change.
+     * The app icon is rendered artwork now — a charcoal slate slab with the
+     * mark carved into it — resampled from one master so every size shows the
+     * same symbol. It is opaque to every edge with no corner mask of its own,
+     * because every platform applies its own.
+     *
+     * "any" and "maskable" are two framings of that master rather than one
+     * file used twice: the Home Screen wants the symbol large enough to hold
+     * its own beside the apps around it, and Android's circular crop wants it
+     * pulled back inside the inner 80%. See scripts/generate-brand.mjs.
      */
     icons: [
       {
@@ -66,8 +70,21 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
         purpose: "any",
       },
+      /*
+       * The maskable entry is its own artwork now, not the same file under a
+       * second purpose. Android guarantees only the inner 80% circle, and the
+       * Home Screen framing puts the carved symbol 41.6% of the way out from
+       * the centre — a launcher that crops to a circle would clip the arc.
+       * The maskable framing pulls back to 38.3%, inside the guarantee.
+       */
       {
-        src: "/brand/app-icon/icon-512.png",
+        src: "/brand/app-icon/maskable-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/brand/app-icon/maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

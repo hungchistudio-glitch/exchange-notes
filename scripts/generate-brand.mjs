@@ -19,14 +19,13 @@
  * not quietly depend on someone else's install tree.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
 import {
-  renderAppIconSvg,
   renderFaviconSvg,
   renderLogoSvg,
 } from "../lib/brand/exchangeNotesLogoSvg.ts";
@@ -71,6 +70,67 @@ async function png(svg, size, { opaque = false } = {}) {
    */
   return (opaque ? pipeline.removeAlpha() : pipeline)
     .png({ compressionLevel: 9 })
+    .toBuffer();
+}
+
+/** Where the app icon's artwork lives. Every icon size is resampled from it. */
+const ICON_MASTER = "public/brand/app-icon/icon-master-1024.png";
+
+/*
+ * Two framings of the same artwork, because two platforms crop it
+ * differently and one framing cannot satisfy both.
+ *
+ * Measured on the master: the carved symbol is 694 x 772 of its 1024, so
+ * 67.8% wide, centred at (504, 509), and its farthest point is 392px from
+ * the centre.
+ *
+ * HOME lifts that to the 74% width the icon needs to carry the same visual
+ * weight as the apps it sits beside on a Home Screen — a 1.09x zoom into the
+ * slab, which also takes the artwork's own corners out of the frame. iOS
+ * masks with a squircle and keeps everything but the corners, so a symbol
+ * reaching 428px from the centre is never touched.
+ *
+ * MASKABLE keeps the wider framing, because Android guarantees only the
+ * inner 80% circle — radius 409.6 — and 392 fits inside it where 428 does
+ * not. A launcher that crops to a circle would otherwise clip the arc.
+ */
+const HOME_ZOOM = 0.74 / 0.678;
+const SYMBOL_CENTRE = { x: 504, y: 509 };
+
+/**
+ * One icon size, resampled from the master artwork.
+ *
+ * Lanczos rather than the default, because this is a photograph of stone
+ * being reduced by up to 5.7x and the texture is the point — a cheaper
+ * kernel turns the grain into mush at 192. Alpha is dropped for the same
+ * reason app icons always drop it: a maskable icon with a transparent pixel
+ * shows a seam inside the platform's crop.
+ *
+ * Palette-quantised, which takes the 512 from 442 KB to 117 KB. These are
+ * downloaded by every install, and at icon size the difference is not
+ * visible — 256 colours is generous for a monochrome slab. The master keeps
+ * its full depth; it is the archive, not the payload.
+ */
+async function iconPng(master, size, { zoom = 1 } = {}) {
+  const pipeline = sharp(master);
+
+  if (zoom !== 1) {
+    /*
+     * Zooming is a crop, centred on the symbol rather than on the canvas, so
+     * the mark stays centred as the stone around it is trimmed.
+     */
+    const side = Math.round(1024 / zoom);
+    const half = Math.round(side / 2);
+    const left = Math.max(0, Math.min(1024 - side, SYMBOL_CENTRE.x - half));
+    const top = Math.max(0, Math.min(1024 - side, SYMBOL_CENTRE.y - half));
+    pipeline.extract({ left, top, width: side, height: side });
+  }
+
+  return pipeline
+    .resize(size, size, { fit: "cover", kernel: "lanczos3" })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .png({ palette: true, quality: 90, effort: 10 })
     .toBuffer();
 }
 
@@ -125,23 +185,38 @@ not shrink the surrounding space.
 | \`monochrome/exchange-notes-black.svg\` | Single-colour pure black, for print and one-ink output. |
 | \`monochrome/exchange-notes-white.svg\` | Single-colour pure white, for the same. |
 | \`micro/exchange-notes-micro.svg\` | The 16–24px drawing. Same proportions; the catchlight is dropped because below ~24px it lands on under half a pixel. |
-| \`app-icon/icon-1024-light.png\` | Master app icon artwork, \`${LOGO_COLORS.canvasLight}\` canvas. Square, no corner mask: the OS rounds it. |
-| \`app-icon/icon-1024-dark.png\` | Master app icon artwork, \`${LOGO_COLORS.canvasDark}\` canvas. |
-| \`app-icon/icon-512.png\`, \`app-icon/icon-192.png\` | PWA icons, referenced by \`app/manifest.ts\`. |
+| \`app-icon/icon-master-1024.png\` | **The app icon's source of truth.** Rendered artwork — a charcoal slate slab with the mark carved into it — cropped to the slab's own surface so it reaches all four edges. Not generated from the vector; see below. |
+| \`app-icon/icon-512.png\`, \`icon-192.png\` | Home Screen framing — the symbol at 74% of the canvas, so it carries the same weight as the apps beside it. Square and opaque; the platform supplies the rounding. |
+| \`app-icon/maskable-512.png\`, \`maskable-192.png\` | Android's maskable framing — pulled back so the symbol sits inside the inner 80% circle every launcher mask keeps. |
 | \`favicon/favicon.svg\` | The micro mark on transparency, switching ink with \`prefers-color-scheme\`. Shipped as \`app/icon.svg\`. |
 | \`favicon/favicon-32.png\`, \`favicon/favicon-16.png\` | Raster fallbacks, also bundled into \`app/favicon.ico\`. |
 
 Also written outside this directory, from the same geometry:
 \`app/icon.svg\`, \`app/apple-icon.png\`, \`app/favicon.ico\`.
 
-## Why there is no separate maskable file
+## Why the app icon is not generated from the vector
 
-The manifest's \`maskable\` entry points at \`app-icon/icon-512.png\`, the same
-file its \`any\` entry uses. A maskable icon has to be opaque to every edge and
-keep its artwork inside the platform's crop; this artwork is a full-bleed
-opaque square with no corner mask of its own, and the mark sits at 44% of the
-canvas — well inside every common launcher mask. A second file would be the
-same bytes under another name.
+Everything else here is drawn from \`lib/brand/exchangeNotesLogo.ts\`. The app
+icon is not. It is a rendered stone slab with the mark carved into it, and no
+amount of SVG would produce its texture, bevel or contact shadow — so the
+master PNG is the source and every size is a resample of that one file. That
+is what keeps the symbol identical at every resolution rather than subtly
+different per export.
+
+The favicon stays vector. At 16px a photograph of stone is mud; the vector
+mark is the same geometry in one colour, which is what survives that size.
+
+## Why the maskable icon is a separate file
+
+Measured on the master, the carved symbol is 67.8% of the canvas and reaches
+38.3% of the way out from the centre. Android guarantees only the inner 80%
+circle — 40% radius — so that framing is safe, but it reads small on an iOS
+Home Screen next to apps whose glyphs fill three quarters of their tile.
+
+The Home Screen framing zooms 1.09x to put the symbol at 74%, which takes it
+41.6% out from the centre. iOS masks with a squircle and keeps everything but
+the corners, so nothing is lost there; a circular Android mask would clip the
+arc. Hence two framings of one master rather than one file used twice.
 
 ## Why there is no PDF master
 
@@ -180,32 +255,38 @@ async function main() {
     renderLogoSvg({ tier: "micro", size: 64 }),
   );
 
-  const iconLight = renderAppIconSvg({ mode: "light" });
-  const iconDark = renderAppIconSvg({ mode: "dark" });
-
-  await write(
-    "public/brand/app-icon/icon-1024-light.png",
-    await png(iconLight, 1024, { opaque: true }),
-  );
-  await write(
-    "public/brand/app-icon/icon-1024-dark.png",
-    await png(iconDark, 1024, { opaque: true }),
-  );
-
-  await write(
-    "public/brand/app-icon/icon-192.png",
-    await png(iconLight, 192, { opaque: true }),
-  );
   /*
-   * One 512 serves the manifest's "any" and "maskable" entries both — see the
-   * README. The artwork is opaque to every edge with no corner mask of its
-   * own, and the mark sits inside every common crop at 44% of the canvas, so
-   * a second file would only be the same bytes under another name.
+   * The app icon is artwork, not geometry.
+   *
+   * Every other file here is drawn from lib/brand/exchangeNotesLogo.ts. The
+   * icon is not: it is a rendered stone slab with the mark carved into it,
+   * and no amount of SVG would produce its texture, its bevel or its contact
+   * shadow. So the master PNG is the source, and every size below is a
+   * resample of that one file — which is what keeps the symbol identical at
+   * every resolution instead of subtly different per export.
+   *
+   * The master is already cropped to the slab's own surface, so the artwork
+   * reaches all four edges and the platform's mask supplies the only
+   * rounding. Nothing here adds a corner radius; a shape rounded twice shows
+   * a lighter seam inside iOS's squircle.
    */
-  await write(
-    "public/brand/app-icon/icon-512.png",
-    await png(iconLight, 512, { opaque: true }),
-  );
+  const master = await readFile(path.join(root, ICON_MASTER));
+
+  /*
+   * No 1024 export: icon-master-1024.png already is one, at full depth. A
+   * resampled copy of a file at its own size is a second name for the same
+   * picture, and the README points at the master for anyone who needs it.
+   */
+  for (const size of [512, 192]) {
+    await write(
+      `public/brand/app-icon/icon-${size}.png`,
+      await iconPng(master, size, { zoom: HOME_ZOOM }),
+    );
+    await write(
+      `public/brand/app-icon/maskable-${size}.png`,
+      await iconPng(master, size),
+    );
+  }
 
   const favicon = renderFaviconSvg();
   await write("public/brand/favicon/favicon.svg", favicon);
@@ -221,7 +302,10 @@ async function main() {
    * conventions instead of standing up a competing set under /public.
    */
   await write("app/icon.svg", favicon);
-  await write("app/apple-icon.png", await png(iconLight, 180, { opaque: true }));
+  await write(
+    "app/apple-icon.png",
+    await iconPng(master, 180, { zoom: HOME_ZOOM }),
+  );
   await write("app/favicon.ico", await ico([16, 32, 48], favicon));
 
   const total = written.reduce((sum, file) => sum + file.bytes, 0);
