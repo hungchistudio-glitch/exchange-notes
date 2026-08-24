@@ -27,20 +27,31 @@
    * app/cosmic.css redefines only those two.
    *
    * Nothing that draws the mark may write a colour of its own. The mark is
-   * always `currentColor` (see components/ui/YumiLogo.tsx), so a surface sets
+   * always `currentColor` (see components/brand/ExchangeNotesLogo.tsx), so a surface sets
    * `color: var(--yumi-mark)` and both modes are handled — there is no
    * second DOM, and no filter: invert().
    */
   --yumi-canvas-light: #ffffff;
-  /* Deep obsidian rather than #000000: against white, pure black reads as a
-     hole punched in the page, where a few points of lift reads as ink. */
-  --yumi-mark-light: #090a0c;
+  /* Pure black. The brand specification asks for #000000 exactly and names
+     the pair "Pure White Canvas, Deep Obsidian Mark" — the obsidian is the
+     name, not a tint. These four must stay in step with LOGO_COLORS in
+     lib/brand/exchangeNotesLogo.ts, which is what the generated asset files
+     are painted with; a CSS variable cannot reach a standalone SVG. */
+  --yumi-mark-light: #000000;
   /* Jet obsidian. Softer than black, and the tone the dark app icon sits on. */
-  --yumi-canvas-dark: #0b0b0f;
+  --yumi-canvas-dark: #0d0d11;
   --yumi-mark-dark: #ffffff;
 
   --yumi-canvas: var(--yumi-canvas-light);
   --yumi-mark: var(--yumi-mark-light);
+
+  /*
+   * The corner radius of the app icon *as Exchange Notes previews it* — the
+   * install card, settings, onboarding. Never baked into an exported icon:
+   * every OS applies its own mask, and a shape rounded twice shows a lighter
+   * seam inside the platform's squircle.
+   */
+  --exchange-icon-radius: 12%;
 
   /*
    * Accent and component colours that used to be written as raw hex at each
