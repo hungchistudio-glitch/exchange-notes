@@ -11,11 +11,13 @@ export type VocabularyCardSides = {
   primary: VocabularyCardSide;
   secondary: VocabularyCardSide;
   /**
-   * Whether this row is in the language the reader is currently learning.
+   * Whether this row's own language is the one the reader is currently
+   * learning.
    *
    * False for a word saved under a different pairing — a French word still in
    * the list after switching to Spanish. Screens can use it to say so; none
-   * of them should use it to hide the row.
+   * of them should use it to hide the row, and none of them should use it to
+   * decide which side leads. That question is settled by the row.
    */
   matchesLearningLanguage: boolean;
 };
@@ -23,20 +25,40 @@ export type VocabularyCardSides = {
 /**
  * Which side of a saved word leads, and in what language.
  *
- * The rule is the same one the whole app uses: the language being learned is
- * the hero, the language already spoken is the support. What is new is that
- * it is asked of the row rather than assumed — every row records the two
- * languages it actually holds, so switching from English to Spanish re-reads
- * the same data instead of relabelling it.
+ * ── The headword is the word ───────────────────────────────────────────
  *
- * A row in neither of the reader's current languages keeps its stored order.
- * That is the case the old boolean could not express: "is the user learning
- * Chinese" has no answer for a French word held by someone studying Spanish,
- * and answering "no" silently meant "English leads".
+ * A card leads in the language it was saved in. `mow` stays "mow", `tondre`
+ * stays "tondre", and neither of them becomes Italian because the reader
+ * started studying Italian in March. The library is not a view of the
+ * language currently being learned; it is what somebody has collected across
+ * languages and across years, and every card in it keeps the language it was
+ * born in.
  *
- * Nothing here rewrites the row. A word saved as French → Traditional Chinese
- * stays that, whatever the profile says today; the profile decides what new
- * words default to, not what old ones meant.
+ * This is a reversal, and a deliberate one. The rule used to be that any
+ * language the row happened to hold could take the lead if the reader was
+ * learning it — which read well in isolation and had one fatal consequence:
+ * the background fill (hooks/useVocabularyLanguageFill.ts) eventually gives
+ * *every* row a text in the current learning language, so eventually every
+ * card in the library led in the same language and no card could be told
+ * from another. A library where everything is Italian is not a library that
+ * remembers you once studied French.
+ *
+ * ── The other languages become the gloss ───────────────────────────────
+ *
+ * They are not wasted. The fill's work is what lets the same French card be
+ * glossed in Chinese for a Chinese reader and in Spanish for a Spanish one,
+ * which is what the second side is for. Order of preference:
+ *
+ *   1. the language the reader reads the app in (resolved by
+ *      useDisplayLanguages — the language they most recently said they read
+ *      comfortably)
+ *   2. the language the row was glossed in when it was saved
+ *   3. the language being learned, as a last resort
+ *
+ * Nothing here rewrites the row, and nothing here invents a language. A word
+ * saved as French → Traditional Chinese stays that, whatever the profile
+ * says today; the profile decides what new words default to, not what old
+ * ones meant.
  */
 export function getVocabularyCardSides(
   item: Pick<
@@ -52,128 +74,71 @@ export function getVocabularyCardSides(
   learningLanguage: LanguageCode,
   /**
    * The language the card is glossed in — the interface language, resolved
-   * by useDisplayLanguages. Used only when neither side is the one being
-   * learned. Optional so a caller that genuinely has no profile still gets
-   * an answer rather than an error.
+   * by useDisplayLanguages. Optional so a caller that genuinely has no
+   * profile still gets an answer rather than an error.
    */
   supportLanguage?: LanguageCode,
 ): VocabularyCardSides {
-  const wordLanguage = item.word_language ?? DEFAULT_LEARNING_PAIR[0];
-  const translationLanguage =
+  const termLanguage = item.word_language ?? DEFAULT_LEARNING_PAIR[0];
+  const storedGlossLanguage =
     item.translation_language ?? DEFAULT_LEARNING_PAIR[1];
 
   /*
    * The map is the word; the pair is how it used to be stored. Reading the
-   * map first is what lets a card show a language the pair could never hold —
-   * a third one, added later, on the same row with the same review history.
+   * map first is what lets the gloss be a language the pair could never
+   * hold — a third one, added later, on the same row.
    */
   const texts = item.texts ?? {};
   const examples = item.examples ?? {};
 
-  const textFor = (code: LanguageCode, fallback: string) =>
-    texts[code]?.trim() || fallback;
-  const exampleFor = (code: LanguageCode, fallback: string) =>
-    examples[code]?.trim() || fallback;
-
-  const wordSide: VocabularyCardSide = {
-    text: textFor(wordLanguage, item.word?.trim() ?? ""),
-    language: wordLanguage,
-    example: exampleFor(wordLanguage, item.example_sentence?.trim() ?? ""),
-  };
-
-  const translationSide: VocabularyCardSide = {
-    text: textFor(translationLanguage, item.translation?.trim() ?? ""),
-    language: translationLanguage,
-    example: exampleFor(
-      translationLanguage,
-      item.translated_example?.trim() ?? "",
-    ),
+  const primary: VocabularyCardSide = {
+    text: texts[termLanguage]?.trim() || item.word?.trim() || "",
+    language: termLanguage,
+    example:
+      examples[termLanguage]?.trim() || item.example_sentence?.trim() || "",
   };
 
   /*
-   * Which language leads, in order of preference.
-   *
-   * A language the row holds and the reader is learning wins, even when it is
-   * neither half of the pair the row was originally saved as — that is the
-   * whole point of the map, and it is what makes switching to Spanish show a
-   * Spanish card rather than the English one it started life as.
-   *
-   * Failing that, the side that is *not* the reader's own language leads: an
-   * English/Chinese word still in the list after switching to French is not
-   * French and cannot be made to be, but one of its sides is still the word
-   * and the other is still the gloss. Promoting someone's own language on a
-   * vocabulary card is showing them the answer.
-   *
-   * Failing both, the row keeps the order it was saved in.
-   *
-   * Nothing here rewrites the row, and nothing here invents a language. A
-   * word saved as French → Traditional Chinese stays that until something
-   * actually adds a third text to it.
+   * The stored gloss is reachable even when the map has not caught up with
+   * it: `translation` is the text this row was saved with, and it is in
+   * translation_language by definition.
    */
-  const learned = texts[learningLanguage]?.trim();
+  const glossText = (code: LanguageCode) =>
+    texts[code]?.trim() ||
+    (code === storedGlossLanguage ? item.translation?.trim() ?? "" : "");
 
-  if (learned && learningLanguage !== wordLanguage &&
-      learningLanguage !== translationLanguage) {
-    /*
-     * The gloss comes out of the map too, not just off the pair.
-     *
-     * This looked for the support language among the two sides the row was
-     * *saved* as and fell back to whichever came first when it was neither.
-     * So "ti amo" — a row saved as Spanish/Chinese, holding all five
-     * languages — was glossed "te amo" for a reader who had never chosen
-     * Spanish, while "I love you" sat unread in the same row.
-     *
-     * Empty rather than wrong when the row genuinely has nothing in a
-     * language the reader chose: every renderer already skips a blank
-     * gloss, and a card with one honest side beats a card with a second
-     * side in a language nobody asked for.
-     */
-    const glossLanguage =
-      supportLanguage && supportLanguage !== learningLanguage
-        ? supportLanguage
-        : null;
+  const glossExample = (code: LanguageCode) =>
+    examples[code]?.trim() ||
+    (code === storedGlossLanguage
+      ? item.translated_example?.trim() ?? ""
+      : "");
 
-    const support: VocabularyCardSide = glossLanguage
-      ? {
-          text:
-            texts[glossLanguage]?.trim() ||
-            [wordSide, translationSide].find(
-              (side) => side.language === glossLanguage,
-            )?.text ||
-            "",
-          language: glossLanguage,
-          example:
-            examples[glossLanguage]?.trim() ||
-            [wordSide, translationSide].find(
-              (side) => side.language === glossLanguage,
-            )?.example ||
-            "",
-        }
-      : { text: "", language: learningLanguage, example: "" };
+  const preference: LanguageCode[] = [];
 
-    return {
-      primary: {
-        text: learned,
-        language: learningLanguage,
-        example: examples[learningLanguage]?.trim() ?? "",
-      },
-      secondary: support,
-      matchesLearningLanguage: true,
-    };
+  for (const code of [supportLanguage, storedGlossLanguage, learningLanguage]) {
+    if (!code || code === termLanguage || preference.includes(code)) continue;
+    preference.push(code);
   }
 
-  const translationLeads =
-    translationLanguage === learningLanguage ||
-    (wordLanguage !== learningLanguage &&
-      supportLanguage !== undefined &&
-      wordLanguage === supportLanguage &&
-      translationLanguage !== supportLanguage);
+  const glossLanguage =
+    preference.find((code) => glossText(code)) ?? preference[0];
+
+  const secondary: VocabularyCardSide = glossLanguage
+    ? {
+        text: glossText(glossLanguage),
+        language: glossLanguage,
+        example: glossExample(glossLanguage),
+      }
+    : /*
+       * Nothing to gloss with: every language the reader has is the language
+       * the word is already in. An empty side, which every renderer skips —
+       * the same text twice is not two sides.
+       */
+      { text: "", language: termLanguage, example: "" };
 
   return {
-    primary: translationLeads ? translationSide : wordSide,
-    secondary: translationLeads ? wordSide : translationSide,
-    matchesLearningLanguage: Boolean(texts[learningLanguage]?.trim()) ||
-      wordLanguage === learningLanguage ||
-      translationLanguage === learningLanguage,
+    primary,
+    secondary,
+    matchesLearningLanguage: termLanguage === learningLanguage,
   };
 }

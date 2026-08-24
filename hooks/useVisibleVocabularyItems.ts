@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
+import type { LanguageCode } from "@/lib/languages";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -19,6 +20,14 @@ type UseVisibleVocabularyItemsOptions = {
   items: VocabularyItem[];
   query: string;
   quickFilter: QuickFilter;
+  /**
+   * Which languages to show. Empty means all of them.
+   *
+   * A list rather than a single code even though the sheet only offers one
+   * at a time: "French and Italian" is a question a Romance-language learner
+   * will ask, and the shape that can answer it costs nothing now.
+   */
+  languages: readonly LanguageCode[];
   sortMode: SortMode;
   rankedIds: string[];
 };
@@ -27,6 +36,7 @@ export default function useVisibleVocabularyItems({
   items,
   query,
   quickFilter,
+  languages,
   sortMode,
   rankedIds,
 }: UseVisibleVocabularyItemsOptions) {
@@ -38,11 +48,38 @@ export default function useVisibleVocabularyItems({
         return false;
       }
 
+      /*
+       * On the row's own language, never on the reader's.
+       *
+       * word_language is what the row was saved as and does not move, so a
+       * word lands in the same bucket today as it will after three changes
+       * of learning language. Filtering on whatever the card happens to be
+       * rendering would move rows between buckets as the background fill
+       * worked through the library.
+       */
+      if (languages.length > 0 && !languages.includes(item.word_language)) {
+        return false;
+      }
+
       if (!normalizedQuery) return true;
 
-      return (
-        normalizeVocabularyText(item.word).includes(normalizedQuery) ||
-        normalizeVocabularyText(item.translation).includes(normalizedQuery)
+      /*
+       * Every language the row is held in, not just the two it was saved as.
+       *
+       * The box searches the whole library — a Chinese word from an earlier
+       * pairing is still findable while studying Italian — and a row that
+       * knows the query in a third language should match on it.
+       */
+      const haystack = [
+        item.word,
+        item.translation,
+        ...Object.values(item.texts ?? {}),
+      ];
+
+      return haystack.some((text) =>
+        text
+          ? normalizeVocabularyText(text).includes(normalizedQuery)
+          : false,
       );
     });
 
@@ -144,5 +181,5 @@ export default function useVisibleVocabularyItems({
         new Date(a.created_at ?? 0).getTime()
       );
     });
-  }, [items, query, quickFilter, rankedIds, sortMode]);
+  }, [items, languages, query, quickFilter, rankedIds, sortMode]);
 }

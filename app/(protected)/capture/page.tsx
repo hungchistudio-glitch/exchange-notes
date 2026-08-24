@@ -13,6 +13,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
 import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
@@ -22,6 +23,7 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
@@ -32,6 +34,13 @@ type IdentificationResult = {
   englishExample: string;
   chineseExample: string;
   confidence: "high" | "medium" | "low";
+  /**
+   * Which language each named side is in, as the model reported it. Absent
+   * on results cached before the schema carried them, which is why the save
+   * path still passes the pair as the primary answer.
+   */
+  termLanguage?: LanguageCode;
+  translationLanguage?: LanguageCode;
 };
 
 type CaptureSource = "camera" | "library" | null;
@@ -97,7 +106,12 @@ function isIdentificationResult(value: unknown): value is IdentificationResult {
       (field) =>
         typeof candidate[field] === "string" &&
         (candidate[field] as string).trim().length > 0,
-    ) && ["high", "medium", "low"].includes(String(candidate.confidence))
+    ) &&
+    ["high", "medium", "low"].includes(String(candidate.confidence)) &&
+    // A cached result predating these fields has neither, and is still good.
+    [candidate.termLanguage, candidate.translationLanguage].every(
+      (value) => value === undefined || value === null || isLanguageCode(value),
+    )
   );
 }
 
@@ -995,26 +1009,33 @@ function CaptureContent() {
         .from("vocabulary-images")
         .getPublicUrl(imagePath);
 
-      const { error: insertError } = await supabase
-        .from("vocabulary_items")
-        .insert({
-          user_id: user.id,
-          word: result.englishName.trim(),
-          translation: result.chineseName.trim(),
-          word_language: languagePair[0],
-          translation_language: languagePair[1],
-          part_of_speech:
-            result.partOfSpeech.trim() || null,
-          example_sentence:
-            result.englishExample.trim() || null,
-          translated_example:
-            result.chineseExample.trim() || null,
-          image_url: publicImage.publicUrl,
+      try {
+        await createVocabularyEntry({
+          userId: user.id,
+          term: result.englishName,
+          translation: result.chineseName,
+          partOfSpeech: result.partOfSpeech,
+          termExample: result.englishExample,
+          translationExample: result.chineseExample,
+          imageUrl: publicImage.publicUrl,
           confidence: result.confidence,
           status: "new",
+          language: {
+            pair: languagePair,
+            /*
+             * The photo was identified in these two languages — the prompt
+             * that produced this result named them — so the row keeps them
+             * rather than being re-guessed from its own text later.
+             */
+            stated: { term: languagePair[0], translation: languagePair[1] },
+            ai: {
+              termLanguage: result.termLanguage,
+              translationLanguage: result.translationLanguage,
+            },
+          },
         });
-
-      if (insertError) {
+      } catch (insertError) {
+        // The image is only worth keeping if a row points at it.
         await supabase.storage
           .from("vocabulary-images")
           .remove([imagePath]);

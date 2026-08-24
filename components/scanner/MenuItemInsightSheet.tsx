@@ -19,6 +19,7 @@ import {
 } from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
 type MenuItemInsightSheetProps = {
   item: MenuItem | null;
@@ -173,21 +174,27 @@ export default function MenuItemInsightSheet({
         return;
       }
 
-      const { error } = await supabase.from("vocabulary_items").insert({
-        user_id: user.id,
-        word: (dish.names[languagePair[0]] ?? "").trim(),
-        translation: (dish.names[languagePair[1]] ?? "").trim(),
-        word_language: languagePair[0],
-        translation_language: languagePair[1],
-        example_sentence: dish.descriptions[languagePair[0]] || null,
-        translated_example: dish.descriptions[languagePair[1]] || null,
+      await createVocabularyEntry({
+        userId: user.id,
+        term: dish.names[languagePair[0]] ?? "",
+        translation: dish.names[languagePair[1]] ?? "",
+        termExample: dish.descriptions[languagePair[0]],
+        translationExample: dish.descriptions[languagePair[1]],
         // The read's own confidence travels with the word: an item the model
         // was unsure of should not arrive in review looking certain.
         confidence: dish.translationConfidence,
         status: "new",
+        language: {
+          pair: languagePair,
+          /*
+           * The menu was read into these two languages by name — the scan
+           * asked for them — so the dish is saved under them rather than
+           * being re-guessed later from a dish name that may be a proper
+           * noun in neither.
+           */
+          stated: { term: languagePair[0], translation: languagePair[1] },
+        },
       });
-
-      if (error) throw error;
 
       setSaveState("saved");
     } catch {

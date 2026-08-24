@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { useMemo } from "react";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -140,8 +141,18 @@ export default function VocabularyFilterPanel({
                       onClick={() => onSelect(item)}
                       className="block w-full text-left"
                     >
-                      <span className="block text-2xl leading-tight">
-                        {item.word}
+                      <span className="flex items-center gap-2.5">
+                        <span className="min-w-0 flex-1 break-words text-2xl leading-tight">
+                          {item.word}
+                        </span>
+
+                        {/* The same signal as on the cards: an A-Z list of a
+                            mixed library is where two spellings of the same
+                            letter are hardest to tell apart. */}
+                        <LanguageOriginBadge
+                          language={item.word_language}
+                          size="sm"
+                        />
                       </span>
 
                       <span className="mt-1 block text-sm text-ink-faint">

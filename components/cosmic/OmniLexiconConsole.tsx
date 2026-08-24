@@ -43,7 +43,8 @@ import {
 } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
-import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
+import { getCurrentUser } from "@/lib/vocabulary/repository";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
 import styles from "./OmniLexiconConsole.module.css";
 
@@ -350,18 +351,24 @@ export default function OmniLexiconConsole({
         return;
       }
 
-      await insertVocabulary({
-        user_id: user.id,
-        word: lookupResult.englishName.trim(),
-        translation: lookupResult.chineseName.trim(),
-        word_language: languagePair[0],
-        translation_language: languagePair[1],
-        part_of_speech: lookupResult.partOfSpeech?.trim() || null,
-        example_sentence: lookupResult.englishExample?.trim() || null,
-        translated_example: lookupResult.chineseExample?.trim() || null,
+      await createVocabularyEntry({
+        userId: user.id,
+        term: lookupResult.englishName,
+        translation: lookupResult.chineseName,
+        partOfSpeech: lookupResult.partOfSpeech,
+        termExample: lookupResult.englishExample,
+        translationExample: lookupResult.chineseExample,
         confidence: lookupResult.confidence,
         category: lookupResult.category,
         status: "new",
+        language: {
+          pair: languagePair,
+          stated: { term: languagePair[0], translation: languagePair[1] },
+          ai: {
+            termLanguage: lookupResult.termLanguage,
+            translationLanguage: lookupResult.translationLanguage,
+          },
+        },
       });
 
       setSavedKey(resultKey);

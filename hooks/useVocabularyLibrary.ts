@@ -15,9 +15,18 @@ export default function useVocabularyLibrary(items: VocabularyItem[]) {
       .filter((item) => {
         if (!normalizedSearch) return true;
 
-        return (
-          normalizeVocabularyText(item.word).includes(normalizedSearch) ||
-          normalizeVocabularyText(item.translation).includes(normalizedSearch)
+        /*
+         * Every language the row is held in, matching the main search box.
+         * This looked at the stored pair alone, so a word the reader could
+         * see on the card in a third language could not be found by typing
+         * what they were looking at.
+         */
+        return [
+          item.word,
+          item.translation,
+          ...Object.values(item.texts ?? {}),
+        ].some((text) =>
+          text ? normalizeVocabularyText(text).includes(normalizedSearch) : false,
         );
       })
       .sort((a, b) =>

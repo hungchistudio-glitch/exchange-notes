@@ -1452,6 +1452,24 @@ const english: TranslationDictionary = {
       },
     },
 
+    language: {
+      title: "Language",
+      allLanguages: "All languages",
+      filterAriaLabel: "Filter by language",
+      badgeAriaLabel: "Vocabulary language: {language}",
+      emptyTitle: "No {language} words yet",
+      emptyDescription:
+        "Words you save in {language} will appear here, whatever you are studying at the time.",
+      change: "Change language",
+      changeTitle: "Which language is this?",
+      changeDescription:
+        "Only the language changes. “{word}” itself, its translation and its review history stay exactly as they are.",
+      changeAriaLabel: "Change the language of {word}",
+      unclear: "Language unclear",
+      savedAs: "Saved as {term} → {translation}",
+      close: "Close",
+    },
+
     search: {
       vocabulary: "Vocabulary",
       yourWords: "Your words",

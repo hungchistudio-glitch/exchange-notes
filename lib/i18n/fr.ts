@@ -1324,6 +1324,24 @@ const french: TranslationDictionary = {
         loadError: "Impossible de charger ce mot.",
       },
     },
+    language: {
+      title: "Langue",
+      allLanguages: "Toutes les langues",
+      filterAriaLabel: "Filtrer par langue",
+      badgeAriaLabel: "Langue du mot : {language}",
+      emptyTitle: "Aucun mot en {language} pour l'instant",
+      emptyDescription:
+        "Les mots que vous enregistrez en {language} apparaîtront ici, quelle que soit la langue étudiée à ce moment-là.",
+      change: "Changer de langue",
+      changeTitle: "De quelle langue s'agit-il ?",
+      changeDescription:
+        "Seule la langue change. « {word} », sa traduction et son historique de révision restent tels quels.",
+      changeAriaLabel: "Changer la langue de {word}",
+      unclear: "Langue indéterminée",
+      savedAs: "Enregistré comme {term} → {translation}",
+      close: "Fermer",
+    },
+
     search: {
       vocabulary: "Vocabulaire",
       yourWords: "Vos mots",

@@ -45,6 +45,10 @@ Rules:${scriptRule}
 - If the input is already ${secondName}, treat it as the source word
   and translate it into ${firstName}.
 - If uncertain what was meant, make your best guess and use low confidence.
-- Keep both examples natural, short, and semantically equivalent.${fieldNote}
+- Keep both examples natural, short, and semantically equivalent.
+- Set "termLanguage" to ${JSON.stringify(first)} and "translationLanguage" to
+  ${JSON.stringify(second)}. They record which language each side of the
+  result is in, for a reader who may be studying something else by the time
+  they see it.${fieldNote}
   `.trim();
 }

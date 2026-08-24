@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 import { getVocabularyKey } from "@/lib/vocabulary/helpers";
 
 export type VocabularyLookupSaveMessages = {
@@ -90,31 +91,35 @@ export default function useVocabularyLookupSave({
         return;
       }
 
-      const { data: inserted, error: insertError } = await supabase
-        .from("vocabulary_items")
-        .insert({
-          user_id: user.id,
-          word,
-          translation,
-          word_language: languagePair[0],
-          translation_language: languagePair[1],
-          part_of_speech: lookupResult.partOfSpeech.trim() || null,
-          example_sentence: lookupResult.englishExample.trim() || null,
-          translated_example: lookupResult.chineseExample.trim() || null,
-          confidence: lookupResult.confidence,
-          category: lookupResult.category,
-          status: "new",
-        })
-        .select()
-        .single();
+      /*
+       * Through the shared pipeline rather than straight at the table.
+       *
+       * This wrote its own insert, which meant it decided its own language
+       * metadata — and, less visibly, that a word looked up on a train was
+       * simply lost, because the outbox only ever saw writes that went
+       * through the repository.
+       */
+      const { item: inserted } = await createVocabularyEntry({
+        userId: user.id,
+        term: word,
+        translation,
+        partOfSpeech: lookupResult.partOfSpeech,
+        termExample: lookupResult.englishExample,
+        translationExample: lookupResult.chineseExample,
+        confidence: lookupResult.confidence,
+        category: lookupResult.category,
+        status: "new",
+        language: {
+          pair: languagePair,
+          stated: { term: languagePair[0], translation: languagePair[1] },
+          ai: {
+            termLanguage: lookupResult.termLanguage,
+            translationLanguage: lookupResult.translationLanguage,
+          },
+        },
+      });
 
-      if (insertError || !inserted) {
-        console.error("Unable to save vocabulary lookup result:", insertError);
-        setError(messages.saveFailed);
-        return;
-      }
-
-      addItem(inserted as VocabularyItem);
+      addItem(inserted);
 
       resetLookup();
       setQuery("");

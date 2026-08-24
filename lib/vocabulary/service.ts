@@ -1,8 +1,8 @@
 import type { ClassifiedVocabulary } from "@/lib/vocabulary/classify";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 import {
   deleteVocabulary,
   getCurrentUser,
-  insertVocabulary,
   updateVocabularyStatus,
   vocabularyExists,
 } from "@/lib/vocabulary/repository";
@@ -48,25 +48,40 @@ export async function saveClassifiedVocabulary(
     };
   }
 
-  const inserted = await insertVocabulary({
-    user_id: user.id,
-    word,
+  const { item } = await createVocabularyEntry({
+    userId: user.id,
+    term: word,
     translation,
-    word_language: languagePair[0],
-    translation_language: languagePair[1],
-    part_of_speech:
-      classified.partOfSpeech?.trim() || null,
-    example_sentence:
-      classified.englishExample?.trim() || null,
-    translated_example:
-      classified.chineseExample?.trim() || null,
+    partOfSpeech: classified.partOfSpeech,
+    termExample: classified.englishExample,
+    translationExample: classified.chineseExample,
     confidence: classified.confidence,
     category: classified.category,
     status: "new",
+    language: {
+      pair: languagePair,
+      /*
+       * The pair is a statement, not a guess. The prompt that produced this
+       * result named these two languages and told the model which field
+       * holds which, so the first field is in the first language by
+       * construction — there is nothing here for a detector to add.
+       */
+      stated: { term: languagePair[0], translation: languagePair[1] },
+      /*
+       * What the model said about its own output, kept as the fallback for
+       * a result that reached this point without a pair — an offline
+       * dictionary hit, a row served from the shared cache. The pair
+       * outranks it whenever both are present.
+       */
+      ai: {
+        termLanguage: classified.termLanguage,
+        translationLanguage: classified.translationLanguage,
+      },
+    },
   });
 
   return {
-    item: inserted as VocabularyItem,
+    item,
     duplicate: false,
   };
 }

@@ -1,11 +1,16 @@
 import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
-import type { LanguageCode } from "@/lib/languages";
+import type { ByLanguage, LanguageCode } from "@/lib/languages";
 import {
   draftVocabularyItem,
   queueMutation,
+  type VocabularyLanguageFields,
 } from "@/lib/offline/vocabulary";
 import { createClient } from "@/lib/supabase/client";
 import { getVocabularyKey } from "@/lib/vocabulary/helpers";
+import type {
+  LanguageMetadataSource,
+  LanguagePairAtCreation,
+} from "@/lib/vocabulary/languageIdentity";
 import type {
   VocabularyCategory,
   VocabularyItem,
@@ -75,23 +80,44 @@ export async function vocabularyExists(
   );
 }
 
-type InsertVocabulary = {
+export type InsertVocabulary = {
   user_id: string;
   word: string;
   translation: string;
   /**
-   * Which language each side is in. Required, and not defaulted.
+   * Which language each side is in. Required, and no longer defaulted.
    *
-   * The columns carry defaults so that inserts written before they existed
-   * kept working, and those defaults say English and Traditional Chinese —
-   * which quietly files a Spanish word as an English one. Making the caller
-   * say it is what lets those defaults come out.
+   * The columns used to default to English and Traditional Chinese so that
+   * inserts written before they existed kept working — which quietly filed a
+   * Spanish word as an English one. Every caller states them now, so
+   * 20260823160000 dropped the defaults; an insert that omits them fails
+   * rather than mislabelling a word permanently.
    */
   word_language: LanguageCode;
   translation_language: LanguageCode;
+  /**
+   * Where those two languages came from. Written by
+   * createVocabularyEntry rather than by callers — see
+   * lib/vocabulary/languageIdentity.ts.
+   */
+  language_source: LanguageMetadataSource;
+  language_confidence: number | null;
+  language_pair_at_creation: LanguagePairAtCreation;
+  needs_language_review: boolean;
+  /**
+   * The word and its example in every language they are known in.
+   *
+   * Written at insert rather than left to the column default, so a row saved
+   * today has the same shape as one the texts-by-language migration filled
+   * in. See createVocabularyEntry, which is what builds these.
+   */
+  texts: ByLanguage;
+  examples: ByLanguage;
   part_of_speech: string | null;
   example_sentence: string | null;
   translated_example: string | null;
+  /** Present only for words saved from a photo. */
+  image_url?: string | null;
   confidence: VocabularyItem["confidence"];
   category: VocabularyCategory;
   status: VocabularyItem["status"];
@@ -226,6 +252,46 @@ export async function updateVocabularyFields(
     // The caller reads this back into its own state; the edit is real on
     // the device whether or not the server has heard about it yet.
     return { id, ...fields } as never;
+  }
+}
+
+/**
+ * Corrects which language a saved word is in.
+ *
+ * Only the language fields move. The word, the translation, the examples and
+ * the whole review history stay exactly as they are — the reader is saying
+ * the app read the language wrong, not that they saved a different word.
+ *
+ * `language` goes along for the ride because the deprecated column is NOT
+ * NULL and means "the language of `word`"; leaving it behind would make the
+ * row disagree with itself.
+ */
+export async function updateVocabularyLanguage(
+  id: string,
+  fields: VocabularyLanguageFields,
+) {
+  const supabase = createClient();
+
+  try {
+    const { error } = await supabase
+      .from("vocabulary_items")
+      .update({
+        ...fields,
+        // Kept in step with word_language: the deprecated column is NOT NULL
+        // and still means "the language of `word`".
+        language: fields.word_language,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    reportNetworkSuccess();
+  } catch (error) {
+    if (!isUnreachable(error)) throw error;
+
+    reportNetworkFailure();
+    await queueMutation({ kind: "language", itemId: id, fields });
   }
 }
 

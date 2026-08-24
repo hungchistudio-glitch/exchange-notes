@@ -7,6 +7,7 @@ import { buildReviewAnalytics } from "@/lib/review/analytics";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 
+import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import type {
   VocabularyItem,
   VocabularyStatus,
@@ -54,6 +55,30 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
 
     const reviewStats = buildReviewAnalytics(items);
 
+    /*
+     * How many words the reader has in each language, from the rows
+     * themselves — no estimate, no placeholder, and no language the library
+     * does not actually contain.
+     *
+     * Seeded in table order so the filter sheet lists languages the same way
+     * every time it opens rather than in whatever order the first matching
+     * row happened to arrive in.
+     */
+    const languageCounts = new Map<LanguageCode, number>();
+
+    for (const item of items) {
+      const code = item.word_language;
+      if (!code) continue;
+      languageCounts.set(code, (languageCounts.get(code) ?? 0) + 1);
+    }
+
+    const orderedLanguageCounts = new Map<LanguageCode, number>(
+      LANGUAGE_CODES.flatMap((code) => {
+        const count = languageCounts.get(code);
+        return count ? [[code, count] as [LanguageCode, number]] : [];
+      }),
+    );
+
     const quickFilters: VocabularyQuickFilter[] = [
       {
         value: "all",
@@ -87,6 +112,7 @@ export default function useVocabularyStats(items: VocabularyItem[]) {
       dailyProgress,
       quickFilters,
       reviewStats,
+      languageCounts: orderedLanguageCounts,
     };
   }, [dailyGoal, items, search]);
 }

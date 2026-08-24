@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyStatus } from "@/lib/types/app";
 import { toTraditional } from "@/lib/chinese/toTraditional";
 import { anyLearningLanguageNeedsTraditional } from "@/lib/languages";
@@ -49,6 +50,22 @@ export function useVocabularyPage({
     "all" | VocabularyStatus
   >("all");
 
+  /**
+   * Which languages the list is limited to. Empty means all of them.
+   *
+   * A list from the start. The sheet offers one at a time today, and
+   * "French and Italian" is a question this state can already answer when
+   * it does not — see LanguageFilterSheet.
+   *
+   * Not persisted, and deliberately: a filter that survives a reload is a
+   * filter a reader meets without having chosen it, and wonders where half
+   * their library went.
+   */
+  const [languageFilter, setLanguageFilter] = useState<
+    readonly LanguageCode[]
+  >([]);
+  const [languageFilterOpen, setLanguageFilterOpen] = useState(false);
+
   const [sortMode, setSortMode] = useState<SortMode>(DEFAULT_SORT_MODE);
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -74,6 +91,12 @@ export function useVocabularyPage({
       quickFilter,
       setQuickFilter,
 
+      languageFilter,
+      setLanguageFilter,
+
+      languageFilterOpen,
+      setLanguageFilterOpen,
+
       sortMode,
       setSortMode,
 
@@ -93,6 +116,8 @@ export function useVocabularyPage({
       query,
       setQuery,
       quickFilter,
+      languageFilter,
+      languageFilterOpen,
       sortMode,
       sortOpen,
       filtersOpen,

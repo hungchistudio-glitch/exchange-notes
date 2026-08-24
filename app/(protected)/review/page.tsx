@@ -16,6 +16,9 @@ import {
 import { saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { speak } from "@/lib/speech";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
 type Phase = "landing" | "session" | "complete";
@@ -148,6 +151,19 @@ export default function ReviewPage() {
 
   const [dueWords, setDueWords] = useState<ReviewWord[]>([]);
   const [allWords, setAllWords] = useState<ReviewWord[]>([]);
+
+  /**
+   * Which language to review, or null for every one of them.
+   *
+   * A mixed-language library makes an all-languages session a session that
+   * changes language every card, which is a different and much harder
+   * exercise than the one the reader thought they were starting. This does
+   * not touch a single row — it decides what goes into the queue, and the
+   * words keep their own languages either way.
+   */
+  const [reviewLanguage, setReviewLanguage] = useState<LanguageCode | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -194,9 +210,29 @@ export default function ReviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /*
+   * Which languages the queue actually holds, and how many of each. Taken
+   * from the whole library rather than from what is due, so the control does
+   * not appear and vanish as words come up for review.
+   */
+  const languageCounts = allWords.reduce((counts, word) => {
+    counts.set(word.termLanguage, (counts.get(word.termLanguage) ?? 0) + 1);
+    return counts;
+  }, new Map<LanguageCode, number>());
+
+  const inReviewLanguage = (word: ReviewWord) =>
+    !reviewLanguage || word.termLanguage === reviewLanguage;
+
+  const dueInLanguage = dueWords.filter(inReviewLanguage);
+  const allInLanguage = allWords.filter(inReviewLanguage);
+
   const startSession = useCallback(
     (selectedMode: Mode) => {
-      const source = selectedMode === "due" ? dueWords : allWords;
+      const source = (
+        selectedMode === "due" ? dueWords : allWords
+      ).filter(
+        (word) => !reviewLanguage || word.termLanguage === reviewLanguage,
+      );
 
       if (source.length === 0) {
         return;
@@ -209,7 +245,7 @@ export default function ReviewPage() {
       setPhase("session");
       setLaunchToken((token) => token + 1);
     },
-    [dueWords, allWords],
+    [dueWords, allWords, reviewLanguage],
   );
 
   async function handleGrade(grade: ReviewGrade) {
@@ -293,68 +329,103 @@ export default function ReviewPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.vocabulary}
               </p>
-              <button
-                type="button"
-                onClick={() => speak(currentWord.chinese, "zh-TW")}
-                aria-label="Listen"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
-              >
-                <SpeakerIcon />
-              </button>
+              <div className="flex items-center gap-2">
+                <LanguageOriginBadge
+                  language={currentWord.translationLanguage}
+                  size="sm"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    speak(
+                      currentWord.translation,
+                      getLanguage(currentWord.translationLanguage).speechTag,
+                    )
+                  }
+                  aria-label={insertValues(
+                    t.vocabulary.detail.listenAriaLabel,
+                    { text: currentWord.translation },
+                  )}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
+                >
+                  <SpeakerIcon />
+                </button>
+              </div>
             </div>
 
             <p className="mt-4 text-[36px] font-bold tracking-[-0.02em]">
-              {currentWord.chinese}
+              {currentWord.translation}
             </p>
 
             {revealed && (
               <>
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-5">
-                  <p className="text-2xl font-bold">{currentWord.english}</p>
-                  <button
-                    type="button"
-                    onClick={() => speak(currentWord.english, "en-US")}
-                    aria-label="Listen"
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line"
-                  >
-                    <SpeakerIcon />
-                  </button>
+                  <p className="min-w-0 break-words text-2xl font-bold">
+                    {currentWord.term}
+                  </p>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <LanguageOriginBadge
+                      language={currentWord.termLanguage}
+                      size="sm"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        speak(
+                          currentWord.term,
+                          getLanguage(currentWord.termLanguage).speechTag,
+                        )
+                      }
+                      aria-label={insertValues(
+                        t.vocabulary.detail.listenAriaLabel,
+                        { text: currentWord.term },
+                      )}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-line"
+                    >
+                      <SpeakerIcon />
+                    </button>
+                  </div>
                 </div>
 
-                {currentWord.englishExample && (
-                  <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3">
-                    <p className="text-sm leading-6">
-                      {currentWord.englishExample}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        speak(currentWord.englishExample as string, "en-US")
-                      }
-                      aria-label="Listen to English example"
-                      className="shrink-0"
+                {/*
+                  Each example in the voice of the language it is written in,
+                  read off the word rather than assumed. The two used to be
+                  hard-coded en-US and zh-TW, so a French card's example was
+                  read aloud in Mandarin.
+                */}
+                {(
+                  [
+                    [currentWord.termExample, currentWord.termLanguage],
+                    [
+                      currentWord.translationExample,
+                      currentWord.translationLanguage,
+                    ],
+                  ] as const
+                ).map(([example, language]) =>
+                  example ? (
+                    <div
+                      key={language}
+                      className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3"
                     >
-                      <SpeakerIcon />
-                    </button>
-                  </div>
-                )}
-
-                {currentWord.chineseExample && (
-                  <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3">
-                    <p className="text-sm leading-6">
-                      {currentWord.chineseExample}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        speak(currentWord.chineseExample as string, "zh-TW")
-                      }
-                      aria-label="Listen to Chinese example"
-                      className="shrink-0"
-                    >
-                      <SpeakerIcon />
-                    </button>
-                  </div>
+                      <p className="min-w-0 text-sm leading-6">{example}</p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          speak(example, getLanguage(language).speechTag)
+                        }
+                        aria-label={insertValues(
+                          t.vocabulary.detail.listenAriaLabel,
+                          { text: example },
+                        )}
+                        className="shrink-0"
+                      >
+                        <SpeakerIcon />
+                      </button>
+                    </div>
+                  ) : null,
                 )}
               </>
             )}
@@ -482,10 +553,72 @@ export default function ReviewPage() {
           </p>
         )}
 
+        {/*
+          Which language this session is in — shown only once there is more
+          than one to choose between, because a control with a single option
+          is a statement, not a choice.
+
+          Chips rather than a sheet: there are at most five, the row is the
+          first thing above the queue it governs, and seeing the counts side
+          by side is the point.
+        */}
+        {languageCounts.size > 1 ? (
+          <div
+            className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            role="group"
+            aria-label={t.vocabulary.language.filterAriaLabel}
+          >
+            {[null, ...languageCounts.keys()].map((code) => {
+              const selected = reviewLanguage === code;
+              const count = code
+                ? (languageCounts.get(code) ?? 0)
+                : allWords.length;
+
+              return (
+                <button
+                  key={code ?? "all"}
+                  type="button"
+                  onClick={() => setReviewLanguage(code)}
+                  aria-pressed={selected}
+                  className={`flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition ${
+                    selected
+                      ? "border-black bg-black text-white"
+                      : "border-line bg-white text-ink-soft"
+                  }`}
+                >
+                  {code ? (
+                    <LanguageOriginBadge
+                      language={code}
+                      size="sm"
+                      className={
+                        selected ? "!border-white/25 !bg-white/15" : ""
+                      }
+                    />
+                  ) : null}
+
+                  <span>
+                    {code
+                      ? getLanguage(code).endonym
+                      : t.vocabulary.language.allLanguages}
+                  </span>
+
+                  <span
+                    className={
+                      selected ? "text-white/70" : "text-ink-faint"
+                    }
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         <button
           type="button"
           onClick={() => startSession("due")}
-          disabled={loading || dueWords.length === 0}
+          disabled={loading || dueInLanguage.length === 0}
           className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
@@ -496,7 +629,7 @@ export default function ReviewPage() {
           </div>
 
           <p className="mt-3 text-[40px] font-bold leading-none">
-            {loading ? "…" : dueWords.length}
+            {loading ? "…" : dueInLanguage.length}
           </p>
           <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
             {copy.cardsReady}
@@ -523,11 +656,11 @@ export default function ReviewPage() {
           <button
             type="button"
             onClick={() => startSession("all")}
-            disabled={loading || allWords.length === 0}
+            disabled={loading || allInLanguage.length === 0}
             className="mt-4 flex h-14 w-full items-center justify-between rounded-2xl bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
           >
             {copy.practiceAllWords}
-            <span>{loading ? "…" : allWords.length}</span>
+            <span>{loading ? "…" : allInLanguage.length}</span>
           </button>
         </div>
 
@@ -540,13 +673,13 @@ export default function ReviewPage() {
             <div className="flex items-center justify-between py-3 text-sm">
               <span className="text-ink-soft">{copy.ready}</span>
               <span className="font-bold">
-                {loading ? "…" : dueWords.length}
+                {loading ? "…" : dueInLanguage.length}
               </span>
             </div>
             <div className="flex items-center justify-between py-3 text-sm">
               <span className="text-ink-soft">{copy.freePractice}</span>
               <span className="font-bold">
-                {loading ? "…" : allWords.length}
+                {loading ? "…" : allInLanguage.length}
               </span>
             </div>
           </div>

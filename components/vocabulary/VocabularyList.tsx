@@ -15,9 +15,10 @@ import {
 import Link from "next/link";
 
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import { EmptyState } from "@/components/foundation-legacy";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
-import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
@@ -53,6 +54,8 @@ type VocabularyListProps = {
   savingLookup: boolean;
   expandedItemId: string | null;
   viewMode: VocabularyViewMode;
+  /** Which languages the list is limited to. Empty means all of them. */
+  languageFilter: readonly LanguageCode[];
   onLookupWord: () => void;
   onSaveLookupResult: () => void;
   onShareLookupResult: () => void;
@@ -80,6 +83,7 @@ function VocabularyList({
   savingLookup,
   expandedItemId,
   viewMode,
+  languageFilter,
   onLookupWord,
   onSaveLookupResult,
   onShareLookupResult,
@@ -92,7 +96,7 @@ function VocabularyList({
   onInteract,
 }: VocabularyListProps) {
   const trimmedQuery = query.trim();
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const { pair: languagePair } = useDisplayLanguages();
   const lookup = t.vocabulary.lookup;
 
@@ -133,6 +137,50 @@ function VocabularyList({
           </Link>
         }
       />
+    );
+  }
+
+  /*
+   * A language filter with nothing behind it gets its own answer.
+   *
+   * The generic "no words yet" is wrong here and misleading with it: the
+   * library is not empty, this corner of it is, and the reader chose the
+   * corner. Naming the language is the difference between "you have nothing"
+   * and "you have nothing in Italian yet".
+   *
+   * Only when nothing else is narrowing the list. With a search term or a
+   * status chip also active, the language is one of several reasons for the
+   * emptiness and singling it out would be a guess.
+   */
+  if (
+    items.length === 0 &&
+    languageFilter.length === 1 &&
+    !trimmedQuery &&
+    lookupStatus !== "result"
+  ) {
+    const languageName = getLanguageName(languageFilter[0], interfaceLanguage);
+
+    return (
+      <div className="mt-6">
+        <EmptyState
+          className="rounded-[24px] py-8 shadow-[0_8px_22px_rgba(0,0,0,0.04)]"
+          icon={<LanguageOriginBadge language={languageFilter[0]} />}
+          title={insertValues(t.vocabulary.language.emptyTitle, {
+            language: languageName,
+          })}
+          description={insertValues(t.vocabulary.language.emptyDescription, {
+            language: languageName,
+          })}
+          action={
+            <Link
+              href="/capture?from=vocabulary"
+              className="mx-auto flex h-12 max-w-sm items-center justify-center rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
+            >
+              {t.vocabulary.search.discoverWord}
+            </Link>
+          }
+        />
+      </div>
     );
   }
 

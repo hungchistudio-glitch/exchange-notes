@@ -10,7 +10,9 @@ import {
   replaceAll,
   writeRecord,
 } from "@/lib/offline/db";
+import type { ByLanguage, LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
+import type { LanguageMetadataSource } from "@/lib/vocabulary/languageIdentity";
 
 /* =========================================================
    The reader's words, on the device
@@ -104,8 +106,37 @@ export async function mirrorSyncedAt(): Promise<string | null> {
 
 /* ---------- the outbox ---------- */
 
+/**
+ * The language half of a row, on its own.
+ *
+ * Separate from the content fields because correcting a language must not
+ * touch the word: the two travel through different mutations, and a queued
+ * correction replayed after a queued edit must not undo the edit.
+ */
+export type VocabularyLanguageFields = {
+  word_language: LanguageCode;
+  translation_language: LanguageCode;
+  language_source: LanguageMetadataSource;
+  language_confidence: number | null;
+  needs_language_review: boolean;
+  /**
+   * The map, re-keyed to match. A correction that moved the headword from
+   * `es` to `it` has to move the text with it, or the row goes on claiming
+   * the word is the Spanish for itself. See relabelLanguage.
+   */
+  texts: ByLanguage;
+  examples: ByLanguage;
+};
+
 export type PendingMutation =
   | { id?: number; kind: "insert"; at: string; item: VocabularyItem }
+  | {
+      id?: number;
+      kind: "language";
+      at: string;
+      itemId: string;
+      fields: VocabularyLanguageFields;
+    }
   | {
       id?: number;
       kind: "status";
@@ -211,6 +242,12 @@ export function applyPending(
       }
 
       case "fields": {
+        const item = byId.get(mutation.itemId);
+        if (item) byId.set(item.id, { ...item, ...mutation.fields });
+        break;
+      }
+
+      case "language": {
         const item = byId.get(mutation.itemId);
         if (item) byId.set(item.id, { ...item, ...mutation.fields });
         break;

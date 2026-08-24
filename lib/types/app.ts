@@ -1,4 +1,8 @@
 import type { ByLanguage, LanguageCode } from "@/lib/languages";
+import type {
+  LanguageMetadataSource,
+  LanguagePairAtCreation,
+} from "@/lib/vocabulary/languageIdentity";
 
 /**
  * The learning-language axis as the database currently stores it.
@@ -60,6 +64,22 @@ export type VocabularyItem = {
    */
   word_language: LanguageCode;
   translation_language: LanguageCode;
+  /**
+   * How those two languages were arrived at, and how sure the app was.
+   *
+   * Provenance, not content. Nothing renders a word differently because of
+   * them — they exist so a guessed language can be told apart from a stated
+   * one, and so the card can offer to be corrected instead of quietly
+   * carrying a wrong answer forever.
+   *
+   * Optional because rows read back from a client that predates the columns,
+   * and drafts written offline, may not carry them. Absent means "not
+   * recorded", which readers treat as legacy rather than as a value.
+   */
+  language_source?: LanguageMetadataSource | null;
+  language_confidence?: number | null;
+  language_pair_at_creation?: LanguagePairAtCreation | null;
+  needs_language_review?: boolean | null;
   /**
    * The word, and its example, in every language it is known in.
    *

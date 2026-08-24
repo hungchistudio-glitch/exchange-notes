@@ -1428,6 +1428,24 @@ const traditionalChinese: TranslationDictionary = {
       },
     },
 
+    language: {
+      title: "語言",
+      allLanguages: "所有語言",
+      filterAriaLabel: "依語言篩選",
+      badgeAriaLabel: "單字語言：{language}",
+      emptyTitle: "目前還沒有{language}單字",
+      emptyDescription:
+        "你存下的{language}單字會出現在這裡，不論當時正在學哪一種語言。",
+      change: "變更語言",
+      changeTitle: "這是哪一種語言？",
+      changeDescription:
+        "只會變更語言。「{word}」本身、翻譯與複習紀錄都不會改變。",
+      changeAriaLabel: "變更 {word} 的語言",
+      unclear: "無法確定語言",
+      savedAs: "存成 {term} → {translation}",
+      close: "關閉",
+    },
+
     search: {
       vocabulary: "單字",
       yourWords: "你的單字",
