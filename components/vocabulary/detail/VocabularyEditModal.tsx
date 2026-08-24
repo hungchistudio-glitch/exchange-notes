@@ -13,7 +13,7 @@ import AppButton from "@/components/ui/AppButton";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import type { VocabularyItem } from "./types";
+import type { VocabularyItem } from "@/lib/types/app";
 
 export type VocabularyEditValues = {
   word: string;

@@ -48,16 +48,3 @@ export function clearPendingSharedVocabulary() {
     console.error("Could not clear pending vocabulary:", storageError);
   }
 }
-
-/**
- * Kept for compatibility with older code.
- */
-export function consumePendingSharedVocabulary(): SharedWordCard | null {
-  const item = getPendingSharedVocabulary();
-
-  if (item) {
-    clearPendingSharedVocabulary();
-  }
-
-  return item;
-}

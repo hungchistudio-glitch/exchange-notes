@@ -41,16 +41,6 @@ export type PronunciationModuleId =
   | "words"
   | "rhythm"
   | "review";
-
-export const PRONUNCIATION_MODULE_IDS: readonly PronunciationModuleId[] = [
-  "sounds",
-  "listen",
-  "speak",
-  "words",
-  "rhythm",
-  "review",
-];
-
 /**
  * How well a unit is known.
  *
@@ -65,14 +55,6 @@ export type PronunciationMastery =
   | "learning"
   | "improving"
   | "mastered";
-
-export const MASTERY_ORDER: readonly PronunciationMastery[] = [
-  "new",
-  "learning",
-  "improving",
-  "mastered",
-];
-
 /* =========================================================
    Units
    ========================================================= */

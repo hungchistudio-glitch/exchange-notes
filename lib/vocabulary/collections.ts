@@ -74,20 +74,6 @@ export async function createCollection(
 
   return toCollection({ ...(data as CollectionRow), vocabulary_collection_items: [{ count: 0 }] });
 }
-
-/** Delete a collection. Words inside it are not deleted, only the grouping. */
-export async function deleteCollection(
-  supabase: SupabaseClient,
-  collectionId: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from("vocabulary_collections")
-    .delete()
-    .eq("id", collectionId);
-
-  if (error) throw error;
-}
-
 /** Which of the user's collections a given word currently belongs to. */
 export async function listCollectionIdsForItem(
   supabase: SupabaseClient,

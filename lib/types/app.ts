@@ -111,5 +111,3 @@ export type VocabularyItem = {
   retention_score?: number | null;
   difficulty?: "easy" | "medium" | "hard" | null;
 };
-
-export type MessageType = "text" | "image" | "vocabulary" | "grammar";

@@ -59,7 +59,3 @@ export function getRecognitionConstructor(): SpeechRecognitionConstructor | null
 
   return scope.SpeechRecognition ?? scope.webkitSpeechRecognition ?? null;
 }
-
-export function speechRecognitionSupported(): boolean {
-  return getRecognitionConstructor() !== null;
-}
