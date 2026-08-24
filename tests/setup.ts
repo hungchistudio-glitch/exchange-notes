@@ -79,6 +79,23 @@ vi.stubGlobal(
   },
 );
 
+/*
+ * jsdom has no ResizeObserver, and components that measure themselves rather
+ * than assume a size depend on one. A stub that never fires is honest here:
+ * a test asserting on a measured layout should set the measurement itself
+ * rather than wait for a fake observer to invent one.
+ */
+if (!("ResizeObserver" in window)) {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+}
+
 if (!window.matchMedia) {
   window.matchMedia = ((query: string) => ({
     matches: false,

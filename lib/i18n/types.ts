@@ -1690,6 +1690,14 @@ export type TranslationDictionary = {
       profileUpdated: string;
       profileUpdateError: string;
       languagesMustDifferError: string;
+      cropTitle: string;
+      cropDescription: string;
+      cropViewportLabel: string;
+      cropZoom: string;
+      cropConfirm: string;
+      cropSaving: string;
+      cropCancel: string;
+      cropError: string;
       editProfile: string;
       copyHandle: string;
       copied: string;
