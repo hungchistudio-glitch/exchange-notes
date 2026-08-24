@@ -434,14 +434,11 @@ export default function LexiconResults({
                       setPickerFor(null);
                       search.chooseLanguage(code);
                     }}
-                    /*
-                     * Anchored to the reader's own text, not the headword.
-                     * A French learner who typed 爸爸 is shown *papa*, and
-                     * "no, that was Japanese" is a correction about 爸爸.
-                     */
-                    aria-pressed={code === languages.queryLanguage}
+                    // The card's own language: this control changes what the
+                    // card leads with, not what the reader typed.
+                    aria-pressed={code === languages.sourceLanguage}
                     className={`flex h-11 items-center gap-2 rounded-full border px-3.5 text-[12px] font-semibold transition-transform active:scale-95 ${
-                      code === languages.queryLanguage
+                      code === languages.sourceLanguage
                         ? tone === "cosmic"
                           ? "border-[var(--cosmic-cyan)] text-[var(--cosmic-cyan)]"
                           : "border-black bg-black text-white"

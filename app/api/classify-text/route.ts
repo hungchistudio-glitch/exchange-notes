@@ -151,10 +151,10 @@ const modelCooldowns = new Map<string, number>();
  * "bicycle" would decide what everyone else got back, in their language
  * rather than the asker's.
  *
- * The pinned language belongs in the key for the same reason it exists: "no,
- * that is Italian" produces a different answer for the same eight letters,
- * and serving one reader's correction to the next reader is the bug this
- * whole module is careful about in miniature.
+ * A requested headword language belongs in the key for the same reason it
+ * exists: "show me this in Italian" produces a different card for the same
+ * eight letters, and serving one reader's choice to the next reader is the
+ * bug this whole module is careful about in miniature.
  *
  * So does the reader's first language, which is not presentation either: it
  * decides whether a query is "what does this mean" or "what is this in the
@@ -163,10 +163,10 @@ const modelCooldowns = new Map<string, number>();
 function getCacheKey(
   query: string,
   { learning, support, native }: LanguageRoles,
-  chosen: LanguageCode | null,
+  chosenHead: LanguageCode | null,
 ) {
   const first = native && native !== support ? `~${native}` : "";
-  const pin = chosen ? `@${chosen}` : "";
+  const pin = chosenHead ? `@${chosenHead}` : "";
 
   return `${learning}+${support}${first}${pin}:${query.toLocaleLowerCase("en-US")}`;
 }
@@ -276,7 +276,7 @@ function toLexiconEntry(value: unknown): LexiconEntry | null {
 type LookupContext = {
   query: string;
   roles: LanguageRoles;
-  chosen: LanguageCode | null;
+  chosenHead: LanguageCode | null;
   detected: LanguageCode | null;
   kind: LexiconQueryKind;
 };
@@ -293,7 +293,7 @@ async function lookupWithModel(
         query: context.query,
         roles: context.roles,
         detected: context.detected,
-        chosen: context.chosen,
+        chosenHead: context.chosenHead,
         kind: context.kind,
       }),
       response_format: {
@@ -406,7 +406,8 @@ async function performLookup(
 
   return {
     result: await lookupOffline(context.query, {
-      source: context.chosen ?? context.detected,
+      source: context.detected,
+      head: context.chosenHead,
       roles: context.roles,
     }),
     origin: "offline",
@@ -417,7 +418,7 @@ async function performLookup(
 async function lookupVocabulary(
   context: LookupContext,
 ): Promise<ResolvedLookup> {
-  const key = getCacheKey(context.query, context.roles, context.chosen);
+  const key = getCacheKey(context.query, context.roles, context.chosenHead);
 
   const cached = getCachedResult(key);
   if (cached) return { result: cached, origin: "memory", fromModel: true };
@@ -454,7 +455,7 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as {
       text?: string;
-      sourceLanguage?: unknown;
+      headLanguage?: unknown;
     };
     const query = normalizeQuery(body.text ?? "");
 
@@ -482,14 +483,14 @@ export async function POST(request: Request) {
      * caller can write.
      */
     const detection = detectLanguage(query);
-    const chosen = isLanguageCode(body.sourceLanguage)
-      ? body.sourceLanguage
+    const chosenHead = isLanguageCode(body.headLanguage)
+      ? body.headLanguage
       : null;
 
     const resolved = await lookupVocabulary({
       query,
       roles,
-      chosen,
+      chosenHead,
       detected:
         detection.language && detection.confidence >= DETECTION_CONFIDENCE_FLOOR
           ? detection.language

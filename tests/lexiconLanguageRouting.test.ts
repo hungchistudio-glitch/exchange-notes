@@ -126,11 +126,10 @@ describe("routing a query before the dictionary answers", () => {
     ).toBe("fr");
   });
 
-  it("treats a reader's own choice as settled", () => {
+  it("carries a requested headword language through", () => {
     const routing = routeQuery("solo", roles, "it");
 
-    expect(routing.preferred).toBe("it");
-    expect(routing.chosen).toBe("it");
+    expect(routing.chosenHead).toBe("it");
   });
 });
 
@@ -183,14 +182,30 @@ describe("settling the languages once the dictionary has answered", () => {
     expect(languages.candidates).toContain("it");
   });
 
-  it("treats a reader's choice as certain and unquestioned", () => {
-    const routing = routeQuery("solo", { learning: "fr", support: "en" }, "it");
-    const languages = settleLanguages(routing, entry("it", "en", "it"));
+  it("leads the card in the language the reader asked for", () => {
+    // The control says "change language", and what it changes is the language
+    // the card leads with — not a guess about what the reader typed.
+    const routing = routeQuery("papa", { learning: "fr", support: "en" }, "it");
+    const languages = settleLanguages(routing, entry("es", "en", "es"));
 
-    expect(languages.queryLanguage).toBe("it");
+    expect(languages.sourceLanguage).toBe("it");
+    // The other half is the language they read the app in. They chose one
+    // side; asking them to choose both would be two questions.
+    expect(languages.glossLanguage).toBe("en");
     expect(languages.confidence).toBe(1);
     expect(languages.ambiguous).toBe(false);
     expect(languages.chosen).toBe(true);
+  });
+
+  it("does not let a chosen headword be turned round again", () => {
+    const routing = routeQuery("papa", { learning: "fr", support: "en" }, "it");
+    const languages = settleLanguages(routing, entry("es", "en", "es"));
+
+    // orientToLearner exists to put the language being studied first. A reader
+    // who asked for Italian outranks it.
+    const oriented = orientToLearner(entry("it", "en"), languages, "fr");
+
+    expect(oriented?.languages.sourceLanguage).toBe("it");
   });
 
   it("keeps the reader's own text as the headword when nothing answered", () => {
@@ -260,18 +275,17 @@ describe("a correction survives a failed attempt", () => {
       sourceLanguage: "en" as LanguageCode,
       queryLanguage: "en" as LanguageCode,
       glossLanguage: "fr" as LanguageCode,
-      confidence: 1,
+      confidence: 0.9,
       ambiguous: false,
       candidates: ["en"] as readonly LanguageCode[],
-      chosen: true,
+      chosen: false,
     };
 
     const oriented = orientToLearner(entry("en", "fr"), languages, "fr");
 
     expect(oriented?.languages.sourceLanguage).toBe("fr");
-    // What a retry must re-pin, and what the picker must highlight.
+    // Still records what the reader actually typed.
     expect(oriented?.languages.queryLanguage).toBe("en");
-    expect(oriented?.languages.chosen).toBe(true);
   });
 });
 

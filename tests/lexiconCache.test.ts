@@ -39,12 +39,12 @@ describe("lexiconCacheKey", () => {
     );
   });
 
-  it("separates a pinned language from an unpinned one", () => {
-    // "No, that is Italian" is a different question about the same eight
-    // letters, and serving one reader's correction to the next reader is the
-    // same class of bug as ignoring the pair.
+  it("separates a requested headword language from an unasked one", () => {
+    // "Show me this in Italian" is a different question about the same eight
+    // letters, and serving one reader's choice to the next reader is the same
+    // class of bug as ignoring the pair.
     expect(
-      lexiconCacheKey({ query: "solo", pair: ["fr", "en"], chosen: "it" }),
+      lexiconCacheKey({ query: "solo", pair: ["fr", "en"], head: "it" }),
     ).not.toBe(lexiconCacheKey({ query: "solo", pair: ["fr", "en"] }));
   });
 

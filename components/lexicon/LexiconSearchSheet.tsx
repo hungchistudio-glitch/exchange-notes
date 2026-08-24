@@ -396,7 +396,21 @@ export default function LexiconSearchSheet({
           errorMessage={friendPicker.friendsError}
           sendingFriendId={friendPicker.sendingFriendId}
           onClose={friendPicker.handleClosePicker}
-          onPick={friendPicker.handlePickFriend}
+          /*
+           * Picking a friend navigates to their conversation — and this sheet
+           * is mounted on the protected layout, so unlike every other picker
+           * in the app it survives that navigation. Left alone it sat on top
+           * of the thread the reader had just been sent to, which reads as a
+           * send that never went anywhere.
+           *
+           * Closed without the exit animation, because the route is changing
+           * underneath it and an animation playing over a page transition is
+           * the sheet insisting on being noticed on its way out.
+           */
+          onPick={(friendId) => {
+            friendPicker.handlePickFriend(friendId);
+            onClose();
+          }}
           onRetry={friendPicker.retryFriends}
         />
       )}

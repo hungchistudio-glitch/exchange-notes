@@ -66,6 +66,14 @@ type DictionaryApiEntry = {
 export type OfflineLookupContext = {
   /** The query's language, when something has decided it. */
   source?: LanguageCode | null;
+  /**
+   * The language the reader asked the card to lead in, if they asked.
+   *
+   * Honoured the same way the model honours it, which here mostly means
+   * admitting defeat: this index speaks English and Chinese, so a request for
+   * an Italian headword has no answer without a network.
+   */
+  head?: LanguageCode | null;
   /** What the reader studies, reads, and grew up with. */
   roles: LanguageRoles;
 };
@@ -294,10 +302,13 @@ export async function lookupOffline(
    * up a word in a language they already read is the language they study,
    * not the language they typed.
    */
-  const { headLanguage: source, glossLanguage: gloss } = resolveCardLanguages(
-    queryLanguage,
-    context.roles,
-  );
+  const resolved = resolveCardLanguages(queryLanguage, context.roles);
+
+  const source = context.head ?? resolved.headLanguage;
+  const gloss =
+    context.head && context.head === resolved.glossLanguage
+      ? resolved.headLanguage
+      : resolved.glossLanguage;
 
   /*
    * With no model, the only text on hand is what the reader typed. When the

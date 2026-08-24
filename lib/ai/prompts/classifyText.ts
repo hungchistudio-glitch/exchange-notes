@@ -33,8 +33,14 @@ export type ClassifyTextPromptOptions = {
    * to obey it would inherit its mistakes.
    */
   detected?: LanguageCode | null;
-  /** Set when the reader picked the language by hand. Then it is settled. */
-  chosen?: LanguageCode | null;
+  /**
+   * The language the reader asked the card to lead in.
+   *
+   * Set when they used the language control. It overrides everything below:
+   * they are not correcting a detection, they are asking for the word in a
+   * particular language.
+   */
+  chosenHead?: LanguageCode | null;
   /** How much text this is, as the app measured it. */
   kind: LexiconQueryKind;
 };
@@ -47,7 +53,7 @@ export function buildClassifyTextPrompt({
   query,
   roles,
   detected,
-  chosen,
+  chosenHead,
   kind,
 }: ClassifyTextPromptOptions) {
   const { learning, support, native } = roles;
@@ -71,10 +77,20 @@ export function buildClassifyTextPrompt({
     "\n- Whenever you write Chinese, write Traditional Chinese. Never Simplified.",
   );
 
-  const languageInstruction = chosen
-    ? `The reader has stated that their text is ${promptLanguageName(chosen)}.
-Read it as that language, even if it could also be a word in another one, and
-set "queryLanguage" to ${JSON.stringify(chosen)}.`
+  const glossForChosen =
+    chosenHead && chosenHead === support ? learning : support;
+
+  const languageInstruction = chosenHead
+    ? `The reader has asked for this card in ${promptLanguageName(chosenHead)}.
+
+Put the ${promptLanguageName(chosenHead)} word for it in "term" and set
+"termLanguage" to ${JSON.stringify(chosenHead)}. Gloss it in
+${promptLanguageName(glossForChosen)} and set "translationLanguage" to
+${JSON.stringify(glossForChosen)}. Set "queryLanguage" to whichever language
+their own text was in.
+
+Ignore the three cases below — they decide which languages to use when nobody
+has said, and somebody has said.`
     : `First work out which of the supported languages the reader's own text is
 in. Do not assume it is ${learningName}: readers look up words they met on a
 street sign, in a message, or on a menu, in languages they are not studying.${

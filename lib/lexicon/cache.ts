@@ -46,8 +46,8 @@ export type LexiconCacheKeyParts = {
    * must not be served each other's answer.
    */
   native?: LanguageCode | null;
-  /** Set only when the reader pinned the language for this query. */
-  chosen?: LanguageCode | null;
+  /** Set only when the reader asked the card to lead in a language. */
+  head?: LanguageCode | null;
 };
 
 /**
@@ -61,20 +61,20 @@ export type LexiconCacheKeyParts = {
  * just stopped learning, and no amount of switching would shift it until the
  * entry aged out ninety days later.
  *
- * The pin is in here because "no, that is Italian" is a different question
- * about the same eight letters, and it deserves its own answer rather than
- * overwriting the unpinned one.
+ * The requested headword language is in here because "show me this in
+ * Italian" is a different question about the same eight letters, and it
+ * deserves its own answer rather than overwriting the unasked one.
  */
 export function lexiconCacheKey({
   query,
   pair,
   native,
-  chosen,
+  head,
 }: LexiconCacheKeyParts): string {
   const first = native && native !== pair[1] ? `~${native}` : "";
 
   return `${pair[0]}>${pair[1]}${first}${
-    chosen ? `@${chosen}` : ""
+    head ? `@${head}` : ""
   }:${matchKey(query)}`;
 }
 

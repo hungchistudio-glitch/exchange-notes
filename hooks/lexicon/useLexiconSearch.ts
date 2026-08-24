@@ -82,7 +82,10 @@ export type LexiconSearch = {
   kind: LexiconResult["kind"];
 
   submit: (value?: string, mode?: LexiconInputMode) => void;
-  /** Re-runs the current query with the language settled by hand. */
+  /**
+   * Re-runs the current query with the card led in a language the reader
+   * named. The gloss follows the language they read the app in.
+   */
   chooseLanguage: (language: LanguageCode) => void;
   retry: () => void;
   reset: () => void;
@@ -199,7 +202,7 @@ export default function useLexiconSearch({
   }, []);
 
   const run = useCallback(
-    async (rawQuery: string, chosen: LanguageCode | null) => {
+    async (rawQuery: string, chosenHead: LanguageCode | null) => {
       const text = normalizeQuery(rawQuery);
 
       if (!text) return;
@@ -214,13 +217,13 @@ export default function useLexiconSearch({
       setError("");
       setPreview(null);
 
-      const routing = routeQuery(text, roles, chosen);
+      const routing = routeQuery(text, roles, chosenHead);
       const queryKind = classifyQueryKind(text);
       const cacheParts = {
         query: text,
         pair,
         native: roles.native,
-        chosen,
+        head: chosenHead,
       };
 
       const settle = (
@@ -281,7 +284,7 @@ export default function useLexiconSearch({
         const response = await fetch("/api/classify-text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, sourceLanguage: chosen ?? undefined }),
+          body: JSON.stringify({ text, headLanguage: chosenHead ?? undefined }),
         });
 
         const data = (await response.json()) as LexiconEntry & {

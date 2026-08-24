@@ -74,6 +74,12 @@ export function orientToLearner(
   if (!entry) return null;
 
   const shouldSwap =
+    /*
+     * Never against a reader. Once they have named the language the card
+     * should lead in, turning it round again would be the app overruling the
+     * one person who cannot be wrong about what they wanted.
+     */
+    !languages.chosen &&
     languages.glossLanguage === learningLanguage &&
     languages.sourceLanguage !== learningLanguage;
 

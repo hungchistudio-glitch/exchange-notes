@@ -502,10 +502,14 @@ function CaptureContent() {
   /**
    * Whether the camera was opened from the Universal Search.
    *
-   * It changes where a saved word lands: back in the search, on the word
-   * that was just photographed, rather than in the vocabulary list. The
-   * reader asked "what is this?" and the answer is the lexicon result — with
-   * the pronunciation, the language, and the word now marked as theirs.
+   * When it was, this screen's job ends at recognition. It reads the photo,
+   * hands the word to the search, and gets out of the way — see the effect
+   * below.
+   *
+   * It used to show its own result card first, so a photographed word passed
+   * two near-identical cards with two save buttons before it could be kept.
+   * Two cards for one word is two chances to wonder which one is the real
+   * answer.
    */
   const fromLexicon = fromParam === "lexicon";
 
@@ -514,6 +518,24 @@ function CaptureContent() {
       window.speechSynthesis?.cancel();
     };
   }, [result]);
+
+  /*
+   * Recognised, and away.
+   *
+   * `replace` rather than `push`: the camera is a step on the way to an
+   * answer, not somewhere to go back to. Backing out of the search should
+   * return the reader to where they opened it, not to a photo they have
+   * already used.
+   *
+   * The word goes over as text and is looked up again by the search, which is
+   * the point — one result model, one save button, one duplicate check,
+   * whichever of the four inputs the word arrived through.
+   */
+  useEffect(() => {
+    if (!fromLexicon || !result?.term) return;
+
+    router.replace(`/?lexicon=${encodeURIComponent(result.term)}`);
+  }, [fromLexicon, result, router]);
 
   /*
    * The two languages this result is actually in.
@@ -1070,12 +1092,7 @@ function CaptureContent() {
       }
 
       setSaved(true);
-
-      router.push(
-        fromLexicon
-          ? `/?lexicon=${encodeURIComponent(result.term)}`
-          : "/vocabulary",
-      );
+      router.push("/vocabulary");
     } catch (saveError) {
       console.error(saveError);
 

@@ -41,8 +41,14 @@ export type LexiconRouting = {
   detected: LanguageDetection;
   /** What the model should be told to prefer, absent better evidence. */
   preferred: LanguageCode;
-  /** Set only when the reader chose the language for this query. */
-  chosen: LanguageCode | null;
+  /**
+   * The language the reader asked the card to lead in, if they asked.
+   *
+   * Not "what language did I type" — that question answers itself and the
+   * reader rarely cares. What they reach for the control to say is "show me
+   * this word in Italian", and the gloss stays whatever they read the app in.
+   */
+  chosenHead: LanguageCode | null;
   /** The reader's three roles, carried through to the settling step. */
   roles: LanguageRoles;
 };
@@ -171,20 +177,19 @@ export function resolveCardLanguages(
 export function routeQuery(
   query: string,
   roles: LanguageRoles,
-  chosen?: LanguageCode | null,
+  chosenHead?: LanguageCode | null,
 ): LexiconRouting {
   const detected = detectLanguage(query);
 
-  const preferred = isLanguageCode(chosen)
-    ? chosen
-    : detected.language && detected.confidence >= DETECTION_CONFIDENCE_FLOOR
+  const preferred =
+    detected.language && detected.confidence >= DETECTION_CONFIDENCE_FLOOR
       ? detected.language
       : roles.learning;
 
   return {
     detected,
     preferred,
-    chosen: isLanguageCode(chosen) ? chosen : null,
+    chosenHead: isLanguageCode(chosenHead) ? chosenHead : null,
     roles,
   };
 }
@@ -202,7 +207,7 @@ export function settleLanguages(
   routing: LexiconRouting,
   entry: LexiconEntry | null,
 ): LexiconLanguages {
-  const { detected, chosen, roles } = routing;
+  const { detected, chosenHead, roles } = routing;
 
   const reportedHead = isLanguageCode(entry?.termLanguage)
     ? entry.termLanguage
@@ -218,15 +223,22 @@ export function settleLanguages(
     ? entry.queryLanguage
     : reportedHead;
 
-  if (chosen) {
-    const { headLanguage, glossLanguage } = resolveCardLanguages(chosen, roles);
-
+  /*
+   * The reader asked for a language and gets it, whatever the model returned.
+   *
+   * The gloss is the support language — the one they read the app in — which
+   * is the half of the card they never have to choose. Asking someone to pick
+   * both sides of a card to correct one of them is two questions where there
+   * was one.
+   */
+  if (chosenHead) {
     return {
-      sourceLanguage: reportedHead ?? headLanguage,
-      queryLanguage: chosen,
-      glossLanguage: isLanguageCode(entry?.translationLanguage)
-        ? entry.translationLanguage
-        : glossLanguage,
+      sourceLanguage: chosenHead,
+      queryLanguage: reportedQuery ?? detected.language ?? chosenHead,
+      glossLanguage:
+        roles.support === chosenHead
+          ? otherLanguage(chosenHead, [roles.learning, roles.support])
+          : roles.support,
       confidence: 1,
       ambiguous: false,
       candidates: LANGUAGE_CODES,
@@ -251,7 +263,7 @@ export function settleLanguages(
       confidence: contradicted ? 0.5 : 0.9,
       ambiguous: contradicted,
       candidates: contradicted
-        ? [reportedQuery, detected.language as LanguageCode]
+        ? [reportedHead, detected.language as LanguageCode]
         : detected.candidates,
       chosen: false,
     };
