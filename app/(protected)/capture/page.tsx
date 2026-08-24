@@ -433,7 +433,7 @@ function CaptureContent() {
    * The app-wide search sheet, opened over this screen once the photo has
    * been read. See the hand-off effect below.
    */
-  const { open: searchOpen, openSearch } = useLexiconSearchSheet();
+  const { openSearch } = useLexiconSearchSheet();
   const capture = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -529,50 +529,29 @@ function CaptureContent() {
   /*
    * Recognised, and straight into the answer.
    *
-   * The search sheet is mounted on the protected layout, which this screen is
-   * inside — so it can be opened here, over the photo, without going
-   * anywhere. That is the whole reason this is a call and not a navigation.
+   * Two things happen here and the order is the whole of it: the sheet opens
+   * *first*, and the route is replaced underneath it second.
    *
-   * It used to `router.replace` to `/?lexicon=…`, which meant the reader
-   * watched the home screen paint itself before the card arrived on top of
-   * it: a page they did not ask for, between the photo and the answer. The
-   * param still works as a deep link; nothing in the app needs it any more.
+   * The sheet is mounted on the protected layout, which both this screen and
+   * the home screen are inside, so it survives the navigation — it is already
+   * covering the display when the route changes, and the reader never sees
+   * the page swap. Doing it the other way round is what made a photographed
+   * word travel through a fully painted home screen to reach its own card.
    *
-   * The word goes over as text and is looked up by the search, which is the
-   * point — one result model, one save button, one duplicate check, whichever
-   * of the four inputs the word arrived through.
+   * Replacing the route also means closing the card leaves the reader at home
+   * rather than back on a capture screen still holding the same word. That
+   * used to be a second effect watching the sheet close, which fired on the
+   * wrong sheet: arriving here from the search's own Scan button, the sheet
+   * that was closing behind the navigation counted as "the card was
+   * dismissed", and the reader was bounced home before they had taken a
+   * photo. There is no close to detect any more.
    */
   useEffect(() => {
     if (!fromLexicon || !result?.term) return;
 
     openSearch({ query: result.term, autoSubmit: true });
-  }, [fromLexicon, openSearch, result]);
-
-  /*
-   * Closing the card ends the errand.
-   *
-   * Without this the reader is handed back the capture screen with its own
-   * copy of the same word on it — the second card this flow exists to remove,
-   * arrived at from behind.
-   *
-   * The ref is what makes "closed" mean closed. Both effects run in the same
-   * commit, and on that commit the sheet has been *asked* to open but the
-   * value here still reads false — so a plain `!searchOpen` check would send
-   * the reader home in the same breath as the card was opened. Only a sheet
-   * that has been seen open can be seen closing.
-   */
-  const sawSearchRef = useRef(false);
-
-  useEffect(() => {
-    if (!fromLexicon) return;
-
-    if (searchOpen) {
-      sawSearchRef.current = true;
-      return;
-    }
-
-    if (sawSearchRef.current) router.replace("/");
-  }, [fromLexicon, router, searchOpen]);
+    router.replace("/");
+  }, [fromLexicon, openSearch, result, router]);
 
   /*
    * The two languages this result is actually in.

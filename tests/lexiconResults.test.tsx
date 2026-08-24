@@ -126,6 +126,56 @@ function harness({
   return { search, save };
 }
 
+describe("the two shells", () => {
+  /*
+   * Standard Mode draws warm paper and the Command Deck draws instrumentation,
+   * and that is the only difference there is allowed to be. Both run the same
+   * engine and both render this component, so "the same word gives the same
+   * answer in both modes" should be impossible to break — this is the test
+   * that says so out loud.
+   */
+  function textOf(tone: "warm" | "cosmic") {
+    const { search, save } = harness({
+      savedMatches: [saved("01", "tondre", "割草", "fr")],
+    });
+
+    const { container, unmount } = render(
+      <LexiconResults
+        tone={tone}
+        search={search as never}
+        save={save as never}
+        onOpenSaved={vi.fn()}
+      />,
+    );
+
+    const text = container.textContent ?? "";
+    const listeners = screen.getAllByRole("button", { name: "Listen" }).length;
+    const saveButtons = screen.queryAllByRole("button", {
+      name: "Save to vocabulary",
+    }).length;
+
+    unmount();
+    return { text, listeners, saveButtons };
+  }
+
+  it("says the same thing in both modes", () => {
+    const warm = textOf("warm");
+    const cosmic = textOf("cosmic");
+
+    expect(cosmic.text).toBe(warm.text);
+  });
+
+  it("offers the same actions in both modes", () => {
+    const warm = textOf("warm");
+    const cosmic = textOf("cosmic");
+
+    expect(cosmic.listeners).toBe(warm.listeners);
+    expect(cosmic.saveButtons).toBe(warm.saveButtons);
+    // Saved word, headword, meaning, and both halves of the example.
+    expect(warm.listeners).toBe(5);
+  });
+});
+
 describe("the result view", () => {
   it("shows the reader's own words above the dictionary, each labelled", () => {
     const mine = saved("01", "tondre", "割草", "fr");
