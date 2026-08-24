@@ -186,7 +186,7 @@ describe("settling the languages once the dictionary has answered", () => {
     // The control says "change language", and what it changes is the language
     // the card leads with — not a guess about what the reader typed.
     const routing = routeQuery("papa", { learning: "fr", support: "en" }, "it");
-    const languages = settleLanguages(routing, entry("es", "en", "es"));
+    const languages = settleLanguages(routing, entry("it", "en", "es"));
 
     expect(languages.sourceLanguage).toBe("it");
     // The other half is the language they read the app in. They chose one
@@ -199,10 +199,11 @@ describe("settling the languages once the dictionary has answered", () => {
 
   it("does not let a chosen headword be turned round again", () => {
     const routing = routeQuery("papa", { learning: "fr", support: "en" }, "it");
-    const languages = settleLanguages(routing, entry("es", "en", "es"));
+    const languages = settleLanguages(routing, entry("it", "en", "es"));
 
     // orientToLearner exists to put the language being studied first. A reader
-    // who asked for Italian outranks it.
+    // who asked for Italian outranks it, so the card stays Italian even
+    // though French is what they study.
     const oriented = orientToLearner(entry("it", "en"), languages, "fr");
 
     expect(oriented?.languages.sourceLanguage).toBe("it");
@@ -286,6 +287,80 @@ describe("a correction survives a failed attempt", () => {
     expect(oriented?.languages.sourceLanguage).toBe("fr");
     // Still records what the reader actually typed.
     expect(oriented?.languages.queryLanguage).toBe("en");
+  });
+});
+
+describe("swapping the card's language", () => {
+  /*
+   * The reader is studying Italian and reads the app in Chinese. They look up
+   * 老朋友 and get *vecchio amico*; then they tap the language control and ask
+   * for English. Every side of the card has to move together — the headword,
+   * the gloss and the badge that names them.
+   */
+  const roles: LanguageRoles = {
+    learning: "it",
+    support: "zh-TW",
+    native: "zh-TW",
+  };
+
+  it("leads in the language being studied before anyone asks", () => {
+    expect(resolveCardLanguages("zh-TW", roles)).toEqual({
+      headLanguage: "it",
+      glossLanguage: "zh-TW",
+    });
+  });
+
+  it("moves the whole card when the reader picks another language", () => {
+    const routing = routeQuery("老朋友", roles, "en");
+
+    // What the model returns when it is told to lead in English.
+    const languages = settleLanguages(routing, entry("en", "zh-TW", "zh-TW"));
+
+    expect(languages.sourceLanguage).toBe("en");
+    expect(languages.glossLanguage).toBe("zh-TW");
+    // The reader's own text is still recorded as what it was.
+    expect(languages.queryLanguage).toBe("zh-TW");
+  });
+
+  it("glosses in the language being studied when the reader asks for their own", () => {
+    // Asking for the card in Chinese, while reading the app in Chinese, would
+    // leave both sides the same language. The gloss moves to Italian instead.
+    const routing = routeQuery("老朋友", roles, "zh-TW");
+    const languages = settleLanguages(routing, null);
+
+    expect(languages.sourceLanguage).toBe("zh-TW");
+    expect(languages.glossLanguage).not.toBe("zh-TW");
+  });
+
+  it("carries the example sentences across with the rest of the card", () => {
+    /*
+     * The example is not decoration hanging off the headword — it is the pair
+     * of sentences the two sides are quoted in, and the prompt asks for them
+     * in the same two languages as `term` and `translation`. Which means the
+     * check that matters is that the *sides* moved: an entry answered in
+     * English and Chinese cannot carry an Italian example, because there is
+     * nowhere in the shape for one to sit.
+     */
+    const routing = routeQuery("老朋友", roles, "en");
+    const answered = entry("en", "zh-TW", "zh-TW");
+    const languages = settleLanguages(routing, answered);
+
+    expect(answered.termLanguage).toBe(languages.sourceLanguage);
+    expect(answered.translationLanguage).toBe(languages.glossLanguage);
+  });
+
+  it("never lets the badge name a language the card is not in", () => {
+    /*
+     * The failure this guards: the flag read EN while the headword read
+     * "vecchio amico". A label that describes a request rather than the card
+     * is a claim, and the reader cannot tell the two apart.
+     */
+    const routing = routeQuery("老朋友", roles, "en");
+
+    // The model declined and answered in Italian anyway.
+    const languages = settleLanguages(routing, entry("it", "zh-TW", "zh-TW"));
+
+    expect(languages.sourceLanguage).toBe("it");
   });
 });
 

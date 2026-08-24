@@ -224,20 +224,31 @@ export function settleLanguages(
     : reportedHead;
 
   /*
-   * The reader asked for a language and gets it, whatever the model returned.
+   * The reader asked for a language, and the request is honoured — but the
+   * badge still names what is *on the card*, not what was asked for.
+   *
+   * Those came apart once and it was the worst kind of wrong: the flag read
+   * EN while the headword read "vecchio amico". A label that describes a
+   * request rather than the thing it labels is not a label, it is a claim,
+   * and the reader has no way to tell which one they are looking at. So the
+   * model's own answer wins here exactly as it does everywhere else; if it
+   * declines the request, the badge says so and the reader can see their tap
+   * did not take.
    *
    * The gloss is the support language — the one they read the app in — which
    * is the half of the card they never have to choose. Asking someone to pick
-   * both sides of a card to correct one of them is two questions where there
-   * was one.
+   * both sides to change one of them is two questions where there was one.
    */
   if (chosenHead) {
+    const head = reportedHead ?? chosenHead;
+
     return {
-      sourceLanguage: chosenHead,
+      sourceLanguage: head,
       queryLanguage: reportedQuery ?? detected.language ?? chosenHead,
-      glossLanguage:
-        roles.support === chosenHead
-          ? otherLanguage(chosenHead, [roles.learning, roles.support])
+      glossLanguage: isLanguageCode(entry?.translationLanguage)
+        ? entry.translationLanguage
+        : roles.support === head
+          ? otherLanguage(head, [roles.learning, roles.support])
           : roles.support,
       confidence: 1,
       ambiguous: false,

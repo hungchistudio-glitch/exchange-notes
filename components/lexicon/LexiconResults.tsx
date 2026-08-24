@@ -483,15 +483,20 @@ export default function LexiconResults({
                 />
               </div>
 
+              {/*
+                The headword's own annotation, and only its own.
+                
+                PronunciationBlock flattens every entry it is given into one
+                column, so passing both sides put the Chinese pinyin of the
+                *meaning* directly under an Italian headword — where it reads
+                as how you say the Italian. Each side carries its own reading
+                now, beside the words it belongs to.
+              */}
               {!isSentence && (
                 <div className="mt-3 rounded-[18px] bg-surface px-4 py-3">
                   <PronunciationBlock
                     entries={[
                       { text: entry.term, language: languages.sourceLanguage },
-                      {
-                        text: entry.translation,
-                        language: languages.glossLanguage,
-                      },
                     ]}
                   />
 
@@ -529,9 +534,23 @@ export default function LexiconResults({
                   <p className={eyebrow}>{copy.translationTitle}</p>
 
                   <div className="mt-1.5 flex items-start gap-3">
-                    <p className="min-w-0 flex-1 break-words text-[17px] leading-7 text-ink-soft">
-                      {entry.translation}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-[17px] leading-7 text-ink-soft">
+                        {entry.translation}
+                      </p>
+
+                      {!isSentence && (
+                        <PronunciationBlock
+                          className="mt-1"
+                          entries={[
+                            {
+                              text: entry.translation,
+                              language: languages.glossLanguage,
+                            },
+                          ]}
+                        />
+                      )}
+                    </div>
 
                     <SpeakButton
                       text={entry.translation}

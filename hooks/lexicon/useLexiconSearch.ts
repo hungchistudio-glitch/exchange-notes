@@ -267,18 +267,27 @@ export default function useLexiconSearch({
       /*
        * Runs alongside the real lookup rather than before it, so it can only
        * ever fill dead time. Any failure just means no preview.
+       *
+       * Skipped entirely once the reader has named a language. The preview
+       * comes from an index that speaks English and Chinese and knows nothing
+       * of the request, so during a switch it would show the card the reader
+       * is switching *away* from — the old headword and the old example,
+       * sitting there looking like the answer while the real one loads.
+       * A skeleton says "coming" honestly; a stale card does not.
        */
-      void fetch("/api/classify-text/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      })
-        .then((response) => (response.ok ? response.json() : null))
-        .then((data) => {
-          if (!isCurrent() || !data || "error" in data) return;
-          setPreview(data as LexiconPreview);
+      if (!chosenHead) {
+        void fetch("/api/classify-text/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
         })
-        .catch(() => undefined);
+          .then((response) => (response.ok ? response.json() : null))
+          .then((data) => {
+            if (!isCurrent() || !data || "error" in data) return;
+            setPreview(data as LexiconPreview);
+          })
+          .catch(() => undefined);
+      }
 
       try {
         const response = await fetch("/api/classify-text", {
