@@ -561,11 +561,40 @@ export default function useVocabularyPage({
       : null,
   } satisfies ComponentProps<typeof VocabularyOverlays>;
 
+  /*
+   * Whether anything in the overlay tree is open.
+   *
+   * Computed here, beside the props themselves, rather than in the page —
+   * which used to re-derive it by listing the overlays it knew about. That
+   * list had to be kept in step with this object by hand and nothing checked
+   * it, so adding the language filter mounted no sheet at all: the state flipped,
+   * the gate did not know to look at it, and the button appeared dead.
+   *
+   * Every open-ness signal in overlaysProps is read here. A new overlay added
+   * above is a new line here, in the same file, a few lines away.
+   *
+   * It cannot live with VocabularyOverlays, which would couple it to the prop
+   * type even more tightly: that module is loaded on demand precisely so its
+   * sheets are not in the first bundle, and importing a predicate out of it
+   * would pull the whole tree back in — defeating the gate it feeds.
+   */
+  const overlaysOpen =
+    overlaysProps.lookupProps.open ||
+    overlaysProps.sortOpen ||
+    overlaysProps.filtersOpen ||
+    overlaysProps.languageFilterOpen ||
+    overlaysProps.friendPickerOpen ||
+    Boolean(overlaysProps.detailItem) ||
+    Boolean(overlaysProps.languageItem) ||
+    Boolean(overlaysProps.collectionsItem) ||
+    Boolean(overlaysProps.editItem);
+
   return {
     heroProps,
     yumiProps,
     mainContentProps,
     overlaysProps,
+    overlaysOpen,
     learningLanguage,
   };
 }

@@ -41,21 +41,20 @@ export default function VocabularyPage({ searchParams }: VocabularyPageProps) {
       ? normalizedWidgetWordId
       : undefined;
 
-  const { yumiProps, mainContentProps, overlaysProps } = useVocabularyPage({
-    openAddWord,
-    addWordRequestId,
-    openWidgetWordId,
-    openWidgetWordRequestId: addWordRequestId,
-  });
-
-  const hasOpenOverlay =
-    overlaysProps.lookupProps.open ||
-    overlaysProps.sortOpen ||
-    overlaysProps.filtersOpen ||
-    overlaysProps.friendPickerOpen ||
-    Boolean(overlaysProps.detailItem) ||
-    Boolean(overlaysProps.collectionsItem) ||
-    Boolean(overlaysProps.editItem);
+  /*
+   * `overlaysOpen` comes from the hook that builds the props rather than
+   * being re-derived here. The overlay tree is loaded on demand, so whatever
+   * decides to mount it has to know about every overlay in it — and a list
+   * kept in a different file from the props it describes is a list that goes
+   * out of date silently. See useVocabularyPage.
+   */
+  const { yumiProps, mainContentProps, overlaysProps, overlaysOpen } =
+    useVocabularyPage({
+      openAddWord,
+      addWordRequestId,
+      openWidgetWordId,
+      openWidgetWordRequestId: addWordRequestId,
+    });
 
   return (
     <AppPage width="default">
@@ -63,7 +62,7 @@ export default function VocabularyPage({ searchParams }: VocabularyPageProps) {
 
       <VocabularyMainContent {...mainContentProps} />
 
-      {hasOpenOverlay ? <VocabularyOverlays {...overlaysProps} /> : null}
+      {overlaysOpen ? <VocabularyOverlays {...overlaysProps} /> : null}
     </AppPage>
   );
 }
