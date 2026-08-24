@@ -8,6 +8,32 @@ import "@testing-library/jest-dom/vitest";
  */
 import "fake-indexeddb/auto";
 
+/*
+ * The five dictionaries, in the cache before anything renders.
+ *
+ * The app fetches only the language it needs (lib/i18n/index.ts), and
+ * useTranslation suspends on the one render where that has not arrived yet.
+ * In the browser React covers that with the server's own markup; in a test
+ * there is no server, so a component rendered without this would suspend
+ * forever and every one of the 110 call sites would need a Suspense wrapper.
+ *
+ * Priming is the honest fix rather than mocking the module: these are the
+ * real dictionaries, so tests that assert on real strings keep asserting on
+ * real strings.
+ */
+import { primeTranslations } from "@/lib/i18n";
+import english from "@/lib/i18n/en";
+import spanish from "@/lib/i18n/es";
+import french from "@/lib/i18n/fr";
+import italian from "@/lib/i18n/it";
+import traditionalChinese from "@/lib/i18n/zh-TW";
+
+primeTranslations("english", english);
+primeTranslations("traditional-chinese", traditionalChinese);
+primeTranslations("spanish", spanish);
+primeTranslations("french", french);
+primeTranslations("italian", italian);
+
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
