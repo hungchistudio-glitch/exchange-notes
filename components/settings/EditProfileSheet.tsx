@@ -1,10 +1,11 @@
 "use client";
 
 import { Camera, Check, Copy, LoaderCircle, QrCode, X } from "lucide-react";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 import Avatar from "@/components/foundation/media/Avatar";
+import AvatarCropper from "@/components/settings/AvatarCropper";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
@@ -58,6 +59,33 @@ export default function EditProfileSheet({
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  /*
+   * The chosen file, held as an object URL while the reader frames it.
+   *
+   * Nothing is uploaded until they say so — picking a photo and changing
+   * your mind should cost nothing, and the old avatar stays untouched.
+   */
+  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+
+  const closeCropper = useCallback(() => {
+    setPendingPhoto((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+  }, []);
+
+  /*
+   * An object URL holds the file in memory until it is revoked. Leaving the
+   * sheet with one open — closing it, signing out, navigating away — would
+   * keep a photo alive for the life of the tab.
+   */
+  useEffect(() => () => {
+    setPendingPhoto((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+  }, []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [copied, setCopied] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -177,7 +205,7 @@ export default function EditProfileSheet({
     }
   }
 
-  async function handlePhotoSelected(event: ChangeEvent<HTMLInputElement>) {
+  function handlePhotoSelected(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -193,6 +221,23 @@ export default function EditProfileSheet({
       return;
     }
 
+    setError("");
+    setMessage("");
+
+    /*
+     * Straight to the cropper. The upload used to happen here, with the file
+     * as it came off the camera — so a portrait photo became whatever
+     * `object-cover` found in the middle of it, usually a chin.
+     */
+    setPendingPhoto((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return URL.createObjectURL(file);
+    });
+  }
+
+  async function uploadCroppedPhoto(cropped: Blob) {
+    if (uploadingPhoto) return;
+
     setUploadingPhoto(true);
     setError("");
     setMessage("");
@@ -200,18 +245,20 @@ export default function EditProfileSheet({
     try {
       const supabase = createClient();
 
-      const extension =
-        file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") ||
-        "jpg";
-
-      const storagePath = `${userId}/profile.${extension}`;
+      /*
+       * Always the same name, because the cropper always produces JPEG. The
+       * path used to carry the original file's extension, so changing from a
+       * PNG to a JPEG left the old object behind under a name nothing
+       * pointed at any more.
+       */
+      const storagePath = `${userId}/profile.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(storagePath, file, {
+        .upload(storagePath, cropped, {
           upsert: true,
           cacheControl: "3600",
-          contentType: file.type,
+          contentType: "image/jpeg",
         });
 
       if (uploadError) throw uploadError;
@@ -231,6 +278,7 @@ export default function EditProfileSheet({
 
       onAvatarChange(avatarWithVersion);
       setMessage(copy.photoUpdated);
+      closeCropper();
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
@@ -362,12 +410,25 @@ export default function EditProfileSheet({
             ) : null}
           </div>
 
+          {pendingPhoto ? (
+            <AvatarCropper
+              /* A new photo is a new crop: remounting is what puts the
+                 framing back to centred-and-just-covering without an effect
+                 that resets it. */
+              key={pendingPhoto}
+              src={pendingPhoto}
+              busy={uploadingPhoto}
+              onCancel={closeCropper}
+              onConfirm={(cropped) => void uploadCroppedPhoto(cropped)}
+            />
+          ) : null}
+
           <input
             ref={photoInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             className="hidden"
-            onChange={(event) => void handlePhotoSelected(event)}
+            onChange={handlePhotoSelected}
           />
 
           {initialExchangeId ? (
