@@ -1,5 +1,6 @@
 "use client";
 
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
@@ -47,16 +48,29 @@ export default function VocabularyCardHeader({
 
   return (
     <header className="min-w-0">
-      <div className="space-y-1.5">
-        <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-soft">
-          {statusLabels[item.status]}
-        </p>
+      {/*
+        The badge shares the eyebrow's line rather than the word's.
 
-        {partOfSpeechLabel ? (
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-faint">
-            {partOfSpeechLabel}
+        Identity and action are different visual roles: this row is what the
+        card *is* (status, part of speech, language), and the controls that
+        act on it live in the expanded footer. Putting the flag up here keeps
+        the word's own line clear and gives the badge a lane of its own, so
+        nothing has to be squeezed when a long part-of-speech label arrives.
+      */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1.5">
+          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-soft">
+            {statusLabels[item.status]}
           </p>
-        ) : null}
+
+          {partOfSpeechLabel ? (
+            <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-faint">
+              {partOfSpeechLabel}
+            </p>
+          ) : null}
+        </div>
+
+        <LanguageOriginBadge language={primary.language} />
       </div>
 
       <VocabularyWord word={primary.text} className="mt-6" />

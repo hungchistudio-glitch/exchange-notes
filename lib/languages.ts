@@ -74,6 +74,20 @@ export type LanguageMetadata = {
   badge: string;
 
   /**
+   * ISO 3166-1 alpha-2 region whose flag stands for this language.
+   *
+   * Representative, and only that. English is not American and Spanish is not
+   * only Spain's — the flag is a fast visual key for a language, the way a
+   * book spine's colour is a key for a series, and every place that needs the
+   * language itself uses `code`. Nothing may store or compare on this.
+   *
+   * It exists so components/language/LanguageFlag.tsx can draw the mark from
+   * the table rather than from a `language === "fr" && "🇫🇷"` ladder in each
+   * card, and so a sixth language arrives by adding a row plus one glyph.
+   */
+  representativeRegion: "US" | "TW" | "ES" | "FR" | "IT";
+
+  /**
    * BCP-47 tag handed to speechSynthesis. Separate from `htmlLang` on
    * purpose: Chinese wants the region-bearing "zh-TW" for voice selection
    * (see the voice-matching notes in lib/speech.ts) while the document
@@ -156,6 +170,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "English",
     voiceSample: "Hello, welcome to Exchange Notes.",
     badge: "En",
+    representativeRegion: "US",
     speechTag: "en-US",
     voiceTagFallbacks: [],
     htmlLang: "en",
@@ -178,6 +193,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "繁體中文",
     voiceSample: "你好，歡迎使用 Exchange Notes。",
     badge: "中",
+    representativeRegion: "TW",
     speechTag: "zh-TW",
     voiceTagFallbacks: ["tw", "hant"],
     htmlLang: "zh-Hant",
@@ -200,6 +216,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Español",
     voiceSample: "Hola, te damos la bienvenida a Exchange Notes.",
     badge: "Es",
+    representativeRegion: "ES",
     speechTag: "es-ES",
     voiceTagFallbacks: [],
     htmlLang: "es",
@@ -222,6 +239,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Français",
     voiceSample: "Bonjour, bienvenue sur Exchange Notes.",
     badge: "Fr",
+    representativeRegion: "FR",
     speechTag: "fr-FR",
     voiceTagFallbacks: [],
     htmlLang: "fr",
@@ -244,6 +262,7 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
     endonym: "Italiano",
     voiceSample: "Ciao, ti diamo il benvenuto su Exchange Notes.",
     badge: "It",
+    representativeRegion: "IT",
     speechTag: "it-IT",
     voiceTagFallbacks: [],
     htmlLang: "it",

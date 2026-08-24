@@ -1324,6 +1324,24 @@ const italian: TranslationDictionary = {
         loadError: "Impossibile caricare questa parola.",
       },
     },
+    language: {
+      title: "Lingua",
+      allLanguages: "Tutte le lingue",
+      filterAriaLabel: "Filtra per lingua",
+      badgeAriaLabel: "Lingua del vocabolo: {language}",
+      emptyTitle: "Ancora nessuna parola in {language}",
+      emptyDescription:
+        "Le parole che salvi in {language} compariranno qui, qualunque lingua tu stia studiando in quel momento.",
+      change: "Cambia lingua",
+      changeTitle: "Di che lingua si tratta?",
+      changeDescription:
+        "Cambia solo la lingua. «{word}», la sua traduzione e la cronologia dei ripassi restano invariate.",
+      changeAriaLabel: "Cambia la lingua di {word}",
+      unclear: "Lingua non chiara",
+      savedAs: "Salvata come {term} → {translation}",
+      close: "Chiudi",
+    },
+
     search: {
       vocabulary: "Vocabolario",
       yourWords: "Le tue parole",

@@ -1,3 +1,4 @@
+import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import type { VocabularyCategory } from "@/lib/types/app";
 
 export type VocabularyLookupStatus =
@@ -14,6 +15,20 @@ export type VocabularyLookupResult = {
   chineseExample: string;
   confidence: "high" | "medium" | "low";
   category: VocabularyCategory;
+  /**
+   * Which language each of the two sides is in, as the model reported them.
+   *
+   * Optional, and not the primary answer: the prompt already named the two
+   * languages and said which field holds which, so a caller that still has
+   * the pair should use it. These matter for the results that arrive
+   * without one — a row served from the shared cache, an offline
+   * dictionary hit — where they are the only thing that knows.
+   *
+   * Absent on results produced before the schema carried them, which is why
+   * nothing may require them.
+   */
+  termLanguage?: LanguageCode;
+  translationLanguage?: LanguageCode;
   /**
    * The lookup reached the offline dictionary and the word was not in it, so
    * there is no translation to show — the side of the pair being translated
@@ -72,6 +87,17 @@ export function isVocabularyLookupResult(
         (candidate[field] as string).trim().length > 0,
     ) &&
     ["high", "medium", "low"].includes(String(candidate.confidence)) &&
-    ["people", "objects", "actions", "other"].includes(String(candidate.category))
+    ["people", "objects", "actions", "other"].includes(String(candidate.category)) &&
+    /*
+     * Optional, so absent passes — but present-and-wrong does not. A cached
+     * row carrying "French" or "fr-FR" where a language code belongs would
+     * otherwise be filed under a language that does not exist.
+     */
+    isOptionalLanguage(candidate.termLanguage) &&
+    isOptionalLanguage(candidate.translationLanguage)
   );
+}
+
+function isOptionalLanguage(value: unknown): boolean {
+  return value === undefined || value === null || isLanguageCode(value);
 }

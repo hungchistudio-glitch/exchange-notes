@@ -73,7 +73,7 @@ import {
   getPendingSharedVocabulary,
   setPendingSharedVocabulary,
 } from "@/lib/vocabularyDraft";
-import { insertVocabulary } from "@/lib/vocabulary/repository";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
 /*
  * Page B. "What are we saying to each other?"
@@ -897,25 +897,26 @@ export default function ConversationRoom({
     setSavingPhraseId(phrase.id);
 
     try {
-      await insertVocabulary({
-        user_id: currentUserId,
-        word: phrase.phrase,
+      await createVocabularyEntry({
+        userId: currentUserId,
+        term: phrase.phrase,
         translation: phrase.meaning,
-        /*
-         * The phrase is in the language being learned — it came out of a
-         * message written in it — so that is what this row's language is.
-         * Saving it into vocabulary rather than a parallel store is what puts
-         * it into review alongside everything else, and what lets §46's
-         * "already known" list be the vocabulary the user actually has.
-         */
-        word_language: languagePair[0],
-        translation_language: languagePair[1],
-        part_of_speech: "phrase",
-        example_sentence: null,
-        translated_example: phrase.expanded ?? null,
+        partOfSpeech: "phrase",
+        translationExample: phrase.expanded,
         confidence: "medium",
         category: "other",
         status: "new",
+        language: {
+          pair: languagePair,
+          /*
+           * The phrase is in the language being learned — it came out of a
+           * message written in it — so that is what this row's language is.
+           * Saving it into vocabulary rather than a parallel store is what
+           * puts it into review alongside everything else, and what lets
+           * §46's "already known" list be the vocabulary the user has.
+           */
+          stated: { term: languagePair[0], translation: languagePair[1] },
+        },
       });
 
       setSavedPhraseIds((current) => new Set(current).add(phrase.id));
@@ -1062,24 +1063,33 @@ export default function ConversationRoom({
     const cardTranslationLanguage = card.translationLanguage ?? languagePair[1];
 
     try {
-      await insertVocabulary({
-        user_id: currentUserId,
-        word: card.word.trim(),
-        translation: card.translation.trim(),
-        /*
-         * The card says which languages its two sides are in, so the saved
-         * row keeps them rather than assuming the receiver's own pair. A card
-         * from someone learning something else is still a real word.
-         */
-        word_language: cardWordLanguage,
-        translation_language: cardTranslationLanguage,
-        part_of_speech: card.partOfSpeech?.trim() || null,
-        example_sentence: card.examples?.[cardWordLanguage]?.trim() || null,
-        translated_example:
-          card.examples?.[cardTranslationLanguage]?.trim() || null,
+      await createVocabularyEntry({
+        userId: currentUserId,
+        term: card.word,
+        translation: card.translation,
+        partOfSpeech: card.partOfSpeech,
+        termExample: card.examples?.[cardWordLanguage],
+        translationExample: card.examples?.[cardTranslationLanguage],
         confidence: "medium",
         category: "other",
         status: "new",
+        language: {
+          pair: languagePair,
+          /*
+           * The card says which languages its two sides are in, so the saved
+           * row keeps them rather than assuming the receiver's own pair — and
+           * records that as an explicit selection rather than as the
+           * receiver's settings, because it was the sender's statement. A
+           * card from someone learning something else is still a real word.
+           */
+          stated: {
+            term: cardWordLanguage,
+            translation: cardTranslationLanguage,
+            source: card.wordLanguage
+              ? "explicit-selection"
+              : "user-settings",
+          },
+        },
       });
 
       setSavedCardIds((current) => new Set(current).add(messageId));

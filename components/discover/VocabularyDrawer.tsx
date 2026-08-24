@@ -9,7 +9,8 @@ import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { getCurrentUser, insertVocabulary } from "@/lib/vocabulary/repository";
+import { getCurrentUser } from "@/lib/vocabulary/repository";
+import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
@@ -125,18 +126,20 @@ export default function VocabularyDrawer({
        * differ — and filing a Spanish word as Italian because Italian is
        * what they are studying is worse than not saving it.
        */
-      await insertVocabulary({
-        user_id: user.id,
-        word: (item.texts[primaryLanguage] ?? "").trim(),
-        translation: (item.texts[secondaryLanguage] ?? "").trim(),
-        word_language: primaryLanguage,
-        translation_language: secondaryLanguage,
-        part_of_speech: item.partOfSpeech?.trim() || null,
-        example_sentence: item.examples[primaryLanguage]?.trim() || null,
-        translated_example: item.examples[secondaryLanguage]?.trim() || null,
+      await createVocabularyEntry({
+        userId: user.id,
+        term: item.texts[primaryLanguage] ?? "",
+        translation: item.texts[secondaryLanguage] ?? "",
+        partOfSpeech: item.partOfSpeech,
+        termExample: item.examples[primaryLanguage],
+        translationExample: item.examples[secondaryLanguage],
         confidence: "medium",
         category: "other",
         status: "new",
+        language: {
+          pair: [primaryLanguage, secondaryLanguage],
+          stated: { term: primaryLanguage, translation: secondaryLanguage },
+        },
       });
 
       setSavedWordKeys((current) => new Set(current).add(cacheKey));

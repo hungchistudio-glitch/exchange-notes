@@ -16,7 +16,15 @@ import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularyViewMode from "@/hooks/useVocabularyViewMode";
 
 import { recordInteraction } from "@/lib/vocabulary/helpers";
-import { updateVocabularyFields } from "@/lib/vocabulary/repository";
+import {
+  updateVocabularyFields,
+  updateVocabularyLanguage,
+} from "@/lib/vocabulary/repository";
+import {
+  correctedLanguageIdentity,
+  relabelLanguage,
+} from "@/lib/vocabulary/languageIdentity";
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { VocabularyEditValues } from "@/components/vocabulary/detail/VocabularyEditModal";
 
@@ -60,6 +68,8 @@ export default function useVocabularyPage({
   const [collectionsItem, setCollectionsItem] =
     useState<VocabularyItem | null>(null);
   const [editItem, setEditItem] = useState<VocabularyItem | null>(null);
+  const [languageItem, setLanguageItem] = useState<VocabularyItem | null>(null);
+  const [savingLanguage, setSavingLanguage] = useState(false);
   // Bumped every time a vocabulary card is opened, so Yumi can react with a
   // brief curious glance — a plain counter keeps the trigger self-contained
   // (no need to track *which* card, just "something happened").
@@ -73,6 +83,10 @@ export default function useVocabularyPage({
     setQuery,
     quickFilter,
     setQuickFilter,
+    languageFilter,
+    setLanguageFilter,
+    languageFilterOpen,
+    setLanguageFilterOpen,
     sortMode,
     setSortMode,
     sortOpen,
@@ -105,6 +119,7 @@ export default function useVocabularyPage({
     dailyProgress,
     reviewStats,
     quickFilters,
+    languageCounts,
   } = controller.stats;
 
   const { updatingId, changeStatus, deleteVocabularyItem } = controller.mutations;
@@ -213,9 +228,70 @@ export default function useVocabularyPage({
     items: uniqueItems,
     query,
     quickFilter,
+    languages: languageFilter,
     sortMode,
     rankedIds,
   });
+
+  /**
+   * Applies a language the reader has corrected by hand.
+   *
+   * The only path in the app that changes a saved row's language, and it
+   * changes nothing else: the word, its translation, its examples and its
+   * whole review history are carried through untouched. What moves is the
+   * label — and the map key the headword sits under, which has to follow it
+   * or the row goes on claiming the word is its own translation.
+   */
+  async function applyLanguageCorrection(
+    item: VocabularyItem,
+    language: LanguageCode,
+  ) {
+    if (savingLanguage) return;
+
+    setSavingLanguage(true);
+
+    try {
+      const corrected = correctedLanguageIdentity(language, {
+        translationLanguage: item.translation_language,
+        pairAtCreation: item.language_pair_at_creation ?? {
+          primary: item.word_language,
+          secondary: item.translation_language,
+        },
+      });
+
+      const fields = {
+        word_language: corrected.termLanguage,
+        translation_language: corrected.translationLanguage,
+        language_source: corrected.source,
+        language_confidence: corrected.confidence,
+        needs_language_review: corrected.needsReview,
+        texts: relabelLanguage(
+          item.texts,
+          item.word_language,
+          corrected.termLanguage,
+        ),
+        examples: relabelLanguage(
+          item.examples,
+          item.word_language,
+          corrected.termLanguage,
+        ),
+      };
+
+      await updateVocabularyLanguage(item.id, fields);
+
+      const next: VocabularyItem = {
+        ...item,
+        ...fields,
+        language: corrected.termLanguage,
+      };
+
+      updateItem(next);
+      if (detailItem?.id === item.id) setDetailItem(next);
+      setLanguageItem(null);
+    } finally {
+      setSavingLanguage(false);
+    }
+  }
 
   function openAiSearch() {
     setQuery("");
@@ -288,7 +364,10 @@ export default function useVocabularyPage({
     },
     setSortOpen,
     openCollections,
+    openLanguageFilter: () => setLanguageFilterOpen(true),
     toggleViewMode,
+    languageFilter,
+    languageCount: languageCounts.size,
   });
 
   const listProps = {
@@ -303,6 +382,7 @@ export default function useVocabularyPage({
     savingLookup,
     expandedItemId,
     viewMode,
+    languageFilter,
     onLookupWord: lookupWord,
     onSaveLookupResult: saveLookupResult,
     /*
@@ -428,10 +508,40 @@ export default function useVocabularyPage({
       onEdit: () => {
         if (detailItem) setEditItem(detailItem);
       },
+      onChangeLanguage: () => {
+        if (detailItem) setLanguageItem(detailItem);
+      },
     },
 
     collectionsItem,
     onCloseCollections: () => setCollectionsItem(null),
+
+    languageFilterOpen,
+    languageFilterProps: {
+      open: languageFilterOpen,
+      selected: languageFilter,
+      counts: languageCounts,
+      totalCount: totalWords,
+      onClose: () => setLanguageFilterOpen(false),
+      onChange: (languages) => {
+        setExpandedItemId(null);
+        setLanguageFilter(languages);
+      },
+    },
+
+    languageItem,
+    languageSheetProps: languageItem
+      ? {
+          open: true,
+          word: languageItem.word,
+          current: languageItem.word_language,
+          saving: savingLanguage,
+          onClose: () => setLanguageItem(null),
+          onSelect: (language) => {
+            void applyLanguageCorrection(languageItem, language);
+          },
+        }
+      : null,
 
     editItem,
     editProps: editItem

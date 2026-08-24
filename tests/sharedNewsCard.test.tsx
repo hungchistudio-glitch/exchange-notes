@@ -75,7 +75,7 @@ import {
 import english from "@/lib/i18n/en";
 
 describe("WordCardMessage", () => {
-  it("leads in the language being learned, not the one it was sent as", () => {
+  it("leads in the language it was sent as, not the reader's own", () => {
     // Sent by someone studying Spanish, read by someone studying Italian.
     const card = {
       word: "te amo",
@@ -100,10 +100,14 @@ describe("WordCardMessage", () => {
       />,
     );
 
-    expect(container.textContent).toContain("ti amo");
+    // The card is somebody else's Spanish word, and stays one. Relabelling
+    // it as Italian would make the conversation history a record of what the
+    // reader is studying rather than of what was sent.
+    expect(container.textContent).toContain("te amo");
+    // Glossed in a language this reader has: English, from the card's own
+    // stored pair.
     expect(container.textContent).toContain("I love you");
-    // Spanish is what the card was sent as, and is not what this reader chose.
-    expect(container.textContent).not.toContain("te amo");
+    expect(container.textContent).not.toContain("ti amo");
   });
 
   it("annotates both sides in whatever systems their languages use", async () => {

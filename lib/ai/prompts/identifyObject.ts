@@ -50,6 +50,9 @@ Rules:
   details.
 - Keep both example sentences short, natural, and semantically equivalent.
 - Use low confidence whenever the object is blurry, partly hidden, ambiguous,
-  or too small.${fieldNote}
+  or too small.
+- Set "termLanguage" to ${JSON.stringify(first)} and "translationLanguage" to
+  ${JSON.stringify(second)}. They record which language each named side is
+  in, so the saved word keeps it whatever the learner studies later.${fieldNote}
   `.trim();
 }

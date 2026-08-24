@@ -2,8 +2,10 @@
 
 import {
   Camera,
+  ChevronDown,
   FolderHeart,
   ImageIcon,
+  Languages,
   LayoutGrid,
   List,
   Mic,
@@ -14,13 +16,14 @@ import {
 import Link from "next/link";
 
 import { Pill } from "@/components/foundation-legacy";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
-import { getLanguage } from "@/lib/languages";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
 import useVoiceInput from "@/hooks/useVoiceInput";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
@@ -42,7 +45,12 @@ type VocabularySearchProps = {
   onQuickFilterChange: (value: "all" | VocabularyStatus) => void;
   onOpenSort: () => void;
   onOpenCollections: () => void;
+  onOpenLanguageFilter: () => void;
   onToggleView: () => void;
+  /** Empty means every language. */
+  languageFilter: readonly LanguageCode[];
+  /** How many languages the library actually holds, for hiding the control. */
+  languageCount: number;
 };
 
 export default function VocabularySearch({
@@ -57,11 +65,15 @@ export default function VocabularySearch({
   onQuickFilterChange,
   onOpenSort,
   onOpenCollections,
+  onOpenLanguageFilter,
   onToggleView,
+  languageFilter,
+  languageCount,
 }: VocabularySearchProps) {
   const { t } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
   const search = t.vocabulary.search;
+  const language = t.vocabulary.language;
 
   // Dictate in the language being learned — that's what the user is
   // searching their vocabulary for.
@@ -216,18 +228,57 @@ export default function VocabularySearch({
       </div>
 
       <div className="mt-2.5 flex items-center justify-between gap-3">
-        {/* The sort mode belongs here rather than only on the button, whose
-            icon-only form left `title` as the sole indication — and a title
-            tooltip never fires on touch, so on a phone there was no way to
-            see which sort was active without opening the sheet. */}
-        <p className="min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-ink-faint">
-          {visibleCount} {visibleCount === 1 ? search.word : search.words}
-          <span aria-hidden="true"> · </span>
-          <span className="text-ink-soft">{sortLabels[sortMode]}</span>
-        </p>
+        {/*
+          The language filter, and only when there is a choice to make.
+
+          A library in one language has nothing to filter, and a control that
+          can only be set to the value it already has is furniture. It
+          appears the first time a second language is saved.
+
+          It leads the row rather than joining the icon cluster on the right
+          because it is the only one of these controls whose current value is
+          worth reading at a glance — the others say what they do, this one
+          says what you are looking at.
+        */}
+        {languageCount > 1 ? (
+          <button
+            type="button"
+            onClick={onOpenLanguageFilter}
+            aria-label={language.filterAriaLabel}
+            className="cosmic-instrument flex h-11 min-w-0 shrink items-center gap-2 rounded-full border border-black/[0.07] bg-white px-3 text-ink-soft transition duration-200 hover:border-[var(--accent-amber)]/30 hover:text-black active:scale-95"
+          >
+            {languageFilter.length === 1 ? (
+              <>
+                <LanguageOriginBadge
+                  language={languageFilter[0]}
+                  size="sm"
+                  className="!border-0 !bg-transparent !px-0 !py-0"
+                />
+                <span className="min-w-0 truncate text-[12px] font-semibold tracking-[-0.01em] text-black">
+                  {getLanguage(languageFilter[0]).endonym}
+                </span>
+              </>
+            ) : (
+              <>
+                <Languages size={16} strokeWidth={1.8} />
+                <span className="min-w-0 truncate text-[12px] font-medium tracking-[-0.01em]">
+                  {languageFilter.length > 1
+                    ? languageFilter
+                        .map((code) => getLanguage(code).badge)
+                        .join(" · ")
+                    : language.allLanguages}
+                </span>
+              </>
+            )}
+
+            <ChevronDown size={14} strokeWidth={2} className="shrink-0" />
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
 
         <div
-          className="flex items-center gap-2"
+          className="flex shrink-0 items-center gap-2"
           role="toolbar"
           aria-label={search.toolbarAriaLabel}
         >
@@ -277,6 +328,19 @@ export default function VocabularySearch({
           </button>
         </div>
       </div>
+
+      {/* The sort mode belongs on screen rather than only on the button, whose
+          icon-only form left `title` as the sole indication — and a title
+          tooltip never fires on touch, so on a phone there was no way to see
+          which sort was active without opening the sheet. It sits on its own
+          line now that the language control shares the row above: three
+          44pt controls and a language pill leave no room to read a sentence
+          beside them on a narrow phone. */}
+      <p className="mt-2 min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-ink-faint">
+        {visibleCount} {visibleCount === 1 ? search.word : search.words}
+        <span aria-hidden="true"> · </span>
+        <span className="text-ink-soft">{sortLabels[sortMode]}</span>
+      </p>
     </section>
   );
 }

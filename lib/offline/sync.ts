@@ -66,6 +66,17 @@ async function send(
         word_language: item.word_language,
         translation_language: item.translation_language,
         language: item.word_language,
+        /*
+         * The provenance travels with the row. A word saved on a train was
+         * decided about on the train — replaying it a day later must not
+         * re-derive its languages from whatever the reader is studying by
+         * then, which is the whole failure this metadata exists to prevent.
+         */
+        language_source: item.language_source,
+        language_confidence: item.language_confidence,
+        language_pair_at_creation: item.language_pair_at_creation,
+        needs_language_review: item.needs_language_review,
+        image_url: item.image_url,
         part_of_speech: item.part_of_speech,
         example_sentence: item.example_sentence,
         translated_example: item.translated_example,
@@ -91,6 +102,21 @@ async function send(
       const { error } = await supabase
         .from("vocabulary_items")
         .update({ ...mutation.fields, updated_at: mutation.at })
+        .eq("id", mutation.itemId);
+
+      return error;
+    }
+
+    case "language": {
+      const { error } = await supabase
+        .from("vocabulary_items")
+        .update({
+          ...mutation.fields,
+          // Kept in step with word_language: the deprecated column is NOT
+          // NULL and still means "the language of `word`".
+          language: mutation.fields.word_language,
+          updated_at: mutation.at,
+        })
         .eq("id", mutation.itemId);
 
       return error;

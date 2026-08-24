@@ -15,6 +15,8 @@ import {
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 import AppBadge from "@/components/ui/AppBadge";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import { languagePairSummary } from "@/components/vocabulary/detail/VocabularyLanguageSheet";
 import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage } from "@/lib/languages";
@@ -87,6 +89,7 @@ export default function VocabularyDetailSheet({
   onDelete,
   onOpenCollections,
   onEdit,
+  onChangeLanguage,
 }: {
   item: VocabularyItem;
   open: boolean;
@@ -98,8 +101,10 @@ export default function VocabularyDetailSheet({
   onDelete: () => void;
   onOpenCollections: () => void;
   onEdit: () => void;
+  onChangeLanguage: () => void;
 }) {
-  const { t, isTraditionalChinese } = useTranslation();
+  const { t, isTraditionalChinese, language: interfaceLanguage } =
+    useTranslation();
   const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
   const detail = t.vocabulary.detail;
@@ -163,6 +168,8 @@ export default function VocabularyDetailSheet({
                       ]}
                     </AppBadge>
                   )}
+
+                  <LanguageOriginBadge language={sides.primary.language} />
                 </div>
 
                 <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
@@ -292,6 +299,46 @@ export default function VocabularyDetailSheet({
                 </span>
               </div>
             </div>
+
+            {/*
+              The row's language identity, and the one door that changes it.
+
+              It sits with the other facts about the row rather than with the
+              actions, because that is what it mostly is: a statement of what
+              this card is. The whole strip is the hit area, which is how a
+              16px badge gets a 44pt target without a 44pt badge.
+            */}
+            <button
+              type="button"
+              onClick={onChangeLanguage}
+              aria-label={insertValues(t.vocabulary.language.changeAriaLabel, {
+                word: sides.primary.text || item.word,
+              })}
+              className="mt-2 flex min-h-[52px] w-full items-center gap-3 rounded-[18px] bg-black/[0.035] px-3 py-2.5 text-left transition active:scale-[0.99]"
+            >
+              <LanguageOriginBadge language={item.word_language} />
+
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12px] text-ink-soft">
+                  {languagePairSummary(
+                    item.word_language,
+                    item.translation_language,
+                    t.vocabulary.language.savedAs,
+                    interfaceLanguage,
+                  )}
+                </span>
+
+                {item.needs_language_review ? (
+                  <span className="mt-0.5 block text-[11px] font-semibold text-[var(--accent-amber-ink)]">
+                    {t.vocabulary.language.unclear}
+                  </span>
+                ) : null}
+              </span>
+
+              <span className="shrink-0 text-[11px] font-semibold text-ink-soft">
+                {t.vocabulary.language.change}
+              </span>
+            </button>
 
             <div className="mt-5 grid grid-cols-4 gap-2">
               <AppButton

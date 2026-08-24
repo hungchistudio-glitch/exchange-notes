@@ -1,6 +1,7 @@
 import { LoaderCircle } from "lucide-react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyStatus } from "@/lib/types/app";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
@@ -25,6 +26,11 @@ type Props = {
   sortMode: SortMode;
   viewMode: VocabularyViewMode;
 
+  /** Empty means every language. */
+  languageFilter: readonly LanguageCode[];
+  /** How many languages the library holds; under two, the control is hidden. */
+  languageCount: number;
+
   rankingLoading: boolean;
   rankingError: string;
 
@@ -35,6 +41,7 @@ type Props = {
   ) => void;
   onOpenSort: () => void;
   onOpenCollections: () => void;
+  onOpenLanguageFilter: () => void;
   onToggleView: () => void;
 };
 
@@ -48,6 +55,8 @@ export default function VocabularySearchSection({
   visibleCount,
   sortMode,
   viewMode,
+  languageFilter,
+  languageCount,
   rankingLoading,
   rankingError,
   onQueryChange,
@@ -55,6 +64,7 @@ export default function VocabularySearchSection({
   onQuickFilterChange,
   onOpenSort,
   onOpenCollections,
+  onOpenLanguageFilter,
   onToggleView,
 }: Props) {
   const { t } = useTranslation();
@@ -122,7 +132,10 @@ export default function VocabularySearchSection({
           onQuickFilterChange={onQuickFilterChange}
           onOpenSort={onOpenSort}
           onOpenCollections={onOpenCollections}
+          onOpenLanguageFilter={onOpenLanguageFilter}
           onToggleView={onToggleView}
+          languageFilter={languageFilter}
+          languageCount={languageCount}
         />
       </div>
 

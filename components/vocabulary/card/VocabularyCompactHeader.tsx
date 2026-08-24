@@ -1,5 +1,6 @@
 "use client";
 
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -29,12 +30,24 @@ export default function VocabularyCompactHeader({ item }: Props) {
         />
 
         <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-baseline justify-between gap-3">
+          <div className="flex min-w-0 items-center justify-between gap-3">
             <h3 className="min-w-0 break-words text-[17px] font-semibold leading-6 tracking-[-0.025em] text-black">
               {primary.text || item.word}
             </h3>
-            <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.13em] text-ink-faint">
-              {statusLabels[item.status]}
+            {/*
+              One right-hand cluster, not two.
+
+              A compact row has room for a single trailing group; the badge
+              joins the status label inside it rather than claiming a corner
+              of its own, which is what would have pushed the word's line
+              short on a narrow phone.
+            */}
+            <span className="flex shrink-0 items-center gap-2">
+              <LanguageOriginBadge language={primary.language} size="sm" />
+
+              <span className="text-[9px] font-semibold uppercase tracking-[0.13em] text-ink-faint">
+                {statusLabels[item.status]}
+              </span>
             </span>
           </div>
 

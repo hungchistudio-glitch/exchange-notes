@@ -22,10 +22,13 @@ import { insertValues } from "@/lib/utils";
 
 /*
  * A word someone sent you, rendered the way the vocabulary screens render
- * one: the language you are learning is the hero, the language you already
- * have is the support. Which of the two that is comes from the account's
- * learning language, so the same card is laid out differently for the two
- * people looking at it.
+ * one: it leads in the language it was sent in, and is glossed in a language
+ * you read. A card sent as Spanish stays a Spanish card — it is somebody
+ * else's word, and relabelling it as whatever you happen to be studying is
+ * how a conversation history stops being a record of what was said.
+ *
+ * Both blocks name their own language, so neither side depends on the reader
+ * recognising a script.
  */
 
 type WordCardMessageProps = {
@@ -52,13 +55,13 @@ export default function WordCardMessage({
 }: WordCardMessageProps) {
   /*
    * Read by the same rule the vocabulary screens use, so a word in your
-   * history is laid out like a word in your library: the language you are
-   * learning leads, the one you read it in supports.
+   * history is laid out like a word in your library: it leads in its own
+   * language, and the gloss follows the reader.
    *
-   * A card sent with every language (`texts`) can satisfy any reader. One
-   * sent before that existed carries two, and if neither is yours it renders
-   * as it was sent — it is somebody's message, and showing it in the wrong
-   * order beats not showing it at all.
+   * A card sent with every language (`texts`) can be glossed for any reader.
+   * One sent before that existed carries two, and if neither is the reader's
+   * the gloss is the one it was sent with — it is somebody's message, and a
+   * gloss in a third language beats no gloss at all.
    */
   const { supportLanguage } = useDisplayLanguages();
 

@@ -30,34 +30,51 @@ const REQUEST_TIMEOUT_MS = readBoundedInteger(
   20_000,
 );
 
-const TEXT_RESULT_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    englishName: { type: "string", minLength: 1, maxLength: 80 },
-    chineseName: { type: "string", minLength: 1, maxLength: 80 },
-    partOfSpeech: {
-      type: "string",
-      enum: ["noun", "verb", "adjective", "phrase", "other"],
+/*
+ * The schema is built per request, because two of its fields are the pair.
+ *
+ * A model asked "which language is this" with a free-text answer replies
+ * "French", "fr-FR" and "français" on three consecutive calls. Constraining
+ * it to the two codes the prompt named makes the answer a choice between two
+ * things rather than a naming exercise, and makes an out-of-pair answer
+ * impossible rather than merely unlikely.
+ */
+function buildTextResultSchema(
+  [first, second]: readonly [LanguageCode, LanguageCode],
+) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      englishName: { type: "string", minLength: 1, maxLength: 80 },
+      chineseName: { type: "string", minLength: 1, maxLength: 80 },
+      termLanguage: { type: "string", enum: [first, second] },
+      translationLanguage: { type: "string", enum: [first, second] },
+      partOfSpeech: {
+        type: "string",
+        enum: ["noun", "verb", "adjective", "phrase", "other"],
+      },
+      englishExample: { type: "string", minLength: 4, maxLength: 200 },
+      chineseExample: { type: "string", minLength: 2, maxLength: 200 },
+      confidence: { type: "string", enum: ["high", "medium", "low"] },
+      category: {
+        type: "string",
+        enum: ["people", "objects", "actions", "other"],
+      },
     },
-    englishExample: { type: "string", minLength: 4, maxLength: 200 },
-    chineseExample: { type: "string", minLength: 2, maxLength: 200 },
-    confidence: { type: "string", enum: ["high", "medium", "low"] },
-    category: {
-      type: "string",
-      enum: ["people", "objects", "actions", "other"],
-    },
-  },
-  required: [
-    "englishName",
-    "chineseName",
-    "partOfSpeech",
-    "englishExample",
-    "chineseExample",
-    "confidence",
-    "category",
-  ],
-};
+    required: [
+      "englishName",
+      "chineseName",
+      "termLanguage",
+      "translationLanguage",
+      "partOfSpeech",
+      "englishExample",
+      "chineseExample",
+      "confidence",
+      "category",
+    ],
+  };
+}
 
 type CacheEntry = {
   expiresAt: number;
@@ -171,7 +188,7 @@ async function lookupWithModel(
       response_format: {
         type: "text",
         mime_type: "application/json",
-        schema: TEXT_RESULT_SCHEMA,
+        schema: buildTextResultSchema(languagePair),
       },
       generation_config: {
         thinking_level: "low",

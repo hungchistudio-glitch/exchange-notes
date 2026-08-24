@@ -1,5 +1,5 @@
 import { buildIdentifyObjectPrompt } from "@/lib/ai/prompts/identifyObject";
-import type { LanguageCode } from "@/lib/languages";
+import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
@@ -15,6 +15,17 @@ export type ObjectIdentificationResult = {
   englishExample: string;
   chineseExample: string;
   confidence: "high" | "medium" | "low";
+  /**
+   * Which language each named side is in.
+   *
+   * The field names above say English and Chinese and have not meant that
+   * since the pair became the user's own — the prompt tells the model as
+   * much. These say what the fields actually hold, so a word saved from a
+   * photo carries its language rather than having one inferred from its
+   * spelling weeks later.
+   */
+  termLanguage?: LanguageCode;
+  translationLanguage?: LanguageCode;
 };
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -27,29 +38,42 @@ const REQUEST_TIMEOUT_MS = readBoundedInteger(
   20_000,
 );
 
-const OBJECT_RESULT_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    englishName: { type: "string", minLength: 1, maxLength: 80 },
-    chineseName: { type: "string", minLength: 1, maxLength: 80 },
-    partOfSpeech: {
-      type: "string",
-      enum: ["noun", "verb", "adjective", "phrase", "other"],
+/*
+ * Built per request: two of its fields are the pair, constrained to the two
+ * codes the prompt named so the model chooses between them rather than
+ * inventing a spelling of "French".
+ */
+function buildObjectResultSchema(
+  [first, second]: readonly [LanguageCode, LanguageCode],
+) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      englishName: { type: "string", minLength: 1, maxLength: 80 },
+      chineseName: { type: "string", minLength: 1, maxLength: 80 },
+      termLanguage: { type: "string", enum: [first, second] },
+      translationLanguage: { type: "string", enum: [first, second] },
+      partOfSpeech: {
+        type: "string",
+        enum: ["noun", "verb", "adjective", "phrase", "other"],
+      },
+      englishExample: { type: "string", minLength: 4, maxLength: 160 },
+      chineseExample: { type: "string", minLength: 2, maxLength: 160 },
+      confidence: { type: "string", enum: ["high", "medium", "low"] },
     },
-    englishExample: { type: "string", minLength: 4, maxLength: 160 },
-    chineseExample: { type: "string", minLength: 2, maxLength: 160 },
-    confidence: { type: "string", enum: ["high", "medium", "low"] },
-  },
-  required: [
-    "englishName",
-    "chineseName",
-    "partOfSpeech",
-    "englishExample",
-    "chineseExample",
-    "confidence",
-  ],
-};
+    required: [
+      "englishName",
+      "chineseName",
+      "termLanguage",
+      "translationLanguage",
+      "partOfSpeech",
+      "englishExample",
+      "chineseExample",
+      "confidence",
+    ],
+  };
+}
 
 type CacheEntry = {
   expiresAt: number;
@@ -100,8 +124,20 @@ function isObjectIdentificationResult(
     ["noun", "verb", "adjective", "phrase", "other"].includes(
       String(candidate.partOfSpeech),
     ) &&
-    ["high", "medium", "low"].includes(String(candidate.confidence))
+    ["high", "medium", "low"].includes(String(candidate.confidence)) &&
+    /*
+     * Optional, so a result cached before the schema carried them still
+     * passes — but a present-and-malformed value does not, because filing a
+     * word under a language that does not exist is worse than filing it
+     * under none.
+     */
+    isOptionalLanguage(candidate.termLanguage) &&
+    isOptionalLanguage(candidate.translationLanguage)
   );
+}
+
+function isOptionalLanguage(value: unknown): boolean {
+  return value === undefined || value === null || isLanguageCode(value);
 }
 
 function getErrorStatus(error: unknown) {
@@ -197,7 +233,7 @@ async function identifyWithModel(
       response_format: {
         type: "text",
         mime_type: "application/json",
-        schema: OBJECT_RESULT_SCHEMA,
+        schema: buildObjectResultSchema(languagePair),
       },
       generation_config: {
         thinking_level: "low",

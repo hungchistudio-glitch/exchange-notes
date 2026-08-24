@@ -1452,6 +1452,24 @@ const spanish: TranslationDictionary = {
       },
     },
 
+    language: {
+      title: "Idioma",
+      allLanguages: "Todos los idiomas",
+      filterAriaLabel: "Filtrar por idioma",
+      badgeAriaLabel: "Idioma del vocabulario: {language}",
+      emptyTitle: "Aún no hay palabras en {language}",
+      emptyDescription:
+        "Las palabras que guardes en {language} aparecerán aquí, sea cual sea el idioma que estudies entonces.",
+      change: "Cambiar idioma",
+      changeTitle: "¿Qué idioma es este?",
+      changeDescription:
+        "Solo cambia el idioma. «{word}», su traducción y su historial de repaso se quedan como están.",
+      changeAriaLabel: "Cambiar el idioma de {word}",
+      unclear: "Idioma sin determinar",
+      savedAs: "Guardada como {term} → {translation}",
+      close: "Cerrar",
+    },
+
     search: {
       vocabulary: "Vocabulario",
       yourWords: "Tus palabras",

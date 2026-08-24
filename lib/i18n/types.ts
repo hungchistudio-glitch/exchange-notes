@@ -1399,6 +1399,31 @@ export type TranslationDictionary = {
       };
     };
 
+    /*
+     * The vocabulary language axis, as it appears on screen.
+     *
+     * Separate from every other language string in this dictionary because it
+     * is about a *different* axis: these name the language a saved word is
+     * in, which has nothing to do with the language this dictionary is
+     * written in. A Chinese interface says 「法文」 above a card that still
+     * reads "tondre".
+     */
+    language: {
+      title: string;
+      allLanguages: string;
+      filterAriaLabel: string;
+      badgeAriaLabel: string;
+      emptyTitle: string;
+      emptyDescription: string;
+      change: string;
+      changeTitle: string;
+      changeDescription: string;
+      changeAriaLabel: string;
+      unclear: string;
+      savedAs: string;
+      close: string;
+    };
+
     search: {
       vocabulary: string;
       yourWords: string;
