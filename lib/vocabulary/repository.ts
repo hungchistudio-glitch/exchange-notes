@@ -90,7 +90,7 @@ export type InsertVocabulary = {
    * The columns used to default to English and Traditional Chinese so that
    * inserts written before they existed kept working — which quietly filed a
    * Spanish word as an English one. Every caller states them now, so
-   * 20260823160000 dropped the defaults; an insert that omits them fails
+   * 20260823222407 dropped the defaults; an insert that omits them fails
    * rather than mislabelling a word permanently.
    */
   word_language: LanguageCode;
