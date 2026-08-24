@@ -9,20 +9,21 @@ import {
 } from "@/lib/ai/modelConfig";
 
 export type ObjectIdentificationResult = {
-  englishName: string;
-  chineseName: string;
+  term: string;
+  translation: string;
   partOfSpeech: "noun" | "verb" | "adjective" | "phrase" | "other";
-  englishExample: string;
-  chineseExample: string;
+  termExample: string;
+  translationExample: string;
   confidence: "high" | "medium" | "low";
   /**
-   * Which language each named side is in.
+   * Which language each side is in.
    *
-   * The field names above say English and Chinese and have not meant that
-   * since the pair became the user's own — the prompt tells the model as
-   * much. These say what the fields actually hold, so a word saved from a
-   * photo carries its language rather than having one inferred from its
-   * spelling weeks later.
+   * These fields were called englishName and chineseName until the app
+   * taught five languages, at which point the names described two languages
+   * the reader might not have either of. `term` is the headword in whichever
+   * language the prompt asked for; these say which that was, so a word saved
+   * from a photo carries its language rather than having one inferred from
+   * its spelling weeks later.
    */
   termLanguage?: LanguageCode;
   translationLanguage?: LanguageCode;
@@ -50,26 +51,26 @@ function buildObjectResultSchema(
     type: "object",
     additionalProperties: false,
     properties: {
-      englishName: { type: "string", minLength: 1, maxLength: 80 },
-      chineseName: { type: "string", minLength: 1, maxLength: 80 },
+      term: { type: "string", minLength: 1, maxLength: 80 },
+      translation: { type: "string", minLength: 1, maxLength: 80 },
       termLanguage: { type: "string", enum: [first, second] },
       translationLanguage: { type: "string", enum: [first, second] },
       partOfSpeech: {
         type: "string",
         enum: ["noun", "verb", "adjective", "phrase", "other"],
       },
-      englishExample: { type: "string", minLength: 4, maxLength: 160 },
-      chineseExample: { type: "string", minLength: 2, maxLength: 160 },
+      termExample: { type: "string", minLength: 4, maxLength: 160 },
+      translationExample: { type: "string", minLength: 2, maxLength: 160 },
       confidence: { type: "string", enum: ["high", "medium", "low"] },
     },
     required: [
-      "englishName",
-      "chineseName",
+      "term",
+      "translation",
       "termLanguage",
       "translationLanguage",
       "partOfSpeech",
-      "englishExample",
-      "chineseExample",
+      "termExample",
+      "translationExample",
       "confidence",
     ],
   };
@@ -109,10 +110,10 @@ function isObjectIdentificationResult(
 
   const candidate = value as Record<string, unknown>;
   const stringFields = [
-    "englishName",
-    "chineseName",
-    "englishExample",
-    "chineseExample",
+    "term",
+    "translation",
+    "termExample",
+    "translationExample",
   ];
 
   return (

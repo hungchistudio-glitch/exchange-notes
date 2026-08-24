@@ -12,10 +12,20 @@ import {
 import styles from "./BottomNavigation.module.css";
 
 type NavigationItem = {
-  href: string;
+  /** Where the key goes. Omitted for action keys — see `onSelect`. */
+  href?: string;
   label: string;
   icon: ReactNode;
   active?: boolean;
+  /**
+   * Makes this key an action rather than a destination.
+   *
+   * The dock's centre key opens the Universal Search everywhere except the
+   * home screen, and a search sheet is not a route — rendering it as a link
+   * to nowhere would put a URL in the status bar, offer a useless "open in
+   * new tab", and hand the wrong role to a screen reader.
+   */
+  onSelect?: () => void;
   // Small unread-style badge (currently just Messages). Omitted/0 renders
   // nothing — this is not a generic "always show a dot" affordance.
   badgeCount?: number;
@@ -57,7 +67,7 @@ export default function BottomNavigation({
   label,
 }: BottomNavigationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+  const itemRefs = useRef<Array<HTMLElement | null>>([]);
   const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
 
   const activeIndex = items.findIndex((item) => item.active);
@@ -134,43 +144,71 @@ export default function BottomNavigation({
             gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
           }}
         >
-          {items.map((item, index) => (
-            <Link
-              key={`${item.href}-${item.label}`}
-              href={item.href}
-              prefetch={false}
-              transitionTypes={item.transitionTypes}
-              title={item.label}
-              ref={(element) => {
-                itemRefs.current[index] = element;
-              }}
-              aria-current={item.active ? "page" : undefined}
-              aria-label={item.label}
-              className={`z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                item.active
-                  ? "scale-[1.05] text-[var(--dock-active-ink)]"
-                  : "text-ink-faint hover:text-ink-strong"
-              }`}
-            >
-              <span className="relative inline-flex">
-                {item.icon}
+          {items.map((item, index) => {
+            const className = `z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              item.active
+                ? "scale-[1.05] text-[var(--dock-active-ink)]"
+                : "text-ink-faint hover:text-ink-strong"
+            }`;
 
-                {item.badgeCount ? (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--accent-amber)] px-[3px] text-[9px] font-semibold leading-none text-white"
-                  >
-                    {item.badgeCount > 9 ? "9+" : item.badgeCount}
+            const content = (
+              <>
+                <span className="relative inline-flex">
+                  {item.icon}
+
+                  {item.badgeCount ? (
                     <span
-                      key={item.pulseToken}
-                      className={styles.pulseRing}
-                    />
-                  </span>
-                ) : null}
-              </span>
-              <span className="sr-only">{item.label}</span>
-            </Link>
-          ))}
+                      aria-hidden="true"
+                      className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--accent-amber)] px-[3px] text-[9px] font-semibold leading-none text-white"
+                    >
+                      {item.badgeCount > 9 ? "9+" : item.badgeCount}
+                      <span
+                        key={item.pulseToken}
+                        className={styles.pulseRing}
+                      />
+                    </span>
+                  ) : null}
+                </span>
+                <span className="sr-only">{item.label}</span>
+              </>
+            );
+
+            if (item.onSelect || !item.href) {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.onSelect}
+                  title={item.label}
+                  ref={(element) => {
+                    itemRefs.current[index] = element;
+                  }}
+                  aria-label={item.label}
+                  className={className}
+                >
+                  {content}
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={`${item.href}-${item.label}`}
+                href={item.href}
+                prefetch={false}
+                transitionTypes={item.transitionTypes}
+                title={item.label}
+                ref={(element) => {
+                  itemRefs.current[index] = element;
+                }}
+                aria-current={item.active ? "page" : undefined}
+                aria-label={item.label}
+                className={className}
+              >
+                {content}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

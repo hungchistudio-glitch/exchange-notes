@@ -1,6 +1,8 @@
 "use client";
 
 import type { LanguageCode } from "@/lib/languages";
+import { findDuplicate } from "@/lib/lexicon/personal";
+import { applyPending, readMirror, readOutbox } from "@/lib/offline/vocabulary";
 import type { VocabularyCategory, VocabularyItem } from "@/lib/types/app";
 import {
   resolveLanguageIdentity,
@@ -44,6 +46,24 @@ export type CreateVocabularyEntryInput = {
 
   /** Everything the caller knows about which languages these are. */
   language: Omit<LanguageIdentityRequest, "term" | "translation">;
+
+  /**
+   * The reader's library, when the caller already holds it.
+   *
+   * Only an optimisation: the duplicate check falls back to the device's
+   * own mirror when this is absent, so a caller that does not have the list
+   * is checked just as thoroughly, one IndexedDB read more slowly.
+   */
+  knownItems?: readonly VocabularyItem[];
+
+  /**
+   * Saves even if this word is already in the library.
+   *
+   * For the one case where the reader has been shown the existing card and
+   * asked for a second one anyway. Never a default — see the note on
+   * DuplicateVocabularyError.
+   */
+  allowDuplicate?: boolean;
 };
 
 export type CreateVocabularyEntryResult = {
@@ -56,6 +76,51 @@ export class EmptyVocabularyTermError extends Error {
   constructor() {
     super("A vocabulary entry needs a term.");
     this.name = "EmptyVocabularyTermError";
+  }
+}
+
+/**
+ * This word is already here, and here is the card.
+ *
+ * Thrown rather than returned so that no caller can accidentally ignore it —
+ * a save that quietly did nothing is indistinguishable, from the reader's
+ * side, from a save that worked, and they find out weeks later when the same
+ * word comes round twice in review with two different review histories.
+ *
+ * Carries the existing row because every sensible thing a screen can do next
+ * needs it: open it, say when it was saved, offer to review it.
+ */
+export class DuplicateVocabularyError extends Error {
+  readonly existing: VocabularyItem;
+
+  constructor(existing: VocabularyItem) {
+    super("That word is already in your vocabulary.");
+    this.name = "DuplicateVocabularyError";
+    this.existing = existing;
+  }
+}
+
+/**
+ * The library as this device knows it, for the duplicate check.
+ *
+ * The mirror plus the outbox, which is what the reader actually has —
+ * including a word saved on a train that the server has not been told about
+ * yet. Checking the server instead would let that word be saved twice.
+ *
+ * An empty mirror means this device has never synced, and the check is
+ * skipped rather than failing the save: a duplicate is a nuisance, a word
+ * the reader could not save at all is worse.
+ */
+async function readKnownItems(userId: string): Promise<VocabularyItem[]> {
+  try {
+    const [mirror, pending] = await Promise.all([
+      readMirror(userId),
+      readOutbox(),
+    ]);
+
+    return applyPending(mirror, pending);
+  } catch {
+    return [];
   }
 }
 
@@ -94,6 +159,20 @@ export async function createVocabularyEntry(
     term,
     translation,
   });
+
+  /*
+   * Checked after the languages are resolved, because the language is half
+   * the question. "Come" is an English verb and an Italian conjunction, and a
+   * duplicate check keyed on the spelling alone refuses to save the second
+   * one — which is the failure that loses data rather than merely duplicating
+   * it.
+   */
+  if (!input.allowDuplicate) {
+    const library = input.knownItems ?? (await readKnownItems(input.userId));
+    const existing = findDuplicate(library, term, identity.termLanguage);
+
+    if (existing) throw new DuplicateVocabularyError(existing);
+  }
 
   const termExample = input.termExample?.trim() || null;
   const translationExample = input.translationExample?.trim() || null;

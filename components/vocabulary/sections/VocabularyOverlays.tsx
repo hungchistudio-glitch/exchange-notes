@@ -8,14 +8,17 @@ import LanguageFilterSheet from "@/components/vocabulary/LanguageFilterSheet";
 import VocabularyLanguageSheet from "@/components/vocabulary/detail/VocabularyLanguageSheet";
 import VocabularyDetailSheet from "@/components/vocabulary/VocabularyDetailSheet";
 import VocabularyEditModal from "@/components/vocabulary/detail/VocabularyEditModal";
-import VocabularyLookupModal from "@/components/vocabulary/modals/VocabularyLookupModal";
 import SortBottomSheet from "@/components/vocabulary/SortBottomSheet";
 import VocabularyFilterPanel from "@/components/vocabulary/VocabularyFilterPanel";
 import type { VocabularyItem } from "@/lib/types/app";
 
+/*
+ * The lookup sheet used to be the first thing in this tree. It is gone —
+ * looking a word up is an app-level sheet now (contexts/LexiconSearchContext),
+ * mounted once for every screen rather than once per screen that thought to
+ * ask for it.
+ */
 type VocabularyOverlaysProps = {
-  lookupProps: ComponentProps<typeof VocabularyLookupModal>;
-
   sortOpen: boolean;
   sortProps: ComponentProps<typeof SortBottomSheet>;
 
@@ -43,7 +46,6 @@ type VocabularyOverlaysProps = {
 };
 
 export default function VocabularyOverlays({
-  lookupProps,
   sortOpen,
   sortProps,
   filtersOpen,
@@ -63,8 +65,6 @@ export default function VocabularyOverlays({
 }: VocabularyOverlaysProps) {
   return (
     <>
-      <VocabularyLookupModal {...lookupProps} />
-
       {sortOpen && <SortBottomSheet {...sortProps} />}
 
       {filtersOpen && <VocabularyFilterPanel {...filterProps} />}

@@ -166,6 +166,11 @@ const french: TranslationDictionary = {
         title: "L'accueil, là où je vous attends",
         body: "C'est ici que je suis. Vous y verrez l'objectif du jour, le mot que j'ai choisi pour vous, et un endroit pour noter une idée. Donnez-moi un biscuit quand vous terminez une révision et je serai très contente de vous.",
       },
+      search: {
+        title: "Un seul champ pour tous les mots",
+        body:
+          "Vous voyez quelque chose que vous ne connaissez pas — sur un panneau, dans un message, n'importe où ? Écrivez-le, dites-le, ou visez-le avec l'appareil photo. Je trouve la langue, le sens, et si vous l'aviez déjà rencontré. C'est la première chose sur l'accueil, et c'est dans la barre depuis toutes les autres pages.",
+      },
       vocabulary: {
         title: "Tout ce que vous avez collecté",
         body: "Chaque mot que vous enregistrez arrive ici, rangé en collections. Les mots que vous êtes sur le point d'oublier remontent en haut pour révision — c'est ce qui les fait tenir.",
@@ -206,7 +211,78 @@ const french: TranslationDictionary = {
     home: "Accueil",
     discover: "Découvrir",
     settings: "Réglages",
+    search: "Rechercher",
     primaryLabel: "Navigation principale",
+  },
+
+  lexicon: {
+    open: "Rechercher ou ajouter un mot",
+    fieldPlaceholder: "Cherchez ou ajoutez un mot…",
+    fieldPlaceholderLanguage: "Cherchez ou ajoutez un mot en {language}…",
+    fieldHint: "Écrivez-le, dites-le, ou visez-le avec l'appareil photo.",
+    inputAriaLabel: "Rechercher ou ajouter un mot",
+
+    modeType: "Clavier",
+    modeVoice: "Voix",
+    modeCamera: "Scanner",
+    modeImage: "Image",
+
+    search: "Rechercher",
+    clear: "Effacer",
+    close: "Fermer la recherche",
+    cancel: "Annuler",
+
+    emptyTitle: "Écrivez un mot ou une phrase.",
+    emptyDescription:
+      "Yumi détermine la langue, le sens, et si vous l'avez déjà rencontré.",
+    searching: "Recherche en cours…",
+    offlineTitle: "Vous êtes hors ligne",
+    offlineDescription:
+      "Seuls les mots déjà présents sur cet appareil peuvent être trouvés.",
+    errorTitle: "Aucun résultat exact.",
+    errorDescription: "Vérifiez l'orthographe, ou essayez avec une photo.",
+    retry: "Réessayer",
+
+    yourVocabulary: "Votre vocabulaire",
+    dictionary: "Dictionnaire",
+    savedOn: "Enregistré le {date}",
+    openWord: "Ouvrir",
+    reviewWord: "Réviser",
+    listen: "Écouter",
+
+    save: "Ajouter au vocabulaire",
+    saving: "Enregistrement…",
+    saved: "Enregistré",
+    alreadySaved: "Déjà dans votre vocabulaire",
+    alreadySavedDescription: "Vous l'avez enregistré le {date}.",
+    openSavedWord: "Ouvrir le mot enregistré",
+    noTranslation: "Pas encore de sens",
+    noTranslationDetail:
+      "Le dictionnaire est injoignable, ce mot n'a donc pas encore de sens associé.",
+    degradedNotice:
+      "Le mot et son sens sont justes ; l'exemple est générique.",
+    lowConfidence: "C'est une supposition. Vérifiez-la avant de l'enregistrer.",
+    example: "Exemple",
+    share: "Partager",
+    copied: "Copié",
+    send: "Envoyer",
+
+    languageLabel: "Langue",
+    changeLanguage: "Changer de langue",
+    chooseLanguage: "Quelle langue est-ce ?",
+    chooseLanguageDescription: "Cette orthographe existe dans plusieurs.",
+
+    sentenceTitle: "Phrase",
+    phraseTitle: "Expression",
+    translationTitle: "Sens",
+    worthKeeping: "À retenir",
+    savePhrase: "Enregistrer « {term} »",
+    sentenceNotSavable:
+      "Une phrase entière ne fait pas une carte de révision. Gardez seulement ce que vous voulez retenir.",
+
+    onboardingTitle: "Un mot que vous ne connaissez pas ?",
+    onboardingDescription: "Cherchez-le ici. Yumi trouve la langue pour vous.",
+    onboardingDismiss: "Compris",
   },
   cosmic: {
     modeName: "Mode Cosmique Yumi",
@@ -429,7 +505,7 @@ const french: TranslationDictionary = {
     },
     analysis: {
       title: "Analyse de votre photo",
-      description: "L'IA identifie l'objet et prépare des exemples en anglais et en chinois traditionnel.",
+      description: "Yumi cherche ce que c'est, et comment le dire.",
     },
     result: {
       eyebrow: "Résultat de l'IA",
@@ -1165,38 +1241,12 @@ const french: TranslationDictionary = {
       collectActionLabel: "Ouvrir les collections",
     },
     lookup: {
-      title: "Chercher un mot",
-      placeholder: "Anglais ou chinois traditionnel",
-      search: "Recherche intelligente",
-      searching: "Recherche",
-      description: "Cherchez n'importe quel mot anglais ou chinois traditionnel pour sa traduction, sa nature et des exemples naturels.",
-      error: "Impossible de chercher ce mot.",
-      degradedNotice: "La recherche intelligente est occupée : ceci vient du dictionnaire hors ligne. Le mot et la traduction sont corrects — seuls les exemples sont génériques.",
-      degradedRetry: "Réessayer pour de vrais exemples",
-      translationUnavailable: "Traduction pas encore chargée",
-      translationUnavailableDetail: "Yumi n'a pas pu joindre le service de traduction — le plus souvent une connexion faible ou coupée. Rien ne manque au mot lui-même : réessayez une fois de retour en ligne.",
-      translationUnavailableRetry: "Réessayer",
-      translationUnavailableSaveBlocked: "L'enregistrement est suspendu jusqu'au chargement de la traduction, pour que ce mot n'entre pas dans votre vocabulaire sans son sens.",
-      english: "Anglais",
-      chinese: "Chinois traditionnel",
-      englishExample: "Exemple en anglais",
-      chineseExample: "Exemple en chinois",
-      share: "Partager",
-      send: "Envoyer",
-      saving: "Enregistrement",
-      addToVocabulary: "Ajouter au vocabulaire",
       unsavedTitle: "Ce mot n'est pas encore enregistré",
       noMatchingTitle: "Aucun mot correspondant",
       unsavedDescription: "Cherchez-le pour trouver son sens, des exemples, et l'ajouter à votre vocabulaire.",
       noMatchingDescription: "Essayez une autre recherche ou un autre statut d'apprentissage.",
-      lookingUp: "Recherche",
       lookUpWord: "Chercher « {word} »",
-      wordFound: "Mot trouvé",
       shareWithFriend: "Envoyer à un ami",
-      closeSearchAriaLabel: "Fermer la recherche de mot",
-      inputPlaceholder: "Anglais ou chinois traditionnel",
-      clearSearchAriaLabel: "Effacer la recherche",
-      lowConfidenceNotice: "Yumi n'est pas totalement sûre. Vérifiez le résultat avant d'enregistrer.",
     },
     collections: {
       title: "Collections",
@@ -1357,8 +1407,7 @@ const french: TranslationDictionary = {
       noMatchingWords: "Aucun mot correspondant.",
       loadingVocabulary: "Chargement de vos mots",
       firstWordTitle: "Votre premier mot commence dehors",
-      firstWordDescription: "Photographiez quelque chose du quotidien et enregistrez son sens en anglais et en chinois traditionnel.",
-      discoverWord: "Découvrir un mot",
+      firstWordDescription: "Cherchez un mot que vous venez de rencontrer, ou photographiez ce que vous avez devant vous.",
       statuses: {
         all: "Tous",
         new: "Nouveaux",

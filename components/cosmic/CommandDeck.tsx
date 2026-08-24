@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useState,
   type ComponentType,
   type CSSProperties,
@@ -26,8 +25,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import type { VocabularyItem } from "@/lib/types/app";
-import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
+import { useVocabulary } from "@/contexts/VocabularyContext";
 
 import styles from "./CommandDeck.module.css";
 
@@ -142,8 +140,16 @@ export default function CommandDeck() {
   // two stay separate here as everywhere else.
   const { learningLanguage } = useLearningLanguageContext();
 
-  const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(true);
+  /*
+   * The app-wide library, not a second fetch of it.
+   *
+   * The deck used to read the vocabulary table itself, in parallel with the
+   * home screen doing the same and the Vocabulary page doing it a third time.
+   * A word saved in the OmniLexicon console left the readouts above it
+   * unchanged until the next reload, because they were looking at a different
+   * copy of the same rows.
+   */
+  const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
   const { unreadCount } = useUnreadMessageCount();
   const [lockedRoom, setLockedRoom] = useState<RoomKey | null>(null);
@@ -183,32 +189,6 @@ export default function CommandDeck() {
       `${Math.round(bounds.top + bounds.height / 2 - window.innerHeight / 2)}px`,
     );
   }
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      const { user } = await getCurrentUser();
-
-      if (!user) {
-        if (active) setItemsLoading(false);
-        return;
-      }
-
-      const vocabulary = await fetchVocabulary(user.id);
-
-      if (!active) return;
-
-      setItems((vocabulary ?? []) as VocabularyItem[]);
-      setItemsLoading(false);
-    }
-
-    void load();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   function statusFor(key: RoomKey) {
     if (key === "lexicon") {

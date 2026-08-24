@@ -22,6 +22,7 @@ import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
 import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
+import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
@@ -33,6 +34,7 @@ type StepKey =
   | "name"
   | "senses"
   | "home"
+  | "search"
   | "vocabulary"
   | "capture"
   | "discover"
@@ -54,6 +56,13 @@ const STEP_ORDER: StepKey[] = [
   "name",
   "senses",
   "home",
+  /*
+   * Directly after Home, because that is where it sits: the search is the
+   * first thing on that screen you can act on. Introducing the library before
+   * the one control that fills it had the tour explaining where words go
+   * before it explained how they get there.
+   */
+  "search",
   "vocabulary",
   "capture",
   "discover",
@@ -133,6 +142,15 @@ function stepVisual(step: StepKey): ReactNode {
         <OrbitIcon
           render={(active) => (
             <NavHomeIcon className="h-7 w-7" active={active} />
+          )}
+        />
+      );
+
+    case "search":
+      return (
+        <OrbitIcon
+          render={(active) => (
+            <NavSearchIcon className="h-7 w-7" active={active} />
           )}
         />
       );

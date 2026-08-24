@@ -174,6 +174,11 @@ const english: TranslationDictionary = {
         body:
           "This is where I am. You'll see today's focus, the word I picked for you, and a place to jot a quick note. Feed me a cookie when you finish a review and I'll be very pleased with you.",
       },
+      search: {
+        title: "One field for every word",
+        body:
+          "See something you don't know — on a sign, in a message, anywhere? Type it, say it, or point the camera at it. I work out which language it is, what it means, and whether you have met it before. It's the first thing on the home screen, and it's on the dock from every other one.",
+      },
       vocabulary: {
         title: "Everything you've collected",
         body:
@@ -222,7 +227,79 @@ const english: TranslationDictionary = {
     home: "Home",
     discover: "Discover",
     settings: "Settings",
+    search: "Search",
     primaryLabel: "Primary navigation",
+  },
+
+  lexicon: {
+    open: "Search or add a word",
+    fieldPlaceholder: "Search or add a word…",
+    fieldPlaceholderLanguage: "Search or add a word in {language}…",
+    fieldHint: "Type it, say it, or point your camera at it.",
+    inputAriaLabel: "Search or add a word",
+
+    modeType: "Type",
+    modeVoice: "Voice",
+    modeCamera: "Scan",
+    modeImage: "Image",
+
+    search: "Search",
+    clear: "Clear",
+    close: "Close search",
+    cancel: "Cancel",
+
+    emptyTitle: "Start typing a word or a phrase.",
+    emptyDescription:
+      "Yumi works out what language it is, what it means, and whether you have met it before.",
+    searching: "Looking it up…",
+    offlineTitle: "You are offline",
+    offlineDescription:
+      "Only the words already on this device can be searched.",
+    errorTitle: "No exact result found.",
+    errorDescription: "Check the spelling, or try a photo instead.",
+    retry: "Try again",
+
+    yourVocabulary: "Your vocabulary",
+    dictionary: "Dictionary",
+    savedOn: "Saved {date}",
+    openWord: "Open",
+    reviewWord: "Review",
+    listen: "Listen",
+
+    save: "Save to vocabulary",
+    saving: "Saving…",
+    saved: "Saved",
+    alreadySaved: "Already in your vocabulary",
+    alreadySavedDescription: "You saved this one on {date}.",
+    openSavedWord: "Open the saved word",
+    noTranslation: "No meaning yet",
+    noTranslationDetail:
+      "The dictionary could not be reached, so this word has no meaning attached yet.",
+    degradedNotice:
+      "The word and its meaning are right; the example sentence is a generic one.",
+    lowConfidence: "This is a best guess. Check it before you keep it.",
+    example: "Example",
+    share: "Share",
+    copied: "Copied",
+    send: "Send",
+
+    languageLabel: "Language",
+    changeLanguage: "Change language",
+    chooseLanguage: "Which language is this?",
+    chooseLanguageDescription: "This spelling exists in more than one.",
+
+    sentenceTitle: "Sentence",
+    phraseTitle: "Phrase",
+    translationTitle: "Meaning",
+    worthKeeping: "Worth keeping",
+    savePhrase: "Save “{term}”",
+    sentenceNotSavable:
+      "A whole sentence does not make a review card. Keep the part you want to remember.",
+
+    onboardingTitle: "See a word you don't know?",
+    onboardingDescription:
+      "Search it here. Yumi works out the language for you.",
+    onboardingDismiss: "Got it",
   },
 
   cosmic: {
@@ -471,7 +548,7 @@ const english: TranslationDictionary = {
     analysis: {
       title: "Analyzing your photo",
       description:
-        "AI is identifying the object and preparing English and Traditional Chinese examples.",
+        "Yumi is working out what this is, and how to say it.",
     },
 
     result: {
@@ -1271,45 +1348,14 @@ const english: TranslationDictionary = {
     },
 
     lookup: {
-      title: "Search any word",
-      placeholder: "English or Traditional Chinese",
-      search: "Smart search",
-      searching: "Searching",
-      description:
-        "Search any English or Traditional Chinese word for its translation, part of speech and natural examples.",
-      error: "Could not search that word.",
-      degradedNotice:
-        "Smart search is busy, so this came from the offline dictionary. The word and translation are correct — only the examples are generic.",
-      degradedRetry: "Try again for real examples",
-      translationUnavailable: "Translation not loaded yet",
-      translationUnavailableDetail:
-        "Yumi could not reach the translation service — usually a weak or dropped connection. Nothing is missing from the word itself, so try again once you are back online.",
-      translationUnavailableRetry: "Try again",
-      translationUnavailableSaveBlocked:
-        "Saving is paused until the translation loads, so this word does not enter your vocabulary without its meaning.",
-      english: "English",
-      chinese: "Traditional Chinese",
-      englishExample: "English example",
-      chineseExample: "Chinese example",
-      share: "Share",
-      send: "Send",
-      saving: "Saving",
-      addToVocabulary: "Add to Vocabulary",
       unsavedTitle: "This word is not saved yet",
       noMatchingTitle: "No matching words",
       unsavedDescription:
         "Look it up to find its meaning, examples, and save it to your vocabulary.",
       noMatchingDescription:
         "Try another search or choose a different learning status.",
-      lookingUp: "Looking up",
       lookUpWord: 'Look up "{word}"',
-      wordFound: "Word found",
       shareWithFriend: "Send to a friend",
-      closeSearchAriaLabel: "Close word search",
-      inputPlaceholder: "English or Traditional Chinese",
-      clearSearchAriaLabel: "Clear search",
-      lowConfidenceNotice:
-        "Yumi is not completely sure. Please review the result before saving.",
     },
 
     collections: {
@@ -1491,9 +1537,7 @@ const english: TranslationDictionary = {
       loadingVocabulary: "Loading your words",
       firstWordTitle: "Your first word begins outside",
       firstWordDescription:
-        "Photograph something from daily life and save its English and Traditional Chinese meaning.",
-      discoverWord: "Discover a word",
-
+        "Search a word you have just met, or photograph something in front of you.",
       statuses: {
         all: "All",
         new: "New",

@@ -21,7 +21,6 @@ type BuildVocabularySearchPropsParams = Pick<
   | "languageCount"
 > & {
   setQuery: (value: string) => void;
-  resetLookup: () => void;
   setQuickFilter: SearchProps["onQuickFilterChange"];
   setSortOpen: (open: boolean) => void;
   openCollections: () => void;
@@ -44,7 +43,6 @@ export default function buildVocabularySearchProps({
   rankingLoading,
   rankingError,
   setQuery,
-  resetLookup,
   setQuickFilter,
   setSortOpen,
   openCollections,
@@ -66,15 +64,9 @@ export default function buildVocabularySearchProps({
     rankingLoading,
     rankingError,
 
-    onQueryChange: (value) => {
-      setQuery(value);
-      resetLookup();
-    },
+    onQueryChange: setQuery,
 
-    onClear: () => {
-      setQuery("");
-      resetLookup();
-    },
+    onClear: () => setQuery(""),
 
     onQuickFilterChange: setQuickFilter,
     onOpenSort: () => setSortOpen(true),

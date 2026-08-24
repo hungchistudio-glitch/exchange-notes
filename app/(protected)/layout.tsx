@@ -10,6 +10,8 @@ import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
+import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
+import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
 import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
 import { createClient } from "@/lib/supabase/server";
@@ -111,12 +113,32 @@ export default async function ProtectedLayout({
 
         <SplashGate />
 
-        <CosmicRouteStage>
-          <OfflineBanner />
-          {children}
-        </CosmicRouteStage>
+        {/*
+          The library, once for the whole app.
 
-        <ProtectedNav />
+          It used to be mounted per route — the Vocabulary screen and the
+          Pronunciation Lab each had their own — while the home screen and
+          the Command Deck fetched the same rows separately by hand. Four
+          copies of one list, three of them unable to see a word the fourth
+          had just saved.
+
+          Hoisting it here is what makes the Universal Search answerable from
+          anywhere: "do I already have this word" is a question about the
+          account, not about whichever screen happens to be open. It also
+          costs one query per app load instead of one per screen, and brings
+          the offline mirror to every route rather than two of them.
+        */}
+        <VocabularyProvider>
+          <LexiconSearchProvider>
+            <CosmicRouteStage>
+              <OfflineBanner />
+              {children}
+            </CosmicRouteStage>
+
+            <ProtectedNav />
+          </LexiconSearchProvider>
+        </VocabularyProvider>
+
         <ModeTransitionStage />
       </LearningLanguageProvider>
     </InterfaceModeProvider>

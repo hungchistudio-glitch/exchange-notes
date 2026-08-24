@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Exchange Notes",
     short_name: "Exchange Notes",
     description:
-      "Learn English and Traditional Chinese together, one note at a time.",
+      "Look up any word in five languages, and keep the ones worth remembering.",
     id: "/",
     start_url: "/",
     display: "standalone",

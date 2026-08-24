@@ -7,6 +7,7 @@ import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMa
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useVocabularyController from "@/hooks/controllers/useVocabularyController";
 import buildVocabularyHeroProps from "@/hooks/pages/builders/buildVocabularyHeroProps";
 import buildVocabularySearchProps from "@/hooks/pages/builders/buildVocabularySearchProps";
@@ -60,9 +61,17 @@ export default function useVocabularyPage({
   openWidgetWordRequestId,
 }: UseVocabularyPageOptions = {}) {
   const router = useRouter();
-  const controller = useVocabularyController({
-    initialAiSearchOpen: openAddWord,
-  });
+  const controller = useVocabularyController();
+
+  /*
+   * Looking a word up is not this screen's job any more.
+   *
+   * It owns the library — the list, the filters, the sort, the cards. The
+   * question "what does this word mean" is asked the same way here as it is
+   * from the dock or the home screen, and answered by the same sheet, so the
+   * two can no longer give different answers about the same word.
+   */
+  const { openSearch } = useLexiconSearchSheet();
 
   const [detailItem, setDetailItem] = useState<VocabularyItem | null>(null);
   const [collectionsItem, setCollectionsItem] =
@@ -93,8 +102,6 @@ export default function useVocabularyPage({
     setSortOpen,
     filtersOpen,
     setFiltersOpen,
-    aiSearchOpen,
-    setAiSearchOpen,
   } = controller.page;
 
   const {
@@ -131,40 +138,21 @@ export default function useVocabularyPage({
     friendsError,
     sendingFriendId,
     handleSendToPartner,
-    shareCard,
     retryFriends,
     handleClosePicker,
     handlePickFriend,
   } = controller.friendPicker;
 
-  const {
-    lookupStatus,
-    lookupResult,
-    lookupError,
-    lookupDegraded,
-    lookupPreview,
-    lookupWord,
-    resetLookup,
-    savingLookup,
-    saveLookupResult,
-    lookupCopied,
-    shareLookupResult,
-    sendLookupToPartner,
-  } = controller.lookup;
-
+  /*
+   * The widget's "add a word" shortcut, which is the same request as tapping
+   * the dock's search key — so it opens the same sheet rather than a second
+   * one that happens to live on this screen.
+   */
   useEffect(() => {
     if (!openAddWord) return;
 
-    setQuery("");
-    resetLookup();
-    setAiSearchOpen(true);
-  }, [
-    addWordRequestId,
-    openAddWord,
-    resetLookup,
-    setAiSearchOpen,
-    setQuery,
-  ]);
+    openSearch();
+  }, [addWordRequestId, openAddWord, openSearch]);
 
   useEffect(() => {
     if (!openWidgetWordId || loading) return;
@@ -184,8 +172,6 @@ export default function useVocabularyPage({
     queueMicrotask(() => {
       if (cancelled) return;
 
-      setAiSearchOpen(false);
-      resetLookup();
       setQuery("");
       setQuickFilter("all");
       setExpandedItemId(matchingItem.id);
@@ -209,8 +195,6 @@ export default function useVocabularyPage({
     loading,
     openWidgetWordId,
     openWidgetWordRequestId,
-    resetLookup,
-    setAiSearchOpen,
     setQuickFilter,
     setQuery,
     uniqueItems,
@@ -293,16 +277,15 @@ export default function useVocabularyPage({
     }
   }
 
-  function openAiSearch() {
-    setQuery("");
-    resetLookup();
-    setAiSearchOpen(true);
-  }
-
-  function closeAiSearch() {
-    setAiSearchOpen(false);
-    setQuery("");
-    resetLookup();
+  /**
+   * Hands a query to the Universal Search.
+   *
+   * An empty string opens it blank, which is what the Yumi menu and the
+   * empty states want; a word opens it already asking about that word, which
+   * is what "I filtered my library and it is not in there" wants.
+   */
+  function openLexiconSearch(query: string) {
+    openSearch(query ? { query, autoSubmit: true } : undefined);
   }
 
   const heroProps = buildVocabularyHeroProps({
@@ -328,7 +311,7 @@ export default function useVocabularyPage({
     searchHasNoResults,
     cardGlancePulse,
     onStartReview: () => router.push("/review?from=vocabulary"),
-    onAddWord: openAiSearch,
+    onAddWord: () => openLexiconSearch(""),
     onOpenCamera: () => router.push("/capture?source=camera&from=vocabulary"),
     /*
      * The Pronunciation Lab's only other entry point is on the standard home
@@ -357,7 +340,6 @@ export default function useVocabularyPage({
       setExpandedItemId(null);
       setQuery(value);
     },
-    resetLookup,
     setQuickFilter: (value) => {
       setExpandedItemId(null);
       setQuickFilter(value);
@@ -376,33 +358,10 @@ export default function useVocabularyPage({
     items: visibleItems,
     query,
     updatingId,
-    lookupStatus,
-    lookupResult,
-    lookupError,
-    savingLookup,
     expandedItemId,
     viewMode,
     languageFilter,
-    onLookupWord: lookupWord,
-    onSaveLookupResult: saveLookupResult,
-    /*
-     * Sharing a looked-up word does not save it first. The send path only ever
-     * needed the card, so a word can go to a friend without being added to
-     * your own vocabulary — which is often the point of looking it up.
-     */
-    onShareLookupResult: () => {
-      if (!lookupResult) return;
-
-      shareCard({
-        word: lookupResult.englishName,
-        translation: lookupResult.chineseName,
-        partOfSpeech: lookupResult.partOfSpeech,
-        examples: {
-          en: lookupResult.englishExample,
-          "zh-TW": lookupResult.chineseExample,
-        },
-      });
-    },
+    onLookUpQuery: openLexiconSearch,
     onChangeStatus: changeStatus,
     onDeleteItem: deleteVocabularyItem,
     onOpenDetail: (item: VocabularyItem) => {
@@ -425,24 +384,6 @@ export default function useVocabularyPage({
   } satisfies ComponentProps<typeof VocabularyMainContent>;
 
   const overlaysProps = {
-    lookupProps: {
-      open: aiSearchOpen,
-      onClose: closeAiSearch,
-      query,
-      setQuery,
-      lookupStatus,
-      lookupResult,
-      lookupError,
-      lookupDegraded,
-      lookupPreview,
-      savingLookup,
-      lookupCopied,
-      onLookupWord: () => void lookupWord(),
-      onSave: () => void saveLookupResult(),
-      onShare: () => void shareLookupResult(),
-      onSend: () => void sendLookupToPartner(),
-    },
-
     sortOpen,
     sortProps: {
       value: sortMode,
@@ -465,7 +406,6 @@ export default function useVocabularyPage({
       },
 
       onSelect: (item) => {
-        resetLookup();
         setQuery(item.word);
         setFiltersOpen(false);
         clearFilterSearch();
@@ -579,7 +519,6 @@ export default function useVocabularyPage({
    * would pull the whole tree back in — defeating the gate it feeds.
    */
   const overlaysOpen =
-    overlaysProps.lookupProps.open ||
     overlaysProps.sortOpen ||
     overlaysProps.filtersOpen ||
     overlaysProps.languageFilterOpen ||
