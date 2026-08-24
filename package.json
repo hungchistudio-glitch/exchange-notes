@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:widget": "node scripts/verify-scriptable-widget.mjs",
-    "generate:brand": "node scripts/generate-yumi-brand.mjs",
+    "generate:brand": "node scripts/generate-brand.mjs",
     "generate:native": "bash native/apple/scripts/generate-project.sh",
     "test:native-personal": "bash native/apple/scripts/verify-personal-build.sh"
   },

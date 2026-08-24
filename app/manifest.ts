@@ -38,8 +38,8 @@ export default function manifest(): MetadataRoute.Manifest {
      * point at (/api/icon and /api/icon-maskable, now deleted).
      *
      * The artwork stopped being something worth rendering per request the
-     * moment it became a generated asset — scripts/generate-yumi-brand.mjs
-     * writes these from lib/brand/yumiMark.ts alongside every other surface
+     * moment it became a generated asset — scripts/generate-brand.mjs
+     * writes these from lib/brand/exchangeNotesLogo.ts alongside every other surface
      * the mark appears on, so serving them from /public is both cheaper and
      * the only way they are guaranteed to match app/icon.svg and the brand
      * tree. It also puts them back inside the service worker's reach:
@@ -50,24 +50,24 @@ export default function manifest(): MetadataRoute.Manifest {
      * One file serves both purposes. A maskable icon must be opaque to every
      * edge and keep its artwork inside the OS's crop; this square is opaque
      * with no corner mask of its own, and the mark sits well inside the safe
-     * circle at 48% of the canvas, so there is nothing for a separate
+     * circle at 44% of the canvas, so there is nothing for a separate
      * maskable drawing to change.
      */
     icons: [
       {
-        src: "/yumi-brand/app-icon/icon-192.png",
+        src: "/brand/app-icon/icon-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/yumi-brand/app-icon/icon-512.png",
+        src: "/brand/app-icon/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/yumi-brand/app-icon/icon-512.png",
+        src: "/brand/app-icon/icon-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

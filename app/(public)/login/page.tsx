@@ -1,7 +1,7 @@
 "use client";
 
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
-import YumiLogo from "@/components/ui/YumiLogo";
+import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
           colour, which is what carries it across into Cosmic Mode — the card
           turns deep navy there and the mark turns white with it.
         */}
-        <YumiLogo className="mb-6 h-11 w-11 text-[color:var(--yumi-mark)]" />
+        <ExchangeNotesLogo className="mb-6 h-11 w-11 text-[color:var(--yumi-mark)]" />
 
         {/* Fixed bilingual brand mark — always shown in both scripts
             regardless of interface language, not app UI copy. */}
