@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +33,12 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
+import {
+  ImageRecognitionError,
+  fileToModelImage,
+  identifyImage,
+  type ImageRecognitionCode,
+} from "@/lib/lexicon/imageRecognition";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
@@ -87,6 +99,79 @@ export default function LexiconSearchSheet({
   const keyboardInset = useKeyboardInset(motion.rendered);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  /*
+   * Reading a photograph, which happens before the search has anything to
+   * show a state for. The engine's own status only starts once there is a
+   * word to look up.
+   */
+  const [readingImage, setReadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
+
+  /**
+   * The sentence for each way a photograph can fail.
+   *
+   * Taken from the capture screen's dictionary rather than given new keys of
+   * its own: these describe images, not the screen they were picked on, and a
+   * second set would be the same six sentences translated twice.
+   */
+  function imageErrorMessage(code: ImageRecognitionCode): string {
+    const errors = t.capture.errors;
+
+    switch (code) {
+      case "not-an-image":
+        return errors.selectImage;
+      case "too-large":
+        return errors.imageTooLarge;
+      case "unreadable":
+        return errors.processImage;
+      case "daily-limit":
+        return errors.identifyDailyLimit;
+      case "busy":
+        return errors.identifyBusy;
+      case "timeout":
+        return errors.identifyTimeout;
+      default:
+        return errors.identifyImage;
+    }
+  }
+
+  async function handleImageFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    // Cleared straight away so picking the same photo twice fires again.
+    event.target.value = "";
+
+    if (!file || readingImage) return;
+
+    setImageError("");
+    setReadingImage(true);
+
+    try {
+      const identified = await identifyImage(await fileToModelImage(file));
+
+      /*
+       * The word goes back through the field, not around it. What a photo
+       * produces is text, and text is what the engine already answers — so a
+       * photographed word gets the same card, the same duplicate check and
+       * the same save button as a typed one.
+       */
+      if (identified.term) search.submit(identified.term, "image");
+    } catch (recognitionError) {
+      console.error("Could not read that photo:", recognitionError);
+
+      setImageError(
+        imageErrorMessage(
+          recognitionError instanceof ImageRecognitionError
+            ? recognitionError.code
+            : "failed",
+        ),
+      );
+    } finally {
+      setReadingImage(false);
+    }
+  }
 
   /*
    * The field takes focus on open, and the query that arrived with it is
@@ -357,15 +442,55 @@ export default function LexiconSearchSheet({
               {copy.modeCamera}
             </Link>
 
-            <Link
-              href="/capture?source=library&from=lexicon"
-              onClick={motion.requestClose}
+            {/*
+              A button, not a link. Choosing a photo is not somewhere to go —
+              it opens the picker the operating system already has. This used
+              to navigate to the capture screen so that screen could click a
+              file input two hundred milliseconds after mounting: a whole page,
+              painted, to do nothing the reader wanted to see.
+
+              Scan stays a link on purpose. That one really is a destination:
+              a live camera with a focus hint and guidance about centring the
+              object, which a bare file input cannot offer.
+            */}
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={readingImage}
               aria-label={copy.modeImage}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-[0.97]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-[0.97] disabled:opacity-50"
             >
               <ImageIcon size={16} strokeWidth={1.7} aria-hidden="true" />
-            </Link>
+            </button>
+
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageFile}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
           </div>
+
+          {/* Reading the photo, which happens before there is a word for the
+              engine to have a status about. */}
+          {readingImage && (
+            <p
+              role="status"
+              className="mt-2.5 flex items-center gap-2 px-1 text-[12px] text-ink-soft"
+            >
+              <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
+              {t.capture.analysis.description}
+            </p>
+          )}
+
+          {imageError && (
+            <p role="alert" className="mt-2.5 px-1 text-[12px] text-red-600">
+              {imageError}
+            </p>
+          )}
         </header>
 
         <div

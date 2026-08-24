@@ -18,6 +18,12 @@ import {
   createVocabularyEntry,
 } from "@/lib/vocabulary/createEntry";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
+import {
+  MAX_AI_DIMENSION,
+  MAX_IMAGE_FILE_SIZE,
+  MAX_PREVIEW_DIMENSION,
+  downscaleToDataUrl,
+} from "@/lib/lexicon/imageRecognition";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
 import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
@@ -80,18 +86,14 @@ const readCameraSupport = () =>
 const readSpeechSupport = () => "speechSynthesis" in window;
 const assumeSupported = () => true;
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_DIMENSION = 1280;
-
-/**
- * Gemini bills images as 768x768 tiles, so a 1280px photo costs four tiles
- * where a 768px one costs a single tile. Identifying the object nearest the
- * centre does not need the extra detail, so the model gets its own smaller
- * copy while the preview and the saved word image stay at MAX_DIMENSION.
+/*
+ * The limits and the resize live in lib/lexicon/imageRecognition, because the
+ * search sheet reads photographs too — and two copies of an image pipeline
+ * drift into two different answers for the same photograph.
  */
-const MAX_AI_DIMENSION = 768;
+const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
+const MAX_DIMENSION = MAX_PREVIEW_DIMENSION;
 
-const JPEG_QUALITY = 0.8;
 const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
 // v2: cache keys now hash the downscaled image actually sent to the model.
@@ -750,44 +752,19 @@ function CaptureContent() {
     sourceImage: CanvasImageSource,
     sourceWidth: number,
     sourceHeight: number,
-    maxDimension: number = MAX_DIMENSION
+    maxDimension: number = MAX_DIMENSION,
   ): string | null {
-    if (
-      !Number.isFinite(sourceWidth) ||
-      !Number.isFinite(sourceHeight) ||
-      sourceWidth <= 0 ||
-      sourceHeight <= 0
-    ) {
-      return null;
-    }
-
-    const canvas =
-      canvasRef.current ?? document.createElement("canvas");
-
-    const scale = Math.min(
-      1,
-      maxDimension / Math.max(sourceWidth, sourceHeight)
-    );
-
-    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-
-    const context = canvas.getContext("2d");
-
-    if (!context) return null;
-
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-    context.drawImage(
+    /*
+     * The one canvas this screen keeps, handed to the shared resize so a
+     * burst of captures does not allocate a new one per frame.
+     */
+    return downscaleToDataUrl(
       sourceImage,
-      0,
-      0,
-      canvas.width,
-      canvas.height
+      sourceWidth,
+      sourceHeight,
+      maxDimension,
+      canvasRef.current,
     );
-
-    return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
   }
 
   /**
