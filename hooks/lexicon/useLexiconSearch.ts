@@ -376,10 +376,16 @@ export default function useLexiconSearch({
      * A retry repeats the question that was asked, pin included. Dropping a
      * language the reader chose by hand because the first attempt failed
      * would quietly undo their correction at the worst possible moment.
+     *
+     * The pin is the *query's* language, never the headword's. Those are the
+     * same thing until a result is turned to put the language being studied
+     * first — after which re-pinning the headword would answer a question the
+     * reader did not ask, and would drop the correction this branch exists to
+     * preserve.
      */
     void run(
       text,
-      result?.languages.chosen ? result.languages.sourceLanguage : null,
+      result?.languages.chosen ? result.languages.queryLanguage : null,
     );
   }, [query, result, run, submittedQuery]);
 

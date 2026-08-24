@@ -247,6 +247,34 @@ describe("turning a result the right way round", () => {
   });
 });
 
+describe("a correction survives a failed attempt", () => {
+  /*
+   * The pin a retry repeats is the language of what the reader typed, not the
+   * language of the headword they were handed. Those diverge exactly when the
+   * result was turned to put the language being studied first — and that is
+   * also when re-pinning the headword would silently drop the correction the
+   * reader had just made.
+   */
+  it("keeps the two anchors apart after the result is turned round", () => {
+    const languages = {
+      sourceLanguage: "en" as LanguageCode,
+      queryLanguage: "en" as LanguageCode,
+      glossLanguage: "fr" as LanguageCode,
+      confidence: 1,
+      ambiguous: false,
+      candidates: ["en"] as readonly LanguageCode[],
+      chosen: true,
+    };
+
+    const oriented = orientToLearner(entry("en", "fr"), languages, "fr");
+
+    expect(oriented?.languages.sourceLanguage).toBe("fr");
+    // What a retry must re-pin, and what the picker must highlight.
+    expect(oriented?.languages.queryLanguage).toBe("en");
+    expect(oriented?.languages.chosen).toBe(true);
+  });
+});
+
 describe("the language matrix", () => {
   /*
    * Straight from the brief. Each row is a reader, a word they met in a

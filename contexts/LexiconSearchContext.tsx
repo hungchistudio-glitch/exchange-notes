@@ -65,7 +65,13 @@ const QUERY_PARAM = "lexicon";
  * hook here means one empty div is the dynamic part, rather than every
  * screen in the product.
  */
-function LexiconHandoff({ onQuery }: { onQuery: (query: string) => void }) {
+function LexiconHandoff({
+  open,
+  onQuery,
+}: {
+  open: boolean;
+  onQuery: (query: string) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -73,14 +79,34 @@ function LexiconHandoff({ onQuery }: { onQuery: (query: string) => void }) {
   const incoming = searchParams.get(QUERY_PARAM);
 
   /*
-   * The param is removed as soon as it is read, with `replace` rather than
-   * `push`, so the back button does not walk the reader into reopening a
-   * search they just closed — and so a reload does not reopen it either.
+   * Opening and cleaning the URL are two effects, in that order, and the
+   * order is the whole point.
+   *
+   * They used to be one: hand the word over, then immediately rewrite the
+   * URL. On a warm navigation that worked. On a cold load it did not — the
+   * rewrite landed close enough to hydration to take the just-set state with
+   * it, so the param vanished and no sheet ever opened. A camera hand-off
+   * that silently does nothing is worse than one that is slow.
+   *
+   * Split, the failure cannot happen: nothing touches the URL until the sheet
+   * is actually open, so a lost state update leaves the param in place and
+   * this effect simply runs again. It is self-healing rather than
+   * correctly-ordered, which is the only kind of fix worth having against a
+   * race nobody can see.
    */
   useEffect(() => {
-    if (!incoming) return;
+    if (!incoming || open) return;
 
     onQuery(incoming);
+  }, [incoming, onQuery, open]);
+
+  /*
+   * `replace` rather than `push`, so the back button does not walk the reader
+   * into reopening a search they just closed — and so a reload does not
+   * reopen it either.
+   */
+  useEffect(() => {
+    if (!incoming || !open) return;
 
     const next = new URLSearchParams(searchParams);
     next.delete(QUERY_PARAM);
@@ -89,7 +115,7 @@ function LexiconHandoff({ onQuery }: { onQuery: (query: string) => void }) {
     router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
       scroll: false,
     });
-  }, [incoming, onQuery, pathname, router, searchParams]);
+  }, [incoming, open, pathname, router, searchParams]);
 
   return null;
 }
@@ -106,12 +132,22 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
   }>({ open: false, query: "", autoSubmit: false, token: 0 });
 
   const openSearch = useCallback((options?: OpenOptions) => {
-    setState((current) => ({
-      open: true,
-      query: options?.query ?? "",
-      autoSubmit: options?.autoSubmit ?? false,
-      token: current.token + 1,
-    }));
+    setState((current) => {
+      const query = options?.query ?? "";
+      const autoSubmit = options?.autoSubmit ?? false;
+
+      /*
+       * Idempotent, because the hand-off effect above may ask more than once
+       * while it waits for the sheet to appear. Returning the same object
+       * tells React there is nothing to do — without it, each retry would
+       * bump the token and remount the sheet mid-lookup.
+       */
+      if (current.open && current.query === query && current.autoSubmit === autoSubmit) {
+        return current;
+      }
+
+      return { open: true, query, autoSubmit, token: current.token + 1 };
+    });
   }, []);
 
   const closeSearch = useCallback(() => {
@@ -134,7 +170,7 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
       {children}
 
       <Suspense fallback={null}>
-        <LexiconHandoff onQuery={handleHandoff} />
+        <LexiconHandoff open={state.open} onQuery={handleHandoff} />
       </Suspense>
 
       <LexiconSearchSheet

@@ -4,6 +4,7 @@ import { gunzipSync } from "node:zlib";
 
 import { detectLanguage } from "@/lib/languageDetection";
 import {
+  otherLanguage,
   resolveCardLanguages,
   type LanguageRoles,
 } from "@/lib/lexicon/languageRouting";
@@ -197,6 +198,22 @@ function unresolvedEntry(
   source: LanguageCode,
   gloss: LanguageCode,
 ): LexiconEntry {
+  /*
+   * The two sides can collide on this path and only on this path.
+   *
+   * When the card rule promotes a lookup to the language being studied — a
+   * French learner typing an English word — the gloss it chose is the support
+   * language, which is the very language the reader typed in. There is no
+   * French to promote to without a model, so the headword falls back to their
+   * own text, and the gloss has to move out of its way.
+   *
+   * Guarded here rather than at each caller because a row whose two sides are
+   * the same language is refused by the database, and a card that renders one
+   * would ask PronunciationBlock for the same annotation twice.
+   */
+  const glossLanguage =
+    gloss === source ? otherLanguage(source, [source, gloss]) : gloss;
+
   return {
     term: query.slice(0, 240),
     translation: "",
@@ -206,7 +223,7 @@ function unresolvedEntry(
     confidence: "low",
     category: "other",
     termLanguage: source,
-    translationLanguage: gloss,
+    translationLanguage: glossLanguage,
     kind: "word",
     highlight: null,
     translationUnavailable: true,
@@ -287,9 +304,13 @@ export async function lookupOffline(
    * rule asks for a headword in a language this index cannot produce, saying
    * so is the answer — inventing one is what the whole translationUnavailable
    * flag exists to prevent.
+   *
+   * The empty side is the language the rule wanted for the headword, because
+   * that is the language the reader is actually missing: a French learner who
+   * typed "mow" is short a French word, not an English one.
    */
   if (source !== queryLanguage) {
-    return unresolvedEntry(query, queryLanguage, gloss);
+    return unresolvedEntry(query, queryLanguage, source);
   }
 
   const index = getOfflineIndex();
