@@ -26,6 +26,7 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import {
   getLanguage,
   isLanguageCode,
@@ -427,6 +428,12 @@ function CaptureContent() {
   const searchParams = useSearchParams();
   const { t } = useTranslation();
   const { pair: languagePair } = useDisplayLanguages();
+
+  /*
+   * The app-wide search sheet, opened over this screen once the photo has
+   * been read. See the hand-off effect below.
+   */
+  const { open: searchOpen, openSearch } = useLexiconSearchSheet();
   const capture = t.capture;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -520,22 +527,52 @@ function CaptureContent() {
   }, [result]);
 
   /*
-   * Recognised, and away.
+   * Recognised, and straight into the answer.
    *
-   * `replace` rather than `push`: the camera is a step on the way to an
-   * answer, not somewhere to go back to. Backing out of the search should
-   * return the reader to where they opened it, not to a photo they have
-   * already used.
+   * The search sheet is mounted on the protected layout, which this screen is
+   * inside — so it can be opened here, over the photo, without going
+   * anywhere. That is the whole reason this is a call and not a navigation.
    *
-   * The word goes over as text and is looked up again by the search, which is
-   * the point — one result model, one save button, one duplicate check,
-   * whichever of the four inputs the word arrived through.
+   * It used to `router.replace` to `/?lexicon=…`, which meant the reader
+   * watched the home screen paint itself before the card arrived on top of
+   * it: a page they did not ask for, between the photo and the answer. The
+   * param still works as a deep link; nothing in the app needs it any more.
+   *
+   * The word goes over as text and is looked up by the search, which is the
+   * point — one result model, one save button, one duplicate check, whichever
+   * of the four inputs the word arrived through.
    */
   useEffect(() => {
     if (!fromLexicon || !result?.term) return;
 
-    router.replace(`/?lexicon=${encodeURIComponent(result.term)}`);
-  }, [fromLexicon, result, router]);
+    openSearch({ query: result.term, autoSubmit: true });
+  }, [fromLexicon, openSearch, result]);
+
+  /*
+   * Closing the card ends the errand.
+   *
+   * Without this the reader is handed back the capture screen with its own
+   * copy of the same word on it — the second card this flow exists to remove,
+   * arrived at from behind.
+   *
+   * The ref is what makes "closed" mean closed. Both effects run in the same
+   * commit, and on that commit the sheet has been *asked* to open but the
+   * value here still reads false — so a plain `!searchOpen` check would send
+   * the reader home in the same breath as the card was opened. Only a sheet
+   * that has been seen open can be seen closing.
+   */
+  const sawSearchRef = useRef(false);
+
+  useEffect(() => {
+    if (!fromLexicon) return;
+
+    if (searchOpen) {
+      sawSearchRef.current = true;
+      return;
+    }
+
+    if (sawSearchRef.current) router.replace("/");
+  }, [fromLexicon, router, searchOpen]);
 
   /*
    * The two languages this result is actually in.
@@ -1415,7 +1452,13 @@ function CaptureContent() {
               </p>
             )}
 
-            {result && (
+            {/*
+              Suppressed when the search is answering, because it is the same
+              word again: this screen's card, underneath the sheet's card, one
+              tap from being seen. Two cards for one word is two chances to
+              wonder which is the real answer.
+            */}
+            {result && !fromLexicon && (
               <div className="flex flex-1 flex-col pt-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
