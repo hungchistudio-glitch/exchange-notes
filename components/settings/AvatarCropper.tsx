@@ -8,6 +8,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
+import { createPortal } from "react-dom";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -32,6 +33,22 @@ import {
    circle components/foundation/media/Avatar.tsx draws — same shape, same
    cover behaviour — so there is no gap between the preview and the result.
    ========================================================= */
+
+/*
+ * ── Why this renders through a portal ──────────────────────────────────
+ *
+ * The cropper opens from inside Edit profile, which is itself a BottomSheet,
+ * and a BottomSheet's panel is animated with `transform` and carries
+ * `will-change: transform` (SheetMotion.module.css). A transformed ancestor
+ * becomes the containing block for `position: fixed` descendants — so an
+ * overlay nested inside one is not pinned to the viewport at all. It is
+ * pinned to the sheet, inside that sheet's `max-h-[70dvh] overflow-y-auto`
+ * body, with the parent's own footer still drawn beneath it.
+ *
+ * That is exactly what shipped: the circle appeared, and Cancel and Use photo
+ * were below the fold of a container nobody could scroll. Portalling to the
+ * body is what makes `fixed` mean fixed again.
+ */
 
 /** The exported avatar's edge, in pixels. */
 const OUTPUT_SIZE = 512;
@@ -315,7 +332,13 @@ export default function AvatarCropper({
 
   const ready = Boolean(natural && viewport && !failed);
 
-  return (
+  /*
+   * Nothing to portal into during a server render, and this only ever opens
+   * from a press, so there is no first paint to preserve.
+   */
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <BottomSheet
       open
       onClose={onCancel}
@@ -323,7 +346,13 @@ export default function AvatarCropper({
       description={copy.cropDescription}
     >
       <div className="p-5">
-        <div className="mx-auto w-full max-w-[320px]">
+        {/*
+          Capped by height as well as width. The sheet body is 70dvh, and the
+          zoom control and the two actions have to fit under the circle — on a
+          short phone a 320px circle alone would push them out of reach, which
+          is the failure this component already shipped once.
+        */}
+        <div className="mx-auto w-full max-w-[min(320px,44dvh)]">
           {/*
             The circle. `touch-action: none` because every gesture inside it
             is ours — without it the browser pans the sheet instead of the
@@ -414,6 +443,7 @@ export default function AvatarCropper({
           </button>
         </div>
       </div>
-    </BottomSheet>
+    </BottomSheet>,
+    document.body,
   );
 }
