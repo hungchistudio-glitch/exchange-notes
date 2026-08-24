@@ -1,0 +1,60 @@
+# Migrations
+
+One rule, and it is the one that has already been broken once: **the
+filename's version must equal the version the database recorded.**
+
+`supabase db push` decides what to apply by comparing the leading timestamp
+of each file against `supabase_migrations.schema_migrations.version`. A file
+whose version is not in that table is, as far as the CLI is concerned,
+unapplied — and it will be replayed.
+
+## How the drift happened
+
+Applying through the Supabase MCP's `apply_migration` stamps the table with a
+version generated *at apply time*. Committing the SQL afterwards under a
+timestamp chosen by hand produces two different versions for one migration.
+Five of them drifted that way before this was noticed:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260819120000_daily_news_pool` | `20260819135439` |
+| `20260822210000_pronunciation_lab` | `20260823001230` |
+| `20260823100000_word_phonetics_cache` | `20260823131423` |
+| `20260823120000_text_translations_cache` | `20260823150634` |
+| `20260823160000_vocabulary_language_identity` | `20260823222407` |
+
+Nothing was lost — the counts matched, so it was a pure renaming drift — but
+`db push` would have tried to replay all five, and four of them would have
+failed on `create policy`, which has no `if not exists` form and raises
+`42710 duplicate_object` against a policy that is already there. Each
+migration runs in its own transaction, so those would have rolled back
+cleanly rather than half-applying. The files have been renamed to the
+recorded versions and the two sets now match exactly.
+
+## Checking
+
+```sql
+select version, name from supabase_migrations.schema_migrations order by version;
+```
+
+against `ls supabase/migrations`. Every file should have a row and every row
+a file.
+
+## Writing one
+
+Prefer statements that can be run twice, because a migration that has to be
+re-run — a fresh environment, a recovered database, a version mismatch like
+the one above — should not need a human to unpick it first:
+
+- `create table if not exists`, `create index if not exists`,
+  `alter table … add column if not exists`
+- `drop constraint if exists` immediately before `add constraint`
+- `drop policy if exists` immediately before `create policy` — there is no
+  `create policy if not exists`
+- `create or replace function`
+- guard backfills with a `where` that stops matching once they have run, and
+  give data inserts an `on conflict … do nothing`
+
+Destructive statements — `drop table`, `drop column`, `truncate` — belong in
+their own migration, after the code that stopped reading the thing has been
+live for a while.
