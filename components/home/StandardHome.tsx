@@ -7,7 +7,7 @@ import { Volume2 } from "lucide-react";
 import Card from "@/components/foundation/cards/Card";
 import Screen from "@/components/foundation/layout/Screen";
 import BookIcon from "@/components/foundation/icons/BookIcon";
-import CameraIcon from "@/components/foundation/icons/CameraIcon";
+import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import LearningPartnerCard from "@/components/home/LearningPartnerCard";
 import YumiHomeStage from "@/components/home/yumi/YumiHomeStage";
 import NotesComposer from "@/components/home/NotesComposer";
@@ -17,10 +17,10 @@ import PronunciationHub from "@/components/pronunciation/PronunciationHub";
 import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 
+import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { HomeMood } from "@/lib/pet/homeMoodEngine";
-import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import { createClient } from "@/lib/supabase/client";
 import type { Note } from "@/lib/notes/repository";
 import {
@@ -30,7 +30,6 @@ import {
   importLegacyNotes,
 } from "@/lib/notes/repository";
 import { speak } from "@/lib/speech";
-import type { VocabularyItem } from "@/lib/types/app";
 
 function ArrowRightIcon() {
   return (
@@ -132,8 +131,15 @@ const noHourOnTheServer = () => null;
 export default function StandardHome() {
   const { t } = useTranslation();
 
-  const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(true);
+  /*
+   * The app-wide library, not a second fetch of it.
+   *
+   * This screen used to read the vocabulary table itself, which meant a word
+   * saved from the search sheet did not change the counts underneath until
+   * the next reload — the sheet and the screen were looking at two different
+   * copies of the same rows.
+   */
+  const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
   const [yumiMood, setYumiMood] = useState<HomeMood>("waiting");
 
@@ -201,32 +207,6 @@ export default function StandardHome() {
   };
 
   const [notes, setNotes] = useState<Note[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      const { user } = await getCurrentUser();
-
-      if (!user) {
-        if (active) setItemsLoading(false);
-        return;
-      }
-
-      const vocabulary = await fetchVocabulary(user.id);
-
-      if (active) {
-        setItems((vocabulary ?? []) as VocabularyItem[]);
-        setItemsLoading(false);
-      }
-    }
-
-    load();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -314,7 +294,20 @@ export default function StandardHome() {
         <p className="mt-1 text-ink-soft">{heroCopy.description}</p>
       </div>
 
-      <div id="daily-focus-card" className="px-4 pt-4 scroll-mt-6">
+      {/*
+        Above the review card, above everything.
+
+        The order of this screen is an argument about what the app is for,
+        and it used to argue for reviewing what you already know. Looking up
+        a word you have just met is the more common intention and was the
+        harder of the two to reach; now it is the first thing under Yumi and
+        review is directly beneath it. See UniversalSearchField.
+      */}
+      <div className="px-4 pt-5">
+        <UniversalSearchField />
+      </div>
+
+      <div id="daily-focus-card" className="px-4 pt-6 scroll-mt-6">
         <DailyFocusCard
           due={itemsLoading ? 0 : reviewStats.due}
           retention={reviewStats.retention}
@@ -333,27 +326,31 @@ export default function StandardHome() {
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.quickStart.title}</h2>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        {/*
+          Capture used to be the second tile here. It is one of the four
+          doors into the search now — the camera button sits inside the field
+          above — and a screen that offers the same destination twice is a
+          screen teaching the reader that its layout does not mean anything.
+        */}
+        <div className="mt-4">
           <Link
             href="/review"
-            className="rounded-[24px] bg-black p-4 text-white transition active:scale-[0.99]"
+            className="flex items-center justify-between gap-4 rounded-[24px] bg-black p-5 text-white transition active:scale-[0.99]"
           >
-            <BookIcon className="h-5 w-5" />
-            <p className="mt-6 font-bold">{t.home.quickStart.review}</p>
-            <p className="mt-0.5 text-xs text-ink-invert-faint">
-              {itemsLoading ? "…" : `${reviewStats.due} words ready`}
-            </p>
-          </Link>
+            <span className="min-w-0">
+              <span className="block font-bold">{t.home.quickStart.review}</span>
+              <span className="mt-0.5 block text-xs text-ink-invert-faint">
+                {itemsLoading
+                  ? "…"
+                  : `${reviewStats.due} ${
+                      reviewStats.due === 1
+                        ? t.home.progress.word
+                        : t.home.progress.words
+                    }`}
+              </span>
+            </span>
 
-          <Link
-            href="/capture"
-            className="rounded-[24px] border border-[#f3ddb0] bg-gradient-to-br from-[#fdf6e6] to-white p-4 transition active:scale-[0.99]"
-          >
-            <CameraIcon className="h-5 w-5" />
-            <p className="mt-6 font-bold">{t.home.quickStart.capture}</p>
-            <p className="mt-0.5 text-xs text-ink-faint">
-              {t.home.quickStart.captureDescription}
-            </p>
+            <BookIcon className="h-5 w-5 shrink-0" />
           </Link>
         </div>
 

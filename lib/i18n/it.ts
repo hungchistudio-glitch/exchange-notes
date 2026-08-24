@@ -166,6 +166,11 @@ const italian: TranslationDictionary = {
         title: "La Home è dove ti aspetto",
         body: "Io sto qui. Vedrai l'obiettivo di oggi, la parola che ho scelto per te e un posto per annotare un pensiero. Dammi un biscotto quando finisci un ripasso e sarò molto contenta di te.",
       },
+      search: {
+        title: "Un campo per ogni parola",
+        body:
+          "Vedi qualcosa che non conosci — su un cartello, in un messaggio, ovunque? Scrivilo, dillo, o inquadralo con la fotocamera. Io capisco in che lingua è, cosa significa e se l'avevi già incontrato. È la prima cosa nella schermata iniziale, ed è nella barra da tutte le altre.",
+      },
       vocabulary: {
         title: "Tutto quello che hai raccolto",
         body: "Ogni parola che salvi arriva qui, raccolta in collezioni. Le parole che stai per dimenticare salgono in cima per il ripasso — è la parte che le fa restare.",
@@ -206,7 +211,78 @@ const italian: TranslationDictionary = {
     home: "Home",
     discover: "Scopri",
     settings: "Impostazioni",
+    search: "Cerca",
     primaryLabel: "Navigazione principale",
+  },
+
+  lexicon: {
+    open: "Cerca o aggiungi una parola",
+    fieldPlaceholder: "Cerca o aggiungi una parola…",
+    fieldPlaceholderLanguage: "Cerca o aggiungi una parola in {language}…",
+    fieldHint: "Scrivila, dilla, o inquadrala con la fotocamera.",
+    inputAriaLabel: "Cerca o aggiungi una parola",
+
+    modeType: "Tastiera",
+    modeVoice: "Voce",
+    modeCamera: "Scansiona",
+    modeImage: "Immagine",
+
+    search: "Cerca",
+    clear: "Cancella",
+    close: "Chiudi la ricerca",
+    cancel: "Annulla",
+
+    emptyTitle: "Scrivi una parola o una frase.",
+    emptyDescription:
+      "Yumi capisce in che lingua è, cosa significa e se l'hai già incontrata.",
+    searching: "Ricerca in corso…",
+    offlineTitle: "Sei offline",
+    offlineDescription:
+      "Si possono cercare solo le parole già presenti su questo dispositivo.",
+    errorTitle: "Nessun risultato esatto.",
+    errorDescription: "Controlla l'ortografia, oppure prova con una foto.",
+    retry: "Riprova",
+
+    yourVocabulary: "Il tuo vocabolario",
+    dictionary: "Dizionario",
+    savedOn: "Salvata il {date}",
+    openWord: "Apri",
+    reviewWord: "Ripassa",
+    listen: "Ascolta",
+
+    save: "Salva nel vocabolario",
+    saving: "Salvataggio…",
+    saved: "Salvata",
+    alreadySaved: "È già nel tuo vocabolario",
+    alreadySavedDescription: "L'hai salvata il {date}.",
+    openSavedWord: "Apri la parola salvata",
+    noTranslation: "Ancora senza significato",
+    noTranslationDetail:
+      "Il dizionario non è raggiungibile, quindi questa parola non ha ancora un significato.",
+    degradedNotice:
+      "La parola e il suo significato sono giusti; l'esempio è generico.",
+    lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",
+    example: "Esempio",
+    share: "Condividi",
+    copied: "Copiato",
+    send: "Invia",
+
+    languageLabel: "Lingua",
+    changeLanguage: "Cambia lingua",
+    chooseLanguage: "Che lingua è?",
+    chooseLanguageDescription: "Questa grafia esiste in più di una.",
+
+    sentenceTitle: "Frase",
+    phraseTitle: "Espressione",
+    translationTitle: "Significato",
+    worthKeeping: "Vale la pena tenerlo",
+    savePhrase: "Salva «{term}»",
+    sentenceNotSavable:
+      "Una frase intera non funziona come carta di ripasso. Tieni solo la parte che vuoi ricordare.",
+
+    onboardingTitle: "Una parola che non conosci?",
+    onboardingDescription: "Cercala qui. Yumi capisce da sola che lingua è.",
+    onboardingDismiss: "Ho capito",
   },
   cosmic: {
     modeName: "Modalità Cosmica Yumi",
@@ -429,7 +505,7 @@ const italian: TranslationDictionary = {
     },
     analysis: {
       title: "Analisi della tua foto",
-      description: "L'IA sta identificando l'oggetto e preparando esempi in inglese e cinese tradizionale.",
+      description: "Yumi sta capendo che cos'è, e come si dice.",
     },
     result: {
       eyebrow: "Risultato dell'IA",
@@ -1165,38 +1241,12 @@ const italian: TranslationDictionary = {
       collectActionLabel: "Apri le collezioni",
     },
     lookup: {
-      title: "Cerca una parola",
-      placeholder: "Inglese o cinese tradizionale",
-      search: "Ricerca intelligente",
-      searching: "Ricerca",
-      description: "Cerca qualsiasi parola inglese o in cinese tradizionale per traduzione, parte del discorso ed esempi naturali.",
-      error: "Impossibile cercare questa parola.",
-      degradedNotice: "La ricerca intelligente è occupata, quindi questo risultato viene dal dizionario offline. Parola e traduzione sono corrette — solo gli esempi sono generici.",
-      degradedRetry: "Riprova per esempi reali",
-      translationUnavailable: "Traduzione non ancora caricata",
-      translationUnavailableDetail: "Yumi non è riuscita a raggiungere il servizio di traduzione — di solito è una connessione debole o caduta. Alla parola non manca nulla: riprova quando torni online.",
-      translationUnavailableRetry: "Riprova",
-      translationUnavailableSaveBlocked: "Il salvataggio è sospeso finché la traduzione non si carica, così questa parola non entra nel vocabolario senza il suo significato.",
-      english: "Inglese",
-      chinese: "Cinese tradizionale",
-      englishExample: "Esempio in inglese",
-      chineseExample: "Esempio in cinese",
-      share: "Condividi",
-      send: "Invia",
-      saving: "Salvataggio",
-      addToVocabulary: "Aggiungi al vocabolario",
       unsavedTitle: "Questa parola non è ancora salvata",
       noMatchingTitle: "Nessuna parola corrispondente",
       unsavedDescription: "Cercala per trovarne il significato, gli esempi, e salvarla nel tuo vocabolario.",
       noMatchingDescription: "Prova un'altra ricerca o un altro stato di apprendimento.",
-      lookingUp: "Ricerca",
       lookUpWord: "Cerca «{word}»",
-      wordFound: "Parola trovata",
       shareWithFriend: "Invia a un amico",
-      closeSearchAriaLabel: "Chiudi la ricerca di parole",
-      inputPlaceholder: "Inglese o cinese tradizionale",
-      clearSearchAriaLabel: "Cancella la ricerca",
-      lowConfidenceNotice: "Yumi non è del tutto sicura. Controlla il risultato prima di salvare.",
     },
     collections: {
       title: "Collezioni",
@@ -1357,8 +1407,7 @@ const italian: TranslationDictionary = {
       noMatchingWords: "Nessuna parola corrispondente.",
       loadingVocabulary: "Caricamento delle tue parole",
       firstWordTitle: "La tua prima parola inizia fuori",
-      firstWordDescription: "Fotografa qualcosa della vita quotidiana e salvane il significato in inglese e cinese tradizionale.",
-      discoverWord: "Scopri una parola",
+      firstWordDescription: "Cerca una parola che hai appena incontrato, o fotografa quello che hai davanti.",
       statuses: {
         all: "Tutte",
         new: "Nuove",

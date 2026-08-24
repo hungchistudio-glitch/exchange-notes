@@ -174,6 +174,11 @@ const spanish: TranslationDictionary = {
         body:
           "Aquí estoy yo. Verás el foco de hoy, la palabra que he elegido para ti y un sitio para anotar algo rápido. Dame una galleta cuando termines un repaso y me pondré muy contenta contigo.",
       },
+      search: {
+        title: "Un campo para cualquier palabra",
+        body:
+          "¿Ves algo que no conoces, en un cartel, en un mensaje, donde sea? Escríbelo, dilo o enfócalo con la cámara. Yo averiguo en qué idioma está, qué significa y si ya lo habías guardado. Es lo primero de la pantalla de inicio, y está en la barra desde cualquier otra.",
+      },
       vocabulary: {
         title: "Todo lo que has ido reuniendo",
         body:
@@ -222,7 +227,78 @@ const spanish: TranslationDictionary = {
     home: "Inicio",
     discover: "Descubrir",
     settings: "Ajustes",
+    search: "Buscar",
     primaryLabel: "Navegación principal",
+  },
+
+  lexicon: {
+    open: "Buscar o añadir una palabra",
+    fieldPlaceholder: "Busca o añade una palabra…",
+    fieldPlaceholderLanguage: "Busca o añade una palabra en {language}…",
+    fieldHint: "Escríbela, dila o enfócala con la cámara.",
+    inputAriaLabel: "Buscar o añadir una palabra",
+
+    modeType: "Teclado",
+    modeVoice: "Voz",
+    modeCamera: "Escanear",
+    modeImage: "Imagen",
+
+    search: "Buscar",
+    clear: "Borrar",
+    close: "Cerrar la búsqueda",
+    cancel: "Cancelar",
+
+    emptyTitle: "Escribe una palabra o una frase.",
+    emptyDescription:
+      "Yumi averigua en qué idioma está, qué significa y si ya la habías guardado.",
+    searching: "Buscando…",
+    offlineTitle: "Estás sin conexión",
+    offlineDescription:
+      "Solo se pueden buscar las palabras que ya están en este dispositivo.",
+    errorTitle: "No se encontró un resultado exacto.",
+    errorDescription: "Revisa la ortografía o prueba con una foto.",
+    retry: "Reintentar",
+
+    yourVocabulary: "Tu vocabulario",
+    dictionary: "Diccionario",
+    savedOn: "Guardada el {date}",
+    openWord: "Abrir",
+    reviewWord: "Repasar",
+    listen: "Escuchar",
+
+    save: "Guardar en el vocabulario",
+    saving: "Guardando…",
+    saved: "Guardada",
+    alreadySaved: "Ya está en tu vocabulario",
+    alreadySavedDescription: "La guardaste el {date}.",
+    openSavedWord: "Abrir la palabra guardada",
+    noTranslation: "Todavía sin significado",
+    noTranslationDetail:
+      "No se pudo llegar al diccionario, así que esta palabra aún no tiene significado.",
+    degradedNotice:
+      "La palabra y su significado son correctos; el ejemplo es genérico.",
+    lowConfidence: "Es la mejor suposición. Compruébala antes de guardarla.",
+    example: "Ejemplo",
+    share: "Compartir",
+    copied: "Copiado",
+    send: "Enviar",
+
+    languageLabel: "Idioma",
+    changeLanguage: "Cambiar de idioma",
+    chooseLanguage: "¿Qué idioma es?",
+    chooseLanguageDescription: "Esta forma existe en más de uno.",
+
+    sentenceTitle: "Frase",
+    phraseTitle: "Expresión",
+    translationTitle: "Significado",
+    worthKeeping: "Vale la pena guardarlo",
+    savePhrase: "Guardar «{term}»",
+    sentenceNotSavable:
+      "Una frase entera no funciona como tarjeta de repaso. Guarda solo la parte que quieres recordar.",
+
+    onboardingTitle: "¿Ves una palabra que no conoces?",
+    onboardingDescription: "Búscala aquí. Yumi averigua el idioma por ti.",
+    onboardingDismiss: "Entendido",
   },
 
   cosmic: {
@@ -471,7 +547,7 @@ const spanish: TranslationDictionary = {
     analysis: {
       title: "Analizando tu foto",
       description:
-        "La IA está identificando el objeto y preparando ejemplos en inglés y en chino tradicional.",
+        "Yumi está averiguando qué es esto y cómo se dice.",
     },
 
     result: {
@@ -1271,45 +1347,14 @@ const spanish: TranslationDictionary = {
     },
 
     lookup: {
-      title: "Busca cualquier palabra",
-      placeholder: "Inglés o chino tradicional",
-      search: "Búsqueda inteligente",
-      searching: "Buscando",
-      description:
-        "Busca cualquier palabra en inglés o en chino tradicional para ver su traducción, su categoría gramatical y ejemplos naturales.",
-      error: "No se ha podido buscar esa palabra.",
-      degradedNotice:
-        "La búsqueda inteligente está ocupada, así que esto viene del diccionario sin conexión. La palabra y la traducción son correctas; solo los ejemplos son genéricos.",
-      degradedRetry: "Reintentar para obtener ejemplos reales",
-      translationUnavailable: "La traducción aún no se ha cargado",
-      translationUnavailableDetail:
-        "Yumi no ha podido conectar con el servicio de traducción, normalmente por una conexión débil o caída. A la palabra en sí no le falta nada, así que vuelve a intentarlo cuando tengas conexión.",
-      translationUnavailableRetry: "Reintentar",
-      translationUnavailableSaveBlocked:
-        "Guardar está en pausa hasta que cargue la traducción, para que esta palabra no entre en tu vocabulario sin su significado.",
-      english: "Inglés",
-      chinese: "Chino tradicional",
-      englishExample: "Ejemplo en inglés",
-      chineseExample: "Ejemplo en chino",
-      share: "Compartir",
-      send: "Enviar",
-      saving: "Guardando",
-      addToVocabulary: "Añadir al vocabulario",
       unsavedTitle: "Esta palabra todavía no está guardada",
       noMatchingTitle: "No hay palabras que coincidan",
       unsavedDescription:
         "Búscala para ver su significado y sus ejemplos, y guárdala en tu vocabulario.",
       noMatchingDescription:
         "Prueba con otra búsqueda o elige otro estado de aprendizaje.",
-      lookingUp: "Buscando",
       lookUpWord: 'Buscar «{word}»',
-      wordFound: "Palabra encontrada",
       shareWithFriend: "Enviar a alguien",
-      closeSearchAriaLabel: "Cerrar la búsqueda de palabras",
-      inputPlaceholder: "Inglés o chino tradicional",
-      clearSearchAriaLabel: "Borrar la búsqueda",
-      lowConfidenceNotice:
-        "Yumi no está del todo segura. Revisa el resultado antes de guardarlo.",
     },
 
     collections: {
@@ -1488,9 +1533,7 @@ const spanish: TranslationDictionary = {
       loadingVocabulary: "Cargando tus palabras",
       firstWordTitle: "Tu primera palabra empieza ahí fuera",
       firstWordDescription:
-        "Fotografía algo de la vida diaria y guarda su significado en inglés y en chino tradicional.",
-      discoverWord: "Descubrir una palabra",
-
+        "Busca una palabra que acabas de encontrar, o fotografía algo que tengas delante.",
       statuses: {
         all: "Todas",
         new: "Nuevas",

@@ -81,17 +81,37 @@ export default function VocabularySelection({
       const data = await classifyText(selectedText);
       const now = new Date().toISOString();
 
+      /*
+       * The languages come off the answer, not off the reader's settings.
+       *
+       * A card sent to a friend carries its own two languages so they can
+       * read it in one of theirs; filling those in from the sender's pair is
+       * how a French word arrived labelled English on the other side.
+       */
+      const wordLanguage = data.termLanguage ?? languagePair[0];
+      const translationLanguage =
+        data.translationLanguage ??
+        (wordLanguage === languagePair[1] ? languagePair[0] : languagePair[1]);
+
       const selectedVocabulary: VocabularyItem = {
         ...item,
         id: `selection-${crypto.randomUUID()}`,
-        word: (data.englishName ?? selectedText).trim(),
-        translation: (data.chineseName ?? "").trim(),
-        language: languagePair[0],
-        word_language: languagePair[0],
-        translation_language: languagePair[1],
+        word: (data.term || selectedText).trim(),
+        translation: data.translation.trim(),
+        language: wordLanguage,
+        word_language: wordLanguage,
+        translation_language: translationLanguage,
+        texts: {
+          [wordLanguage]: (data.term || selectedText).trim(),
+          [translationLanguage]: data.translation.trim(),
+        },
+        examples: {
+          [wordLanguage]: data.termExample,
+          [translationLanguage]: data.translationExample,
+        },
         part_of_speech: data.partOfSpeech?.trim() || null,
-        example_sentence: data.englishExample?.trim() || null,
-        translated_example: data.chineseExample?.trim() || null,
+        example_sentence: data.termExample?.trim() || null,
+        translated_example: data.translationExample?.trim() || null,
         confidence: data.confidence ?? "medium",
         category: data.category ?? "other",
         status: "new",

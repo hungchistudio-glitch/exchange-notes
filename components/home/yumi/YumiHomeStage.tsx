@@ -19,6 +19,7 @@ import {
   type HomeReactionMood,
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
+import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 import { getPronunciationData } from "@/lib/pronunciation";
 import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
@@ -36,6 +37,17 @@ type YumiHomeStageProps = {
 };
 
 const REACTION_DURATION_MS = 3900;
+
+/*
+ * A word arriving is a smaller event than a cookie being eaten, and its
+ * reaction is shorter to match — long enough to be seen, short enough that a
+ * reader saving three words in a row is not watching an animation queue.
+ *
+ * It also has to end before the reader's attention comes back to the screen:
+ * the save happens inside a sheet that covers Yumi, so most of this plays
+ * behind it and what is left when the sheet closes is the tail.
+ */
+const WORD_SAVED_REACTION_MS = 1100;
 const DANCE_DURATION_MS = 4200;
 const WELCOME_DURATION_MS = 3600;
 const LONELY_TEAR_DURATION_MS = 2600;
@@ -431,6 +443,33 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
 
     void persistFeed(cookie);
   }
+
+  /*
+   * Yumi looks up when a word is saved, wherever it was saved from.
+   *
+   * A subscription rather than a prop: a word can now be kept from the search
+   * sheet, the dock, the deck console or a photo, and threading a callback
+   * from each of those down to whichever Yumi is mounted would put four
+   * layouts in the business of knowing about a mascot. See lib/pet/wordSaved.
+   *
+   * setState inside the subscriber, never in the effect body — this is
+   * synchronising with an external event, which is what the effect is for.
+   */
+  useEffect(() => {
+    return subscribeToWordSaved(({ duplicate }) => {
+      // Nothing was added, so there is nothing to be pleased about. A
+      // celebration for a word the reader already had reads as a bug.
+      if (duplicate) return;
+
+      setReaction("happy");
+
+      if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
+      reactionTimeoutRef.current = setTimeout(
+        () => setReaction(null),
+        WORD_SAVED_REACTION_MS,
+      );
+    });
+  }, []);
 
   const lines = getStatusLines(displayMood, context.wordsToday, copy);
 

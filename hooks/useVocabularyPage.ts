@@ -8,15 +8,7 @@ import type { VocabularyStatus } from "@/lib/types/app";
 import { toTraditional } from "@/lib/chinese/toTraditional";
 import { anyLearningLanguageNeedsTraditional } from "@/lib/languages";
 
-type ResetLookup = () => void;
-
-type UseVocabularyPageOptions = {
-  initialAiSearchOpen?: boolean;
-};
-
-export function useVocabularyPage({
-  initialAiSearchOpen = false,
-}: UseVocabularyPageOptions = {}) {
+export function useVocabularyPage() {
   const [query, setRawQuery] = useState("");
 
   /**
@@ -69,19 +61,6 @@ export function useVocabularyPage({
   const [sortMode, setSortMode] = useState<SortMode>(DEFAULT_SORT_MODE);
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [aiSearchOpen, setAiSearchOpen] = useState(initialAiSearchOpen);
-
-  const openAiSearch = useCallback((resetLookup: ResetLookup) => {
-    setQuery("");
-    resetLookup();
-    setAiSearchOpen(true);
-  }, [setQuery]);
-
-  const closeAiSearch = useCallback((resetLookup: ResetLookup) => {
-    setAiSearchOpen(false);
-    setQuery("");
-    resetLookup();
-  }, [setQuery]);
 
   return useMemo(
     () => ({
@@ -105,12 +84,6 @@ export function useVocabularyPage({
 
       filtersOpen,
       setFiltersOpen,
-
-      aiSearchOpen,
-      setAiSearchOpen,
-
-      openAiSearch,
-      closeAiSearch,
     }),
     [
       query,
@@ -121,9 +94,6 @@ export function useVocabularyPage({
       sortMode,
       sortOpen,
       filtersOpen,
-      aiSearchOpen,
-      openAiSearch,
-      closeAiSearch,
     ],
   );
 }

@@ -13,7 +13,10 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
-import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
+import {
+  DuplicateVocabularyError,
+  createVocabularyEntry,
+} from "@/lib/vocabulary/createEntry";
 import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
 import { encodeWordCardMessage } from "@/lib/messages/wordCard";
 import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
@@ -23,21 +26,28 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { isLanguageCode, type LanguageCode } from "@/lib/languages";
+import {
+  getLanguage,
+  isLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
+import { speak as speakText } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
 type IdentificationResult = {
-  englishName: string;
-  chineseName: string;
+  term: string;
+  translation: string;
   partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
+  termExample: string;
+  translationExample: string;
   confidence: "high" | "medium" | "low";
   /**
-   * Which language each named side is in, as the model reported it. Absent
-   * on results cached before the schema carried them, which is why the save
-   * path still passes the pair as the primary answer.
+   * Which language each side is in, as the model reported it.
+   *
+   * Absent on results cached before the schema carried them — v2 keys did
+   * not include it — so every read falls back to the reader's pair rather
+   * than requiring it.
    */
   termLanguage?: LanguageCode;
   translationLanguage?: LanguageCode;
@@ -97,11 +107,11 @@ function isIdentificationResult(value: unknown): value is IdentificationResult {
   const candidate = value as Record<string, unknown>;
   return (
     [
-      "englishName",
-      "chineseName",
+      "term",
+      "translation",
       "partOfSpeech",
-      "englishExample",
-      "chineseExample",
+      "termExample",
+      "translationExample",
     ].every(
       (field) =>
         typeof candidate[field] === "string" &&
@@ -446,7 +456,7 @@ function CaptureContent() {
     readSpeechSupport,
     assumeSupported,
   );
-  const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
+  const [speakingLang, setSpeakingLang] = useState<LanguageCode | null>(null);
   const [pronunciationEntry, setPronunciationEntry] = useState<{
     key: string;
     data: PronunciationResult | null;
@@ -489,18 +499,40 @@ function CaptureContent() {
       ? "/vocabulary"
       : "/";
 
+  /**
+   * Whether the camera was opened from the Universal Search.
+   *
+   * It changes where a saved word lands: back in the search, on the word
+   * that was just photographed, rather than in the vocabulary list. The
+   * reader asked "what is this?" and the answer is the lexicon result — with
+   * the pronunciation, the language, and the word now marked as theirs.
+   */
+  const fromLexicon = fromParam === "lexicon";
+
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
     };
   }, [result]);
 
-  // Same phonetic lookup used by the Discover vocabulary drawer (English
-  // IPA via the free dictionary API, zhuyin/pinyin computed locally) — so
-  // a word identified here looks consistent with the rest of the app's
-  // word cards.
+  /*
+   * The two languages this result is actually in.
+   *
+   * The model reports them, and they are what the card renders, speaks and
+   * saves under. Falling back to the reader's pair covers results cached
+   * before the schema carried the fields — the pair is what the prompt asked
+   * for, so it is the right fallback rather than a guess.
+   */
+  const termLanguage = result?.termLanguage ?? languagePair[0];
+  const translationLanguage =
+    result?.translationLanguage ??
+    (termLanguage === languagePair[1] ? languagePair[0] : languagePair[1]);
+
+  // Same phonetic lookup used by the Discover vocabulary drawer (IPA via the
+  // free dictionary API, zhuyin/pinyin computed locally) — so a word
+  // identified here looks consistent with the rest of the app's word cards.
   const pronunciationKey = result
-    ? `${result.englishName}|${result.chineseName}`
+    ? `${result.term}|${result.translation}`
     : null;
 
   // Derived rather than cleared: tagging the fetched data with the word it
@@ -518,8 +550,8 @@ function CaptureContent() {
     let cancelled = false;
 
     void getPronunciationForPair(
-      { text: result.englishName, language: languagePair[0] },
-      { text: result.chineseName, language: languagePair[1] },
+      { text: result.term, language: termLanguage },
+      { text: result.translation, language: translationLanguage },
     ).then(
       (data) => {
         if (!cancelled) setPronunciationEntry({ key: pronunciationKey, data });
@@ -529,7 +561,7 @@ function CaptureContent() {
     return () => {
       cancelled = true;
     };
-  }, [result, pronunciationKey, languagePair]);
+  }, [result, pronunciationKey, termLanguage, translationLanguage]);
 
   // Body scrolling is locked by the camera overlay's own useSheetMotion, which
   // now also handles overscroll. A second lock here fought it: this one lived
@@ -594,34 +626,23 @@ function CaptureContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
-  function speak(text: string, language: "en" | "zh") {
+  /**
+   * Reads a piece of the result aloud, in its own language.
+   *
+   * This used to be forty lines of local voice matching that could only say
+   * "en-US" or "zh-TW" — so an Italian word photographed by an Italian
+   * learner was read by an English voice, mispronouncing it. It delegates to
+   * lib/speech now, which knows every language's tag, its acceptable voice
+   * fallbacks, and the rate and voice the reader chose in Settings.
+   */
+  function speak(text: string, language: LanguageCode) {
     if (!speechSupported || !text.trim()) return;
 
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const targetLang = language === "en" ? "en-US" : "zh-TW";
-    const langPrefix = language === "en" ? "en" : "zh";
-
-    utterance.lang = targetLang;
-    utterance.rate = 0.95;
-
-    const voices = window.speechSynthesis.getVoices();
-    const matchedVoice =
-      voices.find((voice) => voice.lang === targetLang) ??
-      voices.find((voice) =>
-        voice.lang.toLowerCase().startsWith(langPrefix)
-      );
-
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    }
-
-    utterance.onstart = () => setSpeakingLang(language);
-    utterance.onend = () => setSpeakingLang(null);
-    utterance.onerror = () => setSpeakingLang(null);
-
-    window.speechSynthesis.speak(utterance);
+    speakText(text, getLanguage(language).speechTag, {
+      onStart: () => setSpeakingLang(language),
+      onEnd: () => setSpeakingLang(null),
+      onError: () => setSpeakingLang(null),
+    });
   }
 
   function stopCamera() {
@@ -951,23 +972,23 @@ function CaptureContent() {
     if (!result) return "";
 
     return encodeWordCardMessage({
-      word: result.englishName,
-      translation: result.chineseName,
+      word: result.term,
+      translation: result.translation,
       /*
-       * The result's fields are still named for the pair this app used to
-       * have; what they hold is the reader's own. Labelling them en/zh-TW
-       * filed an Italian word as English on the receiving end.
+       * The card carries the languages the model actually answered in, not
+       * the sender's settings. Labelling them from the pair filed an Italian
+       * word as English on the receiving end.
        */
-      wordLanguage: languagePair[0],
-      translationLanguage: languagePair[1],
+      wordLanguage: termLanguage,
+      translationLanguage,
       partOfSpeech: result.partOfSpeech,
       texts: {
-        [languagePair[0]]: result.englishName,
-        [languagePair[1]]: result.chineseName,
+        [termLanguage]: result.term,
+        [translationLanguage]: result.translation,
       },
       examples: {
-        [languagePair[0]]: result.englishExample,
-        [languagePair[1]]: result.chineseExample,
+        [termLanguage]: result.termExample,
+        [translationLanguage]: result.translationExample,
       },
     });
   }
@@ -1012,22 +1033,27 @@ function CaptureContent() {
       try {
         await createVocabularyEntry({
           userId: user.id,
-          term: result.englishName,
-          translation: result.chineseName,
+          term: result.term,
+          translation: result.translation,
           partOfSpeech: result.partOfSpeech,
-          termExample: result.englishExample,
-          translationExample: result.chineseExample,
+          termExample: result.termExample,
+          translationExample: result.translationExample,
           imageUrl: publicImage.publicUrl,
           confidence: result.confidence,
           status: "new",
           language: {
             pair: languagePair,
             /*
-             * The photo was identified in these two languages — the prompt
-             * that produced this result named them — so the row keeps them
-             * rather than being re-guessed from its own text later.
+             * What the model said, not what the settings say.
+             *
+             * This used to state the reader's pair outright, which outranks
+             * everything and is never recomputed — so a word the model itself
+             * had labelled Italian was stored as English, permanently,
+             * because the reader happened to be studying English that week.
+             * The pair still travels along as the context the photo was taken
+             * in, and as the fallback when a cached result predates the
+             * language fields.
              */
-            stated: { term: languagePair[0], translation: languagePair[1] },
             ai: {
               termLanguage: result.termLanguage,
               translationLanguage: result.translationLanguage,
@@ -1044,14 +1070,28 @@ function CaptureContent() {
       }
 
       setSaved(true);
-      router.push("/vocabulary");
+
+      router.push(
+        fromLexicon
+          ? `/?lexicon=${encodeURIComponent(result.term)}`
+          : "/vocabulary",
+      );
     } catch (saveError) {
       console.error(saveError);
+
       setError(
-        saveError instanceof Error &&
-          saveError.message === capture.errors.loginBeforeSave
-          ? capture.errors.loginBeforeSave
-          : capture.errors.saveWord
+        /*
+         * The duplicate check moved into createVocabularyEntry, which throws
+         * rather than returning a flag — so a word already in the library
+         * arrives here. Saying so is a real answer; the generic "could not
+         * save" would have the reader photographing it again.
+         */
+        saveError instanceof DuplicateVocabularyError
+          ? capture.errors.duplicateWord
+          : saveError instanceof Error &&
+              saveError.message === capture.errors.loginBeforeSave
+            ? capture.errors.loginBeforeSave
+            : capture.errors.saveWord,
       );
     } finally {
       setSaving(false);
@@ -1118,23 +1158,23 @@ function CaptureContent() {
 
     setSendingFriendId(friendId);
     setPendingSharedVocabulary({
-      word: result.englishName,
-      translation: result.chineseName,
+      word: result.term,
+      translation: result.translation,
       /*
-       * The result's fields are still named for the pair this app used to
-       * have; what they hold is the reader's own. Labelling them en/zh-TW
-       * filed an Italian word as English on the receiving end.
+       * The card carries the languages the model actually answered in, not
+       * the sender's settings. Labelling them from the pair filed an Italian
+       * word as English on the receiving end.
        */
-      wordLanguage: languagePair[0],
-      translationLanguage: languagePair[1],
+      wordLanguage: termLanguage,
+      translationLanguage,
       partOfSpeech: result.partOfSpeech,
       texts: {
-        [languagePair[0]]: result.englishName,
-        [languagePair[1]]: result.chineseName,
+        [termLanguage]: result.term,
+        [translationLanguage]: result.translation,
       },
       examples: {
-        [languagePair[0]]: result.englishExample,
-        [languagePair[1]]: result.chineseExample,
+        [termLanguage]: result.termExample,
+        [translationLanguage]: result.translationExample,
       },
     });
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
@@ -1382,10 +1422,10 @@ function CaptureContent() {
                   learner's own two languages, learning first.
                 */}
                 <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                  {result.englishName}
+                  {result.term}
                 </h2>
                 <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
-                  {result.chineseName}
+                  {result.translation}
                 </p>
                 <p className="mt-1 text-xs text-ink-faint">
                   {
@@ -1397,37 +1437,45 @@ function CaptureContent() {
 
                 <div className="mt-2.5 space-y-1.5">
                   {(() => {
-                    const englishIsPrimary = true;
-                    const primaryValueClass =
-                      "mt-0.5 block break-words text-[16px] font-semibold text-black";
-                    const secondaryValueClass =
-                      "mt-0.5 block break-words text-[14px] font-normal text-ink-soft";
-                    const primaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90";
-                    const secondaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90";
+                    /*
+                     * Two boxes, each labelled with the language it is in and
+                     * spoken by that language's own voice.
+                     *
+                     * This was a hard-coded pair of boxes headed "English" and
+                     * "中文", reading their contents with an en-US and a zh-TW
+                     * voice. Photograph a lamp while studying Italian and the
+                     * card said the Italian word was English and pronounced it
+                     * like one. Both halves now come off the result's own
+                     * languages, which the model reports.
+                     */
+                    const valueClass = (primary: boolean) =>
+                      primary
+                        ? "mt-0.5 block break-words text-[16px] font-semibold text-black"
+                        : "mt-0.5 block break-words text-[14px] font-normal text-ink-soft";
 
-                    const englishBox = (
+                    const buttonClass = (primary: boolean) =>
+                      primary
+                        ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90"
+                        : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90";
+
+                    const languageBox = (
+                      text: string,
+                      language: LanguageCode,
+                      reading: string | null | undefined,
+                      primary: boolean,
+                    ) => (
                       <div
-                        key="english"
+                        key={language}
                         className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                       >
                         <span className="min-w-0">
                           <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                            English
+                            {getLanguage(language).endonym}
                           </span>
-                          <span
-                            className={
-                              englishIsPrimary
-                                ? primaryValueClass
-                                : secondaryValueClass
-                            }
-                          >
-                            {result.englishName}
-                          </span>
-                          {pronunciation?.englishPronunciation && (
+                          <span className={valueClass(primary)}>{text}</span>
+                          {reading && (
                             <span className="mt-0.5 block text-[12px] text-ink-faint">
-                              {pronunciation.englishPronunciation}
+                              {reading}
                             </span>
                           )}
                         </span>
@@ -1435,69 +1483,51 @@ function CaptureContent() {
                         {speechSupported && (
                           <button
                             type="button"
-                            onClick={() => speak(result.englishName, "en")}
-                            aria-label={capture.result.playEnglishAriaLabel}
-                            className={
-                              englishIsPrimary
-                                ? primaryButtonClass
-                                : secondaryButtonClass
-                            }
+                            onClick={() => speak(text, language)}
+                            aria-label={insertValues(
+                              t.vocabulary.detail.listenAriaLabel,
+                              { text },
+                            )}
+                            className={buttonClass(primary)}
                           >
-                            <SpeakerIcon speaking={speakingLang === "en"} />
+                            <SpeakerIcon speaking={speakingLang === language} />
                           </button>
                         )}
                       </div>
                     );
 
-                    const chineseBox = (
-                      <div
-                        key="chinese"
-                        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
-                            中文
-                          </span>
-                          <span
-                            className={
-                              englishIsPrimary
-                                ? secondaryValueClass
-                                : primaryValueClass
-                            }
-                          >
-                            {result.chineseName}
-                          </span>
-                          {(pronunciation?.pinyin || pronunciation?.zhuyin) && (
-                            <span className="mt-0.5 block text-[12px] text-ink-faint">
-                              {[pronunciation?.pinyin, pronunciation?.zhuyin]
-                                .filter(Boolean)
-                                .join("  ")}
-                            </span>
-                          )}
-                        </span>
+                    /*
+                     * Which reading belongs to which side is a question about
+                     * the language, not about the field: IPA for the alphabets,
+                     * pinyin and zhuyin for Chinese. Asked of the language table
+                     * rather than assumed from the slot.
+                     */
+                    const readingFor = (language: LanguageCode) =>
+                      getLanguage(language).phonetics.includes("pinyin")
+                        ? [pronunciation?.pinyin, pronunciation?.zhuyin]
+                            .filter(Boolean)
+                            .join("  ") || null
+                        : (pronunciation?.englishPronunciation ?? null);
 
-                        {speechSupported && (
-                          <button
-                            type="button"
-                            onClick={() => speak(result.chineseName, "zh")}
-                            aria-label={capture.result.playChineseAriaLabel}
-                            className={
-                              englishIsPrimary
-                                ? secondaryButtonClass
-                                : primaryButtonClass
-                            }
-                          >
-                            <SpeakerIcon speaking={speakingLang === "zh"} />
-                          </button>
-                        )}
-                      </div>
-                    );
-
-                    return [englishBox, chineseBox];
+                    // The learning language leads, as it does on every card.
+                    return [
+                      languageBox(
+                        result.term,
+                        termLanguage,
+                        readingFor(termLanguage),
+                        true,
+                      ),
+                      languageBox(
+                        result.translation,
+                        translationLanguage,
+                        readingFor(translationLanguage),
+                        false,
+                      ),
+                    ];
                   })()}
                 </div>
 
-                {(result.englishExample || result.chineseExample) && (
+                {(result.termExample || result.translationExample) && (
                   <div className="mt-2.5">
                     <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
                       {t.vocabulary.detail.example}
@@ -1505,63 +1535,50 @@ function CaptureContent() {
 
                     <div className="mt-1.5 space-y-1.5">
                       {(() => {
-                        const englishExampleBox = result.englishExample ? (
-                          <div
-                            key="english-example"
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                          >
-                            <span className="min-w-0 break-words text-sm leading-6 text-neutral-900">
-                              {result.englishExample}
-                            </span>
-
-                            {speechSupported && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  speak(result.englishExample, "en")
-                                }
-                                aria-label={
-                                  capture.result.playEnglishAriaLabel
-                                }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
+                        const exampleBox = (
+                          text: string,
+                          language: LanguageCode,
+                          strong: boolean,
+                        ) =>
+                          text ? (
+                            <div
+                              key={`example-${language}`}
+                              className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
+                            >
+                              <span
+                                className={`min-w-0 break-words text-sm leading-6 ${
+                                  strong ? "text-neutral-900" : "text-ink-soft"
+                                }`}
                               >
-                                <SpeakerIcon
-                                  speaking={speakingLang === "en"}
-                                />
-                              </button>
-                            )}
-                          </div>
-                        ) : null;
+                                {text}
+                              </span>
 
-                        const chineseExampleBox = result.chineseExample ? (
-                          <div
-                            key="chinese-example"
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                          >
-                            <span className="min-w-0 break-words text-sm leading-6 text-ink-soft">
-                              {result.chineseExample}
-                            </span>
+                              {speechSupported && (
+                                <button
+                                  type="button"
+                                  onClick={() => speak(text, language)}
+                                  aria-label={insertValues(
+                                    t.vocabulary.detail.listenAriaLabel,
+                                    { text },
+                                  )}
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
+                                >
+                                  <SpeakerIcon
+                                    speaking={speakingLang === language}
+                                  />
+                                </button>
+                              )}
+                            </div>
+                          ) : null;
 
-                            {speechSupported && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  speak(result.chineseExample, "zh")
-                                }
-                                aria-label={
-                                  capture.result.playChineseAriaLabel
-                                }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
-                              >
-                                <SpeakerIcon
-                                  speaking={speakingLang === "zh"}
-                                />
-                              </button>
-                            )}
-                          </div>
-                        ) : null;
-
-                        return [englishExampleBox, chineseExampleBox];
+                        return [
+                          exampleBox(result.termExample, termLanguage, true),
+                          exampleBox(
+                            result.translationExample,
+                            translationLanguage,
+                            false,
+                          ),
+                        ];
                       })()}
                     </div>
                   </div>

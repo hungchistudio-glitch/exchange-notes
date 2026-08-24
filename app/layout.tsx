@@ -29,8 +29,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Exchange Notes",
+  /*
+   * Five languages, not two. This still said "English and Traditional
+   * Chinese" long after the app learned Spanish, French and Italian — the
+   * kind of copy that goes stale silently because nothing renders it inside
+   * the product.
+   */
   description:
-    "Learn English and Traditional Chinese together, one note at a time.",
+    "Look up any word in five languages, and keep the ones worth remembering.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

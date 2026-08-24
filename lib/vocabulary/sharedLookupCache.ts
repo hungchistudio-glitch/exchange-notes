@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/service";
-import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
-import { isVocabularyLookupResult } from "@/lib/types/vocabularyLookup";
+import type { LexiconEntry } from "@/lib/lexicon/types";
+import { isLexiconEntry } from "@/lib/lexicon/types";
 
 /**
  * Cross-user, cross-instance cache for vocabulary lookups.
@@ -24,7 +24,7 @@ import { isVocabularyLookupResult } from "@/lib/types/vocabularyLookup";
 
 const TABLE = "vocabulary_lookup_cache";
 
-/** Bump when VocabularyLookupResult changes shape. */
+/** Bump when LexiconEntry changes shape. */
 const CACHE_SCHEMA_VERSION = 1;
 
 /*
@@ -48,7 +48,7 @@ function isUsableKey(key: string) {
 
 export async function readSharedLookupCache(
   key: string,
-): Promise<VocabularyLookupResult | null> {
+): Promise<LexiconEntry | null> {
   if (!isUsableKey(key)) return null;
 
   try {
@@ -64,7 +64,7 @@ export async function readSharedLookupCache(
 
     // A row written by an older result shape is discarded, not served.
     if (data.schema_version !== CACHE_SCHEMA_VERSION) return null;
-    if (!isVocabularyLookupResult(data.result)) return null;
+    if (!isLexiconEntry(data.result)) return null;
 
     // Fire-and-forget: hit accounting must not add latency to the response.
     void supabase
@@ -79,7 +79,7 @@ export async function readSharedLookupCache(
 
 export async function writeSharedLookupCache(
   key: string,
-  result: VocabularyLookupResult,
+  result: LexiconEntry,
   source: string,
 ): Promise<void> {
   if (!isUsableKey(key)) return;

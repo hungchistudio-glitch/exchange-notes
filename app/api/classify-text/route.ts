@@ -1,12 +1,20 @@
 import { buildClassifyTextPrompt } from "@/lib/ai/prompts/classifyText";
-import type { LanguageCode } from "@/lib/languages";
-import { readLearningPair } from "@/lib/profile/languagePair";
+import {
+  LANGUAGE_CODES,
+  isLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
+import { DETECTION_CONFIDENCE_FLOOR, detectLanguage } from "@/lib/languageDetection";
+import { classifyQueryKind } from "@/lib/lexicon/queryKind";
+import { normalizeQuery } from "@/lib/lexicon/normalize";
+import { readLanguageRoles } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { VocabularyLookupResult } from "@/lib/types/vocabularyLookup";
-import { isVocabularyLookupResult } from "@/lib/types/vocabularyLookup";
+import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
+import type { LexiconEntry, LexiconQueryKind } from "@/lib/lexicon/types";
+import { isLexiconEntry } from "@/lib/lexicon/types";
 import { lookupOffline } from "@/lib/vocabulary/offlineLookup";
 import {
   readSharedLookupCache,
@@ -19,7 +27,14 @@ import {
 
 export const runtime = "nodejs";
 
-const MAX_QUERY_LENGTH = 80;
+/*
+ * Long enough for a sentence, because the app now accepts one.
+ *
+ * The shared cache's key column stops at 80 characters, so anything past
+ * that skips it — a miss, not a wrong answer, and sentences are the queries
+ * least likely to be asked twice by two different people anyway.
+ */
+const MAX_QUERY_LENGTH = 240;
 const MEMORY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_MAX_ITEMS = 500;
 const MODEL_COOLDOWN_MS = 65 * 1000;
@@ -31,31 +46,55 @@ const REQUEST_TIMEOUT_MS = readBoundedInteger(
 );
 
 /*
- * The schema is built per request, because two of its fields are the pair.
+ * Every supported language, every time.
  *
- * A model asked "which language is this" with a free-text answer replies
- * "French", "fr-FR" and "français" on three consecutive calls. Constraining
- * it to the two codes the prompt named makes the answer a choice between two
- * things rather than a naming exercise, and makes an out-of-pair answer
- * impossible rather than merely unlikely.
+ * This enum used to hold exactly the two languages the reader had set, and
+ * the comment above it argued — correctly, in its own terms — that
+ * constraining the choice stops a model from spelling French three different
+ * ways. What it also did was make a French answer unrepresentable for a
+ * reader studying English, which is not a formatting problem but a wrong
+ * answer the app then stored forever.
+ *
+ * The constraint stays; the set widens. Five codes is still a choice between
+ * named things rather than a naming exercise.
  */
-function buildTextResultSchema(
-  [first, second]: readonly [LanguageCode, LanguageCode],
-) {
+const LANGUAGE_ENUM = [...LANGUAGE_CODES];
+
+function buildTextResultSchema() {
   return {
     type: "object",
     additionalProperties: false,
     properties: {
-      englishName: { type: "string", minLength: 1, maxLength: 80 },
-      chineseName: { type: "string", minLength: 1, maxLength: 80 },
-      termLanguage: { type: "string", enum: [first, second] },
-      translationLanguage: { type: "string", enum: [first, second] },
+      term: { type: "string", minLength: 1, maxLength: 240 },
+      translation: { type: "string", minLength: 1, maxLength: 240 },
+      termLanguage: { type: "string", enum: LANGUAGE_ENUM },
+      translationLanguage: { type: "string", enum: LANGUAGE_ENUM },
+      /*
+       * The language the reader's own text was in — which is not always the
+       * headword's language. Asked for separately because "no, that was
+       * Italian" is a correction about their text, and pinning the headword
+       * would answer a question nobody asked.
+       */
+      queryLanguage: { type: "string", enum: LANGUAGE_ENUM },
       partOfSpeech: {
         type: "string",
         enum: ["noun", "verb", "adjective", "phrase", "other"],
       },
-      englishExample: { type: "string", minLength: 4, maxLength: 200 },
-      chineseExample: { type: "string", minLength: 2, maxLength: 200 },
+      termExample: { type: "string", minLength: 4, maxLength: 240 },
+      translationExample: { type: "string", minLength: 2, maxLength: 240 },
+      kind: { type: "string", enum: ["word", "phrase", "sentence"] },
+      /*
+       * Flat strings rather than a nullable object.
+       *
+       * "There is nothing worth keeping in this sentence" is a real answer,
+       * and an empty string says it without asking the schema to express a
+       * null object — which the structured-output layer handles unevenly
+       * across model versions. The parser below turns all-empty into null
+       * once, in one place.
+       */
+      highlightTerm: { type: "string", maxLength: 120 },
+      highlightTranslation: { type: "string", maxLength: 120 },
+      highlightPartOfSpeech: { type: "string", maxLength: 40 },
       confidence: { type: "string", enum: ["high", "medium", "low"] },
       category: {
         type: "string",
@@ -63,13 +102,18 @@ function buildTextResultSchema(
       },
     },
     required: [
-      "englishName",
-      "chineseName",
+      "term",
+      "translation",
       "termLanguage",
       "translationLanguage",
+      "queryLanguage",
       "partOfSpeech",
-      "englishExample",
-      "chineseExample",
+      "termExample",
+      "translationExample",
+      "kind",
+      "highlightTerm",
+      "highlightTranslation",
+      "highlightPartOfSpeech",
       "confidence",
       "category",
     ],
@@ -78,11 +122,11 @@ function buildTextResultSchema(
 
 type CacheEntry = {
   expiresAt: number;
-  result: VocabularyLookupResult;
+  result: LexiconEntry;
 };
 
 type ResolvedLookup = {
-  result: VocabularyLookupResult;
+  result: LexiconEntry;
   /** "memory", "shared", "offline", or the model id that produced it. */
   origin: string;
   /**
@@ -97,29 +141,34 @@ const resultCache = new Map<string, CacheEntry>();
 const inFlightLookups = new Map<string, Promise<ResolvedLookup>>();
 const modelCooldowns = new Map<string, number>();
 
-function normalizeQuery(value: string) {
-  return value.normalize("NFKC").trim().replace(/\s+/g, " ");
-}
-
 /**
- * The cache key is the query *and* the pair it was answered in.
+ * The cache key is the query, the pair it was answered in, and any language
+ * the reader pinned.
  *
  * Both caches here are shared — the in-memory one across every request an
- * instance serves, the table across the whole app — and the answer is no
- * longer the same for everyone. Keyed on the query alone, the first person to
- * look up "bicycle" would decide what everyone else got back, in their
- * language rather than the asker's.
+ * instance serves, the table across the whole app — and the answer is not the
+ * same for everyone. Keyed on the query alone, the first person to look up
+ * "bicycle" would decide what everyone else got back, in their language
+ * rather than the asker's.
  *
- * Old rows keyed without a pair simply never match again and age out; a
- * cache miss costs a lookup, which is the failure this module is built to
- * take. A query long enough to push the key past the column's 80-character
- * ceiling skips the shared cache the same way — see MAX_KEY_LENGTH there.
+ * The pinned language belongs in the key for the same reason it exists: "no,
+ * that is Italian" produces a different answer for the same eight letters,
+ * and serving one reader's correction to the next reader is the bug this
+ * whole module is careful about in miniature.
+ *
+ * So does the reader's first language, which is not presentation either: it
+ * decides whether a query is "what does this mean" or "what is this in the
+ * language I study", and those are different cards.
  */
 function getCacheKey(
   query: string,
-  [learning, native]: readonly [LanguageCode, LanguageCode],
+  { learning, support, native }: LanguageRoles,
+  chosen: LanguageCode | null,
 ) {
-  return `${learning}+${native}:${query.toLocaleLowerCase("en-US")}`;
+  const first = native && native !== support ? `~${native}` : "";
+  const pin = chosen ? `@${chosen}` : "";
+
+  return `${learning}+${support}${first}${pin}:${query.toLocaleLowerCase("en-US")}`;
 }
 
 function getCachedResult(key: string) {
@@ -138,7 +187,7 @@ function getCachedResult(key: string) {
   return cached.result;
 }
 
-function cacheResult(key: string, result: VocabularyLookupResult) {
+function cacheResult(key: string, result: LexiconEntry) {
   resultCache.set(key, {
     expiresAt: Date.now() + MEMORY_CACHE_TTL_MS,
     result,
@@ -175,20 +224,82 @@ function isRateLimitError(error: unknown) {
   return error instanceof Error && /quota|rate.?limit|too many requests/i.test(error.message);
 }
 
+/**
+ * The model's flat answer, folded into the shape the app carries.
+ *
+ * The highlight is the only real work: three strings that are all present and
+ * all possibly empty become one object or nothing at all, decided here rather
+ * than at each of the places that render it.
+ */
+function toLexiconEntry(value: unknown): LexiconEntry | null {
+  if (!isLexiconEntry(value)) return null;
+
+  const raw = value as LexiconEntry & {
+    highlightTerm?: unknown;
+    highlightTranslation?: unknown;
+    highlightPartOfSpeech?: unknown;
+  };
+
+  const highlightTerm =
+    typeof raw.highlightTerm === "string" ? raw.highlightTerm.trim() : "";
+  const highlightTranslation =
+    typeof raw.highlightTranslation === "string"
+      ? raw.highlightTranslation.trim()
+      : "";
+
+  /*
+   * The three flat highlight fields are folded into one object below and
+   * must not survive as loose keys — a cached entry carrying both shapes is
+   * two answers to the same question.
+   */
+  const entry = { ...raw };
+  delete entry.highlightTerm;
+  delete entry.highlightTranslation;
+  delete entry.highlightPartOfSpeech;
+
+  return {
+    ...entry,
+    highlight:
+      highlightTerm && highlightTranslation
+        ? {
+            term: highlightTerm,
+            translation: highlightTranslation,
+            partOfSpeech:
+              typeof raw.highlightPartOfSpeech === "string"
+                ? raw.highlightPartOfSpeech.trim()
+                : "",
+          }
+        : null,
+  };
+}
+
+type LookupContext = {
+  query: string;
+  roles: LanguageRoles;
+  chosen: LanguageCode | null;
+  detected: LanguageCode | null;
+  kind: LexiconQueryKind;
+};
+
 async function lookupWithModel(
   client: GoogleGenAI,
   model: string,
-  query: string,
-  languagePair: readonly [LanguageCode, LanguageCode],
+  context: LookupContext,
 ) {
   const interaction = await client.interactions.create(
     {
       model,
-      input: buildClassifyTextPrompt(query, languagePair),
+      input: buildClassifyTextPrompt({
+        query: context.query,
+        roles: context.roles,
+        detected: context.detected,
+        chosen: context.chosen,
+        kind: context.kind,
+      }),
       response_format: {
         type: "text",
         mime_type: "application/json",
-        schema: buildTextResultSchema(languagePair),
+        schema: buildTextResultSchema(),
       },
       generation_config: {
         thinking_level: "low",
@@ -210,19 +321,29 @@ async function lookupWithModel(
     throw new Error("Gemini returned an empty response.");
   }
 
-  const result = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
+  const parsed = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
+  const result = toLexiconEntry(parsed);
 
-  if (!isVocabularyLookupResult(result)) {
+  if (!result) {
     throw new Error("Gemini returned an invalid vocabulary result.");
+  }
+
+  /*
+   * A gloss in the same language as the headword is not a gloss.
+   *
+   * The prompt says so, and a model still produces one occasionally for a
+   * word that exists in both languages. Caught here rather than downstream
+   * because the database refuses such a row and the reader would meet it as
+   * a failed save several screens later.
+   */
+  if (result.termLanguage && result.termLanguage === result.translationLanguage) {
+    throw new Error("Gemini glossed the word in its own language.");
   }
 
   return result;
 }
 
-async function lookupWithModelFallback(
-  query: string,
-  languagePair: readonly [LanguageCode, LanguageCode],
-) {
+async function lookupWithModelFallback(context: LookupContext) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -239,7 +360,7 @@ async function lookupWithModelFallback(
     if (cooldownUntil > Date.now()) continue;
 
     try {
-      const result = await lookupWithModel(client, model, query, languagePair);
+      const result = await lookupWithModel(client, model, context);
       return { result, model };
     } catch (error) {
       const status = getErrorStatus(error);
@@ -260,9 +381,8 @@ async function lookupWithModelFallback(
 }
 
 async function performLookup(
-  query: string,
+  context: LookupContext,
   key: string,
-  languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<ResolvedLookup> {
   // Any word another user has already looked up costs nothing and returns in
   // a single round trip, so this runs ahead of the model.
@@ -271,7 +391,7 @@ async function performLookup(
     return { result: shared, origin: "shared", fromModel: true };
   }
 
-  const modelResult = await lookupWithModelFallback(query, languagePair);
+  const modelResult = await lookupWithModelFallback(context);
   if (modelResult) {
     // Not awaited: persisting for other users must not delay this response,
     // and a cache that cannot be written is not a failed lookup.
@@ -285,17 +405,19 @@ async function performLookup(
   }
 
   return {
-    result: await lookupOffline(query),
+    result: await lookupOffline(context.query, {
+      source: context.chosen ?? context.detected,
+      roles: context.roles,
+    }),
     origin: "offline",
     fromModel: false,
   };
 }
 
 async function lookupVocabulary(
-  query: string,
-  languagePair: readonly [LanguageCode, LanguageCode],
+  context: LookupContext,
 ): Promise<ResolvedLookup> {
-  const key = getCacheKey(query, languagePair);
+  const key = getCacheKey(context.query, context.roles, context.chosen);
 
   const cached = getCachedResult(key);
   if (cached) return { result: cached, origin: "memory", fromModel: true };
@@ -303,7 +425,7 @@ async function lookupVocabulary(
   const existingRequest = inFlightLookups.get(key);
   if (existingRequest) return existingRequest;
 
-  const request = performLookup(query, key, languagePair)
+  const request = performLookup(context, key)
     .then((resolved) => {
       if (resolved.fromModel) cacheResult(key, resolved.result);
       return resolved;
@@ -330,7 +452,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as { text?: string };
+    const body = (await request.json()) as {
+      text?: string;
+      sourceLanguage?: unknown;
+    };
     const query = normalizeQuery(body.text ?? "");
 
     if (!query) {
@@ -342,14 +467,35 @@ export async function POST(request: Request) {
 
     if (query.length > MAX_QUERY_LENGTH) {
       return NextResponse.json(
-        { error: `Please keep the word or phrase under ${MAX_QUERY_LENGTH} characters.` },
+        { error: `Please keep it under ${MAX_QUERY_LENGTH} characters.` },
         { status: 400 },
       );
     }
 
-    const languagePair = await readLearningPair(supabase, user.id);
+    const roles = await readLanguageRoles(supabase, user.id);
 
-    const resolved = await lookupVocabulary(query, languagePair);
+    /*
+     * Detected here as well as on the device, and for a different reason.
+     * The client detects to decide what to show while it waits; this
+     * detection is a hint inside the prompt, so it has to be computed where
+     * the prompt is built rather than trusted from a request body that any
+     * caller can write.
+     */
+    const detection = detectLanguage(query);
+    const chosen = isLanguageCode(body.sourceLanguage)
+      ? body.sourceLanguage
+      : null;
+
+    const resolved = await lookupVocabulary({
+      query,
+      roles,
+      chosen,
+      detected:
+        detection.language && detection.confidence >= DETECTION_CONFIDENCE_FLOOR
+          ? detection.language
+          : null,
+      kind: classifyQueryKind(query),
+    });
 
     return NextResponse.json(
       {

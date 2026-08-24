@@ -170,6 +170,11 @@ const traditionalChinese: TranslationDictionary = {
         body:
           "我就在這裡。你會看到今天的重點、我幫你挑的字，還有一個可以隨手寫下筆記的地方。複習完餵我一塊餅乾，我會很開心。",
       },
+      search: {
+        title: "一個欄位，什麼字都能查",
+        body:
+          "看到不會的東西——招牌上、訊息裡、任何地方？打字、說出來，或用相機拍下來都可以。我會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。它就在首頁最上面，其他頁面則在底部導覽列上。",
+      },
       vocabulary: {
         title: "你收集的一切",
         body:
@@ -218,7 +223,75 @@ const traditionalChinese: TranslationDictionary = {
     home: "首頁",
     discover: "探索",
     settings: "設定",
+    search: "搜尋",
     primaryLabel: "主要導覽",
+  },
+
+  lexicon: {
+    open: "搜尋或新增單字",
+    fieldPlaceholder: "搜尋或新增單字…",
+    fieldPlaceholderLanguage: "搜尋或新增{language}單字…",
+    fieldHint: "可以打字、說出來，或用相機拍下來。",
+    inputAriaLabel: "搜尋或新增單字",
+
+    modeType: "鍵盤",
+    modeVoice: "語音",
+    modeCamera: "掃描",
+    modeImage: "圖片",
+
+    search: "搜尋",
+    clear: "清除",
+    close: "關閉搜尋",
+    cancel: "取消",
+
+    emptyTitle: "輸入一個單字或句子。",
+    emptyDescription:
+      "Yumi 會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。",
+    searching: "查詢中…",
+    offlineTitle: "目前離線",
+    offlineDescription: "現在只能搜尋這台裝置上已經有的單字。",
+    errorTitle: "找不到完全符合的結果。",
+    errorDescription: "確認一下拼字，或改用拍照試試看。",
+    retry: "再試一次",
+
+    yourVocabulary: "你的單字",
+    dictionary: "字典",
+    savedOn: "{date} 儲存",
+    openWord: "開啟",
+    reviewWord: "複習",
+    listen: "發音",
+
+    save: "存進單字庫",
+    saving: "儲存中…",
+    saved: "已儲存",
+    alreadySaved: "已經在你的單字庫裡",
+    alreadySavedDescription: "你在 {date} 存過這個字。",
+    openSavedWord: "開啟已儲存的單字",
+    noTranslation: "還沒有意思",
+    noTranslationDetail: "目前連不上字典，所以這個字還沒有對應的意思。",
+    degradedNotice: "單字和意思是對的，例句是通用的範本。",
+    lowConfidence: "這是最接近的猜測，儲存前請先確認。",
+    example: "例句",
+    share: "分享",
+    copied: "已複製",
+    send: "傳送",
+
+    languageLabel: "語言",
+    changeLanguage: "更改語言",
+    chooseLanguage: "這是哪一種語言？",
+    chooseLanguageDescription: "這個拼法在好幾種語言裡都存在。",
+
+    sentenceTitle: "句子",
+    phraseTitle: "片語",
+    translationTitle: "意思",
+    worthKeeping: "值得記下來",
+    savePhrase: "儲存「{term}」",
+    sentenceNotSavable:
+      "整句話沒辦法變成複習卡片，留下你真正想記住的那一段就好。",
+
+    onboardingTitle: "看到不會的字？",
+    onboardingDescription: "在這裡查。Yumi 會幫你判斷是哪一種語言。",
+    onboardingDismiss: "知道了",
   },
 
   cosmic: {
@@ -464,7 +537,7 @@ const traditionalChinese: TranslationDictionary = {
 
     analysis: {
       title: "正在分析照片",
-      description: "AI 正在辨識物品，並準備英文與繁體中文單字及例句。",
+      description: "Yumi 正在辨識這是什麼，以及該怎麼唸。",
     },
 
     result: {
@@ -1251,43 +1324,13 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     lookup: {
-      title: "搜尋單字",
-      placeholder: "英文或繁體中文",
-      search: "智慧搜尋",
-      searching: "搜尋中",
-      description:
-        "搜尋任何英文或繁體中文單字，自動取得翻譯、詞性與自然例句。",
-      error: "無法搜尋這個單字。",
-      degradedNotice:
-        "智慧搜尋忙碌中，這筆結果來自離線字典。單字和翻譯都正確，只有例句是通用範本。",
-      degradedRetry: "再試一次以取得真實例句",
-      translationUnavailable: "翻譯尚未載入",
-      translationUnavailableDetail:
-        "目前連不上翻譯服務，通常是網路不穩或斷線造成的。這個單字本身沒有問題，等連線恢復後再試一次即可。",
-      translationUnavailableRetry: "再試一次",
-      translationUnavailableSaveBlocked:
-        "翻譯載入前會暫停儲存，避免這個單字在沒有字義的情況下進入你的單字庫。",
-      english: "英文",
-      chinese: "繁體中文",
-      englishExample: "英文例句",
-      chineseExample: "中文例句",
-      share: "分享",
-      send: "傳送",
-      saving: "儲存中",
-      addToVocabulary: "加入單字庫",
       unsavedTitle: "這個單字尚未儲存",
       noMatchingTitle: "找不到符合的單字",
       unsavedDescription:
         "搜尋這個單字以查看意思與例句，並將它加入你的單字庫。",
       noMatchingDescription: "請嘗試其他搜尋或切換不同的學習狀態。",
-      lookingUp: "搜尋中",
       lookUpWord: "搜尋「{word}」",
-      wordFound: "找到單字",
       shareWithFriend: "分享給朋友",
-      closeSearchAriaLabel: "關閉單字搜尋",
-      inputPlaceholder: "輸入英文或繁體中文",
-      clearSearchAriaLabel: "清除搜尋",
-      lowConfidenceNotice: "Yumi 還不太確定，儲存前請先檢查結果。",
     },
 
     collections: {
@@ -1464,9 +1507,7 @@ const traditionalChinese: TranslationDictionary = {
       loadingVocabulary: "正在載入你的單字",
       firstWordTitle: "第一個單字，從生活開始",
       firstWordDescription:
-        "拍下日常生活中的物品，儲存它的英文與繁體中文意思。",
-      discoverWord: "探索一個單字",
-
+        "查一個你剛遇到的字，或拍下眼前的東西。",
       statuses: {
         all: "全部",
         new: "新單字",

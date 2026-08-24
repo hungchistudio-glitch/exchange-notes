@@ -1,10 +1,12 @@
-import type { ClassifiedVocabulary } from "@/lib/vocabulary/classify";
-import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
+import type { LexiconEntry } from "@/lib/lexicon/types";
+import {
+  DuplicateVocabularyError,
+  createVocabularyEntry,
+} from "@/lib/vocabulary/createEntry";
 import {
   deleteVocabulary,
   getCurrentUser,
   updateVocabularyStatus,
-  vocabularyExists,
 } from "@/lib/vocabulary/repository";
 import { recordInteraction } from "@/lib/vocabulary/helpers";
 import type { LanguageCode } from "@/lib/languages";
@@ -16,13 +18,12 @@ type SaveClassifiedVocabularyResult = {
 };
 
 export async function saveClassifiedVocabulary(
-  classified: ClassifiedVocabulary,
+  entry: LexiconEntry,
   fallbackText: string,
   /*
-   * The pair the result was produced in, learning first. The classifier's two
-   * fields are still named for two languages; which languages they hold is
-   * decided by the prompt this pair built, so it has to travel with the
-   * result rather than being guessed at the point it is saved.
+   * The reader's pair, learning first. Not an answer about this word — the
+   * answer is on the entry — but the context it was met in, which is recorded
+   * on the row and is the fallback when the model said nothing usable.
    */
   languagePair: readonly [LanguageCode, LanguageCode],
 ): Promise<SaveClassifiedVocabularyResult> {
@@ -32,58 +33,52 @@ export async function saveClassifiedVocabulary(
     throw new Error("Please log in before saving a word.");
   }
 
-  const word = (classified.englishName || fallbackText).trim();
-  const translation = classified.chineseName.trim();
+  const word = (entry.term || fallbackText).trim();
+  const translation = entry.translation.trim();
 
-  const duplicate = await vocabularyExists(
-    user.id,
-    word,
-    translation,
-  );
-
-  if (duplicate) {
-    return {
-      item: null,
-      duplicate: true,
-    };
-  }
-
-  const { item } = await createVocabularyEntry({
-    userId: user.id,
-    term: word,
-    translation,
-    partOfSpeech: classified.partOfSpeech,
-    termExample: classified.englishExample,
-    translationExample: classified.chineseExample,
-    confidence: classified.confidence,
-    category: classified.category,
-    status: "new",
-    language: {
-      pair: languagePair,
-      /*
-       * The pair is a statement, not a guess. The prompt that produced this
-       * result named these two languages and told the model which field
-       * holds which, so the first field is in the first language by
-       * construction — there is nothing here for a detector to add.
-       */
-      stated: { term: languagePair[0], translation: languagePair[1] },
-      /*
-       * What the model said about its own output, kept as the fallback for
-       * a result that reached this point without a pair — an offline
-       * dictionary hit, a row served from the shared cache. The pair
-       * outranks it whenever both are present.
-       */
-      ai: {
-        termLanguage: classified.termLanguage,
-        translationLanguage: classified.translationLanguage,
+  try {
+    const { item } = await createVocabularyEntry({
+      userId: user.id,
+      term: word,
+      translation,
+      partOfSpeech: entry.partOfSpeech,
+      termExample: entry.termExample,
+      translationExample: entry.translationExample,
+      confidence: entry.confidence,
+      category: entry.category,
+      status: "new",
+      language: {
+        pair: languagePair,
+        /*
+         * The model's answer, not the reader's pair.
+         *
+         * This used to state the pair outright — `stated: { term: pair[0] }` —
+         * which was defensible while the prompt could only answer in those two
+         * languages. It can answer in any of the five now, so stating the pair
+         * would file a French word selected by an English learner as English,
+         * permanently, in the one field that is never recomputed afterwards.
+         */
+        ai: {
+          termLanguage: entry.termLanguage,
+          translationLanguage: entry.translationLanguage,
+        },
       },
-    },
-  });
+    });
 
-  return {
-    item,
-    duplicate: false,
-  };
+    return { item, duplicate: false };
+  } catch (saveError) {
+    /*
+     * The duplicate check lives in createVocabularyEntry now, keyed on the
+     * word *and* its language. This used to call vocabularyExists, which read
+     * every row the reader owns on every save and compared on spelling alone —
+     * so an Italian "come" could not be saved beside the English one.
+     */
+    if (saveError instanceof DuplicateVocabularyError) {
+      return { item: null, duplicate: true };
+    }
+
+    throw saveError;
+  }
 }
 
 export async function changeVocabularyStatus(

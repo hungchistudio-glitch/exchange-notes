@@ -169,6 +169,7 @@ export type TranslationDictionary = {
       name: { title: string; body: string };
       senses: { title: string; body: string };
       home: { title: string; body: string };
+      search: { title: string; body: string };
       vocabulary: { title: string; body: string };
       capture: { title: string; body: string; action: string };
       discover: { title: string; body: string; action: string };
@@ -185,7 +186,85 @@ export type TranslationDictionary = {
     home: string;
     discover: string;
     settings: string;
+    /** The dock's centre slot, everywhere except the home screen itself. */
+    search: string;
     primaryLabel: string;
+  };
+
+  /*
+   * The Universal Lexicon — one field for "what is this?", wherever the
+   * reader is standing.
+   *
+   * Shared word for word by the two shells. The warm home sheet and the
+   * Cosmic OmniLexicon differ in what they draw and in nothing they say, so
+   * a sentence written once here is the sentence both of them use.
+   */
+  lexicon: {
+    open: string;
+    fieldPlaceholder: string;
+    /** Takes the learning language's own localized name. */
+    fieldPlaceholderLanguage: string;
+    fieldHint: string;
+    inputAriaLabel: string;
+
+    modeType: string;
+    modeVoice: string;
+    modeCamera: string;
+    modeImage: string;
+
+    search: string;
+    clear: string;
+    close: string;
+    cancel: string;
+
+    emptyTitle: string;
+    emptyDescription: string;
+    searching: string;
+    offlineTitle: string;
+    offlineDescription: string;
+    errorTitle: string;
+    errorDescription: string;
+    retry: string;
+
+    yourVocabulary: string;
+    dictionary: string;
+    savedOn: string;
+    openWord: string;
+    reviewWord: string;
+    listen: string;
+
+    save: string;
+    saving: string;
+    saved: string;
+    alreadySaved: string;
+    alreadySavedDescription: string;
+    openSavedWord: string;
+    noTranslation: string;
+    noTranslationDetail: string;
+    degradedNotice: string;
+    lowConfidence: string;
+    example: string;
+    share: string;
+    /** Shown in place of `share` when the text went to the clipboard. */
+    copied: string;
+    send: string;
+
+    languageLabel: string;
+    changeLanguage: string;
+    chooseLanguage: string;
+    chooseLanguageDescription: string;
+
+    sentenceTitle: string;
+    phraseTitle: string;
+    translationTitle: string;
+    worthKeeping: string;
+    /** Takes the phrase itself. */
+    savePhrase: string;
+    sentenceNotSavable: string;
+
+    onboardingTitle: string;
+    onboardingDescription: string;
+    onboardingDismiss: string;
   };
 
   /*
@@ -1227,38 +1306,12 @@ export type TranslationDictionary = {
     };
 
     lookup: {
-      title: string;
-      placeholder: string;
-      search: string;
-      searching: string;
-      description: string;
-      error: string;
-      degradedNotice: string;
-      degradedRetry: string;
-      translationUnavailable: string;
-      translationUnavailableDetail: string;
-      translationUnavailableRetry: string;
-      translationUnavailableSaveBlocked: string;
-      english: string;
-      chinese: string;
-      englishExample: string;
-      chineseExample: string;
-      share: string;
-      send: string;
-      saving: string;
-      addToVocabulary: string;
       unsavedTitle: string;
       noMatchingTitle: string;
       unsavedDescription: string;
       noMatchingDescription: string;
-      lookingUp: string;
       lookUpWord: string;
-      wordFound: string;
       shareWithFriend: string;
-      closeSearchAriaLabel: string;
-      inputPlaceholder: string;
-      clearSearchAriaLabel: string;
-      lowConfidenceNotice: string;
     };
 
     collections: {
@@ -1442,8 +1495,6 @@ export type TranslationDictionary = {
       loadingVocabulary: string;
       firstWordTitle: string;
       firstWordDescription: string;
-      discoverWord: string;
-
       statuses: {
         all: string;
         new: string;

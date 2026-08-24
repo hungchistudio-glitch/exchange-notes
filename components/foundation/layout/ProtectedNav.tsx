@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
+import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
@@ -48,10 +50,29 @@ export default function ProtectedNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { isCosmic } = useInterfaceMode();
+  const { openSearch } = useLexiconSearchSheet();
   const { unreadCount, pulseToken } = useUnreadMessageCount();
   const { count: pendingFriendRequestCount, pulseToken: friendRequestPulseToken } =
     useIncomingFriendRequestCount();
 
+  /*
+   * Six keys, and the sixth is Search.
+   *
+   * The plan was to swap the centre key — Home on the home screen, Search
+   * everywhere else — until a grep turned up the thing that makes that
+   * unshippable: this dock is the only route back to `/` in the entire app.
+   * Nothing else links there. Trading the centre key away would have left a
+   * reader on the Vocabulary screen with no way home at all.
+   *
+   * So Search is added rather than substituted, directly beside Home, and
+   * every existing key keeps its position. Six icon-only keys still clear
+   * the 44px touch target on the narrowest phone the app supports (53px each
+   * at 375px wide), which is what makes the extra slot affordable.
+   *
+   * It is present on the home screen too, where the field above it does the
+   * same job. A dock whose keys appear and disappear by route is a dock
+   * nobody can build a habit around, and the habit is the whole point.
+   */
   const navRoutes = [
     {
       href: "/vocabulary",
@@ -67,6 +88,12 @@ export default function ProtectedNav() {
       href: "/",
       label: t.navigation.home,
       Icon: NavHomeIcon,
+    },
+    {
+      // No href: this opens a sheet, not a route. See BottomNavigation.
+      label: t.navigation.search,
+      Icon: NavSearchIcon,
+      onSelect: () => openSearch(),
     },
     {
       href: "/discover",
@@ -93,17 +120,17 @@ export default function ProtectedNav() {
       <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">
         <BottomNavigation
           label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
-          items={navRoutes.map((route) => ({
-            href: route.href,
-            label: route.label,
-            active: isActive(pathname, route.href),
-            icon: (
-              <route.Icon
-                className={iconClassName}
-                active={isActive(pathname, route.href)}
-              />
-            ),
-          }))}
+          items={navRoutes.map((route) => {
+            const active = Boolean(route.href) && isActive(pathname, route.href!);
+
+            return {
+              href: route.href,
+              label: route.label,
+              active,
+              icon: <route.Icon className={iconClassName} active={active} />,
+              onSelect: route.onSelect,
+            };
+          })}
         />
       </div>
     );
@@ -113,7 +140,7 @@ export default function ProtectedNav() {
     <BottomNavigation
       label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
       items={navRoutes.map((route) => {
-        const active = isActive(pathname, route.href);
+        const active = Boolean(route.href) && isActive(pathname, route.href!);
         const isMessages = route.href === "/messages";
         // Home is where the "add friends" entry point (LearningPartnerCard)
         // lives, and there's no dedicated Friends tab, so a pending
@@ -125,6 +152,7 @@ export default function ProtectedNav() {
           label: route.label,
           active,
           icon: <route.Icon className={iconClassName} active={active} />,
+          onSelect: route.onSelect,
           // Home is the Command Deck in Cosmic Mode, so going there is a
           // return to the bridge and gets the arrival that says so. Every
           // other dock tap is a lateral move between rooms and gets the short

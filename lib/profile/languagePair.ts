@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
 import {
   DEFAULT_LEARNING_PAIR,
   INTERFACE_LANGUAGE_CODE,
@@ -76,4 +77,55 @@ export function toLearningPair(
     learningCode,
     resolveSupportLanguage(learningCode, interfaceCode, readLanguageCode(native)),
   ];
+}
+
+/**
+ * All three language roles, for callers that need the native one too.
+ *
+ * The pair answers "which two languages is this card in". The native
+ * language answers a different question — "can the reader already read what
+ * they typed?" — and only the lookup asks it. Someone studying French who
+ * types a word in their own first language wants the French back; someone
+ * who types a word off a French street sign wants to know what it means, and
+ * those are opposite answers to the same-looking request. See
+ * resolveCardLanguages.
+ */
+export async function readLanguageRoles(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<LanguageRoles> {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("native_language, learning_language, app_preferences")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        learning: DEFAULT_LEARNING_PAIR[0],
+        support: DEFAULT_LEARNING_PAIR[1],
+        native: null,
+      };
+    }
+
+    const [learning, support] = toLearningPair(
+      data?.learning_language,
+      data?.native_language,
+      (data?.app_preferences as { interfaceLanguage?: unknown } | null)
+        ?.interfaceLanguage,
+    );
+
+    return {
+      learning,
+      support,
+      native: readLanguageCode(data?.native_language),
+    };
+  } catch {
+    return {
+      learning: DEFAULT_LEARNING_PAIR[0],
+      support: DEFAULT_LEARNING_PAIR[1],
+      native: null,
+    };
+  }
 }

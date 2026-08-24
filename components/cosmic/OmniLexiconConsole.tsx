@@ -4,47 +4,31 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type CSSProperties,
   type FormEvent,
 } from "react";
 import Link from "next/link";
-import {
-  BookmarkCheck,
-  BookmarkPlus,
-  Camera,
-  Check,
-  ImageIcon,
-  Keyboard,
-  LoaderCircle,
-  Mic,
-  Radar,
-  Send,
-  Share2,
-  Volume2,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Camera, ImageIcon, Keyboard, Mic, Radar } from "lucide-react";
 
-import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
-import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
+import LexiconResults from "@/components/lexicon/LexiconResults";
+import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import useVocabularyLookup from "@/hooks/useVocabularyLookup";
+import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
+import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
+import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
-import useVocabularyShare from "@/hooks/useVocabularyShare";
 import useVoiceInput from "@/hooks/useVoiceInput";
-import {
-  getPronunciationForPair,
-  type PronunciationResult,
-} from "@/lib/pronunciation/getPronunciation";
 import {
   getLanguage,
   getLanguageName,
   isUnreadableScript,
 } from "@/lib/languages";
-import { speak } from "@/lib/speech";
+import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
-import { getCurrentUser } from "@/lib/vocabulary/repository";
-import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 
 import styles from "./OmniLexiconConsole.module.css";
 
@@ -71,70 +55,48 @@ const WAVE_BARS = 12;
 /**
  * Yumi OmniLexicon — one console for every way of asking "what is this?".
  *
- * Text, voice, camera and image are four doors into the same room. Text and
- * voice both end up in useVocabularyLookup, which is the app's existing
- * lookup pipeline — the same one the vocabulary screen uses, hitting the same
- * endpoint and the same cache. Camera and image hand off to /capture, which
- * already owns recognition. Nothing here is a second search implementation,
- * and nothing here writes to a store of its own.
+ * ── What this file is, and is not ──────────────────────────────────────
  *
- * Saving goes through lib/vocabulary/repository directly rather than through
- * useVocabularyLookupSave. That hook also owns the vocabulary list, the search
- * field and the AI sheet of the vocabulary page — none of which exist on the
- * deck — so using it here would drag the heaviest part of another screen into
- * the lightest part of this one. The row it writes is the same row, to the same
- * table, that the standard vocabulary screen reads.
+ * It is the deck's chrome: the brackets, the sweep, the waveform, the field
+ * and the four mode keys. That is the whole of its job.
+ *
+ * Everything underneath — the language detection, the reader's own words,
+ * the dictionary, the duplicate check, the save — is
+ * hooks/lexicon/useLexiconSearch, the same engine the warm Universal Search
+ * sheet runs on, and the answer is drawn by the same LexiconResults with the
+ * deck's tone. This used to be five hundred lines of its own result
+ * rendering and its own save path, which is exactly how "the same word gives
+ * a different answer in Cosmic Mode" becomes possible. It is not possible
+ * now: there is one computation and two skins.
+ *
+ * Camera and image still hand off to /capture, which already owns
+ * recognition. What it reads comes back through the search sheet, so a word
+ * photographed on the deck lands in the same result model as a word typed
+ * into it.
  */
 export default function OmniLexiconConsole({
   onStateChange,
 }: OmniLexiconConsoleProps) {
+  const router = useRouter();
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic.omni;
   const { pair: languagePair } = useDisplayLanguages();
 
-  const [query, setQuery] = useState("");
-  const {
-    lookupStatus,
-    lookupResult,
-    lookupError,
-    lookupDegraded,
-    lookupPreview,
-    lookupWord,
-    resetLookup,
-  } = useVocabularyLookup(query);
+  const { items, addItem } = useVocabulary();
 
-  /*
-   * lookupWord reads the query out of its own closure, so a submit cannot run
-   * in the same tick as the transcript that produced it — it has to wait for
-   * the render that carries the new value.
-   *
-   * The trigger is a counter rather than the query itself, and that detail is
-   * the whole correctness of this component. Submitting text the user has
-   * already typed calls setQuery with the value it already holds; React sees
-   * no change, skips the re-render, and an effect watching the query never
-   * fires — so pressing enter did nothing at all. A counter always changes, so
-   * both paths behave the same: typed text submits on the value already in
-   * state, and a voice transcript submits on the render that brings it in.
-   */
-  const [submitToken, setSubmitToken] = useState(0);
-  const pendingRef = useRef(false);
+  const search = useLexiconSearch({ items });
+  const save = useLexiconSave({
+    result: search.result,
+    items,
+    onSaved: addItem,
+  });
+  const share = useLexiconShare(
+    search.result?.entry ?? null,
+    search.result?.languages ?? null,
+  );
+  const friendPicker = useVocabularyFriendPicker();
 
-  useEffect(() => {
-    if (!pendingRef.current) return;
-
-    pendingRef.current = false;
-    void lookupWord();
-  }, [submitToken, lookupWord]);
-
-  const submit = useCallback((value: string) => {
-    const next = value.trim();
-
-    if (!next) return;
-
-    pendingRef.current = true;
-    setQuery(next);
-    setSubmitToken((token) => token + 1);
-  }, []);
+  const formRef = useRef<HTMLFormElement>(null);
 
   /*
    * The recording, when the browser heard nothing it could use.
@@ -158,7 +120,7 @@ export default function OmniLexiconConsole({
 
         if (!response.ok) return;
 
-        const result = (await response.json()) as {
+        const heard = (await response.json()) as {
           heard?: boolean;
           text?: string;
         };
@@ -166,12 +128,12 @@ export default function OmniLexiconConsole({
         // An unconfident answer comes back as heard: false, and nothing is
         // put in the field. A word invented from silence would be looked
         // up, saved and studied, and it would be nobody's word.
-        if (result.heard && result.text) submit(result.text);
+        if (heard.heard && heard.text) search.submit(heard.text, "voice");
       } catch {
-        // No connection. The offline path below is what answers here.
+        // No connection. The engine's offline path answers here.
       }
     },
-    [submit],
+    [search],
   );
 
   const { supported: voiceSupported, listening, toggle: toggleVoice } =
@@ -180,15 +142,15 @@ export default function OmniLexiconConsole({
       // the reader most often cannot spell. Anything else it mishears goes
       // to the model, which was told nothing.
       lang: getLanguage(languagePair[0]).speechTag,
-      onResult: submit,
+      onResult: (transcript) => search.submit(transcript, "voice"),
       onAudio: handleAudio,
     });
 
   const state: OmniLexiconState = listening
     ? "listening"
-    : lookupStatus === "loading"
+    : search.status === "searching"
       ? "scanning"
-      : query.length > 0
+      : search.query.length > 0
         ? "typing"
         : "idle";
 
@@ -198,28 +160,15 @@ export default function OmniLexiconConsole({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    submit(query);
-  }
-
-  function handleClear() {
-    setQuery("");
-    resetLookup();
-  }
-
-  function handleChange(value: string) {
-    setQuery(value);
-
-    // A cleared field puts the console back to rest rather than leaving the
-    // last answer sitting under an empty input.
-    if (!value.trim() && lookupStatus !== "idle") resetLookup();
+    search.submit();
   }
 
   /*
    * The placeholder follows the learning language, because the question a
    * learner arrives with is different in each direction: one is "I saw
-   * something written I cannot read", the other is "I heard something I cannot
-   * spell". It is chosen once per render from a stable input, never rotated on
-   * a timer.
+   * something written I cannot read", the other is "I heard something I
+   * cannot spell". It is chosen once per render from a stable input, never
+   * rotated on a timer.
    */
   const learningLanguage = languagePair[0];
 
@@ -230,171 +179,39 @@ export default function OmniLexiconConsole({
     { language: getLanguageName(learningLanguage, interfaceLanguage) },
   );
 
-  // The offline dictionary can answer before the model does; showing that
-  // early answer is better than an empty console, as long as it is labelled.
-  const shown = lookupResult ?? lookupPreview;
+  function openSavedWord(item: VocabularyItem) {
+    router.push(
+      `/vocabulary?widgetAction=open-word&widgetWordId=${encodeURIComponent(
+        item.id,
+      )}&widgetNonce=${Date.now()}`,
+    );
+  }
 
-  /*
-   * Pinyin, zhuyin and IPA are a second request, so they arrive after the word
-   * does rather than holding it back. Requested once per identified pair and
-   * remembered, because re-identifying the same word is common and the answer
-   * cannot change.
-   */
-  const [pronunciation, setPronunciation] = useState<PronunciationResult | null>(
-    null,
-  );
-  const pronouncedRef = useRef<string | null>(null);
+  function sendToFriend() {
+    const entry = search.result?.entry;
+    const languages = search.result?.languages;
 
-  useEffect(() => {
-    if (!lookupResult) return;
-    // Half a pair cannot be pronounced. Asking anyway is what produced pinyin
-    // and zhuyin for the placeholder that used to stand in for the missing
-    // translation, presenting an invented reading as the word's own.
-    if (lookupResult.translationUnavailable) return;
+    if (!entry || !languages) return;
 
-    const key = `${lookupResult.englishName}|${lookupResult.chineseName}`;
-
-    if (pronouncedRef.current === key) return;
-
-    pronouncedRef.current = key;
-    setPronunciation(null);
-
-    let active = true;
-
-    void getPronunciationForPair(
-      { text: lookupResult.englishName, language: languagePair[0] },
-      { text: lookupResult.chineseName, language: languagePair[1] },
-    ).then((result) => {
-      if (active) setPronunciation(result);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [lookupResult, languagePair]);
-
-  const { lookupCopied, shareLookupResult } = useVocabularyShare(lookupResult);
-
-  /*
-   * Sending to a friend is its own destination, not a variant of the system
-   * share sheet: one leaves the app, the other stays inside it and lands as a
-   * word card in a conversation. The picker hook is self-contained and needs no
-   * vocabulary row — a looked-up word can be sent before it is ever saved.
-   */
-  const {
-    friendPickerItem,
-    shareCard,
-    friends,
-    friendsLoading,
-    friendsError,
-    sendingFriendId,
-    handleClosePicker,
-    handlePickFriend,
-    retryFriends,
-  } = useVocabularyFriendPicker();
-
-  function handleSendToFriend() {
-    if (!lookupResult) return;
-
-    shareCard({
-      word: lookupResult.englishName,
-      translation: lookupResult.chineseName,
-      partOfSpeech: lookupResult.partOfSpeech,
+    friendPicker.shareCard({
+      word: entry.term,
+      translation: entry.translation,
+      partOfSpeech: entry.partOfSpeech,
+      wordLanguage: languages.sourceLanguage,
+      translationLanguage: languages.glossLanguage,
+      texts: {
+        [languages.sourceLanguage]: entry.term,
+        [languages.glossLanguage]: entry.translation,
+      },
       examples: {
-        en: lookupResult.englishExample,
-        "zh-TW": lookupResult.chineseExample,
+        [languages.sourceLanguage]: entry.termExample,
+        [languages.glossLanguage]: entry.translationExample,
       },
     });
   }
 
-  /*
-   * Saving writes straight to the vocabulary table through the same repository
-   * every other surface uses, so a word identified here is the same row the
-   * standard vocabulary screen reads. Deliberately not routed through
-   * useVocabularyLookupSave: that hook also owns the vocabulary list, the
-   * search field and the AI sheet on the vocabulary page, none of which exist
-   * on the deck.
-   */
-  /*
-   * Keyed to the word rather than reset when the word changes. An effect that
-   * cleared the button on every new result was both a synchronous setState
-   * inside an effect and slightly wrong: identifying a word you already saved
-   * a moment ago should still show as saved, not offer to save it twice.
-   */
-  const [savedKey, setSavedKey] = useState<string | null>(null);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
-
-  const resultKey = lookupResult
-    ? `${lookupResult.englishName}|${lookupResult.chineseName}`
-    : null;
-
-  const saveState =
-    resultKey && savingKey === resultKey
-      ? "saving"
-      : resultKey && savedKey === resultKey
-        ? "saved"
-        : "idle";
-
-  async function handleSave() {
-    if (!lookupResult || !resultKey || saveState !== "idle") return;
-    // Guarded here and not only on the button: this is what keeps a word with
-    // no meaning out of the vocabulary table, which reviews read from.
-    if (lookupResult.translationUnavailable) return;
-
-    setSavingKey(resultKey);
-
-    try {
-      const { user } = await getCurrentUser();
-
-      if (!user) {
-        setSavingKey(null);
-        return;
-      }
-
-      await createVocabularyEntry({
-        userId: user.id,
-        term: lookupResult.englishName,
-        translation: lookupResult.chineseName,
-        partOfSpeech: lookupResult.partOfSpeech,
-        termExample: lookupResult.englishExample,
-        translationExample: lookupResult.chineseExample,
-        confidence: lookupResult.confidence,
-        category: lookupResult.category,
-        status: "new",
-        language: {
-          pair: languagePair,
-          stated: { term: languagePair[0], translation: languagePair[1] },
-          ai: {
-            termLanguage: lookupResult.termLanguage,
-            translationLanguage: lookupResult.translationLanguage,
-          },
-        },
-      });
-
-      setSavedKey(resultKey);
-    } catch (error) {
-      console.error("Unable to save the identified word:", error);
-    } finally {
-      setSavingKey(null);
-    }
-  }
-
-  // The learning language leads everywhere in the app, and this is no
-  // exception — the console does not get a hierarchy of its own.
-  /*
-   * A lookup answers in the pair's own order, learning first, so the hero is
-   * the first field rather than whichever of two languages this happens to
-   * be. The console does not get a hierarchy of its own.
-   */
-  const primary = shown ? shown.englishName : "";
-  const secondary = shown ? shown.chineseName : "";
-  const primaryLang = getLanguage(languagePair[0]).speechTag;
-  const secondaryLang = getLanguage(languagePair[1]).speechTag;
-
-  // Shared with the standard-mode lookup sheet rather than restated in the
-  // cosmic vocabulary: the explanation is about the network, not the theme.
-  const pendingCopy = t.vocabulary.lookup;
-  const translationUnavailable = Boolean(shown?.translationUnavailable);
+  const hasAnswer =
+    search.status !== "idle" || search.savedMatches.length > 0;
 
   return (
     <section
@@ -440,14 +257,12 @@ export default function OmniLexiconConsole({
             <span
               key={index}
               className={styles.waveBar}
-              style={
-                { "--bar-delay": `${index * 78}ms` } as CSSProperties
-              }
+              style={{ "--bar-delay": `${index * 78}ms` } as CSSProperties}
             />
           ))}
         </div>
       ) : (
-        <form className={styles.field} onSubmit={handleSubmit}>
+        <form ref={formRef} className={styles.field} onSubmit={handleSubmit}>
           <Radar
             size={17}
             strokeWidth={1.8}
@@ -457,8 +272,8 @@ export default function OmniLexiconConsole({
 
           <input
             type="text"
-            value={query}
-            onChange={(event) => handleChange(event.target.value)}
+            value={search.query}
+            onChange={(event) => search.setQuery(event.target.value)}
             placeholder={placeholder}
             aria-label={copy.placeholder}
             enterKeyHint="search"
@@ -466,17 +281,15 @@ export default function OmniLexiconConsole({
             className={styles.input}
           />
 
-          {/* copy.clear has existed in the dictionary since this console was
-              built; nothing ever rendered it. Sitting before the submit
-              button keeps the destructive one away from the thumb's path to
-              Identify. */}
-          {query && (
-            <ClearFieldButton onClear={handleClear} label={copy.clear} />
+          {/* Sitting before the submit button keeps the destructive one away
+              from the thumb's path to Identify. */}
+          {search.query && (
+            <ClearFieldButton onClear={search.reset} label={copy.clear} />
           )}
 
           <button
             type="submit"
-            disabled={!query.trim() || lookupStatus === "loading"}
+            disabled={!search.query.trim() || search.status === "searching"}
             aria-label={copy.submit}
             className={styles.submit}
           >
@@ -492,12 +305,7 @@ export default function OmniLexiconConsole({
           type="button"
           className={styles.mode}
           data-active={!listening}
-          onClick={(event) => {
-            const input =
-              event.currentTarget.closest("section")?.querySelector("input");
-
-            if (input instanceof HTMLInputElement) input.focus();
-          }}
+          onClick={() => formRef.current?.querySelector("input")?.focus()}
         >
           <Keyboard size={17} strokeWidth={1.7} aria-hidden="true" />
           <span className={styles.modeLabel}>{copy.inputText}</span>
@@ -518,7 +326,9 @@ export default function OmniLexiconConsole({
 
         {/*
           Camera and image go to the capture flow that already owns
-          recognition, rather than a second pipeline living here.
+          recognition, rather than a second pipeline living here. What it
+          reads returns through the lexicon hand-off, so a photographed word
+          and a typed one reach the same result.
 
           Deliberately untagged, so no view transition runs. Two reasons. The
           camera opening its own lens is the transition; wrapping that in a
@@ -527,239 +337,40 @@ export default function OmniLexiconConsole({
           page — everything visible, nothing clickable — which is a far worse
           failure on a full-screen camera than a missing flourish.
         */}
-        <Link href="/capture?source=camera&from=deck" className={styles.mode}>
+        <Link href="/capture?source=camera&from=lexicon" className={styles.mode}>
           <Camera size={17} strokeWidth={1.7} aria-hidden="true" />
           <span className={styles.modeLabel}>{copy.inputCamera}</span>
         </Link>
 
-        <Link href="/capture?source=library&from=deck" className={styles.mode}>
+        <Link href="/capture?source=library&from=lexicon" className={styles.mode}>
           <ImageIcon size={17} strokeWidth={1.7} aria-hidden="true" />
           <span className={styles.modeLabel}>{copy.inputImage}</span>
         </Link>
       </div>
 
-      {shown && lookupStatus !== "error" && (
+      {hasAnswer && (
         <div className={styles.result}>
-          <p className="hud-label">{copy.acquired}</p>
-
-          {/* Word and translation each carry their own speaker, because these
-              are two different languages and hearing one is not hearing the
-              other. */}
-          <div className={styles.resultRow}>
-            <p className={styles.resultWord}>{primary}</p>
-            <button
-              type="button"
-              className={`cosmic-sonar ${styles.speak}`}
-              aria-label={copy.playLearning}
-              onClick={() => speak(primary, primaryLang)}
-            >
-              <Volume2 size={15} strokeWidth={1.8} aria-hidden="true" />
-            </button>
-          </div>
-
-          {/* A missing translation is stated, not filled in. The console used
-              to print a placeholder here that looked exactly like an answer,
-              so the learner had no way to tell a real meaning from a failed
-              request. The retry is offered inline because that is the whole
-              remedy — the word was fine, the connection was not. */}
-          {translationUnavailable ? (
-            <div className={styles.pending} role="status">
-              <p className={styles.pendingTitle}>{pendingCopy.translationUnavailable}</p>
-              <p className={styles.pendingDetail}>
-                {pendingCopy.translationUnavailableDetail}
-              </p>
-              <button
-                type="button"
-                className={styles.pendingRetry}
-                onClick={() => lookupWord()}
-              >
-                {pendingCopy.translationUnavailableRetry}
-              </button>
-            </div>
-          ) : (
-            <div className={styles.resultRow}>
-              <p className={styles.resultTranslation}>{secondary}</p>
-              <button
-                type="button"
-                className={`cosmic-sonar ${styles.speak}`}
-                aria-label={copy.playTranslation}
-                onClick={() => speak(secondary, secondaryLang)}
-              >
-                <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            </div>
-          )}
-
-          {/* Pinyin, zhuyin and IPA. Each gets its own font stack: forcing
-              zhuyin or IPA through the Latin stack is what produced the
-              missing-glyph boxes this app already fixed once. */}
-          {pronunciation && (
-            <div className={styles.phonetics}>
-              {pronunciation.pinyin && (
-                <span className="font-cjk">{pronunciation.pinyin}</span>
-              )}
-              {pronunciation.zhuyin && (
-                <span className="font-zhuyin">{pronunciation.zhuyin}</span>
-              )}
-              {pronunciation.englishPronunciation && (
-                <span className="font-phonetic">
-                  /{pronunciation.englishPronunciation}/
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className={styles.resultMeta}>
-            <span className={styles.pos}>{shown.partOfSpeech}</span>
-            {lookupDegraded && (
-              <span className={styles.note}>{copy.degraded}</span>
-            )}
-          </div>
-
-          {/* Empty when the translation never arrived — there is nothing
-              truthful to put in a sentence about the word's meaning. */}
-          {lookupResult && lookupResult.englishExample && lookupResult.chineseExample && (
-            <div className={styles.examples}>
-              <div className={styles.resultRow}>
-                <p className={styles.resultExample}>
-                  {lookupResult.englishExample}
-                </p>
-                <button
-                  type="button"
-                  className={`cosmic-sonar ${styles.speak}`}
-                  aria-label={copy.playExampleLearning}
-                  onClick={() =>
-                    speak(
-                      lookupResult.englishExample,
-                      primaryLang,
-                    )
-                  }
-                >
-                  <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
-                </button>
-              </div>
-
-              <div className={styles.resultRow}>
-                <p className={styles.resultExample}>
-                  {lookupResult.chineseExample}
-                </p>
-                <button
-                  type="button"
-                  className={`cosmic-sonar ${styles.speak}`}
-                  aria-label={copy.playExampleTranslation}
-                  onClick={() =>
-                    speak(
-                      lookupResult.chineseExample,
-                      secondaryLang,
-                    )
-                  }
-                >
-                  <Volume2 size={14} strokeWidth={1.8} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Save, send and share only appear for a real model result: the
-              offline preview has no example sentences, so saving it would write
-              a half-formed row into the vocabulary the rest of the app reads.
-
-              Icon-only, and each icon is a different verb rather than three
-              shades of "share": a bookmark keeps it, a paper plane sends it to
-              someone in the app, and the system glyph hands it to whatever is
-              outside the app. Labels would triple the height of the row for
-              three glyphs nobody needs explained twice. */}
-          {lookupResult && (
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={`cosmic-lock ${styles.action}`}
-                data-saved={saveState === "saved"}
-                // A word with no meaning attached is worse in the vocabulary
-                // than not saved at all: it comes back in review with nothing
-                // to review against.
-                disabled={saveState !== "idle" || translationUnavailable}
-                aria-label={
-                  translationUnavailable
-                    ? pendingCopy.translationUnavailableSaveBlocked
-                    : saveState === "saved"
-                      ? copy.saved
-                      : copy.save
-                }
-                title={
-                  translationUnavailable
-                    ? pendingCopy.translationUnavailableSaveBlocked
-                    : saveState === "saved"
-                      ? copy.saved
-                      : copy.save
-                }
-                onClick={handleSave}
-              >
-                {saveState === "saving" ? (
-                  <LoaderCircle
-                    size={16}
-                    strokeWidth={1.8}
-                    className="animate-spin"
-                    aria-hidden="true"
-                  />
-                ) : saveState === "saved" ? (
-                  <BookmarkCheck size={16} strokeWidth={1.8} aria-hidden="true" />
-                ) : (
-                  <BookmarkPlus size={16} strokeWidth={1.8} aria-hidden="true" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                className={styles.action}
-                aria-label={copy.sendToFriend}
-                title={copy.sendToFriend}
-                onClick={handleSendToFriend}
-              >
-                <Send size={16} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
-                className={styles.action}
-                aria-label={lookupCopied ? copy.copied : copy.share}
-                title={lookupCopied ? copy.copied : copy.share}
-                onClick={() => void shareLookupResult()}
-              >
-                {lookupCopied ? (
-                  <Check size={16} strokeWidth={2} aria-hidden="true" />
-                ) : (
-                  <Share2 size={16} strokeWidth={1.8} aria-hidden="true" />
-                )}
-              </button>
-            </div>
-          )}
+          <LexiconResults
+            tone="cosmic"
+            search={search}
+            save={save}
+            onOpenSaved={openSavedWord}
+            onShare={() => void share.share()}
+            onSend={sendToFriend}
+            shareCopied={share.copied}
+          />
         </div>
       )}
 
-      {lookupStatus === "error" && (
-        /*
-         * Yumi does not fail dramatically. The message says it could not place
-         * the word and then offers the other two senses, because "try a photo"
-         * is genuinely the next thing to do when a spelling guess did not land.
-         */
-        <div className={styles.error} role="status">
-          <p className={styles.errorTitle}>{copy.noMatch}</p>
-          <p className={`${styles.note} mt-1`}>
-            {lookupError || copy.noMatchHint}
-          </p>
-        </div>
-      )}
-
-      {friendPickerItem && (
+      {friendPicker.friendPickerItem && (
         <FriendPickerModal
-          friends={friends}
-          loading={friendsLoading}
-          errorMessage={friendsError}
-          sendingFriendId={sendingFriendId}
-          onClose={handleClosePicker}
-          onPick={handlePickFriend}
-          onRetry={retryFriends}
+          friends={friendPicker.friends}
+          loading={friendPicker.friendsLoading}
+          errorMessage={friendPicker.friendsError}
+          sendingFriendId={friendPicker.sendingFriendId}
+          onClose={friendPicker.handleClosePicker}
+          onPick={friendPicker.handlePickFriend}
+          onRetry={friendPicker.retryFriends}
         />
       )}
     </section>
