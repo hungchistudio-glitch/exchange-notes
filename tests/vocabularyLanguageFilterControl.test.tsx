@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LanguageCode } from "@/lib/languages";
 
@@ -19,6 +19,10 @@ import type { LanguageCode } from "@/lib/languages";
    ========================================================= */
 
 const preferences = vi.hoisted(() => ({ interfaceLanguage: "english" }));
+const imageLookup = vi.hoisted(() => ({
+  handleFile: vi.fn(),
+  openSearch: vi.fn(),
+}));
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
   default: () => preferences.interfaceLanguage,
@@ -35,6 +39,18 @@ vi.mock("@/hooks/useVoiceInput", () => ({
   default: () => ({ supported: false, listening: false, toggle: () => {} }),
 }));
 
+vi.mock("@/contexts/LexiconSearchContext", () => ({
+  useLexiconSearchSheet: () => ({ openSearch: imageLookup.openSearch }),
+}));
+
+vi.mock("@/hooks/lexicon/useLexiconImageLookup", () => ({
+  default: () => ({
+    reading: false,
+    error: "",
+    handleFile: imageLookup.handleFile,
+  }),
+}));
+
 const { default: VocabularySearch } = await import(
   "@/components/vocabulary/VocabularySearch"
 );
@@ -47,7 +63,7 @@ function renderSearch(
 ) {
   const onOpenLanguageFilter = vi.fn();
 
-  render(
+  const rendered = render(
     <VocabularySearch
       query=""
       quickFilter="all"
@@ -68,8 +84,30 @@ function renderSearch(
     />,
   );
 
-  return { onOpenLanguageFilter };
+  return { onOpenLanguageFilter, ...rendered };
 }
+
+beforeEach(() => {
+  imageLookup.handleFile.mockReset();
+  imageLookup.openSearch.mockReset();
+});
+
+describe("the vocabulary camera key", () => {
+  it("uses one native image picker and never links to the capture page", () => {
+    const { container } = renderSearch();
+    const input = container.querySelector('input[type="file"]');
+    const photo = new File(["photo"], "menu.jpg", { type: "image/jpeg" });
+
+    expect(screen.getByRole("button", { name: "Scan" })).toBeInTheDocument();
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
+    expect(container.querySelector('a[href^="/capture"]')).toBeNull();
+    expect(screen.queryByLabelText("Identify from a photo")).toBeNull();
+
+    fireEvent.change(input!, { target: { files: [photo] } });
+
+    expect(imageLookup.handleFile).toHaveBeenCalledWith(photo);
+  });
+});
 
 describe("the language filter pill", () => {
   it("reports the press", async () => {

@@ -3,7 +3,6 @@
 import {
   useEffect,
   useRef,
-  useState,
   type FormEvent,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -24,18 +23,13 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useKeyboardInset from "@/hooks/lexicon/useKeyboardInset";
+import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
-import {
-  ImageRecognitionError,
-  fileToModelImage,
-  identifyImage,
-  type ImageRecognitionCode,
-} from "@/lib/lexicon/imageRecognition";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
@@ -97,72 +91,10 @@ export default function LexiconSearchSheet({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /*
-   * Reading a photograph, which happens before the search has anything to
-   * show a state for. The engine's own status only starts once there is a
-   * word to look up.
-   */
-  const [readingImage, setReadingImage] = useState(false);
-  const [imageError, setImageError] = useState("");
-
-  /**
-   * The sentence for each way a photograph can fail.
-   *
-   * Taken from the capture screen's dictionary rather than given new keys of
-   * its own: these describe images, not the screen they were picked on, and a
-   * second set would be the same six sentences translated twice.
-   */
-  function imageErrorMessage(code: ImageRecognitionCode): string {
-    const errors = t.capture.errors;
-
-    switch (code) {
-      case "not-an-image":
-        return errors.selectImage;
-      case "too-large":
-        return errors.imageTooLarge;
-      case "unreadable":
-        return errors.processImage;
-      case "daily-limit":
-        return errors.identifyDailyLimit;
-      case "busy":
-        return errors.identifyBusy;
-      case "timeout":
-        return errors.identifyTimeout;
-      default:
-        return errors.identifyImage;
-    }
-  }
-
-  async function handleImageFile(file: File) {
-    if (readingImage) return;
-
-    setImageError("");
-    setReadingImage(true);
-
-    try {
-      const identified = await identifyImage(await fileToModelImage(file));
-
-      /*
-       * The word goes back through the field, not around it. What a photo
-       * produces is text, and text is what the engine already answers — so a
-       * photographed word gets the same card, the same duplicate check and
-       * the same save button as a typed one.
-       */
-      if (identified.term) search.submit(identified.term, "image");
-    } catch (recognitionError) {
-      console.error("Could not read that photo:", recognitionError);
-
-      setImageError(
-        imageErrorMessage(
-          recognitionError instanceof ImageRecognitionError
-            ? recognitionError.code
-            : "failed",
-        ),
-      );
-    } finally {
-      setReadingImage(false);
-    }
-  }
+  /* Reading happens before the search engine has a term or status of its own. */
+  const imageLookup = useLexiconImageLookup({
+    onTerm: (term) => search.submit(term, "image"),
+  });
 
   /*
    * The field takes focus on open, and the query that arrived with it is
@@ -425,15 +357,15 @@ export default function LexiconSearchSheet({
             )}
 
             <LexiconImageMenu
-              onFile={handleImageFile}
-              disabled={readingImage}
+              onFile={imageLookup.handleFile}
+              disabled={imageLookup.reading}
               buttonClassName={`${modeButtonClass} bg-surface text-ink-soft disabled:opacity-50`}
             />
           </div>
 
           {/* Reading the photo, which happens before there is a word for the
               engine to have a status about. */}
-          {readingImage && (
+          {imageLookup.reading && (
             <p
               role="status"
               className="mt-2.5 flex items-center gap-2 px-1 text-[12px] text-ink-soft"
@@ -443,9 +375,9 @@ export default function LexiconSearchSheet({
             </p>
           )}
 
-          {imageError && (
+          {imageLookup.error && (
             <p role="alert" className="mt-2.5 px-1 text-[12px] text-red-600">
-              {imageError}
+              {imageLookup.error}
             </p>
           )}
         </header>

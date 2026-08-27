@@ -4,7 +4,6 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type CSSProperties,
   type FormEvent,
 } from "react";
@@ -17,18 +16,13 @@ import LexiconResults from "@/components/lexicon/LexiconResults";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
-import {
-  ImageRecognitionError,
-  fileToModelImage,
-  identifyImage,
-  type ImageRecognitionCode,
-} from "@/lib/lexicon/imageRecognition";
 import {
   getLanguage,
   getLanguageName,
@@ -104,52 +98,9 @@ export default function OmniLexiconConsole({
   const friendPicker = useVocabularyFriendPicker();
 
   const formRef = useRef<HTMLFormElement>(null);
-  const [readingImage, setReadingImage] = useState(false);
-  const [imageError, setImageError] = useState("");
-
-  function imageErrorMessage(code: ImageRecognitionCode): string {
-    const errors = t.capture.errors;
-
-    switch (code) {
-      case "not-an-image":
-        return errors.selectImage;
-      case "too-large":
-        return errors.imageTooLarge;
-      case "unreadable":
-        return errors.processImage;
-      case "daily-limit":
-        return errors.identifyDailyLimit;
-      case "busy":
-        return errors.identifyBusy;
-      case "timeout":
-        return errors.identifyTimeout;
-      default:
-        return errors.identifyImage;
-    }
-  }
-
-  async function handleImageFile(file: File) {
-    if (readingImage) return;
-
-    setImageError("");
-    setReadingImage(true);
-
-    try {
-      const identified = await identifyImage(await fileToModelImage(file));
-      if (identified.term) search.submit(identified.term, "image");
-    } catch (recognitionError) {
-      console.error("Could not read that photo:", recognitionError);
-      setImageError(
-        imageErrorMessage(
-          recognitionError instanceof ImageRecognitionError
-            ? recognitionError.code
-            : "failed",
-        ),
-      );
-    } finally {
-      setReadingImage(false);
-    }
-  }
+  const imageLookup = useLexiconImageLookup({
+    onTerm: (term) => search.submit(term, "image"),
+  });
 
   /*
    * The recording, when the browser heard nothing it could use.
@@ -201,7 +152,7 @@ export default function OmniLexiconConsole({
 
   const state: OmniLexiconState = listening
     ? "listening"
-    : readingImage || search.status === "searching"
+    : imageLookup.reading || search.status === "searching"
       ? "scanning"
       : search.query.length > 0
         ? "typing"
@@ -378,15 +329,15 @@ export default function OmniLexiconConsole({
         )}
 
         <LexiconImageMenu
-          onFile={handleImageFile}
-          disabled={readingImage}
+          onFile={imageLookup.handleFile}
+          disabled={imageLookup.reading}
           buttonClassName={styles.mode}
         />
       </div>
 
-      {imageError ? (
+      {imageLookup.error ? (
         <p role="alert" className="mt-2.5 text-[12px] text-red-300">
-          {imageError}
+          {imageLookup.error}
         </p>
       ) : null}
 

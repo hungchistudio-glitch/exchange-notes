@@ -1551,8 +1551,6 @@ const spanish: TranslationDictionary = {
       openCollections: "Abrir las colecciones",
       toolbarAriaLabel: "Herramientas de vocabulario",
       lookupToolbarAriaLabel: "Buscar una palabra",
-      cameraLookup: "Identificar con la cámara",
-      photoLookup: "Identificar desde una foto",
       voiceSearch: "Buscar por voz",
       voiceListening: "Escuchando: toca para parar",
       cardsView: "Usar la vista de tarjetas clásica",

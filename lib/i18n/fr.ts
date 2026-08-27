@@ -1423,8 +1423,6 @@ const french: TranslationDictionary = {
       openCollections: "Ouvrir les collections",
       toolbarAriaLabel: "Outils de vocabulaire",
       lookupToolbarAriaLabel: "Chercher un mot",
-      cameraLookup: "Identifier avec la caméra",
-      photoLookup: "Identifier depuis une photo",
       voiceSearch: "Rechercher à la voix",
       voiceListening: "Écoute — touchez pour arrêter",
       cardsView: "Vue en fiches classiques",

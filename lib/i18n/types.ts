@@ -1512,8 +1512,6 @@ export type TranslationDictionary = {
       openCollections: string;
       toolbarAriaLabel: string;
       lookupToolbarAriaLabel: string;
-      cameraLookup: string;
-      photoLookup: string;
       voiceSearch: string;
       voiceListening: string;
       cardsView: string;

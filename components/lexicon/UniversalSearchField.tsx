@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, LoaderCircle, Mic, Search } from "lucide-react";
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
@@ -11,18 +11,13 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useLexiconOnboarding from "@/hooks/lexicon/useLexiconOnboarding";
+import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
-import {
-  ImageRecognitionError,
-  fileToModelImage,
-  identifyImage,
-  type ImageRecognitionCode,
-} from "@/lib/lexicon/imageRecognition";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
@@ -58,57 +53,13 @@ export default function UniversalSearchField() {
   );
   const friendPicker = useVocabularyFriendPicker();
 
-  const [readingImage, setReadingImage] = useState(false);
-  const [imageError, setImageError] = useState("");
+  const imageLookup = useLexiconImageLookup({
+    onTerm: (term) => search.submit(term, "image"),
+  });
 
   const placeholder = insertValues(copy.fieldPlaceholderLanguage, {
     language: getLanguageName(pair[0], interfaceLanguage),
   });
-
-  function imageErrorMessage(code: ImageRecognitionCode): string {
-    const errors = t.capture.errors;
-
-    switch (code) {
-      case "not-an-image":
-        return errors.selectImage;
-      case "too-large":
-        return errors.imageTooLarge;
-      case "unreadable":
-        return errors.processImage;
-      case "daily-limit":
-        return errors.identifyDailyLimit;
-      case "busy":
-        return errors.identifyBusy;
-      case "timeout":
-        return errors.identifyTimeout;
-      default:
-        return errors.identifyImage;
-    }
-  }
-
-  async function handleImageFile(file: File) {
-    if (readingImage) return;
-
-    onboarding.dismiss();
-    setImageError("");
-    setReadingImage(true);
-
-    try {
-      const identified = await identifyImage(await fileToModelImage(file));
-      if (identified.term) search.submit(identified.term, "image");
-    } catch (recognitionError) {
-      console.error("Could not read that photo:", recognitionError);
-      setImageError(
-        imageErrorMessage(
-          recognitionError instanceof ImageRecognitionError
-            ? recognitionError.code
-            : "failed",
-        ),
-      );
-    } finally {
-      setReadingImage(false);
-    }
-  }
 
   const handleAudio = useCallback(
     async (audio: Blob) => {
@@ -259,8 +210,11 @@ export default function UniversalSearchField() {
           ) : null}
 
           <LexiconImageMenu
-            onFile={handleImageFile}
-            disabled={readingImage}
+            onFile={(file) => {
+              onboarding.dismiss();
+              return imageLookup.handleFile(file);
+            }}
+            disabled={imageLookup.reading}
             buttonClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-strong transition-transform active:scale-95 disabled:opacity-50"
           />
         </div>
@@ -272,7 +226,7 @@ export default function UniversalSearchField() {
         </p>
       ) : null}
 
-      {readingImage ? (
+      {imageLookup.reading ? (
         <p
           role="status"
           className="mt-2.5 flex items-center gap-2 px-1 text-[12px] text-ink-soft"
@@ -282,9 +236,9 @@ export default function UniversalSearchField() {
         </p>
       ) : null}
 
-      {imageError ? (
+      {imageLookup.error ? (
         <p role="alert" className="mt-2.5 px-1 text-[12px] text-red-600">
-          {imageError}
+          {imageLookup.error}
         </p>
       ) : null}
 

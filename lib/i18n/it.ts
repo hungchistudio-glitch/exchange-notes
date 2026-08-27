@@ -1423,8 +1423,6 @@ const italian: TranslationDictionary = {
       openCollections: "Apri le collezioni",
       toolbarAriaLabel: "Strumenti del vocabolario",
       lookupToolbarAriaLabel: "Cerca una parola",
-      cameraLookup: "Identifica con la fotocamera",
-      photoLookup: "Identifica da una foto",
       voiceSearch: "Cerca con la voce",
       voiceListening: "In ascolto — tocca per fermare",
       cardsView: "Vista a schede classiche",

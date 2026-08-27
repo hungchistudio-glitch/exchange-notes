@@ -1,27 +1,28 @@
 "use client";
 
 import {
-  Camera,
   ChevronDown,
   FolderHeart,
-  ImageIcon,
   Languages,
   LayoutGrid,
   List,
+  LoaderCircle,
   Mic,
   Search,
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import Link from "next/link";
 
 import { Pill } from "@/components/foundation-legacy";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 
 import type { SortMode } from "@/components/vocabulary/SortBottomSheet";
 import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import useVoiceInput from "@/hooks/useVoiceInput";
@@ -72,8 +73,13 @@ export default function VocabularySearch({
 }: VocabularySearchProps) {
   const { t } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
+  const { openSearch } = useLexiconSearchSheet();
   const search = t.vocabulary.search;
   const language = t.vocabulary.language;
+
+  const imageLookup = useLexiconImageLookup({
+    onTerm: (term) => openSearch({ query: term, autoSubmit: true }),
+  });
 
   // Dictate in the language being learned — that's what the user is
   // searching their vocabulary for.
@@ -87,9 +93,9 @@ export default function VocabularySearch({
   /*
    * 36px, and deliberately not the 44pt a standalone control would get.
    *
-   * These three live *inside* the search field, which is 44 tall — so the
+   * These two live *inside* the search field, which is 44 tall — so the
    * vertical dimension is at guidance and only the horizontal is short. Widen
-   * them and the placeholder stops fitting: three 44px discs plus the field's
+   * them and the placeholder stops fitting: two 44px discs plus the field's
    * own padding and the search icon leave under 90px for the input on a 375px
    * phone, which is not enough to read the word you are typing. A control you
    * can hit but cannot see the result of is the worse trade, so the width
@@ -142,34 +148,22 @@ export default function VocabularySearch({
             </button>
           )}
 
-          {/* Recognition shortcuts live inside the field because they're
-              all alternative ways of filling it. Camera and photo reuse the
-              existing /capture pipeline (same 10MB / 1600px / JPEG limits)
-              rather than duplicating an upload flow, and voice runs
-              on-device via the Web Speech API — so none of the three adds
-              an extra AI round trip just to get the input. */}
+          {/* Recognition shortcuts live inside the field because they are
+              alternative ways of asking about a word. The one camera key
+              delegates source choice to iOS, then uses the same direct image
+              recognition and lexicon result as every other search surface.
+              There is deliberately no second photo key and no capture-page
+              detour. Voice remains on-device through the Web Speech API. */}
           <span
             className="flex shrink-0 items-center gap-0.5 border-l border-black/[0.07] pl-1.5"
             role="toolbar"
             aria-label={search.lookupToolbarAriaLabel}
           >
-            <Link
-              href="/capture?source=camera&from=vocabulary"
-              aria-label={search.cameraLookup}
-              title={search.cameraLookup}
-              className={lookupButtonClass}
-            >
-              <Camera size={16} strokeWidth={1.8} />
-            </Link>
-
-            <Link
-              href="/capture?source=library&from=vocabulary"
-              aria-label={search.photoLookup}
-              title={search.photoLookup}
-              className={lookupButtonClass}
-            >
-              <ImageIcon size={16} strokeWidth={1.8} />
-            </Link>
+            <LexiconImageMenu
+              onFile={imageLookup.handleFile}
+              disabled={imageLookup.reading}
+              buttonClassName={`${lookupButtonClass} disabled:opacity-50`}
+            />
 
             {voiceSupported && (
               <button
@@ -195,8 +189,23 @@ export default function VocabularySearch({
             )}
           </span>
         </label>
-
       </div>
+
+      {imageLookup.reading ? (
+        <p
+          role="status"
+          className="mt-2 flex items-center gap-2 px-2 text-[11px] text-ink-soft"
+        >
+          <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
+          {t.capture.analysis.description}
+        </p>
+      ) : null}
+
+      {imageLookup.error ? (
+        <p role="alert" className="mt-2 px-2 text-[11px] text-red-600">
+          {imageLookup.error}
+        </p>
+      ) : null}
 
       <div className="-mx-1 mt-2.5 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {quickFilters.map((filter) => {

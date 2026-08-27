@@ -1555,8 +1555,6 @@ const english: TranslationDictionary = {
       openCollections: "Open collections",
       toolbarAriaLabel: "Vocabulary tools",
       lookupToolbarAriaLabel: "Look up a word",
-      cameraLookup: "Identify with camera",
-      photoLookup: "Identify from a photo",
       voiceSearch: "Search by voice",
       voiceListening: "Listening — tap to stop",
       cardsView: "Use classic card view",

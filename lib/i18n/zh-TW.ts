@@ -1525,8 +1525,6 @@ const traditionalChinese: TranslationDictionary = {
       openCollections: "開啟收藏分類",
       toolbarAriaLabel: "單字工具",
       lookupToolbarAriaLabel: "查詢單字",
-      cameraLookup: "用相機辨識",
-      photoLookup: "從相片辨識",
       voiceSearch: "語音搜尋",
       voiceListening: "聆聽中,點一下停止",
       cardsView: "切換為經典卡片",
