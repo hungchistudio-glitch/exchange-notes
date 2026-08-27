@@ -61,7 +61,6 @@ export type LexiconSearchSheetProps = {
   initialQuery?: string;
   /** Looks the initial query up immediately, without waiting for a submit. */
   autoSubmit?: boolean;
-  initialAction?: "voice" | "camera";
   tone?: "warm" | "cosmic";
 };
 
@@ -70,7 +69,6 @@ export default function LexiconSearchSheet({
   onClose,
   initialQuery = "",
   autoSubmit = false,
-  initialAction,
   tone = "warm",
 }: LexiconSearchSheetProps) {
   const router = useRouter();
@@ -106,7 +104,6 @@ export default function LexiconSearchSheet({
    */
   const [readingImage, setReadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
-  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
 
   /**
    * The sentence for each way a photograph can fail.
@@ -197,7 +194,7 @@ export default function LexiconSearchSheet({
      * lands the field under the keyboard about a third of the time.
      */
     const frame = requestAnimationFrame(() => {
-      if (!initialAction) inputRef.current?.focus();
+      inputRef.current?.focus();
     });
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,33 +235,6 @@ export default function LexiconSearchSheet({
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
   });
-
-  const launchHandledRef = useRef(false);
-
-  useEffect(() => {
-    if (!open) {
-      launchHandledRef.current = false;
-      return;
-    }
-
-    if (launchHandledRef.current) return;
-    launchHandledRef.current = true;
-
-    if (initialAction === "camera") {
-      queueMicrotask(() => setCameraMenuOpen(true));
-      return;
-    }
-
-    if (initialAction === "voice") {
-      if (!voice.supported) {
-        queueMicrotask(() => inputRef.current?.focus());
-        return;
-      }
-
-      const timer = window.setTimeout(voice.start, 160);
-      return () => window.clearTimeout(timer);
-    }
-  }, [initialAction, open, voice.start, voice.supported]);
 
   if (!motion.rendered) return null;
 
@@ -418,8 +388,9 @@ export default function LexiconSearchSheet({
             </button>
           </div>
 
-          {/* Three quiet, icon-only inputs. The visible camera key owns every
-              image source, so there is no second photo icon competing with it. */}
+          {/* Three quiet, icon-only modes. The visible camera key delegates
+              its one source choice to the platform, so there is no second
+              photo icon or duplicate menu competing with it. */}
           <div
             className="mt-2.5 flex items-center gap-2"
             role="toolbar"
@@ -427,10 +398,7 @@ export default function LexiconSearchSheet({
           >
             <button
               type="button"
-              onClick={() => {
-                setCameraMenuOpen(false);
-                inputRef.current?.focus();
-              }}
+              onClick={() => inputRef.current?.focus()}
               aria-pressed={!voice.listening}
               aria-label={copy.modeType}
               title={copy.modeType}
@@ -444,10 +412,7 @@ export default function LexiconSearchSheet({
             {voice.supported && (
               <button
                 type="button"
-                onClick={() => {
-                  setCameraMenuOpen(false);
-                  voice.toggle();
-                }}
+                onClick={voice.toggle}
                 aria-pressed={voice.listening}
                 aria-label={voice.listening ? copy.searching : copy.modeVoice}
                 title={voice.listening ? copy.searching : copy.modeVoice}
@@ -460,11 +425,8 @@ export default function LexiconSearchSheet({
             )}
 
             <LexiconImageMenu
-              open={cameraMenuOpen}
-              onOpenChange={setCameraMenuOpen}
               onFile={handleImageFile}
               disabled={readingImage}
-              tone={tone}
               buttonClassName={`${modeButtonClass} bg-surface text-ink-soft disabled:opacity-50`}
             />
           </div>

@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
@@ -10,38 +9,33 @@ const { default: LexiconImageMenu } = await import(
   "@/components/lexicon/LexiconImageMenu"
 );
 
-function Harness({ onFile = vi.fn() }: { onFile?: (file: File) => void }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <LexiconImageMenu
-      open={open}
-      onOpenChange={setOpen}
-      onFile={onFile}
-    />
-  );
-}
-
-describe("the search camera source menu", () => {
-  it("keeps one icon in the toolbar and offers exactly the three requested sources", () => {
-    render(<Harness />);
+describe("the search camera source chooser", () => {
+  it("delegates to one native image picker without drawing a second menu", () => {
+    const inputClick = vi
+      .spyOn(HTMLInputElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const { container } = render(<LexiconImageMenu onFile={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Scan" }));
 
-    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
-      "Photo Library",
-      "Take Photo",
-      "Choose File",
-    ]);
-    expect(screen.queryByRole("button", { name: "Image" })).not.toBeInTheDocument();
+    expect(inputClick).toHaveBeenCalledTimes(1);
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
+    expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+      "accept",
+      "image/*",
+    );
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
   });
 
-  it("uses a camera-capture input only for Take Photo", () => {
-    const { container } = render(<Harness />);
-    const inputs = Array.from(container.querySelectorAll('input[type="file"]'));
+  it("hands the one selected image to recognition", () => {
+    const onFile = vi.fn();
+    const { container } = render(<LexiconImageMenu onFile={onFile} />);
+    const input = container.querySelector('input[type="file"]');
+    const image = new File(["image"], "lamp.jpg", { type: "image/jpeg" });
 
-    expect(inputs).toHaveLength(3);
-    expect(inputs.filter((input) => input.getAttribute("capture") === "environment"))
-      .toHaveLength(1);
+    fireEvent.change(input!, { target: { files: [image] } });
+
+    expect(onFile).toHaveBeenCalledWith(image);
   });
 });

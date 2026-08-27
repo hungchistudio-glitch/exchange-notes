@@ -238,10 +238,6 @@ const traditionalChinese: TranslationDictionary = {
     modeVoice: "語音",
     modeCamera: "掃描",
     modeImage: "圖片",
-    cameraMenuLabel: "圖片來源",
-    photoLibrary: "照片圖庫",
-    takePhoto: "拍攝照片",
-    chooseFile: "選擇檔案",
 
     search: "搜尋",
     clear: "清除",
@@ -252,6 +248,7 @@ const traditionalChinese: TranslationDictionary = {
     emptyDescription:
       "Yumi 會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。",
     searching: "查詢中…",
+    listening: "聆聽中…",
     offlineTitle: "目前離線",
     offlineDescription: "現在只能搜尋這台裝置上已經有的單字。",
     errorTitle: "找不到完全符合的結果。",

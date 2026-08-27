@@ -242,10 +242,6 @@ const english: TranslationDictionary = {
     modeVoice: "Voice",
     modeCamera: "Scan",
     modeImage: "Image",
-    cameraMenuLabel: "Image source",
-    photoLibrary: "Photo Library",
-    takePhoto: "Take Photo",
-    chooseFile: "Choose File",
 
     search: "Search",
     clear: "Clear",
@@ -256,6 +252,7 @@ const english: TranslationDictionary = {
     emptyDescription:
       "Yumi works out what language it is, what it means, and whether you have met it before.",
     searching: "Looking it up…",
+    listening: "Listening…",
     offlineTitle: "You are offline",
     offlineDescription:
       "Only the words already on this device can be searched.",

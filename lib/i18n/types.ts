@@ -195,9 +195,9 @@ export type TranslationDictionary = {
    * The Universal Lexicon — one field for "what is this?", wherever the
    * reader is standing.
    *
-   * Shared word for word by the two shells. The warm home sheet and the
-   * Cosmic OmniLexicon differ in what they draw and in nothing they say, so
-   * a sentence written once here is the sentence both of them use.
+   * Shared word for word by every search surface. The inline home field, the
+   * app-wide sheet and the Cosmic OmniLexicon differ in what they draw and in
+   * nothing they say, so a sentence written once here is used everywhere.
    */
   lexicon: {
     open: string;
@@ -211,10 +211,6 @@ export type TranslationDictionary = {
     modeVoice: string;
     modeCamera: string;
     modeImage: string;
-    cameraMenuLabel: string;
-    photoLibrary: string;
-    takePhoto: string;
-    chooseFile: string;
 
     search: string;
     clear: string;
@@ -224,6 +220,7 @@ export type TranslationDictionary = {
     emptyTitle: string;
     emptyDescription: string;
     searching: string;
+    listening: string;
     offlineTitle: string;
     offlineDescription: string;
     errorTitle: string;

@@ -1,20 +1,15 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { LanguageCode } from "@/lib/languages";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
+import type { LanguageCode } from "@/lib/languages";
 
 /* =========================================================
-   Two language axes, one field
+   Two language axes, one real field
 
-   The placeholder on the home screen is where confusing the two axes shows
-   up most plainly. A reader with a Chinese interface studying French should
-   see 搜尋或新增法文單字 — the sentence in the language they read, naming
-   the language they study. Not "Search or add a French word", and not
-   搜尋或新增中文單字.
-
-   This is the brief's language matrix, asserted at the surface a user
-   actually looks at rather than one layer down.
+   The home control is an input now, not a button that opens a second screen.
+   These tests keep the five-language placeholder matrix and assert that text,
+   voice and camera all act where the field already is.
    ========================================================= */
 
 const axes = vi.hoisted(() => ({
@@ -23,8 +18,13 @@ const axes = vi.hoisted(() => ({
   native: "en" as LanguageCode,
 }));
 
-const searchSheet = vi.hoisted(() => ({
-  openSearch: vi.fn(),
+const controls = vi.hoisted(() => ({
+  query: "",
+  setQuery: vi.fn(),
+  submit: vi.fn(),
+  reset: vi.fn(),
+  voiceToggle: vi.fn(),
+  dismiss: vi.fn(),
 }));
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
@@ -38,12 +38,68 @@ vi.mock("@/contexts/LearningLanguageContext", () => ({
   }),
 }));
 
-vi.mock("@/contexts/LexiconSearchContext", () => ({
-  useLexiconSearchSheet: () => ({
-    open: false,
-    openSearch: searchSheet.openSearch,
-    closeSearch: vi.fn(),
+vi.mock("@/contexts/VocabularyContext", () => ({
+  useVocabulary: () => ({ items: [], addItem: vi.fn() }),
+}));
+
+vi.mock("@/hooks/lexicon/useLexiconOnboarding", () => ({
+  default: () => ({ visible: false, dismiss: controls.dismiss }),
+}));
+
+vi.mock("@/hooks/lexicon/useLexiconSearch", () => ({
+  default: () => ({
+    query: controls.query,
+    setQuery: controls.setQuery,
+    submit: controls.submit,
+    reset: controls.reset,
+    status: controls.query ? "typing" : "idle",
+    result: null,
+    preview: null,
+    error: "",
+    savedMatches: [],
+    kind: "word",
+    chooseLanguage: vi.fn(),
+    retry: vi.fn(),
+    inputMode: "type",
   }),
+}));
+
+vi.mock("@/hooks/lexicon/useLexiconSave", () => ({
+  default: () => ({}),
+}));
+
+vi.mock("@/hooks/lexicon/useLexiconShare", () => ({
+  default: () => ({ share: vi.fn(), copied: false }),
+}));
+
+vi.mock("@/hooks/useVocabularyFriendPicker", () => ({
+  default: () => ({
+    friendPickerItem: null,
+    friends: [],
+    friendsLoading: false,
+    friendsError: "",
+    sendingFriendId: null,
+    shareCard: vi.fn(),
+    handleClosePicker: vi.fn(),
+    handlePickFriend: vi.fn(),
+    retryFriends: vi.fn(),
+  }),
+}));
+
+vi.mock("@/hooks/useVoiceInput", () => ({
+  default: () => ({
+    supported: true,
+    listening: false,
+    toggle: controls.voiceToggle,
+  }),
+}));
+
+vi.mock("@/components/lexicon/LexiconResults", () => ({
+  default: () => <div data-testid="inline-results" />,
+}));
+
+vi.mock("@/components/vocabulary/FriendPickerModal", () => ({
+  default: () => null,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -55,7 +111,12 @@ const { default: UniversalSearchField } = await import(
 );
 
 beforeEach(() => {
-  searchSheet.openSearch.mockReset();
+  controls.query = "";
+  controls.setQuery.mockReset();
+  controls.submit.mockReset();
+  controls.reset.mockReset();
+  controls.voiceToggle.mockReset();
+  controls.dismiss.mockReset();
 });
 
 function placeholderFor(
@@ -68,10 +129,10 @@ function placeholderFor(
   axes.native = native;
 
   const { unmount } = render(<UniversalSearchField />);
-  const label = screen.getAllByRole("button")[0].textContent ?? "";
+  const placeholder = screen.getByRole("textbox").getAttribute("placeholder") ?? "";
 
   unmount();
-  return label;
+  return placeholder;
 }
 
 describe("the home search field's placeholder", () => {
@@ -89,14 +150,9 @@ describe("the home search field's placeholder", () => {
   });
 
   it("keeps the two axes independent in every interface language", () => {
-    // Interface Spanish, learning English: Spanish sentence, English named.
     expect(placeholderFor("spanish", "en")).toContain("Inglés");
-
-    // Interface French, learning Italian.
     expect(placeholderFor("french", "it")).toContain("Italien");
 
-    // Interface Italian, learning Traditional Chinese — the row from the
-    // brief that has no English anywhere in it.
     const italian = placeholderFor("italian", "zh-TW", "it");
     expect(italian).toContain("Cinese tradizionale");
     expect(italian).not.toContain("Chinese");
@@ -112,32 +168,33 @@ describe("the home search field's placeholder", () => {
   });
 });
 
-describe("the field's other two doors", () => {
-  it("offers voice and camera beside the text, labelled in the interface language", () => {
-    axes.interfaceLanguage = "traditional-chinese";
-    axes.learning = "fr";
-
-    render(<UniversalSearchField />);
-
-    // Not "Voice"/"Camera": every control the search adds is translated.
-    expect(screen.getByLabelText("語音")).toBeInTheDocument();
-    expect(screen.getByLabelText("掃描")).toBeInTheDocument();
-  });
-
-  it("keeps text search independent and wires each shortcut to its own action", () => {
+describe("the home field works in place", () => {
+  it("is a real input and submits its lookup without opening another view", () => {
+    controls.query = "bonjour";
     axes.interfaceLanguage = "english";
     axes.learning = "fr";
 
     render(<UniversalSearchField />);
 
-    const [textSearch] = screen.getAllByRole("button");
-    fireEvent.click(textSearch);
-    expect(searchSheet.openSearch).toHaveBeenLastCalledWith();
+    expect(screen.getByRole("textbox")).toHaveValue("bonjour");
+    fireEvent.submit(screen.getByRole("textbox").closest("form")!);
 
-    fireEvent.click(screen.getByRole("button", { name: "Voice" }));
-    expect(searchSheet.openSearch).toHaveBeenLastCalledWith({ action: "voice" });
+    expect(controls.submit).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("inline-results")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
-    expect(searchSheet.openSearch).toHaveBeenLastCalledWith({ action: "camera" });
+  it("runs voice here and keeps one native camera picker", () => {
+    axes.interfaceLanguage = "traditional-chinese";
+    axes.learning = "fr";
+
+    const { container } = render(<UniversalSearchField />);
+
+    fireEvent.click(screen.getByRole("button", { name: "語音" }));
+
+    expect(controls.voiceToggle).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "掃描" })).toBeInTheDocument();
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });

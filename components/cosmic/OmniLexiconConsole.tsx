@@ -104,7 +104,6 @@ export default function OmniLexiconConsole({
   const friendPicker = useVocabularyFriendPicker();
 
   const formRef = useRef<HTMLFormElement>(null);
-  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
   const [readingImage, setReadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
 
@@ -328,7 +327,6 @@ export default function OmniLexiconConsole({
             type="text"
             value={search.query}
             onChange={(event) => search.setQuery(event.target.value)}
-            onFocus={() => setCameraMenuOpen(false)}
             placeholder={placeholder}
             aria-label={copy.placeholder}
             enterKeyHint="search"
@@ -358,10 +356,7 @@ export default function OmniLexiconConsole({
           type="button"
           className={styles.mode}
           data-active={!listening}
-          onClick={() => {
-            setCameraMenuOpen(false);
-            formRef.current?.querySelector("input")?.focus();
-          }}
+          onClick={() => formRef.current?.querySelector("input")?.focus()}
           aria-label={copy.inputText}
           title={copy.inputText}
         >
@@ -374,10 +369,7 @@ export default function OmniLexiconConsole({
             className={styles.mode}
             data-active={listening}
             aria-pressed={listening}
-            onClick={() => {
-              setCameraMenuOpen(false);
-              toggleVoice();
-            }}
+            onClick={toggleVoice}
             aria-label={copy.inputVoice}
             title={copy.inputVoice}
           >
@@ -386,11 +378,8 @@ export default function OmniLexiconConsole({
         )}
 
         <LexiconImageMenu
-          open={cameraMenuOpen}
-          onOpenChange={setCameraMenuOpen}
           onFile={handleImageFile}
           disabled={readingImage}
-          tone="cosmic"
           buttonClassName={styles.mode}
         />
       </div>

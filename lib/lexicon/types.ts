@@ -12,7 +12,7 @@ import type { VocabularyCategory, VocabularyItem } from "@/lib/types/app";
 
    Everything now ends here. A LexiconResult is what the app knows about a
    piece of text: what language it is in, whether the reader already has it,
-   and what the dictionary says. The two shells render it differently and
+   and what the dictionary says. The search surfaces render it differently and
    agree about all of it.
    ========================================================= */
 

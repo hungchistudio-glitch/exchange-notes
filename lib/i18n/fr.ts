@@ -226,10 +226,6 @@ const french: TranslationDictionary = {
     modeVoice: "Voix",
     modeCamera: "Scanner",
     modeImage: "Image",
-    cameraMenuLabel: "Source de l’image",
-    photoLibrary: "Photothèque",
-    takePhoto: "Prendre une photo",
-    chooseFile: "Choisir un fichier",
 
     search: "Rechercher",
     clear: "Effacer",
@@ -240,6 +236,7 @@ const french: TranslationDictionary = {
     emptyDescription:
       "Yumi détermine la langue, le sens, et si vous l'avez déjà rencontré.",
     searching: "Recherche en cours…",
+    listening: "Écoute…",
     offlineTitle: "Vous êtes hors ligne",
     offlineDescription:
       "Seuls les mots déjà présents sur cet appareil peuvent être trouvés.",

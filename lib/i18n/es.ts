@@ -242,10 +242,6 @@ const spanish: TranslationDictionary = {
     modeVoice: "Voz",
     modeCamera: "Escanear",
     modeImage: "Imagen",
-    cameraMenuLabel: "Fuente de imagen",
-    photoLibrary: "Fototeca",
-    takePhoto: "Hacer foto",
-    chooseFile: "Elegir archivo",
 
     search: "Buscar",
     clear: "Borrar",
@@ -256,6 +252,7 @@ const spanish: TranslationDictionary = {
     emptyDescription:
       "Yumi averigua en qué idioma está, qué significa y si ya la habías guardado.",
     searching: "Buscando…",
+    listening: "Escuchando…",
     offlineTitle: "Estás sin conexión",
     offlineDescription:
       "Solo se pueden buscar las palabras que ya están en este dispositivo.",

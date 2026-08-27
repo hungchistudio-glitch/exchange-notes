@@ -32,10 +32,11 @@ import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 
 /* =========================================================
-   One engine, two shells
+   One engine, every search surface
 
-   Everything the Universal Search and the Cosmic OmniLexicon do to a query
-   happens here. They differ in what they draw and in nothing else — the
+   Everything the inline home field, the app-wide sheet and the Cosmic
+   OmniLexicon do to a query happens here. They differ in what they draw and
+   in nothing else — the
    language that comes back, the meaning, the saved-or-not, the pronunciation
    and the duplicate state are one computation with two renderings, which is
    the only way "the same word gives the same answer in both modes" can be a
