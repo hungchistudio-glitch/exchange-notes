@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { LanguageCode } from "@/lib/languages";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
@@ -23,6 +23,10 @@ const axes = vi.hoisted(() => ({
   native: "en" as LanguageCode,
 }));
 
+const searchSheet = vi.hoisted(() => ({
+  openSearch: vi.fn(),
+}));
+
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
   default: () => axes.interfaceLanguage,
 }));
@@ -37,7 +41,7 @@ vi.mock("@/contexts/LearningLanguageContext", () => ({
 vi.mock("@/contexts/LexiconSearchContext", () => ({
   useLexiconSearchSheet: () => ({
     open: false,
-    openSearch: vi.fn(),
+    openSearch: searchSheet.openSearch,
     closeSearch: vi.fn(),
   }),
 }));
@@ -49,6 +53,10 @@ vi.mock("next/navigation", () => ({
 const { default: UniversalSearchField } = await import(
   "@/components/lexicon/UniversalSearchField"
 );
+
+beforeEach(() => {
+  searchSheet.openSearch.mockReset();
+});
 
 function placeholderFor(
   interfaceLanguage: InterfaceLanguage,
@@ -114,5 +122,22 @@ describe("the field's other two doors", () => {
     // Not "Voice"/"Camera": every control the search adds is translated.
     expect(screen.getByLabelText("語音")).toBeInTheDocument();
     expect(screen.getByLabelText("掃描")).toBeInTheDocument();
+  });
+
+  it("keeps text search independent and wires each shortcut to its own action", () => {
+    axes.interfaceLanguage = "english";
+    axes.learning = "fr";
+
+    render(<UniversalSearchField />);
+
+    const [textSearch] = screen.getAllByRole("button");
+    fireEvent.click(textSearch);
+    expect(searchSheet.openSearch).toHaveBeenLastCalledWith();
+
+    fireEvent.click(screen.getByRole("button", { name: "Voice" }));
+    expect(searchSheet.openSearch).toHaveBeenLastCalledWith({ action: "voice" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+    expect(searchSheet.openSearch).toHaveBeenLastCalledWith({ action: "camera" });
   });
 });

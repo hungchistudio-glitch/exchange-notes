@@ -4,15 +4,11 @@ import {
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
   type FormEvent,
 } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  Camera,
-  ImageIcon,
   Keyboard,
   LoaderCircle,
   Mic,
@@ -22,6 +18,7 @@ import {
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -64,6 +61,7 @@ export type LexiconSearchSheetProps = {
   initialQuery?: string;
   /** Looks the initial query up immediately, without waiting for a submit. */
   autoSubmit?: boolean;
+  initialAction?: "voice" | "camera";
   tone?: "warm" | "cosmic";
 };
 
@@ -72,6 +70,7 @@ export default function LexiconSearchSheet({
   onClose,
   initialQuery = "",
   autoSubmit = false,
+  initialAction,
   tone = "warm",
 }: LexiconSearchSheetProps) {
   const router = useRouter();
@@ -99,7 +98,6 @@ export default function LexiconSearchSheet({
   const keyboardInset = useKeyboardInset(motion.rendered);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   /*
    * Reading a photograph, which happens before the search has anything to
@@ -108,6 +106,7 @@ export default function LexiconSearchSheet({
    */
   const [readingImage, setReadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
 
   /**
    * The sentence for each way a photograph can fail.
@@ -137,13 +136,8 @@ export default function LexiconSearchSheet({
     }
   }
 
-  async function handleImageFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    // Cleared straight away so picking the same photo twice fires again.
-    event.target.value = "";
-
-    if (!file || readingImage) return;
+  async function handleImageFile(file: File) {
+    if (readingImage) return;
 
     setImageError("");
     setReadingImage(true);
@@ -202,7 +196,9 @@ export default function LexiconSearchSheet({
      * where to put the keyboard. Focusing during the same frame as the mount
      * lands the field under the keyboard about a third of the time.
      */
-    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    const frame = requestAnimationFrame(() => {
+      if (!initialAction) inputRef.current?.focus();
+    });
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -242,6 +238,33 @@ export default function LexiconSearchSheet({
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
   });
+
+  const launchHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      launchHandledRef.current = false;
+      return;
+    }
+
+    if (launchHandledRef.current) return;
+    launchHandledRef.current = true;
+
+    if (initialAction === "camera") {
+      queueMicrotask(() => setCameraMenuOpen(true));
+      return;
+    }
+
+    if (initialAction === "voice") {
+      if (!voice.supported) {
+        queueMicrotask(() => inputRef.current?.focus());
+        return;
+      }
+
+      const timer = window.setTimeout(voice.start, 160);
+      return () => window.clearTimeout(timer);
+    }
+  }, [initialAction, open, voice.start, voice.supported]);
 
   if (!motion.rendered) return null;
 
@@ -291,7 +314,7 @@ export default function LexiconSearchSheet({
   }
 
   const modeButtonClass =
-    "flex h-11 flex-1 items-center justify-center gap-2 rounded-full text-[12px] font-semibold transition-transform active:scale-[0.97]";
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-[0.97]";
 
   return (
     <div className="fixed inset-0 z-[130] flex justify-center">
@@ -395,9 +418,8 @@ export default function LexiconSearchSheet({
             </button>
           </div>
 
-          {/* Four doors into the same room, so nobody has to know which one
-              the app calls "AI". Text focuses the field rather than
-              navigating, which keeps the row reading as four peers. */}
+          {/* Three quiet, icon-only inputs. The visible camera key owns every
+              image source, so there is no second photo icon competing with it. */}
           <div
             className="mt-2.5 flex items-center gap-2"
             role="toolbar"
@@ -405,72 +427,45 @@ export default function LexiconSearchSheet({
           >
             <button
               type="button"
-              onClick={() => inputRef.current?.focus()}
+              onClick={() => {
+                setCameraMenuOpen(false);
+                inputRef.current?.focus();
+              }}
               aria-pressed={!voice.listening}
+              aria-label={copy.modeType}
+              title={copy.modeType}
               className={`${modeButtonClass} ${
                 voice.listening ? "bg-surface text-ink-soft" : "bg-black text-white"
               }`}
             >
               <Keyboard size={16} strokeWidth={1.7} aria-hidden="true" />
-              {copy.modeType}
             </button>
 
             {voice.supported && (
               <button
                 type="button"
-                onClick={voice.toggle}
+                onClick={() => {
+                  setCameraMenuOpen(false);
+                  voice.toggle();
+                }}
                 aria-pressed={voice.listening}
+                aria-label={voice.listening ? copy.searching : copy.modeVoice}
+                title={voice.listening ? copy.searching : copy.modeVoice}
                 className={`${modeButtonClass} ${
                   voice.listening ? "bg-black text-white" : "bg-surface text-ink-soft"
                 }`}
               >
                 <Mic size={16} strokeWidth={1.7} aria-hidden="true" />
-                {voice.listening ? copy.searching : copy.modeVoice}
               </button>
             )}
 
-            {/* Camera and image go to the capture flow that already owns
-                recognition, rather than a second pipeline living here. What
-                it recognises comes back through this same sheet — see the
-                lexicon query param in LexiconSearchProvider. */}
-            <Link
-              href="/capture?source=camera&from=lexicon"
-              onClick={motion.requestClose}
-              className={`${modeButtonClass} bg-surface text-ink-soft`}
-            >
-              <Camera size={16} strokeWidth={1.7} aria-hidden="true" />
-              {copy.modeCamera}
-            </Link>
-
-            {/*
-              A button, not a link. Choosing a photo is not somewhere to go —
-              it opens the picker the operating system already has. This used
-              to navigate to the capture screen so that screen could click a
-              file input two hundred milliseconds after mounting: a whole page,
-              painted, to do nothing the reader wanted to see.
-
-              Scan stays a link on purpose. That one really is a destination:
-              a live camera with a focus hint and guidance about centring the
-              object, which a bare file input cannot offer.
-            */}
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
+            <LexiconImageMenu
+              open={cameraMenuOpen}
+              onOpenChange={setCameraMenuOpen}
+              onFile={handleImageFile}
               disabled={readingImage}
-              aria-label={copy.modeImage}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-[0.97] disabled:opacity-50"
-            >
-              <ImageIcon size={16} strokeWidth={1.7} aria-hidden="true" />
-            </button>
-
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageFile}
-              className="hidden"
-              aria-hidden="true"
-              tabIndex={-1}
+              tone={tone}
+              buttonClassName={`${modeButtonClass} bg-surface text-ink-soft disabled:opacity-50`}
             />
           </div>
 

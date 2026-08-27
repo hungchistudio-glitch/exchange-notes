@@ -226,6 +226,10 @@ const italian: TranslationDictionary = {
     modeVoice: "Voce",
     modeCamera: "Scansiona",
     modeImage: "Immagine",
+    cameraMenuLabel: "Origine immagine",
+    photoLibrary: "Libreria foto",
+    takePhoto: "Scatta una foto",
+    chooseFile: "Scegli file",
 
     search: "Cerca",
     clear: "Cancella",
@@ -1331,6 +1335,8 @@ const italian: TranslationDictionary = {
       shareWordAriaLabel: "Condividi la parola",
       deleteWordAriaLabel: "Elimina la parola",
       listenAriaLabel: "Ascolta: {text}",
+      copyWordAriaLabel: "Copia {text}",
+      copiedAriaLabel: "Copiato",
       markAsMastered: "Segna come padroneggiata",
       markAsLearning: "Riporta in apprendimento",
       reviewPanel: {

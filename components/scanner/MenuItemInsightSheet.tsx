@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { getPhoneticsFor } from "@/lib/pronunciation/getPronunciation";
@@ -267,6 +268,7 @@ export default function MenuItemInsightSheet({
         onClose={onClose}
         title={primary}
         description={primaryDescription || undefined}
+        titleAction={<VocabularyCopyButton text={primary} />}
       >
         <div className="space-y-3">
           {/*

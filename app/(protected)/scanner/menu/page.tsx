@@ -52,6 +52,15 @@ export default function MenuTranslatorPage() {
 
   const { session, dispatch } = useScanSession();
 
+  const leaveScanner = useCallback(() => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.replace("/");
+  }, [router]);
+
   /*
    * Which language the menu comes back in — a learning language, not the
    * interface one. Seeded from the interface language because reading the app
@@ -157,7 +166,7 @@ export default function MenuTranslatorPage() {
         onCaptured={(image, quality) =>
           dispatch({ type: "captured", image, quality })
         }
-        onClose={() => router.push("/")}
+        onClose={leaveScanner}
       />
     );
   }
@@ -240,7 +249,7 @@ export default function MenuTranslatorPage() {
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader
           title={copy.title}
-          backHref="/"
+          onBack={leaveScanner}
           backLabel={t.scanner.back}
         />
 

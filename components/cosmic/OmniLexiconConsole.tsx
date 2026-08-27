@@ -4,14 +4,15 @@ import {
   useCallback,
   useEffect,
   useRef,
+  useState,
   type CSSProperties,
   type FormEvent,
 } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, ImageIcon, Keyboard, Mic, Radar } from "lucide-react";
+import { Keyboard, Mic, Radar } from "lucide-react";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
+import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -22,6 +23,12 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
+import {
+  ImageRecognitionError,
+  fileToModelImage,
+  identifyImage,
+  type ImageRecognitionCode,
+} from "@/lib/lexicon/imageRecognition";
 import {
   getLanguage,
   getLanguageName,
@@ -58,7 +65,7 @@ const WAVE_BARS = 12;
  * ── What this file is, and is not ──────────────────────────────────────
  *
  * It is the deck's chrome: the brackets, the sweep, the waveform, the field
- * and the four mode keys. That is the whole of its job.
+ * and the three mode keys. That is the whole of its job.
  *
  * Everything underneath — the language detection, the reader's own words,
  * the dictionary, the duplicate check, the save — is
@@ -69,10 +76,10 @@ const WAVE_BARS = 12;
  * a different answer in Cosmic Mode" becomes possible. It is not possible
  * now: there is one computation and two skins.
  *
- * Camera and image still hand off to /capture, which already owns
- * recognition. What it reads comes back through the search sheet, so a word
- * photographed on the deck lands in the same result model as a word typed
- * into it.
+ * The camera key opens the platform's photo sources here and sends the image
+ * through the shared recognition pipeline. A photographed word therefore
+ * lands in exactly the same result model as a typed or spoken one, without a
+ * detour through the retired capture screen.
  */
 export default function OmniLexiconConsole({
   onStateChange,
@@ -97,6 +104,53 @@ export default function OmniLexiconConsole({
   const friendPicker = useVocabularyFriendPicker();
 
   const formRef = useRef<HTMLFormElement>(null);
+  const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
+  const [readingImage, setReadingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
+
+  function imageErrorMessage(code: ImageRecognitionCode): string {
+    const errors = t.capture.errors;
+
+    switch (code) {
+      case "not-an-image":
+        return errors.selectImage;
+      case "too-large":
+        return errors.imageTooLarge;
+      case "unreadable":
+        return errors.processImage;
+      case "daily-limit":
+        return errors.identifyDailyLimit;
+      case "busy":
+        return errors.identifyBusy;
+      case "timeout":
+        return errors.identifyTimeout;
+      default:
+        return errors.identifyImage;
+    }
+  }
+
+  async function handleImageFile(file: File) {
+    if (readingImage) return;
+
+    setImageError("");
+    setReadingImage(true);
+
+    try {
+      const identified = await identifyImage(await fileToModelImage(file));
+      if (identified.term) search.submit(identified.term, "image");
+    } catch (recognitionError) {
+      console.error("Could not read that photo:", recognitionError);
+      setImageError(
+        imageErrorMessage(
+          recognitionError instanceof ImageRecognitionError
+            ? recognitionError.code
+            : "failed",
+        ),
+      );
+    } finally {
+      setReadingImage(false);
+    }
+  }
 
   /*
    * The recording, when the browser heard nothing it could use.
@@ -148,7 +202,7 @@ export default function OmniLexiconConsole({
 
   const state: OmniLexiconState = listening
     ? "listening"
-    : search.status === "searching"
+    : readingImage || search.status === "searching"
       ? "scanning"
       : search.query.length > 0
         ? "typing"
@@ -274,6 +328,7 @@ export default function OmniLexiconConsole({
             type="text"
             value={search.query}
             onChange={(event) => search.setQuery(event.target.value)}
+            onFocus={() => setCameraMenuOpen(false)}
             placeholder={placeholder}
             aria-label={copy.placeholder}
             enterKeyHint="search"
@@ -299,16 +354,18 @@ export default function OmniLexiconConsole({
       )}
 
       <div className={styles.modes} role="toolbar" aria-label={copy.label}>
-        {/* Text is the mode you are already in; it focuses the field rather
-            than navigating, so the toolbar reads as four peers. */}
         <button
           type="button"
           className={styles.mode}
           data-active={!listening}
-          onClick={() => formRef.current?.querySelector("input")?.focus()}
+          onClick={() => {
+            setCameraMenuOpen(false);
+            formRef.current?.querySelector("input")?.focus();
+          }}
+          aria-label={copy.inputText}
+          title={copy.inputText}
         >
           <Keyboard size={17} strokeWidth={1.7} aria-hidden="true" />
-          <span className={styles.modeLabel}>{copy.inputText}</span>
         </button>
 
         {voiceSupported && (
@@ -317,36 +374,32 @@ export default function OmniLexiconConsole({
             className={styles.mode}
             data-active={listening}
             aria-pressed={listening}
-            onClick={toggleVoice}
+            onClick={() => {
+              setCameraMenuOpen(false);
+              toggleVoice();
+            }}
+            aria-label={copy.inputVoice}
+            title={copy.inputVoice}
           >
             <Mic size={17} strokeWidth={1.7} aria-hidden="true" />
-            <span className={styles.modeLabel}>{copy.inputVoice}</span>
           </button>
         )}
 
-        {/*
-          Camera and image go to the capture flow that already owns
-          recognition, rather than a second pipeline living here. What it
-          reads returns through the lexicon hand-off, so a photographed word
-          and a typed one reach the same result.
-
-          Deliberately untagged, so no view transition runs. Two reasons. The
-          camera opening its own lens is the transition; wrapping that in a
-          second aperture animation is the same gesture twice. And a view
-          transition that does not settle leaves its snapshot on top of the
-          page — everything visible, nothing clickable — which is a far worse
-          failure on a full-screen camera than a missing flourish.
-        */}
-        <Link href="/capture?source=camera&from=lexicon" className={styles.mode}>
-          <Camera size={17} strokeWidth={1.7} aria-hidden="true" />
-          <span className={styles.modeLabel}>{copy.inputCamera}</span>
-        </Link>
-
-        <Link href="/capture?source=library&from=lexicon" className={styles.mode}>
-          <ImageIcon size={17} strokeWidth={1.7} aria-hidden="true" />
-          <span className={styles.modeLabel}>{copy.inputImage}</span>
-        </Link>
+        <LexiconImageMenu
+          open={cameraMenuOpen}
+          onOpenChange={setCameraMenuOpen}
+          onFile={handleImageFile}
+          disabled={readingImage}
+          tone="cosmic"
+          buttonClassName={styles.mode}
+        />
       </div>
+
+      {imageError ? (
+        <p role="alert" className="mt-2.5 text-[12px] text-red-300">
+          {imageError}
+        </p>
+      ) : null}
 
       {hasAnswer && (
         <div className={styles.result}>

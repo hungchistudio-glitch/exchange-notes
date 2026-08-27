@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { LanguageCode } from "@/lib/languages";
@@ -309,6 +309,22 @@ describe("the result view", () => {
 
     // Headword, meaning, and both halves of the example.
     expect(listeners.length).toBe(4);
+  });
+
+  it("copies the primary learning-language word from the result card", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    const { search, save } = harness({});
+
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy tondre" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("tondre"));
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
   });
 
   it("will not offer to keep a whole sentence as a card", () => {

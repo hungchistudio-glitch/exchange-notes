@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   ImageRecognitionError,
@@ -6,6 +6,7 @@ import {
   MAX_IMAGE_FILE_SIZE,
   MAX_PREVIEW_DIMENSION,
   fileToModelImage,
+  identifyImage,
 } from "@/lib/lexicon/imageRecognition";
 
 /* =========================================================
@@ -63,5 +64,33 @@ describe("the sizes the model and the screen get", () => {
      * one of them being tuned and the other quietly not.
      */
     expect(MAX_AI_DIMENSION).toBeLessThan(MAX_PREVIEW_DIMENSION);
+  });
+});
+
+describe("image lookup failures", () => {
+  it("turns both minute and service rate limits into the translated busy state", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "Wait", code: "rate_limit" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(identifyImage("data:image/jpeg;base64,AA==")).rejects.toMatchObject({
+      code: "busy",
+    });
+  });
+
+  it("keeps the daily limit distinct from a short-lived busy response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "Tomorrow", code: "daily_limit" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(identifyImage("data:image/jpeg;base64,AA==")).rejects.toMatchObject({
+      code: "daily-limit",
+    });
   });
 });

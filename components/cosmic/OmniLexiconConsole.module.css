@@ -238,13 +238,13 @@
   opacity: 0.3;
 }
 
-/* ---------- The four senses ---------- */
+/* ---------- The three quiet input keys ---------- */
 
 .modes {
   position: relative;
   margin-top: 0.7rem;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 0.4rem;
   padding-top: 0.65rem;
   border-top: 1px solid color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
@@ -252,9 +252,10 @@
 
 .mode {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.28rem;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
   padding: 0.35rem 0.15rem;
   border-radius: 12px;
   color: color-mix(in oklab, var(--color-black) 52%, transparent);
@@ -271,14 +272,6 @@
 .mode[data-active="true"] {
   color: var(--cosmic-cyan);
   background: color-mix(in oklab, var(--cosmic-cyan) 9%, transparent);
-}
-
-.modeLabel {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 /* ---------- Listening ---------- */

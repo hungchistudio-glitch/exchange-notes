@@ -1,7 +1,6 @@
 "use client";
 
 import { Camera, Mic, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -30,7 +29,6 @@ import { insertValues } from "@/lib/utils";
    ========================================================= */
 
 export default function UniversalSearchField() {
-  const router = useRouter();
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.lexicon;
   const { openSearch } = useLexiconSearchSheet();
@@ -75,7 +73,10 @@ export default function UniversalSearchField() {
 
         <button
           type="button"
-          onClick={open}
+          onClick={() => {
+            onboarding.dismiss();
+            openSearch({ action: "voice" });
+          }}
           aria-label={copy.modeVoice}
           title={copy.modeVoice}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-strong transition-transform active:scale-95"
@@ -87,7 +88,7 @@ export default function UniversalSearchField() {
           type="button"
           onClick={() => {
             onboarding.dismiss();
-            router.push("/capture?source=camera&from=lexicon");
+            openSearch({ action: "camera" });
           }}
           aria-label={copy.modeCamera}
           title={copy.modeCamera}

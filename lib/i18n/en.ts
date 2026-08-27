@@ -242,6 +242,10 @@ const english: TranslationDictionary = {
     modeVoice: "Voice",
     modeCamera: "Scan",
     modeImage: "Image",
+    cameraMenuLabel: "Image source",
+    photoLibrary: "Photo Library",
+    takePhoto: "Take Photo",
+    chooseFile: "Choose File",
 
     search: "Search",
     clear: "Clear",
@@ -1449,6 +1453,8 @@ const english: TranslationDictionary = {
       shareWordAriaLabel: "Share word",
       deleteWordAriaLabel: "Delete word",
       listenAriaLabel: "Listen: {text}",
+      copyWordAriaLabel: "Copy {text}",
+      copiedAriaLabel: "Copied",
       markAsMastered: "Mark as mastered",
       markAsLearning: "Move to learning",
 

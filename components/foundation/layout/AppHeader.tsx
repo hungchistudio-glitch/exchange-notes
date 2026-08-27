@@ -9,6 +9,7 @@ type AppHeaderProps = {
   // A sub-screen of the page named here. Settings' Devices & Widgets and
   // Help & About are the first two; the dock stays where it is either way.
   backHref?: string;
+  onBack?: () => void;
   backLabel?: string;
   className?: string;
 };
@@ -18,6 +19,7 @@ export default function AppHeader({
   eyebrow,
   action,
   backHref,
+  onBack,
   backLabel,
   className = "",
 }: AppHeaderProps) {
@@ -29,14 +31,25 @@ export default function AppHeader({
       }}
     >
       <div className="flex h-16 items-center justify-between gap-3">
-        {backHref ? (
-          <Link
-            href={backHref}
-            aria-label={backLabel}
-            className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
-          >
-            <ArrowLeft size={20} strokeWidth={1.9} />
-          </Link>
+        {backHref || onBack ? (
+          onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backLabel}
+              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
+            >
+              <ArrowLeft size={20} strokeWidth={1.9} />
+            </button>
+          ) : (
+            <Link
+              href={backHref!}
+              aria-label={backLabel}
+              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
+            >
+              <ArrowLeft size={20} strokeWidth={1.9} />
+            </Link>
+          )
         ) : null}
 
         <div className="min-w-0 flex-1">

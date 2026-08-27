@@ -226,6 +226,10 @@ const french: TranslationDictionary = {
     modeVoice: "Voix",
     modeCamera: "Scanner",
     modeImage: "Image",
+    cameraMenuLabel: "Source de l’image",
+    photoLibrary: "Photothèque",
+    takePhoto: "Prendre une photo",
+    chooseFile: "Choisir un fichier",
 
     search: "Rechercher",
     clear: "Effacer",
@@ -1331,6 +1335,8 @@ const french: TranslationDictionary = {
       shareWordAriaLabel: "Partager le mot",
       deleteWordAriaLabel: "Supprimer le mot",
       listenAriaLabel: "Écouter : {text}",
+      copyWordAriaLabel: "Copier {text}",
+      copiedAriaLabel: "Copié",
       markAsMastered: "Marquer comme maîtrisé",
       markAsLearning: "Remettre en apprentissage",
       reviewPanel: {

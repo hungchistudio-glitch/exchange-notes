@@ -242,6 +242,10 @@ const spanish: TranslationDictionary = {
     modeVoice: "Voz",
     modeCamera: "Escanear",
     modeImage: "Imagen",
+    cameraMenuLabel: "Fuente de imagen",
+    photoLibrary: "Fototeca",
+    takePhoto: "Hacer foto",
+    chooseFile: "Elegir archivo",
 
     search: "Buscar",
     clear: "Borrar",
@@ -1448,6 +1452,8 @@ const spanish: TranslationDictionary = {
       shareWordAriaLabel: "Compartir la palabra",
       deleteWordAriaLabel: "Eliminar la palabra",
       listenAriaLabel: "Escuchar: {text}",
+      copyWordAriaLabel: "Copiar {text}",
+      copiedAriaLabel: "Copiado",
       markAsMastered: "Marcar como dominada",
       markAsLearning: "Pasar a aprendiendo",
 

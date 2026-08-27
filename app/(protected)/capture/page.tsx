@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import {
   ChangeEvent,
   RefObject,
   Suspense,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -29,12 +29,14 @@ import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunc
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
+import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import {
   getLanguage,
+  getLanguageName,
   isLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
@@ -70,6 +72,10 @@ type CameraOverlayProps = {
   captureAriaLabel: string;
   focusHint: string;
 };
+
+function safeReturnHref(value: string | null, fallback: string) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
 
 /**
  * Browser capabilities are read through useSyncExternalStore rather than set
@@ -399,7 +405,7 @@ function CameraOverlay({
       </button>
 
       <div
-        className={`${motion.handleClassName} absolute inset-x-0 z-10 flex h-12 items-start justify-center pt-3`}
+        className={`${motion.handleClassName} absolute left-1/2 z-10 flex h-12 w-24 -translate-x-1/2 items-start justify-center pt-3`}
         style={{ top: "env(safe-area-inset-top)" }}
         {...motion.handleProps}
       >
@@ -428,7 +434,7 @@ function CameraOverlay({
 function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const { pair: languagePair } = useDisplayLanguages();
 
   /*
@@ -445,6 +451,8 @@ function CaptureContent() {
   const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
   const sourceHandledRef = useRef(false);
+  const pickerStateRef = useRef<{ exitOnCancel: boolean } | null>(null);
+  const pickerFocusTimerRef = useRef<number | null>(null);
 
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
@@ -479,13 +487,16 @@ function CaptureContent() {
   const friendsRequestedRef = useRef(false);
 
   const sourceParam = searchParams.get("source");
+  const widgetAction = searchParams.get("widgetAction");
   const withParam = searchParams.get("with");
   const fromParam = searchParams.get("from");
 
   const source: CaptureSource =
     sourceParam === "camera" || sourceParam === "library"
       ? sourceParam
-      : null;
+      : widgetAction === "camera"
+        ? "camera"
+        : null;
 
   const messagesHref = withParam
     ? `/messages/new?friend=${encodeURIComponent(withParam)}`
@@ -507,6 +518,36 @@ function CaptureContent() {
     : fromParam === "vocabulary"
       ? "/vocabulary"
       : "/";
+  const returnHref = safeReturnHref(searchParams.get("returnTo"), cancelHref);
+
+  const leaveCapture = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraActive(false);
+    window.speechSynthesis?.cancel();
+
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.replace(returnHref);
+  }, [returnHref, router]);
+
+  const openFilePicker = useCallback((
+    input: HTMLInputElement | null,
+    exitOnCancel = false,
+  ) => {
+    if (!input) return;
+    pickerStateRef.current = { exitOnCancel };
+    input.click();
+  }, []);
 
   /**
    * Whether the camera was opened from the Universal Search.
@@ -527,6 +568,55 @@ function CaptureContent() {
       window.speechSynthesis?.cancel();
     };
   }, [result]);
+
+  useEffect(() => {
+    function handlePickerReturn() {
+      if (!pickerStateRef.current) return;
+
+      if (pickerFocusTimerRef.current !== null) {
+        window.clearTimeout(pickerFocusTimerRef.current);
+      }
+
+      pickerFocusTimerRef.current = window.setTimeout(() => {
+        pickerFocusTimerRef.current = null;
+        const pickerState = pickerStateRef.current;
+        if (!pickerState) return;
+
+        pickerStateRef.current = null;
+        if (pickerState.exitOnCancel) leaveCapture();
+      }, 450);
+    }
+
+    window.addEventListener("focus", handlePickerReturn);
+
+    return () => {
+      window.removeEventListener("focus", handlePickerReturn);
+      if (pickerFocusTimerRef.current !== null) {
+        window.clearTimeout(pickerFocusTimerRef.current);
+      }
+    };
+  }, [leaveCapture]);
+
+  useEffect(() => {
+    const inputs = [takePhotoInputRef.current, chooseImageInputRef.current].filter(
+      (input): input is HTMLInputElement => Boolean(input),
+    );
+
+    function handlePickerCancel() {
+      const pickerState = pickerStateRef.current;
+      pickerStateRef.current = null;
+
+      if (pickerState?.exitOnCancel) leaveCapture();
+    }
+
+    inputs.forEach((input) => input.addEventListener("cancel", handlePickerCancel));
+
+    return () => {
+      inputs.forEach((input) =>
+        input.removeEventListener("cancel", handlePickerCancel),
+      );
+    };
+  }, [leaveCapture]);
 
   /*
    * Recognised, and straight into the answer.
@@ -552,8 +642,8 @@ function CaptureContent() {
     if (!fromLexicon || !result?.term) return;
 
     openSearch({ query: result.term, autoSubmit: true });
-    router.replace("/");
-  }, [fromLexicon, openSearch, result, router]);
+    router.replace(returnHref);
+  }, [fromLexicon, openSearch, result, returnHref, router]);
 
   /*
    * The two languages this result is actually in.
@@ -654,7 +744,7 @@ function CaptureContent() {
 
     if (source === "library") {
       const timeout = window.setTimeout(() => {
-        chooseImageInputRef.current?.click();
+        openFilePicker(chooseImageInputRef.current, true);
       }, 200);
 
       return () => window.clearTimeout(timeout);
@@ -664,7 +754,7 @@ function CaptureContent() {
     // cleanup above would clear the library picker's timeout before it fires
     // while the guard blocks re-arming it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [source]);
+  }, [openFilePicker, source]);
 
   /**
    * Reads a piece of the result aloud, in its own language.
@@ -708,7 +798,7 @@ function CaptureContent() {
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraStarting(false);
-      takePhotoInputRef.current?.click();
+      openFilePicker(takePhotoInputRef.current, source === "camera");
       return;
     }
 
@@ -746,6 +836,11 @@ function CaptureContent() {
     } finally {
       setCameraStarting(false);
     }
+  }
+
+  function closeCamera() {
+    stopCamera();
+    leaveCapture();
   }
 
   function drawToDataUrl(
@@ -838,6 +933,7 @@ function CaptureContent() {
   async function handleSelectedFile(
     event: ChangeEvent<HTMLInputElement>
   ) {
+    pickerStateRef.current = null;
     const file = event.target.files?.[0];
 
     event.target.value = "";
@@ -1199,7 +1295,7 @@ function CaptureContent() {
     setError("");
     setSaved(false);
 
-    chooseImageInputRef.current?.click();
+    openFilePicker(chooseImageInputRef.current);
   }
 
   function reset() {
@@ -1237,12 +1333,13 @@ function CaptureContent() {
               paddingTop: "env(safe-area-inset-top)",
             }}
           >
-            <Link
-              href={cancelHref}
+            <button
+              type="button"
+              onClick={leaveCapture}
               className="min-w-14 text-sm font-medium text-ink-soft transition-colors hover:text-neutral-900"
             >
               {capture.camera.cancel}
-            </Link>
+            </button>
 
             <h1 className="text-sm font-semibold tracking-tight">
               {capture.title}
@@ -1261,7 +1358,8 @@ function CaptureContent() {
         {!cameraActive && !cameraStarting && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
-              English × 繁體中文
+              {getLanguageName(languagePair[0], interfaceLanguage)} ×{" "}
+              {getLanguageName(languagePair[1], interfaceLanguage)}
             </p>
 
             <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.03em]">
@@ -1290,7 +1388,9 @@ function CaptureContent() {
 
               <button
                 type="button"
-                onClick={() => chooseImageInputRef.current?.click()}
+                onClick={() =>
+                  openFilePicker(chooseImageInputRef.current, true)
+                }
                 className="group flex w-20 flex-col items-center gap-2.5"
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full border border-black/5 bg-white text-neutral-900 transition-transform duration-150 group-active:scale-95">
@@ -1332,7 +1432,7 @@ function CaptureContent() {
         {cameraActive && !imageData && (
           <CameraOverlay
             videoRef={videoRef}
-            onClose={stopCamera}
+            onClose={closeCamera}
             onCapture={capturePhoto}
             closeCameraAriaLabel={capture.camera.closeCameraAriaLabel}
             captureAriaLabel={capture.camera.captureAriaLabel}
@@ -1437,9 +1537,15 @@ function CaptureContent() {
                   Pair order already: the identification answers in the
                   learner's own two languages, learning first.
                 */}
-                <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                  {result.term}
-                </h2>
+                <div className="mt-2 flex items-start gap-3">
+                  <h2 className="min-w-0 flex-1 break-words text-[24px] font-semibold tracking-[-0.03em]">
+                    {result.term}
+                  </h2>
+                  <VocabularyCopyButton
+                    text={result.term}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-90"
+                  />
+                </div>
                 <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
                   {result.translation}
                 </p>

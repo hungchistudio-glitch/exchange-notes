@@ -202,7 +202,10 @@ export async function identifyImage(
     throw new ImageRecognitionError(
       code === "daily_limit"
         ? "daily-limit"
-        : code === "busy"
+        : code === "busy" ||
+            code === "rate_limit" ||
+            response.status === 429 ||
+            response.status === 503
           ? "busy"
           : "failed",
     );

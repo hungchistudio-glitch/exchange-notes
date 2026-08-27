@@ -211,6 +211,10 @@ export type TranslationDictionary = {
     modeVoice: string;
     modeCamera: string;
     modeImage: string;
+    cameraMenuLabel: string;
+    photoLibrary: string;
+    takePhoto: string;
+    chooseFile: string;
 
     search: string;
     clear: string;
@@ -1403,6 +1407,8 @@ export type TranslationDictionary = {
       shareWordAriaLabel: string;
       deleteWordAriaLabel: string;
       listenAriaLabel: string;
+      copyWordAriaLabel: string;
+      copiedAriaLabel: string;
       markAsMastered: string;
       markAsLearning: string;
 

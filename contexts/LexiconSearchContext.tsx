@@ -34,6 +34,8 @@ type OpenOptions = {
   query?: string;
   /** Looks it up immediately rather than waiting for a submit. */
   autoSubmit?: boolean;
+  /** Starts the requested input immediately instead of only opening the UI. */
+  action?: "voice" | "camera";
 };
 
 type LexiconSearchContextType = {
@@ -127,14 +129,16 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
     open: boolean;
     query: string;
     autoSubmit: boolean;
+    action?: "voice" | "camera";
     /** Changes on every open, so the sheet re-primes for a new query. */
     token: number;
-  }>({ open: false, query: "", autoSubmit: false, token: 0 });
+  }>({ open: false, query: "", autoSubmit: false, action: undefined, token: 0 });
 
   const openSearch = useCallback((options?: OpenOptions) => {
     setState((current) => {
       const query = options?.query ?? "";
       const autoSubmit = options?.autoSubmit ?? false;
+      const action = options?.action;
 
       /*
        * Idempotent, because the hand-off effect above may ask more than once
@@ -142,11 +146,22 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
        * tells React there is nothing to do — without it, each retry would
        * bump the token and remount the sheet mid-lookup.
        */
-      if (current.open && current.query === query && current.autoSubmit === autoSubmit) {
+      if (
+        current.open &&
+        current.query === query &&
+        current.autoSubmit === autoSubmit &&
+        current.action === action
+      ) {
         return current;
       }
 
-      return { open: true, query, autoSubmit, token: current.token + 1 };
+      return {
+        open: true,
+        query,
+        autoSubmit,
+        action,
+        token: current.token + 1,
+      };
     });
   }, []);
 
@@ -179,6 +194,7 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
         onClose={closeSearch}
         initialQuery={state.query}
         autoSubmit={state.autoSubmit}
+        initialAction={state.action}
         tone={isCosmic ? "cosmic" : "warm"}
       />
     </LexiconSearchContext.Provider>

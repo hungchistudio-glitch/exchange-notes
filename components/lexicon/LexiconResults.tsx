@@ -15,6 +15,7 @@ import { useState } from "react";
 
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import type { LexiconSearch } from "@/hooks/lexicon/useLexiconSearch";
@@ -475,12 +476,22 @@ export default function LexiconResults({
                   {entry.term}
                 </p>
 
-                <SpeakButton
-                  text={entry.term}
-                  language={languages.sourceLanguage}
-                  label={copy.listen}
-                  tone={tone}
-                />
+                <div className="flex shrink-0 items-center gap-2">
+                  <VocabularyCopyButton
+                    text={entry.term}
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
+                      tone === "cosmic"
+                        ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
+                        : "bg-black text-white"
+                    }`}
+                  />
+                  <SpeakButton
+                    text={entry.term}
+                    language={languages.sourceLanguage}
+                    label={copy.listen}
+                    tone={tone}
+                  />
+                </div>
               </div>
 
               {/*

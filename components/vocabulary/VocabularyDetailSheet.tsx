@@ -19,6 +19,7 @@ import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import { languagePairSummary } from "@/components/vocabulary/detail/VocabularyLanguageSheet";
 import AppButton from "@/components/ui/AppButton";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import { getLanguage } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -192,6 +193,10 @@ export default function VocabularyDetailSheet({
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                <VocabularyCopyButton
+                  text={sides.primary.text}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-black text-white transition active:scale-90"
+                />
                 <button
                   type="button"
                   onClick={onEdit}

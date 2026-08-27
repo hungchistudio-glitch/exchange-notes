@@ -7,6 +7,7 @@ import VocabularyWord from "@/components/vocabulary/ui/VocabularyWord";
 import VocabularyTranslation from "@/components/vocabulary/ui/VocabularyTranslation";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { getLanguage } from "@/lib/languages";
 
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type {
@@ -73,7 +74,11 @@ export default function VocabularyCardHeader({
         <LanguageOriginBadge language={primary.language} />
       </div>
 
-      <VocabularyWord word={primary.text} className="mt-6" />
+      <VocabularyWord
+        word={primary.text}
+        language={getLanguage(primary.language).speechTag}
+        className="mt-6"
+      />
 
       <PronunciationBlock
         entries={[
@@ -86,6 +91,7 @@ export default function VocabularyCardHeader({
       {secondary.text ? (
         <VocabularyTranslation
           text={secondary.text}
+          language={getLanguage(secondary.language).speechTag}
           className="mt-5 border-t border-black/[0.06] pt-5"
         />
       ) : null}

@@ -238,6 +238,10 @@ const traditionalChinese: TranslationDictionary = {
     modeVoice: "語音",
     modeCamera: "掃描",
     modeImage: "圖片",
+    cameraMenuLabel: "圖片來源",
+    photoLibrary: "照片圖庫",
+    takePhoto: "拍攝照片",
+    chooseFile: "選擇檔案",
 
     search: "搜尋",
     clear: "清除",
@@ -1422,6 +1426,8 @@ const traditionalChinese: TranslationDictionary = {
       shareWordAriaLabel: "分享單字",
       deleteWordAriaLabel: "刪除單字",
       listenAriaLabel: "播放：{text}",
+      copyWordAriaLabel: "複製{text}",
+      copiedAriaLabel: "已複製",
       markAsMastered: "標記為已掌握",
       markAsLearning: "移回學習中",
 

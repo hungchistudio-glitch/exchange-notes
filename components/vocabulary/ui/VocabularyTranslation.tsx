@@ -3,6 +3,8 @@
 import { cn, insertValues } from "@/lib/utils";
 import { Display, Title } from "@/components/ui/Typography";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { SpeechLanguage } from "@/lib/speech";
+import VocabularyCopyButton from "./VocabularyCopyButton";
 import VocabularySpeechButton from "./VocabularySpeechButton";
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
    * LearningLanguageContext) — NOT the interface display language. */
   variant?: "primary" | "secondary";
   showSpeechButton?: boolean;
+  language: SpeechLanguage;
 };
 
 export default function VocabularyTranslation({
@@ -21,6 +24,7 @@ export default function VocabularyTranslation({
   className,
   variant = "secondary",
   showSpeechButton = true,
+  language,
 }: Props) {
   const { t } = useTranslation();
   const normalizedText = text.trim();
@@ -52,17 +56,23 @@ export default function VocabularyTranslation({
         {normalizedText}
       </TextComponent>
 
-      {showSpeechButton ? <div className="shrink-0">
-        <VocabularySpeechButton
-          text={normalizedText}
-          language="zh-TW"
-          label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-            text: normalizedText,
-          })}
-          size="sm"
-          prominence={variant}
-        />
-      </div> : null}
+      <div className="flex shrink-0 items-center gap-2">
+        {variant === "primary" ? (
+          <VocabularyCopyButton text={normalizedText} />
+        ) : null}
+
+        {showSpeechButton ? (
+          <VocabularySpeechButton
+            text={normalizedText}
+            language={language}
+            label={insertValues(t.vocabulary.detail.listenAriaLabel, {
+              text: normalizedText,
+            })}
+            size="sm"
+            prominence={variant}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

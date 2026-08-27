@@ -11,6 +11,7 @@ type BottomSheetProps = {
   title: string;
   children: ReactNode;
   description?: string;
+  titleAction?: ReactNode;
   footer?: ReactNode;
   className?: string;
 };
@@ -21,6 +22,7 @@ export default function BottomSheet({
   title,
   children,
   description,
+  titleAction,
   footer,
   className = "",
 }: BottomSheetProps) {
@@ -84,19 +86,23 @@ export default function BottomSheet({
             ) : null}
           </div>
 
-          <button
-            type="button"
-            aria-label="Close"
-            title="Close"
-            onClick={motion.requestClose}
-            className={[
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-              "bg-black/[0.05] text-ink-soft",
-              "transition-all hover:bg-black/[0.08] active:scale-95",
-            ].join(" ")}
-          >
-            <X size={17} strokeWidth={1.8} />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {titleAction}
+
+            <button
+              type="button"
+              aria-label="Close"
+              title="Close"
+              onClick={motion.requestClose}
+              className={[
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                "bg-black/[0.05] text-ink-soft",
+                "transition-all hover:bg-black/[0.08] active:scale-95",
+              ].join(" ")}
+            >
+              <X size={17} strokeWidth={1.8} />
+            </button>
+          </div>
         </header>
 
         <div className="max-h-[70dvh] overflow-y-auto px-5 py-5">
