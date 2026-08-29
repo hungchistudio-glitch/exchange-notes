@@ -663,8 +663,10 @@ export default function DailyNews() {
       }
 
       const saved = await createNote(supabase, user.id, {
-        english: noteContent.english,
-        chinese: noteContent.chinese,
+        originalText: noteContent.english,
+        originalLanguage: pair[0],
+        personalMeaning: noteContent.chinese,
+        sourceKind: "news",
         sourceName: card.sourceName,
         sourceUrl: card.sourceUrl,
       });

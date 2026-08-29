@@ -42,7 +42,9 @@ const DWELL_MS = 1500;
  * height of two lines so a longer language does not make the slide jump.
  */
 export default function NavKeyMap() {
-  const { t } = useTranslation();
+  // useTranslation last: it suspends on a cold dictionary, and a hook declared
+  // after it would not exist on the discarded first attempt. Same reasoning as
+  // TutorialOverlay, which spells it out.
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -54,12 +56,32 @@ export default function NavKeyMap() {
     return () => window.clearInterval(timer);
   }, []);
 
+  const { t } = useTranslation();
+
   return (
     <div className={styles.wrap}>
-      <div className={styles.dock} aria-hidden="true">
+      {/*
+       * A real list, not a decoration.
+       *
+       * The visible design shows one key name at a time — that is what stops
+       * "Vocabulary" being clipped to "Vocabula" and gives "Impostazioni"
+       * somewhere to go. But one name at a time is a solution to a width
+       * problem, and a screen reader does not have a width problem: hiding the
+       * dock from it would mean a reader who cannot see the icons never hears
+       * what the six keys are, which is the entire content of this slide.
+       *
+       * So every key carries its own name in the accessibility tree and only
+       * the caption below carries it on screen.
+       */}
+      <div
+        className={styles.dock}
+        role="list"
+        aria-label={t.navigation.primaryLabel}
+      >
         {/* One element, moved — not six that take turns being lit. The claim is
             that a single ring travels, so a single ring travels. */}
         <span
+          aria-hidden="true"
           className={styles.indicator}
           style={{ transform: `translateX(${active * 100}%)` }}
         />
@@ -67,15 +89,17 @@ export default function NavKeyMap() {
         {KEYS.map(({ key, Icon }, index) => (
           <span
             key={key}
+            role="listitem"
             className={styles.key}
             data-active={index === active}
           >
             <Icon className={styles.icon} active={index === active} />
+            <span className="sr-only">{t.navigation[key]}</span>
           </span>
         ))}
       </div>
 
-      <p className={styles.caption}>
+      <p aria-hidden="true" className={styles.caption}>
         {/* Keyed so each name fades in on its own rather than cross-fading
             through a frame where the two overlap. */}
         <span key={KEYS[active].key} className={styles.captionText}>

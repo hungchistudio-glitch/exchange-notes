@@ -17,6 +17,7 @@ import {
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
@@ -86,7 +87,11 @@ export default function LexiconSearchSheet({
 
   const friendPicker = useVocabularyFriendPicker();
 
-  const motion = useSheetMotion({ open, onClose });
+  const motion = useSheetMotion({
+    open,
+    onClose,
+    presentation: "fullscreen",
+  });
   const keyboardInset = useKeyboardInset(motion.rendered);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,12 +102,11 @@ export default function LexiconSearchSheet({
   });
 
   /*
-   * The field takes focus on open, and the query that arrived with it is
-   * looked up without waiting to be submitted.
+   * The query that arrived with the sheet is looked up without waiting to be
+   * submitted.
    *
    * Keyed on `open` alone: re-running this when the query changes would
-   * re-submit on every keystroke, and stealing focus back mid-typing is the
-   * kind of bug that only shows up on a real phone.
+   * re-submit on every keystroke.
    */
   const primedRef = useRef(false);
 
@@ -120,17 +124,30 @@ export default function LexiconSearchSheet({
       if (autoSubmit) search.submit(initialQuery);
     }
 
-    /*
-     * One frame later, so the panel has been laid out before iOS decides
-     * where to put the keyboard. Focusing during the same frame as the mount
-     * lands the field under the keyboard about a third of the time.
-     */
-    const frame = requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  /*
+   * Do not ask iOS to animate the visual viewport while this full-screen
+   * surface is still animating in a transformed compositor layer. That race
+   * is what made the entrance jump and, on some Safari builds, painted the
+   * native caret at the sheet's old coordinates.
+   *
+   * A fine pointer gets the desktop convenience of focus once motion is
+   * settled. Touch users tap the prominent field themselves; keeping the
+   * keyboard out of the entrance makes opening deterministic and avoids an
+   * asynchronous focus request that iOS may accept visually but reject for
+   * keyboard activation.
+   */
+  useEffect(() => {
+    if (!open || !motion.settled || autoSubmit) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
+    const frame = requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [autoSubmit, motion.settled, open]);
 
   /*
    * The browser has to be told a language before it listens and returns
@@ -219,7 +236,8 @@ export default function LexiconSearchSheet({
     "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-[0.97]";
 
   return (
-    <div className="fixed inset-0 z-[130] flex justify-center">
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[130] flex justify-center overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label={copy.close}
@@ -238,8 +256,29 @@ export default function LexiconSearchSheet({
       >
         <header
           className="shrink-0 border-b border-black/[0.07] px-4 pb-3"
-          style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
+          style={{ paddingTop: "max(env(safe-area-inset-top), 4px)" }}
         >
+          {/*
+            Search occupies the full phone because the software keyboard needs
+            the room, but it is still a child sheet. A dedicated drag strip
+            makes that relationship visible and gives iOS a touch surface that
+            never competes with the field, microphone or camera controls.
+            The same shared motion closes both the warm and Cosmic versions.
+          */}
+          <div
+            data-lexicon-drawer-handle
+            className={`${motion.handleClassName} -mx-4 flex h-7 items-center justify-center sm:hidden`}
+            {...motion.handleProps}
+          >
+            <span
+              className={`h-1 w-10 rounded-full ${
+                tone === "cosmic"
+                  ? "bg-[var(--cosmic-cyan-dim)]"
+                  : "bg-black/15"
+              }`}
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <form className="min-w-0 flex-1" onSubmit={handleSubmit}>
               <div
@@ -257,6 +296,7 @@ export default function LexiconSearchSheet({
                 />
 
                 <input
+                  data-lexicon-search-input
                   ref={inputRef}
                   type="text"
                   value={search.query}
@@ -383,7 +423,7 @@ export default function LexiconSearchSheet({
         </header>
 
         <div
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5"
+          className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-5"
           style={{
             // The keyboard stands on the bottom of a fixed panel without
             // shortening it, so the last result would sit under the keys
@@ -428,6 +468,7 @@ export default function LexiconSearchSheet({
           onRetry={friendPicker.retryFriends}
         />
       )}
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

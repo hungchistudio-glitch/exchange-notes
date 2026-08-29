@@ -7,7 +7,7 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { prefetchTranslations } from "@/lib/i18n";
+import { loadTranslations, prefetchTranslations } from "@/lib/i18n";
 import {
   setInterfaceLanguage,
   type InterfaceLanguage,
@@ -39,7 +39,10 @@ export default function AppLanguageSettingsButton() {
   const { t, language } = useTranslation();
   const copy = t.settings.appLanguage;
 
-  function handleSelect(value: InterfaceLanguage) {
+  async function handleSelect(value: InterfaceLanguage) {
+    if (value === language) return;
+
+    await loadTranslations(value);
     setInterfaceLanguage(value);
   }
 
@@ -85,7 +88,7 @@ export default function AppLanguageSettingsButton() {
               badge={<span className="text-[15px]">{option.badge}</span>}
               title={option.label}
               description={copy.descriptions[option.value]}
-              onClick={() => handleSelect(option.value)}
+              onClick={() => void handleSelect(option.value)}
             />
           ))}
         </div>

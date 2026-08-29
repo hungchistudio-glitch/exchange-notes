@@ -19,24 +19,23 @@ import type {
    dictionary inlined per document load would be smaller on the first visit
    and larger on every visit after it, and this app is opened daily.
 
-   ── Why nothing ever waits on this ─────────────────────────────────────
+   ── Why rendering never creates a Promise ─────────────────────────────
 
    `useTranslation` is synchronous at all 110 of its call sites and stays
-   that way: it reads `getTranslations`, which answers from the cache below
-   or not at all. The load is arranged so the cache is already warm every
-   time that matters:
+   that way. The current dictionary is resolved by the root Server Component
+   and serialized through DevicePreferencesProvider; a newly selected one is
+   loaded before the preference event is dispatched:
 
-     server render   the client module graph resolves the dictionary once
-                     per language per process, on the first render that asks
-     hydration       React suspends on the promise and keeps the
-                     server-rendered markup, so nothing on screen changes
-     switching       `prefetchTranslations` has already fetched the other
-                     four while the device was idle
+     server render   resolves the reader's one active dictionary
+     hydration       receives that same dictionary with the server markup
+     switching       the picker loads its dictionary chunk before changing
+                     the synchronous preference store
      tests           tests/setup.ts primes all five up front
 
-   The only path that can suspend is the very first render of a language
-   nobody has asked for yet, and the only place that happens in the app is
-   hydration, where React holds the server's own HTML.
+   React 19 does not support creating an uncached Promise from a Client
+   Component render. Keeping all loads in server work, effects, or event
+   handlers prevents both that warning and the hook-order failure that can
+   follow a suspended first render.
    ========================================================= */
 
 /**
@@ -66,9 +65,9 @@ const loaded = new Map<TranslationLanguage, TranslationDictionary>();
 /**
  * In-flight loads, kept so the same promise is returned every time.
  *
- * `use()` re-invokes the render that suspended, so a function handing back a
- * new promise each call would suspend on a promise that had only just been
- * created, forever. The identity is the point.
+ * Event handlers can request the same language more than once (pointer hover,
+ * focus, then click), so the identity still matters: all of them share one
+ * request and one result.
  */
 const pending = new Map<
   TranslationLanguage,
@@ -79,8 +78,9 @@ const pending = new Map<
  * The dictionary for a language, if it is already here.
  *
  * Deliberately not async. A caller that gets `undefined` has to decide what
- * to do about it — see useTranslation, which suspends — and a caller that
- * gets a dictionary is holding the real thing with no await in sight.
+ * to do about it; a caller that gets a dictionary is holding the real thing
+ * with no await in sight. DevicePreferencesProvider makes sure the active
+ * interface language is always in this cache before it publishes a change.
  */
 export function getTranslations(
   language: TranslationLanguage,

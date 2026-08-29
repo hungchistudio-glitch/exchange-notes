@@ -1,4 +1,8 @@
-import ExchangeNotesLaunch from "@/components/launch/ExchangeNotesLaunch";
+"use client";
+
+import { useState } from "react";
+
+import ActiveLaunch from "@/components/launch/activeLaunch";
 
 /**
  * The opening, on every load of a signed-in page.
@@ -15,5 +19,9 @@ import ExchangeNotesLaunch from "@/components/launch/ExchangeNotesLaunch";
  * layout, so moving around inside the app does not replay it.
  */
 export default function SplashGate() {
-  return <ExchangeNotesLaunch />;
+  const [visible, setVisible] = useState(true);
+
+  if (!visible) return null;
+
+  return <ActiveLaunch onComplete={() => setVisible(false)} />;
 }

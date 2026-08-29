@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 
 import AppBadge from "@/components/ui/AppBadge";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
@@ -114,7 +115,8 @@ export default function VocabularyDetailSheet({
   if (!motion.rendered) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center">
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[80] flex items-end justify-center overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label={detail.closeDetailsAriaLabel}
@@ -128,7 +130,7 @@ export default function VocabularyDetailSheet({
         aria-modal="true"
         aria-label={`${item.word} details`}
         {...motion.panelProps}
-        className={`${motion.panelClassName} relative z-10 max-h-[90dvh] w-full max-w-[640px] overflow-y-auto rounded-t-[32px] bg-surface px-4 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-18px_60px_rgba(0,0,0,0.18)]`}
+        className={`${motion.panelClassName} relative z-10 max-h-[90dvh] w-full max-w-[640px] touch-pan-y overflow-y-auto overscroll-contain rounded-t-[32px] bg-surface px-4 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-18px_60px_rgba(0,0,0,0.18)]`}
       >
         <div
           className={`${motion.handleClassName} -mx-4 flex h-9 items-center justify-center`}
@@ -388,6 +390,7 @@ export default function VocabularyDetailSheet({
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

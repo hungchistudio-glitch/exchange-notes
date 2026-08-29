@@ -35,6 +35,121 @@ const english: TranslationDictionary = {
     updateReadyAction: "Reload",
     updateReadyDismiss: "Not now",
   },
+  landing: {
+    navigation: {
+      ariaLabel: "Product introduction navigation",
+      homeAriaLabel: "Exchange Notes introduction",
+      start: "Start",
+      opening: "Opening…",
+    },
+    languagePicker: {
+      label: "Interface language",
+      ariaLabel: "Read this introduction in",
+    },
+    hero: {
+      eyebrow: "A journal that can see and listen",
+      title: "Keep the moment before it disappears.",
+      intro:
+        "Write what you're thinking. Say what you can't quite write. Show Yumi what you're seeing.",
+      description:
+        "Your journal remembers with you—connecting thoughts, feelings, images, and moments so they can find their way back when they matter again.",
+      mantra: "Write it. · Say it. · Show it.",
+      modeAriaLabel: "Choose how to capture this moment",
+      write: "Write",
+      voice: "Voice",
+      camera: "Camera",
+      cta: "Start journaling — Continue with Google",
+      ctaLoading: "Opening Google…",
+      preview: {
+        ariaLabel: "Journal capture preview",
+        writeEyebrow: "Writing",
+        writeSample: "I keep thinking about the light on the walk home…",
+        writeStatus: "Saved as a thought",
+        voiceEyebrow: "Voice recognition",
+        voiceSample:
+          "I don't quite know how to write this yet, but today felt different.",
+        voiceStatus: "Voice recognized · transcript ready",
+        cameraEyebrow: "Camera recognition",
+        cameraSubject: "Ginkgo leaves in evening light",
+        cameraDescription: "Yumi connected the image with this moment.",
+        cameraStatus: "Scene recognized",
+        memoryLinks: "This moment connects",
+        thought: "thought",
+        feeling: "feeling",
+        image: "image",
+      },
+    },
+    lookup: {
+      ariaLabel: "Word lookup preview",
+      sourceLanguage: "English",
+      targetLanguage: "繁體中文",
+      query: "serendipity",
+      partOfSpeech: "noun",
+      meaning: "finding something good without looking for it",
+      translation: "意外發現美好事物的機緣",
+      example:
+        "Learning a word at exactly the right moment feels like serendipity.",
+      saved: "Saved",
+      savedNote: "One word, kept for later.",
+    },
+    notes: {
+      eyebrow: "Keep",
+      title: "Save the sentence, not just the definition.",
+      description:
+        "A personal bilingual note gives a new word somewhere to belong — without likes, replies, or an audience.",
+      previewAriaLabel: "Bilingual note preview",
+      date: "August 24",
+      original: "I finally found the word for that feeling: bittersweet.",
+      translation: "我終於找到形容那種感覺的詞：苦樂參半。",
+      privateNote: "Private note",
+    },
+    exchange: {
+      eyebrow: "Exchange",
+      title: "A useful word can keep moving.",
+      description:
+        "Share a vocabulary card with a learning friend. It arrives with its reading and meaning intact — more like passing a note than posting to a feed.",
+      previewAriaLabel: "Vocabulary sharing journey",
+      sender: "Your vocabulary",
+      senderCaption: "your word library",
+      word: "留白",
+      reading: "liú bái",
+      meaning: "breathing room · space left open",
+      receiver: "A learning friend",
+      receiverCaption: "a learning partner",
+    },
+    yumi: {
+      eyebrow: "Yumi",
+      title: "Learning feels lighter with someone nearby.",
+      description:
+        "Yumi notices the words you keep, reacts as you practise, and helps you return to what is ready for review. She is a companion to your progress, not a chatbot with all the answers.",
+      previewAriaLabel: "Yumi learning companion preview",
+      message:
+        "You kept three new words today. Want to bring one back for a quick review?",
+      translation: "你今天留下了三個新單字，要不要帶一個回來快速複習？",
+      reviewWord: "bonjour",
+      reviewHint: "ready to review",
+    },
+    moods: {
+      eyebrow: "A living companion",
+      title: "Progress has more than one mood.",
+      subtitle: "Learning has more than one feeling, and so does Yumi.",
+      previewAriaLabel: "Yumi mood preview",
+      pickerAriaLabel: "Choose a Yumi mood",
+      selectedAriaLabel: "Yumi is {mood}.",
+      curious: "curious",
+      happy: "happy",
+      excited: "excited",
+      proud: "proud",
+      missingYou: "missed you",
+    },
+    closing: {
+      title: "You do not have to learn everything today.",
+      titleSecond: "Keep one word worth finding again.",
+      description: "Start with one word, then let your language grow around it.",
+      cta: "Start journaling — Continue with Google",
+      ctaLoading: "Opening Google…",
+    },
+  },
   onboarding: {
     back: "Back",
     continue: "Continue",
@@ -145,67 +260,64 @@ const english: TranslationDictionary = {
     replay: "You can reopen this any time from Home or Settings.",
 
     steps: {
-      setup: {
-        title: "Two languages, first",
+      meet: {
+        title: "Keep what matters before it disappears",
         body:
-          "One is the language I speak to you in. The other is the one you came here to learn. Pick them now and the rest of this tour arrives in your language.",
+          "I'm Yumi. You notice a word, thought, sound, or scene; I help you keep its first meaning and find it again later. Exchange Notes is a private learning space, not a feed you have to perform for.",
+      },
+      dock: {
+        title: "Six keys that never move",
+        body:
+          "The bottom bar always stays in the same order: Vocabulary, Messages, Home, Search, Discover, and Settings. Only the active ring moves, so your thumb can learn where everything lives.",
+      },
+      setup: {
+        title: "Welcome. Let's make this yours",
+        body:
+          "Choose the language I should use with you and the language you are learning. The tour changes immediately, so every next step is easy to understand.",
         appLanguageLabel: "Talk to me in",
         learningLabel: "I'm here to learn",
         note: "Both can be changed later in Settings.",
         saveError: "I couldn't save that. Try again in a moment.",
       },
-      meet: {
-        title: "Hello — I'm Yumi",
+      home: {
+        title: "Home and Discover make a daily rhythm",
         body:
-          "I live on your home screen, and I am learning the same way you are: one new thing at a time. Give me a minute and I'll show you around.",
-      },
-      keys: {
-        title: "Six keys that never move",
-        body:
-          "The bar at the bottom always keeps the same order: Vocabulary, Messages, Home, Search, Discover, Settings. Only the ring around the active one moves, so your thumb can learn where everything lives.",
-      },
-      name: {
-        title: "yu and mi",
-        body:
-          "Exchange Notes is really two people. yu is you. mi is me. You write down a word in your language, I write one down in mine, and we trade. That trade is the whole app.",
+          "Home shows what is ready to review and how your memory is growing. Discover adds a real story at your level. Together they give you one useful reason to return — you never have to finish everything.",
       },
       search: {
-        title: "One field for every word",
+        title: "Begin with what you notice",
         body:
-          "See something you don't know — on a sign, in a message, anywhere? Type it, say it, or point the camera at it. I work out which language it is, what it means, and whether you have met it before.",
+          "Type it, say it, or show it to the camera. I detect the language, explain what it means, and tell you whether you have met it before. The same search stays close from every part of the app.",
       },
-      capture: {
-        title: "Point at anything",
+      notes: {
+        title: "Give the moment somewhere to belong",
         body:
-          "Show me something in front of you and I'll name it in both languages, with an example sentence you can actually say. It is the fastest way to your first word.",
-        action: "Add my first word this way",
+          "A Note keeps one original text, your own meaning, context, and tags. Switch among five language views or ask me for an interpretation only when you need one. It stays private unless you deliberately share it.",
       },
       vocabulary: {
-        title: "Everything you keep",
+        title: "Turn useful words into memory",
         body:
-          "Every word you save lands here, with the picture, the sound and the moment you first met it — that first meeting is most of why a word stays. The ones you are about to forget rise to the top for review.",
-      },
-      discover: {
-        title: "Today's stories",
-        body:
-          "Real news, rewritten so you can read it at your level. Tap any word you don't know and I'll keep it for you.",
-        action: "Find my first word in a story",
+          "Save a useful word and it joins your vocabulary, with pronunciation, meaning, and the context where you found it. I bring it back when your memory needs it, not just because it is new.",
       },
       messages: {
-        title: "Where the exchange happens",
+        title: "Exchange without a public feed",
         body:
-          "Send a word to your partner and they get the whole card, pronunciation included. Add someone by their Exchange ID, or let them scan your QR code — learning a language alone is hard, learning it with someone who needs yours is not.",
-        action: "Add my first partner",
+          "Add a trusted learning partner by Exchange ID or QR code. Send word cards in Messages, or share a Note as view-only. There are no followers or public reactions — only the person you chose.",
+      },
+      settings: {
+        title: "You stay in control",
+        body:
+          "Settings lets you change languages, text size, reminders, devices, and your profile. Notes are private by default, sharing can be revoked, and this tour is always available again when you need it.",
       },
       cosmic: {
         title: "Same learning, a different atmosphere",
         body:
-          "Yumi Cosmic Mode turns Home into a Command Deck and gives review and navigation a more animated presentation. It is not a second account: your words, messages, partners and progress stay exactly the same. Switch modes in Settings any time.",
+          "Yumi Cosmic Mode turns Home into a Command Deck and gives review and navigation a more focused, animated presentation. It is not a second account: your Notes, words, messages, friends, and progress stay exactly the same. Switch modes in Settings any time.",
       },
       done: {
-        title: "That's everything",
+        title: "Start with one thing",
         body:
-          "Start with one word today. That is genuinely enough — the app is built so that one word a day beats an hour once a month. I'll be on the home screen when you're ready.",
+          "You do not need to learn everything today. Keep one word, one sentence, or one moment worth finding again. I'll help you return to it when it matters.",
       },
     },
   },
@@ -733,6 +845,58 @@ const english: TranslationDictionary = {
       emptyDescription: "Save a new word or idea from today's learning.",
       deleteNote: "Delete note",
       translateError: "Could not translate this note. Please try again.",
+      recentTitle: "Recent notes",
+      viewAll: "View all",
+      composerTitle: "New note",
+      composerDescription: "Keep the original thought. Yumi can interpret it in other languages later.",
+      originalLabel: "Original note",
+      originalPlaceholder: "Write a word, sentence, or thought…",
+      languageLabel: "Original language",
+      detectedHint: "Detected automatically — you can change it.",
+      personalMeaning: "What it means to you",
+      personalMeaningPlaceholder: "Optional personal meaning…",
+      contextLabel: "Context",
+      contextPlaceholder: "Where did you hear or need this?",
+      tagsLabel: "Tags",
+      tagsPlaceholder: "travel, work, feeling",
+      sourceLabel: "Source",
+      sourcePlaceholder: "Optional source or place",
+      privateLabel: "Private by default",
+      privateDescription: "Only you can see this until you share it with a friend.",
+      saveError: "This note could not be saved. Check your connection and try again.",
+      libraryTitle: "Notes",
+      libraryDescription: "One thought, with every language view kept together.",
+      searchPlaceholder: "Search text, translations, tags, and meanings",
+      allNotes: "All",
+      mine: "Mine",
+      sharedWithMe: "Shared with me",
+      noResults: "No notes match this search.",
+      retry: "Try again",
+      loadError: "Your notes could not be loaded.",
+      detailEyebrow: "Personal note",
+      viewIn: "View in",
+      yumiTitle: "Ask Yumi",
+      yumiDescription: "Get a natural translation, meaning, tone, and local context only when you need it.",
+      interpret: "Interpret this note",
+      interpreting: "Yumi is thinking…",
+      interpretError: "Yumi could not interpret this note. Try again when you are online.",
+      naturalTranslation: "Natural translation",
+      meaning: "Meaning",
+      localExpressions: "Local expressions",
+      tone: "Tone",
+      culturalNuance: "Cultural nuance",
+      usageExamples: "Usage examples",
+      warnings: "Good to know",
+      sharedBy: "Shared by {name}",
+      saveToMyNotes: "Save to My Notes",
+      savedToMyNotes: "Saved to My Notes",
+      saveCopyError: "A personal copy could not be saved.",
+      shareTitle: "Share note",
+      shareDescription: "Friends receive view-only access. You can revoke it at any time.",
+      noFriends: "Add a friend before sharing a note.",
+      viewOnly: "Can view",
+      shareError: "Sharing could not be updated.",
+      deleteConfirm: "Delete this note and its language views?",
     },
   },
 

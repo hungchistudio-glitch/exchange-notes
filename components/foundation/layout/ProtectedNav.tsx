@@ -16,8 +16,8 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") {
-    return pathname === "/";
+  if (href === "/home") {
+    return pathname === "/home";
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -60,7 +60,7 @@ export default function ProtectedNav() {
    *
    * The plan was to swap the centre key — Home on the home screen, Search
    * everywhere else — until a grep turned up the thing that makes that
-   * unshippable: this dock is the only route back to `/` in the entire app.
+   * unshippable: this dock is the only route back to `/home` in the entire app.
    * Nothing else links there. Trading the centre key away would have left a
    * reader on the Vocabulary screen with no way home at all.
    *
@@ -85,7 +85,7 @@ export default function ProtectedNav() {
       Icon: NavMessagesIcon,
     },
     {
-      href: "/",
+      href: "/home",
       label: t.navigation.home,
       Icon: NavHomeIcon,
     },
@@ -145,7 +145,7 @@ export default function ProtectedNav() {
         // Home is where the "add friends" entry point (LearningPartnerCard)
         // lives, and there's no dedicated Friends tab, so a pending
         // incoming request badges Home instead of going unnoticed.
-        const isHome = route.href === "/";
+        const isHome = route.href === "/home";
 
         return {
           href: route.href,

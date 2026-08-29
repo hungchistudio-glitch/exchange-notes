@@ -25,7 +25,7 @@ export default async function OnboardingPage() {
   // Already finished onboarding (or an old account, backfilled to
   // completed) — this route has nothing left to do for them.
   if (profile?.onboarding_completed) {
-    redirect("/");
+    redirect("/home");
   }
 
   // Google OAuth metadata carries the user's real name/photo, but the

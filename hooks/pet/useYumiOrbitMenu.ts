@@ -113,14 +113,22 @@ export default function useYumiOrbitMenu() {
       close();
     }
 
+    const appScroller = document.querySelector<HTMLElement>(
+      "[data-app-scroll-viewport]",
+    );
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("scroll", handleCloseRequest, { passive: true });
+    appScroller?.addEventListener("scroll", handleCloseRequest, {
+      passive: true,
+    });
     window.addEventListener("exchange-notes:close-yumi-menu", handleCloseRequest);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("scroll", handleCloseRequest);
+      appScroller?.removeEventListener("scroll", handleCloseRequest);
       window.removeEventListener(
         "exchange-notes:close-yumi-menu",
         handleCloseRequest,

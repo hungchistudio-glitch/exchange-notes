@@ -10,10 +10,34 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import LexiconSearchSheet from "@/components/lexicon/LexiconSearchSheet";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+
+/*
+ * This is the heaviest global overlay in the protected shell: camera/image
+ * lookup, voice capture, results, save and friend sharing all live behind it.
+ * Keeping it out of the route bundle means every ordinary page can become
+ * interactive without first parsing a search experience that is still
+ * closed. Once opened, useSheetMotion owns the complete exit and calls the
+ * provider only after the closing animation has finished, so conditionally
+ * mounting it does not cut that motion short.
+ */
+const loadLexiconSearchSheet = () =>
+  import("@/components/lexicon/LexiconSearchSheet");
+
+const LexiconSearchSheet = dynamic(
+  loadLexiconSearchSheet,
+  {
+    loading: () => (
+      <div
+        className="fixed inset-0 z-[130] touch-none overscroll-none bg-white"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
 
 /* =========================================================
    Search, from anywhere
@@ -131,6 +155,19 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
     token: number;
   }>({ open: false, query: "", autoSubmit: false, token: 0 });
 
+  /*
+   * Download the search chunk only after the current screen has had a chance
+   * to paint. The opening animation gives most app starts a generous quiet
+   * window, so Search is normally ready before the first possible tap while
+   * still staying out of the critical hydration path. A timer is used rather
+   * than requestIdleCallback because iOS Safari does not expose it.
+   */
+  useEffect(() => {
+    const warm = () => void loadLexiconSearchSheet();
+    const timer = window.setTimeout(warm, 900);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const openSearch = useCallback((options?: OpenOptions) => {
     setState((current) => {
       const query = options?.query ?? "";
@@ -182,14 +219,16 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
         <LexiconHandoff open={state.open} onQuery={handleHandoff} />
       </Suspense>
 
-      <LexiconSearchSheet
-        key={state.token}
-        open={state.open}
-        onClose={closeSearch}
-        initialQuery={state.query}
-        autoSubmit={state.autoSubmit}
-        tone={isCosmic ? "cosmic" : "warm"}
-      />
+      {state.open ? (
+        <LexiconSearchSheet
+          key={state.token}
+          open
+          onClose={closeSearch}
+          initialQuery={state.query}
+          autoSubmit={state.autoSubmit}
+          tone={isCosmic ? "cosmic" : "warm"}
+        />
+      ) : null}
     </LexiconSearchContext.Provider>
   );
 }

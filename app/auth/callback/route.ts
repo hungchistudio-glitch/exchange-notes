@@ -6,6 +6,7 @@ import {
   friendInvitePath,
   PENDING_FRIEND_INVITE_COOKIE,
 } from "@/lib/friends";
+import { track } from "@/lib/analytics/track";
 import { normalizeExchangeId } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
@@ -33,7 +34,11 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      track("google_auth_success");
+    }
   }
 
   /*
@@ -50,7 +55,7 @@ export async function GET(request: NextRequest) {
 
   const destination = pendingInvite
     ? friendInvitePath(pendingInvite)
-    : "/";
+    : "/home";
 
   const response = NextResponse.redirect(
     new URL(destination, request.url),

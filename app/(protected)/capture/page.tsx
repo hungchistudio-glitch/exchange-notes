@@ -30,6 +30,7 @@ import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -351,10 +352,11 @@ function CameraOverlay({
   const motion = useSheetMotion({ onClose });
 
   return (
-    <section
-      {...motion.panelProps}
-      className={`${motion.panelClassName} fixed inset-0 z-[100] overflow-hidden bg-black`}
-    >
+    <OverlayPortal>
+      <section
+        {...motion.panelProps}
+        className={`${motion.panelClassName} fixed inset-0 z-[100] overflow-hidden overscroll-none bg-black`}
+      >
       <video
         ref={videoRef}
         autoPlay
@@ -427,7 +429,8 @@ function CameraOverlay({
           <span className="h-[60px] w-[60px] rounded-full bg-white" />
         </button>
       </div>
-    </section>
+      </section>
+    </OverlayPortal>
   );
 }
 
@@ -517,7 +520,7 @@ function CaptureContent() {
     ? messagesHref
     : fromParam === "vocabulary"
       ? "/vocabulary"
-      : "/";
+      : "/home";
   const returnHref = safeReturnHref(searchParams.get("returnTo"), cancelHref);
 
   const leaveCapture = useCallback(() => {

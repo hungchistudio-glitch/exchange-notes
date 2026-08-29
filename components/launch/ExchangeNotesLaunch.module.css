@@ -48,6 +48,25 @@
   pointer-events: none;
 }
 
+/*
+ * Stop the ambient loops during a review pause and during the handover fade.
+ * Besides making checkpoint screenshots deterministic, this avoids spending
+ * the last 420ms repainting effects underneath an overlay that is dissolving.
+ */
+.launch[data-paused] .radarField,
+.launch[data-paused] .radarField::before,
+.launch[data-paused] .radarField::after,
+.launch[data-paused] .radarRing,
+.launch[data-paused] .radarSweep,
+.launch[data-paused] .scanBeamLeft,
+.launch[data-paused] .scanBeamRight,
+.launch[data-paused] .scanSparkLeft,
+.launch[data-paused] .scanSparkRight,
+.launch[data-paused] .searchlightA,
+.launch[data-paused] .searchlightB {
+  animation-play-state: paused;
+}
+
 .reviewMode {
   z-index: 2147483000;
 }

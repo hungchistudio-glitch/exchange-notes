@@ -249,27 +249,6 @@
 }
 
 /*
- * The dock itself never travels.
- *
- * It is the one thing on screen that is in the same place before and after,
- * and animating it away would throw out the user's only fixed reference for
- * what just moved. Giving it a name takes it out of the root snapshot so the
- * page can animate underneath it while it stays put.
- */
-::view-transition-group(cosmic-dock) {
-  animation: none;
-  z-index: 50;
-}
-
-::view-transition-old(cosmic-dock) {
-  display: none;
-}
-
-::view-transition-new(cosmic-dock) {
-  animation: none;
-}
-
-/*
  * Reduced motion.
  *
  * Not "no transition" — an instant swap on a dark interface is its own kind

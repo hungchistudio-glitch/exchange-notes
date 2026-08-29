@@ -22,10 +22,10 @@ import ConfirmStep from "./steps/ConfirmStep";
 
 type Step = "welcome" | "name" | "app-language" | "languages" | "confirm";
 
-// Only the steps that show a progress indicator — Welcome is a pure
-// first-impression screen with nothing to fill in, so it stays off the
-// "N / total" count per the design brief.
-const PROGRESS_STEPS: Step[] = ["name", "app-language", "languages", "confirm"];
+// Language choice comes before the introduction, and Welcome is the
+// introduction itself. Neither is part of the profile form, so progress
+// starts only once the reader reaches their name.
+const PROGRESS_STEPS: Step[] = ["name", "languages", "confirm"];
 
 type OnboardingFlowProps = {
   userId: string;
@@ -50,12 +50,18 @@ export default function OnboardingFlow({
   const { t } = useTranslation();
   const copy = t.onboarding;
 
-  // If the name step was already saved on a previous visit, jump straight
-  // past Welcome + Name — no reason to make someone re-type their name
-  // just because they closed the app mid-flow.
-  const [step, setStep] = useState<Step>(
-    initialStep === "languages" ? "app-language" : "welcome",
-  );
+  /*
+   * Language is deliberately first, before even Welcome. Every option names
+   * itself (Español, Français, Italiano…), so a reader does not need to
+   * understand the default language before choosing their own; the welcome
+   * and every step after it then arrive in that choice.
+   *
+   * A profile that already saved Name still gets this language gate once,
+   * then returns directly to Languages instead of being asked for the name
+   * again.
+   */
+  const resumingAfterName = initialStep === "languages";
+  const [step, setStep] = useState<Step>("app-language");
 
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [exchangeId, setExchangeId] = useState(initialExchangeId);
@@ -147,14 +153,16 @@ export default function OnboardingFlow({
      */
     setTutorialPending(true);
 
-    router.replace("/");
+    router.replace("/home");
     router.refresh();
   }
 
   function goBack() {
-    if (step === "name") setStep("welcome");
-    else if (step === "app-language") setStep("name");
-    else if (step === "languages") setStep("app-language");
+    if (step === "welcome") setStep("app-language");
+    else if (step === "name") setStep("welcome");
+    else if (step === "languages") {
+      setStep(resumingAfterName ? "app-language" : "name");
+    }
     else if (step === "confirm") setStep("languages");
   }
 
@@ -166,7 +174,7 @@ export default function OnboardingFlow({
         className="flex shrink-0 items-center justify-between px-5"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}
       >
-        {step !== "welcome" ? (
+        {step !== "app-language" ? (
           <button
             type="button"
             onClick={goBack}
@@ -202,7 +210,9 @@ export default function OnboardingFlow({
       </div>
 
       <div className="flex flex-1 flex-col px-6 pb-10 pt-4 sm:px-8">
-        {step === "welcome" && <WelcomeStep onContinue={() => setStep("name")} />}
+        {step === "welcome" && (
+          <WelcomeStep onContinue={() => setStep("name")} />
+        )}
 
         {step === "name" && (
           <NameStep
@@ -221,7 +231,11 @@ export default function OnboardingFlow({
         )}
 
         {step === "app-language" && (
-          <AppLanguageStep onContinue={() => setStep("languages")} />
+          <AppLanguageStep
+            onContinue={() =>
+              setStep(resumingAfterName ? "languages" : "welcome")
+            }
+          />
         )}
 
         {step === "languages" && (

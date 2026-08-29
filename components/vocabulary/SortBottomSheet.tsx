@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useCallback, useRef } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
 export type SortMode =
@@ -58,9 +59,8 @@ export default function SortBottomSheet({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[300] flex items-end"
-    >
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[300] flex items-end overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label={search.closeSortMenu}
@@ -116,6 +116,7 @@ export default function SortBottomSheet({
           ))}
         </div>
       </section>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

@@ -135,7 +135,7 @@ export default function ReviewPage() {
    * string, and treating it as a destination would be an open redirect.
    */
   const cameFromVocabulary = searchParams.get("from") === "vocabulary";
-  const exitHref = cameFromVocabulary ? "/vocabulary" : "/";
+  const exitHref = cameFromVocabulary ? "/vocabulary" : "/home";
   /*
    * The arrival has to match the destination too. "deck-return" plays the
    * Command Deck coming back, which is the wrong room entirely when the

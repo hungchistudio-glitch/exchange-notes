@@ -35,6 +35,122 @@ const spanish: TranslationDictionary = {
     updateReadyAction: "Recargar",
     updateReadyDismiss: "Ahora no",
   },
+  landing: {
+    navigation: {
+      ariaLabel: "Navegación de la presentación del producto",
+      homeAriaLabel: "Presentación de Exchange Notes",
+      start: "Empezar",
+      opening: "Abriendo…",
+    },
+    languagePicker: {
+      label: "Idioma de la interfaz",
+      ariaLabel: "Leer esta presentación en",
+    },
+    hero: {
+      eyebrow: "Un diario que puede ver y escuchar",
+      title: "Guarda el momento antes de que desaparezca.",
+      intro:
+        "Escribe lo que estás pensando. Di lo que todavía no sabes bien cómo escribir. Muéstrale a Yumi lo que estás viendo.",
+      description:
+        "Tu diario recuerda contigo: conecta pensamientos, sentimientos, imágenes y momentos para que vuelvan a encontrarte cuando importen de nuevo.",
+      mantra: "Escríbelo. · Dilo. · Muéstralo.",
+      modeAriaLabel: "Elige cómo capturar este momento",
+      write: "Escribir",
+      voice: "Voz",
+      camera: "Cámara",
+      cta: "Empieza tu diario — Continuar con Google",
+      ctaLoading: "Abriendo Google…",
+      preview: {
+        ariaLabel: "Vista previa de captura del diario",
+        writeEyebrow: "Escritura",
+        writeSample: "Sigo pensando en la luz del camino de vuelta a casa…",
+        writeStatus: "Guardado como pensamiento",
+        voiceEyebrow: "Reconocimiento de voz",
+        voiceSample:
+          "Todavía no sé muy bien cómo escribirlo, pero hoy se sintió diferente.",
+        voiceStatus: "Voz reconocida · transcripción lista",
+        cameraEyebrow: "Reconocimiento con cámara",
+        cameraSubject: "Hojas de ginkgo bajo la luz del atardecer",
+        cameraDescription: "Yumi conectó la imagen con este momento.",
+        cameraStatus: "Escena reconocida",
+        memoryLinks: "Este momento conecta",
+        thought: "pensamiento",
+        feeling: "emoción",
+        image: "imagen",
+      },
+    },
+    lookup: {
+      ariaLabel: "Vista previa de búsqueda de palabras",
+      sourceLanguage: "English",
+      targetLanguage: "Español",
+      query: "serendipity",
+      partOfSpeech: "sustantivo",
+      meaning: "encontrar algo bueno sin estar buscándolo",
+      translation: "hallazgo afortunado e inesperado",
+      example:
+        "Encontrar una palabra justo en el momento adecuado parece una serendipia.",
+      saved: "Guardada",
+      savedNote: "Una palabra guardada para después.",
+    },
+    notes: {
+      eyebrow: "Guarda",
+      title: "Guarda la frase, no solo la definición.",
+      description:
+        "Una nota bilingüe personal le da a una palabra nueva un lugar propio, sin me gusta, respuestas ni público.",
+      previewAriaLabel: "Vista previa de una nota bilingüe",
+      date: "24 de agosto",
+      original: "I finally found the word for that feeling: bittersweet.",
+      translation: "Por fin encontré la palabra para esa sensación: agridulce.",
+      privateNote: "Nota privada",
+    },
+    exchange: {
+      eyebrow: "Intercambia",
+      title: "Una palabra útil puede seguir viajando.",
+      description:
+        "Comparte una tarjeta de vocabulario con una amistad que también aprende. Le llegará con su pronunciación y significado intactos: más parecido a pasar una nota que a publicar en un muro.",
+      previewAriaLabel: "Recorrido para compartir vocabulario",
+      sender: "Tu vocabulario",
+      senderCaption: "tu biblioteca de palabras",
+      word: "留白",
+      reading: "liú bái",
+      meaning: "espacio para respirar · espacio dejado en blanco",
+      receiver: "Una amistad que aprende",
+      receiverCaption: "tu compañero de aprendizaje",
+    },
+    yumi: {
+      eyebrow: "Yumi",
+      title: "Aprender se siente más ligero con alguien cerca.",
+      description:
+        "Yumi se fija en las palabras que guardas, reacciona mientras practicas y te ayuda a volver a lo que ya está listo para repasar. Acompaña tu progreso; no es un chatbot con todas las respuestas.",
+      previewAriaLabel: "Vista previa de Yumi como compañera de aprendizaje",
+      message:
+        "Hoy guardaste tres palabras nuevas. ¿Quieres recuperar una para repasarla rápido?",
+      translation:
+        "You kept three new words today. Want to bring one back for a quick review?",
+      reviewWord: "bonjour",
+      reviewHint: "lista para repasar",
+    },
+    moods: {
+      eyebrow: "Una compañera con vida",
+      title: "El progreso tiene más de un estado de ánimo.",
+      subtitle: "Aprender trae muchas emociones, y Yumi también las siente.",
+      previewAriaLabel: "Vista previa del estado de ánimo de Yumi",
+      pickerAriaLabel: "Elige el estado de ánimo de Yumi",
+      selectedAriaLabel: "Yumi está {mood}.",
+      curious: "curiosa",
+      happy: "feliz",
+      excited: "emocionada",
+      proud: "orgullosa",
+      missingYou: "te echaba de menos",
+    },
+    closing: {
+      title: "No tienes que aprenderlo todo hoy.",
+      titleSecond: "Guarda una palabra que merezca la pena volver a encontrar.",
+      description: "Empieza con una palabra y deja que tu idioma crezca a su alrededor.",
+      cta: "Empieza tu diario — Continuar con Google",
+      ctaLoading: "Abriendo Google…",
+    },
+  },
   onboarding: {
     back: "Atrás",
     continue: "Continuar",
@@ -145,67 +261,64 @@ const spanish: TranslationDictionary = {
     replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
 
     steps: {
-      setup: {
-        title: "Primero, dos idiomas",
+      meet: {
+        title: "Guarda lo importante antes de que desaparezca",
         body:
-          "Uno es el idioma en el que te hablo. El otro es el que has venido a aprender. Elígelos ahora y el resto de la visita llegará en tu idioma.",
+          "Soy Yumi. Tú notas una palabra, una idea, un sonido o una escena; yo te ayudo a conservar su primer significado y a encontrarlo después. Exchange Notes es un espacio privado para aprender, no un feed en el que tengas que actuar.",
+      },
+      dock: {
+        title: "Seis teclas que nunca cambian de sitio",
+        body:
+          "La barra inferior mantiene siempre el mismo orden: Vocabulario, Mensajes, Inicio, Buscar, Descubrir y Ajustes. Solo se mueve el anillo activo, para que tu pulgar aprenda dónde vive cada herramienta.",
+      },
+      setup: {
+        title: "Te damos la bienvenida. Hazlo tuyo",
+        body:
+          "Elige el idioma en el que debo hablarte y el que estás aprendiendo. La visita cambia al instante para que cada paso siguiente sea fácil de entender.",
         appLanguageLabel: "Háblame en",
         learningLabel: "He venido a aprender",
         note: "Los dos se pueden cambiar después en Ajustes.",
         saveError: "No he podido guardarlo. Inténtalo dentro de un momento.",
       },
-      meet: {
-        title: "Hola, soy Yumi",
+      home: {
+        title: "Inicio y Descubrir crean un ritmo diario",
         body:
-          "Vivo en tu pantalla de inicio y estoy aprendiendo igual que tú: una cosa nueva cada vez. Dame un minuto y te enseño dónde está todo.",
-      },
-      keys: {
-        title: "Seis teclas que no se mueven",
-        body:
-          "La barra de abajo mantiene siempre el mismo orden: Vocabulario, Mensajes, Inicio, Buscar, Descubrir y Ajustes. Solo se mueve el aro de la que está activa, así tu pulgar aprende dónde vive cada cosa.",
-      },
-      name: {
-        title: "yu y mi",
-        body:
-          "Exchange Notes son en realidad dos personas. yu eres tú. mi soy yo. Tú apuntas una palabra en tu idioma, yo apunto una en el mío, y las intercambiamos. Ese intercambio es toda la app.",
+          "Inicio muestra qué toca repasar y cómo crece tu memoria. Descubrir añade una historia real a tu nivel. Juntos te dan un motivo útil para volver, sin obligarte a terminarlo todo.",
       },
       search: {
-        title: "Un campo para cualquier palabra",
+        title: "Empieza por lo que te llame la atención",
         body:
-          "¿Ves algo que no conoces, en un cartel, en un mensaje, donde sea? Escríbelo, dilo o enfócalo con la cámara. Yo averiguo en qué idioma está, qué significa y si ya lo habías guardado.",
+          "Escríbelo, dilo o enséñamelo con la cámara. Detecto el idioma, explico el significado y te digo si ya lo habías encontrado. La misma búsqueda siempre está cerca, estés donde estés en la app.",
       },
-      capture: {
-        title: "Apunta a lo que sea",
+      notes: {
+        title: "Dale al momento un lugar donde quedarse",
         body:
-          "Enséñame algo que tengas delante y te diré qué es en los dos idiomas, con una frase de ejemplo que puedas decir de verdad. Es el camino más rápido a tu primera palabra.",
-        action: "Añadir así mi primera palabra",
+          "Una Nota guarda un único texto original, lo que significa para ti, su contexto y sus etiquetas. Cambia entre cinco idiomas o pídeme una interpretación solo cuando la necesites. Sigue siendo privada salvo que decidas compartirla.",
       },
       vocabulary: {
-        title: "Todo lo que guardas",
+        title: "Convierte palabras útiles en memoria",
         body:
-          "Cada palabra que guardas aterriza aquí, con la foto, el sonido y el momento en que la conociste: ese primer encuentro es casi todo el motivo por el que una palabra se queda. Las que estás a punto de olvidar suben arriba para repasarlas.",
-      },
-      discover: {
-        title: "Las historias de hoy",
-        body:
-          "Noticias reales, reescritas para que puedas leerlas a tu nivel. Toca cualquier palabra que no conozcas y te la guardo.",
-        action: "Buscar mi primera palabra en una historia",
+          "Guarda una palabra útil y entrará en tu vocabulario con pronunciación, significado y el contexto donde la encontraste. Volverá cuando tu memoria la necesite, no solo porque sea nueva.",
       },
       messages: {
-        title: "Donde ocurre el intercambio",
+        title: "Intercambia sin un feed público",
         body:
-          "Envía una palabra a tu pareja de aprendizaje y le llegará la tarjeta entera, con pronunciación. Añade a alguien por su Exchange ID o deja que escanee tu código QR: aprender un idioma en solitario es difícil, y con alguien que necesita el tuyo no lo es.",
-        action: "Añadir a mi primera pareja",
+          "Añade a una persona de confianza por Exchange ID o código QR. Envía tarjetas en Mensajes o comparte una Nota en modo de solo lectura. No hay seguidores ni reacciones públicas: solo la persona que elegiste.",
+      },
+      settings: {
+        title: "Tú mantienes el control",
+        body:
+          "En Ajustes puedes cambiar idiomas, tamaño de texto, recordatorios, dispositivos y perfil. Las Notas son privadas por defecto, puedes revocar lo compartido y volver a abrir esta visita cuando quieras.",
       },
       cosmic: {
-        title: "El mismo aprendizaje, otro ambiente",
+        title: "El mismo aprendizaje, otra atmósfera",
         body:
-          "El Modo Cósmico de Yumi convierte Inicio en un Puesto de Mando y le da al repaso y a la navegación una presentación más animada. No es otra cuenta: tus palabras, mensajes, parejas y progreso siguen exactamente igual. Cambia de modo en Ajustes cuando quieras.",
+          "El Modo Cósmico de Yumi convierte Inicio en un puente de mando y presenta el repaso y la navegación de forma más enfocada y animada. No es otra cuenta: tus Notas, palabras, mensajes, amigos y progreso siguen iguales. Cámbialo en Ajustes cuando quieras.",
       },
       done: {
-        title: "Y ya está",
+        title: "Empieza por una sola cosa",
         body:
-          "Empieza hoy con una palabra. De verdad que es suficiente: la app está hecha para que una palabra al día gane a una hora una vez al mes. Estaré en la pantalla de inicio cuando quieras.",
+          "No tienes que aprenderlo todo hoy. Guarda una palabra, una frase o un momento que merezca volver a encontrarse. Yo te ayudaré a recuperarlo cuando importe.",
       },
     },
   },
@@ -732,6 +845,58 @@ const spanish: TranslationDictionary = {
       emptyDescription: "Guarda una palabra o una idea de lo que aprendas hoy.",
       deleteNote: "Eliminar la nota",
       translateError: "No se ha podido traducir esta nota. Inténtalo de nuevo.",
+      recentTitle: "Notas recientes",
+      viewAll: "Ver todas",
+      composerTitle: "Nota nueva",
+      composerDescription: "Conserva la idea original. Yumi puede interpretarla en otros idiomas cuando lo necesites.",
+      originalLabel: "Nota original",
+      originalPlaceholder: "Escribe una palabra, frase o idea…",
+      languageLabel: "Idioma original",
+      detectedHint: "Detectado automáticamente; puedes cambiarlo.",
+      personalMeaning: "Qué significa para ti",
+      personalMeaningPlaceholder: "Significado personal opcional…",
+      contextLabel: "Contexto",
+      contextPlaceholder: "¿Dónde lo oíste o cuándo lo necesitas?",
+      tagsLabel: "Etiquetas",
+      tagsPlaceholder: "viaje, trabajo, emoción",
+      sourceLabel: "Fuente",
+      sourcePlaceholder: "Fuente o lugar opcional",
+      privateLabel: "Privada por defecto",
+      privateDescription: "Solo tú puedes verla hasta que la compartas con alguien.",
+      saveError: "No se pudo guardar la nota. Comprueba la conexión e inténtalo de nuevo.",
+      libraryTitle: "Notas",
+      libraryDescription: "Una idea con todas sus versiones lingüísticas juntas.",
+      searchPlaceholder: "Buscar texto, traducciones, etiquetas y significados",
+      allNotes: "Todas",
+      mine: "Mías",
+      sharedWithMe: "Compartidas conmigo",
+      noResults: "Ninguna nota coincide con esta búsqueda.",
+      retry: "Reintentar",
+      loadError: "No se pudieron cargar tus notas.",
+      detailEyebrow: "Nota personal",
+      viewIn: "Ver en",
+      yumiTitle: "Preguntar a Yumi",
+      yumiDescription: "Obtén una traducción natural, el significado, el tono y el contexto local solo cuando lo necesites.",
+      interpret: "Interpretar esta nota",
+      interpreting: "Yumi está pensando…",
+      interpretError: "Yumi no pudo interpretar esta nota. Reinténtalo con conexión.",
+      naturalTranslation: "Traducción natural",
+      meaning: "Significado",
+      localExpressions: "Expresiones locales",
+      tone: "Tono",
+      culturalNuance: "Matiz cultural",
+      usageExamples: "Ejemplos de uso",
+      warnings: "Conviene saber",
+      sharedBy: "Compartida por {name}",
+      saveToMyNotes: "Guardar en Mis notas",
+      savedToMyNotes: "Guardada en Mis notas",
+      saveCopyError: "No se pudo guardar una copia personal.",
+      shareTitle: "Compartir nota",
+      shareDescription: "Tus contactos reciben acceso de solo lectura. Puedes revocarlo cuando quieras.",
+      noFriends: "Añade un contacto antes de compartir una nota.",
+      viewOnly: "Puede ver",
+      shareError: "No se pudo actualizar el uso compartido.",
+      deleteConfirm: "¿Eliminar esta nota y sus versiones lingüísticas?",
     },
   },
 

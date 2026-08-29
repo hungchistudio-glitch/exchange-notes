@@ -8,25 +8,16 @@ import { SketchUnderline } from "@/components/tutorial/HandDrawn";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useTutorialPending from "@/hooks/preferences/useTutorialPending";
 
-/*
- * The tour is fetched when it is opened, not when the home screen loads.
- *
- * Everything behind this import is eleven slides that most sessions never
- * see: the overlay, the dock map, the Cosmic Mode card, Yumi's whole stage,
- * and — through the language step — a Supabase client. All of it was in the
- * home screen's own bundle because this file imported it directly, so every
- * launch of the app paid to download and parse a screen that opens at most
- * once per account.
- *
- * `ssr: false` because there is nothing to server-render: the overlay is
- * never on screen in the first paint. The first run is the one case where the
- * tour opens without being asked for, and it pays a single chunk fetch while
- * the home screen behind it is already painted — which is the right trade
- * against every other launch carrying it for nothing.
- */
 const TutorialOverlay = dynamic(
   () => import("@/components/tutorial/TutorialOverlay"),
-  { ssr: false },
+  {
+    loading: () => (
+      <div
+        className="fixed inset-0 z-[120] touch-none overscroll-none bg-surface"
+        aria-hidden="true"
+      />
+    ),
+  },
 );
 
 /**

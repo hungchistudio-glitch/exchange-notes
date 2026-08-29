@@ -19,6 +19,7 @@ import OmniLexiconConsole, {
   type OmniLexiconState,
 } from "@/components/cosmic/OmniLexiconConsole";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguageName } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -283,6 +284,10 @@ export default function CommandDeck() {
       */}
       <div className="mt-4 px-4">
         <OmniLexiconConsole onStateChange={setOmniState} />
+      </div>
+
+      <div className="mt-4 px-4">
+        <NotesHomeModule />
       </div>
 
       <nav

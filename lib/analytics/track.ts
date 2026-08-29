@@ -24,6 +24,11 @@
  * is readable in one place. The radar's names are the brief's own (§41).
  */
 export type AnalyticsEvent =
+  | "landing_view"
+  | "landing_primary_cta_click"
+  | "landing_final_cta_click"
+  | "google_auth_start"
+  | "google_auth_success"
   | "radar.tap"
   | "radar.long_press"
   | "radar.scan_started"
@@ -32,7 +37,17 @@ export type AnalyticsEvent =
   | "radar.offline"
   | "radar.online_restored"
   | "radar.controls_opened"
-  | "radar.control_changed";
+  | "radar.control_changed"
+  | "notes.composer_opened"
+  | "notes.created"
+  | "notes.opened"
+  | "notes.searched"
+  | "notes.language_view_changed"
+  | "notes.interpretation_requested"
+  | "notes.interpretation_completed"
+  | "notes.shared"
+  | "notes.share_revoked"
+  | "notes.shared_copy_saved";
 
 export type AnalyticsProperties = Record<
   string,

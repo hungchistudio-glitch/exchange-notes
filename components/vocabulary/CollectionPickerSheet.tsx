@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
@@ -169,9 +170,8 @@ export default function CollectionPickerSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center"
-    >
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label={copy.close}
@@ -222,7 +222,7 @@ export default function CollectionPickerSheet({
           </p>
         )}
 
-        <div className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto">
+        <div className="mt-4 max-h-[45dvh] touch-pan-y space-y-2 overflow-y-auto overscroll-contain">
           {loading && (
             <p className="py-6 text-center text-sm text-ink-faint">
               {t.common.loading}
@@ -341,6 +341,7 @@ export default function CollectionPickerSheet({
           </button>
         )}
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

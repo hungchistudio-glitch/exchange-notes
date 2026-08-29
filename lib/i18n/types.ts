@@ -49,6 +49,121 @@ export type TranslationDictionary = {
     updateReadyAction: string;
     updateReadyDismiss: string;
   };
+  /**
+   * The public product introduction shown before sign-in.
+   *
+   * This belongs in the same dictionary as the app itself: the introduction
+   * is the first interface a new reader meets, so leaving it as hand-written
+   * English and Chinese copy makes the language picker arrive one screen too
+   * late for Spanish, French and Italian readers.
+   */
+  landing: {
+    navigation: {
+      ariaLabel: string;
+      homeAriaLabel: string;
+      start: string;
+      opening: string;
+    };
+    languagePicker: {
+      label: string;
+      ariaLabel: string;
+    };
+    hero: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      description: string;
+      mantra: string;
+      modeAriaLabel: string;
+      write: string;
+      voice: string;
+      camera: string;
+      cta: string;
+      ctaLoading: string;
+      preview: {
+        ariaLabel: string;
+        writeEyebrow: string;
+        writeSample: string;
+        writeStatus: string;
+        voiceEyebrow: string;
+        voiceSample: string;
+        voiceStatus: string;
+        cameraEyebrow: string;
+        cameraSubject: string;
+        cameraDescription: string;
+        cameraStatus: string;
+        memoryLinks: string;
+        thought: string;
+        feeling: string;
+        image: string;
+      };
+    };
+    lookup: {
+      ariaLabel: string;
+      sourceLanguage: string;
+      targetLanguage: string;
+      query: string;
+      partOfSpeech: string;
+      meaning: string;
+      translation: string;
+      example: string;
+      saved: string;
+      savedNote: string;
+    };
+    notes: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      previewAriaLabel: string;
+      date: string;
+      original: string;
+      translation: string;
+      privateNote: string;
+    };
+    exchange: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      previewAriaLabel: string;
+      sender: string;
+      senderCaption: string;
+      word: string;
+      reading: string;
+      meaning: string;
+      receiver: string;
+      receiverCaption: string;
+    };
+    yumi: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      previewAriaLabel: string;
+      message: string;
+      translation: string;
+      reviewWord: string;
+      reviewHint: string;
+    };
+    moods: {
+      eyebrow: string;
+      title: string;
+      subtitle: string;
+      previewAriaLabel: string;
+      pickerAriaLabel: string;
+      selectedAriaLabel: string;
+      curious: string;
+      happy: string;
+      excited: string;
+      proud: string;
+      missingYou: string;
+    };
+    closing: {
+      title: string;
+      titleSecond: string;
+      description: string;
+      cta: string;
+      ctaLoading: string;
+    };
+  };
   onboarding: {
     back: string;
     continue: string;
@@ -156,13 +271,8 @@ export type TranslationDictionary = {
     stepLabel: string;
     replay: string;
 
-    /*
-     * Eleven, down from thirteen, and the two that went were not cut so much
-     * as gathered up: five near-identical slides each introducing one dock
-     * icon are now a single map of all six keys, and the partner step folded
-     * into the message step it was already describing half of.
-     */
     steps: {
+      meet: { title: string; body: string };
       setup: {
         title: string;
         body: string;
@@ -171,14 +281,13 @@ export type TranslationDictionary = {
         note: string;
         saveError: string;
       };
-      meet: { title: string; body: string };
-      keys: { title: string; body: string };
-      name: { title: string; body: string };
+      dock: { title: string; body: string };
+      home: { title: string; body: string };
       search: { title: string; body: string };
-      capture: { title: string; body: string; action: string };
+      notes: { title: string; body: string };
       vocabulary: { title: string; body: string };
-      discover: { title: string; body: string; action: string };
-      messages: { title: string; body: string; action: string };
+      messages: { title: string; body: string };
+      settings: { title: string; body: string };
       cosmic: { title: string; body: string };
       done: { title: string; body: string };
     };
@@ -690,6 +799,58 @@ export type TranslationDictionary = {
       emptyDescription: string;
       deleteNote: string;
       translateError: string;
+      recentTitle: string;
+      viewAll: string;
+      composerTitle: string;
+      composerDescription: string;
+      originalLabel: string;
+      originalPlaceholder: string;
+      languageLabel: string;
+      detectedHint: string;
+      personalMeaning: string;
+      personalMeaningPlaceholder: string;
+      contextLabel: string;
+      contextPlaceholder: string;
+      tagsLabel: string;
+      tagsPlaceholder: string;
+      sourceLabel: string;
+      sourcePlaceholder: string;
+      privateLabel: string;
+      privateDescription: string;
+      saveError: string;
+      libraryTitle: string;
+      libraryDescription: string;
+      searchPlaceholder: string;
+      allNotes: string;
+      mine: string;
+      sharedWithMe: string;
+      noResults: string;
+      retry: string;
+      loadError: string;
+      detailEyebrow: string;
+      viewIn: string;
+      yumiTitle: string;
+      yumiDescription: string;
+      interpret: string;
+      interpreting: string;
+      interpretError: string;
+      naturalTranslation: string;
+      meaning: string;
+      localExpressions: string;
+      tone: string;
+      culturalNuance: string;
+      usageExamples: string;
+      warnings: string;
+      sharedBy: string;
+      saveToMyNotes: string;
+      savedToMyNotes: string;
+      saveCopyError: string;
+      shareTitle: string;
+      shareDescription: string;
+      noFriends: string;
+      viewOnly: string;
+      shareError: string;
+      deleteConfirm: string;
     };
   };
 

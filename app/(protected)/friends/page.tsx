@@ -148,7 +148,7 @@ function FriendsPageContent() {
       router.back();
       return;
     }
-    router.push("/");
+    router.push("/home");
   }
 
   function handleScannedExchangeId(scannedExchangeId: string) {

@@ -103,19 +103,10 @@ export default function BottomNavigation({
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-5"
+      data-app-bottom-navigation
+      className="absolute inset-x-0 bottom-0 z-40 flex w-full justify-center px-5 [transform:translateZ(0)]"
       style={{
         paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
-        /*
-         * Named so the browser gives the dock its own snapshot during a view
-         * transition and app/cosmic-motion.css can hold it perfectly still.
-         * Without this the dock is part of the root snapshot and travels with
-         * the page, taking away the one fixed thing on screen — the reference
-         * that tells the user the content moved rather than the whole ship.
-         *
-         * Harmless in Standard Mode, where no transition ever runs.
-         */
-        viewTransitionName: "cosmic-dock",
       }}
       aria-label={label}
     >
@@ -195,7 +186,6 @@ export default function BottomNavigation({
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
-                prefetch={false}
                 transitionTypes={item.transitionTypes}
                 title={item.label}
                 ref={(element) => {

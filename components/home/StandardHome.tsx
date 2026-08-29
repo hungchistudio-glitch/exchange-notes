@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Volume2 } from "lucide-react";
 
 import Card from "@/components/foundation/cards/Card";
 import Screen from "@/components/foundation/layout/Screen";
@@ -10,7 +9,7 @@ import BookIcon from "@/components/foundation/icons/BookIcon";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import LearningPartnerCard from "@/components/home/LearningPartnerCard";
 import YumiHomeStage from "@/components/home/yumi/YumiHomeStage";
-import NotesComposer from "@/components/home/NotesComposer";
+import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
 import PronunciationHub from "@/components/pronunciation/PronunciationHub";
@@ -21,15 +20,6 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { HomeMood } from "@/lib/pet/homeMoodEngine";
-import { createClient } from "@/lib/supabase/client";
-import type { Note } from "@/lib/notes/repository";
-import {
-  createNote,
-  deleteNote as deleteNoteRow,
-  fetchNotes,
-  importLegacyNotes,
-} from "@/lib/notes/repository";
-import { speak } from "@/lib/speech";
 
 function ArrowRightIcon() {
   return (
@@ -44,41 +34,6 @@ function ArrowRightIcon() {
       <path d="M5 12h13M13 7l5 5-5 5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 7h14M9 7V4.5h6V7M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13"
-      />
-    </svg>
-  );
-}
-
-
-function formatNoteDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
 }
 
 const STAT_TILE_TONES = {
@@ -206,66 +161,6 @@ export default function StandardHome() {
     description: t.home.hero.description,
   };
 
-  const [notes, setNotes] = useState<Note[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadNotes() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        return;
-      }
-
-      // Hands over anything this device saved back when notes were local
-      // only. Runs once per device and is a no-op afterwards.
-      await importLegacyNotes(supabase, user.id);
-
-      const rows = await fetchNotes(supabase);
-
-      if (!active) return;
-
-      setNotes(rows);
-    }
-
-    void loadNotes();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  async function addNote(english: string, chinese: string) {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const saved = await createNote(supabase, user.id, { english, chinese });
-
-    // Nothing optimistic here: a note that only appeared to save is the
-    // failure this whole change exists to remove.
-    if (!saved) return;
-
-    setNotes((currentNotes) => [saved, ...currentNotes]);
-  }
-
-  async function deleteNote(noteId: string) {
-    const supabase = createClient();
-
-    if (!(await deleteNoteRow(supabase, noteId))) return;
-
-    setNotes((currentNotes) =>
-      currentNotes.filter((note) => note.id !== noteId),
-    );
-  }
-
   return (
     <Screen>
       <HomeInstallPrompt />
@@ -305,6 +200,10 @@ export default function StandardHome() {
       */}
       <div className="px-4 pt-5">
         <UniversalSearchField />
+      </div>
+
+      <div className="px-4 pt-5">
+        <NotesHomeModule />
       </div>
 
       <div id="daily-focus-card" className="px-4 pt-6 scroll-mt-6">
@@ -434,82 +333,6 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
-          {t.home.notes.eyebrow}
-        </p>
-        <h2 className="mt-1 text-xl font-bold">{t.home.notes.title}</h2>
-
-        <div className="mt-4">
-          <NotesComposer onSave={addNote} />
-
-          <div className="mt-5 space-y-3">
-            {notes.length === 0 && (
-              <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
-                <p className="text-sm font-semibold">{t.home.notes.emptyTitle}</p>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">
-                  {t.home.notes.emptyDescription}
-                </p>
-              </div>
-            )}
-
-            {notes.map((note) => (
-              <article
-                key={note.id}
-                className="rounded-[24px] border border-black/[0.06] bg-white p-5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    {note.english && (
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="min-w-0 whitespace-pre-wrap break-words text-[15px] font-medium leading-7">
-                          {note.english}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => speak(note.english, "en-US")}
-                          aria-label="Play English note"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-90"
-                        >
-                          <Volume2 size={14} strokeWidth={1.8} />
-                        </button>
-                      </div>
-                    )}
-
-                    {note.chinese && (
-                      <div className="mt-2 flex items-start justify-between gap-3">
-                        <p className="min-w-0 whitespace-pre-wrap break-words text-sm leading-6 text-ink-soft">
-                          {note.chinese}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => speak(note.chinese, "zh-TW")}
-                          aria-label="播放中文筆記"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-ink-soft transition-transform active:scale-90"
-                        >
-                          <Volume2 size={14} strokeWidth={1.8} />
-                        </button>
-                      </div>
-                    )}
-
-                    <p className="mt-4 text-[10px] text-ink-faint">
-                      {formatNoteDate(note.createdAt)}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => deleteNote(note.id)}
-                    aria-label={t.home.notes.deleteNote}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint transition-transform hover:bg-red-50 hover:text-red-600 active:scale-90"
-                  >
-                    <TrashIcon />
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
         <TutorialLauncher />
       </div>
     </Screen>
