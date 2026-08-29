@@ -7,6 +7,7 @@ import {
   subscribeToDailyGoalWords,
   subscribeToInterfaceLanguage,
 } from "@/lib/appPreferences";
+import { loadTranslations } from "@/lib/i18n";
 import {
   applyPreferencesLocally,
   isEmptyPreferences,
@@ -97,13 +98,24 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
       write();
     } else {
       applyingRef.current = true;
-      applyPreferencesLocally(parseAccountPreferences(stored));
-      lastWrittenRef.current = readLocalPreferences();
+      const storedPreferences = parseAccountPreferences(stored);
 
-      // Cleared after the events from applying have been delivered.
-      window.setTimeout(() => {
-        applyingRef.current = false;
-      }, 0);
+      void loadTranslations(storedPreferences.interfaceLanguage)
+        .then(() => {
+          if (cancelled) return;
+
+          applyPreferencesLocally(storedPreferences);
+          lastWrittenRef.current = readLocalPreferences();
+
+          // Cleared after the events from applying have been delivered.
+          window.setTimeout(() => {
+            applyingRef.current = false;
+          }, 0);
+        })
+        .catch((error) => {
+          applyingRef.current = false;
+          console.error("Could not load the account's interface language.", error);
+        });
     }
 
     const unsubscribes = [

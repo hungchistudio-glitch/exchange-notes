@@ -8,7 +8,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { createPortal } from "react-dom";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -332,13 +331,7 @@ export default function AvatarCropper({
 
   const ready = Boolean(natural && viewport && !failed);
 
-  /*
-   * Nothing to portal into during a server render, and this only ever opens
-   * from a press, so there is no first paint to preserve.
-   */
-  if (typeof document === "undefined") return null;
-
-  return createPortal(
+  return (
     <BottomSheet
       open
       onClose={onCancel}
@@ -347,10 +340,10 @@ export default function AvatarCropper({
     >
       <div className="p-5">
         {/*
-          Capped by height as well as width. The sheet body is 70dvh, and the
-          zoom control and the two actions have to fit under the circle — on a
-          short phone a 320px circle alone would push them out of reach, which
-          is the failure this component already shipped once.
+          Capped by height as well as width. The sheet body owns whatever is
+          left between its fixed header and the bottom safe area, and the zoom
+          control plus two actions still have to fit under the circle — on a
+          short phone a 320px circle alone would push them out of reach.
         */}
         <div className="mx-auto w-full max-w-[min(320px,44dvh)]">
           {/*
@@ -443,7 +436,6 @@ export default function AvatarCropper({
           </button>
         </div>
       </div>
-    </BottomSheet>,
-    document.body,
+    </BottomSheet>
   );
 }

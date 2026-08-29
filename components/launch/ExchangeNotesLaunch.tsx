@@ -15,15 +15,14 @@ import {
   clamp,
   computeFrame,
 } from "./timeline";
-
-type Props = {
-  /** Renders the scrub/checkpoint harness and never fires `onComplete`. */
-  reviewMode?: boolean;
-  onComplete?: () => void;
-};
+import type { LaunchRendererProps } from "./types";
 
 /** How long the launch takes to dissolve into the app underneath it. */
 const EXIT_MS = 420;
+
+/** A resolved still, not a full-length wait, for reduced-motion readers. */
+export const REDUCED_MOTION_HOLD_MS = 500;
+const REDUCED_MOTION_EXIT_MS = 16;
 
 /*
  * A backstop for a loop that starts but never finishes — a device that
@@ -37,17 +36,20 @@ const FIRST_FRAME = computeFrame(0);
 const asStyle = (frame: Record<string, string>) => frame as CSSProperties;
 
 export default function ExchangeNotesLaunch({
+  launchId,
   reviewMode = false,
   onComplete,
-}: Props) {
+}: LaunchRendererProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const readoutRef = useRef<HTMLSpanElement>(null);
   const scrubberRef = useRef<HTMLInputElement>(null);
 
   const frameRef = useRef(0);
+  const exitTimerRef = useRef<number | null>(null);
   const originRef = useRef(0);
   const timeRef = useRef(0);
   const finishedRef = useRef(false);
+  const reducedRef = useRef(false);
 
   const [playing, setPlaying] = useState(true);
   const [exiting, setExiting] = useState(false);
@@ -116,25 +118,32 @@ export default function ExchangeNotesLaunch({
 
     if (reviewMode) return;
 
+    setPlaying(false);
     setExiting(true);
 
-    window.setTimeout(() => {
+    const delay = reducedRef.current ? REDUCED_MOTION_EXIT_MS : EXIT_MS;
+
+    exitTimerRef.current = window.setTimeout(() => {
+      exitTimerRef.current = null;
       setDone(true);
       onCompleteRef.current?.();
-    }, EXIT_MS);
+    }, delay);
   }, [reviewMode]);
 
-  /*
-   * Reduced motion still takes the full duration — it just does not move.
-   *
-   * The animation is a handover, not decoration: cutting it to a brief hold
-   * meant the app arrived at a different moment for these users, and it was
-   * indistinguishable from the opening being skipped. The resolved frame is
-   * shown for the same 2.5s and fades out on the same beat; the stylesheet
-   * silences the ambient loops.
-   */
-  const reducedRef = useRef(false);
+  useEffect(
+    () => () => {
+      if (exitTimerRef.current !== null) {
+        window.clearTimeout(exitTimerRef.current);
+      }
+    },
+    [],
+  );
 
+  /*
+   * Reduced motion shows the resolved mark briefly and hands over. Waiting
+   * through the full moving timeline after asking for less motion adds delay
+   * without adding information; the stylesheet also silences ambient loops.
+   */
   useEffect(() => {
     if (reviewMode) return;
 
@@ -144,13 +153,13 @@ export default function ExchangeNotesLaunch({
     timeRef.current = LAUNCH_DURATION_MS;
     paint(LAUNCH_DURATION_MS);
 
-    const timer = window.setTimeout(finish, LAUNCH_DURATION_MS);
+    const timer = window.setTimeout(finish, REDUCED_MOTION_HOLD_MS);
     return () => window.clearTimeout(timer);
   }, [finish, paint, reviewMode]);
 
   /* The loop. */
   useEffect(() => {
-    if (!playing || reducedRef.current) return;
+    if (done || !playing || reducedRef.current) return;
 
     /*
      * The clock starts on the first frame that actually runs, not here.
@@ -190,7 +199,7 @@ export default function ExchangeNotesLaunch({
     frameRef.current = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(frameRef.current);
-  }, [playing, paint, finish]);
+  }, [done, playing, paint, finish]);
 
   /*
    * The clock stops while the app is in the background and picks up where it
@@ -206,13 +215,15 @@ export default function ExchangeNotesLaunch({
    * back is ordinary rather than exceptional.
    */
   useEffect(() => {
+    if (done) return;
+
     const onVisibility = () => {
       if (document.visibilityState === "visible") originRef.current = 0;
     };
 
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, []);
+  }, [done]);
 
   /*
    * A backstop for a loop that never completes. Armed on the first painted
@@ -221,7 +232,7 @@ export default function ExchangeNotesLaunch({
    * how it used to cut a not-yet-started opening short.
    */
   useEffect(() => {
-    if (reviewMode) return;
+    if (done || reviewMode) return;
 
     /*
      * Counts only time the animation was both started and on screen, rather
@@ -245,7 +256,7 @@ export default function ExchangeNotesLaunch({
     }, STEP);
 
     return () => window.clearInterval(poll);
-  }, [finish, reviewMode]);
+  }, [done, finish, reviewMode]);
 
   /* --- review harness ------------------------------------------------ */
 
@@ -296,9 +307,12 @@ export default function ExchangeNotesLaunch({
        * opacity, so there is nothing to see in between.
        */
       style={asStyle(FIRST_FRAME)}
+      data-launch-id={launchId}
       data-exiting={exiting ? "" : undefined}
-      role="status"
-      aria-label="Opening Exchange Notes"
+      data-paused={!playing ? "" : undefined}
+      role={reviewMode ? "region" : undefined}
+      aria-label={reviewMode ? "Opening animation review" : undefined}
+      aria-hidden={reviewMode ? undefined : true}
     >
       <div className={styles.space} aria-hidden="true">
         <div className={styles.stars} />

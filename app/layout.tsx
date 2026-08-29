@@ -5,6 +5,7 @@ import OrbitField from "@/components/foundation/ambience/OrbitField";
 import { DevicePreferencesProvider } from "@/contexts/DevicePreferencesContext";
 import { rootFontSizeFor } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
+import { loadTranslations } from "@/lib/i18n";
 import {
   getServerAppFontSize,
   getServerDailyGoalWords,
@@ -13,9 +14,6 @@ import {
 } from "@/lib/preferences/serverPreferences";
 
 import "./globals.css";
-
-import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
-import NativePushRegister from "./components/NativePushRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,22 +53,8 @@ export async function generateViewport(): Promise<Viewport> {
 
   return {
     themeColor: interfaceMode === "yumi-cosmic" ? "#060a14" : "#f5f3ed",
-    /*
-     * Not per-mode, unlike themeColor above, and that is the point.
-     *
-     * On a cold launch of the installed app the OS fades from its splash to
-     * the web view, and the web view has nothing painted yet. Its canvas is
-     * whatever the user agent picks, which without this is white — a screen
-     * recording of the launch shows the splash reach black, then ramp up
-     * through grey to near-white, then cut to the app. This tells the agent
-     * to pick a dark canvas for that gap instead.
-     *
-     * Dark is right in both modes because the first thing the app draws is
-     * always the opening animation, which is near-black either way (SplashGate
-     * renders it on every load of a signed-in page). Standard Mode turns cream
-     * only once the opening has finished, seconds later.
-     */
-    colorScheme: "dark",
+    /* The active opening is a pure-white canvas in every interface mode. */
+    colorScheme: "light",
   };
 }
 
@@ -94,6 +78,7 @@ export default async function RootLayout({
    * single load. See lib/preferences/serverPreferences.ts.
    */
   const interfaceLanguage = await getServerInterfaceLanguage();
+  const interfaceTranslations = await loadTranslations(interfaceLanguage);
 
   /*
    * Two more the server has to answer, for the same reason and with the same
@@ -155,9 +140,8 @@ export default async function RootLayout({
        * render-blocking third-party requests that can push that later still on
        * a cold start.
        *
-       * #07080b is the outer stop of the opening animation's backdrop, the
-       * same value the manifest splash uses, so the whole launch — splash,
-       * this gap, then the opening itself — is one continuous colour.
+       * Pure white matches both the manifest splash and the active Yumi
+       * opening, so the pre-stylesheet gap cannot flash dark between them.
        *
        * body's own background covers this the moment globals.css lands, in
        * whichever mode is active, so nothing downstream is affected.
@@ -172,7 +156,7 @@ export default async function RootLayout({
        * DevicePreferencesProvider only has to keep it in step afterwards.
        */
       style={{
-        backgroundColor: "#07080b",
+        backgroundColor: "#ffffff",
         fontSize: rootFontSizeFor(appFontSize),
       }}
     >
@@ -242,14 +226,13 @@ export default async function RootLayout({
         <DevicePreferencesProvider
           initial={{
             interfaceLanguage,
+            interfaceTranslations,
             appFontSize,
             dailyGoalWords,
           }}
         >
           {children}
         </DevicePreferencesProvider>
-        <ServiceWorkerRegister />
-        <NativePushRegister />
       </body>
     </html>
   );

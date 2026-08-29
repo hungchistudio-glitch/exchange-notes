@@ -71,7 +71,7 @@ export default function LabLanding() {
   // from the query string, and treating it as a destination would be an
   // open redirect.
   const cameFromVocabulary = searchParams.get("from") === "vocabulary";
-  const exitHref = cameFromVocabulary ? "/vocabulary" : "/";
+  const exitHref = cameFromVocabulary ? "/vocabulary" : "/home";
 
   const [coachTapped, setCoachTapped] = useState(false);
 

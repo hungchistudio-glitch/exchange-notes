@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import NativePushRegister from "@/app/components/NativePushRegister";
+import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
 import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import OfflineBanner from "@/components/foundation/OfflineBanner";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
+import AppViewport from "@/components/foundation/layout/AppViewport";
 import SplashGate from "@/components/ui/SplashGate";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
@@ -39,11 +42,44 @@ export default async function ProtectedLayout({
   // Also grabs learning_language here so LearningLanguageProvider can be
   // seeded server-side (no client fetch waterfall on first render) — this
   // drives which language is the visual hero on word cards app-wide.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("onboarding_completed, learning_language, native_language, interface_mode")
-    .eq("id", user.id)
-    .maybeSingle();
+  /*
+   * The profile and optional preferences column are independent reads, so do
+   * them in parallel. They used to add two database round trips in series to
+   * every signed-in cold start, even though neither depends on the other.
+   * Keeping app_preferences in its own query still preserves the important
+   * deployment safety below: an older database may reject that column without
+   * taking down the profile data every protected screen requires.
+   *
+   * The cookie read is local, but joins the same wait so the render has one
+   * synchronization point rather than three.
+   *
+   * app_preferences is allowed to fail.
+   *
+   * app_preferences arrived in a later migration than this code path, and the
+   * app and the database do not deploy together. Folding the column into the
+   * main profile query would mean a missing column takes down every protected
+   * page; asking for it on its own means the worst case is that settings do
+   * not sync until the migration lands.
+   */
+  const [profileResult, preferencesResult, cookieInterfaceMode] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "onboarding_completed, learning_language, native_language, interface_mode",
+        )
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("app_preferences")
+        .eq("id", user.id)
+        .maybeSingle(),
+      getServerInterfaceMode(),
+    ]);
+
+  const profile = profileResult.data;
+  const preferencesRow = preferencesResult.data;
 
   if (profile && !profile.onboarding_completed) {
     redirect("/onboarding");
@@ -58,22 +94,6 @@ export default async function ProtectedLayout({
   // almost always already right. The profile is what makes the choice follow
   // the account — to a new phone, a new browser, a fresh login — so where the
   // two disagree the account wins.
-  /*
-   * Fetched separately from the select above, and allowed to fail.
-   *
-   * app_preferences arrived in a later migration than this code path, and the
-   * app and the database do not deploy together. Folding the column into the
-   * main profile query would mean a missing column takes down every protected
-   * page; asking for it on its own means the worst case is that settings do
-   * not sync until the migration lands.
-   */
-  const { data: preferencesRow } = await supabase
-    .from("profiles")
-    .select("app_preferences")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const cookieInterfaceMode = await getServerInterfaceMode();
 
   const interfaceMode = isInterfaceMode(profile?.interface_mode)
     ? profile.interface_mode
@@ -111,6 +131,14 @@ export default async function ProtectedLayout({
           stored={preferencesRow?.app_preferences ?? null}
         />
 
+        {/*
+          Both services belong to the authenticated app runtime. Keeping them
+          here means public product and review routes do not create an auth
+          client, register a worker, or subscribe to native bridge events.
+        */}
+        <ServiceWorkerRegister />
+        <NativePushRegister />
+
         <SplashGate />
 
         {/*
@@ -130,12 +158,26 @@ export default async function ProtectedLayout({
         */}
         <VocabularyProvider>
           <LexiconSearchProvider>
-            <CosmicRouteStage>
-              <OfflineBanner />
-              {children}
-            </CosmicRouteStage>
+            {/*
+              One physical viewport, with one deliberately scrollable layer.
 
-            <ProtectedNav />
+              The document itself used to scroll while the dock tried to stay
+              fixed above it. Mobile Safari can detach fixed descendants from
+              the visual viewport after a long scroll, a sheet transition or
+              a dynamic-toolbar resize; the screenshots then show the dock in
+              the middle of the page and content continuing underneath it.
+
+              Keeping the protected app at exactly 100dvh gives the chrome a
+              stable coordinate system. Pages still scroll normally inside
+              data-app-scroll-viewport, while the dock is its non-scrolling
+              sibling and therefore cannot be carried away by page content.
+            */}
+            <AppViewport navigation={<ProtectedNav />}>
+              <CosmicRouteStage>
+                <OfflineBanner />
+                {children}
+              </CosmicRouteStage>
+            </AppViewport>
           </LexiconSearchProvider>
         </VocabularyProvider>
 

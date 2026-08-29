@@ -315,6 +315,11 @@
    fairly thin; "Noto Sans TC" (loaded in app/layout.tsx) is the fallback
    everywhere else. */
 body {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   background: var(--background);
   color: var(--foreground);
   font-family:
@@ -329,6 +334,11 @@ body {
 }
 
 html {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   scroll-behavior: smooth;
 }
 
@@ -339,6 +349,27 @@ html {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
+}
+
+/*
+ * The authenticated app owns one viewport-sized shell. Only its content
+ * layer scrolls; persistent chrome is a sibling of that layer, so iOS cannot
+ * re-anchor the dock part-way down a long document. This also stops page-edge
+ * rubber-banding from revealing the body's layer underneath the active page.
+ *
+ * This root scroller is deliberately the exception to the generic rule
+ * above. Current iOS has native inertial overflow scrolling; forcing the old
+ * `-webkit-overflow-scrolling: touch` path creates a separate compositor for
+ * form controls. When the software keyboard moves the visual viewport, the
+ * native caret can then remain at the compositor's old coordinates. Likewise,
+ * `scroll-behavior: smooth` makes Safari animate its focus correction while
+ * the caret jumps immediately to the destination. Ordinary finger scrolling
+ * remains inertial and smooth with both properties set to their stable path.
+ */
+[data-app-scroll-viewport] {
+  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: none;
+  scroll-behavior: auto;
 }
 
 /*

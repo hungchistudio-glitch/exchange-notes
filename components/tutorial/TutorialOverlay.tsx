@@ -1,46 +1,50 @@
 "use client";
 
-import Link from "next/link";
 import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Ear,
-  Eye,
-  Flower2,
-  Hand,
-  UserPlus,
+  Keyboard,
+  Mic,
+  NotebookPen,
 } from "lucide-react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import CameraIcon from "@/components/foundation/icons/CameraIcon";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
+import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
 import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
-import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
+import stageStyles from "@/components/tutorial/TutorialStage.module.css";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
+import type { TranslationDictionary } from "@/lib/i18n";
 import { insertValues } from "@/lib/utils";
+import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 
 type StepKey =
   | "setup"
   | "meet"
-  | "name"
-  | "senses"
-  | "home"
+  | "dock"
   | "search"
+  | "notes"
   | "vocabulary"
-  | "capture"
-  | "discover"
+  | "home"
   | "messages"
-  | "friends"
   | "settings"
+  | "cosmic"
   | "done";
 
 /*
@@ -53,104 +57,137 @@ type StepKey =
 const STEP_ORDER: StepKey[] = [
   "setup",
   "meet",
-  "name",
-  "senses",
-  "home",
+  "dock",
   /*
-   * Directly after Home, because that is where it sits: the search is the
-   * first thing on that screen you can act on. Introducing the library before
-   * the one control that fills it had the tour explaining where words go
-   * before it explained how they get there.
+   * The rest follows one human journey instead of the navigation tree:
+   * notice something, keep it, remember it, return to it, share it, then tune
+   * the space. That is the order someone learns the product in, even though
+   * it is not the order its routes happen to be stored in.
    */
   "search",
+  "notes",
   "vocabulary",
-  "capture",
-  "discover",
+  "home",
   "messages",
-  "friends",
   "settings",
+  "cosmic",
   "done",
 ];
-
-/*
- * Steps that end somewhere real. Following one closes the tour and marks it
- * seen — arriving on the capture screen ready to photograph something is a
- * better outcome than being returned to slide seven.
- */
-const STEP_HREF: Partial<Record<StepKey, string>> = {
-  capture: "/capture",
-  discover: "/discover",
-  friends: "/friends",
-  settings: "/profile",
-};
 
 type TutorialOverlayProps = {
   onClose: () => void;
 };
 
-/** The senses, drawn in a row. Smell has no icon of its own; a flower will do. */
-function SensesRow() {
-  const senses = [Hand, Eye, Ear, Flower2];
+/** The first real action in the app: write it, say it, or show it. */
+function CaptureModesRow() {
+  const modes = [
+    <Keyboard key="write" size={23} strokeWidth={1.65} aria-hidden="true" />,
+    <Mic key="voice" size={23} strokeWidth={1.65} aria-hidden="true" />,
+    <CameraIcon key="camera" className="h-6 w-6" />,
+  ];
 
   return (
     <div className="flex items-center gap-3">
-      {senses.map((Glyph, index) => (
+      {modes.map((mode, index) => (
         <span
           key={index}
           className="flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white text-ink-strong"
-          style={{ transform: `rotate(${(index % 2 === 0 ? -1 : 1) * 4}deg)` }}
+          style={{ transform: `rotate(${(index - 1) * 3}deg)` }}
         >
-          <Glyph size={24} strokeWidth={1.6} aria-hidden="true" />
+          {mode}
         </span>
       ))}
     </div>
   );
 }
 
-/** yu and mi, as two hands passing something between them. */
-function ExchangeMark() {
+/** The six permanent dock keys, shown with the app's real icon components. */
+function DockMap({ t }: { t: TranslationDictionary }) {
+  const items = [
+    { label: t.navigation.vocabulary, Icon: NavVocabularyIcon },
+    { label: t.navigation.messages, Icon: NavMessagesIcon },
+    { label: t.navigation.home, Icon: NavHomeIcon },
+    { label: t.navigation.search, Icon: NavSearchIcon },
+    { label: t.navigation.discover, Icon: NavDiscoverIcon },
+    { label: t.navigation.settings, Icon: NavSettingsIcon },
+  ];
+
   return (
-    <div className="flex items-center gap-4">
-      <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-black/15 text-2xl font-bold text-black">
-        yu
-      </span>
-
-      <span className="text-2xl font-bold text-ink-faint">+</span>
-
-      <span className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-black/15 text-2xl font-bold text-black">
-        mi
-      </span>
+    <div
+      role="list"
+      aria-label={t.navigation.primaryLabel}
+      className="grid w-full max-w-[18rem] grid-cols-3 gap-2"
+    >
+      {items.map(({ label, Icon }) => (
+        <div
+          key={label}
+          role="listitem"
+          className="flex min-h-16 items-center gap-2 rounded-2xl border border-black/10 bg-white px-3"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04]">
+            <Icon className="h-[18px] w-[18px]" active={false} />
+          </span>
+          <span className="min-w-0 text-[10px] font-semibold leading-tight text-ink-soft">
+            {label}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
 
-function stepVisual(step: StepKey): ReactNode {
+/** Yumi is unchanged; Cosmic Mode adds the command-deck presentation. */
+function CosmicModePreview() {
+  return (
+    <div className="relative flex h-32 w-64 items-center justify-center overflow-hidden rounded-[30px] border border-cyan-300/25 bg-[#07101f] shadow-[0_18px_48px_rgba(4,18,36,0.22)]">
+      <span className="absolute h-24 w-52 rounded-[50%] border border-cyan-200/20" />
+      <span className="absolute h-16 w-44 rotate-[-14deg] rounded-[50%] border border-dashed border-cyan-200/30" />
+      <span className="absolute h-2 w-2 translate-x-20 -translate-y-7 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(125,211,252,0.9)]" />
+      <ExchangeNotesMark
+        cosmic
+        energy={0.58}
+        className="relative h-24 w-24"
+        surfaceColor="#07101f"
+        highlightColor="#dffbff"
+      />
+    </div>
+  );
+}
+
+function stepVisual(step: StepKey, t: TranslationDictionary): ReactNode {
   switch (step) {
     // The two choice rows are this step's content; a mark above them would
     // only push them off a small screen.
     case "setup":
       return null;
 
-    case "name":
-      return <ExchangeMark />;
-
-    case "senses":
-      return <SensesRow />;
+    case "dock":
+      return <DockMap t={t} />;
 
     case "home":
       return (
-        <OrbitIcon
-          render={(active) => (
-            <NavHomeIcon className="h-7 w-7" active={active} />
-          )}
-        />
+        <div className="flex items-center gap-3">
+          <OrbitIcon
+            render={(active) => (
+              <NavHomeIcon className="h-7 w-7" active={active} />
+            )}
+          />
+          <OrbitIcon
+            render={(active) => (
+              <NavDiscoverIcon className="h-7 w-7" active={active} />
+            )}
+          />
+        </div>
       );
 
     case "search":
+      return <CaptureModesRow />;
+
+    case "notes":
       return (
         <OrbitIcon
-          render={(active) => (
-            <NavSearchIcon className="h-7 w-7" active={active} />
+          render={() => (
+            <NotebookPen size={27} strokeWidth={1.65} aria-hidden="true" />
           )}
         />
       );
@@ -164,32 +201,11 @@ function stepVisual(step: StepKey): ReactNode {
         />
       );
 
-    case "capture":
-      return <OrbitIcon render={() => <CameraIcon className="h-7 w-7" />} />;
-
-    case "discover":
-      return (
-        <OrbitIcon
-          render={(active) => (
-            <NavDiscoverIcon className="h-7 w-7" active={active} />
-          )}
-        />
-      );
-
     case "messages":
       return (
         <OrbitIcon
           render={(active) => (
             <NavMessagesIcon className="h-7 w-7" active={active} />
-          )}
-        />
-      );
-
-    case "friends":
-      return (
-        <OrbitIcon
-          render={() => (
-            <UserPlus size={26} strokeWidth={1.6} aria-hidden="true" />
           )}
         />
       );
@@ -202,6 +218,9 @@ function stepVisual(step: StepKey): ReactNode {
           )}
         />
       );
+
+    case "cosmic":
+      return <CosmicModePreview />;
   }
 }
 
@@ -210,13 +229,14 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const copy = t.tutorial;
 
   const [index, setIndex] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const step = STEP_ORDER[index];
   const isFirst = index === 0;
   const isLast = index === STEP_ORDER.length - 1;
 
   const stepCopy = copy.steps[step];
-  const href = STEP_HREF[step];
-  const visual = stepVisual(step);
+  const visual = stepVisual(step, t);
   const isYumiStep = step === "meet" || step === "done";
 
   /*
@@ -230,9 +250,54 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     onClose();
   }, [onClose]);
 
+  /*
+   * A full-screen tour is still a modal. Freeze the page beneath it, return
+   * focus to the control that opened it, and move focus to each new heading so
+   * keyboard and screen-reader users hear the same progression sighted users
+   * see. Without this, Tab eventually reaches controls hidden behind the tour.
+   */
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [step]);
+
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") dismiss();
+      if (event.key === "Escape") {
+        dismiss();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     window.addEventListener("keydown", handleKey);
@@ -242,9 +307,11 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
-      aria-label={copy.rowTitle}
+      aria-labelledby="tutorial-step-title"
+      aria-describedby="tutorial-step-body"
       className="fixed inset-0 z-[120] flex flex-col bg-surface"
     >
       <header className="flex shrink-0 items-center justify-between px-7 pt-[max(1rem,env(safe-area-inset-top))]">
@@ -264,7 +331,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-7">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-7">
         <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center py-8">
           {/* Keyed by step so the CSS restarts on every advance — that
               punctuation is most of what makes the tour feel alive. */}
@@ -283,35 +350,35 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             </div>
           )}
 
-          <h2 className="text-[1.6rem] font-bold leading-[1.2] tracking-[-0.025em] text-black">
-            {stepCopy.title}
-          </h2>
-
-          {/* One confident stroke. The hand-drawn feel lives here, not in a
-              frame around everything. */}
-          <SketchUnderline className="mt-2.5 h-2 w-32 text-amber-500/70" />
-
-          <p className="mt-5 max-w-[30rem] text-[14.5px] leading-[1.85] text-ink-soft">
-            {stepCopy.body}
-          </p>
-
-          {step === "setup" && <TutorialLanguageSetup />}
-
-          {href && "action" in stepCopy && (
-            <Link
-              href={href}
-              onClick={dismiss}
-              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 self-start whitespace-nowrap rounded-full bg-black px-6 py-3.5 text-[13.5px] font-semibold text-white transition-transform active:scale-[0.985]"
+          <div key={`${step}-copy`} className={stageStyles.copyEnter}>
+            <h2
+              ref={headingRef}
+              id="tutorial-step-title"
+              tabIndex={-1}
+              className="text-[1.6rem] font-bold leading-[1.2] tracking-[-0.025em] text-black outline-none"
             >
-              {stepCopy.action}
-            </Link>
-          )}
+              {stepCopy.title}
+            </h2>
 
-          {isLast && (
-            <p className="mt-7 text-[13px] leading-6 text-ink-faint">
-              {copy.replay}
+            {/* One confident stroke. The hand-drawn feel lives here, not in a
+                frame around everything. */}
+            <SketchUnderline className="mt-2.5 h-2 w-32 text-amber-500/70" />
+
+            <p
+              id="tutorial-step-body"
+              className="mt-5 max-w-[30rem] text-[14.5px] leading-[1.8] text-ink-soft"
+            >
+              {stepCopy.body}
             </p>
-          )}
+
+            {step === "setup" && <TutorialLanguageSetup />}
+
+            {isLast && (
+              <p className="mt-7 text-[13px] leading-6 text-ink-faint">
+                {copy.replay}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

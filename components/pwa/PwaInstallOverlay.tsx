@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 type PwaInstallOverlayProps = {
@@ -20,7 +21,8 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
   if (!motion.rendered) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:px-4" role="presentation">
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden overscroll-none sm:items-center sm:px-4" role="presentation">
       <button
         type="button"
         aria-label="Close"
@@ -33,7 +35,12 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
         role="dialog"
         aria-modal="true"
         {...motion.panelProps}
-        className={`${motion.panelClassName} relative z-10 w-full max-w-md overflow-hidden rounded-t-[30px] bg-surface px-6 pb-[max(28px,env(safe-area-inset-bottom))] text-black shadow-[0_-18px_60px_rgba(0,0,0,0.28)] sm:rounded-[30px] sm:pt-8 sm:shadow-2xl`}
+        className={`${motion.panelClassName} relative z-10 w-full max-w-md touch-pan-y overflow-y-auto overscroll-contain rounded-t-[30px] bg-surface px-6 pb-[max(28px,env(safe-area-inset-bottom))] text-black shadow-[0_-18px_60px_rgba(0,0,0,0.28)] sm:rounded-[30px] sm:pt-8 sm:shadow-2xl`}
+        style={{
+          ...motion.panelProps.style,
+          maxHeight:
+            "calc(100dvh - max(3rem, env(safe-area-inset-top)))",
+        }}
       >
         <div
           className={`${motion.handleClassName} -mx-6 flex h-10 items-center justify-center sm:hidden`}
@@ -53,6 +60,7 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
 
         {children}
       </section>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

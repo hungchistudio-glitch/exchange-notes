@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import HighlightedMessageBody from "@/components/messages/HighlightedMessageBody";
 import NewsCardMessage from "@/components/messages/NewsCardMessage";
 import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
@@ -1848,7 +1849,8 @@ export default function ConversationRoom({
       </div>
 
       {deleteMotion.rendered && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+        <OverlayPortal>
+          <div className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden overscroll-none sm:items-center">
           <button
             type="button"
             aria-label={copy.closeDeleteConfirmation}
@@ -1929,7 +1931,8 @@ export default function ConversationRoom({
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </OverlayPortal>
       )}
 
       {friendPickerItem && (

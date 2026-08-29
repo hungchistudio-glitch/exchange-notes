@@ -12,10 +12,8 @@ import "fake-indexeddb/auto";
  * The five dictionaries, in the cache before anything renders.
  *
  * The app fetches only the language it needs (lib/i18n/index.ts), and
- * useTranslation suspends on the one render where that has not arrived yet.
- * In the browser React covers that with the server's own markup; in a test
- * there is no server, so a component rendered without this would suspend
- * forever and every one of the 110 call sites would need a Suspense wrapper.
+ * In the app the root Server Component supplies the active dictionary; a
+ * component test has no root layout, so the shared cache is primed here.
  *
  * Priming is the honest fix rather than mocking the module: these are the
  * real dictionaries, so tests that assert on real strings keep asserting on

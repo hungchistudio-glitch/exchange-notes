@@ -129,6 +129,7 @@ export default function VocabularySearch({
           />
 
           <input
+            data-vocabulary-search-input
             type="text"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}

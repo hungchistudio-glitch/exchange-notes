@@ -3,6 +3,7 @@
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
+import { loadTranslations } from "@/lib/i18n";
 import {
   INTERFACE_LANGUAGE_CODE,
   getInterfaceLanguageMeta,
@@ -32,6 +33,13 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
   const { t, language } = useTranslation();
   const copy = t.onboarding.appLanguage;
 
+  async function selectLanguage(value: InterfaceLanguage) {
+    if (value === language) return;
+
+    await loadTranslations(value);
+    setInterfaceLanguage(value);
+  }
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1">
@@ -50,7 +58,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
               selected={language === option.value}
               badge={<span className="text-[15px]">{option.badge}</span>}
               title={option.label}
-              onClick={() => setInterfaceLanguage(option.value)}
+              onClick={() => void selectLanguage(option.value)}
             />
           ))}
         </div>

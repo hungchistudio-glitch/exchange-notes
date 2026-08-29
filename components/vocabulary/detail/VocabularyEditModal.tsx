@@ -12,6 +12,7 @@ import {
 import AppButton from "@/components/ui/AppButton";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem } from "@/lib/types/app";
 
@@ -125,9 +126,8 @@ export default function VocabularyEditModal({
     "mt-2 w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base text-neutral-950 outline-none transition placeholder:text-ink-faint focus:border-neutral-950 focus:bg-white focus:ring-4 focus:ring-neutral-950/5";
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-6"
-    >
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden overscroll-none sm:items-center sm:p-6">
       <button
         type="button"
         aria-label={edit.close}
@@ -142,7 +142,7 @@ export default function VocabularyEditModal({
         aria-modal="true"
         aria-labelledby="edit-vocabulary-title"
         {...motion.panelProps}
-        className={`${motion.panelClassName} relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-[32px] bg-white shadow-2xl sm:max-w-2xl sm:rounded-[32px]`}
+        className={`${motion.panelClassName} relative z-10 max-h-[92dvh] w-full touch-pan-y overflow-y-auto overscroll-contain rounded-t-[32px] bg-white shadow-2xl sm:max-w-2xl sm:rounded-[32px]`}
       >
         <div
           className={`${motion.handleClassName} flex h-8 items-center justify-center sm:hidden`}
@@ -303,6 +303,7 @@ export default function VocabularyEditModal({
           </div>
         </form>
       </section>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

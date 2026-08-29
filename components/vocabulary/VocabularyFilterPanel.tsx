@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -54,10 +55,11 @@ export default function VocabularyFilterPanel({
   }, [items]);
 
   return (
-    <div
-      {...motion.panelProps}
-      className={`${motion.panelClassName} fixed inset-0 z-[300] overflow-y-auto bg-white text-black`}
-    >
+    <OverlayPortal>
+      <div
+        {...motion.panelProps}
+        className={`${motion.panelClassName} fixed inset-0 z-[300] touch-pan-y overflow-y-auto overscroll-contain bg-white text-black`}
+      >
       <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
         <div
           className={`${motion.handleClassName} flex h-7 items-center justify-center sm:hidden`}
@@ -174,6 +176,7 @@ export default function VocabularyFilterPanel({
           </a>
         ))}
       </nav>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

@@ -58,7 +58,7 @@ export default function MenuTranslatorPage() {
       return;
     }
 
-    router.replace("/");
+    router.replace("/home");
   }, [router]);
 
   /*

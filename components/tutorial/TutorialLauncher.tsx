@@ -1,12 +1,24 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
-import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useTutorialPending from "@/hooks/preferences/useTutorialPending";
+
+const TutorialOverlay = dynamic(
+  () => import("@/components/tutorial/TutorialOverlay"),
+  {
+    loading: () => (
+      <div
+        className="fixed inset-0 z-[120] touch-none overscroll-none bg-surface"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
 
 /**
  * The tour's home-screen entry point, and the thing that opens it unprompted

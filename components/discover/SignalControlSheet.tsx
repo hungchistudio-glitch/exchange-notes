@@ -6,6 +6,7 @@ import { track } from "@/lib/analytics/track";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 
 import SpeechSpeedControl from "./SpeechSpeedControl";
 import { DISCOVER_COLORS, categoryAccent, type SpeechRate } from "./types";
@@ -78,7 +79,8 @@ export default function SignalControlSheet({
   const allSelected = selectedTopics.size === 0;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end">
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[300] flex items-end overflow-hidden overscroll-none">
       <button
         type="button"
         onClick={motion.requestClose}
@@ -92,9 +94,11 @@ export default function SignalControlSheet({
         aria-modal="true"
         aria-label={copy.signalControlsTitle}
         {...motion.panelProps}
-        className={`${motion.panelClassName} relative z-10 w-full rounded-t-[28px] px-5 pb-8`}
+        className={`${motion.panelClassName} relative z-10 w-full touch-pan-y overflow-y-auto overscroll-contain rounded-t-[28px] px-5 pb-8`}
         style={{
           ...motion.panelProps.style,
+          maxHeight:
+            "calc(100dvh - max(3rem, env(safe-area-inset-top)))",
           backgroundColor: DISCOVER_COLORS.card,
           borderTop: `1px solid ${DISCOVER_COLORS.divider}`,
           paddingBottom: "calc(env(safe-area-inset-bottom) + 2rem)",
@@ -232,6 +236,7 @@ export default function SignalControlSheet({
           </>
         ) : null}
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

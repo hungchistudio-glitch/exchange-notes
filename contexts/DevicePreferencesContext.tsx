@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -14,6 +15,7 @@ import {
   getAppFontSize,
   getDailyGoalWords,
   getInterfaceLanguage,
+  setInterfaceLanguage,
   subscribeToAppFontSize,
   subscribeToDailyGoalWords,
   subscribeToInterfaceLanguage,
@@ -21,6 +23,12 @@ import {
   type DailyGoalWords,
   type InterfaceLanguage,
 } from "@/lib/appPreferences";
+import {
+  getTranslations,
+  loadTranslations,
+  primeTranslations,
+  type TranslationDictionary,
+} from "@/lib/i18n";
 
 /**
  * The preferences the document was rendered with.
@@ -38,6 +46,7 @@ import {
  */
 type DevicePreferences = {
   interfaceLanguage: InterfaceLanguage;
+  interfaceTranslations: TranslationDictionary;
   appFontSize: AppFontSize;
   dailyGoalWords: DailyGoalWords;
 };
@@ -51,8 +60,13 @@ export function DevicePreferencesProvider({
   initial: DevicePreferences;
   children: ReactNode;
 }) {
+  const [primedInitial] = useState(() => {
+    primeTranslations(initial.interfaceLanguage, initial.interfaceTranslations);
+    return initial;
+  });
+
   return (
-    <DevicePreferencesContext.Provider value={initial}>
+    <DevicePreferencesContext.Provider value={primedInitial}>
       <PreferenceEffects />
       {children}
     </DevicePreferencesContext.Provider>
@@ -71,6 +85,23 @@ export function DevicePreferencesProvider({
 function PreferenceEffects() {
   const language = useInterfaceLanguageValue();
   const fontSize = useAppFontSizeValue();
+
+  useEffect(() => {
+    const deviceLanguage = getInterfaceLanguage();
+    if (deviceLanguage === language) return;
+
+    let active = true;
+
+    void loadTranslations(deviceLanguage)
+      .then(() => {
+        if (active) setInterfaceLanguage(deviceLanguage);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [language]);
 
   useEffect(() => {
     applyInterfaceLanguage(language);
@@ -117,10 +148,18 @@ function usePreference<T>(
  */
 
 export function useInterfaceLanguageValue(): InterfaceLanguage {
-  return usePreference(
+  const preferences = useContext(DevicePreferencesContext);
+
+  return useSyncExternalStore(
     subscribeToInterfaceLanguage,
-    getInterfaceLanguage,
-    (preferences) => preferences?.interfaceLanguage ?? getInterfaceLanguage(),
+    () => {
+      const deviceLanguage = getInterfaceLanguage();
+
+      return getTranslations(deviceLanguage)
+        ? deviceLanguage
+        : (preferences?.interfaceLanguage ?? deviceLanguage);
+    },
+    () => preferences?.interfaceLanguage ?? getInterfaceLanguage(),
   );
 }
 

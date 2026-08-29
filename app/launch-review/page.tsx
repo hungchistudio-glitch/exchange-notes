@@ -1,4 +1,4 @@
-import ExchangeNotesLaunch from "@/components/launch/ExchangeNotesLaunch";
+import ActiveLaunch from "@/components/launch/activeLaunch";
 
 /*
  * The opening, with a scrubber and phase checkpoints. Kept as a real route
@@ -13,7 +13,7 @@ export const metadata = {
 export default function LaunchReviewPage() {
   return (
     <main>
-      <ExchangeNotesLaunch reviewMode />
+      <ActiveLaunch reviewMode />
     </main>
   );
 }

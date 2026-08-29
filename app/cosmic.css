@@ -716,10 +716,30 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console {
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
+  background-color: rgba(9, 18, 36, 0.94);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 18%, transparent),
     0 0 0 1px color-mix(in oklab, var(--cosmic-cyan) 22%, transparent),
     0 0 22px color-mix(in oklab, var(--cosmic-cyan) 16%, transparent);
+}
+
+/*
+ * WebKit draws a focused input's caret outside the normal page paint. Two
+ * nested backdrop filters (the console and its panel) give that native layer
+ * a stale coordinate space after the visual viewport moves for the keyboard.
+ * The console already becomes more opaque above; suspend the parent's blur
+ * for the same focused interval so there is no filtered ancestor left between
+ * the input and the app scroller.
+ */
+@supports selector(:has(*)) {
+  html[data-interface-mode="yumi-cosmic"]
+    .cosmic-panel:has([data-vocabulary-search-input]:focus) {
+    background-color: rgba(11, 20, 40, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 /*

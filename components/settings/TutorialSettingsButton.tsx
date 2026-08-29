@@ -1,11 +1,23 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
-import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import useTranslation from "@/hooks/i18n/useTranslation";
+
+const TutorialOverlay = dynamic(
+  () => import("@/components/tutorial/TutorialOverlay"),
+  {
+    loading: () => (
+      <div
+        className="fixed inset-0 z-[120] touch-none overscroll-none bg-surface"
+        aria-hidden="true"
+      />
+    ),
+  },
+);
 
 /**
  * The permanent way back into the tour. Unlike the home launcher this never

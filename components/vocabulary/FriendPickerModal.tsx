@@ -4,6 +4,7 @@ import { LoaderCircle, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import type { FriendProfile } from "@/lib/friends";
 
 type FriendPickerModalProps = {
@@ -34,9 +35,8 @@ export default function FriendPickerModal({
   }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-[300] flex items-end justify-center sm:items-center"
-    >
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[300] flex items-end justify-center overflow-hidden overscroll-none sm:items-center">
       <button
         type="button"
         aria-label="Close"
@@ -84,7 +84,7 @@ export default function FriendPickerModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-4 pb-2">
+        <div className="min-h-0 flex-1 touch-pan-y space-y-1.5 overflow-y-auto overscroll-contain px-4 pb-2">
           {loading && (
             <div className="space-y-1.5 px-2 py-2">
               {[0, 1].map((index) => (
@@ -164,6 +164,7 @@ export default function FriendPickerModal({
             })}
         </div>
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }
