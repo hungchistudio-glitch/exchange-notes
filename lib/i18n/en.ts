@@ -145,11 +145,6 @@ const english: TranslationDictionary = {
     replay: "You can reopen this any time from Home or Settings.",
 
     steps: {
-      meet: {
-        title: "Hello — I'm Yumi",
-        body:
-          "I live in this app, and I am learning the same way you are: one new thing at a time. Let me walk you through what everything does. It takes about a minute.",
-      },
       setup: {
         title: "Two languages, first",
         body:
@@ -159,64 +154,58 @@ const english: TranslationDictionary = {
         note: "Both can be changed later in Settings.",
         saveError: "I couldn't save that. Try again in a moment.",
       },
+      meet: {
+        title: "Hello — I'm Yumi",
+        body:
+          "I live on your home screen, and I am learning the same way you are: one new thing at a time. Give me a minute and I'll show you around.",
+      },
+      keys: {
+        title: "Six keys that never move",
+        body:
+          "The bar at the bottom always keeps the same order: Vocabulary, Messages, Home, Search, Discover, Settings. Only the ring around the active one moves, so your thumb can learn where everything lives.",
+      },
       name: {
         title: "yu and mi",
         body:
-          "Exchange Notes is really two people. yu is you. mi is me. You write down a word in your language, I write one down in mine, and we trade. That trade is the whole app — we each end up fluent in the other's mother tongue.",
-      },
-      senses: {
-        title: "The first time counts",
-        body:
-          "A word stays with you because of how you first met it — the feel of the thing, the look of it, the sound, even what the air smelled like. I keep those first meetings safe for you. Coming back to them, a little each day, is where patience quietly turns into fluency.",
-      },
-      home: {
-        title: "Home is where I wait",
-        body:
-          "This is where I am. You'll see today's focus, the word I picked for you, and a place to jot a quick note. Feed me a cookie when you finish a review and I'll be very pleased with you.",
+          "Exchange Notes is really two people. yu is you. mi is me. You write down a word in your language, I write one down in mine, and we trade. That trade is the whole app.",
       },
       search: {
         title: "One field for every word",
         body:
-          "See something you don't know — on a sign, in a message, anywhere? Type it, say it, or point the camera at it. I work out which language it is, what it means, and whether you have met it before. It's the first thing on the home screen, and it's on the dock from every other one.",
-      },
-      vocabulary: {
-        title: "Everything you've collected",
-        body:
-          "Every word you save lands here, grouped into collections. Words you're about to forget rise to the top for review — that's the part that makes them stick.",
+          "See something you don't know — on a sign, in a message, anywhere? Type it, say it, or point the camera at it. I work out which language it is, what it means, and whether you have met it before.",
       },
       capture: {
         title: "Point at anything",
         body:
-          "Tap the camera and show me something in front of you. I'll tell you what it is in both languages, with an example sentence you can actually say. This is the fastest way to your first word.",
+          "Show me something in front of you and I'll name it in both languages, with an example sentence you can actually say. It is the fastest way to your first word.",
         action: "Add my first word this way",
+      },
+      vocabulary: {
+        title: "Everything you keep",
+        body:
+          "Every word you save lands here, with the picture, the sound and the moment you first met it — that first meeting is most of why a word stays. The ones you are about to forget rise to the top for review.",
       },
       discover: {
         title: "Today's stories",
         body:
-          "Real news, rewritten so you can read it at your level. Tap any word you don't know and I'll save it for you. This is the other good way to get your first word.",
+          "Real news, rewritten so you can read it at your level. Tap any word you don't know and I'll keep it for you.",
         action: "Find my first word in a story",
       },
       messages: {
         title: "Where the exchange happens",
         body:
-          "Send a word to your learning partner and they'll get the card, with pronunciation. When they send one back in their language, that's the exchange working exactly as it should.",
-      },
-      friends: {
-        title: "Bring someone with you",
-        body:
-          "Add a partner by their Exchange ID, or let them scan your QR code. Learning a language alone is hard; learning it with someone who needs yours is much easier.",
+          "Send a word to your partner and they get the whole card, pronunciation included. Add someone by their Exchange ID, or let them scan your QR code — learning a language alone is hard, learning it with someone who needs yours is not.",
         action: "Add my first partner",
       },
-      settings: {
-        title: "Make it yours",
+      cosmic: {
+        title: "Same learning, a different atmosphere",
         body:
-          "Settings holds your name and photo, your daily goal, the widget, and the two language controls: which language the app itself speaks, and which one you're here to learn. Change either whenever you like.",
-        action: "Open Settings",
+          "Yumi Cosmic Mode turns Home into a Command Deck and gives review and navigation a more animated presentation. It is not a second account: your words, messages, partners and progress stay exactly the same. Switch modes in Settings any time.",
       },
       done: {
         title: "That's everything",
         body:
-          "Start with one word today. That's genuinely enough — the app is built so that one word a day beats an hour once a month. I'll be on the home screen when you're ready.",
+          "Start with one word today. That is genuinely enough — the app is built so that one word a day beats an hour once a month. I'll be on the home screen when you're ready.",
       },
     },
   },

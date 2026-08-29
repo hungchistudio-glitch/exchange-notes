@@ -1,0 +1,123 @@
+/*
+ * The dock, drawn for the tour.
+ *
+ * Deliberately not a second copy of BottomNavigation: that component measures
+ * a live DOM to place its indicator and reads route state to decide what is
+ * active, neither of which exists inside a modal. What is shared is the thing
+ * worth sharing — the icons themselves, and their own `active` art.
+ */
+
+.wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.dock {
+  position: relative;
+  display: flex;
+  width: 100%;
+  /* The real dock is 28px round on a wider bar; at tour scale the same radius
+     would read as a pill, so it comes down with the height. */
+  border-radius: 22px;
+  border: 1px solid color-mix(in oklab, var(--color-black, #000) 8%, transparent);
+  background: #fff;
+  padding: 0.4rem;
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-black, #000) 4%, transparent),
+    0 12px 28px -18px color-mix(in oklab, var(--color-black, #000) 42%, transparent);
+}
+
+.key {
+  /*
+   * flex-1 with a zero basis, so six keys divide the bar evenly whatever the
+   * frame is — 320px included — instead of six fixed widths overflowing it.
+   */
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.6rem;
+  color: var(--ink-faint, rgba(0, 0, 0, 0.55));
+  transition: color 220ms ease;
+}
+
+.key[data-active="true"] {
+  color: var(--color-black, #000);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/*
+ * The travelling ring. One sixth of the track wide, moved by whole multiples
+ * of its own width, which is what keeps it centred on a key at any frame width
+ * without measuring anything.
+ */
+.indicator {
+  position: absolute;
+  left: 0.4rem;
+  top: 0.4rem;
+  width: calc((100% - 0.8rem) / 6);
+  height: 2.6rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent-amber, #c9962e) 14%, transparent);
+  box-shadow: 0 0 0 5px
+    color-mix(in oklab, var(--accent-amber, #c9962e) 7%, transparent);
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * The caption box holds two lines whether it needs them or not. "Home" is one
+ * line and "Impostazioni" can be two at 320px; without a reserved height the
+ * slide would grow and shrink under the ring every second and a half.
+ */
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4rem;
+  width: 100%;
+  margin: 0;
+  padding: 0 0.5rem;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: var(--color-black, #000);
+}
+
+.captionText {
+  animation: captionIn 420ms cubic-bezier(0.33, 0.9, 0.32, 1) both;
+}
+
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    transition: none;
+  }
+
+  .captionText {
+    animation: none;
+  }
+}

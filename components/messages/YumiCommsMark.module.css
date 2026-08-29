@@ -8,7 +8,9 @@
  *
  * The trick to "continuous" is that nothing here shares a period. Breath runs
  * at 5.5s, the glance at 17s, the blink at 11s, the iris at 8.5s and the scan
- * pass at 28s; the combination takes minutes to come back around, so the
+ * pass at 28s — and Cosmic Mode reruns three of them quicker in .shellCosmic
+ * below, on periods chosen not to divide into the rest; the combination takes
+ * minutes to come back around either way, so the
  * figure never visibly loops the way a single 3-second mood did. That is the
  * whole difference between a looping asset and something that appears to be
  * alive.
@@ -36,10 +38,11 @@
   --yumi-iris: 8.5s;
 
   /*
-   * 28s rather than the deck's 35 so the two never look like one clock, and a
-   * dimmer peak because this mark is a third the size and Messages is already
-   * a bright cyan room — the brightness that reads as contained energy at
-   * 120px reads as a flare at 84.
+   * Standard Mode's pass, and it stays rare: this is a cream room with a
+   * conversation list in it, and the mark's job here is to be a signature that
+   * happens to be alive. The dimmer peak is because the mark is a third the
+   * size of the deck's — the brightness that reads as contained energy at
+   * 120px reads as a flare at 84. Cosmic Mode overrides all three below.
    */
   --yumi-sweep: 28s;
   --yumi-sweep-delay: 9s;
@@ -51,6 +54,29 @@
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 14px 24px rgba(17, 17, 17, 0.1));
+}
+
+/*
+ * Cosmic Mode runs the same mark quicker.
+ *
+ * Standard Mode above is untouched: a cream room with a conversation list in
+ * it wants a mark that behaves like a logo, and every number up there was
+ * tuned for that. Cosmic Mode is making a different offer — the character is
+ * part of what you switched modes for — so the two layers that read as a
+ * powered machine, the iris and the scan pass, come forward, and the blink
+ * comes with them so the face keeps pace with the body.
+ *
+ * Still slower than the Command Deck's, and deliberately: that is a hero at
+ * 120px on a screen built around it, this is an 84px mark in a header above a
+ * list you came here to read. Different periods from the deck's as well, so
+ * two Yumis in one session never look like one clock.
+ */
+.shellCosmic {
+  --yumi-blink: 8.4s;
+  --yumi-iris: 5.8s;
+  --yumi-sweep: 9.5s;
+  --yumi-sweep-delay: 2.2s;
+  --yumi-sweep-peak: 0.62;
 }
 
 /* In deep space the drop shadow becomes a light source instead. */

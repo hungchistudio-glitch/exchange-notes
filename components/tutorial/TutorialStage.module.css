@@ -13,10 +13,17 @@
   animation: stageEnter 720ms cubic-bezier(0.33, 0.9, 0.32, 1) both;
 }
 
+/*
+ * --enter-x comes from the tour's slide container and is the direction of
+ * travel — see TutorialOverlay.module.css. It is only in the first frame: the
+ * prop arrives from the side the reader moved from and then does its own
+ * settle, which is what keeps the visual and the copy reading as one gesture
+ * without them moving identically.
+ */
 @keyframes stageEnter {
   0% {
     opacity: 0;
-    transform: translateY(12px) scale(0.93, 0.99);
+    transform: translate(var(--enter-x, 0px), 12px) scale(0.93, 0.99);
   }
   40% {
     opacity: 1;

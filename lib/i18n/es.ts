@@ -145,11 +145,6 @@ const spanish: TranslationDictionary = {
     replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
 
     steps: {
-      meet: {
-        title: "Hola, soy Yumi",
-        body:
-          "Vivo en esta app y estoy aprendiendo igual que tú: una cosa nueva cada vez. Deja que te enseñe para qué sirve todo. Es cosa de un minuto.",
-      },
       setup: {
         title: "Primero, dos idiomas",
         body:
@@ -159,59 +154,53 @@ const spanish: TranslationDictionary = {
         note: "Los dos se pueden cambiar después en Ajustes.",
         saveError: "No he podido guardarlo. Inténtalo dentro de un momento.",
       },
+      meet: {
+        title: "Hola, soy Yumi",
+        body:
+          "Vivo en tu pantalla de inicio y estoy aprendiendo igual que tú: una cosa nueva cada vez. Dame un minuto y te enseño dónde está todo.",
+      },
+      keys: {
+        title: "Seis teclas que no se mueven",
+        body:
+          "La barra de abajo mantiene siempre el mismo orden: Vocabulario, Mensajes, Inicio, Buscar, Descubrir y Ajustes. Solo se mueve el aro de la que está activa, así tu pulgar aprende dónde vive cada cosa.",
+      },
       name: {
         title: "yu y mi",
         body:
-          "Exchange Notes son en realidad dos personas. yu eres tú. mi soy yo. Tú apuntas una palabra en tu idioma, yo apunto una en el mío, y las intercambiamos. Ese intercambio es toda la app: acabamos los dos hablando con soltura la lengua materna del otro.",
-      },
-      senses: {
-        title: "La primera vez cuenta",
-        body:
-          "Una palabra se te queda por cómo la conociste: el tacto de la cosa, su aspecto, el sonido, hasta a qué olía el aire. Yo guardo esos primeros encuentros por ti. Volver a ellos, un poco cada día, es donde la paciencia se convierte sin ruido en soltura.",
-      },
-      home: {
-        title: "En Inicio es donde te espero",
-        body:
-          "Aquí estoy yo. Verás el foco de hoy, la palabra que he elegido para ti y un sitio para anotar algo rápido. Dame una galleta cuando termines un repaso y me pondré muy contenta contigo.",
+          "Exchange Notes son en realidad dos personas. yu eres tú. mi soy yo. Tú apuntas una palabra en tu idioma, yo apunto una en el mío, y las intercambiamos. Ese intercambio es toda la app.",
       },
       search: {
         title: "Un campo para cualquier palabra",
         body:
-          "¿Ves algo que no conoces, en un cartel, en un mensaje, donde sea? Escríbelo, dilo o enfócalo con la cámara. Yo averiguo en qué idioma está, qué significa y si ya lo habías guardado. Es lo primero de la pantalla de inicio, y está en la barra desde cualquier otra.",
-      },
-      vocabulary: {
-        title: "Todo lo que has ido reuniendo",
-        body:
-          "Cada palabra que guardas aterriza aquí, agrupada en colecciones. Las que estás a punto de olvidar suben arriba para repasarlas: esa es la parte que hace que se queden.",
+          "¿Ves algo que no conoces, en un cartel, en un mensaje, donde sea? Escríbelo, dilo o enfócalo con la cámara. Yo averiguo en qué idioma está, qué significa y si ya lo habías guardado.",
       },
       capture: {
         title: "Apunta a lo que sea",
         body:
-          "Toca la cámara y enséñame algo que tengas delante. Te diré qué es en los dos idiomas, con una frase de ejemplo que puedas decir de verdad. Es el camino más rápido a tu primera palabra.",
+          "Enséñame algo que tengas delante y te diré qué es en los dos idiomas, con una frase de ejemplo que puedas decir de verdad. Es el camino más rápido a tu primera palabra.",
         action: "Añadir así mi primera palabra",
+      },
+      vocabulary: {
+        title: "Todo lo que guardas",
+        body:
+          "Cada palabra que guardas aterriza aquí, con la foto, el sonido y el momento en que la conociste: ese primer encuentro es casi todo el motivo por el que una palabra se queda. Las que estás a punto de olvidar suben arriba para repasarlas.",
       },
       discover: {
         title: "Las historias de hoy",
         body:
-          "Noticias reales, reescritas para que puedas leerlas a tu nivel. Toca cualquier palabra que no conozcas y te la guardo. Esta es la otra buena manera de conseguir tu primera palabra.",
+          "Noticias reales, reescritas para que puedas leerlas a tu nivel. Toca cualquier palabra que no conozcas y te la guardo.",
         action: "Buscar mi primera palabra en una historia",
       },
       messages: {
         title: "Donde ocurre el intercambio",
         body:
-          "Envía una palabra a tu pareja de aprendizaje y le llegará la tarjeta, con pronunciación. Cuando te devuelva una en su idioma, eso es el intercambio funcionando exactamente como debe.",
-      },
-      friends: {
-        title: "Tráete a alguien",
-        body:
-          "Añade a alguien por su Exchange ID, o deja que escanee tu código QR. Aprender un idioma en solitario es difícil; aprenderlo con alguien que necesita el tuyo es mucho más fácil.",
+          "Envía una palabra a tu pareja de aprendizaje y le llegará la tarjeta entera, con pronunciación. Añade a alguien por su Exchange ID o deja que escanee tu código QR: aprender un idioma en solitario es difícil, y con alguien que necesita el tuyo no lo es.",
         action: "Añadir a mi primera pareja",
       },
-      settings: {
-        title: "Hazlo tuyo",
+      cosmic: {
+        title: "El mismo aprendizaje, otro ambiente",
         body:
-          "En Ajustes están tu nombre y tu foto, tu objetivo diario, el widget y los dos controles de idioma: en cuál habla la app y cuál has venido a aprender. Cambia el que quieras cuando quieras.",
-        action: "Abrir Ajustes",
+          "El Modo Cósmico de Yumi convierte Inicio en un Puesto de Mando y le da al repaso y a la navegación una presentación más animada. No es otra cuenta: tus palabras, mensajes, parejas y progreso siguen exactamente igual. Cambia de modo en Ajustes cuando quieras.",
       },
       done: {
         title: "Y ya está",

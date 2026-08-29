@@ -1,0 +1,239 @@
+/*
+ * The tour's own surface and its copy stagger.
+ *
+ * Everything here animates transform or opacity, and everything except the
+ * backdrop is a one-shot restarted by the step key on the elements it is
+ * applied to. A tour that loops its own entrances would be a slideshow that
+ * never settles, and the reader is trying to read.
+ */
+
+.root {
+  /* The overlay is the top-most surface in the app and the only thing that
+     should ever scroll while it is open. */
+  overscroll-behavior: contain;
+}
+
+/*
+ * Two washes on long, unequal clocks. Standard Mode is a flat cream app on
+ * purpose, and this is the one screen allowed some weather — it is the first
+ * minute of the product, and a first minute is where the effort is supposed to
+ * show. Kept far under the text: at these opacities the body copy still tests
+ * at its full contrast against --surface.
+ */
+.aura {
+  position: absolute;
+  inset: -25%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      32% 28% at 22% 18%,
+      color-mix(in oklab, var(--accent-amber, #c9962e) 13%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      36% 30% at 82% 74%,
+      color-mix(in oklab, #7e9cff 11%, transparent),
+      transparent 72%
+    );
+  animation: auraDrift 26s ease-in-out infinite;
+}
+
+@keyframes auraDrift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  36% {
+    transform: translate(2.4%, -1.8%) scale(1.05);
+  }
+  71% {
+    transform: translate(-2%, 1.6%) scale(1.02);
+  }
+}
+
+/*
+ * The copy stagger. Title, stroke, paragraph, then anything below them — four
+ * beats about 70ms apart, which is short enough to read as one movement and
+ * long enough to have a direction.
+ */
+/*
+ * A real box, not `display: contents`.
+ *
+ * It used to be contents so its three children behaved as direct children of
+ * the slide's flex column — which they still effectively do, since all three
+ * are block-level and full width. What contents also does is take the element
+ * out of the accessibility tree in some engines, and this element is now the
+ * tour's live region: announcing a step change needs something for the change
+ * to happen inside.
+ */
+.copy {
+  display: block;
+}
+
+.copyTitle {
+  animation: copyIn 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.copyRule {
+  /* Drawn rather than faded: the stroke sweeps out from its left end, which is
+     the direction a hand would have made it in. */
+  animation: ruleIn 640ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  transform-origin: left center;
+}
+
+.copyBody {
+  animation: copyIn 620ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+.copyAction {
+  animation: copyIn 620ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+
+/*
+ * --enter-x is set on the slide container by the overlay and carries the
+ * direction of travel: forward pushes the copy in from the right, back from
+ * the left. The vertical component stays the same either way, so the movement
+ * still settles downward onto the page rather than only sliding across it.
+ */
+@keyframes copyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--enter-x, 0px), 9px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ruleIn {
+  from {
+    opacity: 0;
+    transform: scaleX(0.1);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The + between yu and mi, passing something back and forth. */
+.trade {
+  animation: trade 2.8s ease-in-out infinite;
+}
+
+@keyframes trade {
+  0%,
+  100% {
+    transform: translateX(-3px) rotate(0deg);
+  }
+  50% {
+    transform: translateX(3px) rotate(180deg);
+  }
+}
+
+/* =========================================================
+   The progress track
+   ========================================================= */
+
+.track {
+  height: 1.5rem;
+}
+
+/*
+ * Scaled rather than sized, so the fill is a compositor transform on every
+ * advance instead of a layout of the footer. The origin is the left end
+ * because that is where the tour started.
+ */
+.trackFill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-black, #000) 82%, transparent);
+  transform-origin: left center;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-black, #000) 10%, transparent);
+}
+
+/*
+ * Three states, and only two of them are visible.
+ *
+ * Steps already taken hand themselves over to the fill: an eleven-dot row with
+ * a line through it and a pale ring around every dot reads as a dashed rule,
+ * not as progress. What is left is the shape the eye can parse without being
+ * told — a solid line behind you, one marker where you are, faint dots ahead.
+ */
+.dot {
+  position: relative;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-black, #000) 18%, transparent);
+  transition:
+    background-color 260ms ease,
+    box-shadow 260ms ease,
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dotDone {
+  background: transparent;
+}
+
+.dotActive {
+  background: var(--color-black, #000);
+  /* The ring is in the surface colour, so the marker sits on the fill as a
+     marker rather than as a bulge in it. */
+  box-shadow: 0 0 0 3.5px var(--surface, #f5f3ed);
+  transform: scale(1.5);
+}
+
+/* The last key is the one that finishes the tour, so it gets a beat of its
+   own — quiet, and it stops. */
+.finish {
+  animation: finishIn 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes finishIn {
+  0% {
+    transform: scale(0.86);
+  }
+  52% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura,
+  .copyTitle,
+  .copyRule,
+  .copyBody,
+  .copyAction,
+  .trade,
+  .finish {
+    animation: none;
+  }
+
+  .trackFill,
+  .dot {
+    transition: none;
+  }
+}
