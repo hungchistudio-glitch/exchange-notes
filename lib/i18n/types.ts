@@ -156,8 +156,13 @@ export type TranslationDictionary = {
     stepLabel: string;
     replay: string;
 
+    /*
+     * Eleven, down from thirteen, and the two that went were not cut so much
+     * as gathered up: five near-identical slides each introducing one dock
+     * icon are now a single map of all six keys, and the partner step folded
+     * into the message step it was already describing half of.
+     */
     steps: {
-      meet: { title: string; body: string };
       setup: {
         title: string;
         body: string;
@@ -166,16 +171,15 @@ export type TranslationDictionary = {
         note: string;
         saveError: string;
       };
+      meet: { title: string; body: string };
+      keys: { title: string; body: string };
       name: { title: string; body: string };
-      senses: { title: string; body: string };
-      home: { title: string; body: string };
       search: { title: string; body: string };
-      vocabulary: { title: string; body: string };
       capture: { title: string; body: string; action: string };
+      vocabulary: { title: string; body: string };
       discover: { title: string; body: string; action: string };
-      messages: { title: string; body: string };
-      friends: { title: string; body: string; action: string };
-      settings: { title: string; body: string; action: string };
+      messages: { title: string; body: string; action: string };
+      cosmic: { title: string; body: string };
       done: { title: string; body: string };
     };
   };

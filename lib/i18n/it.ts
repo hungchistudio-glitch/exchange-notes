@@ -142,69 +142,71 @@ const italian: TranslationDictionary = {
     stepLabel: "{current} di {total}",
     replay: "Puoi riaprirla quando vuoi dalla Home o dalle impostazioni.",
     steps: {
-      meet: {
-        title: "Ciao — sono Yumi",
-        body: "Vivo in questa app e imparo come te: una cosa nuova alla volta. Lascia che ti mostri a cosa serve tutto. Ci vuole circa un minuto.",
-      },
       setup: {
         title: "Prima di tutto, due lingue",
-        body: "Una è quella in cui ti parlo. L'altra è quella che sei venuto a imparare. Scegliile ora e il resto della visita arriverà nella tua lingua.",
+        body:
+          "Una è quella in cui ti parlo. L'altra è quella che sei venuto a imparare. Scegliile ora e il resto della visita arriverà nella tua lingua.",
         appLanguageLabel: "Parlami in",
         learningLabel: "Sono qui per imparare",
         note: "Entrambe si possono cambiare più tardi nelle impostazioni.",
         saveError: "Non sono riuscita a salvare. Riprova tra un momento.",
       },
+      meet: {
+        title: "Ciao — sono Yumi",
+        body:
+          "Vivo nella tua schermata Home e imparo come te: una cosa nuova alla volta. Dammi un minuto e ti mostro dove si trova tutto.",
+      },
+      keys: {
+        title: "Sei tasti che non si spostano mai",
+        body:
+          "La barra in basso tiene sempre lo stesso ordine: Vocabolario, Messaggi, Home, Cerca, Scopri, Impostazioni. Si muove solo l'anello del tasto attivo, così il tuo pollice impara dove vive ogni cosa.",
+      },
       name: {
         title: "yu e mi",
-        body: "Exchange Notes sono in realtà due persone. yu sei tu. mi sono io. Tu annoti una parola nella tua lingua, io ne annoto una nella mia, e ce le scambiamo. Quello scambio è tutta l'app — finiamo entrambi a nostro agio nella lingua madre dell'altro.",
-      },
-      senses: {
-        title: "La prima volta conta",
-        body: "Una parola ti resta per come l'hai incontrata la prima volta — la sensazione della cosa, il suo aspetto, il suono, perfino l'odore dell'aria. Io custodisco per te quei primi incontri. Tornarci un po' ogni giorno è dove la pazienza diventa, in silenzio, scioltezza.",
-      },
-      home: {
-        title: "La Home è dove ti aspetto",
-        body: "Io sto qui. Vedrai l'obiettivo di oggi, la parola che ho scelto per te e un posto per annotare un pensiero. Dammi un biscotto quando finisci un ripasso e sarò molto contenta di te.",
+        body:
+          "Exchange Notes sono in realtà due persone. yu sei tu. mi sono io. Tu annoti una parola nella tua lingua, io ne annoto una nella mia, e ce le scambiamo. Quello scambio è tutta l'app.",
       },
       search: {
-        title: "Un campo per ogni parola",
+        title: "Un solo campo per ogni parola",
         body:
-          "Vedi qualcosa che non conosci — su un cartello, in un messaggio, ovunque? Scrivilo, dillo, o inquadralo con la fotocamera. Io capisco in che lingua è, cosa significa e se l'avevi già incontrato. È la prima cosa nella schermata iniziale, ed è nella barra da tutte le altre.",
-      },
-      vocabulary: {
-        title: "Tutto quello che hai raccolto",
-        body: "Ogni parola che salvi arriva qui, raccolta in collezioni. Le parole che stai per dimenticare salgono in cima per il ripasso — è la parte che le fa restare.",
+          "Vedi qualcosa che non conosci — su un cartello, in un messaggio, ovunque? Scrivilo, dillo, o puntaci la fotocamera. Capisco io che lingua è, che cosa significa e se l'avevi già incontrata.",
       },
       capture: {
-        title: "Inquadra qualsiasi cosa",
-        body: "Tocca la fotocamera e mostrami qualcosa davanti a te. Ti dirò cos'è in entrambe le lingue, con una frase d'esempio che puoi davvero dire. È la via più rapida alla tua prima parola.",
+        title: "Punta qualsiasi cosa",
+        body:
+          "Mostrami qualcosa che hai davanti e ti dirò che cos'è in entrambe le lingue, con una frase d'esempio che puoi davvero dire. È la strada più veloce alla tua prima parola.",
         action: "Aggiungi così la mia prima parola",
+      },
+      vocabulary: {
+        title: "Tutto quello che tieni",
+        body:
+          "Ogni parola che salvi arriva qui, con la foto, il suono e il momento in cui l'hai incontrata: quel primo incontro è quasi tutto il motivo per cui una parola resta. Quelle che stai per dimenticare salgono in cima per il ripasso.",
       },
       discover: {
         title: "Le storie di oggi",
-        body: "Notizie vere, riscritte perché tu possa leggerle al tuo livello. Tocca una parola che non conosci e la salverò per te. È l'altro buon modo per ottenere la tua prima parola.",
+        body:
+          "Notizie vere, riscritte perché tu possa leggerle al tuo livello. Tocca una parola che non conosci e te la tengo da parte.",
         action: "Trova la mia prima parola in una storia",
       },
       messages: {
         title: "Dove avviene lo scambio",
-        body: "Manda una parola al tuo partner di studio e riceverà la scheda, con la pronuncia. Quando te ne rimanda una nella sua lingua, lo scambio funziona esattamente come deve.",
-      },
-      friends: {
-        title: "Porta qualcuno con te",
-        body: "Aggiungi un partner con il suo Exchange ID, o lascia che inquadri il tuo codice QR. Imparare una lingua da soli è difficile; impararla con qualcuno che ha bisogno della tua lo è molto meno.",
+        body:
+          "Manda una parola al tuo partner e gli arriva la scheda intera, pronuncia compresa. Aggiungi qualcuno con il suo Exchange ID, o lascia che scansioni il tuo codice QR: imparare una lingua da soli è difficile, farlo con qualcuno che ha bisogno della tua no.",
         action: "Aggiungi il mio primo partner",
       },
-      settings: {
-        title: "Rendila tua",
-        body: "Le impostazioni contengono nome e foto, l'obiettivo giornaliero, il widget e i due controlli di lingua: quella che parla l'app e quella che sei qui per imparare. Cambia l'una o l'altra quando vuoi.",
-        action: "Apri le impostazioni",
+      cosmic: {
+        title: "Stesso studio, un'altra atmosfera",
+        body:
+          "La Modalità Cosmica di Yumi trasforma la Home in una Plancia di Comando e dà al ripasso e alla navigazione una presentazione più animata. Non è un secondo account: parole, messaggi, partner e progressi restano identici. Cambia modalità nelle impostazioni quando vuoi.",
       },
       done: {
         title: "È tutto",
-        body: "Comincia con una parola oggi. Basta davvero — l'app è fatta perché una parola al giorno batta un'ora una volta al mese. Sarò nella schermata Home quando sarai pronto.",
+        body:
+          "Comincia con una parola oggi. Basta davvero — l'app è fatta perché una parola al giorno batta un'ora una volta al mese. Sarò sulla schermata Home quando sei pronto.",
       },
     },
   },
+
   navigation: {
     vocabulary: "Vocabolario",
     messages: "Messaggi",

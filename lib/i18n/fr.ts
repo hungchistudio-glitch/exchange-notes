@@ -142,69 +142,71 @@ const french: TranslationDictionary = {
     stepLabel: "{current} sur {total}",
     replay: "Vous pouvez rouvrir ceci à tout moment depuis l'accueil ou les réglages.",
     steps: {
-      meet: {
-        title: "Bonjour — je suis Yumi",
-        body: "Je vis dans cette application, et j'apprends comme vous : une chose nouvelle à la fois. Laissez-moi vous montrer à quoi tout sert. Cela prend environ une minute.",
-      },
       setup: {
         title: "Deux langues, d'abord",
-        body: "L'une est celle dans laquelle je vous parle. L'autre est celle que vous êtes venu apprendre. Choisissez-les maintenant et la suite de cette visite arrivera dans votre langue.",
+        body:
+          "L'une est celle dans laquelle je vous parle. L'autre est celle que vous êtes venu apprendre. Choisissez-les maintenant et la suite de cette visite arrivera dans votre langue.",
         appLanguageLabel: "Parlez-moi en",
         learningLabel: "Je viens apprendre",
         note: "Les deux peuvent être modifiées plus tard dans les réglages.",
         saveError: "Je n'ai pas pu enregistrer. Réessayez dans un instant.",
       },
+      meet: {
+        title: "Bonjour — je suis Yumi",
+        body:
+          "J'habite sur votre écran d'accueil, et j'apprends comme vous : une chose nouvelle à la fois. Donnez-moi une minute et je vous montre où tout se trouve.",
+      },
+      keys: {
+        title: "Six touches qui ne bougent jamais",
+        body:
+          "La barre du bas garde toujours le même ordre : Vocabulaire, Messages, Accueil, Rechercher, Découvrir, Réglages. Seul l'anneau de la touche active se déplace, pour que votre pouce apprenne où vit chaque chose.",
+      },
       name: {
         title: "yu et mi",
-        body: "Exchange Notes, ce sont en réalité deux personnes. yu, c'est vous. mi, c'est moi. Vous notez un mot dans votre langue, je note le mien dans la mienne, et nous échangeons. Cet échange est toute l'application — nous finissons chacun à l'aise dans la langue maternelle de l'autre.",
-      },
-      senses: {
-        title: "La première fois compte",
-        body: "Un mot vous reste à cause de la façon dont vous l'avez rencontré la première fois — la sensation de la chose, son apparence, son bruit, jusqu'à l'odeur de l'air. Je garde ces premières rencontres en sécurité pour vous. Y revenir un peu chaque jour, c'est là que la patience devient discrètement de l'aisance.",
-      },
-      home: {
-        title: "L'accueil, là où je vous attends",
-        body: "C'est ici que je suis. Vous y verrez l'objectif du jour, le mot que j'ai choisi pour vous, et un endroit pour noter une idée. Donnez-moi un biscuit quand vous terminez une révision et je serai très contente de vous.",
+        body:
+          "Exchange Notes, ce sont en réalité deux personnes. yu, c'est vous. mi, c'est moi. Vous notez un mot dans votre langue, je note le mien dans la mienne, et nous échangeons. Cet échange est toute l'application.",
       },
       search: {
         title: "Un seul champ pour tous les mots",
         body:
-          "Vous voyez quelque chose que vous ne connaissez pas — sur un panneau, dans un message, n'importe où ? Écrivez-le, dites-le, ou visez-le avec l'appareil photo. Je trouve la langue, le sens, et si vous l'aviez déjà rencontré. C'est la première chose sur l'accueil, et c'est dans la barre depuis toutes les autres pages.",
-      },
-      vocabulary: {
-        title: "Tout ce que vous avez collecté",
-        body: "Chaque mot que vous enregistrez arrive ici, rangé en collections. Les mots que vous êtes sur le point d'oublier remontent en haut pour révision — c'est ce qui les fait tenir.",
+          "Vous voyez quelque chose que vous ne connaissez pas — sur un panneau, dans un message, n'importe où ? Écrivez-le, dites-le, ou visez-le avec l'appareil photo. Je trouve la langue, le sens, et si vous l'aviez déjà rencontré.",
       },
       capture: {
         title: "Pointez n'importe quoi",
-        body: "Touchez l'appareil photo et montrez-moi quelque chose devant vous. Je vous dirai ce que c'est dans les deux langues, avec une phrase d'exemple que vous pouvez vraiment dire. C'est le chemin le plus rapide vers votre premier mot.",
+        body:
+          "Montrez-moi quelque chose devant vous et je vous dirai ce que c'est dans les deux langues, avec une phrase d'exemple que vous pouvez vraiment dire. C'est le chemin le plus rapide vers votre premier mot.",
         action: "Ajouter mon premier mot ainsi",
+      },
+      vocabulary: {
+        title: "Tout ce que vous gardez",
+        body:
+          "Chaque mot enregistré arrive ici, avec l'image, le son et le moment où vous l'avez rencontré — cette première rencontre explique l'essentiel de ce qui fait qu'un mot reste. Ceux que vous êtes sur le point d'oublier remontent en haut pour révision.",
       },
       discover: {
         title: "Les histoires du jour",
-        body: "De vraies actualités, réécrites pour que vous puissiez les lire à votre niveau. Touchez un mot que vous ne connaissez pas et je l'enregistrerai pour vous. C'est l'autre bon moyen d'obtenir votre premier mot.",
+        body:
+          "De vraies actualités, réécrites pour que vous puissiez les lire à votre niveau. Touchez un mot que vous ne connaissez pas et je le garde pour vous.",
         action: "Trouver mon premier mot dans une histoire",
       },
       messages: {
         title: "Là où l'échange se produit",
-        body: "Envoyez un mot à votre partenaire d'apprentissage et il recevra la fiche, avec la prononciation. Quand il vous en renvoie un dans sa langue, l'échange fonctionne exactement comme il le doit.",
-      },
-      friends: {
-        title: "Emmenez quelqu'un avec vous",
-        body: "Ajoutez un partenaire par son Exchange ID, ou laissez-le scanner votre QR code. Apprendre une langue seul est difficile ; l'apprendre avec quelqu'un qui a besoin de la vôtre l'est beaucoup moins.",
+        body:
+          "Envoyez un mot à votre partenaire et il reçoit la fiche entière, prononciation comprise. Ajoutez quelqu'un par son Exchange ID, ou laissez-le scanner votre QR code — apprendre une langue seul est difficile, l'apprendre avec quelqu'un qui a besoin de la vôtre ne l'est pas.",
         action: "Ajouter mon premier partenaire",
       },
-      settings: {
-        title: "Faites-en votre app",
-        body: "Les réglages contiennent votre nom et votre photo, votre objectif quotidien, le widget, et les deux commandes de langue : celle que l'application parle, et celle que vous êtes venu apprendre. Changez l'une ou l'autre quand vous voulez.",
-        action: "Ouvrir les réglages",
+      cosmic: {
+        title: "Le même apprentissage, une autre atmosphère",
+        body:
+          "Le Mode Cosmique de Yumi transforme l'accueil en poste de commande et donne à la révision et à la navigation une présentation plus animée. Ce n'est pas un second compte : vos mots, vos messages, vos partenaires et vos progrès restent exactement les mêmes. Changez de mode dans les réglages quand vous voulez.",
       },
       done: {
-        title: "C'est tout",
-        body: "Commencez par un mot aujourd'hui. C'est vraiment suffisant — l'application est faite pour qu'un mot par jour batte une heure une fois par mois. Je serai sur l'écran d'accueil quand vous serez prêt.",
+        title: "Voilà, c'est tout",
+        body:
+          "Commencez par un mot aujourd'hui. C'est vraiment suffisant — l'application est faite pour qu'un mot par jour l'emporte sur une heure une fois par mois. Je serai sur l'écran d'accueil quand vous serez prêt.",
       },
     },
   },
+
   navigation: {
     vocabulary: "Vocabulaire",
     messages: "Messages",

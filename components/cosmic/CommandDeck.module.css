@@ -449,7 +449,7 @@
 }
 
 .coreMark {
-  animation: coreBreath 7.4s ease-in-out infinite;
+  animation: coreBreath 5.6s ease-in-out infinite;
 }
 
 .pupil {
@@ -471,9 +471,27 @@
  * The shared rhythm is a double, then a single, then a long pause, and 11s is
  * what gives that pause somewhere to happen.
  */
+/*
+ * Yumi's pace on the deck.
+ *
+ * These used to be the app's slowest: a blink every eleven seconds, a scan
+ * pass every thirty-five, an iris that refocused twice a minute. The reasoning
+ * was that ambience you cannot escape becomes wallpaper, and for the rings and
+ * the instrument discs around Yumi that still holds — none of those changed.
+ *
+ * It did not hold for Yumi. Cosmic Mode's whole proposition is that the
+ * character is alive in it, and at that spacing most visits to the deck saw
+ * her do nothing at all: the pass was rarer than the average session, so the
+ * one layer that reads unmistakably as a living machine was a layer most
+ * people never saw. Rare is only meaningful when the thing is seen often
+ * enough to have a baseline to be rare against.
+ *
+ * So the character runs quick and the room stays slow. That split is the
+ * point — everything below is on Yumi's body, and nothing above it moved.
+ */
 .coreTiming {
-  --yumi-blink: 11s;
-  --yumi-sweep-peak: 0.55;
+  --yumi-blink: 7.5s;
+  --yumi-sweep-peak: 0.82;
 }
 
 /* Only the scale is left here. The travel moved to .coreDrift so the two can
@@ -484,7 +502,7 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.016);
+    transform: scale(1.028);
   }
 }
 
@@ -896,18 +914,24 @@
 }
 
 /*
- * The iris only turns while Yumi is working something out. At rest it is
- * still — a permanently rotating iris is a loading spinner wearing an eye,
- * and it would make Yumi look busy even when nothing is happening.
+ * The iris still does not turn at rest, and that part of the original
+ * reasoning survives intact: a permanently rotating iris is a loading spinner
+ * wearing an eye, and it makes Yumi look busy when nothing is happening.
+ * Rotation stays reserved for the one state that is genuinely work.
  *
- * What it does do at rest is refocus: once every thirteen seconds the rings
- * tighten a few percent and brighten, then settle. One event, most of a cycle
- * apart, so it is something Yumi occasionally does rather than something the
- * eye is permanently doing.
+ * What changed is how often it refocuses. Thirteen seconds put roughly four
+ * refocuses in a minute of looking at the deck, spaced far enough apart that
+ * the eye read as a drawing between them. At five it is an optic that keeps
+ * adjusting — which is what an instrument does while it is watching something,
+ * and watching is exactly what Yumi is doing here.
+ *
+ * Two beats per cycle rather than one, and the second is smaller than the
+ * first. Adjustment is a correction and then a smaller correction; a single
+ * even pulse at this speed would read as a heartbeat.
  */
 .iris {
   transform-box: view-box;
-  animation: irisIdle 13s ease-in-out infinite;
+  animation: irisIdle 5.2s ease-in-out infinite;
 }
 
 .core[data-omni="scanning"] .iris {
@@ -916,18 +940,25 @@
 
 @keyframes irisIdle {
   0%,
-  62%,
   100% {
-    opacity: 0.72;
+    opacity: 0.74;
     transform: scale(1);
   }
-  70% {
+  22% {
     opacity: 1;
-    transform: scale(0.93);
+    transform: scale(0.92);
   }
-  84% {
-    opacity: 0.88;
-    transform: scale(1.02);
+  40% {
+    opacity: 0.86;
+    transform: scale(1.035);
+  }
+  64% {
+    opacity: 0.97;
+    transform: scale(0.97);
+  }
+  82% {
+    opacity: 0.8;
+    transform: scale(1.012);
   }
 }
 
@@ -942,22 +973,25 @@
    ========================================================= */
 
 /*
- * The scan pass.
+ * The scan pass — a band of light crossing the shell, clipped to Yumi's own
+ * silhouette by the mark's body mask.
  *
- * Thirty-five seconds, of which the band is on screen for about one and a half.
- * The other thirty-three and a half are the point — this is the layer that has
- * to feel like something Yumi did rather than something the page does, and
- * anything that happens often enough to be expected cannot do that. Sitting
- * near the top of the brief's 18–40s band means most visits to the deck get one
- * pass and some get none, which is the correct trade: a pass you might miss is
- * worth more than one you can wait for.
+ * This was thirty-five seconds, and thirty-five seconds was a mistake made for
+ * a good reason. The argument was that a pass you might miss is worth more
+ * than one you can wait for, and it is a sound argument about a screen someone
+ * lives on. The deck is not that screen: it is the first thing Cosmic Mode
+ * shows and often the only thing, and a session shorter than the interval
+ * meant a reader could turn the mode on, look at it, and see a still drawing.
  *
- * The band is parked off the body for the whole quiet stretch and only travels
- * during the last 4% of the cycle, so nothing is interpolating in between.
+ * Eight and a half seconds is short enough that every visit gets several
+ * passes and long enough that each is an event — the band is still parked off
+ * the body for about 95% of the cycle and only travels through the last few
+ * percent, so nothing is interpolating in between and the shell is at rest
+ * most of the time you are looking at it.
  */
 .coreSweep {
-  --yumi-sweep: 35s;
-  --yumi-sweep-delay: 5s;
+  --yumi-sweep: 8.5s;
+  --yumi-sweep-delay: 1.6s;
 }
 
 /*
@@ -977,13 +1011,19 @@
 }
 
 /*
- * The gleam. Fifteen seconds, on for well under one of them, and out of step
- * with everything else on Yumi — most importantly with the blink, so the lid
- * is not reliably down when it passes.
+ * The gleam — a reflection travelling across the lens, clipped to the eye.
+ *
+ * Six and a half seconds, on for a fraction of one of them. Kept coprime-ish
+ * with the blink (7.5s), the sweep (8.5s) and the iris (5.2s) on purpose:
+ * four layers on periods that do not divide into each other take minutes to
+ * line up again, and that is the whole difference between something that is
+ * alive and something that is looping. Sharing a period with the blink would
+ * be the worst of the four, since the lid would reliably be down when the
+ * reflection crossed.
  */
 .coreGleam {
-  --yumi-gleam: 15s;
-  --yumi-gleam-delay: 2.4s;
+  --yumi-gleam: 6.5s;
+  --yumi-gleam-delay: 1.2s;
 }
 
 /* =========================================================
