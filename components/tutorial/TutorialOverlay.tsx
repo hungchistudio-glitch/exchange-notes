@@ -20,19 +20,18 @@ import CameraIcon from "@/components/foundation/icons/CameraIcon";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
-import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
+import CosmicPreview from "@/components/tutorial/CosmicPreview";
+import NavKeyMap from "@/components/tutorial/NavKeyMap";
 import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
 import stageStyles from "@/components/tutorial/TutorialStage.module.css";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
-import type { TranslationDictionary } from "@/lib/i18n";
 import { insertValues } from "@/lib/utils";
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 
 type StepKey =
   | "setup"
@@ -102,59 +101,10 @@ function CaptureModesRow() {
 }
 
 /** The six permanent dock keys, shown with the app's real icon components. */
-function DockMap({ t }: { t: TranslationDictionary }) {
-  const items = [
-    { label: t.navigation.vocabulary, Icon: NavVocabularyIcon },
-    { label: t.navigation.messages, Icon: NavMessagesIcon },
-    { label: t.navigation.home, Icon: NavHomeIcon },
-    { label: t.navigation.search, Icon: NavSearchIcon },
-    { label: t.navigation.discover, Icon: NavDiscoverIcon },
-    { label: t.navigation.settings, Icon: NavSettingsIcon },
-  ];
-
-  return (
-    <div
-      role="list"
-      aria-label={t.navigation.primaryLabel}
-      className="grid w-full max-w-[18rem] grid-cols-3 gap-2"
-    >
-      {items.map(({ label, Icon }) => (
-        <div
-          key={label}
-          role="listitem"
-          className="flex min-h-16 items-center gap-2 rounded-2xl border border-black/10 bg-white px-3"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04]">
-            <Icon className="h-[18px] w-[18px]" active={false} />
-          </span>
-          <span className="min-w-0 text-[10px] font-semibold leading-tight text-ink-soft">
-            {label}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /** Yumi is unchanged; Cosmic Mode adds the command-deck presentation. */
-function CosmicModePreview() {
-  return (
-    <div className="relative flex h-32 w-64 items-center justify-center overflow-hidden rounded-[30px] border border-cyan-300/25 bg-[#07101f] shadow-[0_18px_48px_rgba(4,18,36,0.22)]">
-      <span className="absolute h-24 w-52 rounded-[50%] border border-cyan-200/20" />
-      <span className="absolute h-16 w-44 rotate-[-14deg] rounded-[50%] border border-dashed border-cyan-200/30" />
-      <span className="absolute h-2 w-2 translate-x-20 -translate-y-7 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(125,211,252,0.9)]" />
-      <ExchangeNotesMark
-        cosmic
-        energy={0.58}
-        className="relative h-24 w-24"
-        surfaceColor="#07101f"
-        highlightColor="#dffbff"
-      />
-    </div>
-  );
-}
 
-function stepVisual(step: StepKey, t: TranslationDictionary): ReactNode {
+function stepVisual(step: StepKey): ReactNode {
   switch (step) {
     // The two choice rows are this step's content; a mark above them would
     // only push them off a small screen.
@@ -162,7 +112,7 @@ function stepVisual(step: StepKey, t: TranslationDictionary): ReactNode {
       return null;
 
     case "dock":
-      return <DockMap t={t} />;
+      return <NavKeyMap />;
 
     case "home":
       return (
@@ -220,24 +170,30 @@ function stepVisual(step: StepKey, t: TranslationDictionary): ReactNode {
       );
 
     case "cosmic":
-      return <CosmicModePreview />;
+      return <CosmicPreview />;
   }
 }
 
 export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
-  const { t } = useTranslation();
-  const copy = t.tutorial;
-
+  /*
+   * Every hook this component owns runs before useTranslation, and that order
+   * is load-bearing rather than stylistic.
+   *
+   * useTranslation reads its dictionary out of a cache and falls back to
+   * `use(loadTranslations(language))` on the one render where that cache is
+   * cold — which suspends. A suspended render is discarded and replayed, and
+   * any hook sitting after the suspending one never ran on the first attempt:
+   * React compares the two attempts, finds a hook list that grew, and reports
+   * a change in hook order before throwing.
+   *
+   * That is not theoretical here. Step one of this tour is where the reader
+   * chooses the interface language, so the first thing a new account does is
+   * hand this component a language whose dictionary is not loaded yet.
+   */
   const [index, setIndex] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const step = STEP_ORDER[index];
-  const isFirst = index === 0;
-  const isLast = index === STEP_ORDER.length - 1;
-
-  const stepCopy = copy.steps[step];
-  const visual = stepVisual(step, t);
-  const isYumiStep = step === "meet" || step === "done";
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   /*
    * Clearing the pending flag is unconditional — finished, skipped, or
@@ -267,9 +223,51 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     };
   }, []);
 
+  // The suspending read, last — see the note at the top of this component.
+  const { t } = useTranslation();
+  const copy = t.tutorial;
+
+  const step = STEP_ORDER[index];
+  const isFirst = index === 0;
+  const isLast = index === STEP_ORDER.length - 1;
+
+  const stepCopy = copy.steps[step];
+  const visual = stepVisual(step);
+  const isYumiStep = step === "meet" || step === "done";
+
   useEffect(() => {
     headingRef.current?.focus();
   }, [step]);
+
+  /*
+   * Every step starts at its own top.
+   *
+   * The scrolling panel is one element reused across all eleven slides, so its
+   * offset survived the advance: a reader who scrolled to the end of a long
+   * step and pressed next arrived on the following one already scrolled past
+   * its title. On a short screen that reads as the tour having skipped
+   * something.
+   *
+   * `instant` is explicit because globals.css sets `scroll-behavior: smooth`
+   * on the document and this inherits it — without it the panel visibly runs
+   * back up through the outgoing step while the new one fades in.
+   */
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    /*
+     * scrollTo when it exists, scrollTop when it does not. Not defensiveness
+     * for its own sake: jsdom implements the property and not the method, so
+     * the unguarded call threw inside an effect and took three passing tests
+     * down with it. The fallback is also the honest one for older Safari.
+     */
+    if (typeof scroller.scrollTo === "function") {
+      scroller.scrollTo({ top: 0, behavior: "instant" });
+    } else {
+      scroller.scrollTop = 0;
+    }
+  }, [index]);
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent) {
@@ -331,8 +329,21 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto overscroll-contain px-7">
-        <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center py-8">
+      <div
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto overscroll-contain px-7"
+      >
+        {/*
+         * `my-auto` rather than `justify-center` on the scroller.
+         *
+         * A centred flex child taller than its scroll container overflows
+         * equally in both directions, and the half above the start edge cannot
+         * be scrolled to — which is how the setup step, the tallest here, ended
+         * up with its footnote unreachable on a short screen. Auto margins
+         * collapse to zero when there is no room, so this centres when it fits
+         * and starts at the top when it does not.
+         */}
+        <div className="mx-auto my-auto flex w-full max-w-md flex-col py-8">
           {/* Keyed by step so the CSS restarts on every advance — that
               punctuation is most of what makes the tour feel alive. */}
           {(isYumiStep || visual) && (
