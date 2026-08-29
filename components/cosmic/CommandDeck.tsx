@@ -135,8 +135,6 @@ function lookAt(index: number) {
  * here invents a reading to look technical.
  */
 export default function CommandDeck() {
-  const { t, language: interfaceLanguage } = useTranslation();
-  const copy = t.cosmic;
   // Which language is being learned, not which one the interface is in — the
   // two stay separate here as everywhere else.
   const { learningLanguage } = useLearningLanguageContext();
@@ -160,6 +158,23 @@ export default function CommandDeck() {
    * console while it is being used and turns to the user while it listens.
    */
   const [omniState, setOmniState] = useState<OmniLexiconState>("idle");
+
+  /*
+   * The suspending read, last, and deliberately so.
+   *
+   * useTranslation serves its dictionary from a cache and falls back to
+   * `use(loadTranslations(language))` when that cache is cold — which
+   * suspends. React discards a suspended render and replays it, and any hook
+   * that sat after the suspending one never ran on the first attempt: the two
+   * attempts then disagree about how many hooks this component has, which
+   * React reports as a change in hook order.
+   *
+   * Cold is the normal case here rather than an edge one. The deck is the
+   * first screen of Cosmic Mode, so it is routinely the first component in a
+   * page to ask for the dictionary at all.
+   */
+  const { t, language: interfaceLanguage } = useTranslation();
+  const copy = t.cosmic;
 
   /*
    * The lock, and the direction the room will open from.
@@ -347,10 +362,18 @@ export default function CommandDeck() {
                   <ExchangeNotesMark
                     cosmic
                     /*
-                     * Energy follows what Yumi is actually doing, and the
-                     * resting value is deliberately low. A seam that is always
+                     * Energy follows what Yumi is actually doing, and the four
+                     * working states are unchanged — a seam that is always
                      * bright says nothing when the moment it was meant to mark
-                     * arrives.
+                     * arrives, and that logic still governs the range.
+                     *
+                     * What moved is the floor. At 0.12 the seam was effectively
+                     * unlit, so a resting Yumi on the deck was a dark shape
+                     * with rings around it; the light that makes this a powered
+                     * machine only existed while the console was busy. 0.34 is
+                     * lit enough to read as a system running and still less
+                     * than half of listening, so every state above it keeps a
+                     * clear step up to arrive on.
                      */
                     energy={
                       omniState === "scanning"
@@ -359,7 +382,7 @@ export default function CommandDeck() {
                           ? 0.65
                           : omniState === "typing"
                             ? 0.4
-                            : 0.12
+                            : 0.34
                     }
                     className={`${styles.coreMark} ${styles.coreTiming}`}
                     pupilClassName={styles.pupil}

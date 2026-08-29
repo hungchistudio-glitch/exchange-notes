@@ -28,24 +28,32 @@ export default function OrbitIcon({ render }: OrbitIconProps) {
   const [pressed, setPressed] = useState(false);
 
   useEffect(() => {
-    const timeouts: number[] = [];
+    /*
+     * One slot, not a growing list.
+     *
+     * This used to push every release timer onto an array that was only
+     * emptied on unmount, so a slide left open added an id every 2.4 seconds
+     * and never dropped one. At most one release can ever be pending — each
+     * beat cancels the one before it — so a single variable is both smaller
+     * and the honest description of what is happening.
+     */
+    let release = 0;
 
     function beat() {
+      window.clearTimeout(release);
       setPressed(true);
-      timeouts.push(
-        window.setTimeout(() => setPressed(false), HOLD_MS),
-      );
+      release = window.setTimeout(() => setPressed(false), HOLD_MS);
     }
 
     // State is only ever assigned from these callbacks, never from the effect
     // body, which is what keeps this clear of the set-state-in-effect rule.
-    timeouts.push(window.setTimeout(beat, PRESS_AT_MS));
-
+    const first = window.setTimeout(beat, PRESS_AT_MS);
     const interval = window.setInterval(beat, CYCLE_MS);
 
     return () => {
+      window.clearTimeout(first);
+      window.clearTimeout(release);
       window.clearInterval(interval);
-      timeouts.forEach((id) => window.clearTimeout(id));
     };
   }, []);
 

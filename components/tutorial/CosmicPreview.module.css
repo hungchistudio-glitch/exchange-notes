@@ -1,0 +1,265 @@
+/*
+ * A window into Cosmic Mode, on the tour's cream background.
+ *
+ * The card paints its own deep-space palette rather than reading the cosmic
+ * token layer, because the tour runs in whichever mode the reader is already
+ * in — usually Standard. Tokens here would show the reader the mode they are
+ * looking at instead of the one being offered.
+ */
+
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 17rem;
+  aspect-ratio: 16 / 10;
+  border-radius: 20px;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(77, 227, 240, 0.16);
+  background:
+    radial-gradient(120% 100% at 72% 18%, #16283f 0%, #0b1524 46%, #060a14 100%);
+  box-shadow:
+    0 18px 40px -24px rgba(6, 10, 20, 0.9),
+    inset 0 0 40px rgba(77, 227, 240, 0.05);
+}
+
+/* A slow wash across the back of the card, so the field is never quite the
+   same twice — the layer that keeps a static gradient from reading as a JPEG. */
+.nebula {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(38% 38% at 30% 34%, rgba(77, 227, 240, 0.18), transparent 70%),
+    radial-gradient(42% 42% at 74% 70%, rgba(126, 108, 255, 0.16), transparent 72%);
+  animation: nebulaDrift 18s ease-in-out infinite;
+}
+
+@keyframes nebulaDrift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -2.5%) scale(1.06);
+  }
+  66% {
+    transform: translate(-2.5%, 2%) scale(1.02);
+  }
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+}
+
+.star {
+  position: absolute;
+  border-radius: 999px;
+  background: #dff6ff;
+  opacity: 0.25;
+  animation: starTwinkle 4.2s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.25);
+  }
+}
+
+/*
+ * The orbits. The ellipse is a rotated circle rather than a border-radius
+ * ellipse, so the satellite riding it stays on the path at every angle.
+ */
+.orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 999px;
+  border: 1px dashed rgba(150, 214, 235, 0.28);
+}
+
+.orbitOuter {
+  width: 76%;
+  height: 76%;
+  margin: -38% 0 0 -38%;
+  transform: rotate(-18deg) scaleY(0.44);
+  animation: orbitSpinOuter 11s linear infinite;
+}
+
+.orbitInner {
+  width: 54%;
+  height: 54%;
+  margin: -27% 0 0 -27%;
+  border-style: solid;
+  border-color: rgba(150, 214, 235, 0.16);
+  transform: rotate(28deg) scaleY(0.5);
+  animation: orbitSpinInner 7.5s linear infinite reverse;
+}
+
+@keyframes orbitSpinOuter {
+  from {
+    transform: rotate(-18deg) scaleY(0.44) rotate(0deg);
+  }
+  to {
+    transform: rotate(-18deg) scaleY(0.44) rotate(360deg);
+  }
+}
+
+@keyframes orbitSpinInner {
+  from {
+    transform: rotate(28deg) scaleY(0.5) rotate(0deg);
+  }
+  to {
+    transform: rotate(28deg) scaleY(0.5) rotate(360deg);
+  }
+}
+
+.satellite {
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 999px;
+  background: #7fe9f5;
+  box-shadow: 0 0 10px 3px rgba(77, 227, 240, 0.55);
+}
+
+.satelliteWarm {
+  background: #ffd98a;
+  box-shadow: 0 0 9px 3px rgba(255, 199, 110, 0.45);
+}
+
+/* The glow Yumi sits in. Its pulse is the card's slowest clock, so it reads as
+   the thing everything else is orbiting rather than as another blinking part. */
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  aspect-ratio: 1;
+  margin: -23% 0 0 -23%;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(77, 227, 240, 0.34) 0%,
+    rgba(77, 227, 240, 0.1) 46%,
+    transparent 72%
+  );
+  animation: haloPulse 3.6s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* One transform per element: the drift travels, the mark breathes. An element
+   can only run one transform animation at a time. */
+.drift {
+  animation: previewDrift 9s ease-in-out infinite;
+}
+
+@keyframes previewDrift {
+  0%,
+  100% {
+    transform: translate(0, 1px);
+  }
+  27% {
+    transform: translate(-2px, -2px);
+  }
+  54% {
+    transform: translate(1.5px, 1px);
+  }
+  78% {
+    transform: translate(-1px, -2.5px);
+  }
+}
+
+.mark {
+  width: 5.4rem;
+  height: 5.4rem;
+  animation: previewBreath 4.4s cubic-bezier(0.37, 0, 0.24, 1) infinite;
+}
+
+@keyframes previewBreath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/*
+ * The rhythms this card exists for, and the one place in the app where they
+ * are fast on purpose. The Command Deck spaces its pass 35s apart because it
+ * is a screen you live on; this card gets a few seconds of attention and has
+ * to make the case for the mode inside them.
+ */
+.timing {
+  --yumi-blink: 6.5s;
+  --yumi-sweep-peak: 0.85;
+}
+
+.sweep {
+  --yumi-sweep: 6s;
+  --yumi-sweep-delay: 0.9s;
+}
+
+.gleam {
+  --yumi-gleam: 5s;
+  --yumi-gleam-delay: 2.2s;
+}
+
+.iris {
+  --yumi-iris: 3.4s;
+}
+
+/*
+ * Reduced motion keeps the card, loses the travel.
+ *
+ * Not `animation: none` on everything: the shared blink is deliberately
+ * preserved app-wide (see app/yumi-motion.css), and a Yumi with a shut or
+ * frozen eye inside a card advertising a livelier mode would be the worst
+ * version of this slide. What goes is everything that moves or scales.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .nebula,
+  .star,
+  .orbitOuter,
+  .orbitInner,
+  .halo,
+  .drift,
+  .mark {
+    animation: none;
+  }
+
+  .star {
+    opacity: 0.6;
+  }
+}

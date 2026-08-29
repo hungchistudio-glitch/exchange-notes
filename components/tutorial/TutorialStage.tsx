@@ -36,8 +36,14 @@ export default function TutorialStage({
   performance,
   children,
 }: TutorialStageProps) {
+  /*
+   * Full width, and the prop decides its own alignment inside it. The key map
+   * is a drawing of the dock and has to span the frame to be that; the orbit
+   * icons are fixed-size and sit at the leading edge, which is where they sat
+   * when this wrapper shrank to fit them.
+   */
   if (performance === "prop") {
-    return <div className={styles.stageEnter}>{children}</div>;
+    return <div className={`w-full ${styles.stageEnter}`}>{children}</div>;
   }
 
   const isFinale = performance === "finale";

@@ -74,7 +74,18 @@ function ChoiceRow<T extends string>({
         {label}
       </p>
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      {/*
+       * Pills that take the width of their own name, wrapped — not a two-column
+       * grid.
+       *
+       * Five languages in two columns is three rows, twice over, and the two
+       * rows plus this step's paragraph were taller than a 375px phone: the
+       * footnote below could be scrolled to but was never on screen at the
+       * moment the reader had to decide. Wrapped pills put the same five
+       * choices in two rows, and they stay one tap each — the minimum height is
+       * unchanged, only the wasted width is gone.
+       */}
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {options.map((option) => {
           const active = option.value === value;
 
@@ -85,7 +96,7 @@ function ChoiceRow<T extends string>({
               disabled={disabled}
               aria-pressed={active}
               onClick={() => onSelect(option.value)}
-              className={`min-h-12 rounded-2xl border px-4 text-[15px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${
+              className={`min-h-10 max-w-full rounded-[18px] border px-3.5 py-2 text-[14px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${
                 active
                   ? "border-black bg-black text-white"
                   : "border-black/10 bg-white text-black"
@@ -108,14 +119,20 @@ function ChoiceRow<T extends string>({
  * including the rest of the tour, arrives in the language just chosen.
  */
 export default function TutorialLanguageSetup() {
-  const { t } = useTranslation();
-  const copy = t.tutorial.steps.setup;
-
+  /*
+   * useTranslation last, for the reason spelled out in TutorialOverlay: it can
+   * suspend on a cold dictionary, and this is the component whose own buttons
+   * make the dictionary cold. Every hook that must survive that replay is
+   * declared above it.
+   */
   const interfaceLanguage = useInterfaceLanguage();
   const { learningLanguage, refresh } = useLearningLanguageContext();
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const { t } = useTranslation();
+  const copy = t.tutorial.steps.setup;
 
   async function handleLearningChange(next: LanguageCode) {
     if (saving || next === learningLanguage) return;
@@ -171,7 +188,7 @@ export default function TutorialLanguageSetup() {
   }
 
   return (
-    <div className="mt-7 space-y-5">
+    <div className="mt-6 space-y-3.5">
       <ChoiceRow
         label={copy.appLanguageLabel}
         options={INTERFACE_OPTIONS}

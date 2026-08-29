@@ -14,8 +14,9 @@ import styles from "./YumiCommsMark.module.css";
  * Cosmic Mode does not get a different character. It gets the mark's own
  * refit — the energy seam, the lit constellation points and the iris optics
  * that ExchangeNotesMark already carries behind its `cosmic` prop — plus the
- * rings and halo that CosmicYumiOrbit draws around it, and a scan pass every
- * half minute or so. Same body, more light.
+ * rings and halo that CosmicYumiOrbit draws around it, and a scan pass a few
+ * times a minute rather than the twice it used to be. Same body, more light,
+ * and visibly running; the timings live in .shellCosmic.
  *
  * Decorative: the page is already titled, so this is aria-hidden rather than
  * competing with the heading for a screen reader's attention.
