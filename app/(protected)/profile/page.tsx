@@ -276,7 +276,6 @@ export default function ProfilePage() {
      * signed-out state. Signing out should leave nothing of the old session in
      * memory, and the cheapest way to guarantee that is a new document.
      */
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Sign-out intentionally discards the entire authenticated client tree.
     window.location.assign("/login");
   }
 
