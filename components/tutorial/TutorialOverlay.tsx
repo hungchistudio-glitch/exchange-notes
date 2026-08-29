@@ -277,6 +277,24 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     scrollerRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, [index]);
 
+  /*
+   * The dialog takes focus when it opens.
+   *
+   * It declares aria-modal, which tells assistive technology that everything
+   * behind it is inert — but focus was still sitting on the home screen button
+   * that opened it, inside the part now claimed to be inert. A screen reader
+   * was left reading a tour it had not been moved into, and Escape and the
+   * arrow keys only worked because they are bound to the window.
+   *
+   * The container is the focus target rather than the first button: landing on
+   * "Skip for now" would read the way out of the tour before the tour.
+   */
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    dialogRef.current?.focus({ preventScroll: true });
+  }, []);
+
   // The suspending read, last — see the note at the top of this component.
   const { t } = useTranslation();
   const copy = t.tutorial;
@@ -319,7 +337,14 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       role="dialog"
       aria-modal="true"
       aria-label={copy.rowTitle}
-      className={`fixed inset-0 z-[120] flex flex-col overflow-hidden bg-surface ${styles.root}`}
+      ref={dialogRef}
+      /*
+       * -1 so it can be focused programmatically without being a tab stop of
+       * its own: tabbing from here goes to the controls, not back through the
+       * container.
+       */
+      tabIndex={-1}
+      className={`fixed inset-0 z-[120] flex flex-col overflow-hidden bg-surface outline-none ${styles.root}`}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={() => {
@@ -395,8 +420,33 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
            * the visual above so the whole slide is one gesture rather than a
            * picture that animates over text that does not.
            */}
-          <div key={`${step}-copy`} className={styles.copy}>
+          {/*
+           * Announced as one region rather than as a title and a paragraph
+           * arriving separately.
+           *
+           * `polite` because a step change is the reader's own doing and never
+           * urgent, and `atomic` because the two halves are one thought — "One
+           * field for every word" read on its own, seconds before its
+           * explanation, is worse than silence.
+           */}
+          <div
+            className={styles.copy}
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {/*
+             * The container is stable and the three children are keyed, not
+             * the other way round.
+             *
+             * Both halves of that matter. The keys are what restart the
+             * entrance animations on every advance. The stable parent is what
+             * makes the live region work: a region that is itself removed and
+             * re-added arrives as a new region that happens to have content in
+             * it, and most screen readers do not announce that — they announce
+             * a change inside a region that was already there.
+             */}
             <h2
+              key={`${step}-title`}
               className={`text-balance text-[1.55rem] font-bold leading-[1.22] tracking-[-0.025em] text-black ${styles.copyTitle}`}
             >
               {stepCopy.title}
@@ -405,10 +455,12 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             {/* One confident stroke. The hand-drawn feel lives here, not in a
                 frame around everything. */}
             <SketchUnderline
+              key={`${step}-rule`}
               className={`mt-2.5 h-2 w-32 text-amber-500/70 ${styles.copyRule}`}
             />
 
             <p
+              key={`${step}-body`}
               className={`mt-5 max-w-[30rem] text-pretty text-[14.5px] leading-[1.8] text-ink-soft ${styles.copyBody}`}
             >
               {stepCopy.body}

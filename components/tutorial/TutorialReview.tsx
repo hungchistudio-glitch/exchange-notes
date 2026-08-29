@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
@@ -107,6 +108,14 @@ export default function TutorialReview() {
             >
               Restart
             </button>
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-semibold text-black"
+            >
+              Close
+            </button>
           </div>
 
           {/*
@@ -123,8 +132,22 @@ export default function TutorialReview() {
               contain: "layout paint size",
             }}
           >
-            {open && (
+            {open ? (
               <TutorialOverlay key={nonce} onClose={() => setOpen(false)} />
+            ) : (
+              /*
+               * The home screen's real entry point, in the frame, for when the
+               * overlay is closed.
+               *
+               * It is here to exercise the path the product actually takes:
+               * the launcher pulls the overlay in with next/dynamic, so this
+               * is the only place outside a signed-in session where that
+               * lazy fetch — and the moment of nothing before the chunk lands
+               * — can be looked at.
+               */
+              <div className="flex h-full items-end p-6">
+                <TutorialLauncher />
+              </div>
             )}
           </div>
         </div>

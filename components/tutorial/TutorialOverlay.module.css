@@ -57,8 +57,18 @@
  * beats about 70ms apart, which is short enough to read as one movement and
  * long enough to have a direction.
  */
+/*
+ * A real box, not `display: contents`.
+ *
+ * It used to be contents so its three children behaved as direct children of
+ * the slide's flex column — which they still effectively do, since all three
+ * are block-level and full width. What contents also does is take the element
+ * out of the accessibility tree in some engines, and this element is now the
+ * tour's live region: announcing a step change needs something for the change
+ * to happen inside.
+ */
 .copy {
-  display: contents;
+  display: block;
 }
 
 .copyTitle {
