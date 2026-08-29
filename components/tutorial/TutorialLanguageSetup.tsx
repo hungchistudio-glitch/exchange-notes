@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
+import { loadTranslations, prefetchTranslations } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import {
@@ -187,13 +188,43 @@ export default function TutorialLanguageSetup() {
     }
   }
 
+  /*
+   * Load the dictionary, then switch — never the other way round.
+   *
+   * useTranslation stopped suspending on a cold dictionary and now throws
+   * instead, on the contract that whoever changes the language has already
+   * fetched it. Settings, the landing page and the account sync were updated
+   * to honour that; this row was not, so tapping a language here dispatched
+   * the change, re-rendered every consumer against a dictionary that was not
+   * there, and threw during render. What the reader saw was a language button
+   * that did nothing at all.
+   *
+   * It is the worst place in the app to have missed, too: this row is step one
+   * of the tour, so it was the first thing a new account touched.
+   */
+  async function selectInterfaceLanguage(value: InterfaceLanguage) {
+    if (value === interfaceLanguage) return;
+
+    await loadTranslations(value);
+    setInterfaceLanguage(value);
+  }
+
+  /*
+   * The other four, fetched once this step is on screen. The reader is looking
+   * at five buttons they were asked to choose between, so the fetch is already
+   * justified — and it means the tap itself has nothing to wait for.
+   */
+  useEffect(() => {
+    prefetchTranslations(interfaceLanguage);
+  }, [interfaceLanguage]);
+
   return (
     <div className="mt-6 space-y-3.5">
       <ChoiceRow
         label={copy.appLanguageLabel}
         options={INTERFACE_OPTIONS}
         value={interfaceLanguage}
-        onSelect={setInterfaceLanguage}
+        onSelect={(value) => void selectInterfaceLanguage(value)}
       />
 
       <ChoiceRow

@@ -10,6 +10,7 @@ import {
   setInterfaceLanguage,
   type InterfaceLanguage,
 } from "@/lib/appPreferences";
+import { loadTranslations } from "@/lib/i18n";
 
 /*
  * The harness behind /tutorial-review.
@@ -55,7 +56,16 @@ export default function TutorialReview() {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setInterfaceLanguage(option.value)}
+                /*
+                 * Fetch then switch, like every other language control in the
+                 * app — useTranslation throws on a dictionary that is not
+                 * there rather than suspending for it.
+                 */
+                onClick={() => {
+                  void loadTranslations(option.value).then(() =>
+                    setInterfaceLanguage(option.value),
+                  );
+                }}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold ${
                   option.value === language
                     ? "border-black bg-black text-white"
