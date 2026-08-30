@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowRight,
   ChevronDown,
   FolderHeart,
   Languages,
@@ -101,6 +102,24 @@ export default function VocabularySearch({
    * can hit but cannot see the result of is the worse trade, so the width
    * stays and the row's full height carries the target.
    */
+  /*
+   * What the field does when you press Enter, or the key beside the clear
+   * button.
+   *
+   * Typing here filters the words you already have, live — which is right, and
+   * is also why there was nothing to submit and no key to press. But the most
+   * common thing to type is a word you have just met and do not have yet, and
+   * that search ends at "0 words" with the answer one screen away and no way
+   * to ask for it. This carries the term straight into the lexicon, which is
+   * the same hand-off the camera key already makes.
+   */
+  function lookUpQuery() {
+    const term = query.trim();
+    if (!term) return;
+
+    openSearch({ query: term, autoSubmit: true });
+  }
+
   const lookupButtonClass =
     "cosmic-instrument flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft transition duration-200 hover:bg-black/[0.04] hover:text-black active:scale-90";
 
@@ -117,7 +136,13 @@ export default function VocabularySearch({
 
   return (
     <section className="mt-4">
-      <div className="flex items-center">
+      <form
+        className="flex items-center"
+        onSubmit={(event) => {
+          event.preventDefault();
+          lookUpQuery();
+        }}
+      >
         {/* cosmic-console turns the field into the brief's glass-tech control
             — cyan hairline, internal gradient, a glow that arrives on focus —
             and does nothing at all in Standard Mode. See app/cosmic.css. */}
@@ -135,6 +160,7 @@ export default function VocabularySearch({
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={search.searchPlaceholder}
             aria-label={search.searchAriaLabel}
+            enterKeyHint="search"
             className="h-full min-w-0 flex-1 bg-transparent font-sans text-[14px] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-ink-faint"
           />
 
@@ -146,6 +172,24 @@ export default function VocabularySearch({
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-transform active:scale-95"
             >
               <X size={13} strokeWidth={2} />
+            </button>
+          )}
+
+          {/* Same shape, same icon and the same label as the lexicon sheet's
+              own submit, because it is the same action arriving from a
+              different field. Present only with something to look up.
+
+              No cosmic variant is needed: app/cosmic.css remaps --color-black
+              and --color-white, so `bg-black text-white` becomes a pale key
+              with deep navy on it and keeps its contrast in both modes. */}
+          {query.trim() && (
+            <button
+              type="submit"
+              aria-label={t.lexicon.search}
+              title={t.lexicon.search}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-95"
+            >
+              <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
             </button>
           )}
 
@@ -190,7 +234,7 @@ export default function VocabularySearch({
             )}
           </span>
         </label>
-      </div>
+      </form>
 
       {imageLookup.reading ? (
         <p
