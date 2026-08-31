@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearImageCapture,
   holdImageCapture,
+  peekImageCapture,
   takeImageCapture,
 } from "@/lib/lexicon/pendingImageCapture";
 import type { PendingCapture } from "@/lib/media/assets";
@@ -61,6 +62,34 @@ describe("holding a capture for the save that follows", () => {
     expect(takeImageCapture("  bouteille ")).not.toBeNull();
   });
 
+  it("matches across the accent a dictionary adds or drops", () => {
+    /*
+     * The bug this was reported as. It is held under what the *model* said
+     * and claimed with the headword the *dictionary* resolved to, and those
+     * routinely differ by an accent — so a naive compare dropped the
+     * photograph at the very last step, after it had survived the capture,
+     * the crop and the recognition.
+     */
+    holdImageCapture("Télévision", capture("tv.jpg"));
+
+    expect(takeImageCapture("television")?.sourceFileName).toBe("tv.jpg");
+  });
+
+  it("still refuses two genuinely different words", () => {
+    // Folding accents must not fold meanings together.
+    holdImageCapture("bouteille", capture("bottle.jpg"));
+
+    expect(takeImageCapture("bouteilles")).toBeNull();
+  });
+
+  it("holds nothing for an empty term", () => {
+    // matchKey strips punctuation, so "..." and "!!!" both reduce to "".
+    // Two such terms must not match each other.
+    holdImageCapture("...", capture("junk.jpg"));
+
+    expect(takeImageCapture("!!!")).toBeNull();
+  });
+
   it("keeps the newer photograph when two are taken in a row", () => {
     holdImageCapture("un", capture("first.jpg"));
     holdImageCapture("deux", capture("second.jpg"));
@@ -80,5 +109,28 @@ describe("holding a capture for the save that follows", () => {
 
   it("returns null when nothing was ever held", () => {
     expect(takeImageCapture("anything")).toBeNull();
+  });
+});
+
+describe("showing the reader what was captured", () => {
+  it("offers a preview for the word it was held under", () => {
+    holdImageCapture("bouteille", capture("bottle.jpg"));
+
+    expect(peekImageCapture("bouteille")).toMatch(/^blob:|^data:/);
+  });
+
+  it("does not consume, so the save can still claim it", () => {
+    holdImageCapture("bouteille", capture("bottle.jpg"));
+
+    peekImageCapture("bouteille");
+    peekImageCapture("bouteille");
+
+    expect(takeImageCapture("bouteille")).not.toBeNull();
+  });
+
+  it("offers nothing for a different word", () => {
+    holdImageCapture("bouteille", capture("bottle.jpg"));
+
+    expect(peekImageCapture("fenêtre")).toBeNull();
   });
 });

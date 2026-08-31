@@ -474,13 +474,36 @@ export default function TargetCamera({
           <p className="text-sm leading-relaxed">
             {status === "denied" ? copy.permissionDenied : copy.unavailable}
           </p>
-          <button
-            type="button"
-            onClick={retry}
-            className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
-          >
-            {copy.retry}
-          </button>
+
+          {/*
+            The library is offered here as a real control, not only as the
+            small key in the corner.
+
+            This screen replaced a plain file input, which needed no camera
+            permission at all — so the first thing a reader who has denied
+            it, or who is on an origin they never granted, now meets is a
+            black rectangle. "Try again" cannot help them: on iOS the
+            decision is sticky per site and is changed in Settings, not by
+            asking twice. Choosing a photo can help them, immediately, and
+            it is the path this key used to take anyway.
+          */}
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openPicker(photoInputRef.current)}
+              className="w-full rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black"
+            >
+              {copy.photoLibrary}
+            </button>
+
+            <button
+              type="button"
+              onClick={retry}
+              className="w-full rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              {copy.retry}
+            </button>
+          </div>
         </div>
       )}
 
