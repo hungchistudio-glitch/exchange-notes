@@ -13,7 +13,7 @@ import type { NormalizedRect } from "@/lib/media/geometry";
 import type { Raster } from "@/lib/media/raster";
 import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
-import { buildCapture } from "@/lib/media/pipeline";
+import { startCapture } from "@/lib/media/pipeline";
 import { decodeBlob } from "@/lib/media/raster";
 
 /**
@@ -84,7 +84,13 @@ export default function useLexiconImageLookup({
        * answers. The card, meanwhile, must not be the whole photograph
        * shrunk down, which is exactly what the spec forbids.
        */
-      const built = await buildCapture({
+      /*
+       * The request goes out as soon as the model's copy exists; the two
+       * stored derivatives encode while it is in flight. They used to be
+       * encoded first, which put about three hundred milliseconds of work
+       * for files the reader may never save in front of the network call.
+       */
+      const started = await startCapture({
         raster,
         targetRect,
         sourceType,
@@ -93,14 +99,14 @@ export default function useLexiconImageLookup({
         sourceFileName: fileName,
       });
 
-      const identified = await identifyImage(built.recognitionImage);
+      const identified = await identifyImage(started.recognitionImage);
 
-      if (identified.term) {
-        // Held rather than uploaded: nothing reaches storage until the
-        // reader saves the word this photograph produced.
-        holdImageCapture(identified.term, built.capture);
-        onTerm(identified.term);
-      }
+      if (!identified.term) return;
+
+      // Held rather than uploaded: nothing reaches storage until the reader
+      // saves the word this photograph produced.
+      holdImageCapture(identified.term, await started.capture);
+      onTerm(identified.term);
     },
     [onTerm],
   );
@@ -108,7 +114,15 @@ export default function useLexiconImageLookup({
   /** A frame off the shutter, with the target the reader tapped. */
   const handleCapture = useCallback(
     async (raster: Raster, targetRect: NormalizedRect) => {
-      if (readingRef.current) return;
+      if (readingRef.current) {
+        /*
+         * A second shutter press while the first is still being read. The
+         * frame is dropped, and has to be freed here — nothing downstream
+         * ever sees it, and it is a full-resolution copy of the sensor.
+         */
+        raster.close();
+        return;
+      }
 
       readingRef.current = true;
       setError("");
@@ -126,7 +140,9 @@ export default function useLexiconImageLookup({
           ),
         );
       } finally {
-        raster.close();
+        // startCapture owns the raster and closes it when its derivatives
+        // settle; closing it here would pull the pixels out from under an
+        // encode still running.
         readingRef.current = false;
         setReading(false);
       }
@@ -155,7 +171,14 @@ export default function useLexiconImageLookup({
 
         raster = await decodeBlob(file);
 
-        await readRaster(raster, DEFAULT_TARGET_RECT, "photo", file.name);
+        /*
+         * Ownership moves with the value. Past this point the capture frees
+         * it when its derivatives settle, and the `finally` below must not.
+         */
+        const decoded = raster;
+        raster = null;
+
+        await readRaster(decoded, DEFAULT_TARGET_RECT, "photo", file.name);
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
         setError(
@@ -166,7 +189,12 @@ export default function useLexiconImageLookup({
           ),
         );
       } finally {
+        /*
+         * Only ever non-null on the paths that never reached the capture — a
+         * file refused for its type or size, or a decode that failed.
+         */
         raster?.close();
+
         readingRef.current = false;
         setReading(false);
       }

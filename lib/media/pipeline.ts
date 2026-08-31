@@ -73,6 +73,20 @@ export type BuiltCapture = {
   cropRect: NormalizedRect;
 };
 
+export type StartedCapture = {
+  /** Ready first, so the request can go out. A data URL; never stored. */
+  recognitionImage: string;
+  /** The padded rect the card is being cut at. */
+  cropRect: NormalizedRect;
+  /**
+   * The two stored derivatives, already being encoded.
+   *
+   * Await it when the reader saves. It has usually settled long before,
+   * because it was running while the recognition request was in flight.
+   */
+  capture: Promise<PendingCapture>;
+};
+
 /**
  * The rectangle a card is actually cut at.
  *
@@ -92,31 +106,129 @@ export function cropRectFor(target: NormalizedRect): NormalizedRect {
 }
 
 /**
- * A raster turned into everything a save will need.
+ * The same work, in the order that matters to whoever is waiting.
  *
- * Deliberately does not touch the network or storage. What comes back is
- * held in memory by the screen until the reader decides to keep it, which
- * is what makes cancelling free — see lib/media/assets.ts.
+ * buildCapture below produces the retained source, then the card, then the
+ * copy for the model — and the recognition request cannot leave until all
+ * three are done. Measured on a desktop: about 200ms to encode the source
+ * and 90ms the card, against 35ms for the copy the request actually needs.
+ * Three hundred milliseconds of a reader's wait spent encoding two files
+ * they may never save, before the network is even asked. On a phone that
+ * multiplies.
  *
- * The steps await one another rather than running together. Three canvases
- * of a 12-megapixel photograph at once is how a mid-range phone runs out of
- * memory, and the awaits also hand the main thread back between them so the
- * shutter animation keeps running.
+ * So the model's copy is made first and returned, and the two derivatives
+ * are left running. The encoding then overlaps the round trip instead of
+ * preceding it.
+ *
+ * This owns the raster: it is closed when the derivatives settle, however
+ * they settle. A caller that closed it itself would pull the pixels out
+ * from under an encode still in progress.
  */
-export async function buildCapture({
-  raster,
-  targetRect,
-  sourceType,
-  recognitionKind = "object",
-  recognitionScope = "target",
-  sourceFileName,
-  sourcePage,
-  recognition,
-}: BuildCaptureOptions): Promise<BuiltCapture> {
+export async function startCapture(
+  options: BuildCaptureOptions,
+): Promise<StartedCapture> {
+  const {
+    raster,
+    targetRect,
+    recognitionKind = "object",
+    recognitionScope = "target",
+  } = options;
+
   const cropRect = cropRectFor(targetRect);
 
+  let recognitionImage: string;
+
+  try {
+    recognitionImage = await renderForRecognition(
+      raster,
+      RECOGNITION_EDGE[recognitionKind],
+      recognitionScope === "target" ? cropRect : undefined,
+    );
+  } catch (renderError) {
+    /*
+     * Ownership passes at the `return` below, so a failure before it leaves
+     * the raster to this function. Nothing downstream exists yet to free it.
+     */
+    raster.close();
+    throw renderError;
+  }
+
+  const capture = (async () => {
+    try {
+      return await buildDerivatives(options, cropRect);
+    } finally {
+      raster.close();
+    }
+  })();
+
+  /*
+   * Attached now so that a caller which never awaits `capture` — a reader
+   * who closes the sheet without saving — does not leave an unhandled
+   * rejection behind. The real error still reaches whoever awaits it.
+   */
+  capture.catch(() => {});
+
+  return { recognitionImage, cropRect, capture };
+}
+
+/** The two files that get kept. The expensive half. */
+async function buildDerivatives(
+  {
+    raster,
+    targetRect,
+    sourceType,
+    sourceFileName,
+    sourcePage,
+    recognition,
+  }: BuildCaptureOptions,
+  cropRect: NormalizedRect,
+): Promise<PendingCapture> {
   const source = await renderSource(raster);
   const card = await renderCard(raster, cropRect);
+
+  return {
+    sourceType,
+    source,
+    card,
+    /*
+     * The reader's target is stored, not the padded crop. The padding is a
+     * presentation decision and may well change; what the reader actually
+     * pointed at is the fact worth keeping, and the crop can be recomputed
+     * from it whenever the margin is retuned.
+     */
+    targetRect: clampRect(targetRect),
+    originalDimensions: { width: raster.width, height: raster.height },
+    recognition,
+    sourceFileName,
+    sourcePage,
+  };
+}
+
+/**
+ * A raster turned into everything a save will need, all of it awaited.
+ *
+ * For the callers with nothing to overlap: the menu scanner already has its
+ * answer when it cuts a dish out of the page, so there is no request for
+ * the encoding to run alongside and nothing to gain from handing back
+ * early. startCapture is what the recognition paths use.
+ *
+ * Does not close the raster — the caller made it and keeps it, which is the
+ * opposite of startCapture and is why they are two functions rather than
+ * one with a flag.
+ */
+export async function buildCapture(
+  options: BuildCaptureOptions,
+): Promise<BuiltCapture> {
+  const {
+    raster,
+    targetRect,
+    recognitionKind = "object",
+    recognitionScope = "target",
+  } = options;
+
+  const cropRect = cropRectFor(targetRect);
+
+  const capture = await buildDerivatives(options, cropRect);
 
   const recognitionImage = await renderForRecognition(
     raster,
@@ -124,24 +236,5 @@ export async function buildCapture({
     recognitionScope === "target" ? cropRect : undefined,
   );
 
-  return {
-    capture: {
-      sourceType,
-      source,
-      card,
-      /*
-       * The reader's target is stored, not the padded crop. The padding is
-       * a presentation decision and may well change; what the reader
-       * actually pointed at is the fact worth keeping, and the crop can be
-       * recomputed from it whenever the margin is retuned.
-       */
-      targetRect: clampRect(targetRect),
-      originalDimensions: { width: raster.width, height: raster.height },
-      recognition,
-      sourceFileName,
-      sourcePage,
-    },
-    recognitionImage,
-    cropRect,
-  };
+  return { capture, recognitionImage, cropRect };
 }

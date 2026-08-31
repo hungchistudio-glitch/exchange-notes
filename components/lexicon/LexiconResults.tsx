@@ -19,6 +19,7 @@ import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButto
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import type { LexiconSearch } from "@/hooks/lexicon/useLexiconSearch";
+import { peekImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
 import {
@@ -187,6 +188,17 @@ export default function LexiconResults({
   }
 
   const entry = result?.entry ?? null;
+
+  /*
+   * Read during render rather than held in state, and deliberately.
+   *
+   * The capture is put there by the lookup before the term reaches the
+   * search, so by the time this card exists the picture is already waiting —
+   * there is no moment where a re-render would be needed to reveal it. And
+   * the save consumes it, so mirroring it into state would leave a stale
+   * copy on screen after the word had been kept.
+   */
+  const capturedImage = entry ? peekImageCapture(entry.term) : null;
   const languages = result?.languages ?? null;
   const isSentence = result?.kind === "sentence";
 
@@ -465,6 +477,29 @@ export default function LexiconResults({
           )}
 
           <article className={`mt-3 overflow-hidden ${cardClass(tone)}`}>
+            {/*
+              The photograph this word came from, above the word — the same
+              place, and the same 16:9 container, that a saved card uses.
+
+              Without it there was no way to tell a word that will arrive
+              with a picture from one that will not: the photo was captured,
+              cropped and held, and the reader had nothing to confirm it by
+              until they saved and went looking. It was reported, reasonably,
+              as the photo not being kept.
+
+              Only ever present for a word a camera produced, and only until
+              the save claims it.
+            */}
+            {capturedImage && (
+              // An object URL for a blob already in memory on this device.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={capturedImage}
+                alt=""
+                className="aspect-[16/9] w-full object-cover"
+              />
+            )}
+
             <div className="p-5">
               {/* ---- headword ---- */}
               <div className="flex items-start gap-3">
