@@ -415,6 +415,38 @@ export function rectContains(rect: NormalizedRect, point: Point): boolean {
   );
 }
 
+/**
+ * Have these two sets of candidates effectively not moved?
+ *
+ * A hand-held camera jitters. The detector re-runs five times a second and
+ * returns rectangles a thousandth of a frame from where they were, which is
+ * not news — but it is a new array, so React re-renders the whole camera,
+ * and it was a new React key, so every outline was destroyed and rebuilt
+ * with its fade restarted. The outlines could never settle.
+ *
+ * The tolerance is what separates "the same thing, seen again" from "the
+ * reader moved the phone". A hundredth of the frame: below that, nothing
+ * anyone can see has changed.
+ */
+export function sameRects(
+  a: readonly NormalizedRect[],
+  b: readonly NormalizedRect[],
+  tolerance = 0.01,
+): boolean {
+  if (a.length !== b.length) return false;
+
+  return a.every((rect, index) => {
+    const other = b[index];
+
+    return (
+      Math.abs(rect.x - other.x) <= tolerance &&
+      Math.abs(rect.y - other.y) <= tolerance &&
+      Math.abs(rect.width - other.width) <= tolerance &&
+      Math.abs(rect.height - other.height) <= tolerance
+    );
+  });
+}
+
 /** Rect area, normalised. Zero for anything inverted or empty. */
 export function rectArea(rect: NormalizedRect): number {
   return Math.max(0, rect.width) * Math.max(0, rect.height);
