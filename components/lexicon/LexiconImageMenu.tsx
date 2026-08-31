@@ -88,13 +88,23 @@ export default function LexiconImageMenu({
               retry: camera.retry,
             }}
             onClose={() => setOpen(false)}
-            onCapture={(capture) => {
+            /*
+             * The camera stays up while the photograph is read, and closes
+             * when there is an answer.
+             *
+             * Closing on the shutter instead made the screen vanish with no
+             * feedback for the two or three seconds recognition takes,
+             * which reads as the button having failed. `busy` is what draws
+             * "Analysing target…" over the frame, and it can only do that
+             * if the frame is still there.
+             */
+            onCapture={async (capture) => {
+              await onCapture(capture);
               setOpen(false);
-              void onCapture(capture);
             }}
-            onPickPhoto={(file) => {
+            onPickPhoto={async (file) => {
+              await onFile(file);
               setOpen(false);
-              void onFile(file);
             }}
           />
         </OverlayPortal>

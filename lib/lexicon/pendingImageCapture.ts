@@ -22,20 +22,38 @@
    two can genuinely disagree: photograph a bottle, then type a different
    word and save that. The picture belongs to the word the model actually
    produced, and a mismatch means no picture rather than the wrong one.
+
+   The comparison uses the app's own matchKey rather than a lowercase
+   trim, and that matters more than it looks. The term this is held under is
+   what the *model* said; the term it is claimed with is the headword the
+   *dictionary* resolved to. Those routinely differ by an accent or a
+   capital — "Télévision" against "television" — and under a naive compare
+   the photograph was silently dropped at the last step, having survived
+   everything else.
    ========================================================= */
 
+import { matchKey } from "@/lib/lexicon/normalize";
 import type { PendingCapture } from "@/lib/media/assets";
 
 type Held = {
   term: string;
   capture: PendingCapture;
+  /** For showing the reader what was captured, before anything is saved. */
+  previewUrl: string;
 };
 
 let held: Held | null = null;
 
-/** Compared case- and space-insensitively, the way a headword is. */
+/** The same comparison the lexicon uses everywhere else. */
 function sameTerm(a: string, b: string) {
-  return a.trim().toLowerCase() === b.trim().toLowerCase();
+  const left = matchKey(a);
+
+  return left.length > 0 && left === matchKey(b);
+}
+
+function release() {
+  if (held) URL.revokeObjectURL(held.previewUrl);
+  held = null;
 }
 
 /**
@@ -45,7 +63,25 @@ function sameTerm(a: string, b: string) {
  * without saving the first meant the second.
  */
 export function holdImageCapture(term: string, capture: PendingCapture) {
-  held = { term, capture };
+  release();
+
+  held = {
+    term,
+    capture,
+    previewUrl: URL.createObjectURL(capture.card.blob),
+  };
+}
+
+/**
+ * The captured picture, for showing while the reader decides.
+ *
+ * Does not consume. A lookup result that came from a photograph should show
+ * that photograph — without it there is no way to tell a word that will
+ * arrive with a picture from one that will not, which is exactly the
+ * confusion this was reported as.
+ */
+export function peekImageCapture(term: string): string | null {
+  return held && sameTerm(held.term, term) ? held.previewUrl : null;
 }
 
 /**
@@ -59,12 +95,13 @@ export function takeImageCapture(term: string): PendingCapture | null {
   if (!held || !sameTerm(held.term, term)) return null;
 
   const capture = held.capture;
-  held = null;
+
+  release();
 
   return capture;
 }
 
-/** Drop whatever is held. Called when the sheet closes. */
+/** Drop whatever is held, and free its preview. */
 export function clearImageCapture() {
-  held = null;
+  release();
 }

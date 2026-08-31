@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 /* =========================================================
@@ -81,7 +81,13 @@ describe("the search camera key", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hands a chosen image to recognition and closes", () => {
+  it("hands a chosen image to recognition, and closes once it is read", async () => {
+    /*
+     * Closes after, not before. The camera stays up while the photograph is
+     * being read so "Analysing target…" has somewhere to appear — closing
+     * on the tap made the screen vanish with no feedback for the seconds
+     * recognition takes.
+     */
     const onFile = vi.fn();
     render(<LexiconImageMenu onFile={onFile} onCapture={vi.fn()} />);
 
@@ -95,9 +101,31 @@ describe("the search camera key", () => {
     fireEvent.change(picker!, { target: { files: [image] } });
 
     expect(onFile).toHaveBeenCalledWith(image);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Capture photo" }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("offers the photo library when the camera is refused", async () => {
+    /*
+     * The key it replaced needed no camera permission at all, so a reader
+     * who has denied it now meets a black rectangle where a picker used to
+     * be. "Try again" cannot help — on iOS the decision is sticky per site
+     * — but choosing a photo can, and it is the path this key used to take.
+     */
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
+
+    open();
+
+    await screen.findByRole("button", { name: "Try again" });
+
+    // Two of them now: the corner key, and the one inside the notice.
     expect(
-      screen.queryByRole("button", { name: "Capture photo" }),
-    ).not.toBeInTheDocument();
+      screen.getAllByRole("button", { name: "Photo library" }).length,
+    ).toBeGreaterThan(1);
   });
 
   it("says the camera is unavailable rather than failing silently", async () => {
