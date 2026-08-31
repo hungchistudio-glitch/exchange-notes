@@ -621,6 +621,12 @@ export type TranslationDictionary = {
       selectedTarget: string;
       candidateTarget: string;
       focused: string;
+      /*
+       * Without a trailing ellipsis. AnalysingTargetIndicator draws the dots
+       * itself and animates them one at a time, so a "…" written into the
+       * string here would render as "Analysing target…..." and would make
+       * the pill jump as the animated ones cycled.
+       */
       analysing: string;
       retry: string;
       confirmTarget: string;

@@ -615,7 +615,7 @@ const french: TranslationDictionary = {
       selectedTarget: "Cible sélectionnée",
       candidateTarget: "Cible possible",
       focused: "Mise au point faite",
-      analysing: "Analyse de la cible…",
+      analysing: "Analyse de la cible",
       retry: "Réessayer",
       confirmTarget: "Utiliser cette cible",
       resetZoom: "Réinitialiser le zoom",

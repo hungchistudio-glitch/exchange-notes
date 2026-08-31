@@ -33,6 +33,7 @@ import {
   type Point,
 } from "@/lib/media/geometry";
 import { detectRegions } from "@/lib/media/regionDetection";
+import AnalysingTargetIndicator from "@/components/camera/AnalysingTargetIndicator";
 import TargetOverlay from "@/components/camera/TargetOverlay";
 import { useElementSize } from "@/hooks/camera/useElementSize";
 
@@ -402,12 +403,15 @@ export default function TargetImageViewer({
         className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 bg-gradient-to-t from-black/60 to-transparent pt-16"
         style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
       >
-        <p
-          role={busy ? "status" : undefined}
-          className="rounded-full bg-black/35 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md"
-        >
-          {busy ? copy.busy : copy.hint}
-        </p>
+        {/* The same indicator the camera uses, so a photograph read from
+            the library waits the same way one read through the lens does. */}
+        <AnalysingTargetIndicator active={busy} label={copy.busy} />
+
+        {!busy && (
+          <p className="rounded-full bg-black/35 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md">
+            {copy.hint}
+          </p>
+        )}
 
         {pages && pages.pageCount > 1 && (
           <div className="flex items-center gap-2 rounded-full bg-black/35 p-1 backdrop-blur-md">

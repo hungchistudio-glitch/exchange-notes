@@ -640,7 +640,7 @@ const traditionalChinese: TranslationDictionary = {
       selectedTarget: "已選取的目標",
       candidateTarget: "可選取的目標",
       focused: "已對焦",
-      analysing: "正在分析目標…",
+      analysing: "正在分析目標",
       retry: "再試一次",
       confirmTarget: "使用這個目標",
       resetZoom: "重設縮放",

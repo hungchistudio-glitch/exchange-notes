@@ -1,0 +1,210 @@
+/* =========================================================
+   "Analysing target…", while the model reads the frame
+
+   The wait this covers is three to seven seconds and is not reducible —
+   gemini-3.1-flash-lite is already the fast model at thinking_level "low",
+   `none` is rejected by the API, and dropping the image resolution bought
+   ten percent inside the noise. So none of this is trying to feel fast. It
+   is trying to make a real wait look intended.
+
+   Every timing lives in the block below. The JavaScript side — when the pill
+   is allowed to appear at all, and how long it must stay — is in
+   AnalysingTargetIndicator.tsx, which cross-references this file.
+
+   Only opacity and transform are animated. This sits over a live camera
+   preview, and anything that touches layout on every frame would be paid
+   for out of the preview's frame rate.
+   ========================================================= */
+
+.pill {
+  /* ---- tune the motion here ---- */
+  --enter-duration: 200ms;
+  --exit-duration: 180ms;
+  --sweep-duration: 1800ms;
+  --dot-cycle: 1050ms;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 20px;
+  overflow: hidden;
+
+  /*
+   * A warm near-black rather than a neutral one: the viewfinder behind it is
+   * a photograph of a room, and a cold grey pill reads as a system dialog
+   * dropped on top of it.
+   */
+  background: rgba(25, 22, 18, 0.72);
+  backdrop-filter: blur(10px);
+
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  /* No border and no drop shadow: both would make it an object sitting on
+     the picture rather than a note written over it. */
+  animation: analysingEnter var(--enter-duration) ease-out both;
+}
+
+.leaving {
+  animation: analysingExit var(--exit-duration) ease-out both;
+}
+
+@keyframes analysingEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes analysingExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(2px) scale(0.99);
+  }
+}
+
+/* ---------- the sweep ---------- */
+
+/*
+ * Barely visible on purpose. At a glance the pill should look still; the
+ * sweep is what stops it looking frozen once you have been waiting a couple
+ * of seconds. Ten percent white at its brightest point.
+ */
+.sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.03) 75%,
+    transparent 100%
+  );
+  /* Wider than the pill so the gradient's soft ends are off-screen at rest. */
+  width: 60%;
+  animation: analysingSweep var(--sweep-duration) ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes analysingSweep {
+  from {
+    transform: translateX(-40%);
+  }
+  to {
+    transform: translateX(240%);
+  }
+}
+
+/* ---------- the dots ---------- */
+
+/*
+ * All three are always in the layout and only their opacity changes, which
+ * is what keeps the pill from growing and shrinking as they cycle — the
+ * jitter the brief specifically calls out.
+ */
+.dots {
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+}
+
+/*
+ * One timeline each, with no animation-delay and no step easing.
+ *
+ * The first attempt used a single keyframe plus a delay per dot, and the
+ * second and third dots then never appeared at all: before its delay
+ * elapses an element shows its own declared opacity, and `steps(1, end)`
+ * held the remaining frame flat. Three explicit windows are longer to read
+ * and impossible to get subtly wrong — each dot simply states the fraction
+ * of the cycle it is present for.
+ *
+ * Cycle: . at 0, .. at a third, ... at two thirds, restart.
+ */
+.dot:nth-child(1) {
+  opacity: 1;
+}
+
+.dot:nth-child(2) {
+  animation: analysingDotSecond var(--dot-cycle) linear infinite;
+}
+
+.dot:nth-child(3) {
+  animation: analysingDotThird var(--dot-cycle) linear infinite;
+}
+
+@keyframes analysingDotSecond {
+  0%,
+  33.32% {
+    opacity: 0;
+  }
+  33.33%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes analysingDotThird {
+  0%,
+  66.65% {
+    opacity: 0;
+  }
+  66.66%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ---------- reduced motion ---------- */
+
+/*
+ * The dots stay: they are the part that carries information, and they are
+ * a discrete change of state rather than continuous movement. The sweep
+ * goes, and the pill arrives and leaves on opacity alone — nothing travels
+ * and nothing scales.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .pill {
+    animation: analysingFadeIn var(--enter-duration) ease-out both;
+  }
+
+  .leaving {
+    animation: analysingFadeOut var(--exit-duration) ease-out both;
+  }
+
+  .sweep {
+    display: none;
+  }
+
+  @keyframes analysingFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes analysingFadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+}
