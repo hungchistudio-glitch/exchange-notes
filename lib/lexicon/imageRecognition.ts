@@ -23,7 +23,17 @@ import type { ObjectIdentificationResult } from "@/lib/ai/identifyObject";
 
 export { MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 
-const IDENTIFY_TIMEOUT_MS = 16 * 1000;
+/*
+ * Above the server's own budget, deliberately.
+ *
+ * At sixteen seconds this abort fired while the route was still working, and
+ * the reader was told the recognition had timed out for a request that had
+ * already spent a daily unit and was about to answer. The server now bounds
+ * itself (VISION_TOTAL_BUDGET_MS, twenty seconds by default) and returns a
+ * real error when it runs out; this is the backstop for a connection that
+ * dies rather than the thing that decides how long a reader waits.
+ */
+const IDENTIFY_TIMEOUT_MS = 25 * 1000;
 
 /** Which sentence the reader should be shown. */
 export type ImageRecognitionCode =
@@ -52,9 +62,10 @@ export class ImageRecognitionError extends Error {
 /**
  * Asks the model what is in the photograph.
  *
- * The timeout is here rather than left to the browser because a recognition
- * that has not answered in sixteen seconds is not going to, and a reader
- * holding a phone up to a lamp deserves to be told so rather than watched.
+ * The timeout is here rather than left to the browser because a request that
+ * outlives the server's own budget is a connection that has died, and a
+ * reader holding a phone up to a lamp deserves to be told so rather than
+ * watched.
  */
 export async function identifyImage(
   image: string,

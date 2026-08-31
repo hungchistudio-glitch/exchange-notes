@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type {
   MessageAnalysis,
   PhraseType,
@@ -38,8 +39,7 @@ const MAX_ANALYSES_PER_DAY = readBoundedInteger(
 
 const MAX_PHRASES = 4;
 
-/** Set once the quota function is found to be missing, to stop retrying it. */
-let persistentQuotaUnavailable = false;
+const OPERATION = "message_decode" as const;
 
 const ANALYSIS_SCHEMA = {
   type: "object",
@@ -95,34 +95,16 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-async function consumeDailyQuota(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-) {
-  if (persistentQuotaUnavailable) return true;
-
-  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-    p_operation: "message_decode",
-    p_limit: MAX_ANALYSES_PER_DAY,
-  });
-
-  if (error) {
-    persistentQuotaUnavailable = true;
-    console.warn("Persistent AI quota is unavailable for message decode.", {
-      code: error.code,
-    });
-    return true;
-  }
-
-  const rows = data as Array<{ allowed?: boolean }> | null;
-  return rows?.[0]?.allowed === true;
-}
 
 const SCRIPT_RULE = `\n- Any Chinese you write must be Traditional as written in Taiwan. Never a
   Simplified character, anywhere, for any reason.`;
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -200,12 +182,22 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyQuota(supabase))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_ANALYSES_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         { error: "Daily language-help limit reached." },
         { status: 429 },
       );
     }
+
+    // Spent; handed back below if the model never answers.
+    charged = user.id;
 
     /*
      * Two pieces of context, both required by the brief.
@@ -299,6 +291,9 @@ ${scriptRule}
 
     const result = JSON.parse(stripJsonCodeFence(outputText)) as ModelResult;
 
+    // The model answered. Everything after this is the app's own storage.
+    charged = null;
+
     /*
      * Only phrases that are actually in the message survive.
      *
@@ -368,6 +363,10 @@ ${scriptRule}
     const analysis = await readStoredAnalysis(supabase, user.id, messageId);
     return NextResponse.json({ analysis }, { status: 200 });
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     console.error("Message analysis failed:", error);
 
     return NextResponse.json(
