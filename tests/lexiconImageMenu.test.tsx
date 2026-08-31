@@ -1,6 +1,25 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+/* =========================================================
+   The camera key opens this app's camera
+
+   This file used to assert the opposite — that the key clicked a native
+   file input and drew no menu of its own. That was right when the system
+   sheet was the whole feature: on iOS it offers Photo Library, Take Photo
+   and Choose File, and letting the platform own that beat drawing our own
+   popover.
+
+   It stopped being right when the app grew a camera. "Take Photo" handed
+   over to Apple's, with its own shutter, its own mode pills and its own
+   zoom stops — a different camera from the one every other capture surface
+   uses, reached from four search fields. The key opens TargetCamera now.
+
+   The photo library is not lost; it moved one level in, to the picker
+   TargetCamera carries. That is asserted here too, because "we replaced the
+   system sheet" is only an improvement if nothing it offered went away.
+   ========================================================= */
+
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
   default: () => "english",
 }));
@@ -9,33 +28,95 @@ const { default: LexiconImageMenu } = await import(
   "@/components/lexicon/LexiconImageMenu"
 );
 
-describe("the search camera source chooser", () => {
-  it("delegates to one native image picker without drawing a second menu", () => {
-    const inputClick = vi
-      .spyOn(HTMLInputElement.prototype, "click")
-      .mockImplementation(() => undefined);
-    const { container } = render(<LexiconImageMenu onFile={vi.fn()} />);
+function open() {
+  fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+}
 
-    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+describe("the search camera key", () => {
+  it("opens no camera until it is pressed", () => {
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    expect(inputClick).toHaveBeenCalledTimes(1);
-    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
-    expect(container.querySelector('input[type="file"]')).toHaveAttribute(
-      "accept",
-      "image/*",
-    );
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Capture photo" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("hands the one selected image to recognition", () => {
+  it("opens this app's camera rather than the system one", () => {
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
+
+    open();
+
+    // The shutter and the close control are TargetCamera's, and are what
+    // tells this apart from the platform sheet that used to appear.
+    expect(
+      screen.getByRole("button", { name: "Capture photo" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Close camera" }),
+    ).toBeInTheDocument();
+  });
+
+  it("still offers the photo library, one level in", () => {
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
+
+    open();
+
+    expect(
+      screen.getByRole("button", { name: "Photo library" }),
+    ).toBeInTheDocument();
+
+    const picker = document.querySelector('input[type="file"][accept="image/*"]');
+
+    expect(picker).not.toBeNull();
+  });
+
+  it("closes when the camera is dismissed", () => {
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
+
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Close camera" }));
+
+    expect(
+      screen.queryByRole("button", { name: "Capture photo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hands a chosen image to recognition and closes", () => {
     const onFile = vi.fn();
-    const { container } = render(<LexiconImageMenu onFile={onFile} />);
-    const input = container.querySelector('input[type="file"]');
+    render(<LexiconImageMenu onFile={onFile} onCapture={vi.fn()} />);
+
+    open();
+
+    const picker = document.querySelector<HTMLInputElement>(
+      'input[type="file"][accept="image/*"]',
+    );
     const image = new File(["image"], "lamp.jpg", { type: "image/jpeg" });
 
-    fireEvent.change(input!, { target: { files: [image] } });
+    fireEvent.change(picker!, { target: { files: [image] } });
 
     expect(onFile).toHaveBeenCalledWith(image);
+    expect(
+      screen.queryByRole("button", { name: "Capture photo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says the camera is unavailable rather than failing silently", async () => {
+    /*
+     * There is no getUserMedia in this runner, which is the same situation
+     * as a browser that refuses the camera. The reader gets a sentence and
+     * a retry, not a black rectangle.
+     *
+     * Awaited because the stream hook defers its first attempt by a
+     * microtask — opening the camera and reporting that it cannot open are
+     * deliberately two different frames, so the reader never sees an error
+     * flash before the permission prompt has been asked for.
+     */
+    render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
+
+    open();
+
+    expect(
+      await screen.findByRole("button", { name: "Try again" }),
+    ).toBeInTheDocument();
   });
 });

@@ -9,6 +9,9 @@ import {
   type ImageRecognitionCode,
 } from "@/lib/lexicon/imageRecognition";
 import { holdImageCapture } from "@/lib/lexicon/pendingImageCapture";
+import type { NormalizedRect } from "@/lib/media/geometry";
+import type { Raster } from "@/lib/media/raster";
+import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 import { buildCapture } from "@/lib/media/pipeline";
 import { decodeBlob } from "@/lib/media/raster";
@@ -56,6 +59,81 @@ export default function useLexiconImageLookup({
     [t.capture.errors],
   );
 
+  /**
+   * The shared half: pixels in, a word out.
+   *
+   * Both entry points land here. What differs before it is only where the
+   * pixels came from — a picked file has to be validated and decoded, a
+   * camera capture arrives already decoded with a target the reader chose.
+   */
+  const readRaster = useCallback(
+    async (
+      raster: Raster,
+      targetRect: NormalizedRect,
+      sourceType: MediaSourceType,
+      fileName?: string,
+    ) => {
+      /*
+       * The whole frame goes to the model and the reader's target becomes
+       * the card's.
+       *
+       * Not the same rectangle, and deliberately. The prompt asks for the
+       * object at the exact centre, so sending the target alone would take
+       * away the context it uses to decide what that object is — this is a
+       * working recognition path and narrowing its input would change
+       * answers. The card, meanwhile, must not be the whole photograph
+       * shrunk down, which is exactly what the spec forbids.
+       */
+      const built = await buildCapture({
+        raster,
+        targetRect,
+        sourceType,
+        recognitionKind: "object",
+        recognitionScope: "frame",
+        sourceFileName: fileName,
+      });
+
+      const identified = await identifyImage(built.recognitionImage);
+
+      if (identified.term) {
+        // Held rather than uploaded: nothing reaches storage until the
+        // reader saves the word this photograph produced.
+        holdImageCapture(identified.term, built.capture);
+        onTerm(identified.term);
+      }
+    },
+    [onTerm],
+  );
+
+  /** A frame off the shutter, with the target the reader tapped. */
+  const handleCapture = useCallback(
+    async (raster: Raster, targetRect: NormalizedRect) => {
+      if (readingRef.current) return;
+
+      readingRef.current = true;
+      setError("");
+      setReading(true);
+
+      try {
+        await readRaster(raster, targetRect, "camera");
+      } catch (recognitionError) {
+        console.error("Could not read that photo:", recognitionError);
+        setError(
+          errorMessage(
+            recognitionError instanceof ImageRecognitionError
+              ? recognitionError.code
+              : "failed",
+          ),
+        );
+      } finally {
+        raster.close();
+        readingRef.current = false;
+        setReading(false);
+      }
+    },
+    [errorMessage, readRaster],
+  );
+
   const handleFile = useCallback(
     async (file: File) => {
       if (readingRef.current) return;
@@ -77,38 +155,7 @@ export default function useLexiconImageLookup({
 
         raster = await decodeBlob(file);
 
-        /*
-         * The whole frame goes to the model and the centre becomes the
-         * card's target.
-         *
-         * Not the same rectangle, and deliberately. The prompt asks for the
-         * object at the exact centre, so sending the centre alone would
-         * take away the context it uses to decide what that object is —
-         * this is a working recognition path and narrowing its input would
-         * change answers. The card, meanwhile, must not be the whole
-         * photograph shrunk down, which is exactly what the spec forbids.
-         *
-         * There is no target-selection step here because the search sheet
-         * has no room for one: this is a key on a search field, not a
-         * camera screen. The capture screen is where a reader chooses.
-         */
-        const built = await buildCapture({
-          raster,
-          targetRect: DEFAULT_TARGET_RECT,
-          sourceType: "photo",
-          recognitionKind: "object",
-          recognitionScope: "frame",
-          sourceFileName: file.name,
-        });
-
-        const identified = await identifyImage(built.recognitionImage);
-
-        if (identified.term) {
-          // Held rather than uploaded: nothing reaches storage until the
-          // reader saves the word this photograph produced.
-          holdImageCapture(identified.term, built.capture);
-          onTerm(identified.term);
-        }
+        await readRaster(raster, DEFAULT_TARGET_RECT, "photo", file.name);
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
         setError(
@@ -124,8 +171,8 @@ export default function useLexiconImageLookup({
         setReading(false);
       }
     },
-    [errorMessage, onTerm],
+    [errorMessage, readRaster],
   );
 
-  return { reading, error, handleFile };
+  return { reading, error, handleFile, handleCapture };
 }

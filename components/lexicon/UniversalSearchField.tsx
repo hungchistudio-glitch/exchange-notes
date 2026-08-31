@@ -214,6 +214,11 @@ export default function UniversalSearchField() {
               onboarding.dismiss();
               return imageLookup.handleFile(file);
             }}
+            onCapture={({ raster, targetRect }) => {
+              onboarding.dismiss();
+              return imageLookup.handleCapture(raster, targetRect);
+            }}
+            busy={imageLookup.reading}
             disabled={imageLookup.reading}
             buttonClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-ink-strong transition-transform active:scale-95 disabled:opacity-50"
           />

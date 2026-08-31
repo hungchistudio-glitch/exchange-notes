@@ -206,6 +206,10 @@ export default function VocabularySearch({
           >
             <LexiconImageMenu
               onFile={imageLookup.handleFile}
+              onCapture={({ raster, targetRect }) =>
+                imageLookup.handleCapture(raster, targetRect)
+              }
+              busy={imageLookup.reading}
               disabled={imageLookup.reading}
               buttonClassName={`${lookupButtonClass} disabled:opacity-50`}
             />

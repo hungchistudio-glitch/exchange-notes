@@ -398,6 +398,10 @@ export default function LexiconSearchSheet({
 
             <LexiconImageMenu
               onFile={imageLookup.handleFile}
+              onCapture={({ raster, targetRect }) =>
+                imageLookup.handleCapture(raster, targetRect)
+              }
+              busy={imageLookup.reading}
               disabled={imageLookup.reading}
               buttonClassName={`${modeButtonClass} bg-surface text-ink-soft disabled:opacity-50`}
             />
