@@ -1,4 +1,5 @@
 import ActiveLaunch from "@/components/launch/activeLaunch";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * The opening, with a scrubber and phase checkpoints. Kept as a real route
@@ -11,6 +12,8 @@ export const metadata = {
 };
 
 export default function LaunchReviewPage() {
+  reviewRouteOnly();
+
   return (
     <main>
       <ActiveLaunch reviewMode />

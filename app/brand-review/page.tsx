@@ -6,6 +6,7 @@ import {
   LOGO_TIERS,
   exchangeNotesLogoGeometry,
 } from "@/lib/brand/exchangeNotesLogo";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * The brand comparison screen the specification asks for in §26.
@@ -121,6 +122,8 @@ function Panel({
 }
 
 export default function BrandReviewPage() {
+  reviewRouteOnly();
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
       <h1 className="text-[26px] font-semibold tracking-[-0.03em]">

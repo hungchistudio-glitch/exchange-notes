@@ -31,8 +31,11 @@ export const runtime = "nodejs";
  * Short, because the browser is redirected to it and follows it
  * immediately. It is not a link anybody keeps — the thing that gets kept is
  * the route URL, which is re-authorised on every use.
+ *
+ * Comfortably longer than the redirect's own cache lifetime below, so a
+ * cached redirect can never outlive the signature it points at.
  */
-const SIGNED_URL_TTL_SECONDS = 60 * 10;
+const SIGNED_URL_TTL_SECONDS = 60 * 90;
 
 /**
  * The folder a shared copy goes in.
@@ -143,11 +146,18 @@ export async function GET(request: Request) {
     status: 307,
     headers: {
       /*
-       * Private, and for rather less than the signature's own life: the
-       * browser may reuse the redirect while a list scrolls, and must come
-       * back for a fresh one before the URL it was given goes stale.
+       * Private, and for rather less than the signature's own life so the
+       * browser comes back for a fresh redirect before the URL it was given
+       * goes stale.
+       *
+       * An hour rather than five minutes. Every image on a vocabulary card
+       * is a function invocation now that the bucket is private, and five
+       * minutes meant a reader who scrolled their library twice in an
+       * afternoon paid for all of them twice. The signature outlives this
+       * by a wide margin, so nothing here can hand back a link that has
+       * already expired.
        */
-      "Cache-Control": "private, max-age=300",
+      "Cache-Control": "private, max-age=3600",
     },
   });
 }

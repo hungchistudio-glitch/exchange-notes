@@ -1,4 +1,5 @@
 import YumiMinimalLaunch from "@/components/launch/YumiMinimalLaunch";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 export const metadata = {
   title: "Yumi minimal opening review — Exchange Notes",
@@ -10,6 +11,8 @@ export const metadata = {
  * the signed-in SplashGate.
  */
 export default function YumiOpeningReviewPage() {
+  reviewRouteOnly();
+
   return (
     <main>
       <YumiMinimalLaunch
