@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -46,23 +48,50 @@ describe("the target while nothing is happening", () => {
 });
 
 describe("the target while the model is reading it", () => {
-  it("puts a scan on the target", () => {
+  it("sweeps a band down the inside of the target", () => {
+    /*
+     * The half that answers "is this working" from across a room. A light
+     * on the edge alone was reported as not obvious enough.
+     */
     const { container } = overlay({ busy: true });
 
-    const scan = container.querySelector("svg rect");
+    const band = container.querySelector("[class*='band']");
 
-    expect(scan).not.toBeNull();
-    expect(scan?.getAttribute("class")).toContain("animate-[targetScan");
+    expect(band).not.toBeNull();
   });
 
-  it("only animates when motion is welcome", () => {
-    // A reader who asked for less motion gets a brighter outline that holds
-    // still, not a light running round the box.
+  it("clips the band to the target so it cannot spill onto the picture", () => {
     const { container } = overlay({ busy: true });
 
-    expect(container.querySelector("svg rect")?.getAttribute("class")).toContain(
-      "motion-safe:",
+    expect(container.querySelector("[class*='bandClip']")).not.toBeNull();
+  });
+
+  it("runs a light round the target's own edge", () => {
+    // The quieter half: it says precisely which rectangle is being read.
+    const { container } = overlay({ busy: true });
+
+    const edge = container.querySelector("svg rect");
+
+    expect(edge).not.toBeNull();
+    expect(edge?.getAttribute("class")).toMatch(/edgeStroke/);
+  });
+
+  it("stops everything travelling under reduced motion", () => {
+    /*
+     * Asserted against the stylesheet, because the rule lives in a media
+     * query rather than in a class name the markup carries. The band is
+     * removed outright — its whole purpose is movement, and left static it
+     * would be a stripe across the middle of the picture.
+     */
+    const css = readFileSync(
+      join(process.cwd(), "components/camera/TargetOverlay.module.css"),
+      "utf8",
     );
+
+    const reduced = css.slice(css.indexOf("prefers-reduced-motion"));
+
+    expect(reduced).toContain("display: none");
+    expect(reduced).toContain("animation: none");
   });
 
   it("normalises the perimeter so the journey is the same at any shape", () => {
@@ -89,6 +118,19 @@ describe("the target while the model is reading it", () => {
 
     const selected = screen.getByRole("img", { name: copy.selectedLabel });
 
+    expect(selected.contains(container.querySelector("svg"))).toBe(true);
+  });
+
+  it("keeps both signals inside the target, never across the frame", () => {
+    /*
+     * The brief rules out a line sweeping the viewfinder by name, and it
+     * would also be untrue: nothing is reading the rest of the picture.
+     */
+    const { container } = overlay({ busy: true });
+
+    const selected = screen.getByRole("img", { name: copy.selectedLabel });
+
+    expect(selected.contains(container.querySelector("[class*='band']"))).toBe(true);
     expect(selected.contains(container.querySelector("svg"))).toBe(true);
   });
 

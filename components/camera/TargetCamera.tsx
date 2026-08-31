@@ -119,8 +119,17 @@ export default function TargetCamera({
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { videoRef, stream, status, capabilities, suspend, resume, retry } =
-    useCameraStream({ ideal });
+  const {
+    videoRef,
+    stream,
+    status,
+    capabilities,
+    suspend,
+    resume,
+    freeze,
+    unfreeze,
+    retry,
+  } = useCameraStream({ ideal });
 
   const [natural, setNatural] = useState<Size | null>(null);
   const [candidates, setCandidates] = useState<NormalizedRect[]>([]);
@@ -369,11 +378,31 @@ export default function TargetCamera({
 
     if (!raster) return;
 
+    /*
+     * The preview stops here, on the frame that was just taken.
+     *
+     * It used to carry on running through the whole recognition — three to
+     * seven seconds of the room moving behind a progress message, which
+     * reads as the shutter not having fired. Holding the frame is what makes
+     * the wait obviously *about* the picture you just took.
+     */
+    freeze();
+
     onCapture({
       raster,
       targetRect: clampRect(targetRef.current ?? DEFAULT_TARGET_RECT),
     });
-  }, [videoRef, busy, status, onCapture]);
+  }, [videoRef, busy, status, onCapture, freeze]);
+
+  /*
+   * Let it run again when the caller is done and has not navigated away.
+   * Most callers close the camera on an answer, so this usually matters
+   * only for a failure — where the reader is left looking at a live camera
+   * they can immediately use again rather than a frozen one they cannot.
+   */
+  useEffect(() => {
+    if (!busy) unfreeze();
+  }, [busy, unfreeze]);
 
   /* ---------- pickers ---------- */
 
@@ -406,7 +435,17 @@ export default function TargetCamera({
     .map(toBoxFraction)
     .filter((rect): rect is NormalizedRect => rect !== null);
 
-  const overlayTarget = target ? toBoxFraction(target) : null;
+  /*
+   * The centre region stands in until the reader picks something.
+   *
+   * `target` started as null and the overlay draws nothing without one — so
+   * a reader who never tapped saw no frame at all, and, once the shutter
+   * went, no scanning animation either, because that is drawn on the target.
+   * The shutter has always fallen back to this same rectangle; the screen
+   * simply never said so.
+   */
+  const effectiveTarget = target ?? DEFAULT_TARGET_RECT;
+  const overlayTarget = toBoxFraction(effectiveTarget);
   const unavailable = status === "denied" || status === "unavailable";
 
   return (

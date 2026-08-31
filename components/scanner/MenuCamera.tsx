@@ -85,6 +85,8 @@ export default function MenuCamera({
   const startingRef = useRef(false);
   const closedRef = useRef(false);
   const pickingRef = useRef(false);
+  /* Set once the shutter has stopped the preview on the captured frame. */
+  const frozenRef = useRef(false);
 
   const [ready, setReady] = useState(false);
   /*
@@ -249,10 +251,14 @@ export default function MenuCamera({
         return;
       }
 
+      // A frame held on purpose after the shutter is not a frame iOS took
+      // away while the app was in the background.
+      if (frozenRef.current) return;
+
       const video = videoRef.current;
       if (!video || !video.paused) return;
 
-      void video.play().catch(() => {});
+      void video.play()?.catch(() => {});
     }
 
     document.addEventListener("visibilitychange", resume);
@@ -341,6 +347,18 @@ export default function MenuCamera({
       setCapturing(false);
       return;
     }
+
+    /*
+     * The preview stops on the frame that was taken.
+     *
+     * The encode below is awaited and the screen only changes once the
+     * session has the image, so without this the menu carries on moving
+     * under the reader's hands after the shutter — which reads as the tap
+     * not having landed. The stream is untouched, so the retake path picks
+     * straight up again.
+     */
+    frozenRef.current = true;
+    video.pause();
 
     try {
       const image = await renderForRecognition(raster, CAPTURE_MAX_EDGE);
