@@ -1,4 +1,5 @@
 import TutorialReview from "@/components/tutorial/TutorialReview";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * The tour, openable without an account and at any interface language.
@@ -16,5 +17,7 @@ export const metadata = {
 };
 
 export default function TutorialReviewPage() {
+  reviewRouteOnly();
+
   return <TutorialReview />;
 }

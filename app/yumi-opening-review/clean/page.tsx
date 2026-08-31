@@ -1,4 +1,5 @@
 import YumiMinimalLaunch from "@/components/launch/YumiMinimalLaunch";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 export const metadata = {
   title: "Yumi minimal opening — clean review",
@@ -7,6 +8,8 @@ export const metadata = {
 
 /** Control-free route for full-screen review and screen recording. */
 export default function CleanYumiOpeningReviewPage() {
+  reviewRouteOnly();
+
   return (
     <main>
       <YumiMinimalLaunch

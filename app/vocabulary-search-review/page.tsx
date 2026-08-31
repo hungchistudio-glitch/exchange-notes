@@ -1,5 +1,6 @@
 import VocabularySearchReview from "@/components/vocabulary/VocabularySearchReview";
 import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * The vocabulary search field, without an account. A development surface
@@ -11,6 +12,8 @@ export const metadata = {
 };
 
 export default async function VocabularySearchReviewPage() {
+  reviewRouteOnly();
+
   const storedMode = await getServerInterfaceMode();
 
   return <VocabularySearchReview storedMode={storedMode} />;

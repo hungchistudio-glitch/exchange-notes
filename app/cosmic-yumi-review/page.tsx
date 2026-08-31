@@ -1,5 +1,6 @@
 import CosmicYumiReview from "@/components/cosmic/CosmicYumiReview";
 import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
+import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 /*
  * Yumi on the Command Deck, without an account.
@@ -18,6 +19,8 @@ export const metadata = {
 };
 
 export default async function CosmicYumiReviewPage() {
+  reviewRouteOnly();
+
   const storedMode = await getServerInterfaceMode();
 
   return <CosmicYumiReview storedMode={storedMode} />;
