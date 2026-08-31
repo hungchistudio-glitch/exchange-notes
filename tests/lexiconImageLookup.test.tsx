@@ -20,7 +20,7 @@ const recognition = vi.hoisted(() => ({
 
 const media = vi.hoisted(() => ({
   decodeBlob: vi.fn(),
-  buildCapture: vi.fn(),
+  startCapture: vi.fn(),
   holdImageCapture: vi.fn(),
 }));
 
@@ -41,7 +41,7 @@ vi.mock("@/lib/media/raster", () => ({
 }));
 
 vi.mock("@/lib/media/pipeline", () => ({
-  buildCapture: media.buildCapture,
+  startCapture: media.startCapture,
 }));
 
 vi.mock("@/lib/lexicon/pendingImageCapture", () => ({
@@ -70,7 +70,7 @@ const close = vi.fn();
 beforeEach(() => {
   recognition.identifyImage.mockReset();
   media.decodeBlob.mockReset();
-  media.buildCapture.mockReset();
+  media.startCapture.mockReset();
   media.holdImageCapture.mockReset();
   close.mockReset();
 
@@ -81,11 +81,19 @@ beforeEach(() => {
     close,
   });
 
-  media.buildCapture.mockResolvedValue({
+  /*
+   * startCapture hands back the model's copy immediately and the stored
+   * derivatives as a promise still running — that ordering is the point of
+   * it, so the double mirrors it rather than resolving everything at once.
+   */
+  media.startCapture.mockImplementation(async ({ raster }) => ({
     recognitionImage: "data:image/jpeg;base64,cGhvdG8=",
-    capture: { sourceType: "photo" },
     cropRect: { x: 0, y: 0, width: 1, height: 1 },
-  });
+    capture: Promise.resolve({ sourceType: "photo" }).finally(() =>
+      // startCapture owns the raster and frees it when these settle.
+      raster.close(),
+    ),
+  }));
 });
 
 describe("the shared lexicon image lookup", () => {
@@ -97,7 +105,7 @@ describe("the shared lexicon image lookup", () => {
 
     await act(async () => result.current.handleFile(photo("sign.jpg")));
 
-    expect(media.buildCapture).toHaveBeenCalledOnce();
+    expect(media.startCapture).toHaveBeenCalledOnce();
     expect(recognition.identifyImage).toHaveBeenCalledOnce();
     expect(onTerm).toHaveBeenCalledWith("bonjour");
     expect(result.current.reading).toBe(false);
@@ -119,7 +127,7 @@ describe("the shared lexicon image lookup", () => {
 
     await act(async () => result.current.handleFile(photo("glass.jpg")));
 
-    expect(media.buildCapture).toHaveBeenCalledWith(
+    expect(media.startCapture).toHaveBeenCalledWith(
       expect.objectContaining({
         recognitionScope: "frame",
         targetRect: DEFAULT_TARGET_RECT,
@@ -204,9 +212,13 @@ describe("the shared lexicon image lookup", () => {
     expect(result.current.reading).toBe(false);
   });
 
-  it("releases the decoded frame however it ends", async () => {
-    // A raster is the full-resolution decode. Leaking one per lookup is tens
-    // of megabytes a reader never gets back.
+  it("releases the decoded frame even when recognition fails", async () => {
+    /*
+     * A raster is the full-resolution decode — tens of megabytes a reader
+     * never gets back. Ownership moves to startCapture, which frees it when
+     * its derivatives settle, so this holds whether or not the request that
+     * ran alongside them succeeded.
+     */
     const onTerm = vi.fn();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     recognition.identifyImage.mockRejectedValue(new Error("network"));
@@ -216,5 +228,30 @@ describe("the shared lexicon image lookup", () => {
     await act(async () => result.current.handleFile(photo("sign.jpg")));
 
     expect(close).toHaveBeenCalled();
+  });
+
+  it("frees a frame dropped because a read was already running", async () => {
+    // A second shutter press while the first is still being read. Nothing
+    // downstream ever sees that frame, so the hook has to free it itself.
+    const onTerm = vi.fn();
+    const dropped = { source: {}, width: 10, height: 10, close: vi.fn() };
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => {
+      // Two in the same tick: the first takes the lock, the second is dropped.
+      void result.current.handleCapture(
+        { source: {}, width: 10, height: 10, close: vi.fn() } as never,
+        { x: 0, y: 0, width: 1, height: 1 },
+      );
+      await result.current.handleCapture(dropped as never, {
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+    });
+
+    expect(dropped.close).toHaveBeenCalled();
   });
 });
