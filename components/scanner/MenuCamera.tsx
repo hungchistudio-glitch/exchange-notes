@@ -13,17 +13,23 @@ import {
   DETECTION_RELEASE_FRAMES,
 } from "@/lib/scanner/imageAnalysis";
 import { getLearningLanguages, type LanguageCode } from "@/lib/languages";
+import { RECOGNITION_EDGE } from "@/lib/media/config";
+import { decodeBlob, rasterFromVideo, renderForRecognition } from "@/lib/media/raster";
 
 /*
  * The long edge of the photo that gets sent for reading.
  *
- * 1800 rather than the 1024 the rest of this app uses for vision: a menu is
+ * 1800 rather than the 768 the rest of this app uses for vision: a menu is
  * 9pt type photographed from a metre away, and every pixel dropped here is a
  * price that comes back wrong. It is the single biggest lever on quality in
  * the whole feature.
+ *
+ * That reasoning now lives in lib/media/config as RECOGNITION_EDGE.document,
+ * alongside the object reader's 768 and with the same note attached, so the
+ * two sizes are visibly one decision made twice rather than two screens that
+ * happen to disagree.
  */
-const CAPTURE_MAX_EDGE = 1800;
-const CAPTURE_QUALITY = 0.92;
+const CAPTURE_MAX_EDGE = RECOGNITION_EDGE.document;
 
 // Five times a second. Fast enough that the marker lands while the user is
 // still lining up, slow enough to leave the preview alone.
@@ -317,81 +323,39 @@ export default function MenuCamera({
     }
   }, [torchOn]);
 
-  const capture = useCallback(() => {
+  const capture = useCallback(async () => {
     const video = videoRef.current;
     if (!video || capturing) return;
 
-    const { videoWidth, videoHeight } = video;
-    if (!videoWidth || !videoHeight) return;
-
     setCapturing(true);
 
-    const scale = Math.min(1, CAPTURE_MAX_EDGE / Math.max(videoWidth, videoHeight));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(videoWidth * scale);
-    canvas.height = Math.round(videoHeight * scale);
+    /*
+     * The frame comes off the sensor at full size and is reduced once, by
+     * the shared pipeline, at the document long edge. This screen used to
+     * do its own canvas arithmetic here; keeping the reasoning and dropping
+     * the duplicate is the whole of this change.
+     */
+    const raster = rasterFromVideo(video);
 
-    const context = canvas.getContext("2d");
-
-    if (!context) {
+    if (!raster) {
       setCapturing(false);
       return;
     }
 
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+      const image = await renderForRecognition(raster, CAPTURE_MAX_EDGE);
 
-    // Judged on the frame that was actually kept, not on the preview.
-    const quality = assessQuality(
-      analyseFrame(canvas, canvas.width, canvas.height),
-    );
+      // Judged on the frame that was actually kept, not on the preview.
+      const quality = assessQuality(
+        analyseFrame(raster.source as HTMLCanvasElement, raster.width, raster.height),
+      );
 
-    onCaptured(
-      canvas.toDataURL("image/jpeg", CAPTURE_QUALITY),
-      quality.usable ? null : quality.reason,
-    );
-
-    setCapturing(false);
-  }, [capturing, onCaptured]);
-
-  /**
-   * Decodes a chosen photo into something drawable.
-   *
-   * createImageBitmap first: it hands back a decoded image without the base64
-   * round trip a FileReader forces, which on a 12-megapixel HEIC is the
-   * difference between a pause and a stall. FileReader stays as the fallback
-   * for browsers without it.
-   */
-  async function decodePhoto(
-    file: File,
-  ): Promise<ImageBitmap | HTMLImageElement> {
-    if (typeof createImageBitmap === "function") {
-      try {
-        return await createImageBitmap(file);
-      } catch {
-        // A format this browser cannot decode, or a corrupt file. The path
-        // below fails the same way, and reports it once.
-      }
+      onCaptured(image, quality.usable ? null : quality.reason);
+    } finally {
+      raster.close();
+      setCapturing(false);
     }
-
-    const source = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        typeof reader.result === "string"
-          ? resolve(reader.result)
-          : reject(new Error("unreadable"));
-      reader.onerror = () => reject(new Error("unreadable"));
-      reader.readAsDataURL(file);
-    });
-
-    return await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("undecodable"));
-      image.src = source;
-    });
-  }
+  }, [capturing, onCaptured]);
 
   /**
    * Opens the photo picker, with the camera released first.
@@ -407,40 +371,34 @@ export default function MenuCamera({
     fileInputRef.current?.click();
   }
 
+  /**
+   * A chosen photo, read the same way a captured one is.
+   *
+   * The bespoke decoder that used to live here — createImageBitmap with a
+   * FileReader fallback, and its own resize — is lib/media/raster's
+   * decodeBlob now, which does the same thing plus the two this one did not:
+   * it applies EXIF orientation, and it resizes during the decode rather
+   * than after, so a 48-megapixel photo never exists at full size in memory.
+   */
   async function importPhoto(file: File) {
     setImportError("");
 
+    let raster = null;
+
     try {
-      const decoded = await decodePhoto(file);
+      raster = await decodeBlob(file, CAPTURE_MAX_EDGE);
 
-      const scale = Math.min(
-        1,
-        CAPTURE_MAX_EDGE / Math.max(decoded.width, decoded.height),
-      );
-
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(decoded.width * scale));
-      canvas.height = Math.max(1, Math.round(decoded.height * scale));
-
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("no-canvas");
-
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = "high";
-      context.drawImage(decoded, 0, 0, canvas.width, canvas.height);
-
-      if (typeof ImageBitmap !== "undefined" && decoded instanceof ImageBitmap) {
-        decoded.close();
-      }
+      const image = await renderForRecognition(raster, CAPTURE_MAX_EDGE);
 
       const quality = assessQuality(
-        analyseFrame(canvas, canvas.width, canvas.height),
+        analyseFrame(
+          raster.source as HTMLImageElement,
+          raster.width,
+          raster.height,
+        ),
       );
 
-      onCaptured(
-        canvas.toDataURL("image/jpeg", CAPTURE_QUALITY),
-        quality.usable ? null : quality.reason,
-      );
+      onCaptured(image, quality.usable ? null : quality.reason);
     } catch {
       /*
        * Reported on the camera rather than by throwing the user to an error
@@ -448,6 +406,8 @@ export default function MenuCamera({
        * taking the shot themselves, and both beat a dead end.
        */
       setImportError(copy.importFailed);
+    } finally {
+      raster?.close();
     }
   }
 
@@ -567,7 +527,7 @@ export default function MenuCamera({
           */}
           <button
             type="button"
-            onClick={capture}
+            onClick={() => void capture()}
             disabled={!ready || capturing}
             aria-label={copy.capture}
             className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-[#ffffff]/85 transition-transform active:scale-95 disabled:opacity-40"

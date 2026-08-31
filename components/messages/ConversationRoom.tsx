@@ -75,6 +75,8 @@ import {
   setPendingSharedVocabulary,
 } from "@/lib/vocabularyDraft";
 import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
+import { CARD_HEIGHT, CARD_WIDTH, COMPRESSION_VERSION } from "@/lib/media/config";
+import { adoptSharedImage } from "@/lib/media/sharing";
 
 /*
  * Page B. "What are we saying to each other?"
@@ -1064,8 +1066,52 @@ export default function ConversationRoom({
     const cardTranslationLanguage = card.translationLanguage ?? languagePair[1];
 
     try {
+      /*
+       * The picture becomes theirs, not a link to the sender's.
+       *
+       * A reference would look identical today and rot: the sender can
+       * delete their word, and the recipient's card would lose its picture
+       * for a reason they could never see. It also keeps asset cleanup
+       * honest — one row, one file, and deleting either takes exactly its
+       * own copy.
+       */
+      let media = null;
+
+      if (card.imagePath) {
+        const adopted = await adoptSharedImage(
+          supabase,
+          currentUserId,
+          card.imagePath,
+        );
+
+        if (adopted) {
+          media = {
+            version: 1 as const,
+            sourceType: "photo" as const,
+            /*
+             * Both point at the one file that was actually copied. A shared
+             * card carries the card derivative and never the retained
+             * source — the sender shared a vocabulary card, not their
+             * original photograph — so there is no larger copy to name, and
+             * saying so honestly beats inventing a path to a file that does
+             * not exist.
+             */
+            sourcePath: adopted.path,
+            cardPath: adopted.path,
+            targetRect: { x: 0, y: 0, width: 1, height: 1 },
+            originalDimensions: { width: CARD_WIDTH, height: CARD_HEIGHT },
+            storedDimensions: { width: CARD_WIDTH, height: CARD_HEIGHT },
+            mimeType: adopted.mimeType,
+            compressionVersion: COMPRESSION_VERSION,
+            createdAt: new Date().toISOString(),
+            recognition: { source: "shared-word-card" },
+          };
+        }
+      }
+
       await createVocabularyEntry({
         userId: currentUserId,
+        media,
         term: card.word,
         translation: card.translation,
         partOfSpeech: card.partOfSpeech,

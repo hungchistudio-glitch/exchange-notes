@@ -166,6 +166,7 @@ export default function MenuResultViewer({
 
       <MenuItemInsightSheet
         item={selected}
+        pageImage={image}
         cuisine={menu.detectedCuisine}
         targetLanguage={menu.targetLanguage}
         onClose={() => setSelected(null)}

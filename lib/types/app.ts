@@ -96,6 +96,13 @@ export type VocabularyItem = {
   example_sentence: string | null;
   translated_example: string | null;
   image_url: string | null;
+  /**
+   * The two derivatives a visual capture produced, and the target rectangle
+   * relating them. Null for every word saved before the media pipeline, and
+   * for every word that never came from a picture — see lib/media/record.ts,
+   * which is also the only thing that should parse this.
+   */
+  media?: unknown;
   confidence: "high" | "medium" | "low" | null;
   status: VocabularyStatus;
   created_at: string;

@@ -28,6 +28,7 @@ import {
 import { flushOutbox } from "@/lib/offline/sync";
 import type { VocabularyItem } from "@/lib/types/app";
 import { useVocabularyLanguageFill } from "@/hooks/useVocabularyLanguageFill";
+import { sweepOrphans } from "@/lib/media/orphanSweep";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 
 type VocabularyContextType = {
@@ -209,6 +210,37 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       // See above.
     }
   }, []);
+
+  /*
+   * Image files nothing points at, cleared away once a session.
+   *
+   * Here because this is the one place that holds the reader's whole
+   * library, which is what "nothing points at it" has to be measured
+   * against — a sweep run against a filtered list would delete the pictures
+   * of every word not currently on screen.
+   *
+   * Deliberately unawaited and unreported. It is housekeeping the reader did
+   * not ask for; it must never delay the list appearing and must never put
+   * an error on screen. Its own session guard keeps it to one run, so this
+   * effect firing again on a refresh costs nothing.
+   */
+  useEffect(() => {
+    if (loading || items.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const { user } = await getCurrentUser();
+
+      if (!user || cancelled) return;
+
+      await sweepOrphans(createClient(), user.id, items);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, items]);
 
   useEffect(() => {
     let active = true;

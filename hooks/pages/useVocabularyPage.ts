@@ -431,7 +431,7 @@ export default function useVocabularyPage({
         if (detailItem) void changeStatus(detailItem, status);
       },
       onSendToPartner: () => {
-        if (detailItem) handleSendToPartner(detailItem);
+        if (detailItem) void handleSendToPartner(detailItem);
       },
       onShare: () => {
         if (detailItem) void shareVocabularyItem(detailItem);

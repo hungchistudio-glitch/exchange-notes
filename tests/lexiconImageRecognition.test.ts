@@ -2,52 +2,32 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   ImageRecognitionError,
-  MAX_AI_DIMENSION,
   MAX_IMAGE_FILE_SIZE,
-  MAX_PREVIEW_DIMENSION,
-  fileToModelImage,
   identifyImage,
 } from "@/lib/lexicon/imageRecognition";
+import {
+  RECOGNITION_EDGE,
+  SOURCE_MAX_EDGE,
+  MAX_IMAGE_FILE_SIZE as CONFIG_MAX_FILE_SIZE,
+} from "@/lib/media/config";
 
 /* =========================================================
-   Refusing a photograph before decoding it
+   What is left of this module, and where the rest went
 
-   The two guards here run before any pixels are read, which is the point: a
-   forty-megabyte screenshot should be turned away in a microsecond, not after
-   the browser has spent a second decoding it to discover it is too big.
+   The guards this file used to check — not-an-image, too-large — moved to
+   the callers when the decoding did, because they belong next to the decode
+   they are protecting. They are checked in tests/lexiconImageLookup.test.tsx
+   against the hook that now performs them.
+
+   What stays here is the request: its failure codes, and the one size
+   relationship still worth pinning across modules.
    ========================================================= */
 
-function file(type: string, size: number): File {
-  const blob = new Blob([new Uint8Array(1)], { type });
-
-  // A real File of tens of megabytes would be built byte by byte in the test
-  // runner for no benefit; only the reported size is read.
-  Object.defineProperty(blob, "size", { value: size });
-
-  return blob as File;
-}
-
-describe("reading a picked photo", () => {
-  it("refuses something that is not an image", async () => {
-    await expect(fileToModelImage(file("application/pdf", 1024))).rejects.toThrow(
-      ImageRecognitionError,
-    );
-
-    await expect(
-      fileToModelImage(file("application/pdf", 1024)),
-    ).rejects.toMatchObject({ code: "not-an-image" });
-  });
-
-  it("refuses an image past the size limit", async () => {
-    await expect(
-      fileToModelImage(file("image/jpeg", MAX_IMAGE_FILE_SIZE + 1)),
-    ).rejects.toMatchObject({ code: "too-large" });
-  });
-
+describe("a failure with a name", () => {
   it("carries a code rather than a sentence", () => {
-    // The message is for a log. What the screen shows is chosen from the code,
-    // in the reader's own language — a library has no business holding the
-    // English one.
+    // The message is for a log. What the screen shows is chosen from the
+    // code, in the reader's own language — a library has no business holding
+    // the English one.
     const error = new ImageRecognitionError("daily-limit");
 
     expect(error.code).toBe("daily-limit");
@@ -55,15 +35,28 @@ describe("reading a picked photo", () => {
   });
 });
 
-describe("the sizes the model and the screen get", () => {
-  it("sends the model a smaller copy than the one kept for the card", () => {
+describe("the sizes the model and the storage get", () => {
+  it("sends the model a smaller copy than the one kept for the future", () => {
     /*
-     * Gemini bills in 768px tiles, so the model's copy is one tile and the
-     * preview's is four. Both numbers live in one module now — the capture
-     * screen imports them rather than declaring its own, which is what stops
-     * one of them being tuned and the other quietly not.
+     * Gemini bills in 768px tiles, so the object reader's copy is one tile.
+     * The retained source is much larger because it is not for the model at
+     * all — it is what a better model reads later.
      */
-    expect(MAX_AI_DIMENSION).toBeLessThan(MAX_PREVIEW_DIMENSION);
+    expect(RECOGNITION_EDGE.object).toBeLessThan(SOURCE_MAX_EDGE);
+  });
+
+  it("reads a menu at a higher resolution than a single object", () => {
+    // A menu is 9pt type at a metre; a bottle on a table is not.
+    expect(RECOGNITION_EDGE.document).toBeGreaterThan(RECOGNITION_EDGE.object);
+  });
+
+  it("has exactly one file-size limit", () => {
+    /*
+     * This module re-exports the config's constant rather than declaring a
+     * second one. They were two separate declarations for a while, which is
+     * precisely the drift the media pipeline exists to end.
+     */
+    expect(MAX_IMAGE_FILE_SIZE).toBe(CONFIG_MAX_FILE_SIZE);
   });
 });
 

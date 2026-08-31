@@ -3,35 +3,25 @@
 import type { ObjectIdentificationResult } from "@/lib/ai/identifyObject";
 
 /* =========================================================
-   A photo, read where the reader is standing
+   Asking the model what is in a photograph
 
-   The search's Image key used to navigate to the capture screen and let it
-   open the picker two hundred milliseconds later. A whole screen, mounted and
-   painted, to do nothing but click a file input — and on the way, a page the
-   reader had not asked for.
+   This module used to hold the whole path from a File to a word: the
+   size limits, the downscale, the JPEG encode, and the request. All of it
+   except the request has moved to lib/media, which is where the capture
+   screen and the menu scanner do the same work — three copies of an image
+   pipeline was the thing that made a photograph mean three different sizes
+   depending on which screen the reader had opened.
 
-   The picker belongs to the button that opens it. What this module holds is
-   everything between "a File arrived" and "here is a word": the downscale, the
-   size limits, and the request. Extracted rather than copied, because the
-   capture screen still does the same work for the camera and two copies of an
-   image pipeline drift into two different answers for the same photograph.
+   What is left is the part that was always specific to this: one request,
+   with a timeout, and failures that carry a code rather than a sentence.
+
+   MAX_IMAGE_FILE_SIZE is re-exported from lib/media/config rather than
+   declared again. It was declared twice for a while, which is exactly the
+   drift worth not having: two constants named the same thing that nothing
+   stops from disagreeing.
    ========================================================= */
 
-export const MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024;
-
-/** What the preview and the saved word's image are kept at. */
-export const MAX_PREVIEW_DIMENSION = 1280;
-
-/**
- * What the model is sent.
- *
- * Gemini bills images as 768x768 tiles, so a 1280px photo costs four tiles
- * where a 768px one costs a single tile. Identifying the object nearest the
- * centre does not need the extra detail.
- */
-export const MAX_AI_DIMENSION = 768;
-
-export const JPEG_QUALITY = 0.8;
+export { MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 
 const IDENTIFY_TIMEOUT_MS = 16 * 1000;
 
@@ -57,105 +47,6 @@ export class ImageRecognitionError extends Error {
     this.name = "ImageRecognitionError";
     this.code = code;
   }
-}
-
-/**
- * Draws an image onto a canvas at no more than `maxDimension` on its longest
- * side, and returns it as a JPEG data URL.
- *
- * Returns null for a source with no usable dimensions — a decode that half
- * failed, which is worth telling apart from one that produced a small image.
- */
-export function downscaleToDataUrl(
-  source: CanvasImageSource,
-  sourceWidth: number,
-  sourceHeight: number,
-  maxDimension: number = MAX_PREVIEW_DIMENSION,
-  canvas?: HTMLCanvasElement | null,
-): string | null {
-  if (
-    !Number.isFinite(sourceWidth) ||
-    !Number.isFinite(sourceHeight) ||
-    sourceWidth <= 0 ||
-    sourceHeight <= 0
-  ) {
-    return null;
-  }
-
-  const target = canvas ?? document.createElement("canvas");
-
-  const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
-
-  target.width = Math.max(1, Math.round(sourceWidth * scale));
-  target.height = Math.max(1, Math.round(sourceHeight * scale));
-
-  const context = target.getContext("2d");
-
-  if (!context) return null;
-
-  context.clearRect(0, 0, target.width, target.height);
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  context.drawImage(source, 0, 0, target.width, target.height);
-
-  return target.toDataURL("image/jpeg", JPEG_QUALITY);
-}
-
-function decode(dataUrl: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new ImageRecognitionError("unreadable"));
-    image.src = dataUrl;
-  });
-}
-
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = () => reject(new ImageRecognitionError("unreadable"));
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new ImageRecognitionError("unreadable"));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * A picked file, checked and reduced to the copy the model is sent.
- *
- * The checks come first and are cheap: a 40 MB screenshot should be refused
- * before it is decoded, not after the browser has spent a second on it.
- */
-export async function fileToModelImage(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new ImageRecognitionError("not-an-image");
-  }
-
-  if (file.size > MAX_IMAGE_FILE_SIZE) {
-    throw new ImageRecognitionError("too-large");
-  }
-
-  const image = await decode(await readAsDataUrl(file));
-
-  const downscaled = downscaleToDataUrl(
-    image,
-    image.naturalWidth || image.width,
-    image.naturalHeight || image.height,
-    MAX_AI_DIMENSION,
-  );
-
-  if (!downscaled) throw new ImageRecognitionError("unreadable");
-
-  return downscaled;
 }
 
 /**

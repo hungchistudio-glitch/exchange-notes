@@ -24,6 +24,7 @@ import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButto
 import { getLanguage } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { vocabularyImageUrl } from "@/lib/media/imageUrl";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { speak } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
@@ -105,6 +106,7 @@ export default function VocabularyDetailSheet({
   onEdit: () => void;
   onChangeLanguage: () => void;
 }) {
+  const cardImage = vocabularyImageUrl(item);
   const { t, isTraditionalChinese, language: interfaceLanguage } =
     useTranslation();
   const { learningLanguage, supportLanguage } = useDisplayLanguages();
@@ -140,10 +142,10 @@ export default function VocabularyDetailSheet({
         </div>
 
         <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_10px_36px_rgba(16,16,15,0.06)]">
-          {item.image_url && (
+          {cardImage && (
             <div
               className="aspect-[16/10] w-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${item.image_url})` }}
+              style={{ backgroundImage: `url(${cardImage})` }}
               role="img"
               aria-label={item.word}
             />

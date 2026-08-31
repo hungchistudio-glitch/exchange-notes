@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  ChangeEvent,
-  RefObject,
   Suspense,
   useCallback,
   useEffect,
@@ -17,21 +15,32 @@ import {
   DuplicateVocabularyError,
   createVocabularyEntry,
 } from "@/lib/vocabulary/createEntry";
-import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
+import TargetCamera, {
+  type CameraCapture,
+} from "@/components/camera/TargetCamera";
+import TargetImageViewer from "@/components/camera/TargetImageViewer";
+import { AssetWriteError, commitCapture } from "@/lib/media/assets";
 import {
-  MAX_AI_DIMENSION,
-  MAX_IMAGE_FILE_SIZE,
-  MAX_PREVIEW_DIMENSION,
-  downscaleToDataUrl,
-} from "@/lib/lexicon/imageRecognition";
-import { encodeWordCardMessage } from "@/lib/messages/wordCard";
+  PdfRenderError,
+  isPdf,
+  openPdf,
+  type PdfDocument,
+} from "@/lib/media/pdf";
+import { publishCardBlob } from "@/lib/media/sharing";
+import { MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
+import type { NormalizedRect } from "@/lib/media/geometry";
+import { buildCapture, type BuiltCapture } from "@/lib/media/pipeline";
+import { MediaDecodeError, decodeBlob, type Raster } from "@/lib/media/raster";
+import type { MediaSourceType } from "@/lib/media/record";
+import {
+  encodeWordCardMessage,
+  type SharedWordCard,
+} from "@/lib/messages/wordCard";
 import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
-import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
-import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
@@ -65,15 +74,6 @@ type IdentificationResult = {
 
 type CaptureSource = "camera" | "library" | null;
 
-type CameraOverlayProps = {
-  videoRef: RefObject<HTMLVideoElement | null>;
-  onClose: () => void;
-  onCapture: () => void;
-  closeCameraAriaLabel: string;
-  captureAriaLabel: string;
-  focusHint: string;
-};
-
 function safeReturnHref(value: string | null, fallback: string) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
@@ -94,12 +94,12 @@ const readSpeechSupport = () => "speechSynthesis" in window;
 const assumeSupported = () => true;
 
 /*
- * The limits and the resize live in lib/lexicon/imageRecognition, because the
- * search sheet reads photographs too — and two copies of an image pipeline
- * drift into two different answers for the same photograph.
+ * Every size, quality and margin this screen used to decide for itself now
+ * comes from lib/media/config, which is the whole point of that file: the
+ * capture screen resized to 1280, the search sheet to 768, and the menu
+ * camera to 1800, and all three were answering the same question.
  */
 const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
-const MAX_DIMENSION = MAX_PREVIEW_DIMENSION;
 
 const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
@@ -341,99 +341,6 @@ function SendIcon() {
   );
 }
 
-function CameraOverlay({
-  videoRef,
-  onClose,
-  onCapture,
-  closeCameraAriaLabel,
-  captureAriaLabel,
-  focusHint,
-}: CameraOverlayProps) {
-  const motion = useSheetMotion({ onClose });
-
-  return (
-    <OverlayPortal>
-      <section
-        {...motion.panelProps}
-        className={`${motion.panelClassName} fixed inset-0 z-[100] overflow-hidden overscroll-none bg-black`}
-      >
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/45 to-transparent" />
-
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="relative h-52 w-52">
-          <span className="absolute left-0 top-0 h-9 w-9 rounded-tl-[20px] border-l-2 border-t-2 border-white/80" />
-          <span className="absolute right-0 top-0 h-9 w-9 rounded-tr-[20px] border-r-2 border-t-2 border-white/80" />
-          <span className="absolute bottom-0 left-0 h-9 w-9 rounded-bl-[20px] border-b-2 border-l-2 border-white/80" />
-          <span className="absolute bottom-0 right-0 h-9 w-9 rounded-br-[20px] border-b-2 border-r-2 border-white/80" />
-          <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-[0_0_0_5px_rgba(255,255,255,0.12)]" />
-        </div>
-
-        <p className="absolute top-[calc(50%+7.5rem)] rounded-full bg-black/25 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 backdrop-blur-md">
-          {focusHint}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={motion.requestClose}
-        aria-label={closeCameraAriaLabel}
-        className="absolute left-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-md transition-transform duration-150 active:scale-90"
-        style={{
-          top: "max(1rem, env(safe-area-inset-top))",
-        }}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="h-5 w-5"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 6l12 12M18 6L6 18"
-          />
-        </svg>
-      </button>
-
-      <div
-        className={`${motion.handleClassName} absolute left-1/2 z-10 flex h-12 w-24 -translate-x-1/2 items-start justify-center pt-3`}
-        style={{ top: "env(safe-area-inset-top)" }}
-        {...motion.handleProps}
-      >
-        <span className="h-1 w-12 rounded-full bg-white/55 shadow-sm" />
-      </div>
-
-      <div
-        className="absolute inset-x-0 bottom-0 flex justify-center"
-        style={{
-          paddingBottom: "max(1.75rem, env(safe-area-inset-bottom))",
-        }}
-      >
-        <button
-          type="button"
-          onClick={onCapture}
-          aria-label={captureAriaLabel}
-          className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-white/95 transition-transform duration-150 active:scale-95"
-        >
-          <span className="h-[60px] w-[60px] rounded-full bg-white" />
-        </button>
-      </div>
-      </section>
-    </OverlayPortal>
-  );
-}
-
 function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -447,20 +354,50 @@ function CaptureContent() {
   const { openSearch } = useLexiconSearchSheet();
   const capture = t.capture;
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
-  const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
-  const sourceHandledRef = useRef(false);
-  const pickerStateRef = useRef<{ exitOnCancel: boolean } | null>(null);
-  const pickerFocusTimerRef = useRef<number | null>(null);
-
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraStarting, setCameraStarting] = useState(false);
+  /*
+   * The camera, the photo picker and the file picker all live inside
+   * TargetCamera now. What this screen keeps is what happens after the
+   * shutter: a built capture waiting to be recognised, and the card image
+   * to show while that happens.
+   */
+  const [built, setBuilt] = useState<BuiltCapture | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
+
+  /*
+   * An imported photograph, held between "a file arrived" and "the reader
+   * pointed at the part of it that matters".
+   *
+   * The raster is kept rather than the File, because decoding is the
+   * expensive half and doing it once — before the viewer, and again for the
+   * crop — would be doing it twice.
+   */
+  const [pendingImage, setPendingImage] = useState<{
+    src: string;
+    raster: Raster;
+    fileName: string;
+    /** One-based, for a source that has pages. */
+    page?: number;
+    /*
+     * Carried in state rather than read off documentRef while rendering.
+     * React 19 forbids reading a ref during render, and it would be wrong
+     * anyway: the first render after a file is picked happens before the
+     * ref is populated, so the stepper would be missing for one frame.
+     */
+    pageCount?: number;
+  } | null>(null);
+
+  /*
+   * The open document, while the reader is looking through it.
+   *
+   * Held so that turning a page is a render rather than a re-parse, and
+   * closed the moment the viewer does — a parsed PDF owns a worker thread,
+   * and leaking one per file opened is exactly the kind of thing that makes
+   * an app feel heavier the longer it is used.
+   */
+  const documentRef = useRef<PdfDocument | null>(null);
+
+  const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<IdentificationResult | null>(null);
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -501,6 +438,20 @@ function CaptureContent() {
         ? "camera"
         : null;
 
+  /*
+   * Opened straight away when the link asked for it.
+   *
+   * `source` is known from the URL on the first render, so this is initial
+   * state rather than something an effect synchronises afterwards — which
+   * would paint the landing screen for one frame before replacing it, and
+   * trip this project's cascading-render rule on the way.
+   *
+   * Declared here rather than up with the other state because it reads
+   * `source`, and a lazy initialiser that closes over a `const` declared
+   * below it throws on the first render.
+   */
+  const [cameraOpen, setCameraOpen] = useState(() => source !== null);
+
   const messagesHref = withParam
     ? `/messages/new?friend=${encodeURIComponent(withParam)}`
     : "/messages";
@@ -524,15 +475,7 @@ function CaptureContent() {
   const returnHref = safeReturnHref(searchParams.get("returnTo"), cancelHref);
 
   const leaveCapture = useCallback(() => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
-
-    setCameraActive(false);
+    setCameraOpen(false);
     window.speechSynthesis?.cancel();
 
     if (window.history.length > 1) {
@@ -542,15 +485,6 @@ function CaptureContent() {
 
     router.replace(returnHref);
   }, [returnHref, router]);
-
-  const openFilePicker = useCallback((
-    input: HTMLInputElement | null,
-    exitOnCancel = false,
-  ) => {
-    if (!input) return;
-    pickerStateRef.current = { exitOnCancel };
-    input.click();
-  }, []);
 
   /**
    * Whether the camera was opened from the Universal Search.
@@ -572,54 +506,15 @@ function CaptureContent() {
     };
   }, [result]);
 
-  useEffect(() => {
-    function handlePickerReturn() {
-      if (!pickerStateRef.current) return;
-
-      if (pickerFocusTimerRef.current !== null) {
-        window.clearTimeout(pickerFocusTimerRef.current);
-      }
-
-      pickerFocusTimerRef.current = window.setTimeout(() => {
-        pickerFocusTimerRef.current = null;
-        const pickerState = pickerStateRef.current;
-        if (!pickerState) return;
-
-        pickerStateRef.current = null;
-        if (pickerState.exitOnCancel) leaveCapture();
-      }, 450);
-    }
-
-    window.addEventListener("focus", handlePickerReturn);
-
-    return () => {
-      window.removeEventListener("focus", handlePickerReturn);
-      if (pickerFocusTimerRef.current !== null) {
-        window.clearTimeout(pickerFocusTimerRef.current);
-      }
-    };
-  }, [leaveCapture]);
-
-  useEffect(() => {
-    const inputs = [takePhotoInputRef.current, chooseImageInputRef.current].filter(
-      (input): input is HTMLInputElement => Boolean(input),
-    );
-
-    function handlePickerCancel() {
-      const pickerState = pickerStateRef.current;
-      pickerStateRef.current = null;
-
-      if (pickerState?.exitOnCancel) leaveCapture();
-    }
-
-    inputs.forEach((input) => input.addEventListener("cancel", handlePickerCancel));
-
-    return () => {
-      inputs.forEach((input) =>
-        input.removeEventListener("cancel", handlePickerCancel),
-      );
-    };
-  }, [leaveCapture]);
+  /*
+   * The picker-return dance that used to live here is gone.
+   *
+   * Two effects and three refs existed to notice that a file picker had been
+   * dismissed without a file, because no browser fires a reliable event for
+   * that and the screen had to decide whether to exit. The pickers belong to
+   * TargetCamera now, which is still on screen either way — a cancelled
+   * picker just puts the preview back, which needs no bookkeeping at all.
+   */
 
   /*
    * Recognised, and straight into the answer.
@@ -696,78 +591,13 @@ function CaptureContent() {
     };
   }, [result, pronunciationKey, termLanguage, translationLanguage]);
 
-  // Body scrolling is locked by the camera overlay's own useSheetMotion, which
-  // now also handles overscroll. A second lock here fought it: this one lived
-  // as long as cameraActive, the overlay's only while the overlay was
-  // mounted, and taking a photo unmounts the overlay first — so the overlay
-  // released a lock this effect was still holding.
-
-  useEffect(() => {
-    const video = videoRef.current;
-    const stream = streamRef.current;
-
-    if (!cameraActive || !video || !stream) return;
-
-    video.srcObject = stream;
-
-    const handleLoadedMetadata = () => {
-      void video.play().catch((playError) => {
-        console.error("video.play() failed:", playError);
-        setError(capture.errors.cameraPreview);
-      });
-    };
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
-    // Only the copy for the failure message is missing here. Depending on it
-    // would re-assign video.srcObject on a language change, which restarts the
-    // media element and flickers the live preview.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraActive]);
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sourceHandledRef.current) return;
-
-    sourceHandledRef.current = true;
-
-    if (source === "camera") {
-      void startCamera();
-      return;
-    }
-
-    if (source === "library") {
-      const timeout = window.setTimeout(() => {
-        openFilePicker(chooseImageInputRef.current, true);
-      }, 200);
-
-      return () => window.clearTimeout(timeout);
-    }
-    // Handled once per screen, guarded by sourceHandledRef. Depending on
-    // startCamera — a fresh identity every render — would re-run this, and the
-    // cleanup above would clear the library picker's timeout before it fires
-    // while the guard blocks re-arming it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFilePicker, source]);
-
-  /**
-   * Reads a piece of the result aloud, in its own language.
-   *
-   * This used to be forty lines of local voice matching that could only say
-   * "en-US" or "zh-TW" — so an Italian word photographed by an Italian
-   * learner was read by an English voice, mispronouncing it. It delegates to
-   * lib/speech now, which knows every language's tag, its acceptable voice
-   * fallbacks, and the rate and voice the reader chose in Settings.
+  /*
+   * Attaching the stream to the element, keeping the preview alive across
+   * the photo picker, and stopping the tracks on the way out are all
+   * useCameraStream's job now (hooks/camera/useCameraStream.ts). Three
+   * effects and a ref went with them.
    */
+
   function speak(text: string, language: LanguageCode) {
     if (!speechSupported || !text.trim()) return;
 
@@ -778,240 +608,225 @@ function CaptureContent() {
     });
   }
 
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
+  /**
+   * A raster and a target, turned into everything a save will need.
+   *
+   * The single funnel for all three ways a picture can arrive here — the
+   * shutter, the photo library, a file — which is what makes them one
+   * workflow rather than three that happen to end at the same screen.
+   *
+   * The raster is released whatever happens: it is the full-resolution
+   * frame, and on a 12-megapixel phone camera holding one by accident is
+   * tens of megabytes that never come back.
+   */
+  const prepare = useCallback(
+    async (
+      raster: Raster,
+      targetRect: NormalizedRect,
+      sourceType: MediaSourceType,
+      name: string,
+      page?: number,
+    ) => {
+      setPreparing(true);
+      setError("");
+      setResult(null);
+      setSaved(false);
 
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
+      try {
+        const next = await buildCapture({
+          raster,
+          targetRect,
+          sourceType,
+          recognitionKind: "object",
+          /*
+           * The model is sent the target, not the whole frame. The prompt
+           * asks for "the object at the exact centre", which was only ever
+           * approximately true — cropping to what the reader actually
+           * pointed at makes it true.
+           */
+          recognitionScope: "target",
+          sourceFileName: sourceType === "camera" ? undefined : name,
+          // Kept so a saved word can say which page of which document it
+          // came from, which is the source relationship the spec asks for.
+          sourcePage: page,
+        });
 
-    setCameraActive(false);
-  }
+        setBuilt(next);
+        setImageData(URL.createObjectURL(next.capture.card.blob));
+        setFileName(name);
+        setCameraOpen(false);
+        setPendingImage(null);
+      } catch (buildError) {
+        console.error(buildError);
+        setError(
+          buildError instanceof MediaDecodeError
+            ? capture.errors.processImage
+            : capture.errors.captureImage,
+        );
+      } finally {
+        raster.close();
+        setPreparing(false);
+      }
+    },
+    [capture.errors.captureImage, capture.errors.processImage],
+  );
 
-  async function startCamera() {
-    if (cameraStarting || cameraActive) return;
-
-    setError("");
-    setResult(null);
-    setImageData(null);
-    setSaved(false);
-    setCameraStarting(true);
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraStarting(false);
-      openFilePicker(takePhotoInputRef.current, source === "camera");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: {
-            ideal: "environment",
-          },
-          width: {
-            ideal: 1920,
-          },
-          height: {
-            ideal: 1080,
-          },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      setCameraActive(true);
-    } catch (mediaError) {
-      console.error("getUserMedia failed:", mediaError);
-
-      const permissionDenied =
-        mediaError instanceof DOMException &&
-        (mediaError.name === "NotAllowedError" ||
-          mediaError.name === "PermissionDeniedError");
-
-      setError(
-        permissionDenied
-          ? capture.errors.cameraPermissionDenied
-          : capture.errors.cameraUnavailable
-      );
-    } finally {
-      setCameraStarting(false);
-    }
-  }
-
-  function closeCamera() {
-    stopCamera();
-    leaveCapture();
-  }
-
-  function drawToDataUrl(
-    sourceImage: CanvasImageSource,
-    sourceWidth: number,
-    sourceHeight: number,
-    maxDimension: number = MAX_DIMENSION,
-  ): string | null {
-    /*
-     * The one canvas this screen keeps, handed to the shared resize so a
-     * burst of captures does not allocate a new one per frame.
-     */
-    return downscaleToDataUrl(
-      sourceImage,
-      sourceWidth,
-      sourceHeight,
-      maxDimension,
-      canvasRef.current,
-    );
-  }
+  const onCameraCapture = useCallback(
+    ({ raster, targetRect }: CameraCapture) => {
+      void prepare(raster, targetRect, "camera", "camera-photo.webp");
+    },
+    [prepare],
+  );
 
   /**
-   * Re-renders the stored preview down to MAX_AI_DIMENSION for the
-   * identification request. Falls back to the full-size copy if the decode
-   * fails: a larger image only costs more, whereas throwing here would block
-   * the capture entirely.
+   * One page of a document, rendered and put in front of the reader.
+   *
+   * Shares everything after the render with a photograph: the same viewer,
+   * the same target selection, the same pipeline. Only the way the pixels
+   * are obtained differs, which is the whole point of the Raster type.
    */
-  function buildAiImage(dataUrl: string): Promise<string> {
-    return new Promise((resolve) => {
-      const image = new Image();
+  const showPage = useCallback(
+    async (page: number, fileName: string) => {
+      const document_ = documentRef.current;
 
-      image.onload = () => {
-        resolve(
-          drawToDataUrl(
-            image,
-            image.naturalWidth,
-            image.naturalHeight,
-            MAX_AI_DIMENSION
-          ) ?? dataUrl
+      if (!document_) return;
+
+      setPreparing(true);
+
+      try {
+        const raster = await document_.renderPage(page);
+
+        /*
+         * The page render becomes an object URL only so the viewer can show
+         * it. It is never uploaded — the retained source and the card are
+         * made from the raster by the pipeline, and both are a fraction of
+         * this render's size.
+         */
+        const blob = await new Promise<Blob | null>((resolve) =>
+          (raster.source as HTMLCanvasElement).toBlob(resolve, "image/webp", 0.9),
         );
-      };
 
-      image.onerror = () => resolve(dataUrl);
-      image.src = dataUrl;
-    });
-  }
-
-  function compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onerror = () => {
-        reject(new Error("Could not read this image."));
-      };
-
-      reader.onload = () => {
-        if (typeof reader.result !== "string") {
-          reject(new Error("Could not read this image."));
-          return;
-        }
-
-        const image = new Image();
-
-        image.onerror = () => {
-          reject(new Error("Could not open this image."));
-        };
-
-        image.onload = () => {
-          const dataUrl = drawToDataUrl(
-            image,
-            image.naturalWidth || image.width,
-            image.naturalHeight || image.height
-          );
-
-          if (!dataUrl) {
-            reject(new Error("Could not process this image."));
-            return;
+        setPendingImage((current) => {
+          if (current) {
+            current.raster.close();
+            URL.revokeObjectURL(current.src);
           }
 
-          resolve(dataUrl);
-        };
+          return blob
+            ? {
+                src: URL.createObjectURL(blob),
+                raster,
+                fileName,
+                page,
+                pageCount: document_.pageCount,
+              }
+            : null;
+        });
+      } catch (renderError) {
+        console.error(renderError);
+        setError(capture.errors.processImage);
+      } finally {
+        setPreparing(false);
+      }
+    },
+    [capture.errors.processImage],
+  );
 
-        image.src = reader.result;
-      };
+  /**
+   * A picked document.
+   *
+   * The only entry point in the app that accepts something which is not an
+   * image. Page one is shown first, because that is the page somebody
+   * photographing a menu or a form means nine times in ten.
+   */
+  const onPickFile = useCallback(
+    async (file: File) => {
+      setError("");
 
-      reader.readAsDataURL(file);
-    });
-  }
+      if (!isPdf(file)) {
+        setError(capture.errors.selectImage);
+        return;
+      }
 
-  async function handleSelectedFile(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    pickerStateRef.current = null;
-    const file = event.target.files?.[0];
+      try {
+        documentRef.current?.close();
+        documentRef.current = await openPdf(file);
 
-    event.target.value = "";
+        await showPage(1, file.name);
+      } catch (openError) {
+        console.error(openError);
+        setError(
+          openError instanceof PdfRenderError
+            ? capture.errors.processImage
+            : capture.errors.captureImage,
+        );
+      }
+    },
+    [
+      capture.errors.captureImage,
+      capture.errors.processImage,
+      capture.errors.selectImage,
+      showPage,
+    ],
+  );
 
-    if (!file) return;
+  /**
+   * A picked photograph, decoded once and shown for a target to be chosen.
+   *
+   * The checks come first and are cheap, as they were before: a forty
+   * megabyte screenshot should be refused in a microsecond rather than
+   * after the browser has spent a second decoding it.
+   */
+  const onPickPhoto = useCallback(
+    async (file: File) => {
+      setError("");
 
-    setError("");
-    setResult(null);
-    setSaved(false);
+      if (!file.type.startsWith("image/")) {
+        setError(capture.errors.selectImage);
+        return;
+      }
 
-    if (!file.type.startsWith("image/")) {
-      setError(capture.errors.selectImage);
-      return;
-    }
+      if (file.size > MAX_FILE_SIZE) {
+        setError(capture.errors.imageTooLarge);
+        return;
+      }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError(capture.errors.imageTooLarge);
-      return;
-    }
+      try {
+        const raster = await decodeBlob(file);
 
-    try {
-      const compressedImage = await compressImage(file);
-
-      stopCamera();
-      setImageData(compressedImage);
-      setFileName(file.name);
-    } catch (uploadError) {
-      console.error(uploadError);
-      setError(capture.errors.processImage);
-    }
-  }
-
-  function capturePhoto() {
-    const video = videoRef.current;
-
-    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-      setError(capture.errors.cameraNotReady);
-      return;
-    }
-
-    if (!video.videoWidth || !video.videoHeight) {
-      setError(capture.errors.cameraNotReady);
-      return;
-    }
-
-    const dataUrl = drawToDataUrl(
-      video,
-      video.videoWidth,
-      video.videoHeight
-    );
-
-    if (!dataUrl) {
-      setError(capture.errors.captureImage);
-      return;
-    }
-
-    setImageData(dataUrl);
-    setFileName("camera-photo.jpg");
-    setResult(null);
-    setSaved(false);
-
-    stopCamera();
-  }
+        setPendingImage({
+          src: URL.createObjectURL(file),
+          raster,
+          fileName: file.name,
+        });
+      } catch (decodeError) {
+        console.error(decodeError);
+        setError(capture.errors.processImage);
+      }
+    },
+    [
+      capture.errors.imageTooLarge,
+      capture.errors.processImage,
+      capture.errors.selectImage,
+    ],
+  );
 
   async function identifyImage() {
-    if (!imageData || analyzing) return;
+    if (!built || analyzing) return;
 
     setAnalyzing(true);
     setError("");
     setResult(null);
 
     try {
-      // Keyed on the downscaled copy because that is what determines the
-      // model's answer.
-      const aiImage = await buildAiImage(imageData);
+      /*
+       * The pipeline already produced the copy the model gets, cropped to
+       * the target and sized for it. Keyed on that copy because that is
+       * what determines the model's answer — and it is a stronger key than
+       * before, since two photographs of the same shelf with different
+       * targets are now different requests rather than one cache hit.
+       */
+      const aiImage = built.recognitionImage;
       const cacheKey = await getIdentificationCacheKey(aiImage);
       const cachedResult = getCachedIdentification(cacheKey);
 
@@ -1082,10 +897,40 @@ function CaptureContent() {
     }
   }
 
-  function createShareText() {
-    if (!result) return "";
+  /**
+   * The card for a friend, with its picture published first.
+   *
+   * The word being shared here has usually not been saved, so there is no
+   * library asset to copy — the card derivative is sitting in memory from
+   * the capture, and gets uploaded straight into the shared folder. That is
+   * the one place a picture reaches storage without a vocabulary row
+   * pointing at it, and it is deliberate: the message is the thing that
+   * points at it, and a message is permanent.
+   *
+   * Both ways of sending build the card here, so a word sent into an open
+   * conversation and one sent through the friend picker carry the same
+   * picture rather than one of them quietly carrying none.
+   */
+  async function buildShareCard(): Promise<SharedWordCard | null> {
+    if (!result) return null;
 
-    return encodeWordCardMessage({
+    let imagePath: string | undefined;
+
+    if (built) {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        imagePath =
+          (await publishCardBlob(supabase, user.id, built.capture.card.blob)) ??
+          undefined;
+      }
+    }
+
+    return {
+      imagePath,
       word: result.term,
       translation: result.translation,
       /*
@@ -1104,11 +949,11 @@ function CaptureContent() {
         [termLanguage]: result.termExample,
         [translationLanguage]: result.translationExample,
       },
-    });
+    };
   }
 
   async function saveToVocabulary() {
-    if (!result || !imageData || saving || saved) return;
+    if (!result || !built || saving || saved) return;
 
     setSaving(true);
     setError("");
@@ -1125,63 +970,61 @@ function CaptureContent() {
         throw new Error(capture.errors.loginBeforeSave);
       }
 
-      const imageBlob = dataUrlToBlob(imageData);
-      const extension = safeImageExtension(imageBlob.type);
-      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("vocabulary-images")
-        .upload(imagePath, imageBlob, {
-          contentType: imageBlob.type,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: publicImage } = supabase.storage
-        .from("vocabulary-images")
-        .getPublicUrl(imagePath);
+      /*
+       * The pictures are written first, then the row.
+       *
+       * The old order was the same, but the recovery was not: an upload
+       * whose insert failed was removed in a catch, which works right up
+       * until the tab closes between the two. Now the assets are committed
+       * as a pair by lib/media/assets, and a failed insert leaves at most
+       * two files that the orphan sweep already knows how to find.
+       */
+      let media = null;
 
       try {
-        await createVocabularyEntry({
-          userId: user.id,
-          term: result.term,
-          translation: result.translation,
-          partOfSpeech: result.partOfSpeech,
-          termExample: result.termExample,
-          translationExample: result.translationExample,
-          imageUrl: publicImage.publicUrl,
-          confidence: result.confidence,
-          status: "new",
-          language: {
-            pair: languagePair,
-            /*
-             * What the model said, not what the settings say.
-             *
-             * This used to state the reader's pair outright, which outranks
-             * everything and is never recomputed — so a word the model itself
-             * had labelled Italian was stored as English, permanently,
-             * because the reader happened to be studying English that week.
-             * The pair still travels along as the context the photo was taken
-             * in, and as the fallback when a cached result predates the
-             * language fields.
-             */
-            ai: {
-              termLanguage: result.termLanguage,
-              translationLanguage: result.translationLanguage,
-            },
-          },
-        });
-      } catch (insertError) {
-        // The image is only worth keeping if a row points at it.
-        await supabase.storage
-          .from("vocabulary-images")
-          .remove([imagePath]);
+        media = await commitCapture(supabase, user.id, built.capture);
+      } catch (assetError) {
+        /*
+         * Offline, or out of storage. The word is saved without its
+         * picture rather than not at all — the same trade this file
+         * already makes for the duplicate check, and the right one: a
+         * missing image is a nuisance, a word the reader could not save
+         * is worse.
+         */
+        console.error(assetError);
 
-        throw insertError;
+        if (!(assetError instanceof AssetWriteError)) throw assetError;
       }
+
+      await createVocabularyEntry({
+        userId: user.id,
+        term: result.term,
+        translation: result.translation,
+        partOfSpeech: result.partOfSpeech,
+        termExample: result.termExample,
+        translationExample: result.translationExample,
+        media,
+        confidence: result.confidence,
+        status: "new",
+        language: {
+          pair: languagePair,
+          /*
+           * What the model said, not what the settings say.
+           *
+           * This used to state the reader's pair outright, which outranks
+           * everything and is never recomputed — so a word the model itself
+           * had labelled Italian was stored as English, permanently,
+           * because the reader happened to be studying English that week.
+           * The pair still travels along as the context the photo was taken
+           * in, and as the fallback when a cached result predates the
+           * language fields.
+           */
+          ai: {
+            termLanguage: result.termLanguage,
+            translationLanguage: result.translationLanguage,
+          },
+        },
+      });
 
       setSaved(true);
       router.push("/vocabulary");
@@ -1236,14 +1079,21 @@ function CaptureContent() {
     }
   }
 
-  function sendToPartner() {
+  async function sendToPartner() {
     if (!result) return;
 
     // Already inside a specific conversation (opened the camera from
     // there via ?with=) — the recipient is already known, so this keeps
     // the existing draft-prefill behavior instead of asking again.
     if (withParam) {
-      sessionStorage.setItem("exchange-notes-draft-message", createShareText());
+      const card = await buildShareCard();
+
+      if (!card) return;
+
+      sessionStorage.setItem(
+        "exchange-notes-draft-message",
+        encodeWordCardMessage(card),
+      );
       router.push(messagesHref);
       return;
     }
@@ -1262,48 +1112,131 @@ function CaptureContent() {
     setSendingFriendId(null);
   }
 
-  function handlePickFriend(friendId: string) {
+  async function handlePickFriend(friendId: string) {
     if (!result || sendingFriendId) return;
 
     setSendingFriendId(friendId);
-    setPendingSharedVocabulary({
-      word: result.term,
-      translation: result.translation,
-      /*
-       * The card carries the languages the model actually answered in, not
-       * the sender's settings. Labelling them from the pair filed an Italian
-       * word as English on the receiving end.
-       */
-      wordLanguage: termLanguage,
-      translationLanguage,
-      partOfSpeech: result.partOfSpeech,
-      texts: {
-        [termLanguage]: result.term,
-        [translationLanguage]: result.translation,
-      },
-      examples: {
-        [termLanguage]: result.termExample,
-        [translationLanguage]: result.translationExample,
-      },
-    });
+
+    const card = await buildShareCard();
+
+    if (!card) {
+      setSendingFriendId(null);
+      return;
+    }
+
+    setPendingSharedVocabulary(card);
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
+  /** Back to the camera, which is where another photograph comes from. */
   function chooseAnotherImage() {
-    window.speechSynthesis?.cancel();
-
-    setImageData(null);
-    setFileName("");
-    setResult(null);
-    setError("");
-    setSaved(false);
-
-    openFilePicker(chooseImageInputRef.current);
+    reset();
+    setCameraOpen(true);
   }
 
+  /**
+   * Whether something is covering the whole screen.
+   *
+   * The camera and the imported-photo viewer are both fixed and full-bleed,
+   * and the page behind them must not paint its header and hero copy — that
+   * is what once made reaching the viewfinder feel like passing through an
+   * unrelated page.
+   */
+  const fullScreen = cameraOpen || Boolean(pendingImage);
+
+  const closeCamera = useCallback(() => {
+    setCameraOpen(false);
+    leaveCapture();
+  }, [leaveCapture]);
+
+  /** A picked photograph or document the reader backed out of. */
+  const discardPendingImage = useCallback(() => {
+    documentRef.current?.close();
+    documentRef.current = null;
+
+    // Released here rather than inside the updater: React may call an
+    // updater twice, and freeing a bitmap is not a thing to do twice.
+    if (pendingImage) {
+      pendingImage.raster.close();
+      URL.revokeObjectURL(pendingImage.src);
+    }
+
+    setPendingImage(null);
+  }, [pendingImage]);
+
+  /*
+   * Released when the screen goes, not only when the reader resets.
+   *
+   * A raster is the full-resolution decode and an object URL pins its blob;
+   * navigating away mid-flow used to be the one path that leaked both.
+   *
+   * Read through a ref so this runs on unmount alone. Depending on the value
+   * directly would free the previous photograph every time a new one is
+   * picked — which is correct by luck today, and would stop being so the
+   * moment anything held on to it.
+   */
+  const pendingRef = useRef(pendingImage);
+
+  useEffect(() => {
+    pendingRef.current = pendingImage;
+  }, [pendingImage]);
+
+  useEffect(
+    () => () => {
+      documentRef.current?.close();
+      documentRef.current = null;
+
+      const held = pendingRef.current;
+
+      if (!held) return;
+
+      held.raster.close();
+      URL.revokeObjectURL(held.src);
+    },
+    [],
+  );
+
+  const cameraCopy = {
+    close: capture.camera.closeCameraAriaLabel,
+    shutter: capture.camera.captureAriaLabel,
+    torchOn: capture.camera.torchOn,
+    torchOff: capture.camera.torchOff,
+    photoLibrary: capture.source.photoLibrary,
+    importFile: capture.camera.importFile,
+    zoom: capture.camera.zoom,
+    zoomLevel: capture.camera.zoomLevel,
+    hint: capture.camera.targetHint,
+    selectedTarget: capture.camera.selectedTarget,
+    candidateTarget: capture.camera.candidateTarget,
+    focused: capture.camera.focused,
+    analysing: capture.camera.analysing,
+    permissionDenied: capture.errors.cameraPermissionDenied,
+    unavailable: capture.errors.cameraUnavailable,
+    retry: capture.camera.retry,
+  };
+
+  const viewerCopy = {
+    close: capture.camera.closeCameraAriaLabel,
+    confirm: capture.camera.confirmTarget,
+    reset: capture.camera.resetZoom,
+    hint: capture.camera.targetHint,
+    selectedTarget: capture.camera.selectedTarget,
+    candidateTarget: capture.camera.candidateTarget,
+    busy: capture.camera.analysing,
+    previousPage: capture.camera.previousPage,
+    nextPage: capture.camera.nextPage,
+    pageLabel: capture.camera.pageLabel,
+  };
+
   function reset() {
-    stopCamera();
     window.speechSynthesis?.cancel();
+
+    // The preview is an object URL over a blob that would otherwise be held
+    // for the life of the tab.
+    if (imageData) URL.revokeObjectURL(imageData);
+
+    setBuilt(null);
+    setCameraOpen(false);
 
     setImageData(null);
     setFileName("");
@@ -1325,11 +1258,12 @@ function CaptureContent() {
           during that beat this page used to show its whole landing screen —
           header, title, hero copy — behind a prompt for a camera the user has
           already asked for. Reaching the viewfinder felt like passing through
-          an unrelated page. cameraStarting is a safe condition to gate on
-          because it always resolves: either cameraActive turns true or the
-          catch sets an error, and both bring this back.
+          an unrelated page. The camera component owns that beat now — it
+          paints black from its first frame and reports permission failures
+          itself — so this only has to stand aside while it, or the imported
+          photo viewer, is up.
         */}
-        {!cameraActive && !cameraStarting && (
+        {!fullScreen && (
           <header
             className="flex h-14 shrink-0 items-center justify-between"
             style={{
@@ -1358,7 +1292,7 @@ function CaptureContent() {
           </header>
         )}
 
-        {!cameraActive && !cameraStarting && !imageData && (
+        {!fullScreen && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
               {getLanguageName(languagePair[0], interfaceLanguage)} ×{" "}
@@ -1376,12 +1310,12 @@ function CaptureContent() {
             <div className="mt-10 flex items-start justify-center gap-12">
               <button
                 type="button"
-                onClick={() => void startCamera()}
-                disabled={cameraStarting}
+                onClick={() => setCameraOpen(true)}
+                disabled={false}
                 className="group flex w-20 flex-col items-center gap-2.5 disabled:opacity-40"
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-950 text-white transition-transform duration-150 group-active:scale-95">
-                  {cameraStarting ? <SpinnerIcon /> : <CameraIcon />}
+                  <CameraIcon />
                 </span>
 
                 <span className="text-xs font-medium text-neutral-600">
@@ -1392,7 +1326,7 @@ function CaptureContent() {
               <button
                 type="button"
                 onClick={() =>
-                  openFilePicker(chooseImageInputRef.current, true)
+                  setCameraOpen(true)
                 }
                 className="group flex w-20 flex-col items-center gap-2.5"
               >
@@ -1420,30 +1354,57 @@ function CaptureContent() {
           app going blank — and no view transition is involved, which is what
           once left the viewfinder visible with every control dead.
         */}
-        {cameraStarting && (
-          <div
-            className="fixed inset-0 z-[90] grid place-items-center bg-black"
-            role="status"
-            aria-live="polite"
-          >
-            <p className="text-xs font-medium tracking-wide text-ink-invert-soft">
-              {capture.camera.opening}
-            </p>
-          </div>
-        )}
-
-        {cameraActive && !imageData && (
-          <CameraOverlay
-            videoRef={videoRef}
+        {cameraOpen && (
+          <TargetCamera
+            copy={cameraCopy}
+            busy={preparing}
+            onCapture={onCameraCapture}
             onClose={closeCamera}
-            onCapture={capturePhoto}
-            closeCameraAriaLabel={capture.camera.closeCameraAriaLabel}
-            captureAriaLabel={capture.camera.captureAriaLabel}
-            focusHint={capture.camera.focusHint}
+            onPickPhoto={(file) => void onPickPhoto(file)}
+            onPickFile={(file) => void onPickFile(file)}
           />
         )}
 
-        {!cameraActive && imageData && (
+        {/*
+          An imported photograph, at the same target-selection step the
+          camera's own preview offers. Same component, same gestures, same
+          normalised rectangle out of the other end.
+        */}
+        {pendingImage && (
+          <TargetImageViewer
+            /*
+             * Keyed on the page so turning one remounts the viewer, which
+             * clears the target and the candidates. A rectangle chosen on
+             * page two means nothing on page three.
+             */
+            key={pendingImage.page ?? "photo"}
+            src={pendingImage.src}
+            copy={viewerCopy}
+            busy={preparing}
+            pages={
+              pendingImage.page && pendingImage.pageCount
+                ? {
+                    page: pendingImage.page,
+                    pageCount: pendingImage.pageCount,
+                    onPageChange: (page) =>
+                      void showPage(page, pendingImage.fileName),
+                  }
+                : null
+            }
+            onConfirm={(target) =>
+              void prepare(
+                pendingImage.raster,
+                target,
+                pendingImage.page ? "file" : "photo",
+                pendingImage.fileName,
+                pendingImage.page,
+              )
+            }
+            onClose={discardPendingImage}
+          />
+        )}
+
+        {!fullScreen && imageData && (
           <section className="flex flex-1 flex-col pb-28">
             <div className="relative overflow-hidden rounded-[24px] bg-neutral-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1746,7 +1707,7 @@ function CaptureContent() {
           </section>
         )}
 
-        {!cameraActive && !imageData && error && (
+        {!fullScreen && !imageData && error && (
           <p
             role="alert"
             className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700"
@@ -1755,24 +1716,6 @@ function CaptureContent() {
           </p>
         )}
 
-        <canvas ref={canvasRef} className="hidden" />
-
-        <input
-          ref={takePhotoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
-
-        <input
-          ref={chooseImageInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
       </div>
 
       {friendPickerOpen && (

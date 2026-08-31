@@ -65,16 +65,22 @@ function toGrayscale(data: Uint8ClampedArray, pixelCount: number) {
 }
 
 /**
- * Reads one frame from a video or image element.
+ * One frame, downscaled to grayscale samples.
+ *
+ * Split out of analyseFrame so that region detection can read the same
+ * 192-pixel copy rather than making a second one. Two passes over one small
+ * buffer is affordable beside a live preview; two draws and two
+ * getImageData calls at five frames a second is not, and the whole reason
+ * this analysis is allowed to exist is that it stays cheap.
  *
  * Returns null when the source has no pixels yet — a video element that has
  * not reached its first frame reports 0×0, and drawing it throws.
  */
-export function analyseFrame(
+export function sampleFrame(
   source: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement,
   sourceWidth: number,
   sourceHeight: number,
-): FrameAnalysis | null {
+): { gray: Float32Array; width: number; height: number } | null {
   if (!sourceWidth || !sourceHeight) return null;
 
   const scale = ANALYSIS_EDGE / Math.max(sourceWidth, sourceHeight);
@@ -91,8 +97,27 @@ export function analyseFrame(
   }
 
   const { data } = context.getImageData(0, 0, width, height);
+
+  return { gray: toGrayscale(data, width * height), width, height };
+}
+
+/**
+ * Reads one frame from a video or image element.
+ *
+ * Returns null when the source has no pixels yet — a video element that has
+ * not reached its first frame reports 0×0, and drawing it throws.
+ */
+export function analyseFrame(
+  source: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement,
+  sourceWidth: number,
+  sourceHeight: number,
+): FrameAnalysis | null {
+  const sampled = sampleFrame(source, sourceWidth, sourceHeight);
+
+  if (!sampled) return null;
+
+  const { gray, width, height } = sampled;
   const pixelCount = width * height;
-  const gray = toGrayscale(data, pixelCount);
 
   let luminanceTotal = 0;
   let glarePixels = 0;
