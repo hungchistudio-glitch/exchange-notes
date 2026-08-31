@@ -73,7 +73,7 @@ create index if not exists vocabulary_items_media_version_idx
    Registered here as it currently is — public — because this file has to be
    safe to apply against the running app *before* the code that reads images
    through /api/vocabulary-image is deployed. Making it private is
-   20260831022500, which must be applied after that deploy and not before.
+   20260831023815, which must be applied after that deploy and not before.
    ========================================================= */
 
 insert into storage.buckets (id, name, public)

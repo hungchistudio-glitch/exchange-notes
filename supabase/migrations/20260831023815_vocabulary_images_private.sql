@@ -4,9 +4,11 @@
 -- /api/vocabulary-image is deployed, and not before. That is the whole
 -- operational content of this file being separate from 20260831022419.
 --
--- NOT YET APPLIED. 20260831022419 is on production; this one is deliberately
--- held back, because production is still serving the code that reads images
--- by public URL. Applying it now blanks every existing vocabulary image.
+-- Applied once PR #68 was merged and serving: the route existed on
+-- production, its guards answered 400/400/401 as they do locally, and no
+-- runtime errors had appeared. Held back until then, because until that
+-- deploy production read images by public URL and this would have blanked
+-- every one of them.
 --
 -- Every vocabulary image ever saved is currently readable by anyone holding
 -- its URL: the bucket is public, the capture screen stored
