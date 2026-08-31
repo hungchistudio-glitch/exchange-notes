@@ -1,6 +1,7 @@
 "use client";
 
 import type { LanguageCode } from "@/lib/languages";
+import type { VocabularyMedia } from "@/lib/media/record";
 import { findDuplicate } from "@/lib/lexicon/personal";
 import { applyPending, readMirror, readOutbox } from "@/lib/offline/vocabulary";
 import type { VocabularyCategory, VocabularyItem } from "@/lib/types/app";
@@ -39,6 +40,15 @@ export type CreateVocabularyEntryInput = {
   termExample?: string | null;
   translationExample?: string | null;
   imageUrl?: string | null;
+
+  /**
+   * What a visual capture produced, from lib/media/assets' commitCapture.
+   *
+   * Optional, and stays optional. A word typed into the search box has no
+   * picture and never will; the spec is explicit that a target image is
+   * never made mandatory, and the type says so.
+   */
+  media?: VocabularyMedia | null;
 
   confidence?: VocabularyItem["confidence"];
   category?: VocabularyCategory;
@@ -210,6 +220,7 @@ export async function createVocabularyEntry(
     example_sentence: termExample,
     translated_example: translationExample,
     image_url: input.imageUrl ?? null,
+    media: input.media ?? null,
     confidence: input.confidence ?? "medium",
     category: input.category ?? "other",
     status: input.status ?? "new",

@@ -118,6 +118,14 @@ export type InsertVocabulary = {
   translated_example: string | null;
   /** Present only for words saved from a photo. */
   image_url?: string | null;
+  /**
+   * The media record, for words that came from a camera, a photo or a file.
+   *
+   * Sits beside image_url rather than replacing it: a reader on an older
+   * build of this PWA still renders from image_url, and rows have to stay
+   * legible to both until nothing that old is being served.
+   */
+  media?: unknown;
   confidence: VocabularyItem["confidence"];
   category: VocabularyCategory;
   status: VocabularyItem["status"];

@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { listFriends, type FriendProfile } from "@/lib/friends";
+import { readMedia } from "@/lib/media/record";
+import { publishCardImage } from "@/lib/media/sharing";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import { recordInteraction } from "@/lib/vocabulary/helpers";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
@@ -29,6 +31,9 @@ export default function useVocabularyFriendPicker() {
    */
   const [pendingCard, setPendingCard] =
     useState<SharedWordCard | null>(null);
+  /** The library path to copy into the shared folder once a friend is picked. */
+  const [pendingImageSource, setPendingImageSource] =
+    useState<string | null>(null);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [friendsError, setFriendsError] = useState("");
@@ -39,6 +44,14 @@ export default function useVocabularyFriendPicker() {
 
   const handleSendToPartner = useCallback((item: VocabularyItem) => {
     recordInteraction(item, "send");
+
+    /*
+     * The picture is noted here and copied later, when a friend has been
+     * chosen. Publishing now would make the picker wait on an upload before
+     * it opened, which on a slow connection reads as a button that did
+     * nothing — and would copy a file for a share the reader then cancels.
+     */
+    setPendingImageSource(readMedia(item.media)?.cardPath ?? null);
 
     setPendingCard({
       word: item.word,
@@ -61,6 +74,13 @@ export default function useVocabularyFriendPicker() {
   /** Opens the picker for a card that is not a saved row — a lookup result, or
    *  one already sitting in a conversation. */
   const shareCard = useCallback((card: SharedWordCard) => {
+    /*
+     * A card already carrying an imagePath — one being forwarded out of a
+     * conversation — keeps it. There is nothing to copy: the sender's
+     * shared file is already published, and both readers can reach it
+     * through the same membership check.
+     */
+    setPendingImageSource(null);
     setPendingCard(card);
   }, []);
 
@@ -107,18 +127,46 @@ export default function useVocabularyFriendPicker() {
 
   const handleClosePicker = useCallback(() => {
     setPendingCard(null);
+    setPendingImageSource(null);
     setSendingFriendId(null);
   }, []);
 
   const handlePickFriend = useCallback(
-    (friendId: string) => {
+    async (friendId: string) => {
       if (!pendingCard || sendingFriendId) return;
 
       setSendingFriendId(friendId);
-      setPendingSharedVocabulary(pendingCard);
+
+      /*
+       * The copy happens here, behind the spinner the picker already shows
+       * for the chosen friend.
+       *
+       * A copy inside the bucket rather than a reference to the library
+       * asset: this reader may delete the word next month, and a card they
+       * sent should not go blank in someone else's conversation. Failure
+       * costs the picture, never the send.
+       */
+      let imagePath = pendingCard.imagePath;
+
+      if (pendingImageSource) {
+        const {
+          data: { user },
+        } = await createClient().auth.getUser();
+
+        if (user) {
+          imagePath =
+            (await publishCardImage(
+              createClient(),
+              user.id,
+              pendingImageSource,
+            )) ?? undefined;
+        }
+      }
+
+      setPendingSharedVocabulary({ ...pendingCard, imagePath });
       router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
     },
-    [pendingCard, router, sendingFriendId],
+    [pendingCard, pendingImageSource, router, sendingFriendId],
   );
 
   return {

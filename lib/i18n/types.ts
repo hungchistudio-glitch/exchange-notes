@@ -604,8 +604,32 @@ export type TranslationDictionary = {
       closeCameraAriaLabel: string;
       selectedObjectAlt: string;
       chooseAnother: string;
-      focusHint: string;
-      opening: string;
+      /*
+       * The target camera's own vocabulary. `focusHint` and `opening` went
+       * with the overlay this replaced: there is no separate "opening the
+       * camera" screen any more (the camera paints its own black from the
+       * first frame), and the fixed centre reticle became a target the
+       * reader chooses.
+       */
+      torchOn: string;
+      torchOff: string;
+      importFile: string;
+      zoom: string;
+      /** Carries {level}, already formatted — "0.5", "1", "2.4". */
+      zoomLevel: string;
+      targetHint: string;
+      selectedTarget: string;
+      candidateTarget: string;
+      focused: string;
+      analysing: string;
+      retry: string;
+      confirmTarget: string;
+      resetZoom: string;
+      /* Only ever shown for a source with pages — a document, never a photo. */
+      previousPage: string;
+      nextPage: string;
+      /** Carries {page} and {count}. */
+      pageLabel: string;
     };
 
     analysis: {

@@ -5,10 +5,13 @@ import { useCallback, useRef, useState } from "react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   ImageRecognitionError,
-  fileToModelImage,
   identifyImage,
   type ImageRecognitionCode,
 } from "@/lib/lexicon/imageRecognition";
+import { holdImageCapture } from "@/lib/lexicon/pendingImageCapture";
+import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
+import { buildCapture } from "@/lib/media/pipeline";
+import { decodeBlob } from "@/lib/media/raster";
 
 /**
  * The one image-recognition path used by every lexicon camera key.
@@ -61,9 +64,51 @@ export default function useLexiconImageLookup({
       setError("");
       setReading(true);
 
+      let raster = null;
+
       try {
-        const identified = await identifyImage(await fileToModelImage(file));
-        if (identified.term) onTerm(identified.term);
+        if (!file.type.startsWith("image/")) {
+          throw new ImageRecognitionError("not-an-image");
+        }
+
+        if (file.size > MAX_IMAGE_FILE_SIZE) {
+          throw new ImageRecognitionError("too-large");
+        }
+
+        raster = await decodeBlob(file);
+
+        /*
+         * The whole frame goes to the model and the centre becomes the
+         * card's target.
+         *
+         * Not the same rectangle, and deliberately. The prompt asks for the
+         * object at the exact centre, so sending the centre alone would
+         * take away the context it uses to decide what that object is —
+         * this is a working recognition path and narrowing its input would
+         * change answers. The card, meanwhile, must not be the whole
+         * photograph shrunk down, which is exactly what the spec forbids.
+         *
+         * There is no target-selection step here because the search sheet
+         * has no room for one: this is a key on a search field, not a
+         * camera screen. The capture screen is where a reader chooses.
+         */
+        const built = await buildCapture({
+          raster,
+          targetRect: DEFAULT_TARGET_RECT,
+          sourceType: "photo",
+          recognitionKind: "object",
+          recognitionScope: "frame",
+          sourceFileName: file.name,
+        });
+
+        const identified = await identifyImage(built.recognitionImage);
+
+        if (identified.term) {
+          // Held rather than uploaded: nothing reaches storage until the
+          // reader saves the word this photograph produced.
+          holdImageCapture(identified.term, built.capture);
+          onTerm(identified.term);
+        }
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
         setError(
@@ -74,6 +119,7 @@ export default function useLexiconImageLookup({
           ),
         );
       } finally {
+        raster?.close();
         readingRef.current = false;
         setReading(false);
       }

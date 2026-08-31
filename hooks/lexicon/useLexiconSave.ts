@@ -6,7 +6,10 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { canonicalTerm, identityKey } from "@/lib/lexicon/normalize";
 import { findDuplicate } from "@/lib/lexicon/personal";
 import type { LexiconResult } from "@/lib/lexicon/types";
+import { takeImageCapture } from "@/lib/lexicon/pendingImageCapture";
+import { commitCapture } from "@/lib/media/assets";
 import { announceWordSaved } from "@/lib/pet/wordSaved";
+import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
 import {
   DuplicateVocabularyError,
@@ -192,8 +195,28 @@ export default function useLexiconSave({
 
         const { languages } = targets;
 
+        /*
+         * The photograph this word came from, if it came from one.
+         *
+         * Claimed by term, and committed only now — the capture has been
+         * sitting in memory since the lookup, and a reader who never saved
+         * would have left nothing behind. A failure here costs the picture,
+         * never the word.
+         */
+        let media = null;
+        const pending = takeImageCapture(target.term);
+
+        if (pending) {
+          try {
+            media = await commitCapture(createClient(), user.id, pending);
+          } catch (imageError) {
+            console.error("Could not keep that photo:", imageError);
+          }
+        }
+
         const { item } = await createVocabularyEntry({
           userId: user.id,
+          media,
           term: target.term,
           translation: target.translation,
           partOfSpeech: target.partOfSpeech,

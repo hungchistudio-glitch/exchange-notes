@@ -4,6 +4,7 @@ import { Bookmark, Check, Send, Volume2 } from "lucide-react";
 
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
 import { formatMessageTime } from "@/lib/messages/format";
+import { signedImageHref } from "@/lib/media/imageUrl";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import { getPhonetics } from "@/lib/pronunciation";
@@ -286,13 +287,37 @@ export default function WordCardMessage({
 
   return (
     <article
-      className="w-full max-w-[360px] rounded-[22px] border p-4 sm:p-5"
+      className="w-full max-w-[360px] overflow-hidden rounded-[22px] border"
       style={{
         background: "var(--msg-surface)",
         borderColor: "var(--msg-line)",
         color: "var(--msg-ink)",
       }}
     >
+      {/*
+        The picture above the words, in the same 16:9 container the
+        vocabulary card and the detail sheet use — a word looks the same
+        wherever the reader meets it.
+
+        Served through /api/vocabulary-image, which checks that these two
+        people share a conversation before it signs anything. A card sent
+        before pictures existed, or one whose picture failed to publish, has
+        no imagePath and this renders nothing.
+      */}
+      {card.imagePath && (
+        // A signed, short-lived redirect that next/image would only proxy
+        // again.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={signedImageHref(card.imagePath)}
+          alt=""
+          loading="lazy"
+          className="aspect-[16/9] w-full object-cover"
+          style={{ background: "var(--msg-line)" }}
+        />
+      )}
+
+      <div className="p-4 sm:p-5">
       {firstBlock}
       {secondBlock ? (
         <div
@@ -364,6 +389,7 @@ export default function WordCardMessage({
             )}
           </button>
         </div>
+      </div>
       </div>
     </article>
   );

@@ -77,6 +77,14 @@ async function send(
         language_pair_at_creation: item.language_pair_at_creation,
         needs_language_review: item.needs_language_review,
         image_url: item.image_url,
+        /*
+         * The picture travels with the row for the same reason the
+         * provenance does. A word captured on a plane, queued, and replayed
+         * on landing must arrive with the card image it was saved with —
+         * the assets were already uploaded before the insert was queued, so
+         * the paths are real by the time this runs.
+         */
+        media: item.media ?? null,
         part_of_speech: item.part_of_speech,
         example_sentence: item.example_sentence,
         translated_example: item.translated_example,

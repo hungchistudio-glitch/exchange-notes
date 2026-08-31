@@ -36,6 +36,21 @@ export type SharedWordCard = {
   texts?: ByLanguage;
   /** The example sentence in each language it exists in. */
   examples?: ByLanguage;
+
+  /**
+   * The storage path of a card picture the sender published for this card.
+   *
+   * A path rather than a URL, for the same reason the vocabulary row stores
+   * one: a URL bakes in the bucket's visibility, and this bucket is private.
+   * The recipient's app turns it into a request to /api/vocabulary-image,
+   * which checks that the two of them share a conversation before signing
+   * anything.
+   *
+   * Optional, and always will be. Most word cards are typed rather than
+   * photographed, cards sent before this existed have none, and a card whose
+   * picture failed to publish is still the word somebody meant to send.
+   */
+  imagePath?: string;
 };
 
 /**
@@ -78,6 +93,10 @@ export function encodeWordCardMessage(card: SharedWordCard): string {
       partOfSpeech: card.partOfSpeech ?? null,
       texts,
       examples,
+      // Omitted rather than sent as null when there is no picture: these
+      // bodies are permanent, and a key that means nothing is bytes in
+      // every message anybody ever sends.
+      ...(card.imagePath ? { imagePath: card.imagePath } : {}),
       /*
        * The old fields go out alongside the new ones, and deliberately.
        *
@@ -121,6 +140,17 @@ export function decodeWordCardMessage(body: string): SharedWordCard | null {
       translationLanguage:
         readCode(parsed.translationLanguage) ?? DEFAULT_LEARNING_PAIR[1],
       partOfSpeech: parsed.partOfSpeech ?? null,
+      /*
+       * Checked for shape rather than trusted. A message body is text that
+       * arrived from another device, and this one becomes a request path —
+       * so anything that is not a plain relative path is dropped rather
+       * than passed to the image route.
+       */
+      imagePath:
+        typeof parsed.imagePath === "string" &&
+        /^[0-9a-f-]{36}\/[\w-]+\/[\w.-]+$/i.test(parsed.imagePath)
+          ? parsed.imagePath
+          : undefined,
       examples:
         Object.keys(examples).length > 0 ? examples : legacyExamples(parsed),
     };

@@ -9,6 +9,7 @@ import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardAc
 import VocabularyCardDetails from "@/components/vocabulary/card/VocabularyCardDetails";
 import VocabularyCompactHeader from "@/components/vocabulary/card/VocabularyCompactHeader";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { vocabularyImageUrl } from "@/lib/media/imageUrl";
 
 import type { InteractionType } from "@/lib/vocabulary/helpers";
 import type {
@@ -49,6 +50,7 @@ function VocabularyCard({
   onInteract,
 }: VocabularyCardProps) {
   const { t } = useTranslation();
+  const cardImage = vocabularyImageUrl(item);
   useEffect(() => {
     onInteract(item, "view");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,10 +106,17 @@ function VocabularyCard({
           }}
           className="group block w-full cursor-pointer text-left transition active:scale-[0.995]"
         >
-          {viewMode === "cards" && item.image_url && (
+          {/*
+            The card derivative, not the retained source. A vocabulary list
+            that decoded a 2048px photograph per row is a list that stutters
+            on the way down — vocabularyImageUrl picks the small one, and
+            resolves a legacy row's public URL through the same signing
+            route so a word saved months ago still renders.
+          */}
+          {viewMode === "cards" && cardImage && (
             <div
               className="aspect-[16/9] w-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${item.image_url})` }}
+              style={{ backgroundImage: `url(${cardImage})` }}
               role="img"
               aria-label={item.word}
             />

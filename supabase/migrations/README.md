@@ -23,6 +23,19 @@ Five of them drifted that way before this was noticed:
 | `20260823120000_text_translations_cache` | `20260823150634` |
 | `20260823160000_vocabulary_language_identity` | `20260823222407` |
 
+It happened twice more with the Notes work, found on 2026-08-30 while checking
+parity after applying `vocabulary_media`, and fixed the same way:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260829041644_multilingual_social_notes` | `20260829044233` |
+| `20260829044312_notes_least_privilege_grants` | `20260829044342` |
+
+The first of those would have failed a replay rather than merely repeating it:
+it has nine `create policy` statements and only five `drop policy if exists`
+guards, so four of them would have raised `42710` against policies that are
+already there.
+
 Nothing was lost — the counts matched, so it was a pure renaming drift — but
 `db push` would have tried to replay all five, and four of them would have
 failed on `create policy`, which has no `if not exists` form and raises

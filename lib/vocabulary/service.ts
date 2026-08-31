@@ -1,4 +1,7 @@
 import type { LexiconEntry } from "@/lib/lexicon/types";
+import { removeAssets } from "@/lib/media/assets";
+import { ownedPaths, readMedia } from "@/lib/media/record";
+import { createClient } from "@/lib/supabase/client";
 import {
   DuplicateVocabularyError,
   createVocabularyEntry,
@@ -99,6 +102,25 @@ export async function removeVocabularyItem(
   item: VocabularyItem,
 ) {
   await deleteVocabulary(item.id);
+
+  /*
+   * The pictures go with the word.
+   *
+   * They never did before: deleting a word removed the row and left its
+   * photograph in storage for ever, so every library that has ever had a
+   * word deleted is carrying files nothing points at. Now that a capture
+   * writes two of them, that leak would have doubled.
+   *
+   * After the delete, not before, and never allowed to fail the delete. A
+   * file that outlives its row is litter the orphan sweep can find; a row
+   * whose picture was removed first is a card with a hole in it that
+   * nothing will ever repair.
+   */
+  const paths = ownedPaths(readMedia(item.media), item.image_url);
+
+  if (paths.length > 0) {
+    await removeAssets(createClient(), paths);
+  }
 
   return item.id;
 }

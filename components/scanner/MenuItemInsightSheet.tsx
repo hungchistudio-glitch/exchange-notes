@@ -21,11 +21,26 @@ import {
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
+import { commitCapture } from "@/lib/media/assets";
+import { publishCardBlob } from "@/lib/media/sharing";
+import { buildCapture } from "@/lib/media/pipeline";
+import { decodeBlob } from "@/lib/media/raster";
+import type { VocabularyMedia } from "@/lib/media/record";
 
 type MenuItemInsightSheetProps = {
   item: MenuItem | null;
   cuisine: string;
   targetLanguage: LanguageCode;
+  /**
+   * The scanned page, as the data URL the analyser was given.
+   *
+   * Saving a dish crops this to the dish's own region. The menu scan is the
+   * one place in the app where a recognition target arrives ready-made —
+   * the model returns a normalised rectangle per line — so a dish saved
+   * from here gets a card showing that line of the menu rather than the
+   * whole page shrunk down.
+   */
+  pageImage: string | null;
   onClose: () => void;
 };
 
@@ -33,6 +48,81 @@ type MenuItemInsightSheetProps = {
 // pair of slashes from either would end up doubled by the markup below.
 function stripSlashes(value: string) {
   return value.replace(/^\/+|\/+$/g, "").trim();
+}
+
+/**
+ * A dish's own rectangle of the menu, committed as a saved word's picture.
+ *
+ * Returns null rather than throwing when there is no page to crop — a scan
+ * restored from a previous session has its dishes but not its photograph,
+ * and that is a word without a picture, not an error.
+ */
+async function captureDishImage(
+  pageImage: string | null,
+  dish: MenuItem,
+): Promise<VocabularyMedia | null> {
+  if (!pageImage) return null;
+
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const response = await fetch(pageImage);
+  const raster = await decodeBlob(await response.blob());
+
+  try {
+    const built = await buildCapture({
+      raster,
+      // Already normalised and given a minimum size by the analyser.
+      targetRect: dish.region,
+      sourceType: "camera",
+      recognitionKind: "document",
+      recognition: { source: "menu-scan", dishId: dish.id },
+    });
+
+    return await commitCapture(supabase, user.id, built.capture);
+  } finally {
+    raster.close();
+  }
+}
+
+/**
+ * A dish's rectangle of the menu, published for a conversation.
+ *
+ * Shares its cropping with captureDishImage above and differs only in where
+ * the result goes: into the shared folder, which /api/vocabulary-image will
+ * serve to anyone in a conversation with the sender, rather than into the
+ * sender's own library.
+ */
+async function publishDishImage(
+  pageImage: string,
+  dish: MenuItem,
+): Promise<string | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const response = await fetch(pageImage);
+  const raster = await decodeBlob(await response.blob());
+
+  try {
+    const built = await buildCapture({
+      raster,
+      targetRect: dish.region,
+      sourceType: "camera",
+      recognitionKind: "document",
+    });
+
+    return await publishCardBlob(supabase, user.id, built.capture.card.blob);
+  } finally {
+    raster.close();
+  }
 }
 
 /**
@@ -48,6 +138,7 @@ export default function MenuItemInsightSheet({
   item,
   cuisine,
   targetLanguage,
+  pageImage,
   onClose,
 }: MenuItemInsightSheetProps) {
   const { t } = useTranslation();
@@ -175,8 +266,23 @@ export default function MenuItemInsightSheet({
         return;
       }
 
+      /*
+       * The picture is built and committed before the row, and its failure
+       * is never the save's failure: a dish saved without its crop is a
+       * word the reader keeps, and a save refused because storage was full
+       * is a word they lose.
+       */
+      let media = null;
+
+      try {
+        media = await captureDishImage(pageImage, dish);
+      } catch (imageError) {
+        console.error(imageError);
+      }
+
       await createVocabularyEntry({
         userId: user.id,
+        media,
         term: dish.names[languagePair[0]] ?? "",
         translation: dish.names[languagePair[1]] ?? "",
         termExample: dish.descriptions[languagePair[0]],
@@ -235,10 +341,29 @@ export default function MenuItemInsightSheet({
     if (!friendsRequestedRef.current) void loadFriends();
   }
 
-  function handlePickFriend(friendId: string) {
+  async function handlePickFriend(friendId: string) {
     if (!item || sendingFriendId) return;
 
     setSendingFriendId(friendId);
+
+    /*
+     * The dish's own line of the menu travels with it.
+     *
+     * Cut here rather than at scan time because most dishes are never
+     * shared, and cropping every line of a forty-item menu on the chance
+     * one of them might be is work nobody asked for. Behind the spinner
+     * the picker is already showing, so the wait is accounted for.
+     */
+    let imagePath: string | undefined;
+
+    if (pageImage) {
+      try {
+        imagePath = (await publishDishImage(pageImage, item)) ?? undefined;
+      } catch (imageError) {
+        // The word still goes. A card without its picture is a card.
+        console.error(imageError);
+      }
+    }
 
     /*
      * The same queue every other "share a word" entry point in this app
@@ -246,6 +371,7 @@ export default function MenuItemInsightSheet({
      * captured object or a saved vocabulary item would.
      */
     setPendingSharedVocabulary({
+      imagePath,
       word: item.names[languagePair[0]] ?? "",
       translation: item.names[languagePair[1]] ?? "",
       wordLanguage: languagePair[0],
