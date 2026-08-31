@@ -652,7 +652,7 @@ const spanish: TranslationDictionary = {
       selectedTarget: "Objetivo seleccionado",
       candidateTarget: "Objetivo posible",
       focused: "Enfocado",
-      analysing: "Analizando el objetivo…",
+      analysing: "Analizando el objetivo",
       retry: "Reintentar",
       confirmTarget: "Usar este objetivo",
       resetZoom: "Restablecer el zoom",

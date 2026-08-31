@@ -34,6 +34,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Images, X, Zap, ZapOff } from "lucide-react";
 
+import AnalysingTargetIndicator from "@/components/camera/AnalysingTargetIndicator";
 import FocusIndicator from "@/components/camera/FocusIndicator";
 import TargetOverlay from "@/components/camera/TargetOverlay";
 import ZoomControl from "@/components/camera/ZoomControl";
@@ -536,19 +537,16 @@ export default function TargetCamera({
         className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 bg-gradient-to-t from-black/55 to-transparent pt-16"
         style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
       >
-        {busy ? (
-          <p
-            role="status"
-            className="rounded-full bg-black/45 px-4 py-1.5 text-xs font-medium tracking-wide text-white backdrop-blur-md"
-          >
-            {copy.analysing}
+        {/*
+          Above the zoom control and the shutter, centred, and clear of the
+          target frame — which is drawn over the preview, not down here.
+        */}
+        <AnalysingTargetIndicator active={busy} label={copy.analysing} />
+
+        {!busy && !unavailable && (
+          <p className="rounded-full bg-black/25 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md">
+            {copy.hint}
           </p>
-        ) : (
-          !unavailable && (
-            <p className="rounded-full bg-black/25 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md">
-              {copy.hint}
-            </p>
-          )
         )}
 
         <ZoomControl
