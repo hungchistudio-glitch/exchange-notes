@@ -63,6 +63,18 @@ export type CameraStream = {
   suspend: () => void;
   /** Take it back. Safe to call when it was never suspended. */
   resume: () => void;
+  /**
+   * Hold the preview on its current frame.
+   *
+   * What the reader sees after the shutter should be the picture they took,
+   * not the room continuing to move behind a progress message — the live
+   * preview made a three-second wait look like the tap had done nothing.
+   * The stream stays open, so unfreezing is instant and costs no permission
+   * prompt.
+   */
+  freeze: () => void;
+  /** Let the preview run again. */
+  unfreeze: () => void;
   retry: () => void;
 };
 
@@ -83,6 +95,12 @@ export function useCameraStream({
    * the page becomes visible again.
    */
   const suspendedRef = useRef(false);
+  /*
+   * Set while the preview is deliberately held on one frame. The visibility
+   * handler below plays a paused video on the way back, which is right for a
+   * video iOS paused on its own and wrong for one we stopped on purpose.
+   */
+  const frozenRef = useRef(false);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [status, setStatus] = useState<CameraStatus>("idle");
@@ -143,7 +161,7 @@ export function useCameraStream({
 
       if (videoRef.current) {
         videoRef.current.srcObject = opened;
-        await videoRef.current.play().catch(() => {});
+        await videoRef.current.play()?.catch(() => {});
       }
     } catch (error) {
       if (releasedRef.current) return;
@@ -190,6 +208,22 @@ export function useCameraStream({
     void start();
   }, [start]);
 
+  const freeze = useCallback(() => {
+    frozenRef.current = true;
+    videoRef.current?.pause();
+  }, []);
+
+  const unfreeze = useCallback(() => {
+    frozenRef.current = false;
+    /*
+     * `?.catch` on the result, not just on the element: play() is specified
+     * to return a promise but does not everywhere — jsdom returns undefined,
+     * and so do older mobile browsers. Calling .catch on that throws, which
+     * turned "let the preview run again" into a crash on mount.
+     */
+    void videoRef.current?.play()?.catch(() => {});
+  }, []);
+
   /**
    * The preview comes back when the screen does.
    *
@@ -209,10 +243,13 @@ export function useCameraStream({
         return;
       }
 
+      // A frame held on purpose is not a frame iOS took away.
+      if (frozenRef.current) return;
+
       const video = videoRef.current;
       if (!video || !video.paused || !video.srcObject) return;
 
-      void video.play().catch(() => {});
+      void video.play()?.catch(() => {});
     }
 
     document.addEventListener("visibilitychange", revive);
@@ -235,7 +272,7 @@ export function useCameraStream({
     if (!video || !stream || video.srcObject === stream) return;
 
     video.srcObject = stream;
-    void video.play().catch(() => {});
+    void video.play()?.catch(() => {});
   }, [stream]);
 
   const retry = useCallback(() => {
@@ -250,6 +287,8 @@ export function useCameraStream({
     capabilities,
     suspend,
     resume,
+    freeze,
+    unfreeze,
     retry,
   };
 }

@@ -19,6 +19,7 @@
    one is selected.
    ========================================================= */
 
+import styles from "@/components/camera/TargetOverlay.module.css";
 import type { NormalizedRect } from "@/lib/media/geometry";
 
 type TargetOverlayProps = {
@@ -44,18 +45,6 @@ function boxStyle(rect: NormalizedRect) {
   };
 }
 
-/*
- * Declared once, beside the only thing that uses it. `pathLength={100}`
- * above normalises the perimeter, so this offset is the same journey
- * whatever shape the target happens to be.
- */
-const scanKeyframes = `
-  @keyframes targetScan {
-    from { stroke-dashoffset: 100; }
-    to   { stroke-dashoffset: 0; }
-  }
-`;
-
 export default function TargetOverlay({
   candidates,
   selected,
@@ -68,7 +57,6 @@ export default function TargetOverlay({
       className="pointer-events-none absolute inset-0"
       aria-hidden={candidates.length === 0 && !selected}
     >
-      <style>{scanKeyframes}</style>
       {candidates.map((rect, index) => {
         const isSelected =
           selected &&
@@ -100,11 +88,21 @@ export default function TargetOverlay({
 
       {selected && (
         <div
-          className="absolute transition-all duration-200 ease-out"
+          className={styles.target}
           style={boxStyle(selected)}
           role="img"
           aria-label={selectedLabel}
         >
+          {/*
+            The band that makes it obvious from across a room. Clipped to the
+            target's own rounded rectangle, so it sweeps the thing being read
+            and nothing else.
+          */}
+          {busy && (
+            <span className={styles.bandClip} aria-hidden="true">
+              <span className={styles.band} />
+            </span>
+          )}
           {/*
             Brackets rather than a full box: they mark the corners the crop
             will be taken at without drawing a line through the middle of
@@ -159,10 +157,7 @@ export default function TargetOverlay({
             still as a brighter outline.
           */}
           {busy && (
-            <svg
-              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-              aria-hidden="true"
-            >
+            <svg className={styles.edge} aria-hidden="true">
               <rect
                 x="1"
                 y="1"
@@ -175,8 +170,7 @@ export default function TargetOverlay({
                 strokeLinecap="round"
                 pathLength={100}
                 strokeDasharray="22 78"
-                className="motion-safe:animate-[targetScan_1.6s_linear_infinite]"
-                style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.55))" }}
+                className={styles.edgeStroke}
               />
             </svg>
           )}
