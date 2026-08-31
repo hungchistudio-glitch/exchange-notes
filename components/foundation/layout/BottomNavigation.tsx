@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+
+import NavPendingHint from "@/components/foundation/layout/NavPendingHint";
 import {
   useEffect,
   useLayoutEffect,
@@ -136,7 +138,7 @@ export default function BottomNavigation({
           }}
         >
           {items.map((item, index) => {
-            const className = `z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            const className = `relative z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
               item.active
                 ? "scale-[1.05] text-[var(--dock-active-ink)]"
                 : "text-ink-faint hover:text-ink-strong"
@@ -196,6 +198,12 @@ export default function BottomNavigation({
                 className={className}
               >
                 {content}
+                {/*
+                  Says the tap was heard, in the beat between the finger
+                  lifting and the destination's skeleton arriving. Inside the
+                  Link because useLinkStatus reads the Link above it.
+                */}
+                <NavPendingHint />
               </Link>
             );
           })}
