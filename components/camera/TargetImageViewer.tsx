@@ -322,7 +322,21 @@ export default function TargetImageViewer({
   const overlayTarget = target ? toBoxFraction(target) : null;
 
   return (
-    <section className="fixed inset-0 z-[100] overflow-hidden overscroll-none bg-black">
+      /*
+       * Above the surfaces that open it, below the ones that outrank
+       * everything.
+       *
+       * This screen sat at z-100 and the lexicon search sheet sits at
+       * z-130, so tapping the camera key inside that sheet started the
+       * stream — the recording light came on — and drew the viewfinder
+       * underneath the sheet that launched it. A working camera nobody
+       * could see.
+       *
+       * 150 clears the sheet (130) and the tutorial (120), and stays under
+       * the service-worker notice (200) and the top modal layer (300),
+       * which the camera never shares a moment with.
+       */
+    <section className="fixed inset-0 z-[150] overflow-hidden overscroll-none bg-black">
       <div
         ref={frameRef}
         className="absolute inset-0 touch-none"
