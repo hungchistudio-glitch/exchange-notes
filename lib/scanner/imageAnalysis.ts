@@ -52,8 +52,26 @@ function getAnalysisContext(width: number, height: number) {
   return analysisCanvas.getContext("2d", { willReadFrequently: true });
 }
 
+/*
+ * Reused between frames, like the canvas above and for the same reason.
+ *
+ * A 192-pixel frame is about 81KB of Float32Array. Allocating one per frame
+ * is 405KB a second thrown away while a camera preview is running, which on
+ * a phone is enough GC pressure to show up as a periodic hitch in the very
+ * preview this is meant to stay out of the way of.
+ *
+ * The consequence is that the array sampleFrame hands back is *borrowed*:
+ * it is valid until the next call and no caller may keep it. Both callers
+ * read it to completion synchronously, which is what makes this safe.
+ */
+let grayBuffer: Float32Array | null = null;
+
 function toGrayscale(data: Uint8ClampedArray, pixelCount: number) {
-  const gray = new Float32Array(pixelCount);
+  if (!grayBuffer || grayBuffer.length < pixelCount) {
+    grayBuffer = new Float32Array(pixelCount);
+  }
+
+  const gray = grayBuffer;
 
   for (let i = 0; i < pixelCount; i += 1) {
     const offset = i * 4;
@@ -72,6 +90,10 @@ function toGrayscale(data: Uint8ClampedArray, pixelCount: number) {
  * buffer is affordable beside a live preview; two draws and two
  * getImageData calls at five frames a second is not, and the whole reason
  * this analysis is allowed to exist is that it stays cheap.
+ *
+ * The `gray` array is borrowed, not given: it is reused between calls and is
+ * only valid until the next one. Read it before calling again, and never
+ * store it.
  *
  * Returns null when the source has no pixels yet — a video element that has
  * not reached its first frame reports 0×0, and drawing it throws.

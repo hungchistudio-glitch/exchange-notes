@@ -47,6 +47,7 @@ import {
   ensureMinimumSize,
   normalizedRectToViewport,
   pickTarget,
+  sameRects,
   viewportPointToNormalized,
   type NormalizedRect,
   type Size,
@@ -174,7 +175,16 @@ export default function TargetCamera({
       // backgrounded phone's GPU busy for no one's benefit.
       if (!video || document.hidden || !video.videoWidth) return;
 
-      setCandidates(detectRegions(video, video.videoWidth, video.videoHeight));
+      const next = detectRegions(video, video.videoWidth, video.videoHeight);
+
+      /*
+       * Keeping the previous array when nothing moved is what makes this
+       * affordable. React bails out on an identical reference, so a camera
+       * held still costs one pixel pass every 200ms and no render at all —
+       * rather than re-rendering a full-screen component five times a
+       * second to draw the same four rectangles.
+       */
+      setCandidates((current) => (sameRects(current, next) ? current : next));
     }, DETECTION_INTERVAL_MS);
 
     return () => window.clearInterval(interval);

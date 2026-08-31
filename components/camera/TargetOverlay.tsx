@@ -68,7 +68,15 @@ export default function TargetOverlay({
 
         return (
           <div
-            key={`${rect.x}-${rect.y}-${index}`}
+            /*
+             * Keyed by slot, not by coordinates. The key used to contain
+             * the rect's own floating-point position, so a hand-held
+             * camera's jitter changed it every tick — React destroyed and
+             * rebuilt every outline five times a second and restarted its
+             * fade, which is why they never settled. Candidates are ordered
+             * by area and capped at five; the slot is the stable identity.
+             */
+            key={index}
             className="absolute rounded-[10px] border border-white/35 transition-opacity duration-300"
             style={{ ...boxStyle(rect), opacity: busy ? 0 : 1 }}
             role="img"

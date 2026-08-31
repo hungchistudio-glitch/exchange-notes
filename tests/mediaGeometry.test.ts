@@ -13,6 +13,7 @@ import {
   padRect,
   pickTarget,
   rotateRect,
+  sameRects,
   viewportPointToNormalized,
   viewportRectToNormalized,
   viewportToImage,
@@ -369,6 +370,60 @@ describe("mirroring", () => {
       width: 0.2,
       height: 0.2,
     });
+  });
+});
+
+describe("noticing that nothing moved", () => {
+  const held: NormalizedRect[] = [
+    { x: 0.1, y: 0.2, width: 0.5, height: 0.08 },
+    { x: 0.1, y: 0.32, width: 0.4, height: 0.08 },
+  ];
+
+  it("treats a hand's jitter as the same frame", () => {
+    /*
+     * The whole point. Five times a second the detector returns rectangles
+     * a thousandth of a frame from where they were; calling that a change
+     * re-rendered the camera and restarted every outline's fade.
+     */
+    const jittered = held.map((rect) => ({
+      ...rect,
+      x: rect.x + 0.002,
+      y: rect.y - 0.001,
+    }));
+
+    expect(sameRects(held, jittered)).toBe(true);
+  });
+
+  it("notices the reader actually moving the phone", () => {
+    const panned = held.map((rect) => ({ ...rect, x: rect.x + 0.06 }));
+
+    expect(sameRects(held, panned)).toBe(false);
+  });
+
+  it("notices a candidate appearing or disappearing", () => {
+    expect(sameRects(held, held.slice(0, 1))).toBe(false);
+    expect(sameRects([], held)).toBe(false);
+  });
+
+  it("notices one growing while its corner stays put", () => {
+    // A box that gets taller has moved, even though x and y have not.
+    const taller = [{ ...held[0], height: held[0].height + 0.05 }, held[1]];
+
+    expect(sameRects(held, taller)).toBe(false);
+  });
+
+  it("calls two empty lists the same", () => {
+    // A camera pointed at a blank wall, which is a very common tick.
+    expect(sameRects([], [])).toBe(true);
+  });
+
+  it("compares slot by slot rather than as a set", () => {
+    /*
+     * Candidates arrive ordered by area, and the overlay keys them by
+     * slot. Two lists holding the same rectangles in a different order are
+     * a real change, because slot one is now a different rectangle.
+     */
+    expect(sameRects(held, [held[1], held[0]])).toBe(false);
   });
 });
 
