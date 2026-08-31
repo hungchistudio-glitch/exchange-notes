@@ -21,6 +21,7 @@ import type { LanguageCode } from "@/lib/languages";
 const preferences = vi.hoisted(() => ({ interfaceLanguage: "english" }));
 const imageLookup = vi.hoisted(() => ({
   handleFile: vi.fn(),
+  handleCapture: vi.fn(),
   openSearch: vi.fn(),
 }));
 
@@ -48,6 +49,7 @@ vi.mock("@/hooks/lexicon/useLexiconImageLookup", () => ({
     reading: false,
     error: "",
     handleFile: imageLookup.handleFile,
+    handleCapture: imageLookup.handleCapture,
   }),
 }));
 
@@ -89,23 +91,51 @@ function renderSearch(
 
 beforeEach(() => {
   imageLookup.handleFile.mockReset();
+  imageLookup.handleCapture.mockReset();
   imageLookup.openSearch.mockReset();
 });
 
 describe("the vocabulary camera key", () => {
-  it("uses one native image picker and never links to the capture page", () => {
+  it("opens this app's camera rather than the system picker", () => {
+    /*
+     * This used to assert one inline file input, back when the key handed
+     * straight to the platform sheet. It opens TargetCamera now — the same
+     * camera the capture flow uses — so the field itself renders no picker
+     * at all until the camera is up.
+     */
     const { container } = renderSearch();
-    const input = container.querySelector('input[type="file"]');
+
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+
+    expect(
+      screen.getByRole("button", { name: "Capture photo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("still reaches recognition from the photo library", () => {
+    renderSearch();
+
+    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+
+    const picker = document.querySelector<HTMLInputElement>(
+      'input[type="file"][accept="image/*"]',
+    );
     const photo = new File(["photo"], "menu.jpg", { type: "image/jpeg" });
 
-    expect(screen.getByRole("button", { name: "Scan" })).toBeInTheDocument();
-    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
-    expect(container.querySelector('a[href^="/capture"]')).toBeNull();
-    expect(screen.queryByLabelText("Identify from a photo")).toBeNull();
-
-    fireEvent.change(input!, { target: { files: [photo] } });
+    fireEvent.change(picker!, { target: { files: [photo] } });
 
     expect(imageLookup.handleFile).toHaveBeenCalledWith(photo);
+  });
+
+  it("never links to the capture page", () => {
+    // The key reads a photo in place; it does not navigate to a screen that
+    // then opens a picker, which is what it used to do.
+    const { container } = renderSearch();
+
+    expect(container.querySelector('a[href^="/capture"]')).toBeNull();
+    expect(screen.queryByLabelText("Identify from a photo")).toBeNull();
   });
 });
 

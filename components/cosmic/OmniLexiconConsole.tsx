@@ -330,6 +330,10 @@ export default function OmniLexiconConsole({
 
         <LexiconImageMenu
           onFile={imageLookup.handleFile}
+          onCapture={({ raster, targetRect }) =>
+            imageLookup.handleCapture(raster, targetRect)
+          }
+          busy={imageLookup.reading}
           disabled={imageLookup.reading}
           buttonClassName={styles.mode}
         />

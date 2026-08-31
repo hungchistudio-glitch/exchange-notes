@@ -184,7 +184,7 @@ describe("the home field works in place", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("runs voice here and keeps one native camera picker", () => {
+  it("runs voice here and opens the app's own camera", () => {
     axes.interfaceLanguage = "traditional-chinese";
     axes.learning = "fr";
 
@@ -194,7 +194,14 @@ describe("the home field works in place", () => {
 
     expect(controls.voiceToggle).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: "掃描" })).toBeInTheDocument();
-    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(1);
+
+    /*
+     * No picker sits in the field any more. The key used to be a bare file
+     * input, which on iOS meant "Take Photo" handed over to Apple's camera
+     * — a different camera from the one every other capture surface in this
+     * app uses. It opens TargetCamera now, and the picker moved inside it.
+     */
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(0);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 });
