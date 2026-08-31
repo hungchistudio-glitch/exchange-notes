@@ -44,6 +44,18 @@ function boxStyle(rect: NormalizedRect) {
   };
 }
 
+/*
+ * Declared once, beside the only thing that uses it. `pathLength={100}`
+ * above normalises the perimeter, so this offset is the same journey
+ * whatever shape the target happens to be.
+ */
+const scanKeyframes = `
+  @keyframes targetScan {
+    from { stroke-dashoffset: 100; }
+    to   { stroke-dashoffset: 0; }
+  }
+`;
+
 export default function TargetOverlay({
   candidates,
   selected,
@@ -56,6 +68,7 @@ export default function TargetOverlay({
       className="pointer-events-none absolute inset-0"
       aria-hidden={candidates.length === 0 && !selected}
     >
+      <style>{scanKeyframes}</style>
       {candidates.map((rect, index) => {
         const isSelected =
           selected &&
@@ -115,9 +128,58 @@ export default function TargetOverlay({
           ))}
 
           <span
-            className="absolute inset-0 rounded-[10px] border border-white/25"
-            style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.18)" }}
+            className="absolute inset-0 rounded-[10px] border border-white/25 transition-[box-shadow] duration-500"
+            style={{
+              /*
+                The surround deepens while the target is being read, so the
+                eye is held on the thing being worked on rather than on the
+                room around it.
+              */
+              boxShadow: `0 0 0 9999px rgba(0,0,0,${busy ? 0.42 : 0.18})`,
+            }}
           />
+
+          {/*
+            The scan, drawn on the target and nowhere else.
+
+            The wait here is the model's, and it is three to seven seconds —
+            measured, and not reducible by any parameter this app controls.
+            So the job is to make it legible rather than shorter: a light
+            travelling the target's own perimeter says which rectangle is
+            being read, and that something is still happening.
+
+            Deliberately not a line sweeping the whole viewfinder. The spec
+            rules that out by name, and it would also be a lie — nothing is
+            scanning the rest of the frame.
+
+            SVG with an animated dash offset rather than a moving element:
+            it is one compositor-friendly property, it follows the rounded
+            rectangle exactly at any aspect ratio, and it costs nothing when
+            the reader has asked for less motion, where it simply holds
+            still as a brighter outline.
+          */}
+          {busy && (
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+              aria-hidden="true"
+            >
+              <rect
+                x="1"
+                y="1"
+                width="calc(100% - 2px)"
+                height="calc(100% - 2px)"
+                rx="10"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                pathLength={100}
+                strokeDasharray="22 78"
+                className="motion-safe:animate-[targetScan_1.6s_linear_infinite]"
+                style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.55))" }}
+              />
+            </svg>
+          )}
         </div>
       )}
     </div>
