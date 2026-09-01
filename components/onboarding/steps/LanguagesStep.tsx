@@ -73,15 +73,15 @@ export default function LanguagesStep({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">
-        <h1 className="text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.nativeLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-ink-soft">
+          <p className="mt-1 text-[0.8125rem] leading-5 text-ink-soft">
             {copy.nativeDescription}
           </p>
 
@@ -90,7 +90,7 @@ export default function LanguagesStep({
               <SettingsChoiceCard
                 key={option.value}
                 selected={nativeLanguage === option.value}
-                badge={<span className="text-[15px]">{option.badge}</span>}
+                badge={<span className="text-[0.9375rem]">{option.badge}</span>}
                 title={option.label}
                 onClick={() => handlePickNative(option.value)}
               />
@@ -99,10 +99,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.learningLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-ink-soft">
+          <p className="mt-1 text-[0.8125rem] leading-5 text-ink-soft">
             {copy.learningDescription}
           </p>
 
@@ -111,7 +111,7 @@ export default function LanguagesStep({
               <SettingsChoiceCard
                 key={option.value}
                 selected={learningLanguage === option.value}
-                badge={<span className="text-[15px]">{option.badge}</span>}
+                badge={<span className="text-[0.9375rem]">{option.badge}</span>}
                 title={option.label}
                 onClick={() => handlePickLearning(option.value)}
               />
@@ -120,10 +120,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-6 rounded-2xl bg-black/[0.035] px-4 py-3.5">
-          <p className="text-[13px] leading-6 text-ink-soft">
+          <p className="text-[0.8125rem] leading-6 text-ink-soft">
             {copy.previewPrimary.replace("{language}", learningLabel)}
           </p>
-          <p className="mt-1 text-[13px] leading-6 text-ink-soft">
+          <p className="mt-1 text-[0.8125rem] leading-6 text-ink-soft">
             {copy.previewSecondary.replace("{language}", nativeLabel)}
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function LanguagesStep({
       <button
         type="button"
         onClick={onContinue}
-        className="mt-6 flex h-13 min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-6 flex h-13 min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
       >
         {t.onboarding.continue}
       </button>

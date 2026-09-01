@@ -157,7 +157,7 @@ export default function UniversalSearchField() {
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
-            className="h-11 min-w-0 flex-1 bg-transparent px-1 text-[16px] outline-none placeholder:text-ink-faint"
+            className="h-11 min-w-0 flex-1 bg-transparent px-1 text-[1rem] outline-none placeholder:text-ink-faint"
           />
 
           {search.query ? (
@@ -226,7 +226,7 @@ export default function UniversalSearchField() {
       </form>
 
       {voice.listening ? (
-        <p role="status" className="mt-2.5 px-1 text-[12px] text-ink-soft">
+        <p role="status" className="mt-2.5 px-1 text-[0.75rem] text-ink-soft">
           {copy.listening}
         </p>
       ) : null}
@@ -234,7 +234,7 @@ export default function UniversalSearchField() {
       {imageLookup.reading ? (
         <p
           role="status"
-          className="mt-2.5 flex items-center gap-2 px-1 text-[12px] text-ink-soft"
+          className="mt-2.5 flex items-center gap-2 px-1 text-[0.75rem] text-ink-soft"
         >
           <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
           {t.capture.analysis.description}
@@ -242,14 +242,14 @@ export default function UniversalSearchField() {
       ) : null}
 
       {imageLookup.error ? (
-        <p role="alert" className="mt-2.5 px-1 text-[12px] text-red-600">
+        <p role="alert" className="mt-2.5 px-1 text-[0.75rem] text-red-600">
           {imageLookup.error}
         </p>
       ) : null}
 
       {onboarding.visible && !hasAnswer ? (
         <div className="mt-2.5 flex items-start gap-2 px-1">
-          <p className="min-w-0 flex-1 text-[12px] leading-5 text-ink-faint">
+          <p className="min-w-0 flex-1 text-[0.75rem] leading-5 text-ink-faint">
             <span className="font-semibold text-ink-soft">
               {copy.onboardingTitle}
             </span>{" "}
@@ -259,7 +259,7 @@ export default function UniversalSearchField() {
           <button
             type="button"
             onClick={onboarding.dismiss}
-            className="shrink-0 text-[12px] font-semibold text-ink-soft underline underline-offset-2"
+            className="shrink-0 text-[0.75rem] font-semibold text-ink-soft underline underline-offset-2"
           >
             {copy.onboardingDismiss}
           </button>

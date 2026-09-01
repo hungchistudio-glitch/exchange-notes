@@ -47,7 +47,7 @@ export default function SpeechSpeedControl({
     >
       {showLabel ? (
         <span
-          className="text-[12px] font-medium"
+          className="text-[0.75rem] font-medium"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {copy.speechSpeed}

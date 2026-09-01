@@ -61,7 +61,7 @@ export default function NotesHomeModule() {
     <section className="rounded-[28px] border border-black/[0.06] bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-faint">{copy.eyebrow}</p>
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">{copy.eyebrow}</p>
           <h2 className="mt-0.5 text-xl font-bold tracking-[-0.03em]">{copy.spaceTitle}</h2>
         </div>
         <button

@@ -340,7 +340,7 @@ export default function OmniLexiconConsole({
       </div>
 
       {imageLookup.error ? (
-        <p role="alert" className="mt-2.5 text-[12px] text-red-300">
+        <p role="alert" className="mt-2.5 text-[0.75rem] text-red-300">
           {imageLookup.error}
         </p>
       ) : null}

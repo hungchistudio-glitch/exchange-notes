@@ -44,7 +44,7 @@ export function LabError({
       className="rounded-[26px] border border-black/[0.06] bg-white p-6 text-center"
       role="alert"
     >
-      <p className="text-[17px] font-semibold">{title ?? copy.error}</p>
+      <p className="text-[1.0625rem] font-semibold">{title ?? copy.error}</p>
       <p className="font-cjk mt-1.5 text-sm leading-6 text-ink-soft">
         {body ?? copy.errorBody}
       </p>
@@ -73,7 +73,7 @@ export function LabEmpty({
 }) {
   return (
     <div className="rounded-[26px] border border-dashed border-line bg-white/60 p-8 text-center">
-      <p className="font-cjk text-[17px] font-semibold">{title}</p>
+      <p className="font-cjk text-[1.0625rem] font-semibold">{title}</p>
       {body ? (
         <p className="font-cjk mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-soft">
           {body}

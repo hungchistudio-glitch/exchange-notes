@@ -71,7 +71,7 @@ function ChoiceRow<T extends string>({
 }: ChoiceRowProps<T>) {
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
         {label}
       </p>
 
@@ -97,7 +97,7 @@ function ChoiceRow<T extends string>({
               disabled={disabled}
               aria-pressed={active}
               onClick={() => onSelect(option.value)}
-              className={`min-h-10 max-w-full rounded-[18px] border px-3.5 py-2 text-[14px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${
+              className={`min-h-10 max-w-full rounded-[18px] border px-3.5 py-2 text-[0.875rem] font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${
                 active
                   ? "border-black bg-black text-white"
                   : "border-black/10 bg-white text-black"
@@ -236,11 +236,11 @@ export default function TutorialLanguageSetup() {
       />
 
       {error ? (
-        <p role="alert" className="text-[12.5px] font-medium text-red-600">
+        <p role="alert" className="text-[0.78125rem] font-medium text-red-600">
           {error}
         </p>
       ) : (
-        <p className="text-[12.5px] leading-6 text-ink-faint">{copy.note}</p>
+        <p className="text-[0.78125rem] leading-6 text-ink-faint">{copy.note}</p>
       )}
     </div>
   );

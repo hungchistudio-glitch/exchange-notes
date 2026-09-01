@@ -40,7 +40,7 @@ export default function SettingsChoiceCard({
       ) : null}
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-semibold tracking-[-0.02em]">
+        <span className="block truncate text-[0.9375rem] font-semibold tracking-[-0.02em]">
           {title}
         </span>
 

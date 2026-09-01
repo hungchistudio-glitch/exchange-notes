@@ -74,7 +74,7 @@
   align-items: center;
   gap: 11px;
   color: var(--landing-ink);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: -0.015em;
 }
@@ -94,7 +94,7 @@
   border: 1px solid var(--landing-ink);
   background: transparent !important;
   color: var(--landing-ink) !important;
-  font-size: 13px !important;
+  font-size: 0.8125rem !important;
 }
 
 .languagePicker {
@@ -108,7 +108,7 @@
   align-items: center;
   gap: 8px;
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -131,7 +131,7 @@
   background: color-mix(in oklab, var(--landing-card) 82%, transparent);
   padding: 7px 12px 7px 8px;
   color: var(--landing-soft);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 650;
   transition: border-color 160ms ease, background 160ms ease,
     color 160ms ease, transform 160ms ease;
@@ -145,7 +145,7 @@
   justify-content: center;
   border-radius: 50%;
   background: var(--landing-subtle-fill);
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 0.02em;
 }
 
@@ -190,7 +190,7 @@
   align-items: center;
   gap: 12px;
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -241,7 +241,7 @@
 .heroMantra {
   margin-top: 16px;
   color: var(--landing-ink);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 750;
   letter-spacing: 0.055em;
 }
@@ -263,7 +263,7 @@
   background: var(--landing-control);
   padding: 0 15px;
   color: var(--landing-soft);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 680;
   transition: border-color 160ms ease, background 160ms ease,
     color 160ms ease, transform 160ms ease;
@@ -289,7 +289,7 @@
 .primaryButton {
   min-height: 56px !important;
   box-shadow: 0 12px 30px rgba(23, 23, 23, 0.14);
-  font-size: 14px !important;
+  font-size: 0.875rem !important;
 }
 
 .momentPreview {
@@ -323,7 +323,7 @@
   align-items: center;
   justify-content: space-between;
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -358,7 +358,7 @@
 
 .previewEyebrow {
   color: var(--landing-faint);
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 750;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -387,7 +387,7 @@
   background: var(--landing-amber-wash);
   padding: 0 11px;
   color: var(--landing-recognition-ink);
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
 }
 
@@ -436,7 +436,7 @@
   max-width: 370px;
   margin: 16px auto 0;
   font-family: "Iowan Old Style", Georgia, serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.6;
   text-align: center;
 }
@@ -541,13 +541,13 @@
 
 .cameraResult strong {
   font-family: "Iowan Old Style", Georgia, serif;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 600;
 }
 
 .cameraResult p {
   color: var(--landing-soft);
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.5;
 }
 
@@ -560,7 +560,7 @@
   gap: 14px;
   margin-top: 18px;
   color: var(--landing-faint);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .memoryLinksLabel {
@@ -618,14 +618,14 @@
 .zhTitle {
   margin-top: 18px;
   color: var(--landing-soft);
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.55;
 }
 
 .sectionDescription,
 .sectionDescriptionZh {
   color: var(--landing-soft);
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.75;
 }
 
@@ -635,7 +635,7 @@
 
 .sectionDescriptionZh {
   margin-top: 7px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .notePreview {
@@ -653,7 +653,7 @@
 
 .noteDate {
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -690,7 +690,7 @@
   gap: 7px;
   margin-top: 32px;
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .exchangePreview {
@@ -712,7 +712,7 @@
 
 .exchangeStop p {
   margin-top: 13px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 650;
 }
 
@@ -720,7 +720,7 @@
   display: block;
   margin-top: 4px;
   color: var(--landing-faint);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .exchangeDot {
@@ -782,7 +782,7 @@
 
 .travelCard p {
   font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-  font-size: 29px;
+  font-size: 1.8125rem;
 }
 
 .travelCard > span,
@@ -793,12 +793,12 @@
 
 .travelCard > span {
   margin-top: 3px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .travelCard > small {
   margin-top: 16px;
-  font-size: 10px;
+  font-size: 0.625rem;
   line-height: 1.5;
 }
 
@@ -833,7 +833,7 @@
 }
 
 .yumiMessage p {
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -841,7 +841,7 @@
   display: block;
   margin-top: 6px;
   color: var(--landing-soft);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.6;
 }
 
@@ -856,12 +856,12 @@
   background: var(--landing-ink);
   padding: 11px 17px;
   color: var(--landing-on-ink);
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 
 .reviewWord {
   font-family: "Iowan Old Style", Georgia, serif;
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 
 .moodSection {
@@ -892,7 +892,7 @@
 .moodHeading > p:last-child {
   margin-top: 18px;
   color: var(--landing-soft);
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .moodExperience {
@@ -982,7 +982,7 @@
   max-width: 620px;
   margin-top: 24px;
   color: var(--landing-soft);
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.7;
 }
 
@@ -1000,7 +1000,7 @@
   background: var(--landing-muted-surface);
   padding: 20px max(24px, calc((100vw - 1180px) / 2));
   color: var(--landing-faint);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 /*
@@ -1125,7 +1125,7 @@
   }
 
   .brand span {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   .navCta {

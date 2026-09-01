@@ -313,7 +313,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
       className="fixed inset-0 z-[120] flex flex-col bg-surface"
     >
       <header className="flex shrink-0 items-center justify-between px-7 pt-[max(1rem,env(safe-area-inset-top))]">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
           {insertValues(copy.stepLabel, {
             current: index + 1,
             total: STEP_ORDER.length,
@@ -323,7 +323,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         <button
           type="button"
           onClick={dismiss}
-          className="-mr-3 shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold text-ink-faint transition-transform active:scale-95"
+          className="-mr-3 shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-[0.8125rem] font-semibold text-ink-faint transition-transform active:scale-95"
         >
           {isLast ? copy.close : copy.skip}
         </button>
@@ -377,7 +377,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
 
             <p
               id="tutorial-step-body"
-              className="mt-5 max-w-[30rem] text-[14.5px] leading-[1.8] text-ink-soft"
+              className="mt-5 max-w-[30rem] text-[0.90625rem] leading-[1.8] text-ink-soft"
             >
               {stepCopy.body}
             </p>
@@ -385,7 +385,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             {step === "setup" && <TutorialLanguageSetup />}
 
             {isLast && (
-              <p className="mt-7 text-[13px] leading-6 text-ink-faint">
+              <p className="mt-7 text-[0.8125rem] leading-6 text-ink-faint">
                 {copy.replay}
               </p>
             )}
@@ -400,7 +400,17 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             onClick={() => setIndex((current) => Math.max(0, current - 1))}
             disabled={isFirst}
             aria-label={copy.back}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/10 text-ink-soft transition-transform active:scale-[0.94] disabled:invisible"
+            /*
+             * Pinned to real pixels, unlike everything else on this screen.
+             *
+             * Forty-eight is a thumb, not a type size. Once every rem in the
+             * app follows the reader's font setting, `h-12 w-12` made these
+             * two grow to 57px on "large" and the row stopped fitting a
+             * 410px phone by seven pixels. The same reasoning as the input
+             * floor in globals.css: a control sized for a hand should not
+             * move because the text around it did.
+             */
+            className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full border border-black/10 text-ink-soft transition-transform active:scale-[0.94] disabled:invisible"
           >
             <ChevronLeft size={19} strokeWidth={1.9} aria-hidden="true" />
           </button>
@@ -433,7 +443,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
                   )
             }
             aria-label={isLast ? copy.finish : copy.next}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-[0.94]"
+            className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full bg-black text-white transition-transform active:scale-[0.94]"
           >
             {isLast ? (
               <ArrowRight size={19} strokeWidth={2} aria-hidden="true" />

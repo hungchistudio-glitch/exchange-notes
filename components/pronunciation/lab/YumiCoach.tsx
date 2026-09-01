@@ -136,7 +136,7 @@ export default function YumiCoach({
       </div>
 
       <div className="min-w-0 flex-1 text-center sm:text-left">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           {copy.eyebrow}
         </p>
 
@@ -146,7 +146,7 @@ export default function YumiCoach({
           interrupt a screen reader mid-word each time.
         */}
         <p
-          className="font-cjk mt-1 text-[15px] font-medium leading-6 text-ink-strong"
+          className="font-cjk mt-1 text-[0.9375rem] font-medium leading-6 text-ink-strong"
           aria-live="polite"
         >
           {line}

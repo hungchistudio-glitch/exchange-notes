@@ -83,12 +83,12 @@ export default function ServiceWorkerRegister() {
         "sm:inset-x-auto sm:left-1/2 sm:w-auto sm:-translate-x-1/2",
       ].join(" ")}
     >
-      <p className="flex-1 text-[13px] font-medium">{copy.updateReadyTitle}</p>
+      <p className="flex-1 text-[0.8125rem] font-medium">{copy.updateReadyTitle}</p>
 
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="shrink-0 rounded-full px-3 py-1.5 text-[13px] text-ink-invert-soft transition active:scale-95"
+        className="shrink-0 rounded-full px-3 py-1.5 text-[0.8125rem] text-ink-invert-soft transition active:scale-95"
       >
         {copy.updateReadyDismiss}
       </button>
@@ -96,7 +96,7 @@ export default function ServiceWorkerRegister() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="shrink-0 rounded-full bg-white px-4 py-1.5 text-[13px] font-semibold text-black transition active:scale-95"
+        className="shrink-0 rounded-full bg-white px-4 py-1.5 text-[0.8125rem] font-semibold text-black transition active:scale-95"
       >
         {copy.updateReadyAction}
       </button>

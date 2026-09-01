@@ -80,7 +80,7 @@ export default function YumiDecodeCard({
         </span>
 
         <h3
-          className="flex-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
+          className="flex-1 text-[0.6875rem] font-semibold uppercase tracking-[0.16em]"
           style={{ color: "var(--msg-accent)" }}
         >
           {copy.label}
@@ -96,7 +96,7 @@ export default function YumiDecodeCard({
           type="button"
           onClick={() => setShowWhy((open) => !open)}
           aria-expanded={showWhy}
-          className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium"
+          className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[0.6875rem] font-medium"
           style={{
             borderColor: "var(--msg-line)",
             color: "var(--msg-ink-soft)",
@@ -119,7 +119,7 @@ export default function YumiDecodeCard({
 
       {showWhy && (
         <p
-          className="mt-2.5 rounded-xl p-3 text-[12px] leading-5"
+          className="mt-2.5 rounded-xl p-3 text-[0.75rem] leading-5"
           style={{
             background: "var(--msg-surface-soft)",
             color: "var(--msg-ink-soft)",
@@ -137,13 +137,13 @@ export default function YumiDecodeCard({
             <div key={phrase.id}>
               <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
                 <span
-                  className="text-[17px] font-semibold underline decoration-dotted underline-offset-4"
+                  className="text-[1.0625rem] font-semibold underline decoration-dotted underline-offset-4"
                   style={{ textDecorationColor: "var(--msg-accent)" }}
                 >
                   {phrase.phrase}
                 </span>
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
                   style={{ color: "var(--msg-ink-faint)" }}
                 >
                   {typeLabel[phrase.phraseType]}
@@ -154,7 +154,7 @@ export default function YumiDecodeCard({
                   with a meaning, it is a shorthand for one. */}
               {phrase.expanded && (
                 <p
-                  className="mt-1 text-[14px] leading-[1.5]"
+                  className="mt-1 text-[0.875rem] leading-[1.5]"
                   style={{ color: "var(--msg-ink)" }}
                 >
                   {phrase.expanded}
@@ -162,7 +162,7 @@ export default function YumiDecodeCard({
               )}
 
               <p
-                className="mt-1 text-[14px] leading-[1.5]"
+                className="mt-1 text-[0.875rem] leading-[1.5]"
                 style={{ color: "var(--msg-ink-soft)" }}
               >
                 {phrase.meaning}
@@ -172,7 +172,7 @@ export default function YumiDecodeCard({
                 <button
                   type="button"
                   onClick={() => speak(phrase.phrase, speechLanguage)}
-                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold"
+                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold"
                   style={{
                     borderColor: "var(--msg-line)",
                     color: "var(--msg-ink-soft)",
@@ -186,7 +186,7 @@ export default function YumiDecodeCard({
                   type="button"
                   onClick={() => onSavePhrase(phrase)}
                   disabled={saved || savingPhraseId === phrase.id}
-                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold disabled:opacity-70"
+                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold disabled:opacity-70"
                   style={
                     saved
                       ? {
@@ -224,15 +224,15 @@ export default function YumiDecodeCard({
           style={{ borderColor: "var(--msg-line)" }}
         >
           <span
-            className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+            className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {copy.tone}
           </span>
-          <span className="text-[13px] font-medium">{analysis.tone}</span>
+          <span className="text-[0.8125rem] font-medium">{analysis.tone}</span>
           {analysis.toneConfidence === "low" && (
             <span
-              className="text-[11px]"
+              className="text-[0.6875rem]"
               style={{ color: "var(--msg-ink-faint)" }}
             >
               {copy.toneUncertain}
@@ -249,7 +249,7 @@ export default function YumiDecodeCard({
           type="button"
           onClick={() => setCoachOpen((open) => !open)}
           aria-expanded={coachOpen}
-          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold"
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[0.8125rem] font-semibold"
           style={{
             background: coachOpen ? "var(--msg-accent-soft)" : "var(--msg-accent)",
             color: coachOpen ? "var(--msg-accent)" : "var(--msg-accent-ink)",

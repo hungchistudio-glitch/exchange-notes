@@ -71,7 +71,7 @@ export default function SoundTile({
     >
       <div className="flex items-start justify-between gap-2">
         <span
-          className="text-[30px] font-bold leading-none tracking-[-0.02em]"
+          className="text-[1.875rem] font-bold leading-none tracking-[-0.02em]"
           style={{ fontFamily: `var(${meta.fontVariable})` }}
           lang={meta.htmlLang}
         >
@@ -88,7 +88,7 @@ export default function SoundTile({
         ) : null}
 
         {displayLabel ? (
-          <p className="font-cjk mt-0.5 truncate text-[13px] font-medium text-ink-soft">
+          <p className="font-cjk mt-0.5 truncate text-[0.8125rem] font-medium text-ink-soft">
             {displayLabel}
           </p>
         ) : null}

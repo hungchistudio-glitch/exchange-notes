@@ -166,7 +166,7 @@ export default function MinimalPairDrill({
         />
       </div>
 
-      <p className="font-cjk text-[17px] font-semibold">{copy.prompt}</p>
+      <p className="font-cjk text-[1.0625rem] font-semibold">{copy.prompt}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {question.options.map((option, optionIndex) => {
@@ -200,7 +200,7 @@ export default function MinimalPairDrill({
               >
                 <span className="min-w-0">
                   <span
-                    className="font-cjk block truncate text-[17px] font-semibold"
+                    className="font-cjk block truncate text-[1.0625rem] font-semibold"
                     style={{ fontFamily: `var(${meta.fontVariable})` }}
                     lang={meta.htmlLang}
                   >
@@ -242,7 +242,7 @@ export default function MinimalPairDrill({
       {answered ? (
         <div className="space-y-3" aria-live="polite">
           <p
-            className={`font-cjk text-[15px] font-semibold ${
+            className={`font-cjk text-[0.9375rem] font-semibold ${
               correct ? "text-emerald-700" : "text-red-700"
             }`}
           >

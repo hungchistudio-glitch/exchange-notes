@@ -514,7 +514,7 @@ export default function ScriptableWidgetSettingsButton() {
           */}
           {issuedToken && (
             <div className="rounded-2xl border border-black/[0.08] bg-black/[0.03] px-4 py-4">
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-black">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-black">
                 {copy.oneTimeTitle}
               </h3>
 
@@ -522,7 +522,7 @@ export default function ScriptableWidgetSettingsButton() {
                 {copy.oneTimeDescription}
               </p>
 
-              <p className="mt-3 break-all rounded-xl border border-black/[0.08] bg-white px-3 py-2.5 font-mono text-[13px] leading-5 text-black">
+              <p className="mt-3 break-all rounded-xl border border-black/[0.08] bg-white px-3 py-2.5 font-mono text-[0.8125rem] leading-5 text-black">
                 {issuedToken}
               </p>
 
@@ -552,7 +552,7 @@ export default function ScriptableWidgetSettingsButton() {
               }
               className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
             >
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-amber-950">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-amber-950">
                 {confirming === "rotate"
                   ? copy.rotateConfirmTitle
                   : copy.revokeConfirmTitle}
@@ -608,7 +608,7 @@ export default function ScriptableWidgetSettingsButton() {
             </span>
 
             <div className="min-w-0">
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em]">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em]">
                 {stateContent.title}
               </h3>
 
@@ -622,7 +622,7 @@ export default function ScriptableWidgetSettingsButton() {
             <dl className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white text-sm">
               <div className="flex items-center justify-between border-b border-black/[0.05] px-4 py-3">
                 <dt className="text-ink-soft">{copy.tokenPrefixLabel}</dt>
-                <dd className="font-mono text-[13px] text-black">
+                <dd className="font-mono text-[0.8125rem] text-black">
                   {token.prefix}…
                 </dd>
               </div>

@@ -43,7 +43,7 @@ export default function VocabularyCardDetails({ item }: Props) {
         className="mt-4"
       />
 
-      <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-[18px] bg-black/[0.025] px-4 py-3.5 text-[11px]">
+      <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-[18px] bg-black/[0.025] px-4 py-3.5 text-[0.6875rem]">
         <div className="min-w-0">
           <dt className="text-ink-faint">{detail.reviews}</dt>
           <dd className="mt-0.5 font-semibold text-ink-soft">

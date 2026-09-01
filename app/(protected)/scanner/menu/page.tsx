@@ -184,11 +184,11 @@ export default function MenuTranslatorPage() {
 
         <div className="relative mt-auto px-6 pb-10">
           <div className="rounded-[22px] bg-white px-5 py-5">
-            <h2 className="text-[17px] font-bold tracking-[-0.02em] text-black">
+            <h2 className="text-[1.0625rem] font-bold tracking-[-0.02em] text-black">
               {copy.qualityTitle}
             </h2>
 
-            <p className="mt-1.5 text-[14px] leading-[21px] text-ink-soft">
+            <p className="mt-1.5 text-[0.875rem] leading-[1.3125rem] text-ink-soft">
               {copy.qualityBody}
             </p>
 
@@ -263,11 +263,11 @@ export default function MenuTranslatorPage() {
             />
           ) : (
             <div className="rounded-[18px] border border-black/[0.06] bg-white px-5 py-6">
-              <h2 className="text-[17px] font-bold tracking-[-0.02em] text-black">
+              <h2 className="text-[1.0625rem] font-bold tracking-[-0.02em] text-black">
                 {failureCopy.title}
               </h2>
 
-              <p className="mt-1.5 text-[14px] leading-[21px] text-ink-soft">
+              <p className="mt-1.5 text-[0.875rem] leading-[1.3125rem] text-ink-soft">
                 {failureCopy.body}
               </p>
 

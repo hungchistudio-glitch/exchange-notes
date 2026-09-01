@@ -107,10 +107,10 @@ export default function ArchivedConversations() {
           </Link>
 
           <div className="min-w-0">
-            <h1 className="text-[22px] font-bold tracking-[-0.02em]">
+            <h1 className="text-[1.375rem] font-bold tracking-[-0.02em]">
               {copy.hub.archivedTitle}
             </h1>
-            <p className="text-[13px]" style={{ color: "var(--msg-ink-soft)" }}>
+            <p className="text-[0.8125rem]" style={{ color: "var(--msg-ink-soft)" }}>
               {copy.hub.archivedSubtitle}
             </p>
           </div>

@@ -138,7 +138,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
           <button
             type="button"
             onClick={() => playback.play("slow", source, "slow")}
-            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[0.8125rem] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
             {copy.detail.slowSpeed}
           </button>
@@ -146,7 +146,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
           <button
             type="button"
             onClick={playSelf}
-            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[0.8125rem] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
             {copy.detail.replay}
           </button>
@@ -164,7 +164,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
             aria-label={copy.detail.articulation}
             className="rounded-3xl border border-black/[0.06] bg-white p-5"
           >
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+            <h2 className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
               {copy.detail.articulation}
             </h2>
 
@@ -206,7 +206,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
               <div className="mt-4 rounded-2xl bg-surface p-3">
                 {showGuidance ? (
                   <>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                    <p className="text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                       {t.pronunciation.cards.howToSayIt}
                     </p>
 
@@ -259,7 +259,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
 
         {/* ── Examples ──────────────────────────────────────────── */}
         <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+          <h2 className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {copy.detail.examples}
           </h2>
 
@@ -281,7 +281,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
                   >
                     <span className="min-w-0">
                       <span
-                        className="font-cjk block truncate text-[15px] font-medium"
+                        className="font-cjk block truncate text-[0.9375rem] font-medium"
                         style={{ fontFamily: `var(${meta.fontVariable})` }}
                         lang={meta.htmlLang}
                       >
@@ -322,7 +322,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
               className="flex w-full items-start justify-between gap-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-700">
+                <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-amber-700">
                   {t.pronunciation.cards.commonMistake}
                 </span>
                 <span className="font-cjk mt-1 block text-sm leading-6 text-amber-800">
@@ -351,7 +351,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
         {/* ── Minimal pairs ─────────────────────────────────────── */}
         {pairs.length > 0 ? (
           <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+            <h2 className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
               {copy.detail.minimalPairs}
             </h2>
 
@@ -403,7 +403,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
                                   {example.text}
                                 </span>
                                 {example.meaning ? (
-                                  <span className="font-cjk block truncate text-[11px] text-ink-faint">
+                                  <span className="font-cjk block truncate text-[0.6875rem] text-ink-faint">
                                     {localize(example.meaning, interfaceLanguage)}
                                   </span>
                                 ) : null}
@@ -424,7 +424,7 @@ export default function SoundDetail({ unitId }: { unitId: string }) {
 
         {/* ── Record and compare ────────────────────────────────── */}
         <section>
-          <h2 className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+          <h2 className="px-1 text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {copy.detail.recordYourself}
           </h2>
 

@@ -116,7 +116,7 @@ export default function SpeakModule() {
                   onClick={() =>
                     setSelected({ language: pack.language, unitId: candidate.id })
                   }
-                  className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-[15px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
+                  className={`inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-[0.9375rem] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
                     candidate.id === unit.id
                       ? "border-black bg-black text-white"
                       : "border-line bg-white text-ink-soft hover:text-black"

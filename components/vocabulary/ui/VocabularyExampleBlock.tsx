@@ -45,7 +45,7 @@ export default function VocabularyExampleBlock({
         className="flex items-start gap-3 px-5 py-5"
       >
         <p
-          className={`flex-1 text-[15px] leading-6 ${
+          className={`flex-1 text-[0.9375rem] leading-6 ${
             hero ? "text-neutral-700" : "text-ink-soft"
           }`}
         >

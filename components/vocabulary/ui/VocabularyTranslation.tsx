@@ -45,12 +45,12 @@ export default function VocabularyTranslation({
       <TextComponent
         className={
           variant === "primary"
-            ? "min-w-0 flex-1 break-words text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[34px]"
+            ? "min-w-0 flex-1 break-words text-[1.875rem] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[2.125rem]"
             // CJK glyphs carry more visual weight than Latin at the same
             // size, so the demoted Chinese line needs to sit a step lower
             // than the demoted English line (see VocabularyWord) to read
             // as genuinely secondary rather than as a second headline.
-            : "min-w-0 flex-1 break-words text-[20px] font-normal leading-[1.45] tracking-[-0.01em] text-ink-faint"
+            : "min-w-0 flex-1 break-words text-[1.25rem] font-normal leading-[1.45] tracking-[-0.01em] text-ink-faint"
         }
       >
         {normalizedText}

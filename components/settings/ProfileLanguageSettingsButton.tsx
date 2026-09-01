@@ -77,7 +77,7 @@ export default function ProfileLanguageSettingsButton({
             <SettingsChoiceCard
               key={option.value}
               selected={value === option.value}
-              badge={<span className="text-[15px]">{option.badge}</span>}
+              badge={<span className="text-[0.9375rem]">{option.badge}</span>}
               title={option.label}
               onClick={() => handleSelect(option.value)}
             />

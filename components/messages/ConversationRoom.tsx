@@ -1329,12 +1329,12 @@ export default function ConversationRoom({
                 )}
 
                 <div className="min-w-0">
-                  <h1 className="truncate text-[17px] font-semibold tracking-[-0.015em]">
+                  <h1 className="truncate text-[1.0625rem] font-semibold tracking-[-0.015em]">
                     {friendName}
                   </h1>
 
                   <div
-                    className="mt-0.5 flex items-center gap-1.5 text-[11px]"
+                    className="mt-0.5 flex items-center gap-1.5 text-[0.6875rem]"
                     style={{ color: "var(--msg-ink-soft)" }}
                   >
                     <span
@@ -1355,7 +1355,7 @@ export default function ConversationRoom({
 
               <span
                 title={copy.room.privateHint}
-                className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-medium min-[420px]:flex"
+                className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[0.6875rem] font-medium min-[420px]:flex"
                 style={{
                   borderColor: "var(--msg-line)",
                   color: "var(--msg-ink-soft)",
@@ -1501,7 +1501,7 @@ export default function ConversationRoom({
                   {copy.startConversationDescription}
                 </p>
                 <p
-                  className="mt-3 text-[11px] leading-5"
+                  className="mt-3 text-[0.6875rem] leading-5"
                   style={{ color: "var(--msg-ink-faint)" }}
                 >
                   {copy.room.privateNote}
@@ -1531,7 +1531,7 @@ export default function ConversationRoom({
                   {showDateDivider && (
                     <div className="flex justify-center py-5">
                       <span
-                        className="rounded-full border px-3 py-1 text-[11px] font-medium"
+                        className="rounded-full border px-3 py-1 text-[0.6875rem] font-medium"
                         style={{
                           borderColor: "var(--msg-line)",
                           color: "var(--msg-ink-soft)",
@@ -1623,12 +1623,12 @@ export default function ConversationRoom({
                             onSelectPhrase={() => setOpenDecodeId(message.id)}
                           />
                         ) : (
-                          <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.55]">
+                          <p className="whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.55]">
                             {message.body}
                           </p>
                         )}
                         <div
-                          className="mt-1.5 flex items-center justify-end gap-1 text-[10px]"
+                          className="mt-1.5 flex items-center justify-end gap-1 text-[0.625rem]"
                           style={{
                             color: isMine
                               ? "var(--msg-bubble-out-meta)"
@@ -1690,7 +1690,7 @@ export default function ConversationRoom({
                         <button
                           type="button"
                           onClick={() => setOpenDecodeId(message.id)}
-                          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium"
+                          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-medium"
                           style={{
                             borderColor: "var(--msg-line)",
                             color: "var(--msg-accent)",
@@ -1775,7 +1775,7 @@ export default function ConversationRoom({
             <button
               type="button"
               onClick={() => scrollToBottom()}
-              className="pointer-events-auto flex items-center gap-2 rounded-full border px-4 py-2 text-[13px] font-semibold shadow-lg"
+              className="pointer-events-auto flex items-center gap-2 rounded-full border px-4 py-2 text-[0.8125rem] font-semibold shadow-lg"
               style={{
                 background: hasUnseenBelow
                   ? "var(--msg-accent)"
@@ -1841,7 +1841,7 @@ export default function ConversationRoom({
                   maxLength={MAX_MESSAGE_LENGTH}
                   placeholder={copy.inputPlaceholder}
                   aria-label={copy.inputPlaceholder}
-                  className="min-h-10 flex-1 resize-none bg-transparent px-1 py-2.5 text-[16px] leading-6 outline-none"
+                  className="min-h-10 flex-1 resize-none bg-transparent px-1 py-2.5 text-[1rem] leading-6 outline-none"
                   style={{ color: "var(--msg-ink)" }}
                 />
 
@@ -1877,7 +1877,7 @@ export default function ConversationRoom({
               {showCharacterCount && (
                 <div className="flex justify-end px-3 pt-1.5">
                   <span
-                    className="text-[10px]"
+                    className="text-[0.625rem]"
                     style={{
                       color:
                         newMessage.length >= MAX_MESSAGE_LENGTH

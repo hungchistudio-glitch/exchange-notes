@@ -94,9 +94,9 @@ export default function ReplyCoachPanel({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="text-[13px] font-bold">{copy.title}</h4>
+          <h4 className="text-[0.8125rem] font-bold">{copy.title}</h4>
           <p
-            className="mt-0.5 text-[12px] leading-5"
+            className="mt-0.5 text-[0.75rem] leading-5"
             style={{ color: "var(--msg-ink-soft)" }}
           >
             {copy.subtitle}
@@ -116,7 +116,7 @@ export default function ReplyCoachPanel({
 
       {!suggestions && !failed && (
         <p
-          className="mt-3 text-[13px]"
+          className="mt-3 text-[0.8125rem]"
           style={{ color: "var(--msg-ink-soft)" }}
         >
           {copy.drafting}
@@ -125,13 +125,13 @@ export default function ReplyCoachPanel({
 
       {failed && (
         <div className="mt-3 flex items-center gap-3">
-          <p className="text-[13px]" style={{ color: "var(--msg-ink-soft)" }}>
+          <p className="text-[0.8125rem]" style={{ color: "var(--msg-ink-soft)" }}>
             {copy.failed}
           </p>
           <button
             type="button"
             onClick={() => setAttempt((value) => value + 1)}
-            className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold"
+            className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold"
             style={{
               borderColor: "var(--msg-line)",
               color: "var(--msg-accent)",
@@ -165,19 +165,19 @@ export default function ReplyCoachPanel({
                   }}
                 >
                   <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
                     style={{ color: "var(--msg-accent)" }}
                   >
                     {directionLabel[suggestion.direction]}
                   </span>
 
-                  <span className="mt-1 block text-[14px] leading-[1.5]">
+                  <span className="mt-1 block text-[0.875rem] leading-[1.5]">
                     {suggestion.text}
                   </span>
 
                   {/* What it means, so nobody sends a sentence they cannot read. */}
                   <span
-                    className="mt-1 block text-[12px] leading-5"
+                    className="mt-1 block text-[0.75rem] leading-5"
                     style={{ color: "var(--msg-ink-soft)" }}
                   >
                     {suggestion.gloss}
@@ -188,7 +188,7 @@ export default function ReplyCoachPanel({
           </ul>
 
           <p
-            className="mt-2.5 text-[11px]"
+            className="mt-2.5 text-[0.6875rem]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
             {insertedDirection ? copy.inserted : copy.ownership}

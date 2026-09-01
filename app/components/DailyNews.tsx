@@ -900,14 +900,14 @@ export default function DailyNews() {
       <div className="mb-7 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2
-            className="text-[34px] font-bold leading-[1.08] tracking-[-0.03em]"
+            className="text-[2.125rem] font-bold leading-[1.08] tracking-[-0.03em]"
             style={{ color: DISCOVER_COLORS.text }}
           >
             {copy.dailyNewsTitle}
           </h2>
 
           <p
-            className="mt-2 text-[15px] leading-[1.5]"
+            className="mt-2 text-[0.9375rem] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {copy.subtitle}
@@ -1042,7 +1042,7 @@ export default function DailyNews() {
       {latestCardsWithThumbnail.length > 0 ? (
         <div className="mt-9">
           <p
-            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+            className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {copy.latestStoriesLabel}

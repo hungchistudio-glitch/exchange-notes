@@ -76,7 +76,7 @@ export default function PronunciationBlock({
 
   return (
     <div
-      className={`space-y-1.5 break-words font-sans text-[11px] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
+      className={`space-y-1.5 break-words font-sans text-[0.6875rem] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
       {rows.map((row) => (
         <button

@@ -122,7 +122,7 @@ export default function WordsModule() {
                   >
                     <span className="min-w-0">
                       <span
-                        className="font-cjk block truncate text-[17px] font-semibold"
+                        className="font-cjk block truncate text-[1.0625rem] font-semibold"
                         style={{ fontFamily: `var(${meta.fontVariable})` }}
                         lang={meta.htmlLang}
                       >
@@ -143,7 +143,7 @@ export default function WordsModule() {
                       </span>
                     </span>
 
-                    <span className="font-cjk shrink-0 rounded-full bg-surface px-3 py-1 text-[11px] font-semibold text-ink-soft">
+                    <span className="font-cjk shrink-0 rounded-full bg-surface px-3 py-1 text-[0.6875rem] font-semibold text-ink-soft">
                       {reasonLabel[word.reason]}
                     </span>
                   </button>
@@ -152,7 +152,7 @@ export default function WordsModule() {
                     <div className="border-t border-black/[0.05] px-5 py-4">
                       {drills.length > 0 ? (
                         <div className="mb-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                             {copy.words.drills}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -160,7 +160,7 @@ export default function WordsModule() {
                               <Link
                                 key={unit.id}
                                 href={`/pronunciation/sounds/${encodeURIComponent(unit.id)}`}
-                                className="inline-flex min-h-[36px] items-center rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                                className="inline-flex min-h-[36px] items-center rounded-full border border-line bg-surface px-3 text-[0.8125rem] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                               >
                                 {unit.symbol}
                               </Link>

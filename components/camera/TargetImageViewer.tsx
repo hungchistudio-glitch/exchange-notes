@@ -408,7 +408,7 @@ export default function TargetImageViewer({
         <AnalysingTargetIndicator active={busy} label={copy.busy} />
 
         {!busy && (
-          <p className="rounded-full bg-black/35 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md">
+          <p className="rounded-full bg-black/35 px-3 py-1.5 text-[0.6875rem] font-medium tracking-wide text-white/90 backdrop-blur-md">
             {copy.hint}
           </p>
         )}
@@ -425,7 +425,7 @@ export default function TargetImageViewer({
               <ChevronLeft size={18} strokeWidth={2} aria-hidden="true" />
             </button>
 
-            <span className="min-w-[68px] text-center text-[12px] font-semibold tabular-nums text-white">
+            <span className="min-w-[68px] text-center text-[0.75rem] font-semibold tabular-nums text-white">
               {copy.pageLabel
                 .replace("{page}", String(pages.page))
                 .replace("{count}", String(pages.pageCount))}

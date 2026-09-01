@@ -106,7 +106,7 @@ export default function VocabularyCollectionsPage() {
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[26px] font-bold tracking-[-0.02em]">
+            <h1 className="text-[1.625rem] font-bold tracking-[-0.02em]">
               {copy.title}
             </h1>
             <p className="mt-1 text-ink-soft">{copy.description}</p>

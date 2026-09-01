@@ -152,7 +152,7 @@ export default function BottomNavigation({
                   {item.badgeCount ? (
                     <span
                       aria-hidden="true"
-                      className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--accent-amber)] px-[3px] text-[9px] font-semibold leading-none text-white"
+                      className="absolute -right-[7px] -top-[5px] flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--accent-amber)] px-[3px] text-[0.5625rem] font-semibold leading-none text-white"
                     >
                       {item.badgeCount > 9 ? "9+" : item.badgeCount}
                       <span

@@ -57,7 +57,7 @@ export default function AudioRail({
 
       <div className="min-w-0 flex-1">
         <p
-          className="truncate text-[12px] font-medium"
+          className="truncate text-[0.75rem] font-medium"
           style={{ color: DISCOVER_COLORS.accent }}
         >
           {isPlaying ? copy.stopStory : copy.playFullStory}
@@ -88,7 +88,7 @@ export default function AudioRail({
               onClick={() => onModeChange(option.value)}
               aria-label={copy[option.labelKey]}
               aria-pressed={active}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[10.5px] font-semibold transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-[0.65625rem] font-semibold transition-colors"
               style={{
                 backgroundColor: active ? DISCOVER_COLORS.accent : "transparent",
                 color: active

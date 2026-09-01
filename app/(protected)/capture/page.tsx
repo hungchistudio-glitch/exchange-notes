@@ -1304,12 +1304,12 @@ function CaptureContent() {
 
         {!fullScreen && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
               {getLanguageName(languagePair[0], interfaceLanguage)} ×{" "}
               {getLanguageName(languagePair[1], interfaceLanguage)}
             </p>
 
-            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.03em]">
+            <h2 className="mt-3 text-[1.75rem] font-semibold tracking-[-0.03em]">
               {capture.source.title}
             </h2>
 
@@ -1440,7 +1440,7 @@ function CaptureContent() {
             </div>
 
             {!result && fileName && (
-              <p className="mt-2 truncate px-2 text-center text-[11px] text-ink-faint">
+              <p className="mt-2 truncate px-2 text-center text-[0.6875rem] text-ink-faint">
                 {fileName}
               </p>
             )}
@@ -1491,11 +1491,11 @@ function CaptureContent() {
             {result && !fromLexicon && (
               <div className="flex flex-1 flex-col pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+                  <span className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                     {capture.result.eyebrow}
                   </span>
 
-                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-ink-soft">
+                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[0.625rem] font-medium text-ink-soft">
                     {insertValues(capture.result.confidence, {
                       value:
                         result.confidence === "high"
@@ -1512,7 +1512,7 @@ function CaptureContent() {
                   learner's own two languages, learning first.
                 */}
                 <div className="mt-2 flex items-start gap-3">
-                  <h2 className="min-w-0 flex-1 break-words text-[24px] font-semibold tracking-[-0.03em]">
+                  <h2 className="min-w-0 flex-1 break-words text-[1.5rem] font-semibold tracking-[-0.03em]">
                     {result.term}
                   </h2>
                   <VocabularyCopyButton
@@ -1546,8 +1546,8 @@ function CaptureContent() {
                      */
                     const valueClass = (primary: boolean) =>
                       primary
-                        ? "mt-0.5 block break-words text-[16px] font-semibold text-black"
-                        : "mt-0.5 block break-words text-[14px] font-normal text-ink-soft";
+                        ? "mt-0.5 block break-words text-[1rem] font-semibold text-black"
+                        : "mt-0.5 block break-words text-[0.875rem] font-normal text-ink-soft";
 
                     const buttonClass = (primary: boolean) =>
                       primary
@@ -1565,12 +1565,12 @@ function CaptureContent() {
                         className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                       >
                         <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                          <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
                             {getLanguage(language).endonym}
                           </span>
                           <span className={valueClass(primary)}>{text}</span>
                           {reading && (
-                            <span className="mt-0.5 block text-[12px] text-ink-faint">
+                            <span className="mt-0.5 block text-[0.75rem] text-ink-faint">
                               {reading}
                             </span>
                           )}
@@ -1625,7 +1625,7 @@ function CaptureContent() {
 
                 {(result.termExample || result.translationExample) && (
                   <div className="mt-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
+                    <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
                       {t.vocabulary.detail.example}
                     </p>
 

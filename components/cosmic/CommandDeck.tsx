@@ -235,7 +235,7 @@ export default function CommandDeck() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
         <p className="hud-label">{copy.deck.eyebrow}</p>
-        <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
+        <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
           {copy.deck.title}
         </h1>
         <p className="mt-1 text-ink-soft">{copy.deck.subtitle}</p>

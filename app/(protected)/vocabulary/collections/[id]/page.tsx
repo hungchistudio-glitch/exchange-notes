@@ -117,7 +117,7 @@ export default function CollectionDetailPage() {
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xl shadow-sm">
             {collection?.emoji ?? "📚"}
           </span>
-          <h1 className="text-[24px] font-bold tracking-[-0.02em]">
+          <h1 className="text-[1.5rem] font-bold tracking-[-0.02em]">
             {collection?.name ?? copy.fallbackTitle}
           </h1>
         </div>

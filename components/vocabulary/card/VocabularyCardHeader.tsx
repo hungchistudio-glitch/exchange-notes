@@ -60,12 +60,12 @@ export default function VocabularyCardHeader({
       */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
-          <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-soft">
+          <p className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.26em] text-ink-soft">
             {statusLabels[item.status]}
           </p>
 
           {partOfSpeechLabel ? (
-            <p className="font-sans text-[10px] font-semibold uppercase tracking-[0.26em] text-ink-faint">
+            <p className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.26em] text-ink-faint">
               {partOfSpeechLabel}
             </p>
           ) : null}

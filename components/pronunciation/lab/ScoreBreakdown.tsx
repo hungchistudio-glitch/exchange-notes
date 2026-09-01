@@ -54,13 +54,13 @@ export default function ScoreBreakdown({
   return (
     <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+        <h3 className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
           {copy.overall}
         </h3>
 
-        <p className="text-[28px] font-bold leading-none tracking-[-0.02em]">
+        <p className="text-[1.75rem] font-bold leading-none tracking-[-0.02em]">
           {result.overall === null ? (
-            <span className="text-[15px] font-medium text-ink-faint">
+            <span className="text-[0.9375rem] font-medium text-ink-faint">
               {copy.notAnalyzed}
             </span>
           ) : (
@@ -81,7 +81,7 @@ export default function ScoreBreakdown({
 
           return (
             <div key={dimension} className="flex items-center gap-3">
-              <dt className="w-[38%] shrink-0 truncate font-cjk text-[13px] text-ink-soft">
+              <dt className="w-[38%] shrink-0 truncate font-cjk text-[0.8125rem] text-ink-soft">
                 {names[dimension]}
               </dt>
 
@@ -94,12 +94,12 @@ export default function ScoreBreakdown({
                         style={{ width: `${entry.score}%` }}
                       />
                     </span>
-                    <span className="w-9 shrink-0 text-right text-[13px] font-semibold tabular-nums">
+                    <span className="w-9 shrink-0 text-right text-[0.8125rem] font-semibold tabular-nums">
                       {entry.score}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[13px] text-ink-faint">
+                  <span className="text-[0.8125rem] text-ink-faint">
                     {copy.notAnalyzed}
                   </span>
                 )}
@@ -129,7 +129,7 @@ export default function ScoreBreakdown({
         </>
       ) : null}
 
-      <p className="font-cjk mt-4 border-t border-black/[0.05] pt-3 text-[11px] leading-5 text-ink-faint">
+      <p className="font-cjk mt-4 border-t border-black/[0.05] pt-3 text-[0.6875rem] leading-5 text-ink-faint">
         {result.processing === "cloud" ? copy.privacyCloud : copy.privacyOnDevice}
       </p>
     </section>

@@ -132,7 +132,7 @@ export default function LabLanding() {
           tapLabel={copy.coach.eyebrow}
         />
 
-        <p className="px-1 text-[13px] text-ink-faint">
+        <p className="px-1 text-[0.8125rem] text-ink-faint">
           {fill(copy.learningLabel, { language: languageName })} ·{" "}
           {copy.switchLanguageHint}
         </p>
@@ -140,7 +140,7 @@ export default function LabLanding() {
         {/* ── Today's training ──────────────────────────────────── */}
         <section className="overflow-hidden rounded-[26px] border border-black/[0.06] bg-black text-white">
           <div className="p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
               {copy.today.eyebrow}
             </p>
 
@@ -195,7 +195,7 @@ export default function LabLanding() {
           aria-label={copy.progress.title}
           className="rounded-[26px] border border-black/[0.06] bg-white p-5"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
             {copy.progress.eyebrow}
           </p>
           <h2 className="mt-1 text-lg font-bold tracking-[-0.02em]">
@@ -267,7 +267,7 @@ export default function LabLanding() {
                     </span>
 
                     <span className="mt-3 block">
-                      <span className="font-cjk block text-[15px] font-bold tracking-[-0.01em]">
+                      <span className="font-cjk block text-[0.9375rem] font-bold tracking-[-0.01em]">
                         {copy.modules[module].title}
                       </span>
                       <span className="font-cjk mt-0.5 block text-xs leading-5 text-ink-faint">
@@ -291,7 +291,7 @@ export default function LabLanding() {
             {weakest.length > 0 ? (
               <Link
                 href="/pronunciation/review"
-                className="shrink-0 text-[13px] font-semibold text-ink-soft hover:text-black"
+                className="shrink-0 text-[0.8125rem] font-semibold text-ink-soft hover:text-black"
               >
                 {copy.weakness.viewAll}
               </Link>
@@ -319,7 +319,7 @@ export default function LabLanding() {
                             : copy.weakness.improving
                         }
                       />
-                      <span className="truncate text-[17px] font-semibold">
+                      <span className="truncate text-[1.0625rem] font-semibold">
                         {entry.unit.symbol}
                       </span>
                       <span className="truncate text-xs text-ink-faint">
@@ -358,11 +358,11 @@ export default function LabLanding() {
                     href={`/pronunciation/sounds?group=${encodeURIComponent(group.id)}`}
                     className="flex min-h-[52px] items-center justify-between gap-3 rounded-2xl px-2 transition-colors hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                   >
-                    <span className="font-cjk min-w-0 truncate text-[15px] font-medium">
+                    <span className="font-cjk min-w-0 truncate text-[0.9375rem] font-medium">
                       {localize(group.label, interfaceLanguage)}
                     </span>
 
-                    <span className="shrink-0 text-[13px] text-ink-faint">
+                    <span className="shrink-0 text-[0.8125rem] text-ink-faint">
                       {mastery.percent === null
                         ? fill(copy.sounds.soundCount, { count: mastery.total })
                         : fill(copy.progress.soundsMastered, {
@@ -394,21 +394,21 @@ function ProgressTile({
 }) {
   return (
     <div className="rounded-2xl bg-surface p-3">
-      <dt className="font-cjk text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+      <dt className="font-cjk text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
         {label}
       </dt>
       <dd className="mt-1">
         {value === null ? (
-          <span className="font-cjk text-[12px] leading-5 text-ink-faint">
+          <span className="font-cjk text-[0.75rem] leading-5 text-ink-faint">
             {fallback}
           </span>
         ) : (
           <>
-            <span className="text-[22px] font-bold leading-none tracking-[-0.02em]">
+            <span className="text-[1.375rem] font-bold leading-none tracking-[-0.02em]">
               {value}
             </span>
             {hint ? (
-              <span className="mt-1 block text-[11px] text-ink-faint">{hint}</span>
+              <span className="mt-1 block text-[0.6875rem] text-ink-faint">{hint}</span>
             ) : null}
           </>
         )}

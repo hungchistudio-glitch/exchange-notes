@@ -53,7 +53,7 @@ export default function YumiReminderDiagnostics() {
 
   return (
     <div className="rounded-2xl border border-black/[0.07] bg-black/[0.02] px-4 py-4">
-      <h3 className="text-[15px] font-semibold tracking-[-0.02em]">
+      <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em]">
         {copy.testTitle}
       </h3>
 
@@ -61,7 +61,7 @@ export default function YumiReminderDiagnostics() {
         {copy.testDescription}
       </p>
 
-      <p className="mt-3 text-[11px] font-medium uppercase tracking-[0.13em] text-ink-faint">
+      <p className="mt-3 text-[0.6875rem] font-medium uppercase tracking-[0.13em] text-ink-faint">
         {copy.timezoneLabel}
       </p>
 

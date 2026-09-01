@@ -264,7 +264,7 @@
 }
 
 .eyebrow {
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: 0.18em;
@@ -275,7 +275,7 @@
 .serial {
   margin-top: 4px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   color: var(--card-muted);
 }
@@ -340,7 +340,7 @@
 .secondaryWord {
   margin-top: 9px;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 560;
   line-height: 1.35;
   letter-spacing: 0.01em;
@@ -351,7 +351,7 @@
   margin-top: 7px;
   min-height: 17px;
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.42;
   letter-spacing: 0.015em;
   color: var(--card-muted);
@@ -406,7 +406,7 @@
 
 .soundLabel {
   display: block;
-  font-size: 8px;
+  font-size: 0.5rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0.08em;
@@ -421,18 +421,18 @@
   display: block;
   margin-top: 6px;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 650;
   line-height: 1.4;
 }
 
 .soundValue[data-script="english"] {
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: -0.015em;
 }
 
 .soundValue[data-script="zhuyin"] {
-  font-size: 12px;
+  font-size: 0.75rem;
   letter-spacing: 0.01em;
 }
 
@@ -448,7 +448,7 @@
 
 .swipeMicrocopy {
   overflow: hidden;
-  font-size: 9px;
+  font-size: 0.5625rem;
   letter-spacing: 0.04em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -525,7 +525,7 @@
 .counter {
   min-width: 72px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.18em;
   text-align: center;
   /* 0.48 was 3.32:1 on the deck gradient behind it; 0.60 is 4.90:1. */
@@ -586,7 +586,7 @@
 }
 
 .emptyEyebrow {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -597,7 +597,7 @@
 
 .emptyTitle {
   margin-top: 12px;
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 760;
   letter-spacing: -0.035em;
 }
@@ -605,7 +605,7 @@
 .emptyDescription {
   max-width: 290px;
   margin-top: 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.6;
   /* Was 0.54 — 4.02:1. 0.70 is 6.95:1. */
   color: rgba(12, 13, 16, 0.7);
@@ -626,7 +626,7 @@
   justify-content: center;
   gap: 7px;
   border-radius: 16px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 

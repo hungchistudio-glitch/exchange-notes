@@ -196,7 +196,7 @@ export default function TrainModule() {
           <YumiCoach pack={pack} state="celebrating" size={92} />
 
           <section className="rounded-[26px] border border-black/[0.06] bg-white p-6 text-center">
-            <p className="font-cjk text-[17px] font-semibold">
+            <p className="font-cjk text-[1.0625rem] font-semibold">
               {fill(copy.session.completeBody, {
                 correct: summary.correct,
                 answered: summary.answered,
@@ -206,7 +206,7 @@ export default function TrainModule() {
             {summary.averageScore === null ? (
               <p className="mt-2 text-sm text-ink-faint">{copy.speak.notAnalyzed}</p>
             ) : (
-              <p className="mt-2 text-[28px] font-bold tracking-[-0.02em]">
+              <p className="mt-2 text-[1.75rem] font-bold tracking-[-0.02em]">
                 {summary.averageScore}
               </p>
             )}
@@ -344,7 +344,7 @@ function SoundStep({ item, pack, playback, onCoachStateChange }: StepProps) {
 
   return (
     <section className="rounded-[26px] border border-black/[0.06] bg-white p-6 text-center">
-      <p className="text-[44px] font-bold leading-none tracking-[-0.02em]">
+      <p className="text-[2.75rem] font-bold leading-none tracking-[-0.02em]">
         {unit.symbol}
       </p>
 
@@ -368,7 +368,7 @@ function SoundStep({ item, pack, playback, onCoachStateChange }: StepProps) {
         <button
           type="button"
           onClick={() => playback.play(`${unit.id}-slow`, source, "slow")}
-          className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+          className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[0.8125rem] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
         >
           {copy.detail.slowSpeed}
         </button>
@@ -376,7 +376,7 @@ function SoundStep({ item, pack, playback, onCoachStateChange }: StepProps) {
 
       <Link
         href={`/pronunciation/sounds/${encodeURIComponent(unit.id)}`}
-        className="mt-4 inline-block text-[13px] font-semibold text-ink-soft underline underline-offset-4 hover:text-black"
+        className="mt-4 inline-block text-[0.8125rem] font-semibold text-ink-soft underline underline-offset-4 hover:text-black"
       >
         {copy.detail.articulation}
       </Link>
@@ -499,7 +499,7 @@ function RhythmStep({
         {lesson.phrases.slice(0, 3).map((phrase) => (
           <li key={phrase.id}>
             <div className="flex items-center justify-between gap-3">
-              <p className="font-cjk min-w-0 truncate text-[15px] font-semibold">
+              <p className="font-cjk min-w-0 truncate text-[0.9375rem] font-semibold">
                 {phrase.text}
               </p>
 

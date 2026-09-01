@@ -515,7 +515,7 @@ export default function MenuCamera({
       >
         <p
           aria-live="polite"
-          className={`mb-5 text-center text-[13px] font-medium leading-5 tracking-[0.02em] transition-colors duration-200 ${
+          className={`mb-5 text-center text-[0.8125rem] font-medium leading-5 tracking-[0.02em] transition-colors duration-200 ${
             importError || cameraError
               ? "text-amber-300"
               : detected

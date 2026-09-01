@@ -116,7 +116,7 @@ export default function MenuRebuiltView({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="text-[12px] text-ink-faint">{copy.overlayHint}</p>
+        <p className="text-[0.75rem] text-ink-faint">{copy.overlayHint}</p>
 
         <div className="flex items-center gap-1.5">
           <button
@@ -131,7 +131,7 @@ export default function MenuRebuiltView({
 
           <span
             aria-live="polite"
-            className="min-w-[3.4rem] text-center text-[12px] font-semibold text-ink-soft"
+            className="min-w-[3.4rem] text-center text-[0.75rem] font-semibold text-ink-soft"
           >
             {copy.zoomLevel.replace("{level}", String(zoom))}
           </span>

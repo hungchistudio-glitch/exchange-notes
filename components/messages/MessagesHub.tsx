@@ -600,16 +600,16 @@ export default function MessagesHub() {
             */}
             <div className="relative z-20 min-w-0">
               <p
-                className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em]"
                 style={{ color: "var(--msg-accent)" }}
               >
                 {copy.hub.eyebrow}
               </p>
-              <h1 className="mt-1.5 text-[26px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[34px]">
+              <h1 className="mt-1.5 text-[1.625rem] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[2.125rem]">
                 {copy.title}
               </h1>
               <p
-                className="mt-2 text-[13px] leading-5 sm:text-sm sm:leading-6"
+                className="mt-2 text-[0.8125rem] leading-5 sm:text-sm sm:leading-6"
                 style={{ color: "var(--msg-ink-soft)" }}
               >
                 {copy.hub.subtitleFirst}
@@ -635,7 +635,7 @@ export default function MessagesHub() {
                 "offline" and mean it.
               */}
               <span
-                className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] min-[420px]:flex"
+                className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] min-[420px]:flex"
                 style={{
                   background: "var(--msg-surface)",
                   borderColor: "var(--msg-line)",
@@ -696,7 +696,7 @@ export default function MessagesHub() {
             }}
             placeholder={copy.hub.searchPlaceholder}
             aria-label={copy.hub.searchLabel}
-            className="w-full bg-transparent text-[15px] outline-none"
+            className="w-full bg-transparent text-[0.9375rem] outline-none"
             style={{ color: "var(--msg-ink)" }}
           />
           {isSearching && (
@@ -729,7 +729,7 @@ export default function MessagesHub() {
                     setTab(entry.key);
                     persist({ tab: entry.key });
                   }}
-                  className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13px] font-semibold transition-colors"
+                  className="flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[0.8125rem] font-semibold transition-colors"
                   style={{
                     background: active
                       ? "var(--msg-accent-soft)"
@@ -741,7 +741,7 @@ export default function MessagesHub() {
                   {entry.label}
                   {entry.badge !== undefined && (
                     <span
-                      className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+                      className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.625rem] font-bold"
                       style={{
                         background: "var(--msg-accent)",
                         color: "var(--msg-accent-ink)",
@@ -827,7 +827,7 @@ export default function MessagesHub() {
                   {groups.map((group) => (
                     <section key={group.key}>
                       <h2
-                        className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                        className="px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.16em]"
                         style={{ color: "var(--msg-ink-faint)" }}
                       >
                         {group.label}
@@ -885,11 +885,11 @@ export default function MessagesHub() {
                         </span>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-semibold">
+                          <p className="truncate text-[0.9375rem] font-semibold">
                             {name}
                           </p>
                           <p
-                            className="truncate text-[12px]"
+                            className="truncate text-[0.75rem]"
                             style={{ color: "var(--msg-ink-faint)" }}
                           >
                             @{request.sender.exchangeId}
@@ -903,7 +903,7 @@ export default function MessagesHub() {
                             onClick={() =>
                               void handleRespond(request, "declined")
                             }
-                            className="rounded-full border px-3 py-1.5 text-[13px] font-semibold disabled:opacity-50"
+                            className="rounded-full border px-3 py-1.5 text-[0.8125rem] font-semibold disabled:opacity-50"
                             style={{
                               borderColor: "var(--msg-line)",
                               color: "var(--msg-ink-soft)",
@@ -917,7 +917,7 @@ export default function MessagesHub() {
                             onClick={() =>
                               void handleRespond(request, "accepted")
                             }
-                            className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold disabled:opacity-50"
+                            className="rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold disabled:opacity-50"
                             style={{
                               background: "var(--msg-accent)",
                               color: "var(--msg-accent-ink)",
@@ -1003,7 +1003,7 @@ export default function MessagesHub() {
               style={{ color: "var(--msg-ink-soft)" }}
               aria-hidden="true"
             />
-            <span className="flex-1 text-[15px] font-semibold">
+            <span className="flex-1 text-[0.9375rem] font-semibold">
               {copy.hub.archived}
             </span>
             <span

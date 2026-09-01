@@ -83,7 +83,7 @@ export default function ListenModule() {
           <LabEmpty title={copy.listen.empty} />
         ) : finished ? (
           <div className="rounded-3xl border border-black/[0.06] bg-white p-6 text-center">
-            <p className="text-[17px] font-semibold">{copy.session.complete}</p>
+            <p className="text-[1.0625rem] font-semibold">{copy.session.complete}</p>
             <button
               type="button"
               onClick={restart}

@@ -126,13 +126,13 @@ export default function SignalControlSheet({
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p
-              className="hud-label text-[11px] font-semibold uppercase tracking-[0.15em]"
+              className="hud-label text-[0.6875rem] font-semibold uppercase tracking-[0.15em]"
               style={{ color: DISCOVER_COLORS.accent }}
             >
               {copy.signalControlsEyebrow}
             </p>
             <h2
-              className="mt-1 text-[22px] font-bold tracking-[-0.02em]"
+              className="mt-1 text-[1.375rem] font-bold tracking-[-0.02em]"
               style={{ color: DISCOVER_COLORS.text }}
             >
               {copy.signalControlsTitle}
@@ -154,7 +154,7 @@ export default function SignalControlSheet({
         </div>
 
         <p
-          className="mb-2 text-[12px] font-semibold uppercase tracking-[0.12em]"
+          className="mb-2 text-[0.75rem] font-semibold uppercase tracking-[0.12em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {copy.signalControlsSpeed}
@@ -173,7 +173,7 @@ export default function SignalControlSheet({
         {topics.length > 1 ? (
           <>
             <p
-              className="mb-2 mt-6 text-[12px] font-semibold uppercase tracking-[0.12em]"
+              className="mb-2 mt-6 text-[0.75rem] font-semibold uppercase tracking-[0.12em]"
               style={{ color: DISCOVER_COLORS.textSecondary }}
             >
               {copy.signalControlsTopics}
@@ -192,7 +192,7 @@ export default function SignalControlSheet({
                   onClearTopics();
                 }}
                 aria-pressed={allSelected}
-                className="h-9 rounded-full px-4 text-[13px] font-medium transition"
+                className="h-9 rounded-full px-4 text-[0.8125rem] font-medium transition"
                 style={{
                   border: `1px solid ${
                     allSelected ? DISCOVER_COLORS.accent : DISCOVER_COLORS.divider
@@ -221,7 +221,7 @@ export default function SignalControlSheet({
                       onToggleTopic(topic);
                     }}
                     aria-pressed={selected}
-                    className="h-9 rounded-full px-4 text-[13px] font-medium uppercase tracking-[0.04em] transition"
+                    className="h-9 rounded-full px-4 text-[0.8125rem] font-medium uppercase tracking-[0.04em] transition"
                     style={{
                       border: `1px solid ${selected ? accent : DISCOVER_COLORS.divider}`,
                       color: selected ? DISCOVER_COLORS.onAccent : accent,

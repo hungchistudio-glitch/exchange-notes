@@ -89,16 +89,16 @@ export default function OfflineBanner() {
       />
 
       <div className="min-w-0">
-        <p className="text-[13px] font-semibold text-[var(--accent-amber-deep)]">
+        <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
           {copy.title}
         </p>
 
-        <p className="mt-0.5 text-[12px] leading-5 text-ink-soft">
+        <p className="mt-0.5 text-[0.75rem] leading-5 text-ink-soft">
           {copy.body}
         </p>
 
         {waiting ? (
-          <p className="mt-1 text-[11px] font-medium text-ink-faint">
+          <p className="mt-1 text-[0.6875rem] font-medium text-ink-faint">
             {waiting}
           </p>
         ) : null}
