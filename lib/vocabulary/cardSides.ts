@@ -120,8 +120,19 @@ export function getVocabularyCardSides(
     preference.push(code);
   }
 
+  /*
+   * A language that has both, before one that has only the word.
+   *
+   * The preference order decides which language to gloss in; it is not a
+   * reason to print a gloss with a blank sentence under it when another
+   * language on the same row carries both. Falls back to text alone, and then
+   * to the first preference, so a row with no examples anywhere still gets
+   * exactly the gloss it would have had.
+   */
   const glossLanguage =
-    preference.find((code) => glossText(code)) ?? preference[0];
+    preference.find((code) => glossText(code) && glossExample(code)) ??
+    preference.find((code) => glossText(code)) ??
+    preference[0];
 
   const secondary: VocabularyCardSide = glossLanguage
     ? {

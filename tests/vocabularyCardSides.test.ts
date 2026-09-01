@@ -187,6 +187,49 @@ describe("the supporting side", () => {
     expect(sides.secondary.language).toBe("it");
   });
 
+  it("prefers a gloss language that has a sentence to go with the word", () => {
+    /*
+     * The reader reads the app in English, so English is the first choice to
+     * gloss in — and the fill has given this row an English word but no
+     * English sentence. Glossing in English is the right instinct and half an
+     * answer: the card prints a word with a blank where the example belongs,
+     * while Chinese on the same row carries both.
+     *
+     * The preference order decides which language to gloss in. It is not a
+     * reason to show half a card.
+     */
+    const halfFilled = {
+      ...tiAmo,
+      examples: { "zh-TW": "我愛你。" },
+    } as unknown as VocabularyItem;
+
+    const sides = getVocabularyCardSides(halfFilled, "it", "en");
+
+    expect(sides.secondary.language).toBe("zh-TW");
+    expect(sides.secondary.example).toBe("我愛你。");
+  });
+
+  it("still glosses with a word when no language on the row has a sentence", () => {
+    /*
+     * The fallback that keeps the previous behaviour intact. Preferring a
+     * language with both must not become a requirement for one — a row whose
+     * examples have not been filled in yet still has a gloss to show, and
+     * dropping to the first preference regardless would show a language the
+     * row does not have.
+     */
+    const noExamples = {
+      ...tiAmo,
+      texts: { es: "te amo", "zh-TW": "我愛你" },
+      examples: {},
+    } as unknown as VocabularyItem;
+
+    // French leads the preference and is not on this row at all.
+    const sides = getVocabularyCardSides(noExamples, "it", "fr");
+
+    expect(sides.secondary.text).toBe("我愛你");
+    expect(sides.secondary.language).toBe("zh-TW");
+  });
+
   it("leaves the gloss empty when every side is the word's own language", () => {
     const only = {
       ...tiAmo,
