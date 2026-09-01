@@ -30,6 +30,7 @@ import type { VocabularyItem } from "@/lib/types/app";
 import { useVocabularyLanguageFill } from "@/hooks/useVocabularyLanguageFill";
 import { sweepOrphans } from "@/lib/media/orphanSweep";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
+import { subscribeToSavedWords } from "@/lib/vocabulary/savedWords";
 
 type VocabularyContextType = {
   items: VocabularyItem[];
@@ -354,6 +355,21 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       current.map((existing) => (existing.id === item.id ? item : existing)),
     );
   }, []);
+
+  /*
+   * A word saved anywhere in the app lands in this list immediately.
+   *
+   * The provider sits in the protected layout, so it stays mounted while the
+   * reader walks from the camera back to their words — `items` is whatever
+   * was loaded when the app started, and nothing on that walk replaced it.
+   * Four of the five save surfaces never told it anything, so the word was in
+   * the database and not on the screen until the app was opened again.
+   *
+   * Subscribing rather than asking each screen to remember: the announcement
+   * comes from createVocabularyEntry, which every save already goes through.
+   * See lib/vocabulary/savedWords.
+   */
+  useEffect(() => subscribeToSavedWords(addItem), [addItem]);
 
   /*
    * Mounted here rather than on a screen, because the words belong to the
