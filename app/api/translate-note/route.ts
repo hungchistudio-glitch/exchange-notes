@@ -6,6 +6,7 @@ import { readLearningPair } from "@/lib/profile/languagePair";
 
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,7 @@ const MAX_TRANSLATIONS_PER_DAY = readBoundedInteger(
   500,
 );
 
-/** Set once the quota function is found to be missing, to stop retrying it. */
-let persistentQuotaUnavailable = false;
+const OPERATION = "note_translation" as const;
 
 type TranslateResult = {
   english: string;
@@ -57,32 +57,13 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-async function consumeDailyQuota(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-) {
-  if (persistentQuotaUnavailable) return true;
-
-  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-    p_operation: "note_translation",
-    p_limit: MAX_TRANSLATIONS_PER_DAY,
-  });
-
-  if (error) {
-    persistentQuotaUnavailable = true;
-    console.warn(
-      "Persistent AI quota is unavailable for note translation.",
-      { code: error.code },
-    );
-    return true;
-  }
-
-  const rows = data as Array<{ allowed?: boolean }> | null;
-  return rows?.[0]?.allowed === true;
-}
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -123,7 +104,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyQuota(supabase))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_TRANSLATIONS_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         {
           error:
@@ -132,6 +120,9 @@ export async function POST(request: Request) {
         { status: 429 }
       );
     }
+
+    // Spent; handed back below if the model never answers.
+    charged = user.id;
 
     const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
 
@@ -166,8 +157,14 @@ export async function POST(request: Request) {
       stripJsonCodeFence(outputText)
     ) as TranslateResult;
 
+    charged = null;
+
     return NextResponse.json(result);
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     console.error("Note translation failed:", error);
 
     return NextResponse.json(

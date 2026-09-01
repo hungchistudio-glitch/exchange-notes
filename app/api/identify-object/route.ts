@@ -7,9 +7,12 @@ import {
   ObjectIdentificationUnavailableError,
 } from "@/lib/ai/identifyObject";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 
 export const runtime = "nodejs";
+
+const OPERATION = "vision_identification" as const;
 
 const MAX_IMAGE_BYTES = readBoundedInteger(
   process.env.VISION_MAX_IMAGE_BYTES,
@@ -23,11 +26,28 @@ const MAX_REQUESTS_PER_MINUTE = readBoundedInteger(
   1,
   60,
 );
+
+/*
+ * Sixty a day, not fifteen.
+ *
+ * Fifteen was a guess made before anyone had used the feature, and the usage
+ * table says it was the binding constraint rather than a safety margin: a
+ * reader walking around naming things reached it in an afternoon and then had
+ * the camera refuse them until midnight UTC. Nothing outside this app was
+ * limiting them — the model's own free allowance is in the hundreds of
+ * requests a day and is shared across every reader, not per reader, so the
+ * number here was rationing headroom that existed.
+ *
+ * It stays a limit rather than becoming none, because a runaway client with
+ * a valid session should cost an afternoon's allowance and not the project's.
+ * The ceiling on the override is what an operator may raise it to, and it is
+ * deliberately far above the default.
+ */
 const MAX_REQUESTS_PER_DAY = readBoundedInteger(
   process.env.VISION_DAILY_USER_LIMIT,
-  15,
+  60,
   1,
-  100,
+  500,
 );
 
 type RequestWindow = {
@@ -36,14 +56,19 @@ type RequestWindow = {
 };
 
 const requestWindows = new Map<string, RequestWindow>();
-const dailyRequestWindows = new Map<string, RequestWindow>();
-let persistentQuotaUnavailable = false;
 
 function decodedByteLength(base64: string) {
   const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
   return Math.floor((base64.length * 3) / 4) - padding;
 }
 
+/**
+ * The burst limit, which stays in memory on purpose.
+ *
+ * It exists to stop one client hammering the endpoint, and a per-instance
+ * counter is enough for that. The daily allowance is the one that has to
+ * survive a cold start, and it lives in the database.
+ */
 function consumeMinuteRequest(userId: string) {
   const now = Date.now();
   const minuteWindow = requestWindows.get(userId);
@@ -68,58 +93,12 @@ function consumeMinuteRequest(userId: string) {
   return true;
 }
 
-function consumeMemoryDailyRequest(userId: string) {
-  const now = Date.now();
-  const dayKey = new Date(now).toISOString().slice(0, 10);
-  const dailyKey = `${userId}:${dayKey}`;
-  const dailyWindow = dailyRequestWindows.get(dailyKey);
-
-  if (dailyWindow && dailyWindow.count >= MAX_REQUESTS_PER_DAY) {
-    return false;
-  }
-
-  if (!dailyWindow) {
-    const tomorrowUtc = new Date(`${dayKey}T00:00:00.000Z`).getTime()
-      + 24 * 60 * 60 * 1000;
-    dailyRequestWindows.set(dailyKey, {
-      count: 1,
-      resetsAt: tomorrowUtc,
-    });
-  } else {
-    dailyWindow.count += 1;
-  }
-
-  return true;
-}
-
-async function consumeDailyRequest(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-) {
-  if (!persistentQuotaUnavailable) {
-    const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-      p_operation: "vision_identification",
-      p_limit: MAX_REQUESTS_PER_DAY,
-    });
-
-    if (!error) {
-      const rows = data as Array<{ allowed?: boolean }> | null;
-      return rows?.[0]?.allowed === true;
-    }
-
-    persistentQuotaUnavailable = true;
-    console.warn(
-      "Persistent AI quota is unavailable; using the in-memory safety limit.",
-      { code: error.code },
-    );
-  }
-
-  return consumeMemoryDailyRequest(userId);
-}
-
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -155,6 +134,8 @@ export async function POST(request: Request) {
 
     const languagePair = await readLearningPair(supabase, user.id);
 
+    // Before the allowance is touched: an answer we already have costs the
+    // reader nothing.
     const cached = getCachedObjectIdentification(imageBase64, languagePair);
 
     if (cached) {
@@ -176,7 +157,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyRequest(supabase, user.id))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_REQUESTS_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         {
           error:
@@ -187,7 +175,17 @@ export async function POST(request: Request) {
       );
     }
 
+    /*
+     * Spent. From here every exit that is not an answer has to hand it back,
+     * which is what `charged` tracks — the model call is the only thing left
+     * that can fail, and it fails by timing out more often than by anything
+     * else.
+     */
+    charged = user.id;
+
     const result = await identifyObject(imageBase64, mediaType, languagePair);
+    charged = null;
+
     return NextResponse.json(result, {
       headers: {
         "Cache-Control": "private, no-store",
@@ -195,6 +193,10 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     if (error instanceof ObjectIdentificationUnavailableError) {
       return NextResponse.json(
         { error: "AI vision is temporarily busy. Please try again shortly." },

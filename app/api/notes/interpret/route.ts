@@ -6,6 +6,7 @@ import { buildInterpretNotePrompt } from "@/lib/ai/prompts/interpretNote";
 import { isLanguageCode } from "@/lib/languages";
 import { fetchNote } from "@/lib/notes/repository";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const runtime = "nodejs";
@@ -66,26 +67,14 @@ function stripJsonCodeFence(value: string) {
   return value.replace(/^```json\s*|^```\s*|\s*```$/gi, "").trim();
 }
 
-async function consumeQuota(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-) {
-  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-    p_operation: "note_interpretation",
-    p_limit: MAX_INTERPRETATIONS_PER_DAY,
-  });
-
-  if (error) {
-    console.warn("Note interpretation quota unavailable", { code: error.code });
-    return true;
-  }
-
-  const rows = data as Array<{ allowed?: boolean }> | null;
-  return rows?.[0]?.allowed === true;
-}
+const OPERATION = "note_interpretation" as const;
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -122,7 +111,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ interpretation: cached, cached: true });
     }
 
-    if (!(await consumeQuota(supabase))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_INTERPRETATIONS_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         { error: "Today's Yumi interpretation limit has been reached." },
         { status: 429 },
@@ -133,6 +129,9 @@ export async function POST(request: Request) {
     if (!apiKey) {
       return NextResponse.json({ error: "Yumi interpretation is not configured." }, { status: 503 });
     }
+
+    // Spent; handed back below if every candidate model fails.
+    charged = user.id;
 
     const client = new GoogleGenAI({ apiKey });
     let outputText = "";
@@ -171,6 +170,12 @@ export async function POST(request: Request) {
     }
 
     if (lastError || !outputText.trim()) throw lastError ?? new Error("Empty result");
+
+    // A model answered. What follows is the app's own storage, and a failure
+    // there is not the reader's to pay for either — but the call was made, so
+    // the unit is earned.
+    charged = null;
+
     const result = JSON.parse(stripJsonCodeFence(outputText)) as Result;
 
     // Only this validated server path writes machine interpretations. The
@@ -217,6 +222,10 @@ export async function POST(request: Request) {
       cached: false,
     });
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     console.error("Note interpretation failed", error);
     return NextResponse.json({ error: "Yumi could not interpret this note." }, { status: 500 });
   }

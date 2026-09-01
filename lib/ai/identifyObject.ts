@@ -32,12 +32,52 @@ export type ObjectIdentificationResult = {
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CACHE_MAX_ITEMS = 200;
 const MODEL_COOLDOWN_MS = 65 * 1000;
+/* =========================================================
+   How long a recognition is given, and by whom
+
+   These three numbers used to be one, and the one was eight seconds per
+   model attempt with two models to try. Read together with the browser's
+   own sixteen-second abort, that arithmetic never worked: a first attempt
+   that timed out left exactly zero seconds for the second, so the fallback
+   model could not once have delivered an answer to a reader. All it could
+   do was hold the request open until the browser gave up — after the daily
+   allowance had already been charged for it.
+
+   A low-confidence first answer had the same shape. It is kept and the
+   stronger model is tried, and at six seconds plus eight that reader was
+   also going to see a timeout rather than the usable answer already in hand.
+
+   So there is now a budget for the whole route, and each attempt takes the
+   smaller of its own timeout and what is left of it. An attempt is not
+   started at all if what remains would not be enough to finish one — better
+   to return the imperfect answer we have than to spend the rest of the
+   budget failing to improve it.
+   ========================================================= */
+
+/** What one model attempt may take. Measured p50 is three to seven seconds. */
 const REQUEST_TIMEOUT_MS = readBoundedInteger(
   process.env.VISION_REQUEST_TIMEOUT_MS,
-  8_000,
+  12_000,
   3_000,
-  20_000,
+  30_000,
 );
+
+/** What the whole route may take, fallbacks included. */
+const TOTAL_BUDGET_MS = readBoundedInteger(
+  process.env.VISION_TOTAL_BUDGET_MS,
+  20_000,
+  5_000,
+  45_000,
+);
+
+/**
+ * Below this, a further attempt is not worth starting.
+ *
+ * Nothing has ever come back from this model in under three seconds, so an
+ * attempt given less than four is a way of spending the remaining budget on
+ * a certain timeout.
+ */
+const MIN_ATTEMPT_MS = 4_000;
 
 /*
  * Built per request: two of its fields are the pair, constrained to the two
@@ -215,6 +255,7 @@ async function identifyWithModel(
   imageBase64: string,
   mediaType: string,
   languagePair: readonly [LanguageCode, LanguageCode],
+  timeoutMs: number,
 ) {
   const interaction = await client.interactions.create(
     {
@@ -243,7 +284,7 @@ async function identifyWithModel(
     },
     {
       maxRetries: 0,
-      timeout: REQUEST_TIMEOUT_MS,
+      timeout: timeoutMs,
     },
   );
 
@@ -280,11 +321,20 @@ async function identifyWithFallback(
     },
   });
 
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lowConfidenceResult: ObjectIdentificationResult | null = null;
 
   for (const model of getVisionModelCandidates()) {
     const cooldownUntil = modelCooldowns.get(model) ?? 0;
     if (cooldownUntil > Date.now()) continue;
+
+    /*
+     * The budget decides whether there is a next attempt at all. Without
+     * this the second model ran on borrowed time the browser had already
+     * stopped waiting for.
+     */
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_ATTEMPT_MS) break;
 
     try {
       const result = await identifyWithModel(
@@ -293,6 +343,7 @@ async function identifyWithFallback(
         imageBase64,
         mediaType,
         languagePair,
+        Math.min(REQUEST_TIMEOUT_MS, remaining),
       );
 
       if (result.confidence !== "low") return result;

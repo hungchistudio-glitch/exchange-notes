@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type { ReplyDirection, ReplySuggestion } from "@/lib/messages/decode";
 
 export const runtime = "nodejs";
@@ -33,8 +34,7 @@ const MAX_COACH_CALLS_PER_DAY = readBoundedInteger(
   500,
 );
 
-/** Set once the quota function is found to be missing, to stop retrying it. */
-let persistentQuotaUnavailable = false;
+const OPERATION = "reply_coach" as const;
 
 const SUGGESTIONS_SCHEMA = {
   type: "object",
@@ -67,34 +67,16 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-async function consumeDailyQuota(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-) {
-  if (persistentQuotaUnavailable) return true;
-
-  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-    p_operation: "reply_coach",
-    p_limit: MAX_COACH_CALLS_PER_DAY,
-  });
-
-  if (error) {
-    persistentQuotaUnavailable = true;
-    console.warn("Persistent AI quota is unavailable for reply coach.", {
-      code: error.code,
-    });
-    return true;
-  }
-
-  const rows = data as Array<{ allowed?: boolean }> | null;
-  return rows?.[0]?.allowed === true;
-}
 
 const SCRIPT_RULE = `\n- Any Chinese you write, in a reply or in a gloss, must be Traditional as
   written in Taiwan. Never a Simplified character, anywhere, for any reason.`;
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -149,12 +131,22 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyQuota(supabase))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_COACH_CALLS_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         { error: "Daily Reply Coach limit reached." },
         { status: 429 },
       );
     }
+
+    // Spent; handed back below if the model never answers.
+    charged = user.id;
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -263,8 +255,14 @@ ${scriptRule}
       throw new Error("The model returned no usable suggestions.");
     }
 
+    charged = null;
+
     return NextResponse.json({ suggestions }, { status: 200 });
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     console.error("Reply Coach failed:", error);
 
     return NextResponse.json(

@@ -8,6 +8,7 @@ import {
   scanMenu,
 } from "@/lib/ai/menuScan";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createClient } from "@/lib/supabase/server";
 import type { MenuAnalyzeResponse } from "@/lib/scanner/menuTypes";
 
@@ -27,12 +28,20 @@ const MAX_REQUESTS_PER_MINUTE = readBoundedInteger(
   1,
   30,
 );
+/*
+ * Doubled, for the same reason the vision allowance was: twenty was a number
+ * chosen before the feature had users, and a menu is re-photographed several
+ * times over one meal — a page at a time, then a corner that came out blurred.
+ * Each of those attempts spent a unit.
+ */
 const MAX_REQUESTS_PER_DAY = readBoundedInteger(
   process.env.MENU_SCAN_DAILY_USER_LIMIT,
-  20,
+  40,
   1,
-  100,
+  200,
 );
+
+const OPERATION = "menu_scan" as const;
 
 type RequestWindow = {
   count: number;
@@ -40,14 +49,17 @@ type RequestWindow = {
 };
 
 const requestWindows = new Map<string, RequestWindow>();
-const dailyRequestWindows = new Map<string, RequestWindow>();
-let persistentQuotaUnavailable = false;
 
 function decodedByteLength(base64: string) {
   const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
   return Math.floor((base64.length * 3) / 4) - padding;
 }
 
+/**
+ * The burst limit, which stays in memory on purpose: it exists to stop one
+ * client hammering the endpoint, and a per-instance counter is enough. The
+ * daily allowance has to survive a cold start, so it lives in the database.
+ */
 function consumeMinuteRequest(userId: string) {
   const now = Date.now();
   const window = requestWindows.get(userId);
@@ -63,50 +75,6 @@ function consumeMinuteRequest(userId: string) {
   }
 
   return true;
-}
-
-function consumeMemoryDailyRequest(userId: string) {
-  const now = Date.now();
-  const dayKey = new Date(now).toISOString().slice(0, 10);
-  const dailyKey = `${userId}:${dayKey}`;
-  const window = dailyRequestWindows.get(dailyKey);
-
-  if (window && window.count >= MAX_REQUESTS_PER_DAY) return false;
-
-  if (!window) {
-    const tomorrowUtc =
-      new Date(`${dayKey}T00:00:00.000Z`).getTime() + 24 * 60 * 60 * 1000;
-    dailyRequestWindows.set(dailyKey, { count: 1, resetsAt: tomorrowUtc });
-  } else {
-    window.count += 1;
-  }
-
-  return true;
-}
-
-async function consumeDailyRequest(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-) {
-  if (!persistentQuotaUnavailable) {
-    const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-      p_operation: "menu_scan",
-      p_limit: MAX_REQUESTS_PER_DAY,
-    });
-
-    if (!error) {
-      const rows = data as Array<{ allowed?: boolean }> | null;
-      return rows?.[0]?.allowed === true;
-    }
-
-    persistentQuotaUnavailable = true;
-    console.warn(
-      "Persistent AI quota is unavailable; using the in-memory safety limit.",
-      { code: error.code },
-    );
-  }
-
-  return consumeMemoryDailyRequest(userId);
 }
 
 function failed(
@@ -141,8 +109,11 @@ function failed(
  * holds.
  */
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -204,7 +175,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyRequest(supabase, user.id))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_REQUESTS_PER_DAY,
+      ))
+    ) {
       return failed(
         "Today's free menu-scan limit has been reached.",
         "daily_limit",
@@ -212,12 +190,25 @@ export async function POST(request: Request) {
       );
     }
 
+    /*
+     * Spent. A scan that times out — and a menu gets forty-five seconds, so
+     * the ones that do are genuinely stuck — used to be charged exactly like
+     * a menu that came back translated.
+     */
+    charged = user.id;
+
     const { document, isMenu } = await scanMenu(
       imageBase64,
       mediaType,
       targetLanguage,
       languagePair,
     );
+
+    /*
+     * The model answered, so the unit stays spent even here: "this is not a
+     * menu" is a real read of the photograph and cost a real call.
+     */
+    charged = null;
 
     if (!document) {
       const response: MenuAnalyzeResponse = {
@@ -262,6 +253,10 @@ export async function POST(request: Request) {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     if (error instanceof MenuScanTimeoutError) {
       return failed(
         "Reading the menu took too long. Try a tighter photo of one page.",

@@ -102,7 +102,17 @@ const assumeSupported = () => true;
 const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
 
 const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
+/*
+ * Above the server's own budget, deliberately.
+ *
+ * At sixteen seconds this abort fired while the route was still working, and
+ * the reader was told the recognition had timed out for a request that had
+ * already spent a daily unit and was about to answer. The server now bounds
+ * itself (VISION_TOTAL_BUDGET_MS, twenty seconds by default) and returns a
+ * real error when it runs out; this is the backstop for a connection that
+ * dies rather than the thing that decides how long a reader waits.
+ */
+const IDENTIFICATION_TIMEOUT_MS = 25 * 1000;
 // v2: cache keys now hash the downscaled image actually sent to the model.
 const IDENTIFICATION_CACHE_VERSION = "v2";
 
