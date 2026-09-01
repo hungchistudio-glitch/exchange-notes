@@ -592,6 +592,10 @@ const traditionalChinese: TranslationDictionary = {
     addToVocabulary: "加入單字庫",
     addedToVocabulary: "已加入",
     addToVocabularyAriaLabel: "將 {word} 加入單字庫",
+    wordAlreadySaved: "已在你的單字庫",
+    wordAlreadySavedAriaLabel: "{word} 已在你的單字庫裡",
+    saveWordError: "這個字存不進去，請再試一次。",
+    saveWordLoginError: "請先登入才能存單字。",
 
     exploreImageLabel: "探索這張圖片 · {count} 個單字",
   },

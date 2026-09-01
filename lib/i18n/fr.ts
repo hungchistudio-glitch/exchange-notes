@@ -574,6 +574,10 @@ const french: TranslationDictionary = {
     addToVocabulary: "Ajouter au vocabulaire",
     addedToVocabulary: "Ajouté",
     addToVocabularyAriaLabel: "Ajouter {word} au vocabulaire",
+    wordAlreadySaved: "Déjà dans vos mots",
+    wordAlreadySavedAriaLabel: "{word} est déjà dans vos mots",
+    saveWordError: "Ce mot n'a pas pu être enregistré. Réessayez.",
+    saveWordLoginError: "Connectez-vous pour enregistrer des mots.",
     exploreImageLabel: "Explorer cette image · {count} mots",
   },
   capture: {
