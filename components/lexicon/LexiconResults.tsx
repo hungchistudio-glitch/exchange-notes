@@ -70,7 +70,7 @@ type LexiconResultsProps = {
 function eyebrowClass(tone: LexiconTone) {
   return tone === "cosmic"
     ? "hud-label"
-    : "text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint";
+    : "text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint";
 }
 
 function cardClass(tone: LexiconTone) {
@@ -179,8 +179,8 @@ export default function LexiconResults({
           <Sparkles size={20} strokeWidth={1.6} aria-hidden="true" />
         </div>
 
-        <p className="mt-4 text-[15px] font-semibold">{copy.emptyTitle}</p>
-        <p className="mx-auto mt-1.5 max-w-xs text-[13px] leading-6 text-ink-soft">
+        <p className="mt-4 text-[0.9375rem] font-semibold">{copy.emptyTitle}</p>
+        <p className="mx-auto mt-1.5 max-w-xs text-[0.8125rem] leading-6 text-ink-soft">
           {copy.emptyDescription}
         </p>
       </div>
@@ -264,14 +264,14 @@ export default function LexiconResults({
                     <LanguageOriginBadge language={sides.primary.language} size="sm" />
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-semibold">
+                      <p className="truncate text-[0.9375rem] font-semibold">
                         {sides.primary.text}
                       </p>
-                      <p className="truncate text-[13px] text-ink-soft">
+                      <p className="truncate text-[0.8125rem] text-ink-soft">
                         {sides.secondary.text}
                       </p>
                       {saved && (
-                        <p className="mt-0.5 text-[10px] text-ink-faint">
+                        <p className="mt-0.5 text-[0.625rem] text-ink-faint">
                           {insertValues(copy.savedOn, { date: saved })}
                         </p>
                       )}
@@ -288,7 +288,7 @@ export default function LexiconResults({
                       <button
                         type="button"
                         onClick={() => onOpenSaved(item)}
-                        className={`h-9 shrink-0 rounded-full px-4 text-[12px] font-semibold transition-transform active:scale-95 ${
+                        className={`h-9 shrink-0 rounded-full px-4 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
                           tone === "cosmic"
                             ? "border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
                             : "bg-black text-white"
@@ -314,12 +314,12 @@ export default function LexiconResults({
           <div className={`mt-3 p-5 ${cardClass(tone)}`}>
             {showPreview ? (
               <>
-                <p className="text-[24px] font-bold tracking-[-0.02em]">
+                <p className="text-[1.5rem] font-bold tracking-[-0.02em]">
                   {preview.term}
                 </p>
 
                 {preview.translation ? (
-                  <p className="mt-1 text-[15px] text-ink-soft">
+                  <p className="mt-1 text-[0.9375rem] text-ink-soft">
                     {preview.translation}
                   </p>
                 ) : (
@@ -335,7 +335,7 @@ export default function LexiconResults({
               <div className="h-4 w-3/5 animate-pulse rounded-full bg-black/[0.06]" />
             </div>
 
-            <p className="mt-4 flex items-center gap-2 text-[12px] text-ink-faint">
+            <p className="mt-4 flex items-center gap-2 text-[0.75rem] text-ink-faint">
               <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
               {copy.searching}
             </p>
@@ -350,14 +350,14 @@ export default function LexiconResults({
           role="status"
           className={`p-5 ${cardClass(tone)}`}
         >
-          <p className="flex items-center gap-2 text-[14px] font-semibold">
+          <p className="flex items-center gap-2 text-[0.875rem] font-semibold">
             {result?.offline && (
               <WifiOff size={15} strokeWidth={1.8} aria-hidden="true" />
             )}
             {result?.offline ? copy.offlineTitle : copy.errorTitle}
           </p>
 
-          <p className="mt-1.5 text-[13px] leading-6 text-ink-soft">
+          <p className="mt-1.5 text-[0.8125rem] leading-6 text-ink-soft">
             {result?.offline
               ? copy.offlineDescription
               : error || copy.errorDescription}
@@ -366,7 +366,7 @@ export default function LexiconResults({
           <button
             type="button"
             onClick={search.retry}
-            className="mt-3 text-[13px] font-semibold underline underline-offset-2"
+            className="mt-3 text-[0.8125rem] font-semibold underline underline-offset-2"
           >
             {copy.retry}
           </button>
@@ -409,7 +409,7 @@ export default function LexiconResults({
                   type="button"
                   onClick={() => setPickerFor(result?.query ?? query)}
                   aria-expanded={false}
-                  className="text-[11px] font-semibold text-ink-faint underline underline-offset-2"
+                  className="text-[0.6875rem] font-semibold text-ink-faint underline underline-offset-2"
                 >
                   {copy.changeLanguage}
                 </button>
@@ -431,8 +431,8 @@ export default function LexiconResults({
           */}
           {pickerOpen && (
             <div className={`mt-3 p-4 ${cardClass(tone)}`}>
-              <p className="text-[13px] font-semibold">{copy.chooseLanguage}</p>
-              <p className="mt-1 text-[12px] leading-5 text-ink-soft">
+              <p className="text-[0.8125rem] font-semibold">{copy.chooseLanguage}</p>
+              <p className="mt-1 text-[0.75rem] leading-5 text-ink-soft">
                 {languages.ambiguous
                   ? copy.chooseLanguageDescription
                   : copy.changeLanguage}
@@ -450,7 +450,7 @@ export default function LexiconResults({
                     // The card's own language: this control changes what the
                     // card leads with, not what the reader typed.
                     aria-pressed={code === languages.sourceLanguage}
-                    className={`flex h-11 items-center gap-2 rounded-full border px-3.5 text-[12px] font-semibold transition-transform active:scale-95 ${
+                    className={`flex h-11 items-center gap-2 rounded-full border px-3.5 text-[0.75rem] font-semibold transition-transform active:scale-95 ${
                       code === languages.sourceLanguage
                         ? tone === "cosmic"
                           ? "border-[var(--cosmic-cyan)] text-[var(--cosmic-cyan)]"
@@ -468,7 +468,7 @@ export default function LexiconResults({
                 <button
                   type="button"
                   onClick={() => setPickerFor(null)}
-                  className="mt-3 text-[12px] font-semibold text-ink-faint underline underline-offset-2"
+                  className="mt-3 text-[0.75rem] font-semibold text-ink-faint underline underline-offset-2"
                 >
                   {copy.cancel}
                 </button>
@@ -505,7 +505,7 @@ export default function LexiconResults({
               <div className="flex items-start gap-3">
                 <p
                   className={`min-w-0 flex-1 break-words font-semibold tracking-[-0.03em] ${
-                    isSentence ? "text-[19px] leading-7" : "text-[28px]"
+                    isSentence ? "text-[1.1875rem] leading-7" : "text-[1.75rem]"
                   }`}
                 >
                   {entry.term}
@@ -547,7 +547,7 @@ export default function LexiconResults({
                   />
 
                   {entry.partOfSpeech && (
-                    <p className="mt-2 text-[11px] tracking-[0.04em] text-ink-faint">
+                    <p className="mt-2 text-[0.6875rem] tracking-[0.04em] text-ink-faint">
                       {
                         t.vocabulary.detail.partOfSpeech[
                           normalizePartOfSpeech(entry.partOfSpeech)
@@ -561,16 +561,16 @@ export default function LexiconResults({
               {/* ---- meaning ---- */}
               {entry.translationUnavailable ? (
                 <div className="mt-4 rounded-[18px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-4">
-                  <p className="text-[13px] font-semibold text-[var(--accent-amber-deep)]">
+                  <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
                     {copy.noTranslation}
                   </p>
-                  <p className="mt-1 text-[13px] leading-5 text-[var(--accent-amber-deep)]/85">
+                  <p className="mt-1 text-[0.8125rem] leading-5 text-[var(--accent-amber-deep)]/85">
                     {copy.noTranslationDetail}
                   </p>
                   <button
                     type="button"
                     onClick={search.retry}
-                    className="mt-2 text-[13px] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
+                    className="mt-2 text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
                   >
                     {copy.retry}
                   </button>
@@ -581,7 +581,7 @@ export default function LexiconResults({
 
                   <div className="mt-1.5 flex items-start gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="break-words text-[17px] leading-7 text-ink-soft">
+                      <p className="break-words text-[1.0625rem] leading-7 text-ink-soft">
                         {entry.translation}
                       </p>
 
@@ -627,7 +627,7 @@ export default function LexiconResults({
                     <p className={eyebrow}>{copy.example}</p>
 
                     <div className="mt-2.5 flex items-start gap-3">
-                      <p className="min-w-0 flex-1 text-[14px] leading-6">
+                      <p className="min-w-0 flex-1 text-[0.875rem] leading-6">
                         {entry.termExample}
                       </p>
                       <SpeakButton
@@ -640,7 +640,7 @@ export default function LexiconResults({
                     </div>
 
                     <div className="mt-2 flex items-start gap-3">
-                      <p className="min-w-0 flex-1 text-[13px] leading-6 text-ink-soft">
+                      <p className="min-w-0 flex-1 text-[0.8125rem] leading-6 text-ink-soft">
                         {entry.translationExample}
                       </p>
                       <SpeakButton
@@ -658,7 +658,7 @@ export default function LexiconResults({
               {result?.degraded && !entry.translationUnavailable && (
                 <p
                   role="status"
-                  className="mt-4 rounded-[16px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[12px] leading-5 text-[var(--accent-amber-deep)]"
+                  className="mt-4 rounded-[16px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[0.75rem] leading-5 text-[var(--accent-amber-deep)]"
                 >
                   {copy.degradedNotice}
                 </p>
@@ -667,7 +667,7 @@ export default function LexiconResults({
               {entry.confidence === "low" && !result?.degraded && (
                 <p
                   role="status"
-                  className="mt-4 rounded-[16px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[12px] leading-5 text-[var(--accent-amber-deep)]"
+                  className="mt-4 rounded-[16px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[0.75rem] leading-5 text-[var(--accent-amber-deep)]"
                 >
                   {copy.lowConfidence}
                 </p>
@@ -699,7 +699,7 @@ export default function LexiconResults({
                     <button
                       type="button"
                       onClick={onShare}
-                      className="flex h-11 items-center justify-center gap-2 rounded-full bg-surface text-[12px] font-semibold transition-transform active:scale-[0.98]"
+                      className="flex h-11 items-center justify-center gap-2 rounded-full bg-surface text-[0.75rem] font-semibold transition-transform active:scale-[0.98]"
                     >
                       <Share2 size={15} aria-hidden="true" />
                       {shareCopied ? copy.copied : copy.share}
@@ -710,7 +710,7 @@ export default function LexiconResults({
                     <button
                       type="button"
                       onClick={onSend}
-                      className="flex h-11 items-center justify-center gap-2 rounded-full bg-surface text-[12px] font-semibold transition-transform active:scale-[0.98]"
+                      className="flex h-11 items-center justify-center gap-2 rounded-full bg-surface text-[0.75rem] font-semibold transition-transform active:scale-[0.98]"
                     >
                       <Send size={15} aria-hidden="true" />
                       {copy.send}
@@ -727,7 +727,7 @@ export default function LexiconResults({
           it. A complete answer rather than an empty state, and said plainly
           instead of left as silence under the list. */}
       {status === "ready" && !entry && result?.offline && (
-        <p className="px-1 text-[13px] leading-6 text-ink-soft" role="status">
+        <p className="px-1 text-[0.8125rem] leading-6 text-ink-soft" role="status">
           {savedMatches.length > 0
             ? copy.offlineDescription
             : copy.errorDescription}
@@ -735,7 +735,7 @@ export default function LexiconResults({
       )}
 
       {status === "typing" && savedMatches.length === 0 && query.trim() && (
-        <p className="px-1 py-6 text-center text-[13px] leading-6 text-ink-soft">
+        <p className="px-1 py-6 text-center text-[0.8125rem] leading-6 text-ink-soft">
           {copy.emptyDescription}
         </p>
       )}
@@ -778,13 +778,13 @@ function SaveRow({
   if (state === "duplicate" && duplicate) {
     return (
       <div className="mt-5 rounded-[18px] bg-surface p-4">
-        <p className="text-[13px] font-semibold">{copy.alreadySaved}</p>
+        <p className="text-[0.8125rem] font-semibold">{copy.alreadySaved}</p>
 
         {onOpenSaved && (
           <button
             type="button"
             onClick={() => onOpenSaved(duplicate)}
-            className="mt-2 text-[13px] font-semibold underline underline-offset-2"
+            className="mt-2 text-[0.8125rem] font-semibold underline underline-offset-2"
           >
             {copy.openSavedWord}
           </button>
@@ -798,7 +798,7 @@ function SaveRow({
       type="button"
       onClick={() => void save.save(variant)}
       disabled={disabled || state === "saving" || state === "saved"}
-      className={`mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-transform active:scale-[0.99] disabled:opacity-40 ${
+      className={`mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-full text-[0.8125rem] font-semibold transition-transform active:scale-[0.99] disabled:opacity-40 ${
         tone === "cosmic"
           ? "cosmic-lock border border-[var(--cosmic-cyan-dim)] text-[var(--cosmic-cyan)]"
           : "bg-black text-white"
@@ -848,7 +848,7 @@ function SentenceKeep({
 }) {
   if (!entry.highlight) {
     return (
-      <p className="mt-5 rounded-[18px] bg-surface px-4 py-3 text-[12px] leading-5 text-ink-soft">
+      <p className="mt-5 rounded-[18px] bg-surface px-4 py-3 text-[0.75rem] leading-5 text-ink-soft">
         {copy.sentenceNotSavable}
       </p>
     );
@@ -860,7 +860,7 @@ function SentenceKeep({
 
       {/* Same rule as the example block: each language says itself. */}
       <div className="mt-2 flex items-start gap-3">
-        <p className="min-w-0 flex-1 text-[17px] font-semibold">
+        <p className="min-w-0 flex-1 text-[1.0625rem] font-semibold">
           {entry.highlight.term}
         </p>
         <SpeakButton
@@ -873,7 +873,7 @@ function SentenceKeep({
       </div>
 
       <div className="mt-0.5 flex items-start gap-3">
-        <p className="min-w-0 flex-1 text-[13px] leading-6 text-ink-soft">
+        <p className="min-w-0 flex-1 text-[0.8125rem] leading-6 text-ink-soft">
           {entry.highlight.translation}
         </p>
         <SpeakButton
@@ -885,7 +885,7 @@ function SentenceKeep({
         />
       </div>
 
-      <p className="mt-3 text-[12px] leading-5 text-ink-soft">
+      <p className="mt-3 text-[0.75rem] leading-5 text-ink-soft">
         {copy.sentenceNotSavable}
       </p>
 

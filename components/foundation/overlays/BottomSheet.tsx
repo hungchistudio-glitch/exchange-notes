@@ -81,7 +81,7 @@ export default function BottomSheet({
           <div className="min-w-0">
             <h2
               id={titleId}
-              className="text-[18px] font-semibold tracking-[-0.025em] text-black"
+              className="text-[1.125rem] font-semibold tracking-[-0.025em] text-black"
             >
               {title}
             </h2>

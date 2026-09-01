@@ -136,7 +136,7 @@ function GroupChip({
       role="tab"
       aria-selected={selected}
       onClick={onSelect}
-      className={`font-cjk inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-[13px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
+      className={`font-cjk inline-flex min-h-[44px] shrink-0 items-center rounded-full border px-4 text-[0.8125rem] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
         selected
           ? "border-black bg-black text-white"
           : "border-line bg-white text-ink-soft hover:text-black"

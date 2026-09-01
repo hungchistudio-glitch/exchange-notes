@@ -287,7 +287,7 @@ function FriendsPageContent() {
             ←
           </button>
 
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <p className="mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.eyebrow}
           </p>
 

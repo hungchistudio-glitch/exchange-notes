@@ -68,12 +68,12 @@ export default function MenuProcessing({
 
         <p
           aria-live="polite"
-          className="mt-8 text-[19px] font-semibold tracking-[-0.02em] text-[#ffffff]"
+          className="mt-8 text-[1.1875rem] font-semibold tracking-[-0.02em] text-[#ffffff]"
         >
           {phaseLabels[phase]}
         </p>
 
-        <p className="mt-2 text-center text-[13px] leading-5 text-[#ffffff]/55">
+        <p className="mt-2 text-center text-[0.8125rem] leading-5 text-[#ffffff]/55">
           {copy.processingHint}
         </p>
       </div>

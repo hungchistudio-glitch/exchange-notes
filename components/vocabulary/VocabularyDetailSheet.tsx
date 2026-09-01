@@ -56,13 +56,13 @@ function SpeechRow({
     <div className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3 text-left">
       <span className="min-w-0">
         {eyebrow && (
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+          <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
             {eyebrow}
           </span>
         )}
         <span
           className={`mt-0.5 block break-words ${
-            size === "md" ? "text-[15px] font-medium" : "text-sm"
+            size === "md" ? "text-[0.9375rem] font-medium" : "text-sm"
           } text-black`}
         >
           {text}
@@ -177,10 +177,10 @@ export default function VocabularyDetailSheet({
                   <LanguageOriginBadge language={sides.primary.language} />
                 </div>
 
-                <h2 className="mt-4 break-words text-[34px] font-semibold leading-none tracking-[-0.05em]">
+                <h2 className="mt-4 break-words text-[2.125rem] font-semibold leading-none tracking-[-0.05em]">
                   {sides.primary.text}
                 </h2>
-                <p className="mt-2 break-words text-[22px] font-normal leading-tight text-ink-soft">
+                <p className="mt-2 break-words text-[1.375rem] font-normal leading-tight text-ink-soft">
                   {sides.secondary.text}
                 </p>
 
@@ -237,7 +237,7 @@ export default function VocabularyDetailSheet({
 
             {(item.example_sentence || item.translated_example) && (
               <div className="mt-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
+                <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
                   {detail.example}
                 </p>
 
@@ -260,7 +260,7 @@ export default function VocabularyDetailSheet({
             )}
 
             <div className="mt-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">
+              <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
                 {detail.learningStatusLabel}
               </p>
               <div className="mt-3 grid grid-cols-3 gap-2 rounded-[20px] bg-surface p-1.5">
@@ -270,7 +270,7 @@ export default function VocabularyDetailSheet({
                     type="button"
                     disabled={updating}
                     onClick={() => onChangeStatus(status)}
-                    className={`min-h-[44px] rounded-[15px] px-2 text-[12px] font-semibold transition-all disabled:opacity-40 ${
+                    className={`min-h-[44px] rounded-[15px] px-2 text-[0.75rem] font-semibold transition-all disabled:opacity-40 ${
                       item.status === status
                         ? "bg-black text-white shadow-sm"
                         : "text-ink-soft"
@@ -282,7 +282,7 @@ export default function VocabularyDetailSheet({
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-2 text-[12px] text-ink-soft">
+            <div className="mt-5 grid grid-cols-2 gap-2 text-[0.75rem] text-ink-soft">
               <div className="flex items-center gap-2 rounded-[18px] bg-black/[0.035] p-3">
                 <Clock3 size={15} />
                 <span>
@@ -328,7 +328,7 @@ export default function VocabularyDetailSheet({
               <LanguageOriginBadge language={item.word_language} />
 
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12px] text-ink-soft">
+                <span className="block truncate text-[0.75rem] text-ink-soft">
                   {languagePairSummary(
                     item.word_language,
                     item.translation_language,
@@ -338,13 +338,13 @@ export default function VocabularyDetailSheet({
                 </span>
 
                 {item.needs_language_review ? (
-                  <span className="mt-0.5 block text-[11px] font-semibold text-[var(--accent-amber-ink)]">
+                  <span className="mt-0.5 block text-[0.6875rem] font-semibold text-[var(--accent-amber-ink)]">
                     {t.vocabulary.language.unclear}
                   </span>
                 ) : null}
               </span>
 
-              <span className="shrink-0 text-[11px] font-semibold text-ink-soft">
+              <span className="shrink-0 text-[0.6875rem] font-semibold text-ink-soft">
                 {t.vocabulary.language.change}
               </span>
             </button>

@@ -9,9 +9,9 @@ import useAppFontSize from "@/hooks/preferences/useAppFontSize";
 import { setAppFontSize, type AppFontSize } from "@/lib/appPreferences";
 
 const FONT_SIZE_CLASSES: Record<AppFontSize, string> = {
-  small: "text-[13px]",
-  medium: "text-[15px]",
-  large: "text-[18px]",
+  small: "text-[0.8125rem]",
+  medium: "text-[0.9375rem]",
+  large: "text-[1.125rem]",
 };
 
 /**

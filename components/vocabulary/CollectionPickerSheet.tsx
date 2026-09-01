@@ -200,7 +200,7 @@ export default function CollectionPickerSheet({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
               {copy.title}
             </p>
             <h2 className="mt-0.5 truncate text-lg font-bold">{item.word}</h2>

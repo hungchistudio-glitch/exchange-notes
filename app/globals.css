@@ -395,7 +395,14 @@ html {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
   textarea,
   select {
-    font-size: 16px;
+    /*
+     * A floor, not a size. Every other font-size in the app is rem so the
+     * reader's setting can move it; this one cannot go below sixteen real
+     * pixels whatever they chose, or iOS zooms the page on focus and the
+     * rule above stops meaning anything. max() gives both: the setting
+     * raises it, nothing lowers it.
+     */
+    font-size: max(16px, 1rem);
   }
 }
 

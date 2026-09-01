@@ -167,7 +167,7 @@ export default function StoryDetailSheet({
                   type="button"
                   disabled
                   title={copy.quizSoonTitle}
-                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-ink-faint"
+                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-ink-faint"
                 >
                   <Sparkles size={15} strokeWidth={1.8} />
                   {copy.quizSoon}
@@ -179,7 +179,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onOpenSource();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black transition hover:bg-black/[0.03]"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-black transition hover:bg-black/[0.03]"
                 >
                   <ExternalLink size={15} strokeWidth={1.8} />
                   {copy.openSource}
@@ -191,7 +191,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onShare();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black transition hover:bg-black/[0.03]"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-black transition hover:bg-black/[0.03]"
                 >
                   <Share2 size={15} strokeWidth={1.8} />
                   {copy.shareStory}
@@ -203,7 +203,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onHide();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-red-600 transition hover:bg-red-50"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-red-600 transition hover:bg-red-50"
                 >
                   <EyeOff size={15} strokeWidth={1.8} />
                   {copy.hideStory}
@@ -217,7 +217,7 @@ export default function StoryDetailSheet({
       <div className="space-y-5">
         <div>
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 text-[21px] font-bold leading-[1.25] tracking-[-0.02em] text-black">
+            <h3 className="min-w-0 flex-1 text-[1.3125rem] font-bold leading-[1.25] tracking-[-0.02em] text-black">
               {(card.titles[primaryLanguage] ?? "")}
             </h3>
 
@@ -238,7 +238,7 @@ export default function StoryDetailSheet({
           </div>
 
           <div className="mt-2 flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[15px] font-medium leading-[1.6] text-ink-soft">
+            <p className="min-w-0 flex-1 text-[0.9375rem] font-medium leading-[1.6] text-ink-soft">
               {(card.titles[secondaryLanguage] ?? "")}
             </p>
 
@@ -261,7 +261,7 @@ export default function StoryDetailSheet({
 
         <div className="space-y-2.5">
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[15px] leading-[1.7] text-ink-strong">
+            <p className="min-w-0 flex-1 text-[0.9375rem] leading-[1.7] text-ink-strong">
               {(card.summaries[primaryLanguage] ?? "")}
             </p>
 
@@ -284,7 +284,7 @@ export default function StoryDetailSheet({
           </div>
 
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[14px] leading-[1.7] text-ink-soft">
+            <p className="min-w-0 flex-1 text-[0.875rem] leading-[1.7] text-ink-soft">
               {(card.summaries[secondaryLanguage] ?? "")}
             </p>
 
@@ -312,7 +312,7 @@ export default function StoryDetailSheet({
           onClick={onOpenVocabulary}
           className="flex w-full items-center justify-between rounded-2xl bg-black/[0.035] px-4 py-3.5 text-left transition active:scale-[0.99]"
         >
-          <span className="min-w-0 truncate text-[13px] font-medium text-ink-strong">
+          <span className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-strong">
             {copy.keyWordsLabel.replace(
               "{count}",
               String(card.vocabulary.length)

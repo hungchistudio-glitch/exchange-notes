@@ -142,7 +142,7 @@ export default function SettingsSearch() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                className="w-full bg-transparent py-2.5 text-[15px] text-black outline-none placeholder:text-ink-faint"
+                className="w-full bg-transparent py-2.5 text-[0.9375rem] text-black outline-none placeholder:text-ink-faint"
               />
 
               {query ? (
@@ -160,7 +160,7 @@ export default function SettingsSearch() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="shrink-0 px-1 text-[15px] font-semibold text-ink-strong"
+              className="shrink-0 px-1 text-[0.9375rem] font-semibold text-ink-strong"
             >
               {copy.cancel}
             </button>
@@ -173,11 +173,11 @@ export default function SettingsSearch() {
           */}
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-10">
             {!query.trim() ? (
-              <p className="px-1.5 pt-2 text-[13px] leading-6 text-ink-soft">
+              <p className="px-1.5 pt-2 text-[0.8125rem] leading-6 text-ink-soft">
                 {copy.hint}
               </p>
             ) : results.length === 0 ? (
-              <p className="px-1.5 pt-2 text-[13px] leading-6 text-ink-soft">
+              <p className="px-1.5 pt-2 text-[0.8125rem] leading-6 text-ink-soft">
                 {copy.empty.replace("{query}", query.trim())}
               </p>
             ) : (
@@ -193,11 +193,11 @@ export default function SettingsSearch() {
                       className="flex min-h-[58px] w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-100 active:bg-black/[0.035]"
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold tracking-[-0.02em] text-black">
+                        <span className="block truncate text-[0.9375rem] font-semibold tracking-[-0.02em] text-black">
                           {entry.title}
                         </span>
 
-                        <span className="mt-0.5 block truncate text-[12px] uppercase tracking-[0.1em] text-ink-faint">
+                        <span className="mt-0.5 block truncate text-[0.75rem] uppercase tracking-[0.1em] text-ink-faint">
                           {entry.section}
                         </span>
                       </span>

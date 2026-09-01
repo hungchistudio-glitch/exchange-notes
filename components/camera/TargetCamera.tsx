@@ -583,7 +583,7 @@ export default function TargetCamera({
         <AnalysingTargetIndicator active={busy} label={copy.analysing} />
 
         {!busy && !unavailable && (
-          <p className="rounded-full bg-black/25 px-3 py-1.5 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-md">
+          <p className="rounded-full bg-black/25 px-3 py-1.5 text-[0.6875rem] font-medium tracking-wide text-white/90 backdrop-blur-md">
             {copy.hint}
           </p>
         )}

@@ -65,7 +65,7 @@ export default function ReviewModule() {
         <section className="rounded-[26px] border border-black/[0.06] bg-white p-5">
           {due.length === 0 ? (
             <>
-              <p className="text-[17px] font-semibold">{copy.review.nothingDue}</p>
+              <p className="text-[1.0625rem] font-semibold">{copy.review.nothingDue}</p>
               <p className="font-cjk mt-1.5 text-sm leading-6 text-ink-soft">
                 {copy.review.nothingDueHint}
               </p>
@@ -78,7 +78,7 @@ export default function ReviewModule() {
             </>
           ) : (
             <>
-              <p className="text-[17px] font-semibold">
+              <p className="text-[1.0625rem] font-semibold">
                 {fill(copy.review.due, { count: due.length })}
               </p>
 
@@ -87,7 +87,7 @@ export default function ReviewModule() {
                   <li key={unit.id}>
                     <Link
                       href={`/pronunciation/sounds/${encodeURIComponent(unit.id)}`}
-                      className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-4 text-[15px] font-semibold transition-colors hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line bg-surface px-4 text-[0.9375rem] font-semibold transition-colors hover:bg-black/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                     >
                       <MasteryDot
                         mastery={progress[unit.id]?.mastery ?? "new"}
@@ -129,7 +129,7 @@ export default function ReviewModule() {
               {bandOrder.map((band) =>
                 bands[band].length === 0 ? null : (
                   <div key={band}>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                    <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                       {bandLabel[band]}
                     </p>
 
@@ -162,10 +162,10 @@ function WeaknessChip({ entry }: { entry: WeaknessEntry }) {
     <li>
       <Link
         href={`/pronunciation/sounds/${encodeURIComponent(entry.unit.id)}`}
-        className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-[15px] font-semibold transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${BAND_TONE[entry.band]}`}
+        className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-[0.9375rem] font-semibold transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${BAND_TONE[entry.band]}`}
       >
         {entry.unit.symbol}
-        <span className="text-[11px] font-medium opacity-70">
+        <span className="text-[0.6875rem] font-medium opacity-70">
           {fill(t.pronunciation.lab.weakness.attempts, { count: entry.attempts })}
         </span>
       </Link>

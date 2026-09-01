@@ -121,7 +121,7 @@ export default function ConversationRow({
         <span className="flex items-baseline justify-between gap-2">
           <span className="flex min-w-0 items-center gap-1.5">
             <span
-              className={`truncate text-[15px] tracking-[-0.01em] sm:text-base ${
+              className={`truncate text-[0.9375rem] tracking-[-0.01em] sm:text-base ${
                 hasUnread ? "font-bold" : "font-semibold"
               }`}
               style={{ color: "var(--msg-ink)" }}
@@ -142,7 +142,7 @@ export default function ConversationRow({
           {summary.lastMessage && (
             <time
               dateTime={summary.lastMessage.createdAt}
-              className="shrink-0 text-[11px]"
+              className="shrink-0 text-[0.6875rem]"
               style={{ color: "var(--msg-ink-faint)" }}
             >
               {formatConversationTime(summary.lastMessage.createdAt)}
@@ -151,7 +151,7 @@ export default function ConversationRow({
         </span>
 
         <span
-          className="mt-0.5 block truncate text-[12px]"
+          className="mt-0.5 block truncate text-[0.75rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           @{summary.friend.exchangeId}
@@ -159,7 +159,7 @@ export default function ConversationRow({
 
         <span className="mt-1 flex items-center justify-between gap-2">
           <span
-            className="min-w-0 flex-1 truncate text-[13px] sm:text-sm"
+            className="min-w-0 flex-1 truncate text-[0.8125rem] sm:text-sm"
             style={{
               color: hasUnread ? "var(--msg-ink)" : "var(--msg-ink-soft)",
             }}
@@ -170,7 +170,7 @@ export default function ConversationRow({
           <span className="flex shrink-0 items-center gap-1.5">
             {phraseCount > 0 && !hasUnread && (
               <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                className="rounded-full px-2 py-0.5 text-[0.625rem] font-semibold"
                 style={{
                   background: "var(--msg-accent-soft)",
                   color: "var(--msg-accent)",
@@ -191,7 +191,7 @@ export default function ConversationRow({
                 aria-label={insertValues(copy.hub.unreadLabel, {
                   count: String(summary.unreadCount),
                 })}
-                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold"
+                className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-semibold"
                 style={{
                   background: "var(--msg-accent)",
                   color: "var(--msg-accent-ink)",

@@ -23,11 +23,11 @@ function Metric({
 }: MetricProps) {
   return (
     <div className="border-t border-white/10 py-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
+      <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-invert-faint">
         {label}
       </p>
 
-      <p className="mt-2 text-[24px] font-semibold leading-none tracking-[-0.04em] text-white">
+      <p className="mt-2 text-[1.5rem] font-semibold leading-none tracking-[-0.04em] text-white">
         {value}
       </p>
     </div>
@@ -67,7 +67,7 @@ export default function DailyFocusCard({
     <article className="overflow-hidden rounded-[26px] bg-black p-5 text-white sm:p-6">
       <div className="flex items-start justify-between gap-6">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-ink-invert-faint">
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.24em] text-ink-invert-faint">
             {copy.cardEyebrow}
           </p>
 

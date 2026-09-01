@@ -45,7 +45,7 @@ export default function ConfirmStep({
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <OnboardingYumi mood="proud" className="h-32 w-32" />
 
-        <h1 className="mt-5 text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="mt-5 text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
@@ -67,7 +67,7 @@ export default function ConfirmStep({
         type="button"
         onClick={onStart}
         disabled={completing}
-        className="mt-8 flex h-13 min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
+        className="mt-8 flex h-13 min-h-12 w-full max-w-xs items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-60"
       >
         {completing ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {copy.cta}
@@ -79,8 +79,8 @@ export default function ConfirmStep({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-[13px] text-ink-soft">{label}</span>
-      <span className="truncate text-[14px] font-semibold text-black">{value}</span>
+      <span className="text-[0.8125rem] text-ink-soft">{label}</span>
+      <span className="truncate text-[0.875rem] font-semibold text-black">{value}</span>
     </div>
   );
 }

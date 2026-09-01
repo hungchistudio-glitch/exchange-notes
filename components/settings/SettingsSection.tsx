@@ -25,7 +25,7 @@ export default function SettingsSection({
 }: SettingsSectionProps) {
   return (
     <section className={className}>
-      <h2 className="mb-2 px-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+      <h2 className="mb-2 px-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
         {label}
       </h2>
 
@@ -34,7 +34,7 @@ export default function SettingsSection({
       </div>
 
       {footnote ? (
-        <p className="mt-2.5 px-1.5 text-[12px] leading-[18px] text-ink-faint">
+        <p className="mt-2.5 px-1.5 text-[0.75rem] leading-[1.125rem] text-ink-faint">
           {footnote}
         </p>
       ) : null}

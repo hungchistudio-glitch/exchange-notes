@@ -97,7 +97,7 @@ export default function NotesLibrary() {
               if (event.target.value.trim().length === 2) track("notes.searched", { scope: filter });
             }}
             placeholder={copy.searchPlaceholder}
-            className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-ink-faint"
+            className="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-ink-faint"
           />
         </label>
 

@@ -88,7 +88,7 @@ function Panel({
             */}
             <ExchangeNotesLogo variant="app-icon" theme={theme} size={size} />
             <span
-              className="text-[11px] font-medium tabular-nums"
+              className="text-[0.6875rem] font-medium tabular-nums"
               style={{ color: dark ? "#8a8a92" : "#71717a" }}
             >
               {size}
@@ -110,9 +110,9 @@ function Panel({
         <ExchangeNotesLogo variant="mark" size={16} />
       </div>
 
-      <p className="mt-8 text-center text-[15px] font-semibold">{label}</p>
+      <p className="mt-8 text-center text-[0.9375rem] font-semibold">{label}</p>
       <p
-        className="mt-1 text-center text-[13px]"
+        className="mt-1 text-center text-[0.8125rem]"
         style={{ color: dark ? "#8a8a92" : "#71717a" }}
       >
         {caption}
@@ -126,10 +126,10 @@ export default function BrandReviewPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-[26px] font-semibold tracking-[-0.03em]">
+      <h1 className="text-[1.625rem] font-semibold tracking-[-0.03em]">
         Exchange Notes logo
       </h1>
-      <p className="mt-2 max-w-2xl text-[14px] leading-6 text-ink-soft">
+      <p className="mt-2 max-w-2xl text-[0.875rem] leading-6 text-ink-soft">
         One geometry, two colour pairs. Everything below is drawn from
         lib/brand/exchangeNotesLogo.ts — the same numbers the app icons,
         favicon and PWA assets are generated from.
@@ -148,17 +148,17 @@ export default function BrandReviewPage() {
         />
       </div>
 
-      <h2 className="mt-12 text-[18px] font-semibold tracking-[-0.02em]">
+      <h2 className="mt-12 text-[1.125rem] font-semibold tracking-[-0.02em]">
         Master measurements
       </h2>
-      <p className="mt-1 text-[13px] text-ink-soft">
+      <p className="mt-1 text-[0.8125rem] text-ink-soft">
         Computed at the 1024 master, against the specification&rsquo;s
         acceptance targets. tests/exchangeNotesLogo.test.ts asserts the same
         values.
       </p>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[420px] text-left text-[13px] tabular-nums">
+        <table className="w-full min-w-[420px] text-left text-[0.8125rem] tabular-nums">
           <thead>
             <tr className="border-b border-black/10 text-ink-faint">
               <th className="py-2 pr-4 font-medium">Measurement</th>

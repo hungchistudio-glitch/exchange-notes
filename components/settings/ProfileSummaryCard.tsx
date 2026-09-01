@@ -41,12 +41,12 @@ export default function ProfileSummaryCard({
       <Avatar src={avatarUrl} fallback={displayName} size="lg" />
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[19px] font-bold tracking-[-0.03em] text-black">
+        <span className="block truncate text-[1.1875rem] font-bold tracking-[-0.03em] text-black">
           {displayName}
         </span>
 
         {exchangeId ? (
-          <span className="mt-0.5 block truncate text-[14px] font-semibold text-blue-600">
+          <span className="mt-0.5 block truncate text-[0.875rem] font-semibold text-blue-600">
             @{exchangeId}
           </span>
         ) : null}
@@ -55,7 +55,7 @@ export default function ProfileSummaryCard({
           The address is the quietest line of the three: it identifies the
           account, but it is not what anyone came to this card to read.
         */}
-        <span className="mt-0.5 block truncate text-[13px] leading-[18px] text-ink-soft">
+        <span className="mt-0.5 block truncate text-[0.8125rem] leading-[1.125rem] text-ink-soft">
           {loading ? "" : email}
         </span>
       </span>

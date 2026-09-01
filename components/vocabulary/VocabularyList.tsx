@@ -91,7 +91,7 @@ function VocabularyList({
     <button
       type="button"
       onClick={() => onLookUpQuery(query)}
-      className="mx-auto flex h-12 w-full max-w-sm items-center justify-center gap-2 rounded-full bg-black px-5 text-[13px] font-semibold text-white transition active:scale-[0.99]"
+      className="mx-auto flex h-12 w-full max-w-sm items-center justify-center gap-2 rounded-full bg-black px-5 text-[0.8125rem] font-semibold text-white transition active:scale-[0.99]"
     >
       <Search size={15} strokeWidth={2} aria-hidden="true" />
       {query
@@ -113,7 +113,7 @@ function VocabularyList({
             size={24}
             strokeWidth={1.8}
           />
-          <span className="text-[12px] font-medium">
+          <span className="text-[0.75rem] font-medium">
             {t.vocabulary.search.loadingVocabulary}
           </span>
         </div>

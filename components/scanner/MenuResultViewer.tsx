@@ -68,11 +68,11 @@ export default function MenuResultViewer({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1.5">
-        <p className="text-[15px] font-semibold tracking-[-0.02em] text-black">
+        <p className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-black">
           {copy.itemCount.replace("{count}", String(itemCount))}
         </p>
 
-        <p className="text-[13px] text-ink-soft">
+        <p className="text-[0.8125rem] text-ink-soft">
           {copy.sourceLanguage.replace(
             "{language}",
             sourceName ?? copy.unknownLanguage,
@@ -86,10 +86,10 @@ export default function MenuResultViewer({
       */}
       {partial ? (
         <div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-[14px] font-semibold text-amber-900">
+          <p className="text-[0.875rem] font-semibold text-amber-900">
             {copy.partialTitle}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-amber-800">
+          <p className="mt-1 text-[0.8125rem] leading-5 text-amber-800">
             {copy.partialBody}
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function MenuResultViewer({
       {mode === "translated" ? (
         <>
           {rebuildFailed ? (
-            <p className="rounded-[18px] border border-black/[0.06] bg-black/[0.02] px-4 py-3 text-[13px] leading-5 text-ink-soft">
+            <p className="rounded-[18px] border border-black/[0.06] bg-black/[0.02] px-4 py-3 text-[0.8125rem] leading-5 text-ink-soft">
               {copy.rebuildUnavailable}
             </p>
           ) : null}

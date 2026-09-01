@@ -139,7 +139,7 @@ export default function NoteComposerSheet({
             </option>
           ))}
         </select>
-        <p className="mt-1.5 text-[11px] text-ink-faint">{copy.detectedHint}</p>
+        <p className="mt-1.5 text-[0.6875rem] text-ink-faint">{copy.detectedHint}</p>
       </label>
 
       <label className="mt-5 block">

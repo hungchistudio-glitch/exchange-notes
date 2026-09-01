@@ -22,7 +22,7 @@ function DetailSection({ title, value }: { title: string; value: string | string
 
   return (
     <section className="border-t border-line py-4 first:border-0 first:pt-0">
-      <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-faint">{title}</h3>
+      <h3 className="text-[0.625rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">{title}</h3>
       <div className="mt-2 space-y-2">
         {values.map((item, index) => (
           <p key={`${item}-${index}`} className="whitespace-pre-wrap text-sm leading-6 text-ink-strong">{item}</p>
@@ -180,7 +180,7 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
         {note.isSharedWithMe ? (
           <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-black/[0.04] p-3">
             <p className="min-w-0 text-xs font-semibold text-ink-soft">{copy.sharedBy.replace("{name}", note.sourceOwnerName || copy.sharedWithMe)}</p>
-            <button type="button" onClick={() => void saveSharedCopy()} disabled={copySaved} className="shrink-0 rounded-full bg-black px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50">
+            <button type="button" onClick={() => void saveSharedCopy()} disabled={copySaved} className="shrink-0 rounded-full bg-black px-3 py-2 text-[0.6875rem] font-semibold text-white disabled:opacity-50">
               {copySaved ? copy.savedToMyNotes : copy.saveToMyNotes}
             </button>
           </div>
@@ -188,18 +188,18 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
 
         <article className="rounded-[28px] border border-line bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-faint">{copy.originalLabel}</p>
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">{copy.originalLabel}</p>
             <button type="button" onClick={() => speak(note.originalText, getLanguage(note.originalLanguage).speechTag)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface" aria-label={copy.originalLabel}><Volume2 size={15} /></button>
           </div>
-          <p className="mt-3 whitespace-pre-wrap break-words text-[20px] font-semibold leading-8 tracking-[-0.02em]">{note.originalText}</p>
+          <p className="mt-3 whitespace-pre-wrap break-words text-[1.25rem] font-semibold leading-8 tracking-[-0.02em]">{note.originalText}</p>
 
-          {note.personalMeaning ? <div className="mt-5 rounded-2xl bg-surface p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.personalMeaning}</p><p className="mt-2 text-sm leading-6">{note.personalMeaning}</p></div> : null}
-          {note.context ? <div className="mt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.contextLabel}</p><p className="mt-2 text-sm leading-6 text-ink-soft">{note.context}</p></div> : null}
-          {note.tags.length ? <div className="mt-4 flex flex-wrap gap-2">{note.tags.map((tag) => <span key={tag} className="rounded-full bg-surface px-3 py-1.5 text-[11px] font-semibold text-ink-soft">#{tag}</span>)}</div> : null}
+          {note.personalMeaning ? <div className="mt-5 rounded-2xl bg-surface p-4"><p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.personalMeaning}</p><p className="mt-2 text-sm leading-6">{note.personalMeaning}</p></div> : null}
+          {note.context ? <div className="mt-3"><p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">{copy.contextLabel}</p><p className="mt-2 text-sm leading-6 text-ink-soft">{note.context}</p></div> : null}
+          {note.tags.length ? <div className="mt-4 flex flex-wrap gap-2">{note.tags.map((tag) => <span key={tag} className="rounded-full bg-surface px-3 py-1.5 text-[0.6875rem] font-semibold text-ink-soft">#{tag}</span>)}</div> : null}
         </article>
 
         <section className="mt-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ink-faint">{copy.viewIn}</p>
+          <p className="text-[0.625rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">{copy.viewIn}</p>
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
             {LANGUAGE_CODES.map((code) => (
               <button

@@ -85,7 +85,7 @@ export default function AppLanguageSettingsButton() {
             <SettingsChoiceCard
               key={option.value}
               selected={language === option.value}
-              badge={<span className="text-[15px]">{option.badge}</span>}
+              badge={<span className="text-[0.9375rem]">{option.badge}</span>}
               title={option.label}
               description={copy.descriptions[option.value]}
               onClick={() => void handleSelect(option.value)}

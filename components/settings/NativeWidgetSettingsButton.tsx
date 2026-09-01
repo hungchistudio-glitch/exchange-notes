@@ -67,7 +67,7 @@ export default function NativeWidgetSettingsButton() {
               </span>
 
               <div>
-                <h3 className="text-[15px] font-semibold text-black">
+                <h3 className="text-[0.9375rem] font-semibold text-black">
                   {copy.nativeTitle}
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-ink-soft">

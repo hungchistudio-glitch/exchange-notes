@@ -41,10 +41,29 @@ function writePreferenceCookie(
     `${PREFERENCE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+/*
+ * 14 / 16 / 19, not 15 / 16 / 17.
+ *
+ * The old range was one pixel either side of the default — about six
+ * percent — and it moved ordinary body text by 1.75px between the smallest
+ * setting and the largest. Measured in the browser rather than argued about:
+ * a reader switching from small to large could not see that anything had
+ * happened, and reported exactly that.
+ *
+ * Half the reason was worse. 576 font sizes across the app were written in
+ * hard pixels, so between 47 and 80 percent of the text on a given screen
+ * ignored the setting completely however far it was moved. Those are rem
+ * now, which is what makes widening this worth doing: the whole screen
+ * answers, not a scattered third of it.
+ *
+ * The most common body size is 13px, which now travels 11.4px to 15.4px —
+ * a 35 percent range. Large enough to be the point of the setting, small
+ * enough that a card with a fixed height still holds its text.
+ */
 const ROOT_FONT_SIZES: Record<AppFontSize, string> = {
-  small: "15px",
+  small: "14px",
   medium: "16px",
-  large: "17px",
+  large: "19px",
 };
 
 /**

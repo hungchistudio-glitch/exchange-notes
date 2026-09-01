@@ -54,7 +54,7 @@ export default function AppHeader({
 
         <div className="min-w-0 flex-1">
           {eyebrow && (
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
               {eyebrow}
             </p>
           )}

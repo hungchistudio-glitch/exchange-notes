@@ -169,7 +169,7 @@ export default function VocabularyFilterPanel({
         </div>
       </div>
 
-      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-ink-faint sm:flex">
+      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[0.625rem] leading-4 text-ink-faint sm:flex">
         {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
           <a key={letter} href={`#letter-${letter}`}>
             {letter}

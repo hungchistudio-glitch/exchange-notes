@@ -177,7 +177,7 @@ export default function PronunciationSettingsButton() {
           <section>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-[15px] font-semibold text-black">
+                <h3 className="text-[0.9375rem] font-semibold text-black">
                   {copy.readingSpeed}
                 </h3>
 
@@ -202,7 +202,7 @@ export default function PronunciationSettingsButton() {
               className="mt-5 w-full accent-blue-600"
             />
 
-            <div className="mt-2 flex justify-between text-[10px] font-medium text-ink-faint">
+            <div className="mt-2 flex justify-between text-[0.625rem] font-medium text-ink-faint">
               <span>{copy.slower}</span>
               <span>{copy.faster}</span>
             </div>
@@ -216,7 +216,7 @@ export default function PronunciationSettingsButton() {
                   return (
                     <p
                       key={language}
-                      className="text-[12px] leading-5 text-[var(--accent-amber-deep)]"
+                      className="text-[0.75rem] leading-5 text-[var(--accent-amber-deep)]"
                     >
                       {copy.genderUnavailable
                         .replace("{language}", nameOf(language))
@@ -233,7 +233,7 @@ export default function PronunciationSettingsButton() {
           </section>
 
           <section>
-            <h3 className="text-[15px] font-semibold text-black">
+            <h3 className="text-[0.9375rem] font-semibold text-black">
               {copy.voice}
             </h3>
 
@@ -267,7 +267,7 @@ export default function PronunciationSettingsButton() {
           </section>
 
           <section>
-            <h3 className="text-[15px] font-semibold text-black">
+            <h3 className="text-[0.9375rem] font-semibold text-black">
               {copy.voicesOnDevice}
             </h3>
 
@@ -281,7 +281,7 @@ export default function PronunciationSettingsButton() {
 
               return (
                 <div key={language} className="mt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                     {nameOf(language)}
                   </p>
 
@@ -330,7 +330,7 @@ export default function PronunciationSettingsButton() {
                             <span className="min-w-0 truncate">{voice.name}</span>
                             <span
                               className={[
-                                "shrink-0 font-mono text-[10px]",
+                                "shrink-0 font-mono text-[0.625rem]",
                                 selected ? "text-white" : "text-ink-faint",
                               ].join(" ")}
                             >

@@ -56,7 +56,7 @@ function StatTile({
 }) {
   return (
     <Card className={`border p-4 ${STAT_TILE_TONES[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
         {label}
       </p>
       <p className="mt-1 text-2xl font-bold tracking-[-0.02em]">{value}</p>
@@ -169,7 +169,7 @@ export default function StandardHome() {
         className="px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {/* A non-breaking space rather than nothing while the reader's hour
               is still unknown: an empty <p> has no line box, so the whole
               screen below would jump down by a line the moment the greeting
@@ -183,7 +183,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-3">
-        <h1 className="text-[26px] font-bold tracking-[-0.02em]">
+        <h1 className="text-[1.625rem] font-bold tracking-[-0.02em]">
           {heroCopy.title}
         </h1>
         <p className="mt-1 text-ink-soft">{heroCopy.description}</p>
@@ -220,7 +220,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.quickStart.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.quickStart.title}</h2>
@@ -259,13 +259,13 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.progress.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.progress.title}</h2>
 
         <Card className="mt-4 p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {t.home.progress.todaysReview}
           </p>
           <p className="mt-1 text-2xl font-bold">
@@ -322,7 +322,7 @@ export default function StandardHome() {
       </div>
 
       <div className="px-4 pt-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {t.home.community.eyebrow}
         </p>
         <h2 className="mt-1 text-xl font-bold">{t.home.community.title}</h2>

@@ -36,7 +36,7 @@ export default function MenuListView({
     <div className="space-y-7">
       {menu.sections.map((section) => (
         <section key={section.id}>
-          <h2 className="mb-2 px-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <h2 className="mb-2 px-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {sectionTitle(section, menu.targetLanguage) ||
               copy.untitledSection}
           </h2>
@@ -58,7 +58,7 @@ export default function MenuListView({
                   <span className="min-w-0 flex-1">
                     <span
                       className={[
-                        "block text-[16px] font-semibold leading-[21px] tracking-[-0.02em] text-black",
+                        "block text-[1rem] font-semibold leading-[1.3125rem] tracking-[-0.02em] text-black",
                         hasLowConfidence(item)
                           ? "underline decoration-dotted decoration-ink-faint underline-offset-[3px]"
                           : "",
@@ -76,20 +76,20 @@ export default function MenuListView({
                       on what the list happened to be printed in.
                     */}
                     {secondary && secondary !== primary ? (
-                      <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft">
+                      <span className="mt-0.5 block text-[0.8125rem] leading-[1.125rem] text-ink-soft">
                         {secondary}
                       </span>
                     ) : null}
 
                     {primaryDescription ? (
-                      <span className="mt-1 block text-[13px] leading-[19px] text-ink-faint">
+                      <span className="mt-1 block text-[0.8125rem] leading-[1.1875rem] text-ink-faint">
                         {primaryDescription}
                       </span>
                     ) : null}
                   </span>
 
                   <span className="flex shrink-0 items-center gap-1.5 pt-0.5">
-                    <span className="text-[14px] font-semibold text-ink-strong">
+                    <span className="text-[0.875rem] font-semibold text-ink-strong">
                       {item.price || "—"}
                     </span>
 

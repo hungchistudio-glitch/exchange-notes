@@ -380,14 +380,14 @@ export default function AvatarCropper({
             ) : null}
 
             {!ready ? (
-              <span className="absolute inset-0 flex items-center justify-center text-[12px] font-medium text-ink-faint">
+              <span className="absolute inset-0 flex items-center justify-center text-[0.75rem] font-medium text-ink-faint">
                 {failed ? copy.cropError : copy.loading}
               </span>
             ) : null}
           </div>
 
           <label className="mt-6 block">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
               {copy.cropZoom}
             </span>
 
@@ -421,7 +421,7 @@ export default function AvatarCropper({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="flex h-12 items-center justify-center rounded-full border border-black/[0.09] bg-white text-[14px] font-semibold text-black transition active:scale-[0.99] disabled:opacity-40"
+            className="flex h-12 items-center justify-center rounded-full border border-black/[0.09] bg-white text-[0.875rem] font-semibold text-black transition active:scale-[0.99] disabled:opacity-40"
           >
             {copy.cropCancel}
           </button>
@@ -430,7 +430,7 @@ export default function AvatarCropper({
             type="button"
             onClick={confirm}
             disabled={!ready || busy}
-            className="flex h-12 items-center justify-center rounded-full bg-black text-[14px] font-semibold text-white transition active:scale-[0.99] disabled:opacity-40"
+            className="flex h-12 items-center justify-center rounded-full bg-black text-[0.875rem] font-semibold text-white transition active:scale-[0.99] disabled:opacity-40"
           >
             {busy ? copy.cropSaving : copy.cropConfirm}
           </button>

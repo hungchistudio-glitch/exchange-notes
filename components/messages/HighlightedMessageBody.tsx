@@ -37,7 +37,7 @@ export default function HighlightedMessageBody({
 
   if (spans.length === 0) {
     return (
-      <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.55]">
+      <p className="whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.55]">
         {body}
       </p>
     );
@@ -77,7 +77,7 @@ export default function HighlightedMessageBody({
   }
 
   return (
-    <p className="whitespace-pre-wrap break-words text-[15px] leading-[1.55]">
+    <p className="whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.55]">
       {pieces}
     </p>
   );

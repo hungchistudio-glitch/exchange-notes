@@ -125,7 +125,7 @@ export default function WordCardMessage({
     return (
       <div key={code}>
         <span
-          className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+          className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           {language.endonym}
@@ -349,7 +349,7 @@ export default function WordCardMessage({
       <div className="mt-2.5 flex items-center justify-between">
         <time
           dateTime={createdAt}
-          className="text-[10px]"
+          className="text-[0.625rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
           {formatMessageTime(createdAt)}

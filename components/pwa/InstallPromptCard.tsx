@@ -37,7 +37,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
   if (showIosSteps) {
     return (
       <div className="flex flex-col items-center text-center">
-        <h2 className="text-[18px] font-bold tracking-[-0.02em] text-black">
+        <h2 className="text-[1.125rem] font-bold tracking-[-0.02em] text-black">
           {copy.iosStepsTitle}
         </h2>
 
@@ -47,7 +47,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-black text-xs font-bold text-white">
                 {index === 0 ? <Share size={12} strokeWidth={2} /> : index + 1}
               </span>
-              <span className="text-[14px] leading-6 text-ink-strong">{stepText}</span>
+              <span className="text-[0.875rem] leading-6 text-ink-strong">{stepText}</span>
             </li>
           ))}
         </ol>
@@ -76,11 +76,11 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         className="h-16 w-16 rounded-[20px] shadow-[0_6px_20px_rgba(0,0,0,0.1)]"
       />
 
-      <h2 className="mt-4 text-[19px] font-bold tracking-[-0.02em] text-black">
+      <h2 className="mt-4 text-[1.1875rem] font-bold tracking-[-0.02em] text-black">
         {copy.title}
       </h2>
 
-      <p className="mt-1.5 max-w-xs text-[14px] leading-6 text-ink-soft">
+      <p className="mt-1.5 max-w-xs text-[0.875rem] leading-6 text-ink-soft">
         {copy.subtitle}
       </p>
 
@@ -94,7 +94,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         type="button"
         onClick={() => void handlePrimaryAction()}
         disabled={installing || (platform !== "ios" && !canPromptInstall)}
-        className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[15px] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+        className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
       >
         {installing ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {copy.installCta}
@@ -104,7 +104,7 @@ export default function InstallPromptCard({ onDismiss, onInstalled }: InstallPro
         <button
           type="button"
           onClick={onDismiss}
-          className="mt-2.5 flex h-10 w-full items-center justify-center text-[13px] font-medium text-ink-faint transition-colors hover:text-ink-soft"
+          className="mt-2.5 flex h-10 w-full items-center justify-center text-[0.8125rem] font-medium text-ink-faint transition-colors hover:text-ink-soft"
         >
           {copy.maybeLater}
         </button>
@@ -128,8 +128,8 @@ function Benefit({
         {icon}
       </span>
       <span>
-        <span className="block text-[14px] font-semibold text-black">{title}</span>
-        <span className="block text-[13px] leading-5 text-ink-soft">{description}</span>
+        <span className="block text-[0.875rem] font-semibold text-black">{title}</span>
+        <span className="block text-[0.8125rem] leading-5 text-ink-soft">{description}</span>
       </span>
     </div>
   );

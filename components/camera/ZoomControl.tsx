@@ -63,7 +63,7 @@ export default function ZoomControl({
   return (
     <div className="pointer-events-auto flex flex-col items-center gap-3">
       <div
-        className="rounded-full bg-black/45 px-3 py-1 text-[13px] font-semibold tabular-nums text-white backdrop-blur-md transition-opacity duration-300"
+        className="rounded-full bg-black/45 px-3 py-1 text-[0.8125rem] font-semibold tabular-nums text-white backdrop-blur-md transition-opacity duration-300"
         style={{ opacity: readoutVisible ? 1 : 0 }}
         aria-hidden={!readoutVisible}
       >
@@ -90,7 +90,7 @@ export default function ZoomControl({
                * for real targets under compact icons, and a zoom stop that
                * needs aiming is worse than no zoom stop.
                */
-              className={`relative flex h-[34px] min-w-[34px] items-center justify-center rounded-full px-2 text-[12px] font-semibold tabular-nums transition-colors before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] ${
+              className={`relative flex h-[34px] min-w-[34px] items-center justify-center rounded-full px-2 text-[0.75rem] font-semibold tabular-nums transition-colors before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-[''] ${
                 current
                   ? "bg-white text-black"
                   : "text-white/85 active:bg-white/15"

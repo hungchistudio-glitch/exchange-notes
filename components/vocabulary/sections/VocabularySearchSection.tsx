@@ -89,11 +89,11 @@ export default function VocabularySearchSection({
               and is inert in every other shell, so the eyebrow becomes an
               instrument readout in deep space and stays a plain caption
               everywhere else — no branch, no second component. */}
-          <p className="hud-label text-[11px] font-semibold uppercase tracking-[0.15em] text-ink-faint">
+          <p className="hud-label text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">
             {search.vocabulary}
           </p>
 
-          <h2 className="mt-1 text-[26px] font-semibold tracking-[-0.04em] text-black">
+          <h2 className="mt-1 text-[1.625rem] font-semibold tracking-[-0.04em] text-black">
             {search.yourWords}
           </h2>
 
@@ -101,7 +101,7 @@ export default function VocabularySearchSection({
               Standard — see .cosmic-metric in app/cosmic.css. They were
               already separate expressions, so this costs a span each and no
               change to the sentence a translator sees. */}
-          <p className="mt-1 text-[13px] text-ink-soft">
+          <p className="mt-1 text-[0.8125rem] text-ink-soft">
             <span className="cosmic-metric">{totalWords}</span> {search.saved} ·{" "}
             <span className="cosmic-metric">{learningWords}</span>{" "}
             {search.learning} ·{" "}
@@ -141,7 +141,7 @@ export default function VocabularySearchSection({
 
       {(sortMode === "for-you" || sortMode === "trending") &&
         (rankingLoading || rankingError) && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[11px] font-medium text-ink-soft">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[0.6875rem] font-medium text-ink-soft">
             <span className="min-w-0">
               {rankingLoading
                 ? search.personalizing.replace(

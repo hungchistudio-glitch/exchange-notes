@@ -126,7 +126,7 @@ export default function RhythmModule() {
 
             {lesson.rule ? (
               <div className="mt-3 rounded-2xl bg-surface p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
+                <p className="text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ink-faint">
                   {copy.rhythm.rule}
                 </p>
                 <p className="font-cjk mt-1.5 text-sm leading-6 text-ink-strong">
@@ -140,7 +140,7 @@ export default function RhythmModule() {
                 <li key={phrase.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-cjk truncate text-[15px] font-semibold">
+                      <p className="font-cjk truncate text-[0.9375rem] font-semibold">
                         {phrase.text}
                       </p>
                       {phrase.meaning ? (

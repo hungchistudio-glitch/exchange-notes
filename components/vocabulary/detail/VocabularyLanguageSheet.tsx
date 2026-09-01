@@ -75,7 +75,7 @@ export default function VocabularyLanguageSheet({
                 />
 
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold tracking-[-0.01em]">
+                  <span className="block truncate text-[0.9375rem] font-semibold tracking-[-0.01em]">
                     {meta.endonym}
                   </span>
 
@@ -89,7 +89,7 @@ export default function VocabularyLanguageSheet({
                   {getLanguageName(meta.code, interfaceLanguage) !==
                   meta.endonym ? (
                     <span
-                      className={`block truncate text-[12px] ${
+                      className={`block truncate text-[0.75rem] ${
                         selected ? "text-white/70" : "text-ink-faint"
                       }`}
                     >

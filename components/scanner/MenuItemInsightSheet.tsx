@@ -402,7 +402,7 @@ export default function MenuItemInsightSheet({
             point of scanning inside a language app rather than a translator.
           */}
           {secondary ? (
-            <p className="px-1 text-[16px] font-semibold tracking-[-0.02em] text-ink-strong">
+            <p className="px-1 text-[1rem] font-semibold tracking-[-0.02em] text-ink-strong">
               {secondary}
             </p>
           ) : null}
@@ -414,7 +414,7 @@ export default function MenuItemInsightSheet({
           */}
           {phonetics &&
           (phonetics.pinyin || phonetics.zhuyin || phonetics.ipa) ? (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-1 text-[13px] leading-5 text-ink-soft">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-1 text-[0.8125rem] leading-5 text-ink-soft">
               {phonetics.pinyin ? (
                 <span className="font-cjk">{phonetics.pinyin}</span>
               ) : null}
@@ -501,7 +501,7 @@ export default function MenuItemInsightSheet({
           {actionError ? (
             <p
               role="alert"
-              className="rounded-2xl bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-700"
+              className="rounded-2xl bg-red-50 px-4 py-3 text-[0.8125rem] leading-5 text-red-700"
             >
               {actionError}
             </p>
@@ -512,16 +512,16 @@ export default function MenuItemInsightSheet({
             item.sourceName !== primary &&
             item.sourceName !== secondary ? (
               <div className="flex items-start justify-between gap-4 px-4 py-3">
-                <dt className="shrink-0 text-[13px] text-ink-soft">
+                <dt className="shrink-0 text-[0.8125rem] text-ink-soft">
                   {copy.originalLabel}
                 </dt>
                 <dd className="min-w-0 text-right">
-                  <span className="block text-[15px] font-semibold text-black">
+                  <span className="block text-[0.9375rem] font-semibold text-black">
                     {item.sourceName}
                   </span>
 
                   {item.sourceDescription ? (
-                    <span className="mt-0.5 block text-[13px] leading-[18px] text-ink-faint">
+                    <span className="mt-0.5 block text-[0.8125rem] leading-[1.125rem] text-ink-faint">
                       {item.sourceDescription}
                     </span>
                   ) : null}
@@ -530,20 +530,20 @@ export default function MenuItemInsightSheet({
             ) : null}
 
             <div className="flex items-start justify-between gap-4 px-4 py-3">
-              <dt className="shrink-0 text-[13px] text-ink-soft">
+              <dt className="shrink-0 text-[0.8125rem] text-ink-soft">
                 {copy.priceLabel}
               </dt>
-              <dd className="min-w-0 text-right text-[15px] font-semibold text-black">
+              <dd className="min-w-0 text-right text-[0.9375rem] font-semibold text-black">
                 {item.price || copy.noPrice}
               </dd>
             </div>
 
             {cuisine ? (
               <div className="flex items-start justify-between gap-4 px-4 py-3">
-                <dt className="shrink-0 text-[13px] text-ink-soft">
+                <dt className="shrink-0 text-[0.8125rem] text-ink-soft">
                   {copy.cuisineLabel}
                 </dt>
-                <dd className="min-w-0 text-right text-[15px] font-semibold text-black">
+                <dd className="min-w-0 text-right text-[0.9375rem] font-semibold text-black">
                   {cuisine}
                 </dd>
               </div>
@@ -551,7 +551,7 @@ export default function MenuItemInsightSheet({
           </dl>
 
           {hasLowConfidence(item) ? (
-            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-[13px] leading-5 text-amber-800">
+            <p className="rounded-2xl bg-amber-50 px-4 py-3 text-[0.8125rem] leading-5 text-amber-800">
               {copy.confidenceNote}
             </p>
           ) : null}
@@ -561,7 +561,7 @@ export default function MenuItemInsightSheet({
             the ingredients here are read off a name, and the only place that
             knows what is in the pan is the kitchen.
           */}
-          <p className="px-1 text-[12px] leading-[18px] text-ink-faint">
+          <p className="px-1 text-[0.75rem] leading-[1.125rem] text-ink-faint">
             {copy.askRestaurant}
           </p>
         </div>

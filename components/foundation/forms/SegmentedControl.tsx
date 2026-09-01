@@ -68,7 +68,7 @@ export default function SegmentedControl<Value extends string>({
             className={[
               "flex min-h-[34px] items-center justify-center rounded-full px-3.5",
               fill ? "flex-1" : "",
-              "text-[13px] font-semibold tracking-[-0.01em]",
+              "text-[0.8125rem] font-semibold tracking-[-0.01em]",
               "transition-[background-color,color] duration-200 ease-out",
               "motion-reduce:transition-none",
               selected

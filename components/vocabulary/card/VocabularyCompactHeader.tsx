@@ -31,7 +31,7 @@ export default function VocabularyCompactHeader({ item }: Props) {
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center justify-between gap-3">
-            <h3 className="min-w-0 break-words text-[17px] font-semibold leading-6 tracking-[-0.025em] text-black">
+            <h3 className="min-w-0 break-words text-[1.0625rem] font-semibold leading-6 tracking-[-0.025em] text-black">
               {primary.text || item.word}
             </h3>
             {/*
@@ -45,14 +45,14 @@ export default function VocabularyCompactHeader({ item }: Props) {
             <span className="flex shrink-0 items-center gap-2">
               <LanguageOriginBadge language={primary.language} size="sm" />
 
-              <span className="text-[9px] font-semibold uppercase tracking-[0.13em] text-ink-faint">
+              <span className="text-[0.5625rem] font-semibold uppercase tracking-[0.13em] text-ink-faint">
                 {statusLabels[item.status]}
               </span>
             </span>
           </div>
 
           {secondary.text ? (
-            <p className="mt-0.5 break-words text-[13px] leading-5 text-ink-soft">
+            <p className="mt-0.5 break-words text-[0.8125rem] leading-5 text-ink-soft">
               {secondary.text}
             </p>
           ) : null}

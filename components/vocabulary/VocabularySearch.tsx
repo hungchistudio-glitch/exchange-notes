@@ -161,7 +161,7 @@ export default function VocabularySearch({
             placeholder={search.searchPlaceholder}
             aria-label={search.searchAriaLabel}
             enterKeyHint="search"
-            className="h-full min-w-0 flex-1 bg-transparent font-sans text-[14px] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-ink-faint"
+            className="h-full min-w-0 flex-1 bg-transparent font-sans text-[0.875rem] font-normal tracking-[-0.01em] text-black outline-none placeholder:text-ink-faint"
           />
 
           {query && (
@@ -243,7 +243,7 @@ export default function VocabularySearch({
       {imageLookup.reading ? (
         <p
           role="status"
-          className="mt-2 flex items-center gap-2 px-2 text-[11px] text-ink-soft"
+          className="mt-2 flex items-center gap-2 px-2 text-[0.6875rem] text-ink-soft"
         >
           <LoaderCircle size={12} className="animate-spin" aria-hidden="true" />
           {t.capture.analysis.description}
@@ -251,7 +251,7 @@ export default function VocabularySearch({
       ) : null}
 
       {imageLookup.error ? (
-        <p role="alert" className="mt-2 px-2 text-[11px] text-red-600">
+        <p role="alert" className="mt-2 px-2 text-[0.6875rem] text-red-600">
           {imageLookup.error}
         </p>
       ) : null}
@@ -312,14 +312,14 @@ export default function VocabularySearch({
                   size="sm"
                   className="!border-0 !bg-transparent !px-0 !py-0"
                 />
-                <span className="min-w-0 truncate text-[12px] font-semibold tracking-[-0.01em] text-black">
+                <span className="min-w-0 truncate text-[0.75rem] font-semibold tracking-[-0.01em] text-black">
                   {getLanguage(languageFilter[0]).endonym}
                 </span>
               </>
             ) : (
               <>
                 <Languages size={16} strokeWidth={1.8} />
-                <span className="min-w-0 truncate text-[12px] font-medium tracking-[-0.01em]">
+                <span className="min-w-0 truncate text-[0.75rem] font-medium tracking-[-0.01em]">
                   {languageFilter.length > 1
                     ? languageFilter
                         .map((code) => getLanguage(code).badge)
@@ -394,7 +394,7 @@ export default function VocabularySearch({
           line now that the language control shares the row above: three
           44pt controls and a language pill leave no room to read a sentence
           beside them on a narrow phone. */}
-      <p className="mt-2 min-w-0 truncate font-sans text-[11px] font-medium tracking-[-0.01em] text-ink-faint">
+      <p className="mt-2 min-w-0 truncate font-sans text-[0.6875rem] font-medium tracking-[-0.01em] text-ink-faint">
         {visibleCount} {visibleCount === 1 ? search.word : search.words}
         <span aria-hidden="true"> · </span>
         <span className="text-ink-soft">{sortLabels[sortMode]}</span>

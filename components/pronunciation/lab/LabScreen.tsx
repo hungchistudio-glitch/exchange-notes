@@ -55,17 +55,17 @@ export default function LabScreen({
         <div className="mt-2 flex items-start justify-between gap-4">
           <div className="min-w-0">
             {eyebrow ? (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-faint">
+              <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
                 {eyebrow}
               </p>
             ) : null}
 
-            <h1 className="mt-1 text-[26px] font-bold leading-tight tracking-[-0.025em] sm:text-[30px]">
+            <h1 className="mt-1 text-[1.625rem] font-bold leading-tight tracking-[-0.025em] sm:text-[1.875rem]">
               {title}
             </h1>
 
             {subtitle ? (
-              <p className="mt-1.5 text-[15px] leading-6 text-ink-soft">
+              <p className="mt-1.5 text-[0.9375rem] leading-6 text-ink-soft">
                 {subtitle}
               </p>
             ) : null}

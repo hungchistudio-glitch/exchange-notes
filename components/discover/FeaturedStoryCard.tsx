@@ -119,7 +119,7 @@ export default function FeaturedStoryCard({
 
       {card.imageUrl && caption ? (
         <p
-          className="px-7 pt-3 text-[11.5px] leading-[1.5]"
+          className="px-7 pt-3 text-[0.71875rem] leading-[1.5]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {caption}
@@ -130,7 +130,7 @@ export default function FeaturedStoryCard({
         <button
           type="button"
           onClick={handleExploreImage}
-          className="mt-2 flex items-center gap-1.5 px-7 text-[12px] font-medium transition-opacity active:opacity-70"
+          className="mt-2 flex items-center gap-1.5 px-7 text-[0.75rem] font-medium transition-opacity active:opacity-70"
           style={{ color: accent }}
         >
           <ZoomIn size={13} strokeWidth={1.8} />
@@ -157,14 +157,14 @@ export default function FeaturedStoryCard({
       >
         <div className="flex items-center gap-2.5">
           <span
-            className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+            className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em]"
             style={{ color: accent }}
           >
             {categoryText}
           </span>
 
           <span
-            className="text-[11px]"
+            className="text-[0.6875rem]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {formattedTime}
@@ -173,14 +173,14 @@ export default function FeaturedStoryCard({
 
         {/* Bilingual headline block */}
         <h2
-          className="mt-4 line-clamp-3 text-[30px] font-bold leading-[1.16] tracking-[-0.02em]"
+          className="mt-4 line-clamp-3 text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]"
           style={{ color: DISCOVER_COLORS.text }}
         >
           {(card.titles[primaryLanguage] ?? "")}
         </h2>
 
         <p
-          className="mt-2.5 text-[16px] font-medium leading-[1.55] tracking-[0.005em]"
+          className="mt-2.5 text-[1rem] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {(card.titles[secondaryLanguage] ?? "")}
@@ -188,14 +188,14 @@ export default function FeaturedStoryCard({
 
         {/* Short summary */}
         <p
-          className="mt-4 line-clamp-2 text-[15px] leading-[1.6]"
+          className="mt-4 line-clamp-2 text-[0.9375rem] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {(card.summaries[primaryLanguage] ?? "")}
         </p>
 
         <p
-          className="mt-1 line-clamp-1 text-[13.5px] leading-[1.6]"
+          className="mt-1 line-clamp-1 text-[0.84375rem] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {(card.summaries[secondaryLanguage] ?? "")}

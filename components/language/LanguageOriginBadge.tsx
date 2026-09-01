@@ -21,8 +21,8 @@ import { insertValues } from "@/lib/utils";
    ========================================================= */
 
 const SIZES = {
-  sm: { flag: "h-[11px] w-[16px]", gap: "gap-1", text: "text-[9px]" },
-  md: { flag: "h-[14px] w-[20px]", gap: "gap-1.5", text: "text-[10px]" },
+  sm: { flag: "h-[11px] w-[16px]", gap: "gap-1", text: "text-[0.5625rem]" },
+  md: { flag: "h-[14px] w-[20px]", gap: "gap-1.5", text: "text-[0.625rem]" },
 } as const;
 
 export default function LanguageOriginBadge({

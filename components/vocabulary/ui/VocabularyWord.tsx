@@ -40,8 +40,8 @@ export default function VocabularyWord({
       <TextComponent
         className={
           variant === "primary"
-            ? "min-w-0 flex-1 break-words text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[34px]"
-            : "min-w-0 flex-1 break-words text-[22px] font-normal leading-[1.4] tracking-[-0.02em] text-ink-soft"
+            ? "min-w-0 flex-1 break-words text-[1.875rem] font-semibold leading-[1.08] tracking-[-0.04em] text-black sm:text-[2.125rem]"
+            : "min-w-0 flex-1 break-words text-[1.375rem] font-normal leading-[1.4] tracking-[-0.02em] text-ink-soft"
         }
       >
         {normalizedWord}

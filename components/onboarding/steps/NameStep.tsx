@@ -180,7 +180,7 @@ export default function NameStep({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1">
-        <h1 className="text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
@@ -213,7 +213,7 @@ export default function NameStep({
         </div>
 
         <label className="mt-7 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.displayNameLabel}
           </span>
 
@@ -233,7 +233,7 @@ export default function NameStep({
         </label>
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.usernameLabel}
           </span>
 
@@ -274,7 +274,7 @@ export default function NameStep({
         type="button"
         onClick={onContinue}
         disabled={!canContinue}
-        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
       >
         {saving ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {t.onboarding.continue}

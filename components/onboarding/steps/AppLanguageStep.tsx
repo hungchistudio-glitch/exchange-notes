@@ -43,11 +43,11 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1">
-        <h1 className="text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
-        <p className="mt-2 text-[15px] leading-6 text-ink-soft">
+        <p className="mt-2 text-[0.9375rem] leading-6 text-ink-soft">
           {copy.subtitle}
         </p>
 
@@ -56,7 +56,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
             <SettingsChoiceCard
               key={option.value}
               selected={language === option.value}
-              badge={<span className="text-[15px]">{option.badge}</span>}
+              badge={<span className="text-[0.9375rem]">{option.badge}</span>}
               title={option.label}
               onClick={() => void selectLanguage(option.value)}
             />
@@ -69,7 +69,7 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
       <button
         type="button"
         onClick={onContinue}
-        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
       >
         {t.onboarding.continue}
       </button>

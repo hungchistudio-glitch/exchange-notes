@@ -15,18 +15,18 @@ export default function WelcomeStep({ onContinue }: WelcomeStepProps) {
     <div className="flex flex-1 flex-col items-center justify-center text-center">
       <OnboardingYumi className="h-40 w-40" />
 
-      <h1 className="mt-6 text-[26px] font-bold tracking-[-0.03em] text-black">
+      <h1 className="mt-6 text-[1.625rem] font-bold tracking-[-0.03em] text-black">
         {copy.title}
       </h1>
 
-      <p className="mt-2.5 max-w-xs text-[15px] leading-6 text-ink-soft">
+      <p className="mt-2.5 max-w-xs text-[0.9375rem] leading-6 text-ink-soft">
         {copy.subtitle}
       </p>
 
       <button
         type="button"
         onClick={onContinue}
-        className="mt-10 flex h-13 min-h-12 w-full max-w-xs items-center justify-center rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-10 flex h-13 min-h-12 w-full max-w-xs items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
       >
         {copy.cta}
       </button>

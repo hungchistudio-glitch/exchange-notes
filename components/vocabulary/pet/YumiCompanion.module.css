@@ -60,7 +60,7 @@
 }
 
 .greeting {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: color-mix(in oklab, var(--color-black) 55%, transparent);
@@ -104,7 +104,7 @@
 
 .moodStatus {
   margin-top: 2px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: color-mix(in oklab, var(--color-black) 75%, transparent);
   text-align: center;
@@ -115,7 +115,7 @@
    fine print underneath it, not four more boxes to scan. */
 .summaryLine {
   margin-top: 3px;
-  font-size: 11.5px;
+  font-size: 0.71875rem;
   color: color-mix(in oklab, var(--color-black) 40%, transparent);
   text-align: center;
 }
@@ -233,12 +233,12 @@
   /* A shade larger than Standard's, because it is now the caption under a
      hero rather than a line in a header band, and at 13px it was being lost
      under a Yumi half again as large. */
-  font-size: 14.5px;
+  font-size: 0.90625rem;
   color: color-mix(in oklab, var(--color-black) 88%, transparent);
 }
 
 .section[data-cosmic="true"] .summaryLine {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: color-mix(in oklab, var(--color-black) 52%, transparent);
   /* Four facts on a narrow phone will not hold one line, and the brief is
      explicit that they should wrap rather than be shrunk into it. */

@@ -436,7 +436,7 @@ export default function EditProfileSheet({
               <button
                 type="button"
                 onClick={() => void handleCopyHandle()}
-                className="flex items-center gap-1.5 rounded-full bg-black/[0.045] px-3 py-1.5 text-[13px] font-semibold text-ink-strong transition-colors hover:bg-black/[0.08]"
+                className="flex items-center gap-1.5 rounded-full bg-black/[0.045] px-3 py-1.5 text-[0.8125rem] font-semibold text-ink-strong transition-colors hover:bg-black/[0.08]"
               >
                 {copied ? (
                   <Check size={13} strokeWidth={2.5} className="text-emerald-600" />
@@ -491,7 +491,7 @@ export default function EditProfileSheet({
         </div>
 
         <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.yourName}
           </span>
 
@@ -509,7 +509,7 @@ export default function EditProfileSheet({
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.exchangeId}
           </span>
 

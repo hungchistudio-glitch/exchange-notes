@@ -299,10 +299,10 @@ export default function ReviewPage() {
 
           <div className="mt-3 flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.sessionEyebrow}
               </p>
-              <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
+              <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
                 {copy.sessionTitle}
               </h1>
             </div>
@@ -326,7 +326,7 @@ export default function ReviewPage() {
 
           <div className="mt-6 rounded-[28px] border border-line bg-white p-6">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.vocabulary}
               </p>
               <div className="flex items-center gap-2">
@@ -354,7 +354,7 @@ export default function ReviewPage() {
               </div>
             </div>
 
-            <p className="mt-4 text-[36px] font-bold tracking-[-0.02em]">
+            <p className="mt-4 text-[2.25rem] font-bold tracking-[-0.02em]">
               {currentWord.translation}
             </p>
 
@@ -482,7 +482,7 @@ export default function ReviewPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-2xl text-white">
           ✓
         </div>
-        <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {isCosmic
             ? t.cosmic.mission.completeEyebrow
             : mode === "due"
@@ -539,10 +539,10 @@ export default function ReviewPage() {
           <BackIcon />
         </Link>
 
-        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        <p className="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
           {copy.eyebrow}
         </p>
-        <h1 className="mt-1 text-[28px] font-bold tracking-[-0.02em]">
+        <h1 className="mt-1 text-[1.75rem] font-bold tracking-[-0.02em]">
           {copy.title}
         </h1>
         <p className="mt-1 text-ink-soft">{copy.subtitle}</p>
@@ -580,7 +580,7 @@ export default function ReviewPage() {
                   type="button"
                   onClick={() => setReviewLanguage(code)}
                   aria-pressed={selected}
-                  className={`flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition ${
+                  className={`flex h-11 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[0.8125rem] font-semibold transition ${
                     selected
                       ? "border-black bg-black text-white"
                       : "border-line bg-white text-ink-soft"
@@ -622,16 +622,16 @@ export default function ReviewPage() {
           className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
               {copy.today}
             </p>
             <p className="text-xs text-ink-invert-faint">{copy.introLineOne}</p>
           </div>
 
-          <p className="mt-3 text-[40px] font-bold leading-none">
+          <p className="mt-3 text-[2.5rem] font-bold leading-none">
             {loading ? "…" : dueInLanguage.length}
           </p>
-          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
+          <p className="mt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-invert-faint">
             {copy.cardsReady}
           </p>
 
@@ -665,7 +665,7 @@ export default function ReviewPage() {
         </div>
 
         <div className="mt-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.queueData}
           </p>
 

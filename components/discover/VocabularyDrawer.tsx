@@ -174,13 +174,13 @@ export default function VocabularyDrawer({
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
                     <span
-                      className="text-[17px] font-semibold text-black"
+                      className="text-[1.0625rem] font-semibold text-black"
                     >
                       {(item.texts[primaryLanguage] ?? "")}
                     </span>
 
                     {(
-                      <span className="text-[11px] text-ink-faint">
+                      <span className="text-[0.6875rem] text-ink-faint">
                         {partOfSpeechLabels[
                           normalizePartOfSpeech(item.partOfSpeech)
                         ]}

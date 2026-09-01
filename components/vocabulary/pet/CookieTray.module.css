@@ -5,7 +5,7 @@
 
 .empty {
   text-align: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: color-mix(in oklab, var(--color-black) 40%, transparent);
 }
@@ -21,7 +21,7 @@
 .hint {
   margin-top: 10px;
   text-align: center;
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.02em;
   color: color-mix(in oklab, var(--color-black) 35%, transparent);
 }
@@ -32,7 +32,7 @@
   justify-content: center;
   height: 46px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: color-mix(in oklab, var(--color-black) 40%, transparent);
 }
 
@@ -113,7 +113,7 @@
 .glyphText {
   position: relative;
   font-family: ui-monospace, "SF Mono", "Menlo", monospace;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -277,7 +277,7 @@
   justify-content: center;
   padding: 0 4px;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.02em;
@@ -329,7 +329,7 @@
   padding: 0 10px;
   border: 0;
   background: transparent;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: color-mix(in oklab, var(--color-black) 40%, transparent);
   cursor: pointer;
 }
@@ -340,7 +340,7 @@
   padding: 4px 10px;
   border: 0;
   background: transparent;
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0.02em;
   color: color-mix(in oklab, var(--color-black) 45%, transparent);
   cursor: pointer;
@@ -348,7 +348,7 @@
 
 .wrap[data-cosmic="true"] .collapse {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--cosmic-cyan);
@@ -359,7 +359,7 @@
    either side the way the deck marks a readout. */
 .wrap[data-cosmic="true"] .hint {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 0.625rem;
   letter-spacing: 0.1em;
   color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
 }
@@ -368,7 +368,7 @@
 .wrap[data-cosmic="true"] .hint::after {
   content: "◆";
   margin: 0 7px;
-  font-size: 6px;
+  font-size: 0.375rem;
   vertical-align: middle;
   opacity: 0.5;
 }

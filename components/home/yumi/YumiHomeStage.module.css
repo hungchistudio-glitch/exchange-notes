@@ -784,7 +784,7 @@
 }
 
 .primaryText {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: #1c1a16;
@@ -795,7 +795,7 @@
   border: none;
   background: none;
   padding: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   /* 0.4 was 2.47:1 on --surface for a 12px control label; 0.62 is 4.69:1. */
   color: rgba(28, 26, 22, 0.62);
   cursor: pointer;

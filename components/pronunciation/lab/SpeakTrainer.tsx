@@ -217,11 +217,11 @@ export default function SpeakTrainer({
   return (
     <div className="space-y-4">
       <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+        <p className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
           {copy.listenFirst}
         </p>
 
-        <p className="font-cjk mt-2 text-[24px] font-bold leading-tight tracking-[-0.02em]">
+        <p className="font-cjk mt-2 text-[1.5rem] font-bold leading-tight tracking-[-0.02em]">
           {targetText}
         </p>
 
@@ -236,7 +236,7 @@ export default function SpeakTrainer({
           <button
             type="button"
             onClick={() => playNative("slow")}
-            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-4 text-[0.8125rem] font-semibold text-ink-soft transition-colors hover:text-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
             {t.pronunciation.lab.detail.slowSpeed}
           </button>
@@ -272,7 +272,7 @@ export default function SpeakTrainer({
               )}
             </button>
 
-            <p className="text-[13px] font-medium text-ink-soft" aria-live="polite">
+            <p className="text-[0.8125rem] font-medium text-ink-soft" aria-live="polite">
               {recording
                 ? copy.recording
                 : analyzing
@@ -300,7 +300,7 @@ export default function SpeakTrainer({
 
       {clipSource ? (
         <section className="rounded-3xl border border-black/[0.06] bg-white p-5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+          <h3 className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
             {copy.compare}
           </h3>
 
@@ -317,7 +317,7 @@ export default function SpeakTrainer({
               aria-label={copy.playNative}
               className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-3 py-3 transition-colors hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.native}
               </span>
               <AudioGlyph phase={phaseFor("native")} size="sm" />
@@ -329,7 +329,7 @@ export default function SpeakTrainer({
               aria-label={copy.playYours}
               className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface px-3 py-3 transition-colors hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
             >
-              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                 {copy.you}
               </span>
               <AudioGlyph phase={phaseFor("you")} size="sm" />
@@ -346,7 +346,7 @@ export default function SpeakTrainer({
                 { source: clipSource },
               ])
             }
-            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-line bg-white text-[13px] font-semibold text-ink-strong transition-colors hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-line bg-white text-[0.8125rem] font-semibold text-ink-strong transition-colors hover:bg-black/[0.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
           >
             {copy.native} → {copy.you} → {copy.native} → {copy.you}
           </button>

@@ -30,7 +30,7 @@ export default function DeviceSettingsPage() {
         />
 
         <div className="flex-1 space-y-5 px-5 pt-5 sm:px-6">
-          <p className="px-1.5 text-[13px] leading-[21px] text-ink-soft">
+          <p className="px-1.5 text-[0.8125rem] leading-[1.3125rem] text-ink-soft">
             {copy.pageDescription}
           </p>
 

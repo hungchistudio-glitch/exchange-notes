@@ -114,7 +114,7 @@ function RowText({
       <span
         id={titleId}
         className={[
-          "block text-[16px] font-semibold leading-[21px] tracking-[-0.02em]",
+          "block text-[1rem] font-semibold leading-[1.3125rem] tracking-[-0.02em]",
           danger ? "text-red-600" : "text-black",
         ].join(" ")}
       >
@@ -126,7 +126,7 @@ function RowText({
         // sentence that is worth reading in full.
         <span
           id={descriptionId}
-          className="mt-0.5 block text-[13px] leading-[18px] text-ink-soft"
+          className="mt-0.5 block text-[0.8125rem] leading-[1.125rem] text-ink-soft"
         >
           {description}
         </span>
@@ -139,7 +139,7 @@ function RowValue({ value }: Pick<SharedProps, "value">) {
   if (!value) return null;
 
   return (
-    <span className="max-w-[42%] shrink-0 truncate text-[14px] font-medium text-ink-soft">
+    <span className="max-w-[42%] shrink-0 truncate text-[0.875rem] font-medium text-ink-soft">
       {value}
     </span>
   );
