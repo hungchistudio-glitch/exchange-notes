@@ -11,6 +11,7 @@ import {
   type VocabularyLanguageIdentity,
 } from "@/lib/vocabulary/languageIdentity";
 import { insertVocabulary } from "@/lib/vocabulary/repository";
+import { announceWordSaved } from "@/lib/vocabulary/savedWords";
 
 /* =========================================================
    One door into the vocabulary table
@@ -226,5 +227,18 @@ export async function createVocabularyEntry(
     status: input.status ?? "new",
   });
 
-  return { item: inserted as VocabularyItem, identity };
+  const item = inserted as VocabularyItem;
+
+  /*
+   * The list on screen hears about it here, not at the five call sites.
+   *
+   * Four of the five never told it, so a word saved from the camera, a
+   * message, the menu scanner or the news drawer stayed invisible until the
+   * app was restarted. Announcing at the door is the same bargain the rest
+   * of this function makes: a new save surface gets it without knowing it
+   * needs to.
+   */
+  announceWordSaved(item);
+
+  return { item, identity };
 }
