@@ -3,6 +3,7 @@ import {
   promptLanguagePair,
   whenScriptRuleApplies,
 } from "@/lib/ai/languagePrompt";
+import { exampleSentenceRules } from "@/lib/ai/prompts/exampleSentence";
 import type { LanguageCode } from "@/lib/languages";
 
 /**
@@ -42,8 +43,10 @@ Rules:
   details.
 - Use low confidence whenever the object is blurry, partly hidden, ambiguous,
   or too small.
-- "termExample" is a short natural sentence in ${firstName};
-  "translationExample" is the same sentence in ${secondName}.
+- "termExample" is one example sentence in ${firstName};
+  "translationExample" is the same sentence in ${secondName}, each reading as
+  though it had been written in its own language rather than translated.
+${exampleSentenceRules()}
 - The two languages are recorded on the saved word, so it keeps them whatever
   the learner studies later.
   `.trim();

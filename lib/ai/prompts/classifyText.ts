@@ -2,6 +2,7 @@ import {
   promptLanguageName,
   whenScriptRuleApplies,
 } from "@/lib/ai/languagePrompt";
+import { exampleSentenceRules } from "@/lib/ai/prompts/exampleSentence";
 import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
 import type { LexiconQueryKind } from "@/lib/lexicon/types";
@@ -161,9 +162,11 @@ ${languageInstruction}
 ${kindInstruction}
 
 Rules:${scriptRule}
-- "termExample" is a short natural sentence in the same language as "term".
+- "termExample" is one example sentence in the same language as "term".
   "translationExample" is that same sentence in the same language as
-  "translation". They must mean the same thing.
+  "translation". They must mean the same thing, and each must read as though
+  it had been written in its own language rather than translated.
+${exampleSentenceRules()}
 - If the input is misspelled, answer for the word the reader most likely
   meant, put the correct spelling in "term", and use low confidence.
 - If you cannot tell what was meant, make your best guess and use low

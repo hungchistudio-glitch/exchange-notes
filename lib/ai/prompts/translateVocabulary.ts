@@ -1,4 +1,5 @@
 import { promptLanguageName, whenScriptRuleApplies } from "@/lib/ai/languagePrompt";
+import { exampleSentenceRules } from "@/lib/ai/prompts/exampleSentence";
 import type { LanguageCode } from "@/lib/languages";
 
 export type VocabularyToTranslate = {
@@ -59,9 +60,11 @@ Rules:
   word in one is settled by the others.
 - "text" is the word or phrase in ${targetName}, in the form it would be
   looked up in — not a sentence, and not an explanation.
-- "example" is one short natural sentence in ${targetName} using it. It should
-  mean roughly what the examples above mean where they exist, but read as
-  something a person would actually say rather than a translation of them.
+- "example" is one example sentence in ${targetName} using it. Where the
+  examples above exist it should mean roughly what they mean, but it must read
+  as something a person would actually say rather than as a translation of
+  them.
+${exampleSentenceRules()}
 - If a word has no ordinary equivalent in ${targetName} — a name, a piece of
   culture with no counterpart — give the form a ${targetName} speaker would
   actually use, borrowed or transliterated, rather than inventing one.
