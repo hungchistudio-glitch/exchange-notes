@@ -10,7 +10,12 @@ import { Bookmark, BookmarkCheck, LoaderCircle, Volume2 } from "lucide-react";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getCurrentUser } from "@/lib/vocabulary/repository";
-import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
+import {
+  DuplicateVocabularyError,
+  createVocabularyEntry,
+} from "@/lib/vocabulary/createEntry";
+import { findDuplicate } from "@/lib/lexicon/personal";
+import useVocabulary from "@/hooks/useVocabulary";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
@@ -109,16 +114,43 @@ export default function VocabularyDrawer({
 
   const [savedWordKeys, setSavedWordKeys] = useState<Set<string>>(new Set());
   const [savingWordKey, setSavingWordKey] = useState<string | null>(null);
+  const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
+
+  /*
+   * The reader's own words, so a recommendation they already have is shown
+   * as already theirs rather than as something to tap.
+   *
+   * Seventeen percent of a week's recommendations are already in this
+   * library, and the proportion only grows. Every one of them used to offer
+   * a save button that threw DuplicateVocabularyError into a console nobody
+   * was reading: the button did not move, no message appeared, and the
+   * feature looked broken at exactly the moment it was working correctly.
+   */
+  const { items } = useVocabulary();
 
   async function handleSaveWord(cacheKey: string, item: VocabularyItem) {
     if (savingWordKey || savedWordKeys.has(cacheKey)) return;
 
     setSavingWordKey(cacheKey);
+    setSaveErrors((current) => {
+      if (!(cacheKey in current)) return current;
+      const next = { ...current };
+      delete next[cacheKey];
+      return next;
+    });
 
     try {
       const { user } = await getCurrentUser();
 
-      if (!user) return;
+      if (!user) {
+        // Was a bare `return`, which left the reader tapping a button that
+        // did nothing and said nothing.
+        setSaveErrors((current) => ({
+          ...current,
+          [cacheKey]: copy.saveWordLoginError,
+        }));
+        return;
+      }
 
       /*
        * Saved under the languages on screen, not the ones the reader
@@ -145,9 +177,33 @@ export default function VocabularyDrawer({
       setSavedWordKeys((current) => new Set(current).add(cacheKey));
     } catch (error) {
       console.error("Failed to save vocabulary word:", error);
+
+      /*
+       * A duplicate is not a failure. The word is in the library, which is
+       * what the reader wanted, so the button settles into the same state it
+       * would have reached by saving — the only case that can reach here now
+       * is a word saved somewhere else while this sheet was open, because
+       * the ones already in the library never offered a button.
+       */
+      if (error instanceof DuplicateVocabularyError) {
+        setSavedWordKeys((current) => new Set(current).add(cacheKey));
+        return;
+      }
+
+      setSaveErrors((current) => ({
+        ...current,
+        [cacheKey]: copy.saveWordError,
+      }));
     } finally {
       setSavingWordKey(null);
     }
+  }
+
+  /** Whether this word is already one of the reader's, under its own language. */
+  function alreadyInLibrary(item: VocabularyItem) {
+    return Boolean(
+      findDuplicate(items, item.texts[primaryLanguage] ?? "", primaryLanguage),
+    );
   }
 
   return (
@@ -166,6 +222,16 @@ export default function VocabularyDrawer({
             const englishExampleKey = `${baseKey}-en-example`;
             const chineseExampleKey = `${baseKey}-zh-example`;
 
+            const owned = alreadyInLibrary(item);
+            /*
+             * Already theirs, or saved in this sitting. Either way the button
+             * is a tick rather than an invitation — the reader can see at a
+             * glance which of the three are new to them.
+             */
+            const saved = owned || savedWordKeys.has(wordKey);
+            const saveError = saveErrors[wordKey];
+            const word = item.texts[primaryLanguage] ?? "";
+
             const wordBlock = (
               <div
                 key="word"
@@ -176,7 +242,7 @@ export default function VocabularyDrawer({
                     <span
                       className="text-[1.0625rem] font-semibold text-black"
                     >
-                      {(item.texts[primaryLanguage] ?? "")}
+                      {word}
                     </span>
 
                     {(
@@ -187,6 +253,21 @@ export default function VocabularyDrawer({
                       </span>
                     )}
                   </div>
+
+                  {owned && (
+                    <p className="mt-0.5 text-[0.6875rem] text-ink-faint">
+                      {copy.wordAlreadySaved}
+                    </p>
+                  )}
+
+                  {saveError && (
+                    <p
+                      role="status"
+                      className="mt-1 text-[0.6875rem] leading-4 text-[var(--accent-amber-deep)]"
+                    >
+                      {saveError}
+                    </p>
+                  )}
 
                   <PronunciationBlock
                     className="mt-0.5"
@@ -204,14 +285,19 @@ export default function VocabularyDrawer({
                     <SaveWordButton
                       onClick={() => void handleSaveWord(wordKey, item)}
                       saving={savingWordKey === wordKey}
-                      saved={savedWordKeys.has(wordKey)}
+                      saved={saved}
                       ariaLabel={
-                        savedWordKeys.has(wordKey)
-                          ? copy.addedToVocabulary
-                          : copy.addToVocabularyAriaLabel.replace(
+                        owned
+                          ? copy.wordAlreadySavedAriaLabel.replace(
                               "{word}",
-                              (item.texts[primaryLanguage] ?? "")
+                              word,
                             )
+                          : saved
+                            ? copy.addedToVocabulary
+                            : copy.addToVocabularyAriaLabel.replace(
+                                "{word}",
+                                word,
+                              )
                       }
                     />
                   )}

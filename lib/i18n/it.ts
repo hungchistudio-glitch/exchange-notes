@@ -574,6 +574,10 @@ const italian: TranslationDictionary = {
     addToVocabulary: "Aggiungi al vocabolario",
     addedToVocabulary: "Aggiunto",
     addToVocabularyAriaLabel: "Aggiungi {word} al vocabolario",
+    wordAlreadySaved: "Già tra le tue parole",
+    wordAlreadySavedAriaLabel: "{word} è già tra le tue parole",
+    saveWordError: "Non è stato possibile salvare questa parola. Riprova.",
+    saveWordLoginError: "Accedi per salvare le parole.",
     exploreImageLabel: "Esplora questa immagine · {count} parole",
   },
   capture: {

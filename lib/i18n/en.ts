@@ -603,6 +603,10 @@ const english: TranslationDictionary = {
     addToVocabulary: "Add to Vocabulary",
     addedToVocabulary: "Added",
     addToVocabularyAriaLabel: "Add {word} to Vocabulary",
+    wordAlreadySaved: "Already in your words",
+    wordAlreadySavedAriaLabel: "{word} is already in your words",
+    saveWordError: "Could not save this word. Please try again.",
+    saveWordLoginError: "Sign in to save words.",
 
     exploreImageLabel: "Explore this image · {count} words",
   },

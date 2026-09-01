@@ -603,6 +603,10 @@ const spanish: TranslationDictionary = {
     addToVocabulary: "Añadir al vocabulario",
     addedToVocabulary: "Añadida",
     addToVocabularyAriaLabel: "Añadir {word} al vocabulario",
+    wordAlreadySaved: "Ya está en tus palabras",
+    wordAlreadySavedAriaLabel: "{word} ya está en tus palabras",
+    saveWordError: "No se pudo guardar esta palabra. Inténtalo de nuevo.",
+    saveWordLoginError: "Inicia sesión para guardar palabras.",
 
     exploreImageLabel: "Explorar esta imagen · {count} palabras",
   },

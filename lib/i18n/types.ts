@@ -567,6 +567,10 @@ export type TranslationDictionary = {
     addToVocabulary: string;
     addedToVocabulary: string;
     addToVocabularyAriaLabel: string;
+    wordAlreadySaved: string;
+    wordAlreadySavedAriaLabel: string;
+    saveWordError: string;
+    saveWordLoginError: string;
 
     exploreImageLabel: string;
   };
