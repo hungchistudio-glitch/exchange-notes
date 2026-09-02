@@ -1325,6 +1325,14 @@ const italian: TranslationDictionary = {
     },
   },
   vocabulary: {
+    selection: {
+      addWord: "Aggiungi al vocabolario",
+      addedWord: "Aggiunta alle tue parole",
+      sendToPartner: "Invia al tuo partner",
+      saveFailed: "Non è stato possibile salvare quella parola. Riprova.",
+      alreadySaved: "Quella parola è già nel tuo vocabolario.",
+      sendFailed: "Non è stato possibile preparare quella parola per l'invio. Riprova.",
+    },
     hero: {
       vocabulary: "Vocabolario",
       todayProgress: "Progressi di oggi",

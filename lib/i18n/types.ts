@@ -1404,6 +1404,14 @@ export type TranslationDictionary = {
   };
 
   vocabulary: {
+    selection: {
+      addWord: string;
+      addedWord: string;
+      sendToPartner: string;
+      saveFailed: string;
+      alreadySaved: string;
+      sendFailed: string;
+    };
     hero: {
       vocabulary: string;
       todayProgress: string;

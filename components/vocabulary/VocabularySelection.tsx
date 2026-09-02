@@ -11,6 +11,8 @@ import {
 import SelectionToolbar from "@/components/vocabulary/SelectionToolbar";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTextSelection from "@/hooks/useTextSelection";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { DuplicateVocabularyError } from "@/lib/vocabulary/createEntry";
 import type { VocabularyItem } from "@/lib/types/app";
 import { classifyText } from "@/lib/vocabulary/classify";
 import { saveClassifiedVocabulary } from "@/lib/vocabulary/service";
@@ -30,15 +32,20 @@ export default function VocabularySelection({
   const contentRef = useRef<HTMLDivElement>(null);
   const { pair: languagePair } = useDisplayLanguages();
 
+  const { t } = useTranslation();
+  const copy = t.vocabulary.selection;
+
   const [selection, setSelection] = useTextSelection(contentRef);
   const [addingWord, setAddingWord] = useState(false);
   const [addedWord, setAddedWord] = useState(false);
+  const [error, setError] = useState("");
 
   const handleAddSelectionToVocabulary = useCallback(async () => {
     if (!selection || addingWord) return;
 
     const text = selection.text;
     setAddingWord(true);
+    setError("");
 
     try {
       const data = await classifyText(text);
@@ -55,13 +62,27 @@ export default function VocabularySelection({
         setSelection(null);
         setAddedWord(false);
       }, 1100);
-    } catch (error) {
-      console.error("Failed to add word:", error);
-      setSelection(null);
+    } catch (saveError) {
+      console.error("Failed to add word:", saveError);
+
+      /*
+       * The selection stays put.
+       *
+       * This used to clear it, which dismissed the toolbar — so a word that
+       * failed to save looked exactly like a word that had saved, and the
+       * reader walked away believing they had it. Keeping the selection
+       * gives them the message and a second attempt in the same gesture.
+       */
+      setError(
+        saveError instanceof DuplicateVocabularyError
+          ? copy.alreadySaved
+          : copy.saveFailed,
+      );
     } finally {
       setAddingWord(false);
     }
   }, [
+    copy,
     addItem,
     addingWord,
     selection,
@@ -76,6 +97,7 @@ export default function VocabularySelection({
     if (!selectedText) return;
 
     setAddingWord(true);
+    setError("");
 
     try {
       const data = await classifyText(selectedText);
@@ -123,15 +145,18 @@ export default function VocabularySelection({
       window.getSelection()?.removeAllRanges();
       setSelection(null);
       onSendToPartner(selectedVocabulary);
-    } catch (error) {
+    } catch (sendError) {
       console.error(
         "Failed to prepare selected vocabulary:",
-        error,
+        sendError,
       );
+
+      setError(copy.sendFailed);
     } finally {
       setAddingWord(false);
     }
   }, [
+    copy,
     addingWord,
     item,
     onSendToPartner,
@@ -146,6 +171,7 @@ export default function VocabularySelection({
         selection={selection}
         addingWord={addingWord}
         addedWord={addedWord}
+        error={error}
         onAddWord={handleAddSelectionToVocabulary}
         onSendToPartner={handleSelectionSendToPartner}
       />
