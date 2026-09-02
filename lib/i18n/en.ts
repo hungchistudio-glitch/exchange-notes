@@ -1425,6 +1425,14 @@ const english: TranslationDictionary = {
   },
 
   vocabulary: {
+    selection: {
+      addWord: "Add to vocabulary",
+      addedWord: "Added to your words",
+      sendToPartner: "Send to partner",
+      saveFailed: "That word could not be saved. Try again.",
+      alreadySaved: "That word is already in your vocabulary.",
+      sendFailed: "That word could not be prepared to send. Try again.",
+    },
     hero: {
       vocabulary: "Vocabulary",
       todayProgress: "Today’s progress",

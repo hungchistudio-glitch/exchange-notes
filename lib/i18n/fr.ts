@@ -1325,6 +1325,14 @@ const french: TranslationDictionary = {
     },
   },
   vocabulary: {
+    selection: {
+      addWord: "Ajouter au vocabulaire",
+      addedWord: "Ajouté à vos mots",
+      sendToPartner: "Envoyer à votre partenaire",
+      saveFailed: "Ce mot n'a pas pu être enregistré. Réessayez.",
+      alreadySaved: "Ce mot est déjà dans votre vocabulaire.",
+      sendFailed: "Ce mot n'a pas pu être préparé pour l'envoi. Réessayez.",
+    },
     hero: {
       vocabulary: "Vocabulaire",
       todayProgress: "Progression du jour",

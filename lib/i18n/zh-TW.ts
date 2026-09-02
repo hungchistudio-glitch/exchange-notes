@@ -1399,6 +1399,14 @@ const traditionalChinese: TranslationDictionary = {
   },
 
   vocabulary: {
+    selection: {
+      addWord: "加入單字庫",
+      addedWord: "已加入你的單字庫",
+      sendToPartner: "傳送給夥伴",
+      saveFailed: "這個字存不起來，請再試一次。",
+      alreadySaved: "這個字已經在你的單字庫裡了。",
+      sendFailed: "這個字準備不起來，請再試一次。",
+    },
     hero: {
       vocabulary: "單字",
       todayProgress: "今日進度",

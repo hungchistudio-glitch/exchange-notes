@@ -1425,6 +1425,14 @@ const spanish: TranslationDictionary = {
   },
 
   vocabulary: {
+    selection: {
+      addWord: "Añadir al vocabulario",
+      addedWord: "Añadida a tus palabras",
+      sendToPartner: "Enviar a tu compañero",
+      saveFailed: "No se pudo guardar esa palabra. Inténtalo de nuevo.",
+      alreadySaved: "Esa palabra ya está en tu vocabulario.",
+      sendFailed: "No se pudo preparar esa palabra para enviarla. Inténtalo de nuevo.",
+    },
     hero: {
       vocabulary: "Vocabulario",
       todayProgress: "Progreso de hoy",
