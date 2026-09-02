@@ -287,8 +287,17 @@ assertSize(nodeForUrl(largeWidget, nextLargeUrl), 34, 34, "Large next button");
 assertSize(nodeForUrl(largeWidget, englishSpeechUrl), 52, 52, "Large English audio button");
 assertSize(nodeForUrl(largeWidget, chineseSpeechUrl), 52, 52, "Large Chinese audio button");
 
+/*
+ * Every route the widget deep-links to, and the file that serves it.
+ *
+ * "/" moved in 5d4df4d: the protected root became app/(protected)/home and
+ * "/" is now the public landing, which redirects a signed-in reader to
+ * /home. The widget's link is still correct — this map was not, and this
+ * check has been failing on the stale path ever since rather than on
+ * anything to do with the widget.
+ */
 const routeFiles = {
-  "/": "app/(protected)/page.tsx",
+  "/": "app/(public)/page.tsx",
   "/vocabulary": "app/(protected)/vocabulary/page.tsx",
   "/capture": "app/(protected)/capture/page.tsx",
   "/profile": "app/(protected)/profile/page.tsx",
@@ -323,7 +332,14 @@ assert.match(
 );
 assert.match(vocabularyPage, /openWidgetWordId/);
 assert.match(capturePage, /searchParams\.get\(["']source["']\)/);
-assert.match(capturePage, /source\s*===\s*["']camera["']/);
+/*
+ * What the widget needs is that the page still honours ?source=camera. The
+ * assertion used to spell the variable out — /source\s*===\s*"camera"/ — and
+ * broke when it was renamed to sourceParam, which is a rename and not a
+ * regression. Matching the comparison rather than the identifier keeps the
+ * check about the behaviour the widget depends on.
+ */
+assert.match(capturePage, /===\s*["']camera["']/);
 // The /speak page used to compare the query value against "zh-TW" and
 // default everything else to English. It now resolves any language the app
 // knows — including the speech tags this widget actually sends — so the
