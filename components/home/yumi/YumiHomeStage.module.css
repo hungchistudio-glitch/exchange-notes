@@ -29,10 +29,6 @@
 }
 
 .stage {
-  animation-play-state: paused !important;
-}
-
-.stage {
   position: relative;
   background: radial-gradient(
     120% 160% at 50% 0%,
@@ -41,10 +37,6 @@
     #f0ede3 100%
   );
 }
-
-/* Yumi is meant to always be alive on screen — deliberately no
-   scroll-out-of-view animation pausing here (removed in favor of always
-   moving, even off-screen or briefly scrolled past). */
 
 .ambientLight {
   position: absolute;

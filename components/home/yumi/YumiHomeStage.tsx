@@ -209,7 +209,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     onConsume: handleCookieConsumed,
   });
 
-  const context = computeHomeContext(items);
+  const context = useMemo(() => computeHomeContext(items), [items]);
   const steadyMood = computeSteadyHomeMood(context);
   const displayMood: HomeMood = introMood ?? steadyMood;
 
@@ -393,9 +393,17 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     setIsWaking(false);
   }
 
-  const cookies: Cookie[] = buildAvailableCookies(
-    items,
-    petState?.fed_word_ids ?? [],
+  /*
+   * Memoised because the identity matters as much as the work.
+   *
+   * A fresh array every render is a fresh prop for the tray below, so the
+   * tray re-rendered on every mood tick, blink and drag frame even when not
+   * one cookie had changed.
+   */
+  const fedWordIds = petState?.fed_word_ids;
+  const cookies: Cookie[] = useMemo(
+    () => buildAvailableCookies(items, fedWordIds ?? []),
+    [items, fedWordIds],
   );
 
   const persistFeed = useFeedPersistence(petState, setPetState);

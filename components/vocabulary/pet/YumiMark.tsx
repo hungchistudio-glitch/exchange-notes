@@ -11,6 +11,8 @@ import type {
 import type { GrowthStage } from "@/lib/pet/moodEngine";
 import type { YumiMood } from "@/lib/pet/types";
 
+import useInView from "@/hooks/useInView";
+
 import YumiFeedingFace from "./YumiFeedingFace";
 import styles from "./YumiMark.module.css";
 
@@ -188,9 +190,19 @@ export default function YumiMark({
     mood,
   });
 
+  const { ref: stageRef, inView } = useInView<HTMLDivElement>();
+
   return (
     <div
+      ref={stageRef}
       className={styles.stage}
+      /*
+       * Paused when scrolled away — see .stage[data-in-view="false"] in the
+       * module CSS. The mark runs 28 infinite animations, and on the
+       * vocabulary page it sits above a list people scroll through, so most
+       * of the time it is being animated where nobody can see it.
+       */
+      data-in-view={inView ? "true" : "false"}
       data-cosmic={cosmic ? "true" : "false"}
       data-attract={attracted ? "true" : "false"}
       data-feeding={resolvedFeedingPhase}

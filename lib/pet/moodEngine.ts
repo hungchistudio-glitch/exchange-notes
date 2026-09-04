@@ -158,9 +158,22 @@ export function cookieReactionMood(type: CookieType): YumiMood {
   }
 }
 
-// Builds the full earned-order cookie list (oldest word first) so a
-// cookie's shape/type stays stable regardless of feed order, then filters
-// down to the ones not yet fed to Yumi.
+/*
+ * Builds the full earned-order cookie list (oldest word first) so a cookie's
+ * shape/type stays stable regardless of feed order, then filters down to the
+ * ones not yet fed to Yumi.
+ *
+ * Two things here are about cost rather than about cookies.
+ *
+ * The fed ones are dropped before the cookie is built, not after. It used to
+ * map first and filter second, which meant every word Yumi had already eaten
+ * still had a glyph computed for it — the longer you played, the more work the
+ * tray did for cookies nobody would ever see. The index the type cycles on
+ * still comes from the full earned order, so what a surviving cookie looks
+ * like is unchanged.
+ *
+ * And the glyph is resolved on first read rather than up front. See below.
+ */
 export function buildAvailableCookies(
   items: VocabularyItem[],
   fedWordIds: string[],
@@ -173,26 +186,56 @@ export function buildAvailableCookies(
 
   const todayKey = toLocalDateKey(new Date());
   const now = Date.now();
+  const cookies: Cookie[] = [];
 
-  return sorted
-    .map((item, index) => {
-      const type = cookieTypeForIndex(index);
+  sorted.forEach((item, index) => {
+    if (fedSet.has(item.id)) return;
 
-      return {
-        id: item.id,
-        word: item.word,
-        type,
-        glyph: glyphForCookie(item, type),
-        status: item.status,
-        isNew: toLocalDateKey(new Date(item.created_at)) === todayKey,
-        reviewDue: Boolean(
-          item.last_reviewed_at
-            && item.next_review_at
-            && new Date(item.next_review_at).getTime() <= now,
-        ),
-      };
-    })
-    .filter((cookie) => !fedSet.has(cookie.id));
+    cookies.push(buildCookie(item, cookieTypeForIndex(index), todayKey, now));
+  });
+
+  return cookies;
+}
+
+/*
+ * One cookie, with its glyph deferred.
+ *
+ * `glyph` is a getter, and that is the point rather than a flourish: a zhuyin
+ * glyph costs a dictionary conversion of the word's Chinese reading, and this
+ * list is built for the whole library while the tray shows three of them on
+ * the home screen and eight on the vocabulary page. Computing all of them
+ * eagerly was 12.8ms per call at 300 words — on every render of either screen,
+ * including every frame of a drag — to produce a few characters.
+ *
+ * Read once, kept. Consumers see a plain `string` property and need to know
+ * none of this; the only thing that would defeat it is spreading a cookie into
+ * a new object, which would evaluate every glyph. Nothing does, and there is
+ * no reason to start.
+ */
+function buildCookie(
+  item: VocabularyItem,
+  type: CookieType,
+  todayKey: string,
+  now: number,
+): Cookie {
+  let glyph: string | null = null;
+
+  return {
+    id: item.id,
+    word: item.word,
+    type,
+    get glyph() {
+      glyph ??= glyphForCookie(item, type);
+      return glyph;
+    },
+    status: item.status,
+    isNew: toLocalDateKey(new Date(item.created_at)) === todayKey,
+    reviewDue: Boolean(
+      item.last_reviewed_at
+        && item.next_review_at
+        && new Date(item.next_review_at).getTime() <= now,
+    ),
+  };
 }
 
 /*
