@@ -26,6 +26,7 @@ import ProfileLanguageSettingsButton from "@/components/settings/ProfileLanguage
 import DailyGoalSettingsButton from "@/components/settings/DailyGoalSettingsButton";
 import PronunciationSettingsButton from "@/components/settings/PronunciationSettingsButton";
 import FontSizeSettingsButton from "@/components/settings/FontSizeSettingsButton";
+import LaunchSoundSettingsButton from "@/components/settings/LaunchSoundSettingsButton";
 import AppLanguageSettingsButton from "@/components/settings/AppLanguageSettingsButton";
 import InterfaceModeSettingsButton from "@/components/settings/InterfaceModeSettingsButton";
 import WebPushSettingsButton from "@/components/settings/WebPushSettingsButton";
@@ -377,6 +378,10 @@ export default function ProfilePage() {
 
             <SettingsAnchor id="setting-font-size">
               <FontSizeSettingsButton />
+            </SettingsAnchor>
+
+            <SettingsAnchor id="setting-launch-sound">
+              <LaunchSoundSettingsButton />
             </SettingsAnchor>
           </SettingsSection>
 
