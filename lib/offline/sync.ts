@@ -155,7 +155,67 @@ export type FlushResult = {
  * sending the fourth edit to a word before the second is how a reader ends
  * up with a value they never chose.
  */
-export async function flushOutbox(): Promise<FlushResult> {
+/*
+ * The run in progress, if there is one.
+ *
+ * Two things start a flush — the app mounting, and the `online` event — and
+ * the ordinary case is both at once: a reader opens the app as the signal
+ * comes back. Nothing stopped them overlapping, so each held its own copy of
+ * the outbox, read before the other had emptied it, and every queued change
+ * was sent to the server twice. Duplicate inserts then came back as 23505,
+ * which this module correctly treats as terminal — so a completely normal
+ * reconnection logged "Dropped an offline change the server refused" and
+ * counted work as discarded that had in fact been done. Both runs also
+ * reported having sent everything, so the caller re-read the whole library
+ * twice.
+ *
+ * Sharing the promise rather than dropping the second call: a caller that
+ * asks for a flush is entitled to know when the outbox is empty, and the
+ * answer to "is it flushed yet" is the same answer for both of them.
+ */
+let inFlight: Promise<FlushResult> | null = null;
+
+export function flushOutbox(): Promise<FlushResult> {
+  inFlight ??= drainOutbox().finally(() => {
+    inFlight = null;
+  });
+
+  return inFlight;
+}
+
+/*
+ * Keeps going until there is nothing left, or nothing more will go.
+ *
+ * One pass reads the outbox once, so a word saved while that pass was in the
+ * air is not in the copy it is working from — and with callers now sharing a
+ * single run, that word would have waited for the next mount or the next
+ * `online` event, which can be a long time on a device that is simply staying
+ * online. The extra pass is free when there is nothing new: it is one indexed
+ * read that comes back empty.
+ *
+ * Each pass either sends at least one entry or reports what it stopped on, so
+ * this cannot spin.
+ */
+async function drainOutbox(): Promise<FlushResult> {
+  let sent = 0;
+  let dropped = 0;
+
+  for (;;) {
+    const pass = await runFlush();
+
+    sent += pass.sent;
+    dropped += pass.dropped;
+
+    // Stopped on something undeliverable — no signal. Nothing behind it will
+    // go through either, so report and leave the queue alone.
+    if (pass.remaining > 0) return { sent, dropped, remaining: pass.remaining };
+
+    const arrivedMeanwhile = await readOutbox();
+    if (arrivedMeanwhile.length === 0) return { sent, dropped, remaining: 0 };
+  }
+}
+
+async function runFlush(): Promise<FlushResult> {
   const pending = await readOutbox();
 
   if (pending.length === 0) {

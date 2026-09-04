@@ -56,10 +56,27 @@ export default function NameStep({
   const { t } = useTranslation();
   const copy = t.onboarding.name;
 
-  const [idStatus, setIdStatus] = useState<IdStatus>("idle");
+  /*
+   * The answer is stored with the handle it was an answer to.
+   *
+   * A bare status could not tell which keystroke it belonged to. The debounce
+   * clears the pending timer, but a check already in flight cannot be called
+   * back, so two overlapping lookups could resolve in either order and the
+   * screen would show whichever landed last — an ID reported free when it was
+   * taken, or taken when it was free, for a handle the reader had already
+   * edited. Since `canContinue` gates on this, that was a real chance of
+   * walking out of onboarding with a handle somebody else owns.
+   *
+   * Keying the result to its input makes a stale answer unusable rather than
+   * merely unlikely: it no longer matches, so it reads as "still checking",
+   * which is exactly what it is. Same shape EditProfileSheet already uses for
+   * the same lookup.
+   */
+  const [idCheck, setIdCheck] = useState<
+    { exchangeId: string; status: Exclude<IdStatus, "idle" | "checking"> } | null
+  >(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState("");
-  const checkTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const suggestedOnce = useRef(false);
 
@@ -79,36 +96,56 @@ export default function NameStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, initialExchangeId]);
 
+  const needsIdCheck =
+    exchangeId.length >= 3 && exchangeId !== initialExchangeId;
+
+  // Derived rather than stored: "idle" and "checking" follow from the current
+  // input, so only the asynchronous outcome is real state — and an outcome
+  // for a handle that has since been edited simply does not match.
+  const idStatus: IdStatus = !needsIdCheck
+    ? "idle"
+    : idCheck?.exchangeId === exchangeId
+      ? idCheck.status
+      : "checking";
+
+  /*
+   * Cancelled as well as keyed, and it needs to be both.
+   *
+   * Keying alone stops a stale answer being believed, but not from being
+   * stored — and storing it overwrites the answer for the handle actually in
+   * the field, which then has no request outstanding to replace it. The
+   * screen sits on "checking" and Continue never enables again. Dropping a
+   * resolution whose effect has already been torn down means the good answer
+   * is the one that survives.
+   */
   useEffect(() => {
-    if (checkTimeout.current) clearTimeout(checkTimeout.current);
+    if (!needsIdCheck) return;
 
-    const isUnchangedOrTooShort =
-      exchangeId.length < 3 || exchangeId === initialExchangeId;
+    let cancelled = false;
 
-    checkTimeout.current = setTimeout(
-      async () => {
-        if (isUnchangedOrTooShort) {
-          setIdStatus("idle");
-          return;
-        }
+    const timer = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const match = await findProfileByExchangeId(supabase, exchangeId);
 
-        setIdStatus("checking");
+        if (cancelled) return;
 
-        try {
-          const supabase = createClient();
-          const match = await findProfileByExchangeId(supabase, exchangeId);
-          setIdStatus(!match || match.id === userId ? "available" : "taken");
-        } catch {
-          setIdStatus("error");
-        }
-      },
-      isUnchangedOrTooShort ? 0 : 400,
-    );
+        setIdCheck({
+          exchangeId,
+          status: !match || match.id === userId ? "available" : "taken",
+        });
+      } catch {
+        if (cancelled) return;
+
+        setIdCheck({ exchangeId, status: "error" });
+      }
+    }, 400);
 
     return () => {
-      if (checkTimeout.current) clearTimeout(checkTimeout.current);
+      cancelled = true;
+      clearTimeout(timer);
     };
-  }, [exchangeId, initialExchangeId, userId]);
+  }, [exchangeId, needsIdCheck, userId]);
 
   async function handlePhotoSelected(fileList: FileList | null) {
     const file = fileList?.[0];
