@@ -2151,6 +2151,9 @@ export type TranslationDictionary = {
     launchSound: {
       rowTitle: string;
       rowDescription: string;
+      previewLabel: string;
+      previewPlaying: string;
+      previewFailed: string;
     };
 
     fontSize: {

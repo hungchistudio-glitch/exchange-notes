@@ -2148,6 +2148,9 @@ const traditionalChinese: TranslationDictionary = {
     launchSound: {
       rowTitle: "開場音效",
       rowDescription: "開啟 App 時隨開場動畫播放聲音",
+      previewLabel: "試聽",
+      previewPlaying: "播放中…",
+      previewFailed: "無法播放聲音",
     },
 
     fontSize: {
