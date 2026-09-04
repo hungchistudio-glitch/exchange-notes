@@ -71,28 +71,28 @@
 
 .overlay[data-feeding-phase="anticipating"] .mouthAssembly {
   opacity: 1;
-  animation: mouthAnticipate 520ms cubic-bezier(0.2, 0.85, 0.3, 1) both;
+  animation: mouthAnticipate 240ms cubic-bezier(0.2, 0.85, 0.3, 1) both;
 }
 
 .overlay[data-feeding-phase="anticipating"] .mouthCavity {
-  animation: cavityWait 540ms ease-in-out infinite alternate;
+  animation: cavityWait 420ms ease-in-out infinite alternate;
 }
 
 .overlay[data-feeding-phase="anticipating"] .tongue {
-  animation: tongueWait 540ms ease-in-out infinite alternate;
+  animation: tongueWait 420ms ease-in-out infinite alternate;
 }
 
 .overlay[data-feeding-phase="biting"] .mouthAssembly {
   opacity: 1;
-  animation: mouthBite 260ms cubic-bezier(0.5, 0, 0.2, 1) both;
+  animation: mouthBite 150ms cubic-bezier(0.5, 0, 0.2, 1) both;
 }
 
 .overlay[data-feeding-phase="biting"] .tongue {
-  animation: tongueBite 260ms ease-in both;
+  animation: tongueBite 150ms ease-in both;
 }
 
 .overlay[data-feeding-phase="biting"] .biteEnergy {
-  animation: biteEnergyBurst 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: biteEnergyBurst 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .overlay[data-feeding-phase="chewing"] .mouthAssembly {
@@ -111,60 +111,60 @@
 }
 
 .overlay[data-feeding-phase="chewing"][data-chew-beat="1"] .mouthAssembly {
-  animation: mouthChewLeft 250ms ease-in-out both;
+  animation: mouthChewLeft 180ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="chewing"][data-chew-beat="2"] .mouthAssembly {
-  animation: mouthChewRight 270ms ease-in-out both;
+  animation: mouthChewRight 190ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="chewing"][data-chew-beat="3"] .mouthAssembly {
-  animation: mouthChewSmall 220ms ease-in-out both;
+  animation: mouthChewSmall 170ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="chewing"][data-chew-beat="4"] .mouthAssembly {
-  animation: mouthChewFinish 285ms cubic-bezier(0.3, 0.7, 0.25, 1) both;
+  animation: mouthChewFinish 200ms cubic-bezier(0.3, 0.7, 0.25, 1) both;
 }
 
 .overlay[data-feeding-phase="chewing"] .leftCheek {
-  animation: cheekChewLeft 255ms ease-in-out both;
+  animation: cheekChewLeft 180ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="chewing"] .rightCheek {
-  animation: cheekChewRight 255ms ease-in-out both;
+  animation: cheekChewRight 180ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="chewing"] .tongue {
-  animation: tongueChew 255ms ease-in-out both;
+  animation: tongueChew 180ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="swallowing"] .mouthAssembly {
   opacity: 1;
-  animation: mouthSeal 600ms cubic-bezier(0.25, 0.7, 0.35, 1) both;
+  animation: mouthSeal 320ms cubic-bezier(0.25, 0.7, 0.35, 1) both;
 }
 
 .overlay[data-feeding-phase="swallowing"] .mouthCavity,
 .overlay[data-feeding-phase="swallowing"] .upperLip,
 .overlay[data-feeding-phase="swallowing"] .lowerLip,
 .overlay[data-feeding-phase="swallowing"] .tongue {
-  animation: mouthDisappear 240ms ease-in forwards;
+  animation: mouthDisappear 140ms ease-in forwards;
 }
 
 .overlay[data-feeding-phase="swallowing"] .upperTeeth,
 .overlay[data-feeding-phase="swallowing"] .lowerTeeth {
-  animation: mouthDisappear 180ms ease-in forwards;
+  animation: mouthDisappear 110ms ease-in forwards;
 }
 
 .overlay[data-feeding-phase="swallowing"] .smile {
-  animation: smileIn 360ms ease-out 180ms both;
+  animation: smileIn 200ms ease-out 90ms both;
 }
 
 .overlay[data-feeding-phase="swallowing"] .swallowTrack {
-  animation: trackIn 700ms ease-in-out both;
+  animation: trackIn 330ms ease-in-out both;
 }
 
 .overlay[data-feeding-phase="swallowing"] .swallowTrack path {
-  animation: trackStrain 700ms cubic-bezier(0.3, 0, 0.45, 1) both;
+  animation: trackStrain 330ms cubic-bezier(0.3, 0, 0.45, 1) both;
 }
 
 /*
@@ -173,13 +173,13 @@
  */
 .overlay[data-feeding-phase="swallowing"] .swallowPulse {
   animation:
-    swallowDown 700ms cubic-bezier(0.3, 0, 0.45, 1) both,
-    swallowTint 700ms linear both;
+    swallowDown 330ms cubic-bezier(0.3, 0, 0.45, 1) both,
+    swallowTint 330ms linear both;
 }
 
 /* The gulp runs across the whole face, so it has to sit on the root. */
 .overlay[data-feeding-phase="swallowing"] {
-  animation: swallowGulp 700ms cubic-bezier(0.34, 0.9, 0.4, 1) both;
+  animation: swallowGulp 330ms cubic-bezier(0.34, 0.9, 0.4, 1) both;
   transform-origin: 50% 62%;
 }
 
@@ -190,7 +190,7 @@
  * mouthSeal belongs to the swallowing selector, so the moment the phase turns
  * to satisfied the rule stops matching and its `both` fill goes with it — the
  * assembly snapped back to its untransformed coordinates and stayed there for
- * the 2.3 seconds satisfied lasts. The cavity, lips and tongue are hidden
+ * however long satisfied lasts. The cavity, lips and tongue are hidden
  * below, so what was left visible was .smile: a dark stroke, at a position no
  * other phase ever puts it, painting across the status line under Yumi.
  *
@@ -211,13 +211,13 @@
 
 .overlay[data-feeding-phase="satisfied"] .smile {
   opacity: 1;
-  animation: satisfiedSmile 1.8s ease-in-out infinite;
+  animation: satisfiedSmile 1.1s ease-in-out infinite;
 }
 
 .overlay[data-feeding-phase="satisfied"] .leftCheek,
 .overlay[data-feeding-phase="satisfied"] .rightCheek {
   opacity: 0.58;
-  animation: satisfiedCheek 1.8s ease-in-out infinite;
+  animation: satisfiedCheek 1.1s ease-in-out infinite;
 }
 
 @keyframes mouthAnticipate {

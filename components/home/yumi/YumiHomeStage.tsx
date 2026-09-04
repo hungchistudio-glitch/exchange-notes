@@ -1,7 +1,14 @@
 "use client";
 
 import { toWidgetLanguage } from "@/lib/widget/yumiWidgetBridge";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
@@ -9,6 +16,7 @@ import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
+import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -21,7 +29,7 @@ import {
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 import { getPronunciationData } from "@/lib/pronunciation";
-import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
+import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -390,47 +398,54 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     petState?.fed_word_ids ?? [],
   );
 
-  async function persistFeed(cookie: Cookie) {
-    if (!petState) return;
-
-    try {
-      const supabase = createClient();
-      const updated = await feedCookie(supabase, petState, cookie.id);
-      setPetState(updated);
-    } catch {
-      // Optimistic UI already played the reaction.
-    }
-  }
+  const persistFeed = useFeedPersistence(petState, setPetState);
 
   // Yumi's eyes glance toward whichever cookie is currently being
   // dragged, clamped to a small max offset so it reads as a glance rather
   // than the pupil detaching from the eye.
-  function handleDragPoint(point: { x: number; y: number } | null) {
-    if (!point) {
-      setPupilOffset(null);
-      return;
-    }
+  const handleDragPoint = useCallback(
+    (point: { x: number; y: number } | null) => {
+      if (!point) {
+        setPupilOffset(null);
+        return;
+      }
 
-    const rect = figureRef.current?.getBoundingClientRect();
-    if (!rect) {
-      setPupilOffset(null);
-      return;
-    }
+      const rect = figureRef.current?.getBoundingClientRect();
+      if (!rect) {
+        setPupilOffset(null);
+        return;
+      }
 
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = point.x - centerX;
-    const dy = point.y - centerY;
-    const distance = Math.hypot(dx, dy);
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = point.x - centerX;
+      const dy = point.y - centerY;
+      const distance = Math.hypot(dx, dy);
+      const next =
+        distance === 0
+          ? { x: 0, y: 0 }
+          : (() => {
+              const clamped = Math.min(distance, MAX_PUPIL_OFFSET);
 
-    if (distance === 0) {
-      setPupilOffset({ x: 0, y: 0 });
-      return;
-    }
+              return {
+                x: (dx / distance) * clamped,
+                y: (dy / distance) * clamped,
+              };
+            })();
 
-    const clamped = Math.min(distance, MAX_PUPIL_OFFSET);
-    setPupilOffset({ x: (dx / distance) * clamped, y: (dy / distance) * clamped });
-  }
+      /*
+       * Bail out when the eyes are already there.
+       *
+       * A fresh object on every report is a fresh render on every report, and
+       * this one is reported from a pointermove — so a drag that paused with
+       * the finger still down kept re-rendering the whole stage for nothing.
+       */
+      setPupilOffset((prev) =>
+        prev && prev.x === next.x && prev.y === next.y ? prev : next,
+      );
+    },
+    [],
+  );
 
   function handleCookieConsumed(cookie: Cookie) {
     setReaction(cookieHomeReaction(cookie.type));
@@ -441,7 +456,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
       REACTION_DURATION_MS,
     );
 
-    void persistFeed(cookie);
+    persistFeed(cookie);
   }
 
   /*
@@ -612,7 +627,14 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
             onFeedStart={feeding.beginApproach}
             feedTargetRef={feedTargetRef}
             onDragPoint={handleDragPoint}
-            disabled={!petState || feeding.isFeeding}
+            /* Not disabled while Yumi is eating.
+               A mouthful now runs ~1.6s, and gating the whole tray on it made
+               feeding a queue: the tray went inert the moment a cookie left it
+               and stayed inert until the chewing finished, so cookies had to be
+               handed over one at a time. Yumi's sequence restarts cleanly on
+               each bite, and each cookie flies on its own, so there is nothing
+               left for the lock to protect. */
+            disabled={!petState}
             copy={cookieCopy}
             maxVisible={3}
             hideHint
