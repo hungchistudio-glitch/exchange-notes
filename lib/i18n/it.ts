@@ -1985,6 +1985,11 @@ const italian: TranslationDictionary = {
       testDeliveryError: "Non è stato possibile consegnare la notifica di prova. Riprova.",
       testNetworkError: "Il servizio di prova non è raggiungibile. Controlla la connessione e riprova.",
     },
+    launchSound: {
+      rowTitle: "Suono di apertura",
+      rowDescription: "Riproduci un suono con l'animazione di apertura",
+    },
+
     fontSize: {
       rowTitle: "Dimensione del testo",
       rowDescription: "Regola il testo in tutta l'app",

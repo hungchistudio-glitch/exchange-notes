@@ -637,3 +637,87 @@ export function subscribeToTutorialPending(
     window.removeEventListener("storage", handleStorage);
   };
 }
+
+/* =========================================================
+   The opening animation's sound
+   ========================================================= */
+
+const LAUNCH_SOUND_STORAGE_KEY = "exchange-notes-launch-sound";
+const LAUNCH_SOUND_EVENT = "exchange-notes-launch-sound-change";
+
+/**
+ * On by default, because a sound nobody has heard is a sound nobody knows to
+ * look for. It runs for 2.8 seconds, once per document load, and the whole
+ * point of this switch is that anyone who does not want it can say so.
+ */
+export const DEFAULT_LAUNCH_SOUND_ENABLED = true;
+
+/*
+ * localStorage only, no cookie — and that is a decision rather than an
+ * omission. See lib/preferences/serverPreferences.ts: a preference earns a
+ * cookie when the *first* HTML is wrong without it. The mode picks a whole
+ * component tree, the language every string, the font size every rem, the
+ * goal a number rendered in two places. This one decides whether an audio
+ * element is asked to play, which the server does not render, and shows up in
+ * exactly one place: the switch on its own settings row. That row corrects
+ * itself once after hydration for a reader who turned the sound off, which is
+ * a single switch updating rather than a document rebuilding.
+ */
+export function getLaunchSoundEnabled(): boolean {
+  if (typeof window === "undefined") return DEFAULT_LAUNCH_SOUND_ENABLED;
+
+  try {
+    const saved = window.localStorage.getItem(LAUNCH_SOUND_STORAGE_KEY);
+
+    if (saved === null) return DEFAULT_LAUNCH_SOUND_ENABLED;
+
+    return saved === "true";
+  } catch {
+    // Storage blocked or unavailable. The default is the safe answer.
+    return DEFAULT_LAUNCH_SOUND_ENABLED;
+  }
+}
+
+export function setLaunchSoundEnabled(enabled: boolean) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(LAUNCH_SOUND_STORAGE_KEY, String(enabled));
+  } catch {
+    // The event still fires, so the switch answers this session even where
+    // the choice cannot be remembered past it.
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<boolean>(LAUNCH_SOUND_EVENT, { detail: enabled }),
+  );
+}
+
+export function subscribeToLaunchSound(listener: (enabled: boolean) => void) {
+  if (typeof window === "undefined") return () => undefined;
+
+  function handleChange(event: Event) {
+    const customEvent = event as CustomEvent<boolean>;
+
+    if (typeof customEvent.detail === "boolean") {
+      listener(customEvent.detail);
+    }
+  }
+
+  // Another tab. The switch is the same account's, so it should agree.
+  function handleStorage(event: StorageEvent) {
+    if (event.key === LAUNCH_SOUND_STORAGE_KEY) {
+      listener(event.newValue === null
+        ? DEFAULT_LAUNCH_SOUND_ENABLED
+        : event.newValue === "true");
+    }
+  }
+
+  window.addEventListener(LAUNCH_SOUND_EVENT, handleChange);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener(LAUNCH_SOUND_EVENT, handleChange);
+    window.removeEventListener("storage", handleStorage);
+  };
+}

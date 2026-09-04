@@ -6,6 +6,7 @@ import {
   subscribeToAppFontSize,
   subscribeToDailyGoalWords,
   subscribeToInterfaceLanguage,
+  subscribeToLaunchSound,
 } from "@/lib/appPreferences";
 import { loadTranslations } from "@/lib/i18n";
 import {
@@ -122,6 +123,7 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
       subscribeToAppFontSize(scheduleWrite),
       subscribeToInterfaceLanguage(scheduleWrite),
       subscribeToDailyGoalWords(scheduleWrite),
+      subscribeToLaunchSound(scheduleWrite),
       subscribeToSpeechSettings(scheduleWrite),
     ];
 

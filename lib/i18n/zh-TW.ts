@@ -2145,6 +2145,11 @@ const traditionalChinese: TranslationDictionary = {
         "無法連線至測試服務，請檢查網路後再試一次。",
     },
 
+    launchSound: {
+      rowTitle: "開場音效",
+      rowDescription: "開啟 App 時隨開場動畫播放聲音",
+    },
+
     fontSize: {
       rowTitle: "字體大小",
       rowDescription: "調整 App 內的文字大小",
