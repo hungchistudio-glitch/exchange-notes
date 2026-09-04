@@ -1988,6 +1988,9 @@ const french: TranslationDictionary = {
     launchSound: {
       rowTitle: "Son d'ouverture",
       rowDescription: "Jouer un son avec l'animation d'ouverture",
+      previewLabel: "Écouter",
+      previewPlaying: "Lecture…",
+      previewFailed: "Impossible de lire le son",
     },
 
     fontSize: {

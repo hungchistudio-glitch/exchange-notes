@@ -1,11 +1,8 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const migration = readFileSync(
-  join(process.cwd(), "supabase/migrations/20260829044233_multilingual_social_notes.sql"),
-  "utf8",
-);
+import { readMigration } from "./readMigration";
+
+const migration = readMigration("multilingual_social_notes");
 
 describe("multilingual social notes migration", () => {
   it("preserves the canonical note and seeds existing translations without AI", () => {

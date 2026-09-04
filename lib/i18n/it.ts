@@ -1988,6 +1988,9 @@ const italian: TranslationDictionary = {
     launchSound: {
       rowTitle: "Suono di apertura",
       rowDescription: "Riproduci un suono con l'animazione di apertura",
+      previewLabel: "Ascolta",
+      previewPlaying: "Riproduzione…",
+      previewFailed: "Impossibile riprodurre il suono",
     },
 
     fontSize: {

@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { readMigration } from "./readMigration";
+
 /* =========================================================
    public_profiles is a directory, not a way to edit the directory
 
@@ -98,10 +100,7 @@ describe("the grants that make that true", () => {
      * living only as a change someone once made by hand — a project rebuilt
      * from migrations alone has to come back safe.
      */
-    const migration = readFileSync(
-      "supabase/migrations/20260902005607_public_profiles_read_only.sql",
-      "utf8",
-    );
+    const migration = readMigration("public_profiles_read_only");
 
     expect(migration).toMatch(
       /revoke[\s\S]*insert[\s\S]*update[\s\S]*delete[\s\S]*on\s+public\.public_profiles\s+from\s+authenticated/i,

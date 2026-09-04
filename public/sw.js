@@ -1,4 +1,4 @@
-const CACHE_NAME = "exchange-notes-v2";
+const CACHE_NAME = "exchange-notes-v3";
 // "/signup" was a dead legacy route (login only offers Google OAuth, no
 // link anywhere in the app points at it) — replaced with "/onboarding",
 // the real first-run route new accounts hit.
@@ -53,13 +53,48 @@ self.addEventListener("fetch", (event) => {
   // hit the network normally, uncached.
   if (url.pathname.startsWith("/api/")) return;
 
+  /*
+   * Range requests are left entirely alone.
+   *
+   * This is how a media element asks for audio — the opening sound and every
+   * zhuyin clip — and it produces a 206. The Cache API refuses to store a
+   * partial response, so `cache.put` below rejected on every one of them:
+   * "Failed to execute 'put' on 'Cache': Partial response (status code 206)
+   * is unsupported", uncaught, once per request.
+   *
+   * Not caught and moved on from, but skipped altogether. Answering a ranged
+   * media request through respondWith means this worker is now responsible
+   * for range semantics it does not implement — and the fallback below can
+   * hand a cached 200 to a request that asked for bytes 45000-45620, which a
+   * media element is entitled to reject. Returning nothing here lets the
+   * browser do what it already does correctly.
+   */
+  if (request.headers.has("range")) return;
+
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok) {
+        /*
+         * Only a plain 200 is storable. `response.ok` is true for the whole
+         * 2xx range, which is what let a 206 reach put() in the first place.
+         * Cross-origin responses are already excluded above, so status is the
+         * only remaining thing the Cache API objects to.
+         */
+        if (response.status === 200) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(request, clone))
+            .catch(() => {
+              /*
+               * Caching is an optimisation, and a failed one must not surface
+               * as an unhandled rejection in the console of every reader who
+               * happens to hit a response this worker cannot store.
+               */
+            });
         }
+
         return response;
       })
       .catch(async () => {

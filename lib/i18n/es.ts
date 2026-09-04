@@ -2191,6 +2191,9 @@ const spanish: TranslationDictionary = {
     launchSound: {
       rowTitle: "Sonido de apertura",
       rowDescription: "Reproduce un sonido con la animación de apertura",
+      previewLabel: "Escuchar",
+      previewPlaying: "Reproduciendo…",
+      previewFailed: "No se pudo reproducir el sonido",
     },
 
     fontSize: {

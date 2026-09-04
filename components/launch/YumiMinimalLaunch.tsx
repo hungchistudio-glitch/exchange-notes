@@ -19,6 +19,7 @@ import {
 import styles from "./YumiMinimalLaunch.module.css";
 import type { LaunchRendererProps } from "./types";
 import {
+  YUMI_MINIMAL_AUDIO_SRC,
   YUMI_MINIMAL_CHECKPOINTS,
   YUMI_MINIMAL_DURATION_MS,
   YUMI_MINIMAL_REDUCED_DURATION_MS,
@@ -26,8 +27,6 @@ import {
 } from "./yumiMinimalTimeline";
 
 const FIRST_FRAME = computeYumiMinimalFrame(0);
-const AUDIO_SRC = "/audio/yumi-minimal-opening.m4a";
-
 /*
  * play() as a promise, whatever the browser hands back.
  *
@@ -343,7 +342,7 @@ export default function YumiMinimalLaunch({
       aria-label={reviewMode ? "Yumi minimal opening animation review" : undefined}
       aria-hidden={reviewMode ? undefined : true}
     >
-      <audio ref={audioRef} src={AUDIO_SRC} preload="auto" />
+      <audio ref={audioRef} src={YUMI_MINIMAL_AUDIO_SRC} preload="auto" />
 
       {showHandoffPreview && (
         <div className={styles.handoffPreview} aria-hidden="true">

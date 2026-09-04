@@ -2194,6 +2194,9 @@ const english: TranslationDictionary = {
     launchSound: {
       rowTitle: "Opening sound",
       rowDescription: "Play a sound with the opening animation",
+      previewLabel: "Preview",
+      previewPlaying: "Playing…",
+      previewFailed: "Could not play the sound",
     },
 
     fontSize: {
