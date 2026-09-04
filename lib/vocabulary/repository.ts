@@ -6,7 +6,6 @@ import {
   type VocabularyLanguageFields,
 } from "@/lib/offline/vocabulary";
 import { createClient } from "@/lib/supabase/client";
-import { getVocabularyKey } from "@/lib/vocabulary/helpers";
 import type {
   LanguageMetadataSource,
   LanguagePairAtCreation,
@@ -56,28 +55,6 @@ export async function getCurrentUser() {
   } = await supabase.auth.getUser();
 
   return { supabase, user };
-}
-
-export async function vocabularyExists(
-  userId: string,
-  word: string,
-  translation: string,
-) {
-  const supabase = createClient();
-
-  const key = getVocabularyKey(word, translation);
-
-  const { data, error } = await supabase
-    .from("vocabulary_items")
-    .select("word, translation")
-    .eq("user_id", userId);
-
-  if (error) throw error;
-
-  return (data ?? []).some(
-    (item) =>
-      getVocabularyKey(item.word, item.translation) === key,
-  );
 }
 
 export type InsertVocabulary = {

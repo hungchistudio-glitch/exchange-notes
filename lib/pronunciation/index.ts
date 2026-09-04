@@ -55,7 +55,46 @@ type GetPronunciationDataInput = {
  * Spanish, French and Italian need is stress placement and liaison, which is
  * not an analogue of pinyin.
  */
+/*
+ * The conversions are pure, so the same string is converted once.
+ *
+ * Both halves are dictionary lookups over every character, and the callers are
+ * render paths that ask for the same few hundred words over and over — the
+ * cookie tray rebuilding a library's glyphs, a word list re-rendering, a card
+ * re-reading the word it is already showing. Measured at 0.056ms a call, which
+ * is nothing once and 17ms across a 300-word library, every render.
+ *
+ * Bounded because this is a long-lived tab and the key is arbitrary user text.
+ * The eviction is deliberately the crudest one that cannot leak: at the limit
+ * the map is dropped whole. A vocabulary is far smaller than the cap, so in
+ * practice this never fires; it exists so that a pathological input cannot
+ * grow the map without end.
+ */
+const MAX_PRONUNCIATION_CACHE = 4_000;
+
+let pronunciationCache = new Map<
+  string,
+  { pinyin: string | null; zhuyin: string | null }
+>();
+
 function computeChinesePronunciation(text: string): {
+  pinyin: string | null;
+  zhuyin: string | null;
+} {
+  const cached = pronunciationCache.get(text);
+  if (cached) return cached;
+
+  const computed = convertChinesePronunciation(text);
+
+  if (pronunciationCache.size >= MAX_PRONUNCIATION_CACHE) {
+    pronunciationCache = new Map();
+  }
+  pronunciationCache.set(text, computed);
+
+  return computed;
+}
+
+function convertChinesePronunciation(text: string): {
   pinyin: string | null;
   zhuyin: string | null;
 } {

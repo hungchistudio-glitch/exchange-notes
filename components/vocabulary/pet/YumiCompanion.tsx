@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -227,10 +234,19 @@ export default function YumiCompanion({
     }
   }, [items.length]);
 
-  const streak = computeWordStreak(items);
-  const cookies: Cookie[] = buildAvailableCookies(
-    items,
-    petState?.fed_word_ids ?? [],
+  const streak = useMemo(() => computeWordStreak(items), [items]);
+
+  /*
+   * Memoised because the identity matters as much as the work.
+   *
+   * A fresh array every render is a fresh prop for the tray below, so the
+   * tray re-rendered on every mood tick, blink and drag frame even when not
+   * one cookie had changed.
+   */
+  const fedWordIds = petState?.fed_word_ids;
+  const cookies: Cookie[] = useMemo(
+    () => buildAvailableCookies(items, fedWordIds ?? []),
+    [items, fedWordIds],
   );
   const growthStage = computeGrowthStage(petState?.total_cookies_fed ?? 0);
   const crownEarned = hasCrown(streak.currentStreak);
