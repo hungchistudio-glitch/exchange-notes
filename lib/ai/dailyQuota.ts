@@ -55,6 +55,15 @@ const memoryWindows = new Map<string, Window>();
 /** Latched per operation, so one route's outage does not mute the others. */
 const persistentQuotaUnavailable = new Set<AiOperation>();
 
+/*
+ * The fallback's day, and deliberately still UTC.
+ *
+ * The real counter rolls over on the reader's own midnight — the database
+ * function reads the zone their device reported. This one cannot: it exists
+ * precisely for the moments the database is unreachable, which is also when
+ * the zone is unreadable. A safety net whose window is off by a few hours is
+ * doing its job; a safety net that needs the thing that just failed is not.
+ */
 function utcDayKey(now: number) {
   return new Date(now).toISOString().slice(0, 10);
 }

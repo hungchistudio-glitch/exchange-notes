@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import NativePushRegister from "@/app/components/NativePushRegister";
 import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
+import DeviceTimeZoneSync from "@/components/foundation/DeviceTimeZoneSync";
 import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
@@ -130,6 +131,8 @@ export default async function ProtectedLayout({
           userId={user.id}
           stored={preferencesRow?.app_preferences ?? null}
         />
+
+        <DeviceTimeZoneSync userId={user.id} />
 
         {/*
           Both services belong to the authenticated app runtime. Keeping them

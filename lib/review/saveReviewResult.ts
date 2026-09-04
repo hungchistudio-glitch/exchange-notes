@@ -57,15 +57,16 @@ export async function saveReviewResult(
       response_time_ms: null,
     });
 
+  /*
+   * The review itself is saved by this point, so a failed event write is not
+   * the reader's problem and must not become their error. It is still worth
+   * one line in the console for whoever is looking.
+   */
   if (eventError) {
-    console.log("========== REVIEW EVENT ERROR ==========");
-    console.log(eventError);
-    console.log(JSON.stringify(eventError, null, 2));
-    console.log("code:", eventError.code);
-    console.log("message:", eventError.message);
-    console.log("details:", eventError.details);
-    console.log("hint:", eventError.hint);
-    console.log("========================================");
+    console.warn("A review event could not be recorded.", {
+      code: eventError.code,
+      message: eventError.message,
+    });
   }
 
   return next;

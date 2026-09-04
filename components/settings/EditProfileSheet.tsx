@@ -135,25 +135,43 @@ export default function EditProfileSheet({
       ? idCheck.status
       : "checking";
 
-  // Debounced Exchange ID availability check.
+  /*
+   * Debounced Exchange ID availability check, cancelled as well as keyed.
+   *
+   * Keying the answer to its handle stops a stale one being believed, but not
+   * from being stored — and storing it overwrites the answer for the handle
+   * actually in the field, which then has no request outstanding to replace
+   * it. The row sits on "checking" and Save never enables again. Dropping a
+   * resolution whose effect has already been torn down means the good answer
+   * is the one that survives.
+   */
   useEffect(() => {
     if (!open || !needsIdCheck) return;
+
+    let cancelled = false;
 
     const timeout = setTimeout(async () => {
       try {
         const supabase = createClient();
         const match = await findProfileByExchangeId(supabase, exchangeId);
 
+        if (cancelled) return;
+
         setIdCheck({
           exchangeId,
           status: !match || match.id === userId ? "available" : "taken",
         });
       } catch {
+        if (cancelled) return;
+
         setIdCheck({ exchangeId, status: "error" });
       }
     }, 400);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [exchangeId, needsIdCheck, open, userId]);
 
   const isDirty =
