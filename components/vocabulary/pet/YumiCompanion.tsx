@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import useYumiOrbitMenu from "@/hooks/pet/useYumiOrbitMenu";
 import {
@@ -15,7 +16,7 @@ import {
   daysSince,
   hasCrown,
 } from "@/lib/pet/moodEngine";
-import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
+import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, YumiMood, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -246,22 +247,11 @@ export default function YumiCompanion({
   const mood = reactionMood ?? (searchHasNoResults ? "confused" : steadyMood);
   const greeting = dailyProgress === 0 ? copy.greetingWaiting : copy.greetingDefault;
 
-  async function persistFeed(cookie: Cookie) {
-    if (!petState) return;
-
-    try {
-      const supabase = createClient();
-      const updated = await feedCookie(supabase, petState, cookie.id);
-      setPetState(updated);
-    } catch {
-      // Optimistic UI already played the reaction — a failed write here
-      // just means growth won't be remembered next visit.
-    }
-  }
+  const persistFeed = useFeedPersistence(petState, setPetState);
 
   function handleCookieConsumed(cookie: Cookie) {
     triggerReaction(cookieReactionMood(cookie.type), REACTION_DURATION_MS);
-    void persistFeed(cookie);
+    persistFeed(cookie);
   }
 
   const feeding = useYumiFeedingSequence({
@@ -474,7 +464,14 @@ export default function YumiCompanion({
           onFeed={feeding.consume}
           onFeedStart={handleFeedStart}
           feedTargetRef={feedTargetRef}
-          disabled={!petState || feeding.isFeeding}
+          /* Not disabled while Yumi is eating.
+             A mouthful now runs ~1.6s, and gating the whole tray on it made
+             feeding a queue: the tray went inert the moment a cookie left it
+             and stayed inert until the chewing finished, so cookies had to be
+             handed over one at a time. Yumi's sequence restarts cleanly on
+             each bite, and each cookie flies on its own, so there is nothing
+             left for the lock to protect. */
+          disabled={!petState}
           copy={copy}
           onDragPoint={handleCookieDragPoint}
           cosmic={isCosmic}

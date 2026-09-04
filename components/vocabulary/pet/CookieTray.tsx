@@ -108,20 +108,49 @@ function coreAriaLabel(copy: MascotCopy, cookie: Cookie) {
     .replace("{state}", state);
 }
 
-type DragPhase = "pending" | "dragging" | "returning" | "releasing";
+type GhostPhase = "pending" | "dragging" | "releasing" | "returning";
 
-type DragState = {
+/*
+ * One cookie between the tray and Yumi's mouth.
+ *
+ * There used to be a single one of these, which is what made feeding a queue:
+ * picking up a second cookie while the first was still flying overwrote the
+ * first, so it never landed, was never eaten, and Yumi was left waiting for a
+ * cookie that no longer existed — with the tray disabled off that same wait.
+ * A list means a release hands the cookie off to its own flight and frees the
+ * hand immediately, which is the whole "keep feeding" behaviour.
+ */
+type Ghost = {
+  // An instance id, not the cookie's: the same cookie can be picked up again
+  // while an earlier flight of it is still in the air.
+  id: number;
+  // Which finger owns this one, or null once it has been let go. Also what
+  // keeps a second contact from stealing a drag out from under the first.
+  pointerId: number | null;
   cookie: Cookie;
   originX: number;
   originY: number;
   x: number;
   y: number;
-  phase: DragPhase;
-  // True only while the pointer is inside Yumi's attraction zone. Lives on
-  // the drag rather than in its own state so it can never disagree with the
-  // drag it describes.
+  phase: GhostPhase;
   attracted: boolean;
 };
+
+// How long to wait for a flight's transition before settling it anyway. These
+// sit just past the CSS durations (0.5s for the feed, 0.3s for the return).
+const FEED_FLIGHT_MS = 700;
+const RETURN_FLIGHT_MS = 520;
+// With transitions off there is nothing to wait for, and 700ms of nothing is
+// exactly the stall the reduced-motion path is supposed to avoid.
+const REDUCED_FLIGHT_MS = 60;
+// Comfortably past the ~300ms a touch browser may take to synthesise a click.
+const RECENT_FEED_MS = 800;
+
+function prefersReducedMotion() {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 export default function CookieTray({
   cookies,
@@ -138,26 +167,88 @@ export default function CookieTray({
   onAttractChange,
   expandable = true,
 }: CookieTrayProps) {
-  const [drag, setDrag] = useState<DragState | null>(null);
+  const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [expanded, setExpanded] = useState(false);
-  const dragRef = useRef<DragState | null>(null);
-  const settledRef = useRef(false);
+
+  // Pointer events resolve against the ref, never against rendered state:
+  // a down and an up can land in the same React batch on a fast tap, and the
+  // up has to see what the down wrote.
+  const ghostsRef = useRef<Ghost[]>([]);
+  const ghostSeqRef = useRef(0);
+  /*
+   * The in-flight timers, keyed by ghost.
+   *
+   * Presence in this map is also the "not settled yet" flag — the single
+   * boolean that used to serve that purpose could only ever describe one
+   * flight, so with two in the air it settled the wrong one.
+   */
+  // Cookies fed a moment ago, so a trailing synthetic click cannot feed one of
+  // them again. Each entry removes itself; the set only ever holds the last
+  // instant's worth, and nothing outside this component reads it.
+  const recentlyFedRef = useRef(new Set<string>());
+  const flightTimersRef = useRef(
+    new Map<
+      number,
+      { raf: number; fallback: ReturnType<typeof setTimeout> }
+    >(),
+  );
+
+  function updateGhosts(next: (prev: Ghost[]) => Ghost[]) {
+    const resolved = next(ghostsRef.current);
+    ghostsRef.current = resolved;
+    setGhosts(resolved);
+  }
+
+  function patchGhost(id: number, patch: Partial<Ghost>) {
+    updateGhosts((prev) =>
+      prev.map((ghost) => (ghost.id === id ? { ...ghost, ...patch } : ghost)),
+    );
+  }
+
+  function heldGhost(pointerId: number) {
+    return ghostsRef.current.find(
+      (ghost) =>
+        ghost.pointerId === pointerId
+        && (ghost.phase === "pending" || ghost.phase === "dragging"),
+    );
+  }
+
+  const liveDrag = ghosts.find((ghost) => ghost.phase === "dragging") ?? null;
+  /*
+   * Yumi's eyes follow the cookie, and this is reported by value.
+   *
+   * The dependency used to be the drag object itself, which is rebuilt on
+   * every pointermove — and on the home screen the handler on the other end
+   * was a plain function, so a new identity every render re-ran this, which
+   * set state, which rendered, which re-ran this. A drag there was a render
+   * loop for as long as the finger was down, and the cookie visibly stopped
+   * keeping up with it. Depending on the coordinates means this fires when
+   * the cookie actually moves and not once per render.
+   */
+  const dragX = liveDrag?.x ?? null;
+  const dragY = liveDrag?.y ?? null;
+  const onDragPointRef = useRef(onDragPoint);
+  const onAttractChangeRef = useRef(onAttractChange);
 
   useEffect(() => {
-    if (!onDragPoint) return;
+    onDragPointRef.current = onDragPoint;
+    onAttractChangeRef.current = onAttractChange;
+  });
 
-    if (drag && drag.phase === "dragging") {
-      onDragPoint({ x: drag.x, y: drag.y });
-    } else {
-      onDragPoint(null);
+  useEffect(() => {
+    if (dragX === null || dragY === null) {
+      onDragPointRef.current?.(null);
+      return;
     }
-  }, [drag, onDragPoint]);
+
+    onDragPointRef.current?.({ x: dragX, y: dragY });
+  }, [dragX, dragY]);
+
+  const dragAttracted = Boolean(liveDrag?.attracted);
 
   useEffect(() => {
-    if (!onAttractChange) return;
-
-    onAttractChange(Boolean(drag && drag.phase === "dragging" && drag.attracted));
-  }, [drag, onAttractChange]);
+    onAttractChangeRef.current?.(dragAttracted);
+  }, [dragAttracted]);
 
   /*
    * Expansion is derived rather than synchronised.
@@ -173,22 +264,6 @@ export default function CookieTray({
   const showAll = expanded && cookies.length > maxVisible;
   const visible = showAll ? cookies : cookies.slice(0, maxVisible);
   const overflowCount = Math.max(cookies.length - visible.length, 0);
-
-  function updateDrag(
-    next: DragState | null | ((prev: DragState | null) => DragState | null),
-  ) {
-    // Pointer down/up can arrive inside the same React event batch on a
-    // fast tap. Resolve against the ref synchronously so pointer-up always
-    // sees the state written by pointer-down; React state remains the
-    // rendering copy of the same value.
-    const resolved =
-      typeof next === "function"
-        ? next(dragRef.current)
-        : next;
-
-    dragRef.current = resolved;
-    setDrag(resolved);
-  }
 
   /*
    * Yumi's attraction zone, and the drop target with it.
@@ -214,75 +289,87 @@ export default function CookieTray({
     );
   }
 
-  function handlePointerDown(
-    event: React.PointerEvent<HTMLButtonElement>,
-    cookie: Cookie,
-  ) {
-    if (disabled) return;
+  function feedPoint() {
+    const target = feedTargetRef?.current ?? yumiZoneRef.current;
+    if (!target) return null;
 
-    event.currentTarget.setPointerCapture(event.pointerId);
+    const rect = target.getBoundingClientRect();
 
-    updateDrag({
-      cookie,
-      originX: event.clientX,
-      originY: event.clientY,
-      x: event.clientX,
-      y: event.clientY,
-      phase: "pending",
-      attracted: false,
-    });
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
-  function handlePointerMove(event: React.PointerEvent<HTMLButtonElement>) {
-    const current = dragRef.current;
-    if (!current || current.phase === "releasing" || current.phase === "returning") {
-      return;
-    }
+  /*
+   * Settles one flight, exactly once.
+   *
+   * Called from three places that can all race each other — the transition
+   * ending, the fallback timer, and a missing drop target — so the map lookup
+   * at the top is the guard: the first caller removes the timers, every later
+   * one finds nothing and returns.
+   */
+  function finishFlight(id: number) {
+    const timers = flightTimersRef.current.get(id);
+    if (!timers) return;
 
-    const dx = event.clientX - current.originX;
-    const dy = event.clientY - current.originY;
-    const dragging =
-      current.phase === "dragging" || Math.hypot(dx, dy) > DRAG_THRESHOLD;
+    cancelAnimationFrame(timers.raf);
+    clearTimeout(timers.fallback);
+    flightTimersRef.current.delete(id);
 
-    if (dragging && current.phase !== "dragging") haptic(8);
+    const ghost = ghostsRef.current.find((entry) => entry.id === id);
+    updateGhosts((prev) => prev.filter((entry) => entry.id !== id));
 
-    const attracted = dragging && isOverYumi(event.clientX, event.clientY);
+    if (!ghost || ghost.phase !== "releasing") return;
 
-    // Only on the way in. The zone edge is soft enough that a hand hovering
-    // across it would otherwise buzz repeatedly.
-    if (attracted && !current.attracted) haptic(5);
+    const fedId = ghost.cookie.id;
+    const recentlyFed = recentlyFedRef.current;
 
-    updateDrag({
-      ...current,
-      x: event.clientX,
-      y: event.clientY,
-      phase: dragging ? "dragging" : "pending",
-      attracted,
+    recentlyFed.add(fedId);
+    setTimeout(() => recentlyFed.delete(fedId), RECENT_FEED_MS);
+
+    onFeed(ghost.cookie);
+  }
+
+  // Second half of a release: on the next frame, move the ghost's target
+  // position — Yumi's mouth for a feed, the slot it came from for a cancel —
+  // so the CSS transition on the ghost animates it there, then settle when
+  // that finishes.
+  function beginFlight(id: number, phase: "releasing" | "returning") {
+    const raf = requestAnimationFrame(() => {
+      const ghost = ghostsRef.current.find((entry) => entry.id === id);
+      if (!ghost || ghost.phase !== phase) return;
+
+      const destination =
+        phase === "releasing"
+          ? feedPoint()
+          : { x: ghost.originX, y: ghost.originY };
+
+      // No Yumi to fly to. Settle rather than leave the cookie hanging over
+      // the page — a feed still counts, it just doesn't get its travel.
+      if (!destination) {
+        finishFlight(id);
+        return;
+      }
+
+      patchGhost(id, destination);
     });
+
+    const fallback = setTimeout(
+      () => finishFlight(id),
+      prefersReducedMotion()
+        ? REDUCED_FLIGHT_MS
+        : phase === "releasing"
+          ? FEED_FLIGHT_MS
+          : RETURN_FLIGHT_MS,
+    );
+
+    flightTimersRef.current.set(id, { raf, fallback });
   }
 
   // On release: either let go inside Yumi's zone, or a plain tap (never
   // dragged past the threshold) — both count as feeding, and both play the
   // same "fly to Yumi" transition for a consistent, satisfying finish. A drag
   // released anywhere else travels back to where it came from.
-  function handlePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    const current = dragRef.current;
-    if (!current) return;
-
-    const overYumi = isOverYumi(event.clientX, event.clientY);
-
-    if (current.phase !== "dragging" || overYumi) {
-      settledRef.current = false;
-      haptic(18);
-      onFeedStart?.(current.cookie);
-      updateDrag({
-        ...current,
-        x: current.phase === "dragging" ? event.clientX : current.originX,
-        y: current.phase === "dragging" ? event.clientY : current.originY,
-        phase: "releasing",
-        attracted: false,
-      });
-    } else {
+  function releaseGhost(ghost: Ghost, clientX: number, clientY: number) {
+    if (ghost.phase === "dragging" && !isOverYumi(clientX, clientY)) {
       /*
        * Cancelled, and it travels home rather than vanishing.
        *
@@ -291,115 +378,293 @@ export default function CookieTray({
        * form rejecting a field. The return is the same ghost on the same two
        * properties as the feed — only the easing and the destination differ.
        */
-      updateDrag({
-        ...current,
-        x: event.clientX,
-        y: event.clientY,
+      patchGhost(ghost.id, {
+        x: clientX,
+        y: clientY,
         phase: "returning",
         attracted: false,
+        pointerId: null,
       });
+      beginFlight(ghost.id, "returning");
+      return;
     }
+
+    haptic(18);
+    onFeedStart?.(ghost.cookie);
+    patchGhost(ghost.id, {
+      x: ghost.phase === "dragging" ? clientX : ghost.originX,
+      y: ghost.phase === "dragging" ? clientY : ghost.originY,
+      phase: "releasing",
+      attracted: false,
+      pointerId: null,
+    });
+    beginFlight(ghost.id, "releasing");
   }
 
+  function handlePointerDown(
+    event: React.PointerEvent<HTMLButtonElement>,
+    cookie: Cookie,
+  ) {
+    if (disabled) return;
+    // One hand at a time. A second contact landing mid-drag would fight the
+    // first for Yumi's gaze and for the attraction zone. Read from the ref,
+    // not from rendered state: two presses can land in the same batch.
+    if (ghostsRef.current.some((ghost) => ghost.pointerId !== null)) return;
+
+    /*
+     * Capture is best-effort, and deliberately not load-bearing.
+     *
+     * It throws on a pointer the browser no longer considers active, which
+     * some WebKit and assistive-touch paths produce — and when the whole drag
+     * hung off the captured element, that threw the gesture away and stranded
+     * whatever had already been picked up. The window listeners below are what
+     * actually carry the drag; this only keeps the button's own :active state
+     * honest while the finger is outside it.
+     */
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // No capture. The window listeners do not need it.
+    }
+
+    attachDragListeners();
+
+    const id = ghostSeqRef.current++;
+
+    updateGhosts((prev) => [
+      ...prev,
+      {
+        id,
+        pointerId: event.pointerId,
+        cookie,
+        originX: event.clientX,
+        originY: event.clientY,
+        x: event.clientX,
+        y: event.clientY,
+        phase: "pending",
+        attracted: false,
+      },
+    ]);
+  }
+
+  /*
+   * Move, up and cancel live on the window, not on the button.
+   *
+   * They used to be React handlers on the slot, which only saw anything at all
+   * because of pointer capture — so any path that lost or never established
+   * capture (capture refused, the element re-rendered out from under the
+   * pointer, an assistive-touch gesture) stopped delivering moves the moment
+   * the finger left the slot, and delivered no release at all. The cookie
+   * froze mid-air under a finger that was still moving and stayed there.
+   * Listening on the window means the release always arrives, captured or not.
+   */
+  function handleDragMove(event: PointerEvent) {
+    const ghost = heldGhost(event.pointerId);
+    if (!ghost) return;
+
+    const dx = event.clientX - ghost.originX;
+    const dy = event.clientY - ghost.originY;
+    const dragging =
+      ghost.phase === "dragging" || Math.hypot(dx, dy) > DRAG_THRESHOLD;
+
+    if (dragging && ghost.phase !== "dragging") haptic(8);
+
+    const attracted = dragging && isOverYumi(event.clientX, event.clientY);
+
+    // Only on the way in. The zone edge is soft enough that a hand hovering
+    // across it would otherwise buzz repeatedly.
+    if (attracted && !ghost.attracted) haptic(5);
+
+    patchGhost(ghost.id, {
+      x: event.clientX,
+      y: event.clientY,
+      phase: dragging ? "dragging" : "pending",
+      attracted,
+    });
+  }
+
+  function handleDragUp(event: PointerEvent) {
+    const ghost = heldGhost(event.pointerId);
+    if (!ghost) return;
+
+    releaseGhost(ghost, event.clientX, event.clientY);
+  }
+
+  /*
+   * Interrupted, not dropped.
+   *
+   * This used to delete the drag outright. That is fine while nothing has been
+   * promised, but a cancel arriving after the feed had been announced left
+   * Yumi mouth-open, waiting for a cookie that had ceased to exist, with the
+   * tray disabled off exactly that wait — a lock that lasted until reload.
+   * Sending it home is a complete outcome from any phase.
+   */
+  function handleDragCancel(event: PointerEvent) {
+    const ghost = heldGhost(event.pointerId);
+    if (!ghost) return;
+
+    patchGhost(ghost.id, {
+      phase: "returning",
+      attracted: false,
+      pointerId: null,
+    });
+    beginFlight(ghost.id, "returning");
+  }
+
+  /*
+   * The window listeners, attached the instant a finger goes down.
+   *
+   * Deliberately imperative rather than an effect keyed on "is something being
+   * dragged": an effect only runs after React has committed, so every pointer
+   * event between the press and that commit would be missed — and the press is
+   * exactly when the gesture starts. Attaching here means the drag is being
+   * listened for before `pointerdown` has even finished returning.
+   */
+  /*
+   * The window listeners, attached the instant a finger goes down.
+   *
+   * Deliberately imperative rather than an effect keyed on "is something being
+   * dragged": an effect only runs after React has committed, so every pointer
+   * event between the press and that commit would be missed — and the press is
+   * exactly when the gesture starts. Attaching here means the drag is being
+   * listened for before `pointerdown` has finished returning.
+   */
+  const pointerHandlersRef = useRef({
+    move: handleDragMove,
+    up: handleDragUp,
+    cancel: handleDragCancel,
+  });
+
+  // Refreshed after every render so the listeners, which are attached once per
+  // gesture, always call the current closures.
+  useEffect(() => {
+    pointerHandlersRef.current = {
+      move: handleDragMove,
+      up: handleDragUp,
+      cancel: handleDragCancel,
+    };
+  });
+
+  type DragListeners = {
+    move: (event: PointerEvent) => void;
+    up: (event: PointerEvent) => void;
+    cancel: (event: PointerEvent) => void;
+  };
+
+  // The same three function objects for the life of the component, because
+  // removeEventListener only accepts the identity it was given.
+  const listenersRef = useRef<DragListeners | null>(null);
+  const listeningRef = useRef(false);
+
+  function detachDragListeners() {
+    const listeners = listenersRef.current;
+    if (!listeners || !listeningRef.current) return;
+
+    listeningRef.current = false;
+    window.removeEventListener("pointermove", listeners.move);
+    window.removeEventListener("pointerup", listeners.up);
+    window.removeEventListener("pointercancel", listeners.cancel);
+  }
+
+  // Stops listening once no finger is holding anything. Ghosts still in the
+  // air are none of the pointer layer's business.
+  function detachIfHandsFree() {
+    if (ghostsRef.current.some((ghost) => ghost.pointerId !== null)) return;
+
+    detachDragListeners();
+  }
+
+  function attachDragListeners() {
+    if (listeningRef.current) return;
+
+    if (!listenersRef.current) {
+      listenersRef.current = {
+        move: (event) => pointerHandlersRef.current.move(event),
+        up: (event) => {
+          pointerHandlersRef.current.up(event);
+          detachIfHandsFree();
+        },
+        cancel: (event) => {
+          pointerHandlersRef.current.cancel(event);
+          detachIfHandsFree();
+        },
+      };
+    }
+
+    listeningRef.current = true;
+    window.addEventListener("pointermove", listenersRef.current.move);
+    window.addEventListener("pointerup", listenersRef.current.up);
+    window.addEventListener("pointercancel", listenersRef.current.cancel);
+  }
+
+  useEffect(() => {
+    const listeners = listenersRef;
+
+    return () => {
+      const attached = listeners.current;
+      if (!attached) return;
+
+      window.removeEventListener("pointermove", attached.move);
+      window.removeEventListener("pointerup", attached.up);
+      window.removeEventListener("pointercancel", attached.cancel);
+    };
+  }, []);
+
+  // Nothing may outlive the component. A pending flight's rAF or fallback
+  // firing after unmount would settle a ghost that no longer renders.
+  useEffect(() => {
+    const timers = flightTimersRef.current;
+
+    return () => {
+      timers.forEach(({ raf, fallback }) => {
+        cancelAnimationFrame(raf);
+        clearTimeout(fallback);
+      });
+      timers.clear();
+    };
+  }, []);
+
   // Accessibility activation and a few WebKit/assistive-touch paths can
-  // produce a click without delivering the matching pointer-up back to the
-  // captured element. This is a guarded fallback: a normal pointer-up has
-  // already moved the drag out of its pending phase, so it cannot feed twice.
+  // produce a click without any matching pointer sequence. This is a guarded
+  // fallback: a real release has already put this cookie into a flight, so it
+  // cannot feed the same cookie twice.
   function handleClick(
     event: React.MouseEvent<HTMLButtonElement>,
     cookie: Cookie,
   ) {
+    if (disabled) return;
+    // Still in the air from this same gesture's pointer release.
+    if (ghostsRef.current.some((ghost) => ghost.cookie.id === cookie.id)) return;
+    /*
+     * Or just landed. A click is synthesised after the pointer sequence, and
+     * on a touch browser it can trail the release by a few hundred
+     * milliseconds — longer than a reduced-motion flight, which settles in
+     * 60ms. Without this, the same tap could feed the cookie a second time.
+     */
+    if (recentlyFedRef.current.has(cookie.id)) return;
+
     const rect = event.currentTarget.getBoundingClientRect();
-    const current = dragRef.current ?? {
-      cookie,
-      originX: rect.left + rect.width / 2,
-      originY: rect.top + rect.height / 2,
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-      phase: "pending" as DragPhase,
-      attracted: false,
-    };
+    const originX = rect.left + rect.width / 2;
+    const originY = rect.top + rect.height / 2;
+    const id = ghostSeqRef.current++;
 
-    if (current.cookie.id !== cookie.id || current.phase !== "pending") return;
-
-    settledRef.current = false;
-    onFeedStart?.(current.cookie);
-    updateDrag({
-      ...current,
-      x: event.clientX || current.originX,
-      y: event.clientY || current.originY,
-      phase: "releasing",
-      attracted: false,
-    });
+    onFeedStart?.(cookie);
+    updateGhosts((prev) => [
+      ...prev,
+      {
+        id,
+        pointerId: null,
+        cookie,
+        originX,
+        originY,
+        x: originX,
+        y: originY,
+        phase: "releasing",
+        attracted: false,
+      },
+    ]);
+    beginFlight(id, "releasing");
   }
-
-  function settleRelease() {
-    if (settledRef.current) return;
-    settledRef.current = true;
-
-    const current = dragRef.current;
-    if (current) onFeed(current.cookie);
-    updateDrag(null);
-  }
-
-  // Second half of a release: on the next frame, move the ghost's target
-  // position — Yumi's centre for a feed, the tray slot it came from for a
-  // cancel — so the CSS transition on the ghost animates it there, then
-  // settle when that finishes.
-  useEffect(() => {
-    const phase = drag?.phase;
-    if (phase !== "releasing" && phase !== "returning") return;
-
-    if (phase === "returning") {
-      const raf = requestAnimationFrame(() => {
-        updateDrag((prev) =>
-          prev && prev.phase === "returning"
-            ? { ...prev, x: prev.originX, y: prev.originY }
-            : prev,
-        );
-      });
-
-      // Same safety net as the feed below: a transition that never fires
-      // must not leave a ghost stranded over the page.
-      const fallback = setTimeout(() => updateDrag(null), 520);
-
-      return () => {
-        cancelAnimationFrame(raf);
-        clearTimeout(fallback);
-      };
-    }
-
-    const zone = yumiZoneRef.current;
-    if (!zone || !drag) {
-      if (drag) onFeed(drag.cookie);
-      updateDrag(null);
-      return;
-    }
-
-    const target = feedTargetRef?.current ?? zone;
-    const rect = target.getBoundingClientRect();
-    const targetX = rect.left + rect.width / 2;
-    const targetY = rect.top + rect.height / 2;
-
-    const raf = requestAnimationFrame(() => {
-      updateDrag((prev) =>
-        prev && prev.phase === "releasing"
-          ? { ...prev, x: targetX, y: targetY }
-          : prev,
-      );
-    });
-
-    // Safety net: if the transition never fires (e.g. reduced-motion, or
-    // the cookie happened to already be at Yumi's position), still settle
-    // so the cookie doesn't get stuck un-fed.
-    const fallback = setTimeout(settleRelease, 700);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(fallback);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag?.phase]);
 
   // The ghost and the tray slots draw the same object, so the face is one
   // function rather than two that have to be kept looking alike.
@@ -436,7 +701,9 @@ export default function CookieTray({
         <>
           <div className={styles.tray}>
             {visible.map((cookie, index) => {
-              const isDragging = drag?.cookie.id === cookie.id;
+              const lifted = ghosts.some(
+                (ghost) => ghost.cookie.id === cookie.id,
+              );
 
               return (
                 <button
@@ -451,11 +718,8 @@ export default function CookieTray({
                   title={cookieLabel(copy, cookie.type)}
                   className={`${slotClass} ${
                     cosmic ? "" : styles[`cookie--${cookie.type}`]
-                  } ${isDragging ? styles.cookieHidden : ""}`}
+                  } ${lifted ? styles.cookieHidden : ""}`}
                   onPointerDown={(event) => handlePointerDown(event, cookie)}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  onPointerCancel={() => updateDrag(null)}
                   onClick={(event) => handleClick(event, cookie)}
                 >
                   {face(cookie, index, "resting")}
@@ -498,55 +762,73 @@ export default function CookieTray({
         </>
       )}
 
-      {drag && typeof document !== "undefined"
+      {typeof document !== "undefined"
         ? createPortal(
-            <div
-              className={`${cosmic ? styles.ghostCore : styles.ghost} ${
-                cosmic ? "" : styles[`cookie--${drag.cookie.type}`]
-              } ${
-                drag.phase === "releasing"
-                  ? styles.ghostFlying
-                  : drag.phase === "returning"
-                    ? styles.ghostReturning
-                    : styles.ghostDragging
-              }`}
-              data-attracted={drag.attracted ? "true" : "false"}
-              /*
-               * Position as a transform, not as left/top.
-               *
-               * This element is moved on every pointermove of a drag. Written
-               * to left/top that is a layout pass, a paint and a composite per
-               * frame — for a fixed-position element the browser cannot skip
-               * any of the three, and on a phone it is the difference between
-               * a Core that follows the finger and one that lags behind it.
-               * As a translate it is composited only, and the flight and the
-               * spring back become GPU transitions rather than animated
-               * geometry. See .ghost in the module CSS.
-               */
-              style={
-                {
-                  "--ghost-x": `${drag.x}px`,
-                  "--ghost-y": `${drag.y}px`,
-                } as CSSProperties
-              }
-              onTransitionEnd={
-                drag.phase === "releasing"
-                  ? settleRelease
-                  : drag.phase === "returning"
-                    ? () => updateDrag(null)
-                    : undefined
-              }
-            >
-              {face(
-                drag.cookie,
-                0,
-                drag.phase === "releasing"
-                  ? "absorbing"
-                  : drag.attracted
-                    ? "attracted"
-                    : "lifted",
-              )}
-            </div>,
+            <>
+              {ghosts.map((ghost) => (
+                <div
+                  key={ghost.id}
+                  className={`${cosmic ? styles.ghostCore : styles.ghost} ${
+                    cosmic ? "" : styles[`cookie--${ghost.cookie.type}`]
+                  } ${
+                    ghost.phase === "releasing"
+                      ? styles.ghostFlying
+                      : ghost.phase === "returning"
+                        ? styles.ghostReturning
+                        : styles.ghostDragging
+                  }`}
+                  data-attracted={ghost.attracted ? "true" : "false"}
+                  /*
+                   * Position as a transform, not as left/top.
+                   *
+                   * This element is moved on every pointermove of a drag.
+                   * Written to left/top that is a layout pass, a paint and a
+                   * composite per frame — for a fixed-position element the
+                   * browser cannot skip any of the three, and on a phone it is
+                   * the difference between a Core that follows the finger and
+                   * one that lags behind it. As a translate it is composited
+                   * only, and the flight and the spring back become GPU
+                   * transitions rather than animated geometry. See .ghost in
+                   * the module CSS.
+                   */
+                  style={
+                    {
+                      "--ghost-x": `${ghost.x}px`,
+                      "--ghost-y": `${ghost.y}px`,
+                    } as CSSProperties
+                  }
+                  onTransitionEnd={(event) => {
+                    if (ghost.phase !== "releasing" && ghost.phase !== "returning") {
+                      return;
+                    }
+
+                    /*
+                     * Only this element's own travel ends the flight.
+                     *
+                     * transitionend bubbles, and the Core inside this wrapper
+                     * fades its chassis out over 220ms while it is being
+                     * absorbed — so an unfiltered handler settled the flight
+                     * less than halfway through and the cookie jumped the rest
+                     * of the way into Yumi's mouth.
+                     */
+                    if (event.target !== event.currentTarget) return;
+                    if (event.propertyName !== "translate") return;
+
+                    finishFlight(ghost.id);
+                  }}
+                >
+                  {face(
+                    ghost.cookie,
+                    0,
+                    ghost.phase === "releasing"
+                      ? "absorbing"
+                      : ghost.attracted
+                        ? "attracted"
+                        : "lifted",
+                  )}
+                </div>
+              ))}
+            </>,
             document.body,
           )
         : null}
