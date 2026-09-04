@@ -31,6 +31,23 @@ parity after applying `vocabulary_media`, and fixed the same way:
 | `20260829041644_multilingual_social_notes` | `20260829044233` |
 | `20260829044312_notes_least_privilege_grants` | `20260829044342` |
 
+And three more, found on 2026-09-04 while checking parity before applying
+`ai_quota_local_day` — the same cause each time, an MCP `apply_migration`
+stamping its own version:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260831225716_ai_quota_refund` | `20260831232428` |
+| `20260902005607_public_profiles_read_only` | `20260902005619` |
+| `20260902012506_repair_rows_without_texts` | `20260902012558` |
+
+`ai_quota_local_day` was committed as `20260904165110` and recorded as
+`20260904173633`, and has been renamed on the same pass. All four files now
+match their rows, and the two sets are exactly equal at 66 each.
+
+The lesson keeps being the same one: **read the recorded version back
+immediately after applying, and rename the file to match before committing.**
+
 The first of those would have failed a replay rather than merely repeating it:
 it has nine `create policy` statements and only five `drop policy if exists`
 guards, so four of them would have raised `42710` against policies that are
