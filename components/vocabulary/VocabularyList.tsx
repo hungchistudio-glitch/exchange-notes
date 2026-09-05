@@ -260,6 +260,14 @@ const ROW_ESTIMATE: Record<VocabularyViewMode, number> = {
   cards: 132,
 };
 
+/*
+ * Enough to cover a tall phone before anything has been measured — a little
+ * over a screenful of the shorter compact rows. It is a fixed number rather
+ * than a calculation because there is nothing to calculate from yet: the
+ * viewport has not been found, which is the whole reason this pass exists.
+ */
+const FIRST_PAINT_ROWS = 12;
+
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -275,13 +283,27 @@ function VirtualWordList({
   renderRow: (item: VocabularyItem) => ReactNode;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
-  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+
+  /*
+   * Three answers, not two: undefined is "not looked yet", null is "looked
+   * and there is no scroller", an element is the scroller.
+   *
+   * This was a plain `HTMLElement | null` starting at null, and null carried
+   * both meanings at once — so the first render of every visit took the
+   * no-scroller branch below and built every word in the library, which the
+   * layout effect then threw away one render later. The list scrolled
+   * beautifully and took seconds to arrive, because virtualisation only ever
+   * applied from the second render onwards. Arriving is the common case.
+   */
+  const [scrollElement, setScrollElement] = useState<
+    HTMLElement | null | undefined
+  >(undefined);
 
   /*
    * The app's one scroller, found by walking up rather than threaded down.
    * AppViewport marks it deliberately — see data-app-scroll-viewport there.
-   * Layout effect so it is known before the first paint and the list does not
-   * flash empty.
+   * Layout effect so it is known before the first paint and the reader never
+   * sees the placeholder below.
    */
   useIsomorphicLayoutEffect(() => {
     setScrollElement(
@@ -291,6 +313,7 @@ function VirtualWordList({
   }, []);
 
   const gap = ROW_GAP[viewMode];
+  const estimatedRowHeight = ROW_ESTIMATE[viewMode] + gap;
 
   /*
    * The React Compiler's lint rule warns that it would skip memoising this
@@ -302,19 +325,63 @@ function VirtualWordList({
   // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: items.length,
-    getScrollElement: () => scrollElement,
-    estimateSize: () => ROW_ESTIMATE[viewMode] + gap,
+    getScrollElement: () => scrollElement ?? null,
+    estimateSize: () => estimatedRowHeight,
     getItemKey: (index) => items[index].id,
     // Enough rows either side that a fast flick does not outrun the render.
     overscan: 8,
   });
 
   /*
+   * The first render, before anything has been measured.
+   *
+   * A screenful of real rows, laid out exactly as the virtualiser will lay
+   * them out, against a spacer the height of the whole list. The scroller is
+   * found in the layout effect above and React flushes that before the
+   * browser paints, so this pass is normally never seen — but "normally" is
+   * not a thing worth promising a reader about whether their words are on
+   * screen, and a dozen rows costs nothing to be sure.
+   *
+   * This branch used to render *every* row, which is why arriving at a large
+   * library took seconds: virtualisation only ever applied from the second
+   * render onwards, so every visit paid for the whole list and then threw it
+   * away. 2,000 words built 188,003 DOM nodes to show twelve.
+   */
+  if (scrollElement === undefined) {
+    return (
+      <section ref={sectionRef} aria-label={label} className="mt-5">
+        <div
+          style={{
+            height: items.length * estimatedRowHeight,
+            position: "relative",
+          }}
+        >
+          {items.slice(0, FIRST_PAINT_ROWS).map((item, index) => (
+            <div
+              key={item.id}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${index * estimatedRowHeight}px)`,
+                paddingBottom: gap,
+              }}
+            >
+              {renderRow(item)}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  /*
    * No scroller found — a test, or this list mounted somewhere without the
    * app frame around it. Render the lot rather than render nothing: the
    * failure mode has to be "slow", never "the reader's words are missing".
    */
-  if (!scrollElement) {
+  if (scrollElement === null) {
     return (
       <section
         ref={sectionRef}
