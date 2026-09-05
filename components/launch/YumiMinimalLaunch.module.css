@@ -28,7 +28,11 @@
   overscroll-behavior: none;
 
   color: #090909;
-  background-color: rgb(255 255 255 / var(--scene-opacity));
+  /*
+   * Transparent: the white ground is .sceneWash below, so it can fade as a
+   * composited layer instead of repainting the viewport every frame.
+   */
+  background-color: transparent;
   font-family: var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
 
   contain: layout paint style;
@@ -37,6 +41,15 @@
 
 .launch audio {
   display: none;
+}
+
+.sceneWash {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-color: #ffffff;
+  opacity: var(--scene-opacity);
+  pointer-events: none;
 }
 
 .brandScene {

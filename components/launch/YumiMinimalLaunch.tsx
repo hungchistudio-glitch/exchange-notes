@@ -21,6 +21,7 @@ import {
   YUMI_MINIMAL_CHECKPOINTS,
   YUMI_MINIMAL_DURATION_MS,
   YUMI_MINIMAL_REDUCED_DURATION_MS,
+  buildYumiMinimalTracks,
   computeYumiMinimalFrame,
 } from "./yumiMinimalTimeline";
 
@@ -119,8 +120,77 @@ export default function YumiMinimalLaunch({
     [reducedMotion],
   );
 
+  /*
+   * The opening itself, handed to the compositor.
+   *
+   * One animation per element, transform and opacity only, so the browser can
+   * run them off the main thread. That matters more here than anywhere else
+   * in the app: this plays while the app is booting — hydrating, parsing
+   * chunks, fetching the reader's words — and a frame-at-a-time JavaScript
+   * animation competes with all of it and loses. The stutter used to land on
+   * the first thing anyone sees.
+   *
+   * The review tool keeps the JavaScript path below, because scrubbing is a
+   * request to be at a time rather than to travel through one.
+   */
   useEffect(() => {
-    if (!playing) return;
+    if (reviewMode || !playing) return;
+
+    const root = rootRef.current;
+    if (!root || typeof root.animate !== "function") return;
+
+    const tracks = buildYumiMinimalTracks(reducedMotion);
+    const animations: Animation[] = [];
+
+    for (const [name, keyframes] of Object.entries(tracks)) {
+      const element = root.querySelector<HTMLElement>(
+        `[data-track="${name}"]`,
+      );
+
+      // The handoff preview is only rendered for part of the sequence.
+      if (!element) continue;
+
+      animations.push(
+        element.animate(keyframes, {
+          duration,
+          // Sampled at a fixed rate, so the shape is already in the samples.
+          easing: "linear",
+          fill: "both",
+        }),
+      );
+    }
+
+    if (animations.length === 0) return;
+
+    let done = false;
+
+    /*
+     * Every track is the same length, so the first one to finish has
+     * finished them all. `finished` rejects when an animation is cancelled,
+     * which is what the cleanup below does, so the rejection is the ordinary
+     * unmount path and not a failure.
+     */
+    void animations[0].finished
+      .then(() => {
+        if (done) return;
+        done = true;
+        setPlaying(false);
+        onCompleteRef.current?.();
+      })
+      .catch(() => {});
+
+    return () => {
+      done = true;
+      for (const animation of animations) animation.cancel();
+    };
+  }, [duration, playing, reducedMotion, reviewMode]);
+
+  /*
+   * The review tool's clock. Scrubbing, pausing and replaying all want a
+   * specific time painted, which is what the frame function is for.
+   */
+  useEffect(() => {
+    if (!reviewMode || !playing) return;
 
     let origin = 0;
 
@@ -133,7 +203,6 @@ export default function YumiMinimalLaunch({
 
       if (time >= duration) {
         setPlaying(false);
-        if (!reviewMode) onCompleteRef.current?.();
         return;
       }
 
@@ -215,8 +284,16 @@ export default function YumiMinimalLaunch({
       aria-label={reviewMode ? "Yumi minimal opening animation review" : undefined}
       aria-hidden={reviewMode ? undefined : true}
     >
+      {/*
+        The white ground, as a layer rather than the root's background-colour.
+        A background-color cannot be composited — fading one across the whole
+        viewport repaints the whole viewport every frame — while the opacity
+        of a plain sheet can be handed to the compositor and forgotten about.
+      */}
+      <div data-track="sceneWash" className={styles.sceneWash} aria-hidden="true" />
+
       {showHandoffPreview && (
-        <div className={styles.handoffPreview} aria-hidden="true">
+        <div data-track="handoffPreview" className={styles.handoffPreview} aria-hidden="true">
           <header className={styles.previewHeader}>
             <ExchangeNotesLogo className={styles.previewLogo} decorative />
             <strong>Exchange Notes</strong>
@@ -243,10 +320,10 @@ export default function YumiMinimalLaunch({
         </div>
       )}
 
-      <div className={styles.brandScene} aria-hidden="true">
+      <div data-track="brandScene" className={styles.brandScene} aria-hidden="true">
         <div className={styles.actorAnchor}>
-          <div className={styles.actorEntry}>
-            <div className={styles.actorReaction}>
+          <div data-track="actorEntry" className={styles.actorEntry}>
+            <div data-track="actorReaction" className={styles.actorReaction}>
               <svg
                 className={styles.yumi}
                 viewBox={`0 0 ${geometry.canvas} ${geometry.canvas}`}
@@ -271,13 +348,13 @@ export default function YumiMinimalLaunch({
                 />
 
                 <path
-                  className={styles.coreBridge}
+                  data-track="coreBridge" className={styles.coreBridge}
                   d={geometry.bridge.d}
                   strokeWidth={coreBridgeStrokeWidth}
                   vectorEffect="non-scaling-stroke"
                 />
 
-                <g className={styles.eyeAssembly}>
+                <g data-track="eyeAssembly" className={styles.eyeAssembly}>
                   <circle
                     className={styles.eyeField}
                     cx={geometry.eye.cx}
@@ -287,7 +364,7 @@ export default function YumiMinimalLaunch({
                   />
 
                   <g clipPath={`url(#${eyeClipId})`}>
-                    <g className={styles.pupilGroup}>
+                    <g data-track="pupilGroup" className={styles.pupilGroup}>
                       <circle
                         className={styles.pupil}
                         cx={geometry.pupil.cx}
@@ -305,7 +382,7 @@ export default function YumiMinimalLaunch({
                     </g>
 
                     <path
-                      className={styles.closedEye}
+                      data-track="closedEye" className={styles.closedEye}
                       d={`M ${closedEyeX} ${geometry.eye.cy} Q ${geometry.eye.cx} ${
                         geometry.eye.cy + geometry.pupil.r * 0.18
                       } ${closedEyeEndX} ${geometry.eye.cy}`}
@@ -318,7 +395,7 @@ export default function YumiMinimalLaunch({
           </div>
         </div>
 
-        <div className={styles.wordmark}>Exchange Notes</div>
+        <div data-track="wordmark" className={styles.wordmark}>Exchange Notes</div>
       </div>
 
       {showReviewControls && (

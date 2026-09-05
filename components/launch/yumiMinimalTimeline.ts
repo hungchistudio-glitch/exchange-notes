@@ -273,3 +273,117 @@ export function computeYumiMinimalFrame(
     "--handoff-y": `${number(lerp(8, 0, handoff), 2)}px`,
   };
 }
+
+/*
+ * The same animation, expressed as something the compositor can run.
+ *
+ * The opening plays while the app is booting — hydrating, parsing chunks,
+ * asking the server for the reader's words — which is the busiest the main
+ * thread ever gets. Driven a frame at a time from JavaScript it competes with
+ * all of that and loses, and the stutter lands on the first thing anyone sees.
+ *
+ * These tracks are the identical motion sampled ahead of time and handed to
+ * the browser as transform and opacity keyframes. Nothing else is animated,
+ * which is what lets them run off the main thread: they keep their timing
+ * whatever else the app is doing.
+ *
+ * Sampled at 60Hz, which is the rate the JavaScript version was computing at
+ * anyway, so the springs keep their shape. Between samples the browser
+ * interpolates linearly — over a sixtieth of a second, on curves this smooth,
+ * that is well under a pixel.
+ */
+const SAMPLE_MS = 1000 / 60;
+
+/** One track per element, keyed by its data-track name. */
+export type YumiMinimalTracks = Record<string, Keyframe[]>;
+
+/*
+ * How each element composes its own transform out of the frame.
+ *
+ * These mirror the rules in YumiMinimalLaunch.module.css exactly — same
+ * functions, same order, same units. The stylesheet still holds them for the
+ * review tool, which scrubs by setting the custom properties directly.
+ */
+const TRACKS: Record<string, (frame: YumiMinimalFrame) => Keyframe> = {
+  sceneWash: (f) => ({ opacity: f["--scene-opacity"] }),
+
+  brandScene: (f) => ({
+    opacity: f["--scene-opacity"],
+    transform: `translate3d(0, ${f["--scene-exit-y"]}, 0)`,
+  }),
+
+  actorEntry: (f) => ({
+    opacity: f["--actor-opacity"],
+    transform: `translate3d(${f["--actor-x"]}, ${f["--actor-y"]}, 0)`,
+  }),
+
+  actorReaction: (f) => ({
+    transform:
+      `translate3d(${f["--actor-shift-x"]}, 0, 0) ` +
+      `rotate(${f["--actor-rotation"]}) ` +
+      `scale(${f["--body-scale-x"]}, ${f["--body-scale-y"]})`,
+  }),
+
+  coreBridge: (f) => ({ transform: `scaleX(${f["--bridge-scale"]})` }),
+
+  eyeAssembly: (f) => ({ transform: `translateX(${f["--eye-x"]})` }),
+
+  pupilGroup: (f) => ({
+    transform:
+      `translate(${f["--pupil-x"]}, ${f["--pupil-y"]}) ` +
+      `scaleY(${number(1 - Number(f["--blink"]))})`,
+  }),
+
+  closedEye: (f) => ({ opacity: f["--blink"] }),
+
+  wordmark: (f) => ({
+    opacity: f["--wordmark-opacity"],
+    transform: `translate3d(-50%, ${f["--wordmark-y"]}, 0)`,
+  }),
+
+  handoffPreview: (f) => ({
+    opacity: f["--handoff-opacity"],
+    transform: `translate3d(0, ${f["--handoff-y"]}, 0)`,
+  }),
+};
+
+export function buildYumiMinimalTracks(
+  reducedMotion = false,
+): YumiMinimalTracks {
+  const duration = reducedMotion
+    ? YUMI_MINIMAL_REDUCED_DURATION_MS
+    : YUMI_MINIMAL_DURATION_MS;
+
+  const tracks: YumiMinimalTracks = {};
+  for (const name of Object.keys(TRACKS)) tracks[name] = [];
+
+  /*
+   * A even 60Hz grid, plus the authored checkpoints, plus the end.
+   *
+   * The grid on its own never lands on the moments the animation was written
+   * around — the snap is at 1820ms and the sixtieths either side of it are
+   * 1816.67 and 1833.33 — and that is where the springs move fastest, so it
+   * is where missing by three milliseconds shows. Sampling the checkpoints
+   * exactly makes the poses land as authored, which the frame-at-a-time
+   * version never guaranteed either: it saw whatever times the browser
+   * happened to hand it.
+   */
+  const times = new Set<number>([duration]);
+
+  for (let time = 0; time < duration; time += SAMPLE_MS) times.add(time);
+
+  for (const [checkpoint] of YUMI_MINIMAL_CHECKPOINTS) {
+    if (checkpoint <= duration) times.add(checkpoint);
+  }
+
+  for (const at of [...times].sort((a, b) => a - b)) {
+    const frame = computeYumiMinimalFrame(at, reducedMotion);
+    const offset = at / duration;
+
+    for (const [name, compose] of Object.entries(TRACKS)) {
+      tracks[name].push({ offset, ...compose(frame) });
+    }
+  }
+
+  return tracks;
+}

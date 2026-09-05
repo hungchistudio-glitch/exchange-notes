@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import ActiveLaunch from "@/components/launch/activeLaunch";
+import ActiveLaunch, { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
 import { setLaunching } from "@/lib/launchState";
 
 /**
@@ -19,6 +19,12 @@ import { setLaunching } from "@/lib/launchState";
  * per document load — soft navigation between protected pages keeps the
  * layout, so moving around inside the app does not replay it.
  */
+/*
+ * How long after the opening should have ended before the gate stops waiting
+ * to be told and simply opens.
+ */
+const LAUNCH_GRACE_MS = 1200;
+
 export default function SplashGate() {
   const [visible, setVisible] = useState(true);
 
@@ -59,6 +65,32 @@ export default function SplashGate() {
       setLaunching(false);
       delete root.dataset.launching;
     };
+  }, [visible]);
+
+  /*
+   * The overlay leaves on its own, whatever the animation does.
+   *
+   * Until this, the only way out was the opening reporting that it had
+   * finished — so anything that stopped it finishing left an opaque sheet
+   * over the whole app for the life of the document. That is not
+   * hypothetical: browsers suspend animations in a backgrounded tab, and
+   * opening the app and immediately switching away is an ordinary thing to
+   * do. It is the likeliest explanation for the opening "getting stuck".
+   *
+   * A ceiling rather than a race with the animation: the grace is long
+   * enough that a smooth run always reports in first and this never fires,
+   * and short enough that a stalled one is measured in a moment rather than
+   * for as long as the reader keeps the tab open.
+   */
+  useEffect(() => {
+    if (!visible) return;
+
+    const timer = window.setTimeout(
+      () => setVisible(false),
+      ACTIVE_LAUNCH.durationMs + LAUNCH_GRACE_MS,
+    );
+
+    return () => window.clearTimeout(timer);
   }, [visible]);
 
   if (!visible) return null;
