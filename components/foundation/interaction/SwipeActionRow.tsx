@@ -83,9 +83,25 @@ export default function SwipeActionRow({
     action.onAction();
   }
 
+  /*
+   * The actions are mounted only once the row has been touched.
+   *
+   * They were always in the tree, both of them, behind every row — each a
+   * button carrying a 16px-blur box-shadow and an SVG icon, for a control
+   * that is invisible until you swipe. On a library of 300 words that was 600
+   * blurred shadows and 600 icons in the paint tree at rest, and a blurred
+   * shadow is among the most expensive things a browser rasterises. It is
+   * what made the list feel gritty to scroll rather than smooth.
+   *
+   * Mounting on pointer-down is early enough: the row cannot have moved far
+   * enough to reveal anything in the same frame the finger lands, and React
+   * has committed long before the first pointermove.
+   */
+  const revealed = isDragging || translateX !== 0;
+
   return (
     <div className={`relative overflow-hidden rounded-[24px] ${className}`}>
-      {trailingAction && (
+      {revealed && trailingAction && (
         <button
           type="button"
           onClick={() => runAction(trailingAction)}
@@ -98,7 +114,7 @@ export default function SwipeActionRow({
         </button>
       )}
 
-      {leadingAction && (
+      {revealed && leadingAction && (
         <button
           type="button"
           onClick={() => runAction(leadingAction)}

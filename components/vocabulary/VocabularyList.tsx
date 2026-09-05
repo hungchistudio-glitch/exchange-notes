@@ -1,6 +1,15 @@
 "use client";
 
-import { memo, type ComponentProps } from "react";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   BookOpen,
   FolderPlus,
@@ -197,13 +206,12 @@ function VocabularyList({
   }
 
   return (
-    <section
-      aria-label={t.vocabulary.search.yourWords}
-      className={viewMode === "compact" ? "mt-5 space-y-2" : "mt-5 space-y-3"}
-    >
-      {items.map((item) => (
+    <VirtualWordList
+      label={t.vocabulary.search.yourWords}
+      items={items}
+      viewMode={viewMode}
+      renderRow={(item) => (
         <SwipeActionRow
-          key={item.id}
           disabled={updatingId === item.id}
           trailingAction={{
             label: t.vocabulary.detail.deleteWordAriaLabel,
@@ -228,7 +236,125 @@ function VocabularyList({
             onInteract={onInteract}
           />
         </SwipeActionRow>
-      ))}
+      )}
+    />
+  );
+}
+
+/*
+ * Only the rows on screen exist.
+ *
+ * The list rendered every word: 300 of them was 24,001 DOM nodes and a 2.5s
+ * first render, and this is a library meant to grow into the thousands. The
+ * rows are absolutely positioned against a spacer the height of the whole
+ * list, so the scrollbar still describes the real thing.
+ *
+ * Heights are measured rather than assumed. A card is a different height
+ * compact than detailed, and different again while expanded, so the estimate
+ * below only has to be close enough to place the first frame — every row that
+ * renders reports its real height back and the positions settle.
+ */
+const ROW_GAP: Record<VocabularyViewMode, number> = { compact: 8, cards: 12 };
+const ROW_ESTIMATE: Record<VocabularyViewMode, number> = {
+  compact: 76,
+  cards: 132,
+};
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+function VirtualWordList({
+  label,
+  items,
+  viewMode,
+  renderRow,
+}: {
+  label: string;
+  items: VocabularyItem[];
+  viewMode: VocabularyViewMode;
+  renderRow: (item: VocabularyItem) => ReactNode;
+}) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
+
+  /*
+   * The app's one scroller, found by walking up rather than threaded down.
+   * AppViewport marks it deliberately — see data-app-scroll-viewport there.
+   * Layout effect so it is known before the first paint and the list does not
+   * flash empty.
+   */
+  useIsomorphicLayoutEffect(() => {
+    setScrollElement(
+      sectionRef.current?.closest<HTMLElement>("[data-app-scroll-viewport]")
+        ?? null,
+    );
+  }, []);
+
+  const gap = ROW_GAP[viewMode];
+
+  /*
+   * The React Compiler's lint rule warns that it would skip memoising this
+   * component because of this hook. It is not enabled on this project — only
+   * its rules ship with eslint-plugin-react-hooks — so there is nothing being
+   * skipped, and the memoisation that matters here is done by hand upstream
+   * in useVocabularyPage.
+   */
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => scrollElement,
+    estimateSize: () => ROW_ESTIMATE[viewMode] + gap,
+    getItemKey: (index) => items[index].id,
+    // Enough rows either side that a fast flick does not outrun the render.
+    overscan: 8,
+  });
+
+  /*
+   * No scroller found — a test, or this list mounted somewhere without the
+   * app frame around it. Render the lot rather than render nothing: the
+   * failure mode has to be "slow", never "the reader's words are missing".
+   */
+  if (!scrollElement) {
+    return (
+      <section
+        ref={sectionRef}
+        aria-label={label}
+        className={viewMode === "compact" ? "mt-5 space-y-2" : "mt-5 space-y-3"}
+      >
+        {items.map((item) => (
+          <div key={item.id}>{renderRow(item)}</div>
+        ))}
+      </section>
+    );
+  }
+
+  return (
+    <section ref={sectionRef} aria-label={label} className="mt-5">
+      <div
+        style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+      >
+        {virtualizer.getVirtualItems().map((row) => {
+          const item = items[row.index];
+
+          return (
+            <div
+              key={row.key}
+              data-index={row.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${row.start}px)`,
+                paddingBottom: gap,
+              }}
+            >
+              {renderRow(item)}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
