@@ -113,11 +113,10 @@ export default function BottomNavigation({
     >
       <div
         ref={containerRef}
-        // Named so the device-tier rules in globals.css can reach it — see
-        // the note there about what a fixed blurred surface costs to scroll
-        // underneath.
-        data-app-dock
-        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-2 shadow-[var(--dock-shadow)] backdrop-blur-xl"
+        /* Opaque, and no backdrop-filter — see the note in AppHeader. This
+           one is fixed rather than sticky, so it re-blurs on every scroll
+           frame of every screen in the app. */
+        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-2 shadow-[var(--dock-shadow)]"
       >
         {offset && (
           <div

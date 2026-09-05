@@ -80,9 +80,8 @@ html[data-interface-mode="yumi-cosmic"] {
      orbital halo, and a cyan energy base under the active system. The active
      icon keeps its `text-white`, which in this mode resolves to the panel
      navy — dark on cyan, and legible without an override. */
-  --dock-surface: rgba(16, 26, 48, 0.72);
-  /* The same colour with nothing showing through, for when the blur is off. */
-  --dock-surface-opaque: #101a30;
+  /* Opaque — see the note in globals.css. */
+  --dock-surface: #101a30;
   --dock-line: var(--cosmic-ring);
   --dock-shadow: 0 10px 36px rgba(1, 4, 12, 0.55);
   /* Hollow rather than filled. A solid cyan disc is the brightest thing on a
@@ -200,7 +199,9 @@ html[data-interface-mode="yumi-cosmic"] {
 
   --msg-presence: #25df82;
   --msg-glow: 0 0 24px color-mix(in oklab, #32ddf8 12%, transparent);
-  --msg-header: color-mix(in oklab, #020a16 82%, transparent);
+  /* Opaque — see the note in globals.css. Fully the colour it was 82% of,
+     which on this near-black bar is a barely perceptible deepening. */
+  --msg-header: #020a16;
 
   /* Still light — see the note in globals.css — but cooled to match the field
      it is lit by, rather than carrying warm paper into deep space. */
