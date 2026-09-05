@@ -35,7 +35,21 @@ export default function useVocabularyFriendPicker() {
   const [pendingImageSource, setPendingImageSource] =
     useState<string | null>(null);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
+  /*
+   * Loading before anything has been asked for.
+   *
+   * The picker mounts the moment a card is pending, and the request for the
+   * friend list goes out in an effect — one paint later. Starting at false
+   * meant that first paint had no friends and was not loading, which is the
+   * picker's "you have no friends yet" state: every share opened by telling
+   * the reader they had nobody to share with, and then correcting itself.
+   *
+   * It is also half of why the sheet appeared to overshoot. That empty state
+   * is a different height from the list that replaces it, and the sheet is
+   * anchored to the bottom of the screen, so the correction moved the panel
+   * while it was still arriving.
+   */
+  const [friendsLoading, setFriendsLoading] = useState(true);
   const [friendsError, setFriendsError] = useState("");
   const [sendingFriendId, setSendingFriendId] =
     useState<string | null>(null);

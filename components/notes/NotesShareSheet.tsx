@@ -25,7 +25,13 @@ export default function NotesShareSheet({
   const copy = t.home.notes;
   const [friends, setFriends] = useState<FriendProfile[]>([]);
   const [sharedIds, setSharedIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
+  /*
+   * Loading before the request has been made — see the same reasoning in
+   * useVocabularyFriendPicker. The fetch below is deferred by a timeout, so
+   * starting at false painted the "no friends yet" state first and corrected
+   * it a frame later, moving a sheet that was still animating in.
+   */
+  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -33,6 +39,7 @@ export default function NotesShareSheet({
     if (!open) return;
     let active = true;
     const timer = window.setTimeout(() => {
+      // Already true on first open; this covers reopening for another note.
       setLoading(true);
       setError("");
       const supabase = createClient();
@@ -90,7 +97,21 @@ export default function NotesShareSheet({
       onClose={onClose}
       title={copy.shareTitle}
       description={copy.shareDescription}
+      /*
+       * Picking a friend is a question, not a screen. Left at the sheet's
+       * default this climbed to 94% of a phone's screen with only a handful
+       * of friends in the list.
+       */
+      maxHeight="min(60dvh, 640px)"
     >
+      {/*
+       * One height for loading, for an empty list and for a short one. The
+       * sheet is anchored to the bottom, so its height is also its position:
+       * swapping a spinner for a list of a different size moved the panel
+       * while it was still animating in, which is what looked like the sheet
+       * overshooting and dropping back.
+       */}
+      <div className="min-h-[184px]">
       {loading ? (
         <div className="flex min-h-32 items-center justify-center">
           <LoaderCircle className="animate-spin text-ink-soft" size={22} />
@@ -130,6 +151,7 @@ export default function NotesShareSheet({
           })}
         </div>
       )}
+      </div>
       {error ? <p role="alert" className="mt-4 text-sm font-semibold text-red-600">{error}</p> : null}
     </BottomSheet>
   );
