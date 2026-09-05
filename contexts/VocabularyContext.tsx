@@ -27,7 +27,10 @@ import {
 } from "@/lib/offline/vocabulary";
 import { flushOutbox } from "@/lib/offline/sync";
 import type { VocabularyItem } from "@/lib/types/app";
-import { useVocabularyLanguageFill } from "@/hooks/useVocabularyLanguageFill";
+import {
+  useVocabularyLanguageFill,
+  type FilledRow,
+} from "@/hooks/useVocabularyLanguageFill";
 import { sweepOrphans } from "@/lib/media/orphanSweep";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import { subscribeToSavedWords } from "@/lib/vocabulary/savedWords";
@@ -191,28 +194,6 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /*
-   * The same read, without the spinner.
-   *
-   * For work the user did not ask for and is not waiting on — the language
-   * fill re-reads after every batch so cards appear as they are translated,
-   * and a library of three hundred words is seventeen batches. Through
-   * `refresh` that is seventeen full-screen loading states in a row, which
-   * reads as a list that cannot make up its mind. A failure is swallowed for
-   * the same reason: nothing was asked for, so nothing should be reported
-   * here — the caller knows its own request failed.
-   */
-  const refreshQuietly = useCallback(async () => {
-    try {
-      const snapshot = await fetchVocabularySnapshot();
-
-      setItems(snapshot.items);
-      setLearningLanguage(snapshot.learningLanguage);
-    } catch {
-      // See above.
-    }
-  }, []);
-
-  /*
    * Image files nothing points at, cleared away once a session.
    *
    * Here because this is the one place that holds the reader's whole
@@ -357,6 +338,29 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /*
+   * Folds a finished translation batch into the list it belongs to.
+   *
+   * The alternative, and what this replaces, was re-reading everything after
+   * every batch — see the comment on onFilled in useVocabularyLanguageFill.
+   * Only the two filled columns are taken, so a row edited on this device
+   * while the batch was in the air keeps the rest of its own state.
+   */
+  const patchTranslations = useCallback((updated: FilledRow[]) => {
+    if (updated.length === 0) return;
+
+    const byId = new Map(updated.map((row) => [row.id, row]));
+
+    setItems((current) =>
+      current.map((item) => {
+        const patch = byId.get(item.id);
+        if (!patch) return item;
+
+        return { ...item, texts: patch.texts, examples: patch.examples };
+      }),
+    );
+  }, []);
+
+  /*
    * A word saved anywhere in the app lands in this list immediately.
    *
    * The provider sits in the protected layout, so it stays mounted while the
@@ -381,7 +385,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     items,
     learningLanguage,
     loading,
-    onFilled: refreshQuietly,
+    onFilled: patchTranslations,
   });
 
   const value = useMemo<VocabularyContextType>(
