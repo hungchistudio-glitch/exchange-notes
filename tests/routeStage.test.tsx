@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 /* =========================================================
@@ -80,7 +81,7 @@ describe("the stage every protected route is played on", () => {
     expect(screen.getByText("a screen")).toBeInTheDocument();
   });
 
-  it("steps out of the way while the opening animation is on screen", () => {
+  it("turns the animation off while the opening is on screen", () => {
     /*
      * Reported as the home screen flashing before the opening appeared.
      *
@@ -99,33 +100,52 @@ describe("the stage every protected route is played on", () => {
       </RouteStage>,
     );
 
-    expect(boundary()).toBeNull();
+    // The boundary stays — see the next test for why that matters.
+    expect(boundary()).toHaveAttribute("data-view-transition", "none");
     expect(screen.getByText("a screen")).toBeInTheDocument();
   });
 
-  it("starts fading once the opening has handed the screen over", () => {
+  it("does not remount the page when the opening hands the screen over", () => {
+    /*
+     * Reported as the install-prompt card vanishing on reaching Home.
+     *
+     * The first version of the opening fix returned `children` bare while the
+     * opening was up, and the boundary afterwards — a different element type
+     * in the same position, so React unmounted and remounted the whole page
+     * the instant the opening finished. Every effect re-ran and every piece
+     * of page state reset, 2.8 seconds after load. The install prompt opens
+     * on a 1.2s timer and is therefore still behind the overlay at that
+     * moment, so it was thrown away exactly as it was handed the screen.
+     */
+    let mounts = 0;
+
+    function Page() {
+      useEffect(() => {
+        mounts += 1;
+      }, []);
+
+      return <p>a screen</p>;
+    }
+
     mode.modeTransition = false;
     setLaunching(true);
 
     const view = render(
       <RouteStage>
-        <p>a screen</p>
+        <Page />
       </RouteStage>,
     );
-    expect(boundary()).toBeNull();
+    expect(mounts).toBe(1);
 
+    act(() => setLaunching(false));
     view.rerender(
       <RouteStage>
-        <p>a screen</p>
-      </RouteStage>,
-    );
-    setLaunching(false);
-    view.rerender(
-      <RouteStage>
-        <p>a screen</p>
+        <Page />
       </RouteStage>,
     );
 
     expect(boundary()).toHaveAttribute("data-view-transition", "page-fade");
+    // The page was never torn down and rebuilt.
+    expect(mounts).toBe(1);
   });
 });

@@ -37,24 +37,37 @@ export default function RouteStage({ children }: { children: ReactNode }) {
   );
 
   /*
-   * No boundary while something else owns the screen.
+   * No boundary at all while the mode itself is changing.
    *
-   * Two cases, and the same reason underneath both: a full-screen sequence is
-   * already playing and a route animation must not play over it.
-   *
-   * The mode change replaces the shell — it is the same boundary whose child
-   * tree is being swapped, so the two would animate over each other.
-   *
-   * The opening is the case that made this visible. A view transition's
-   * snapshots are rendered in the browser's *top layer*, above every
-   * z-index — so a route transition running underneath the opening painted
-   * the page on top of it, and the reader saw the home screen flash before
-   * the opening appeared. Standard Mode had no boundary at all until this
-   * feature, which is why it had never happened before.
+   * The mode sequence replaces the shell underneath, and that is the one
+   * moment a route animation must not also be running — it is the same
+   * boundary whose child tree is being swapped, so the two would animate over
+   * each other. Removing the boundary remounts what is inside it, which is
+   * already what a mode change does to the shell, so nothing is lost.
    */
-  if (modeTransition || launching) return children;
+  if (modeTransition) return children;
 
+  /*
+   * The opening gets the animation turned off, not the boundary taken away.
+   *
+   * A view transition's snapshots are rendered in the browser's *top layer*,
+   * above every z-index — so a route transition running underneath the
+   * opening painted the page on top of it, and the reader saw the home screen
+   * flash before the opening appeared. Standard Mode had no boundary at all
+   * until this feature, which is why it had never happened.
+   *
+   * The first fix for that returned `children` bare while the opening was up.
+   * That is a different element type in the same position, so React unmounted
+   * and remounted the whole page the instant the opening finished: every
+   * effect re-ran and every piece of page state reset 2.8 seconds after load.
+   * The install prompt, which opens on a timer at 1.2s and is therefore still
+   * behind the overlay at that moment, vanished as it was handed the screen.
+   *
+   * Same boundary throughout, then, and only the animation changes.
+   */
   return (
-    <ViewTransition default="page-fade">{children}</ViewTransition>
+    <ViewTransition default={launching ? "none" : "page-fade"}>
+      {children}
+    </ViewTransition>
   );
 }
