@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 
+import useInView from "@/hooks/useInView";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import styles from "@/components/tutorial/CosmicPreview.module.css";
 
@@ -47,8 +48,16 @@ const STARS: ReadonlyArray<{ x: number; y: number; d: number; s: number }> = [
  * six, and the iris never fully stops.
  */
 export default function CosmicPreview() {
+  const { ref, inView } = useInView<HTMLDivElement>();
+
   return (
-    <div className={styles.card} aria-hidden="true">
+    <div
+      ref={ref}
+      /* Paused when scrolled away — see [data-in-view] in globals.css. */
+      data-in-view={inView ? "true" : "false"}
+      className={styles.card}
+      aria-hidden="true"
+    >
       <span className={styles.nebula} />
 
       <span className={styles.stars}>

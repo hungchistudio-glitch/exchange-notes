@@ -2,6 +2,7 @@
 
 import { useId, type CSSProperties } from "react";
 
+import useInView from "@/hooks/useInView";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import {
   YUMI_IDLE_POSE,
@@ -193,8 +194,13 @@ export default function YumiFace({
     !reducedMotion &&
     (phase === "idle" || phase === "entering" || isAttendingState(phase));
 
+  const { ref: inViewRef, inView } = useInView<HTMLDivElement>();
+
   return (
     <div
+      ref={inViewRef}
+      /* Paused when scrolled away — see [data-in-view] in globals.css. */
+      data-in-view={inView ? "true" : "false"}
       className={`${styles.stage} ${reducedMotion ? styles.reduced : ""} ${
         breathing ? styles.breathing : ""
       } ${phase === "entering" ? styles.entering : ""} ${

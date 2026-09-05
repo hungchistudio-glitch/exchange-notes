@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import useInView from "@/hooks/useInView";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
@@ -396,8 +397,14 @@ export default function YumiCompanion({
     }
   })();
 
+  const { ref: sectionRef, inView } = useInView<HTMLElement>();
+
   return (
     <section
+      ref={sectionRef}
+      /* The mark pauses itself; the feeding face, the learning core and the
+         cookie tray around it did not, and they scroll away together. */
+      data-in-view={inView ? "true" : "false"}
       className={styles.section}
       data-menu-open={orbit.isVisible}
       data-cosmic={isCosmic ? "true" : "false"}

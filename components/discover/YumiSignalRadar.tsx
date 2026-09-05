@@ -2,6 +2,7 @@
 
 import { useId, type CSSProperties } from "react";
 
+import useInView from "@/hooks/useInView";
 import { RADAR_NODE_COUNT } from "@/lib/discover/signalRadar";
 import type { SignalRadarController } from "@/hooks/discover/useSignalRadar";
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -85,8 +86,13 @@ export default function YumiSignalRadar({
 
   const nodeCount = RADAR_NODE_COUNT[policy.tier];
 
+  const { ref, inView } = useInView<HTMLButtonElement>();
+
   return (
     <button
+      ref={ref}
+      /* Paused when scrolled away — see [data-in-view] in globals.css. */
+      data-in-view={inView ? "true" : "false"}
       type="button"
       onClick={scan}
       {...pressHandlers}

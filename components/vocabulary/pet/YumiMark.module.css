@@ -1,19 +1,9 @@
 /*
- * Animation here is budgeted, not free.
- *
- * The mark runs 28 infinite animations. Each is individually cheap — nearly
- * all animate transform or opacity — but each also holds a compositing layer
- * for as long as it runs, and on the vocabulary page they ran the whole time
- * the reader was scrolled down among their words, where none of it is visible.
- *
- * animation-play-state is the right lever: it stops a layer advancing rather
- * than tearing it down and rebuilding it, so it costs nothing to apply and
- * nothing to lift. Same treatment the home stage already gives its own tree.
+ * The mark runs 28 infinite animations and pauses them all when it is
+ * scrolled away. The rule that does it is [data-in-view] in globals.css,
+ * which every animated region in the app now shares; this stylesheet used
+ * to carry its own copy.
  */
-.stage[data-in-view="false"],
-.stage[data-in-view="false"] * {
-  animation-play-state: paused !important;
-}
 
 .stage {
   position: relative;

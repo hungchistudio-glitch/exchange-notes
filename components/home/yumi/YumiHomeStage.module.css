@@ -22,11 +22,12 @@
  * it costs nothing at the moment it is applied.
  */
 :global(html[data-deck-dragging="true"]) .stage *,
-:global(html[data-deck-dragging="true"]) .stage,
-.stage[data-in-view="false"] *,
-.stage[data-in-view="false"] {
+:global(html[data-deck-dragging="true"]) .stage {
   animation-play-state: paused !important;
 }
+
+/* Scrolled out of view is handled by [data-in-view] in globals.css, which
+   every animated region in the app shares. Only the drag stays local. */
 
 .stage {
   position: relative;

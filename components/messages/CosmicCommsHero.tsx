@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 
+import useInView from "@/hooks/useInView";
+
 import styles from "./CosmicCommsHero.module.css";
 
 /*
@@ -25,8 +27,16 @@ import styles from "./CosmicCommsHero.module.css";
  * header. Absolutely positioned; give the parent `position: relative`.
  */
 export function CosmicCommsBackdrop() {
+  const { ref, inView } = useInView<HTMLDivElement>();
+
   return (
-    <div className={styles.hero} aria-hidden="true">
+    <div
+      ref={ref}
+      /* Paused when scrolled away — see [data-in-view] in globals.css. */
+      data-in-view={inView ? "true" : "false"}
+      className={styles.hero}
+      aria-hidden="true"
+    >
       <div className={styles.starsFar} />
       <div className={styles.starsNear} />
 

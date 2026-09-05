@@ -1,5 +1,6 @@
 "use client";
 
+import useInView from "@/hooks/useInView";
 import type { YumiInstrument as InstrumentKind } from "@/lib/pronunciation/lab/types";
 
 import styles from "./YumiInstrument.module.css";
@@ -27,8 +28,13 @@ export default function YumiInstrument({
   instrument,
   active,
 }: YumiInstrumentProps) {
+  const { ref, inView } = useInView<SVGSVGElement>();
+
   return (
     <svg
+      ref={ref}
+      /* Paused when scrolled away — see [data-in-view] in globals.css. */
+      data-in-view={inView ? "true" : "false"}
       viewBox="0 0 200 200"
       className={`${styles.instrument} ${active ? styles.active : ""}`}
       aria-hidden="true"
