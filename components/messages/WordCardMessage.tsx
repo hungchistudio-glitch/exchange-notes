@@ -7,7 +7,6 @@ import { formatMessageTime } from "@/lib/messages/format";
 import { signedImageHref } from "@/lib/media/imageUrl";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
-import { getPhonetics } from "@/lib/pronunciation";
 import {
   DEFAULT_LEARNING_PAIR,
   getLanguage,
@@ -108,7 +107,7 @@ export default function WordCardMessage({
    */
   function languageBlock(code: LanguageCode, text: string, primary: boolean) {
     const language = getLanguage(code);
-    const phonetics = getPhonetics(text, code);
+    const phonetics = phoneticsFor({ text, language: code });
 
     /*
      * Whatever systems this language actually uses, in the order the rest of
@@ -118,7 +117,7 @@ export default function WordCardMessage({
      * languages the app teaches — and the reader had no way to tell that
      * from the word simply not having one.
      */
-    const annotation = [ipaFor({ text, language: code }), phonetics.pinyin, phonetics.zhuyin]
+    const annotation = [phonetics?.ipa, phonetics?.pinyin, phonetics?.zhuyin]
       .filter(Boolean)
       .join("  ");
 
@@ -226,7 +225,7 @@ export default function WordCardMessage({
   const secondCode = translatedGloss ? supportLanguage : sides.secondary.language;
   const secondText = translatedGloss ?? sides.secondary.text;
 
-  const ipaFor = usePhonetics([
+  const phoneticsFor = usePhonetics([
     { text: firstText, language: firstCode },
     { text: secondText, language: secondCode },
   ]);

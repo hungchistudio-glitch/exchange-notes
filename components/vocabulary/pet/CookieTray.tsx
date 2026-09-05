@@ -9,7 +9,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import { cosmicCoreTone } from "@/lib/pet/moodEngine";
+import usePhonetics from "@/hooks/usePhonetics";
+import { cosmicCoreTone, zhuyinGlyph } from "@/lib/pet/moodEngine";
 import type { Cookie, CookieType } from "@/lib/pet/types";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
@@ -666,6 +667,38 @@ export default function CookieTray({
     beginFlight(id, "releasing");
   }
 
+  /*
+   * The readings for the cookies on screen, and only those.
+   *
+   * A zhuyin cookie wears the first symbol of its word's Chinese reading.
+   * That used to be computed here from pinyin-pro — 640KB of dictionary on
+   * the critical path of two screens, to draw one character on a biscuit.
+   * The same batched request every word card already makes answers it, and
+   * the answer is cached for the session and mirrored to the device, so it
+   * is a round trip once and instant forever after.
+   *
+   * Only the visible slice is asked for: the tray shows three cookies on the
+   * home screen and eight on the vocabulary page, however long the library is.
+   */
+  const phoneticsFor = usePhonetics(
+    visible
+      .filter((cookie) => cookie.type === "zhuyin")
+      .map((cookie) => ({ text: cookie.translation, language: "zh-TW" as const })),
+  );
+
+  function glyphFor(cookie: Cookie) {
+    if (cookie.type !== "zhuyin") return cookie.glyph;
+
+    const reading = phoneticsFor({
+      text: cookie.translation,
+      language: "zh-TW",
+    });
+
+    // Undefined while the lookup is in the air — the cookie wears its
+    // placeholder until then rather than nothing.
+    return reading?.zhuyin ? zhuyinGlyph(reading.zhuyin) : cookie.glyph;
+  }
+
   // The ghost and the tray slots draw the same object, so the face is one
   // function rather than two that have to be kept looking alike.
   function face(
@@ -673,11 +706,14 @@ export default function CookieTray({
     index: number,
     state: "resting" | "lifted" | "attracted" | "absorbing",
   ) {
-    if (!cosmic) return <span className={styles.glyphText}>{cookie.glyph}</span>;
+    if (!cosmic) {
+      return <span className={styles.glyphText}>{glyphFor(cookie)}</span>;
+    }
 
     return (
       <LearningCore
         cookie={cookie}
+        glyph={glyphFor(cookie)}
         tone={cosmicCoreTone(cookie)}
         state={state}
         index={index}

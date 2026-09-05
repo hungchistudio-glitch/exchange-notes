@@ -21,7 +21,7 @@ import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import { getPhonetics, getPronunciationData } from "@/lib/pronunciation";
+import usePhonetics from "@/hooks/usePhonetics";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
@@ -137,9 +137,20 @@ function DeckWordCard({
 }) {
   const word = item.word?.trim() || copy.untitledWord;
   const translation = item.translation?.trim() || "";
-  const pronunciation = getPronunciationData({
-    english: word,
-    chinese: translation,
+  /*
+   * Both readings on this card, looked up together.
+   *
+   * They used to be computed from pinyin-pro, which is what carried 640KB of
+   * dictionary onto the home screen — this card is on it. One batched request
+   * per language answers them, cached for the session and mirrored to the
+   * device, so it is a round trip once and instant afterwards.
+   */
+  const phoneticsFor = usePhonetics([
+    { text: translation, language: "zh-TW" as const },
+  ]);
+  const pronunciation = phoneticsFor({
+    text: translation,
+    language: "zh-TW",
   });
   /*
    * The row records its own two languages, so which side leads is read from
@@ -147,6 +158,10 @@ function DeckWordCard({
    * for a word saved under a different pairing.
    */
   const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
+  const sidePhoneticsFor = usePhonetics([
+    { text: sides.primary.text, language: sides.primary.language },
+    { text: sides.secondary.text, language: sides.secondary.language },
+  ]);
   const primaryWord = sides.primary.text || word;
   const secondaryWord = sides.secondary.text;
   const primaryWordLength = Array.from(primaryWord).length;
@@ -213,7 +228,7 @@ function DeckWordCard({
             <p className={styles.secondaryWord}>{secondaryWord}</p>
           ) : null}
           <p className={styles.phonetic}>
-            {pronunciation.pinyin || pronunciation.zhuyin || "\u00a0"}
+            {pronunciation?.pinyin || pronunciation?.zhuyin || "\u00a0"}
           </p>
         </div>
 
@@ -226,8 +241,11 @@ function DeckWordCard({
         <div className={styles.soundGrid}>
           {[sides.primary, sides.secondary].map((side) => {
             const language = getLanguage(side.language);
-            const phonetics = getPhonetics(side.text, side.language);
-            const annotation = phonetics.zhuyin || side.text;
+            const phonetics = sidePhoneticsFor({
+              text: side.text,
+              language: side.language,
+            });
+            const annotation = phonetics?.zhuyin || side.text;
             const label = language.endonym;
 
             return (
@@ -244,7 +262,7 @@ function DeckWordCard({
                   <span className={styles.soundLabel}>{label}</span>
                   <span
                     className={styles.soundValue}
-                    data-script={phonetics.zhuyin ? "zhuyin" : "english"}
+                    data-script={phonetics?.zhuyin ? "zhuyin" : "english"}
                   >
                     {annotation}
                   </span>

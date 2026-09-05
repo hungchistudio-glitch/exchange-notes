@@ -8,6 +8,12 @@ import type { Cookie } from "@/lib/pet/types";
 import styles from "./LearningCore.module.css";
 
 type LearningCoreProps = {
+  /**
+   * The glyph to draw, when the caller has resolved it. A zhuyin cookie's
+   * symbol comes from a looked-up reading now, so the tray knows it and this
+   * component does not — see CookieTray.
+   */
+  glyph?: string;
   cookie: Cookie;
   tone: CoreTone;
   /*
@@ -57,6 +63,7 @@ type LearningCoreProps = {
  */
 export default function LearningCore({
   cookie,
+  glyph,
   tone,
   state = "resting",
   newBadgeLabel,
@@ -75,7 +82,7 @@ export default function LearningCore({
       <span className={styles.rim} aria-hidden="true" />
       <span className={styles.chamber} aria-hidden="true" />
 
-      <span className={styles.glyph}>{cookie.glyph}</span>
+      <span className={styles.glyph}>{glyph ?? cookie.glyph}</span>
 
       <span className={styles.gloss} aria-hidden="true" />
 
