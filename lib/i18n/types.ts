@@ -2148,14 +2148,6 @@ export type TranslationDictionary = {
      * shows each size at its own size — so the labels survive as the
      * accessible names of the segments, and the sheet's prose does not.
      */
-    launchSound: {
-      rowTitle: string;
-      rowDescription: string;
-      previewLabel: string;
-      previewPlaying: string;
-      previewFailed: string;
-    };
-
     fontSize: {
       rowTitle: string;
       rowDescription: string;

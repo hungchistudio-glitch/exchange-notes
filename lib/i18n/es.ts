@@ -2188,14 +2188,6 @@ const spanish: TranslationDictionary = {
         "No se ha podido contactar con el servicio de pruebas. Comprueba tu conexión e inténtalo de nuevo.",
     },
 
-    launchSound: {
-      rowTitle: "Sonido de apertura",
-      rowDescription: "Reproduce un sonido con la animación de apertura",
-      previewLabel: "Escuchar",
-      previewPlaying: "Reproduciendo…",
-      previewFailed: "No se pudo reproducir el sonido",
-    },
-
     fontSize: {
       rowTitle: "Tamaño del texto",
       rowDescription: "Ajusta el texto de toda la app",

@@ -314,7 +314,7 @@
   font-family: var(--font-geist-mono), monospace;
 }
 
-.soundReadout {
+.motionReadout {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

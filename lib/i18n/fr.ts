@@ -1985,14 +1985,6 @@ const french: TranslationDictionary = {
       testDeliveryError: "La notification test n'a pas pu être remise. Réessayez.",
       testNetworkError: "Le service de test est injoignable. Vérifiez votre connexion et réessayez.",
     },
-    launchSound: {
-      rowTitle: "Son d'ouverture",
-      rowDescription: "Jouer un son avec l'animation d'ouverture",
-      previewLabel: "Écouter",
-      previewPlaying: "Lecture…",
-      previewFailed: "Impossible de lire le son",
-    },
-
     fontSize: {
       rowTitle: "Taille du texte",
       rowDescription: "Ajustez le texte dans toute l'app",

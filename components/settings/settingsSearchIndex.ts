@@ -87,12 +87,6 @@ export function buildSettingsSearchIndex(
       keywords: ["font", "size", "text", "type", "bigger", "smaller"],
     },
     {
-      id: "setting-launch-sound",
-      title: settings.launchSound.rowTitle,
-      section: sections.app,
-      keywords: ["sound", "audio", "opening", "launch", "mute", "volume"],
-    },
-    {
       id: "setting-install",
       title: t.pwa.settingsRowTitle,
       section: sections.devices,

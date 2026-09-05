@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /* =========================================================
    The service worker and the audio it kept choking on
 
-   Every request for the opening sound, and every zhuyin clip, produced this
-   in the console of anyone signed in:
+   Every request for a pronunciation clip produced this in the console of
+   anyone signed in:
 
      Uncaught (in promise) TypeError: Failed to execute 'put' on 'Cache':
      Partial response (status code 206) is unsupported
@@ -116,7 +116,7 @@ beforeEach(() => {
 describe("what the worker does with a media request", () => {
   it("leaves a ranged request to the browser entirely", async () => {
     const result = await handle(
-      request("https://app.test/audio/yumi-minimal-opening.m4a", {
+      request("https://app.test/audio/zhuyin/a.mp3", {
         range: "bytes=0-",
       }),
     );
