@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ComponentProps } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
 
 import VocabularyMainContent from "@/components/vocabulary/sections/VocabularyMainContent";
 import VocabularyOverlays from "@/components/vocabulary/sections/VocabularyOverlays";
@@ -284,9 +291,12 @@ export default function useVocabularyPage({
    * empty states want; a word opens it already asking about that word, which
    * is what "I filtered my library and it is not in there" wants.
    */
-  function openLexiconSearch(query: string) {
-    openSearch(query ? { query, autoSubmit: true } : undefined);
-  }
+  const openLexiconSearch = useCallback(
+    (query: string) => {
+      openSearch(query ? { query, autoSubmit: true } : undefined);
+    },
+    [openSearch],
+  );
 
   const heroProps = buildVocabularyHeroProps({
     totalWords,
@@ -352,30 +362,69 @@ export default function useVocabularyPage({
     languageCount: languageCounts.size,
   });
 
-  const listProps = {
-    loading,
-    totalItemCount: totalWords,
-    items: visibleItems,
-    query,
-    updatingId,
-    expandedItemId,
-    viewMode,
-    languageFilter,
-    onLookUpQuery: openLexiconSearch,
-    onChangeStatus: changeStatus,
-    onDeleteItem: deleteVocabularyItem,
-    onOpenDetail: (item: VocabularyItem) => {
-      setDetailItem(item);
-      setCardGlancePulse((count) => count + 1);
-    },
-    onToggleExpanded: (item: VocabularyItem) => {
-      setExpandedItemId((current) => (current === item.id ? null : item.id));
-      setCardGlancePulse((count) => count + 1);
-    },
-    onOpenCollections: setCollectionsItem,
-    onSendToPartner: handleSendToPartner,
-    onInteract: recordInteraction,
-  } satisfies ComponentProps<typeof VocabularyList>;
+  /*
+   * These two were written inline in the object below, which meant a new
+   * function identity on every render of this hook — and this hook re-renders
+   * for every mood tick Yumi has, every keystroke in the search field and
+   * every card glance. `VocabularyCard` is wrapped in `memo`, so those two
+   * props were the reason it had never once skipped a render: at 300 words a
+   * re-render with nothing changed cost ~958ms and rebuilt all 300 cards.
+   */
+  const openDetail = useCallback((item: VocabularyItem) => {
+    setDetailItem(item);
+    setCardGlancePulse((count) => count + 1);
+  }, []);
+
+  const toggleExpanded = useCallback((item: VocabularyItem) => {
+    setExpandedItemId((current) => (current === item.id ? null : item.id));
+    setCardGlancePulse((count) => count + 1);
+  }, []);
+
+  /*
+   * And the object itself, for the same reason one level up: `VocabularyList`
+   * is also wrapped in `memo`, and a fresh props object defeated that before
+   * the cards were ever reached. Everything it depends on is already stable —
+   * `visibleItems` is memoised, and the mutations come from useCallback — so
+   * this genuinely holds still between renders now.
+   */
+  const listProps = useMemo(
+    () =>
+      ({
+        loading,
+        totalItemCount: totalWords,
+        items: visibleItems,
+        query,
+        updatingId,
+        expandedItemId,
+        viewMode,
+        languageFilter,
+        onLookUpQuery: openLexiconSearch,
+        onChangeStatus: changeStatus,
+        onDeleteItem: deleteVocabularyItem,
+        onOpenDetail: openDetail,
+        onToggleExpanded: toggleExpanded,
+        onOpenCollections: setCollectionsItem,
+        onSendToPartner: handleSendToPartner,
+        onInteract: recordInteraction,
+      }) satisfies ComponentProps<typeof VocabularyList>,
+    [
+      loading,
+      totalWords,
+      visibleItems,
+      query,
+      updatingId,
+      expandedItemId,
+      viewMode,
+      languageFilter,
+      openLexiconSearch,
+      changeStatus,
+      deleteVocabularyItem,
+      openDetail,
+      toggleExpanded,
+      setCollectionsItem,
+      handleSendToPartner,
+    ],
+  );
 
   const mainContentProps = {
     error,
