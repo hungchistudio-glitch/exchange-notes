@@ -81,6 +81,8 @@ html[data-interface-mode="yumi-cosmic"] {
      icon keeps its `text-white`, which in this mode resolves to the panel
      navy — dark on cyan, and legible without an override. */
   --dock-surface: rgba(16, 26, 48, 0.72);
+  /* The same colour with nothing showing through, for when the blur is off. */
+  --dock-surface-opaque: #101a30;
   --dock-line: var(--cosmic-ring);
   --dock-shadow: 0 10px 36px rgba(1, 4, 12, 0.55);
   /* Hollow rather than filled. A solid cyan disc is the brightest thing on a

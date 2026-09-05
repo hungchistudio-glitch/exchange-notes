@@ -113,6 +113,8 @@
   /* The floating dock. Its glass, its line, and the circular energy base that
      slides behind whichever icon is active. */
   --dock-surface: rgba(253, 251, 246, 0.75);
+  /* The same colour with nothing showing through, for when the blur is off. */
+  --dock-surface-opaque: #fdfbf6;
   --dock-line: rgba(0, 0, 0, 0.07);
   --dock-shadow: 0 10px 36px rgba(28, 26, 22, 0.12);
   --dock-indicator: #1c1a16;
@@ -512,45 +514,31 @@ html[data-launching="true"] [data-app-viewport] * {
 }
 
 /*
- * One crossfade for every navigation inside the signed-in app.
+ * Blurred glass, only where it is affordable.
  *
- * The outgoing screen fades out while the incoming one fades in — no
- * movement and no scale, because a page that slides or grows reads as a
- * slower page, and this exists to make arriving feel considered rather than
- * abrupt. 240ms is the whole budget: long enough to register, short enough
- * that nobody waits on it.
+ * The header is sticky and the dock is fixed, both over the one scrolling
+ * viewport — so their backdrop-filter is not paid once, it is re-computed on
+ * every frame of every scroll, on every screen. It is also nearly invisible:
+ * the surfaces behind it are 90% and 75% opaque, so between a tenth and a
+ * quarter of the blur ever reaches the reader.
  *
- * Applied through React's <ViewTransition default="page-fade"> in
- * RouteStage. The two halves overlap deliberately rather than running in
- * sequence, which is what makes it a crossfade instead of a blink.
+ * On a device that has told us it is modest (see lib/deviceTier.ts) the glass
+ * becomes plain surface. The colour goes fully opaque at the same time —
+ * translucency without the blur behind it is not the same effect at lower
+ * cost, it is text with the page showing through it.
+ *
+ * Capable devices, iPhones among them, are untouched.
  */
-::view-transition-old(.page-fade) {
-  animation: pageFadeOut 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+html[data-device-tier="modest"] [data-app-header],
+html[data-device-tier="modest"] [data-app-dock] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
-::view-transition-new(.page-fade) {
-  animation: pageFadeIn 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+html[data-device-tier="modest"] [data-app-header] {
+  background-color: var(--surface) !important;
 }
 
-@keyframes pageFadeOut {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes pageFadeIn {
-  from {
-    opacity: 0;
-  }
-}
-
-/*
- * A reader who has asked for less motion gets the destination, immediately.
- * A crossfade is motion even without movement.
- */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(.page-fade),
-  ::view-transition-new(.page-fade) {
-    animation: none;
-  }
+html[data-device-tier="modest"] [data-app-dock] {
+  background-color: var(--dock-surface-opaque, var(--surface)) !important;
 }
