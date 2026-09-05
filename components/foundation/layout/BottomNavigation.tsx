@@ -113,6 +113,10 @@ export default function BottomNavigation({
     >
       <div
         ref={containerRef}
+        // Named so the device-tier rules in globals.css can reach it — see
+        // the note there about what a fixed blurred surface costs to scroll
+        // underneath.
+        data-app-dock
         className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-2 shadow-[var(--dock-shadow)] backdrop-blur-xl"
       >
         {offset && (

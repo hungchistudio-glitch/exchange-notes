@@ -25,6 +25,9 @@ export default function AppHeader({
 }: AppHeaderProps) {
   return (
     <header
+      // Named so the device-tier rules in globals.css can reach it — the
+      // blur here is re-computed on every frame of every scroll.
+      data-app-header
       className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface/90 px-4 backdrop-blur-xl ${className}`}
       style={{
         paddingTop: "env(safe-area-inset-top)",

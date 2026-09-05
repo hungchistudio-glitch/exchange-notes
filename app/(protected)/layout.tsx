@@ -17,6 +17,7 @@ import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import { isInterfaceMode } from "@/lib/appPreferences";
+import { DEVICE_TIER_SCRIPT } from "@/lib/deviceTier";
 import { getServerInterfaceMode } from "@/lib/preferences/serverPreferences";
 import { createClient } from "@/lib/supabase/server";
 
@@ -120,6 +121,17 @@ export default async function ProtectedLayout({
             )}`}
           />
         )}
+
+        {/*
+          What the device can afford, decided before the first paint.
+
+          The header and the dock are blurred glass, and a backdrop-filter is
+          re-computed every frame the content behind it moves — which, for a
+          sticky header and a fixed dock, means every frame of every scroll.
+          On a phone that cannot spend that, the glass becomes plain surface.
+          See the [data-device-tier="modest"] rules in globals.css.
+        */}
+        <InlineScript html={DEVICE_TIER_SCRIPT} />
 
         {/*
           Here rather than in the root layout so the opening only ever plays
