@@ -42,6 +42,7 @@ vi.mock("react", async (importOriginal) => {
 
 const RouteStage = (await import("@/components/foundation/layout/RouteStage"))
   .default;
+const { setLaunching } = await import("@/lib/launchState");
 
 function boundary() {
   return document.querySelector("[data-view-transition]");
@@ -50,6 +51,7 @@ function boundary() {
 describe("the stage every protected route is played on", () => {
   it("wraps the page in one crossfade", () => {
     mode.modeTransition = false;
+    setLaunching(false);
 
     render(
       <RouteStage>
@@ -65,6 +67,7 @@ describe("the stage every protected route is played on", () => {
     // The mode sequence is replacing the shell underneath. A route animation
     // running at the same time would be animating over its own replacement.
     mode.modeTransition = "to-cosmic";
+    setLaunching(false);
 
     render(
       <RouteStage>
@@ -75,5 +78,54 @@ describe("the stage every protected route is played on", () => {
     expect(boundary()).toBeNull();
     // And the page is still rendered — stepping aside must not mean vanishing.
     expect(screen.getByText("a screen")).toBeInTheDocument();
+  });
+
+  it("steps out of the way while the opening animation is on screen", () => {
+    /*
+     * Reported as the home screen flashing before the opening appeared.
+     *
+     * A view transition's snapshots are rendered in the browser's top layer,
+     * above every z-index — so a route transition running underneath the
+     * opening painted the page *over* an overlay sitting at z-index 1000.
+     * Standard Mode had no boundary at all before this feature, which is why
+     * it had never happened.
+     */
+    mode.modeTransition = false;
+    setLaunching(true);
+
+    render(
+      <RouteStage>
+        <p>a screen</p>
+      </RouteStage>,
+    );
+
+    expect(boundary()).toBeNull();
+    expect(screen.getByText("a screen")).toBeInTheDocument();
+  });
+
+  it("starts fading once the opening has handed the screen over", () => {
+    mode.modeTransition = false;
+    setLaunching(true);
+
+    const view = render(
+      <RouteStage>
+        <p>a screen</p>
+      </RouteStage>,
+    );
+    expect(boundary()).toBeNull();
+
+    view.rerender(
+      <RouteStage>
+        <p>a screen</p>
+      </RouteStage>,
+    );
+    setLaunching(false);
+    view.rerender(
+      <RouteStage>
+        <p>a screen</p>
+      </RouteStage>,
+    );
+
+    expect(boundary()).toHaveAttribute("data-view-transition", "page-fade");
   });
 });

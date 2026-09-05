@@ -1,9 +1,14 @@
 "use client";
 
-import { ViewTransition } from "react";
+import { ViewTransition, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import {
+  isLaunching,
+  isLaunchingOnServer,
+  subscribeToLaunching,
+} from "@/lib/launchState";
 
 /**
  * The stage every protected route is played on.
@@ -25,17 +30,29 @@ import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
  */
 export default function RouteStage({ children }: { children: ReactNode }) {
   const { modeTransition } = useInterfaceMode();
+  const launching = useSyncExternalStore(
+    subscribeToLaunching,
+    isLaunching,
+    isLaunchingOnServer,
+  );
 
   /*
-   * No boundary while the mode itself is changing.
+   * No boundary while something else owns the screen.
    *
-   * The mode sequence replaces the shell underneath, and that is the one
-   * moment a route animation must not also be running — it is the same
-   * boundary whose child tree is being swapped, so the two would animate over
-   * each other. The mode change owns the screen until it finishes; route
-   * travel resumes after.
+   * Two cases, and the same reason underneath both: a full-screen sequence is
+   * already playing and a route animation must not play over it.
+   *
+   * The mode change replaces the shell — it is the same boundary whose child
+   * tree is being swapped, so the two would animate over each other.
+   *
+   * The opening is the case that made this visible. A view transition's
+   * snapshots are rendered in the browser's *top layer*, above every
+   * z-index — so a route transition running underneath the opening painted
+   * the page on top of it, and the reader saw the home screen flash before
+   * the opening appeared. Standard Mode had no boundary at all until this
+   * feature, which is why it had never happened before.
    */
-  if (modeTransition) return children;
+  if (modeTransition || launching) return children;
 
   return (
     <ViewTransition default="page-fade">{children}</ViewTransition>
