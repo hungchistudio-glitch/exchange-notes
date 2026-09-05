@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ActiveLaunch from "@/components/launch/activeLaunch";
 
@@ -20,6 +20,32 @@ import ActiveLaunch from "@/components/launch/activeLaunch";
  */
 export default function SplashGate() {
   const [visible, setVisible] = useState(true);
+
+  /*
+   * Everything under the opening holds still while it plays.
+   *
+   * The opening is a fixed, opaque overlay at z-index 1000, and the whole app
+   * mounts underneath it: the home stage starts its wake, its own nineteen
+   * infinite animations and the mark's twenty-eight, the library loads, the
+   * preferences sync — all at once, all behind something nobody can see
+   * through, all competing for the frames the opening needs to be smooth.
+   * That is why it stuttered.
+   *
+   * animation-play-state rather than unmounting: the app carries on loading,
+   * hydrating and fetching, which is the part that has to happen during these
+   * 2.8 seconds. Only the drawing of things nobody can see stops, and it
+   * resumes the moment the overlay goes.
+   */
+  useEffect(() => {
+    if (!visible) return;
+
+    const root = document.documentElement;
+    root.dataset.launching = "true";
+
+    return () => {
+      delete root.dataset.launching;
+    };
+  }, [visible]);
 
   if (!visible) return null;
 

@@ -489,3 +489,25 @@ html {
     background-color: color-mix(in oklab, var(--color-black, #000) 6%, transparent);
   }
 }
+
+/*
+ * Nothing under the opening animates while it plays.
+ *
+ * The opening is a fixed, opaque overlay at z-index 1000 and the whole app
+ * mounts underneath it — the home stage's nineteen infinite animations, the
+ * mark's twenty-eight, the wake, the cookie tray — every one of them drawing
+ * frames behind something nobody can see through, and taking those frames
+ * from the one animation that is actually on screen.
+ *
+ * Scoped to [data-app-viewport], which the opening is a sibling of rather
+ * than inside, so this can never pause the thing it exists to protect.
+ *
+ * Set by SplashGate for exactly as long as the overlay is up. The app keeps
+ * loading, hydrating and fetching throughout — only the drawing stops, and
+ * animation-play-state resumes a layer rather than rebuilding it, so there is
+ * nothing to pay back when the overlay goes.
+ */
+html[data-launching="true"] [data-app-viewport],
+html[data-launching="true"] [data-app-viewport] * {
+  animation-play-state: paused !important;
+}

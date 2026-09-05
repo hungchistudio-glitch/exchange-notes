@@ -78,6 +78,13 @@ function wait(ms: number, signal: { cancelled: boolean }): Promise<void> {
  * the end of the budget, retries a failed batch with backoff, and is
  * cancelled only by unmount or by the language actually changing.
  */
+/** What a batch changed, as the route now reports it. */
+export type FilledRow = {
+  id: string;
+  texts: Record<string, string>;
+  examples: Record<string, string>;
+};
+
 export function useVocabularyLanguageFill({
   items,
   learningLanguage,
@@ -87,7 +94,7 @@ export function useVocabularyLanguageFill({
   items: VocabularyItem[];
   learningLanguage: LanguageCode | null;
   loading: boolean;
-  onFilled: () => void;
+  onFilled: (updated: FilledRow[]) => void;
 }) {
   const [filling, setFilling] = useState(false);
 
@@ -118,7 +125,12 @@ export function useVocabularyLanguageFill({
       let consecutiveFailures = 0;
 
       while (batches < MAX_BATCHES_PER_SESSION && !signal.cancelled) {
-        let result: { filled?: number; remaining?: number; done?: boolean };
+        let result: {
+          filled?: number;
+          remaining?: number;
+          done?: boolean;
+          updated?: FilledRow[];
+        };
 
         try {
           const response = await fetch("/api/vocabulary/translate", {
@@ -147,9 +159,16 @@ export function useVocabularyLanguageFill({
         consecutiveFailures = 0;
         batches += 1;
 
-        // Re-reading is what puts the new language on screen, one batch at a
-        // time, while the rest is still being worked through.
-        onFilledRef.current();
+        /*
+         * The batch's own rows go straight onto the screen.
+         *
+         * This used to re-read the entire library after every batch, which on
+         * a three-hundred-word library meant re-fetching and re-parsing 307kB
+         * to show twenty changed words — and up to twenty-five times in one
+         * session. The route hands back what it wrote now, so twenty words
+         * cost twenty words.
+         */
+        onFilledRef.current(result.updated ?? []);
 
         /*
          * Nothing left, or nothing achieved. The second is the important one:

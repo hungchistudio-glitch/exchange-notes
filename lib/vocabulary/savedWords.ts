@@ -22,10 +22,15 @@ import type { VocabularyItem } from "@/lib/types/app";
 
    Why it looked like a problem that only large libraries had: on a small or
    new library the background language fill still has work to do, and it
-   calls refreshQuietly when a batch lands — which quietly re-read the list
-   and made the missing word appear. Once a library is settled the fill finds
-   nothing missing and returns before it starts, that incidental refresh
-   stops happening, and the bug is visible. It was always there.
+   re-read the whole list when a batch landed — which made the missing word
+   appear as a side effect. Once a library is settled the fill finds nothing
+   missing and returns before it starts, that incidental refresh stops
+   happening, and the bug is visible. It was always there.
+
+   (That re-read is gone now: a batch reports the rows it changed and only
+   those are merged. The incidental fix it used to provide was never the
+   mechanism this file describes, which is why removing it changed nothing
+   here.)
 
    So the announcement belongs at the door rather than at each of the five
    screens. A sixth save surface gets the list update the same way it gets

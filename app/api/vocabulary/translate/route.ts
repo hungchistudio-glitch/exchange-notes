@@ -199,6 +199,18 @@ export async function POST(request: Request) {
      * feature must not have.
      */
     let filled = 0;
+    /*
+     * The rows as they now are, handed back rather than left for the caller
+     * to go and find. It used to answer with counts only, so the only way to
+     * put a filled batch on screen was to re-read the whole library — twenty
+     * words translated, three hundred re-fetched, up to twenty-five times in
+     * a session. The route already holds exactly what changed.
+     */
+    const updated: Array<{
+      id: string;
+      texts: Record<string, string>;
+      examples: Record<string, string>;
+    }> = [];
 
     for (const [index, item] of items.entries()) {
       const answer = answers[index];
@@ -210,18 +222,25 @@ export async function POST(request: Request) {
 
       const example = answer.example?.trim();
 
+      const nextTexts = { ...row.texts, [target]: text };
+      const nextExamples = example
+        ? { ...row.examples, [target]: example }
+        : row.examples;
+
       const { error: updateError } = await supabase
         .from("vocabulary_items")
-        .update({
-          texts: { ...row.texts, [target]: text },
-          examples: example
-            ? { ...row.examples, [target]: example }
-            : row.examples,
-        })
+        .update({ texts: nextTexts, examples: nextExamples })
         .eq("id", row.id)
         .eq("user_id", user.id);
 
-      if (!updateError) filled += 1;
+      if (updateError) continue;
+
+      filled += 1;
+      updated.push({
+        id: row.id,
+        texts: nextTexts,
+        examples: nextExamples ?? {},
+      });
     }
 
     /*
@@ -236,6 +255,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       filled,
       language: target,
+      updated,
       remaining: Math.max(outstanding.length - filled, 0),
       done: filled === 0,
     });
