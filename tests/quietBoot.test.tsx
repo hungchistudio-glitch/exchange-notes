@@ -2,6 +2,7 @@ import { act, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import SplashGate from "@/components/ui/SplashGate";
+import { isLaunching } from "@/lib/launchState";
 
 /* =========================================================
    Nothing under the opening animates while it plays
@@ -49,6 +50,18 @@ describe("the flag that quietens the app under the opening", () => {
     });
 
     expect(launching()).toBeUndefined();
+  });
+
+  it("tells the route stage the same story", () => {
+    // Both signals come from here, and both have to clear together — one is
+    // read by CSS, the other by RouteStage, and an opening that is gone must
+    // not still be suppressing route transitions.
+    const view = render(<SplashGate />);
+    expect(isLaunching()).toBe(true);
+
+    view.unmount();
+
+    expect(isLaunching()).toBe(false);
   });
 
   it("is gone if the opening is unmounted mid-play", () => {

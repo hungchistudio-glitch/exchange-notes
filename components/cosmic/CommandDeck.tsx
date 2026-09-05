@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useState,
-  type ComponentType,
-  type CSSProperties,
-  type PointerEvent,
-} from "react";
+import { useState, type ComponentType, type CSSProperties } from "react";
 import Link from "next/link";
 
 import BookIcon from "@/components/foundation/icons/BookIcon";
@@ -190,20 +185,8 @@ export default function CommandDeck() {
    * pointer is released, which is the correct read: the system stays targeted
    * for exactly as long as the finger is on it.
    */
-  function lockRoom(key: RoomKey, event: PointerEvent<HTMLAnchorElement>) {
+  function lockRoom(key: RoomKey) {
     setLockedRoom(key);
-
-    const bounds = event.currentTarget.getBoundingClientRect();
-
-    document.documentElement.style.setProperty(
-      "--deck-origin-x",
-      `${Math.round(bounds.left + bounds.width / 2 - window.innerWidth / 2)}px`,
-    );
-
-    document.documentElement.style.setProperty(
-      "--deck-origin-y",
-      `${Math.round(bounds.top + bounds.height / 2 - window.innerHeight / 2)}px`,
-    );
   }
 
   function statusFor(key: RoomKey) {
@@ -432,22 +415,7 @@ export default function CommandDeck() {
                 <div className={styles.nodeInner}>
                   <Link
                     href={room.href}
-                    /*
-                     * The type is what the route stage reads to decide which
-                     * of the six arrivals to play. See CosmicRouteStage.
-                     *
-                     * Scanner Bay is the exception: it lands on a full-screen
-                     * camera, which opens its own lens — that is already the
-                     * transition. And a view transition that fails to settle
-                     * leaves its snapshot above the page, so the camera would
-                     * be visible with none of its controls responding. Not
-                     * worth the risk for a flourish nobody sees behind a
-                     * viewfinder.
-                     */
-                    transitionTypes={
-                      room.key === "scanner" ? undefined : [`room-${room.key}`]
-                    }
-                    onPointerDown={(event) => lockRoom(room.key, event)}
+                    onPointerDown={() => lockRoom(room.key)}
                     onPointerUp={() => setLockedRoom(null)}
                     onPointerCancel={() => setLockedRoom(null)}
                     className={[

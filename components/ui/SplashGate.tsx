@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import ActiveLaunch from "@/components/launch/activeLaunch";
+import { setLaunching } from "@/lib/launchState";
 
 /**
  * The opening, on every load of a signed-in page.
@@ -37,12 +38,25 @@ export default function SplashGate() {
    * resumes the moment the overlay goes.
    */
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setLaunching(false);
+      return;
+    }
+
+    setLaunching(true);
 
     const root = document.documentElement;
     root.dataset.launching = "true";
 
+    /*
+     * Cleared on the way out as well as on completion. Unmounting while the
+     * overlay is still up — a sign-out, a route that leaves the protected
+     * app — would otherwise leave both signals set for the life of the
+     * document: the app's animations paused, and every route transition
+     * suppressed, by an opening that is no longer on screen.
+     */
     return () => {
+      setLaunching(false);
       delete root.dataset.launching;
     };
   }, [visible]);

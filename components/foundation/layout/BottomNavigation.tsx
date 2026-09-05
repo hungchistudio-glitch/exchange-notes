@@ -36,7 +36,6 @@ type NavigationItem = {
   pulseToken?: number;
   // Cosmic Mode only. Tags the navigation so the route stage knows which
   // arrival to play; Standard Mode leaves it undefined and gets no animation.
-  transitionTypes?: string[];
 };
 
 type BottomNavigationProps = {
@@ -188,7 +187,6 @@ export default function BottomNavigation({
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
-                transitionTypes={item.transitionTypes}
                 title={item.label}
                 ref={(element) => {
                   itemRefs.current[index] = element;
