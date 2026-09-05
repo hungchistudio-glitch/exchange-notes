@@ -5,7 +5,7 @@ import NativePushRegister from "@/app/components/NativePushRegister";
 import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
 import DeviceTimeZoneSync from "@/components/foundation/DeviceTimeZoneSync";
-import CosmicRouteStage from "@/components/cosmic/CosmicRouteStage";
+import RouteStage from "@/components/foundation/layout/RouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import OfflineBanner from "@/components/foundation/OfflineBanner";
@@ -176,10 +176,10 @@ export default async function ProtectedLayout({
               sibling and therefore cannot be carried away by page content.
             */}
             <AppViewport navigation={<ProtectedNav />}>
-              <CosmicRouteStage>
+              <RouteStage>
                 <OfflineBanner />
                 {children}
-              </CosmicRouteStage>
+              </RouteStage>
             </AppViewport>
           </LexiconSearchProvider>
         </VocabularyProvider>

@@ -136,12 +136,6 @@ export default function ReviewPage() {
    */
   const cameFromVocabulary = searchParams.get("from") === "vocabulary";
   const exitHref = cameFromVocabulary ? "/vocabulary" : "/home";
-  /*
-   * The arrival has to match the destination too. "deck-return" plays the
-   * Command Deck coming back, which is the wrong room entirely when the
-   * destination is the lexicon — see CosmicRouteStage for the pairing.
-   */
-  const exitTransition = cameFromVocabulary ? "lexicon-return" : "deck-return";
 
   const [phase, setPhase] = useState<Phase>("landing");
   const [mode, setMode] = useState<Mode>("due");
@@ -498,7 +492,6 @@ export default function ReviewPage() {
 
         <Link
           href={exitHref}
-          transitionTypes={isCosmic ? [exitTransition] : undefined}
           className="mt-6 flex h-12 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-semibold text-white"
         >
           {cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
@@ -532,7 +525,6 @@ export default function ReviewPage() {
       >
         <Link
           href={exitHref}
-          transitionTypes={isCosmic ? [exitTransition] : undefined}
           aria-label={cameFromVocabulary ? copy.backToVocabulary : copy.backToHome}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
         >

@@ -153,15 +153,6 @@ export default function ProtectedNav() {
           active,
           icon: <route.Icon className={iconClassName} active={active} />,
           onSelect: route.onSelect,
-          // Home is the Command Deck in Cosmic Mode, so going there is a
-          // return to the bridge and gets the arrival that says so. Every
-          // other dock tap is a lateral move between rooms and gets the short
-          // crossfade. Standard Mode passes nothing and animates nothing.
-          transitionTypes: !isCosmic
-            ? undefined
-            : isHome
-              ? ["deck-return"]
-              : ["dock-move"],
           badgeCount: isMessages
             ? unreadCount
             : isHome

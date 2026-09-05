@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "./cosmic.css";
-@import "./cosmic-motion.css";
 @import "./yumi-motion.css";
 
 :root {
@@ -510,4 +509,48 @@ html {
 html[data-launching="true"] [data-app-viewport],
 html[data-launching="true"] [data-app-viewport] * {
   animation-play-state: paused !important;
+}
+
+/*
+ * One crossfade for every navigation inside the signed-in app.
+ *
+ * The outgoing screen fades out while the incoming one fades in — no
+ * movement and no scale, because a page that slides or grows reads as a
+ * slower page, and this exists to make arriving feel considered rather than
+ * abrupt. 240ms is the whole budget: long enough to register, short enough
+ * that nobody waits on it.
+ *
+ * Applied through React's <ViewTransition default="page-fade"> in
+ * RouteStage. The two halves overlap deliberately rather than running in
+ * sequence, which is what makes it a crossfade instead of a blink.
+ */
+::view-transition-old(.page-fade) {
+  animation: pageFadeOut 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+::view-transition-new(.page-fade) {
+  animation: pageFadeIn 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes pageFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * A reader who has asked for less motion gets the destination, immediately.
+ * A crossfade is motion even without movement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.page-fade),
+  ::view-transition-new(.page-fade) {
+    animation: none;
+  }
 }
