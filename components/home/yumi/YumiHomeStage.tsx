@@ -17,6 +17,7 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
+import usePhonetics from "@/hooks/usePhonetics";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -28,7 +29,6 @@ import {
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
-import { getPronunciationData } from "@/lib/pronunciation";
 import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
@@ -218,23 +218,39 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     [items],
   );
 
+  /*
+   * The readings the widget carries, looked up rather than computed.
+   *
+   * This used to derive them from pinyin-pro, which is what put 640KB of
+   * dictionary on the home screen's critical path — for a payload that is
+   * pushed to a native widget and never rendered here. It is a handful of
+   * words, batched with everything else on the screen, and the push below
+   * already re-runs whenever the payload changes.
+   */
+  const phoneticsFor = usePhonetics(
+    widgetWords.map((item) => ({
+      text: item.translation,
+      language: "zh-TW" as const,
+    })),
+  );
+
   const widgetWordPayloads = useMemo(
     () =>
       widgetWords.map((item) => {
-        const pronunciation = getPronunciationData({
-          english: item.word,
-          chinese: item.translation,
+        const reading = phoneticsFor({
+          text: item.translation,
+          language: "zh-TW",
         });
 
         return {
           id: item.id,
           englishWord: item.word.trim(),
           traditionalChineseWord: item.translation.trim(),
-          pinyin: pronunciation.pinyin ?? "",
-          zhuyin: pronunciation.zhuyin ?? "",
+          pinyin: reading?.pinyin ?? "",
+          zhuyin: reading?.zhuyin ?? "",
         };
       }),
-    [widgetWords],
+    [widgetWords, phoneticsFor],
   );
 
   const widgetWord = widgetWordPayloads[0] ?? null;

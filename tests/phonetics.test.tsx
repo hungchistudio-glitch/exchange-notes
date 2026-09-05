@@ -22,9 +22,11 @@ vi.mock("@/hooks/i18n/useTranslation", () => ({
 
 vi.mock("@/lib/speech", () => ({ speak: vi.fn() }));
 
+type Answer = { ipa?: string; pinyin?: string; zhuyin?: string };
+
 const served = vi.hoisted(() => ({
   calls: [] as Array<{ language: string; texts: string[] }>,
-  table: {} as Record<string, string>,
+  table: {} as Record<string, Answer>,
 }));
 
 function serve() {
@@ -40,9 +42,7 @@ function serve() {
           phonetics: Object.fromEntries(
             body.texts.map((text) => [
               text,
-              served.table[`${body.language}:${text}`]
-                ? { ipa: served.table[`${body.language}:${text}`] }
-                : {},
+              served.table[`${body.language}:${text}`] ?? {},
             ]),
           ),
         }),
@@ -58,7 +58,7 @@ describe("PronunciationBlock", () => {
   });
 
   it("annotates Italian in IPA", async () => {
-    served.table = { "it:consulenza": "/konsuˈlɛntsa/" };
+    served.table = { "it:consulenza": { ipa: "/konsuˈlɛntsa/" } };
     serve();
 
     render(
@@ -70,20 +70,55 @@ describe("PronunciationBlock", () => {
     expect(await screen.findByText("/konsuˈlɛntsa/")).toBeTruthy();
   });
 
-  it("annotates Chinese with zhuyin and pinyin, without asking the network", async () => {
-    served.table = {};
+  it("annotates Chinese with zhuyin and pinyin, from the same lookup", async () => {
+    /*
+     * These used to be computed here from pinyin-pro, which is what put
+     * 640KB of dictionary on the critical path of the home and vocabulary
+     * screens — to derive something the very same response already carried
+     * and the client was throwing away. They come from the lookup now.
+     *
+     * Two annotations, not a choice between them: zhuyin and pinyin are both
+     * shown, as they always were.
+     */
+    served.table = {
+      "zh-TW:監獄": { zhuyin: "ㄐㄧㄢ ㄩˋ", pinyin: "jiān yù" },
+    };
     serve();
 
     render(<PronunciationBlock entries={[{ text: "監獄", language: "zh-TW" }]} />);
 
-    // Computed locally, so both are on screen in the first render — zhuyin
-    // and pinyin are two annotations, not a choice between them.
-    expect(screen.getAllByText(/ㄐ|jiān/).length).toBe(2);
-    expect(served.calls).toHaveLength(0);
+    expect(await screen.findByText("ㄐㄧㄢ ㄩˋ")).toBeTruthy();
+    expect(screen.getByText("jiān yù")).toBeTruthy();
+  });
+
+  it("asks once for a word that appears many times on screen", async () => {
+    /*
+     * The batching is why this is affordable at all: a list of word cards is
+     * one request per language, not one per card. A distinct word, because
+     * the cache is module-level on purpose and outlives a single test — the
+     * same property that makes it one request across a whole screen.
+     */
+    served.table = {
+      "zh-TW:圖書館": { zhuyin: "ㄊㄨˊ ㄕㄨ ㄍㄨㄢˇ", pinyin: "tú shū guǎn" },
+    };
+    serve();
+
+    render(
+      <>
+        <PronunciationBlock entries={[{ text: "圖書館", language: "zh-TW" }]} />
+        <PronunciationBlock entries={[{ text: "圖書館", language: "zh-TW" }]} />
+        <PronunciationBlock entries={[{ text: "圖書館", language: "zh-TW" }]} />
+      </>,
+    );
+
+    await screen.findAllByText("ㄊㄨˊ ㄕㄨ ㄍㄨㄢˇ");
+
+    expect(served.calls).toHaveLength(1);
+    expect(served.calls[0].texts).toEqual(["圖書館"]);
   });
 
   it("prefers a transcription the caller already has", async () => {
-    served.table = { "fr:conseil": "/looked-up/" };
+    served.table = { "fr:conseil": { ipa: "/looked-up/" } };
     serve();
 
     render(
@@ -116,10 +151,10 @@ describe("usePhonetics batching", () => {
 
   it("asks once per language however many cards are on screen", async () => {
     served.table = {
-      "it:uno": "/ˈuno/",
-      "it:due": "/ˈdue/",
-      "it:tre": "/ˈtre/",
-      "en:one": "/wʌn/",
+      "it:uno": { ipa: "/ˈuno/" },
+      "it:due": { ipa: "/ˈdue/" },
+      "it:tre": { ipa: "/ˈtre/" },
+      "en:one": { ipa: "/wʌn/" },
     };
     serve();
 
@@ -141,7 +176,7 @@ describe("usePhonetics batching", () => {
   });
 
   it("does not ask twice for a word it already has", async () => {
-    served.table = { "es:pionero": "/pjoˈneɾo/" };
+    served.table = { "es:pionero": { ipa: "/pjoˈneɾo/" } };
     serve();
 
     render(<PronunciationBlock entries={[{ text: "pionero", language: "es" }]} />);

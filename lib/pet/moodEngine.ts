@@ -1,4 +1,3 @@
-import { getPronunciationData } from "@/lib/pronunciation";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import type { Cookie, CookieType, YumiMood } from "./types";
@@ -13,21 +12,35 @@ export function cookieTypeForIndex(index: number): CookieType {
   return COOKIE_CYCLE[index % COOKIE_CYCLE.length];
 }
 
+/** The placeholder a zhuyin cookie wears until its reading is known. */
+export const ZHUYIN_GLYPH_FALLBACK = "ㄅ";
+
+/*
+ * The first zhuyin symbol of a reading.
+ *
+ * Split out because the reading no longer arrives with the cookie. It used to
+ * be computed here from pinyin-pro, which put 640KB of dictionary on the
+ * critical path of the home and vocabulary screens to draw one character on a
+ * biscuit; the tray looks the reading up now, through the same batched request
+ * every word card already makes, and calls this with the answer.
+ */
+export function zhuyinGlyph(zhuyin: string | null | undefined): string {
+  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
+  const symbol = [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char));
+
+  return symbol ?? ZHUYIN_GLYPH_FALLBACK;
+}
+
 // The cookie's actual glyph — the real first letter of the learned English
-// word, or the real first Zhuyin symbol from its Chinese reading (computed
-// locally via pinyin-pro/pinyin-to-zhuyin, no network/Gemini call) — so
-// each cookie represents a genuine piece of that word, not a random shape.
+// word, or the real first Zhuyin symbol from its Chinese reading — so each
+// cookie represents a genuine piece of that word, not a random shape.
 function glyphForCookie(item: VocabularyItem, type: CookieType): string {
   if (type === "letter") {
     const letter = item.word.trim().charAt(0).toUpperCase();
     return letter || "?";
   }
 
-  const { zhuyin } = getPronunciationData({ chinese: item.translation });
-  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
-  const symbol = [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char));
-
-  return symbol ?? "ㄅ";
+  return ZHUYIN_GLYPH_FALLBACK;
 }
 
 export type GrowthStage = 0 | 1 | 2 | 3;
@@ -223,6 +236,8 @@ function buildCookie(
   return {
     id: item.id,
     word: item.word,
+    // What the tray looks the reading up from, for a zhuyin cookie.
+    translation: item.translation,
     type,
     get glyph() {
       glyph ??= glyphForCookie(item, type);

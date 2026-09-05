@@ -7,7 +7,7 @@ import { PHONETICS_STORE, hydrate, persist } from "@/lib/offline/annotations";
 import { isOnline } from "@/hooks/useOnline";
 
 /* =========================================================
-   IPA for whatever is on screen
+   The phonetics for whatever is on screen
 
    Word cards render two languages each and a list renders many cards, so
    the naive shape — one request per card per language — turns a scroll into
@@ -26,7 +26,24 @@ const BATCH_WINDOW_MS = 50;
 /** The server takes forty at a time; ask in the same size it answers. */
 const CHUNK = 40;
 
-const cache = new Map<string, string>();
+/*
+ * Everything the route knows about one piece of text.
+ *
+ * It used to keep only the IPA and throw the rest away, so zhuyin and pinyin
+ * were recomputed on the client from pinyin-pro — 640KB of dictionary on the
+ * critical path of the home and vocabulary screens, to derive something the
+ * server had already put in the same response.
+ *
+ * An absent field means "asked, and there is none"; an absent entry means
+ * "not asked yet". That distinction is why misses are cached.
+ */
+export type WordPhonetics = {
+  ipa?: string;
+  pinyin?: string;
+  zhuyin?: string;
+};
+
+const cache = new Map<string, WordPhonetics>();
 const inFlight = new Set<string>();
 const pending = new Map<LanguageCode, Set<string>>();
 const listeners = new Set<() => void>();
@@ -47,7 +64,7 @@ function hydrateOnce(): Promise<void> {
     for (const [id, value] of stored) {
       // Never over anything this session already learned: a fresh answer
       // outranks a remembered one.
-      if (!cache.has(id)) cache.set(id, value);
+      if (!cache.has(id)) cache.set(id, parseStored(value));
     }
 
     notify();
@@ -63,10 +80,38 @@ function hydrateOnce(): Promise<void> {
  * that memoise on it would render the rows they built before the data
  * existed.
  */
-let snapshot: ReadonlyMap<string, string> = new Map();
+let snapshot: ReadonlyMap<string, WordPhonetics> = new Map();
 
 function key(language: LanguageCode, text: string): string {
   return `${language}:${text}`;
+}
+
+/*
+ * Reads both shapes the device may be holding.
+ *
+ * The store kept a bare IPA string before this; a record written by an older
+ * build is that string and nothing else. Treating an unparseable value as the
+ * IPA means nobody has to clear their cache, and the zhuyin simply arrives on
+ * the next lookup.
+ */
+function parseStored(value: string): WordPhonetics {
+  if (!value) return {};
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as WordPhonetics;
+    }
+  } catch {
+    // Not JSON, so it is the old bare-IPA format.
+  }
+
+  return { ipa: value };
+}
+
+function trimmed(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function notify() {
@@ -121,7 +166,7 @@ async function flush() {
 
           if (response.ok) {
             const result = (await response.json()) as {
-              phonetics?: Record<string, { ipa?: string }>;
+              phonetics?: Record<string, WordPhonetics>;
               unavailable?: string[];
             };
 
@@ -138,14 +183,23 @@ async function flush() {
             for (const text of chunk) {
               if (unreachable.has(text)) continue;
 
-              const ipa = result.phonetics?.[text]?.ipa?.trim();
+              const answer = result.phonetics?.[text];
               /*
-               * A genuine miss is cached as an empty string, not left
-               * absent. The alternative is asking again for every word the
-               * sources cannot transcribe, once per render, forever.
+               * A genuine miss is cached as an empty record, not left absent.
+               * The alternative is asking again for every word the sources
+               * cannot transcribe, once per render, forever.
+               *
+               * Zhuyin and pinyin come back in the same response and are kept
+               * with the IPA rather than discarded — see WordPhonetics.
                */
-              cache.set(key(language, text), ipa ?? "");
-              learned.push([key(language, text), ipa ?? ""]);
+              const phonetics: WordPhonetics = {
+                ipa: trimmed(answer?.ipa),
+                pinyin: trimmed(answer?.pinyin),
+                zhuyin: trimmed(answer?.zhuyin),
+              };
+
+              cache.set(key(language, text), phonetics);
+              learned.push([key(language, text), JSON.stringify(phonetics)]);
             }
 
             // Kept on the device, so the next cold start with no signal
@@ -185,7 +239,7 @@ function subscribe(listener: () => void) {
   };
 }
 
-function getSnapshot(): ReadonlyMap<string, string> {
+function getSnapshot(): ReadonlyMap<string, WordPhonetics> {
   return snapshot;
 }
 
@@ -195,18 +249,18 @@ export type PhoneticRequest = {
 };
 
 /**
- * The IPA for each entry, once it arrives.
+ * The phonetics for each entry, once they arrive.
  *
  * Returns what is known now and re-renders when more lands, so a card draws
- * immediately with its text and gains the annotation a moment later rather
+ * immediately with its text and gains its annotations a moment later rather
  * than waiting on the network to show anything at all.
  *
- * An empty string means "asked, and there is none" — render nothing.
- * Undefined means "not known yet".
+ * An absent field means "asked, and there is none" — render nothing. An
+ * undefined result means "not known yet".
  */
 export default function usePhonetics(
   entries: PhoneticRequest[],
-): (entry: PhoneticRequest) => string | undefined {
+): (entry: PhoneticRequest) => WordPhonetics | undefined {
   /*
    * The snapshot is what the returned lookup closes over, and that is the
    * whole point of it.

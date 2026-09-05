@@ -32,6 +32,7 @@ function cookie(id: string, word: string): Cookie {
   return {
     id,
     word,
+    translation: word,
     type: "letter",
     glyph: word[0].toUpperCase(),
     status: "learning",

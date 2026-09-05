@@ -30,6 +30,8 @@ export type PetState = {
 export type Cookie = {
   id: string;
   word: string;
+  /** The other side of the card — what a zhuyin glyph is read from. */
+  translation: string;
   type: CookieType;
   // The actual symbol this cookie represents — the real first letter of
   // the learned English word, or the real first Zhuyin symbol from its

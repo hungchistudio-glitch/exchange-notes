@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { getPhonetics } from "@/lib/pronunciation";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 import usePhonetics from "@/hooks/usePhonetics";
@@ -20,10 +19,12 @@ import { insertValues } from "@/lib/utils";
  *   en · es · fr · it   IPA
  *   zh-TW               zhuyin and pinyin
  *
- * Chinese is computed locally and costs nothing. IPA has to be looked up,
- * and this component now does that itself rather than rendering only what a
- * caller thought to pass in — which is why a word card showed zhuyin under
- * Chinese and nothing at all under everything else, English included.
+ * All three are looked up together, by the hook, in one request per language
+ * per tick. Chinese used to be computed here instead — which meant every
+ * screen that renders a word card carried pinyin-pro's dictionary, 640KB of
+ * it, on the critical path of the home and vocabulary screens, to derive
+ * something the same response already contained and the client was throwing
+ * away.
  *
  * Requests from every card on screen are gathered into one per language by
  * the hook, and answers are cached across the session and in the database,
@@ -50,7 +51,7 @@ export default function PronunciationBlock({
   className = "",
 }: PronunciationBlockProps) {
   const { t } = useTranslation();
-  const ipaFor = usePhonetics(entries);
+  const phoneticsFor = usePhonetics(entries);
 
   const rows = useMemo(
     () =>
@@ -58,18 +59,18 @@ export default function PronunciationBlock({
         const text = entry.text?.trim() ?? "";
         if (!text) return [];
 
-        const phonetics = getPhonetics(text, entry.language);
+        const phonetics = phoneticsFor(entry);
         const speechTag = getLanguage(entry.language).speechTag;
 
         // A caller that already has the transcription wins; everyone else
         // gets the looked-up one.
-        const ipa = entry.ipa?.trim() || ipaFor(entry);
+        const ipa = entry.ipa?.trim() || phonetics?.ipa;
 
-        return [ipa, phonetics.pinyin, phonetics.zhuyin]
+        return [ipa, phonetics?.pinyin, phonetics?.zhuyin]
           .filter((label): label is string => Boolean(label))
           .map((label) => ({ label, text, speechTag }));
       }),
-    [entries, ipaFor],
+    [entries, phoneticsFor],
   );
 
   if (rows.length === 0) return null;
