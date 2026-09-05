@@ -514,3 +514,30 @@ html[data-launching="true"] [data-app-viewport],
 html[data-launching="true"] [data-app-viewport] * {
   animation-play-state: paused !important;
 }
+
+/*
+ * Nothing animates while nobody can see it.
+ *
+ * The app draws a great deal of decoration with infinite CSS animations —
+ * about a hundred and fifty of them, thirty in Yumi's mark alone. Each is
+ * individually cheap and nearly all of them animate transform or opacity,
+ * but each also advances a compositing layer on every frame for as long as
+ * it runs, and they ran whether or not they were on screen: a radar spinning
+ * at the top of Discover while the reader is far down the list, a hero
+ * drifting above a conversation, six haloes turning on a deck that has been
+ * scrolled past.
+ *
+ * animation-play-state is the right lever. It stops a layer advancing rather
+ * than tearing it down and rebuilding it, so it costs nothing to apply and
+ * nothing to lift — unlike unmounting, which would restart every animation
+ * from its first frame the moment the element came back.
+ *
+ * Opt-in: it reaches only what an element has been marked for, by useInView.
+ * The hook reports "in view" until an observer says otherwise, and stays
+ * there where IntersectionObserver does not exist, so the failure mode is
+ * "animates anyway" and never "silently frozen".
+ */
+[data-in-view="false"],
+[data-in-view="false"] * {
+  animation-play-state: paused !important;
+}

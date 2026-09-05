@@ -11,11 +11,14 @@ import { useEffect, useRef, useState } from "react";
  * whether or not anyone could see them. On a mid-range Android that is real
  * battery and real frames spent on a logo scrolled half a page above.
  *
+ * Spread the result onto the element as `data-in-view`; the rule that acts on
+ * it lives once in globals.css rather than once per stylesheet.
+ *
  * Defaults to true, and stays true where there is no IntersectionObserver: the
  * failure mode of this hook has to be "animates anyway", never "silently
  * frozen".
  */
-export default function useInView<T extends HTMLElement>(threshold = 0.2) {
+export default function useInView<T extends Element>(threshold = 0.2) {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(true);
 

@@ -23,6 +23,7 @@ import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 
+import useInView from "@/hooks/useInView";
 import styles from "./CommandDeck.module.css";
 
 type RoomKey = keyof TranslationDictionary["cosmic"]["rooms"];
@@ -211,6 +212,9 @@ export default function CommandDeck() {
     return null;
   }
 
+  const { ref: coreRef, inView: coreInView } =
+    useInView<HTMLDivElement>();
+
   return (
     <Screen>
       <div
@@ -312,6 +316,11 @@ export default function CommandDeck() {
           ))}
 
           <div
+            ref={coreRef}
+            /* Twenty-one infinite animations live on this one widget, and it
+               is the top of a page that scrolls. See [data-in-view] in
+               globals.css. */
+            data-in-view={coreInView ? "true" : "false"}
             className={styles.core}
             data-omni={omniState}
             // The acknowledgement in §9 of the brief. It has a real trigger
