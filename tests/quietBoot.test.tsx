@@ -19,7 +19,11 @@ import { isLaunching } from "@/lib/launchState";
    too — a flag left behind would freeze the app it was meant to protect.
    ========================================================= */
 
+// Hoisted, because vi.mock's factory is lifted above ordinary consts.
+const { OPENING_MS } = vi.hoisted(() => ({ OPENING_MS: 2800 }));
+
 vi.mock("@/components/launch/activeLaunch", () => ({
+  ACTIVE_LAUNCH: { id: "test-opening", durationMs: OPENING_MS },
   default: ({ onComplete }: { onComplete?: () => void }) => (
     <button type="button" data-testid="finish" onClick={() => onComplete?.()}>
       opening
@@ -74,5 +78,61 @@ describe("the flag that quietens the app under the opening", () => {
     view.unmount();
 
     expect(launching()).toBeUndefined();
+  });
+});
+
+describe("the gate letting go without being told", () => {
+  it("opens on its own if the opening never reports finishing", () => {
+    /*
+     * Reported as the opening getting stuck.
+     *
+     * Until this the only way out was the animation saying it had finished,
+     * so anything that stopped it finishing left an opaque sheet over the
+     * whole app for the life of the document. Browsers suspend animations in
+     * a backgrounded tab, and opening the app and immediately switching away
+     * is an ordinary thing to do.
+     */
+    vi.useFakeTimers();
+
+    try {
+      const { container } = render(<SplashGate />);
+      expect(container.querySelector("[data-testid='finish']")).not.toBeNull();
+
+      // Well past the animation, and it has still said nothing.
+      act(() => {
+        vi.advanceTimersByTime(OPENING_MS + 5000);
+      });
+
+      expect(container.querySelector("[data-testid='finish']")).toBeNull();
+      expect(isLaunching()).toBe(false);
+      expect(launching()).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("still lets a healthy opening hand over on its own terms", () => {
+    vi.useFakeTimers();
+
+    try {
+      const { container } = render(<SplashGate />);
+
+      act(() => {
+        container
+          .querySelector<HTMLButtonElement>("[data-testid='finish']")
+          ?.click();
+      });
+
+      expect(container.querySelector("[data-testid='finish']")).toBeNull();
+
+      // And the ceiling that never fired does not fire later either.
+      act(() => {
+        vi.advanceTimersByTime(OPENING_MS + 5000);
+      });
+
+      expect(isLaunching()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
