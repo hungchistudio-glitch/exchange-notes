@@ -26,13 +26,11 @@ import {
   type InterfaceLanguage,
 } from "@/lib/appPreferences";
 import { loadTranslations } from "@/lib/i18n";
-import { fill } from "@/lib/i18n/format";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
   INTERFACE_LANGUAGE_CODE,
   getInterfaceLanguageMeta,
 } from "@/lib/languages";
-import type { YumiMood } from "@/lib/pet/types";
 
 import styles from "./LandingPage.module.css";
 
@@ -322,49 +320,155 @@ function YumiPreview({
   );
 }
 
-function MoodShowcase({ copy }: { copy: LandingCopy["moods"] }) {
-  const [selectedMood, setSelectedMood] = useState<YumiMood>("curious");
-  const moods: ReadonlyArray<{ mood: YumiMood; label: string }> = [
-    { mood: "curious", label: copy.curious },
-    { mood: "happy", label: copy.happy },
-    { mood: "excited", label: copy.excited },
-    { mood: "proud", label: copy.proud },
-    { mood: "missingYou", label: copy.missingYou },
+type LensFeature = "menu" | "target";
+
+/*
+ * What the camera does, shown rather than listed.
+ *
+ * Two features that are both "point it at something", and are otherwise
+ * nothing alike: one reads a whole printed document and keeps its shape, the
+ * other reads exactly one rectangle out of a crowded frame. They share a
+ * panel because a reader deciding whether this app is for them is asking one
+ * question — can it read the thing in front of me — and gets both answers.
+ *
+ * The previews are drawn here rather than borrowed from the real screens.
+ * MenuOverlayView and TargetOverlay want a scanned document and a live camera
+ * between them, and neither belongs in the bundle of a page that has to paint
+ * before anyone has signed in.
+ */
+function LensShowcase({ copy }: { copy: LandingCopy["lens"] }) {
+  const [feature, setFeature] = useState<LensFeature>("menu");
+
+  const features: ReadonlyArray<{
+    key: LensFeature;
+    label: string;
+    blurb: string;
+    cosmic?: boolean;
+  }> = [
+    { key: "menu", label: copy.menu.label, blurb: copy.menu.blurb, cosmic: true },
+    { key: "target", label: copy.target.label, blurb: copy.target.blurb },
   ];
-  const selectedLabel =
-    moods.find((item) => item.mood === selectedMood)?.label ?? copy.curious;
+
+  const details =
+    feature === "menu"
+      ? [copy.menu.detailOne, copy.menu.detailTwo, copy.menu.detailThree]
+      : [copy.target.detailOne, copy.target.detailTwo, copy.target.detailThree];
 
   return (
-    <div className={styles.moodExperience}>
+    <div className={styles.lensExperience}>
       <div
-        className={styles.moodYumi}
+        className={styles.lensStage}
         aria-live="polite"
         aria-label={copy.previewAriaLabel}
       >
-        <YumiMark
-          mood={selectedMood}
-          isWaking={false}
-          isEating={false}
-          growthStage={0}
-          crownEarned={false}
-        />
-        <span className="sr-only">
-          {fill(copy.selectedAriaLabel, { mood: selectedLabel })}
-        </span>
+        {feature === "menu" ? (
+          <MenuScanPreview copy={copy.menu} />
+        ) : (
+          <TargetFocusPreview copy={copy.target} />
+        )}
       </div>
-      <div className={styles.moodButtons} aria-label={copy.pickerAriaLabel}>
-        {moods.map((item) => (
-          <button
-            key={item.mood}
-            type="button"
-            onClick={() => setSelectedMood(item.mood)}
-            aria-pressed={selectedMood === item.mood}
-            className={styles.moodButton}
-          >
-            <span>{item.label}</span>
-          </button>
-        ))}
+
+      <div className={styles.lensPanel}>
+        <div className={styles.lensButtons} aria-label={copy.pickerAriaLabel}>
+          {features.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setFeature(item.key)}
+              aria-pressed={feature === item.key}
+              className={styles.lensButton}
+            >
+              <span className={styles.lensButtonLabel}>
+                {item.label}
+                {item.cosmic && (
+                  <span className={styles.lensCosmicTag}>
+                    {copy.cosmicBadge}
+                  </span>
+                )}
+              </span>
+              <small>{item.blurb}</small>
+            </button>
+          ))}
+        </div>
+
+        <ul className={styles.lensDetails}>
+          {details.map((detail) => (
+            <li key={detail}>{detail}</li>
+          ))}
+        </ul>
       </div>
+    </div>
+  );
+}
+
+/*
+ * A menu, read and kept in place.
+ *
+ * Deliberately shows the printed line above the translation rather than
+ * instead of it — that ordering is the feature. The price is repeated exactly
+ * as a menu would print it, because "point at this on the real menu" only
+ * works if the app did not tidy it into a number.
+ */
+function MenuScanPreview({ copy }: { copy: LandingCopy["lens"]["menu"] }) {
+  return (
+    <div className={styles.menuScan}>
+      <div className={`${styles.menuRow} ${styles.menuRowLit}`}>
+        <div>
+          <p className={styles.menuSource} lang="zh-Hant">
+            {copy.demoSource}
+          </p>
+          <p className={styles.menuName}>{copy.demoName}</p>
+          <p className={styles.menuIpa}>{copy.demoIpa}</p>
+        </div>
+        <span className={styles.menuPrice}>{copy.demoPrice}</span>
+      </div>
+
+      <div className={styles.menuRow}>
+        <div>
+          <p className={styles.menuSource} lang="zh-Hant">
+            {copy.demoSecondSource}
+          </p>
+          <p className={styles.menuName}>{copy.demoSecondName}</p>
+        </div>
+        <span className={styles.menuPrice}>{copy.demoSecondPrice}</span>
+      </div>
+
+      <p className={styles.menuConfidence}>{copy.demoConfidence}</p>
+    </div>
+  );
+}
+
+/*
+ * A viewfinder with more than one thing in it.
+ *
+ * The candidates are thin and unfilled and the chosen one is marked at its
+ * corners, which is how the real overlay draws them — selection is never
+ * carried by colour alone there, and a marketing preview that invented a
+ * different rule would be teaching the wrong thing.
+ */
+function TargetFocusPreview({
+  copy,
+}: {
+  copy: LandingCopy["lens"]["target"];
+}) {
+  return (
+    <div className={styles.viewfinder}>
+      <span className={`${styles.targetBox} ${styles.targetBoxA}`}>
+        <span className="sr-only">{copy.demoCandidate}</span>
+      </span>
+      <span className={`${styles.targetBox} ${styles.targetBoxB}`}>
+        <span className="sr-only">{copy.demoCandidate}</span>
+      </span>
+
+      <span className={`${styles.targetBox} ${styles.targetChosen}`}>
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
+        <span className={styles.targetTag}>{copy.demoSelected}</span>
+      </span>
+
+      <p className={styles.targetResult}>{copy.demoResult}</p>
     </div>
   );
 }
@@ -500,14 +604,14 @@ export default function LandingPage() {
 
       <section
         className={styles.moodSection}
-        aria-labelledby="landing-moods-title"
+        aria-labelledby="landing-lens-title"
       >
         <div className={styles.moodHeading}>
-          <p className={styles.eyebrow}>{copy.moods.eyebrow}</p>
-          <h2 id="landing-moods-title">{copy.moods.title}</h2>
-          <p>{copy.moods.subtitle}</p>
+          <p className={styles.eyebrow}>{copy.lens.eyebrow}</p>
+          <h2 id="landing-lens-title">{copy.lens.title}</h2>
+          <p>{copy.lens.subtitle}</p>
         </div>
-        <MoodShowcase copy={copy.moods} />
+        <LensShowcase copy={copy.lens} />
       </section>
 
       <section

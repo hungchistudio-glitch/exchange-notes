@@ -102,17 +102,37 @@ describe("the pre-login product tour", () => {
     );
   });
 
-  it("uses one real Yumi component to preview selectable moods", () => {
+  it("switches between the two things the camera can do", () => {
     render(<LandingPage />);
 
-    const proud = screen.getByRole("button", { name: "proud" });
-    fireEvent.click(proud);
+    // Opens on the menu scan.
+    const menu = screen.getByRole("button", { name: /Translate a menu/ });
+    const target = screen.getByRole("button", { name: /Focus on one thing/ });
 
-    expect(proud).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getAllByTestId("landing-yumi").at(-1)).toHaveAttribute(
-      "data-mood",
-      "proud",
-    );
+    expect(menu).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("Sliced pork with garlic sauce")).toBeInTheDocument();
+
+    fireEvent.click(target);
+
+    expect(target).toHaveAttribute("aria-pressed", "true");
+    expect(menu).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("teapot")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Sliced pork with garlic sauce"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("says which of the two only exists in Cosmic Mode", () => {
+    // The menu scanner's only entry point is the Cosmic Mode Command Deck, so
+    // a reader who goes looking for it in the standard app would not find it.
+    // Target focus is on the ordinary capture screen and carries no badge.
+    render(<LandingPage />);
+
+    const menu = screen.getByRole("button", { name: /Translate a menu/ });
+    const target = screen.getByRole("button", { name: /Focus on one thing/ });
+
+    expect(menu).toHaveTextContent("Yumi Cosmic Mode");
+    expect(target).not.toHaveTextContent("Yumi Cosmic Mode");
   });
 
   it("keeps hero and final conversion events distinct", () => {

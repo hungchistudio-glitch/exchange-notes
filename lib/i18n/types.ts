@@ -143,18 +143,38 @@ export type TranslationDictionary = {
       reviewWord: string;
       reviewHint: string;
     };
-    moods: {
+    lens: {
       eyebrow: string;
       title: string;
       subtitle: string;
-      previewAriaLabel: string;
       pickerAriaLabel: string;
-      selectedAriaLabel: string;
-      curious: string;
-      happy: string;
-      excited: string;
-      proud: string;
-      missingYou: string;
+      previewAriaLabel: string;
+      cosmicBadge: string;
+      menu: {
+        label: string;
+        blurb: string;
+        detailOne: string;
+        detailTwo: string;
+        detailThree: string;
+        demoSource: string;
+        demoName: string;
+        demoIpa: string;
+        demoPrice: string;
+        demoSecondSource: string;
+        demoSecondName: string;
+        demoSecondPrice: string;
+        demoConfidence: string;
+      };
+      target: {
+        label: string;
+        blurb: string;
+        detailOne: string;
+        detailTwo: string;
+        detailThree: string;
+        demoSelected: string;
+        demoCandidate: string;
+        demoResult: string;
+      };
     };
     closing: {
       title: string;
