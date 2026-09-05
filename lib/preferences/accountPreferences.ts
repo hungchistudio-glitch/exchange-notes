@@ -22,11 +22,8 @@ import {
   getDailyGoalWords,
   getInterfaceLanguage,
   isAppFontSize,
-  DEFAULT_LAUNCH_SOUND_ENABLED,
-  getLaunchSoundEnabled,
   isDailyGoalWords,
   isInterfaceLanguage,
-  setLaunchSoundEnabled,
   setAppFontSize,
   setDailyGoalWords,
   setInterfaceLanguage,
@@ -45,7 +42,6 @@ export type AccountPreferences = {
   fontSize: AppFontSize;
   interfaceLanguage: InterfaceLanguage;
   dailyGoalWords: DailyGoalWords;
-  launchSound: boolean;
   speech: SpeechSettings;
 };
 
@@ -80,16 +76,6 @@ export function parseAccountPreferences(value: unknown): AccountPreferences {
     dailyGoalWords: isDailyGoalWords(dailyGoal)
       ? dailyGoal
       : DEFAULT_DAILY_GOAL_WORDS,
-
-    /*
-     * Absent means "never chosen", which is the default rather than off — a
-     * reader signing in on a new device before this setting existed should
-     * get the app as it ships, not silently muted.
-     */
-    launchSound:
-      typeof raw.launchSound === "boolean"
-        ? raw.launchSound
-        : DEFAULT_LAUNCH_SOUND_ENABLED,
 
     speech: parseSpeech(raw.speech),
   };
@@ -127,7 +113,6 @@ export function readLocalPreferences(): AccountPreferences {
     fontSize: getAppFontSize(),
     interfaceLanguage: getInterfaceLanguage(),
     dailyGoalWords: getDailyGoalWords(),
-    launchSound: getLaunchSoundEnabled(),
     speech: getSpeechSettings(),
   };
 }
@@ -137,7 +122,6 @@ export function applyPreferencesLocally(preferences: AccountPreferences) {
   setAppFontSize(preferences.fontSize);
   setInterfaceLanguage(preferences.interfaceLanguage);
   setDailyGoalWords(preferences.dailyGoalWords);
-  setLaunchSoundEnabled(preferences.launchSound);
   setSpeechSettings(preferences.speech);
 }
 
@@ -149,7 +133,6 @@ export function preferencesEqual(
     a.fontSize === b.fontSize &&
     a.interfaceLanguage === b.interfaceLanguage &&
     a.dailyGoalWords === b.dailyGoalWords &&
-    a.launchSound === b.launchSound &&
     a.speech.rate === b.speech.rate &&
     a.speech.voiceGender === b.speech.voiceGender &&
     a.speech.voiceURIs["zh-TW"] === b.speech.voiceURIs["zh-TW"] &&

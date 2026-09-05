@@ -2191,14 +2191,6 @@ const english: TranslationDictionary = {
         "The test service could not be reached. Check your connection and try again.",
     },
 
-    launchSound: {
-      rowTitle: "Opening sound",
-      rowDescription: "Play a sound with the opening animation",
-      previewLabel: "Preview",
-      previewPlaying: "Playing…",
-      previewFailed: "Could not play the sound",
-    },
-
     fontSize: {
       rowTitle: "Font size",
       rowDescription: "Adjust text throughout the app",

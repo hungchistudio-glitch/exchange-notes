@@ -10,7 +10,6 @@ import {
 } from "react";
 
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
-import { getLaunchSoundEnabled } from "@/lib/appPreferences";
 import {
   LOGO_TIERS,
   exchangeNotesLogoGeometry,
@@ -19,7 +18,6 @@ import {
 import styles from "./YumiMinimalLaunch.module.css";
 import type { LaunchRendererProps } from "./types";
 import {
-  YUMI_MINIMAL_AUDIO_SRC,
   YUMI_MINIMAL_CHECKPOINTS,
   YUMI_MINIMAL_DURATION_MS,
   YUMI_MINIMAL_REDUCED_DURATION_MS,
@@ -27,22 +25,6 @@ import {
 } from "./yumiMinimalTimeline";
 
 const FIRST_FRAME = computeYumiMinimalFrame(0);
-/*
- * play() as a promise, whatever the browser hands back.
- *
- * It returns a promise in every browser that matters and `undefined` in older
- * ones — and in jsdom, which is how the launch tests reach this file. It can
- * also throw synchronously rather than rejecting. All three end up the same
- * shape here, so callers only have to know about resolve and reject.
- */
-function attemptPlay(audio: HTMLAudioElement): Promise<void> {
-  try {
-    return Promise.resolve(audio.play());
-  } catch (error) {
-    return Promise.reject(error);
-  }
-}
-
 const geometry = exchangeNotesLogoGeometry({
   canvas: 512,
   ...LOGO_TIERS.inApp,
@@ -83,7 +65,6 @@ export default function YumiMinimalLaunch({
   showReviewControls = reviewMode,
 }: YumiMinimalLaunchProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const scrubberRef = useRef<HTMLInputElement>(null);
   const readoutRef = useRef<HTMLSpanElement>(null);
   const frameRef = useRef(0);
@@ -101,9 +82,6 @@ export default function YumiMinimalLaunch({
     motionOverride ?? forceReducedMotion ?? systemReducedMotion;
   const [playing, setPlaying] = useState(true);
   const [runId, setRunId] = useState(0);
-  const [soundState, setSoundState] = useState<
-    "silent" | "playing" | "blocked"
-  >("silent");
 
   const duration = reducedMotion
     ? YUMI_MINIMAL_REDUCED_DURATION_MS
@@ -169,89 +147,9 @@ export default function YumiMinimalLaunch({
   useEffect(
     () => () => {
       cancelAnimationFrame(frameRef.current);
-      audioRef.current?.pause();
     },
     [],
   );
-
-  /*
-   * The opening tries to make its sound, and takes a tap as permission if the
-   * browser will not give it.
-   *
-   * Nothing used to call play() outside the review route at all: the two
-   * controls that do are behind showReviewControls, which SplashGate never
-   * sets. So the audio element mounted, downloaded its 45KB on every signed-in
-   * load, and was never once asked to play.
-   *
-   * Wiring it up is not enough on its own, because this runs at document load
-   * — before any interaction — and that is exactly what autoplay policies
-   * refuse. Desktop Chrome often allows it; iOS Safari, which is where this is
-   * installed as an app, essentially never does on a cold start, and no amount
-   * of unlocking on a previous visit survives a new document.
-   *
-   * So: ask, and if the answer is no, arm a single listener and let the first
-   * touch anywhere start it from wherever the animation has got to. A reader
-   * who touches nothing gets a silent opening, which is the same thing they
-   * have today.
-   */
-  useEffect(() => {
-    const audio = audioRef.current;
-
-    if (!audio || reviewMode || reducedMotion) return;
-    if (!getLaunchSoundEnabled()) return;
-
-    let disarmed = false;
-
-    const startFromCurrentFrame = () => {
-      audio.currentTime = Math.min(
-        currentTimeRef.current / 1000,
-        Math.max(0, (audio.duration || duration / 1000) - 0.05),
-      );
-
-      return attemptPlay(audio);
-    };
-
-    const disarm = () => {
-      if (disarmed) return;
-      disarmed = true;
-      window.removeEventListener("pointerdown", onGesture);
-      window.removeEventListener("keydown", onGesture);
-    };
-
-    function onGesture() {
-      if (disarmed) return;
-      disarm();
-
-      void startFromCurrentFrame().then(
-        () => setSoundState("playing"),
-        () => setSoundState("blocked"),
-      );
-    }
-
-    void attemptPlay(audio).then(
-      () => {
-        setSoundState("playing");
-        disarm();
-      },
-      () => {
-        setSoundState("blocked");
-
-        // Refused for want of a gesture. The next one will do.
-        if (!disarmed) {
-          window.addEventListener("pointerdown", onGesture, { once: false });
-          window.addEventListener("keydown", onGesture, { once: false });
-        }
-      },
-    );
-
-    return () => {
-      disarm();
-      audio.pause();
-    };
-    // Runs once per opening. runId changes only in review mode, which is
-    // excluded above, so this deliberately does not depend on it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion, reviewMode]);
 
   const restartClock = useCallback(() => {
     currentTimeRef.current = 0;
@@ -261,55 +159,33 @@ export default function YumiMinimalLaunch({
     setRunId((value) => value + 1);
   }, [paint]);
 
-  const replayWithSound = useCallback(() => {
-    const audio = audioRef.current;
-
+  /*
+   * Review-only. The opening itself never restarts — it plays once per
+   * document load and hands the screen over.
+   */
+  const replay = useCallback(() => {
     restartClock();
-
-    if (!audio || reducedMotion) {
-      setSoundState("silent");
-      return;
-    }
-
-    audio.pause();
-    audio.currentTime = 0;
-    audio.volume = 1;
-
-    void attemptPlay(audio).then(
-      () => setSoundState("playing"),
-      () => setSoundState("blocked"),
-    );
-  }, [reducedMotion, restartClock]);
+  }, [restartClock]);
 
   const togglePlaying = useCallback(() => {
-    const audio = audioRef.current;
-
     if (playing) {
       setPlaying(false);
-      audio?.pause();
       return;
     }
 
     if (currentTimeRef.current >= duration) {
-      replayWithSound();
+      replay();
       return;
     }
 
     setPlaying(true);
     setRunId((value) => value + 1);
-
-    if (audio && soundState === "playing" && !reducedMotion) {
-      audio.currentTime = currentTimeRef.current / 1000;
-      void attemptPlay(audio).catch(() => setSoundState("blocked"));
-    }
-  }, [duration, playing, reducedMotion, replayWithSound, soundState]);
+  }, [duration, playing, replay]);
 
   const seek = useCallback(
     (time: number) => {
       const nextTime = Math.min(duration, Math.max(0, time));
       currentTimeRef.current = nextTime;
-      audioRef.current?.pause();
-      setSoundState("silent");
       setPlaying(false);
       paint(nextTime);
     },
@@ -317,8 +193,6 @@ export default function YumiMinimalLaunch({
   );
 
   const toggleMotionMode = useCallback(() => {
-    audioRef.current?.pause();
-    setSoundState("silent");
     currentTimeRef.current = 0;
     previousFrameRef.current = null;
     setMotionOverride(!reducedMotion);
@@ -337,13 +211,10 @@ export default function YumiMinimalLaunch({
       data-launch-id={launchId}
       data-playing={playing ? "" : undefined}
       data-reduced-motion={reducedMotion ? "" : undefined}
-      data-sound={soundState}
       role={reviewMode ? "region" : undefined}
       aria-label={reviewMode ? "Yumi minimal opening animation review" : undefined}
       aria-hidden={reviewMode ? undefined : true}
     >
-      <audio ref={audioRef} src={YUMI_MINIMAL_AUDIO_SRC} preload="auto" />
-
       {showHandoffPreview && (
         <div className={styles.handoffPreview} aria-hidden="true">
           <header className={styles.previewHeader}>
@@ -456,14 +327,8 @@ export default function YumiMinimalLaunch({
             <span ref={readoutRef} className={styles.timeReadout}>
               0.000s
             </span>
-            <span className={styles.soundReadout} role="status">
-              {soundState === "blocked"
-                ? "Sound needs another tap"
-                : soundState === "playing"
-                  ? "Reference sound on"
-                  : reducedMotion
-                    ? "Reduced motion · sound off"
-                    : "Silent preview"}
+            <span className={styles.motionReadout} role="status">
+              {reducedMotion ? "Reduced motion" : "Full motion"}
             </span>
           </div>
 
@@ -486,9 +351,9 @@ export default function YumiMinimalLaunch({
             <button
               type="button"
               className={styles.primaryControl}
-              onClick={replayWithSound}
+              onClick={replay}
             >
-              {reducedMotion ? "Replay" : "Replay + sound"}
+              Replay
             </button>
             <button type="button" onClick={toggleMotionMode}>
               {reducedMotion ? "Full motion" : "Reduced motion"}

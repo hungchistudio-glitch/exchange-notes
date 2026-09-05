@@ -6,12 +6,6 @@
  * reduced-motion cut without asking React to render on every frame.
  */
 
-/**
- * The opening's sound. Here rather than in the component so the settings row
- * can preview it without pulling the whole animation into that bundle.
- */
-export const YUMI_MINIMAL_AUDIO_SRC = "/audio/yumi-minimal-opening.m4a";
-
 export const YUMI_MINIMAL_DURATION_MS = 2800;
 export const YUMI_MINIMAL_REDUCED_DURATION_MS = 820;
 export const YUMI_MINIMAL_SNAP_MS = 1820;
