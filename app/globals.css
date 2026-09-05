@@ -112,9 +112,9 @@
 
   /* The floating dock. Its glass, its line, and the circular energy base that
      slides behind whichever icon is active. */
-  --dock-surface: rgba(253, 251, 246, 0.75);
-  /* The same colour with nothing showing through, for when the blur is off. */
-  --dock-surface-opaque: #fdfbf6;
+  /* Opaque: the dock no longer blurs what is behind it, and a translucent
+     bar with a sharp page showing through it is not the same effect. */
+  --dock-surface: #fdfbf6;
   --dock-line: rgba(0, 0, 0, 0.07);
   --dock-shadow: 0 10px 36px rgba(28, 26, 22, 0.12);
   --dock-indicator: #1c1a16;
@@ -258,7 +258,9 @@
 
   --msg-presence: var(--success);
   --msg-glow: none;
-  --msg-header: rgba(245, 243, 237, 0.88);
+  /* Opaque, as --dock-surface is — and the same colour it already resolved
+     to wherever the page behind it was the page's own background. */
+  --msg-header: #f5f3ed;
 
   /*
    * Yumi's own surfaces, kept apart from the page's.
@@ -511,34 +513,4 @@ html {
 html[data-launching="true"] [data-app-viewport],
 html[data-launching="true"] [data-app-viewport] * {
   animation-play-state: paused !important;
-}
-
-/*
- * Blurred glass, only where it is affordable.
- *
- * The header is sticky and the dock is fixed, both over the one scrolling
- * viewport — so their backdrop-filter is not paid once, it is re-computed on
- * every frame of every scroll, on every screen. It is also nearly invisible:
- * the surfaces behind it are 90% and 75% opaque, so between a tenth and a
- * quarter of the blur ever reaches the reader.
- *
- * On a device that has told us it is modest (see lib/deviceTier.ts) the glass
- * becomes plain surface. The colour goes fully opaque at the same time —
- * translucency without the blur behind it is not the same effect at lower
- * cost, it is text with the page showing through it.
- *
- * Capable devices, iPhones among them, are untouched.
- */
-html[data-device-tier="modest"] [data-app-header],
-html[data-device-tier="modest"] [data-app-dock] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-html[data-device-tier="modest"] [data-app-header] {
-  background-color: var(--surface) !important;
-}
-
-html[data-device-tier="modest"] [data-app-dock] {
-  background-color: var(--dock-surface-opaque, var(--surface)) !important;
 }

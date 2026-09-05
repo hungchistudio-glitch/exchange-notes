@@ -25,10 +25,17 @@ export default function AppHeader({
 }: AppHeaderProps) {
   return (
     <header
-      // Named so the device-tier rules in globals.css can reach it — the
-      // blur here is re-computed on every frame of every scroll.
-      data-app-header
-      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface/90 px-4 backdrop-blur-xl ${className}`}
+      /*
+       * Opaque, and no backdrop-filter.
+       *
+       * This is sticky over the app's one scrolling viewport, so a
+       * backdrop-filter here is not paid once — it is re-sampled and
+       * re-blurred on every frame of every scroll, on every screen that has
+       * a header. At 90% opacity a tenth of that blur ever reached anyone,
+       * and against high-contrast content it read as a smudge rather than
+       * as glass.
+       */
+      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface px-4 ${className}`}
       style={{
         paddingTop: "env(safe-area-inset-top)",
       }}

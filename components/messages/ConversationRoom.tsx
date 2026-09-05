@@ -1254,7 +1254,7 @@ export default function ConversationRoom({
         who you are talking to and the only way back to the list.
       */}
       <header
-        className="z-20 shrink-0 border-b backdrop-blur-xl"
+        className="z-20 shrink-0 border-b"
         style={{
           background: "var(--msg-header)",
           borderColor: "var(--msg-line)",
@@ -1759,7 +1759,7 @@ export default function ConversationRoom({
         composer floating 38px above the dock.
       */}
       <div
-        className="relative z-30 shrink-0 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:pb-[calc(5.625rem+env(safe-area-inset-bottom))]"
+        className="relative z-30 shrink-0 border-t pb-[env(safe-area-inset-bottom)] sm:pb-[calc(5.625rem+env(safe-area-inset-bottom))]"
         style={{
           background: "var(--msg-header)",
           borderColor: "var(--msg-line)",
