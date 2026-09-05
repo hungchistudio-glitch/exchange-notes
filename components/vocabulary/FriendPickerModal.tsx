@@ -7,6 +7,29 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import type { FriendProfile } from "@/lib/friends";
 
+/*
+ * Sixty per cent of the screen, and no more.
+ *
+ * This is a question — "which friend?" — not a screen of its own, so the
+ * page behind it should stay visible enough to be the thing the reader is
+ * sending. Past this the list scrolls inside the sheet.
+ */
+const PANEL_MAX_HEIGHT = "min(60dvh, 640px)";
+
+/*
+ * The list keeps this much room whatever is in it.
+ *
+ * The sheet is anchored to the bottom of the screen, so its height is also
+ * its position: every time the contents changed size while it was arriving,
+ * the top edge moved, and because the entrance transform is a percentage of
+ * the panel's own height the in-flight animation re-resolved against the new
+ * size. That is what read as the sheet flying up too far and dropping back.
+ *
+ * Holding the common cases — loading, no friends, a handful of friends — at
+ * one height means the sheet arrives once, at the height it will stay at.
+ */
+const SETTLED_LIST_HEIGHT = 184;
+
 type FriendPickerModalProps = {
   friends: FriendProfile[];
   loading: boolean;
@@ -55,7 +78,13 @@ export default function FriendPickerModal({
         className={`${motion.panelClassName} relative z-10 flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl sm:rounded-[28px]`}
         style={{
           ...motion.panelProps.style,
-          maxHeight: "min(78vh, 640px)",
+          /*
+           * dvh, not vh. vh is the *large* viewport — the height the page
+           * would have if the browser's toolbars were hidden — so on a phone
+           * with a visible address bar a vh-sized sheet is taller than the
+           * space it is being shown in. Every other sheet here uses dvh.
+           */
+          maxHeight: PANEL_MAX_HEIGHT,
           paddingBottom: "max(env(safe-area-inset-bottom), 20px)",
         }}
       >
@@ -84,7 +113,10 @@ export default function FriendPickerModal({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 touch-pan-y space-y-1.5 overflow-y-auto overscroll-contain px-4 pb-2">
+        <div
+          className="min-h-0 flex-1 touch-pan-y space-y-1.5 overflow-y-auto overscroll-contain px-4 pb-2"
+          style={{ minHeight: SETTLED_LIST_HEIGHT }}
+        >
           {loading && (
             <div className="space-y-1.5 px-2 py-2">
               {[0, 1].map((index) => (

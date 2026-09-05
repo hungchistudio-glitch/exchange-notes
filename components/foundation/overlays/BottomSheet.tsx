@@ -15,6 +15,17 @@ type BottomSheetProps = {
   titleAction?: ReactNode;
   footer?: ReactNode;
   className?: string;
+  /**
+   * How tall this sheet is allowed to get.
+   *
+   * The default is nearly the whole screen, which is right for the sheets
+   * that are a screen of their own — a story, a profile form, a note being
+   * written. A sheet that only asks the reader to pick one thing from a
+   * short list should say so: left at the default it climbs to 94% of the
+   * screen on a phone as soon as there are a handful of rows, which reads
+   * as the app taking over rather than asking a question.
+   */
+  maxHeight?: string;
 };
 
 export default function BottomSheet({
@@ -26,6 +37,7 @@ export default function BottomSheet({
   titleAction,
   footer,
   className = "",
+  maxHeight = "calc(100dvh - max(3rem, env(safe-area-inset-top)))",
 }: BottomSheetProps) {
   const titleId = useId();
   const motion = useSheetMotion({ open, onClose });
@@ -63,8 +75,7 @@ export default function BottomSheet({
             .join(" ")}
           style={{
             ...motion.panelProps.style,
-            maxHeight:
-              "calc(100dvh - max(3rem, env(safe-area-inset-top)))",
+            maxHeight,
           }}
         >
           <div
