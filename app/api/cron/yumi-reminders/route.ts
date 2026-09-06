@@ -9,6 +9,9 @@ import type {
 import {
   sendWebPushToUser,
 } from "@/lib/push/sendToUser";
+import { DEFAULT_INTERFACE_LANGUAGE } from "@/lib/appPreferences";
+import { readerLanguages } from "@/lib/push/readerLanguages";
+import { yumiReminderCopy } from "@/lib/push/yumiReminderCopy";
 import {
   createServiceClient,
 } from "@/lib/supabase/service";
@@ -344,6 +347,25 @@ export async function GET(
     summary.candidates =
       preferences.length;
 
+    /*
+     * Everyone's languages in one query, before the loop.
+     *
+     * Asking per user would be a round trip each, inside a job that already
+     * runs against a sixty-second ceiling — the kind of thing that works
+     * for ten readers and quietly stops working for a thousand. One `in`
+     * for the whole run costs the same whoever turns up.
+     */
+    const languages = new Map(
+      (
+        await readerLanguages(
+          supabase,
+          preferences.map(
+            (preference) => preference.user_id,
+          ),
+        )
+      ).map((reader) => [reader.userId, reader]),
+    );
+
     for (
       const preference of preferences
     ) {
@@ -450,15 +472,23 @@ export async function GET(
           continue;
         }
 
+        const reader = languages.get(
+          preference.user_id,
+        );
+
+        const copy = await yumiReminderCopy(
+          reader?.interfaceLanguage ??
+            DEFAULT_INTERFACE_LANGUAGE,
+          reader?.learningLanguage ?? null,
+        );
+
         const result =
           await sendWebPushToUser(
             supabase,
             preference.user_id,
             {
-              title:
-                "Yumi 想你了 · Yumi misses you",
-              body:
-                "今天還沒餵我單字餅乾呢！Come feed me one word cookie.",
+              title: copy.title,
+              body: copy.body,
               url: "/vocabulary",
               tag:
                 `yumi-reminder-${local.date}`,

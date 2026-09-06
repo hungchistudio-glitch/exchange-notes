@@ -1886,6 +1886,9 @@ const italian: TranslationDictionary = {
       testing: "Invio…",
       testSent: "Notifica di prova di Yumi inviata.",
       testError: "Non è stato possibile inviare la notifica di prova di Yumi.",
+      pushTitle: "Manchi a Yumi",
+      pushBody:
+        "Oggi ancora nessun biscotto-parola. Vieni a dargliene uno.",
     },
     interfaceMode: {
       rowTitle: "Modalità interfaccia",

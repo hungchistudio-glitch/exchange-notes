@@ -2052,6 +2052,9 @@ const english: TranslationDictionary = {
       testing: "Sending…",
       testSent: "Yumi test notification sent.",
       testError: "The Yumi test notification could not be sent.",
+      pushTitle: "Yumi misses you",
+      pushBody:
+        "No word cookie today yet — come and feed one.",
     },
 
     interfaceMode: {

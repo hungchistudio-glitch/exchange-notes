@@ -2006,6 +2006,9 @@ const traditionalChinese: TranslationDictionary = {
       testing: "傳送中…",
       testSent: "Yumi 測試通知已送出。",
       testError: "無法傳送 Yumi 測試通知。",
+      pushTitle: "Yumi 想你了",
+      pushBody:
+        "今天還沒餵單字餅乾呢，快來餵一顆吧！",
     },
 
     interfaceMode: {
