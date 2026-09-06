@@ -84,6 +84,28 @@ declare global {
  * the redirect flow, so an unconfigured deployment can still be signed into.
  * Losing the branding is a bad day; losing the only way into the app is an
  * outage.
+ *
+ * ── Null does not mean "nobody configured it" ──────────────────────────
+ *
+ * `NEXT_PUBLIC_*` is not read here at run time. The bundler replaces this
+ * expression with a string literal while it compiles this module, so what
+ * reaches the browser is whatever the variable was **at build time**. Three
+ * different things therefore produce exactly the same null, and the same
+ * symptom — the redirect button, on a deployment whose settings look right:
+ *
+ *   - the variable genuinely is not set
+ *   - it was added after the last build, and nothing has rebuilt since
+ *   - it was added, something did rebuild, but the build restored a cache
+ *     and never recompiled this module
+ *
+ * The third is the one that wastes an afternoon, because redeploying looks
+ * like it should fix it and does not. All three are distinguishable from
+ * outside: fetch the login page's chunks and search for the client id. If
+ * the literal is absent and `env.NEXT_PUBLIC_GOOGLE_CLIENT_ID` is still
+ * present as a property lookup, this module was compiled without a value —
+ * a lookup that can never resolve, because the `process` a browser gets is
+ * a shim whose `env` is empty. A build that had the value inlines it and
+ * leaves no lookup behind at all.
  */
 export function getGoogleClientId(): string | null {
   const id = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
