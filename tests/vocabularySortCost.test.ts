@@ -8,7 +8,7 @@ import type { VocabularyItem } from "@/lib/types/app";
 /* =========================================================
    The interaction map is read once per sort, not once per comparison
 
-   The relevance sort's fallback — the branch that runs while the AI ranking
+   The for-you sort's fallback — the branch that runs while the AI ranking
    is still loading, when it errors, and offline — read the whole interaction
    map inside its comparator. A comparator runs O(n log n) times: 400 words is
    about 2,800 comparisons, and each one pulled 62KB out of localStorage and
@@ -54,7 +54,7 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
-describe("sorting a library by relevance", () => {
+describe("sorting a library by for-you", () => {
   it("reads the interaction map once, however many words there are", () => {
     const items = library();
 
@@ -69,7 +69,7 @@ describe("sorting a library by relevance", () => {
         query: "",
         quickFilter: "all",
         languages: [],
-        sortMode: "relevance",
+        sortMode: "for-you",
         /* Empty, which is the state this branch exists for: no ranking yet. */
         rankedIds: [],
       }),
