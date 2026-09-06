@@ -3,13 +3,15 @@ import { notFound } from "next/navigation";
 /* =========================================================
    Screens that exist for whoever is building the app
 
-   There are six of these — the vocabulary search field, the brand sheet,
-   the tour, the launch animation and the two Yumi openings — and every one
-   of them answered 200 on the live site. They are not secret and they are
-   not dangerous, but they are development furniture: unfinished states,
-   seeded fixtures, and components mounted outside the flow they belong to.
-   A reader who lands on one has found part of the workshop, and a search
-   engine that indexes one has indexed a page nobody meant to publish.
+   Six of these shipped before this guard existed — the vocabulary search
+   field, the brand sheet, the tour, the launch animation and the two Yumi
+   openings — and every one of them answered 200 on the live site. There are
+   more now; the number is deliberately not restated here, so it cannot go
+   stale. They are not secret and they are not dangerous, but they are
+   development furniture: unfinished states, seeded fixtures, and components
+   mounted outside the flow they belong to. A reader who lands on one has
+   found part of the workshop, and a search engine that indexes one has
+   indexed a page nobody meant to publish.
 
    This asks to be let in rather than asking to be kept out, and that is the
    whole design of it. The first version tested `VERCEL_ENV !== "production"`

@@ -76,6 +76,14 @@ const friends = [
   { id: "2", exchangeId: "jun", displayName: "Jun" },
 ] as unknown as FriendProfile[];
 
+/* More friends than the reserved height can show, which is where the sheet
+   used to grow out from under its own entrance animation. */
+const manyFriends = Array.from({ length: 8 }, (_, index) => ({
+  id: `friend-${index}`,
+  exchangeId: `friend${index}`,
+  displayName: `Friend ${index}`,
+})) as unknown as FriendProfile[];
+
 function pickerProps(overrides: Record<string, unknown> = {}) {
   return {
     friends: [] as FriendProfile[],
@@ -137,6 +145,43 @@ describe("arriving at a share sheet", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Mika")).toBeInTheDocument();
+    });
+  });
+
+  /*
+   * The floor alone was not enough. Four friends or more is taller than the
+   * reservation, and the list is what gives the sheet its height, so a
+   * reader with a real friend list still watched the panel grow by up to
+   * 190px — measured at 294px loading and 484px with six friends on a
+   * 375x812 screen — while the entrance was still running. Bottom-anchored,
+   * that is the panel jumping upward mid-flight, and the entrance transform
+   * is a percentage of the panel's own height, so it re-resolved against the
+   * new size on top of that.
+   */
+  it("does not grow while it is still arriving", async () => {
+    const { rerender } = render(
+      <FriendPickerModal {...pickerProps({ loading: true })} />,
+    );
+
+    const list = pickerList();
+    expect(list).not.toBeNull();
+
+    /* jsdom lays nothing out, so the list is told how tall its contents are. */
+    Object.defineProperty(list!, "scrollHeight", {
+      configurable: true,
+      value: 374,
+    });
+
+    expect(list!.style.height).toBe("184px");
+
+    /* The friend list lands mid-entrance, which is the ordinary case. */
+    rerender(<FriendPickerModal {...pickerProps({ friends: manyFriends })} />);
+
+    expect(list!.style.height).toBe("184px");
+
+    /* And once the sheet has landed, it takes the room it needs. */
+    await waitFor(() => expect(list!.style.height).toBe("374px"), {
+      timeout: 2000,
     });
   });
 
