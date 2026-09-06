@@ -333,6 +333,25 @@ function VirtualWordList({
   });
 
   /*
+   * Switching view mode throws the measurements away.
+   *
+   * The virtualiser remembers the height it measured for every row, keyed by
+   * the word's id — and the id does not change when the reader switches
+   * between compact and cards. So every row it had already measured kept its
+   * compact height while rendering as a card: the spacer was sized for the
+   * wrong list, rows overlapped or left gaps, and the scroll position pointed
+   * somewhere else entirely. Only the handful of rows on screen corrected
+   * themselves, because only those re-measure.
+   *
+   * `measure()` drops the cache so every row is re-derived from the estimate
+   * for the mode it is actually in, and re-measured as it comes into view.
+   * A layout effect, so it happens before the browser paints the new mode.
+   */
+  useIsomorphicLayoutEffect(() => {
+    virtualizer.measure();
+  }, [virtualizer, viewMode]);
+
+  /*
    * The first render, before anything has been measured.
    *
    * A screenful of real rows, laid out exactly as the virtualiser will lay

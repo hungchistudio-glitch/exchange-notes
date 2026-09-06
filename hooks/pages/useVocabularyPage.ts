@@ -80,7 +80,21 @@ export default function useVocabularyPage({
    */
   const { openSearch } = useLexiconSearchSheet();
 
-  const [detailItem, setDetailItem] = useState<VocabularyItem | null>(null);
+  /*
+   * Which word the detail sheet is showing, not a copy of it.
+   *
+   * This held the item itself, and every action that changed a word then had
+   * to remember to write the new version back here as well as into the
+   * library — because the sheet was rendering from the copy, not from the
+   * library. Two actions remembered. Changing the learning status did not,
+   * so tapping New/Learning/Mastered wrote to the database and to the list
+   * behind the sheet, and the sheet went on showing the status the word had
+   * when it opened. It read as a control that did nothing.
+   *
+   * An id cannot go stale. The word is looked up below, so every change is
+   * reflected by construction and no future action has to know about this.
+   */
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
   const [collectionsItem, setCollectionsItem] =
     useState<VocabularyItem | null>(null);
   const [editItem, setEditItem] = useState<VocabularyItem | null>(null);
@@ -124,6 +138,18 @@ export default function useVocabularyPage({
     alphabetizedItems,
     clearFilterSearch,
   } = controller;
+
+  /*
+   * The word the sheet is showing, as the library currently has it. Null once
+   * it is gone — a deleted word closes its own sheet without anyone saying so.
+   */
+  const detailItem = useMemo(
+    () =>
+      detailItemId
+        ? (uniqueItems.find((item) => item.id === detailItemId) ?? null)
+        : null,
+    [detailItemId, uniqueItems],
+  );
 
   const {
     totalWords,
@@ -277,7 +303,6 @@ export default function useVocabularyPage({
       };
 
       updateItem(next);
-      if (detailItem?.id === item.id) setDetailItem(next);
       setLanguageItem(null);
     } finally {
       setSavingLanguage(false);
@@ -371,7 +396,7 @@ export default function useVocabularyPage({
    * re-render with nothing changed cost ~958ms and rebuilt all 300 cards.
    */
   const openDetail = useCallback((item: VocabularyItem) => {
-    setDetailItem(item);
+    setDetailItemId(item.id);
     setCardGlancePulse((count) => count + 1);
   }, []);
 
@@ -475,7 +500,7 @@ export default function useVocabularyPage({
     detailItem,
     detailProps: {
       updating: detailItem ? updatingId === detailItem.id : false,
-      onClose: () => setDetailItem(null),
+      onClose: () => setDetailItemId(null),
       onChangeStatus: (status) => {
         if (detailItem) void changeStatus(detailItem, status);
       },
@@ -488,7 +513,7 @@ export default function useVocabularyPage({
       onDelete: () => {
         if (detailItem) {
           void deleteVocabularyItem(detailItem);
-          setDetailItem(null);
+          setDetailItemId(null);
         }
       },
       onOpenCollections: () => {
@@ -541,10 +566,6 @@ export default function useVocabularyPage({
           onSave: async (values: VocabularyEditValues) => {
             const updated = await updateVocabularyFields(editItem.id, values);
             updateItem(updated as VocabularyItem);
-
-            if (detailItem?.id === editItem.id) {
-              setDetailItem(updated as VocabularyItem);
-            }
           },
         }
       : null,
