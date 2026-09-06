@@ -6,6 +6,24 @@ const ACTION_WIDTH = 88;
 const OPEN_THRESHOLD = ACTION_WIDTH * 0.5;
 const SNAP_TRANSITION = "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)";
 
+/*
+ * How far a finger may wander before the press stops being a tap.
+ *
+ * This was 4px, and 4px is not a tap — it is a still finger. A thumb landing
+ * on a card in a scrolling list drifts five to fifteen pixels between contact
+ * and release without the reader intending anything by it, and every one of
+ * those presses crossed the line, was recorded as a drag, and had its click
+ * suppressed below. That is the whole of "the word cards need tapping
+ * twice": the first tap was thrown away, and the second one, made more
+ * carefully because the first appeared to do nothing, got through.
+ *
+ * Ten pixels is what the platforms themselves use for the same decision —
+ * Android's ViewConfiguration touch slop and UIKit's scroll-view hysteresis
+ * are both in this range — and it is still far below the 44px needed to open
+ * an action, so the swipe gesture is unchanged.
+ */
+const DRAG_SLOP = 10;
+
 type SwipeAction = {
   label: string;
   icon?: ReactNode;
@@ -36,6 +54,13 @@ export default function SwipeActionRow({
   const startTranslateRef = useRef(0);
   const pointerIdRef = useRef<number | null>(null);
   const draggedRef = useRef(false);
+  /*
+   * The slop, taken up once. Without it the row would jump the full ten
+   * pixels the moment the drag is recognised, so a deliberate swipe would
+   * start with a visible snap. Subtracting it means the row starts moving
+   * from exactly where the finger crossed the line.
+   */
+  const slopOffsetRef = useRef(0);
 
   const minX = trailingAction ? -ACTION_WIDTH : 0;
   const maxX = leadingAction ? ACTION_WIDTH : 0;
@@ -51,6 +76,7 @@ export default function SwipeActionRow({
     startXRef.current = event.clientX;
     startTranslateRef.current = translateX;
     draggedRef.current = false;
+    slopOffsetRef.current = 0;
     setIsDragging(true);
   }
 
@@ -59,11 +85,21 @@ export default function SwipeActionRow({
 
     const delta = event.clientX - startXRef.current;
 
-    if (Math.abs(delta) > 4) {
+    /*
+     * Below the slop the row does not move at all. It used to follow every
+     * pixel, so a press that was never going to be a swipe still nudged the
+     * card sideways and still counted as a drag.
+     */
+    if (!draggedRef.current) {
+      if (Math.abs(delta) <= DRAG_SLOP) return;
+
       draggedRef.current = true;
+      slopOffsetRef.current = Math.sign(delta) * DRAG_SLOP;
     }
 
-    setTranslateX(clamp(startTranslateRef.current + delta));
+    setTranslateX(
+      clamp(startTranslateRef.current + delta - slopOffsetRef.current),
+    );
   }
 
   function endDrag() {
@@ -133,12 +169,24 @@ export default function SwipeActionRow({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onClickCapture={(event) => {
-          // Suppress the click that follows a real drag so taps on
-          // buttons inside the row don't fire while/after swiping.
-          if (draggedRef.current) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
+          /*
+           * Suppress the click that follows a real drag, so a swipe does not
+           * also open the card it swiped.
+           *
+           * `detail` is how many times the pointer was clicked, and it is 0
+           * for a click the keyboard synthesised — Enter or Space on a
+           * focused control inside the row. Those never follow a drag, and
+           * suppressing one would make the row unusable without a mouse.
+           *
+           * One click, not every click from here on. The flag used to be
+           * cleared only by the next pointer-down, so a drag that ended
+           * without a click left it armed and the next press paid for it.
+           */
+          if (!draggedRef.current || event.detail === 0) return;
+
+          draggedRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
         }}
         style={{
           transform: `translateX(${translateX}px)`,
