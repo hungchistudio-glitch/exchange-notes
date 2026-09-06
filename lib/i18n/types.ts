@@ -2036,6 +2036,18 @@ export type TranslationDictionary = {
       testing: string;
       testSent: string;
       testError: string;
+
+      /*
+       * The push itself, not the screen that configures it.
+       *
+       * Here rather than beside the sender because it is copy a reader sees,
+       * and every other line Yumi speaks is in these dictionaries. It was
+       * hardcoded in two API routes as one bilingual Chinese-and-English
+       * string, so a reader whose interface is Spanish and who is learning
+       * Italian was reminded in neither.
+       */
+      pushTitle: string;
+      pushBody: string;
     };
 
     interfaceMode: {

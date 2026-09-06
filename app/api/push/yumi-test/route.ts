@@ -12,6 +12,8 @@ import {
 import {
   createServiceClient,
 } from "@/lib/supabase/service";
+import { readerLanguages } from "@/lib/push/readerLanguages";
+import { yumiReminderCopy } from "@/lib/push/yumiReminderCopy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,15 +75,24 @@ export async function POST(
   const service = createServiceClient();
 
   try {
+    /*
+     * The same copy the real reminder uses, in the same two languages. A
+     * test that arrives in a different language from the thing it is
+     * testing is not a test of very much.
+     */
+    const [languages] = await readerLanguages(service, [user.id]);
+    const copy = await yumiReminderCopy(
+      languages.interfaceLanguage,
+      languages.learningLanguage,
+    );
+
     const result =
       await sendWebPushToUser(
         service,
         user.id,
         {
-          title:
-            "Yumi 想你了 · Yumi misses you",
-          body:
-            "今天還沒餵我單字餅乾呢！Come feed me one word cookie.",
+          title: copy.title,
+          body: copy.body,
           url: "/vocabulary",
           tag: "yumi-reminder-test",
           renotify: true,

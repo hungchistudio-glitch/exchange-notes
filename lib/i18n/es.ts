@@ -2049,6 +2049,9 @@ const spanish: TranslationDictionary = {
       testing: "Enviando…",
       testSent: "Notificación de prueba de Yumi enviada.",
       testError: "No se ha podido enviar la notificación de prueba de Yumi.",
+      pushTitle: "Yumi te echa de menos",
+      pushBody:
+        "Hoy todavía no hay galleta-palabra. Ven a darle una.",
     },
 
     interfaceMode: {
