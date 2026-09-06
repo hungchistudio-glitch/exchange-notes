@@ -586,13 +586,137 @@ async function buildLearningBatch(
   return items;
 }
 
+/*
+ * How many batches may be in flight at once.
+ *
+ * Every batch used to go at once, and the free tier allows twenty generate
+ * requests a minute — so six simultaneous calls burst straight through it.
+ * Production bore this out: batches 2 and 5 came back 429 most mornings,
+ * losing a third of the day's cards, and on one of them every batch failed
+ * and the pool was empty.
+ *
+ * Three keeps most of the reason the batches were parallel in the first
+ * place. A batch takes about ten seconds, so six in two waves is roughly
+ * twenty — comfortably inside the sixty-second ceiling the cron runs under
+ * on Vercel's Hobby plan, even with a retry.
+ */
+const MAX_CONCURRENT_BATCHES = 3;
+
+/** One retry per batch. A second would risk the sixty-second ceiling. */
+const RATE_LIMIT_RETRIES = 1;
+
+/** Long enough to cover what the API asks for, short enough to fit. */
+const MAX_RETRY_WAIT_MS = 12_000;
+
+function isRateLimited(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+
+  const status = (error as { status?: unknown }).status;
+  const code = (error as { error?: { code?: unknown } }).error?.code;
+
+  return status === 429 || code === "too_many_requests";
+}
+
+/*
+ * The API says how long to wait — "Please retry in 5.159426619s" — and
+ * nothing read it. Guessing a backoff when the server has already told you
+ * the answer is how a retry either gives up too early or holds the cron open
+ * for no reason.
+ */
+function retryDelayMs(error: unknown): number {
+  const message =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+
+  const seconds = Number.parseFloat(
+    message.match(/retry in ([\d.]+)s/i)?.[1] ?? "",
+  );
+
+  /* A second and a bit when it does not say, which the free tier tolerates. */
+  const wait = Number.isFinite(seconds) ? seconds * 1000 + 250 : 1_500;
+
+  return Math.min(wait, MAX_RETRY_WAIT_MS);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Runs one batch, giving a rate-limited request the wait it asked for. */
+async function withRateLimitRetry<T>(run: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      if (attempt >= RATE_LIMIT_RETRIES || !isRateLimited(error)) throw error;
+
+      await wait(retryDelayMs(error));
+    }
+  }
+}
+
+/*
+ * Batches, at most MAX_CONCURRENT_BATCHES at a time.
+ *
+ * Settled rather than thrown, exactly as Promise.allSettled was: a batch that
+ * fails must not take the others with it. Losing six cards on a day the model
+ * hiccups is a thinner pool; losing all twelve is a day with no news.
+ */
+async function runBatches<T, R>(
+  batches: readonly T[],
+  run: (batch: T) => Promise<R>,
+): Promise<Array<PromiseSettledResult<R>>> {
+  const results: Array<PromiseSettledResult<R>> = new Array(batches.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < batches.length) {
+      const index = next++;
+
+      try {
+        results[index] = {
+          status: "fulfilled",
+          value: await withRateLimitRetry(() => run(batches[index])),
+        };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(MAX_CONCURRENT_BATCHES, batches.length) },
+      worker,
+    ),
+  );
+
+  return results;
+}
+
+/*
+ * Exposed for the tests, which are about the rate limiting rather than about
+ * the news: the failure they guard is invisible to anything that only checks
+ * the cards come out right, because on a good morning they always did.
+ */
+export const __testing = {
+  runBatches,
+  isRateLimited,
+  retryDelayMs,
+  MAX_CONCURRENT_BATCHES,
+};
+
 /**
  * Turns chosen articles into pool items.
  *
- * Split into parallel batches because the cron job runs on Vercel's Hobby
- * plan, where sixty seconds is a hard ceiling that cannot be raised: two
- * calls of six finish in roughly half the wall time of one call of twelve,
- * for the same number of tokens.
+ * Split into batches because the cron job runs on Vercel's Hobby plan, where
+ * sixty seconds is a hard ceiling that cannot be raised: several smaller
+ * calls finish in a fraction of the wall time of one large one, for the same
+ * number of tokens.
+ *
+ * They run a few at a time rather than all at once — see runBatches, and the
+ * free-tier rate limit that all-at-once was walking into every morning.
  *
  * A batch that fails does not take the others down. Losing six cards on a
  * day the model hiccups is a thinner pool; losing all twelve because one
@@ -625,8 +749,8 @@ export async function buildLearningCards(
     batches.push(articles.slice(i, i + perBatch));
   }
 
-  const settled = await Promise.allSettled(
-    batches.map((batch) => buildLearningBatch(batch, model, client, languages))
+  const settled = await runBatches(batches, (batch) =>
+    buildLearningBatch(batch, model, client, languages),
   );
 
   const items: DailyNewsPoolItem[] = [];
