@@ -193,7 +193,24 @@ export default function SwipeActionRow({
           transition: isDragging ? "none" : SNAP_TRANSITION,
           touchAction: "pan-y",
         }}
-        className="relative z-10 select-none bg-white"
+        /*
+         * Selection is only suppressed while a drag is actually happening.
+         *
+         * `select-none` was unconditional, and it inherits — so every word
+         * card, which is rendered inside one of these rows, had its text made
+         * unselectable. The vocabulary card wraps its content in
+         * VocabularySelection precisely so a reader can pick a phrase out of
+         * an example sentence and save it or send it; that feature could not
+         * work at all, because the selection it waits for was impossible to
+         * make. Nothing else re-enabled it anywhere.
+         *
+         * Suppressing it during a drag is what this was for in the first
+         * place: a horizontal swipe over text would otherwise start selecting
+         * it. `isDragging` is true from pointer-down, before the finger has
+         * travelled far enough to move the row, so the guard is in place for
+         * the whole of any gesture that turns out to be a swipe.
+         */
+        className={`relative z-10 bg-white ${isDragging ? "select-none" : ""}`}
       >
         {children}
       </div>
