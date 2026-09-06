@@ -17,8 +17,15 @@ import type { FriendProfile } from "@/lib/friends";
  *
  * So the two things that decide whether the fault can appear at all are the
  * controls here: how many friends come back, and how late they arrive
- * relative to the 380ms the sheet spends arriving. The defaults are the
- * combination that was broken.
+ * relative to the 380ms the sheet spends arriving.
+ *
+ * It opens on the ordinary case — a friend list already in hand, arriving
+ * before the sheet has begun to move — because that is what most opens
+ * actually look like and it is the one to judge the motion by. It is
+ * deliberately not the combination that was broken: at 0ms the panel is
+ * already its full height on the first frame, so nothing can move under the
+ * entrance and even the old component looks right. Reproducing the fault
+ * means 6 friends at 250ms, one tap away.
  */
 
 /** Mirrors the entrance in useSheetMotion. Only used to judge the samples. */
@@ -103,7 +110,7 @@ export default function ShareSheetReview() {
   const [loading, setLoading] = useState(true);
   const [friendCount, setFriendCount] = useState(0);
   const [requestedCount, setRequestedCount] = useState<number>(6);
-  const [arrivalDelay, setArrivalDelay] = useState<number>(250);
+  const [arrivalDelay, setArrivalDelay] = useState<number>(0);
   const [run, setRun] = useState<EntranceRun | null>(null);
 
   const timersRef = useRef<number[]>([]);
@@ -210,7 +217,7 @@ export default function ShareSheetReview() {
             value={arrivalDelay}
             onChange={setArrivalDelay}
             format={(value) => `${value}ms`}
-            hint={`Under ${ENTRANCE_MS}ms lands while the sheet is still arriving.`}
+            hint={`0ms is a list already in hand. Anything under ${ENTRANCE_MS}ms lands while the sheet is still arriving, which is what used to break it.`}
           />
 
           <button
