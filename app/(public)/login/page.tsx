@@ -1,6 +1,6 @@
 "use client";
 
-import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
+import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
         </p>
 
         <div className="mt-8">
-          <GoogleLoginButton />
+          <GoogleIdentityButton />
         </div>
 
         <p className="mt-6 text-center text-xs leading-5 text-ink-soft">
