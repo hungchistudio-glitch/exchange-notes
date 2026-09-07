@@ -4,6 +4,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { LanguageCode } from "@/lib/languages";
 import { PHONETICS_STORE, hydrate, persist } from "@/lib/offline/annotations";
+import { createAnnotationBackoff } from "@/lib/offline/annotationBackoff";
 import { isOnline } from "@/hooks/useOnline";
 
 /* =========================================================
@@ -25,6 +26,7 @@ const BATCH_WINDOW_MS = 50;
 
 /** The server takes forty at a time; ask in the same size it answers. */
 const CHUNK = 40;
+
 
 /*
  * Everything the route knows about one piece of text.
@@ -119,6 +121,9 @@ function notify() {
   for (const listener of listeners) listener();
 }
 
+/* Why a failed lookup is not simply asked for again: see the module. */
+const backoff = createAnnotationBackoff(notify);
+
 async function flush() {
   timer = null;
 
@@ -142,11 +147,22 @@ async function flush() {
   }
 
   if (!isOnline()) {
+    /*
+     * Held back for the same reason a failed request is, and it matters more
+     * here: there is no network call to be slow about it. Without the hold
+     * this branch is a pure loop — clear, notify, re-render, queue, flush —
+     * spinning the tree twenty times a second on a device that is offline
+     * and therefore probably also saving its battery.
+     */
     for (const [language, texts] of batches) {
-      for (const text of texts) inFlight.delete(key(language, text));
+      for (const text of texts) {
+        inFlight.delete(key(language, text));
+        backoff.note(key(language, text));
+      }
     }
 
     notify();
+    backoff.scheduleWake();
     return;
   }
 
@@ -181,7 +197,12 @@ async function flush() {
             const learned: Array<[string, string]> = [];
 
             for (const text of chunk) {
-              if (unreachable.has(text)) continue;
+              if (unreachable.has(text)) {
+                backoff.note(key(language, text));
+                continue;
+              }
+
+              backoff.clear(key(language, text));
 
               const answer = result.phonetics?.[text];
               /*
@@ -205,10 +226,17 @@ async function flush() {
             // Kept on the device, so the next cold start with no signal
             // still has them.
             void persist(PHONETICS_STORE, learned);
+          } else {
+            // Answered, and the answer was no — an expired session, a
+            // rate-limited upstream. Nothing to cache, so the backoff is the
+            // only thing standing between this and asking again at once.
+            for (const text of chunk) backoff.note(key(language, text));
           }
         } catch {
           // Leave these out of the cache so a later render may retry; a
-          // dropped connection is not evidence the word has no IPA.
+          // dropped connection is not evidence the word has no IPA. It is
+          // evidence that asking again this instant will fail the same way.
+          for (const text of chunk) backoff.note(key(language, text));
         } finally {
           for (const text of chunk) inFlight.delete(key(language, text));
         }
@@ -217,11 +245,20 @@ async function flush() {
   );
 
   notify();
+  backoff.scheduleWake();
 }
 
 function request(language: LanguageCode, text: string) {
   const id = key(language, text);
   if (cache.has(id) || inFlight.has(id)) return;
+
+  /*
+   * Recently failed, and not yet due. Returning without scheduling a timer
+   * is the whole point: an unscheduled flush is a flush that does not
+   * notify, and a notify that does not happen is the render that does not
+   * ask again a fiftieth of a second later.
+   */
+  if (backoff.held(id)) return;
 
   inFlight.add(id);
 
