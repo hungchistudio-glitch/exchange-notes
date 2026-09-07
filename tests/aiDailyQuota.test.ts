@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   consumeDailyQuota,
@@ -126,7 +126,7 @@ describe("when the counter cannot be reached", () => {
     expect(outcomes).toEqual([true, true, true, false]);
   });
 
-  it("stops calling a function it has found to be missing", async () => {
+  it("stops calling a function it has just found to be missing", async () => {
     const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
     await consumeDailyQuota(client, "user-1", "vision_identification", 3);
@@ -190,5 +190,87 @@ describe("when the counter cannot be reached", () => {
     expect(
       await consumeDailyQuota(client, "user-1", "vision_identification", 1),
     ).toBe(false);
+  });
+});
+
+/* =========================================================
+   Falling back is temporary
+
+   It used to be permanent. One rpc error — a cold-start timeout, a dropped
+   connection, a moment of database pressure — moved an operation onto the
+   in-memory counter for the entire life of the serverless instance, and
+   nothing ever tried the database again.
+
+   That is not a slightly wrong number. The fallback is per-instance, so the
+   real ceiling becomes the limit times however many instances are warm, and
+   it is forgotten on every cold start: a reader who has spent their fifteen
+   lookups gets fifteen more by being routed to a fresh one. The database
+   counter exists because neither of those is acceptable, and a blip must not
+   be what retires it.
+   ========================================================= */
+describe("recovering from a counter that was unreachable", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("tries the database again once the hold has passed", async () => {
+    const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
+
+    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    expect(calls).toHaveLength(1);
+
+    vi.advanceTimersByTime(61_000);
+
+    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("goes back to the database for good once it answers", async () => {
+    const replies: Record<string, { data?: unknown; error: { code: string } | null }> =
+      { consume_ai_daily_quota: broken };
+
+    const calls: Array<{ fn: string; args: unknown }> = [];
+
+    const client = {
+      rpc: vi.fn(async (fn: string, args: unknown) => {
+        calls.push({ fn, args });
+        return replies[fn];
+      }),
+    } as never;
+
+    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
+    expect(calls).toHaveLength(1);
+
+    replies.consume_ai_daily_quota = allowed;
+    vi.advanceTimersByTime(61_000);
+
+    // The retry answers, so every request after it goes to the database
+    // rather than waiting out another minute.
+    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
+    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
+
+    expect(calls).toHaveLength(3);
+  });
+
+  it("keeps a refund on the counter that took the charge", async () => {
+    /*
+     * Charged in memory because the database was unreachable, refunded a
+     * moment later while it still is. The refund must not be sent to the
+     * database and lost — the charge is not there.
+     */
+    const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
+
+    expect(await consumeDailyQuota(client, "user-2", "reply_coach", 1)).toBe(true);
+    await refundDailyQuota(client, "user-2", "reply_coach");
+
+    expect(calls.some((call) => call.fn === "refund_ai_daily_quota")).toBe(false);
+
+    // The refund landed where the charge did, so the one allowance is free.
+    expect(await consumeDailyQuota(client, "user-2", "reply_coach", 1)).toBe(true);
   });
 });
