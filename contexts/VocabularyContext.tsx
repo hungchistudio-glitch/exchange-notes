@@ -25,6 +25,7 @@ import {
   readOutbox,
   writeMirror,
 } from "@/lib/offline/vocabulary";
+import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
 import { flushOutbox } from "@/lib/offline/sync";
 import type { VocabularyItem } from "@/lib/types/app";
 import {
@@ -303,6 +304,18 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         // The device's copy goes with them. A phone that is handed on, or
         // simply shared, must not open on the last person's words.
         void forgetMirror();
+
+        /*
+         * And everything else this device was holding for them: the
+         * interaction history in localStorage, and the pages the service
+         * worker cached while they were signed in. The mirror was the only
+         * one of the three being cleared. See lib/offline/forgetDevice.
+         *
+         * Here as well as in the sign-out button, because a session can end
+         * without anyone pressing anything — a revoked token, a sign-out on
+         * another device — and this listener is the only thing that sees it.
+         */
+        void forgetDeviceCopies();
       }
     });
 
