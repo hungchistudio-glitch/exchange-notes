@@ -37,7 +37,20 @@ export type AiOperation =
   | "note_translation"
   | "note_interpretation"
   | "message_decode"
-  | "reply_coach";
+  | "reply_coach"
+  /*
+   * The last two are the background ones, and they are counted differently
+   * from the six above: those are a person pressing a button, one press one
+   * unit. These fire on their own — a screen of word cards rendering, a
+   * library filling itself in after a language change — so a unit is one
+   * call that actually reaches the model, after the cache has answered
+   * everything it can. Charging a request that a cache satisfies would spend
+   * the reader's day on a screen that never asked the model anything.
+   */
+  /** /api/text-translate — a card rendered in a language it was not sent in. */
+  | "card_translation"
+  /** /api/vocabulary/translate — one batch of the library fill. */
+  | "library_fill";
 
 type Window = { count: number; resetsAt: number };
 
@@ -52,8 +65,45 @@ type Window = { count: number; resetsAt: number };
  */
 const memoryWindows = new Map<string, Window>();
 
-/** Latched per operation, so one route's outage does not mute the others. */
-const persistentQuotaUnavailable = new Set<AiOperation>();
+/*
+ * When to try the database counter again after it refused.
+ *
+ * This was a latch with no way out: the first RPC error moved an operation
+ * onto the in-memory counter for the entire life of the serverless instance.
+ * A single cold-start timeout, one dropped connection, one moment of
+ * database pressure, and that instance never asked again — every reader it
+ * went on to serve was counted by the map below, which the comment on it
+ * calls "unacceptable as the primary counter" and which it had just become.
+ *
+ * It is worse than a wrong number. The fallback is per-instance, so the real
+ * ceiling becomes the limit multiplied by however many instances are warm,
+ * and it is forgotten on every cold start — so a reader who has spent their
+ * fifteen lookups can get fifteen more by being routed elsewhere. The
+ * database counter exists precisely because neither of those is acceptable.
+ *
+ * A minute is long enough that a database genuinely down is not hammered
+ * once per request, and short enough that a blip costs a minute of loose
+ * counting rather than a day of it.
+ */
+const PERSISTENT_RETRY_MS = 60_000;
+
+/**
+ * Per operation, the moment its database counter may be tried again.
+ *
+ * Per operation rather than global, so one route's outage does not mute the
+ * others — the same reason the latch it replaces was keyed this way.
+ */
+const persistentQuotaUnavailableUntil = new Map<AiOperation, number>();
+
+function persistentQuotaWorthTrying(operation: AiOperation): boolean {
+  const until = persistentQuotaUnavailableUntil.get(operation);
+
+  if (until === undefined) return true;
+  if (until > Date.now()) return false;
+
+  persistentQuotaUnavailableUntil.delete(operation);
+  return true;
+}
 
 /*
  * The fallback's day, and deliberately still UTC.
@@ -122,20 +172,28 @@ export async function consumeDailyQuota(
   operation: AiOperation,
   limit: number,
 ): Promise<boolean> {
-  if (!persistentQuotaUnavailable.has(operation)) {
+  if (persistentQuotaWorthTrying(operation)) {
     const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
       p_operation: operation,
       p_limit: limit,
     });
 
     if (!error) {
+      // Answered, so whatever was wrong is over. Nothing to hold back.
+      persistentQuotaUnavailableUntil.delete(operation);
+
       const rows = data as Array<{ allowed?: boolean }> | null;
       return rows?.[0]?.allowed === true;
     }
 
-    persistentQuotaUnavailable.add(operation);
+    persistentQuotaUnavailableUntil.set(
+      operation,
+      Date.now() + PERSISTENT_RETRY_MS,
+    );
+
     console.warn(
-      "Persistent AI quota is unavailable; using the in-memory safety limit.",
+      "Persistent AI quota is unavailable; using the in-memory safety limit "
+        + `for the next ${PERSISTENT_RETRY_MS / 1_000}s.`,
       { operation, code: error.code },
     );
   }
@@ -158,7 +216,15 @@ export async function refundDailyQuota(
   userId: string,
   operation: AiOperation,
 ): Promise<void> {
-  if (persistentQuotaUnavailable.has(operation)) {
+  /*
+   * Refunded wherever it was charged. `persistentQuotaWorthTrying` is not
+   * used here: it clears an expired hold as a side effect, and a refund
+   * must land on the counter that took the charge a moment ago, not on
+   * whichever one happens to be available now.
+   */
+  const heldUntil = persistentQuotaUnavailableUntil.get(operation);
+
+  if (heldUntil !== undefined && heldUntil > Date.now()) {
     refundInMemory(userId, operation);
     return;
   }
@@ -182,5 +248,5 @@ export async function refundDailyQuota(
 /** Test seam. The maps are module state and each case needs a clean one. */
 export function resetDailyQuotaStateForTests() {
   memoryWindows.clear();
-  persistentQuotaUnavailable.clear();
+  persistentQuotaUnavailableUntil.clear();
 }

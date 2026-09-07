@@ -7,15 +7,21 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
+/*
+ * "For You" and "Trending" were here too, and neither ever worked on this
+ * branch: both asked /api/vocabulary-rank, a route that does not exist in
+ * this repository. Choosing one 404ed, logged an error, and left a grey
+ * banner reading "AI ranking is temporarily unavailable" above a list
+ * sorted by something else. Six sorts that work are better than eight of
+ * which two are an apology.
+ */
 export type SortMode =
   | "new"
   | "old"
   | "alphabetical"
   | "reverse-alphabetical"
   | "recently-reviewed"
-  | "least-reviewed"
-  | "for-you"
-  | "trending";
+  | "least-reviewed";
 
 /** The sort applied when the user has not chosen one. */
 export const DEFAULT_SORT_MODE: SortMode = "new";
@@ -54,8 +60,6 @@ export default function SortBottomSheet({
     "reverse-alphabetical": search.sortOptions.reverseAlphabetical,
     "recently-reviewed": search.sortOptions.recentlyReviewed,
     "least-reviewed": search.sortOptions.leastReviewed,
-    "for-you": search.sortOptions.forYou,
-    trending: search.sortOptions.trending,
   };
 
   return (

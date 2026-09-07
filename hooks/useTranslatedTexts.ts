@@ -4,6 +4,7 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import type { LanguageCode } from "@/lib/languages";
 import { TRANSLATIONS_STORE, hydrate, persist } from "@/lib/offline/annotations";
+import { createAnnotationBackoff } from "@/lib/offline/annotationBackoff";
 import { isOnline } from "@/hooks/useOnline";
 
 /* =========================================================
@@ -23,6 +24,20 @@ import { isOnline } from "@/hooks/useOnline";
 
 const BATCH_WINDOW_MS = 50;
 const CHUNK = 40;
+
+/*
+ * How long to leave a phrase alone once the day's allowance is spent.
+ *
+ * The route now counts model calls and says so when there are none left. That
+ * is not a busy minute, so the escalating hold is the wrong instrument: at
+ * thirty seconds it would ask again two thousand eight hundred times before
+ * midnight, and every one of them would get the same answer.
+ *
+ * An hour rather than "until tomorrow", because the allowance rolls over on
+ * the reader's own midnight and this side does not know when that is — an
+ * hour is short enough that the first cards after it come back on their own.
+ */
+const QUOTA_HOLD_MS = 60 * 60 * 1_000;
 
 const cache = new Map<string, string>();
 const inFlight = new Set<string>();
@@ -56,6 +71,14 @@ function notify() {
   for (const listener of listeners) listener();
 }
 
+/*
+ * Why a failed lookup is not simply asked for again on the next render:
+ * see lib/offline/annotationBackoff. This store reaches /api/text-translate,
+ * which spends model quota on a cache miss, so the loop it prevents was
+ * costing more here than a warm phone.
+ */
+const backoff = createAnnotationBackoff(notify);
+
 async function flush() {
   timer = null;
 
@@ -76,12 +99,23 @@ async function flush() {
   }
 
   if (!isOnline()) {
+    /*
+     * Held back for the same reason a failed request is, and it matters more
+     * here: there is no network call to be slow about it. Without the hold
+     * this branch is a pure loop — clear, notify, re-render, queue, flush —
+     * spinning the tree twenty times a second on a device that is offline
+     * and therefore probably also trying to save its battery.
+     */
     for (const [pair, texts] of batches) {
       const [from, to] = pair.split(">") as [LanguageCode, LanguageCode];
-      for (const text of texts) inFlight.delete(key(from, to, text));
+      for (const text of texts) {
+        inFlight.delete(key(from, to, text));
+        backoff.note(key(from, to, text));
+      }
     }
 
     notify();
+    backoff.scheduleWake();
     return;
   }
 
@@ -104,6 +138,7 @@ async function flush() {
             const result = (await response.json()) as {
               texts?: Record<string, string>;
               unavailable?: string[];
+              quotaExhausted?: boolean;
             };
 
             // Left out of the cache so a later render asks again: a busy
@@ -113,7 +148,22 @@ async function flush() {
             const learned: Array<[string, string]> = [];
 
             for (const text of chunk) {
-              if (unreachable.has(text)) continue;
+              if (unreachable.has(text)) {
+                /*
+                 * Held for the hour rather than the usual second, when the
+                 * answer was "there is nothing left to spend today". What the
+                 * cache did answer is still in `texts` above and is kept.
+                 */
+                if (result.quotaExhausted) {
+                  backoff.holdFor(key(from, to, text), QUOTA_HOLD_MS);
+                } else {
+                  backoff.note(key(from, to, text));
+                }
+
+                continue;
+              }
+
+              backoff.clear(key(from, to, text));
 
               const translated = result.texts?.[text]?.trim() ?? "";
               cache.set(key(from, to, text), translated);
@@ -121,9 +171,16 @@ async function flush() {
             }
 
             void persist(TRANSLATIONS_STORE, learned);
+          } else {
+            // Answered, and the answer was no — an expired session, a
+            // rate-limited upstream. Nothing is cached, so the hold is the
+            // only thing between this and asking again at once.
+            for (const text of chunk) backoff.note(key(from, to, text));
           }
         } catch {
-          // Same reasoning: a dropped connection leaves no entry behind.
+          // Same reasoning: a dropped connection leaves no entry behind. It
+          // is evidence that asking again this instant will fail the same way.
+          for (const text of chunk) backoff.note(key(from, to, text));
         } finally {
           for (const text of chunk) inFlight.delete(key(from, to, text));
         }
@@ -132,11 +189,20 @@ async function flush() {
   );
 
   notify();
+  backoff.scheduleWake();
 }
 
 function request(from: LanguageCode, to: LanguageCode, text: string) {
   const id = key(from, to, text);
   if (cache.has(id) || inFlight.has(id)) return;
+
+  /*
+   * Recently failed, and not yet due. Returning without scheduling a timer
+   * is the whole point: an unscheduled flush is a flush that does not
+   * notify, and a notify that does not happen is the render that does not
+   * ask again a fiftieth of a second later.
+   */
+  if (backoff.held(id)) return;
 
   inFlight.add(id);
 

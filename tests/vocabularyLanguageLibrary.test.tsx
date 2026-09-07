@@ -98,7 +98,6 @@ function visible(languages: readonly LanguageCode[], query = "") {
       quickFilter: "all",
       languages,
       sortMode: "new",
-      rankedIds: [],
     });
     return null;
   }

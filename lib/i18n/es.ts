@@ -1765,11 +1765,8 @@ const spanish: TranslationDictionary = {
         reverseAlphabetical: "De la Z a la A",
         recentlyReviewed: "Repasadas hace poco",
         leastReviewed: "Menos repasadas",
-        forYou: "Para ti",
-        trending: "En racha",
       },
 
-      personalizing: "Personalizando {sort}…",
     },
   },
 

@@ -1768,11 +1768,8 @@ const english: TranslationDictionary = {
         reverseAlphabetical: "Z to A",
         recentlyReviewed: "Recently Reviewed",
         leastReviewed: "Least Reviewed",
-        forYou: "For You",
-        trending: "Trending",
       },
 
-      personalizing: "Personalizing {sort}…",
     },
   },
 

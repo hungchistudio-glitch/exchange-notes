@@ -1639,10 +1639,7 @@ const french: TranslationDictionary = {
         reverseAlphabetical: "De Z à A",
         recentlyReviewed: "Révisés récemment",
         leastReviewed: "Les moins révisés",
-        forYou: "Pour vous",
-        trending: "Tendance",
       },
-      personalizing: "Personnalisation de {sort}…",
     },
   },
   review: {

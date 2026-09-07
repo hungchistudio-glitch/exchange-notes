@@ -18,7 +18,6 @@ import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useVocabularyController from "@/hooks/controllers/useVocabularyController";
 import buildVocabularyHeroProps from "@/hooks/pages/builders/buildVocabularyHeroProps";
 import buildVocabularySearchProps from "@/hooks/pages/builders/buildVocabularySearchProps";
-import useVocabularyRanking from "@/hooks/useVocabularyRanking";
 import useVocabularySearchTracking from "@/hooks/useVocabularySearchTracking";
 import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularyViewMode from "@/hooks/useVocabularyViewMode";
@@ -233,12 +232,6 @@ export default function useVocabularyPage({
     uniqueItems,
   ]);
 
-  const { rankedIds, rankingLoading, rankingError } = useVocabularyRanking({
-    items: uniqueItems,
-    query,
-    sortMode,
-  });
-
   useVocabularySearchTracking(uniqueItems, query);
 
   const visibleItems = useVisibleVocabularyItems({
@@ -247,7 +240,6 @@ export default function useVocabularyPage({
     quickFilter,
     languages: languageFilter,
     sortMode,
-    rankedIds,
   });
 
   /**
@@ -369,8 +361,6 @@ export default function useVocabularyPage({
     visibleCount: visibleItems.length,
     sortMode,
     viewMode,
-    rankingLoading,
-    rankingError,
     setQuery: (value: string) => {
       setExpandedItemId(null);
       setQuery(value);

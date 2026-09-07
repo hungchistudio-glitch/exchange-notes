@@ -1,5 +1,6 @@
 "use client";
 
+import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
 import { disableNativePushRegistration } from "@/lib/push/nativeClient";
 
 import {
@@ -268,6 +269,16 @@ export default function ProfilePage() {
     // tab's — a session left open on another device should not survive a
     // deliberate sign-out here.
     await supabase.auth.signOut({ scope: "global" });
+
+    /*
+     * Awaited, and awaited here rather than left to the SIGNED_OUT listener
+     * alone. That listener does call this too, but it calls it as `void` and
+     * the navigation below replaces the document a moment later — clearing
+     * the caches is asynchronous, and work nobody waited for is work a
+     * discarded document may not finish. The listener covers the sign-out
+     * nobody pressed; this covers the one that did.
+     */
+    await forgetDeviceCopies();
 
     /*
      * A full document load rather than router.replace, which is a soft

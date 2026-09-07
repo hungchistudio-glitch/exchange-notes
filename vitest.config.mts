@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -24,8 +26,18 @@ export default defineConfig({
        * test that touches a server module fails on the import rather than on
        * anything it was trying to check.
        */
-      "server-only": new URL("./tests/serverOnlyStub.ts", import.meta.url)
-        .pathname,
+      /*
+       * fileURLToPath, not `.pathname`. A file: URL percent-encodes, and this
+       * checkout lives under "Desktop/exchange notes" — so `.pathname` handed
+       * Vite ".../exchange%20notes/..." and the alias silently resolved to a
+       * file that does not exist. Nothing noticed, because until now no test
+       * imported a module marked server-only; the first one to try failed on
+       * "Failed to resolve import server-only" rather than on anything it was
+       * checking.
+       */
+      "server-only": fileURLToPath(
+        new URL("./tests/serverOnlyStub.ts", import.meta.url),
+      ),
     },
   },
   test: {

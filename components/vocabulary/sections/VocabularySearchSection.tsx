@@ -1,5 +1,3 @@
-import { LoaderCircle } from "lucide-react";
-
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyStatus } from "@/lib/types/app";
@@ -31,9 +29,6 @@ type Props = {
   /** How many languages the library holds; under two, the control is hidden. */
   languageCount: number;
 
-  rankingLoading: boolean;
-  rankingError: string;
-
   onQueryChange: (value: string) => void;
   onClear: () => void;
   onQuickFilterChange: (
@@ -57,8 +52,6 @@ export default function VocabularySearchSection({
   viewMode,
   languageFilter,
   languageCount,
-  rankingLoading,
-  rankingError,
   onQueryChange,
   onClear,
   onQuickFilterChange,
@@ -69,17 +62,6 @@ export default function VocabularySearchSection({
 }: Props) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
-
-  const sortLabels: Record<SortMode, string> = {
-    new: search.sortOptions.new,
-    old: search.sortOptions.old,
-    alphabetical: search.sortOptions.alphabetical,
-    "reverse-alphabetical": search.sortOptions.reverseAlphabetical,
-    "recently-reviewed": search.sortOptions.recentlyReviewed,
-    "least-reviewed": search.sortOptions.leastReviewed,
-    "for-you": search.sortOptions.forYou,
-    trending: search.sortOptions.trending,
-  };
 
   return (
     <section className="mt-4">
@@ -139,26 +121,6 @@ export default function VocabularySearchSection({
         />
       </div>
 
-      {(sortMode === "for-you" || sortMode === "trending") &&
-        (rankingLoading || rankingError) && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[0.6875rem] font-medium text-ink-soft">
-            <span className="min-w-0">
-              {rankingLoading
-                ? search.personalizing.replace(
-                    "{sort}",
-                    sortLabels[sortMode],
-                  )
-                : rankingError}
-            </span>
-
-            {rankingLoading ? (
-              <LoaderCircle
-                size={14}
-                className="shrink-0 animate-spin"
-              />
-            ) : null}
-          </div>
-        )}
     </section>
   );
 }
