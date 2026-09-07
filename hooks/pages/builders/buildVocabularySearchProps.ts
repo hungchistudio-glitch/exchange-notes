@@ -14,8 +14,6 @@ type BuildVocabularySearchPropsParams = Pick<
   | "quickFilters"
   | "visibleCount"
   | "sortMode"
-  | "rankingLoading"
-  | "rankingError"
   | "viewMode"
   | "languageFilter"
   | "languageCount"
@@ -40,8 +38,6 @@ export default function buildVocabularySearchProps({
   viewMode,
   languageFilter,
   languageCount,
-  rankingLoading,
-  rankingError,
   setQuery,
   setQuickFilter,
   setSortOpen,
@@ -61,8 +57,6 @@ export default function buildVocabularySearchProps({
     viewMode,
     languageFilter,
     languageCount,
-    rankingLoading,
-    rankingError,
 
     onQueryChange: setQuery,
 

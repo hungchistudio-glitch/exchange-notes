@@ -130,8 +130,6 @@ export default function VocabularySearch({
     "reverse-alphabetical": search.sortOptions.reverseAlphabetical,
     "recently-reviewed": search.sortOptions.recentlyReviewed,
     "least-reviewed": search.sortOptions.leastReviewed,
-    "for-you": search.sortOptions.forYou,
-    trending: search.sortOptions.trending,
   };
 
   return (

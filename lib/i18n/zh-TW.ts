@@ -1736,11 +1736,8 @@ const traditionalChinese: TranslationDictionary = {
         reverseAlphabetical: "Z 到 A",
         recentlyReviewed: "最近複習",
         leastReviewed: "最少複習",
-        forYou: "為你推薦",
-        trending: "熱門",
       },
 
-      personalizing: "正在整理 {sort}…",
     },
   },
 

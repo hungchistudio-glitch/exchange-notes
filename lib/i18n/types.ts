@@ -1752,11 +1752,8 @@ export type TranslationDictionary = {
         reverseAlphabetical: string;
         recentlyReviewed: string;
         leastReviewed: string;
-        forYou: string;
-        trending: string;
       };
 
-      personalizing: string;
     };
   };
 

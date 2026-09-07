@@ -1639,10 +1639,7 @@ const italian: TranslationDictionary = {
         reverseAlphabetical: "Dalla Z alla A",
         recentlyReviewed: "Ripassate di recente",
         leastReviewed: "Meno ripassate",
-        forYou: "Per te",
-        trending: "Di tendenza",
       },
-      personalizing: "Personalizzazione di {sort}…",
     },
   },
   review: {
