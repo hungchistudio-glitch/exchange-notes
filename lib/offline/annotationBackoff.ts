@@ -39,6 +39,15 @@ export type AnnotationBackoff = {
   held: (id: string) => boolean;
   /** Records that a lookup for this key failed. */
   note: (id: string) => void;
+  /**
+   * Holds a key for a stated time rather than the next escalating step.
+   *
+   * For a failure whose duration is known from the answer itself. A daily
+   * allowance that is spent is the case this exists for: escalating from a
+   * second to thirty is right for a busy model, and wrong for something that
+   * cannot change until tomorrow.
+   */
+  holdFor: (id: string, ms: number) => void;
   /** Records that a lookup for this key succeeded. */
   clear: (id: string) => void;
   /**
@@ -130,6 +139,17 @@ export function createAnnotationBackoff(
         RETRY_DELAYS_MS[Math.min(attempts, RETRY_DELAYS_MS.length) - 1];
 
       holds.set(id, { until: Date.now() + delay, attempts });
+    },
+
+    holdFor(id, ms) {
+      const until = Date.now() + ms;
+      const existing = holds.get(id);
+
+      // Never shortens a hold already in place: two reasons to wait mean
+      // waiting for the longer of them.
+      if (existing && existing.until >= until) return;
+
+      holds.set(id, { until, attempts: existing?.attempts ?? 1 });
     },
 
     clear(id) {

@@ -37,7 +37,20 @@ export type AiOperation =
   | "note_translation"
   | "note_interpretation"
   | "message_decode"
-  | "reply_coach";
+  | "reply_coach"
+  /*
+   * The last two are the background ones, and they are counted differently
+   * from the six above: those are a person pressing a button, one press one
+   * unit. These fire on their own — a screen of word cards rendering, a
+   * library filling itself in after a language change — so a unit is one
+   * call that actually reaches the model, after the cache has answered
+   * everything it can. Charging a request that a cache satisfies would spend
+   * the reader's day on a screen that never asked the model anything.
+   */
+  /** /api/text-translate — a card rendered in a language it was not sent in. */
+  | "card_translation"
+  /** /api/vocabulary/translate — one batch of the library fill. */
+  | "library_fill";
 
 type Window = { count: number; resetsAt: number };
 

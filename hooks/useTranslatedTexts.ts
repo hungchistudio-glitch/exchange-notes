@@ -25,6 +25,20 @@ import { isOnline } from "@/hooks/useOnline";
 const BATCH_WINDOW_MS = 50;
 const CHUNK = 40;
 
+/*
+ * How long to leave a phrase alone once the day's allowance is spent.
+ *
+ * The route now counts model calls and says so when there are none left. That
+ * is not a busy minute, so the escalating hold is the wrong instrument: at
+ * thirty seconds it would ask again two thousand eight hundred times before
+ * midnight, and every one of them would get the same answer.
+ *
+ * An hour rather than "until tomorrow", because the allowance rolls over on
+ * the reader's own midnight and this side does not know when that is — an
+ * hour is short enough that the first cards after it come back on their own.
+ */
+const QUOTA_HOLD_MS = 60 * 60 * 1_000;
+
 const cache = new Map<string, string>();
 const inFlight = new Set<string>();
 const pending = new Map<string, Set<string>>();
@@ -124,6 +138,7 @@ async function flush() {
             const result = (await response.json()) as {
               texts?: Record<string, string>;
               unavailable?: string[];
+              quotaExhausted?: boolean;
             };
 
             // Left out of the cache so a later render asks again: a busy
@@ -134,7 +149,17 @@ async function flush() {
 
             for (const text of chunk) {
               if (unreachable.has(text)) {
-                backoff.note(key(from, to, text));
+                /*
+                 * Held for the hour rather than the usual second, when the
+                 * answer was "there is nothing left to spend today". What the
+                 * cache did answer is still in `texts` above and is kept.
+                 */
+                if (result.quotaExhausted) {
+                  backoff.holdFor(key(from, to, text), QUOTA_HOLD_MS);
+                } else {
+                  backoff.note(key(from, to, text));
+                }
+
                 continue;
               }
 

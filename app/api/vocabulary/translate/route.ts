@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 
-import { getTextModelCandidates } from "@/lib/ai/modelConfig";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
+import { getTextModelCandidates, readBoundedInteger } from "@/lib/ai/modelConfig";
 import {
   buildTranslateVocabularyPrompt,
   type VocabularyToTranslate,
@@ -26,6 +27,30 @@ export const runtime = "nodejs";
  * so the size is a throughput knob, not a limit on what can be filled.
  */
 const BATCH_SIZE = 20;
+
+/*
+ * How many batches a reader may fill in a day.
+ *
+ * This route reaches the model on every call that has work to do, and it is
+ * called by a background loop rather than by anybody pressing anything — the
+ * library fills itself in after a language change, twenty words at a time, up
+ * to twenty-five batches a session. It was the only model-backed route in the
+ * app with no allowance at all, which made it the cheapest way to spend the
+ * project's Gemini budget: change language, let it run, change back.
+ *
+ * A hundred batches is two thousand words a day. A five-hundred-word library
+ * filling into a language it has never held costs twenty-five of them, so
+ * this is four such fills — more than a real reader does, and a firm stop for
+ * anything that is not a real reader.
+ */
+const MAX_FILL_BATCHES_PER_DAY = readBoundedInteger(
+  process.env.LIBRARY_FILL_DAILY_USER_LIMIT,
+  100,
+  1,
+  1000,
+);
+
+const OPERATION = "library_fill" as const;
 
 const RESULT_SCHEMA = {
   type: "object",
@@ -67,8 +92,12 @@ function toRequest(row: Row): VocabularyToTranslate | null {
 }
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged = false;
+  let userId: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -88,6 +117,8 @@ export async function POST(request: Request) {
      * because filling a language you are about to switch to is a reasonable
      * thing to offer and this route should not have an opinion about it.
      */
+    userId = user.id;
+
     const [learning] = await readLearningPair(supabase, user.id);
     const target: LanguageCode = isLanguageCode(body.language)
       ? body.language
@@ -140,6 +171,41 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+
+    /*
+     * Charged here: past every early return that costs nothing, and before
+     * the model runs. Anything else lets two tabs filling the same library
+     * both be allowed.
+     */
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_FILL_BATCHES_PER_DAY,
+      ))
+    ) {
+      /*
+       * `done` as well as the status, because the caller reads both and the
+       * honest answer to "is there more to fill" is no — not today. Without
+       * it the background loop retries three times and gives up anyway, which
+       * is three more calls to learn what this response already said.
+       */
+      return NextResponse.json(
+        {
+          error:
+            "You have reached today's limit for filling in your library."
+            + " It will carry on tomorrow.",
+          filled: 0,
+          remaining: outstanding.length,
+          done: true,
+          quotaExhausted: true,
+        },
+        { status: 429 },
+      );
+    }
+
+    charged = true;
 
     const client = new GoogleGenAI({ apiKey });
 
@@ -252,6 +318,17 @@ export async function POST(request: Request) {
      * zero: a batch that comes back empty is a batch that is not going to
      * succeed on retry either, and stopping is better than a loop.
      */
+    /*
+     * A batch that filled nothing is a batch the reader did not get, whether
+     * the model was busy or answered with something unusable. Charged like a
+     * delivered one, it is the arithmetic that turns a hundred batches into
+     * seventy on a bad afternoon.
+     */
+    if (filled === 0) {
+      await refundDailyQuota(supabase, user.id, OPERATION);
+      charged = false;
+    }
+
     return NextResponse.json({
       filled,
       language: target,
@@ -261,6 +338,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Vocabulary translation failed:", error);
+
+    // Spent before the model ran, and the model never answered. The reader
+    // should not pay for a batch that threw.
+    if (charged && supabase && userId) {
+      await refundDailyQuota(supabase, userId, OPERATION);
+    }
 
     return NextResponse.json(
       { error: "Those words could not be translated. Please try again." },

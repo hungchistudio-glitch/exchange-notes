@@ -99,35 +99,74 @@ async function writeCache(
   }
 }
 
-/**
- * `texts`, in `to`.
+/*
+ * Deliberately two functions rather than one.
  *
- * Absent from the map means no translation is available — which a caller
- * should render as the original rather than as a blank.
+ * The cache answers most of this, and the model is asked only for what is
+ * left — so a caller that has to pay for the model needs the seam between
+ * those two things. A single translateTexts() hid it, and the route that
+ * called it therefore had no way to charge for a model call without also
+ * charging for a screen the cache had already answered in full.
+ *
+ * Splitting it also removes the shape that got this wrong in the first
+ * place: there is no longer a function that reaches a paid model and looks
+ * from the outside like a lookup.
  */
-export async function translateTexts(
+
+/** What the cache already holds, and what it does not. */
+export type CachedTranslations = {
+  found: Map<string, string>;
+  missing: string[];
+};
+
+/**
+ * The translations already stored for `texts`, and the ones still wanted.
+ *
+ * Costs nothing but a query. `missing` is deduplicated and trimmed, and is
+ * empty when `from` and `to` are the same language — a caller can treat a
+ * non-empty `missing` as "asking the model is the only way to answer this".
+ */
+export async function readCachedTranslations(
   texts: string[],
   from: LanguageCode,
   to: LanguageCode,
-): Promise<{ found: Map<string, string>; unavailable: string[] }> {
+): Promise<CachedTranslations> {
   const wanted = [...new Set(texts.map((text) => text.trim()))].filter(Boolean);
 
   if (wanted.length === 0 || from === to) {
-    return { found: new Map(), unavailable: [] };
+    return { found: new Map(), missing: [] };
   }
 
   const found = await readCache(from, to, wanted);
-  const missing = wanted.filter((text) => !found.has(text));
 
-  if (missing.length === 0 || !process.env.GEMINI_API_KEY) {
-    return { found, unavailable: missing };
-  }
+  return {
+    found,
+    missing: wanted.filter((text) => !found.has(text)),
+  };
+}
+
+/**
+ * Asks the model for the phrases the cache could not answer.
+ *
+ * Returns only what came back. Anything absent from the result is a phrase
+ * the model was asked about and did not usefully answer — "we could not ask"
+ * and "there is no translation" are different answers, and collapsing them is
+ * how one busy minute becomes a card that is never translated, because the
+ * caller caches the silence and stops asking.
+ */
+export async function translateMissing(
+  missing: string[],
+  from: LanguageCode,
+  to: LanguageCode,
+): Promise<Map<string, string>> {
+  const fresh = new Map<string, string>();
+
+  if (missing.length === 0 || !process.env.GEMINI_API_KEY) return fresh;
 
   const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const fromName = getLanguage(from).name.english;
   const toName = getLanguage(to).name.english;
 
-  const fresh = new Map<string, string>();
   let lastError: unknown = null;
 
   // Every candidate: the models share an API key but not a quota, so the one
@@ -188,17 +227,7 @@ export async function translateTexts(
 
   if (lastError) console.error("Card translation failed:", lastError);
 
-  for (const [text, translated] of fresh) found.set(text, translated);
-
   await writeCache(from, to, fresh);
 
-  /*
-   * "We could not ask" and "there is no translation" are different answers.
-   * Collapsing them is how one busy minute becomes a card that is never
-   * translated — the caller caches the silence and stops asking.
-   */
-  return {
-    found,
-    unavailable: missing.filter((text) => !fresh.has(text)),
-  };
+  return fresh;
 }

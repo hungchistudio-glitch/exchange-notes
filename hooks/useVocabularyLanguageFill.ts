@@ -139,6 +139,18 @@ export function useVocabularyLanguageFill({
             body: JSON.stringify({ language }),
           });
 
+          /*
+           * A spent allowance is a wall, not a hiccup, and the two must not
+           * be treated the same. Falling through to the retry path would
+           * spend three more calls and two backoff waits to be told the same
+           * thing three more times — and the answer cannot change until the
+           * reader's own midnight, which is well past this session.
+           */
+          if (response.status === 429) {
+            abandoned.current.add(language);
+            return;
+          }
+
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
           result = (await response.json()) as typeof result;
