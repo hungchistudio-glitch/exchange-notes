@@ -1,0 +1,115 @@
+/*
+ * The dock, drawn for the tour.
+ *
+ * Deliberately not a second copy of BottomNavigation: that component measures
+ * a live DOM to place its indicator and reads route state to decide what is
+ * active, neither of which exists inside a modal. What is shared is the thing
+ * worth sharing — the icons themselves, and their own `active` art.
+ */
+
+.wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/*
+ * Six cells, icon above name.
+ *
+ * The version this replaces put the icon beside the name in a three-column
+ * grid at max-w-[18rem]: once the icon, its circle and the padding had taken
+ * their share, about twenty-six pixels were left for the label. English lost
+ * the end of "Vocabulary" and Italian had nowhere at all to put
+ * "Impostazioni". Stacking gives the name the whole width of its own cell —
+ * around 100px at 375 and 88px at 320 — which is more than the longest of the
+ * five languages needs, so nothing is ever shortened and nothing is crowded.
+ */
+.grid {
+  display: grid;
+  width: 100%;
+  max-width: 21rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.key {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 4.6rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklab, var(--color-black, #000) 8%, transparent);
+  background: #fff;
+  padding: 0.6rem 0.4rem;
+  color: var(--ink-faint, rgba(0, 0, 0, 0.55));
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-black, #000) 4%, transparent),
+    0 10px 22px -18px color-mix(in oklab, var(--color-black, #000) 40%, transparent);
+  transition:
+    color 240ms ease,
+    border-color 240ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Only the active key changes, which is the claim the slide makes about the
+ * real dock — the row itself never rearranges, the ring moves along it.
+ */
+.key[data-active="true"] {
+  color: var(--color-black, #000);
+  border-color: color-mix(in oklab, var(--accent-amber, #c9962e) 45%, transparent);
+  transform: translateY(-2px);
+}
+
+.iconWell {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-black, #000) 4%, transparent);
+  transition: background-color 240ms ease;
+}
+
+.key[data-active="true"] .iconWell {
+  background: color-mix(in oklab, var(--accent-amber, #c9962e) 16%, transparent);
+  box-shadow: 0 0 0 4px
+    color-mix(in oklab, var(--accent-amber, #c9962e) 9%, transparent);
+}
+
+.icon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+/*
+ * The name gets the cell. It is allowed to wrap and allowed to break, so a
+ * sixth interface language with a longer word than Italian's still lands
+ * inside the box rather than over its edge.
+ */
+.name {
+  width: 100%;
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key,
+  .iconWell {
+    transition: none;
+  }
+}

@@ -1,6 +1,5 @@
-import { LoaderCircle } from "lucide-react";
-
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyStatus } from "@/lib/types/app";
 import type { VocabularyViewMode } from "@/lib/vocabulary/viewMode";
 
@@ -25,8 +24,10 @@ type Props = {
   sortMode: SortMode;
   viewMode: VocabularyViewMode;
 
-  rankingLoading: boolean;
-  rankingError: string;
+  /** Empty means every language. */
+  languageFilter: readonly LanguageCode[];
+  /** How many languages the library holds; under two, the control is hidden. */
+  languageCount: number;
 
   onQueryChange: (value: string) => void;
   onClear: () => void;
@@ -35,6 +36,7 @@ type Props = {
   ) => void;
   onOpenSort: () => void;
   onOpenCollections: () => void;
+  onOpenLanguageFilter: () => void;
   onToggleView: () => void;
 };
 
@@ -48,50 +50,58 @@ export default function VocabularySearchSection({
   visibleCount,
   sortMode,
   viewMode,
-  rankingLoading,
-  rankingError,
+  languageFilter,
+  languageCount,
   onQueryChange,
   onClear,
   onQuickFilterChange,
   onOpenSort,
   onOpenCollections,
+  onOpenLanguageFilter,
   onToggleView,
 }: Props) {
   const { t } = useTranslation();
   const search = t.vocabulary.search;
 
-  const sortLabels: Record<SortMode, string> = {
-    new: search.sortOptions.new,
-    old: search.sortOptions.old,
-    alphabetical: search.sortOptions.alphabetical,
-    "reverse-alphabetical": search.sortOptions.reverseAlphabetical,
-    "recently-reviewed": search.sortOptions.recentlyReviewed,
-    "least-reviewed": search.sortOptions.leastReviewed,
-    "for-you": search.sortOptions.forYou,
-    trending: search.sortOptions.trending,
-  };
-
   return (
     <section className="mt-4">
       <div className="mb-4 flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/35">
+          {/* hud-label is the app's shared Cosmic micro-label (app/cosmic.css)
+              and is inert in every other shell, so the eyebrow becomes an
+              instrument readout in deep space and stays a plain caption
+              everywhere else — no branch, no second component. */}
+          <p className="hud-label text-[0.6875rem] font-semibold uppercase tracking-[0.15em] text-ink-faint">
             {search.vocabulary}
           </p>
 
-          <h2 className="mt-1 text-[26px] font-semibold tracking-[-0.04em] text-black">
+          <h2 className="mt-1 text-[1.625rem] font-semibold tracking-[-0.04em] text-black">
             {search.yourWords}
           </h2>
 
-          <p className="mt-1 text-[13px] text-black/45">
-            {totalWords} {search.saved} · {learningWords} {search.learning} ·{" "}
-            {masteredWords} {search.mastered}
+          {/* The three figures are lit in Cosmic Mode and left alone in
+              Standard — see .cosmic-metric in app/cosmic.css. They were
+              already separate expressions, so this costs a span each and no
+              change to the sentence a translator sees. */}
+          <p className="mt-1 text-[0.8125rem] text-ink-soft">
+            <span className="cosmic-metric">{totalWords}</span> {search.saved} ·{" "}
+            <span className="cosmic-metric">{learningWords}</span>{" "}
+            {search.learning} ·{" "}
+            <span className="cosmic-metric">{masteredWords}</span>{" "}
+            {search.mastered}
           </p>
         </div>
 
+        {/*
+          The panel's own instrument mark: a small orbit diagram that pairs
+          Mission Control below with the field above it. Hidden by default and
+          revealed only by the Cosmic rule, which is one class rather than a
+          mode check — see .cosmic-orbit-mark in app/cosmic.css.
+        */}
+        <span aria-hidden="true" className="hidden cosmic-orbit-mark" />
       </div>
 
-      <div className="rounded-[24px] bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+      <div className="cosmic-panel rounded-[24px] bg-white p-3 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
         <VocabularySearch
           query={query}
           quickFilter={quickFilter}
@@ -104,30 +114,13 @@ export default function VocabularySearchSection({
           onQuickFilterChange={onQuickFilterChange}
           onOpenSort={onOpenSort}
           onOpenCollections={onOpenCollections}
+          onOpenLanguageFilter={onOpenLanguageFilter}
           onToggleView={onToggleView}
+          languageFilter={languageFilter}
+          languageCount={languageCount}
         />
       </div>
 
-      {(sortMode === "for-you" || sortMode === "trending") &&
-        (rankingLoading || rankingError) && (
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-[16px] bg-black/[0.035] px-3.5 py-3 text-[11px] font-medium text-black/45">
-            <span className="min-w-0">
-              {rankingLoading
-                ? search.personalizing.replace(
-                    "{sort}",
-                    sortLabels[sortMode],
-                  )
-                : rankingError}
-            </span>
-
-            {rankingLoading ? (
-              <LoaderCircle
-                size={14}
-                className="shrink-0 animate-spin"
-              />
-            ) : null}
-          </div>
-        )}
     </section>
   );
 }

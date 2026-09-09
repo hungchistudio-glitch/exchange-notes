@@ -14,15 +14,15 @@ type BuildVocabularySearchPropsParams = Pick<
   | "quickFilters"
   | "visibleCount"
   | "sortMode"
-  | "rankingLoading"
-  | "rankingError"
   | "viewMode"
+  | "languageFilter"
+  | "languageCount"
 > & {
   setQuery: (value: string) => void;
-  resetLookup: () => void;
   setQuickFilter: SearchProps["onQuickFilterChange"];
   setSortOpen: (open: boolean) => void;
   openCollections: () => void;
+  openLanguageFilter: () => void;
   toggleViewMode: () => void;
 };
 
@@ -36,13 +36,13 @@ export default function buildVocabularySearchProps({
   visibleCount,
   sortMode,
   viewMode,
-  rankingLoading,
-  rankingError,
+  languageFilter,
+  languageCount,
   setQuery,
-  resetLookup,
   setQuickFilter,
   setSortOpen,
   openCollections,
+  openLanguageFilter,
   toggleViewMode,
 }: BuildVocabularySearchPropsParams): SearchProps {
   return {
@@ -55,22 +55,17 @@ export default function buildVocabularySearchProps({
     visibleCount,
     sortMode,
     viewMode,
-    rankingLoading,
-    rankingError,
+    languageFilter,
+    languageCount,
 
-    onQueryChange: (value) => {
-      setQuery(value);
-      resetLookup();
-    },
+    onQueryChange: setQuery,
 
-    onClear: () => {
-      setQuery("");
-      resetLookup();
-    },
+    onClear: () => setQuery(""),
 
     onQuickFilterChange: setQuickFilter,
     onOpenSort: () => setSortOpen(true),
     onOpenCollections: openCollections,
+    onOpenLanguageFilter: openLanguageFilter,
     onToggleView: toggleViewMode,
   };
 }

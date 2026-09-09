@@ -25,7 +25,7 @@ export default function EmptyState({
         .join(" ")}
     >
       {icon && (
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/60">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
           {icon}
         </div>
       )}
@@ -35,7 +35,7 @@ export default function EmptyState({
       </h3>
 
       {description && (
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/50">
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-soft">
           {description}
         </p>
       )}

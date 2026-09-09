@@ -1,9 +1,16 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
 type AppHeaderProps = {
   title: string;
   eyebrow?: string;
   action?: ReactNode;
+  // A sub-screen of the page named here. Settings' Devices & Widgets and
+  // Help & About are the first two; the dock stays where it is either way.
+  backHref?: string;
+  onBack?: () => void;
+  backLabel?: string;
   className?: string;
 };
 
@@ -11,19 +18,53 @@ export default function AppHeader({
   title,
   eyebrow,
   action,
+  backHref,
+  onBack,
+  backLabel,
   className = "",
 }: AppHeaderProps) {
   return (
     <header
-      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface/90 px-4 backdrop-blur-xl ${className}`}
+      /*
+       * Opaque, and no backdrop-filter.
+       *
+       * This is sticky over the app's one scrolling viewport, so a
+       * backdrop-filter here is not paid once — it is re-sampled and
+       * re-blurred on every frame of every scroll, on every screen that has
+       * a header. At 90% opacity a tenth of that blur ever reached anyone,
+       * and against high-contrast content it read as a smudge rather than
+       * as glass.
+       */
+      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface px-4 ${className}`}
       style={{
         paddingTop: "env(safe-area-inset-top)",
       }}
     >
-      <div className="flex h-16 items-center justify-between gap-4">
-        <div className="min-w-0">
+      <div className="flex h-16 items-center justify-between gap-3">
+        {backHref || onBack ? (
+          onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backLabel}
+              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
+            >
+              <ArrowLeft size={20} strokeWidth={1.9} />
+            </button>
+          ) : (
+            <Link
+              href={backHref!}
+              aria-label={backLabel}
+              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-strong transition-colors duration-100 hover:bg-black/[0.04] active:bg-black/[0.07]"
+            >
+              <ArrowLeft size={20} strokeWidth={1.9} />
+            </Link>
+          )
+        ) : null}
+
+        <div className="min-w-0 flex-1">
           {eyebrow && (
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
               {eyebrow}
             </p>
           )}

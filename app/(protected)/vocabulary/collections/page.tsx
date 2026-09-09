@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, FolderPlus, Plus } from "lucide-react";
 
 import Screen from "@/components/foundation/layout/Screen";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   COLLECTION_EMOJI_PRESETS,
@@ -97,7 +98,7 @@ export default function VocabularyCollectionsPage() {
       >
         <Link
           href="/vocabulary"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-black/60 transition hover:bg-black/[0.04]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-black/[0.04]"
           aria-label={copy.backToVocabulary}
         >
           <ArrowLeft size={20} strokeWidth={1.9} />
@@ -105,10 +106,10 @@ export default function VocabularyCollectionsPage() {
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-[26px] font-bold tracking-[-0.02em]">
+            <h1 className="text-[1.625rem] font-bold tracking-[-0.02em]">
               {copy.title}
             </h1>
-            <p className="mt-1 text-black/50">{copy.description}</p>
+            <p className="mt-1 text-ink-soft">{copy.description}</p>
           </div>
 
           <button
@@ -147,12 +148,27 @@ export default function VocabularyCollectionsPage() {
               ))}
             </div>
 
-            <input
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder={copy.namePlaceholder}
-              className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none"
-            />
+            <div className="relative mt-3">
+
+              <input
+
+                value={newName}
+
+                onChange={(event) => setNewName(event.target.value)}
+
+                placeholder={copy.namePlaceholder}
+
+                className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-11 text-sm outline-none"
+
+              />
+
+              {newName && (
+
+                <ClearFieldButton floating onClear={() => setNewName("")} />
+
+              )}
+
+            </div>
 
             <div className="mt-3 flex gap-2">
               <button
@@ -175,16 +191,16 @@ export default function VocabularyCollectionsPage() {
         )}
 
         {loading && (
-          <p className="mt-10 text-center text-sm text-black/40">Loading…</p>
+          <p className="mt-10 text-center text-sm text-ink-faint">Loading…</p>
         )}
 
         {!loading && collections.length === 0 && (
           <div className="mt-10 rounded-[24px] bg-white p-8 text-center shadow-sm">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-black/50">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-soft">
               <FolderPlus size={22} strokeWidth={1.7} />
             </div>
             <p className="mt-4 text-lg font-bold">{copy.emptyTitle}</p>
-            <p className="mt-1 text-sm leading-6 text-black/50">
+            <p className="mt-1 text-sm leading-6 text-ink-soft">
               {copy.emptyDescription}
             </p>
           </div>
@@ -205,7 +221,7 @@ export default function VocabularyCollectionsPage() {
                   {collection.emoji}
                 </span>
                 <p className="mt-3 truncate font-bold">{collection.name}</p>
-                <p className="mt-0.5 text-xs text-black/40">
+                <p className="mt-0.5 text-xs text-ink-faint">
                   {collection.word_count ?? 0}{" "}
                   {(collection.word_count ?? 0) === 1 ? copy.word : copy.words}
                 </p>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Exchange Notes</title>
+  <g id="exchange-notes-mark" fill="none" stroke="#ffffff" stroke-width="54" stroke-linejoin="round">
+    <path id="mark-arc" d="M 594.09 302.44 A 218 218 0 1 0 594.09 721.56" stroke-linecap="round"/>
+    <path id="mark-bridge" d="M 316 512 H 507.5"/>
+    <g id="mark-eye">
+      <circle id="mark-eye-ring" cx="616" cy="512" r="108.5" stroke-width="21"/>
+      <path id="mark-eye-pupil" d="M 566 512 a 50 50 0 1 0 100 0 a 50 50 0 1 0 -100 0 Z M 617.5 498 a 13.5 13.5 0 1 0 27 0 a 13.5 13.5 0 1 0 -27 0 Z" fill="#ffffff" fill-rule="evenodd" stroke="none"/>
+    </g>
+  </g>
+</svg>

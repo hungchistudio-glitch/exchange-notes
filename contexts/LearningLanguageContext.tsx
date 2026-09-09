@@ -11,22 +11,41 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage } from "@/lib/types/app";
+import type { LanguageCode } from "@/lib/languages";
+import { toLearningPair } from "@/lib/profile/languagePair";
 
 type LearningLanguageContextType = {
-  learningLanguage: AppLanguage;
-  isLearningChinese: boolean;
-  isLearningEnglish: boolean;
+  learningLanguage: LanguageCode;
+  nativeLanguage: LanguageCode;
+  /**
+   * Both, in the order everything else uses: learning first, native second.
+   *
+   * Anything saving a word needs both — which language the word is in and
+   * which the translation is in — and deriving the second from the first
+   * only works while exactly two languages exist.
+   */
+  languagePair: readonly [LanguageCode, LanguageCode];
+  /**
+   * Applies a change the caller already knows about, without asking anyone.
+   *
+   * Settings used to save and then call refresh(), which is three round
+   * trips — the update, getUser(), and the profile read — before a single
+   * card on screen changed. The value the reader just picked is not a thing
+   * that has to be fetched; it is a thing that has to be persisted, and
+   * those are different jobs with different latencies.
+   *
+   * Persist afterwards, and call this again with the old pair if the write
+   * fails. Reconciliation with the server still happens on focus and on
+   * visibility change, so a value that somehow diverges is corrected the
+   * next time the tab is looked at.
+   */
+  apply: (learning: LanguageCode, native: LanguageCode) => void;
   loading: boolean;
   refresh: () => Promise<void>;
 };
 
 const LearningLanguageContext =
   createContext<LearningLanguageContextType | null>(null);
-
-function normalizeLearningLanguage(value: unknown): AppLanguage {
-  return value === "traditional-chinese" ? "traditional-chinese" : "english";
-}
 
 /**
  * App-wide source of truth for "which language is the user learning"
@@ -51,14 +70,22 @@ function normalizeLearningLanguage(value: unknown): AppLanguage {
 export function LearningLanguageProvider({
   children,
   initialLearningLanguage,
+  initialNativeLanguage,
 }: {
   children: ReactNode;
-  initialLearningLanguage: AppLanguage;
+  initialLearningLanguage: unknown;
+  initialNativeLanguage?: unknown;
 }) {
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage>(
-    initialLearningLanguage,
+  const [pair, setPair] = useState<readonly [LanguageCode, LanguageCode]>(() =>
+    toLearningPair(initialLearningLanguage, initialNativeLanguage),
   );
+
+  const [learningLanguage, nativeLanguage] = pair;
   const [loading, setLoading] = useState(false);
+
+  const apply = useCallback((learning: LanguageCode, native: LanguageCode) => {
+    setPair(toLearningPair(learning, native));
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -74,7 +101,7 @@ export function LearningLanguageProvider({
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("learning_language")
+        .select("learning_language, native_language")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -83,12 +110,12 @@ export function LearningLanguageProvider({
         return;
       }
 
-      setLearningLanguage(
-        normalizeLearningLanguage(
-          (data as { learning_language: AppLanguage | null } | null)
-            ?.learning_language,
-        ),
-      );
+      const row = data as {
+        learning_language: unknown;
+        native_language: unknown;
+      } | null;
+
+      setPair(toLearningPair(row?.learning_language, row?.native_language));
     } finally {
       setLoading(false);
     }
@@ -120,12 +147,13 @@ export function LearningLanguageProvider({
   const value = useMemo<LearningLanguageContextType>(
     () => ({
       learningLanguage,
-      isLearningChinese: learningLanguage === "traditional-chinese",
-      isLearningEnglish: learningLanguage === "english",
+      nativeLanguage,
+      languagePair: pair,
       loading,
+      apply,
       refresh,
     }),
-    [learningLanguage, loading, refresh],
+    [learningLanguage, nativeLanguage, pair, loading, apply, refresh],
   );
 
   return (

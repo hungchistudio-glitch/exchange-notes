@@ -4,6 +4,7 @@ import { Camera, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { findProfileByExchangeId } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
@@ -55,10 +56,27 @@ export default function NameStep({
   const { t } = useTranslation();
   const copy = t.onboarding.name;
 
-  const [idStatus, setIdStatus] = useState<IdStatus>("idle");
+  /*
+   * The answer is stored with the handle it was an answer to.
+   *
+   * A bare status could not tell which keystroke it belonged to. The debounce
+   * clears the pending timer, but a check already in flight cannot be called
+   * back, so two overlapping lookups could resolve in either order and the
+   * screen would show whichever landed last — an ID reported free when it was
+   * taken, or taken when it was free, for a handle the reader had already
+   * edited. Since `canContinue` gates on this, that was a real chance of
+   * walking out of onboarding with a handle somebody else owns.
+   *
+   * Keying the result to its input makes a stale answer unusable rather than
+   * merely unlikely: it no longer matches, so it reads as "still checking",
+   * which is exactly what it is. Same shape EditProfileSheet already uses for
+   * the same lookup.
+   */
+  const [idCheck, setIdCheck] = useState<
+    { exchangeId: string; status: Exclude<IdStatus, "idle" | "checking"> } | null
+  >(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState("");
-  const checkTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const suggestedOnce = useRef(false);
 
@@ -78,36 +96,56 @@ export default function NameStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName, initialExchangeId]);
 
+  const needsIdCheck =
+    exchangeId.length >= 3 && exchangeId !== initialExchangeId;
+
+  // Derived rather than stored: "idle" and "checking" follow from the current
+  // input, so only the asynchronous outcome is real state — and an outcome
+  // for a handle that has since been edited simply does not match.
+  const idStatus: IdStatus = !needsIdCheck
+    ? "idle"
+    : idCheck?.exchangeId === exchangeId
+      ? idCheck.status
+      : "checking";
+
+  /*
+   * Cancelled as well as keyed, and it needs to be both.
+   *
+   * Keying alone stops a stale answer being believed, but not from being
+   * stored — and storing it overwrites the answer for the handle actually in
+   * the field, which then has no request outstanding to replace it. The
+   * screen sits on "checking" and Continue never enables again. Dropping a
+   * resolution whose effect has already been torn down means the good answer
+   * is the one that survives.
+   */
   useEffect(() => {
-    if (checkTimeout.current) clearTimeout(checkTimeout.current);
+    if (!needsIdCheck) return;
 
-    const isUnchangedOrTooShort =
-      exchangeId.length < 3 || exchangeId === initialExchangeId;
+    let cancelled = false;
 
-    checkTimeout.current = setTimeout(
-      async () => {
-        if (isUnchangedOrTooShort) {
-          setIdStatus("idle");
-          return;
-        }
+    const timer = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const match = await findProfileByExchangeId(supabase, exchangeId);
 
-        setIdStatus("checking");
+        if (cancelled) return;
 
-        try {
-          const supabase = createClient();
-          const match = await findProfileByExchangeId(supabase, exchangeId);
-          setIdStatus(!match || match.id === userId ? "available" : "taken");
-        } catch {
-          setIdStatus("error");
-        }
-      },
-      isUnchangedOrTooShort ? 0 : 400,
-    );
+        setIdCheck({
+          exchangeId,
+          status: !match || match.id === userId ? "available" : "taken",
+        });
+      } catch {
+        if (cancelled) return;
+
+        setIdCheck({ exchangeId, status: "error" });
+      }
+    }, 400);
 
     return () => {
-      if (checkTimeout.current) clearTimeout(checkTimeout.current);
+      cancelled = true;
+      clearTimeout(timer);
     };
-  }, [exchangeId, initialExchangeId, userId]);
+  }, [exchangeId, needsIdCheck, userId]);
 
   async function handlePhotoSelected(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -167,7 +205,7 @@ export default function NameStep({
       ? "text-emerald-600"
       : idStatus === "taken" || idStatus === "error"
         ? "text-red-600"
-        : "text-black/45";
+        : "text-ink-soft";
 
   const canContinue =
     displayName.trim().length > 0 &&
@@ -179,7 +217,7 @@ export default function NameStep({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1">
-        <h1 className="text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
@@ -212,27 +250,32 @@ export default function NameStep({
         </div>
 
         <label className="mt-7 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.displayNameLabel}
           </span>
 
-          <input
-            required
-            value={displayName}
-            onChange={(event) => onChangeDisplayName(event.target.value)}
-            placeholder={copy.displayNamePlaceholder}
-            autoComplete="name"
-            className="w-full rounded-2xl border border-transparent bg-black/[0.035] px-4 py-3.5 text-base text-black outline-none transition-colors placeholder:text-neutral-400 focus:border-black focus:bg-white"
-          />
+          <div className="relative">
+            <input
+              required
+              value={displayName}
+              onChange={(event) => onChangeDisplayName(event.target.value)}
+              placeholder={copy.displayNamePlaceholder}
+              autoComplete="name"
+              className="w-full rounded-2xl border border-transparent bg-black/[0.035] py-3.5 pl-4 pr-12 text-base text-black outline-none transition-colors placeholder:text-ink-faint focus:border-black focus:bg-white"
+            />
+            {displayName && (
+              <ClearFieldButton floating onClear={() => onChangeDisplayName("")} />
+            )}
+          </div>
         </label>
 
         <label className="mt-4 block">
-          <span className="mb-1.5 block text-[13px] font-medium text-black/60">
+          <span className="mb-1.5 block text-[0.8125rem] font-medium text-ink-soft">
             {copy.usernameLabel}
           </span>
 
           <div className="flex items-center rounded-2xl border border-transparent bg-black/[0.035] pl-1.5 pr-4 transition-colors focus-within:border-black focus-within:bg-white">
-            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-black/50">
+            <span className="mr-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.05] text-sm font-bold text-ink-soft">
               @
             </span>
 
@@ -246,11 +289,15 @@ export default function NameStep({
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-neutral-400"
+              className="w-full bg-transparent py-3.5 text-base text-black outline-none placeholder:text-ink-faint"
             />
 
+            {exchangeId && (
+              <ClearFieldButton onClear={() => onChangeExchangeId("")} />
+            )}
+
             {idStatus === "checking" ? (
-              <LoaderCircle size={15} className="shrink-0 animate-spin text-black/30" />
+              <LoaderCircle size={15} className="shrink-0 animate-spin text-ink-faint" />
             ) : null}
           </div>
 
@@ -264,7 +311,7 @@ export default function NameStep({
         type="button"
         onClick={onContinue}
         disabled={!canContinue}
-        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+        className="mt-8 flex h-13 min-h-12 w-full items-center justify-center gap-2 rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-40"
       >
         {saving ? <LoaderCircle size={16} className="animate-spin" /> : null}
         {t.onboarding.continue}

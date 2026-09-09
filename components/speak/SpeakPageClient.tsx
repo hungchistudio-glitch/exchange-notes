@@ -5,10 +5,21 @@ import { ArrowLeft, BookOpen, RotateCcw, Sparkles, Volume2 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Screen from "@/components/foundation/layout/Screen";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { fill } from "@/lib/i18n/format";
+import { getLanguage, getLanguageName, type LanguageCode } from "@/lib/languages";
 import { speak } from "@/lib/speech";
 
 type SpeakPageClientProps = {
-  language: "en-US" | "zh-TW";
+  /**
+   * The language of `text`.
+   *
+   * A LanguageCode, not a pair of hardcoded tags: this page used to admit
+   * exactly "en-US" and "zh-TW" and describe itself with an isChinese
+   * ternary, which meant a Spanish word arriving from the widget was
+   * announced as English and read in an English voice.
+   */
+  language: LanguageCode;
   text: string;
 };
 
@@ -18,6 +29,11 @@ export default function SpeakPageClient({
   language,
   text,
 }: SpeakPageClientProps) {
+  const { t, language: interfaceLanguage } = useTranslation();
+  const copy = t.speakPage;
+
+  const meta = getLanguage(language);
+
   const [playbackState, setPlaybackState] = useState<PlaybackState>("idle");
   const autoPlayedRef = useRef(false);
 
@@ -28,12 +44,12 @@ export default function SpeakPageClient({
     }
 
     setPlaybackState("playing");
-    speak(text, language, {
+    speak(text, meta.speechTag, {
       onStart: () => setPlaybackState("playing"),
       onEnd: () => setPlaybackState("complete"),
       onError: () => setPlaybackState("error"),
     });
-  }, [language, text]);
+  }, [meta.speechTag, text]);
 
   useEffect(() => {
     if (autoPlayedRef.current || !text) return;
@@ -48,27 +64,28 @@ export default function SpeakPageClient({
     return () => window.speechSynthesis?.cancel();
   }, []);
 
-  const isChinese = language === "zh-TW";
   const status =
     playbackState === "playing"
-      ? isChinese
-        ? "正在播放…"
-        : "Playing…"
+      ? copy.playing
       : playbackState === "complete"
-        ? isChinese
-          ? "播放完成"
-          : "Playback complete"
+        ? copy.complete
         : playbackState === "error"
-          ? isChinese
-            ? "無法自動播放，請點擊下方按鈕再試一次。"
-            : "Automatic playback was blocked. Tap the button to try again."
-          : isChinese
-            ? "準備播放"
-            : "Ready to play";
+          ? copy.blocked
+          : copy.ready;
 
   return (
+    // Every white and black below is written as a literal rather than as
+    // `text-white` / `bg-white` / `bg-black`, and that is load-bearing.
+    //
+    // This page is permanently dark: the field behind it is an inline-styled
+    // gradient, and the shell is a hardcoded #06101d. Neither can invert. The
+    // utility versions do — Cosmic Mode repoints --color-white at #101a30 —
+    // so `text-white` here resolved to deep navy on a deep navy page, 1.10:1,
+    // and the glass panels and the play button went with it. Literals opt this
+    // one page out of the inversion it was never built for. Standard Mode is
+    // byte-for-byte what it was.
     <Screen
-      className="bg-[#06101d] text-white"
+      className="bg-[#06101d] text-[#ffffff]"
       contentClassName="relative overflow-hidden px-5 pt-[max(20px,env(safe-area-inset-top))]"
     >
       <div
@@ -83,39 +100,46 @@ export default function SpeakPageClient({
       <header className="relative z-10 flex items-center justify-between">
         <Link
           href="/vocabulary"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur"
-          aria-label={isChinese ? "返回單字本" : "Back to vocabulary"}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#ffffff]/20 bg-[#ffffff]/10 text-[#ffffff] backdrop-blur"
+          aria-label={copy.backToVocabulary}
         >
           <ArrowLeft size={20} aria-hidden="true" />
         </Link>
 
-        <div className="flex items-center gap-2 rounded-full border border-cyan-200/20 bg-white/10 px-3 py-2 text-xs font-semibold tracking-wide text-cyan-50 backdrop-blur">
+        <div className="flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[#ffffff]/10 px-3 py-2 text-xs font-semibold tracking-wide text-cyan-50 backdrop-blur">
           <Sparkles size={14} aria-hidden="true" />
           Yumi Voice
         </div>
       </header>
 
       <section className="relative z-10 flex min-h-[72dvh] flex-col items-center justify-center py-10 text-center">
-        <div className="w-full rounded-[32px] border border-white/20 bg-white/[0.09] p-6 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl">
+        <div className="w-full rounded-[32px] border border-[#ffffff]/20 bg-[#ffffff]/[0.09] p-6 shadow-2xl shadow-cyan-950/40 backdrop-blur-xl">
+          {/*
+            The badge is the language's own glyph from lib/languages.ts, so a
+            new language brings its own rather than needing a case here.
+          */}
           <div
-            className={`mx-auto flex h-20 w-20 items-center justify-center rounded-[24px] text-3xl font-black shadow-lg ${
-              isChinese
-                ? "border border-orange-300/50 bg-gradient-to-br from-[#20243b] to-[#03050d] text-white shadow-orange-950/30"
-                : "bg-gradient-to-br from-[#ffd147] to-[#ff730a] text-[#221508] shadow-orange-950/30"
-            }`}
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-[24px] bg-gradient-to-br from-[#ffd147] to-[#ff730a] text-3xl font-black text-[#221508] shadow-lg shadow-orange-950/30"
+            style={{ fontFamily: `var(${meta.fontVariable})` }}
           >
-            {isChinese ? "ㄅ" : "A"}
+            {meta.badge}
           </div>
 
           <p className="mt-7 text-xs font-bold uppercase tracking-[0.22em] text-cyan-100/70">
-            {isChinese ? "繁體中文發音" : "English pronunciation"}
+            {fill(copy.eyebrow, {
+              language: getLanguageName(language, interfaceLanguage),
+            })}
           </p>
 
-          <h1 className="mt-3 break-words text-4xl font-black leading-tight text-white">
-            {text || (isChinese ? "沒有可播放的文字" : "No text to play")}
+          <h1
+            className="mt-3 break-words text-4xl font-black leading-tight text-[#ffffff]"
+            style={{ fontFamily: `var(${meta.fontVariable})` }}
+            lang={meta.htmlLang}
+          >
+            {text || copy.noText}
           </h1>
 
-          <p className="mt-4 min-h-6 text-sm text-white/65" aria-live="polite">
+          <p className="mt-4 min-h-6 text-sm text-[#ffffff]/65" aria-live="polite">
             {status}
           </p>
 
@@ -123,7 +147,7 @@ export default function SpeakPageClient({
             type="button"
             onClick={play}
             disabled={!text || playbackState === "playing"}
-            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-bold text-[#071626] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
+            className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ffffff] px-5 py-3 font-bold text-[#071626] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
           >
             {playbackState === "complete" || playbackState === "error" ? (
               <RotateCcw size={19} aria-hidden="true" />
@@ -134,16 +158,16 @@ export default function SpeakPageClient({
                 aria-hidden="true"
               />
             )}
-            {isChinese ? "再播放一次" : "Play again"}
+            {copy.playAgain}
           </button>
         </div>
 
         <Link
           href="/pronunciation"
-          className="mt-5 flex min-h-11 items-center gap-2 rounded-full border border-white/15 bg-black/15 px-5 py-2.5 text-sm font-semibold text-white/80 backdrop-blur"
+          className="mt-5 flex min-h-11 items-center gap-2 rounded-full border border-[#ffffff]/15 bg-[#000000]/15 px-5 py-2.5 text-sm font-semibold text-[#ffffff]/80 backdrop-blur"
         >
           <BookOpen size={17} aria-hidden="true" />
-          {isChinese ? "前往發音練習室" : "Open pronunciation lab"}
+          {copy.openLab}
         </Link>
       </section>
     </Screen>

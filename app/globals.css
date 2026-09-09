@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./cosmic.css";
+@import "./yumi-motion.css";
 
 :root {
   --background: #ffffff;
@@ -12,6 +14,265 @@
 
   /* Warm neutral border/divider, replacing #e3e3dc and #e8e8e2. */
   --line: #e3e3dc;
+
+  /*
+   * The brand mark's two colours.
+   *
+   * Both pairs are declared, not just the active one, because the pair that
+   * is *not* in use still gets asked for: an app-icon preview inside the app
+   * has to paint the dark artwork on a light screen, and marketing surfaces
+   * show the two side by side. So the four literals are the palette, and
+   * --yumi-canvas / --yumi-mark are whichever pair this mode resolves to.
+   * app/cosmic.css redefines only those two.
+   *
+   * Nothing that draws the mark may write a colour of its own. The mark is
+   * always `currentColor` (see components/brand/ExchangeNotesLogo.tsx), so a surface sets
+   * `color: var(--yumi-mark)` and both modes are handled — there is no
+   * second DOM, and no filter: invert().
+   */
+  --yumi-canvas-light: #ffffff;
+  /* Pure black. The brand specification asks for #000000 exactly and names
+     the pair "Pure White Canvas, Deep Obsidian Mark" — the obsidian is the
+     name, not a tint. These four must stay in step with LOGO_COLORS in
+     lib/brand/exchangeNotesLogo.ts, which is what the generated asset files
+     are painted with; a CSS variable cannot reach a standalone SVG. */
+  --yumi-mark-light: #000000;
+  /* Jet obsidian. Softer than black, and the tone the dark app icon sits on. */
+  --yumi-canvas-dark: #0d0d11;
+  --yumi-mark-dark: #ffffff;
+
+  --yumi-canvas: var(--yumi-canvas-light);
+  --yumi-mark: var(--yumi-mark-light);
+
+  /*
+   * The corner radius of the app icon *as Exchange Notes previews it* — the
+   * install card, settings, onboarding. Never baked into an exported icon:
+   * every OS applies its own mask, and a shape rounded twice shows a lighter
+   * seam inside the platform's squircle.
+   */
+  --exchange-icon-radius: 12%;
+
+  /*
+   * Accent and component colours that used to be written as raw hex at each
+   * call site. Naming them is what makes Yumi Cosmic Mode possible: the mode
+   * repaints the app by redefining these in one place (app/cosmic.css) rather
+   * than by editing — and risking — every component that uses them.
+   *
+   * Everything below keeps its exact original value, so Standard Mode is
+   * pixel-for-pixel unchanged.
+   */
+
+  /* The app's gold. Categories, highlights, selected chips, Yumi's warmth. */
+  --accent-amber: #c9962e;
+
+  /*
+   * The Signal Radar's palette, Standard Mode.
+   *
+   * The radar is the only refresh control Discover has now, in every shell, so
+   * it needs a set of these outside Cosmic Mode too. Same six token names, so
+   * the component never asks which mode it is in — only the values differ, and
+   * they differ completely: here the instrument sits on paper rather than in
+   * deep space, so the orb is a warm near-black and the signal colour is the
+   * app's own accent rather than a cyan that would have nothing else on the
+   * page to belong to.
+   */
+  --radar-core-bg: #26241f;
+  --radar-cyan-primary: #c9962e;
+  --radar-blue-secondary: #8aa6c4;
+  --radar-violet-accent: #8b5cf6;
+  --radar-success: #2f9e6b;
+  --radar-warning: #c9962e;
+  --accent-amber-ink: #2b2013;
+  --accent-amber-deep: #6b4e1f;
+  --accent-amber-soft: #f3d998;
+  --accent-amber-wash: #fdfaf3;
+
+  /* Confirmation green, used for delivered/known states. */
+  --success: #236c32;
+  --success-soft: #d7ead2;
+
+  /* The cool counterpart to the gold, on the cookie tray's phonetic labels. */
+  --accent-cool: #2c4a63;
+
+  /* The wash Yumi sits on at the top of the vocabulary screen. */
+  --yumi-wash-top: #fdfaf3;
+  --yumi-wash-bottom: #f6f1e5;
+
+  /* The modal family — a cooler, greener neutral than the page behind it. */
+  --modal-scrim: #252821;
+  --modal-surface: #fcfcf9;
+  --modal-ink: #2f312d;
+  --modal-accent: #394a35;
+  --modal-muted: #666a63;
+  --modal-line: #e7eee4;
+
+  /* Round controls that sit on top of content (back buttons, and friends). */
+  --control-surface: #f4f7f2;
+  --control-ink: #394a35;
+
+  /* The floating dock. Its glass, its line, and the circular energy base that
+     slides behind whichever icon is active. */
+  /* Opaque: the dock no longer blurs what is behind it, and a translucent
+     bar with a sharp page showing through it is not the same effect. */
+  --dock-surface: #fdfbf6;
+  --dock-line: rgba(0, 0, 0, 0.07);
+  --dock-shadow: 0 10px 36px rgba(28, 26, 22, 0.12);
+  --dock-indicator: #1c1a16;
+  --dock-indicator-border: transparent;
+  --dock-indicator-halo: rgba(28, 26, 22, 0.05);
+  /* The icon sitting on the energy base. A filled dark base needs white on
+     it; a hollow ring needs the ring's own colour. */
+  --dock-active-ink: #ffffff;
+
+  /* Discover's editorial surface, applied through inline styles — see
+     components/discover/types.ts. */
+  --discover-page: #f3f0e8;
+  --discover-card: #fbfaf6;
+  --discover-text: #151515;
+  /* Was #77736c, which is 4.52:1 on --discover-card but only 4.14:1 on
+     --discover-page behind it — Discover's bylines and kickers sit on both.
+     #6f6b64 is the nearest value that clears 4.5:1 on the page too (4.65:1),
+     and it keeps the warm grey the editorial surface was designed around.
+     Cosmic's #8ba0c6 already clears it on all three (5.98:1 at worst). */
+  --discover-text-secondary: #6f6b64;
+  --discover-divider: #e7e2d9;
+  --discover-divider-soft: rgba(231, 226, 217, 0.28);
+  --discover-accent: #244b3a;
+  --discover-accent-soft: #e7eee9;
+  --discover-selected: #ffffff;
+  --discover-on-accent: #ffffff;
+  --discover-category-business: #7a3226;
+  --discover-category-technology: #2e4c7a;
+  --discover-category-science: #5c4a7a;
+  --discover-category-culture: #7a5a35;
+  --discover-category-health: #2e6b5e;
+  --discover-category-environment: #5b6b35;
+  --discover-category-politics: #55524a;
+
+  /*
+   * The two muted ink tiers — secondary text and tertiary text.
+   *
+   * These replace `text-black/45` and `text-black/35` (and the eleven other
+   * alphas between 20 and 55 that had drifted in around them). Measured
+   * against the surfaces they actually sit on, 45 is 3.28–3.35:1 and 35 is
+   * 2.36–2.44:1, both under the 4.5:1 WCAG AA asks of the 10–14px they carry:
+   * @handles, timestamps, captions, helper text, empty-state copy.
+   *
+   * 0.55 is the lowest alpha that clears 4.5:1 on every light surface in the
+   * app — 4.76:1 on white, 4.64:1 on --surface, 4.61:1 on the darkest of them
+   * (--discover-page). 0.62 sits far enough above it to still read as two
+   * tiers rather than one (6.20:1 / 5.99:1 / 5.94:1).
+   *
+   * Written against --color-black rather than as literal rgba, because that is
+   * the variable app/cosmic.css remaps to #dce9ff. Both tokens therefore
+   * invert on their own, exactly as the `black/x` utilities they replace did,
+   * and they clear AA on the dark shell at the same two alphas — 4.82:1 and
+   * 5.73:1 on its worst surface. One definition, correct in both modes.
+   *
+   * AA compresses what used to be four muted tiers into these two. Anything
+   * at 0.60 and above already passed and is left alone, which does mean a
+   * screen that paired 50 with 60 now reads as one weight; that distinction
+   * only existed because the lighter half was too light to read.
+   */
+  --ink-soft: color-mix(in oklab, var(--color-black, #000) 62%, transparent);
+  --ink-faint: color-mix(in oklab, var(--color-black, #000) 55%, transparent);
+
+  /*
+   * The emphasis tier, and the reason there are exactly three.
+   *
+   * Raising the floor to 0.55 was not enough on its own: the app already had
+   * 0.60, 0.65, 0.70, 0.75, 0.80, 0.85 and 0.90 scattered above it, and on
+   * white those are 5.74:1, 6.98:1, 8.52:1, 10.41:1, 12.63:1, 15.08:1 and
+   * 17.49:1. The first three are indistinguishable from --ink-soft and from
+   * each other — nine steps where the eye can resolve four. Same drift the
+   * --surface comment above describes, in alpha rather than in hex.
+   *
+   * So the ramp is deliberate now, and geometric: 4.76:1, 6.20:1, 10.41:1,
+   * 21:1 on white — each step roughly 1.3x to 2x the last, which is about the
+   * smallest gap that still reads as a different weight. 0.75 is the median of
+   * the 0.70/0.75/0.80 band it absorbs, so most of those call sites do not
+   * move at all. Everything at 0.85 and up folds into plain `text-black`,
+   * which is what it was already pretending to be.
+   */
+  --ink-strong: color-mix(in oklab, var(--color-black, #000) 75%, transparent);
+
+  /*
+   * The same two tiers for text on the black cards — the review tile, the
+   * vocabulary hero, the daily focus card, the quick-start links. Those wrote
+   * `text-white/35` through `text-white/50`, which is 3.0:1 to 5.3:1 on
+   * `bg-black`; the lower half of that range fails the same way the paper side
+   * did. 0.48 is the lowest that clears 4.5:1 here (4.92:1) and 0.62 gives the
+   * second tier (7.85:1).
+   *
+   * Unlike --ink-soft/--ink-faint these need a separate Cosmic definition, and
+   * the reason is worth stating: `bg-black` and `text-white` both invert, so in
+   * Cosmic these cards are a pale blue panel carrying deep navy text. That is a
+   * genuinely different pairing rather than the same one flipped, and it needs
+   * more alpha to reach the same ratio — see app/cosmic.css.
+   */
+  --ink-invert-soft: color-mix(in oklab, var(--color-white, #fff) 62%, transparent);
+  --ink-invert-faint: color-mix(in oklab, var(--color-white, #fff) 48%, transparent);
+
+  /*
+   * Messages. The two-page architecture gave the conversation room to be its
+   * own environment, and an environment needs its own surfaces rather than
+   * borrowing whichever grey was nearest.
+   *
+   * Named here so Cosmic Mode can repaint the whole of Messages by
+   * redefining them in app/cosmic.css — the same mechanism the rest of the
+   * app already uses. Standard Mode keeps the warm paper look it has always
+   * had, so nothing about these values is a change for existing users.
+   */
+  --msg-page: var(--surface);
+  --msg-surface: #ffffff;
+  --msg-surface-soft: #faf9f5;
+  --msg-line: rgba(0, 0, 0, 0.06);
+  --msg-ink: #171717;
+
+  /*
+   * The app-wide tiers, not a second pair at the same alphas.
+   *
+   * These started here as literal rgba(0,0,0,0.62)/0.55 — the lowest values
+   * that clear WCAG AA on this page's surfaces. The app-wide sweep above
+   * landed on exactly the same two alphas for exactly the same reason, so
+   * pointing at it removes a duplicate that only agreed by coincidence and
+   * would drift the moment either was retuned. Cosmic Mode still overrides
+   * both in app/cosmic.css, where Messages has its own palette.
+   */
+  --msg-ink-soft: var(--ink-soft);
+  --msg-ink-faint: var(--ink-faint);
+
+  /* The colour that marks something live or selected. */
+  --msg-accent: var(--accent-amber);
+  --msg-accent-soft: var(--accent-amber-wash);
+  --msg-accent-ink: #ffffff;
+
+  /* Bubbles. Written as gradients in both shells so the outgoing side can
+     carry depth in Cosmic Mode without a second set of rules here. */
+  --msg-bubble-in: linear-gradient(180deg, #ffffff, #ffffff);
+  --msg-bubble-in-ink: #171717;
+  --msg-bubble-in-line: rgba(0, 0, 0, 0.05);
+  --msg-bubble-out: linear-gradient(180deg, #23231f, #131311);
+  --msg-bubble-out-ink: #ffffff;
+  --msg-bubble-out-meta: rgba(255, 255, 255, 0.55);
+
+  --msg-presence: var(--success);
+  --msg-glow: none;
+  /* Opaque, as --dock-surface is — and the same colour it already resolved
+     to wherever the page behind it was the page's own background. */
+  --msg-header: #f5f3ed;
+
+  /*
+   * Yumi's own surfaces, kept apart from the page's.
+   *
+   * ExchangeNotesMark uses one `surfaceColor` for both the sclera and the
+   * eyelids — the lids are the same colour as the eye white, which is how a
+   * blink works without a second mask. So this value has to stay light in
+   * every shell: pointing it at a page surface token meant Cosmic Mode
+   * redefined it to deep navy and Yumi lost the whites of its eye.
+   */
+  --msg-mark-surface: #f5f3ed;
+  --msg-mark-highlight: #ffffff;
 }
 
 @theme inline {
@@ -19,6 +280,15 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-line: var(--line);
+
+  /* Exposed as utilities (text-ink-soft / text-ink-faint) the same way
+     --surface and --line are, so call sites stay as short as the
+     `text-black/45` they replace. */
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-invert-soft: var(--ink-invert-soft);
+  --color-ink-invert-faint: var(--ink-invert-faint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -48,6 +318,11 @@
    fairly thin; "Noto Sans TC" (loaded in app/layout.tsx) is the fallback
    everywhere else. */
 body {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   background: var(--background);
   color: var(--foreground);
   font-family:
@@ -62,6 +337,11 @@ body {
 }
 
 html {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
   scroll-behavior: smooth;
 }
 
@@ -72,4 +352,192 @@ html {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
+}
+
+/*
+ * The authenticated app owns one viewport-sized shell. Only its content
+ * layer scrolls; persistent chrome is a sibling of that layer, so iOS cannot
+ * re-anchor the dock part-way down a long document. This also stops page-edge
+ * rubber-banding from revealing the body's layer underneath the active page.
+ *
+ * This root scroller is deliberately the exception to the generic rule
+ * above. Current iOS has native inertial overflow scrolling; forcing the old
+ * `-webkit-overflow-scrolling: touch` path creates a separate compositor for
+ * form controls. When the software keyboard moves the visual viewport, the
+ * native caret can then remain at the compositor's old coordinates. Likewise,
+ * `scroll-behavior: smooth` makes Safari animate its focus correction while
+ * the caret jumps immediately to the destination. Ordinary finger scrolling
+ * remains inertial and smooth with both properties set to their stable path.
+ */
+[data-app-scroll-viewport] {
+  -webkit-overflow-scrolling: auto;
+  overscroll-behavior: none;
+  scroll-behavior: auto;
+}
+
+/*
+ * Stop iOS zooming the page when a field takes focus.
+ *
+ * Safari scales the viewport up whenever the focused control's computed
+ * font-size is below 16px, and it does not scale back afterwards — so tapping
+ * the vocabulary search box or any field in the capture flow left the whole
+ * interface enlarged and shifted, and every subsequent tap landed on a layout
+ * that had moved. Seventeen fields across search, capture, messages, friends,
+ * collections, editing and onboarding were under the threshold.
+ *
+ * Raising each one by hand would fix today's seventeen and none of tomorrow's,
+ * so the floor is set here instead. Only on coarse pointers: this is a
+ * touch-keyboard behaviour, and the designed sizes stay untouched with a mouse.
+ *
+ * The other well-known fix is maximum-scale=1 on the viewport, which is
+ * rejected deliberately. It does stop this, and it also takes pinch-zoom away
+ * from everyone who relies on it. Making the text big enough to not need
+ * rescuing is the version that costs nobody anything.
+ */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    /*
+     * A floor, not a size. Every other font-size in the app is rem so the
+     * reader's setting can move it; this one cannot go below sixteen real
+     * pixels whatever they chose, or iOS zooms the page on focus and the
+     * rule above stops meaning anything. max() gives both: the setting
+     * raises it, nothing lowers it.
+     */
+    font-size: max(16px, 1rem);
+  }
+}
+
+/*
+ * Reduced Motion for Tailwind's animation utilities.
+ *
+ * Every stylesheet in this app carries its own prefers-reduced-motion block —
+ * all twenty-seven of them. The utilities did not, and there is no way for a
+ * component to add one: `animate-spin` compiles to `animation:
+ * var(--animate-spin)` with no media query anywhere near it, so fifty-six
+ * spinners, pulses and bounces across the app kept turning for a user who had
+ * asked the whole system to stop moving things.
+ *
+ * A spinner is the case that decides how this is written. Simply cancelling
+ * the animation leaves a frozen spinner, which reads as a hung request rather
+ * than as a considerate one — so rotation and translation are *replaced*
+ * rather than removed, by the one thing reduced motion permits: a slow change
+ * in opacity. The control still says "working", it just stops travelling.
+ *
+ * `animate-pulse` is deliberately absent. Tailwind implements it as an opacity
+ * fade with no movement at all, so it already is the substitute the others are
+ * being given.
+ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes reducedMotionWorking {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-spin,
+  .animate-bounce,
+  .animate-ping {
+    animation: reducedMotionWorking 1.6s ease-in-out infinite;
+    /* The utilities also set transform on some of these; neutralising it
+       stops a half-finished rotation being frozen into place. */
+    transform: none;
+  }
+}
+
+/*
+ * Settings search: what "found it" looks like.
+ *
+ * A result does not open the setting for you — it takes you to the row and
+ * points at it for a moment. The pointing is a background wash that fades
+ * out, and the whole mechanism is the URL fragment: no state, no scroll
+ * maths, and it survives the route change into Devices & Widgets or
+ * Help & About.
+ *
+ * scroll-margin-top clears the sticky header the row would otherwise land
+ * underneath.
+ */
+.settings-anchor {
+  /* The sticky header is 64px plus the safe-area inset — on a notched phone a
+     fixed 104px lands the row underneath it. */
+  scroll-margin-top: calc(env(safe-area-inset-top) + 5rem);
+}
+
+@keyframes settingsAnchorFound {
+  0%,
+  55% {
+    background-color: color-mix(in oklab, var(--color-black, #000) 6%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.settings-anchor:target {
+  animation: settingsAnchorFound 1.4s ease-out 1;
+}
+
+/*
+ * Reduced motion keeps the marker and drops the fade: the point is to say
+ * "here", and a wash that simply stays says it without anything moving.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .settings-anchor:target {
+    animation: none;
+    background-color: color-mix(in oklab, var(--color-black, #000) 6%, transparent);
+  }
+}
+
+/*
+ * Nothing under the opening animates while it plays.
+ *
+ * The opening is a fixed, opaque overlay at z-index 1000 and the whole app
+ * mounts underneath it — the home stage's nineteen infinite animations, the
+ * mark's twenty-eight, the wake, the cookie tray — every one of them drawing
+ * frames behind something nobody can see through, and taking those frames
+ * from the one animation that is actually on screen.
+ *
+ * Scoped to [data-app-viewport], which the opening is a sibling of rather
+ * than inside, so this can never pause the thing it exists to protect.
+ *
+ * Set by SplashGate for exactly as long as the overlay is up. The app keeps
+ * loading, hydrating and fetching throughout — only the drawing stops, and
+ * animation-play-state resumes a layer rather than rebuilding it, so there is
+ * nothing to pay back when the overlay goes.
+ */
+html[data-launching="true"] [data-app-viewport],
+html[data-launching="true"] [data-app-viewport] * {
+  animation-play-state: paused !important;
+}
+
+/*
+ * Nothing animates while nobody can see it.
+ *
+ * The app draws a great deal of decoration with infinite CSS animations —
+ * about a hundred and fifty of them, thirty in Yumi's mark alone. Each is
+ * individually cheap and nearly all of them animate transform or opacity,
+ * but each also advances a compositing layer on every frame for as long as
+ * it runs, and they ran whether or not they were on screen: a radar spinning
+ * at the top of Discover while the reader is far down the list, a hero
+ * drifting above a conversation, six haloes turning on a deck that has been
+ * scrolled past.
+ *
+ * animation-play-state is the right lever. It stops a layer advancing rather
+ * than tearing it down and rebuilding it, so it costs nothing to apply and
+ * nothing to lift — unlike unmounting, which would restart every animation
+ * from its first frame the moment the element came back.
+ *
+ * Opt-in: it reaches only what an element has been marked for, by useInView.
+ * The hook reports "in view" until an observer says otherwise, and stays
+ * there where IntersectionObserver does not exist, so the failure mode is
+ * "animates anyway" and never "silently frozen".
+ */
+[data-in-view="false"],
+[data-in-view="false"] * {
+  animation-play-state: paused !important;
 }

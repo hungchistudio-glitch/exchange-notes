@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Exchange Notes</title>
+  <style>
+    :root { color: #000000; }
+    @media (prefers-color-scheme: dark) { :root { color: #ffffff; } }
+  </style>
+  <g id="exchange-notes-mark" fill="none" stroke="currentColor" stroke-width="54.55" stroke-linejoin="round">
+    <path id="mark-arc" d="M 338.93 44.3 A 220.23 220.23 0 1 0 338.93 467.7" stroke-linecap="round"/>
+    <path id="mark-bridge" d="M 58 256 H 251.45"/>
+    <g id="mark-eye">
+      <circle id="mark-eye-ring" cx="361.06" cy="256" r="109.61" stroke-width="21.21"/>
+      <path id="mark-eye-pupil" d="M 310.55 256 a 50.51 50.51 0 1 0 101.02 0 a 50.51 50.51 0 1 0 -101.02 0 Z" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+    </g>
+  </g>
+</svg>

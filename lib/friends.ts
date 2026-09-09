@@ -1,5 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
+import { WORD_CARD_MARKER } from "@/lib/messages/wordCard";
+import { notifyConversationRead } from "@/lib/messages/unreadSignal";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { normalizeExchangeId } from "@/lib/utils";
 
@@ -8,8 +10,9 @@ export type FriendProfile = {
   displayName: string | null;
   exchangeId: string;
   avatarUrl: string | null;
-  nativeLanguage: "english" | "traditional-chinese";
-  learningLanguage: "english" | "traditional-chinese";
+  /* As stored — see the note on the row type below. */
+  nativeLanguage: string | null;
+  learningLanguage: string | null;
 };
 
 export type LastMessagePreview = {
@@ -26,6 +29,26 @@ export type ConversationSummary = {
   unreadCount: number;
   lastMessage: LastMessagePreview | null;
   mutedAt: string | null;
+
+  /*
+   * How many shared word cards this conversation holds — the "1 phrase" chip
+   * on a conversation row.
+   *
+   * Deliberately a count of language that actually changed hands rather than a
+   * prediction: nothing here claims a phrase is worth learning, only that one
+   * was sent. 0 when the count could not be read, which is why the chip is
+   * hidden rather than shown as zero.
+   */
+  learningSignalCount: number;
+};
+
+/** A conversation opened by its own id, rather than by who it is with. */
+export type ConversationContext = {
+  conversationId: string;
+  friend: FriendProfile | null;
+  mutedAt: string | null;
+  archivedAt: string | null;
+  lastReadAt: string | null;
 };
 
 export type IncomingRequest = {
@@ -33,26 +56,47 @@ export type IncomingRequest = {
   createdAt: string;
   sender: FriendProfile;
 };
-
-export type OutgoingRequest = {
-  requestId: string;
-  createdAt: string;
-  receiver: FriendProfile;
-};
-
 type ProfileRow = {
   id: string;
   display_name: string | null;
   exchange_id: string;
   avatar_url: string | null;
-  native_language: "english" | "traditional-chinese";
-  learning_language: "english" | "traditional-chinese";
+  /*
+   * As stored, which is either encoding while the migration is in flight.
+   * Nothing here compares them; a caller that needs to should go through
+   * readLanguageCode rather than matching a literal.
+   */
+  native_language: string | null;
+  learning_language: string | null;
 };
+
+/**
+ * public.profiles is owner-only, so reading anyone else goes through this
+ * view. It carries exactly the columns below and nothing private — see the
+ * migration that creates it. Every lookup here is about someone other than
+ * the signed-in user, which is why none of them touch the table directly.
+ */
+const PUBLIC_PROFILES = "public_profiles";
+const PUBLIC_PROFILE_COLUMNS =
+  "id, display_name, exchange_id, avatar_url, native_language, learning_language";
 
 function toFriendProfile(row: ProfileRow): FriendProfile {
   return {
     id: row.id,
-    displayName: row.display_name,
+
+    /*
+     * An empty display name is normalised to null here rather than at the
+     * places that render it.
+     *
+     * Every one of those falls back with `displayName ?? exchangeId`, which
+     * only catches null — and the column holds "" for accounts that finished
+     * sign-up without typing a name. The result was a conversation row with
+     * no name and no handle at all: blank where the person should be. Doing
+     * it once, at the point the row becomes a FriendProfile, fixes the
+     * message list, the thread header and the friend picker together, and
+     * keeps the existing `??` at each of those sites correct.
+     */
+    displayName: row.display_name?.trim() ? row.display_name.trim() : null,
     exchangeId: row.exchange_id,
     avatarUrl: row.avatar_url,
     nativeLanguage: row.native_language,
@@ -147,8 +191,8 @@ export async function getProfileById(
   userId: string
 ): Promise<FriendProfile | null> {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .eq("id", userId)
     .maybeSingle();
 
@@ -165,8 +209,8 @@ export async function findProfileByExchangeId(
   if (!clean) return null;
 
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .ilike("exchange_id", clean)
     .maybeSingle();
 
@@ -319,43 +363,6 @@ export async function getPendingIncomingRequestCount(
   if (error) throw error;
   return count ?? 0;
 }
-
-export async function listOutgoingRequests(
-  supabase: SupabaseClient,
-  currentUserId: string
-): Promise<OutgoingRequest[]> {
-  const { data, error } = await supabase
-    .from("friend_requests")
-    .select(
-      "id, created_at, receiver:profiles!friend_requests_receiver_id_fkey(id, display_name, exchange_id, avatar_url, native_language, learning_language)"
-    )
-    .eq("sender_id", currentUserId)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  const rows = data ?? [];
-
-  return rows.map((row) => {
-    // Same fix as listIncomingRequests above: receiver_id -> profiles.id is
-    // many-to-one, so this embeds as a single object at runtime, not an
-    // array — the type is cast for the same reason (see the comment
-    // there).
-    const receiver = row.receiver as unknown as ProfileRow;
-
-    if (!receiver) {
-      throw new Error("Outgoing friend request is missing its receiver profile.");
-    }
-
-    return {
-      requestId: row.id,
-      createdAt: row.created_at,
-      receiver: toFriendProfile(receiver),
-    };
-  });
-}
-
 export async function listFriends(
   supabase: SupabaseClient,
   currentUserId: string
@@ -373,8 +380,8 @@ export async function listFriends(
   );
 
   const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id, display_name, exchange_id, avatar_url, native_language, learning_language")
+    .from(PUBLIC_PROFILES)
+    .select(PUBLIC_PROFILE_COLUMNS)
     .in("id", otherIds);
 
   if (profilesError) throw profilesError;
@@ -388,9 +395,20 @@ export async function listFriends(
     .filter((profile): profile is FriendProfile => Boolean(profile));
 }
 
+/**
+ * Which shelf of the message list to build.
+ *
+ * "active" is the Recent list on /messages; "archived" is the separate
+ * /messages/archived screen. They are the same query against opposite sides
+ * of `hidden_at`, so they share one implementation rather than drifting into
+ * two subtly different definitions of what a conversation is.
+ */
+export type ConversationScope = "active" | "archived";
+
 export async function listConversationSummaries(
   supabase: SupabaseClient,
-  currentUserId: string
+  currentUserId: string,
+  scope: ConversationScope = "active"
 ): Promise<ConversationSummary[]> {
   const friends = await listFriends(supabase, currentUserId);
 
@@ -398,15 +416,27 @@ export async function listConversationSummaries(
     return [];
   }
 
-  const { data: myMemberships, error: membershipsError } = await supabase
+  const membershipQuery = supabase
     .from("conversation_members")
     .select("conversation_id, last_read_at, hidden_at, muted_at")
-    .eq("user_id", currentUserId)
-    .is("hidden_at", null);
+    .eq("user_id", currentUserId);
+
+  const { data: myMemberships, error: membershipsError } =
+    scope === "archived"
+      ? await membershipQuery.not("hidden_at", "is", null)
+      : await membershipQuery.is("hidden_at", null);
 
   if (membershipsError) throw membershipsError;
 
   if (!myMemberships || myMemberships.length === 0) {
+    /*
+     * An archived list with no archived memberships is empty, full stop.
+     * The active list still has something to say: every friend you have not
+     * written to yet is someone you could write to, which is what makes the
+     * Friends tab and the empty-state list useful on a new account.
+     */
+    if (scope === "archived") return [];
+
     return friends.map((friend) => ({
       friend,
       conversationId: null,
@@ -414,6 +444,7 @@ export async function listConversationSummaries(
       unreadCount: 0,
       lastMessage: null,
       mutedAt: null,
+      learningSignalCount: 0,
     }));
   }
 
@@ -473,15 +504,59 @@ export async function listConversationSummaries(
   // count a friends-based 1:1 messaging app is likely to have.
   const lastMessageByConversationId = new Map<string, LastMessagePreview>();
 
+  /*
+   * Shared word cards per conversation, from their own query rather than from
+   * the preview window above.
+   *
+   * Counting them inside that window looked free and was wrong: the window is
+   * the newest 500 messages across *all* of the user's conversations, which is
+   * enough to guarantee a latest message for each one but says nothing about
+   * how many cards each holds. Past 500 messages in total, a quiet
+   * conversation's count silently fell to zero, and any conversation's count
+   * changed when an unrelated one got busy.
+   *
+   * This query is bounded by the number of cards rather than the number of
+   * messages — a far smaller and slower-growing quantity — and runs alongside
+   * the preview fetch so it costs no extra latency.
+   */
+  const learningSignalByConversationId = new Map<string, number>();
+
   if (relevantConversationIds.length > 0) {
-    const { data: recentMessages, error: recentMessagesError } = await supabase
-      .from("messages")
-      .select("conversation_id, sender_id, body, created_at, attachment_type")
-      .in("conversation_id", relevantConversationIds)
-      .order("created_at", { ascending: false })
-      .limit(500);
+    const [
+      { data: recentMessages, error: recentMessagesError },
+      { data: wordCardRows, error: wordCardError },
+    ] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("conversation_id, sender_id, body, created_at, attachment_type")
+        .in("conversation_id", relevantConversationIds)
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase
+        .from("messages")
+        .select("conversation_id")
+        .in("conversation_id", relevantConversationIds)
+        .like("body", `${WORD_CARD_MARKER}%`)
+        .limit(2000),
+    ]);
 
     if (recentMessagesError) throw recentMessagesError;
+
+    /*
+     * Tolerated rather than thrown. The count drives one decorative chip; the
+     * conversation list is the page. A chip that fails to appear is a smaller
+     * problem than a Messages screen that will not load.
+     */
+    if (wordCardError) {
+      console.warn("Could not count shared phrases:", wordCardError);
+    } else {
+      for (const row of wordCardRows ?? []) {
+        learningSignalByConversationId.set(
+          row.conversation_id,
+          (learningSignalByConversationId.get(row.conversation_id) ?? 0) + 1
+        );
+      }
+    }
 
     for (const message of recentMessages ?? []) {
       if (lastMessageByConversationId.has(message.conversation_id)) continue;
@@ -535,25 +610,56 @@ export async function listConversationSummaries(
     }
   }
 
-  return friends.map((friend) => {
-    const conversationId = conversationByFriendId.get(friend.id) ?? null;
+  const summaries = friends
+    // An archived conversation is a conversation. A friend you have simply
+    // never written to has nothing to un-archive, so they do not belong here.
+    .filter(
+      (friend) => scope === "active" || conversationByFriendId.has(friend.id)
+    )
+    .map((friend) => {
+      const conversationId = conversationByFriendId.get(friend.id) ?? null;
 
-    return {
-      friend,
-      conversationId,
-      lastReadAt: conversationId
-        ? lastReadByConversationId.get(conversationId) ?? null
-        : null,
-      unreadCount: conversationId
-        ? unreadCountByConversationId.get(conversationId) ?? 0
-        : 0,
-      lastMessage: conversationId
-        ? lastMessageByConversationId.get(conversationId) ?? null
-        : null,
-      mutedAt: conversationId
-        ? mutedAtByConversationId.get(conversationId) ?? null
-        : null,
-    };
+      return {
+        friend,
+        conversationId,
+        lastReadAt: conversationId
+          ? lastReadByConversationId.get(conversationId) ?? null
+          : null,
+        unreadCount: conversationId
+          ? unreadCountByConversationId.get(conversationId) ?? 0
+          : 0,
+        lastMessage: conversationId
+          ? lastMessageByConversationId.get(conversationId) ?? null
+          : null,
+        mutedAt: conversationId
+          ? mutedAtByConversationId.get(conversationId) ?? null
+          : null,
+        learningSignalCount: conversationId
+          ? learningSignalByConversationId.get(conversationId) ?? 0
+          : 0,
+      };
+    });
+
+  /*
+   * Most recent conversation first.
+   *
+   * These used to come back in friend order, which is the order friendships
+   * were accepted in — so a friend who had never sent a message sat above a
+   * thread with something unread in it, and a new message never moved its
+   * conversation anywhere. The list is sorted by activity now, which is what
+   * a messages list is for.
+   *
+   * Friends with no messages yet keep their relative order at the bottom:
+   * they are people you could write to, not conversations you are having.
+   */
+  return summaries.sort((a, b) => {
+    const aAt = a.lastMessage?.createdAt ?? null;
+    const bAt = b.lastMessage?.createdAt ?? null;
+
+    if (aAt && bAt) return bAt.localeCompare(aAt);
+    if (aAt) return -1;
+    if (bAt) return 1;
+    return 0;
   });
 }
 
@@ -619,19 +725,6 @@ export async function respondToRequest(
     requestId,
   });
 }
-
-export async function cancelRequest(
-  supabase: SupabaseClient,
-  requestId: string
-): Promise<void> {
-  const { error } = await supabase
-    .from("friend_requests")
-    .delete()
-    .eq("id", requestId);
-
-  if (error) throw error;
-}
-
 /** Remove an existing friendship (unfriend). Does not delete past messages. */
 export async function removeFriend(
   supabase: SupabaseClient,
@@ -669,6 +762,10 @@ export async function markConversationRead(
     .eq("user_id", currentUserId);
 
   if (error) throw error;
+
+  // Announced here rather than at the call site so every caller — now and
+  // later — brings the badge down with it.
+  notifyConversationRead(conversationId);
 }
 
 /**
@@ -708,6 +805,128 @@ export async function hideConversationForUser(
     .eq("user_id", currentUserId);
 
   if (error) throw error;
+}
+
+/**
+ * Whether these two accounts are actually friends.
+ *
+ * Conversation creation is reachable by URL now that /messages/new resolves a
+ * friend id server-side, so the thing it creates a conversation with is worth
+ * checking rather than assuming. The friendships table is the same source
+ * listFriends reads; this only asks about one row.
+ */
+export async function areFriends(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  otherUserId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("friendships")
+    .select("user_one_id, user_two_id")
+    .or(
+      `and(user_one_id.eq.${currentUserId},user_two_id.eq.${otherUserId}),` +
+        `and(user_one_id.eq.${otherUserId},user_two_id.eq.${currentUserId})`
+    )
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/**
+ * How many conversations the current user has archived.
+ *
+ * The Archived entry on /messages needs a number, not a list — building the
+ * full archived list just to call `.length` on it would pull every friend
+ * profile and a window of messages for a count shown in an 11px chip.
+ */
+export async function getArchivedConversationCount(
+  supabase: SupabaseClient,
+  currentUserId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("conversation_members")
+    .select("conversation_id", { count: "exact", head: true })
+    .eq("user_id", currentUserId)
+    .not("hidden_at", "is", null);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Return a hidden conversation to the main list.
+ *
+ * The counterpart to hideConversationForUser, and the reason Archive is a
+ * place rather than a one-way door.
+ */
+export async function unhideConversationForUser(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_members")
+    .update({ hidden_at: null })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId);
+
+  if (error) throw error;
+}
+
+/**
+ * Resolve a conversation from its own id — who it is with, and the current
+ * user's state in it.
+ *
+ * This is what the two-page architecture needs and the friend-keyed lookups
+ * above cannot give: /messages/[conversationId] arrives knowing only the
+ * conversation, so everything else has to be derived from it.
+ *
+ * Returns null when the conversation does not exist or the current user is
+ * not a member. RLS already refuses to return other people's conversations,
+ * so a null here is a 404 for this user regardless of which of the two it is.
+ */
+export async function getConversationContext(
+  supabase: SupabaseClient,
+  currentUserId: string,
+  conversationId: string
+): Promise<ConversationContext | null> {
+  const { data: membership, error: membershipError } = await supabase
+    .from("conversation_members")
+    .select("conversation_id, last_read_at, hidden_at, muted_at")
+    .eq("conversation_id", conversationId)
+    .eq("user_id", currentUserId)
+    .maybeSingle();
+
+  if (membershipError) throw membershipError;
+  if (!membership) return null;
+
+  const { data: others, error: othersError } = await supabase
+    .from("conversation_members")
+    .select("user_id")
+    .eq("conversation_id", conversationId)
+    .neq("user_id", currentUserId);
+
+  if (othersError) throw othersError;
+
+  const otherUserId = others?.[0]?.user_id ?? null;
+
+  /*
+   * A conversation with no other member is not corrupt — a friendship can be
+   * removed while its history stays readable. The thread still opens; it just
+   * has nobody on the other end, and the page says so instead of failing.
+   */
+  const friend = otherUserId
+    ? await getProfileById(supabase, otherUserId)
+    : null;
+
+  return {
+    conversationId,
+    friend,
+    mutedAt: membership.muted_at,
+    archivedAt: membership.hidden_at,
+    lastReadAt: membership.last_read_at,
+  };
 }
 
 /**

@@ -1,8 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
+import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import useInView from "@/hooks/useInView";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import useYumiOrbitMenu from "@/hooks/pet/useYumiOrbitMenu";
 import {
@@ -14,7 +24,7 @@ import {
   daysSince,
   hasCrown,
 } from "@/lib/pet/moodEngine";
-import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
+import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, YumiMood, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -39,12 +49,48 @@ type YumiCompanionProps = {
   onStartReview: () => void;
   onAddWord: () => void;
   onOpenCamera: () => void;
+  onOpenPronunciation: () => void;
+  onOpenCollections: () => void;
 };
 
 const REACTION_DURATION_MS = 3900;
 // Fallback duration, slightly longer than the CSS animation it backs up:
 // onAnimationEnd never fires when prefers-reduced-motion disables it.
 const WAKE_FALLBACK_MS = 2000;
+
+/*
+ * Lights one token inside a translated sentence.
+ *
+ * The brief asks for Yumi's name in cyan inside the greeting and the status
+ * line, and for the numbers in the daily summary — but both are translated
+ * strings, so neither can be split on position or reassembled from fragments
+ * without giving a translator four half-sentences to make sense of. Finding
+ * the token instead keeps every string whole and grammatical in both locales
+ * ("Hello, Yumi." and "哈囉，Yumi。" both contain exactly one "Yumi"), and a
+ * string that somehow does not contain it simply renders unhighlighted rather
+ * than breaking.
+ *
+ * Standard Mode passes no class and gets the plain text back, so this costs
+ * that shell nothing at all.
+ */
+function highlight(
+  text: string,
+  token: string,
+  className?: string,
+): ReactNode {
+  if (!className) return text;
+
+  const index = text.indexOf(token);
+  if (index === -1) return text;
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className={className}>{token}</span>
+      {text.slice(index + token.length)}
+    </>
+  );
+}
 
 // Replaces the old data-dashboard at the top of the Vocabulary page: Yumi
 // is fed one "cookie" per saved word and grows/reacts over time, so every
@@ -58,11 +104,18 @@ export default function YumiCompanion({
   onStartReview,
   onAddWord,
   onOpenCamera,
+  onOpenPronunciation,
+  onOpenCollections,
 }: YumiCompanionProps) {
   const { t } = useTranslation();
+  const { isCosmic } = useInterfaceMode();
   const copy = t.vocabulary.mascot;
 
   const [petState, setPetState] = useState<PetState | null>(null);
+  // A Core is inside Yumi's attraction zone. Held here rather than inside the
+  // tray because it is Yumi that has to answer it, and the tray has no way to
+  // reach across.
+  const [coreAttracted, setCoreAttracted] = useState(false);
   const [daysSinceLastOpen, setDaysSinceLastOpen] = useState(0);
   const [isWaking, setIsWaking] = useState(true);
   const [glanceDown, setGlanceDown] = useState(false);
@@ -182,10 +235,19 @@ export default function YumiCompanion({
     }
   }, [items.length]);
 
-  const streak = computeWordStreak(items);
-  const cookies: Cookie[] = buildAvailableCookies(
-    items,
-    petState?.fed_word_ids ?? [],
+  const streak = useMemo(() => computeWordStreak(items), [items]);
+
+  /*
+   * Memoised because the identity matters as much as the work.
+   *
+   * A fresh array every render is a fresh prop for the tray below, so the
+   * tray re-rendered on every mood tick, blink and drag frame even when not
+   * one cookie had changed.
+   */
+  const fedWordIds = petState?.fed_word_ids;
+  const cookies: Cookie[] = useMemo(
+    () => buildAvailableCookies(items, fedWordIds ?? []),
+    [items, fedWordIds],
   );
   const growthStage = computeGrowthStage(petState?.total_cookies_fed ?? 0);
   const crownEarned = hasCrown(streak.currentStreak);
@@ -202,22 +264,11 @@ export default function YumiCompanion({
   const mood = reactionMood ?? (searchHasNoResults ? "confused" : steadyMood);
   const greeting = dailyProgress === 0 ? copy.greetingWaiting : copy.greetingDefault;
 
-  async function persistFeed(cookie: Cookie) {
-    if (!petState) return;
-
-    try {
-      const supabase = createClient();
-      const updated = await feedCookie(supabase, petState, cookie.id);
-      setPetState(updated);
-    } catch {
-      // Optimistic UI already played the reaction — a failed write here
-      // just means growth won't be remembered next visit.
-    }
-  }
+  const persistFeed = useFeedPersistence(petState, setPetState);
 
   function handleCookieConsumed(cookie: Cookie) {
     triggerReaction(cookieReactionMood(cookie.type), REACTION_DURATION_MS);
-    void persistFeed(cookie);
+    persistFeed(cookie);
   }
 
   const feeding = useYumiFeedingSequence({
@@ -267,6 +318,10 @@ export default function YumiCompanion({
     );
   }
 
+  const handleCoreAttractChange = useCallback((attracted: boolean) => {
+    setCoreAttracted(attracted);
+  }, []);
+
   const handleCookieDragPoint = useCallback(
     (point: { x: number; y: number } | null) => {
       const zone = yumiZoneRef.current;
@@ -308,7 +363,22 @@ export default function YumiCompanion({
     "{count}",
     String(streak.currentStreak),
   );
-  const summaryLine = `${wordsText} · ${cookiesText} · ${streakText} · ${copy.moodShort[mood]}`;
+  /*
+   * The daily line, as parts rather than one string.
+   *
+   * Same four facts, same order, same separators as before — but each one is
+   * paired with the number inside it so Cosmic Mode can light the figures and
+   * leave the labels quiet, which is the brief's rule for this line: cyan is
+   * for high-value numbers, not for the words around them. Standard Mode
+   * passes no class and the parts render as the plain sentence they always
+   * were.
+   */
+  const summaryParts: Array<{ text: string; value?: string }> = [
+    { text: wordsText, value: String(dailyProgress) },
+    { text: cookiesText, value: String(totalCookiesFed) },
+    { text: streakText, value: String(streak.currentStreak) },
+    { text: copy.moodShort[mood] },
+  ];
   const moodStatus = (() => {
     if (orbit.isOpen && feeding.phase === "idle") return copy.menuPrompt;
 
@@ -327,9 +397,21 @@ export default function YumiCompanion({
     }
   })();
 
+  const { ref: sectionRef, inView } = useInView<HTMLElement>();
+
   return (
-    <section className={styles.section} data-menu-open={orbit.isVisible}>
-      <p className={styles.greeting}>{greeting}</p>
+    <section
+      ref={sectionRef}
+      /* The mark pauses itself; the feeding face, the learning core and the
+         cookie tray around it did not, and they scroll away together. */
+      data-in-view={inView ? "true" : "false"}
+      className={styles.section}
+      data-menu-open={orbit.isVisible}
+      data-cosmic={isCosmic ? "true" : "false"}
+    >
+      <p className={styles.greeting}>
+        {highlight(greeting, "Yumi", isCosmic ? styles.nameLit : undefined)}
+      </p>
 
       <div ref={yumiZoneRef} className={styles.yumiZone}>
         <button
@@ -360,23 +442,43 @@ export default function YumiCompanion({
               isTrackingFood || isTrackingTouch ? "food" : orbit.lookTarget
             }
             onWakeAnimationEnd={handleWakeEnd}
+            cosmic={isCosmic}
+            attracted={coreAttracted}
           />
         </button>
 
         <YumiOrbitMenu
           phase={orbit.phase}
-          showHints={orbit.showHints}
           copy={copy}
+          surface="vocabulary"
           onClose={orbit.close}
           onLook={orbit.lookAt}
           onReview={onStartReview}
           onAddWord={onAddWord}
           onCamera={onOpenCamera}
+          onSpeak={onOpenPronunciation}
+          onCollect={onOpenCollections}
         />
       </div>
 
-      <p className={styles.moodStatus}>{moodStatus}</p>
-      <p className={styles.summaryLine}>{summaryLine}</p>
+      <p className={styles.moodStatus}>
+        {highlight(moodStatus, "Yumi", isCosmic ? styles.nameLit : undefined)}
+      </p>
+
+      <p className={styles.summaryLine}>
+        {summaryParts.map((part, index) => (
+          <span key={part.text}>
+            {index > 0 ? <span aria-hidden="true"> · </span> : null}
+            {part.value
+              ? highlight(
+                  part.text,
+                  part.value,
+                  isCosmic ? styles.metric : undefined,
+                )
+              : part.text}
+          </span>
+        ))}
+      </p>
 
       <div className={styles.foodZone}>
         <CookieTray
@@ -385,9 +487,18 @@ export default function YumiCompanion({
           onFeed={feeding.consume}
           onFeedStart={handleFeedStart}
           feedTargetRef={feedTargetRef}
-          disabled={!petState || feeding.isFeeding}
+          /* Not disabled while Yumi is eating.
+             A mouthful now runs ~1.6s, and gating the whole tray on it made
+             feeding a queue: the tray went inert the moment a cookie left it
+             and stayed inert until the chewing finished, so cookies had to be
+             handed over one at a time. Yumi's sequence restarts cleanly on
+             each bite, and each cookie flies on its own, so there is nothing
+             left for the lock to protect. */
+          disabled={!petState}
           copy={copy}
           onDragPoint={handleCookieDragPoint}
+          cosmic={isCosmic}
+          onAttractChange={handleCoreAttractChange}
         />
       </div>
 

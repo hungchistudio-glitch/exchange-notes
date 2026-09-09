@@ -3,6 +3,9 @@
 import { Search } from "lucide-react";
 import { useMemo } from "react";
 
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
+import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
@@ -52,10 +55,11 @@ export default function VocabularyFilterPanel({
   }, [items]);
 
   return (
-    <div
-      {...motion.panelProps}
-      className={`${motion.panelClassName} fixed inset-0 z-[300] overflow-y-auto bg-white text-black`}
-    >
+    <OverlayPortal>
+      <div
+        {...motion.panelProps}
+        className={`${motion.panelClassName} fixed inset-0 z-[300] touch-pan-y overflow-y-auto overscroll-contain bg-white text-black`}
+      >
       <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
         <div
           className={`${motion.handleClassName} flex h-7 items-center justify-center sm:hidden`}
@@ -89,7 +93,7 @@ export default function VocabularyFilterPanel({
         <div className="relative border-t border-black/10 px-5 py-4">
           <Search
             size={18}
-            className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400"
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-ink-faint"
           />
 
           <input
@@ -98,13 +102,21 @@ export default function VocabularyFilterPanel({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={translations.searchPlaceholder}
             aria-label={translations.searchAriaLabel}
-            className="w-full border-0 bg-transparent py-2 pl-8 pr-2 text-xl outline-none placeholder:text-neutral-300"
+            className="w-full border-0 bg-transparent py-2 pl-8 pr-10 text-xl outline-none placeholder:text-ink-faint"
           />
+
+          {search && (
+            <ClearFieldButton
+              floating
+              className="!right-5"
+              onClear={() => onSearchChange("")}
+            />
+          )}
         </div>
       </header>
 
       <div className="mx-auto grid max-w-xl grid-cols-[72px_1fr] gap-5 px-5 py-8">
-        <aside className="text-xs uppercase leading-5 text-neutral-500">
+        <aside className="text-xs uppercase leading-5 text-ink-soft">
           <p>{String(items.length).padStart(2, "0")}</p>
           <p>
             {items.length === 1
@@ -115,7 +127,7 @@ export default function VocabularyFilterPanel({
 
         <div className="space-y-10">
           {letters.length === 0 ? (
-            <p className="text-neutral-400">
+            <p className="text-ink-faint">
               {translations.noMatchingWords}
             </p>
           ) : (
@@ -131,11 +143,21 @@ export default function VocabularyFilterPanel({
                       onClick={() => onSelect(item)}
                       className="block w-full text-left"
                     >
-                      <span className="block text-2xl leading-tight">
-                        {item.word}
+                      <span className="flex items-center gap-2.5">
+                        <span className="min-w-0 flex-1 break-words text-2xl leading-tight">
+                          {item.word}
+                        </span>
+
+                        {/* The same signal as on the cards: an A-Z list of a
+                            mixed library is where two spellings of the same
+                            letter are hardest to tell apart. */}
+                        <LanguageOriginBadge
+                          language={item.word_language}
+                          size="sm"
+                        />
                       </span>
 
-                      <span className="mt-1 block text-sm text-neutral-400">
+                      <span className="mt-1 block text-sm text-ink-faint">
                         {item.translation} · {statusLabels[item.status]}
                       </span>
                     </button>
@@ -147,13 +169,14 @@ export default function VocabularyFilterPanel({
         </div>
       </div>
 
-      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[10px] leading-4 text-neutral-400 sm:flex">
+      <nav className="fixed right-2 top-1/2 hidden -translate-y-1/2 flex-col text-[0.625rem] leading-4 text-ink-faint sm:flex">
         {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => (
           <a key={letter} href={`#letter-${letter}`}>
             {letter}
           </a>
         ))}
       </nav>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

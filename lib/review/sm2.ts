@@ -92,12 +92,3 @@ export function scheduleSm2(
     retention_score: retentionScore,
   };
 }
-
-export function formatInterval(days: number) {
-  if (days < 0.02) return "10 min";
-  if (days < 1.5) return "1 day";
-  if (days < 7) return `${Math.round(days)} days`;
-  if (days < 30) return `${Math.round(days / 7)} wk`;
-  if (days < 365) return `${Math.round(days / 30)} mo`;
-  return `${Math.round(days / 365)} yr`;
-}

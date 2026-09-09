@@ -17,6 +17,7 @@ import SettingsRow, {
   type SettingsRowTone,
 } from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { setDeviceConnection } from "@/lib/settings/deviceConnections";
 
 /*
  * The Scriptable widget authenticates with a bearer token that only this
@@ -152,6 +153,18 @@ export default function ScriptableWidgetSettingsButton() {
       active = false;
     };
   }, []);
+
+  /*
+   * Settings' Devices & Widgets row says how many integrations are connected
+   * without loading any of them. This is where that number comes from: the
+   * one screen that knows the answer records it, and the row reads the cache.
+   * "unavailable" is not an answer, so it is not recorded.
+   */
+  useEffect(() => {
+    if (state.kind === "loading" || state.kind === "unavailable") return;
+
+    setDeviceConnection("iphoneWidget", state.kind === "active");
+  }, [state.kind]);
 
   async function refreshStatus() {
     try {
@@ -306,14 +319,17 @@ export default function ScriptableWidgetSettingsButton() {
             ? copy.statusNotConfigured
             : copy.statusUnavailable;
 
+  /*
+   * Connected is worth a colour, and a token that was revoked is worth a
+   * warning. "Not set up yet" is the ordinary state of this row and gets the
+   * ordinary treatment.
+   */
   const rowTone: SettingsRowTone =
     state.kind === "active"
       ? "emerald"
       : state.kind === "revoked"
         ? "amber"
-        : state.kind === "empty"
-          ? "blue"
-          : "neutral";
+        : "neutral";
 
   const stateContent =
     state.kind === "active"
@@ -466,7 +482,7 @@ export default function ScriptableWidgetSettingsButton() {
             <button
               type="button"
               onClick={handleClose}
-              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-black/50 transition-all active:scale-[0.985]"
+              className="flex min-h-12 w-full items-center justify-center rounded-full px-5 text-sm font-semibold text-ink-soft transition-all active:scale-[0.985]"
             >
               {copy.close}
             </button>
@@ -498,15 +514,15 @@ export default function ScriptableWidgetSettingsButton() {
           */}
           {issuedToken && (
             <div className="rounded-2xl border border-black/[0.08] bg-black/[0.03] px-4 py-4">
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-black">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-black">
                 {copy.oneTimeTitle}
               </h3>
 
-              <p className="mt-1 text-xs leading-5 text-black/55">
+              <p className="mt-1 text-xs leading-5 text-ink-soft">
                 {copy.oneTimeDescription}
               </p>
 
-              <p className="mt-3 break-all rounded-xl border border-black/[0.08] bg-white px-3 py-2.5 font-mono text-[13px] leading-5 text-black">
+              <p className="mt-3 break-all rounded-xl border border-black/[0.08] bg-white px-3 py-2.5 font-mono text-[0.8125rem] leading-5 text-black">
                 {issuedToken}
               </p>
 
@@ -536,7 +552,7 @@ export default function ScriptableWidgetSettingsButton() {
               }
               className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
             >
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-amber-950">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-amber-950">
                 {confirming === "rotate"
                   ? copy.rotateConfirmTitle
                   : copy.revokeConfirmTitle}
@@ -592,7 +608,7 @@ export default function ScriptableWidgetSettingsButton() {
             </span>
 
             <div className="min-w-0">
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em]">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em]">
                 {stateContent.title}
               </h3>
 
@@ -605,21 +621,21 @@ export default function ScriptableWidgetSettingsButton() {
           {token && (
             <dl className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white text-sm">
               <div className="flex items-center justify-between border-b border-black/[0.05] px-4 py-3">
-                <dt className="text-black/50">{copy.tokenPrefixLabel}</dt>
-                <dd className="font-mono text-[13px] text-black">
+                <dt className="text-ink-soft">{copy.tokenPrefixLabel}</dt>
+                <dd className="font-mono text-[0.8125rem] text-black">
                   {token.prefix}…
                 </dd>
               </div>
 
               <div className="flex items-center justify-between border-b border-black/[0.05] px-4 py-3">
-                <dt className="text-black/50">{copy.createdLabel}</dt>
+                <dt className="text-ink-soft">{copy.createdLabel}</dt>
                 <dd className="text-black">
                   {formatMoment(token.createdAt)}
                 </dd>
               </div>
 
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-black/50">{copy.lastUsedLabel}</dt>
+                <dt className="text-ink-soft">{copy.lastUsedLabel}</dt>
                 <dd className="text-black">
                   {formatMoment(token.lastUsedAt)}
                 </dd>

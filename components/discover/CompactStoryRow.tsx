@@ -1,5 +1,8 @@
 "use client";
 
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import Image from "next/image";
+
 import { DISCOVER_COLORS, categoryAccent, type DailyNewsCard } from "./types";
 
 type CompactStoryRowProps = {
@@ -19,6 +22,14 @@ export default function CompactStoryRow({
   showThumbnail,
   onOpen,
 }: CompactStoryRowProps) {
+  const { pair } = useDisplayLanguages();
+  /*
+   * The two languages the reader chose, and only those. A card that cannot
+   * lead in the language being learned is filtered out upstream rather than
+   * shown in a language nobody asked for.
+   */
+  const [primaryLanguage, secondaryLanguage] = pair;
+
   const accent = categoryAccent(card.category);
   const hasThumbnail = showThumbnail && Boolean(card.imageUrl);
 
@@ -34,12 +45,17 @@ export default function CompactStoryRow({
       }
     >
       <div className={hasThumbnail ? "flex items-start gap-3" : undefined}>
-        {hasThumbnail ? (
+        {showThumbnail && card.imageUrl ? (
           // ~38/62 split — thumbnail carries some of the context, so these
           // rows skip the summary line entirely (see the text column below).
-          <img
-            src={card.imageUrl ?? undefined}
+          // width/height are the rendered size: the row is a fixed 108x84, so
+          // the optimizer can serve exactly that instead of a full-size
+          // Guardian thumbnail scaled down in the browser.
+          <Image
+            src={card.imageUrl}
             alt=""
+            width={108}
+            height={84}
             loading="lazy"
             onLoad={(event) => {
               event.currentTarget.style.opacity = "1";
@@ -52,14 +68,14 @@ export default function CompactStoryRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span
-              className="rounded-full px-2 py-[3px] text-[10px] font-semibold"
+              className="rounded-full px-2 py-[3px] text-[0.625rem] font-semibold"
               style={{ color: accent, backgroundColor: `${accent}17` }}
             >
               {categoryText}
             </span>
 
             <span
-              className="text-[10.5px]"
+              className="text-[0.65625rem]"
               style={{ color: DISCOVER_COLORS.textSecondary }}
             >
               {formattedTime}
@@ -67,27 +83,27 @@ export default function CompactStoryRow({
           </div>
 
           <h3
-            className={`text-[17px] font-semibold leading-[1.35] tracking-[-0.01em] ${
+            className={`text-[1.0625rem] font-semibold leading-[1.35] tracking-[-0.01em] ${
               hasThumbnail ? "mt-1.5 line-clamp-2" : "mt-2"
             }`}
             style={{ color: DISCOVER_COLORS.text }}
           >
-            {card.englishTitle}
+            {(card.titles[primaryLanguage] ?? "")}
           </h3>
 
           <p
-            className="mt-0.5 line-clamp-1 text-[14px] leading-[1.5]"
+            className="mt-0.5 line-clamp-1 text-[0.875rem] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
-            {card.chineseTitle}
+            {(card.titles[secondaryLanguage] ?? "")}
           </p>
 
           {hasThumbnail ? null : (
             <p
-              className="mt-1.5 line-clamp-1 text-[13.5px] leading-[1.5]"
+              className="mt-1.5 line-clamp-1 text-[0.84375rem] leading-[1.5]"
               style={{ color: DISCOVER_COLORS.textSecondary }}
             >
-              {card.englishSummary}
+              {(card.summaries[primaryLanguage] ?? "")}
             </p>
           )}
         </div>

@@ -1,0 +1,55 @@
+# The checks that decide whether a branch is safe to merge.
+#
+# There were none. Vercel's check is a deployment — it builds, which happens
+# to type-check, and that is all it tells you. So #92, which renamed four
+# migration files, went green and merged with a failing test that spelled one
+# of those filenames out. Nothing was watching.
+#
+# Deliberately not a build job: Vercel already builds every push, and running
+# `next build` here again would double the wait to re-learn what the
+# deployment check already reports. This runs the three things Vercel does
+# not: the tests, the linter, and a type-check that fails fast rather than
+# after a full compile.
+
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the first run irrelevant. Cancel it
+# rather than queue behind it — except on main, where every commit's result is
+# worth having on its own.
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Node the app is developed against. `npm ci` needs the
+          # lockfile to be in step with package.json and will fail loudly if
+          # it is not, which is a check worth having on its own.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Last, because it is the slowest and the one whose failures take the
+      # most reading. The others fail in seconds and say exactly what is wrong.
+      - name: Test
+        run: npm test

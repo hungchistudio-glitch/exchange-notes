@@ -65,6 +65,10 @@ function airflowCaption(features: PhoneticFeatures): LocalizedText {
   switch (features.manner) {
     case "stop":
       return { english: "Blocked, then released", "traditional-chinese": "先阻塞，再釋放" };
+    case "tap":
+      return { english: "One quick flick", "traditional-chinese": "輕輕彈一下" };
+    case "trill":
+      return { english: "Blown into a vibration", "traditional-chinese": "用氣流吹到振動" };
     case "fricative":
       return { english: "Through a narrow gap", "traditional-chinese": "從窄縫中通過" };
     case "affricate":

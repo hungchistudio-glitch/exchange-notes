@@ -255,14 +255,15 @@
   }
 }
 
-/* Eyelids/pupil — the same shapes ExchangeNotesMark uses everywhere else
-   in the app (see components/vocabulary/pet/YumiMark.module.css), copied
-   here rather than shared via CSS module import (modules are scoped
-   per-file) so this card gets the same ambient blink without dragging in
-   the vocabulary companion's mood-reaction variants it doesn't need. */
+/* The pupil is this card's own — it wanders toward whatever the tongue is
+   doing, which no other screen needs. The blink is the app's shared one; the
+   copy that used to live here was made because CSS modules are scoped
+   per-file, which is exactly the problem app/yumi-motion.css now solves. */
 .pupil,
 .upperLid,
 .lowerLid {
+  /* This card's blink pace; the shape is app/yumi-motion.css's. */
+  --yumi-blink: 4.2s;
   transform-box: fill-box;
   transform-origin: center;
   will-change: transform;
@@ -307,48 +308,6 @@
   }
 }
 
-.upperLid {
-  transform: translateY(-82px);
-  opacity: 0;
-  animation: yumiFaceUpperBlink 4.2s linear infinite;
-}
-
-.lowerLid {
-  transform: translateY(12px);
-  opacity: 0;
-  animation: yumiFaceLowerBlink 4.2s linear infinite;
-}
-
-@keyframes yumiFaceUpperBlink {
-  0%,
-  44%,
-  50%,
-  100% {
-    transform: translateY(-82px);
-    opacity: 0;
-  }
-  46%,
-  47% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-}
-
-@keyframes yumiFaceLowerBlink {
-  0%,
-  44%,
-  50%,
-  100% {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  46%,
-  47% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-}
-
 /* prefers-reduced-motion: no breathing/focus-bob loop, no entering/exiting
    slide-and-scale, no blink loop, no pupil wander/glance, no voicing pulse
    or contact-pulse animation — the mouth and tongue shapes themselves
@@ -365,12 +324,6 @@
   animation: none;
   opacity: 1;
   transform: none;
-}
-
-.reduced .upperLid,
-.reduced .lowerLid {
-  animation: none;
-  opacity: 0;
 }
 
 .reduced .pupil {

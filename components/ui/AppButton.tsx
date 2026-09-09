@@ -37,7 +37,7 @@ const VARIANT_CLASSES: Record<AppButtonVariant, string> = {
 const SIZE_CLASSES: Record<AppButtonSize, string> = {
   sm: "h-9 px-4 text-xs",
   md: "h-11 px-5 text-sm",
-  lg: "h-12 px-5 text-[15px]",
+  lg: "h-12 px-5 text-[0.9375rem]",
   icon: "h-11 w-11 shrink-0 p-0",
 };
 

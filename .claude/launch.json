@@ -9,6 +9,16 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "start"
+      ],
+      "port": 3100,
+      "autoPort": true
     }
   ]
 }

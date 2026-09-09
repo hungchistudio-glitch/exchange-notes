@@ -1,0 +1,126 @@
+/*
+ * The scanning field.
+ *
+ * Four thin corner markers and one scan line that crosses once when a menu is
+ * found — not a heavy rectangle, and never a beam sweeping the screen for as
+ * long as the camera is open. The field is meant to feel like an instrument
+ * noticing something, which is a single gesture, not an idle animation.
+ */
+
+.field {
+  position: absolute;
+  inset: 8% 6% 22%;
+  pointer-events: none;
+}
+
+.corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--scanner-corner, rgba(220, 233, 255, 0.55));
+  opacity: 0.5;
+  transition:
+    opacity 240ms ease-out,
+    border-color 240ms ease-out,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.topLeft {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 12px;
+  transform: translate(6px, 6px);
+}
+
+.topRight {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-top-right-radius: 12px;
+  transform: translate(-6px, 6px);
+}
+
+.bottomLeft {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom-left-radius: 12px;
+  transform: translate(6px, -6px);
+}
+
+.bottomRight {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 12px;
+  transform: translate(-6px, -6px);
+}
+
+/* Locked: the markers snap out to the true corners and take the cyan. */
+.locked .corner {
+  opacity: 1;
+  border-color: var(--scanner-corner-active, #6fd6ff);
+  transform: translate(0, 0);
+}
+
+.scanLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--scanner-corner-active, #6fd6ff),
+    transparent
+  );
+  opacity: 0;
+}
+
+.locked .scanLine {
+  animation: menuScanPass 900ms cubic-bezier(0.4, 0, 0.2, 1) 1;
+}
+
+@keyframes menuScanPass {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--scan-height, 320px) - 2px));
+  }
+}
+
+/*
+ * Reduced Motion keeps the lock — which is information — and drops the pass,
+ * which is flourish. The corners still change colour and position, so the
+ * user is told the same thing without anything travelling across the frame.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .corner {
+    transition: opacity 120ms ease-out, border-color 120ms ease-out;
+    transform: none;
+  }
+
+  .locked .corner {
+    transform: none;
+  }
+
+  .locked .scanLine {
+    animation: none;
+    opacity: 0;
+  }
+}

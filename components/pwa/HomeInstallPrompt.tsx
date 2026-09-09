@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import InstallPromptCard from "@/components/pwa/InstallPromptCard";
 import PwaInstallOverlay from "@/components/pwa/PwaInstallOverlay";
 import usePwaInstall from "@/hooks/pwa/usePwaInstall";
+import {
+  isLaunching,
+  isLaunchingOnServer,
+  subscribeToLaunching,
+} from "@/lib/launchState";
 import {
   recordInstallPromptDismissed,
   shouldOfferInstallPrompt,
@@ -18,14 +23,30 @@ export default function HomeInstallPrompt() {
   const { platform, isStandalone, canPromptInstall } = usePwaInstall();
   const [open, setOpen] = useState(false);
 
+  /*
+   * The wait starts when the reader arrives, not when this mounts.
+   *
+   * It mounts under the opening animation, which owns the screen for 2.8
+   * seconds — so a 1.2s timer from mount opened this behind the overlay, and
+   * the card was simply already there when the screen was handed over. The
+   * delay exists so the prompt arrives a moment after Home does; that moment
+   * is when the opening ends.
+   */
+  const launching = useSyncExternalStore(
+    subscribeToLaunching,
+    isLaunching,
+    isLaunchingOnServer,
+  );
+
   useEffect(() => {
+    if (launching) return;
     if (isStandalone) return;
     if (platform !== "ios" && !canPromptInstall) return;
     if (!shouldOfferInstallPrompt()) return;
 
     const timer = setTimeout(() => setOpen(true), 1200);
     return () => clearTimeout(timer);
-  }, [isStandalone, platform, canPromptInstall]);
+  }, [launching, isStandalone, platform, canPromptInstall]);
 
   function handleClose() {
     recordInstallPromptDismissed();

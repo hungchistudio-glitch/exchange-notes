@@ -1,49 +1,39 @@
 "use client";
 
 import { Target } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 import {
-  getDailyGoalMinutes,
-  setDailyGoalMinutes,
-  subscribeToDailyGoalMinutes,
-  type DailyGoalMinutes,
+  setDailyGoalWords,
+  type DailyGoalWords,
 } from "@/lib/appPreferences";
 
 const DAILY_GOAL_OPTIONS: Array<{
-  value: DailyGoalMinutes;
-  key: "five" | "ten" | "fifteen" | "twenty" | "thirty";
+  value: DailyGoalWords;
+  key: "three" | "five" | "ten" | "twenty" | "thirtyThree";
 }> = [
+  { value: 3, key: "three" },
   { value: 5, key: "five" },
   { value: 10, key: "ten" },
-  { value: 15, key: "fifteen" },
   { value: 20, key: "twenty" },
-  { value: 30, key: "thirty" },
+  { value: 33, key: "thirtyThree" },
 ];
 
 export default function DailyGoalSettingsButton() {
   const [open, setOpen] = useState(false);
 
-  /**
-   * The stored goal is an external store, not component state. Both snapshots
-   * use getDailyGoalMinutes because it already returns the default when there
-   * is no window, keeping the server and client renders identical.
-   */
-  const goal = useSyncExternalStore(
-    subscribeToDailyGoalMinutes,
-    getDailyGoalMinutes,
-    getDailyGoalMinutes,
-  );
+  const goal = useDailyGoalWords();
 
   const { t } = useTranslation();
   const copy = t.settings.dailyGoal;
 
-  function handleSelect(value: DailyGoalMinutes) {
-    setDailyGoalMinutes(value);
+  function handleSelect(value: DailyGoalWords) {
+    setDailyGoalWords(value);
     setOpen(false);
   }
 
@@ -52,7 +42,7 @@ export default function DailyGoalSettingsButton() {
       <SettingsRow
         title={copy.rowTitle}
         description={copy.rowDescription}
-        value={`${goal} ${copy.minutesLabel}`}
+        value={`${goal} ${copy.wordsLabel}`}
         icon={<Target size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />

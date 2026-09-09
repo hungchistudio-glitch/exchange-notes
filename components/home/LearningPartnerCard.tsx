@@ -68,7 +68,7 @@ export default function LearningPartnerCard() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-neutral-400">
+            <p className="text-xs font-medium text-ink-faint">
               {copy.partnerLabel}
             </p>
 
@@ -87,7 +87,7 @@ export default function LearningPartnerCard() {
 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">{copy.findFriends}</p>
-            <p className="mt-0.5 truncate text-xs text-neutral-400">
+            <p className="mt-0.5 truncate text-xs text-ink-faint">
               {copy.description}
             </p>
           </div>

@@ -13,6 +13,7 @@ import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import SettingsRow, {
   type SettingsRowTone,
 } from "@/components/foundation/rows/SettingsRow";
+import YumiReminderDiagnostics from "@/components/settings/YumiReminderDiagnostics";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useWebPush from "@/hooks/pwa/useWebPush";
 
@@ -154,16 +155,17 @@ export default function WebPushSettingsButton() {
                   ? copy.statusUnavailable
                   : copy.statusLoading;
 
+  /*
+   * Colour only where it means something: a blocked permission and a missing
+   * Home Screen install are both things the user has to go and fix elsewhere.
+   * On and off are just on and off, and the value beside the row says which.
+   */
   const rowTone: SettingsRowTone =
-    displayState === "subscribed"
-      ? "emerald"
-      : displayState === "blocked"
-        ? "red"
-        : displayState === "needs-home-screen"
-          ? "amber"
-          : displayState === "unsubscribed"
-            ? "blue"
-            : "neutral";
+    displayState === "blocked"
+      ? "red"
+      : displayState === "needs-home-screen"
+        ? "amber"
+        : "neutral";
 
   const statusCardClassName =
     displayState === "subscribed"
@@ -411,7 +413,7 @@ export default function WebPushSettingsButton() {
                       : copy.sendTest}
                   </button>
 
-                  <p className="px-3 text-center text-[11px] leading-4 text-black/40">
+                  <p className="px-3 text-center text-[0.6875rem] leading-4 text-ink-faint">
                     {copy.testDescription}
                   </p>
                 </>
@@ -510,7 +512,7 @@ export default function WebPushSettingsButton() {
             </span>
 
             <div className="min-w-0">
-              <h3 className="text-[15px] font-semibold tracking-[-0.02em]">
+              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.02em]">
                 {stateContent.title}
               </h3>
 
@@ -519,6 +521,13 @@ export default function WebPushSettingsButton() {
               </p>
             </div>
           </div>
+
+          {/*
+            Yumi's own reminder is switched on and off out on the Settings
+            page. What is left of it — the clock it follows, and a way to
+            prove one arrives — is delivery, so it lives here.
+          */}
+          <YumiReminderDiagnostics />
         </div>
       </BottomSheet>
     </>

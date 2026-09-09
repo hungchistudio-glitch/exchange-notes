@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ChangeEvent,
-  RefObject,
   Suspense,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -13,37 +11,72 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
-import { dataUrlToBlob, safeImageExtension } from "@/lib/imageUtils";
-import { encodeWordCardMessage } from "@/lib/messages/wordCard";
-import { getPronunciation, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
+import {
+  DuplicateVocabularyError,
+  createVocabularyEntry,
+} from "@/lib/vocabulary/createEntry";
+import TargetCamera, {
+  type CameraCapture,
+} from "@/components/camera/TargetCamera";
+import TargetImageViewer from "@/components/camera/TargetImageViewer";
+import { AssetWriteError, commitCapture } from "@/lib/media/assets";
+import {
+  PdfRenderError,
+  isPdf,
+  openPdf,
+  type PdfDocument,
+} from "@/lib/media/pdf";
+import { publishCardBlob } from "@/lib/media/sharing";
+import { MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
+import type { NormalizedRect } from "@/lib/media/geometry";
+import { buildCapture, type BuiltCapture } from "@/lib/media/pipeline";
+import { MediaDecodeError, decodeBlob, type Raster } from "@/lib/media/raster";
+import type { MediaSourceType } from "@/lib/media/record";
+import {
+  encodeWordCardMessage,
+  type SharedWordCard,
+} from "@/lib/messages/wordCard";
+import { getPronunciationForPair, type PronunciationResult } from "@/lib/pronunciation/getPronunciation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
-import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
+import {
+  getLanguage,
+  getLanguageName,
+  isLanguageCode,
+  type LanguageCode,
+} from "@/lib/languages";
+import { speak as speakText } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
 type IdentificationResult = {
-  englishName: string;
-  chineseName: string;
+  term: string;
+  translation: string;
   partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
+  termExample: string;
+  translationExample: string;
   confidence: "high" | "medium" | "low";
+  /**
+   * Which language each side is in, as the model reported it.
+   *
+   * Absent on results cached before the schema carried them — v2 keys did
+   * not include it — so every read falls back to the reader's pair rather
+   * than requiring it.
+   */
+  termLanguage?: LanguageCode;
+  translationLanguage?: LanguageCode;
 };
 
 type CaptureSource = "camera" | "library" | null;
 
-type CameraOverlayProps = {
-  videoRef: RefObject<HTMLVideoElement | null>;
-  onClose: () => void;
-  onCapture: () => void;
-  closeCameraAriaLabel: string;
-  captureAriaLabel: string;
-  focusHint: string;
-};
+function safeReturnHref(value: string | null, fallback: string) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
 
 /**
  * Browser capabilities are read through useSyncExternalStore rather than set
@@ -60,20 +93,26 @@ const readCameraSupport = () =>
 const readSpeechSupport = () => "speechSynthesis" in window;
 const assumeSupported = () => true;
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_DIMENSION = 1280;
-
-/**
- * Gemini bills images as 768x768 tiles, so a 1280px photo costs four tiles
- * where a 768px one costs a single tile. Identifying the object nearest the
- * centre does not need the extra detail, so the model gets its own smaller
- * copy while the preview and the saved word image stay at MAX_DIMENSION.
+/*
+ * Every size, quality and margin this screen used to decide for itself now
+ * comes from lib/media/config, which is the whole point of that file: the
+ * capture screen resized to 1280, the search sheet to 768, and the menu
+ * camera to 1800, and all three were answering the same question.
  */
-const MAX_AI_DIMENSION = 768;
+const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
 
-const JPEG_QUALITY = 0.8;
 const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const IDENTIFICATION_TIMEOUT_MS = 16 * 1000;
+/*
+ * Above the server's own budget, deliberately.
+ *
+ * At sixteen seconds this abort fired while the route was still working, and
+ * the reader was told the recognition had timed out for a request that had
+ * already spent a daily unit and was about to answer. The server now bounds
+ * itself (VISION_TOTAL_BUDGET_MS, twenty seconds by default) and returns a
+ * real error when it runs out; this is the backstop for a connection that
+ * dies rather than the thing that decides how long a reader waits.
+ */
+const IDENTIFICATION_TIMEOUT_MS = 25 * 1000;
 // v2: cache keys now hash the downscaled image actually sent to the model.
 const IDENTIFICATION_CACHE_VERSION = "v2";
 
@@ -88,16 +127,21 @@ function isIdentificationResult(value: unknown): value is IdentificationResult {
   const candidate = value as Record<string, unknown>;
   return (
     [
-      "englishName",
-      "chineseName",
+      "term",
+      "translation",
       "partOfSpeech",
-      "englishExample",
-      "chineseExample",
+      "termExample",
+      "translationExample",
     ].every(
       (field) =>
         typeof candidate[field] === "string" &&
         (candidate[field] as string).trim().length > 0,
-    ) && ["high", "medium", "low"].includes(String(candidate.confidence))
+    ) &&
+    ["high", "medium", "low"].includes(String(candidate.confidence)) &&
+    // A cached result predating these fields has neither, and is still good.
+    [candidate.termLanguage, candidate.translationLanguage].every(
+      (value) => value === undefined || value === null || isLanguageCode(value),
+    )
   );
 }
 
@@ -307,116 +351,63 @@ function SendIcon() {
   );
 }
 
-function CameraOverlay({
-  videoRef,
-  onClose,
-  onCapture,
-  closeCameraAriaLabel,
-  captureAriaLabel,
-  focusHint,
-}: CameraOverlayProps) {
-  const motion = useSheetMotion({ onClose });
-
-  return (
-    <section
-      {...motion.panelProps}
-      className={`${motion.panelClassName} fixed inset-0 z-[100] overflow-hidden bg-black`}
-    >
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/45 to-transparent" />
-
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="relative h-52 w-52">
-          <span className="absolute left-0 top-0 h-9 w-9 rounded-tl-[20px] border-l-2 border-t-2 border-white/80" />
-          <span className="absolute right-0 top-0 h-9 w-9 rounded-tr-[20px] border-r-2 border-t-2 border-white/80" />
-          <span className="absolute bottom-0 left-0 h-9 w-9 rounded-bl-[20px] border-b-2 border-l-2 border-white/80" />
-          <span className="absolute bottom-0 right-0 h-9 w-9 rounded-br-[20px] border-b-2 border-r-2 border-white/80" />
-          <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 shadow-[0_0_0_5px_rgba(255,255,255,0.12)]" />
-        </div>
-
-        <p className="absolute top-[calc(50%+7.5rem)] rounded-full bg-black/25 px-3 py-1.5 text-xs font-medium tracking-wide text-white/90 backdrop-blur-md">
-          {focusHint}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={motion.requestClose}
-        aria-label={closeCameraAriaLabel}
-        className="absolute left-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur-md transition-transform duration-150 active:scale-90"
-        style={{
-          top: "max(1rem, env(safe-area-inset-top))",
-        }}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="h-5 w-5"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 6l12 12M18 6L6 18"
-          />
-        </svg>
-      </button>
-
-      <div
-        className={`${motion.handleClassName} absolute inset-x-0 z-10 flex h-12 items-start justify-center pt-3`}
-        style={{ top: "env(safe-area-inset-top)" }}
-        {...motion.handleProps}
-      >
-        <span className="h-1 w-12 rounded-full bg-white/55 shadow-sm" />
-      </div>
-
-      <div
-        className="absolute inset-x-0 bottom-0 flex justify-center"
-        style={{
-          paddingBottom: "max(1.75rem, env(safe-area-inset-bottom))",
-        }}
-      >
-        <button
-          type="button"
-          onClick={onCapture}
-          aria-label={captureAriaLabel}
-          className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-white/95 transition-transform duration-150 active:scale-95"
-        >
-          <span className="h-[60px] w-[60px] rounded-full bg-white" />
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function CaptureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { t, language: interfaceLanguage } = useTranslation();
+  const { pair: languagePair } = useDisplayLanguages();
+
+  /*
+   * The app-wide search sheet, opened over this screen once the photo has
+   * been read. See the hand-off effect below.
+   */
+  const { openSearch } = useLexiconSearchSheet();
   const capture = t.capture;
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  const takePhotoInputRef = useRef<HTMLInputElement | null>(null);
-  const chooseImageInputRef = useRef<HTMLInputElement | null>(null);
-  const sourceHandledRef = useRef(false);
-
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraStarting, setCameraStarting] = useState(false);
+  /*
+   * The camera, the photo picker and the file picker all live inside
+   * TargetCamera now. What this screen keeps is what happens after the
+   * shutter: a built capture waiting to be recognised, and the card image
+   * to show while that happens.
+   */
+  const [built, setBuilt] = useState<BuiltCapture | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
+
+  /*
+   * An imported photograph, held between "a file arrived" and "the reader
+   * pointed at the part of it that matters".
+   *
+   * The raster is kept rather than the File, because decoding is the
+   * expensive half and doing it once — before the viewer, and again for the
+   * crop — would be doing it twice.
+   */
+  const [pendingImage, setPendingImage] = useState<{
+    src: string;
+    raster: Raster;
+    fileName: string;
+    /** One-based, for a source that has pages. */
+    page?: number;
+    /*
+     * Carried in state rather than read off documentRef while rendering.
+     * React 19 forbids reading a ref during render, and it would be wrong
+     * anyway: the first render after a file is picked happens before the
+     * ref is populated, so the stepper would be missing for one frame.
+     */
+    pageCount?: number;
+  } | null>(null);
+
+  /*
+   * The open document, while the reader is looking through it.
+   *
+   * Held so that turning a page is a render rather than a re-parse, and
+   * closed the moment the viewer does — a parsed PDF owns a worker thread,
+   * and leaking one per file opened is exactly the kind of thing that makes
+   * an app feel heavier the longer it is used.
+   */
+  const documentRef = useRef<PdfDocument | null>(null);
+
+  const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<IdentificationResult | null>(null);
   const [error, setError] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
@@ -432,7 +423,7 @@ function CaptureContent() {
     readSpeechSupport,
     assumeSupported,
   );
-  const [speakingLang, setSpeakingLang] = useState<"en" | "zh" | null>(null);
+  const [speakingLang, setSpeakingLang] = useState<LanguageCode | null>(null);
   const [pronunciationEntry, setPronunciationEntry] = useState<{
     key: string;
     data: PronunciationResult | null;
@@ -446,16 +437,33 @@ function CaptureContent() {
   const friendsRequestedRef = useRef(false);
 
   const sourceParam = searchParams.get("source");
+  const widgetAction = searchParams.get("widgetAction");
   const withParam = searchParams.get("with");
   const fromParam = searchParams.get("from");
 
   const source: CaptureSource =
     sourceParam === "camera" || sourceParam === "library"
       ? sourceParam
-      : null;
+      : widgetAction === "camera"
+        ? "camera"
+        : null;
+
+  /*
+   * Opened straight away when the link asked for it.
+   *
+   * `source` is known from the URL on the first render, so this is initial
+   * state rather than something an effect synchronises afterwards — which
+   * would paint the landing screen for one frame before replacing it, and
+   * trip this project's cascading-render rule on the way.
+   *
+   * Declared here rather than up with the other state because it reads
+   * `source`, and a lazy initialiser that closes over a `const` declared
+   * below it throws on the first render.
+   */
+  const [cameraOpen, setCameraOpen] = useState(() => source !== null);
 
   const messagesHref = withParam
-    ? `/messages?with=${withParam}`
+    ? `/messages/new?friend=${encodeURIComponent(withParam)}`
     : "/messages";
 
   /**
@@ -473,7 +481,34 @@ function CaptureContent() {
     ? messagesHref
     : fromParam === "vocabulary"
       ? "/vocabulary"
-      : "/";
+      : "/home";
+  const returnHref = safeReturnHref(searchParams.get("returnTo"), cancelHref);
+
+  const leaveCapture = useCallback(() => {
+    setCameraOpen(false);
+    window.speechSynthesis?.cancel();
+
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.replace(returnHref);
+  }, [returnHref, router]);
+
+  /**
+   * Whether the camera was opened from the Universal Search.
+   *
+   * When it was, this screen's job ends at recognition. It reads the photo,
+   * hands the word to the search, and gets out of the way — see the effect
+   * below.
+   *
+   * It used to show its own result card first, so a photographed word passed
+   * two near-identical cards with two save buttons before it could be kept.
+   * Two cards for one word is two chances to wonder which one is the real
+   * answer.
+   */
+  const fromLexicon = fromParam === "lexicon";
 
   useEffect(() => {
     return () => {
@@ -481,12 +516,61 @@ function CaptureContent() {
     };
   }, [result]);
 
-  // Same phonetic lookup used by the Discover vocabulary drawer (English
-  // IPA via the free dictionary API, zhuyin/pinyin computed locally) — so
-  // a word identified here looks consistent with the rest of the app's
-  // word cards.
+  /*
+   * The picker-return dance that used to live here is gone.
+   *
+   * Two effects and three refs existed to notice that a file picker had been
+   * dismissed without a file, because no browser fires a reliable event for
+   * that and the screen had to decide whether to exit. The pickers belong to
+   * TargetCamera now, which is still on screen either way — a cancelled
+   * picker just puts the preview back, which needs no bookkeeping at all.
+   */
+
+  /*
+   * Recognised, and straight into the answer.
+   *
+   * Two things happen here and the order is the whole of it: the sheet opens
+   * *first*, and the route is replaced underneath it second.
+   *
+   * The sheet is mounted on the protected layout, which both this screen and
+   * the home screen are inside, so it survives the navigation — it is already
+   * covering the display when the route changes, and the reader never sees
+   * the page swap. Doing it the other way round is what made a photographed
+   * word travel through a fully painted home screen to reach its own card.
+   *
+   * Replacing the route also means closing the card leaves the reader at home
+   * rather than back on a capture screen still holding the same word. That
+   * used to be a second effect watching the sheet close, which fired on the
+   * wrong sheet: arriving here from the search's own Scan button, the sheet
+   * that was closing behind the navigation counted as "the card was
+   * dismissed", and the reader was bounced home before they had taken a
+   * photo. There is no close to detect any more.
+   */
+  useEffect(() => {
+    if (!fromLexicon || !result?.term) return;
+
+    openSearch({ query: result.term, autoSubmit: true });
+    router.replace(returnHref);
+  }, [fromLexicon, openSearch, result, returnHref, router]);
+
+  /*
+   * The two languages this result is actually in.
+   *
+   * The model reports them, and they are what the card renders, speaks and
+   * saves under. Falling back to the reader's pair covers results cached
+   * before the schema carried the fields — the pair is what the prompt asked
+   * for, so it is the right fallback rather than a guess.
+   */
+  const termLanguage = result?.termLanguage ?? languagePair[0];
+  const translationLanguage =
+    result?.translationLanguage ??
+    (termLanguage === languagePair[1] ? languagePair[0] : languagePair[1]);
+
+  // Same phonetic lookup used by the Discover vocabulary drawer (IPA via the
+  // free dictionary API, zhuyin/pinyin computed locally) — so a word
+  // identified here looks consistent with the rest of the app's word cards.
   const pronunciationKey = result
-    ? `${result.englishName}|${result.chineseName}`
+    ? `${result.term}|${result.translation}`
     : null;
 
   // Derived rather than cleared: tagging the fetched data with the word it
@@ -503,7 +587,10 @@ function CaptureContent() {
 
     let cancelled = false;
 
-    void getPronunciation(result.englishName, result.chineseName).then(
+    void getPronunciationForPair(
+      { text: result.term, language: termLanguage },
+      { text: result.translation, language: translationLanguage },
+    ).then(
       (data) => {
         if (!cancelled) setPronunciationEntry({ key: pronunciationKey, data });
       }
@@ -512,345 +599,244 @@ function CaptureContent() {
     return () => {
       cancelled = true;
     };
-  }, [result, pronunciationKey]);
+  }, [result, pronunciationKey, termLanguage, translationLanguage]);
 
-  // Body scrolling is locked by the camera overlay's own useSheetMotion, which
-  // now also handles overscroll. A second lock here fought it: this one lived
-  // as long as cameraActive, the overlay's only while the overlay was
-  // mounted, and taking a photo unmounts the overlay first — so the overlay
-  // released a lock this effect was still holding.
+  /*
+   * Attaching the stream to the element, keeping the preview alive across
+   * the photo picker, and stopping the tracks on the way out are all
+   * useCameraStream's job now (hooks/camera/useCameraStream.ts). Three
+   * effects and a ref went with them.
+   */
 
-  useEffect(() => {
-    const video = videoRef.current;
-    const stream = streamRef.current;
-
-    if (!cameraActive || !video || !stream) return;
-
-    video.srcObject = stream;
-
-    const handleLoadedMetadata = () => {
-      void video.play().catch((playError) => {
-        console.error("video.play() failed:", playError);
-        setError(capture.errors.cameraPreview);
-      });
-    };
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-    };
-  }, [cameraActive]);
-
-  useEffect(() => {
-    return () => {
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (sourceHandledRef.current) return;
-
-    sourceHandledRef.current = true;
-
-    if (source === "camera") {
-      void startCamera();
-      return;
-    }
-
-    if (source === "library") {
-      const timeout = window.setTimeout(() => {
-        chooseImageInputRef.current?.click();
-      }, 200);
-
-      return () => window.clearTimeout(timeout);
-    }
-  }, [source]);
-
-  function speak(text: string, language: "en" | "zh") {
+  function speak(text: string, language: LanguageCode) {
     if (!speechSupported || !text.trim()) return;
 
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const targetLang = language === "en" ? "en-US" : "zh-TW";
-    const langPrefix = language === "en" ? "en" : "zh";
-
-    utterance.lang = targetLang;
-    utterance.rate = 0.95;
-
-    const voices = window.speechSynthesis.getVoices();
-    const matchedVoice =
-      voices.find((voice) => voice.lang === targetLang) ??
-      voices.find((voice) =>
-        voice.lang.toLowerCase().startsWith(langPrefix)
-      );
-
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    }
-
-    utterance.onstart = () => setSpeakingLang(language);
-    utterance.onend = () => setSpeakingLang(null);
-    utterance.onerror = () => setSpeakingLang(null);
-
-    window.speechSynthesis.speak(utterance);
-  }
-
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
-
-    setCameraActive(false);
-  }
-
-  async function startCamera() {
-    if (cameraStarting || cameraActive) return;
-
-    setError("");
-    setResult(null);
-    setImageData(null);
-    setSaved(false);
-    setCameraStarting(true);
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraStarting(false);
-      takePhotoInputRef.current?.click();
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: {
-            ideal: "environment",
-          },
-          width: {
-            ideal: 1920,
-          },
-          height: {
-            ideal: 1080,
-          },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      setCameraActive(true);
-    } catch (mediaError) {
-      console.error("getUserMedia failed:", mediaError);
-
-      const permissionDenied =
-        mediaError instanceof DOMException &&
-        (mediaError.name === "NotAllowedError" ||
-          mediaError.name === "PermissionDeniedError");
-
-      setError(
-        permissionDenied
-          ? capture.errors.cameraPermissionDenied
-          : capture.errors.cameraUnavailable
-      );
-    } finally {
-      setCameraStarting(false);
-    }
-  }
-
-  function drawToDataUrl(
-    sourceImage: CanvasImageSource,
-    sourceWidth: number,
-    sourceHeight: number,
-    maxDimension: number = MAX_DIMENSION
-  ): string | null {
-    if (
-      !Number.isFinite(sourceWidth) ||
-      !Number.isFinite(sourceHeight) ||
-      sourceWidth <= 0 ||
-      sourceHeight <= 0
-    ) {
-      return null;
-    }
-
-    const canvas =
-      canvasRef.current ?? document.createElement("canvas");
-
-    const scale = Math.min(
-      1,
-      maxDimension / Math.max(sourceWidth, sourceHeight)
-    );
-
-    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-
-    const context = canvas.getContext("2d");
-
-    if (!context) return null;
-
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
-    context.drawImage(
-      sourceImage,
-      0,
-      0,
-      canvas.width,
-      canvas.height
-    );
-
-    return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    speakText(text, getLanguage(language).speechTag, {
+      onStart: () => setSpeakingLang(language),
+      onEnd: () => setSpeakingLang(null),
+      onError: () => setSpeakingLang(null),
+    });
   }
 
   /**
-   * Re-renders the stored preview down to MAX_AI_DIMENSION for the
-   * identification request. Falls back to the full-size copy if the decode
-   * fails: a larger image only costs more, whereas throwing here would block
-   * the capture entirely.
+   * A raster and a target, turned into everything a save will need.
+   *
+   * The single funnel for all three ways a picture can arrive here — the
+   * shutter, the photo library, a file — which is what makes them one
+   * workflow rather than three that happen to end at the same screen.
+   *
+   * The raster is released whatever happens: it is the full-resolution
+   * frame, and on a 12-megapixel phone camera holding one by accident is
+   * tens of megabytes that never come back.
    */
-  function buildAiImage(dataUrl: string): Promise<string> {
-    return new Promise((resolve) => {
-      const image = new Image();
+  const prepare = useCallback(
+    async (
+      raster: Raster,
+      targetRect: NormalizedRect,
+      sourceType: MediaSourceType,
+      name: string,
+      page?: number,
+    ) => {
+      setPreparing(true);
+      setError("");
+      setResult(null);
+      setSaved(false);
 
-      image.onload = () => {
-        resolve(
-          drawToDataUrl(
-            image,
-            image.naturalWidth,
-            image.naturalHeight,
-            MAX_AI_DIMENSION
-          ) ?? dataUrl
+      try {
+        const next = await buildCapture({
+          raster,
+          targetRect,
+          sourceType,
+          recognitionKind: "object",
+          /*
+           * The model is sent the target, not the whole frame. The prompt
+           * asks for "the object at the exact centre", which was only ever
+           * approximately true — cropping to what the reader actually
+           * pointed at makes it true.
+           */
+          recognitionScope: "target",
+          sourceFileName: sourceType === "camera" ? undefined : name,
+          // Kept so a saved word can say which page of which document it
+          // came from, which is the source relationship the spec asks for.
+          sourcePage: page,
+        });
+
+        setBuilt(next);
+        setImageData(URL.createObjectURL(next.capture.card.blob));
+        setFileName(name);
+        setCameraOpen(false);
+        setPendingImage(null);
+      } catch (buildError) {
+        console.error(buildError);
+        setError(
+          buildError instanceof MediaDecodeError
+            ? capture.errors.processImage
+            : capture.errors.captureImage,
         );
-      };
+      } finally {
+        raster.close();
+        setPreparing(false);
+      }
+    },
+    [capture.errors.captureImage, capture.errors.processImage],
+  );
 
-      image.onerror = () => resolve(dataUrl);
-      image.src = dataUrl;
-    });
-  }
+  const onCameraCapture = useCallback(
+    ({ raster, targetRect }: CameraCapture) => {
+      void prepare(raster, targetRect, "camera", "camera-photo.webp");
+    },
+    [prepare],
+  );
 
-  function compressImage(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+  /**
+   * One page of a document, rendered and put in front of the reader.
+   *
+   * Shares everything after the render with a photograph: the same viewer,
+   * the same target selection, the same pipeline. Only the way the pixels
+   * are obtained differs, which is the whole point of the Raster type.
+   */
+  const showPage = useCallback(
+    async (page: number, fileName: string) => {
+      const document_ = documentRef.current;
 
-      reader.onerror = () => {
-        reject(new Error("Could not read this image."));
-      };
+      if (!document_) return;
 
-      reader.onload = () => {
-        if (typeof reader.result !== "string") {
-          reject(new Error("Could not read this image."));
-          return;
-        }
+      setPreparing(true);
 
-        const image = new Image();
+      try {
+        const raster = await document_.renderPage(page);
 
-        image.onerror = () => {
-          reject(new Error("Could not open this image."));
-        };
+        /*
+         * The page render becomes an object URL only so the viewer can show
+         * it. It is never uploaded — the retained source and the card are
+         * made from the raster by the pipeline, and both are a fraction of
+         * this render's size.
+         */
+        const blob = await new Promise<Blob | null>((resolve) =>
+          (raster.source as HTMLCanvasElement).toBlob(resolve, "image/webp", 0.9),
+        );
 
-        image.onload = () => {
-          const dataUrl = drawToDataUrl(
-            image,
-            image.naturalWidth || image.width,
-            image.naturalHeight || image.height
-          );
-
-          if (!dataUrl) {
-            reject(new Error("Could not process this image."));
-            return;
+        setPendingImage((current) => {
+          if (current) {
+            current.raster.close();
+            URL.revokeObjectURL(current.src);
           }
 
-          resolve(dataUrl);
-        };
+          return blob
+            ? {
+                src: URL.createObjectURL(blob),
+                raster,
+                fileName,
+                page,
+                pageCount: document_.pageCount,
+              }
+            : null;
+        });
+      } catch (renderError) {
+        console.error(renderError);
+        setError(capture.errors.processImage);
+      } finally {
+        setPreparing(false);
+      }
+    },
+    [capture.errors.processImage],
+  );
 
-        image.src = reader.result;
-      };
+  /**
+   * A picked document.
+   *
+   * The only entry point in the app that accepts something which is not an
+   * image. Page one is shown first, because that is the page somebody
+   * photographing a menu or a form means nine times in ten.
+   */
+  const onPickFile = useCallback(
+    async (file: File) => {
+      setError("");
 
-      reader.readAsDataURL(file);
-    });
-  }
+      if (!isPdf(file)) {
+        setError(capture.errors.selectImage);
+        return;
+      }
 
-  async function handleSelectedFile(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    const file = event.target.files?.[0];
+      try {
+        documentRef.current?.close();
+        documentRef.current = await openPdf(file);
 
-    event.target.value = "";
+        await showPage(1, file.name);
+      } catch (openError) {
+        console.error(openError);
+        setError(
+          openError instanceof PdfRenderError
+            ? capture.errors.processImage
+            : capture.errors.captureImage,
+        );
+      }
+    },
+    [
+      capture.errors.captureImage,
+      capture.errors.processImage,
+      capture.errors.selectImage,
+      showPage,
+    ],
+  );
 
-    if (!file) return;
+  /**
+   * A picked photograph, decoded once and shown for a target to be chosen.
+   *
+   * The checks come first and are cheap, as they were before: a forty
+   * megabyte screenshot should be refused in a microsecond rather than
+   * after the browser has spent a second decoding it.
+   */
+  const onPickPhoto = useCallback(
+    async (file: File) => {
+      setError("");
 
-    setError("");
-    setResult(null);
-    setSaved(false);
+      if (!file.type.startsWith("image/")) {
+        setError(capture.errors.selectImage);
+        return;
+      }
 
-    if (!file.type.startsWith("image/")) {
-      setError(capture.errors.selectImage);
-      return;
-    }
+      if (file.size > MAX_FILE_SIZE) {
+        setError(capture.errors.imageTooLarge);
+        return;
+      }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setError(capture.errors.imageTooLarge);
-      return;
-    }
+      try {
+        const raster = await decodeBlob(file);
 
-    try {
-      const compressedImage = await compressImage(file);
-
-      stopCamera();
-      setImageData(compressedImage);
-      setFileName(file.name);
-    } catch (uploadError) {
-      console.error(uploadError);
-      setError(capture.errors.processImage);
-    }
-  }
-
-  function capturePhoto() {
-    const video = videoRef.current;
-
-    if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-      setError(capture.errors.cameraNotReady);
-      return;
-    }
-
-    if (!video.videoWidth || !video.videoHeight) {
-      setError(capture.errors.cameraNotReady);
-      return;
-    }
-
-    const dataUrl = drawToDataUrl(
-      video,
-      video.videoWidth,
-      video.videoHeight
-    );
-
-    if (!dataUrl) {
-      setError(capture.errors.captureImage);
-      return;
-    }
-
-    setImageData(dataUrl);
-    setFileName("camera-photo.jpg");
-    setResult(null);
-    setSaved(false);
-
-    stopCamera();
-  }
+        setPendingImage({
+          src: URL.createObjectURL(file),
+          raster,
+          fileName: file.name,
+        });
+      } catch (decodeError) {
+        console.error(decodeError);
+        setError(capture.errors.processImage);
+      }
+    },
+    [
+      capture.errors.imageTooLarge,
+      capture.errors.processImage,
+      capture.errors.selectImage,
+    ],
+  );
 
   async function identifyImage() {
-    if (!imageData || analyzing) return;
+    if (!built || analyzing) return;
 
     setAnalyzing(true);
     setError("");
     setResult(null);
 
     try {
-      // Keyed on the downscaled copy because that is what determines the
-      // model's answer.
-      const aiImage = await buildAiImage(imageData);
+      /*
+       * The pipeline already produced the copy the model gets, cropped to
+       * the target and sized for it. Keyed on that copy because that is
+       * what determines the model's answer — and it is a stronger key than
+       * before, since two photographs of the same shelf with different
+       * targets are now different requests rather than one cache hit.
+       */
+      const aiImage = built.recognitionImage;
       const cacheKey = await getIdentificationCacheKey(aiImage);
       const cachedResult = getCachedIdentification(cacheKey);
 
@@ -921,20 +907,63 @@ function CaptureContent() {
     }
   }
 
-  function createShareText() {
-    if (!result) return "";
+  /**
+   * The card for a friend, with its picture published first.
+   *
+   * The word being shared here has usually not been saved, so there is no
+   * library asset to copy — the card derivative is sitting in memory from
+   * the capture, and gets uploaded straight into the shared folder. That is
+   * the one place a picture reaches storage without a vocabulary row
+   * pointing at it, and it is deliberate: the message is the thing that
+   * points at it, and a message is permanent.
+   *
+   * Both ways of sending build the card here, so a word sent into an open
+   * conversation and one sent through the friend picker carry the same
+   * picture rather than one of them quietly carrying none.
+   */
+  async function buildShareCard(): Promise<SharedWordCard | null> {
+    if (!result) return null;
 
-    return encodeWordCardMessage({
-      word: result.englishName,
-      translation: result.chineseName,
+    let imagePath: string | undefined;
+
+    if (built) {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        imagePath =
+          (await publishCardBlob(supabase, user.id, built.capture.card.blob)) ??
+          undefined;
+      }
+    }
+
+    return {
+      imagePath,
+      word: result.term,
+      translation: result.translation,
+      /*
+       * The card carries the languages the model actually answered in, not
+       * the sender's settings. Labelling them from the pair filed an Italian
+       * word as English on the receiving end.
+       */
+      wordLanguage: termLanguage,
+      translationLanguage,
       partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
-    });
+      texts: {
+        [termLanguage]: result.term,
+        [translationLanguage]: result.translation,
+      },
+      examples: {
+        [termLanguage]: result.termExample,
+        [translationLanguage]: result.translationExample,
+      },
+    };
   }
 
   async function saveToVocabulary() {
-    if (!result || !imageData || saving || saved) return;
+    if (!result || !built || saving || saved) return;
 
     setSaving(true);
     setError("");
@@ -951,60 +980,80 @@ function CaptureContent() {
         throw new Error(capture.errors.loginBeforeSave);
       }
 
-      const imageBlob = dataUrlToBlob(imageData);
-      const extension = safeImageExtension(imageBlob.type);
-      const imagePath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      /*
+       * The pictures are written first, then the row.
+       *
+       * The old order was the same, but the recovery was not: an upload
+       * whose insert failed was removed in a catch, which works right up
+       * until the tab closes between the two. Now the assets are committed
+       * as a pair by lib/media/assets, and a failed insert leaves at most
+       * two files that the orphan sweep already knows how to find.
+       */
+      let media = null;
 
-      const { error: uploadError } = await supabase.storage
-        .from("vocabulary-images")
-        .upload(imagePath, imageBlob, {
-          contentType: imageBlob.type,
-          upsert: false,
-        });
+      try {
+        media = await commitCapture(supabase, user.id, built.capture);
+      } catch (assetError) {
+        /*
+         * Offline, or out of storage. The word is saved without its
+         * picture rather than not at all — the same trade this file
+         * already makes for the duplicate check, and the right one: a
+         * missing image is a nuisance, a word the reader could not save
+         * is worse.
+         */
+        console.error(assetError);
 
-      if (uploadError) {
-        throw uploadError;
+        if (!(assetError instanceof AssetWriteError)) throw assetError;
       }
 
-      const { data: publicImage } = supabase.storage
-        .from("vocabulary-images")
-        .getPublicUrl(imagePath);
-
-      const { error: insertError } = await supabase
-        .from("vocabulary_items")
-        .insert({
-          user_id: user.id,
-          word: result.englishName.trim(),
-          translation: result.chineseName.trim(),
-          language: "english",
-          part_of_speech:
-            result.partOfSpeech.trim() || null,
-          example_sentence:
-            result.englishExample.trim() || null,
-          translated_example:
-            result.chineseExample.trim() || null,
-          image_url: publicImage.publicUrl,
-          confidence: result.confidence,
-          status: "new",
-        });
-
-      if (insertError) {
-        await supabase.storage
-          .from("vocabulary-images")
-          .remove([imagePath]);
-
-        throw insertError;
-      }
+      await createVocabularyEntry({
+        userId: user.id,
+        term: result.term,
+        translation: result.translation,
+        partOfSpeech: result.partOfSpeech,
+        termExample: result.termExample,
+        translationExample: result.translationExample,
+        media,
+        confidence: result.confidence,
+        status: "new",
+        language: {
+          pair: languagePair,
+          /*
+           * What the model said, not what the settings say.
+           *
+           * This used to state the reader's pair outright, which outranks
+           * everything and is never recomputed — so a word the model itself
+           * had labelled Italian was stored as English, permanently,
+           * because the reader happened to be studying English that week.
+           * The pair still travels along as the context the photo was taken
+           * in, and as the fallback when a cached result predates the
+           * language fields.
+           */
+          ai: {
+            termLanguage: result.termLanguage,
+            translationLanguage: result.translationLanguage,
+          },
+        },
+      });
 
       setSaved(true);
       router.push("/vocabulary");
     } catch (saveError) {
       console.error(saveError);
+
       setError(
-        saveError instanceof Error &&
-          saveError.message === capture.errors.loginBeforeSave
-          ? capture.errors.loginBeforeSave
-          : capture.errors.saveWord
+        /*
+         * The duplicate check moved into createVocabularyEntry, which throws
+         * rather than returning a flag — so a word already in the library
+         * arrives here. Saying so is a real answer; the generic "could not
+         * save" would have the reader photographing it again.
+         */
+        saveError instanceof DuplicateVocabularyError
+          ? capture.errors.duplicateWord
+          : saveError instanceof Error &&
+              saveError.message === capture.errors.loginBeforeSave
+            ? capture.errors.loginBeforeSave
+            : capture.errors.saveWord,
       );
     } finally {
       setSaving(false);
@@ -1040,14 +1089,21 @@ function CaptureContent() {
     }
   }
 
-  function sendToPartner() {
+  async function sendToPartner() {
     if (!result) return;
 
     // Already inside a specific conversation (opened the camera from
     // there via ?with=) — the recipient is already known, so this keeps
     // the existing draft-prefill behavior instead of asking again.
     if (withParam) {
-      sessionStorage.setItem("exchange-notes-draft-message", createShareText());
+      const card = await buildShareCard();
+
+      if (!card) return;
+
+      sessionStorage.setItem(
+        "exchange-notes-draft-message",
+        encodeWordCardMessage(card),
+      );
       router.push(messagesHref);
       return;
     }
@@ -1066,35 +1122,131 @@ function CaptureContent() {
     setSendingFriendId(null);
   }
 
-  function handlePickFriend(friendId: string) {
+  async function handlePickFriend(friendId: string) {
     if (!result || sendingFriendId) return;
 
     setSendingFriendId(friendId);
-    setPendingSharedVocabulary({
-      word: result.englishName,
-      translation: result.chineseName,
-      partOfSpeech: result.partOfSpeech,
-      englishExample: result.englishExample,
-      chineseExample: result.chineseExample,
-    });
-    router.push(`/messages?with=${encodeURIComponent(friendId)}`);
+
+    const card = await buildShareCard();
+
+    if (!card) {
+      setSendingFriendId(null);
+      return;
+    }
+
+    setPendingSharedVocabulary(card);
+    router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
+  /** Back to the camera, which is where another photograph comes from. */
   function chooseAnotherImage() {
-    window.speechSynthesis?.cancel();
-
-    setImageData(null);
-    setFileName("");
-    setResult(null);
-    setError("");
-    setSaved(false);
-
-    chooseImageInputRef.current?.click();
+    reset();
+    setCameraOpen(true);
   }
+
+  /**
+   * Whether something is covering the whole screen.
+   *
+   * The camera and the imported-photo viewer are both fixed and full-bleed,
+   * and the page behind them must not paint its header and hero copy — that
+   * is what once made reaching the viewfinder feel like passing through an
+   * unrelated page.
+   */
+  const fullScreen = cameraOpen || Boolean(pendingImage);
+
+  const closeCamera = useCallback(() => {
+    setCameraOpen(false);
+    leaveCapture();
+  }, [leaveCapture]);
+
+  /** A picked photograph or document the reader backed out of. */
+  const discardPendingImage = useCallback(() => {
+    documentRef.current?.close();
+    documentRef.current = null;
+
+    // Released here rather than inside the updater: React may call an
+    // updater twice, and freeing a bitmap is not a thing to do twice.
+    if (pendingImage) {
+      pendingImage.raster.close();
+      URL.revokeObjectURL(pendingImage.src);
+    }
+
+    setPendingImage(null);
+  }, [pendingImage]);
+
+  /*
+   * Released when the screen goes, not only when the reader resets.
+   *
+   * A raster is the full-resolution decode and an object URL pins its blob;
+   * navigating away mid-flow used to be the one path that leaked both.
+   *
+   * Read through a ref so this runs on unmount alone. Depending on the value
+   * directly would free the previous photograph every time a new one is
+   * picked — which is correct by luck today, and would stop being so the
+   * moment anything held on to it.
+   */
+  const pendingRef = useRef(pendingImage);
+
+  useEffect(() => {
+    pendingRef.current = pendingImage;
+  }, [pendingImage]);
+
+  useEffect(
+    () => () => {
+      documentRef.current?.close();
+      documentRef.current = null;
+
+      const held = pendingRef.current;
+
+      if (!held) return;
+
+      held.raster.close();
+      URL.revokeObjectURL(held.src);
+    },
+    [],
+  );
+
+  const cameraCopy = {
+    close: capture.camera.closeCameraAriaLabel,
+    shutter: capture.camera.captureAriaLabel,
+    torchOn: capture.camera.torchOn,
+    torchOff: capture.camera.torchOff,
+    photoLibrary: capture.source.photoLibrary,
+    importFile: capture.camera.importFile,
+    zoom: capture.camera.zoom,
+    zoomLevel: capture.camera.zoomLevel,
+    hint: capture.camera.targetHint,
+    selectedTarget: capture.camera.selectedTarget,
+    candidateTarget: capture.camera.candidateTarget,
+    focused: capture.camera.focused,
+    analysing: capture.camera.analysing,
+    permissionDenied: capture.errors.cameraPermissionDenied,
+    unavailable: capture.errors.cameraUnavailable,
+    retry: capture.camera.retry,
+  };
+
+  const viewerCopy = {
+    close: capture.camera.closeCameraAriaLabel,
+    confirm: capture.camera.confirmTarget,
+    reset: capture.camera.resetZoom,
+    hint: capture.camera.targetHint,
+    selectedTarget: capture.camera.selectedTarget,
+    candidateTarget: capture.camera.candidateTarget,
+    busy: capture.camera.analysing,
+    previousPage: capture.camera.previousPage,
+    nextPage: capture.camera.nextPage,
+    pageLabel: capture.camera.pageLabel,
+  };
 
   function reset() {
-    stopCamera();
     window.speechSynthesis?.cancel();
+
+    // The preview is an object URL over a blob that would otherwise be held
+    // for the life of the tab.
+    if (imageData) URL.revokeObjectURL(imageData);
+
+    setBuilt(null);
+    setCameraOpen(false);
 
     setImageData(null);
     setFileName("");
@@ -1109,19 +1261,32 @@ function CaptureContent() {
   return (
     <main className="min-h-[100dvh] bg-surface text-neutral-950">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col px-4">
-        {!cameraActive && (
+        {/*
+          Hidden while the camera is coming up, not only while it is up.
+
+          getUserMedia takes a permission prompt and a stream to resolve, and
+          during that beat this page used to show its whole landing screen —
+          header, title, hero copy — behind a prompt for a camera the user has
+          already asked for. Reaching the viewfinder felt like passing through
+          an unrelated page. The camera component owns that beat now — it
+          paints black from its first frame and reports permission failures
+          itself — so this only has to stand aside while it, or the imported
+          photo viewer, is up.
+        */}
+        {!fullScreen && (
           <header
             className="flex h-14 shrink-0 items-center justify-between"
             style={{
               paddingTop: "env(safe-area-inset-top)",
             }}
           >
-            <Link
-              href={cancelHref}
-              className="min-w-14 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+            <button
+              type="button"
+              onClick={leaveCapture}
+              className="min-w-14 text-sm font-medium text-ink-soft transition-colors hover:text-neutral-900"
             >
               {capture.camera.cancel}
-            </Link>
+            </button>
 
             <h1 className="text-sm font-semibold tracking-tight">
               {capture.title}
@@ -1130,36 +1295,37 @@ function CaptureContent() {
             <button
               type="button"
               onClick={reset}
-              className="min-w-14 text-right text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+              className="min-w-14 text-right text-sm font-medium text-ink-soft transition-colors hover:text-neutral-900"
             >
               {capture.reset}
             </button>
           </header>
         )}
 
-        {!cameraActive && !imageData && (
+        {!fullScreen && !imageData && (
           <section className="flex flex-1 flex-col items-center justify-center pb-28 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-400">
-              English × 繁體中文
+            <p className="text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+              {getLanguageName(languagePair[0], interfaceLanguage)} ×{" "}
+              {getLanguageName(languagePair[1], interfaceLanguage)}
             </p>
 
-            <h2 className="mt-3 text-[28px] font-semibold tracking-[-0.03em]">
+            <h2 className="mt-3 text-[1.75rem] font-semibold tracking-[-0.03em]">
               {capture.source.title}
             </h2>
 
-            <p className="mt-2 max-w-[260px] text-sm leading-6 text-neutral-500">
+            <p className="mt-2 max-w-[260px] text-sm leading-6 text-ink-soft">
               {capture.source.description}
             </p>
 
             <div className="mt-10 flex items-start justify-center gap-12">
               <button
                 type="button"
-                onClick={() => void startCamera()}
-                disabled={cameraStarting}
+                onClick={() => setCameraOpen(true)}
+                disabled={false}
                 className="group flex w-20 flex-col items-center gap-2.5 disabled:opacity-40"
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full bg-neutral-950 text-white transition-transform duration-150 group-active:scale-95">
-                  {cameraStarting ? <SpinnerIcon /> : <CameraIcon />}
+                  <CameraIcon />
                 </span>
 
                 <span className="text-xs font-medium text-neutral-600">
@@ -1169,7 +1335,9 @@ function CaptureContent() {
 
               <button
                 type="button"
-                onClick={() => chooseImageInputRef.current?.click()}
+                onClick={() =>
+                  setCameraOpen(true)
+                }
                 className="group flex w-20 flex-col items-center gap-2.5"
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full border border-black/5 bg-white text-neutral-900 transition-transform duration-150 group-active:scale-95">
@@ -1183,25 +1351,70 @@ function CaptureContent() {
             </div>
 
             {!cameraSupported && (
-              <p className="mt-8 max-w-xs text-xs leading-5 text-neutral-400">
+              <p className="mt-8 max-w-xs text-xs leading-5 text-ink-faint">
                 {capture.source.unsupported}
               </p>
             )}
           </section>
         )}
 
-        {cameraActive && !imageData && (
-          <CameraOverlay
-            videoRef={videoRef}
-            onClose={stopCamera}
-            onCapture={capturePhoto}
-            closeCameraAriaLabel={capture.camera.closeCameraAriaLabel}
-            captureAriaLabel={capture.camera.captureAriaLabel}
-            focusHint={capture.camera.focusHint}
+        {/*
+          The hold between the tap and the lens. Black rather than the page
+          surface, so what the user sees is the camera arriving rather than the
+          app going blank — and no view transition is involved, which is what
+          once left the viewfinder visible with every control dead.
+        */}
+        {cameraOpen && (
+          <TargetCamera
+            copy={cameraCopy}
+            busy={preparing}
+            onCapture={onCameraCapture}
+            onClose={closeCamera}
+            onPickPhoto={(file) => void onPickPhoto(file)}
+            onPickFile={(file) => void onPickFile(file)}
           />
         )}
 
-        {!cameraActive && imageData && (
+        {/*
+          An imported photograph, at the same target-selection step the
+          camera's own preview offers. Same component, same gestures, same
+          normalised rectangle out of the other end.
+        */}
+        {pendingImage && (
+          <TargetImageViewer
+            /*
+             * Keyed on the page so turning one remounts the viewer, which
+             * clears the target and the candidates. A rectangle chosen on
+             * page two means nothing on page three.
+             */
+            key={pendingImage.page ?? "photo"}
+            src={pendingImage.src}
+            copy={viewerCopy}
+            busy={preparing}
+            pages={
+              pendingImage.page && pendingImage.pageCount
+                ? {
+                    page: pendingImage.page,
+                    pageCount: pendingImage.pageCount,
+                    onPageChange: (page) =>
+                      void showPage(page, pendingImage.fileName),
+                  }
+                : null
+            }
+            onConfirm={(target) =>
+              void prepare(
+                pendingImage.raster,
+                target,
+                pendingImage.page ? "file" : "photo",
+                pendingImage.fileName,
+                pendingImage.page,
+              )
+            }
+            onClose={discardPendingImage}
+          />
+        )}
+
+        {!fullScreen && imageData && (
           <section className="flex flex-1 flex-col pb-28">
             <div className="relative overflow-hidden rounded-[24px] bg-neutral-950">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1227,7 +1440,7 @@ function CaptureContent() {
             </div>
 
             {!result && fileName && (
-              <p className="mt-2 truncate px-2 text-center text-[11px] text-neutral-400">
+              <p className="mt-2 truncate px-2 text-center text-[0.6875rem] text-ink-faint">
                 {fileName}
               </p>
             )}
@@ -1269,14 +1482,20 @@ function CaptureContent() {
               </p>
             )}
 
-            {result && (
+            {/*
+              Suppressed when the search is answering, because it is the same
+              word again: this screen's card, underneath the sheet's card, one
+              tap from being seen. Two cards for one word is two chances to
+              wonder which is the real answer.
+            */}
+            {result && !fromLexicon && (
               <div className="flex flex-1 flex-col pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
+                  <span className="text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                     {capture.result.eyebrow}
                   </span>
 
-                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-neutral-500">
+                  <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[0.625rem] font-medium text-ink-soft">
                     {insertValues(capture.result.confidence, {
                       value:
                         result.confidence === "high"
@@ -1288,26 +1507,23 @@ function CaptureContent() {
                   </span>
                 </div>
 
-                {isLearningChinese ? (
-                  <>
-                    <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                      {result.chineseName}
-                    </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-neutral-400">
-                      {result.englishName}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="mt-2 break-words text-[24px] font-semibold tracking-[-0.03em]">
-                      {result.englishName}
-                    </h2>
-                    <p className="mt-0.5 break-words text-base font-normal text-neutral-400">
-                      {result.chineseName}
-                    </p>
-                  </>
-                )}
-                <p className="mt-1 text-xs text-neutral-400">
+                {/*
+                  Pair order already: the identification answers in the
+                  learner's own two languages, learning first.
+                */}
+                <div className="mt-2 flex items-start gap-3">
+                  <h2 className="min-w-0 flex-1 break-words text-[1.5rem] font-semibold tracking-[-0.03em]">
+                    {result.term}
+                  </h2>
+                  <VocabularyCopyButton
+                    text={result.term}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-90"
+                  />
+                </div>
+                <p className="mt-0.5 break-words text-base font-normal text-ink-faint">
+                  {result.translation}
+                </p>
+                <p className="mt-1 text-xs text-ink-faint">
                   {
                     t.vocabulary.detail.partOfSpeech[
                       normalizePartOfSpeech(result.partOfSpeech)
@@ -1317,37 +1533,45 @@ function CaptureContent() {
 
                 <div className="mt-2.5 space-y-1.5">
                   {(() => {
-                    const englishIsPrimary = !isLearningChinese;
-                    const primaryValueClass =
-                      "mt-0.5 block break-words text-[16px] font-semibold text-black/90";
-                    const secondaryValueClass =
-                      "mt-0.5 block break-words text-[14px] font-normal text-black/45";
-                    const primaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90";
-                    const secondaryButtonClass =
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90";
+                    /*
+                     * Two boxes, each labelled with the language it is in and
+                     * spoken by that language's own voice.
+                     *
+                     * This was a hard-coded pair of boxes headed "English" and
+                     * "中文", reading their contents with an en-US and a zh-TW
+                     * voice. Photograph a lamp while studying Italian and the
+                     * card said the Italian word was English and pronounced it
+                     * like one. Both halves now come off the result's own
+                     * languages, which the model reports.
+                     */
+                    const valueClass = (primary: boolean) =>
+                      primary
+                        ? "mt-0.5 block break-words text-[1rem] font-semibold text-black"
+                        : "mt-0.5 block break-words text-[0.875rem] font-normal text-ink-soft";
 
-                    const englishBox = (
+                    const buttonClass = (primary: boolean) =>
+                      primary
+                        ? "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white shadow-sm transition active:scale-90"
+                        : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90";
+
+                    const languageBox = (
+                      text: string,
+                      language: LanguageCode,
+                      reading: string | null | undefined,
+                      primary: boolean,
+                    ) => (
                       <div
-                        key="english"
+                        key={language}
                         className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
                       >
                         <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
-                            English
+                          <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-ink-faint">
+                            {getLanguage(language).endonym}
                           </span>
-                          <span
-                            className={
-                              englishIsPrimary
-                                ? primaryValueClass
-                                : secondaryValueClass
-                            }
-                          >
-                            {result.englishName}
-                          </span>
-                          {pronunciation?.englishPronunciation && (
-                            <span className="mt-0.5 block text-[12px] text-black/40">
-                              {pronunciation.englishPronunciation}
+                          <span className={valueClass(primary)}>{text}</span>
+                          {reading && (
+                            <span className="mt-0.5 block text-[0.75rem] text-ink-faint">
+                              {reading}
                             </span>
                           )}
                         </span>
@@ -1355,137 +1579,102 @@ function CaptureContent() {
                         {speechSupported && (
                           <button
                             type="button"
-                            onClick={() => speak(result.englishName, "en")}
-                            aria-label={capture.result.playEnglishAriaLabel}
-                            className={
-                              englishIsPrimary
-                                ? primaryButtonClass
-                                : secondaryButtonClass
-                            }
+                            onClick={() => speak(text, language)}
+                            aria-label={insertValues(
+                              t.vocabulary.detail.listenAriaLabel,
+                              { text },
+                            )}
+                            className={buttonClass(primary)}
                           >
-                            <SpeakerIcon speaking={speakingLang === "en"} />
+                            <SpeakerIcon speaking={speakingLang === language} />
                           </button>
                         )}
                       </div>
                     );
 
-                    const chineseBox = (
-                      <div
-                        key="chinese"
-                        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-black/40">
-                            中文
-                          </span>
-                          <span
-                            className={
-                              englishIsPrimary
-                                ? secondaryValueClass
-                                : primaryValueClass
-                            }
-                          >
-                            {result.chineseName}
-                          </span>
-                          {(pronunciation?.pinyin || pronunciation?.zhuyin) && (
-                            <span className="mt-0.5 block text-[12px] text-black/40">
-                              {[pronunciation?.pinyin, pronunciation?.zhuyin]
-                                .filter(Boolean)
-                                .join("  ")}
-                            </span>
-                          )}
-                        </span>
+                    /*
+                     * Which reading belongs to which side is a question about
+                     * the language, not about the field: IPA for the alphabets,
+                     * pinyin and zhuyin for Chinese. Asked of the language table
+                     * rather than assumed from the slot.
+                     */
+                    const readingFor = (language: LanguageCode) =>
+                      getLanguage(language).phonetics.includes("pinyin")
+                        ? [pronunciation?.pinyin, pronunciation?.zhuyin]
+                            .filter(Boolean)
+                            .join("  ") || null
+                        : (pronunciation?.englishPronunciation ?? null);
 
-                        {speechSupported && (
-                          <button
-                            type="button"
-                            onClick={() => speak(result.chineseName, "zh")}
-                            aria-label={capture.result.playChineseAriaLabel}
-                            className={
-                              englishIsPrimary
-                                ? secondaryButtonClass
-                                : primaryButtonClass
-                            }
-                          >
-                            <SpeakerIcon speaking={speakingLang === "zh"} />
-                          </button>
-                        )}
-                      </div>
-                    );
-
-                    return isLearningChinese
-                      ? [chineseBox, englishBox]
-                      : [englishBox, chineseBox];
+                    // The learning language leads, as it does on every card.
+                    return [
+                      languageBox(
+                        result.term,
+                        termLanguage,
+                        readingFor(termLanguage),
+                        true,
+                      ),
+                      languageBox(
+                        result.translation,
+                        translationLanguage,
+                        readingFor(translationLanguage),
+                        false,
+                      ),
+                    ];
                   })()}
                 </div>
 
-                {(result.englishExample || result.chineseExample) && (
+                {(result.termExample || result.translationExample) && (
                   <div className="mt-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/32">
+                    <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-faint">
                       {t.vocabulary.detail.example}
                     </p>
 
                     <div className="mt-1.5 space-y-1.5">
                       {(() => {
-                        const englishExampleBox = result.englishExample ? (
-                          <div
-                            key="english-example"
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                          >
-                            <span className="min-w-0 break-words text-sm leading-6 text-neutral-900">
-                              {result.englishExample}
-                            </span>
-
-                            {speechSupported && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  speak(result.englishExample, "en")
-                                }
-                                aria-label={
-                                  capture.result.playEnglishAriaLabel
-                                }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
+                        const exampleBox = (
+                          text: string,
+                          language: LanguageCode,
+                          strong: boolean,
+                        ) =>
+                          text ? (
+                            <div
+                              key={`example-${language}`}
+                              className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
+                            >
+                              <span
+                                className={`min-w-0 break-words text-sm leading-6 ${
+                                  strong ? "text-neutral-900" : "text-ink-soft"
+                                }`}
                               >
-                                <SpeakerIcon
-                                  speaking={speakingLang === "en"}
-                                />
-                              </button>
-                            )}
-                          </div>
-                        ) : null;
+                                {text}
+                              </span>
 
-                        const chineseExampleBox = result.chineseExample ? (
-                          <div
-                            key="chinese-example"
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2.5 text-left"
-                          >
-                            <span className="min-w-0 break-words text-sm leading-6 text-neutral-500">
-                              {result.chineseExample}
-                            </span>
+                              {speechSupported && (
+                                <button
+                                  type="button"
+                                  onClick={() => speak(text, language)}
+                                  aria-label={insertValues(
+                                    t.vocabulary.detail.listenAriaLabel,
+                                    { text },
+                                  )}
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-soft shadow-sm transition active:scale-90"
+                                >
+                                  <SpeakerIcon
+                                    speaking={speakingLang === language}
+                                  />
+                                </button>
+                              )}
+                            </div>
+                          ) : null;
 
-                            {speechSupported && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  speak(result.chineseExample, "zh")
-                                }
-                                aria-label={
-                                  capture.result.playChineseAriaLabel
-                                }
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black/60 shadow-sm transition active:scale-90"
-                              >
-                                <SpeakerIcon
-                                  speaking={speakingLang === "zh"}
-                                />
-                              </button>
-                            )}
-                          </div>
-                        ) : null;
-
-                        return isLearningChinese
-                          ? [chineseExampleBox, englishExampleBox]
-                          : [englishExampleBox, chineseExampleBox];
+                        return [
+                          exampleBox(result.termExample, termLanguage, true),
+                          exampleBox(
+                            result.translationExample,
+                            translationLanguage,
+                            false,
+                          ),
+                        ];
                       })()}
                     </div>
                   </div>
@@ -1528,7 +1717,7 @@ function CaptureContent() {
           </section>
         )}
 
-        {!cameraActive && !imageData && error && (
+        {!fullScreen && !imageData && error && (
           <p
             role="alert"
             className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700"
@@ -1537,24 +1726,6 @@ function CaptureContent() {
           </p>
         )}
 
-        <canvas ref={canvasRef} className="hidden" />
-
-        <input
-          ref={takePhotoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
-
-        <input
-          ref={chooseImageInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          onChange={handleSelectedFile}
-          className="hidden"
-        />
       </div>
 
       {friendPickerOpen && (
@@ -1577,7 +1748,7 @@ function CaptureLoading() {
 
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-surface text-neutral-950">
-      <div className="flex items-center gap-2 text-sm text-neutral-500">
+      <div className="flex items-center gap-2 text-sm text-ink-soft">
         <SpinnerIcon />
         {t.common.loading}
       </div>

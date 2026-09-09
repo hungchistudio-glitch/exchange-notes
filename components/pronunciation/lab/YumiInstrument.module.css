@@ -1,0 +1,192 @@
+/*
+ * Yumi's calibration instrument.
+ *
+ * The visual difference between languages is a difference in what is being
+ * measured — a pitch contour, a nasal resonance, a length gate — and never
+ * a costume, a flag or a national ornament. Yumi is laboratory equipment
+ * that has been calibrated for a language, not a mascot dressed up as one.
+ *
+ * Everything here is deliberately quiet: one accent colour at low opacity,
+ * strokes under 2px, and no motion at all unless the coach is actually
+ * doing something. A HUD that is always animating stops being information
+ * and becomes wallpaper.
+ */
+
+.instrument {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--accent-amber);
+  opacity: 0.55;
+  transition: opacity 260ms ease-out;
+}
+
+.active {
+  opacity: 0.95;
+}
+
+.line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.faint {
+  opacity: 0.4;
+}
+
+/* ── Phoneme waveform (English) ─────────────────────────────────────── */
+
+.wave {
+  stroke-dasharray: 3 120;
+  stroke-dashoffset: 0;
+}
+
+.active .wave {
+  animation: waveTravel 2.4s linear infinite;
+  stroke-dasharray: 46 120;
+}
+
+@keyframes waveTravel {
+  from {
+    stroke-dashoffset: 166;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Pitch contour (Traditional Chinese) ────────────────────────────── */
+
+.contourDot {
+  fill: currentColor;
+}
+
+.active .contourDot {
+  animation: contourRide 2.6s ease-in-out infinite;
+}
+
+@keyframes contourRide {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  35% {
+    transform: translate(11px, -7px);
+  }
+  70% {
+    transform: translate(22px, 5px);
+  }
+}
+
+/* ── Syllable pulse (Spanish) ───────────────────────────────────────── */
+
+.pulseBar {
+  fill: currentColor;
+  transform-origin: center bottom;
+}
+
+.active .pulseBar {
+  animation: syllableBeat 1.6s ease-in-out infinite;
+}
+
+.active .pulseBar:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+
+.active .pulseBar:nth-of-type(3) {
+  animation-delay: 0.4s;
+}
+
+.active .pulseBar:nth-of-type(4) {
+  animation-delay: 0.6s;
+}
+
+@keyframes syllableBeat {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* ── Nasal resonance (French) ───────────────────────────────────────── */
+
+.resonanceArc {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.5;
+}
+
+.active .resonanceArc {
+  animation: resonanceBloom 3s ease-in-out infinite;
+}
+
+.active .resonanceArc:nth-of-type(2) {
+  animation-delay: 0.45s;
+}
+
+.active .resonanceArc:nth-of-type(3) {
+  animation-delay: 0.9s;
+}
+
+@keyframes resonanceBloom {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  45% {
+    opacity: 0.8;
+  }
+}
+
+/* ── Length gate (Italian) ──────────────────────────────────────────── */
+
+.gate {
+  fill: currentColor;
+}
+
+.active .gateLong {
+  animation: gateHold 2.2s ease-in-out infinite;
+}
+
+@keyframes gateHold {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  30%,
+  60% {
+    opacity: 1;
+  }
+}
+
+/*
+ * Reduced motion keeps the instrument and drops the movement.
+ *
+ * The shape is the information — a contour is a contour whether or not a
+ * dot travels along it — so nothing is hidden here, only stilled. Opacity
+ * is pinned mid-range so a paused animation cannot leave a stroke stuck at
+ * its faintest frame.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .instrument * {
+    animation: none !important;
+  }
+
+  .active .wave {
+    stroke-dasharray: none;
+  }
+
+  .active .pulseBar,
+  .active .resonanceArc,
+  .active .gateLong {
+    opacity: 0.7;
+  }
+}

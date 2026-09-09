@@ -1,12 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { toWidgetLanguage } from "@/lib/widget/yumiWidgetBridge";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
 import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
+import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
+import usePhonetics from "@/hooks/usePhonetics";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -17,8 +28,8 @@ import {
   type HomeReactionMood,
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
-import { getPronunciationData } from "@/lib/pronunciation";
-import { feedCookie, getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
+import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
+import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
@@ -34,6 +45,17 @@ type YumiHomeStageProps = {
 };
 
 const REACTION_DURATION_MS = 3900;
+
+/*
+ * A word arriving is a smaller event than a cookie being eaten, and its
+ * reaction is shorter to match — long enough to be seen, short enough that a
+ * reader saving three words in a row is not watching an animation queue.
+ *
+ * It also has to end before the reader's attention comes back to the screen:
+ * the save happens inside a sheet that covers Yumi, so most of this plays
+ * behind it and what is left when the sheet closes is the tail.
+ */
+const WORD_SAVED_REACTION_MS = 1100;
 const DANCE_DURATION_MS = 4200;
 const WELCOME_DURATION_MS = 3600;
 const LONELY_TEAR_DURATION_MS = 2600;
@@ -44,7 +66,6 @@ const MAX_PUPIL_OFFSET = 9;
 // missed), which would otherwise leave Yumi frozen in the intro pose
 // forever instead of returning to its always-on idle loop.
 const WAKE_FALLBACK_MS = 1900;
-const YUMI_DAILY_WORD_GOAL = 3;
 
 function todayKey() {
   const now = new Date();
@@ -163,6 +184,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const { learningLanguage } = useLearningLanguageContext();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
+  const dailyGoal = useDailyGoalWords();
 
   const [petState, setPetState] = useState<PetState | null>(null);
   const [isWaking, setIsWaking] = useState(true);
@@ -187,7 +209,7 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     onConsume: handleCookieConsumed,
   });
 
-  const context = computeHomeContext(items);
+  const context = useMemo(() => computeHomeContext(items), [items]);
   const steadyMood = computeSteadyHomeMood(context);
   const displayMood: HomeMood = introMood ?? steadyMood;
 
@@ -196,23 +218,39 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     [items],
   );
 
+  /*
+   * The readings the widget carries, looked up rather than computed.
+   *
+   * This used to derive them from pinyin-pro, which is what put 640KB of
+   * dictionary on the home screen's critical path — for a payload that is
+   * pushed to a native widget and never rendered here. It is a handful of
+   * words, batched with everything else on the screen, and the push below
+   * already re-runs whenever the payload changes.
+   */
+  const phoneticsFor = usePhonetics(
+    widgetWords.map((item) => ({
+      text: item.translation,
+      language: "zh-TW" as const,
+    })),
+  );
+
   const widgetWordPayloads = useMemo(
     () =>
       widgetWords.map((item) => {
-        const pronunciation = getPronunciationData({
-          english: item.word,
-          chinese: item.translation,
+        const reading = phoneticsFor({
+          text: item.translation,
+          language: "zh-TW",
         });
 
         return {
           id: item.id,
           englishWord: item.word.trim(),
           traditionalChineseWord: item.translation.trim(),
-          pinyin: pronunciation.pinyin ?? "",
-          zhuyin: pronunciation.zhuyin ?? "",
+          pinyin: reading?.pinyin ?? "",
+          zhuyin: reading?.zhuyin ?? "",
         };
       }),
-    [widgetWords],
+    [widgetWords, phoneticsFor],
   );
 
   const widgetWord = widgetWordPayloads[0] ?? null;
@@ -371,52 +409,67 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     setIsWaking(false);
   }
 
-  const cookies: Cookie[] = buildAvailableCookies(
-    items,
-    petState?.fed_word_ids ?? [],
+  /*
+   * Memoised because the identity matters as much as the work.
+   *
+   * A fresh array every render is a fresh prop for the tray below, so the
+   * tray re-rendered on every mood tick, blink and drag frame even when not
+   * one cookie had changed.
+   */
+  const fedWordIds = petState?.fed_word_ids;
+  const cookies: Cookie[] = useMemo(
+    () => buildAvailableCookies(items, fedWordIds ?? []),
+    [items, fedWordIds],
   );
 
-  async function persistFeed(cookie: Cookie) {
-    if (!petState) return;
-
-    try {
-      const supabase = createClient();
-      const updated = await feedCookie(supabase, petState, cookie.id);
-      setPetState(updated);
-    } catch {
-      // Optimistic UI already played the reaction.
-    }
-  }
+  const persistFeed = useFeedPersistence(petState, setPetState);
 
   // Yumi's eyes glance toward whichever cookie is currently being
   // dragged, clamped to a small max offset so it reads as a glance rather
   // than the pupil detaching from the eye.
-  function handleDragPoint(point: { x: number; y: number } | null) {
-    if (!point) {
-      setPupilOffset(null);
-      return;
-    }
+  const handleDragPoint = useCallback(
+    (point: { x: number; y: number } | null) => {
+      if (!point) {
+        setPupilOffset(null);
+        return;
+      }
 
-    const rect = figureRef.current?.getBoundingClientRect();
-    if (!rect) {
-      setPupilOffset(null);
-      return;
-    }
+      const rect = figureRef.current?.getBoundingClientRect();
+      if (!rect) {
+        setPupilOffset(null);
+        return;
+      }
 
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const dx = point.x - centerX;
-    const dy = point.y - centerY;
-    const distance = Math.hypot(dx, dy);
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = point.x - centerX;
+      const dy = point.y - centerY;
+      const distance = Math.hypot(dx, dy);
+      const next =
+        distance === 0
+          ? { x: 0, y: 0 }
+          : (() => {
+              const clamped = Math.min(distance, MAX_PUPIL_OFFSET);
 
-    if (distance === 0) {
-      setPupilOffset({ x: 0, y: 0 });
-      return;
-    }
+              return {
+                x: (dx / distance) * clamped,
+                y: (dy / distance) * clamped,
+              };
+            })();
 
-    const clamped = Math.min(distance, MAX_PUPIL_OFFSET);
-    setPupilOffset({ x: (dx / distance) * clamped, y: (dy / distance) * clamped });
-  }
+      /*
+       * Bail out when the eyes are already there.
+       *
+       * A fresh object on every report is a fresh render on every report, and
+       * this one is reported from a pointermove — so a drag that paused with
+       * the finger still down kept re-rendering the whole stage for nothing.
+       */
+      setPupilOffset((prev) =>
+        prev && prev.x === next.x && prev.y === next.y ? prev : next,
+      );
+    },
+    [],
+  );
 
   function handleCookieConsumed(cookie: Cookie) {
     setReaction(cookieHomeReaction(cookie.type));
@@ -427,22 +480,55 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
       REACTION_DURATION_MS,
     );
 
-    void persistFeed(cookie);
+    persistFeed(cookie);
   }
+
+  /*
+   * Yumi looks up when a word is saved, wherever it was saved from.
+   *
+   * A subscription rather than a prop: a word can now be kept from the search
+   * sheet, the dock, the deck console or a photo, and threading a callback
+   * from each of those down to whichever Yumi is mounted would put four
+   * layouts in the business of knowing about a mascot. See lib/pet/wordSaved.
+   *
+   * setState inside the subscriber, never in the effect body — this is
+   * synchronising with an external event, which is what the effect is for.
+   */
+  useEffect(() => {
+    return subscribeToWordSaved(({ duplicate }) => {
+      // Nothing was added, so there is nothing to be pleased about. A
+      // celebration for a word the reader already had reads as a bug.
+      if (duplicate) return;
+
+      setReaction("happy");
+
+      if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
+      reactionTimeoutRef.current = setTimeout(
+        () => setReaction(null),
+        WORD_SAVED_REACTION_MS,
+      );
+    });
+  }, []);
 
   const lines = getStatusLines(displayMood, context.wordsToday, copy);
 
   useEffect(() => {
     postYumiWidgetUpdate({
-      cookieCount: Math.min(context.wordsToday, YUMI_DAILY_WORD_GOAL),
-      cookieGoal: YUMI_DAILY_WORD_GOAL,
+      /*
+       * The goal the user set in Settings, not a constant. Yumi's tray was
+       * fixed at three words while the setting stored minutes nothing read;
+       * now the tray is what the setting visibly drives — pick ten and Yumi
+       * wants ten.
+       */
+      cookieCount: Math.min(context.wordsToday, dailyGoal),
+      cookieGoal: dailyGoal,
       englishWord: widgetWord?.englishWord ?? "",
       traditionalChineseWord: widgetWord?.traditionalChineseWord ?? "",
       pinyin: widgetWord?.pinyin ?? "",
       zhuyin: widgetWord?.zhuyin ?? "",
       words: widgetWordPayloads,
-      interfaceLanguage: language,
-      learningLanguage,
+      interfaceLanguage: toWidgetLanguage(language),
+      learningLanguage: toWidgetLanguage(learningLanguage),
       moodKey: displayMood,
       localizedText: {
         headline: lines.primary,
@@ -453,6 +539,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     });
   }, [
     context.wordsToday,
+    // Included so changing the goal in Settings pushes a fresh cookie target
+    // to the widget instead of leaving the old one on the Home Screen.
+    dailyGoal,
     displayMood,
     language,
     learningLanguage,
@@ -540,8 +629,8 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
               <ExchangeNotesMark
                 className={styles.logo}
                 pupilClassName={styles.pupil}
-                upperLidClassName={styles.upperLid}
-                lowerLidClassName={styles.lowerLid}
+                upperLidClassName={`yumi-blink-upper ${styles.upperLid}`}
+                lowerLidClassName={`yumi-blink-lower ${styles.lowerLid}`}
                 surfaceColor="#faf7f0"
                 highlightColor="#ffffff"
               />
@@ -562,10 +651,21 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
             onFeedStart={feeding.beginApproach}
             feedTargetRef={feedTargetRef}
             onDragPoint={handleDragPoint}
-            disabled={!petState || feeding.isFeeding}
+            /* Not disabled while Yumi is eating.
+               A mouthful now runs ~1.6s, and gating the whole tray on it made
+               feeding a queue: the tray went inert the moment a cookie left it
+               and stayed inert until the chewing finished, so cookies had to be
+               handed over one at a time. Yumi's sequence restarts cleanly on
+               each bite, and each cookie flies on its own, so there is nothing
+               left for the lock to protect. */
+            disabled={!petState}
             copy={cookieCopy}
             maxVisible={3}
             hideHint
+            /* The corner tray is three cookies wide and has a stage beside
+               it; opening the full inventory in place would push Yumi off
+               its own home screen. "+N more" stays a label here. */
+            expandable={false}
           />
         </div>
       </div>

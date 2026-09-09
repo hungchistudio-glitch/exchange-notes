@@ -1,5 +1,8 @@
 "use client";
 
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { getLanguage } from "@/lib/languages";
+import type { SpeechLanguage } from "@/lib/speech";
 import { useState } from "react";
 import {
   Check,
@@ -33,7 +36,7 @@ type StoryDetailSheetProps = {
   onSpeak: (
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) => void;
   onSave: () => void;
   onSend: () => void;
@@ -62,6 +65,15 @@ export default function StoryDetailSheet({
   onHide,
 }: StoryDetailSheetProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Above the early return: a hook cannot be called conditionally.
+  const { pair } = useDisplayLanguages();
+  /*
+   * The two languages the reader chose, and only those. A card that cannot
+   * lead in the language being learned is filtered out upstream rather than
+   * shown in a language nobody asked for.
+   */
+  const [primaryLanguage, secondaryLanguage] = pair;
 
   if (!card) {
     return (
@@ -155,7 +167,7 @@ export default function StoryDetailSheet({
                   type="button"
                   disabled
                   title={copy.quizSoonTitle}
-                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black/35"
+                  className="flex w-full cursor-not-allowed items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-ink-faint"
                 >
                   <Sparkles size={15} strokeWidth={1.8} />
                   {copy.quizSoon}
@@ -167,7 +179,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onOpenSource();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black transition hover:bg-black/[0.03]"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-black transition hover:bg-black/[0.03]"
                 >
                   <ExternalLink size={15} strokeWidth={1.8} />
                   {copy.openSource}
@@ -179,7 +191,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onShare();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-black transition hover:bg-black/[0.03]"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-black transition hover:bg-black/[0.03]"
                 >
                   <Share2 size={15} strokeWidth={1.8} />
                   {copy.shareStory}
@@ -191,7 +203,7 @@ export default function StoryDetailSheet({
                     setMenuOpen(false);
                     onHide();
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[13px] font-medium text-red-600 transition hover:bg-red-50"
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.8125rem] font-medium text-red-600 transition hover:bg-red-50"
                 >
                   <EyeOff size={15} strokeWidth={1.8} />
                   {copy.hideStory}
@@ -205,17 +217,17 @@ export default function StoryDetailSheet({
       <div className="space-y-5">
         <div>
           <div className="flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 text-[21px] font-bold leading-[1.25] tracking-[-0.02em] text-black">
-              {card.englishTitle}
+            <h3 className="min-w-0 flex-1 text-[1.3125rem] font-bold leading-[1.25] tracking-[-0.02em] text-black">
+              {(card.titles[primaryLanguage] ?? "")}
             </h3>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(titleEnKey, card.englishTitle, "en-US")
+                onSpeak(titleEnKey, (card.titles[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
               }
               aria-label={copy.readEnglishAriaLabel}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={15}
@@ -226,17 +238,17 @@ export default function StoryDetailSheet({
           </div>
 
           <div className="mt-2 flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[15px] font-medium leading-[1.6] text-black/60">
-              {card.chineseTitle}
+            <p className="min-w-0 flex-1 text-[0.9375rem] font-medium leading-[1.6] text-ink-soft">
+              {(card.titles[secondaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(titleZhKey, card.chineseTitle, "zh-TW")
+                onSpeak(titleZhKey, (card.titles[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
               }
               aria-label={copy.readChineseAriaLabel}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={15}
@@ -249,17 +261,17 @@ export default function StoryDetailSheet({
 
         <div className="space-y-2.5">
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[15px] leading-[1.7] text-black/75">
-              {card.englishSummary}
+            <p className="min-w-0 flex-1 text-[0.9375rem] leading-[1.7] text-ink-strong">
+              {(card.summaries[primaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(summaryEnKey, card.englishSummary, "en-US")
+                onSpeak(summaryEnKey, (card.summaries[primaryLanguage] ?? ""), getLanguage(primaryLanguage).speechTag)
               }
               aria-label={copy.readEnglishAriaLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={14}
@@ -272,17 +284,17 @@ export default function StoryDetailSheet({
           </div>
 
           <div className="flex items-start gap-2">
-            <p className="min-w-0 flex-1 text-[14px] leading-[1.7] text-black/50">
-              {card.chineseSummary}
+            <p className="min-w-0 flex-1 text-[0.875rem] leading-[1.7] text-ink-soft">
+              {(card.summaries[secondaryLanguage] ?? "")}
             </p>
 
             <button
               type="button"
               onClick={() =>
-                onSpeak(summaryZhKey, card.chineseSummary, "zh-TW")
+                onSpeak(summaryZhKey, (card.summaries[secondaryLanguage] ?? ""), getLanguage(secondaryLanguage).speechTag)
               }
               aria-label={copy.readChineseAriaLabel}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black/60 transition-transform active:scale-90"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-ink-soft transition-transform active:scale-90"
             >
               <Volume2
                 size={14}
@@ -300,16 +312,16 @@ export default function StoryDetailSheet({
           onClick={onOpenVocabulary}
           className="flex w-full items-center justify-between rounded-2xl bg-black/[0.035] px-4 py-3.5 text-left transition active:scale-[0.99]"
         >
-          <span className="min-w-0 truncate text-[13px] font-medium text-black/70">
+          <span className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-strong">
             {copy.keyWordsLabel.replace(
               "{count}",
               String(card.vocabulary.length)
             )}
             {card.vocabulary.length > 0 ? (
-              <span className="text-black/40">
+              <span className="text-ink-faint">
                 {" · "}
                 {card.vocabulary
-                  .map((item) => item.word)
+                  .map((item) => (item.texts[primaryLanguage] ?? ""))
                   .join(" · ")}
               </span>
             ) : null}
@@ -318,7 +330,7 @@ export default function StoryDetailSheet({
           <ChevronRight
             size={16}
             strokeWidth={1.8}
-            className="shrink-0 text-black/30"
+            className="shrink-0 text-ink-faint"
           />
         </button>
       </div>

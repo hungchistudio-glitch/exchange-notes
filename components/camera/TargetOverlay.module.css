@@ -1,0 +1,123 @@
+/* =========================================================
+   The target, and what it does while it is being read
+
+   Moved out of an inline <style> and into a module, which is the convention
+   MenuCamera.module.css set and the only place a reduced-motion block can
+   sensibly live.
+
+   Two things run during a read, and they are doing different jobs. The band
+   sweeping down the inside of the target is the one that answers "is this
+   thing working" from across a room — it was reported that the previous
+   perimeter light alone was not obvious enough. The light travelling the
+   edge is the quieter half: it says precisely which rectangle is being read,
+   which the band alone does not.
+
+   Both stay inside the target. A line crossing the whole viewfinder is ruled
+   out by the brief and would also be untrue — nothing is reading the rest of
+   the picture.
+
+   Timings live here, together, at the top.
+   ========================================================= */
+
+.target {
+  --edge-duration: 1600ms;
+  --band-duration: 1400ms;
+  --settle-duration: 200ms;
+
+  position: absolute;
+  transition: all var(--settle-duration) ease-out;
+}
+
+/* ---------- the sweeping band ---------- */
+
+/*
+ * Clipped to the target's own rounded rectangle, so the band cannot spill
+ * onto the picture around it.
+ */
+.bandClip {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 34%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 35%,
+    rgba(255, 255, 255, 0.26) 50%,
+    rgba(255, 255, 255, 0.1) 65%,
+    transparent 100%
+  );
+  animation: targetBand var(--band-duration) ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes targetBand {
+  from {
+    transform: translateY(-120%);
+  }
+  to {
+    transform: translateY(320%);
+  }
+}
+
+/* ---------- the light on the edge ---------- */
+
+.edge {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/*
+ * pathLength is normalised in the markup, so this one keyframe describes a
+ * wide target and a tall one identically — without it the light crawls
+ * around a big box and races around a small one.
+ */
+.edgeStroke {
+  animation: targetEdge var(--edge-duration) linear infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55));
+}
+
+@keyframes targetEdge {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---------- reduced motion ---------- */
+
+/*
+ * Nothing travels. The target still says it is being read — the edge goes
+ * solid and bright, which is a state change rather than movement — and the
+ * band, whose whole purpose is motion, is removed rather than left sitting
+ * as a stripe across the middle of the picture.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .target {
+    transition: none;
+  }
+
+  .band {
+    display: none;
+  }
+
+  .edgeStroke {
+    animation: none;
+    stroke-dasharray: none;
+    opacity: 0.9;
+  }
+}

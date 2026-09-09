@@ -53,42 +53,62 @@ export async function getOrCreatePetState(
   return created as PetState;
 }
 
-// Records that a word's cookie has been fed to Yumi. Read-modify-write is
-// fine here — feeding is a single-user, low-frequency, UI-driven action.
-export async function feedCookie(
-  supabase: SupabaseClient,
-  current: PetState,
-  wordId: string,
-): Promise<PetState> {
+/*
+ * Applies a feed locally, and only locally.
+ *
+ * Feeding is now continuous — a hand can put four cookies in Yumi's mouth
+ * inside a second — so the tray has to update from this, immediately, rather
+ * than from whatever the network eventually agrees to. Pure and idempotent:
+ * feeding the same word twice is the same state, which is what makes it safe
+ * to call from an optimistic path that may also be replayed.
+ */
+export function applyFedCookie(current: PetState, wordId: string): PetState {
   if (current.fed_word_ids.includes(wordId)) {
     return current;
   }
 
-  const nextFedIds = [...current.fed_word_ids, wordId];
   const now = new Date().toISOString();
 
+  return {
+    ...current,
+    fed_word_ids: [...current.fed_word_ids, wordId],
+    total_cookies_fed: current.total_cookies_fed + 1,
+    last_fed_at: now,
+    updated_at: now,
+  };
+}
+
+/*
+ * Pushes the whole accumulated feeding state to the row.
+ *
+ * This replaced a read-modify-write per cookie, which was correct only while
+ * feeding was one-at-a-time: two feeds started before either had returned both
+ * read the same snapshot, and the second write then erased the first — one
+ * word silently un-fed and the counter short by one. Writing the caller's
+ * already-accumulated state instead means a late write can only ever be
+ * redundant, never lossy, provided the caller serialises them (see
+ * useFeedPersistence).
+ */
+export async function saveFedProgress(
+  supabase: SupabaseClient,
+  state: PetState,
+): Promise<PetState> {
   const { data, error } = await supabase
     .from(TABLE)
     .update({
-      fed_word_ids: nextFedIds,
-      total_cookies_fed: current.total_cookies_fed + 1,
-      last_fed_at: now,
-      updated_at: now,
+      fed_word_ids: state.fed_word_ids,
+      total_cookies_fed: state.total_cookies_fed,
+      last_fed_at: state.last_fed_at,
+      updated_at: new Date().toISOString(),
     })
-    .eq("user_id", current.user_id)
+    .eq("user_id", state.user_id)
     .select("*")
     .single();
 
   if (error || !data) {
     // Persistence failed silently (e.g. table not migrated yet) — keep the
     // optimistic in-memory state so the interaction still feels alive.
-    return {
-      ...current,
-      fed_word_ids: nextFedIds,
-      total_cookies_fed: current.total_cookies_fed + 1,
-      last_fed_at: now,
-      updated_at: now,
-    };
+    return state;
   }
 
   return data as PetState;

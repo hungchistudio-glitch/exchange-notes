@@ -1,0 +1,303 @@
+/*
+ * Waking and standing down the Command Deck.
+ *
+ * The sequence is a single overlay above everything, and the mode itself
+ * flips underneath it while the veil is at its densest (see the COMMIT
+ * constants in contexts/InterfaceModeContext.tsx). That is the trick: the
+ * user never sees the standard surface become the deck, they see the deck
+ * being brought online and the finished thing is already behind it.
+ *
+ * The overlay does not take pointer events at any point. A transition you
+ * cannot tap through is a transition that can trap someone, and the brief is
+ * explicit that a scene has to be interruptible — tapping the other option
+ * mid-sequence has to work, so the veil is strictly something to look at.
+ *
+ * Only opacity, transform and filter animate here.
+ */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Scene 01–02: the room darkens, depth builds ---------- */
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% 46%,
+      rgba(18, 34, 66, 0.92) 0%,
+      rgba(6, 10, 20, 0.99) 62%
+    );
+}
+
+.entering .veil {
+  animation: veilRise 1150ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.leaving .veil {
+  animation: veilFall 800ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes veilRise {
+  0% {
+    opacity: 0;
+  }
+  /* Densest across the commit, so the shell underneath changes unseen. */
+  22%,
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes veilFall {
+  0% {
+    opacity: 0;
+  }
+  30%,
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Scene 03–04: the core, then its orbits ---------- */
+
+.core {
+  position: relative;
+  width: min(52vw, 15rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.coreLight {
+  position: absolute;
+  inset: 12%;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(127, 212, 255, 0.5) 0%,
+    rgba(127, 212, 255, 0.08) 52%,
+    transparent 72%
+  );
+}
+
+.entering .coreLight {
+  animation: coreIgnite 1150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.leaving .coreLight {
+  animation: coreDim 800ms ease both;
+}
+
+@keyframes coreIgnite {
+  0%,
+  16% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  46% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  72% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes coreDim {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  55% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+.ring {
+  position: absolute;
+  border-radius: 9999px;
+  border: 1px dashed rgba(127, 212, 255, 0.4);
+}
+
+.ringOuter {
+  inset: 0;
+}
+
+.ringInner {
+  inset: 24%;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: rgba(127, 212, 255, 0.6);
+}
+
+/* The two rings form one after the other, not together — a system bringing
+   itself up in order reads as deliberate; both at once reads as a spinner. */
+.entering .ringOuter {
+  animation: ringForm 1150ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.entering .ringInner {
+  animation: ringForm 1150ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.leaving .ringOuter,
+.leaving .ringInner {
+  animation: ringRetract 800ms ease both;
+}
+
+@keyframes ringForm {
+  0%,
+  22% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-40deg);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08) rotate(12deg);
+  }
+}
+
+@keyframes ringRetract {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.42) rotate(28deg);
+  }
+}
+
+/* ---------- Scene 06: the six systems come online in order ---------- */
+
+.nodes {
+  position: absolute;
+  inset: 0;
+}
+
+.node {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--angle));
+}
+
+.nodeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--cosmic-cyan, #7fd4ff);
+  transform: translateY(-46%);
+  opacity: 0;
+}
+
+.entering .nodeDot {
+  /* Staggered by the component, one system at a time. */
+  animation: nodeOnline 620ms cubic-bezier(0.22, 1, 0.36, 1)
+    var(--node-delay) both;
+}
+
+.leaving .nodeDot {
+  animation: nodeOffline 340ms ease var(--node-delay) both;
+}
+
+@keyframes nodeOnline {
+  0% {
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(127, 212, 255, 0);
+  }
+  40% {
+    opacity: 1;
+    box-shadow: 0 0 12px 3px rgba(127, 212, 255, 0.55);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(127, 212, 255, 0);
+  }
+}
+
+@keyframes nodeOffline {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- Scene 07: one pulse, and the deck is live ---------- */
+
+.pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid rgba(127, 212, 255, 0.55);
+  opacity: 0;
+}
+
+.entering .pulse {
+  animation: deckPulse 340ms cubic-bezier(0.2, 0.9, 0.3, 1) 760ms both;
+}
+
+@keyframes deckPulse {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+/*
+ * Reduced motion.
+ *
+ * The whole staged sequence is exactly the kind of thing motion sensitivity
+ * reacts to, so it never runs — contexts/InterfaceModeContext.tsx commits the
+ * mode instantly and this component is not mounted at all. These rules exist
+ * only to cover a preference changed mid-flight, where the honest answer is
+ * to stop moving and get out of the way.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .stage * {
+    animation: none !important;
+  }
+
+  .veil {
+    opacity: 0;
+  }
+}

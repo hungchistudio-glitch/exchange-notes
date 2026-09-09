@@ -1,6 +1,8 @@
 "use client";
 
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import type { MouseEvent } from "react";
+import Image from "next/image";
 import { ZoomIn } from "lucide-react";
 
 import type { TranslationDictionary } from "@/lib/i18n/types";
@@ -54,8 +56,16 @@ export default function FeaturedStoryCard({
   onToggleAudio,
   onExploreImage,
 }: FeaturedStoryCardProps) {
+  const { pair } = useDisplayLanguages();
+  /*
+   * The two languages the reader chose, and only those. A card that cannot
+   * lead in the language being learned is filtered out upstream rather than
+   * shown in a language nobody asked for.
+   */
+  const [primaryLanguage, secondaryLanguage] = pair;
+
   const accent = categoryAccent(card.category);
-  const caption = [card.englishCaption, card.chineseCaption]
+  const caption = [(card.captions[primaryLanguage] ?? ""), (card.captions[secondaryLanguage] ?? "")]
     .filter(Boolean)
     .join(" · ");
 
@@ -78,24 +88,38 @@ export default function FeaturedStoryCard({
         // fixed ~38% share of the card rather than a locked aspect ratio,
         // since summary length varies. Placeholder fill + opacity fade-in
         // on load avoids a layout jump without needing real blurhash data.
-        <img
-          src={card.imageUrl}
-          alt={card.englishCaption ?? card.englishTitle}
-          loading="eager"
-          onClick={onOpen}
-          onLoad={(event) => {
-            event.currentTarget.style.opacity = "1";
-          }}
-          className="h-[165px] w-full cursor-pointer object-cover opacity-0 transition-opacity duration-500"
+        // `fill` needs a positioned box of its own, which is also where the
+        // placeholder colour now lives. It used to sit on the image itself,
+        // where opacity-0 made it invisible until the moment it was covered by
+        // the loaded image — so the fill it describes never actually showed.
+        <div
+          className="relative h-[165px] w-full"
           style={{ backgroundColor: DISCOVER_COLORS.divider }}
-        />
+        >
+          <Image
+            src={card.imageUrl}
+            alt={(card.captions[primaryLanguage] ?? "") ?? (card.titles[primaryLanguage] ?? "")}
+            fill
+            // Full-bleed inside the card, which is itself capped at the
+            // reading column, so one breakpoint is enough.
+            sizes="(max-width: 768px) 100vw, 768px"
+            // This is the LCP element on Discover. priority preloads it
+            // instead of leaving it to be discovered during layout.
+            priority
+            onClick={onOpen}
+            onLoad={(event) => {
+              event.currentTarget.style.opacity = "1";
+            }}
+            className="cursor-pointer object-cover opacity-0 transition-opacity duration-500"
+          />
+        </div>
       ) : (
         <EditorialMark />
       )}
 
       {card.imageUrl && caption ? (
         <p
-          className="px-7 pt-3 text-[11.5px] leading-[1.5]"
+          className="px-7 pt-3 text-[0.71875rem] leading-[1.5]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
           {caption}
@@ -106,7 +130,7 @@ export default function FeaturedStoryCard({
         <button
           type="button"
           onClick={handleExploreImage}
-          className="mt-2 flex items-center gap-1.5 px-7 text-[12px] font-medium transition-opacity active:opacity-70"
+          className="mt-2 flex items-center gap-1.5 px-7 text-[0.75rem] font-medium transition-opacity active:opacity-70"
           style={{ color: accent }}
         >
           <ZoomIn size={13} strokeWidth={1.8} />
@@ -133,14 +157,14 @@ export default function FeaturedStoryCard({
       >
         <div className="flex items-center gap-2.5">
           <span
-            className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+            className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em]"
             style={{ color: accent }}
           >
             {categoryText}
           </span>
 
           <span
-            className="text-[11px]"
+            className="text-[0.6875rem]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {formattedTime}
@@ -149,32 +173,32 @@ export default function FeaturedStoryCard({
 
         {/* Bilingual headline block */}
         <h2
-          className="mt-4 line-clamp-3 text-[30px] font-bold leading-[1.16] tracking-[-0.02em]"
+          className="mt-4 line-clamp-3 text-[1.875rem] font-bold leading-[1.16] tracking-[-0.02em]"
           style={{ color: DISCOVER_COLORS.text }}
         >
-          {card.englishTitle}
+          {(card.titles[primaryLanguage] ?? "")}
         </h2>
 
         <p
-          className="mt-2.5 text-[16px] font-medium leading-[1.55] tracking-[0.005em]"
+          className="mt-2.5 text-[1rem] font-medium leading-[1.55] tracking-[0.005em]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseTitle}
+          {(card.titles[secondaryLanguage] ?? "")}
         </p>
 
         {/* Short summary */}
         <p
-          className="mt-4 line-clamp-2 text-[15px] leading-[1.6]"
+          className="mt-4 line-clamp-2 text-[0.9375rem] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.englishSummary}
+          {(card.summaries[primaryLanguage] ?? "")}
         </p>
 
         <p
-          className="mt-1 line-clamp-1 text-[13.5px] leading-[1.6]"
+          className="mt-1 line-clamp-1 text-[0.84375rem] leading-[1.6]"
           style={{ color: DISCOVER_COLORS.textSecondary }}
         >
-          {card.chineseSummary}
+          {(card.summaries[secondaryLanguage] ?? "")}
         </p>
       </div>
 

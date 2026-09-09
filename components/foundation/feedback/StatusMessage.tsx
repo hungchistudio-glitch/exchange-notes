@@ -9,7 +9,7 @@ type StatusMessageProps = {
 };
 
 const toneClasses: Record<StatusMessageTone, string> = {
-  info: "bg-white text-black/65 border border-black/[0.06]",
+  info: "bg-white text-ink-soft border border-black/[0.06]",
   success: "bg-emerald-50 text-emerald-800 border border-emerald-100",
   danger: "bg-red-50 text-red-700 border border-red-100",
 };

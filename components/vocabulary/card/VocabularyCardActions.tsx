@@ -31,7 +31,7 @@ function VocabularyCardActions({
       <AppButton
         variant={mastered ? "secondary" : "primary"}
         size="md"
-        className="rounded-full h-11 text-[14px] font-semibold tracking-[-0.01em] shadow-[0_4px_12px_rgba(0,0,0,.06)]"
+        className="rounded-full h-11 text-[0.875rem] font-semibold tracking-[-0.01em] shadow-[0_4px_12px_rgba(0,0,0,.06)]"
         disabled={updating}
         onClick={onToggleMastered}
       >

@@ -1,4 +1,3 @@
-import { getPronunciationData } from "@/lib/pronunciation";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import type { Cookie, CookieType, YumiMood } from "./types";
@@ -13,21 +12,35 @@ export function cookieTypeForIndex(index: number): CookieType {
   return COOKIE_CYCLE[index % COOKIE_CYCLE.length];
 }
 
+/** The placeholder a zhuyin cookie wears until its reading is known. */
+export const ZHUYIN_GLYPH_FALLBACK = "ㄅ";
+
+/*
+ * The first zhuyin symbol of a reading.
+ *
+ * Split out because the reading no longer arrives with the cookie. It used to
+ * be computed here from pinyin-pro, which put 640KB of dictionary on the
+ * critical path of the home and vocabulary screens to draw one character on a
+ * biscuit; the tray looks the reading up now, through the same batched request
+ * every word card already makes, and calls this with the answer.
+ */
+export function zhuyinGlyph(zhuyin: string | null | undefined): string {
+  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
+  const symbol = [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char));
+
+  return symbol ?? ZHUYIN_GLYPH_FALLBACK;
+}
+
 // The cookie's actual glyph — the real first letter of the learned English
-// word, or the real first Zhuyin symbol from its Chinese reading (computed
-// locally via pinyin-pro/pinyin-to-zhuyin, no network/Gemini call) — so
-// each cookie represents a genuine piece of that word, not a random shape.
+// word, or the real first Zhuyin symbol from its Chinese reading — so each
+// cookie represents a genuine piece of that word, not a random shape.
 function glyphForCookie(item: VocabularyItem, type: CookieType): string {
   if (type === "letter") {
     const letter = item.word.trim().charAt(0).toUpperCase();
     return letter || "?";
   }
 
-  const { zhuyin } = getPronunciationData({ chinese: item.translation });
-  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
-  const symbol = [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char));
-
-  return symbol ?? "ㄅ";
+  return ZHUYIN_GLYPH_FALLBACK;
 }
 
 export type GrowthStage = 0 | 1 | 2 | 3;
@@ -111,15 +124,6 @@ export function computeWordStreak(items: VocabularyItem[]): WordStreak {
 
   return { currentStreak, longestStreak, addedToday };
 }
-
-export function wordsAddedToday(items: VocabularyItem[]): number {
-  const todayKey = toLocalDateKey(new Date());
-
-  return items.filter(
-    (item) => toLocalDateKey(new Date(item.created_at)) === todayKey,
-  ).length;
-}
-
 export function daysSince(dateIso: string | null): number {
   if (!dateIso) return Infinity;
 
@@ -167,9 +171,22 @@ export function cookieReactionMood(type: CookieType): YumiMood {
   }
 }
 
-// Builds the full earned-order cookie list (oldest word first) so a
-// cookie's shape/type stays stable regardless of feed order, then filters
-// down to the ones not yet fed to Yumi.
+/*
+ * Builds the full earned-order cookie list (oldest word first) so a cookie's
+ * shape/type stays stable regardless of feed order, then filters down to the
+ * ones not yet fed to Yumi.
+ *
+ * Two things here are about cost rather than about cookies.
+ *
+ * The fed ones are dropped before the cookie is built, not after. It used to
+ * map first and filter second, which meant every word Yumi had already eaten
+ * still had a glyph computed for it — the longer you played, the more work the
+ * tray did for cookies nobody would ever see. The index the type cycles on
+ * still comes from the full earned order, so what a surviving cookie looks
+ * like is unchanged.
+ *
+ * And the glyph is resolved on first read rather than up front. See below.
+ */
 export function buildAvailableCookies(
   items: VocabularyItem[],
   fedWordIds: string[],
@@ -180,16 +197,94 @@ export function buildAvailableCookies(
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
 
-  return sorted
-    .map((item, index) => {
-      const type = cookieTypeForIndex(index);
+  const todayKey = toLocalDateKey(new Date());
+  const now = Date.now();
+  const cookies: Cookie[] = [];
 
-      return {
-        id: item.id,
-        word: item.word,
-        type,
-        glyph: glyphForCookie(item, type),
-      };
-    })
-    .filter((cookie) => !fedSet.has(cookie.id));
+  sorted.forEach((item, index) => {
+    if (fedSet.has(item.id)) return;
+
+    cookies.push(buildCookie(item, cookieTypeForIndex(index), todayKey, now));
+  });
+
+  return cookies;
+}
+
+/*
+ * One cookie, with its glyph deferred.
+ *
+ * `glyph` is a getter, and that is the point rather than a flourish: a zhuyin
+ * glyph costs a dictionary conversion of the word's Chinese reading, and this
+ * list is built for the whole library while the tray shows three of them on
+ * the home screen and eight on the vocabulary page. Computing all of them
+ * eagerly was 12.8ms per call at 300 words — on every render of either screen,
+ * including every frame of a drag — to produce a few characters.
+ *
+ * Read once, kept. Consumers see a plain `string` property and need to know
+ * none of this; the only thing that would defeat it is spreading a cookie into
+ * a new object, which would evaluate every glyph. Nothing does, and there is
+ * no reason to start.
+ */
+function buildCookie(
+  item: VocabularyItem,
+  type: CookieType,
+  todayKey: string,
+  now: number,
+): Cookie {
+  let glyph: string | null = null;
+
+  return {
+    id: item.id,
+    word: item.word,
+    // What the tray looks the reading up from, for a zhuyin cookie.
+    translation: item.translation,
+    type,
+    get glyph() {
+      glyph ??= glyphForCookie(item, type);
+      return glyph;
+    },
+    status: item.status,
+    isNew: toLocalDateKey(new Date(item.created_at)) === todayKey,
+    reviewDue: Boolean(
+      item.last_reviewed_at
+        && item.next_review_at
+        && new Date(item.next_review_at).getTime() <= now,
+    ),
+  };
+}
+
+/*
+ * What colour a cookie is, once Cosmic Mode has repainted it as a Learning
+ * Core. Presentation, but not arbitrary presentation — which is why it lives
+ * next to the thing it reads rather than inside a stylesheet.
+ *
+ * Four tones, resolved in order, and the order is the point: a core wears the
+ * single most useful thing its word currently has to say, not a blend of
+ * everything true about it.
+ *
+ *   mastered  gold. The rarest state and the one worth celebrating, so it
+ *             outranks everything else a mastered word could also be.
+ *   due       violet. The one tone that is a request: this word has been
+ *             practised before, its return is overdue, and dragging it onto
+ *             Yumi is the answer.
+ *   learning  cyan, matching the colour the rest of Cosmic Mode uses for a
+ *             system that is live.
+ *   new       blue, and the resting state of the tray.
+ *
+ * The tone is named for the state rather than the hue on purpose. A palette
+ * whose values are called "blue" and "gold" invites the next change to pick a
+ * colour first and find a meaning for it afterwards, which is precisely how a
+ * semantic system stops being one.
+ *
+ * Deliberately not keyed on letter/zhuyin. That split decides the glyph, and
+ * a palette that repeated it would spend all four hues saying something the
+ * symbol in the middle of the core already says perfectly well.
+ */
+export type CoreTone = "mastered" | "due" | "learning" | "new";
+
+export function cosmicCoreTone(cookie: Cookie): CoreTone {
+  if (cookie.status === "mastered") return "mastered";
+  if (cookie.reviewDue) return "due";
+  if (cookie.status === "learning") return "learning";
+  return "new";
 }

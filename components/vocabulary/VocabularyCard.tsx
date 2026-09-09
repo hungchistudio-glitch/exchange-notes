@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback } from "react";
 
 import { Card } from "@/components/foundation-legacy";
 import VocabularySelection from "@/components/vocabulary/VocabularySelection";
@@ -9,6 +9,7 @@ import VocabularyCardActions from "@/components/vocabulary/card/VocabularyCardAc
 import VocabularyCardDetails from "@/components/vocabulary/card/VocabularyCardDetails";
 import VocabularyCompactHeader from "@/components/vocabulary/card/VocabularyCompactHeader";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { vocabularyImageUrl } from "@/lib/media/imageUrl";
 
 import type { InteractionType } from "@/lib/vocabulary/helpers";
 import type {
@@ -49,10 +50,28 @@ function VocabularyCard({
   onInteract,
 }: VocabularyCardProps) {
   const { t } = useTranslation();
-  useEffect(() => {
-    onInteract(item, "view");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id]);
+  const cardImage = vocabularyImageUrl(item);
+
+  /*
+   * A card no longer counts a view merely for existing.
+   *
+   * It used to, on mount, and that was the single most expensive thing the
+   * vocabulary screen did: recordInteraction reads the whole interaction
+   * map, parses it, edits one field and writes it back, synchronously. With
+   * 388 saved words that is 388 read-parse-stringify-write cycles on the
+   * main thread — measured at 439ms of solid blocking on a desktop, and
+   * roughly 45MB of JSON processed. It grows with the square of the
+   * library, so it gets worse for exactly the readers who use the app most.
+   *
+   * And it bought nothing. The count went up by one for *every* word every
+   * time the list was opened, so it was very nearly the same number on
+   * every row — no signal, and a mild bias towards older words, inside a
+   * relevance sort that weights it (useVisibleVocabularyItems).
+   *
+   * The views that mean something are still recorded: opening the details,
+   * and opening the detail sheet, both below. Those are a reader choosing
+   * one word.
+   */
 
   const toggleDetails = useCallback(() => {
     onInteract(item, "view");
@@ -104,10 +123,17 @@ function VocabularyCard({
           }}
           className="group block w-full cursor-pointer text-left transition active:scale-[0.995]"
         >
-          {viewMode === "cards" && item.image_url && (
+          {/*
+            The card derivative, not the retained source. A vocabulary list
+            that decoded a 2048px photograph per row is a list that stutters
+            on the way down — vocabularyImageUrl picks the small one, and
+            resolves a legacy row's public URL through the same signing
+            route so a word saved months ago still renders.
+          */}
+          {viewMode === "cards" && cardImage && (
             <div
               className="aspect-[16/9] w-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${item.image_url})` }}
+              style={{ backgroundImage: `url(${cardImage})` }}
               role="img"
               aria-label={item.word}
             />

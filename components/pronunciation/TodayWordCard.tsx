@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -17,10 +18,12 @@ import {
 } from "react";
 
 import ExchangeNotesGlyph from "@/components/ui/ExchangeNotesGlyph";
-import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import { getPronunciationData } from "@/lib/pronunciation";
+import usePhonetics from "@/hooks/usePhonetics";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { speakText, stopSpeech } from "@/lib/pronunciation/playback";
 import type { VocabularyItem } from "@/lib/types/app";
 import {
@@ -43,6 +46,11 @@ const DECK_ACCENTS = [
   "145 177 169",
   "173 177 185",
 ] as const;
+
+// Same reason as BottomNavigation: keeps React quiet during server rendering
+// while still writing before paint once hydrated, which is the entire point.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function wrapIndex(index: number, count: number) {
   if (count <= 0) return 0;
@@ -114,7 +122,8 @@ function DeckWordCard({
   tone,
   copy,
   vocabularyCopy,
-  isLearningChinese,
+  learningLanguage,
+  supportLanguage,
 }: {
   item: VocabularyItem;
   index: number;
@@ -123,20 +132,38 @@ function DeckWordCard({
   tone: CardTone;
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
-  isLearningChinese: boolean;
+  learningLanguage: LanguageCode;
+  supportLanguage: LanguageCode;
 }) {
   const word = item.word?.trim() || copy.untitledWord;
   const translation = item.translation?.trim() || "";
-  const pronunciation = getPronunciationData({
-    english: word,
-    chinese: translation,
+  /*
+   * Both readings on this card, looked up together.
+   *
+   * They used to be computed from pinyin-pro, which is what carried 640KB of
+   * dictionary onto the home screen — this card is on it. One batched request
+   * per language answers them, cached for the session and mirrored to the
+   * device, so it is a round trip once and instant afterwards.
+   */
+  const phoneticsFor = usePhonetics([
+    { text: translation, language: "zh-TW" as const },
+  ]);
+  const pronunciation = phoneticsFor({
+    text: translation,
+    language: "zh-TW",
   });
-  const primaryWord = isLearningChinese
-    ? translation || word
-    : word;
-  const secondaryWord = isLearningChinese
-    ? word
-    : translation;
+  /*
+   * The row records its own two languages, so which side leads is read from
+   * it rather than from a yes/no about Chinese — a question with no answer
+   * for a word saved under a different pairing.
+   */
+  const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
+  const sidePhoneticsFor = usePhonetics([
+    { text: sides.primary.text, language: sides.primary.language },
+    { text: sides.secondary.text, language: sides.secondary.language },
+  ]);
+  const primaryWord = sides.primary.text || word;
+  const secondaryWord = sides.secondary.text;
   const primaryWordLength = Array.from(primaryWord).length;
   const primaryWordSize = primaryWordLength >= 20
     ? "extra-long"
@@ -201,70 +228,48 @@ function DeckWordCard({
             <p className={styles.secondaryWord}>{secondaryWord}</p>
           ) : null}
           <p className={styles.phonetic}>
-            {pronunciation.pinyin || pronunciation.zhuyin || "\u00a0"}
+            {pronunciation?.pinyin || pronunciation?.zhuyin || "\u00a0"}
           </p>
         </div>
 
+        {/*
+          One button per side, each showing whatever annotation its own
+          language has: zhuyin under Chinese, the word itself under a
+          language whose spelling already tells you how to say it. The
+          labels used to be two dictionary keys named after two languages.
+        */}
         <div className={styles.soundGrid}>
-          <button
-            type="button"
-            disabled={!interactive}
-            tabIndex={interactive ? 0 : -1}
-            onClick={() => speakText(
-              isLearningChinese ? translation : word,
-              isLearningChinese ? "zh-TW" : "en-US",
-            )}
-            aria-label={
-              isLearningChinese
-                ? `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
-                : `${copy.englishPronunciation}: ${word}`
-            }
-            className={styles.soundButton}
-          >
-            <span className={styles.soundCopy}>
-              <span className={styles.soundLabel}>
-                {isLearningChinese ? copy.zhuyin : copy.englishPronunciation}
-              </span>
-              <span
-                className={styles.soundValue}
-                data-script={isLearningChinese ? "zhuyin" : "english"}
-              >
-                {isLearningChinese
-                  ? pronunciation.zhuyin || translation
-                  : word}
-              </span>
-            </span>
-          </button>
+          {[sides.primary, sides.secondary].map((side) => {
+            const language = getLanguage(side.language);
+            const phonetics = sidePhoneticsFor({
+              text: side.text,
+              language: side.language,
+            });
+            const annotation = phonetics?.zhuyin || side.text;
+            const label = language.endonym;
 
-          <button
-            type="button"
-            disabled={!interactive || !secondaryWord}
-            tabIndex={interactive ? 0 : -1}
-            onClick={() => speakText(
-              isLearningChinese ? word : translation,
-              isLearningChinese ? "en-US" : "zh-TW",
-            )}
-            aria-label={
-              isLearningChinese
-                ? `${copy.englishPronunciation}: ${word}`
-                : `${copy.zhuyin}: ${pronunciation.zhuyin || translation}`
-            }
-            className={styles.soundButton}
-          >
-            <span className={styles.soundCopy}>
-              <span className={styles.soundLabel}>
-                {isLearningChinese ? copy.englishPronunciation : copy.zhuyin}
-              </span>
-              <span
-                className={styles.soundValue}
-                data-script={isLearningChinese ? "english" : "zhuyin"}
+            return (
+              <button
+                key={side.language}
+                type="button"
+                disabled={!interactive || !side.text}
+                tabIndex={interactive ? 0 : -1}
+                onClick={() => speakText(side.text, language.speechTag)}
+                aria-label={`${label}: ${annotation}`}
+                className={styles.soundButton}
               >
-                {isLearningChinese
-                  ? word
-                  : pronunciation.zhuyin || translation}
-              </span>
-            </span>
-          </button>
+                <span className={styles.soundCopy}>
+                  <span className={styles.soundLabel}>{label}</span>
+                  <span
+                    className={styles.soundValue}
+                    data-script={phonetics?.zhuyin ? "zhuyin" : "english"}
+                  >
+                    {annotation}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <footer className={styles.cardFooter}>
@@ -335,19 +340,17 @@ export function TodayWordDeck({
   items,
   copy,
   vocabularyCopy,
-  isLearningChinese,
+  learningLanguage,
+  supportLanguage,
 }: {
   items: VocabularyItem[];
   copy: TodayWordCopy;
   vocabularyCopy: VocabularyCopy;
-  isLearningChinese: boolean;
+  learningLanguage: LanguageCode;
+  supportLanguage: LanguageCode;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-
-  /** Set while the scroll position is being reset, so the reset is not read
-   *  back as a user swipe. */
-  const recentringRef = useRef(false);
 
   const window_ = useMemo(() => {
     if (items.length === 0) return [];
@@ -366,68 +369,104 @@ export function TodayWordDeck({
     return slot?.getBoundingClientRect().width ?? 0;
   }
 
-  /** Puts the middle slot under the snap point without animating. */
+  /**
+   * Puts the middle slot under the snap point without animating.
+   *
+   * Needs no guard against being read back as a swipe. The settle below only
+   * acts on a landing that is off centre, and this lands exactly on centre by
+   * construction, so the event it provokes is already a no-op.
+   *
+   * There used to be a flag here cleared inside requestAnimationFrame, which
+   * is a promise the browser does not always keep: rAF is deferred in a
+   * background tab and can be throttled under low power. Any frame it skipped
+   * left the flag raised and every later swipe ignored — the deck simply
+   * stopped moving. An invariant cannot get stuck the way a flag can.
+   */
   function centreScroll() {
     const scroller = scrollerRef.current;
     const width = slotWidth();
     if (!scroller || !width) return;
 
-    recentringRef.current = true;
     scroller.scrollLeft = width * WINDOW_RADIUS;
-
-    // Cleared on the next frame: the scroll event this triggers has to be
-    // ignored, but nothing after it should be.
-    requestAnimationFrame(() => {
-      recentringRef.current = false;
-    });
   }
 
-  useEffect(() => {
+  /*
+   * Recentring belongs here, after React has committed the window built from
+   * the new activeIndex and before the browser paints.
+   *
+   * It used to run inline right after setActiveIndex, which cannot work:
+   * setState is asynchronous, so scrollLeft was reset while the DOM still held
+   * the previous window. For one frame the middle slot showed the card the
+   * swipe had just left, and only then did the correct one replace it — the
+   * flash of the previous card. A layout effect puts both in the same paint,
+   * which is what the old inline comment assumed was already true.
+   *
+   * Width can still be zero on the very first pass if the slots have not been
+   * laid out; a frame later they have.
+   */
+  useIsomorphicLayoutEffect(() => {
+    if (items.length === 0) return;
+
+    if (slotWidth()) {
+      centreScroll();
+      return;
+    }
+
     const frame = requestAnimationFrame(centreScroll);
     return () => cancelAnimationFrame(frame);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.length]);
+  }, [activeIndex, items.length]);
 
   /**
    * Moves the window to wherever the swipe settled.
    *
-   * Bound to scroll rather than a frame loop, and it only acts once the
-   * scroller has come to rest — so a swipe runs entirely without JavaScript,
-   * and this does its work afterwards.
+   * Nothing runs during the swipe itself — the scroller snaps natively — and
+   * this does its work once it has come to rest.
+   *
+   * "At rest" comes from scrollend where the browser reports it, which is
+   * exact and immediate. The 120ms quiet period is only the fallback for
+   * engines without it, and it was always a guess: too short and a slow finger
+   * settles the deck mid-swipe, too long and the counter lags behind the card.
    */
   useEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller || items.length === 0) return;
+    const node = scrollerRef.current;
+    if (!node || items.length === 0) return;
 
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    function handleScroll() {
-      if (recentringRef.current) return;
+    const settle = () => {
+      const width = slotWidth();
+      if (!width) return;
+
+      const landed = Math.round(node.scrollLeft / width);
+      const moved = landed - WINDOW_RADIUS;
+      if (moved === 0) return;
+
+      // Only the window moves here. The scroll returns to centre in the layout
+      // effect above, once the DOM actually holds the new window.
+      setActiveIndex((current) => wrapIndex(current + moved, items.length));
+    };
+
+    const hasScrollEnd = "onscrollend" in window;
+
+    const handleScrollEnd = () => settle();
+
+    const handleScroll = () => {
       if (settleTimer) clearTimeout(settleTimer);
 
-      settleTimer = setTimeout(() => {
-        const width = slotWidth();
-        if (!width || !scroller) return;
+      settleTimer = setTimeout(settle, 120);
+    };
 
-        const landed = Math.round(scroller.scrollLeft / width);
-        const moved = landed - WINDOW_RADIUS;
-        if (moved === 0) return;
-
-        // The window shifts by however far the swipe travelled and the scroll
-        // returns to centre. The card under the snap point is the same one
-        // either way, so the reset cannot be seen.
-        setActiveIndex((current) => wrapIndex(current + moved, items.length));
-        centreScroll();
-      }, 120);
+    if (hasScrollEnd) {
+      node.addEventListener("scrollend", handleScrollEnd, { passive: true });
+    } else {
+      node.addEventListener("scroll", handleScroll, { passive: true });
     }
 
-    scroller.addEventListener("scroll", handleScroll, { passive: true });
-
     return () => {
-      scroller.removeEventListener("scroll", handleScroll);
+      node.removeEventListener("scrollend", handleScrollEnd);
+      node.removeEventListener("scroll", handleScroll);
       if (settleTimer) clearTimeout(settleTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
   useEffect(() => () => stopSpeech(), []);
@@ -464,7 +503,8 @@ export function TodayWordDeck({
                   tone={toneForCard(index)}
                   copy={copy}
                   vocabularyCopy={vocabularyCopy}
-                  isLearningChinese={isLearningChinese}
+                  learningLanguage={learningLanguage}
+      supportLanguage={supportLanguage}
                 />
               </div>
             </div>
@@ -507,7 +547,7 @@ export function TodayWordDeck({
 
 export default function TodayWordCard() {
   const { t } = useTranslation();
-  const { isLearningChinese } = useLearningLanguageContext();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -556,7 +596,8 @@ export default function TodayWordCard() {
       items={items}
       copy={t.home.todayWord}
       vocabularyCopy={t.vocabulary}
-      isLearningChinese={isLearningChinese}
+      learningLanguage={learningLanguage}
+      supportLanguage={supportLanguage}
     />
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
+import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
   COLLECTION_EMOJI_PRESETS,
@@ -168,9 +170,8 @@ export default function CollectionPickerSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center"
-    >
+    <OverlayPortal>
+      <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden overscroll-none">
       <button
         type="button"
         aria-label={copy.close}
@@ -199,7 +200,7 @@ export default function CollectionPickerSheet({
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
               {copy.title}
             </p>
             <h2 className="mt-0.5 truncate text-lg font-bold">{item.word}</h2>
@@ -209,7 +210,7 @@ export default function CollectionPickerSheet({
             type="button"
             onClick={motion.requestClose}
             aria-label={copy.close}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-black/50 hover:bg-black/[0.04]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-soft hover:bg-black/[0.04]"
           >
             ✕
           </button>
@@ -221,15 +222,15 @@ export default function CollectionPickerSheet({
           </p>
         )}
 
-        <div className="mt-4 max-h-[45vh] space-y-2 overflow-y-auto">
+        <div className="mt-4 max-h-[45dvh] touch-pan-y space-y-2 overflow-y-auto overscroll-contain">
           {loading && (
-            <p className="py-6 text-center text-sm text-black/40">
+            <p className="py-6 text-center text-sm text-ink-faint">
               {t.common.loading}
             </p>
           )}
 
           {!loading && collections.length === 0 && (
-            <p className="py-6 text-center text-sm text-black/40">
+            <p className="py-6 text-center text-sm text-ink-faint">
               {copy.noCollectionsYet}
             </p>
           )}
@@ -254,7 +255,7 @@ export default function CollectionPickerSheet({
                     <span className="block truncate text-sm font-semibold">
                       {collection.name}
                     </span>
-                    <span className="block text-xs text-black/40">
+                    <span className="block text-xs text-ink-faint">
                       {collection.word_count ?? 0} {copy.words}
                     </span>
                   </span>
@@ -290,12 +291,27 @@ export default function CollectionPickerSheet({
               ))}
             </div>
 
-            <input
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              placeholder={copy.namePlaceholder}
-              className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-2.5 text-sm outline-none"
-            />
+            <div className="relative mt-3">
+
+              <input
+
+                value={newName}
+
+                onChange={(event) => setNewName(event.target.value)}
+
+                placeholder={copy.namePlaceholder}
+
+                className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-11 text-sm outline-none"
+
+              />
+
+              {newName && (
+
+                <ClearFieldButton floating onClear={() => setNewName("")} />
+
+              )}
+
+            </div>
 
             <div className="mt-3 flex gap-2">
               <button
@@ -319,12 +335,13 @@ export default function CollectionPickerSheet({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 py-3 text-sm font-semibold text-black/60"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-black/20 py-3 text-sm font-semibold text-ink-soft"
           >
             + {copy.newCollection}
           </button>
         )}
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }

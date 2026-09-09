@@ -1,8 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
+import { buildTranslateNotePrompt } from "@/lib/ai/prompts/translateNote";
+import { readLearningPair } from "@/lib/profile/languagePair";
+
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
 export const runtime = "nodejs";
 
@@ -28,8 +32,7 @@ const MAX_TRANSLATIONS_PER_DAY = readBoundedInteger(
   500,
 );
 
-/** Set once the quota function is found to be missing, to stop retrying it. */
-let persistentQuotaUnavailable = false;
+const OPERATION = "note_translation" as const;
 
 type TranslateResult = {
   english: string;
@@ -54,32 +57,13 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-async function consumeDailyQuota(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-) {
-  if (persistentQuotaUnavailable) return true;
-
-  const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
-    p_operation: "note_translation",
-    p_limit: MAX_TRANSLATIONS_PER_DAY,
-  });
-
-  if (error) {
-    persistentQuotaUnavailable = true;
-    console.warn(
-      "Persistent AI quota is unavailable for note translation.",
-      { code: error.code },
-    );
-    return true;
-  }
-
-  const rows = data as Array<{ allowed?: boolean }> | null;
-  return rows?.[0]?.allowed === true;
-}
 
 export async function POST(request: Request) {
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
+  let charged: string | null = null;
+
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -120,7 +104,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await consumeDailyQuota(supabase))) {
+    if (
+      !(await consumeDailyQuota(
+        supabase,
+        user.id,
+        OPERATION,
+        MAX_TRANSLATIONS_PER_DAY,
+      ))
+    ) {
       return NextResponse.json(
         {
           error:
@@ -130,26 +121,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Spent; handed back below if the model never answers.
+    charged = user.id;
+
     const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+
+    const languagePair = await readLearningPair(supabase, user.id);
 
     const client = new GoogleGenAI({ apiKey });
 
     const interaction = await client.interactions.create({
       model,
-      input: `
-The user wrote this note in a bilingual English / Traditional Chinese
-language-learning app: "${text}"
-
-It may be written in English, in Traditional Chinese, or a mix of both.
-Return both a natural English version and a natural Traditional Chinese
-version of the same note.
-
-Rules:
-- Use Traditional Chinese, never Simplified Chinese.
-- If the note is already bilingual, keep each language's own wording
-  rather than re-translating it from the other.
-- Keep the tone and meaning as close to the original as possible.
-      `.trim(),
+      input: buildTranslateNotePrompt(text, languagePair),
       response_format: {
         type: "text",
         mime_type: "application/json",
@@ -174,8 +157,14 @@ Rules:
       stripJsonCodeFence(outputText)
     ) as TranslateResult;
 
+    charged = null;
+
     return NextResponse.json(result);
   } catch (error) {
+    if (supabase && charged) {
+      await refundDailyQuota(supabase, charged, OPERATION);
+    }
+
     console.error("Note translation failed:", error);
 
     return NextResponse.json(

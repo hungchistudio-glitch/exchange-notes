@@ -478,11 +478,6 @@ function environmentFailure(
       };
   }
 }
-
-export function getWebPushAvailability(): WebPushAvailability {
-  return inspectWebPushEnvironment().availability;
-}
-
 export async function getWebPushStatus(): Promise<WebPushStatus> {
   const environment = inspectWebPushEnvironment();
 

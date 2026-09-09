@@ -13,18 +13,47 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import type { AppLanguage, VocabularyItem } from "@/lib/types/app";
+import { readLanguageCode, type LanguageCode } from "@/lib/languages";
+import {
+  reportNetworkFailure,
+  reportNetworkSuccess,
+} from "@/hooks/useOnline";
+import {
+  applyPending,
+  forgetMirror,
+  readMirror,
+  readOutbox,
+  writeMirror,
+} from "@/lib/offline/vocabulary";
+import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
+import { flushOutbox } from "@/lib/offline/sync";
+import type { VocabularyItem } from "@/lib/types/app";
+import {
+  useVocabularyLanguageFill,
+  type FilledRow,
+} from "@/hooks/useVocabularyLanguageFill";
+import { sweepOrphans } from "@/lib/media/orphanSweep";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
+import { subscribeToSavedWords } from "@/lib/vocabulary/savedWords";
 
 type VocabularyContextType = {
   items: VocabularyItem[];
   setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
 
-  learningLanguage: AppLanguage | null;
+  learningLanguage: LanguageCode | null;
 
   loading: boolean;
   error: string;
   setError: Dispatch<SetStateAction<string>>;
+
+  /**
+   * Whether the missing side of some words is being filled in right now.
+   *
+   * Exposed so a screen can say so quietly. A half-translated list with no
+   * explanation looks broken; the same list with a word about it looks like
+   * work in progress, which is what it is.
+   */
+  fillingLanguage: boolean;
 
   refresh(): Promise<void>;
   addItem(item: VocabularyItem): void;
@@ -36,7 +65,7 @@ const VocabularyContext = createContext<VocabularyContextType | null>(null);
 
 type VocabularySnapshot = {
   items: VocabularyItem[];
-  learningLanguage: AppLanguage | null;
+  learningLanguage: LanguageCode | null;
 };
 
 /*
@@ -63,12 +92,56 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
     fetchVocabulary(user.id),
   ]);
 
+  reportNetworkSuccess();
+
+  const items = rows as VocabularyItem[];
+
+  /*
+   * Mirrored as it arrives. The write is not awaited by the caller: a
+   * reader who is looking at their words should not wait on a copy being
+   * made of them, and if the copy fails the only cost is that the next
+   * cold start with no signal is emptier than it could have been.
+   */
+  void writeMirror(items, user.id);
+
   return {
-    items: rows as VocabularyItem[],
-    learningLanguage: profile?.learning_language
-      ? (profile.learning_language as AppLanguage)
-      : null,
+    items,
+    learningLanguage: readLanguageCode(profile?.learning_language),
   };
+}
+
+/**
+ * The words as the device knows them, without asking anyone.
+ *
+ * The mirror is what the server last said; the outbox is what it has not
+ * been told yet. Together they are what the reader actually has, which is
+ * what a screen should render — a word saved on a train belongs in the
+ * list, in order, with no hint that it is waiting.
+ */
+async function readLocalSnapshot(): Promise<VocabularyItem[]> {
+  /*
+   * getSession, not getUser: this runs before anything is painted and
+   * getUser is a round trip, which is the exact wait the local copy exists
+   * to avoid. getSession reads the session the client already has on disk.
+   *
+   * It is not a security check — the mirror holds only what this device
+   * was already shown — but it is what stops one reader's words appearing
+   * on the way in for the next one.
+   */
+  const supabase = createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const userId = session?.user?.id;
+  if (!userId) return [];
+
+  const [mirror, pending] = await Promise.all([
+    readMirror(userId),
+    readOutbox(),
+  ]);
+
+  return applyPending(mirror, pending);
 }
 
 function loadErrorMessage(error: unknown) {
@@ -79,7 +152,7 @@ function loadErrorMessage(error: unknown) {
 
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<VocabularyItem[]>([]);
-  const [learningLanguage, setLearningLanguage] = useState<AppLanguage | null>(
+  const [learningLanguage, setLearningLanguage] = useState<LanguageCode | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
@@ -102,17 +175,76 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       setItems(snapshot.items);
       setLearningLanguage(snapshot.learningLanguage);
     } catch (refreshError) {
-      setError(loadErrorMessage(refreshError));
+      /*
+       * A failed read is not an empty library any more.
+       *
+       * There is a copy on the device, and falling back to it is the
+       * difference between an app that stops working in a tunnel and one
+       * that carries on. The error is only surfaced when there is nothing
+       * local either — which, after a first successful load, there never is.
+       */
+      reportNetworkFailure();
+
+      const local = await readLocalSnapshot();
+
+      if (local.length > 0) setItems(local);
+      else setError(loadErrorMessage(refreshError));
     } finally {
       setLoading(false);
     }
   }, []);
+
+  /*
+   * Image files nothing points at, cleared away once a session.
+   *
+   * Here because this is the one place that holds the reader's whole
+   * library, which is what "nothing points at it" has to be measured
+   * against — a sweep run against a filtered list would delete the pictures
+   * of every word not currently on screen.
+   *
+   * Deliberately unawaited and unreported. It is housekeeping the reader did
+   * not ask for; it must never delay the list appearing and must never put
+   * an error on screen. Its own session guard keeps it to one run, so this
+   * effect firing again on a refresh costs nothing.
+   */
+  useEffect(() => {
+    if (loading || items.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const { user } = await getCurrentUser();
+
+      if (!user || cancelled) return;
+
+      await sweepOrphans(createClient(), user.id, items);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, items]);
 
   useEffect(() => {
     let active = true;
     const supabase = createClient();
 
     async function loadOnMount() {
+      /*
+       * The device's own copy first, always.
+       *
+       * It is on disk and needs no network, so it paints immediately —
+       * which on a cold start with a slow connection is the difference
+       * between a spinner and a library. The server's answer replaces it a
+       * moment later; where they agree, nothing moves.
+       */
+      const local = await readLocalSnapshot();
+
+      if (active && local.length > 0) {
+        setItems(local);
+        setLoading(false);
+      }
+
       try {
         const snapshot = await fetchVocabularySnapshot();
 
@@ -121,13 +253,37 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         setItems(snapshot.items);
         setLearningLanguage(snapshot.learningLanguage);
       } catch (loadError) {
-        if (active) setError(loadErrorMessage(loadError));
+        if (!active) return;
+
+        reportNetworkFailure();
+
+        // Only an error when there is nothing local either.
+        if (local.length === 0) setError(loadErrorMessage(loadError));
       } finally {
         if (active) setLoading(false);
       }
     }
 
     void loadOnMount();
+
+    /*
+     * Anything saved with no connection goes now.
+     *
+     * On mount rather than only on an "online" event, because the common
+     * case is not a reader watching the app reconnect — it is a reader who
+     * closed it in a tunnel and opened it again at the hotel.
+     */
+    void flushOutbox().then((result) => {
+      if (active && result.sent > 0) void refresh();
+    });
+
+    function handleOnline() {
+      void flushOutbox().then((result) => {
+        if (active && result.sent > 0) void refresh();
+      });
+    }
+
+    window.addEventListener("online", handleOnline);
 
     const {
       data: { subscription },
@@ -144,11 +300,28 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         setLearningLanguage(null);
         setError("");
         setLoading(false);
+
+        // The device's copy goes with them. A phone that is handed on, or
+        // simply shared, must not open on the last person's words.
+        void forgetMirror();
+
+        /*
+         * And everything else this device was holding for them: the
+         * interaction history in localStorage, and the pages the service
+         * worker cached while they were signed in. The mirror was the only
+         * one of the three being cleared. See lib/offline/forgetDevice.
+         *
+         * Here as well as in the sign-out button, because a session can end
+         * without anyone pressing anything — a revoked token, a sign-out on
+         * another device — and this listener is the only thing that sees it.
+         */
+        void forgetDeviceCopies();
       }
     });
 
     return () => {
       active = false;
+      window.removeEventListener("online", handleOnline);
       subscription.unsubscribe();
     };
   }, [refresh]);
@@ -177,11 +350,63 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  /*
+   * Folds a finished translation batch into the list it belongs to.
+   *
+   * The alternative, and what this replaces, was re-reading everything after
+   * every batch — see the comment on onFilled in useVocabularyLanguageFill.
+   * Only the two filled columns are taken, so a row edited on this device
+   * while the batch was in the air keeps the rest of its own state.
+   */
+  const patchTranslations = useCallback((updated: FilledRow[]) => {
+    if (updated.length === 0) return;
+
+    const byId = new Map(updated.map((row) => [row.id, row]));
+
+    setItems((current) =>
+      current.map((item) => {
+        const patch = byId.get(item.id);
+        if (!patch) return item;
+
+        return { ...item, texts: patch.texts, examples: patch.examples };
+      }),
+    );
+  }, []);
+
+  /*
+   * A word saved anywhere in the app lands in this list immediately.
+   *
+   * The provider sits in the protected layout, so it stays mounted while the
+   * reader walks from the camera back to their words — `items` is whatever
+   * was loaded when the app started, and nothing on that walk replaced it.
+   * Four of the five save surfaces never told it anything, so the word was in
+   * the database and not on the screen until the app was opened again.
+   *
+   * Subscribing rather than asking each screen to remember: the announcement
+   * comes from createVocabularyEntry, which every save already goes through.
+   * See lib/vocabulary/savedWords.
+   */
+  useEffect(() => subscribeToSavedWords(addItem), [addItem]);
+
+  /*
+   * Mounted here rather than on a screen, because the words belong to the
+   * account and not to whichever page happens to be open. Switching language
+   * anywhere leaves the library in the wrong one, and this is what walks it
+   * over without anyone having to ask.
+   */
+  const { filling: fillingLanguage } = useVocabularyLanguageFill({
+    items,
+    learningLanguage,
+    loading,
+    onFilled: patchTranslations,
+  });
+
   const value = useMemo<VocabularyContextType>(
     () => ({
       items,
       setItems,
       learningLanguage,
+      fillingLanguage,
       loading,
       error,
       setError,
@@ -191,6 +416,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       updateItem,
     }),
     [
+      fillingLanguage,
       items,
       learningLanguage,
       loading,

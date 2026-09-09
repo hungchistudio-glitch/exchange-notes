@@ -31,6 +31,25 @@ export function getVisionModelCandidates() {
   ]);
 }
 
+/*
+ * Menus invert the usual order: the strong model first, the fast one only as
+ * a fallback.
+ *
+ * Everything else this app sends to vision is one object in the middle of a
+ * frame, where flash-lite is both enough and quicker. A menu is forty lines
+ * of small type photographed from a metre away, and the difference between
+ * the two models is whether the prices come back attached to the right
+ * dishes — which is the one thing the feature cannot be wrong about.
+ */
+export function getMenuModelCandidates() {
+  return uniqueModels([
+    process.env.GEMINI_MENU_MODEL,
+    process.env.GEMINI_VISION_MODEL,
+    DEFAULT_STRONG_MODEL,
+    DEFAULT_FAST_MODEL,
+  ]);
+}
+
 export function readBoundedInteger(
   value: string | undefined,
   fallback: number,

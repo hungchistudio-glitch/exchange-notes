@@ -1,44 +1,25 @@
 "use client";
 
-import useTranslation from "@/hooks/i18n/useTranslation";
 import { useVocabularyPage } from "@/hooks/useVocabularyPage";
 import useVocabulary from "@/hooks/useVocabulary";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
-import useVocabularyLookupController from "@/hooks/useVocabularyLookupController";
 import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 
-type UseVocabularyControllerOptions = {
-  initialAiSearchOpen?: boolean;
-};
-
-export default function useVocabularyController({
-  initialAiSearchOpen = false,
-}: UseVocabularyControllerOptions = {}) {
-  const { t } = useTranslation();
-
-  const page = useVocabularyPage({
-    initialAiSearchOpen,
-  });
+/*
+ * The lookup used to live here too — its own hook, its own save path, its own
+ * duplicate check, wired into this screen's list and error banner. It is gone:
+ * looking a word up is an app-level capability now (contexts/
+ * LexiconSearchContext), and this screen asks for it the same way the dock and
+ * the home screen do. What is left in this controller is the library itself,
+ * which is what it was always for.
+ */
+export default function useVocabularyController() {
+  const page = useVocabularyPage();
   const vocabulary = useVocabulary();
   const friendPicker = useVocabularyFriendPicker();
-
-  const lookup = useVocabularyLookupController({
-    query: page.query,
-    items: vocabulary.items,
-    addItem: vocabulary.addItem,
-    setError: vocabulary.setError,
-    setQuery: page.setQuery,
-    setAiSearchOpen: page.setAiSearchOpen,
-    messages: {
-      loginRequired: t.capture.errors.loginBeforeSave,
-      duplicate: t.capture.errors.duplicateWord,
-      saveFailed: t.capture.errors.saveWord,
-    },
-    onSendToPartner: friendPicker.handleSendToPartner,
-  });
 
   const mutations = useVocabularyMutations({
     items: vocabulary.items,
@@ -57,12 +38,10 @@ export default function useVocabularyController({
      * New consumers should access values through their owning module:
      * controller.page.query
      * controller.vocabulary.items
-     * controller.lookup.lookupStatus
      */
     page,
     vocabulary,
     friendPicker,
-    lookup,
     mutations,
     stats,
     library,
@@ -78,7 +57,6 @@ export default function useVocabularyController({
     ...page,
     ...vocabulary,
     ...friendPicker,
-    ...lookup,
     ...mutations,
     ...stats,
     ...library,

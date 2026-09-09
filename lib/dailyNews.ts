@@ -1,3 +1,10 @@
+import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
+import {
+  DEFAULT_LEARNING_PAIR,
+  type ByLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
+import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
 /**
@@ -24,35 +31,7 @@ import { GoogleGenAI } from "@google/genai";
  * on a user page load.
  */
 
-export type VocabularyItem = {
-  word: string;
-  translation: string;
-  partOfSpeech: string;
-  englishExample: string;
-  chineseExample: string;
-};
-
-export type DailyNewsCard = {
-  id: string;
-  category: string;
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string;
-  vocabulary: VocabularyItem[];
-  // Straight from Guardian's own thumbnail field — never AI-generated, so
-  // it's never a hallucinated image. Null when Guardian doesn't have one
-  // for that article (common for text-only pieces).
-  imageUrl: string | null;
-  // Gemini has no vision access to the actual photo, so this is
-  // deliberately NOT "a description of what's in the photo" — see the
-  // prompt instructions below for why it's scoped to scene/context only.
-  englishCaption: string | null;
-  chineseCaption: string | null;
-};
+export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 
 type GuardianArticle = {
   category: string;
@@ -64,13 +43,10 @@ type GuardianArticle = {
 };
 
 type LearningItem = {
-  englishTitle: string;
-  chineseTitle: string;
-  englishSummary: string;
-  chineseSummary: string;
+  titles: ByLanguage;
+  summaries: ByLanguage;
+  captions: ByLanguage;
   vocabulary: VocabularyItem[];
-  englishCaption: string;
-  chineseCaption: string;
 };
 
 type GeminiLearningResponse = {
@@ -85,18 +61,118 @@ const ALLOWED_PARTS_OF_SPEECH = new Set([
   "phrase",
 ]);
 
-// One Guardian section per slot. Kept small and diverse rather than trying
-// to replicate the old 5-region (US/Taiwan/international/Europe/culture)
-// design, since a single-publisher source can't credibly claim that kind of
-// geographic breadth. Maps cleanly onto the category labels already used in
-// the UI.
-const GUARDIAN_SECTIONS: { section: string; category: string }[] = [
+/*
+ * The daily slate.
+ *
+ * Twelve slots rather than five, because the feed is now a pool the reader
+ * draws from over days instead of a batch replaced every morning — see the
+ * daily_news_pool migration. Twelve a day against a fourteen-day retention
+ * settles at roughly a hundred and seventy cards, which is more than any
+ * reader gets through, so "show me something I have not read" always has an
+ * answer.
+ *
+ * All of them are Guardian sections, which is the only free source measured
+ * to give full body text under terms that permit this use. Twelve sections
+ * cost twelve API calls a day against a five-hundred-a-day free allowance.
+ *
+ * A slot may also be a query rather than a section. Taiwan is the reason:
+ * the Guardian has no Taiwan section, and the tag carries roughly two
+ * articles a week — measured, not assumed. Asking for more Taiwan slots than
+ * that would not produce more Taiwan news, it would produce the same two
+ * articles again, and the pool's unique constraint on source_url would
+ * reject them anyway. So Taiwan takes one slot and the pool takes whatever
+ * genuinely new Taiwan coverage exists on the day; on days with none the
+ * slot simply yields nothing and the other eleven still land.
+ *
+ * Raising Taiwan's share needs a Taiwan source, not a bigger number here.
+ * Taipei Times publishes fifty headlines a day with no body text in its feed
+ * and disallows AI crawlers outright in robots.txt; NewsAPI's free tier is
+ * licensed for development only. Neither is usable, which is why this list
+ * looks the way it does.
+ */
+type NewsSlot = {
+  category: string;
+  /** A Guardian section, for the general-interest slots. */
+  section?: string;
+  /** A free-text query, for subjects the Guardian files under no section. */
+  query?: string;
+  /*
+   * Words the headline must contain for a query slot's result to count.
+   *
+   * A free-text search matches the body, so `q=Taiwan` returns anything that
+   * mentions Taiwan once in passing — the first run of this pulled an
+   * Australian daily briefing about GST reform into the Taiwan category
+   * because the digest happened to name Taiwan somewhere in the middle. A
+   * card filed under Taiwan that is about Australian tax policy is worse
+   * than no Taiwan card at all, so the headline has to be about the subject
+   * too, not merely the article.
+   */
+  headlineMustMention?: string[];
+};
+
+const NEWS_SLOTS: NewsSlot[] = [
   { section: "world", category: "World" },
   { section: "business", category: "Business" },
   { section: "technology", category: "Technology" },
   { section: "science", category: "Science" },
   { section: "culture", category: "Culture" },
+  { section: "environment", category: "Environment" },
+  { section: "society", category: "Society" },
+  { section: "global-development", category: "Development" },
+  { section: "education", category: "Education" },
+  { section: "film", category: "Film" },
+  { section: "books", category: "Books" },
+  {
+    query: "Taiwan",
+    category: "Taiwan",
+    headlineMustMention: ["taiwan", "taipei", "taiwanese"],
+  },
 ];
+
+/*
+ * How many candidates to pull per slot.
+ *
+ * More than one, because the freshest article in a section is often one the
+ * pool already holds — the Guardian's "newest in business" does not change
+ * every twenty-four hours. Eight gives the caller room to skip past what it
+ * has already ingested without a second round trip, and costs nothing extra:
+ * it is the same single request either way.
+ */
+const CANDIDATES_PER_SLOT = 8;
+
+/*
+ * How many articles go into one Gemini call.
+ *
+ * The cron job runs on Vercel's Hobby plan, where a function is killed at
+ * sixty seconds and cannot be raised. One call carrying all twelve articles
+ * is the version that risks that ceiling; two calls of six run in parallel
+ * and finish in roughly half the wall time for the same tokens. Well inside
+ * the free tier's request-per-minute allowance either way.
+ */
+/*
+ * How many articles one Gemini call rewrites, at the pair the app started
+ * with. Scaled down as the pool covers more languages — see articlesPerBatch.
+ */
+const ARTICLES_PER_BATCH = 6;
+
+/**
+ * Articles per request, held so the output per request does not grow with
+ * the language count.
+ *
+ * Every extra language multiplies what a single call has to write: a title,
+ * a summary, a caption and three words with examples, again. Six articles in
+ * two languages and six in five are not the same request, and the cron runs
+ * on Vercel's Hobby plan where sixty seconds is a hard ceiling. Batches run
+ * in parallel and a failed one only costs its own cards, so more, smaller
+ * requests is the cheaper way to be wrong.
+ *
+ * Floored at two: a batch of one loses the shared article context that makes
+ * the model's vocabulary picks differ from card to card.
+ */
+export function articlesPerBatch(languageCount: number): number {
+  const budget = ARTICLES_PER_BATCH * DEFAULT_LEARNING_PAIR.length;
+  return Math.max(2, Math.min(ARTICLES_PER_BATCH, Math.round(budget / Math.max(1, languageCount))));
+}
 
 const MINIMUM_BODY_LENGTH = 300;
 const EXCERPT_BODY_LENGTH = 1200;
@@ -126,17 +202,6 @@ function stripHtml(value: string) {
   return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function createStableId(value: string) {
-  let hash = 2166136261;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return (hash >>> 0).toString(36);
-}
-
 function stripJsonCodeFence(value: string) {
   return value
     .replace(/^```json\s*/i, "")
@@ -160,15 +225,31 @@ type GuardianApiResult = {
   fields?: GuardianApiFields;
 };
 
-async function fetchGuardianArticle(
-  section: string,
-  category: string,
+/**
+ * Every usable article a slot currently offers, freshest first.
+ *
+ * Returns a list rather than a single article so the caller can skip the
+ * ones already in the pool without asking the Guardian again. A slot that
+ * yields nothing usable returns an empty array rather than throwing: on any
+ * given day the Taiwan query legitimately has no new coverage, and one empty
+ * slot must not cost the other eleven their run.
+ */
+async function fetchSlotCandidates(
+  slot: NewsSlot,
   apiKey: string
-): Promise<GuardianArticle | null> {
+): Promise<GuardianArticle[]> {
   const url = new URL("https://content.guardianapis.com/search");
-  url.searchParams.set("section", section);
+
+  if (slot.section) {
+    url.searchParams.set("section", slot.section);
+  }
+
+  if (slot.query) {
+    url.searchParams.set("q", slot.query);
+  }
+
   url.searchParams.set("order-by", "newest");
-  url.searchParams.set("page-size", "5");
+  url.searchParams.set("page-size", String(CANDIDATES_PER_SLOT));
   url.searchParams.set("show-fields", "trailText,bodyText,thumbnail");
   url.searchParams.set("api-key", apiKey);
 
@@ -180,9 +261,9 @@ async function fetchGuardianArticle(
 
   if (!response.ok) {
     console.error(
-      `Guardian API request failed for section "${section}": ${response.status}`
+      `Guardian API request failed for slot "${slot.category}": ${response.status}`
     );
-    return null;
+    return [];
   }
 
   const data = (await response.json()) as {
@@ -190,10 +271,19 @@ async function fetchGuardianArticle(
   };
 
   const results = data.response?.results ?? [];
+  const articles: GuardianArticle[] = [];
 
   for (const result of results) {
     if (result.type !== "article") {
       continue;
+    }
+
+    if (slot.headlineMustMention) {
+      const headline = (result.webTitle ?? "").toLowerCase();
+
+      if (!slot.headlineMustMention.some((term) => headline.includes(term))) {
+        continue;
+      }
     }
 
     const bodyText = stripHtml(result.fields?.bodyText ?? "");
@@ -204,8 +294,8 @@ async function fetchGuardianArticle(
 
     const trailText = stripHtml(result.fields?.trailText ?? "");
 
-    return {
-      category,
+    articles.push({
+      category: slot.category,
       title: normalizeText(result.webTitle, 200),
       url: result.webUrl,
       publishedAt: result.webPublicationDate,
@@ -217,85 +307,127 @@ async function fetchGuardianArticle(
         result.fields.thumbnail.trim()
           ? result.fields.thumbnail.trim()
           : null,
-    };
+    });
   }
 
-  return null;
+  return articles;
 }
 
-function validateVocabularyItem(value: unknown): VocabularyItem | null {
+function validateVocabularyItem(
+  value: unknown,
+  languages: readonly LanguageCode[],
+): VocabularyItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   const candidate = value as Record<string, unknown>;
 
-  const word = normalizeText(candidate.word, 45);
-  const translation = normalizeText(candidate.translation, 40);
+  const texts = readLanguageMap(candidate.texts, 45, languages);
+  const examples = readLanguageMap(candidate.examples, 180, languages);
   const partOfSpeech = normalizeText(candidate.partOfSpeech, 20);
-  const englishExample = normalizeMultilineText(candidate.englishExample, 180);
-  const chineseExample = normalizeMultilineText(candidate.chineseExample, 130);
 
+  // Every language the pool covers, or the word is not usable: a card that
+  // teaches three languages and can only name the word in two of them leaves
+  // one reader looking at a blank.
   if (
-    !word ||
-    !translation ||
     !ALLOWED_PARTS_OF_SPEECH.has(partOfSpeech) ||
-    !englishExample ||
-    !chineseExample
+    languages.some((language) => !texts[language])
   ) {
     return null;
   }
 
-  return { word, translation, partOfSpeech, englishExample, chineseExample };
+  return { texts, examples, partOfSpeech };
 }
 
-function validateLearningItem(value: unknown): LearningItem | null {
+/**
+ * Reads one of the model's language-keyed objects.
+ *
+ * Absent and empty are the same answer here — a language with nothing in it
+ * is a language the card does not carry — so the result never holds a blank
+ * string for a reader to be shown.
+ */
+function readLanguageMap(
+  value: unknown,
+  maxLength: number,
+  languages: readonly LanguageCode[],
+): ByLanguage {
+  if (!value || typeof value !== "object") return {};
+
+  const record = value as Record<string, unknown>;
+  const out: ByLanguage = {};
+
+  for (const language of languages) {
+    const text = normalizeMultilineText(record[language], maxLength);
+    if (text) out[language] = text;
+  }
+
+  return out;
+}
+
+function validateLearningItem(
+  value: unknown,
+  languages: readonly LanguageCode[],
+): LearningItem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   const candidate = value as Record<string, unknown>;
 
-  const englishTitle = normalizeText(candidate.englishTitle, 120);
-  const chineseTitle = normalizeText(candidate.chineseTitle, 80);
-  const englishSummary = normalizeMultilineText(candidate.englishSummary, 320);
-  const chineseSummary = normalizeMultilineText(candidate.chineseSummary, 220);
-  const englishCaption = normalizeText(candidate.englishCaption, 90);
-  const chineseCaption = normalizeText(candidate.chineseCaption, 60);
+  /*
+   * Read by language rather than by field name. The model answers in maps
+   * now, one entry per language the pool serves, so nothing here has to know
+   * which two languages a card "really" is — there is no such pair any more.
+   */
+  const titles = readLanguageMap(candidate.titles, 120, languages);
+  const summaries = readLanguageMap(candidate.summaries, 320, languages);
+  const captions = readLanguageMap(candidate.captions, 90, languages);
 
   const rawVocabulary = Array.isArray(candidate.vocabulary)
     ? candidate.vocabulary
     : [];
 
   const vocabulary = rawVocabulary
-    .map(validateVocabularyItem)
+    .map((item) => validateVocabularyItem(item, languages))
     .filter((item): item is VocabularyItem => item !== null)
     .slice(0, 3);
 
+  // A card missing a language is dropped rather than served half-written:
+  // the pool is shared, and one reader's blank is everyone's blank.
   if (
-    !englishTitle ||
-    !chineseTitle ||
-    !englishSummary ||
-    !chineseSummary ||
-    !englishCaption ||
-    !chineseCaption ||
+    languages.some(
+      (language) => !titles[language] || !summaries[language],
+    ) ||
     vocabulary.length !== 3
   ) {
     return null;
   }
 
-  return {
-    englishTitle,
-    chineseTitle,
-    englishSummary,
-    chineseSummary,
-    vocabulary,
-    englishCaption,
-    chineseCaption,
-  };
+  return { titles, summaries, captions, vocabulary };
 }
 
-function buildLearningSchema(count: number) {
+/*
+ * The schema is built from the language list rather than naming two.
+ *
+ * Every card carries the story in each language the pool needs, keyed by
+ * code, and so does every vocabulary word. Asking for a fixed pair is what
+ * made Daily News the one screen where switching language changed nothing:
+ * the content had never been asked to change.
+ */
+function buildLearningSchema(count: number, languages: LanguageCode[]) {
+  const byLanguage = (minLength: number, maxLength: number) => ({
+    type: "object",
+    additionalProperties: false,
+    properties: Object.fromEntries(
+      languages.map((language) => [
+        language,
+        { type: "string", minLength, maxLength },
+      ]),
+    ),
+    required: [...languages],
+  });
+
   return {
     type: "object",
     additionalProperties: false,
@@ -308,12 +440,9 @@ function buildLearningSchema(count: number) {
           type: "object",
           additionalProperties: false,
           properties: {
-            englishTitle: { type: "string", minLength: 8, maxLength: 120 },
-            chineseTitle: { type: "string", minLength: 4, maxLength: 80 },
-            englishSummary: { type: "string", minLength: 40, maxLength: 320 },
-            chineseSummary: { type: "string", minLength: 20, maxLength: 220 },
-            englishCaption: { type: "string", minLength: 8, maxLength: 90 },
-            chineseCaption: { type: "string", minLength: 4, maxLength: 60 },
+            titles: byLanguage(4, 120),
+            summaries: byLanguage(20, 320),
+            captions: byLanguage(4, 90),
             vocabulary: {
               type: "array",
               minItems: 3,
@@ -322,151 +451,92 @@ function buildLearningSchema(count: number) {
                 type: "object",
                 additionalProperties: false,
                 properties: {
-                  word: { type: "string", minLength: 2, maxLength: 45 },
-                  translation: {
-                    type: "string",
-                    minLength: 1,
-                    maxLength: 40,
-                  },
+                  texts: byLanguage(1, 45),
                   partOfSpeech: {
                     type: "string",
                     enum: ["noun", "verb", "adjective", "adverb", "phrase"],
                   },
-                  englishExample: {
-                    type: "string",
-                    minLength: 10,
-                    maxLength: 180,
-                  },
-                  chineseExample: {
-                    type: "string",
-                    minLength: 5,
-                    maxLength: 130,
-                  },
+                  examples: byLanguage(5, 180),
                 },
-                required: [
-                  "word",
-                  "translation",
-                  "partOfSpeech",
-                  "englishExample",
-                  "chineseExample",
-                ],
+                required: ["texts", "partOfSpeech", "examples"],
               },
             },
           },
-          required: [
-            "englishTitle",
-            "chineseTitle",
-            "englishSummary",
-            "chineseSummary",
-            "englishCaption",
-            "chineseCaption",
-            "vocabulary",
-          ],
+          required: ["titles", "summaries", "captions", "vocabulary"],
         },
       },
     },
     required: ["cards"],
-  } as const;
+  };
 }
 
-function createLearningPrompt(articles: GuardianArticle[]) {
-  const articleBlocks = articles
-    .map(
-      (article, index) => `
-Article ${index + 1} (category: ${article.category}):
-Headline: ${article.title}
-Excerpt: ${article.excerpt}
-`.trim()
-    )
-    .join("\n\n---\n\n");
 
-  return `
-You are building a bilingual (English / Traditional Chinese) vocabulary
-lesson from ${articles.length} real news articles published by The Guardian.
-Use ONLY the facts, names, and numbers stated in each excerpt below. Do not
-invent or add any detail, quote, or claim that is not present in the given
-text.
-
-${articleBlocks}
-
-For EACH article above, in the same order, produce:
-- englishTitle: a clear, natural CEFR B1-B2 English headline. You may
-  lightly simplify difficult vocabulary from the original headline, but the
-  meaning must stay the same.
-- chineseTitle: a natural Traditional Chinese translation as used in Taiwan.
-- englishSummary: a concise 2-3 sentence English summary using only facts
-  present in the excerpt.
-- chineseSummary: an accurate Traditional Chinese translation of that
-  summary.
-- vocabulary: exactly 3 useful CEFR B1-B2 English vocabulary items drawn
-  from the headline or excerpt. For each: give its Traditional Chinese
-  meaning, its part of speech, one original English example sentence, and
-  that example's Traditional Chinese translation. Examples must not
-  introduce new claims about the article.
-- englishCaption: a short one-line caption (max ~12 words) that could sit
-  beneath a generic editorial photo illustrating this story's general
-  topic or setting (e.g. "Demonstrators gather in a city square" for a
-  protest story). You have NOT seen the actual photo, so do not claim to
-  describe specific visual details, people, or exact numbers — only the
-  general scene/context implied by the story's subject matter.
-- chineseCaption: a natural Traditional Chinese translation of
-  englishCaption.
-
-Return exactly ${articles.length} cards, in the same order as the articles
-above, matching the required JSON schema.
-`.trim();
-}
+/** One card, with the article it came from — what the pool stores. */
+export type DailyNewsPoolItem = {
+  card: DailyNewsCard;
+  category: string;
+  sourceUrl: string;
+  publishedAt: string;
+};
 
 /**
- * Fetches real articles from The Guardian's free Open Platform API, then
- * makes exactly one (non-grounded) Gemini call to produce bilingual
- * learning content for them. Throws on any failure — callers (the cron
- * route) are responsible for catching and reporting errors.
+ * Picks today's articles, one per slot, skipping anything already ingested.
+ *
+ * The dedupe happens here rather than after generation, and that ordering is
+ * the point: a repeat article that reached Gemini would spend tokens
+ * producing a card the pool then rejects on its unique constraint. Asking
+ * `isIngested` first means a slow news day costs one Guardian request and
+ * nothing else.
  */
-export async function generateDailyNews(): Promise<{
-  cards: DailyNewsCard[];
-  generatedAt: string;
-}> {
+export async function selectTodaysArticles(
+  isIngested: (url: string) => boolean
+): Promise<GuardianArticle[]> {
   const guardianApiKey = process.env.GUARDIAN_API_KEY;
 
   if (!guardianApiKey) {
     throw new Error("GUARDIAN_API_KEY is not configured on the server.");
   }
 
-  const articles = (
-    await Promise.all(
-      GUARDIAN_SECTIONS.map((entry) =>
-        fetchGuardianArticle(entry.section, entry.category, guardianApiKey)
-      )
-    )
-  ).filter((article): article is GuardianArticle => article !== null);
+  const candidateLists = await Promise.all(
+    NEWS_SLOTS.map((slot) => fetchSlotCandidates(slot, guardianApiKey))
+  );
 
-  if (articles.length === 0) {
-    throw new Error(
-      "The Guardian API did not return any usable articles today."
+  const chosen: GuardianArticle[] = [];
+  const takenThisRun = new Set<string>();
+
+  for (const candidates of candidateLists) {
+    // A query slot and a section slot can surface the same article — the
+    // Taiwan query returns whatever section that story was filed under — so
+    // this run's own picks are checked alongside the pool's.
+    const pick = candidates.find(
+      (article) => !isIngested(article.url) && !takenThisRun.has(article.url)
     );
+
+    if (!pick) continue;
+
+    takenThisRun.add(pick.url);
+    chosen.push(pick);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  return chosen;
+}
 
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured on the server.");
-  }
-
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
-
-  const client = new GoogleGenAI({ apiKey });
-
+async function buildLearningBatch(
+  articles: GuardianArticle[],
+  model: string,
+  client: GoogleGenAI,
+  languages: readonly LanguageCode[],
+): Promise<DailyNewsPoolItem[]> {
   // Deliberately no `tools` field here — this call never touches Google
   // Search grounding, so it only ever draws on the normal (non-grounded)
-  // Gemini free tier, which we've confirmed works reliably with this key.
+  // Gemini free tier.
   const interaction = await client.interactions.create({
     model,
-    input: createLearningPrompt(articles),
+    input: buildDailyNewsPrompt(articles, languages),
     response_format: {
       type: "text",
       mime_type: "application/json",
-      schema: buildLearningSchema(articles.length),
+      schema: buildLearningSchema(articles.length, [...languages]),
     },
     generation_config: {
       thinking_level: "low",
@@ -475,9 +545,7 @@ export async function generateDailyNews(): Promise<{
   });
 
   const outputText =
-    typeof interaction.output_text === "string"
-      ? interaction.output_text
-      : "";
+    typeof interaction.output_text === "string" ? interaction.output_text : "";
 
   if (!outputText.trim()) {
     throw new Error("Gemini returned an empty response.");
@@ -489,40 +557,215 @@ export async function generateDailyNews(): Promise<{
 
   const rawLearningItems = Array.isArray(parsed.cards) ? parsed.cards : [];
 
-  const cards: DailyNewsCard[] = [];
+  const items: DailyNewsPoolItem[] = [];
 
   articles.forEach((article, index) => {
-    const learning = validateLearningItem(rawLearningItems[index]);
+    const learning = validateLearningItem(rawLearningItems[index], languages);
 
-    if (!learning) {
-      return;
-    }
+    if (!learning) return;
 
-    cards.push({
-      id: createStableId(article.url),
+    items.push({
       category: article.category,
-      englishTitle: learning.englishTitle,
-      chineseTitle: learning.chineseTitle,
-      englishSummary: learning.englishSummary,
-      chineseSummary: learning.chineseSummary,
-      sourceName: "The Guardian",
       sourceUrl: article.url,
       publishedAt: article.publishedAt,
-      vocabulary: learning.vocabulary,
-      imageUrl: article.imageUrl,
-      englishCaption: learning.englishCaption,
-      chineseCaption: learning.chineseCaption,
+      card: {
+        id: article.url,
+        category: article.category,
+        titles: learning.titles,
+        summaries: learning.summaries,
+        captions: learning.captions,
+        vocabulary: learning.vocabulary,
+        imageUrl: article.imageUrl,
+        sourceName: "The Guardian",
+        sourceUrl: article.url,
+        publishedAt: article.publishedAt,
+      },
     });
   });
 
-  if (cards.length === 0) {
-    throw new Error(
-      "Gemini did not return any valid learning content for today's articles."
-    );
+  return items;
+}
+
+/*
+ * How many batches may be in flight at once.
+ *
+ * Every batch used to go at once, and the free tier allows twenty generate
+ * requests a minute — so six simultaneous calls burst straight through it.
+ * Production bore this out: batches 2 and 5 came back 429 most mornings,
+ * losing a third of the day's cards, and on one of them every batch failed
+ * and the pool was empty.
+ *
+ * Three keeps most of the reason the batches were parallel in the first
+ * place. A batch takes about ten seconds, so six in two waves is roughly
+ * twenty — comfortably inside the sixty-second ceiling the cron runs under
+ * on Vercel's Hobby plan, even with a retry.
+ */
+const MAX_CONCURRENT_BATCHES = 3;
+
+/** One retry per batch. A second would risk the sixty-second ceiling. */
+const RATE_LIMIT_RETRIES = 1;
+
+/** Long enough to cover what the API asks for, short enough to fit. */
+const MAX_RETRY_WAIT_MS = 12_000;
+
+function isRateLimited(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+
+  const status = (error as { status?: unknown }).status;
+  const code = (error as { error?: { code?: unknown } }).error?.code;
+
+  return status === 429 || code === "too_many_requests";
+}
+
+/*
+ * The API says how long to wait — "Please retry in 5.159426619s" — and
+ * nothing read it. Guessing a backoff when the server has already told you
+ * the answer is how a retry either gives up too early or holds the cron open
+ * for no reason.
+ */
+function retryDelayMs(error: unknown): number {
+  const message =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+
+  const seconds = Number.parseFloat(
+    message.match(/retry in ([\d.]+)s/i)?.[1] ?? "",
+  );
+
+  /* A second and a bit when it does not say, which the free tier tolerates. */
+  const wait = Number.isFinite(seconds) ? seconds * 1000 + 250 : 1_500;
+
+  return Math.min(wait, MAX_RETRY_WAIT_MS);
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Runs one batch, giving a rate-limited request the wait it asked for. */
+async function withRateLimitRetry<T>(run: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      if (attempt >= RATE_LIMIT_RETRIES || !isRateLimited(error)) throw error;
+
+      await wait(retryDelayMs(error));
+    }
+  }
+}
+
+/*
+ * Batches, at most MAX_CONCURRENT_BATCHES at a time.
+ *
+ * Settled rather than thrown, exactly as Promise.allSettled was: a batch that
+ * fails must not take the others with it. Losing six cards on a day the model
+ * hiccups is a thinner pool; losing all twelve is a day with no news.
+ */
+async function runBatches<T, R>(
+  batches: readonly T[],
+  run: (batch: T) => Promise<R>,
+): Promise<Array<PromiseSettledResult<R>>> {
+  const results: Array<PromiseSettledResult<R>> = new Array(batches.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < batches.length) {
+      const index = next++;
+
+      try {
+        results[index] = {
+          status: "fulfilled",
+          value: await withRateLimitRetry(() => run(batches[index])),
+        };
+      } catch (reason) {
+        results[index] = { status: "rejected", reason };
+      }
+    }
   }
 
-  return {
-    cards,
-    generatedAt: new Date().toISOString(),
-  };
+  await Promise.all(
+    Array.from(
+      { length: Math.min(MAX_CONCURRENT_BATCHES, batches.length) },
+      worker,
+    ),
+  );
+
+  return results;
+}
+
+/*
+ * Exposed for the tests, which are about the rate limiting rather than about
+ * the news: the failure they guard is invisible to anything that only checks
+ * the cards come out right, because on a good morning they always did.
+ */
+export const __testing = {
+  runBatches,
+  isRateLimited,
+  retryDelayMs,
+  MAX_CONCURRENT_BATCHES,
+};
+
+/**
+ * Turns chosen articles into pool items.
+ *
+ * Split into batches because the cron job runs on Vercel's Hobby plan, where
+ * sixty seconds is a hard ceiling that cannot be raised: several smaller
+ * calls finish in a fraction of the wall time of one large one, for the same
+ * number of tokens.
+ *
+ * They run a few at a time rather than all at once — see runBatches, and the
+ * free-tier rate limit that all-at-once was walking into every morning.
+ *
+ * A batch that fails does not take the others down. Losing six cards on a
+ * day the model hiccups is a thinner pool; losing all twelve because one
+ * request failed is a day with no news at all.
+ */
+export async function buildLearningCards(
+  articles: GuardianArticle[],
+  /*
+   * The languages the pool should be written in, read from the accounts by
+   * the caller. Defaulted so a caller with no opinion still produces the pool
+   * that has always existed rather than none at all.
+   */
+  languages: readonly LanguageCode[] = DEFAULT_LEARNING_PAIR,
+): Promise<DailyNewsPoolItem[]> {
+  if (articles.length === 0) return [];
+
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured on the server.");
+  }
+
+  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+  const client = new GoogleGenAI({ apiKey });
+
+  const perBatch = articlesPerBatch(languages.length);
+
+  const batches: GuardianArticle[][] = [];
+  for (let i = 0; i < articles.length; i += perBatch) {
+    batches.push(articles.slice(i, i + perBatch));
+  }
+
+  const settled = await runBatches(batches, (batch) =>
+    buildLearningBatch(batch, model, client, languages),
+  );
+
+  const items: DailyNewsPoolItem[] = [];
+
+  settled.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      items.push(...result.value);
+      return;
+    }
+
+    console.error(
+      `Daily news batch ${index + 1}/${batches.length} failed:`,
+      result.reason
+    );
+  });
+
+  return items;
 }

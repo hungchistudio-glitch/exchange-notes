@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
 import Avatar from "@/components/foundation/media/Avatar";
 import FriendQrScanner from "@/components/friends/FriendQrScanner";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
+import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePageOrigin from "@/hooks/usePageOrigin";
 import { UserX } from "lucide-react";
@@ -31,6 +32,7 @@ function FriendsPageContent() {
   const supabase = createClient();
   const { t } = useTranslation();
   const copy = t.friends;
+  const router = useRouter();
   const searchParams = useSearchParams();
   const invitedExchangeId = normalizeExchangeId(
     searchParams.get(FRIEND_INVITE_PARAM) ?? "",
@@ -139,6 +141,16 @@ function FriendsPageContent() {
    * field visible — leaving the user on the camera view after a successful
    * read looks like nothing happened.
    */
+  function handleBack() {
+    // history.length is 1 only on a cold entry — a push notification or a
+    // pasted URL — where there is nowhere to go back to.
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/home");
+  }
+
   function handleScannedExchangeId(scannedExchangeId: string) {
     setAddMode("id");
     setExchangeId(scannedExchangeId);
@@ -257,15 +269,25 @@ function FriendsPageContent() {
     <main className="min-h-screen bg-surface px-4 pb-28 pt-6 text-black sm:px-6 sm:py-10">
       <div className="mx-auto max-w-2xl">
         <header>
-          <Link
-            href="/"
-            aria-label="Back to Home"
+          {/*
+            Goes back, rather than going home.
+            This used to be a hard link to "/", which was wrong from every
+            entry point that is not Home — arriving from the Messages list and
+            pressing back dropped you on the Command Deck instead of back in
+            the list you came from. There is no history to return to when a
+            push notification opens the app directly on this page, which is
+            what the fallback is for.
+          */}
+          <button
+            type="button"
+            onClick={handleBack}
+            aria-label={t.common.back}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full text-lg font-bold text-black transition hover:bg-black/[0.04]"
           >
             ←
-          </Link>
+          </button>
 
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="mt-5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.eyebrow}
           </p>
 
@@ -273,7 +295,7 @@ function FriendsPageContent() {
             {copy.title}
           </h1>
 
-          <p className="mt-2 text-black/60">{copy.subtitle}</p>
+          <p className="mt-2 text-ink-soft">{copy.subtitle}</p>
         </header>
 
         <section className="mt-6 rounded-[24px] border border-line bg-white p-6 shadow-sm">
@@ -284,7 +306,7 @@ function FriendsPageContent() {
               type="button"
               onClick={() => setAddMode("id")}
               className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-                addMode === "id" ? "bg-black text-white" : "text-black/50"
+                addMode === "id" ? "bg-black text-white" : "text-ink-soft"
               }`}
             >
               {copy.add.exchangeId}
@@ -294,7 +316,7 @@ function FriendsPageContent() {
               type="button"
               onClick={() => setAddMode("qr")}
               className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-                addMode === "qr" ? "bg-black text-white" : "text-black/50"
+                addMode === "qr" ? "bg-black text-white" : "text-ink-soft"
               }`}
             >
               {copy.add.scanQr}
@@ -308,13 +330,16 @@ function FriendsPageContent() {
               </label>
 
               <div className="mt-2 flex items-center rounded-2xl border border-line bg-white px-4 py-3">
-                <span className="mr-1 text-black/40">@</span>
+                <span className="mr-1 text-ink-faint">@</span>
                 <input
                   value={exchangeId}
                   onChange={(event) => setExchangeId(event.target.value)}
                   placeholder={copy.add.placeholder}
-                  className="w-full bg-transparent text-black outline-none placeholder:text-black/30"
+                  className="w-full bg-transparent text-black outline-none placeholder:text-ink-faint"
                 />
+                {exchangeId && (
+                  <ClearFieldButton onClear={() => setExchangeId("")} />
+                )}
               </div>
 
               <button
@@ -335,7 +360,7 @@ function FriendsPageContent() {
                   {copy.profileQr.title}
                 </h3>
 
-                <p className="mt-1 text-center text-sm text-black/60">
+                <p className="mt-1 text-center text-sm text-ink-soft">
                   {copy.profileQr.description}
                 </p>
 
@@ -350,14 +375,14 @@ function FriendsPageContent() {
                       aria-label={copy.profileQr.imageAlt}
                     />
                   ) : (
-                    <span className="text-center text-sm text-black/40">
+                    <span className="text-center text-sm text-ink-faint">
                       {copy.profileQr.loading}
                     </span>
                   )}
                 </div>
 
                 {ownProfile && (
-                  <p className="mt-3 text-sm font-semibold text-black/50">
+                  <p className="mt-3 text-sm font-semibold text-ink-soft">
                     @{ownProfile.exchangeId}
                   </p>
                 )}
@@ -366,7 +391,7 @@ function FriendsPageContent() {
           )}
 
           {message && (
-            <p className="mt-4 text-sm font-semibold text-black/60">
+            <p className="mt-4 text-sm font-semibold text-ink-soft">
               {message}
             </p>
           )}
@@ -401,7 +426,7 @@ function FriendsPageContent() {
                         {request.sender.displayName ??
                           request.sender.exchangeId}
                       </p>
-                      <p className="truncate text-sm text-black/50">
+                      <p className="truncate text-sm text-ink-soft">
                         @{request.sender.exchangeId}
                       </p>
                     </div>
@@ -450,7 +475,7 @@ function FriendsPageContent() {
 
           {loading ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
-              <p className="text-black/50">{copy.list.loading}</p>
+              <p className="text-ink-soft">{copy.list.loading}</p>
             </div>
           ) : friends.length === 0 ? (
             <div className="mt-5 rounded-3xl bg-white p-7 text-center shadow-sm">
@@ -486,14 +511,14 @@ function FriendsPageContent() {
                         <p className="truncate text-lg font-bold text-black">
                           {friend.displayName ?? friend.exchangeId}
                         </p>
-                        <p className="truncate text-sm text-black/50">
+                        <p className="truncate text-sm text-ink-soft">
                           @{friend.exchangeId}
                         </p>
                       </div>
                     </div>
 
                     <Link
-                      href={`/messages?with=${friend.id}`}
+                      href={`/messages/new?friend=${encodeURIComponent(friend.id)}`}
                       className="shrink-0 rounded-full bg-black px-4 py-2 text-sm font-semibold text-white"
                     >
                       {t.messages.chatFallback}

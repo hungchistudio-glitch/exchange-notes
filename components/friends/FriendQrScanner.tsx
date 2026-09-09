@@ -200,7 +200,7 @@ export default function FriendQrScanner({
 
   return (
     <div className="mt-5 flex flex-col items-center">
-      <p className="text-center text-sm text-black/60">
+      <p className="text-center text-sm text-ink-soft">
         {copy.description}
       </p>
 
@@ -236,7 +236,7 @@ export default function FriendQrScanner({
 
       {scanning ? (
         <div className="mt-4 flex items-center gap-3">
-          <span className="text-sm font-semibold text-black/50">
+          <span className="text-sm font-semibold text-ink-soft">
             {copy.scanning}
           </span>
 
@@ -244,13 +244,13 @@ export default function FriendQrScanner({
             type="button"
             onClick={stopCamera}
             aria-label={copy.stop}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-black/60 transition-transform active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-ink-soft transition-transform active:scale-95"
           >
             <X size={16} strokeWidth={2} />
           </button>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-semibold text-black/50">
+        <p className="mt-3 text-sm font-semibold text-ink-soft">
           {copy.start}
         </p>
       )}

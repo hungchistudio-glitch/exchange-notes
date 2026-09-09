@@ -2,25 +2,42 @@
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
-import type { AppLanguage } from "@/lib/types/app";
+import {
+  getLanguage,
+  getLearningLanguages,
+  type LanguageCode,
+} from "@/lib/languages";
 
 type LanguagesStepProps = {
-  nativeLanguage: AppLanguage;
-  learningLanguage: AppLanguage;
-  onChangeNativeLanguage: (value: AppLanguage) => void;
-  onChangeLearningLanguage: (value: AppLanguage) => void;
+  nativeLanguage: LanguageCode;
+  learningLanguage: LanguageCode;
+  onChangeNativeLanguage: (value: LanguageCode) => void;
+  onChangeLearningLanguage: (value: LanguageCode) => void;
   onContinue: () => void;
 };
 
-const LANGUAGE_OPTIONS: Array<{ value: AppLanguage; label: string; badge: string }> = [
-  { value: "english", label: "English", badge: "En" },
-  { value: "traditional-chinese", label: "繁體中文", badge: "中" },
-];
+/*
+ * The languages this app can currently teach, read from the table rather than
+ * typed out. Narrower than the table on purpose: the profile columns still
+ * hold the old two-value encoding, so a pair they cannot store would fail on
+ * save instead of in the picker. Widening that column widens this list.
+ */
+const LANGUAGE_OPTIONS: Array<{
+  value: LanguageCode;
+  label: string;
+  badge: string;
+}> = getLearningLanguages().map((meta) => ({
+  value: meta.code,
+  label: meta.endonym,
+  badge: meta.badge,
+}));
 
-const OPPOSITE_LANGUAGE: Record<AppLanguage, AppLanguage> = {
-  english: "traditional-chinese",
-  "traditional-chinese": "english",
-};
+/* Only meaningful while exactly two languages can be learned. */
+function oppositeLanguage(code: LanguageCode): LanguageCode {
+  return (
+    LANGUAGE_OPTIONS.find((option) => option.value !== code)?.value ?? code
+  );
+}
 
 export default function LanguagesStep({
   nativeLanguage,
@@ -36,35 +53,35 @@ export default function LanguagesStep({
   // equal — picking a value that collides with the other field flips that
   // field to the remaining language instead, exactly like the Settings
   // page fix (never lets the DB's "must differ" check get tripped).
-  function handlePickNative(value: AppLanguage) {
+  function handlePickNative(value: LanguageCode) {
     onChangeNativeLanguage(value);
     if (value === learningLanguage) {
-      onChangeLearningLanguage(OPPOSITE_LANGUAGE[value]);
+      onChangeLearningLanguage(oppositeLanguage(value));
     }
   }
 
-  function handlePickLearning(value: AppLanguage) {
+  function handlePickLearning(value: LanguageCode) {
     onChangeLearningLanguage(value);
     if (value === nativeLanguage) {
-      onChangeNativeLanguage(OPPOSITE_LANGUAGE[value]);
+      onChangeNativeLanguage(oppositeLanguage(value));
     }
   }
 
-  const learningLabel = learningLanguage === "traditional-chinese" ? "繁體中文" : "English";
-  const nativeLabel = nativeLanguage === "traditional-chinese" ? "繁體中文" : "English";
+  const learningLabel = getLanguage(learningLanguage).endonym;
+  const nativeLabel = getLanguage(nativeLanguage).endonym;
 
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">
-        <h1 className="text-[24px] font-bold tracking-[-0.03em] text-black">
+        <h1 className="text-[1.5rem] font-bold tracking-[-0.03em] text-black">
           {copy.title}
         </h1>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.nativeLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-black/45">
+          <p className="mt-1 text-[0.8125rem] leading-5 text-ink-soft">
             {copy.nativeDescription}
           </p>
 
@@ -73,7 +90,7 @@ export default function LanguagesStep({
               <SettingsChoiceCard
                 key={option.value}
                 selected={nativeLanguage === option.value}
-                badge={<span className="text-[15px]">{option.badge}</span>}
+                badge={<span className="text-[0.9375rem]">{option.badge}</span>}
                 title={option.label}
                 onClick={() => handlePickNative(option.value)}
               />
@@ -82,10 +99,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-7">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-black/40">
+          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
             {copy.learningLabel}
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-black/45">
+          <p className="mt-1 text-[0.8125rem] leading-5 text-ink-soft">
             {copy.learningDescription}
           </p>
 
@@ -94,7 +111,7 @@ export default function LanguagesStep({
               <SettingsChoiceCard
                 key={option.value}
                 selected={learningLanguage === option.value}
-                badge={<span className="text-[15px]">{option.badge}</span>}
+                badge={<span className="text-[0.9375rem]">{option.badge}</span>}
                 title={option.label}
                 onClick={() => handlePickLearning(option.value)}
               />
@@ -103,10 +120,10 @@ export default function LanguagesStep({
         </div>
 
         <div className="mt-6 rounded-2xl bg-black/[0.035] px-4 py-3.5">
-          <p className="text-[13px] leading-6 text-black/60">
+          <p className="text-[0.8125rem] leading-6 text-ink-soft">
             {copy.previewPrimary.replace("{language}", learningLabel)}
           </p>
-          <p className="mt-1 text-[13px] leading-6 text-black/45">
+          <p className="mt-1 text-[0.8125rem] leading-6 text-ink-soft">
             {copy.previewSecondary.replace("{language}", nativeLabel)}
           </p>
         </div>
@@ -115,7 +132,7 @@ export default function LanguagesStep({
       <button
         type="button"
         onClick={onContinue}
-        className="mt-6 flex h-13 min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-all active:scale-[0.98]"
+        className="mt-6 flex h-13 min-h-12 w-full shrink-0 items-center justify-center rounded-full bg-black px-6 text-[0.9375rem] font-semibold text-white transition-all active:scale-[0.98]"
       >
         {t.onboarding.continue}
       </button>

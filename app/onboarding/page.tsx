@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import { createClient } from "@/lib/supabase/server";
-import type { AppLanguage } from "@/lib/types/app";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -26,7 +25,7 @@ export default async function OnboardingPage() {
   // Already finished onboarding (or an old account, backfilled to
   // completed) — this route has nothing left to do for them.
   if (profile?.onboarding_completed) {
-    redirect("/");
+    redirect("/home");
   }
 
   // Google OAuth metadata carries the user's real name/photo, but the
@@ -49,8 +48,8 @@ export default async function OnboardingPage() {
       initialDisplayName={profile?.display_name?.trim() || metadataName}
       initialExchangeId={profile?.exchange_id ?? ""}
       initialAvatarUrl={profile?.avatar_url ?? metadataAvatarUrl}
-      initialNativeLanguage={(profile?.native_language ?? null) as AppLanguage | null}
-      initialLearningLanguage={(profile?.learning_language ?? null) as AppLanguage | null}
+      initialNativeLanguage={profile?.native_language ?? null}
+      initialLearningLanguage={profile?.learning_language ?? null}
       initialStep={profile?.onboarding_step ?? null}
     />
   );

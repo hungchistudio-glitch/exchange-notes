@@ -32,7 +32,7 @@ export default function SettingsChoiceCard({
         <span
           className={[
             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-semibold",
-            selected ? "bg-white/15 text-white" : "bg-black/[0.05] text-black/70",
+            selected ? "bg-white/15 text-white" : "bg-black/[0.05] text-ink-strong",
           ].join(" ")}
         >
           {badge}
@@ -40,7 +40,7 @@ export default function SettingsChoiceCard({
       ) : null}
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-semibold tracking-[-0.02em]">
+        <span className="block truncate text-[0.9375rem] font-semibold tracking-[-0.02em]">
           {title}
         </span>
 
@@ -48,7 +48,7 @@ export default function SettingsChoiceCard({
           <span
             className={[
               "mt-0.5 block text-xs leading-5",
-              selected ? "text-white/70" : "text-black/45",
+              selected ? "text-ink-invert-soft" : "text-ink-soft",
             ].join(" ")}
           >
             {description}

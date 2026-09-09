@@ -1,0 +1,463 @@
+"use client";
+
+import { useState, type ComponentType, type CSSProperties } from "react";
+import Link from "next/link";
+
+import BookIcon from "@/components/foundation/icons/BookIcon";
+import MenuScanIcon from "@/components/foundation/icons/MenuScanIcon";
+import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
+import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
+import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
+import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
+import Screen from "@/components/foundation/layout/Screen";
+import OmniLexiconConsole, {
+  type OmniLexiconState,
+} from "@/components/cosmic/OmniLexiconConsole";
+import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import NotesHomeModule from "@/components/notes/NotesHomeModule";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import { getLanguageName } from "@/lib/languages";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
+import useVocabularyStats from "@/hooks/useVocabularyStats";
+import type { TranslationDictionary } from "@/lib/i18n/types";
+import { useVocabulary } from "@/contexts/VocabularyContext";
+
+import useInView from "@/hooks/useInView";
+import styles from "./CommandDeck.module.css";
+
+type RoomKey = keyof TranslationDictionary["cosmic"]["rooms"];
+
+type Room = {
+  key: RoomKey;
+  href: string;
+  Icon: ComponentType<{ className?: string }>;
+};
+
+/*
+ * Every room opens a page this app already has. The deck is a different way
+ * into the same features, not a second set of them, so nothing here routes
+ * anywhere that did not exist in Standard Mode.
+ */
+const ROOMS: Room[] = [
+  { key: "lexicon", href: "/vocabulary", Icon: NavVocabularyIcon },
+  { key: "mission", href: "/review", Icon: BookIcon },
+  /*
+   * Straight into the Menu Translator, with no bay in between.
+   *
+   * The room used to be a landing page offering a choice between reading a
+   * menu and photographing an object — but the deck's own console already
+   * has camera and image inputs two taps away, so the choice was a screen
+   * asking a question the deck had already answered.
+   */
+  { key: "scanner", href: "/scanner/menu", Icon: MenuScanIcon },
+  { key: "comms", href: "/messages", Icon: NavMessagesIcon },
+  { key: "earth", href: "/discover", Icon: NavDiscoverIcon },
+  { key: "memory", href: "/profile", Icon: NavSettingsIcon },
+];
+
+// Twelve hand-placed points rather than a generated field. See the .stars note
+// in CommandDeck.module.css for why the count is fixed.
+const STARS: Array<[left: string, top: string, delay: string]> = [
+  ["12%", "18%", "0s"],
+  ["78%", "12%", "1.4s"],
+  ["31%", "8%", "2.9s"],
+  ["88%", "34%", "0.7s"],
+  ["6%", "47%", "3.6s"],
+  ["94%", "62%", "2.1s"],
+  ["21%", "76%", "1.1s"],
+  ["69%", "88%", "3.1s"],
+  ["45%", "94%", "0.4s"],
+  ["84%", "79%", "2.5s"],
+  ["9%", "88%", "1.8s"],
+  ["57%", "5%", "4.2s"],
+];
+
+/*
+ * Signal traffic on the field.
+ *
+ * Three points of light, each riding its own radius. The two periods per
+ * signal are deliberately unrelated to each other: a point that takes 14s to
+ * go round but is only visible for a fifth of every 17s comes back at a
+ * different place on the ring every time, and the pair does not return to its
+ * starting arrangement for nearly four minutes. That is the whole trick behind
+ * the brief's "no repetition inside a short cycle" — nothing here is random,
+ * and nothing here loops anywhere the eye can follow.
+ *
+ * Negative delays so the field already has traffic on it when the deck opens,
+ * rather than three dots waiting to set off together.
+ *
+ * The angle is where each one starts, and it is the reason reduced motion can
+ * simply stop the rotation: three signals frozen at 34°, 158° and 262° are
+ * scattered around the field, where three frozen at 0° would be stacked in a
+ * line directly above Yumi and read as a fault.
+ */
+const SIGNALS: Array<{
+  orbit: string;
+  cycle: string;
+  radius: number;
+  angle: string;
+  delay: string;
+}> = [
+  { orbit: "14s", cycle: "17s", radius: 0.31, angle: "34deg", delay: "-3.4s" },
+  { orbit: "23s", cycle: "13s", radius: 0.25, angle: "158deg", delay: "-9.1s" },
+  { orbit: "19s", cycle: "21s", radius: 0.4, angle: "262deg", delay: "-15.6s" },
+];
+
+/*
+ * Where Yumi looks when a system is locked.
+ *
+ * The six nodes sit at 60° intervals with the first one straight up, so the
+ * direction to the one being pressed is just its angle — and the eye can be
+ * pointed at it with the same two numbers the ring was built from. The travel
+ * is in the mark's own 400-unit space, and it is wider than it is tall because
+ * that is the shape of the room the pupil has to move in.
+ */
+function lookAt(index: number) {
+  const radians = ((360 / ROOMS.length) * index * Math.PI) / 180;
+
+  return {
+    "--look-x": `${(Math.sin(radians) * 8).toFixed(2)}px`,
+    "--look-y": `${(-Math.cos(radians) * 5).toFixed(2)}px`,
+  } as CSSProperties;
+}
+
+/**
+ * The Yumi Command Deck — the home of Yumi Cosmic Mode.
+ *
+ * Yumi sits at the centre with the app's six main systems on a ring around
+ * it. Every number shown on a node is one the app genuinely knows: words
+ * actually saved, reviews actually due, messages actually unread. Nothing
+ * here invents a reading to look technical.
+ */
+export default function CommandDeck() {
+  // Which language is being learned, not which one the interface is in — the
+  // two stay separate here as everywhere else.
+  const { learningLanguage } = useLearningLanguageContext();
+
+  /*
+   * The app-wide library, not a second fetch of it.
+   *
+   * The deck used to read the vocabulary table itself, in parallel with the
+   * home screen doing the same and the Vocabulary page doing it a third time.
+   * A word saved in the OmniLexicon console left the readouts above it
+   * unchanged until the next reload, because they were looking at a different
+   * copy of the same rows.
+   */
+  const { items, loading: itemsLoading } = useVocabulary();
+  const { reviewStats } = useVocabularyStats(items);
+  const { unreadCount } = useUnreadMessageCount();
+  const [lockedRoom, setLockedRoom] = useState<RoomKey | null>(null);
+  /*
+   * What the console is doing, so Yumi can react to it. This is the whole of
+   * the brief's "OmniLexicon and Yumi must interact": the eye looks up at the
+   * console while it is being used and turns to the user while it listens.
+   */
+  const [omniState, setOmniState] = useState<OmniLexiconState>("idle");
+
+  /*
+   * The suspending read, last, and deliberately so.
+   *
+   * useTranslation serves its dictionary from a cache and falls back to
+   * `use(loadTranslations(language))` when that cache is cold — which
+   * suspends. React discards a suspended render and replays it, and any hook
+   * that sat after the suspending one never ran on the first attempt: the two
+   * attempts then disagree about how many hooks this component has, which
+   * React reports as a change in hook order.
+   *
+   * Cold is the normal case here rather than an edge one. The deck is the
+   * first screen of Cosmic Mode, so it is routinely the first component in a
+   * page to ask for the dictionary at all.
+   */
+  const { t, language: interfaceLanguage } = useTranslation();
+  const copy = t.cosmic;
+
+  /*
+   * The lock, and the direction the room will open from.
+   *
+   * On pointer down rather than on click, which is what makes it read as a
+   * targeting system instead of a page transition: the ring closes under the
+   * finger while it is still down, and the deck's departing snapshot is taken
+   * with the lock already on it. No artificial delay is inserted before the
+   * navigation — the whole beat happens inside the press the user is already
+   * making.
+   *
+   * A pointer down that never becomes a tap leaves the lock showing until the
+   * pointer is released, which is the correct read: the system stays targeted
+   * for exactly as long as the finger is on it.
+   */
+  function lockRoom(key: RoomKey) {
+    setLockedRoom(key);
+  }
+
+  function statusFor(key: RoomKey) {
+    if (key === "lexicon") {
+      return itemsLoading
+        ? copy.status.loading
+        : copy.status.wordsSaved.replace("{count}", String(items.length));
+    }
+
+    if (key === "mission") {
+      if (itemsLoading) return copy.status.loading;
+
+      return reviewStats.due === 0
+        ? copy.status.nothingDue
+        : copy.status.dueNow.replace("{count}", String(reviewStats.due));
+    }
+
+    if (key === "comms" && unreadCount > 0) {
+      return copy.status.unreadMessages.replace("{count}", String(unreadCount));
+    }
+
+    return null;
+  }
+
+  const { ref: coreRef, inView: coreInView } =
+    useInView<HTMLDivElement>();
+
+  return (
+    <Screen>
+      <div
+        className="px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
+      >
+        <p className="hud-label">{copy.deck.eyebrow}</p>
+        <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
+          {copy.deck.title}
+        </h1>
+        <p className="mt-1 text-ink-soft">{copy.deck.subtitle}</p>
+
+        {/*
+          The bridge readout, in place of the reference's side panels — there
+          is no room for those on a phone, and this is the part of them worth
+          keeping. Three lines, each one a fact the app actually holds: how
+          many words are in the lexicon, how many are due, and which language
+          is being learned. Nothing here is bearing, bandwidth or range.
+        */}
+        <dl className="mt-4 grid grid-cols-3 gap-x-3 gap-y-1 border-y border-line py-2.5">
+          {[
+            {
+              label: copy.deck.readoutLexicon,
+              value: itemsLoading ? "—" : String(items.length),
+            },
+            {
+              label: copy.deck.readoutDue,
+              value: itemsLoading ? "—" : String(reviewStats.due),
+            },
+            {
+              label: copy.deck.readoutLearning,
+              // The language actually being learned, named in the language
+              // the reader is reading. It used to be one of two constants.
+              value: getLanguageName(learningLanguage, interfaceLanguage),
+            },
+          ].map((readout) => (
+            <div key={readout.label}>
+              <dt className="hud-label">{readout.label}</dt>
+              <dd className="mt-0.5 text-sm font-bold tracking-[-0.01em]">
+                {readout.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      {/*
+        The deck answers three questions, top to bottom: "what is this thing I
+        just saw?", "where do I want to go?", and — in the dock — "take me
+        there, I already know". The console is the first of those and sits
+        above the orbit because identifying something unknown is the action
+        people arrive with, while the six systems are where they go once they
+        already know what they want.
+      */}
+      <div className="mt-4 px-4">
+        <OmniLexiconConsole onStateChange={setOmniState} />
+      </div>
+
+      <div className="mt-4 px-4">
+        <NotesHomeModule />
+      </div>
+
+      <nav
+        className={styles.deck}
+        aria-label={copy.deck.roomsLabel}
+        data-omni={omniState}
+      >
+        <div className={styles.stars} aria-hidden="true">
+          {STARS.map(([left, top, delay]) => (
+            <span
+              key={`${left}-${top}`}
+              className={styles.star}
+              style={{ left, top, animationDelay: delay }}
+            />
+          ))}
+        </div>
+
+        <div className={styles.stage}>
+          <span className={styles.field} aria-hidden="true" />
+          <span className={styles.fieldInner} aria-hidden="true" />
+
+          {SIGNALS.map((signal) => (
+            <span
+              key={signal.orbit}
+              className={styles.signal}
+              aria-hidden="true"
+              style={
+                {
+                  "--signal-orbit": signal.orbit,
+                  "--signal-cycle": signal.cycle,
+                  "--signal-radius": signal.radius,
+                  "--signal-angle": signal.angle,
+                  "--signal-delay": signal.delay,
+                } as CSSProperties
+              }
+            >
+              <span className={styles.signalDot} />
+            </span>
+          ))}
+
+          <div
+            ref={coreRef}
+            /* Twenty-one infinite animations live on this one widget, and it
+               is the top of a page that scrolls. See [data-in-view] in
+               globals.css. */
+            data-in-view={coreInView ? "true" : "false"}
+            className={styles.core}
+            data-omni={omniState}
+            // The acknowledgement in §9 of the brief. It has a real trigger
+            // already: the same press that locks a system — so Yumi answers
+            // the press with a ripple and by turning to look at whichever of
+            // its six systems the finger is on.
+            data-lock={lockedRoom ? "true" : "false"}
+            style={
+              lockedRoom
+                ? lookAt(ROOMS.findIndex((room) => room.key === lockedRoom))
+                : undefined
+            }
+          >
+            <span className={styles.coreAura} aria-hidden="true" />
+            <span className={styles.coreGlow} aria-hidden="true" />
+            <span className={styles.coreHalo} aria-hidden="true" />
+            <span className={styles.coreHaloInner} aria-hidden="true" />
+            <span className={styles.coreArc} aria-hidden="true" />
+            <span className={styles.coreRipple} aria-hidden="true" />
+
+            {/*
+              Three wrappers, one transform each, because an element can only
+              run one transform animation at a time and this needs four on
+              different clocks: the optical correction (static), the drift, the
+              tilt, and the breath on the mark itself. Nesting is what lets
+              them layer instead of overwrite. See the module CSS.
+            */}
+            <div className={styles.coreBody}>
+              <div className={styles.coreDrift}>
+                <div className={styles.coreTilt}>
+                  <ExchangeNotesMark
+                    cosmic
+                    /*
+                     * Energy follows what Yumi is actually doing, and the four
+                     * working states are unchanged — a seam that is always
+                     * bright says nothing when the moment it was meant to mark
+                     * arrives, and that logic still governs the range.
+                     *
+                     * What moved is the floor. At 0.12 the seam was effectively
+                     * unlit, so a resting Yumi on the deck was a dark shape
+                     * with rings around it; the light that makes this a powered
+                     * machine only existed while the console was busy. 0.34 is
+                     * lit enough to read as a system running and still less
+                     * than half of listening, so every state above it keeps a
+                     * clear step up to arrive on.
+                     */
+                    energy={
+                      omniState === "scanning"
+                        ? 1
+                        : omniState === "listening"
+                          ? 0.65
+                          : omniState === "typing"
+                            ? 0.4
+                            : 0.34
+                    }
+                    className={`${styles.coreMark} ${styles.coreTiming}`}
+                    pupilClassName={styles.pupil}
+                    irisClassName={styles.iris}
+                    /*
+                     * The blink, the pass and the gleam are the app's shared
+                     * ones (app/yumi-motion.css); the module class beside each
+                     * carries only this screen's timing. They have to be
+                     * applied as global class names — a CSS module scopes any
+                     * animation-name it sees, so a module referring to a
+                     * shared keyframe compiles to a name that matches nothing
+                     * and silently stops animating.
+                     */
+                    upperLidClassName="yumi-blink-upper"
+                    lowerLidClassName="yumi-blink-lower"
+                    sweepClassName={
+                      omniState === "scanning"
+                        ? `yumi-sweep-active ${styles.coreSweepActive}`
+                        : `yumi-sweep ${styles.coreSweep}`
+                    }
+                    gleamClassName={`yumi-gleam ${styles.coreGleam}`}
+                  />
+                </div>
+              </div>
+            </div>
+            <span className="sr-only">{copy.deck.coreLabel}</span>
+          </div>
+
+          {ROOMS.map((room, index) => {
+            const roomCopy = copy.rooms[room.key];
+            const status = statusFor(room.key);
+
+            return (
+              <div
+                key={room.key}
+                className={styles.node}
+                style={
+                  {
+                    "--angle": `${(360 / ROOMS.length) * index}deg`,
+                    // Each instrument on its own radar cycle. Negative, so
+                    // they are already mid-cycle on arrival rather than all
+                    // waiting to start together.
+                    "--node-radar-delay": `${-index * 0.93}s`,
+                  } as CSSProperties
+                }
+              >
+                <div className={styles.nodeInner}>
+                  <Link
+                    href={room.href}
+                    onPointerDown={() => lockRoom(room.key)}
+                    onPointerUp={() => setLockedRoom(null)}
+                    onPointerCancel={() => setLockedRoom(null)}
+                    className={[
+                      styles.nodeLink,
+                      lockedRoom === room.key ? styles.nodeLocked : "",
+                      lockedRoom && lockedRoom !== room.key
+                        ? styles.nodeDimmed
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    // The description lives here rather than in a second
+                    // visible list of the same six rooms. The ring is the
+                    // deck; repeating it underneath cost more space than
+                    // the hero it was explaining.
+                    aria-label={`${roomCopy.name} — ${roomCopy.familiar}. ${roomCopy.description}`}
+                    title={roomCopy.description}
+                  >
+                    <span className={styles.nodeDisc}>
+                      <room.Icon className="h-5 w-5" />
+                    </span>
+
+                    <span className={styles.nodeName}>{roomCopy.name}</span>
+                    <span className={styles.nodeFamiliar}>
+                      {status ?? roomCopy.familiar}
+                    </span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </nav>
+    </Screen>
+  );
+}

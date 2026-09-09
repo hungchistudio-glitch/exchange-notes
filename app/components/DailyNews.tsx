@@ -1,6 +1,15 @@
 "use client";
 
-import { LoaderCircle, RefreshCw } from "lucide-react";
+
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
+import { STORES, readRecord, writeRecord } from "@/lib/offline/db";
+import { SlidersHorizontal } from "lucide-react";
+
+import SignalControlSheet from "@/components/discover/SignalControlSheet";
+import YumiSignalRadar from "@/components/discover/YumiSignalRadar";
+import useSignalRadar from "@/hooks/discover/useSignalRadar";
+import { track } from "@/lib/analytics/track";
 import {
   useCallback,
   useEffect,
@@ -11,7 +20,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { createNote } from "@/lib/notes/repository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
-import { getVoiceForLanguage } from "@/lib/speech";
+import { getVoiceForLanguage , type SpeechLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -19,7 +28,6 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import CompactStoryRow from "@/components/discover/CompactStoryRow";
 import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
-import SpeechSpeedControl from "@/components/discover/SpeechSpeedControl";
 import StoryDetailSheet from "@/components/discover/StoryDetailSheet";
 import VocabularyDrawer from "@/components/discover/VocabularyDrawer";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
@@ -34,7 +42,34 @@ import {
 type DailyNewsResponse = {
   cards: DailyNewsCard[];
   generatedAt: string;
+  /* True when the pool has nothing this reader has not already been shown. */
+  exhausted?: boolean;
 };
+
+/**
+ * Tells the server which cards this reader has now been shown.
+ *
+ * Fire-and-forget on purpose. It is bookkeeping that makes the *next*
+ * refresh better, and a reader should never wait on it or see it fail — the
+ * cost of losing one call is a card repeating later, which is smaller than
+ * any error it could raise instead.
+ */
+function recordSeen(cards: DailyNewsCard[]) {
+  const itemIds = cards
+    .map((card) => card.itemId)
+    .filter((id): id is string => typeof id === "string");
+
+  if (itemIds.length === 0) return;
+
+  void fetch("/api/daily-news/seen", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ itemIds }),
+    keepalive: true,
+  }).catch(() => {
+    // Deliberately silent — see above.
+  });
+}
 
 /*
  * Deliberately touches no state, so both the mount effect and the refresh
@@ -135,18 +170,33 @@ function categoryLabel(
   return copy.categories[key] ?? category;
 }
 
-function createNoteContent(card: DailyNewsCard) {
+/*
+ * A note keeps both sides of the card, in the reader's own pair. The two
+ * halves were called "english" and "chinese" and now are not: whichever
+ * language leads is the first, and the language they already have is the
+ * second.
+ */
+function createNoteContent(
+  card: DailyNewsCard,
+  [primaryLanguage, secondaryLanguage]: readonly [LanguageCode, LanguageCode],
+) {
   const englishVocabulary = card.vocabulary
-    .map((item) => `• ${item.word} (${item.partOfSpeech}) — ${item.englishExample}`)
+    .map(
+      (item) =>
+        `• ${item.texts[primaryLanguage] ?? ""} (${item.partOfSpeech}) — ${item.examples[primaryLanguage] ?? ""}`,
+    )
     .join("\n");
 
   const chineseVocabulary = card.vocabulary
-    .map((item) => `• ${item.word}：${item.translation}\n  ${item.chineseExample}`)
+    .map(
+      (item) =>
+        `• ${item.texts[primaryLanguage] ?? ""}：${item.texts[secondaryLanguage] ?? ""}\n  ${item.examples[secondaryLanguage] ?? ""}`,
+    )
     .join("\n");
 
-  const english = `📰 ${card.englishTitle}
+  const english = `📰 ${(card.titles[primaryLanguage] ?? "")}
 
-${card.englishSummary}
+${(card.summaries[primaryLanguage] ?? "")}
 
 Vocabulary
 ${englishVocabulary}
@@ -154,9 +204,9 @@ ${englishVocabulary}
 Source: ${card.sourceName}
 ${card.sourceUrl}`;
 
-  const chinese = `${card.chineseTitle}
+  const chinese = `${(card.titles[secondaryLanguage] ?? "")}
 
-${card.chineseSummary}
+${(card.summaries[secondaryLanguage] ?? "")}
 
 學習單字
 ${chineseVocabulary}`;
@@ -166,30 +216,65 @@ ${chineseVocabulary}`;
 
 function createPartnerMessage(card: DailyNewsCard) {
   return encodeNewsCardMessage({
-    englishTitle: card.englishTitle,
-    chineseTitle: card.chineseTitle,
-    englishSummary: card.englishSummary,
-    chineseSummary: card.chineseSummary,
+    titles: card.titles,
+    summaries: card.summaries,
     vocabulary: card.vocabulary.map((item) => ({
-      word: item.word,
-      translation: item.translation,
+      texts: item.texts,
       partOfSpeech: item.partOfSpeech,
-      englishExample: item.englishExample,
-      chineseExample: item.chineseExample,
+      examples: item.examples,
     })),
     sourceName: card.sourceName,
     sourceUrl: card.sourceUrl,
   });
 }
 
+/** Where the last batch that arrived is kept, for a reader with no signal. */
+const NEWS_CACHE_KEY = "news:lastBatch";
+
 export default function DailyNews() {
   const { t } = useTranslation();
   const copy = t.discover;
 
+  const { learningLanguage, pair } = useDisplayLanguages();
+  const [primaryLanguage, secondaryLanguage] = pair;
+
   const [cards, setCards] = useState<DailyNewsCard[]>([]);
+
+
+  /** Which language the batch on screen was fetched for. */
+  const loadedLanguageRef = useRef<LanguageCode | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  /*
+   * The last batch that arrived, kept on the device.
+   *
+   * Discover is the screen a reader opens on a train, and it used to be
+   * the emptiest one there: the pool lives on the server and the service
+   * worker deliberately does not cache API calls, so no signal meant no
+   * stories at all. Yesterday's are worth far more than an error message.
+   *
+   * Only for the language they were fetched in — a cached French feed is
+   * not an answer for someone now learning Italian, and showing it would
+   * be the same fallback this whole change removed from everywhere else.
+   * The language is passed rather than closed over so this stays stable
+   * and the mount effect is not torn down by a change it handles itself.
+   */
+  const loadFromDevice = useCallback(async (language: LanguageCode) => {
+    const stored = await readRecord<{
+      cards: DailyNewsCard[];
+      language: string;
+    }>(STORES.kv, NEWS_CACHE_KEY);
+
+    if (!stored?.cards?.length) return false;
+    if (stored.language !== language) return false;
+
+    setCards(stored.cards);
+    setLoading(false);
+    return true;
+  }, []);
   const [notice, setNotice] = useState("");
 
   const [speakingKey, setSpeakingKey] = useState<string | null>(null);
@@ -201,6 +286,17 @@ export default function DailyNews() {
   // backend column for it, so it simply filters the current view rather
   // than persisting a dismissal.
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+
+  /*
+   * The Signal Controls surface, and the one filter it carries that is real.
+   *
+   * Topics are a view over the cards already loaded rather than a request
+   * parameter — the feed is a single daily batch, so filtering it locally is
+   * both instant and honest. An empty set means no filter at all, which is why
+   * everything downstream tests for size rather than membership.
+   */
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
 
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
   // Decoupled from detailCardId so the featured card's "Explore this
@@ -262,16 +358,28 @@ export default function DailyNews() {
           copy.loadNewsError
         );
 
-        if (
-          isRefresh &&
-          lastGeneratedAtRef.current === payload.generatedAt
-        ) {
+        /*
+         * The feed used to compare generatedAt against the last batch to
+         * decide whether anything had changed, because there was only ever
+         * one batch a day to compare. The pool answers the question directly
+         * now: `exhausted` means this reader has been shown everything it
+         * holds, which is the only case where a refresh genuinely cannot
+         * produce something new.
+         */
+        if (isRefresh && payload.exhausted) {
           setNotice(copy.sameBatchNotice);
         }
 
         lastGeneratedAtRef.current = payload.generatedAt;
 
         setCards(payload.cards);
+        recordSeen(payload.cards);
+
+        void writeRecord(STORES.kv, {
+          key: NEWS_CACHE_KEY,
+          cards: payload.cards,
+          language: learningLanguage,
+        });
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -279,6 +387,10 @@ export default function DailyNews() {
         ) {
           return;
         }
+
+        // The device's own copy first: an error belongs on screen only
+        // when there is genuinely nothing to read.
+        if (await loadFromDevice(learningLanguage)) return;
 
         setError(
           requestError instanceof Error
@@ -290,17 +402,62 @@ export default function DailyNews() {
         setRefreshing(false);
       }
     },
-    [copy]
+    [copy, learningLanguage, loadFromDevice]
   );
 
+  /*
+   * The radar is a reader of this component's state, not a participant in it.
+   *
+   * It is handed the same three facts the refresh button already used —
+   * refreshing, loading, error — plus the function that starts a scan, and it
+   * cannot delay, retry or swallow a request. Everything it needs that the
+   * feed has no reason to know (connection, reduced motion, the short windows
+   * after a scan lands) lives in the hook. See §39 of the brief: animation
+   * state must not become business state.
+   */
+  const radar = useSignalRadar({
+    refreshing,
+    loading,
+    error: Boolean(error),
+    onScan: () => void loadNews(true),
+    onOpenControls: () => {
+      track("radar.controls_opened");
+      setControlsOpen(true);
+    },
+  });
+
+  /*
+   * Reloaded when the language changes, not only when the screen is.
+   *
+   * The pool is filtered server-side to cards that can lead in the language
+   * being learned, so the batch already on screen belongs to the language it
+   * was fetched under. Without this dependency, switching to Italian left a
+   * feed of French stories sitting there until something happened to remount
+   * the component — which, on a client-side navigation, may be never.
+   *
+   * `copy` covers the interface language for the same reason.
+   */
   useEffect(() => {
     const controller = new AbortController();
 
     requestControllerRef.current = controller;
 
-    // No spinner or clearing step here: on mount the component is already in
-    // exactly that state, which is what makes the eager half of loadNews
-    // unnecessary rather than merely inconvenient.
+    /*
+     * Cleared first on a reload, kept on the first pass.
+     *
+     * On mount the component is already empty and loading, which is what
+     * made the eager half of loadNews unnecessary. On a language change it
+     * is neither — and leaving the old batch up while the new one is
+     * fetched shows the reader stories in the language they just left,
+     * which is the exact thing they changed the setting to stop seeing.
+     */
+    if (loadedLanguageRef.current && loadedLanguageRef.current !== learningLanguage) {
+      setCards([]);
+      setLoading(true);
+    }
+
+    loadedLanguageRef.current = learningLanguage;
+
     async function loadOnMount() {
       try {
         const payload = await fetchDailyNews(
@@ -311,6 +468,13 @@ export default function DailyNews() {
         lastGeneratedAtRef.current = payload.generatedAt;
 
         setCards(payload.cards);
+        recordSeen(payload.cards);
+
+        void writeRecord(STORES.kv, {
+          key: NEWS_CACHE_KEY,
+          cards: payload.cards,
+          language: learningLanguage,
+        });
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -318,6 +482,10 @@ export default function DailyNews() {
         ) {
           return;
         }
+
+        // The device's own copy first: an error belongs on screen only
+        // when there is genuinely nothing to read.
+        if (await loadFromDevice(learningLanguage)) return;
 
         setError(
           requestError instanceof Error
@@ -338,12 +506,12 @@ export default function DailyNews() {
       requestControllerRef.current?.abort();
       window.speechSynthesis?.cancel();
     };
-  }, [copy]);
+  }, [copy, learningLanguage, loadFromDevice]);
 
   function speak(
     key: string,
     text: string,
-    language: "en-US" | "zh-TW"
+    language: SpeechLanguage
   ) {
     if (
       typeof window === "undefined" ||
@@ -403,18 +571,18 @@ export default function DailyNews() {
       return;
     }
 
-    const segments: { text: string; lang: "en-US" | "zh-TW" }[] =
+    const segments: { text: string; lang: SpeechLanguage }[] =
       audioMode === "en"
         ? [
             {
-              text: `${card.englishTitle}. ${card.englishSummary}`,
-              lang: "en-US",
+              text: `${(card.titles[primaryLanguage] ?? "")}. ${(card.summaries[primaryLanguage] ?? "")}`,
+              lang: getLanguage(primaryLanguage).speechTag,
             },
           ]
         : [
             {
-              text: `${card.chineseTitle}。${card.chineseSummary}`,
-              lang: "zh-TW",
+              text: `${(card.titles[secondaryLanguage] ?? "")}。${(card.summaries[secondaryLanguage] ?? "")}`,
+              lang: getLanguage(secondaryLanguage).speechTag,
             },
           ];
 
@@ -480,7 +648,7 @@ export default function DailyNews() {
     setSavingCardId(card.id);
     setError("");
 
-    const noteContent = createNoteContent(card);
+    const noteContent = createNoteContent(card, pair);
 
     try {
       const supabase = createClient();
@@ -495,8 +663,10 @@ export default function DailyNews() {
       }
 
       const saved = await createNote(supabase, user.id, {
-        english: noteContent.english,
-        chinese: noteContent.chinese,
+        originalText: noteContent.english,
+        originalLanguage: pair[0],
+        personalMeaning: noteContent.chinese,
+        sourceKind: "news",
         sourceName: card.sourceName,
         sourceUrl: card.sourceUrl,
       });
@@ -635,8 +805,8 @@ export default function DailyNews() {
 
   async function shareStory(card: DailyNewsCard) {
     const shareData = {
-      title: card.englishTitle,
-      text: card.chineseTitle,
+      title: (card.titles[primaryLanguage] ?? ""),
+      text: (card.titles[secondaryLanguage] ?? ""),
       url: card.sourceUrl,
     };
 
@@ -677,7 +847,26 @@ export default function DailyNews() {
     return <LoadingHero />;
   }
 
-  const visibleCards = cards.filter((card) => !hiddenIds.has(card.id));
+  /*
+   * Every topic the current batch actually contains, in the order it first
+   * appears. Derived rather than a fixed list, so a category the feed stops
+   * publishing stops being offered instead of becoming a filter that returns
+   * nothing.
+   */
+  const topics = Array.from(
+    new Set(
+      cards
+        .filter((card) => !hiddenIds.has(card.id))
+        .map((card) => card.category.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  const visibleCards = cards.filter(
+    (card) =>
+      !hiddenIds.has(card.id) &&
+      (selectedTopics.size === 0 || selectedTopics.has(card.category.trim())),
+  );
   const featuredCard = visibleCards[0] ?? null;
   const latestCards = visibleCards.slice(1);
   const detailCard =
@@ -711,48 +900,83 @@ export default function DailyNews() {
       <div className="mb-7 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2
-            className="text-[34px] font-bold leading-[1.08] tracking-[-0.03em]"
+            className="text-[2.125rem] font-bold leading-[1.08] tracking-[-0.03em]"
             style={{ color: DISCOVER_COLORS.text }}
           >
             {copy.dailyNewsTitle}
           </h2>
 
           <p
-            className="mt-2 text-[15px] leading-[1.5]"
+            className="mt-2 text-[0.9375rem] leading-[1.5]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {copy.subtitle}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void loadNews(true)}
-          disabled={refreshing}
-          aria-label={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          title={refreshing ? copy.loadingNewStories : copy.refreshAction}
-          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-50"
-          style={{
-            border: `1px solid ${DISCOVER_COLORS.divider}`,
-            color: DISCOVER_COLORS.accent,
-            backgroundColor: DISCOVER_COLORS.card,
-          }}
-        >
-          {refreshing ? (
-            <LoaderCircle size={14} strokeWidth={2} className="animate-spin" />
-          ) : (
-            <RefreshCw size={14} strokeWidth={2} />
-          )}
-        </button>
+        {/*
+          One control, every shell.
+
+          The plain refresh button is gone — not hidden behind a mode, gone.
+          Keeping a second control alive for Standard Mode would have meant two
+          things to change every time refreshing gains a state, and the radar
+          says strictly more than the button did: the button could report
+          "spinning", where this reports offline, scanning, syncing, succeeded
+          and failed. What differs between shells is six colour tokens.
+        */}
+        <div className="mt-1 flex shrink-0 items-center gap-1">
+          <YumiSignalRadar controller={radar} copy={copy} />
+
+          {/*
+            The same sheet the long press opens, reachable without a gesture.
+            A press-and-hold is undiscoverable and unavailable to anyone driving
+            the page from a keyboard or a switch, so the controls get an
+            ordinary button as well — §43's accessible alternative, not a
+            duplicate feature.
+          */}
+          <button
+            type="button"
+            onClick={() => {
+              track("radar.controls_opened");
+              setControlsOpen(true);
+            }}
+            aria-label={copy.signalControlsOpen}
+            title={copy.signalControlsOpen}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-opacity"
+            style={{ color: DISCOVER_COLORS.textSecondary }}
+          >
+            <SlidersHorizontal size={15} strokeWidth={1.9} />
+          </button>
+        </div>
       </div>
 
-      <div className="mb-7">
-        <SpeechSpeedControl
-          value={speechRate}
-          onChange={setSpeechRate}
-          copy={copy}
-        />
-      </div>
+      {/*
+        Speech speed used to sit here as a labelled row under the title.
+        
+        It moved into the Signal Controls sheet rather than being duplicated
+        there: it is a preference, not a piece of the page, and a preference
+        that is always on screen costs a row of vertical space on every visit
+        to serve the handful where it is actually changed. The header is what
+        the radar and the controls button are for.
+      */}
+      <SignalControlSheet
+        open={controlsOpen}
+        onClose={() => setControlsOpen(false)}
+        copy={copy}
+        speechRate={speechRate}
+        onSpeechRateChange={setSpeechRate}
+        topics={topics}
+        selectedTopics={selectedTopics}
+        onToggleTopic={(topic) =>
+          setSelectedTopics((current) => {
+            const next = new Set(current);
+            if (next.has(topic)) next.delete(topic);
+            else next.add(topic);
+            return next;
+          })
+        }
+        onClearTopics={() => setSelectedTopics(new Set())}
+      />
 
       {notice && !error && (
         <div
@@ -788,7 +1012,7 @@ export default function DailyNews() {
         <div className="rounded-[24px] border border-dashed border-black/[0.1] px-5 py-10 text-center">
           <p className="text-sm font-semibold">{copy.emptyTitle}</p>
 
-          <p className="mt-1 text-sm leading-6 text-neutral-500">
+          <p className="mt-1 text-sm leading-6 text-ink-soft">
             {copy.emptyDescription}
           </p>
         </div>
@@ -818,7 +1042,7 @@ export default function DailyNews() {
       {latestCardsWithThumbnail.length > 0 ? (
         <div className="mt-9">
           <p
-            className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+            className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: DISCOVER_COLORS.textSecondary }}
           >
             {copy.latestStoriesLabel}

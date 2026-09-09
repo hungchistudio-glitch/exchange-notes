@@ -1,6 +1,14 @@
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const english: TranslationDictionary = {
+  offline: {
+    title: "You are offline",
+    body: "Your words, reviews and stories are on this device. Anything you change is saved and sent when you are back.",
+    needsConnection: "This needs a connection",
+    pendingOne: "1 change waiting to sync",
+    pendingMany: "{count} changes waiting to sync",
+    savedLocally: "Saved on this device",
+  },
   pwa: {
     title: "Exchange Notes is ready",
     subtitle:
@@ -26,6 +34,142 @@ const english: TranslationDictionary = {
     updateReadyTitle: "A new version is ready",
     updateReadyAction: "Reload",
     updateReadyDismiss: "Not now",
+  },
+  landing: {
+    navigation: {
+      ariaLabel: "Product introduction navigation",
+      homeAriaLabel: "Exchange Notes introduction",
+      start: "Start",
+      opening: "Opening…",
+    },
+    languagePicker: {
+      label: "Interface language",
+      ariaLabel: "Read this introduction in",
+    },
+    hero: {
+      eyebrow: "A journal that can see and listen",
+      title: "Keep the moment before it disappears.",
+      intro:
+        "Write what you're thinking. Say what you can't quite write. Show Yumi what you're seeing.",
+      description:
+        "Your journal remembers with you—connecting thoughts, feelings, images, and moments so they can find their way back when they matter again.",
+      mantra: "Write it. · Say it. · Show it.",
+      modeAriaLabel: "Choose how to capture this moment",
+      write: "Write",
+      voice: "Voice",
+      camera: "Camera",
+      cta: "Start journaling — Continue with Google",
+      ctaLoading: "Opening Google…",
+      preview: {
+        ariaLabel: "Journal capture preview",
+        writeEyebrow: "Writing",
+        writeSample: "I keep thinking about the light on the walk home…",
+        writeStatus: "Saved as a thought",
+        voiceEyebrow: "Voice recognition",
+        voiceSample:
+          "I don't quite know how to write this yet, but today felt different.",
+        voiceStatus: "Voice recognized · transcript ready",
+        cameraEyebrow: "Camera recognition",
+        cameraSubject: "Ginkgo leaves in evening light",
+        cameraDescription: "Yumi connected the image with this moment.",
+        cameraStatus: "Scene recognized",
+        memoryLinks: "This moment connects",
+        thought: "thought",
+        feeling: "feeling",
+        image: "image",
+      },
+    },
+    lookup: {
+      ariaLabel: "Word lookup preview",
+      sourceLanguage: "English",
+      targetLanguage: "繁體中文",
+      query: "serendipity",
+      partOfSpeech: "noun",
+      meaning: "finding something good without looking for it",
+      translation: "意外發現美好事物的機緣",
+      example:
+        "Learning a word at exactly the right moment feels like serendipity.",
+      saved: "Saved",
+      savedNote: "One word, kept for later.",
+    },
+    notes: {
+      eyebrow: "Keep",
+      title: "Save the sentence, not just the definition.",
+      description:
+        "A personal bilingual note gives a new word somewhere to belong — without likes, replies, or an audience.",
+      previewAriaLabel: "Bilingual note preview",
+      date: "August 24",
+      original: "I finally found the word for that feeling: bittersweet.",
+      translation: "我終於找到形容那種感覺的詞：苦樂參半。",
+      privateNote: "Private note",
+    },
+    exchange: {
+      eyebrow: "Exchange",
+      title: "A useful word can keep moving.",
+      description:
+        "Share a vocabulary card with a learning friend. It arrives with its reading and meaning intact — more like passing a note than posting to a feed.",
+      previewAriaLabel: "Vocabulary sharing journey",
+      sender: "Your vocabulary",
+      senderCaption: "your word library",
+      word: "留白",
+      reading: "liú bái",
+      meaning: "breathing room · space left open",
+      receiver: "A learning friend",
+      receiverCaption: "a learning partner",
+    },
+    yumi: {
+      eyebrow: "Yumi",
+      title: "Learning feels lighter with someone nearby.",
+      description:
+        "Yumi notices the words you keep, reacts as you practise, and helps you return to what is ready for review. She is a companion to your progress, not a chatbot with all the answers.",
+      previewAriaLabel: "Yumi learning companion preview",
+      message:
+        "You kept three new words today. Want to bring one back for a quick review?",
+      translation: "你今天留下了三個新單字，要不要帶一個回來快速複習？",
+      reviewWord: "bonjour",
+      reviewHint: "ready to review",
+    },
+    lens: {
+      eyebrow: "Point it at the world",
+      title: "It reads what you point at.",
+      subtitle:
+        "A menu you cannot order from, or one object in a busy frame — the camera handles both, and differently.",
+      pickerAriaLabel: "Choose a camera feature",
+      previewAriaLabel: "Camera feature preview",
+      cosmicBadge: "Yumi Cosmic Mode",
+      menu: {
+        label: "Translate a menu",
+        blurb: "Every dish, kept in order and in place.",
+        detailOne: "The line as printed, the name in your languages, and how to say it.",
+        detailTwo: "Prices stay exactly as written, so you can point at the real menu.",
+        detailThree: "Each dish says how sure it is — reading it and translating it, separately.",
+        demoSource: "蒜泥白肉",
+        demoName: "Sliced pork with garlic sauce",
+        demoIpa: "suàn ní bái ròu",
+        demoPrice: "NT$280",
+        demoSecondSource: "宮保雞丁",
+        demoSecondName: "Kung pao chicken",
+        demoSecondPrice: "NT$320",
+        demoConfidence: "Read: high · Translated: high",
+      },
+      target: {
+        label: "Focus on one thing",
+        blurb: "Choose what it reads, instead of guessing.",
+        detailOne: "The camera offers what it can see, and you pick the one you meant.",
+        detailTwo: "The chosen frame is marked at the corners, never by colour alone.",
+        detailThree: "Only that rectangle is read, so a crowded shelf gives one clean word.",
+        demoSelected: "Selected",
+        demoCandidate: "Tap to choose",
+        demoResult: "teapot",
+      },
+    },
+    closing: {
+      title: "You do not have to learn everything today.",
+      titleSecond: "Keep one word worth finding again.",
+      description: "Start with one word, then let your language grow around it.",
+      cta: "Start journaling — Continue with Google",
+      ctaLoading: "Opening Google…",
+    },
   },
   onboarding: {
     back: "Back",
@@ -80,6 +224,7 @@ const english: TranslationDictionary = {
     },
   },
   common: {
+    back: "Back",
     close: "Close",
     cancel: "Cancel",
     confirm: "Confirm",
@@ -92,6 +237,7 @@ const english: TranslationDictionary = {
     source: "Source",
     loading: "Loading…",
     error: "Something went wrong",
+    clearField: "Clear",
   },
 
   auth: {
@@ -120,12 +266,265 @@ const english: TranslationDictionary = {
     },
   },
 
+  tutorial: {
+    rowTitle: "How to use Exchange Notes",
+    rowDescription: "Yumi shows you around",
+    rowValue: "Tour",
+    homeButton: "Yumi can show you around",
+    open: "Show me around",
+    skip: "Skip for now",
+    back: "Back",
+    next: "Next",
+    finish: "Start learning",
+    close: "Close",
+    stepLabel: "{current} of {total}",
+    replay: "You can reopen this any time from Home or Settings.",
+
+    steps: {
+      meet: {
+        title: "Keep what matters before it disappears",
+        body:
+          "I'm Yumi. You notice a word, thought, sound, or scene; I help you keep its first meaning and find it again later. Exchange Notes is a private learning space, not a feed you have to perform for.",
+      },
+      dock: {
+        title: "Six keys that never move",
+        body:
+          "The bottom bar always stays in the same order: Vocabulary, Messages, Home, Search, Discover, and Settings. Only the active ring moves, so your thumb can learn where everything lives.",
+      },
+      setup: {
+        title: "Welcome. Let's make this yours",
+        body:
+          "Choose the language I should use with you and the language you are learning. The tour changes immediately, so every next step is easy to understand.",
+        appLanguageLabel: "Talk to me in",
+        learningLabel: "I'm here to learn",
+        note: "Both can be changed later in Settings.",
+        saveError: "I couldn't save that. Try again in a moment.",
+      },
+      home: {
+        title: "Home and Discover make a daily rhythm",
+        body:
+          "Home shows what is ready to review and how your memory is growing. Discover adds a real story at your level. Together they give you one useful reason to return — you never have to finish everything.",
+      },
+      search: {
+        title: "Begin with what you notice",
+        body:
+          "Type it, say it, or show it to the camera. I detect the language, explain what it means, and tell you whether you have met it before. The same search stays close from every part of the app.",
+      },
+      notes: {
+        title: "Give the moment somewhere to belong",
+        body:
+          "A Note keeps one original text, your own meaning, context, and tags. Switch among five language views or ask me for an interpretation only when you need one. It stays private unless you deliberately share it.",
+      },
+      vocabulary: {
+        title: "Turn useful words into memory",
+        body:
+          "Save a useful word and it joins your vocabulary, with pronunciation, meaning, and the context where you found it. I bring it back when your memory needs it, not just because it is new.",
+      },
+      messages: {
+        title: "Exchange without a public feed",
+        body:
+          "Add a trusted learning partner by Exchange ID or QR code. Send word cards in Messages, or share a Note as view-only. There are no followers or public reactions — only the person you chose.",
+      },
+      settings: {
+        title: "You stay in control",
+        body:
+          "Settings lets you change languages, text size, reminders, devices, and your profile. Notes are private by default, sharing can be revoked, and this tour is always available again when you need it.",
+      },
+      cosmic: {
+        title: "Same learning, a different atmosphere",
+        body:
+          "Yumi Cosmic Mode turns Home into a Command Deck and gives review and navigation a more focused, animated presentation. It is not a second account: your Notes, words, messages, friends, and progress stay exactly the same. Switch modes in Settings any time.",
+      },
+      done: {
+        title: "Start with one thing",
+        body:
+          "You do not need to learn everything today. Keep one word, one sentence, or one moment worth finding again. I'll help you return to it when it matters.",
+      },
+    },
+  },
+
   navigation: {
     vocabulary: "Vocabulary",
     messages: "Messages",
     home: "Home",
     discover: "Discover",
     settings: "Settings",
+    search: "Search",
+    primaryLabel: "Primary navigation",
+  },
+
+  lexicon: {
+    open: "Search or add a word",
+    fieldPlaceholder: "Search or add a word…",
+    fieldPlaceholderLanguage: "Search or add a word in {language}…",
+    fieldHint: "Type it, say it, or point your camera at it.",
+    inputAriaLabel: "Search or add a word",
+
+    modeType: "Type",
+    modeVoice: "Voice",
+    modeCamera: "Scan",
+    modeImage: "Image",
+
+    search: "Search",
+    clear: "Clear",
+    close: "Close search",
+    cancel: "Cancel",
+
+    emptyTitle: "Start typing a word or a phrase.",
+    emptyDescription:
+      "Yumi works out what language it is, what it means, and whether you have met it before.",
+    searching: "Looking it up…",
+    listening: "Listening…",
+    offlineTitle: "You are offline",
+    offlineDescription:
+      "Only the words already on this device can be searched.",
+    errorTitle: "No exact result found.",
+    errorDescription: "Check the spelling, or try a photo instead.",
+    retry: "Try again",
+
+    yourVocabulary: "Your vocabulary",
+    dictionary: "Dictionary",
+    savedOn: "Saved {date}",
+    openWord: "Open",
+    reviewWord: "Review",
+    listen: "Listen",
+
+    save: "Save to vocabulary",
+    saving: "Saving…",
+    saved: "Saved",
+    alreadySaved: "Already in your vocabulary",
+    alreadySavedDescription: "You saved this one on {date}.",
+    openSavedWord: "Open the saved word",
+    noTranslation: "No meaning yet",
+    noTranslationDetail:
+      "The dictionary could not be reached, so this word has no meaning attached yet.",
+    degradedNotice:
+      "The word and its meaning are right; the example sentence is a generic one.",
+    lowConfidence: "This is a best guess. Check it before you keep it.",
+    example: "Example",
+    share: "Share",
+    copied: "Copied",
+    send: "Send",
+
+    languageLabel: "Language",
+    changeLanguage: "Change language",
+    chooseLanguage: "Which language is this?",
+    chooseLanguageDescription: "This spelling exists in more than one.",
+
+    sentenceTitle: "Sentence",
+    phraseTitle: "Phrase",
+    translationTitle: "Meaning",
+    worthKeeping: "Worth keeping",
+    savePhrase: "Save “{term}”",
+    sentenceNotSavable:
+      "A whole sentence does not make a review card. Keep the part you want to remember.",
+
+    onboardingTitle: "See a word you don't know?",
+    onboardingDescription:
+      "Search it here. Yumi works out the language for you.",
+    onboardingDismiss: "Got it",
+  },
+
+  cosmic: {
+    modeName: "Yumi Cosmic Mode",
+    deck: {
+      eyebrow: "Command Deck",
+      title: "Yumi Command Deck",
+      subtitle: "Every system online. Pick where to go.",
+      coreLabel: "Yumi core",
+      dockLabel: "Cosmic navigation",
+      roomsLabel: "Command controls",
+      readoutLexicon: "Lexicon",
+      readoutDue: "Due",
+      readoutLearning: "Learning",
+      languageEnglish: "English",
+      languageChinese: "Chinese",
+    },
+    rooms: {
+      lexicon: {
+        name: "Lexicon Core",
+        familiar: "Vocabulary",
+        description: "Your saved words and collections",
+      },
+      mission: {
+        name: "Mission Control",
+        familiar: "Review",
+        description: "Today's words to practise",
+      },
+      scanner: {
+        name: "Menu Translator",
+        familiar: "Scan · Translate",
+        description: "Read a menu you cannot read, prices and all",
+      },
+      comms: {
+        name: "Comms",
+        familiar: "Messages",
+        description: "Talk with your exchange partners",
+      },
+      earth: {
+        name: "Earth Signal",
+        familiar: "Discover",
+        description: "Daily news in your learning language",
+      },
+      memory: {
+        name: "Memory Deck",
+        familiar: "Profile",
+        description: "Progress, profile and settings",
+      },
+    },
+    status: {
+      wordsSaved: "{count} saved",
+      dueNow: "{count} due",
+      nothingDue: "All caught up",
+      unreadMessages: "{count} unread",
+      loading: "…",
+    },
+    transition: {
+      entering: "Command deck coming online",
+      leaving: "Command deck standing down",
+    },
+    mission: {
+      launching: "Mission starting",
+      completeEyebrow: "Mission complete",
+    },
+    omni: {
+      label: "Yumi OmniLexicon",
+      placeholder: "Search, speak, scan, or show Yumi anything",
+      placeholderUnreadable: "Something in {language} you can't read?",
+      placeholderHeard: "Some {language} you heard?",
+      inputText: "Type",
+      inputVoice: "Voice",
+      inputCamera: "Scan",
+      inputImage: "Image",
+      submit: "Identify",
+      clear: "Clear",
+      listening: "Listening\u2026",
+      scanning: "Identifying\u2026",
+      acquired: "Word identified",
+      noMatch: "Yumi could not place that one",
+      noMatchHint: "Try another spelling, say it aloud, or show Yumi a photo.",
+      degraded: "Offline dictionary result",
+      addToVocabulary: "Add to vocabulary",
+      recentSignals: "Recent signals",
+      playLearning: "Play the word",
+      playTranslation: "Play the translation",
+      playExampleLearning: "Play the example",
+      playExampleTranslation: "Play the translated example",
+      save: "Add to vocabulary",
+      saved: "Saved",
+      share: "Share",
+      copied: "Copied",
+      sendToFriend: "Send to a friend",
+    },
+    hud: {
+      eyebrow: "Learning profile",
+      title: "Progress HUD",
+      accuracy: "Accuracy",
+      retention: "Retention",
+      dailyGoal: "Daily goal",
+      mastered: "Words mastered",
+      reviewed: "Reviews done",
+    },
   },
 
   discover: {
@@ -199,6 +598,20 @@ const english: TranslationDictionary = {
     vocabularyDrawerTitle: "Key vocabulary",
     vocabularyDrawerDescription: "Tap a word to hear it.",
 
+    signalControlsEyebrow: "Signal controls",
+    signalControlsTitle: "Tune your signal",
+    signalControlsClose: "Close signal controls",
+    signalControlsSpeed: "Speech speed",
+    signalControlsTopics: "Topics",
+    signalControlsAllTopics: "All",
+    signalControlsOpen: "Open signal controls",
+    radarLabel: "Yumi signal radar.",
+    radarIdle: "Receiving signals.",
+    radarScanning: "Scanning for new stories.",
+    radarSyncing: "Syncing with the feed.",
+    radarSuccess: "New signals received.",
+    radarError: "Scan failed.",
+    radarOffline: "Offline.",
     refreshAction: "Refresh",
     playFullStory: "Play full story",
     stopStory: "Stop",
@@ -211,6 +624,10 @@ const english: TranslationDictionary = {
     addToVocabulary: "Add to Vocabulary",
     addedToVocabulary: "Added",
     addToVocabularyAriaLabel: "Add {word} to Vocabulary",
+    wordAlreadySaved: "Already in your words",
+    wordAlreadySavedAriaLabel: "{word} is already in your words",
+    saveWordError: "Could not save this word. Please try again.",
+    saveWordLoginError: "Sign in to save words.",
 
     exploreImageLabel: "Explore this image · {count} words",
   },
@@ -251,13 +668,28 @@ const english: TranslationDictionary = {
       closeCameraAriaLabel: "Close camera",
       selectedObjectAlt: "Selected object",
       chooseAnother: "Choose another",
-      focusHint: "Center the object",
+      torchOn: "Turn the light on",
+      torchOff: "Turn the light off",
+      importFile: "Import a document",
+      zoom: "Zoom",
+      zoomLevel: "{level}×",
+      targetHint: "Tap what you want to read",
+      selectedTarget: "Selected target",
+      candidateTarget: "Possible target",
+      focused: "Focused",
+      analysing: "Analysing target",
+      retry: "Try again",
+      confirmTarget: "Use this target",
+      resetZoom: "Reset zoom",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+      pageLabel: "{page} of {count}",
     },
 
     analysis: {
       title: "Analyzing your photo",
       description:
-        "AI is identifying the object and preparing English and Traditional Chinese examples.",
+        "Yumi is working out what this is, and how to say it.",
     },
 
     result: {
@@ -409,7 +841,7 @@ const english: TranslationDictionary = {
     pronunciation: {
       eyebrow: "Daily practice",
       title: "Pronunciation Lab",
-      description: "Practice English sounds and Zhuyin.",
+      description: "Sounds, rhythm and your own voice.",
     },
 
     progress: {
@@ -452,31 +884,81 @@ const english: TranslationDictionary = {
       emptyDescription: "Save a new word or idea from today's learning.",
       deleteNote: "Delete note",
       translateError: "Could not translate this note. Please try again.",
+      recentTitle: "Recent notes",
+      viewAll: "View all",
+      composerTitle: "New note",
+      composerDescription: "Keep the original thought. Yumi can interpret it in other languages later.",
+      originalLabel: "Original note",
+      originalPlaceholder: "Write a word, sentence, or thought…",
+      languageLabel: "Original language",
+      detectedHint: "Detected automatically — you can change it.",
+      personalMeaning: "What it means to you",
+      personalMeaningPlaceholder: "Optional personal meaning…",
+      contextLabel: "Context",
+      contextPlaceholder: "Where did you hear or need this?",
+      tagsLabel: "Tags",
+      tagsPlaceholder: "travel, work, feeling",
+      sourceLabel: "Source",
+      sourcePlaceholder: "Optional source or place",
+      privateLabel: "Private by default",
+      privateDescription: "Only you can see this until you share it with a friend.",
+      saveError: "This note could not be saved. Check your connection and try again.",
+      libraryTitle: "Notes",
+      libraryDescription: "One thought, with every language view kept together.",
+      searchPlaceholder: "Search text, translations, tags, and meanings",
+      allNotes: "All",
+      mine: "Mine",
+      sharedWithMe: "Shared with me",
+      noResults: "No notes match this search.",
+      retry: "Try again",
+      loadError: "Your notes could not be loaded.",
+      detailEyebrow: "Personal note",
+      viewIn: "View in",
+      yumiTitle: "Ask Yumi",
+      yumiDescription: "Get a natural translation, meaning, tone, and local context only when you need it.",
+      interpret: "Interpret this note",
+      interpreting: "Yumi is thinking…",
+      interpretError: "Yumi could not interpret this note. Try again when you are online.",
+      naturalTranslation: "Natural translation",
+      meaning: "Meaning",
+      localExpressions: "Local expressions",
+      tone: "Tone",
+      culturalNuance: "Cultural nuance",
+      usageExamples: "Usage examples",
+      warnings: "Good to know",
+      sharedBy: "Shared by {name}",
+      saveToMyNotes: "Save to My Notes",
+      savedToMyNotes: "Saved to My Notes",
+      saveCopyError: "A personal copy could not be saved.",
+      shareTitle: "Share note",
+      shareDescription: "Friends receive view-only access. You can revoke it at any time.",
+      noFriends: "Add a friend before sharing a note.",
+      viewOnly: "Can view",
+      shareError: "Sharing could not be updated.",
+      deleteConfirm: "Delete this note and its language views?",
     },
   },
 
+  speakPage: {
+    eyebrow: "{language} pronunciation",
+    noText: "No text to play",
+    ready: "Ready to play",
+    playing: "Playing…",
+    complete: "Playback complete",
+    blocked: "Automatic playback was blocked. Tap the button to try again.",
+    playAgain: "Play again",
+    openLab: "Open the Pronunciation Lab",
+    backToVocabulary: "Back to vocabulary",
+  },
+
   pronunciation: {
+    backToVocabulary: "Back to your words",
     backHome: "Back to Home",
     title: "Pronunciation Lab",
-    subtitle: "Tap any speaker to hear the pronunciation.",
-
-    modes: {
-      english: "English Focus",
-      zhuyin: "Zhuyin Focus",
-    },
-
-    filters: {
-      all: "All",
-      vowels: "Vowels",
-      consonants: "Consonants",
-      initial: "Initials",
-      medial: "Medials",
-      final: "Finals",
-    },
+    subtitle: "Sounds, rhythm and your own voice.",
 
     cards: {
       howToSayIt: "How to say it",
-      pronunciationMethod: "Pronunciation guide",
       playWord: "Play {word}",
       correct: "Correct",
       incorrect: "Common mistake",
@@ -485,9 +967,6 @@ const english: TranslationDictionary = {
       showLessGuidance: "Show less",
       commonTrapSummary: "You might pronounce {symbol} like {confusedWith}.",
       playbackFailed: "Playback failed. Tap to try again.",
-      kk: "KK",
-      moreSounds: "Pronunciation variants",
-      romanizationHint: "Closest pinyin",
     },
 
     yumi: {
@@ -497,6 +976,228 @@ const english: TranslationDictionary = {
       voice: "Voice",
       demoAriaLabel: "Yumi showing mouth and tongue position for this sound",
       tapToHear: "Tap Yumi to hear and watch this sound.",
+    },
+
+    lab: {
+      backToLab: "Back to the Lab",
+      learningLabel: "Learning {language}",
+      switchLanguageHint: "Change this in Settings.",
+
+      coach: {
+        eyebrow: "Yumi",
+        calibratedFor: "Calibrated for {instrument}",
+        idle: "Pick a sound and I'll show you how it's made.",
+        demonstrating: "Watch my mouth.",
+        listening: "Go ahead — I'm listening.",
+        recording: "Recording…",
+        analyzing: "Listening back…",
+        correct: "That's it.",
+        almost: "Close. Try once more.",
+        incorrect: "Not quite — listen again first.",
+        celebrating: "That's the whole set.",
+        encouraging: "This one takes a few goes. Everyone's does.",
+        waiting: "Ready when you are.",
+      },
+
+      modules: {
+        sounds: { title: "Sounds", description: "How each one is made" },
+        listen: { title: "Listen", description: "Tell them apart" },
+        speak: { title: "Speak", description: "Record and compare" },
+        words: { title: "Words", description: "From your own vocabulary" },
+        rhythm: { title: "Rhythm", description: "Stress, timing, melody" },
+        review: { title: "Review", description: "What's due to come back" },
+      },
+
+      today: {
+        eyebrow: "Today's training",
+        title: "A short session",
+        minutes: "{minutes} min",
+        start: "Start",
+        resume: "Resume",
+        completed: "Done for today",
+        empty: "Nothing scheduled yet — try a few sounds first.",
+      },
+
+      progress: {
+        eyebrow: "Your progress",
+        title: "Where you stand",
+        sounds: "Sounds",
+        listening: "Listening",
+        speaking: "Speaking",
+        rhythm: "Rhythm",
+        notEnough: "Not enough practice yet",
+        soundsMastered: "{mastered} of {total} mastered",
+        practisedCount: "{count} practised",
+      },
+
+      mastery: {
+        new: "Not started",
+        learning: "Learning",
+        improving: "Improving",
+        mastered: "Mastered",
+      },
+
+      weakness: {
+        title: "Weakness map",
+        description: "Built from every attempt, not from one.",
+        strong: "Strong",
+        improving: "Improving",
+        needsWork: "Needs work",
+        empty: "Practise a few sounds and this fills in.",
+        viewAll: "See all",
+        attempts: "{count} attempts",
+      },
+
+      sounds: {
+        title: "Sounds",
+        subtitle: "Tap a sound to see how it's made.",
+        all: "All",
+        empty: "No sounds in this group yet.",
+        soundCount: "{count} sounds",
+      },
+
+      detail: {
+        articulation: "Articulation",
+        examples: "Example words",
+        minimalPairs: "Easy to confuse",
+        recordYourself: "Record yourself",
+        practiceAgain: "Practise again",
+        nativeSpeed: "Native speed",
+        slowSpeed: "Slow",
+        replay: "Replay",
+        tongue: "Tongue",
+        lips: "Lips",
+        jaw: "Jaw",
+        airflow: "Airflow",
+        voicing: "Voicing",
+        resonance: "Resonance",
+        writtenAs: "Written as",
+        difficulty: "Difficulty",
+        notFound: "That sound isn't in this language's pack.",
+      },
+
+      listen: {
+        title: "Listen",
+        subtitle: "One plays. Choose which one it was.",
+        prompt: "Which one did you hear?",
+        playAgain: "Play again",
+        next: "Next",
+        finish: "Finish",
+        correct: "Correct",
+        incorrect: "That was {answer}",
+        empty: "No listening contrasts for this language yet.",
+        roundOf: "{current} of {total}",
+      },
+
+      speak: {
+        title: "Speak",
+        subtitle: "Listen, record, and hear the two side by side.",
+        listenFirst: "Listen first",
+        record: "Record",
+        stop: "Stop",
+        recording: "Recording — tap to stop",
+        analyzing: "Analyzing…",
+        retry: "Record again",
+        continueLabel: "Continue",
+        native: "Native",
+        you: "You",
+        compare: "Compare",
+        playNative: "Play the native version",
+        playYours: "Play your recording",
+        overall: "Overall",
+        notAnalyzed: "Not analyzed",
+        notAnalyzedHint:
+          "Nothing on this device can measure that yet, so no score is shown rather than a made-up one.",
+        privacyCloud:
+          "Your browser sends this recording to its own speech service to transcribe it. Exchange Notes never stores it.",
+        privacyOnDevice: "Analysis happens on this device. Nothing is uploaded.",
+        heard: "Heard as",
+        permissionDenied: "Microphone access was declined.",
+        permissionHelp:
+          "Allow the microphone for this site in your browser settings, then try again.",
+        unsupported: "This browser can't record audio.",
+        unsupportedHelp:
+          "You can still listen and follow along — recording needs a browser with microphone support.",
+        noAudio: "Nothing was recorded. Try again a little closer to the mic.",
+        failed: "Recording failed. Try again.",
+        empty: "Pick a sound to practise saying.",
+      },
+
+      dimensions: {
+        sound: "Sound accuracy",
+        vowel: "Vowels",
+        consonant: "Consonants",
+        consonantLength: "Consonant length",
+        stress: "Stress",
+        rhythm: "Rhythm",
+        fluency: "Fluency",
+        tone: "Tone",
+        pitch: "Pitch contour",
+        nasal: "Nasality",
+        liaison: "Liaison",
+        melody: "Melody",
+      },
+
+      words: {
+        title: "Words",
+        subtitle: "Your own vocabulary, sorted by what it drills.",
+        empty: "No words ready for pronunciation yet.",
+        emptyHint: "Add vocabulary in this language to start practising.",
+        addWords: "Go to Vocabulary",
+        practise: "Practise",
+        reasonWeak: "Has a sound you're working on",
+        reasonDifficult: "You've missed this one before",
+        reasonNew: "New word",
+        reasonRecent: "Added recently",
+        drills: "Drills",
+      },
+
+      rhythm: {
+        title: "Rhythm",
+        subtitle: "Where the weight falls, and how it moves.",
+        rule: "The rule",
+        primaryStress: "Primary stress",
+        secondaryStress: "Secondary stress",
+        linked: "Links to the next syllable",
+        held: "Held longer",
+        toneLabel: "Tone {tone}",
+        empty: "No rhythm lessons for this language yet.",
+      },
+
+      review: {
+        title: "Review",
+        subtitle: "Sounds that are due to come back around.",
+        due: "{count} due",
+        nothingDue: "Nothing due right now.",
+        nothingDueHint: "Come back after some practice, or start a new sound.",
+        start: "Start review",
+      },
+
+      session: {
+        stepOf: "{current} of {total}",
+        skip: "Skip",
+        next: "Next",
+        finish: "Finish",
+        complete: "Session complete",
+        completeBody: "{correct} of {answered} correct.",
+        backToLab: "Back to the Lab",
+        resumeTitle: "You left a session open",
+        resumeBody: "Pick up where you stopped, or start fresh.",
+        resume: "Resume",
+        startOver: "Start over",
+        leaveConfirm: "Leave this session? Your answers so far are saved.",
+      },
+
+      states: {
+        loading: "Loading…",
+        error: "Couldn't load your progress",
+        errorBody: "The sounds still work — only your history is missing.",
+        retry: "Try again",
+        signedOut: "Sign in to keep your progress",
+        signedOutBody: "Everything here works without an account; nothing is remembered.",
+        notSaved: "Saved on this device only.",
+        audioUnavailable: "No audio available for this yet.",
+      },
     },
   },
 
@@ -542,11 +1243,109 @@ const english: TranslationDictionary = {
     statusDelivered: "Delivered",
     statusRead: "Read",
 
-    moodCalm: "Calm",
-    moodCurious: "Curious",
-    moodSleepy: "Sleepy",
-    moodSurprised: "Surprised",
-    moodHappy: "Happy",
+    hub: {
+      eyebrow: "Comms deck",
+      subtitleFirst: "Real conversations.",
+      subtitleSecond: "Real language.",
+      searchPlaceholder: "Search people, conversations, or language…",
+      searchLabel: "Search messages",
+      clearSearch: "Clear search",
+
+      tabs: {
+        recent: "Recent",
+        friends: "Friends",
+        requests: "Requests",
+      },
+
+      resultGroupPeople: "People",
+      resultGroupConversations: "Conversations",
+      resultGroupLanguage: "Language",
+      searching: "Searching…",
+
+      newConversation: "New conversation",
+      openConversation: "Open conversation with {name}",
+      archived: "Archived",
+      archivedTitle: "Archived",
+      archivedSubtitle: "Conversations you have put away.",
+      archivedEmpty: "Nothing archived.",
+      archive: "Archive",
+      unarchive: "Unarchive",
+      backToMessages: "Back to Messages",
+
+      emptyFriendsTitle: "No learning partners yet",
+      emptyFriendsDescription:
+        "Add someone by Exchange ID or QR code to start talking.",
+      emptyRequests: "No incoming requests.",
+      noResultsTitle: "Nothing matched",
+      noResultsDescription: "Try a name, an @handle, or a word you remember.",
+
+      phraseSignal: "{count} phrase",
+      phraseSignalPlural: "{count} phrases",
+      unreadLabel: "{count} unread",
+      neverMessaged: "No messages yet",
+    },
+
+    decode: {
+      label: "Decoded by Yumi",
+      whyThis: "Why this?",
+      whyThisBody:
+        "Yumi picks out expressions a learner tends to trip on, and skips anything you have already saved.",
+      close: "Close",
+      open: "What did this mean?",
+      reading: "Yumi is reading this…",
+      tone: "Tone",
+      toneUncertain: "Yumi isn't sure of the tone here.",
+      types: {
+        expression: "Expression",
+        abbreviation: "Abbreviation",
+        phrase: "Phrase",
+        slang: "Slang",
+        idiom: "Idiom",
+      },
+      listen: "Listen",
+      savePhrase: "Save phrase",
+      savedPhrase: "Saved",
+      saveFailed: "Could not save this phrase. Please try again.",
+      replyCoach: "Reply Coach",
+    },
+
+    coach: {
+      title: "Reply Coach",
+      subtitle: "Three ways to answer. Tap one to put it in the box.",
+      drafting: "Drafting replies…",
+      failed: "Couldn't draft replies right now.",
+      retry: "Try again",
+      close: "Close Reply Coach",
+      insert: "Use this reply",
+      inserted: "Added to your message",
+      ownership: "Nothing sends until you send it.",
+      directions: {
+        friendly: "Friendly",
+        casual: "Casual",
+        natural: "More natural",
+      },
+    },
+
+    room: {
+      back: "Back to Messages",
+      connectionConnected: "Connected",
+      connectionConnecting: "Connecting…",
+      connectionOffline: "Offline",
+      privateLabel: "Private",
+      privateHint:
+        "Protected by your account and database access rules. End-to-end encryption is not yet enabled.",
+      privateNote:
+        "Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.",
+      newMessages: "New messages",
+      jumpToLatest: "Jump to latest",
+      options: "Conversation options",
+      closeOptions: "Close options",
+      addPhoto: "Add a photo",
+      sendMessage: "Send message",
+      unknownParticipant: "Former partner",
+      notLoggedIn: "You are not logged in.",
+      sendFailed: "Message could not be sent. Please try again.",
+    },
 
     errors: {
       loadConversations: "Couldn't load your conversations.",
@@ -556,6 +1355,7 @@ const english: TranslationDictionary = {
       openConversation: "Could not open this conversation. Please try again.",
       saveWord: "Could not save this word. Please try again.",
       updateConversation: "Could not update this conversation. Please try again.",
+      conversationNotFound: "This conversation is not available.",
     },
   },
   friends: {
@@ -646,6 +1446,14 @@ const english: TranslationDictionary = {
   },
 
   vocabulary: {
+    selection: {
+      addWord: "Add to vocabulary",
+      addedWord: "Added to your words",
+      sendToPartner: "Send to partner",
+      saveFailed: "That word could not be saved. Try again.",
+      alreadySaved: "That word is already in your vocabulary.",
+      sendFailed: "That word could not be prepared to send. Try again.",
+    },
     hero: {
       vocabulary: "Vocabulary",
       todayProgress: "Today’s progress",
@@ -701,6 +1509,18 @@ const english: TranslationDictionary = {
       cookieTrayHint: "Drag a cookie onto Yumi",
       cookieTrayMore: "+{count} more",
       feedAriaLabel: "Feed {word} to Yumi",
+      coreTrayEmpty: "Add a word to forge a Learning Core.",
+      coreTrayHint: "Drag a core onto Yumi",
+      coreTrayShowLess: "Show fewer",
+      coreTrayShowAllAriaLabel: "Show all {count} cores",
+      coreNewBadge: "NEW",
+      coreAriaLabel: "{word}, {state}. Feed to Yumi, or drag it onto Yumi.",
+      coreState: {
+        new: "new word",
+        learning: "learning",
+        due: "review due",
+        mastered: "mastered",
+      },
       cookieTypeLetter: "Letter cookie",
       cookieTypeZhuyin: "Zhuyin cookie",
       feedingAnticipating: "Yumi opens up with anticipation.",
@@ -714,41 +1534,29 @@ const english: TranslationDictionary = {
       reviewActionLabel: "Start review",
       addWordActionLabel: "Add a word with AI",
       cameraActionLabel: "Identify with camera",
+      haloReviewName: "Practice",
+      haloReviewBlurb: "Smart review & quizzes",
+      haloAddName: "Create",
+      haloAddBlurb: "Add any word with AI",
+      haloCameraName: "Scan",
+      haloCameraBlurb: "Recognise anything",
+      haloSpeakName: "Speak",
+      haloSpeakBlurb: "Sound out every letter",
+      haloCollectName: "Collect",
+      haloCollectBlurb: "Group words into sets",
+      speakActionLabel: "Open the Pronunciation Lab",
+      collectActionLabel: "Open collections",
     },
 
     lookup: {
-      title: "Search any word",
-      placeholder: "English or Traditional Chinese",
-      search: "Smart search",
-      searching: "Searching",
-      description:
-        "Search any English or Traditional Chinese word for its translation, part of speech and natural examples.",
-      error: "Could not search that word.",
-      degradedNotice:
-        "Smart search is busy, so this came from the offline dictionary. The word and translation are correct — only the examples are generic.",
-      degradedRetry: "Try again for real examples",
-      english: "English",
-      chinese: "Traditional Chinese",
-      englishExample: "English example",
-      chineseExample: "Chinese example",
-      share: "Share",
-      send: "Send",
-      saving: "Saving",
-      addToVocabulary: "Add to Vocabulary",
       unsavedTitle: "This word is not saved yet",
       noMatchingTitle: "No matching words",
       unsavedDescription:
         "Look it up to find its meaning, examples, and save it to your vocabulary.",
       noMatchingDescription:
         "Try another search or choose a different learning status.",
-      lookingUp: "Looking up",
       lookUpWord: 'Look up "{word}"',
-      wordFound: "Word found",
-      closeSearchAriaLabel: "Close word search",
-      inputPlaceholder: "English or Traditional Chinese",
-      clearSearchAriaLabel: "Clear search",
-      lowConfidenceNotice:
-        "Yumi is not completely sure. Please review the result before saving.",
+      shareWithFriend: "Send to a friend",
     },
 
     collections: {
@@ -842,6 +1650,8 @@ const english: TranslationDictionary = {
       shareWordAriaLabel: "Share word",
       deleteWordAriaLabel: "Delete word",
       listenAriaLabel: "Listen: {text}",
+      copyWordAriaLabel: "Copy {text}",
+      copiedAriaLabel: "Copied",
       markAsMastered: "Mark as mastered",
       markAsLearning: "Move to learning",
 
@@ -891,6 +1701,24 @@ const english: TranslationDictionary = {
       },
     },
 
+    language: {
+      title: "Language",
+      allLanguages: "All languages",
+      filterAriaLabel: "Filter by language",
+      badgeAriaLabel: "Vocabulary language: {language}",
+      emptyTitle: "No {language} words yet",
+      emptyDescription:
+        "Words you save in {language} will appear here, whatever you are studying at the time.",
+      change: "Change language",
+      changeTitle: "Which language is this?",
+      changeDescription:
+        "Only the language changes. “{word}” itself, its translation and its review history stay exactly as they are.",
+      changeAriaLabel: "Change the language of {word}",
+      unclear: "Language unclear",
+      savedAs: "Saved as {term} → {translation}",
+      close: "Close",
+    },
+
     search: {
       vocabulary: "Vocabulary",
       yourWords: "Your words",
@@ -900,8 +1728,11 @@ const english: TranslationDictionary = {
       learning: "learning",
       mastered: "mastered",
 
-      searchPlaceholder: "Search saved vocabulary",
-      searchAriaLabel: "Search saved vocabulary",
+      /* Not "search saved vocabulary": this field also looks up words that are
+         not in the list yet, so describing it as a filter over what is already
+         saved understated what it does and hid the lookup entirely. */
+      searchPlaceholder: "Look up any word",
+      searchAriaLabel: "Look up any word",
       clearSearch: "Clear vocabulary search",
       cancel: "Cancel",
       clear: "Clear",
@@ -909,9 +1740,7 @@ const english: TranslationDictionary = {
       loadingVocabulary: "Loading your words",
       firstWordTitle: "Your first word begins outside",
       firstWordDescription:
-        "Photograph something from daily life and save its English and Traditional Chinese meaning.",
-      discoverWord: "Discover a word",
-
+        "Search a word you have just met, or photograph something in front of you.",
       statuses: {
         all: "All",
         new: "New",
@@ -926,8 +1755,6 @@ const english: TranslationDictionary = {
       openCollections: "Open collections",
       toolbarAriaLabel: "Vocabulary tools",
       lookupToolbarAriaLabel: "Look up a word",
-      cameraLookup: "Identify with camera",
-      photoLookup: "Identify from a photo",
       voiceSearch: "Search by voice",
       voiceListening: "Listening — tap to stop",
       cardsView: "Use classic card view",
@@ -941,11 +1768,8 @@ const english: TranslationDictionary = {
         reverseAlphabetical: "Z to A",
         recentlyReviewed: "Recently Reviewed",
         leastReviewed: "Least Reviewed",
-        forYou: "For You",
-        trending: "Trending",
       },
 
-      personalizing: "Personalizing {sort}…",
     },
   },
 
@@ -976,6 +1800,7 @@ const english: TranslationDictionary = {
     completeTitle: "Nice work.",
     completeDescription: "Your review schedule has been updated.",
     completedReviews: "You completed {count} reviews.",
+    backToVocabulary: "Back to your words",
     backToHome: "Back to Home",
     grades: {
       again: {
@@ -997,10 +1822,133 @@ const english: TranslationDictionary = {
     },
   },
 
+  scanner: {
+    back: "Back to the deck",
+
+    menu: {
+      title: "Menu Translator",
+      cameraHint: "Fill the frame with one page of the menu",
+      detecting: "Looking for a menu",
+      detected: "Menu detected",
+      capture: "Capture",
+      close: "Close",
+      torchOn: "Turn on the light",
+      torchOff: "Turn off the light",
+      gallery: "Choose a photo",
+      importFailed:
+        "That photo could not be opened. Try another one, or take the shot here.",
+      targetLanguage: "Translate into",
+      cameraPermissionDenied:
+        "Camera access is off for Exchange Notes. Turn it on in your browser settings, or choose a photo instead.",
+      cameraUnavailable:
+        "This device's camera could not be opened. You can still choose a photo.",
+      cameraRetry: "Try the camera again",
+
+      qualityTitle: "Some text may be hard to read",
+      qualityBody:
+        "The photo is dark, blurred, or at a steep angle. A straighter, closer shot reads far better.",
+      retake: "Retake",
+      continueAnyway: "Continue anyway",
+
+      phaseReading: "Reading",
+      phaseUnderstanding: "Understanding",
+      phaseTranslating: "Translating",
+      phaseFinishing: "Laying it out",
+      processingHint: "Yumi is working through the whole page.",
+      cancel: "Cancel",
+
+      modeRebuilt: "Rebuilt",
+      modeTranslated: "Overlay",
+      modeOriginal: "Original",
+      modeList: "List",
+      viewMode: "View",
+
+      itemCount: "{count} items",
+      sourceLanguage: "From {language}",
+      unknownLanguage: "an unknown language",
+      partialTitle: "Read with low confidence",
+      partialBody:
+        "Yumi was unsure of parts of this menu. Check anything that matters with the restaurant.",
+      rebuildUnavailable:
+        "This photo could not be rebuilt cleanly, so the translation is shown over it instead.",
+      lowConfidence: "Yumi isn't fully sure about this text.",
+      noPrice: "No price printed",
+      untitledSection: "Menu",
+
+      notMenuTitle: "There is no list in that photo",
+      notMenuBody:
+        "Point at a menu, a price list, a shelf card, or a shopping list and try again.",
+      emptyTitle: "Nothing could be read",
+      emptyBody:
+        "The text was too small, too dark, or at too steep an angle. Try one page, filling the frame.",
+      errorTitle: "The menu could not be read",
+      tryAgain: "Try again",
+      scanAnother: "Scan another menu",
+
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      zoomLevel: "Zoom {level}×",
+      overlayHint: "Tap an item for what it is",
+
+      originalLabel: "On the menu",
+      priceLabel: "Price",
+      aboutLabel: "What it is",
+      cuisineLabel: "Cuisine",
+      listen: "Listen",
+      listening: "Playing…",
+      saveWord: "Save to my words",
+      saving: "Saving…",
+      saved: "Saved",
+      saveFailed: "That dish could not be saved.",
+      share: "Send to a friend",
+      shareLoginRequired: "Please sign in before sharing.",
+      friendsError: "Your partners could not be loaded.",
+      confidenceNote: "Yumi wasn't fully sure of this one.",
+      askRestaurant:
+        "Ingredients are Yumi's reading of the name, not the kitchen's. Ask the restaurant about anything you must avoid.",
+    },
+  },
+
   settings: {
     title: "Settings",
-    preferences: "Experience",
-    learningSetup: "Learning setup",
+
+    sections: {
+      learning: "Learning",
+      yumi: "Yumi",
+      app: "App",
+      devices: "Devices & Widgets",
+      help: "Help & About",
+      account: "Account",
+    },
+
+    search: {
+      open: "Search settings",
+      placeholder: "Search settings",
+      cancel: "Cancel",
+      resultsLabel: "Matching settings",
+      empty: "Nothing in Settings matches “{query}”.",
+      hint: "Try “widget”, “voice”, “language”, “cosmic” or “notifications”.",
+    },
+
+    devices: {
+      rowTitle: "Devices & Widgets",
+      rowDescription: "Manage your devices, widgets, and integrations",
+      connectedCount: "{count} connected",
+      notConnected: "Not set up",
+      pageTitle: "Devices & Widgets",
+      pageDescription:
+        "Install Exchange Notes on this device, and connect the widgets that keep Yumi on your Home Screen.",
+      back: "Back to Settings",
+    },
+
+    help: {
+      rowTitle: "Help & About",
+      rowDescription: "The tour, and how Exchange Notes works",
+      pageTitle: "Help & About",
+      pageDescription:
+        "Take the tour again whenever you want it — it never opens on its own from here.",
+      back: "Back to Settings",
+    },
 
     profile: {
       pageTitle: "Settings",
@@ -1023,8 +1971,6 @@ const english: TranslationDictionary = {
       learningLanguageDescription: "The language you're practicing",
       saveChanges: "Save changes",
       saving: "Saving…",
-      preferences: "Preferences",
-      account: "Account",
       logout: "Log out",
       logoutDescription: "Sign out of this device",
       logoutConfirm: "Are you sure you want to log out?",
@@ -1038,6 +1984,15 @@ const english: TranslationDictionary = {
       profileUpdated: "Profile updated successfully!",
       profileUpdateError: "Could not update profile. Please try again.",
       languagesMustDifferError: "Native language and learning language must be different.",
+      cropTitle: "Position your photo",
+      cropDescription:
+        "Drag to move it, pinch or use the slider to zoom. Whatever fills the circle is what people will see.",
+      cropViewportLabel: "Profile photo preview — drag to reposition",
+      cropZoom: "Zoom",
+      cropConfirm: "Use photo",
+      cropSaving: "Uploading…",
+      cropCancel: "Cancel",
+      cropError: "Could not open that photo.",
       editProfile: "Edit profile",
       copyHandle: "Copy",
       copied: "Copied!",
@@ -1050,17 +2005,18 @@ const english: TranslationDictionary = {
 
     dailyGoal: {
       rowTitle: "Daily goal",
-      rowDescription: "How long you'd like to study each day",
+      rowDescription: "How many new words a day",
       sheetTitle: "Daily goal",
-      sheetDescription: "Choose how many minutes you'd like to study each day.",
-      minutesLabel: "min",
+      sheetDescription:
+        "Choose how many new words you'd like to meet each day. Yumi's cookies fill up as you reach it.",
+      wordsLabel: "words",
 
       options: {
-        five: "5 minutes",
-        ten: "10 minutes",
-        fifteen: "15 minutes",
-        twenty: "20 minutes",
-        thirty: "30 minutes",
+        three: "3 words",
+        five: "5 words",
+        ten: "10 words",
+        twenty: "20 words",
+        thirtyThree: "33 words",
       },
     },
 
@@ -1070,9 +2026,43 @@ const english: TranslationDictionary = {
       sheetTitle: "App language",
       sheetDescription:
         "Choose the language used by the Exchange Notes interface.",
-      englishDescription: "Display the app interface in English.",
-      traditionalChineseDescription:
-        "Display the app interface in Traditional Chinese.",
+      descriptions: {
+        english: "Display the app interface in English.",
+        "traditional-chinese": "Display the app interface in Traditional Chinese.",
+        spanish: "Display the app interface in Spanish.",
+        french: "Display the app interface in French.",
+        italian: "Display the app interface in Italian.",
+      },
+    },
+
+    yumiReminders: {
+      rowTitle: "Yumi reminders",
+      rowDescription:
+        "Let Yumi call you when no word cookie has been fed today.",
+      loadError: "Yumi reminder settings could not be loaded.",
+      saveError: "Yumi reminder settings could not be saved.",
+      timezoneLabel: "Device timezone",
+      testTitle: "Yumi reminders",
+      testDescription:
+        "At most once per day. Yumi stays quiet after being fed, after a recent app visit, or during quiet hours.",
+      test: "Send Yumi test notification",
+      testing: "Sending…",
+      testSent: "Yumi test notification sent.",
+      testError: "The Yumi test notification could not be sent.",
+      pushTitle: "Yumi misses you",
+      pushBody:
+        "No word cookie today yet — come and feed one.",
+    },
+
+    interfaceMode: {
+      rowTitle: "Interface mode",
+      rowDescription: "Standard, or Yumi's Command Deck",
+      standardTitle: "Standard Mode",
+      standardShort: "Standard",
+      cosmicTitle: "Yumi Cosmic Mode",
+      cosmicShort: "Yumi Cosmic",
+      sharedDataNote:
+        "Both modes are the same Exchange Notes. Your words, messages, friends and progress stay exactly where they are, and you can switch back any time.",
     },
 
     scriptableWidget: {
@@ -1225,24 +2215,11 @@ const english: TranslationDictionary = {
     fontSize: {
       rowTitle: "Font size",
       rowDescription: "Adjust text throughout the app",
-      sheetTitle: "Font size",
-      sheetDescription: "Choose the text size used throughout Exchange Notes.",
 
       options: {
-        small: {
-          label: "Small",
-          description: "Fits more information on screen.",
-        },
-
-        medium: {
-          label: "Medium",
-          description: "The balanced default size.",
-        },
-
-        large: {
-          label: "Large",
-          description: "Easier and more comfortable to read.",
-        },
+        small: { label: "Small" },
+        medium: { label: "Medium" },
+        large: { label: "Large" },
       },
     },
 
