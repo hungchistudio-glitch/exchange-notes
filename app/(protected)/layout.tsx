@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import { requireUser } from "@/lib/auth/currentUser";
+
 import NativePushRegister from "@/app/components/NativePushRegister";
 import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
@@ -29,13 +31,12 @@ export default async function ProtectedLayout({
 }: ProtectedLayoutProps) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  /*
+   * Sends a genuinely signed-out visitor to /login, exactly as before, and
+   * throws when the auth server could not be asked rather than treating "we
+   * could not check" as "you are a stranger". See lib/auth/currentUser.
+   */
+  const user = await requireUser(supabase);
 
   // Every protected page funnels through here, so this is the single
   // choke point that catches a not-yet-onboarded account regardless of

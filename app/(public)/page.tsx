@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import LandingPage from "@/components/landing/LandingPage";
+import { readCurrentUser } from "@/lib/auth/currentUser";
 import { createClient } from "@/lib/supabase/server";
 
 const description =
@@ -39,11 +40,17 @@ export default async function LandingRoute() {
   }
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (user) {
+  /*
+   * The one place where the safe answer is to do nothing. A signed-in reader
+   * is sent on to /home; anyone else — signed out, or unreachable auth server
+   * — gets the landing page, which is what this route is for. Showing it to
+   * someone who turns out to be signed in costs them one tap; throwing here
+   * would break the public front page over an auth server they never needed.
+   */
+  const current = await readCurrentUser(supabase);
+
+  if (current.state === "signed-in") {
     redirect("/home");
   }
 

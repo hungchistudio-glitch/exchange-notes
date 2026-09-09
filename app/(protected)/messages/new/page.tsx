@@ -5,6 +5,7 @@ import {
   getOrCreateConversationWithFriend,
   unhideConversationForUser,
 } from "@/lib/friends";
+import { requireUser } from "@/lib/auth/currentUser";
 import { createClient } from "@/lib/supabase/server";
 
 /*
@@ -33,15 +34,12 @@ export default async function NewConversationPage({
 
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // The protected layout has already redirected an unauthenticated visitor to
-  // /login; this is only here so the call below has a non-null id.
-  if (!user) {
-    redirect("/login");
-  }
+  // The protected layout has already turned away an unauthenticated visitor;
+  // this is only here so the call below has a non-null id. It classifies the
+  // answer the same way the layout does, so a route that cannot reach the auth
+  // server fails the same way everywhere rather than signing someone out here
+  // and not there.
+  const user = await requireUser(supabase);
 
   /*
    * This route creates a row, and its only input is a user id from the URL.
