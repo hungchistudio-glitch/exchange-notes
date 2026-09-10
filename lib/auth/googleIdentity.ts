@@ -188,7 +188,7 @@ export function loadGoogleIdentity(): Promise<GoogleIdentityApi> {
 export type SignInNonce = {
   /** Handed to Supabase, which hashes it and compares. Never leaves this app. */
   raw: string;
-  /** Handed to Google, which copies it into the signed token. */
+  /** Hex SHA-256 of `raw`. Handed to Google, which signs it into the token. */
   hashed: string;
 };
 
@@ -200,6 +200,24 @@ function toBase64Url(bytes: Uint8Array): string {
 }
 
 /**
+ * Lowercase hex, the encoding Supabase's nonce check is written against.
+ *
+ * Not interchangeable with base64url, and the difference is invisible until
+ * a real sign-in: both are ASCII, both are the same 32 bytes, and nothing
+ * on the way out complains. Google copies whatever it is handed into the
+ * token's `nonce` claim without looking at it, so the first thing that ever
+ * compares the two encodings is Supabase — and all it says is
+ * `invalid nonce: Nonces mismatch`, from the server, where the browser
+ * console cannot see it.
+ */
+function toHex(bytes: Uint8Array): string {
+  let hex = "";
+  for (const byte of bytes) hex += byte.toString(16).padStart(2, "0");
+
+  return hex;
+}
+
+/**
  * A fresh nonce pair for one sign-in attempt.
  *
  * Google signs the *hashed* value into the token; Supabase hashes the raw one
@@ -207,9 +225,18 @@ function toBase64Url(bytes: Uint8Array): string {
  * else's session from being replayed into this one: an attacker holding a
  * valid Google token still cannot produce the raw string it was bound to.
  *
- * SHA-256 because that is what Supabase's verifier computes. Base64url
- * because the value travels inside a JWT claim, where padding and `+/` are
- * not welcome.
+ * SHA-256 and hex, because both are dictated by the other end. Supabase's
+ * verifier does, verbatim:
+ *
+ *     hash := fmt.Sprintf("%x", sha256.Sum256([]byte(params.Nonce)))
+ *     if hash != idToken.Nonce { ...Nonces mismatch... }
+ *
+ * `%x` is lowercase hex of the raw digest. Neither the algorithm nor the
+ * encoding is ours to pick — a base64url digest of exactly the right bytes
+ * fails every single time, which is what this used to do.
+ *
+ * `raw` stays base64url only because it is an opaque random string that
+ * Supabase hashes as-is; its encoding is genuinely free.
  */
 export async function createSignInNonce(): Promise<SignInNonce> {
   const bytes = new Uint8Array(NONCE_BYTES);
@@ -222,7 +249,7 @@ export async function createSignInNonce(): Promise<SignInNonce> {
     new TextEncoder().encode(raw),
   );
 
-  return { raw, hashed: toBase64Url(new Uint8Array(digest)) };
+  return { raw, hashed: toHex(new Uint8Array(digest)) };
 }
 
 /**
