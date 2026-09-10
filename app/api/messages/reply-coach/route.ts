@@ -133,7 +133,6 @@ export async function POST(request: Request) {
 
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_COACH_CALLS_PER_DAY,
@@ -260,7 +259,7 @@ ${scriptRule}
     return NextResponse.json({ suggestions }, { status: 200 });
   } catch (error) {
     if (supabase && charged) {
-      await refundDailyQuota(supabase, charged, OPERATION);
+      await refundDailyQuota(charged, OPERATION);
     }
 
     console.error("Reply Coach failed:", error);

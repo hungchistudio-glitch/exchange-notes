@@ -113,7 +113,6 @@ export async function POST(request: Request) {
 
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_INTERPRETATIONS_PER_DAY,
@@ -223,7 +222,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (supabase && charged) {
-      await refundDailyQuota(supabase, charged, OPERATION);
+      await refundDailyQuota(charged, OPERATION);
     }
 
     console.error("Note interpretation failed", error);

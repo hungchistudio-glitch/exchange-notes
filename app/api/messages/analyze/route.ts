@@ -184,7 +184,6 @@ export async function POST(request: Request) {
 
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_ANALYSES_PER_DAY,
@@ -364,7 +363,7 @@ ${scriptRule}
     return NextResponse.json({ analysis }, { status: 200 });
   } catch (error) {
     if (supabase && charged) {
-      await refundDailyQuota(supabase, charged, OPERATION);
+      await refundDailyQuota(charged, OPERATION);
     }
 
     console.error("Message analysis failed:", error);

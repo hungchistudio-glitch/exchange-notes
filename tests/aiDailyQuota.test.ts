@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   consumeDailyQuota,
   refundDailyQuota,
   resetDailyQuotaStateForTests,
+  setDailyQuotaClientForTests,
 } from "@/lib/ai/dailyQuota";
 
 /* =========================================================
@@ -37,6 +41,8 @@ function supabaseWith(
     }),
   };
 
+  setDailyQuotaClientForTests(client as never);
+
   return { client: client as never, calls };
 }
 
@@ -54,13 +60,24 @@ describe("spending a request", () => {
     const { client, calls } = supabaseWith({ consume_ai_daily_quota: allowed });
 
     await expect(
-      consumeDailyQuota(client, "user-1", "vision_identification", 60),
+      consumeDailyQuota("user-1", "vision_identification", 60),
     ).resolves.toBe(true);
 
     expect(calls).toEqual([
       {
         fn: "consume_ai_daily_quota",
-        args: { p_operation: "vision_identification", p_limit: 60 },
+        args: {
+          /*
+           * The reader is named in the argument now, not read from
+           * auth.uid() inside the function. That is what let the function
+           * be locked to service_role — and it is the whole point of this
+           * assertion: a call that stops carrying p_user_id is a call the
+           * database will refuse.
+           */
+          p_user_id: "user-1",
+          p_operation: "vision_identification",
+          p_limit: 60,
+        },
       },
     ]);
   });
@@ -69,7 +86,7 @@ describe("spending a request", () => {
     const { client } = supabaseWith({ consume_ai_daily_quota: refused });
 
     await expect(
-      consumeDailyQuota(client, "user-1", "vision_identification", 60),
+      consumeDailyQuota("user-1", "vision_identification", 60),
     ).resolves.toBe(false);
   });
 });
@@ -78,10 +95,13 @@ describe("handing a request back", () => {
   it("calls the refund function for that operation", async () => {
     const { client, calls } = supabaseWith({});
 
-    await refundDailyQuota(client, "user-1", "menu_scan");
+    await refundDailyQuota("user-1", "menu_scan");
 
     expect(calls).toEqual([
-      { fn: "refund_ai_daily_quota", args: { p_operation: "menu_scan" } },
+      {
+        fn: "refund_ai_daily_quota",
+        args: { p_user_id: "user-1", p_operation: "menu_scan" },
+      },
     ]);
   });
 
@@ -94,7 +114,7 @@ describe("handing a request back", () => {
     const { client } = supabaseWith({ refund_ai_daily_quota: broken });
 
     await expect(
-      refundDailyQuota(client, "user-1", "menu_scan"),
+      refundDailyQuota("user-1", "menu_scan"),
     ).resolves.toBeUndefined();
   });
 
@@ -105,8 +125,10 @@ describe("handing a request back", () => {
       }),
     } as never;
 
+    setDailyQuotaClientForTests(client);
+
     await expect(
-      refundDailyQuota(client, "user-1", "menu_scan"),
+      refundDailyQuota("user-1", "menu_scan"),
     ).resolves.toBeUndefined();
   });
 });
@@ -119,7 +141,7 @@ describe("when the counter cannot be reached", () => {
     const outcomes: boolean[] = [];
     for (let attempt = 0; attempt < 4; attempt += 1) {
       outcomes.push(
-        await consumeDailyQuota(client, "user-1", "vision_identification", 3),
+        await consumeDailyQuota("user-1", "vision_identification", 3),
       );
     }
 
@@ -129,8 +151,8 @@ describe("when the counter cannot be reached", () => {
   it("stops calling a function it has just found to be missing", async () => {
     const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
-    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    await consumeDailyQuota("user-1", "vision_identification", 3);
+    await consumeDailyQuota("user-1", "vision_identification", 3);
 
     expect(calls).toHaveLength(1);
   });
@@ -139,36 +161,36 @@ describe("when the counter cannot be reached", () => {
     // One user's menu scans must not eat their object lookups.
     const { client } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 1);
+    await consumeDailyQuota("user-1", "vision_identification", 1);
 
     await expect(
-      consumeDailyQuota(client, "user-1", "vision_identification", 1),
+      consumeDailyQuota("user-1", "vision_identification", 1),
     ).resolves.toBe(false);
     await expect(
-      consumeDailyQuota(client, "user-1", "menu_scan", 1),
+      consumeDailyQuota("user-1", "menu_scan", 1),
     ).resolves.toBe(true);
   });
 
   it("counts each reader separately", async () => {
     const { client } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 1);
+    await consumeDailyQuota("user-1", "vision_identification", 1);
 
     await expect(
-      consumeDailyQuota(client, "user-2", "vision_identification", 1),
+      consumeDailyQuota("user-2", "vision_identification", 1),
     ).resolves.toBe(true);
   });
 
   it("refunds in memory too, so a failure is not charged there either", async () => {
     const { client } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 1);
-    await refundDailyQuota(client, "user-1", "vision_identification");
+    await consumeDailyQuota("user-1", "vision_identification", 1);
+    await refundDailyQuota("user-1", "vision_identification");
 
     // The one allowance is available again, exactly as it would be in the
     // database after a refunded timeout.
     await expect(
-      consumeDailyQuota(client, "user-1", "vision_identification", 1),
+      consumeDailyQuota("user-1", "vision_identification", 1),
     ).resolves.toBe(true);
   });
 
@@ -179,16 +201,16 @@ describe("when the counter cannot be reached", () => {
      */
     const { client } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 1);
-    await refundDailyQuota(client, "user-1", "vision_identification");
-    await refundDailyQuota(client, "user-1", "vision_identification");
-    await refundDailyQuota(client, "user-1", "vision_identification");
+    await consumeDailyQuota("user-1", "vision_identification", 1);
+    await refundDailyQuota("user-1", "vision_identification");
+    await refundDailyQuota("user-1", "vision_identification");
+    await refundDailyQuota("user-1", "vision_identification");
 
     expect(
-      await consumeDailyQuota(client, "user-1", "vision_identification", 1),
+      await consumeDailyQuota("user-1", "vision_identification", 1),
     ).toBe(true);
     expect(
-      await consumeDailyQuota(client, "user-1", "vision_identification", 1),
+      await consumeDailyQuota("user-1", "vision_identification", 1),
     ).toBe(false);
   });
 });
@@ -220,13 +242,13 @@ describe("recovering from a counter that was unreachable", () => {
   it("tries the database again once the hold has passed", async () => {
     const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
-    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    await consumeDailyQuota("user-1", "vision_identification", 3);
+    await consumeDailyQuota("user-1", "vision_identification", 3);
     expect(calls).toHaveLength(1);
 
     vi.advanceTimersByTime(61_000);
 
-    await consumeDailyQuota(client, "user-1", "vision_identification", 3);
+    await consumeDailyQuota("user-1", "vision_identification", 3);
     expect(calls).toHaveLength(2);
   });
 
@@ -243,7 +265,9 @@ describe("recovering from a counter that was unreachable", () => {
       }),
     } as never;
 
-    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
+    setDailyQuotaClientForTests(client);
+
+    await consumeDailyQuota("user-1", "menu_scan", 3);
     expect(calls).toHaveLength(1);
 
     replies.consume_ai_daily_quota = allowed;
@@ -251,8 +275,8 @@ describe("recovering from a counter that was unreachable", () => {
 
     // The retry answers, so every request after it goes to the database
     // rather than waiting out another minute.
-    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
-    await consumeDailyQuota(client, "user-1", "menu_scan", 3);
+    await consumeDailyQuota("user-1", "menu_scan", 3);
+    await consumeDailyQuota("user-1", "menu_scan", 3);
 
     expect(calls).toHaveLength(3);
   });
@@ -265,12 +289,41 @@ describe("recovering from a counter that was unreachable", () => {
      */
     const { client, calls } = supabaseWith({ consume_ai_daily_quota: broken });
 
-    expect(await consumeDailyQuota(client, "user-2", "reply_coach", 1)).toBe(true);
-    await refundDailyQuota(client, "user-2", "reply_coach");
+    expect(await consumeDailyQuota("user-2", "reply_coach", 1)).toBe(true);
+    await refundDailyQuota("user-2", "reply_coach");
 
     expect(calls.some((call) => call.fn === "refund_ai_daily_quota")).toBe(false);
 
     // The refund landed where the charge did, so the one allowance is free.
-    expect(await consumeDailyQuota(client, "user-2", "reply_coach", 1)).toBe(true);
+    expect(await consumeDailyQuota("user-2", "reply_coach", 1)).toBe(true);
+  });
+});
+
+describe("the counter is unreachable from a browser", () => {
+  /*
+   * The database half of this lives in
+   * supabase/migrations/20260910190000_ai_quota_server_only.sql, which
+   * grants EXECUTE on both functions to service_role alone. This is the
+   * application half, and it is asserted from source because the failure
+   * it guards against is invisible at runtime: handing these RPCs a
+   * user-scoped client worked perfectly well, and that is exactly how a
+   * reader came to be able to refund their own allowance in a loop.
+   */
+  const source = readFileSync(
+    join(import.meta.dirname, "..", "lib", "ai", "dailyQuota.ts"),
+    "utf8",
+  );
+
+  it("builds its own privileged client instead of taking one", () => {
+    expect(source).toContain('from "@/lib/supabase/service"');
+
+    /* The request-scoped client is built from the publishable key and
+       therefore runs as `authenticated` — the same role a browser has. */
+    expect(source).not.toContain('from "@/lib/supabase/server"');
+  });
+
+  it("names the reader in the call rather than relying on auth.uid()", () => {
+    /* service_role has no auth.uid(); a call without p_user_id raises. */
+    expect(source).toContain("p_user_id");
   });
 });
