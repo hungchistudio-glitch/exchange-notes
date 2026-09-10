@@ -1,4 +1,4 @@
-import type { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 /* =========================================================
    One daily allowance, counted in one place
@@ -22,7 +22,53 @@ import type { createClient } from "@/lib/supabase/server";
       answer is what turned fifteen lookups a day into eight or nine.
    ========================================================= */
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
+/* =========================================================
+   The counter's own connection, which no route may substitute
+
+   These two RPCs used to be handed whichever client the route already
+   had, and every route's client is built from the publishable key — so
+   they ran as `authenticated`, which is the same role a browser gets.
+   That is what made `refund_ai_daily_quota` reachable at /rest/v1/rpc/,
+   and a reader who calls refund in a loop has no daily limit on anything.
+
+   The database side is fixed by taking the user id as an argument and
+   granting EXECUTE to `service_role` alone. This is the other half: the
+   privileged client is owned here rather than passed in, so a route
+   cannot hand over a user-scoped one by accident. There is no parameter
+   left to get wrong.
+   ========================================================= */
+
+type QuotaClient = Pick<ReturnType<typeof createServiceClient>, "rpc">;
+
+let quotaClient: QuotaClient | null = null;
+
+/**
+ * Null when the service role key is absent rather than throwing.
+ *
+ * A missing key is a deployment problem, and turning it into an exception
+ * here would turn it into a 500 on six routes that could still have served
+ * the reader under the in-memory limit below. The caller treats null the
+ * same way it treats an RPC that refused.
+ */
+function getQuotaClient(): QuotaClient | null {
+  if (quotaClient) return quotaClient;
+
+  try {
+    quotaClient = createServiceClient();
+  } catch (error) {
+    console.warn("AI quota has no service-role client.", {
+      reason: error instanceof Error ? error.name : "unknown",
+    });
+    return null;
+  }
+
+  return quotaClient;
+}
+
+/** Test seam. Nothing in a test may reach the real service role key. */
+export function setDailyQuotaClientForTests(client: QuotaClient | null) {
+  quotaClient = client;
+}
 
 /**
  * The operations that draw on a daily allowance.
@@ -167,13 +213,15 @@ function forgetExpiredWindows(now: number) {
  * answer or a {@link refundDailyQuota}.
  */
 export async function consumeDailyQuota(
-  supabase: Supabase,
   userId: string,
   operation: AiOperation,
   limit: number,
 ): Promise<boolean> {
-  if (persistentQuotaWorthTrying(operation)) {
-    const { data, error } = await supabase.rpc("consume_ai_daily_quota", {
+  const client = getQuotaClient();
+
+  if (client && persistentQuotaWorthTrying(operation)) {
+    const { data, error } = await client.rpc("consume_ai_daily_quota", {
+      p_user_id: userId,
       p_operation: operation,
       p_limit: limit,
     });
@@ -212,7 +260,6 @@ export async function consumeDailyQuota(
  * this replaces.
  */
 export async function refundDailyQuota(
-  supabase: Supabase,
   userId: string,
   operation: AiOperation,
 ): Promise<void> {
@@ -223,14 +270,16 @@ export async function refundDailyQuota(
    * whichever one happens to be available now.
    */
   const heldUntil = persistentQuotaUnavailableUntil.get(operation);
+  const client = getQuotaClient();
 
-  if (heldUntil !== undefined && heldUntil > Date.now()) {
+  if (!client || (heldUntil !== undefined && heldUntil > Date.now())) {
     refundInMemory(userId, operation);
     return;
   }
 
   try {
-    const { error } = await supabase.rpc("refund_ai_daily_quota", {
+    const { error } = await client.rpc("refund_ai_daily_quota", {
+      p_user_id: userId,
       p_operation: operation,
     });
 
@@ -249,4 +298,5 @@ export async function refundDailyQuota(
 export function resetDailyQuotaStateForTests() {
   memoryWindows.clear();
   persistentQuotaUnavailableUntil.clear();
+  quotaClient = null;
 }

@@ -133,7 +133,6 @@ export async function POST(request: Request) {
 
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_CARD_TRANSLATIONS_PER_DAY,
@@ -154,7 +153,7 @@ export async function POST(request: Request) {
      * into two thirds of what they said.
      */
     if (fresh.size === 0) {
-      await refundDailyQuota(supabase, user.id, OPERATION);
+      await refundDailyQuota(user.id, OPERATION);
     }
 
     for (const [text, translated] of fresh) found.set(text, translated);

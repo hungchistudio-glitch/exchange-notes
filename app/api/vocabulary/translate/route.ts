@@ -179,7 +179,6 @@ export async function POST(request: Request) {
      */
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_FILL_BATCHES_PER_DAY,
@@ -325,7 +324,7 @@ export async function POST(request: Request) {
      * seventy on a bad afternoon.
      */
     if (filled === 0) {
-      await refundDailyQuota(supabase, user.id, OPERATION);
+      await refundDailyQuota(user.id, OPERATION);
       charged = false;
     }
 
@@ -342,7 +341,7 @@ export async function POST(request: Request) {
     // Spent before the model ran, and the model never answered. The reader
     // should not pay for a batch that threw.
     if (charged && supabase && userId) {
-      await refundDailyQuota(supabase, userId, OPERATION);
+      await refundDailyQuota(userId, OPERATION);
     }
 
     return NextResponse.json(

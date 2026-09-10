@@ -106,7 +106,6 @@ export async function POST(request: Request) {
 
     if (
       !(await consumeDailyQuota(
-        supabase,
         user.id,
         OPERATION,
         MAX_TRANSLATIONS_PER_DAY,
@@ -162,7 +161,7 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     if (supabase && charged) {
-      await refundDailyQuota(supabase, charged, OPERATION);
+      await refundDailyQuota(charged, OPERATION);
     }
 
     console.error("Note translation failed:", error);
