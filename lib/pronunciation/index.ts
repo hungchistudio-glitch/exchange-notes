@@ -1,6 +1,5 @@
 import { pinyin } from "pinyin-pro";
 import { p2z } from "pinyin-to-zhuyin";
-import { toPinyin } from "@/lib/pinyin";
 import { hasPhonetics, type LanguageCode } from "@/lib/languages";
 
 export type PronunciationData = {
@@ -104,7 +103,14 @@ function convertChinesePronunciation(text: string): {
   let zhuyinText: string | null = null;
 
   if (hasChinese) {
-    pinyinText = toPinyin(text);
+    /*
+     * Straight to pinyin-pro, which this module already imports, rather
+     * than through lib/pinyin. That helper is now async so the home screen
+     * does not carry the dictionary; this path is synchronous and already
+     * inside its own `hasChinese` branch, so the check it used to add is
+     * redundant here anyway.
+     */
+    pinyinText = pinyin(text, { toneType: "symbol", type: "string" });
 
     try {
       const numberedPinyin = pinyin(text, {

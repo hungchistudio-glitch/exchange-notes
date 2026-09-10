@@ -20,12 +20,21 @@ import { toPinyin } from "@/lib/pinyin";
    nonsense syllables attached to a word somebody was about to send a friend.
    ========================================================= */
 
-function romanise(text: string, language: LanguageCode): string {
+/*
+ * Async only because toPinyin is: the dictionary behind it is ~295KB and is
+ * fetched on first use rather than carried by every screen that mounts this
+ * hook. Nothing waits on it until a share is actually tapped — see
+ * lib/pinyin.ts.
+ */
+async function romanise(
+  text: string,
+  language: LanguageCode,
+): Promise<string> {
   if (!text.trim()) return "";
 
   // Only Chinese has a romanisation this app can produce. Everything else
   // is written in an alphabet the reader can already sound out.
-  return hasPhonetics(language, "pinyin") ? (toPinyin(text) ?? "") : "";
+  return hasPhonetics(language, "pinyin") ? ((await toPinyin(text)) ?? "") : "";
 }
 
 export default function useLexiconShare(
@@ -39,12 +48,12 @@ export default function useLexiconShare(
     window.setTimeout(() => setCopied(false), 1800);
   }, []);
 
-  const buildShareText = useCallback(() => {
+  const buildShareText = useCallback(async () => {
     if (!entry || !languages) return "";
 
     const reading =
-      romanise(entry.term, languages.sourceLanguage) ||
-      romanise(entry.translation, languages.glossLanguage);
+      (await romanise(entry.term, languages.sourceLanguage)) ||
+      (await romanise(entry.translation, languages.glossLanguage));
 
     const meta = [reading, entry.partOfSpeech?.toLowerCase()]
       .filter(Boolean)
@@ -68,7 +77,7 @@ export default function useLexiconShare(
   const share = useCallback(async () => {
     if (!entry) return;
 
-    const text = buildShareText();
+    const text = await buildShareText();
 
     try {
       if (navigator.share) {

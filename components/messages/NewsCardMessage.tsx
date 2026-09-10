@@ -6,7 +6,7 @@ import { Volume2 } from "lucide-react";
 
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
-import { getPhonetics } from "@/lib/pronunciation";
+import useLocalPhonetics from "@/hooks/pronunciation/useLocalPhonetics";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 
 /*
@@ -62,6 +62,14 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
    * shown in a language nobody asked for.
    */
   const [primaryLanguage, secondaryLanguage] = pair;
+
+  /*
+   * Empty until the dictionary lands, which keeps ~304KB of pinyin and
+   * zhuyin tables off the conversation room's first payload. Every
+   * annotation below is already written to draw nothing when it has
+   * nothing.
+   */
+  const getPhonetics = useLocalPhonetics();
 
   const titlePronunciation = getPhonetics(
     card.titles[secondaryLanguage] ?? "",
