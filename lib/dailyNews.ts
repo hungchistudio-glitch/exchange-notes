@@ -145,15 +145,35 @@ const CANDIDATES_PER_SLOT = 8;
  *
  * The cron job runs on Vercel's Hobby plan, where a function is killed at
  * sixty seconds and cannot be raised. One call carrying all twelve articles
- * is the version that risks that ceiling; two calls of six run in parallel
- * and finish in roughly half the wall time for the same tokens. Well inside
- * the free tier's request-per-minute allowance either way.
- */
-/*
- * How many articles one Gemini call rewrites, at the pair the app started
- * with. Scaled down as the pool covers more languages — see articlesPerBatch.
+ * is the version that risks that ceiling, so the work is split.
+ *
+ * How far it is split stopped being a decision anyone made. This was written
+ * for two languages, where twelve articles became two calls of six — and the
+ * note that used to live here said that was "well inside the free tier's
+ * request-per-minute allowance", which it was. Then the pool grew to five
+ * languages, articlesPerBatch shrank the batch to keep each response the
+ * same size, and two calls quietly became six. Nobody re-read this sentence.
+ *
+ * Six was not inside the allowance. Gemini's free tier answered with 429s
+ * asking for a fifty-one second wait, which is longer than the whole function
+ * is allowed to live, and batches 1, 2 and 4 were simply lost. The days it
+ * produced nothing at all are in daily_news_items: 09-05 through 09-07, and
+ * 09-09.
+ *
+ * So the floor is three rather than two. Five languages now means four calls
+ * instead of six, at fifteen article-languages per response against the
+ * twelve this was measured with — inside the budget dailyNewsBatch asserts,
+ * and inside the request allowance that six was not.
  */
 const ARTICLES_PER_BATCH = 6;
+
+/**
+ * The fewest articles a call may carry.
+ *
+ * Raising it lowers the number of requests, which is the thing the free tier
+ * counts. Lowering it below three brings back the six-call day.
+ */
+const MINIMUM_ARTICLES_PER_BATCH = 3;
 
 /**
  * Articles per request, held so the output per request does not grow with
@@ -171,7 +191,10 @@ const ARTICLES_PER_BATCH = 6;
  */
 export function articlesPerBatch(languageCount: number): number {
   const budget = ARTICLES_PER_BATCH * DEFAULT_LEARNING_PAIR.length;
-  return Math.max(2, Math.min(ARTICLES_PER_BATCH, Math.round(budget / Math.max(1, languageCount))));
+  return Math.max(
+    MINIMUM_ARTICLES_PER_BATCH,
+    Math.min(ARTICLES_PER_BATCH, Math.round(budget / Math.max(1, languageCount))),
+  );
 }
 
 const MINIMUM_BODY_LENGTH = 300;
@@ -600,13 +623,33 @@ async function buildLearningBatch(
  * twenty — comfortably inside the sixty-second ceiling the cron runs under
  * on Vercel's Hobby plan, even with a retry.
  */
-const MAX_CONCURRENT_BATCHES = 3;
+/*
+ * One at a time.
+ *
+ * Three in flight is what turned a request allowance into a burst: the free
+ * tier counts requests per minute, and three arriving together is three
+ * against a limit the 429s reported as five. Serially, four calls spread
+ * across the run are under it.
+ *
+ * This costs wall time, which is why the deadline below exists.
+ */
+const MAX_CONCURRENT_BATCHES = 1;
 
 /** One retry per batch. A second would risk the sixty-second ceiling. */
 const RATE_LIMIT_RETRIES = 1;
 
 /** Long enough to cover what the API asks for, short enough to fit. */
 const MAX_RETRY_WAIT_MS = 12_000;
+
+/*
+ * How long the batches may take before no new one is started.
+ *
+ * maxDuration on the route is sixty seconds and cannot be raised on Hobby.
+ * This leaves room for fetching the articles beforehand and writing the pool
+ * afterwards — the write is what makes the whole run worth anything, and it
+ * happens only if buildLearningCards returns.
+ */
+const BATCH_DEADLINE_MS = 45_000;
 
 function isRateLimited(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -666,6 +709,7 @@ async function withRateLimitRetry<T>(run: () => Promise<T>): Promise<T> {
 async function runBatches<T, R>(
   batches: readonly T[],
   run: (batch: T) => Promise<R>,
+  deadline: number = Date.now() + BATCH_DEADLINE_MS,
 ): Promise<Array<PromiseSettledResult<R>>> {
   const results: Array<PromiseSettledResult<R>> = new Array(batches.length);
   let next = 0;
@@ -673,6 +717,23 @@ async function runBatches<T, R>(
   async function worker() {
     while (next < batches.length) {
       const index = next++;
+
+      /*
+       * Running serially means the last batch can start late enough that the
+       * function is killed before it answers — and a killed function writes
+       * nothing at all, losing the batches that had already succeeded along
+       * with the one that ran long. Stopping here instead gives the caller
+       * back whatever is finished.
+       */
+      if (Date.now() >= deadline) {
+        results[index] = {
+          status: "rejected",
+          reason: new Error(
+            "Skipped: the run was out of time before this batch could start.",
+          ),
+        };
+        continue;
+      }
 
       try {
         results[index] = {
