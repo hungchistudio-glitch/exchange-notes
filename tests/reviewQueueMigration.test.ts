@@ -1,16 +1,10 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { readMigration } from "./readMigration";
 
 describe("review queue migration", () => {
   it("closes the NULL insertion window before enforcing NOT NULL", () => {
-    const sql = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260910121000_review_queue_not_null.sql",
-      ),
-      "utf8",
-    ).toLowerCase();
+    const sql = readMigration("review_queue_not_null").toLowerCase();
 
     const setDefault = sql.indexOf("set default now()");
     const backfill = sql.indexOf("where next_review_at is null");

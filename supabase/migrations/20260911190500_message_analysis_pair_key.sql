@@ -1,4 +1,4 @@
--- Half two of two, after 20260911114625_message_analysis_language_pair.
+-- Half two of two, after 20260911190225_message_analysis_language_pair.
 --
 -- Apply this only once the deploy that writes the directed pair on every
 -- reading is live. Applied before it, the running browser code writes a NULL

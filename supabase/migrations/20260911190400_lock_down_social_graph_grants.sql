@@ -1,4 +1,4 @@
--- Half two of two, after 20260910122000_lock_down_social_graph.
+-- Half two of two, after 20260911190150_lock_down_social_graph.
 --
 -- Apply this only once the deploy that routes every relationship mutation
 -- through the functions in that migration is live. Applied before it, the

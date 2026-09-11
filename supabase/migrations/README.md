@@ -83,6 +83,27 @@ migration runs in its own transaction, so those would have rolled back
 cleanly rather than half-applying. The files have been renamed to the
 recorded versions and the two sets now match exactly.
 
+And five more the same day, applying this branch's own migrations — recorded
+here as it happened rather than discovered later:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260910120000_secure_web_push_endpoints` | `20260911185850` |
+| `20260910121000_review_queue_not_null` | `20260911185858` |
+| `20260910122000_lock_down_social_graph` | `20260911190150` |
+| `20260911114625_message_analysis_language_pair` | `20260911190225` |
+| `20260911114734_atomic_review_save` | `20260911190333` |
+
+The two second-half migrations were renumbered on the same pass — to
+`20260911190400` and `20260911190500` — because the renames above moved their
+first halves past them, and a second half that sorts before its first half is
+a replay that cannot work. They are renamed again once applied, to whatever
+the database says it recorded.
+
+**Ten renames across five occasions now. `apply_migration` always stamps its
+own version; the filename it was given is never what lands.** Read the
+version back and rename before committing, every time.
+
 ## Checking
 
 ```sql
