@@ -145,8 +145,17 @@ than two months later.
 select version, name from supabase_migrations.schema_migrations order by version;
 ```
 
-against `ls supabase/migrations`. Every file should have a row and every row
-a file.
+against `ls supabase/migrations`. Every row should have a file, always.
+
+Every file should have a row too, with one standing exception: the two
+baselines above (`20260711000000` and `20260816030300`) are not recorded in
+production and should not be. They are `if not exists` no-ops against a
+database that already has those tables and policies, and their filenames have
+to stay early or the chain stops replaying from empty. If `supabase db push`
+ever runs against production it will apply them — harmlessly, since there is
+nothing for them to create — and record them under those same early versions,
+because the CLI uses the filename. It is `apply_migration`, not `db push`,
+that invents a version.
 
 ## Writing one
 
