@@ -97,12 +97,47 @@ here as it happened rather than discovered later:
 The two second-half migrations were renumbered on the same pass — to
 `20260911190400` and `20260911190500` — because the renames above moved their
 first halves past them, and a second half that sorts before its first half is
-a replay that cannot work. They are renamed again once applied, to whatever
-the database says it recorded.
+a replay that cannot work. Applied after the deploy, they drifted in their
+turn and were renamed again:
 
-**Ten renames across five occasions now. `apply_migration` always stamps its
+| was committed as | the database recorded |
+| --- | --- |
+| `20260911190400_lock_down_social_graph_grants` | `20260911192656` |
+| `20260911190500_message_analysis_pair_key` | `20260911192708` |
+
+**Twelve renames across five occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the
 version back and rename before committing, every time.
+
+## Rebuilding from empty
+
+`supabase start` against an empty database applies every file in this
+directory in filename order. Until 2026-09-11 it stopped on the third one:
+`20260713173000_add_shared_article` alters `public.messages`, and nothing
+before it creates that table. Production had it — it was made in the
+dashboard — so nothing noticed for two months.
+
+Two files close that gap. They create what the chain had always assumed:
+
+| | |
+| --- | --- |
+| `20260711000000_baseline_tables_created_outside_the_chain` | `vocabulary_items` and `notes`, which no migration ever created; the messaging tables, which `20260803022302` creates three weeks after the files that alter them; and `is_conversation_member()` |
+| `20260816030300_baseline_policies_created_outside_the_chain` | the sixteen RLS policies `20260816030329` rewrites but nothing creates |
+
+Both are entirely `if not exists` / `drop policy if exists`, so they are
+no-ops against production and against any database built from the chain
+since.
+
+Verified by replaying all 79 files into an empty local database and comparing
+the result to production column by column, at a moment when five of them had
+not yet been applied there. Every difference was one of those five, plus
+`ai_lessons` (created by `20260717100000_ai_coach` and since dropped from
+production outside the chain) and `vocabulary_examples_backup_20260831` (made
+by hand). All five have since been applied.
+
+`tests/migrationChain.test.ts` holds the invariant statically, so the next
+migration written against something no earlier one creates fails in CI rather
+than two months later.
 
 ## Checking
 
