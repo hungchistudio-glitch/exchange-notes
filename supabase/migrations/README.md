@@ -95,15 +95,15 @@ here as it happened rather than discovered later:
 | `20260911114734_atomic_review_save` | `20260911190333` |
 
 The two second-half migrations were renumbered on the same pass — to
-`20260911190400` and `20260911190500` — because the renames above moved their
+`20260911192656` and `20260911192708` — because the renames above moved their
 first halves past them, and a second half that sorts before its first half is
 a replay that cannot work. Applied after the deploy, they drifted in their
 turn and were renamed again:
 
 | was committed as | the database recorded |
 | --- | --- |
-| `20260911190400_lock_down_social_graph_grants` | `20260911192656` |
-| `20260911190500_message_analysis_pair_key` | `20260911192708` |
+| `20260911192656_lock_down_social_graph_grants` | `20260911192656` |
+| `20260911192708_message_analysis_pair_key` | `20260911192708` |
 
 **Twelve renames across five occasions now. `apply_migration` always stamps its
 own version; the filename it was given is never what lands.** Read the

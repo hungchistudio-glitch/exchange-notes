@@ -25,7 +25,7 @@
 -- deleted here rather than left unreachable. The cost is that those messages
 -- are read once more, at the price the first reading cost.
 --
--- 20260911190500_message_analysis_pair_key finishes the job and must be
+-- 20260911192708_message_analysis_pair_key finishes the job and must be
 -- applied only *after* the deploy is live.
 
 alter table public.message_language_analysis
