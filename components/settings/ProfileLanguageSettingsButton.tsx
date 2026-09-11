@@ -13,9 +13,8 @@ import {
 
 /*
  * The languages this app can currently teach, read from the table rather than
- * typed out. Narrower than the table on purpose: the profile columns still
- * hold the old two-value encoding, so a pair they cannot store would fail on
- * save instead of in the picker. Widening that column widens this list.
+ * typed out. The profile schema accepts every code in this registry, and the
+ * parent keeps the two selected values distinct.
  */
 const LANGUAGE_OPTIONS: Array<{
   value: LanguageCode;

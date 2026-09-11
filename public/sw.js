@@ -1,8 +1,7 @@
-const CACHE_NAME = "exchange-notes-v3";
-// "/signup" was a dead legacy route (login only offers Google OAuth, no
-// link anywhere in the app points at it) — replaced with "/onboarding",
-// the real first-run route new accounts hit.
-const CORE_ASSETS = ["/", "/login", "/onboarding"];
+const CACHE_NAME = "exchange-notes-v4";
+const OFFLINE_URL = "/offline.html";
+const CORE_ASSETS = [OFFLINE_URL];
+const SAFE_ASSET_PREFIXES = ["/_next/static/", "/brand/", "/audio/"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -47,10 +46,11 @@ self.addEventListener("fetch", (event) => {
   // opaque cross-origin responses the Cache API can't usefully store.
   if (url.origin !== self.location.origin) return;
 
-  // API routes are dynamic/personalized (pronunciation lookups, daily
-  // news, classification, cron) — never worth serving stale from cache,
-  // and some depend on request bodies the cache key ignores. Let these
-  // hit the network normally, uncached.
+  // API routes, pages and React Server Component payloads can all contain
+  // account data. The worker is installed after sign-in, so caching a page
+  // response under a shared URL can expose the previous reader's content on
+  // the next visit to the device. Only immutable Next build assets enter the
+  // runtime cache below.
   if (url.pathname.startsWith("/api/")) return;
 
   /*
@@ -71,15 +71,31 @@ self.addEventListener("fetch", (event) => {
    */
   if (request.headers.has("range")) return;
 
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const offlinePage = await caches.match(OFFLINE_URL);
+        if (offlinePage) return offlinePage;
+
+        return new Response("Exchange Notes is offline.", {
+          status: 503,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      })
+    );
+    return;
+  }
+
+  if (!SAFE_ASSET_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))) {
+    return;
+  }
+
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        /*
-         * Only a plain 200 is storable. `response.ok` is true for the whole
-         * 2xx range, which is what let a 206 reach put() in the first place.
-         * Cross-origin responses are already excluded above, so status is the
-         * only remaining thing the Cache API objects to.
-         */
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request).then((response) => {
+        // `response.ok` includes 206, which the Cache API cannot store.
         if (response.status === 200) {
           const clone = response.clone();
 
@@ -87,30 +103,13 @@ self.addEventListener("fetch", (event) => {
             .open(CACHE_NAME)
             .then((cache) => cache.put(request, clone))
             .catch(() => {
-              /*
-               * Caching is an optimisation, and a failed one must not surface
-               * as an unhandled rejection in the console of every reader who
-               * happens to hit a response this worker cannot store.
-               */
+              // A quota or storage error must never become console noise.
             });
         }
 
         return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
-
-        // Offline navigation with nothing cached for this exact URL yet —
-        // the app shell at "/" (precached on install) is a better failure
-        // mode than a browser-native offline error page.
-        if (request.mode === "navigate") {
-          const shell = await caches.match("/");
-          if (shell) return shell;
-        }
-
-        throw new Error("Network request failed and no cache entry exists.");
-      })
+      });
+    })
   );
 });
 

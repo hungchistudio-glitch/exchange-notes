@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f3ed" />
+    <title>Exchange Notes · Offline</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #f5f3ed;
+        color: #171717;
+      }
+
+      body {
+        display: grid;
+        min-height: 100dvh;
+        margin: 0;
+        place-items: center;
+      }
+
+      main {
+        width: min(34rem, calc(100% - 3rem));
+      }
+
+      p:first-child {
+        color: #967022;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0.75rem 0 0;
+        font-family: Georgia, serif;
+        font-size: clamp(2.4rem, 9vw, 4.5rem);
+        font-weight: 500;
+        letter-spacing: -0.05em;
+        line-height: 0.98;
+      }
+
+      p {
+        color: #5f5c55;
+        line-height: 1.65;
+      }
+
+      button {
+        min-height: 2.75rem;
+        margin-top: 1rem;
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        background: transparent;
+        padding: 0 1.25rem;
+        color: inherit;
+        font: inherit;
+        font-weight: 650;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background: #070b12;
+          color: #f5f2e8;
+        }
+
+        p {
+          color: #c8c3b8;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Exchange Notes</p>
+      <h1>You’re offline.</h1>
+      <p>
+        沒有網路連線 · Sin conexión · Hors connexion · Sei offline<br />
+        Your private pages were not stored in the browser cache. Reconnect to
+        continue safely.
+      </p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+  </body>
+</html>

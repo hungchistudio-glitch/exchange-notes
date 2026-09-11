@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   LANGUAGE_CODES,
+  SUPPORTED_PROFILE_LANGUAGE_PAIRS,
+  changeProfileLanguagePair,
   getInterfaceLanguages,
   getLanguage,
   getLearningLanguages,
@@ -52,6 +54,36 @@ describe("resolveLanguageCode", () => {
 });
 
 describe("what the app offers", () => {
+  it("officially enumerates all 20 directed learning → native pairs", () => {
+    const expected = LANGUAGE_CODES.flatMap((learning) =>
+      LANGUAGE_CODES.filter((native) => native !== learning).map(
+        (native) => `${learning}->${native}`,
+      ),
+    );
+    const actual = SUPPORTED_PROFILE_LANGUAGE_PAIRS.map(
+      ([learning, native]) => `${learning}->${native}`,
+    );
+
+    expect(actual).toHaveLength(20);
+    expect(new Set(actual).size).toBe(20);
+    expect(actual).toEqual(expected);
+  });
+
+  it("swaps existing choices instead of inventing a third language on collision", () => {
+    expect(changeProfileLanguagePair(["fr", "es"], "learning", "es")).toEqual([
+      "es",
+      "fr",
+    ]);
+    expect(changeProfileLanguagePair(["fr", "es"], "native", "fr")).toEqual([
+      "es",
+      "fr",
+    ]);
+    expect(changeProfileLanguagePair(["fr", "es"], "native", "it")).toEqual([
+      "fr",
+      "it",
+    ]);
+  });
+
   it("can teach every language it knows", () => {
     expect(getLearningLanguages().map((meta) => meta.code)).toEqual([
       ...LANGUAGE_CODES,

@@ -10,7 +10,7 @@ import { loadTranslations, prefetchTranslations } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import {
-  DEFAULT_LEARNING_PAIR,
+  changeProfileLanguagePair,
   INTERFACE_LANGUAGE_CODE,
   getInterfaceLanguages,
   getLearningLanguages,
@@ -52,9 +52,8 @@ const INTERFACE_OPTIONS: ReadonlyArray<{
 }));
 
 /*
- * Only the languages the old two-value column can still express. Widening
- * that column is a separate migration; offering a pair it cannot store would
- * fail on save rather than in the picker.
+ * The five learning languages from the shared registry. Profile language
+ * columns were widened to BCP-47 codes, so this list can be stored as-is.
  */
 const LEARNING_OPTIONS: ReadonlyArray<{ value: LanguageCode; label: string }> =
   getLearningLanguages().map((meta) => ({
@@ -120,14 +119,9 @@ function ChoiceRow<T extends string>({
  * including the rest of the tour, arrives in the language just chosen.
  */
 export default function TutorialLanguageSetup() {
-  /*
-   * useTranslation last, for the reason spelled out in TutorialOverlay: it can
-   * suspend on a cold dictionary, and this is the component whose own buttons
-   * make the dictionary cold. Every hook that must survive that replay is
-   * declared above it.
-   */
   const interfaceLanguage = useInterfaceLanguage();
-  const { learningLanguage, refresh } = useLearningLanguageContext();
+  const { learningLanguage, nativeLanguage, refresh } =
+    useLearningLanguageContext();
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -147,13 +141,15 @@ export default function TutorialLanguageSetup() {
      * rather than being left to collide — the same rule the profile screen
      * follows.
      *
-     * "The other one" only means something while exactly two languages can be
-     * learned. A third makes the native language a choice of its own rather
-     * than the leftover, and this becomes a real picker.
+     * When the chosen learning language was the current native language, swap
+     * the pair instead of inventing a default. For every other choice, preserve
+     * the native language the reader already selected during onboarding.
      */
-    const nextNative: LanguageCode =
-      LEARNING_OPTIONS.find((option) => option.value !== next)?.value ??
-      DEFAULT_LEARNING_PAIR[1];
+    const [, nextNative] = changeProfileLanguagePair(
+      [learningLanguage, nativeLanguage],
+      "learning",
+      next,
+    );
 
     try {
       const supabase = createClient();
@@ -205,8 +201,14 @@ export default function TutorialLanguageSetup() {
   async function selectInterfaceLanguage(value: InterfaceLanguage) {
     if (value === interfaceLanguage) return;
 
-    await loadTranslations(value);
-    setInterfaceLanguage(value);
+    setError("");
+    try {
+      await loadTranslations(value);
+      setInterfaceLanguage(value);
+    } catch (error) {
+      setError(copy.saveError);
+      console.error("Could not load the selected interface language.", error);
+    }
   }
 
   /*

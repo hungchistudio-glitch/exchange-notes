@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import type { Cookie, CookieType, YumiMood } from "./types";
@@ -5,9 +6,10 @@ import type { Cookie, CookieType, YumiMood } from "./types";
 const COOKIE_CYCLE: CookieType[] = ["letter", "zhuyin"];
 const ZHUYIN_SYMBOL_PATTERN = /[ㄅ-ㄯ]/;
 
-// Vocabulary items don't carry a "was this English or Zhuyin content"
-// distinction (each row is one English+Chinese pair), so cookie shape is
-// assigned by earned order for visual variety: letter → zhuyin, repeating.
+// Earned order still asks for visual variety. buildAvailableCookies then
+// resolves that preference against the languages the row really contains:
+// only a zh-TW side may become a Zhuyin cookie, while every Latin-language
+// side becomes a letter cookie.
 export function cookieTypeForIndex(index: number): CookieType {
   return COOKIE_CYCLE[index % COOKIE_CYCLE.length];
 }
@@ -31,12 +33,13 @@ export function zhuyinGlyph(zhuyin: string | null | undefined): string {
   return symbol ?? ZHUYIN_GLYPH_FALLBACK;
 }
 
-// The cookie's actual glyph — the real first letter of the learned English
-// word, or the real first Zhuyin symbol from its Chinese reading — so each
-// cookie represents a genuine piece of that word, not a random shape.
-function glyphForCookie(item: VocabularyItem, type: CookieType): string {
+// The cookie's actual glyph — the first grapheme of a Latin-script side, or
+// the first Zhuyin symbol from a Chinese reading. Zhuyin itself is filled in
+// lazily by CookieTray; this fallback is replaced as soon as that lookup is
+// available.
+function glyphForCookie(text: string, type: CookieType): string {
   if (type === "letter") {
-    const letter = item.word.trim().charAt(0).toUpperCase();
+    const letter = [...text.trim()][0]?.toLocaleUpperCase();
     return letter || "?";
   }
 
@@ -227,20 +230,45 @@ export function buildAvailableCookies(
  */
 function buildCookie(
   item: VocabularyItem,
-  type: CookieType,
+  preferredType: CookieType,
   todayKey: string,
   now: number,
 ): Cookie {
+  const primaryLanguage = item.word_language ?? "en";
+  const secondaryLanguage = item.translation_language ?? "zh-TW";
+  const sides: Array<{ language: LanguageCode; text: string }> = [
+    {
+      language: primaryLanguage,
+      text: item.texts?.[primaryLanguage]?.trim() || item.word.trim(),
+    },
+    {
+      language: secondaryLanguage,
+      text:
+        item.texts?.[secondaryLanguage]?.trim()
+        || item.translation.trim(),
+    },
+  ].filter((side) => side.text);
+
+  const preferredSide =
+    preferredType === "zhuyin"
+      ? sides.find((side) => side.language === "zh-TW")
+      : sides.find((side) => side.language !== "zh-TW");
+  const source = preferredSide ?? sides[0] ?? {
+    language: primaryLanguage,
+    text: item.word.trim(),
+  };
+  const type: CookieType =
+    source.language === "zh-TW" ? "zhuyin" : "letter";
   let glyph: string | null = null;
 
   return {
     id: item.id,
     word: item.word,
-    // What the tray looks the reading up from, for a zhuyin cookie.
-    translation: item.translation,
+    sourceText: source.text,
+    language: source.language,
     type,
     get glyph() {
-      glyph ??= glyphForCookie(item, type);
+      glyph ??= glyphForCookie(source.text, type);
       return glyph;
     },
     status: item.status,

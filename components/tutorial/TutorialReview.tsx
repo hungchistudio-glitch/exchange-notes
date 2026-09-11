@@ -62,9 +62,14 @@ export default function TutorialReview() {
                  * there rather than suspending for it.
                  */
                 onClick={() => {
-                  void loadTranslations(option.value).then(() =>
-                    setInterfaceLanguage(option.value),
-                  );
+                  void loadTranslations(option.value)
+                    .then(() => setInterfaceLanguage(option.value))
+                    .catch((error) => {
+                      console.error(
+                        "Could not load the selected interface language.",
+                        error,
+                      );
+                    });
                 }}
                 className={`rounded-full border px-4 py-2 text-sm font-semibold ${
                   option.value === language

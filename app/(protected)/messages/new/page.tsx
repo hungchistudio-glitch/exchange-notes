@@ -53,7 +53,6 @@ export default async function NewConversationPage({
 
   const conversationId = await getOrCreateConversationWithFriend(
     supabase,
-    user.id,
     friend,
   );
 

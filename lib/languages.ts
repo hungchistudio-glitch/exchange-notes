@@ -1,11 +1,10 @@
 import type { InterfaceLanguage } from "@/lib/appPreferences";
-import type { AppLanguage } from "@/lib/types/app";
 
 /* =========================================================
    The two language axes
 
    This app has two independent language axes that happen to share the same
-   two values today, which is exactly why they keep getting confused:
+   five values today, which is exactly why they can still get confused:
 
      - InterfaceLanguage (lib/appPreferences.ts) — what the app itself
        speaks. Adding one means shipping a whole TranslationDictionary;
@@ -14,8 +13,8 @@ import type { AppLanguage } from "@/lib/types/app";
      - LanguageCode (below) — what the user is learning. Stored on
        profiles.native_language / learning_language.
 
-   They will diverge: the interface may only ever ship in a few languages
-   while the learning pair can be any combination. Nothing in this file may
+   They may diverge again: the interface may ship in fewer languages than
+   the learning catalogue. Nothing in this file may
    assume `LanguageCode extends InterfaceLanguage` or the reverse, and
    nothing should reintroduce an equation between them the way
    `TranslationLanguage = InterfaceLanguage` does for the interface axis.
@@ -51,7 +50,7 @@ export type LanguageMetadata = {
 
   /**
    * Display name, per interface language. A Record (not Partial) so adding
-   * a third interface language fails the build here — one small, obvious
+   * a new interface language fails the build here — one small, obvious
    * place — instead of silently rendering an English name inside a
    * fully-translated screen.
    */
@@ -143,11 +142,10 @@ export type LanguageMetadata = {
    * Whether the app can currently teach this language — prompts, speech and
    * phonetics all present.
    *
-   * Independent of `availableAsInterface`, and French and Italian are why:
-   * both are learnable now that the Pronunciation Lab has real packs for
-   * them, and neither has a TranslationDictionary. You can study French in
-   * an app that does not speak French to you, which is the whole point of
-   * keeping the two axes apart.
+   * Independent of `availableAsInterface`. All five current languages support
+   * both axes, but a future language can become teachable before a complete
+   * interface dictionary ships (or vice versa) without coupling the two
+   * release decisions.
    */
   availableAsLearning: boolean;
 };
@@ -277,6 +275,57 @@ export const LANGUAGES: Record<LanguageCode, LanguageMetadata> = {
 
 export const LANGUAGE_CODES = Object.keys(LANGUAGES) as LanguageCode[];
 
+/** A directed learning → native language pairing stored on a profile. */
+export type ProfileLanguagePair = readonly [
+  learningLanguage: LanguageCode,
+  nativeLanguage: LanguageCode,
+];
+
+/**
+ * Every profile pairing the product officially supports.
+ *
+ * Direction matters: learning Spanish with French support is a different
+ * experience from learning French with Spanish support. Five languages with
+ * no same-language pair therefore produce 5 × 4 = 20 combinations.
+ */
+export const SUPPORTED_PROFILE_LANGUAGE_PAIRS: readonly ProfileLanguagePair[] =
+  Object.freeze(
+    LANGUAGE_CODES.flatMap((learningLanguage) =>
+      LANGUAGE_CODES.filter(
+        (nativeLanguage) => nativeLanguage !== learningLanguage,
+      ).map(
+        (nativeLanguage) =>
+          Object.freeze([
+            learningLanguage,
+            nativeLanguage,
+          ]) as ProfileLanguagePair,
+      ),
+    ),
+  );
+
+/**
+ * Applies one profile-language choice while preserving a valid directed pair.
+ * Choosing the language currently in the other slot swaps the two; it never
+ * silently replaces a deliberate language with an arbitrary default.
+ */
+export function changeProfileLanguagePair(
+  pair: ProfileLanguagePair,
+  field: "learning" | "native",
+  value: LanguageCode,
+): ProfileLanguagePair {
+  const [learningLanguage, nativeLanguage] = pair;
+  const fallback =
+    LANGUAGE_CODES.find((language) => language !== value) ?? value;
+
+  if (field === "learning") {
+    if (value !== nativeLanguage) return [value, nativeLanguage];
+    return [value, learningLanguage !== value ? learningLanguage : fallback];
+  }
+
+  if (value !== learningLanguage) return [learningLanguage, value];
+  return [nativeLanguage !== value ? nativeLanguage : fallback, value];
+}
+
 /**
  * A value in each language it exists in.
  *
@@ -337,21 +386,21 @@ export function isInterfaceLanguageValue(
  * showed one pairing and the model was asked for another — and the only
  * reliable way for that not to happen again is for there to be one rule.
  *
- * The interface language wins: it is what the reader most recently said
- * they read comfortably, and it is visibly in effect everywhere else on
- * screen. "My language" is the tie-breaker for someone learning the
- * language the app is already in, and English or Chinese is the last
- * resort — a card needs two sides, and the same text twice is not two.
+ * The native language wins: it is the support language the reader explicitly
+ * paired with the language they are learning. The interface language is only
+ * a recovery path for an incomplete or corrupt profile, followed by any
+ * supported language that differs from the learning side. A card needs two
+ * sides, and the same text twice is not two.
  */
 export function resolveSupportLanguage(
   learning: LanguageCode,
   interfaceCode: LanguageCode | null | undefined,
   native: LanguageCode | null | undefined,
 ): LanguageCode {
-  if (interfaceCode && interfaceCode !== learning) return interfaceCode;
   if (native && native !== learning) return native;
+  if (interfaceCode && interfaceCode !== learning) return interfaceCode;
 
-  return DEFAULT_LEARNING_PAIR.find((code) => code !== learning) ?? "en";
+  return LANGUAGE_CODES.find((code) => code !== learning) ?? "en";
 }
 
 /**
@@ -498,43 +547,20 @@ export function tagNeedsTraditionalNormalization(tag: string): boolean {
   });
 }
 
-/* =========================================================
-   Bridge to the legacy encoding
+/* Older cached profiles may still carry the pre-migration prose values. */
+type LegacyLanguageValue = "english" | "traditional-chinese";
 
-   profiles.native_language / learning_language still hold "english" /
-   "traditional-chinese" under a CHECK constraint, and 60-odd call sites
-   still compare against those strings. Until that column is widened to a
-   language-code allowlist and backfilled, both encodings are live and
-   every crossing between them goes through here.
-
-   When the migration lands: backfill the column to LanguageCode, make
-   AppLanguage a deprecated alias, then delete this section — the compiler
-   will list every remaining caller.
-   ========================================================= */
-
-const LEGACY_TO_CODE: Record<AppLanguage, LanguageCode> = {
+const LEGACY_TO_CODE: Record<LegacyLanguageValue, LanguageCode> = {
   english: "en",
   "traditional-chinese": "zh-TW",
 };
 
-const CODE_TO_LEGACY: Partial<Record<LanguageCode, AppLanguage>> = {
-  en: "english",
-  "zh-TW": "traditional-chinese",
-};
-
-/** Legacy stored value → language code. Total, and lossless. */
-export function toLanguageCode(language: AppLanguage): LanguageCode {
-  return LEGACY_TO_CODE[language];
-}
-
 /**
  * Reads a language out of a database column, in whichever encoding it holds.
  *
- * Both are live: the columns still mostly carry the prose values, and the
- * allowlist now also admits codes. A caller that assumes one encoding will
- * silently mis-read rows written under the other, so every read of
- * native_language / learning_language should come through here. Returns null
- * for an empty column or an unrecognised value rather than guessing.
+ * The live schema stores language codes, but accepting the old two prose
+ * values keeps pre-migration local data and stale clients recoverable.
+ * Returns null for an empty or unrecognised value rather than guessing.
  */
 export function readLanguageCode(value: unknown): LanguageCode | null {
   if (typeof value !== "string" || !value) return null;
@@ -581,16 +607,6 @@ export function resolveLanguageCode(value: unknown): LanguageCode | null {
       (code) => code.toLowerCase().split("-")[0] === primary,
     ) ?? null
   );
-}
-
-/**
- * Language code → legacy stored value, or null for a language the old
- * encoding cannot express. Callers writing to profiles must handle the
- * null rather than coercing — silently storing the wrong language is worse
- * than refusing to store an unsupported one.
- */
-export function toAppLanguage(code: LanguageCode): AppLanguage | null {
-  return CODE_TO_LEGACY[code] ?? null;
 }
 
 /**

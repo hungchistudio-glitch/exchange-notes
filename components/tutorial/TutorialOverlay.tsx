@@ -175,21 +175,7 @@ function stepVisual(step: StepKey): ReactNode {
 }
 
 export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
-  /*
-   * Every hook this component owns runs before useTranslation, and that order
-   * is load-bearing rather than stylistic.
-   *
-   * useTranslation reads its dictionary out of a cache and falls back to
-   * `use(loadTranslations(language))` on the one render where that cache is
-   * cold — which suspends. A suspended render is discarded and replayed, and
-   * any hook sitting after the suspending one never ran on the first attempt:
-   * React compares the two attempts, finds a hook list that grew, and reports
-   * a change in hook order before throwing.
-   *
-   * That is not theoretical here. Step one of this tour is where the reader
-   * chooses the interface language, so the first thing a new account does is
-   * hand this component a language whose dictionary is not loaded yet.
-   */
+  /* The active dictionary is primed before a language preference is published. */
   const [index, setIndex] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -223,7 +209,6 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     };
   }, []);
 
-  // The suspending read, last — see the note at the top of this component.
   const { t } = useTranslation();
   const copy = t.tutorial;
 

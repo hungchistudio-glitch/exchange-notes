@@ -37,12 +37,24 @@ type VocabularyItem = import("@/lib/types/app").VocabularyItem;
 
 const CHINESE = ["蘋果", "橋樑", "蠟燭", "漂流", "餘燼", "鍛造"];
 
-function library(n: number): VocabularyItem[] {
+function library(
+  n: number,
+  pair: readonly ["en" | "es" | "fr" | "it" | "zh-TW", "en" | "es" | "fr" | "it" | "zh-TW"] = ["en", "zh-TW"],
+): VocabularyItem[] {
   return Array.from({ length: n }, (_, i) => ({
     id: `w${i}`,
     user_id: "u",
     word: `word${i}`,
     translation: `${CHINESE[i % CHINESE.length]}${i}`,
+    word_language: pair[0],
+    translation_language: pair[1],
+    texts: {
+      [pair[0]]: `word${i}`,
+      [pair[1]]:
+        pair[1] === "zh-TW"
+          ? `${CHINESE[i % CHINESE.length]}${i}`
+          : `gloss${i}`,
+    },
     created_at: new Date(Date.UTC(2026, 0, 1) + i * 86_400_000).toISOString(),
     status: "learning",
     last_reviewed_at: null,
@@ -96,7 +108,7 @@ describe("building the tray", () => {
     expect(cookies.map((c) => c.id)).toEqual(["w6", "w7", "w8", "w9"]);
   });
 
-  it("still gives each cookie the glyph and type it had before", () => {
+  it("alternates real Latin and Zhuyin sources when the row has both", () => {
     const cookies = buildAvailableCookies(library(6), []);
 
     // Earned order, oldest first, alternating letter/zhuyin — and a real
@@ -109,6 +121,33 @@ describe("building the tray", () => {
     for (const index of [1, 3, 5]) {
       expect(cookies[index].glyph).toMatch(/[ㄅ-ㄯ]/);
     }
+  });
+
+  it("never invents Zhuyin for a pair with no Chinese side", () => {
+    const cookies = buildAvailableCookies(library(6, ["es", "fr"]), []);
+
+    expect(cookies.every((cookie) => cookie.type === "letter")).toBe(true);
+    expect(cookies.map((cookie) => cookie.language)).toEqual([
+      "es", "es", "es", "es", "es", "es",
+    ]);
+    expect(cookies.map((cookie) => cookie.glyph)).toEqual([
+      "W", "W", "W", "W", "W", "W",
+    ]);
+  });
+
+  it("uses the Chinese side only for a genuine Zhuyin cookie", () => {
+    const cookies = buildAvailableCookies(library(2), []);
+
+    expect(cookies[0]).toMatchObject({
+      type: "letter",
+      language: "en",
+      sourceText: "word0",
+    });
+    expect(cookies[1]).toMatchObject({
+      type: "zhuyin",
+      language: "zh-TW",
+      sourceText: `${CHINESE[1]}1`,
+    });
   });
 
   it("keeps the type cycle stable as words are fed", () => {

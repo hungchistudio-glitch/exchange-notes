@@ -3,6 +3,7 @@
 import { Play, Square } from "lucide-react";
 
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { getLanguage, type LanguageCode } from "@/lib/languages";
 
 import { DISCOVER_COLORS, type AudioPlaybackMode } from "./types";
 
@@ -11,18 +12,10 @@ type AudioRailProps = {
   isPlaying: boolean;
   progress: number;
   mode: AudioPlaybackMode;
+  pair: readonly [LanguageCode, LanguageCode];
   onModeChange: (mode: AudioPlaybackMode) => void;
   onTogglePlay: () => void;
 };
-
-const MODES: {
-  value: AudioPlaybackMode;
-  labelKey: "languageEnglish" | "languageChinese";
-  shortKey: "languageEnglishShort" | "languageChineseShort";
-}[] = [
-  { value: "en", labelKey: "languageEnglish", shortKey: "languageEnglishShort" },
-  { value: "zh", labelKey: "languageChinese", shortKey: "languageChineseShort" },
-];
 
 // A single consolidated playback control for the featured story — replaces
 // four separate per-sentence speaker buttons on this card specifically.
@@ -33,9 +26,18 @@ export default function AudioRail({
   isPlaying,
   progress,
   mode,
+  pair,
   onModeChange,
   onTogglePlay,
 }: AudioRailProps) {
+  const modes: readonly {
+    value: AudioPlaybackMode;
+    language: LanguageCode;
+  }[] = [
+    { value: "primary", language: pair[0] },
+    { value: "secondary", language: pair[1] },
+  ];
+
   return (
     <div
       className="mt-5 flex items-center gap-2.5 rounded-full p-1.5"
@@ -78,15 +80,16 @@ export default function AudioRail({
         className="flex shrink-0 items-center gap-0.5 rounded-full p-0.5"
         style={{ backgroundColor: DISCOVER_COLORS.selected }}
       >
-        {MODES.map((option) => {
+        {modes.map((option) => {
           const active = mode === option.value;
+          const language = getLanguage(option.language);
 
           return (
             <button
               key={option.value}
               type="button"
               onClick={() => onModeChange(option.value)}
-              aria-label={copy[option.labelKey]}
+              aria-label={language.endonym}
               aria-pressed={active}
               className="flex h-7 w-7 items-center justify-center rounded-full text-[0.65625rem] font-semibold transition-colors"
               style={{
@@ -96,7 +99,7 @@ export default function AudioRail({
                   : DISCOVER_COLORS.textSecondary,
               }}
             >
-              {copy[option.shortKey]}
+              {language.badge}
             </button>
           );
         })}

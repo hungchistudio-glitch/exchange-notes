@@ -12,9 +12,19 @@ export async function createClient() {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll() {
-          // Server Components cannot set cookies.
-          // Middleware / Route Handlers will handle this.
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            /*
+             * Server Components are read-only cookie contexts; Route
+             * Handlers are not. Trying the write first lets a handler persist
+             * a rotated Supabase session while components continue to rely on
+             * proxy.ts for refreshes, as Next requires.
+             */
+          }
         },
       },
     }

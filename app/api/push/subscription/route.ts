@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import {
+  normalizeHttpsPushEndpoint,
+  normalizeTrustedPushEndpoint,
+} from "@/lib/push/endpoint";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -35,28 +39,6 @@ function isRecord(value: unknown): value is JsonRecord {
     value !== null &&
     !Array.isArray(value)
   );
-}
-
-function validateEndpoint(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-
-  const endpoint = value.trim();
-
-  if (endpoint.length < 10 || endpoint.length > 2048) {
-    return null;
-  }
-
-  try {
-    const url = new URL(endpoint);
-
-    if (url.protocol !== "https:") {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-
-  return endpoint;
 }
 
 function validateKey(
@@ -132,12 +114,12 @@ function validateSubscription(
     };
   }
 
-  const endpoint = validateEndpoint(value.endpoint);
+  const endpoint = normalizeTrustedPushEndpoint(value.endpoint);
 
   if (!endpoint) {
     return {
       ok: false,
-      message: "A valid HTTPS push endpoint is required.",
+      message: "A supported browser push endpoint is required.",
     };
   }
 
@@ -341,7 +323,10 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const endpoint = validateEndpoint(parsedBody.value.endpoint);
+  // Removal deliberately accepts any structurally valid legacy endpoint.
+  // Tightening DELETE would strand a subscription that predates the provider
+  // allowlist and prevent the reader from turning it off.
+  const endpoint = normalizeHttpsPushEndpoint(parsedBody.value.endpoint);
 
   if (!endpoint) {
     return jsonResponse(

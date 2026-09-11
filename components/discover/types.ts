@@ -15,7 +15,8 @@ export function isImageFriendlyCategory(category: string): boolean {
 
 export type SpeechRate = 0.75 | 1 | 1.25;
 
-export type AudioPlaybackMode = "en" | "zh";
+/** Which side of the reader's current language pair the audio rail plays. */
+export type AudioPlaybackMode = "primary" | "secondary";
 
 // A page-scoped editorial palette for Discover — deliberately not folded
 // into the app-wide --surface/--line CSS variables, since this is a

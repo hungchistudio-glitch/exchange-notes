@@ -14,9 +14,9 @@ import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
    written out beside the counts. It survived a sign-out, and the next
    account's library was ordered by it.
 
-   The service worker's cache holds the HTML of the signed-in pages, because
-   public/sw.js is network-first over every same-origin GET that is not an
-   API route. That survived too, and offline it is what the app serves.
+   Worker versions before v4 cached signed-in HTML and RSC responses. The new
+   worker no longer does, but an upgraded shared device can still hold an old
+   cache until sign-out removes every version.
 
    A shared or handed-on phone is the ordinary case for this app. These are
    the two that were being left behind.
@@ -25,6 +25,7 @@ import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
 const ACCOUNT_KEYS = [
   "vocabulary-interactions-v1",
   "exchange-notes-home-notes",
+  "exchange-notes-legacy-notes-imported",
   "pending-shared-vocabulary",
   "exchange-notes-pronunciation-session",
   "exchange-notes-device-connections",
@@ -94,8 +95,9 @@ describe("forgetDeviceCopies", () => {
     }
   });
 
-  it("empties the service worker's cache of signed-in pages", async () => {
+  it("empties current and historical service worker caches", async () => {
     const deleted = fakeCaches([
+      "exchange-notes-v4",
       "exchange-notes-v3",
       "exchange-notes-v2",
     ]);
@@ -107,7 +109,11 @@ describe("forgetDeviceCopies", () => {
      * worker bumps its own cache version, and matching on the current
      * constant would quietly stop working the next time it changes.
      */
-    expect(deleted).toEqual(["exchange-notes-v3", "exchange-notes-v2"]);
+    expect(deleted).toEqual([
+      "exchange-notes-v4",
+      "exchange-notes-v3",
+      "exchange-notes-v2",
+    ]);
   });
 
   it("still clears storage when the cache API is unavailable", async () => {

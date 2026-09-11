@@ -157,7 +157,7 @@ const loadWidgetModule = new AsyncFunction(
   "SFSymbol",
   "Size",
   "URLScheme",
-  `${testableSource}\nreturn { appLinks, buildWidget, speechDeepLink, widgetScriptActionUrl };`,
+  `${testableSource}\nreturn { appLinks, buildWidget, normalizeSnapshot, speechDeepLink, widgetScriptActionUrl };`,
 );
 
 const widgetModule = await loadWidgetModule(
@@ -194,31 +194,61 @@ assert.equal(
   widgetModule.speechDeepLink("你好", "zh-TW", baseUrl),
   `${baseUrl}/speak?language=zh-TW&text=${encodeURIComponent("你好")}`,
 );
+assert.equal(
+  widgetModule.speechDeepLink("hola", "es-ES", baseUrl),
+  `${baseUrl}/speak?language=es-ES&text=hola`,
+);
+assert.equal(
+  widgetModule.speechDeepLink("bonjour", "fr-FR", baseUrl),
+  `${baseUrl}/speak?language=fr-FR&text=bonjour`,
+);
+assert.equal(
+  widgetModule.speechDeepLink("ciao", "it-IT", baseUrl),
+  `${baseUrl}/speak?language=it-IT&text=ciao`,
+);
 
 const payload = {
   cookieCount: 2,
   cookieGoal: 3,
-  englishWord: "hello world",
-  traditionalChineseWord: "你好",
-  pinyin: "nǐ hǎo",
-  zhuyin: "ㄋㄧˇ ㄏㄠˇ",
+  primaryText: "hola",
+  secondaryText: "bonjour",
+  primaryLanguage: "es",
+  secondaryLanguage: "fr",
+  primaryPronunciation: "/ˈola/",
+  secondaryPronunciation: "/bɔ̃.ʒuʁ/",
+  englishWord: "",
+  traditionalChineseWord: "",
+  pinyin: "",
+  zhuyin: "",
   words: [
     {
       id: "word-1",
-      englishWord: "hello world",
-      traditionalChineseWord: "你好",
-      pinyin: "nǐ hǎo",
-      zhuyin: "ㄋㄧˇ ㄏㄠˇ",
+      primaryText: "hola",
+      secondaryText: "bonjour",
+      primaryLanguage: "es",
+      secondaryLanguage: "fr",
+      primaryPronunciation: "/ˈola/",
+      secondaryPronunciation: "/bɔ̃.ʒuʁ/",
+      englishWord: "",
+      traditionalChineseWord: "",
+      pinyin: "",
+      zhuyin: "",
     },
     {
       id: "word-2",
-      englishWord: "spaceship",
-      traditionalChineseWord: "太空船",
-      pinyin: "tài kōng chuán",
-      zhuyin: "ㄊㄞˋ ㄎㄨㄥ ㄔㄨㄢˊ",
+      primaryText: "gracias",
+      secondaryText: "merci",
+      primaryLanguage: "es",
+      secondaryLanguage: "fr",
+      primaryPronunciation: "/ˈɡɾa.sjas/",
+      secondaryPronunciation: "/mɛʁ.si/",
+      englishWord: "",
+      traditionalChineseWord: "",
+      pinyin: "",
+      zhuyin: "",
     },
   ],
-  interfaceLanguage: "traditional-chinese",
+  interfaceLanguage: "spanish",
   learningLanguage: "english",
   moodKey: "excited",
   localizedText: {
@@ -234,7 +264,7 @@ const model = {
   source: "network",
   baseUrl,
   snapshot: {
-    schemaVersion: 1,
+    schemaVersion: 2,
     updatedAt: new Date().toISOString(),
     payload,
   },
@@ -258,8 +288,8 @@ const previousMediumUrl = widgetModule.widgetScriptActionUrl("previous-word", "m
 const nextMediumUrl = widgetModule.widgetScriptActionUrl("next-word", "medium");
 const previousLargeUrl = widgetModule.widgetScriptActionUrl("previous-word", "large");
 const nextLargeUrl = widgetModule.widgetScriptActionUrl("next-word", "large");
-const englishSpeechUrl = widgetModule.speechDeepLink("hello world", "en-US", baseUrl);
-const chineseSpeechUrl = widgetModule.speechDeepLink("你好", "zh-TW", baseUrl);
+const primarySpeechUrl = widgetModule.speechDeepLink("hola", "es-ES", baseUrl);
+const secondarySpeechUrl = widgetModule.speechDeepLink("bonjour", "fr-FR", baseUrl);
 
 const smallWidget = widgetModule.buildWidget(model, "small");
 assert.equal(smallWidget.url, expectedLinks.home);
@@ -274,8 +304,8 @@ assertSize(nodeForUrl(mediumWidget, expectedLinks.addWord), 28, 28, "Medium add-
 assertSize(nodeForUrl(mediumWidget, expectedLinks.capture), 28, 28, "Medium camera button");
 assertSize(nodeForUrl(mediumWidget, previousMediumUrl), 27, 27, "Medium previous button");
 assertSize(nodeForUrl(mediumWidget, nextMediumUrl), 27, 27, "Medium next button");
-assertSize(nodeForUrl(mediumWidget, englishSpeechUrl), 34, 34, "Medium English audio button");
-assertSize(nodeForUrl(mediumWidget, chineseSpeechUrl), 34, 34, "Medium Chinese audio button");
+assertSize(nodeForUrl(mediumWidget, primarySpeechUrl), 34, 34, "Medium Spanish audio button");
+assertSize(nodeForUrl(mediumWidget, secondarySpeechUrl), 34, 34, "Medium French audio button");
 
 const largeWidget = widgetModule.buildWidget(model, "large");
 assert.equal(largeWidget.url, expectedLinks.home);
@@ -284,8 +314,38 @@ assertSize(nodeForUrl(largeWidget, expectedLinks.addWord), 42, 42, "Large add-wo
 assertSize(nodeForUrl(largeWidget, expectedLinks.capture), 42, 42, "Large camera button");
 assertSize(nodeForUrl(largeWidget, previousLargeUrl), 34, 34, "Large previous button");
 assertSize(nodeForUrl(largeWidget, nextLargeUrl), 34, 34, "Large next button");
-assertSize(nodeForUrl(largeWidget, englishSpeechUrl), 52, 52, "Large English audio button");
-assertSize(nodeForUrl(largeWidget, chineseSpeechUrl), 52, 52, "Large Chinese audio button");
+assertSize(nodeForUrl(largeWidget, primarySpeechUrl), 52, 52, "Large Spanish audio button");
+assertSize(nodeForUrl(largeWidget, secondarySpeechUrl), 52, 52, "Large French audio button");
+
+const upgradedLegacySnapshot = widgetModule.normalizeSnapshot({
+  schemaVersion: 1,
+  updatedAt: new Date().toISOString(),
+  payload: {
+    ...payload,
+    primaryText: undefined,
+    secondaryText: undefined,
+    primaryLanguage: undefined,
+    secondaryLanguage: undefined,
+    primaryPronunciation: undefined,
+    secondaryPronunciation: undefined,
+    englishWord: "hello world",
+    traditionalChineseWord: "你好",
+    pinyin: "nǐ hǎo",
+    zhuyin: "ㄋㄧˇ ㄏㄠˇ",
+    words: [{
+      id: "legacy",
+      englishWord: "hello world",
+      traditionalChineseWord: "你好",
+      pinyin: "nǐ hǎo",
+      zhuyin: "ㄋㄧˇ ㄏㄠˇ",
+    }],
+    interfaceLanguage: "traditional-chinese",
+    learningLanguage: "english",
+  },
+});
+assert.equal(upgradedLegacySnapshot.schemaVersion, 2);
+assert.equal(upgradedLegacySnapshot.payload.words[0].primaryLanguage, "en");
+assert.equal(upgradedLegacySnapshot.payload.words[0].secondaryLanguage, "zh-TW");
 
 /*
  * Every route the widget deep-links to, and the file that serves it.
@@ -351,5 +411,6 @@ assert.doesNotMatch(source, /exchangenotes:\/\//);
 
 console.log("PASS: Scriptable widget syntax loaded");
 console.log("PASS: Small, medium, and large widget layouts built with equal outer padding");
-console.log("PASS: Add word, camera, previous, next, English audio, and Chinese audio targets verified");
+console.log("PASS: Add word, camera, previous, next, Spanish audio, and French audio targets verified");
+console.log("PASS: Schema-v1 widget cache upgrades safely to five-language schema v2");
 console.log("PASS: Every HTTPS destination has a matching Next.js page and action handler");

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
   Bookmark,
   Camera,
   Check,
@@ -11,7 +13,9 @@ import {
   Leaf,
   Link2,
   Mic,
+  Pause,
   PenLine,
+  Play,
   Send,
   Sparkles,
 } from "lucide-react";
@@ -52,12 +56,14 @@ function LandingLanguagePicker({
 }) {
   const requestRef = useRef(0);
   const [switchingTo, setSwitchingTo] = useState<InterfaceLanguage | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   async function selectLanguage(value: InterfaceLanguage) {
     if (value === language) return;
 
     const request = ++requestRef.current;
     setSwitchingTo(value);
+    setLoadError(false);
 
     try {
       /*
@@ -68,6 +74,9 @@ function LandingLanguagePicker({
       await loadTranslations(value);
       if (request !== requestRef.current) return;
       setInterfaceLanguage(value);
+    } catch (error) {
+      if (request === requestRef.current) setLoadError(true);
+      console.error("Could not load the selected interface language.", error);
     } finally {
       if (request === requestRef.current) setSwitchingTo(null);
     }
@@ -93,8 +102,8 @@ function LandingLanguagePicker({
               dir={meta.direction}
               aria-pressed={selected}
               aria-busy={switching || undefined}
-              onPointerEnter={() => void loadTranslations(value)}
-              onFocus={() => void loadTranslations(value)}
+              onPointerEnter={() => void loadTranslations(value).catch(() => undefined)}
+              onFocus={() => void loadTranslations(value).catch(() => undefined)}
               onClick={() => void selectLanguage(value)}
               className={styles.languageOption}
             >
@@ -104,6 +113,11 @@ function LandingLanguagePicker({
           );
         })}
       </div>
+      {loadError ? (
+        <p role="alert" className="mt-2 text-xs font-medium text-red-700">
+          {copy.loadError}
+        </p>
+      ) : null}
     </fieldset>
   );
 }
@@ -225,6 +239,289 @@ function MomentPreview({
         </div>
       </div>
     </div>
+  );
+}
+
+function useReducedMotion() {
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return reducedMotion;
+}
+
+function LanguageOrbitPreview({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <div className={styles.languageOrbitPreview} aria-label={ariaLabel}>
+      <div className={styles.languageOrbitCore} aria-hidden="true">
+        <Languages size={28} strokeWidth={1.45} />
+        <strong>5</strong>
+      </div>
+      <ul className={styles.languageOrbitList}>
+        {LANGUAGE_OPTIONS.map(({ value, meta }, index) => {
+          const angle = index * (360 / LANGUAGE_OPTIONS.length);
+
+          return (
+            <li
+              key={value}
+              lang={meta.htmlLang}
+              dir={meta.direction}
+              style={{
+                "--orbit-angle": `${angle}deg`,
+                "--orbit-angle-inverse": `${-angle}deg`,
+              } as CSSProperties}
+            >
+              <span aria-hidden="true">{meta.badge}</span>
+              {meta.endonym}
+            </li>
+          );
+        })}
+      </ul>
+      <span className={styles.languageOrbitOne} aria-hidden="true" />
+      <span className={styles.languageOrbitTwo} aria-hidden="true" />
+    </div>
+  );
+}
+
+function MemoryJourneyPreview({ copy }: { copy: LandingCopy }) {
+  return (
+    <div className={styles.memoryJourneyPreview} aria-hidden="true">
+      <article className={styles.memoryJourneyCard}>
+        <PenLine size={18} strokeWidth={1.7} />
+        <span>{copy.notes.eyebrow}</span>
+        <strong>{copy.notes.title}</strong>
+      </article>
+
+      <div className={styles.memoryJourneyPath}>
+        <span />
+        <Sparkles size={17} />
+        <span />
+      </div>
+
+      <article className={styles.memoryJourneyCard}>
+        <Send size={18} strokeWidth={1.7} />
+        <span>{copy.exchange.eyebrow}</span>
+        <strong>{copy.exchange.title}</strong>
+      </article>
+
+      <div className={styles.memoryJourneyYumi}>
+        <YumiMark
+          mood="curious"
+          isWaking={false}
+          isEating={false}
+          growthStage={0}
+          crownEarned={false}
+        />
+      </div>
+    </div>
+  );
+}
+
+function HeroTutorial3D({
+  copy,
+  captureMode,
+  captureLabels,
+  step,
+  onStepChange,
+}: {
+  copy: LandingCopy;
+  captureMode: CaptureMode;
+  captureLabels: Record<CaptureMode, string>;
+  step: number;
+  onStepChange: (step: number) => void;
+}) {
+  const reducedMotion = useReducedMotion();
+  const [paused, setPaused] = useState(true);
+  const swipeStart = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const tour = copy.hero.tour;
+  const steps = [
+    {
+      title: tour.captureTitle,
+      description: tour.captureDescription,
+    },
+    {
+      title: tour.languagesTitle,
+      description: tour.languagesDescription,
+    },
+    {
+      title: tour.rememberTitle,
+      description: tour.rememberDescription,
+    },
+  ] as const;
+
+  useEffect(() => {
+    if (paused || reducedMotion) return;
+
+    const timer = window.setInterval(() => {
+      onStepChange((step + 1) % steps.length);
+    }, 6500);
+
+    return () => window.clearInterval(timer);
+  }, [onStepChange, paused, reducedMotion, step, steps.length]);
+
+  function chooseStep(nextStep: number) {
+    setPaused(true);
+    onStepChange((nextStep + steps.length) % steps.length);
+  }
+
+  return (
+    <section
+      className={styles.heroTour}
+      aria-label={tour.ariaLabel}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          chooseStep(step - 1);
+        }
+
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          chooseStep(step + 1);
+        }
+      }}
+    >
+      <div
+        className={styles.heroTourCopy}
+        aria-atomic="true"
+        aria-live={paused ? "polite" : "off"}
+      >
+        <p>
+          {tour.stepLabel
+            .replace("{current}", String(step + 1))
+            .replace("{total}", String(steps.length))}
+        </p>
+        <h2>{steps[step].title}</h2>
+        <span>{steps[step].description}</span>
+      </div>
+
+      <div
+        className={styles.heroTourViewport}
+        data-testid="hero-tour-viewport"
+        onPointerDown={(event) => {
+          if (
+            (event.pointerType !== "touch" && event.pointerType !== "pen") ||
+            !event.isPrimary
+          ) {
+            return;
+          }
+
+          swipeStart.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+          };
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        }}
+        onPointerUp={(event) => {
+          const start = swipeStart.current;
+          swipeStart.current = null;
+
+          if (!start || start.pointerId !== event.pointerId) return;
+
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+
+          const deltaX = event.clientX - start.x;
+          const deltaY = event.clientY - start.y;
+          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) {
+            return;
+          }
+
+          chooseStep(step + (deltaX < 0 ? 1 : -1));
+        }}
+        onPointerCancel={() => {
+          swipeStart.current = null;
+        }}
+      >
+        {steps.map((item, itemIndex) => {
+          const relative = (itemIndex - step + steps.length) % steps.length;
+          const positionClass =
+            relative === 0
+              ? styles.heroTourCardActive
+              : relative === 1
+                ? styles.heroTourCardNext
+                : styles.heroTourCardPrevious;
+
+          return (
+            <div
+              key={item.title}
+              className={`${styles.heroTourCard} ${positionClass}`}
+              aria-hidden={itemIndex !== step}
+            >
+              {itemIndex === 0 ? (
+                <MomentPreview
+                  copy={copy.hero.preview}
+                  mode={captureMode}
+                  labels={captureLabels}
+                />
+              ) : null}
+              {itemIndex === 1 ? (
+                <LanguageOrbitPreview ariaLabel={tour.languagesDescription} />
+              ) : null}
+              {itemIndex === 2 ? <MemoryJourneyPreview copy={copy} /> : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={styles.heroTourControls}>
+        <button
+          type="button"
+          aria-label={tour.previous}
+          onClick={() => chooseStep(step - 1)}
+        >
+          <ArrowLeft size={17} aria-hidden="true" />
+        </button>
+        <div className={styles.heroTourDots}>
+          {steps.map((item, itemIndex) => (
+            <button
+              key={item.title}
+              type="button"
+              aria-current={itemIndex === step ? "step" : undefined}
+              aria-label={tour.goToStep
+                .replace("{step}", String(itemIndex + 1))
+                .replace("{title}", item.title)}
+              onClick={() => chooseStep(itemIndex)}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          aria-label={tour.next}
+          onClick={() => chooseStep(step + 1)}
+        >
+          <ArrowRight size={17} aria-hidden="true" />
+        </button>
+        {!reducedMotion ? (
+          <button
+            type="button"
+            aria-label={paused ? tour.play : tour.pause}
+            aria-pressed={!paused}
+            onClick={() => setPaused((value) => !value)}
+          >
+            {paused ? (
+              <Play size={16} aria-hidden="true" />
+            ) : (
+              <Pause size={16} aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -476,6 +773,7 @@ function TargetFocusPreview({
 export default function LandingPage() {
   const viewTrackedRef = useRef(false);
   const [captureMode, setCaptureMode] = useState<CaptureMode>("write");
+  const [tutorialStep, setTutorialStep] = useState(0);
   const { t, language } = useTranslation();
   const copy = t.landing;
   const interfaceLang = getInterfaceLanguageMeta(language).htmlLang;
@@ -539,7 +837,10 @@ export default function LandingPage() {
                 key={mode}
                 type="button"
                 aria-pressed={captureMode === mode}
-                onClick={() => setCaptureMode(mode)}
+                onClick={() => {
+                  setCaptureMode(mode);
+                  setTutorialStep(0);
+                }}
               >
                 <Icon size={15} strokeWidth={1.8} aria-hidden="true" />
                 {captureLabels[mode]}
@@ -556,10 +857,12 @@ export default function LandingPage() {
             />
           </div>
         </div>
-        <MomentPreview
-          copy={copy.hero.preview}
-          mode={captureMode}
-          labels={captureLabels}
+        <HeroTutorial3D
+          copy={copy}
+          captureMode={captureMode}
+          captureLabels={captureLabels}
+          step={tutorialStep}
+          onStepChange={setTutorialStep}
         />
       </section>
 

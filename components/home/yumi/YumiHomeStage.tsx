@@ -18,6 +18,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import useDailyGoalWords from "@/hooks/preferences/useDailyGoalWords";
 import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import usePhonetics from "@/hooks/usePhonetics";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
@@ -33,6 +34,7 @@ import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { postYumiWidgetUpdate } from "@/lib/widget/yumiWidgetBridge";
 
 import styles from "./YumiHomeStage.module.css";
@@ -182,6 +184,7 @@ function scrollToDailyFocus() {
 export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
+  const { supportLanguage } = useDisplayLanguages();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
   const dailyGoal = useDailyGoalWords();
@@ -218,6 +221,19 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     [items],
   );
 
+  const widgetCards = useMemo(
+    () =>
+      widgetWords.map((item) => ({
+        item,
+        sides: getVocabularyCardSides(
+          item,
+          learningLanguage,
+          supportLanguage,
+        ),
+      })),
+    [learningLanguage, supportLanguage, widgetWords],
+  );
+
   /*
    * The readings the widget carries, looked up rather than computed.
    *
@@ -228,29 +244,67 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
    * already re-runs whenever the payload changes.
    */
   const phoneticsFor = usePhonetics(
-    widgetWords.map((item) => ({
-      text: item.translation,
-      language: "zh-TW" as const,
-    })),
+    widgetCards.flatMap(({ sides }) =>
+      [sides.primary, sides.secondary]
+        .filter((side) => side.text)
+        .map((side) => ({
+          text: side.text,
+          language: side.language,
+        })),
+    ),
   );
 
   const widgetWordPayloads = useMemo(
     () =>
-      widgetWords.map((item) => {
-        const reading = phoneticsFor({
-          text: item.translation,
-          language: "zh-TW",
+      widgetCards.map(({ item, sides }) => {
+        const primaryReading = phoneticsFor({
+          text: sides.primary.text,
+          language: sides.primary.language,
         });
+        const secondaryReading = phoneticsFor({
+          text: sides.secondary.text,
+          language: sides.secondary.language,
+        });
+        const pronunciation = (
+          languageCode: typeof sides.primary.language,
+          reading: typeof primaryReading,
+        ) =>
+          languageCode === "zh-TW"
+            ? reading?.zhuyin ?? reading?.pinyin ?? reading?.ipa ?? ""
+            : reading?.ipa ?? "";
+        const textFor = (languageCode: typeof sides.primary.language) => {
+          if (sides.primary.language === languageCode) return sides.primary.text;
+          if (sides.secondary.language === languageCode) return sides.secondary.text;
+          return "";
+        };
+        const chineseReading =
+          sides.primary.language === "zh-TW"
+            ? primaryReading
+            : sides.secondary.language === "zh-TW"
+              ? secondaryReading
+              : undefined;
 
         return {
           id: item.id,
-          englishWord: item.word.trim(),
-          traditionalChineseWord: item.translation.trim(),
-          pinyin: reading?.pinyin ?? "",
-          zhuyin: reading?.zhuyin ?? "",
+          primaryText: sides.primary.text,
+          secondaryText: sides.secondary.text,
+          primaryLanguage: sides.primary.language,
+          secondaryLanguage: sides.secondary.language,
+          primaryPronunciation: pronunciation(
+            sides.primary.language,
+            primaryReading,
+          ),
+          secondaryPronunciation: pronunciation(
+            sides.secondary.language,
+            secondaryReading,
+          ),
+          englishWord: textFor("en"),
+          traditionalChineseWord: textFor("zh-TW"),
+          pinyin: chineseReading?.pinyin ?? "",
+          zhuyin: chineseReading?.zhuyin ?? "",
         };
       }),
-    [widgetWords, phoneticsFor],
+    [widgetCards, phoneticsFor],
   );
 
   const widgetWord = widgetWordPayloads[0] ?? null;
@@ -522,12 +576,18 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
        */
       cookieCount: Math.min(context.wordsToday, dailyGoal),
       cookieGoal: dailyGoal,
+      primaryText: widgetWord?.primaryText ?? "",
+      secondaryText: widgetWord?.secondaryText ?? "",
+      primaryLanguage: learningLanguage,
+      secondaryLanguage: supportLanguage,
+      primaryPronunciation: widgetWord?.primaryPronunciation ?? "",
+      secondaryPronunciation: widgetWord?.secondaryPronunciation ?? "",
       englishWord: widgetWord?.englishWord ?? "",
       traditionalChineseWord: widgetWord?.traditionalChineseWord ?? "",
       pinyin: widgetWord?.pinyin ?? "",
       zhuyin: widgetWord?.zhuyin ?? "",
       words: widgetWordPayloads,
-      interfaceLanguage: toWidgetLanguage(language),
+      interfaceLanguage: language,
       learningLanguage: toWidgetLanguage(learningLanguage),
       moodKey: displayMood,
       localizedText: {
@@ -545,11 +605,16 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     displayMood,
     language,
     learningLanguage,
+    supportLanguage,
     lines.primary,
     lines.secondary,
     t.home.todayWord.emptyHeading,
     widgetWord?.englishWord,
     widgetWord?.pinyin,
+    widgetWord?.primaryPronunciation,
+    widgetWord?.primaryText,
+    widgetWord?.secondaryPronunciation,
+    widgetWord?.secondaryText,
     widgetWord?.traditionalChineseWord,
     widgetWord?.zhuyin,
     widgetWordPayloads,

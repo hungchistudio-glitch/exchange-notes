@@ -26,7 +26,7 @@ const DB_NAME = "exchange-notes";
  * handler below has to be safe to run against every earlier one — which is
  * why it creates stores conditionally rather than assuming a starting point.
  */
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   /** The reader's own words, keyed by row id. */
@@ -39,6 +39,10 @@ export const STORES = {
   translations: "translations",
   /** Everything singular: the last news batch, sync timestamps. */
   kv: "kv",
+  /** AES-GCM ciphertext for the signed-in reader's private notes. */
+  privateNotes: "private-notes",
+  /** Non-extractable, per-user AES keys used only by privateNotes. */
+  privateNoteKeys: "private-note-keys",
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
@@ -189,6 +193,57 @@ export async function replaceAll(
 
     objectStore.clear();
     for (const record of records) objectStore.put(record);
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => resolve();
+    transaction.onabort = () => resolve();
+  });
+}
+
+/**
+ * Replaces one logical namespace without touching records owned by another.
+ *
+ * The cursor deletes and the puts share one transaction. This matters for
+ * encrypted, per-user mirrors: clearing the whole store would make one
+ * account's sync delete another account's ciphertext, while a read/clear/write
+ * sequence could expose an empty snapshot if the tab closed between steps.
+ */
+export async function replaceMatching(
+  store: StoreName,
+  records: Record<string, unknown>[],
+  belongsToNamespace: (record: unknown) => boolean,
+): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+
+  await new Promise<void>((resolve) => {
+    let transaction: IDBTransaction;
+
+    try {
+      transaction = db.transaction(store, "readwrite");
+    } catch {
+      resolve();
+      return;
+    }
+
+    const objectStore = transaction.objectStore(store);
+    const cursorRequest = objectStore.openCursor();
+
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+
+      if (cursor) {
+        try {
+          if (belongsToNamespace(cursor.value)) cursor.delete();
+        } catch {
+          // A malformed old record is not authority to delete a namespace.
+        }
+        cursor.continue();
+        return;
+      }
+
+      for (const record of records) objectStore.put(record);
+    };
 
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => resolve();

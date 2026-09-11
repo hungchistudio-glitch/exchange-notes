@@ -1,8 +1,14 @@
 import { queueScriptableYumiWidgetSnapshotSync } from "@/lib/scriptable/widgetSnapshotClient";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
+import type { LanguageCode } from "@/lib/languages";
 
-export type YumiWidgetLanguage =
+/** Language identifier retained for native builds that predate schema v2. */
+export type LegacyYumiWidgetLanguage =
   | "english"
   | "traditional-chinese";
+
+/** The real content-language axis supported by widget schema v2. */
+export type YumiWidgetLanguage = LanguageCode;
 
 /**
  * The interface language, narrowed to what the widget itself can render.
@@ -13,7 +19,7 @@ export type YumiWidgetLanguage =
  * the widget would fall back anyway, and saying so here keeps the reason
  * visible instead of leaving it to a normaliser three files away.
  */
-export function toWidgetLanguage(language: string): YumiWidgetLanguage {
+export function toWidgetLanguage(language: string): LegacyYumiWidgetLanguage {
   // Takes either encoding: interface languages are still spelled out, the
   // learning language is a code, and both arrive here.
   return language === "traditional-chinese" || language === "zh-TW"
@@ -30,6 +36,15 @@ export type YumiWidgetLocalizedText = {
 
 export type YumiWidgetWord = {
   id: string;
+
+  primaryText: string;
+  secondaryText: string;
+  primaryLanguage: YumiWidgetLanguage;
+  secondaryLanguage: YumiWidgetLanguage;
+  primaryPronunciation: string;
+  secondaryPronunciation: string;
+
+  /** Legacy aliases keep already-installed schema-v1 native clients useful. */
   englishWord: string;
   traditionalChineseWord: string;
   pinyin: string;
@@ -40,14 +55,22 @@ export type YumiWidgetUpdatePayload = {
   cookieCount: number;
   cookieGoal: number;
 
+  primaryText: string;
+  secondaryText: string;
+  primaryLanguage: YumiWidgetLanguage;
+  secondaryLanguage: YumiWidgetLanguage;
+  primaryPronunciation: string;
+  secondaryPronunciation: string;
+
+  /** Schema-v1 aliases. New clients render the generic fields above. */
   englishWord: string;
   traditionalChineseWord: string;
   pinyin: string;
   zhuyin: string;
   words: YumiWidgetWord[];
 
-  interfaceLanguage: YumiWidgetLanguage;
-  learningLanguage: YumiWidgetLanguage;
+  interfaceLanguage: InterfaceLanguage;
+  learningLanguage: LegacyYumiWidgetLanguage;
   moodKey: string;
 
   localizedText: YumiWidgetLocalizedText;

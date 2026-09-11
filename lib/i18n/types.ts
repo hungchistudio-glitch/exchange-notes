@@ -3,8 +3,9 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 /**
  * Dictionaries are keyed by interface language, so this equation is correct
  * — and confined to the interface axis. Do not extend it to the learning
- * language: a user learning Spanish still reads the app in English or
- * Chinese, and `LanguageCode` (lib/languages.ts) carries no dictionary.
+ * language: a user learning Spanish can independently read the app in French,
+ * and dictionaries are selected by `InterfaceLanguage`, not `LanguageCode`
+ * (lib/languages.ts).
  */
 export type TranslationLanguage = InterfaceLanguage;
 
@@ -67,6 +68,7 @@ export type TranslationDictionary = {
     languagePicker: {
       label: string;
       ariaLabel: string;
+      loadError: string;
     };
     hero: {
       eyebrow: string;
@@ -75,6 +77,21 @@ export type TranslationDictionary = {
       description: string;
       mantra: string;
       modeAriaLabel: string;
+      tour: {
+        ariaLabel: string;
+        stepLabel: string;
+        previous: string;
+        next: string;
+        pause: string;
+        play: string;
+        goToStep: string;
+        captureTitle: string;
+        captureDescription: string;
+        languagesTitle: string;
+        languagesDescription: string;
+        rememberTitle: string;
+        rememberDescription: string;
+      };
       write: string;
       voice: string;
       camera: string;
@@ -214,6 +231,7 @@ export type TranslationDictionary = {
       title: string;
       subtitle: string;
       note: string;
+      loadError: string;
     };
     languages: {
       title: string;
@@ -1656,18 +1674,15 @@ export type TranslationDictionary = {
       edit: {
         title: string;
         subtitle: string;
-        english: string;
-        traditionalChinese: string;
-        chinesePlaceholder: string;
-        englishExample: string;
-        chineseExample: string;
-        chineseExamplePlaceholder: string;
+        wordPlaceholder: string;
+        translationPlaceholder: string;
+        exampleLabel: string;
+        examplePlaceholder: string;
         close: string;
         cancel: string;
         save: string;
         saving: string;
-        englishRequired: string;
-        chineseRequired: string;
+        required: string;
         saveFailed: string;
       };
 
@@ -2005,6 +2020,7 @@ export type TranslationDictionary = {
       rowDescription: string;
       sheetTitle: string;
       sheetDescription: string;
+      loadError: string;
       /**
        * One line per interface language, keyed by the language itself.
        *

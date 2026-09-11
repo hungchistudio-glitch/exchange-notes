@@ -225,6 +225,7 @@ export async function createVocabularyEntry(
     confidence: input.confidence ?? "medium",
     category: input.category ?? "other",
     status: input.status ?? "new",
+    next_review_at: new Date().toISOString(),
   });
 
   const item = inserted as VocabularyItem;

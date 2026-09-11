@@ -233,17 +233,25 @@ async function fromModel(
 export async function transcribe(
   texts: string[],
   language: LanguageCode,
-): Promise<{ found: Map<string, string>; unavailable: string[] }> {
+  budget?: {
+    consume: () => Promise<boolean>;
+    refund: () => Promise<void>;
+  },
+): Promise<{
+  found: Map<string, string>;
+  unavailable: string[];
+  limited: string[];
+}> {
   const wanted = [...new Set(texts.map(cacheKey))].filter(Boolean);
 
   if (wanted.length === 0 || !hasPhonetics(language, "ipa")) {
-    return { found: new Map(), unavailable: [] };
+    return { found: new Map(), unavailable: [], limited: [] };
   }
 
   const found = await readCache(language, wanted);
   const missing = wanted.filter((text) => !found.has(text));
 
-  if (missing.length === 0) return { found, unavailable: [] };
+  if (missing.length === 0) return { found, unavailable: [], limited: [] };
 
   if (DICTIONARY_LANGUAGES.includes(language)) {
     const fresh = new Map<string, string>();
@@ -264,9 +272,25 @@ export async function transcribe(
 
   const stillMissing = wanted.filter((text) => !found.has(text));
 
-  if (stillMissing.length === 0) return { found, unavailable: [] };
+  if (stillMissing.length === 0) {
+    return { found, unavailable: [], limited: [] };
+  }
+
+  let charged = false;
+
+  if (process.env.GEMINI_API_KEY && budget) {
+    if (!(await budget.consume())) {
+      return { found, unavailable: [], limited: stillMissing };
+    }
+
+    charged = true;
+  }
 
   const { found: fresh, failed } = await fromModel(stillMissing, language);
+
+  if (failed && charged) {
+    await budget?.refund();
+  }
 
   for (const [text, ipa] of fresh) found.set(text, ipa);
 
@@ -283,5 +307,6 @@ export async function transcribe(
     unavailable: failed
       ? stillMissing.filter((text) => !fresh.has(text))
       : [],
+    limited: [],
   };
 }

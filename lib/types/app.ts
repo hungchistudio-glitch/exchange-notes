@@ -4,25 +4,13 @@ import type {
   LanguagePairAtCreation,
 } from "@/lib/vocabulary/languageIdentity";
 
-/**
- * The learning-language axis as the database currently stores it.
- *
- * This is the *storage encoding*, not the language model: profiles'
- * native_language / learning_language columns carry these exact strings
- * under a CHECK constraint that only permits these two. New code should
- * take `LanguageCode` (lib/languages.ts) and convert at the database edge
- * with toLanguageCode / toAppLanguage; this type shrinks to a deprecated
- * alias once the column is widened and backfilled.
- */
-export type AppLanguage = "english" | "traditional-chinese";
-
 export type Profile = {
   id: string;
   display_name: string;
   exchange_id: string;
   avatar_url: string | null;
-  native_language: AppLanguage;
-  learning_language: AppLanguage;
+  native_language: LanguageCode;
+  learning_language: LanguageCode;
   city: string | null;
   discoverable: boolean;
 };

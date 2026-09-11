@@ -14,6 +14,7 @@ import type {
   VocabularyCategory,
   VocabularyItem,
 } from "@/lib/types/app";
+import type { VocabularyEditFields } from "@/lib/vocabulary/editFields";
 
 /* =========================================================
    Writing with or without a connection
@@ -106,6 +107,8 @@ export type InsertVocabulary = {
   confidence: VocabularyItem["confidence"];
   category: VocabularyCategory;
   status: VocabularyItem["status"];
+  /** New words enter the review queue immediately unless pre-scheduled. */
+  next_review_at: string;
 };
 
 export async function insertVocabulary(
@@ -203,12 +206,8 @@ export async function updateVocabularyStatus(
 
 export async function updateVocabularyFields(
   id: string,
-  fields: {
-    word: string;
-    translation: string;
-    example_sentence: string | null;
-    translated_example: string | null;
-  }
+  fields: VocabularyEditFields,
+  currentItem?: VocabularyItem,
 ) {
   const supabase = createClient();
 
@@ -236,7 +235,7 @@ export async function updateVocabularyFields(
 
     // The caller reads this back into its own state; the edit is real on
     // the device whether or not the server has heard about it yet.
-    return { id, ...fields } as never;
+    return { ...currentItem, id, ...fields } as VocabularyItem;
   }
 }
 

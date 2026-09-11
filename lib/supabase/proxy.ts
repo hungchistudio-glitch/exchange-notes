@@ -50,7 +50,7 @@ export async function updateSession(
          * stores for the next one. Writing only the response would leave this
          * render reading the stale token it just replaced.
          */
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
           });
@@ -59,6 +59,15 @@ export async function updateSession(
 
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
+          });
+
+          /*
+           * @supabase/ssr marks every response carrying auth cookies as
+           * private and uncacheable. Dropping these headers can let a CDN
+           * store one reader's rotated session response for another reader.
+           */
+          Object.entries(headers).forEach(([name, value]) => {
+            response.headers.set(name, value);
           });
         },
       },

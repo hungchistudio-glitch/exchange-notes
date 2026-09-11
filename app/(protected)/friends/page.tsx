@@ -191,7 +191,6 @@ function FriendsPageContent() {
 
       const result = await sendFriendRequest(
         supabase,
-        currentUserId,
         targetProfile.id,
       );
 
@@ -255,7 +254,7 @@ function FriendsPageContent() {
     );
 
     try {
-      await removeFriend(supabase, currentUserId, friend.id);
+      await removeFriend(supabase, friend.id);
     } catch (error) {
       setFriends(previousFriends);
       console.error(error);

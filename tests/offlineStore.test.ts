@@ -138,6 +138,7 @@ describe("what a screen renders offline", () => {
     // id. An id that changes when the network returns is an id that was
     // wrong everywhere it was written down.
     expect(draft.id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(new Date(draft.next_review_at ?? "").getTime()).not.toBeNaN();
   });
 });
 

@@ -1,13 +1,16 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { canLeadIn } from "@/lib/languages";
+import {
+  SUPPORTED_PROFILE_LANGUAGE_PAIRS,
+  canLeadIn,
+} from "@/lib/languages";
 
 /* =========================================================
    Which two languages a screen may render
 
    The rule the whole app now turns on: the lead is the language being
-   learned, the gloss is the interface language, and nothing else appears
+   learned, the gloss is the profile's native language, and nothing else appears
    anywhere. A reader who switched to Italian and kept being shown English
    was watching a fallback quietly overrule a setting.
    ========================================================= */
@@ -39,7 +42,7 @@ describe("canLeadIn", () => {
 });
 
 /* =========================================================
-   The gloss follows the interface language
+   The gloss follows the profile's native language
    ========================================================= */
 
 const preferences = vi.hoisted(() => ({ interfaceLanguage: "english" }));
@@ -73,16 +76,12 @@ function read() {
 }
 
 describe("useDisplayLanguages", () => {
-  it("glosses in the interface language, not the profile's own language", () => {
-    // Learning Italian, reading the app in French, with English still sitting
-    // in the "my language" field from months ago. French is what the reader
-    // most recently said they read comfortably, and it is what is visibly in
-    // effect everywhere else on screen.
+  it("keeps the selected learning → native pair when the interface differs", () => {
     profile.learning = "it";
     profile.native = "en";
     preferences.interfaceLanguage = "french";
 
-    expect(read().pair).toEqual(["it", "fr"]);
+    expect(read().pair).toEqual(["it", "en"]);
   });
 
   it("puts the language being learned first, always", () => {
@@ -93,17 +92,15 @@ describe("useDisplayLanguages", () => {
     const { learningLanguage, pair } = read();
 
     expect(learningLanguage).toBe("es");
-    expect(pair).toEqual(["es", "zh-TW"]);
+    expect(pair).toEqual(["es", "en"]);
   });
 
-  it("falls back to the reader's own language when the two would collide", () => {
-    // Italian app, Italian being learned: there is nothing left to gloss
-    // with, and a card whose two sides are the same text is not a card.
+  it("uses the interface only as recovery when profile values collide", () => {
     profile.learning = "it";
-    profile.native = "zh-TW";
-    preferences.interfaceLanguage = "italian";
+    profile.native = "it";
+    preferences.interfaceLanguage = "french";
 
-    expect(read().pair).toEqual(["it", "zh-TW"]);
+    expect(read().pair).toEqual(["it", "fr"]);
   });
 
   it("never returns the same language twice, even when all three agree", () => {
@@ -130,8 +127,17 @@ describe("useDisplayLanguages", () => {
 const { toLearningPair } = await import("@/lib/profile/languagePair");
 
 describe("toLearningPair", () => {
-  it("glosses in the interface language, like the screens do", () => {
-    expect(toLearningPair("it", "en", "french")).toEqual(["it", "fr"]);
+  it("preserves every one of the 20 supported directions", () => {
+    for (const [learning, native] of SUPPORTED_PROFILE_LANGUAGE_PAIRS) {
+      expect(toLearningPair(learning, native, "italian")).toEqual([
+        learning,
+        native,
+      ]);
+    }
+  });
+
+  it("glosses in the profile's native language, like the screens do", () => {
+    expect(toLearningPair("it", "en", "french")).toEqual(["it", "en"]);
   });
 
   it("agrees with useDisplayLanguages given the same profile", () => {
@@ -144,7 +150,7 @@ describe("toLearningPair", () => {
     );
   });
 
-  it("falls back to the reader's own language when the app is in the one being learned", () => {
+  it("keeps the native language when the app is in the one being learned", () => {
     expect(toLearningPair("fr", "zh-TW", "french")).toEqual(["fr", "zh-TW"]);
   });
 

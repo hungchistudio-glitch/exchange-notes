@@ -3,6 +3,7 @@
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import {
+  changeProfileLanguagePair,
   getLanguage,
   getLearningLanguages,
   type LanguageCode,
@@ -18,9 +19,8 @@ type LanguagesStepProps = {
 
 /*
  * The languages this app can currently teach, read from the table rather than
- * typed out. Narrower than the table on purpose: the profile columns still
- * hold the old two-value encoding, so a pair they cannot store would fail on
- * save instead of in the picker. Widening that column widens this list.
+ * typed out. Every two-distinct-language direction is supported and can be
+ * stored directly as its BCP-47 code.
  */
 const LANGUAGE_OPTIONS: Array<{
   value: LanguageCode;
@@ -32,13 +32,6 @@ const LANGUAGE_OPTIONS: Array<{
   badge: meta.badge,
 }));
 
-/* Only meaningful while exactly two languages can be learned. */
-function oppositeLanguage(code: LanguageCode): LanguageCode {
-  return (
-    LANGUAGE_OPTIONS.find((option) => option.value !== code)?.value ?? code
-  );
-}
-
 export default function LanguagesStep({
   nativeLanguage,
   learningLanguage,
@@ -49,22 +42,24 @@ export default function LanguagesStep({
   const { t } = useTranslation();
   const copy = t.onboarding.languages;
 
-  // Only two languages exist app-wide, so native and learning can never be
-  // equal — picking a value that collides with the other field flips that
-  // field to the remaining language instead, exactly like the Settings
-  // page fix (never lets the DB's "must differ" check get tripped).
   function handlePickNative(value: LanguageCode) {
-    onChangeNativeLanguage(value);
-    if (value === learningLanguage) {
-      onChangeLearningLanguage(oppositeLanguage(value));
-    }
+    const [nextLearning, nextNative] = changeProfileLanguagePair(
+      [learningLanguage, nativeLanguage],
+      "native",
+      value,
+    );
+    onChangeNativeLanguage(nextNative);
+    if (nextLearning !== learningLanguage) onChangeLearningLanguage(nextLearning);
   }
 
   function handlePickLearning(value: LanguageCode) {
-    onChangeLearningLanguage(value);
-    if (value === nativeLanguage) {
-      onChangeNativeLanguage(oppositeLanguage(value));
-    }
+    const [nextLearning, nextNative] = changeProfileLanguagePair(
+      [learningLanguage, nativeLanguage],
+      "learning",
+      value,
+    );
+    onChangeLearningLanguage(nextLearning);
+    if (nextNative !== nativeLanguage) onChangeNativeLanguage(nextNative);
   }
 
   const learningLabel = getLanguage(learningLanguage).endonym;

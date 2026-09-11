@@ -554,7 +554,11 @@ export default function useVocabularyPage({
           item: editItem,
           onClose: () => setEditItem(null),
           onSave: async (values: VocabularyEditValues) => {
-            const updated = await updateVocabularyFields(editItem.id, values);
+            const updated = await updateVocabularyFields(
+              editItem.id,
+              values,
+              editItem,
+            );
             updateItem(updated as VocabularyItem);
           },
         }

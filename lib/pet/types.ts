@@ -1,3 +1,4 @@
+import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyStatus } from "@/lib/types/app";
 
 export type YumiMood =
@@ -29,14 +30,17 @@ export type PetState = {
 
 export type Cookie = {
   id: string;
+  /** The saved headword this cookie belongs to, used in labels and feedback. */
   word: string;
-  /** The other side of the card — what a zhuyin glyph is read from. */
-  translation: string;
+  /** The real text whose first letter or Zhuyin reading appears on the face. */
+  sourceText: string;
+  /** Language of sourceText. Zhuyin is valid only when this is zh-TW. */
+  language: LanguageCode;
   type: CookieType;
-  // The actual symbol this cookie represents — the real first letter of
-  // the learned English word, or the real first Zhuyin symbol from its
-  // Chinese reading — so a cookie reads as a concrete learning outcome,
-  // not a decorative placeholder.
+  // The actual symbol this cookie represents — a real first letter from a
+  // Latin-script side, or a real first Zhuyin symbol from a zh-TW side — so
+  // a cookie reads as a concrete learning outcome, not a decorative
+  // placeholder or an English/Chinese assumption.
   glyph: string;
 
   /*

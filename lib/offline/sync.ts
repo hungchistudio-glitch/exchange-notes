@@ -92,6 +92,11 @@ async function send(
         confidence: item.confidence,
         status: item.status,
         created_at: item.created_at,
+        // Old outbox entries predate the review field. Their creation time is
+        // the least surprising first due date; mutation.at is the fallback
+        // for a very old partial draft.
+        next_review_at:
+          item.next_review_at ?? item.created_at ?? mutation.at,
       });
 
       return error;

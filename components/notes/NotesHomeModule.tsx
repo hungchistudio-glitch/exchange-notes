@@ -5,7 +5,14 @@ import { ArrowRight, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
-import { createNote, fetchNotes, importLegacyNotes, type Note, type NoteInput } from "@/lib/notes/repository";
+import {
+  createNote,
+  fetchNotes,
+  getNotesSessionUserId,
+  importLegacyNotes,
+  type Note,
+  type NoteInput,
+} from "@/lib/notes/clientRepository";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics/track";
 
@@ -26,10 +33,14 @@ export default function NotesHomeModule() {
     const supabase = createClient();
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      await importLegacyNotes(supabase, user.id);
-      setNotes(await fetchNotes(supabase, user.id, { limit: 3 }));
+      const userId = await getNotesSessionUserId(supabase);
+      if (!userId) return;
+      // Import is online-only; failure is non-destructive and fetchNotes can
+      // still open the encrypted mirror below.
+      if (typeof navigator === "undefined" || navigator.onLine !== false) {
+        await importLegacyNotes(supabase, userId);
+      }
+      setNotes(await fetchNotes(supabase, userId, { limit: 3 }));
     } catch (loadError) {
       console.error("Notes home load failed", loadError);
       setError(true);

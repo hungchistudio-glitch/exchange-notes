@@ -6,7 +6,7 @@ struct ExchangeNotesWebView: UIViewRepresentable {
     let url: URL
 
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(trustedURL: url)
     }
 
     func makeUIView(
@@ -33,16 +33,6 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 Coordinator.nativePushMessageName
         )
 #endif
-
-        configuration.userContentController
-            .addUserScript(
-                WKUserScript(
-                    source:
-                        Coordinator.nativeReadyScript,
-                    injectionTime: .atDocumentEnd,
-                    forMainFrameOnly: true
-                )
-            )
 
         let webView = WKWebView(
             frame: .zero,
@@ -128,7 +118,10 @@ struct ExchangeNotesWebView: UIViewRepresentable {
 
         var lastURL: URL?
 
-        override init() {
+        private let trustedURL: URL
+
+        init(trustedURL: URL) {
+            self.trustedURL = trustedURL
             super.init()
 
             NotificationCenter.default
@@ -155,6 +148,10 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             _ webView: WKWebView,
             didFinish navigation: WKNavigation!
         ) {
+            guard isTrusted(webView.url) else {
+                return
+            }
+
             webView.evaluateJavaScript(
                 Self.nativeReadyScript
             )
@@ -166,16 +163,25 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             didReceive message:
                 WKScriptMessage
         ) {
+            guard
+                message.frameInfo.isMainFrame,
+                isTrusted(
+                    message.frameInfo
+                        .securityOrigin
+                ),
+                let sourceWebView =
+                    message.webView,
+                let expectedWebView = webView,
+                sourceWebView === expectedWebView,
+                isTrusted(sourceWebView.url)
+            else {
+                return
+            }
+
             if
                 message.name
                     == Self.nativePushMessageName
             {
-                guard
-                    message.frameInfo.isMainFrame
-                else {
-                    return
-                }
-
                 handleNativePushMessage(
                     message.body
                 )
@@ -185,8 +191,7 @@ struct ExchangeNotesWebView: UIViewRepresentable {
 
             guard
                 message.name
-                    == Self.messageName,
-                message.frameInfo.isMainFrame
+                    == Self.messageName
             else {
                 return
             }
@@ -277,6 +282,22 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                     from: body["words"]
                 )
 
+            let primaryText =
+                stringValue(body["primaryText"])
+            let secondaryText =
+                stringValue(body["secondaryText"])
+            let primaryLanguage =
+                stringValue(body["primaryLanguage"])
+            let secondaryLanguage =
+                stringValue(body["secondaryLanguage"])
+            let primaryPronunciation =
+                stringValue(
+                    body["primaryPronunciation"]
+                )
+            let secondaryPronunciation =
+                stringValue(
+                    body["secondaryPronunciation"]
+                )
 
             let localizedText =
                 YumiWidgetLocalizedText(
@@ -289,6 +310,14 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             let data = YumiWidgetData(
                 cookieCount: cookieCount,
                 cookieGoal: cookieGoal,
+                primaryText: primaryText,
+                secondaryText: secondaryText,
+                primaryLanguage: primaryLanguage,
+                secondaryLanguage: secondaryLanguage,
+                primaryPronunciation:
+                    primaryPronunciation,
+                secondaryPronunciation:
+                    secondaryPronunciation,
                 englishWord: englishWord,
                 traditionalChineseWord:
                     traditionalChineseWord,
@@ -317,7 +346,7 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 ofKind: "YumiDailyWidget"
             )
 
-            message.webView?
+            sourceWebView
                 .evaluateJavaScript(
                     """
                     window.dispatchEvent(
@@ -383,7 +412,10 @@ struct ExchangeNotesWebView: UIViewRepresentable {
             environment: String,
             bundleID: String
         ) {
-            guard let webView else {
+            guard
+                let webView,
+                isTrusted(webView.url)
+            else {
                 return
             }
 
@@ -416,6 +448,85 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                 );
                 """
             )
+        }
+
+        private func isTrusted(
+            _ url: URL?
+        ) -> Bool {
+            guard let url else {
+                return false
+            }
+
+            return isTrusted(
+                scheme: url.scheme,
+                host: url.host,
+                port: url.port
+            )
+        }
+
+        private func isTrusted(
+            _ origin: WKSecurityOrigin
+        ) -> Bool {
+            isTrusted(
+                scheme: origin.protocol,
+                host: origin.host,
+                port:
+                    origin.port > 0
+                    ? origin.port
+                    : nil
+            )
+        }
+
+        private func isTrusted(
+            scheme: String?,
+            host: String?,
+            port: Int?
+        ) -> Bool {
+            guard
+                let scheme =
+                    scheme?.lowercased(),
+                let host = host?.lowercased(),
+                let trustedScheme =
+                    trustedURL.scheme?
+                        .lowercased(),
+                let trustedHost =
+                    trustedURL.host?
+                        .lowercased(),
+                !host.isEmpty,
+                !trustedHost.isEmpty,
+                let candidatePort =
+                    Self.effectivePort(
+                        scheme: scheme,
+                        port: port
+                    ),
+                let expectedPort =
+                    Self.effectivePort(
+                        scheme: trustedScheme,
+                        port: trustedURL.port
+                    )
+            else {
+                return false
+            }
+
+            return
+                scheme == trustedScheme
+                && host == trustedHost
+                && candidatePort
+                    == expectedPort
+        }
+
+        private static func effectivePort(
+            scheme: String,
+            port: Int?
+        ) -> Int? {
+            switch scheme {
+            case "http":
+                return port ?? 80
+            case "https":
+                return port ?? 443
+            default:
+                return nil
+            }
         }
 
         private func widgetWords(
@@ -457,9 +568,41 @@ struct ExchangeNotesWebView: UIViewRepresentable {
                     rawWord["id"] as? String
                     ?? "widget-word-\(index)"
 
+                let primaryText =
+                    rawWord["primaryText"]
+                    as? String
+                let secondaryText =
+                    rawWord["secondaryText"]
+                    as? String
+                let primaryLanguage =
+                    rawWord["primaryLanguage"]
+                    as? String
+                let secondaryLanguage =
+                    rawWord["secondaryLanguage"]
+                    as? String
+                let primaryPronunciation =
+                    rawWord[
+                        "primaryPronunciation"
+                    ] as? String
+                let secondaryPronunciation =
+                    rawWord[
+                        "secondaryPronunciation"
+                    ] as? String
+
                 result.append(
                     YumiWidgetWord(
                         id: identifier,
+                        primaryText: primaryText,
+                        secondaryText:
+                            secondaryText,
+                        primaryLanguage:
+                            primaryLanguage,
+                        secondaryLanguage:
+                            secondaryLanguage,
+                        primaryPronunciation:
+                            primaryPronunciation,
+                        secondaryPronunciation:
+                            secondaryPronunciation,
                         englishWord: english,
                         traditionalChineseWord:
                             chinese,

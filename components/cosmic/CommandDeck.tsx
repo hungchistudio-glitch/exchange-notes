@@ -155,20 +155,7 @@ export default function CommandDeck() {
    */
   const [omniState, setOmniState] = useState<OmniLexiconState>("idle");
 
-  /*
-   * The suspending read, last, and deliberately so.
-   *
-   * useTranslation serves its dictionary from a cache and falls back to
-   * `use(loadTranslations(language))` when that cache is cold — which
-   * suspends. React discards a suspended render and replays it, and any hook
-   * that sat after the suspending one never ran on the first attempt: the two
-   * attempts then disagree about how many hooks this component has, which
-   * React reports as a change in hook order.
-   *
-   * Cold is the normal case here rather than an edge one. The deck is the
-   * first screen of Cosmic Mode, so it is routinely the first component in a
-   * page to ask for the dictionary at all.
-   */
+  /* The active dictionary is primed before a language preference is published. */
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.cosmic;
 
