@@ -425,7 +425,7 @@ export function applyInterfaceLanguage(
   const root = document.documentElement;
 
   root.dataset.interfaceLanguage = language;
-  // Read from the language table rather than decided here, so a fourth
+  // Read from the language table rather than decided here, so the next
   // interface language needs a row and not an extra branch.
   root.lang = getInterfaceLanguageMeta(language).htmlLang;
 }

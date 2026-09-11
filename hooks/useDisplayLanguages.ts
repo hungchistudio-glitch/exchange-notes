@@ -28,23 +28,16 @@ export type DisplayLanguages = {
  * setting: a card that does not lead in it is a card that did not notice
  * the switch.
  *
- * The gloss is the interface language. It used to be the separate "my
- * language" setting, which is defensible — but it meant someone reading a
- * French interface could still be glossed in English, from a setting they
- * had changed months ago and forgotten, with nothing on screen explaining
- * why. The language you chose to read the app in is the language you have
- * most recently said you read comfortably, and it is the one visibly in
- * effect everywhere else.
- *
- * "My language" still exists and still matters — it is what the model is
- * told to translate *from* when a word is first saved, and it is the
- * tie-breaker below. It simply no longer decides what a rendered card says.
+ * The gloss is the profile's native language. That makes each of the 20
+ * directed learning → native combinations real throughout generation and
+ * rendering; changing the interface language changes controls and copy, not
+ * the meaning of an already-selected learning pair.
  *
  * ── When the two would be the same ─────────────────────────────────────
  *
- * Learning Italian with the app in Italian leaves nothing to gloss with, so
- * the fallback is "my language", then English. A card needs two sides;
- * showing the same text twice is not one of them.
+ * A malformed profile may contain the same value in both slots. The interface
+ * language is then a recovery fallback, followed by another supported
+ * language. Valid profiles never take this path.
  *
  * ── What is deliberately absent ────────────────────────────────────────
  *

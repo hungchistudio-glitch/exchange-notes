@@ -1,7 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-import { getTextModelCandidates } from "@/lib/ai/modelConfig";
+import {
+  getTextModelCandidates,
+  readBoundedInteger,
+} from "@/lib/ai/modelConfig";
+import {
+  consumeDailyQuota,
+  refundDailyQuota,
+} from "@/lib/ai/dailyQuota";
 import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,8 +52,17 @@ const ACCEPTED_TYPES = [
 ];
 
 const MAX_BYTES = 4 * 1024 * 1024;
+const OPERATION = "voice_lookup" as const;
+const MAX_REQUESTS_PER_DAY = readBoundedInteger(
+  process.env.VOICE_LOOKUP_DAILY_USER_LIMIT,
+  20,
+  1,
+  200,
+);
 
 export async function POST(request: Request) {
+  let chargedUserId: string | null = null;
+
   try {
     const supabase = await createClient();
     const {
@@ -77,6 +93,17 @@ export async function POST(request: Request) {
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({ error: "Unavailable" }, { status: 503 });
     }
+
+    if (
+      !(await consumeDailyQuota(user.id, OPERATION, MAX_REQUESTS_PER_DAY))
+    ) {
+      return NextResponse.json(
+        { error: "Daily voice lookup limit reached", code: "daily_limit" },
+        { status: 429 },
+      );
+    }
+
+    chargedUserId = user.id;
 
     const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -129,6 +156,10 @@ export async function POST(request: Request) {
 
         const text = parsed.text?.trim() ?? "";
 
+        // A clear "nothing heard" is still a completed model answer. Only
+        // transport/model failures below receive a refund.
+        chargedUserId = null;
+
         /*
          * An unconfident answer is no answer. A word invented from silence
          * or from a language the app does not teach would be looked up,
@@ -150,8 +181,17 @@ export async function POST(request: Request) {
 
     console.error("Voice lookup failed:", lastError);
 
+    if (chargedUserId) {
+      await refundDailyQuota(chargedUserId, OPERATION);
+      chargedUserId = null;
+    }
+
     return NextResponse.json({ heard: false });
   } catch (error) {
+    if (chargedUserId) {
+      await refundDailyQuota(chargedUserId, OPERATION);
+    }
+
     console.error("Voice lookup failed:", error);
 
     return NextResponse.json({ heard: false });

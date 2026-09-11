@@ -3,16 +3,16 @@ import { createServiceClient } from "@/lib/supabase/service";
 /* =========================================================
    One daily allowance, counted in one place
 
-   Six routes send something to a model on the reader's behalf, and until now
-   each carried its own copy of the counting: the same RPC call, the same
-   "quota function is missing" latch, the same unwrapping of a one-row result.
-   Four copies had drifted. Two fell back to an in-memory counter when the
+   Every route that sends something to a model on the reader's behalf once
+   carried its own copy of the counting: the same RPC call, the same "quota
+   function is missing" latch, the same unwrapping of a one-row result. Four
+   copies had drifted. Two fell back to an in-memory counter when the
    database function was unreachable; the other two returned `true`, which
    removes the limit entirely at the moment it is least safe to.
 
-   The drift is why this module exists. Adding refunds meant touching all six,
-   and six divergent copies each growing a refund path is how the next
-   inconsistency gets written.
+   The drift is why this module exists. Adding refunds to divergent copies is
+   how the next inconsistency gets written — and the list below has only
+   grown since.
 
    Two rules, and the second is the one the reader feels:
 
@@ -85,18 +85,23 @@ export type AiOperation =
   | "message_decode"
   | "reply_coach"
   /*
-   * The last two are the background ones, and they are counted differently
-   * from the six above: those are a person pressing a button, one press one
-   * unit. These fire on their own — a screen of word cards rendering, a
-   * library filling itself in after a language change — so a unit is one
-   * call that actually reaches the model, after the cache has answered
-   * everything it can. Charging a request that a cache satisfies would spend
-   * the reader's day on a screen that never asked the model anything.
+   * The rest are the background ones, and they are counted differently from
+   * the interactive operations above: those are a person pressing a button,
+   * one press one unit. These fire on their own — a screen of word cards
+   * rendering, a library filling itself in after a language change, a
+   * pronunciation the shared cache has never seen — so a unit is one call
+   * that actually reaches the model, after the cache has answered everything
+   * it can. Charging a request that a cache satisfies would spend the
+   * reader's day on a screen that never asked the model anything.
    */
   /** /api/text-translate — a card rendered in a language it was not sent in. */
   | "card_translation"
   /** /api/vocabulary/translate — one batch of the library fill. */
-  | "library_fill";
+  | "library_fill"
+  /** /api/voice-lookup — model fallback after on-device recognition misses. */
+  | "voice_lookup"
+  /** IPA model call after the shared pronunciation cache misses. */
+  | "phonetic_transcription";
 
 type Window = { count: number; resetsAt: number };
 

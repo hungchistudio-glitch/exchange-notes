@@ -49,9 +49,8 @@ export type VocabularyCardSides = {
  * glossed in Chinese for a Chinese reader and in Spanish for a Spanish one,
  * which is what the second side is for. Order of preference:
  *
- *   1. the language the reader reads the app in (resolved by
- *      useDisplayLanguages — the language they most recently said they read
- *      comfortably)
+ *   1. the reader's selected native/support language (resolved by
+ *      useDisplayLanguages)
  *   2. the language the row was glossed in when it was saved
  *   3. the language being learned, as a last resort
  *
@@ -73,9 +72,9 @@ export function getVocabularyCardSides(
     Partial<Pick<VocabularyItem, "texts" | "examples">>,
   learningLanguage: LanguageCode,
   /**
-   * The language the card is glossed in — the interface language, resolved
-   * by useDisplayLanguages. Optional so a caller that genuinely has no
-   * profile still gets an answer rather than an error.
+   * The language the card is glossed in — the profile's native language,
+   * resolved by useDisplayLanguages. Optional so a caller that genuinely has
+   * no profile still gets an answer rather than an error.
    */
   supportLanguage?: LanguageCode,
 ): VocabularyCardSides {

@@ -1297,47 +1297,43 @@ private struct WordContent: View {
             alignment: .leading,
             spacing: scale.spacing
         ) {
-            if data.isLearningTraditionalChinese {
-                chinesePrimary
-                pronunciationLines
-                englishSecondary
-            } else {
-                englishPrimary
-                chineseSecondary
-                pronunciationLines
+            primary
+
+            if !data.displayedPrimaryPronunciation.isEmpty {
+                pronunciation(
+                    data.displayedPrimaryPronunciation
+                )
+            }
+
+            if !data.displayedSecondaryText.isEmpty {
+                secondary
+            }
+
+            if !data.displayedSecondaryPronunciation.isEmpty {
+                pronunciation(
+                    data.displayedSecondaryPronunciation
+                )
             }
         }
     }
 
     @ViewBuilder
-    private var pronunciationLines: some View {
-        if !word.pinyin.isEmpty {
-            Text(word.pinyin)
-                .font(.system(
-                    size: scale.pronunciationSize,
-                    weight: .medium,
-                    design: .rounded
-                ))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.64)
-        }
-
-        if !word.zhuyin.isEmpty {
-            Text(word.zhuyin)
-                .font(.system(
-                    size: scale.pronunciationSize,
-                    weight: .medium,
-                    design: .rounded
-                ))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.62)
-        }
+    private func pronunciation(
+        _ value: String
+    ) -> some View {
+        Text(value)
+            .font(.system(
+                size: scale.pronunciationSize,
+                weight: .medium,
+                design: .rounded
+            ))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.62)
     }
 
-    private var englishPrimary: some View {
-        Text(word.englishWord)
+    private var primary: some View {
+        Text(data.displayedPrimaryText)
             .font(.system(
                 size: scale.primarySize,
                 weight: .bold,
@@ -1347,8 +1343,8 @@ private struct WordContent: View {
             .minimumScaleFactor(0.54)
     }
 
-    private var englishSecondary: some View {
-        Text(word.englishWord)
+    private var secondary: some View {
+        Text(data.displayedSecondaryText)
             .font(.system(
                 size: scale.secondarySize,
                 weight: .semibold,
@@ -1359,28 +1355,6 @@ private struct WordContent: View {
             .minimumScaleFactor(0.60)
     }
 
-    private var chinesePrimary: some View {
-        Text(word.traditionalChineseWord)
-            .font(.system(
-                size: scale.primarySize,
-                weight: .bold,
-                design: .rounded
-            ))
-            .lineLimit(1)
-            .minimumScaleFactor(0.58)
-    }
-
-    private var chineseSecondary: some View {
-        Text(word.traditionalChineseWord)
-            .font(.system(
-                size: scale.secondarySize,
-                weight: .semibold,
-                design: .rounded
-            ))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.62)
-    }
 }
 
 // MARK: - Companion Content
@@ -1780,12 +1754,12 @@ private enum AudioActionSize {
 }
 
 private enum AudioLanguageStyle {
-    case english
-    case traditionalChinese
+    case primary
+    case secondary
 
     var fill: LinearGradient {
         switch self {
-        case .english:
+        case .primary:
             return LinearGradient(
                 colors: [
                     Color(
@@ -1803,7 +1777,7 @@ private enum AudioLanguageStyle {
                 endPoint: .bottomTrailing
             )
 
-        case .traditionalChinese:
+        case .secondary:
             return LinearGradient(
                 colors: [
                     Color(
@@ -1825,14 +1799,14 @@ private enum AudioLanguageStyle {
 
     var foreground: Color {
         switch self {
-        case .english:
+        case .primary:
             return Color(
                 red: 0.18,
                 green: 0.09,
                 blue: 0.01
             )
 
-        case .traditionalChinese:
+        case .secondary:
             return Color(
                 red: 1.00,
                 green: 0.96,
@@ -1843,10 +1817,10 @@ private enum AudioLanguageStyle {
 
     var ring: Color {
         switch self {
-        case .english:
+        case .primary:
             return Color.white.opacity(0.58)
 
-        case .traditionalChinese:
+        case .secondary:
             return Color(
                 red: 1.00,
                 green: 0.60,
@@ -1858,7 +1832,7 @@ private enum AudioLanguageStyle {
 
     var orbit: Color {
         switch self {
-        case .english:
+        case .primary:
             return Color(
                 red: 0.32,
                 green: 0.15,
@@ -1866,7 +1840,7 @@ private enum AudioLanguageStyle {
             )
             .opacity(0.34)
 
-        case .traditionalChinese:
+        case .secondary:
             return Color(
                 red: 1.00,
                 green: 0.66,
@@ -1878,14 +1852,14 @@ private enum AudioLanguageStyle {
 
     var glow: Color {
         switch self {
-        case .english:
+        case .primary:
             return Color(
                 red: 1.00,
                 green: 0.55,
                 blue: 0.05
             )
 
-        case .traditionalChinese:
+        case .secondary:
             return Color(
                 red: 0.52,
                 green: 0.44,

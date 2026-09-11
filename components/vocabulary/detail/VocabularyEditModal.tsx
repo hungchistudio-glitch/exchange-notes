@@ -13,15 +13,20 @@ import AppButton from "@/components/ui/AppButton";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import {
+  getLanguage,
+  getLanguageName,
+  type ByLanguage,
+  type LanguageCode,
+} from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
+import { insertValues } from "@/lib/utils";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
+import type { VocabularyEditFields } from "@/lib/vocabulary/editFields";
 
-export type VocabularyEditValues = {
-  word: string;
-  translation: string;
-  example_sentence: string | null;
-  translated_example: string | null;
-};
+export type VocabularyEditValues = VocabularyEditFields;
 
 type VocabularyEditModalProps = {
   open: boolean;
@@ -37,29 +42,47 @@ function optionalValue(value: string) {
   return trimmed ? trimmed : null;
 }
 
+function setLanguageValue(
+  source: ByLanguage,
+  language: LanguageCode,
+  value: string | null,
+): ByLanguage {
+  const next = { ...source };
+  if (value) next[language] = value;
+  else delete next[language];
+  return next;
+}
+
 export default function VocabularyEditModal({
   open,
   item,
   onClose,
   onSave,
 }: VocabularyEditModalProps) {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
+  const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const edit = t.vocabulary.detail.edit;
-  const [word, setWord] = useState(item.word);
+  const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
+  const primaryLanguage = sides.primary.language;
+  const secondaryLanguage = sides.secondary.language;
+  const primaryName = getLanguageName(primaryLanguage, interfaceLanguage);
+  const secondaryName = getLanguageName(secondaryLanguage, interfaceLanguage);
+
+  const [word, setWord] = useState(sides.primary.text);
   const [translation, setTranslation] = useState(
-    item.translation,
+    sides.secondary.text,
   );
   const [
     exampleSentence,
     setExampleSentence,
   ] = useState(
-    item.example_sentence ?? "",
+    sides.primary.example,
   );
   const [
     translatedExample,
     setTranslatedExample,
   ] = useState(
-    item.translated_example ?? "",
+    sides.secondary.example,
   );
 
   const [saving, setSaving] = useState(false);
@@ -83,14 +106,14 @@ export default function VocabularyEditModal({
 
     if (!trimmedWord) {
       setError(
-        edit.englishRequired,
+        insertValues(edit.required, { language: primaryName }),
       );
       return;
     }
 
     if (!trimmedTranslation) {
       setError(
-        edit.chineseRequired,
+        insertValues(edit.required, { language: secondaryName }),
       );
       return;
     }
@@ -99,13 +122,34 @@ export default function VocabularyEditModal({
       setSaving(true);
       setError("");
 
+      const primaryExample = optionalValue(exampleSentence);
+      const secondaryExample = optionalValue(translatedExample);
+      let texts = setLanguageValue(item.texts ?? {}, primaryLanguage, trimmedWord);
+      texts = setLanguageValue(texts, secondaryLanguage, trimmedTranslation);
+      let examples = setLanguageValue(
+        item.examples ?? {},
+        primaryLanguage,
+        primaryExample,
+      );
+      examples = setLanguageValue(
+        examples,
+        secondaryLanguage,
+        secondaryExample,
+      );
+
       await onSave({
         word: trimmedWord,
-        translation: trimmedTranslation,
-        example_sentence:
-          optionalValue(exampleSentence),
+        translation:
+          secondaryLanguage === item.translation_language
+            ? trimmedTranslation
+            : item.translation,
+        example_sentence: primaryExample,
         translated_example:
-          optionalValue(translatedExample),
+          secondaryLanguage === item.translation_language
+            ? secondaryExample
+            : item.translated_example,
+        texts,
+        examples,
       });
 
       setSaving(false);
@@ -184,7 +228,7 @@ export default function VocabularyEditModal({
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block text-sm font-medium text-neutral-800">
-              {edit.english}
+              {primaryName}
               <div className="relative">
                 <input
                   value={word}
@@ -192,7 +236,10 @@ export default function VocabularyEditModal({
                     setWord(event.target.value)
                   }
                   className={`${inputClassName} pr-11`}
-                  placeholder="{edit.english} word or phrase"
+                  placeholder={insertValues(edit.wordPlaceholder, {
+                    language: primaryName,
+                  })}
+                  lang={getLanguage(primaryLanguage).htmlLang}
                   autoFocus
                 />
                 {word && <ClearFieldButton floating onClear={() => setWord("")} />}
@@ -200,7 +247,7 @@ export default function VocabularyEditModal({
             </label>
 
             <label className="block text-sm font-medium text-neutral-800">
-              {edit.traditionalChinese}
+              {secondaryName}
               <div className="relative">
                 <input
                   value={translation}
@@ -210,7 +257,10 @@ export default function VocabularyEditModal({
                     )
                   }
                   className={`${inputClassName} pr-11`}
-                  placeholder={edit.chinesePlaceholder}
+                  placeholder={insertValues(edit.translationPlaceholder, {
+                    language: secondaryName,
+                  })}
+                  lang={getLanguage(secondaryLanguage).htmlLang}
                 />
                 {translation && (
                   <ClearFieldButton floating onClear={() => setTranslation("")} />
@@ -222,7 +272,7 @@ export default function VocabularyEditModal({
           <div className="h-px bg-neutral-100" />
 
           <label className="block text-sm font-medium text-neutral-800">
-            {edit.englishExample}
+            {insertValues(edit.exampleLabel, { language: primaryName })}
             <div className="relative">
               <textarea
                 value={exampleSentence}
@@ -232,7 +282,10 @@ export default function VocabularyEditModal({
                   )
                 }
                 className={`${inputClassName} min-h-28 resize-y pr-11`}
-                placeholder="Use the word in an {edit.english} sentence."
+                placeholder={insertValues(edit.examplePlaceholder, {
+                  language: primaryName,
+                })}
+                lang={getLanguage(primaryLanguage).htmlLang}
               />
               {exampleSentence && (
                 <ClearFieldButton
@@ -245,7 +298,7 @@ export default function VocabularyEditModal({
           </label>
 
           <label className="block text-sm font-medium text-neutral-800">
-            {edit.chineseExample}
+            {insertValues(edit.exampleLabel, { language: secondaryName })}
             <div className="relative">
               <textarea
                 value={translatedExample}
@@ -255,7 +308,10 @@ export default function VocabularyEditModal({
                   )
                 }
                 className={`${inputClassName} min-h-28 resize-y pr-11`}
-                placeholder={edit.chineseExamplePlaceholder}
+                placeholder={insertValues(edit.examplePlaceholder, {
+                  language: secondaryName,
+                })}
+                lang={getLanguage(secondaryLanguage).htmlLang}
               />
               {translatedExample && (
                 <ClearFieldButton

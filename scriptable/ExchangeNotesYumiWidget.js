@@ -7,8 +7,8 @@
 // The token is stored only in the iOS Keychain.
 // The latest successful Widget response is cached locally for offline use.
 
-const SCRIPT_VERSION = 6;
-const SNAPSHOT_SCHEMA_VERSION = 1;
+const SCRIPT_VERSION = 7;
+const SNAPSHOT_SCHEMA_VERSION = 2;
 
 const KEYCHAIN_BASE_URL =
   "exchange-notes-yumi-widget-base-url-v1";
@@ -516,8 +516,10 @@ function readCachedSnapshot() {
 
     if (
       !isRecord(parsed)
-      || parsed.scriptVersion
-        !== SCRIPT_VERSION
+      || (
+        parsed.scriptVersion !== 6
+        && parsed.scriptVersion !== SCRIPT_VERSION
+      )
     ) {
       return null;
     }
@@ -536,7 +538,8 @@ function normalizeSnapshot(value) {
   }
 
   if (
-    value.schemaVersion
+    value.schemaVersion !== 1
+    && value.schemaVersion
       !== SNAPSHOT_SCHEMA_VERSION
   ) {
     return null;
@@ -589,13 +592,32 @@ function normalizePayload(value) {
     );
 
   const interfaceLanguage =
-    normalizeLanguage(
+    normalizeInterfaceLanguage(
       value.interfaceLanguage,
     );
 
   const learningLanguage =
-    normalizeLanguage(
+    normalizeLegacyLanguage(
       value.learningLanguage,
+    ) || "english";
+
+  const primaryLanguage =
+    normalizeContentLanguage(
+      value.primaryLanguage,
+    ) || (
+      learningLanguage
+        === "traditional-chinese"
+        ? "zh-TW"
+        : "en"
+    );
+
+  const secondaryLanguage =
+    normalizeContentLanguage(
+      value.secondaryLanguage,
+    ) || (
+      primaryLanguage === "zh-TW"
+        ? "en"
+        : "zh-TW"
     );
 
   const localizedText =
@@ -611,13 +633,21 @@ function normalizePayload(value) {
   const words =
     rawWords
       .slice(0, MAX_WORDS)
-      .map(normalizeWord)
+      .map(function normalizeEntry(word) {
+        return normalizeWord(
+          word,
+          primaryLanguage,
+          secondaryLanguage,
+        );
+      })
       .filter(Boolean);
 
   if (
     !interfaceLanguage
     || !learningLanguage
     || !localizedText
+    || primaryLanguage
+      === secondaryLanguage
   ) {
     return null;
   }
@@ -625,6 +655,73 @@ function normalizePayload(value) {
   return {
     cookieCount,
     cookieGoal,
+
+    primaryText:
+      safeString(
+        value.primaryText,
+        160,
+      )
+      || words[0]?.primaryText
+      || legacyTextForLanguage(
+        primaryLanguage,
+        safeString(
+          value.englishWord,
+          160,
+        ),
+        safeString(
+          value.traditionalChineseWord,
+          160,
+        ),
+      )
+      || "",
+
+    secondaryText:
+      safeString(
+        value.secondaryText,
+        160,
+      )
+      || words[0]?.secondaryText
+      || legacyTextForLanguage(
+        secondaryLanguage,
+        safeString(
+          value.englishWord,
+          160,
+        ),
+        safeString(
+          value.traditionalChineseWord,
+          160,
+        ),
+      )
+      || "",
+
+    primaryLanguage,
+    secondaryLanguage,
+
+    primaryPronunciation:
+      safeString(
+        value.primaryPronunciation,
+        240,
+      )
+      || words[0]?.primaryPronunciation
+      || legacyPronunciationForLanguage(
+        primaryLanguage,
+        safeString(value.pinyin, 240),
+        safeString(value.zhuyin, 240),
+      )
+      || "",
+
+    secondaryPronunciation:
+      safeString(
+        value.secondaryPronunciation,
+        240,
+      )
+      || words[0]?.secondaryPronunciation
+      || legacyPronunciationForLanguage(
+        secondaryLanguage,
+        safeString(value.pinyin, 240),
+        safeString(value.zhuyin, 240),
+      )
+      || "",
 
     englishWord:
       safeString(
@@ -697,7 +794,11 @@ function normalizeLocalizedText(value) {
   };
 }
 
-function normalizeWord(value) {
+function normalizeWord(
+  value,
+  fallbackPrimaryLanguage,
+  fallbackSecondaryLanguage,
+) {
   if (!isRecord(value)) {
     return null;
   }
@@ -718,34 +819,92 @@ function normalizeWord(value) {
     safeString(
       value.traditionalChineseWord,
       160,
+      );
+
+  const primaryLanguage =
+    normalizeContentLanguage(
+      value.primaryLanguage,
+    ) || fallbackPrimaryLanguage;
+
+  const secondaryLanguage =
+    normalizeContentLanguage(
+      value.secondaryLanguage,
+    ) || fallbackSecondaryLanguage;
+
+  const pinyin =
+    safeString(
+      value.pinyin,
+      240,
+    );
+
+  const zhuyin =
+    safeString(
+      value.zhuyin,
+      240,
+    );
+
+  const primaryText =
+    safeString(
+      value.primaryText,
+      160,
+    ) || legacyTextForLanguage(
+      primaryLanguage,
+      englishWord,
+      traditionalChineseWord,
+    );
+
+  const secondaryText =
+    safeString(
+      value.secondaryText,
+      160,
+    ) || legacyTextForLanguage(
+      secondaryLanguage,
+      englishWord,
+      traditionalChineseWord,
     );
 
   if (
     !id
     || (
-      !englishWord
-      && !traditionalChineseWord
+      !primaryText
+      && !secondaryText
     )
+    || primaryLanguage
+      === secondaryLanguage
   ) {
     return null;
   }
 
   return {
     id,
+    primaryText,
+    secondaryText,
+    primaryLanguage,
+    secondaryLanguage,
+
+    primaryPronunciation:
+      safeString(
+        value.primaryPronunciation,
+        240,
+      ) || legacyPronunciationForLanguage(
+        primaryLanguage,
+        pinyin,
+        zhuyin,
+      ),
+
+    secondaryPronunciation:
+      safeString(
+        value.secondaryPronunciation,
+        240,
+      ) || legacyPronunciationForLanguage(
+        secondaryLanguage,
+        pinyin,
+        zhuyin,
+      ),
     englishWord,
     traditionalChineseWord,
-
-    pinyin:
-      safeString(
-        value.pinyin,
-        240,
-      ),
-
-    zhuyin:
-      safeString(
-        value.zhuyin,
-        240,
-      ),
+    pinyin,
+    zhuyin,
   };
 }
 
@@ -1610,19 +1769,11 @@ function addWordContent(
   const word =
     state.record;
 
-  const learningTraditionalChinese =
-    payload.learningLanguage
-      !== "english";
-
   const primaryValue =
-    learningTraditionalChinese
-      ? word.traditionalChineseWord
-      : word.englishWord;
+    word.primaryText;
 
   const secondaryValue =
-    learningTraditionalChinese
-      ? word.englishWord
-      : word.traditionalChineseWord;
+    word.secondaryText;
 
   const primary =
     container.addText(
@@ -1674,11 +1825,11 @@ function addWordContent(
 
   const pronunciationValues = [
     safeString(
-      word.pinyin,
+      word.primaryPronunciation,
       120,
     ),
     safeString(
-      word.zhuyin,
+      word.secondaryPronunciation,
       120,
     ),
   ].filter(
@@ -1845,10 +1996,14 @@ function addAudioActions(
 
   addAudioButton(
     column,
-    "A",
-    state.record.englishWord,
-    "en-US",
-    "english",
+    badgeForLanguage(
+      state.record.primaryLanguage,
+    ),
+    state.record.primaryText,
+    speechTagForLanguage(
+      state.record.primaryLanguage,
+    ),
+    "primary",
     diameter,
     glyphSize,
     baseUrl,
@@ -1856,10 +2011,14 @@ function addAudioActions(
 
   addAudioButton(
     column,
-    "ㄅ",
-    state.record.traditionalChineseWord,
-    "zh-TW",
-    "traditional-chinese",
+    badgeForLanguage(
+      state.record.secondaryLanguage,
+    ),
+    state.record.secondaryText,
+    speechTagForLanguage(
+      state.record.secondaryLanguage,
+    ),
+    "secondary",
     diameter,
     glyphSize,
     baseUrl,
@@ -1896,7 +2055,7 @@ function addAudioButton(
   const gradient =
     new LinearGradient();
 
-  if (style === "english") {
+  if (style === "primary") {
     gradient.colors = [
       new Color("#FFD147"),
       new Color("#FF730A"),
@@ -1919,7 +2078,7 @@ function addAudioButton(
   button.borderWidth = 1;
 
   button.borderColor =
-    style === "english"
+    style === "primary"
       ? new Color("#FFFFFF", 0.48)
       : new Color("#FF8A1F", 0.72);
 
@@ -1945,7 +2104,7 @@ function addAudioButton(
     );
 
   label.textColor =
-    style === "english"
+    style === "primary"
       ? new Color("#221508")
       : new Color("#FFFFFF");
 
@@ -2143,6 +2302,40 @@ function availableWordRecords(payload) {
 
   return [
     {
+      primaryText:
+        safeString(
+          payload.primaryText,
+          160,
+        ),
+
+      secondaryText:
+        safeString(
+          payload.secondaryText,
+          160,
+        ),
+
+      primaryLanguage:
+        normalizeContentLanguage(
+          payload.primaryLanguage,
+        ) || "en",
+
+      secondaryLanguage:
+        normalizeContentLanguage(
+          payload.secondaryLanguage,
+        ) || "zh-TW",
+
+      primaryPronunciation:
+        safeString(
+          payload.primaryPronunciation,
+          120,
+        ),
+
+      secondaryPronunciation:
+        safeString(
+          payload.secondaryPronunciation,
+          120,
+        ),
+
       englishWord:
         safeString(
           payload.englishWord,
@@ -3773,7 +3966,7 @@ function isValidToken(value) {
   );
 }
 
-function normalizeLanguage(value) {
+function normalizeLegacyLanguage(value) {
   return (
     value === "english"
     || value
@@ -3781,6 +3974,86 @@ function normalizeLanguage(value) {
   )
     ? value
     : null;
+}
+
+function normalizeContentLanguage(value) {
+  return (
+    value === "en"
+    || value === "zh-TW"
+    || value === "es"
+    || value === "fr"
+    || value === "it"
+  )
+    ? value
+    : null;
+}
+
+function normalizeInterfaceLanguage(value) {
+  if (
+    value === "english"
+    || value === "traditional-chinese"
+    || value === "spanish"
+    || value === "french"
+    || value === "italian"
+  ) {
+    return value;
+  }
+
+  const byCode = {
+    en: "english",
+    "zh-TW": "traditional-chinese",
+    es: "spanish",
+    fr: "french",
+    it: "italian",
+  };
+
+  return byCode[value] || null;
+}
+
+function legacyTextForLanguage(
+  language,
+  englishWord,
+  traditionalChineseWord,
+) {
+  if (language === "en") {
+    return englishWord;
+  }
+
+  if (language === "zh-TW") {
+    return traditionalChineseWord;
+  }
+
+  return "";
+}
+
+function legacyPronunciationForLanguage(
+  language,
+  pinyin,
+  zhuyin,
+) {
+  return language === "zh-TW"
+    ? zhuyin || pinyin
+    : "";
+}
+
+function speechTagForLanguage(language) {
+  return {
+    en: "en-US",
+    "zh-TW": "zh-TW",
+    es: "es-ES",
+    fr: "fr-FR",
+    it: "it-IT",
+  }[language] || "en-US";
+}
+
+function badgeForLanguage(language) {
+  return {
+    en: "En",
+    "zh-TW": "中",
+    es: "Es",
+    fr: "Fr",
+    it: "It",
+  }[language] || "?";
 }
 
 function clampInteger(

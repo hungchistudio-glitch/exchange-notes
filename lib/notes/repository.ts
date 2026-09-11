@@ -217,7 +217,7 @@ function readLegacyNotes(): Array<{
   }
 }
 
-/** Imports old device-only notes once, leaving the source copy untouched. */
+/** Imports old device-only notes once, then removes the plaintext source. */
 export async function importLegacyNotes(
   supabase: SupabaseClient,
   userId: string,
@@ -225,7 +225,13 @@ export async function importLegacyNotes(
   if (typeof window === "undefined") return 0;
 
   try {
-    if (window.localStorage.getItem(LEGACY_IMPORTED_KEY) === "1") return 0;
+    if (window.localStorage.getItem(LEGACY_IMPORTED_KEY) === "1") {
+      // Releases before encrypted offline notes intentionally left the old
+      // JSON behind. Once the import marker exists it is only a redundant,
+      // plaintext copy, so an upgraded app removes it immediately.
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return 0;
+    }
     const legacy = readLegacyNotes();
 
     if (legacy.length === 0) {
@@ -246,6 +252,7 @@ export async function importLegacyNotes(
 
     if (error) return 0;
     window.localStorage.setItem(LEGACY_IMPORTED_KEY, "1");
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     return legacy.length;
   } catch {
     return 0;

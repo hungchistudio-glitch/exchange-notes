@@ -250,12 +250,16 @@ export default function ReviewPage() {
     }
 
     setGrading(true);
+    setErrorMessage("");
 
     try {
       await saveReviewResult(currentWord.id, grade);
     } catch (error) {
       console.error(error);
       setErrorMessage(copy.saveError);
+      // Do not tell the reader a grade was recorded by moving on when it was
+      // not. The same card remains available for an explicit retry.
+      return;
     } finally {
       setGrading(false);
     }

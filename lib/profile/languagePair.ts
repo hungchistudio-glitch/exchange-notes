@@ -20,11 +20,11 @@ import {
  * are acquiring. It used to be "English, then Chinese", which happened to
  * agree for one of the two pairings the app supported and was never a rule.
  *
- * The second slot is the interface language, by the same rule the screens
- * render with (resolveSupportLanguage). Generating a card in one pairing
- * and rendering it in another is how a photo taken by a reader with a
- * French interface came back glossed in English and then had nowhere to be
- * shown.
+ * The second slot is the profile's native language, by the same rule the
+ * screens render with (resolveSupportLanguage). The interface language is
+ * only a fallback for an incomplete profile. Generating a card in one
+ * pairing and rendering it in another leaves translated content with nowhere
+ * to be shown, so both paths share this resolver.
  *
  * Falls back to the pair the app has always taught rather than failing: a
  * profile can be mid-onboarding, and a captured photo is worth a card in

@@ -1,5 +1,8 @@
 "use client";
 
+import { STORES, clearStore } from "@/lib/offline/db";
+import { forgetPrivateNotes } from "@/lib/offline/privateNotes";
+
 /* =========================================================
    What the last person leaves behind
 
@@ -18,14 +21,10 @@
    are smaller but the same in kind: a note, a word someone shared, a
    pronunciation session, the devices an account had paired.
 
-   The service worker's cache. public/sw.js is network-first over every
-   same-origin GET that is not an API route, and it caches whatever comes
-   back — which includes the HTML of `/vocabulary`, `/notes/[id]`,
-   `/messages/…` and `/profile`, and the RSC payloads behind them. That cache
-   outlived the session too, and offline it is what the app serves. The pages
-   are mostly shells whose contents arrive over the network, so what leaks is
-   the frame rather than the words; it is still the previous account's frame,
-   and nothing needed it after they left.
+   Historical service worker caches. The current worker stores only public
+   build/brand/audio assets, but versions before v4 cached signed-in HTML and
+   RSC responses. Clearing every version on sign-out removes those old caches
+   from devices that update directly from an affected release.
 
    Display preferences are deliberately not cleared: font size, the speech
    settings, the daily word goal, whether the tutorial has been seen. Those
@@ -45,6 +44,8 @@ const ACCOUNT_STORAGE_KEYS = [
   "vocabulary-interactions-v1",
   /** lib/notes/repository — the pre-Supabase home notes. */
   "exchange-notes-home-notes",
+  /** lib/notes/repository — whether that account's plaintext migration ran. */
+  "exchange-notes-legacy-notes-imported",
   /** lib/vocabularyDraft — a word shared in, waiting to be saved. */
   "pending-shared-vocabulary",
   /** lib/pronunciation/lab/session — where the reader was in the lab. */
@@ -72,8 +73,8 @@ function forgetAccountStorage(): void {
  * By name rather than by entry: the worker owns one cache and names it after
  * a version it bumps on its own, so matching on today's name would quietly
  * stop working the next time that constant changes. Anything cached here is
- * either a public asset — free to fetch again — or a signed-in page that
- * should not be kept, and there is nothing in between worth the coupling.
+ * either a public asset — free to fetch again — or data left by an older
+ * worker version that must not be kept.
  */
 async function forgetCachedPages(): Promise<void> {
   if (typeof caches === "undefined") return;
@@ -84,6 +85,31 @@ async function forgetCachedPages(): Promise<void> {
   } catch {
     // Caches are unavailable in some privacy modes and in insecure contexts.
   }
+}
+
+/**
+ * Removes every IndexedDB record, including encrypted-note CryptoKeys.
+ *
+ * Most stores are namespaced, but sign-out is deliberately stronger than a
+ * namespace switch: a shared device must retain neither ciphertext nor the
+ * key that can open it. The other stores contain vocabulary, translations,
+ * phonetics and queued writes, all of which can also originate in private
+ * user input, so the safe boundary is the whole app database.
+ */
+async function forgetIndexedDbCopies(): Promise<void> {
+  // This also invalidates any crypto operation that was already in flight,
+  // so it cannot recreate a key after the clear transaction completes.
+  await forgetPrivateNotes();
+
+  await Promise.all(
+    Object.values(STORES)
+      .filter(
+        (store) =>
+          store !== STORES.privateNotes &&
+          store !== STORES.privateNoteKeys,
+      )
+      .map((store) => clearStore(store)),
+  );
 }
 
 /**
@@ -99,5 +125,5 @@ async function forgetCachedPages(): Promise<void> {
  */
 export async function forgetDeviceCopies(): Promise<void> {
   forgetAccountStorage();
-  await forgetCachedPages();
+  await Promise.all([forgetIndexedDbCopies(), forgetCachedPages()]);
 }

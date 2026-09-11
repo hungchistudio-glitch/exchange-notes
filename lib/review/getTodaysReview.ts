@@ -149,9 +149,12 @@ export async function getTodaysReview(): Promise<
     .from("vocabulary_items")
     .select("*")
     .eq("user_id", userId)
-    .lte("next_review_at", now)
+    // Rows created while the review column was nullable must not disappear
+    // from every queue during a rolling migration.
+    .or(`next_review_at.is.null,next_review_at.lte.${now}`)
     .order("next_review_at", {
       ascending: true,
+      nullsFirst: true,
     });
 
   if (error) {

@@ -683,15 +683,18 @@ export default function CookieTray({
   const phoneticsFor = usePhonetics(
     visible
       .filter((cookie) => cookie.type === "zhuyin")
-      .map((cookie) => ({ text: cookie.translation, language: "zh-TW" as const })),
+      .map((cookie) => ({
+        text: cookie.sourceText,
+        language: cookie.language,
+      })),
   );
 
   function glyphFor(cookie: Cookie) {
     if (cookie.type !== "zhuyin") return cookie.glyph;
 
     const reading = phoneticsFor({
-      text: cookie.translation,
-      language: "zh-TW",
+      text: cookie.sourceText,
+      language: cookie.language,
     });
 
     // Undefined while the lookup is in the air — the cookie wears its

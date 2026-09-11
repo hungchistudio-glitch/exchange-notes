@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ProfileLanguagePair } from "@/lib/languages";
 
 /*
  * Yumi's language layer, client side.
@@ -79,6 +80,7 @@ export async function listAnalysisForMessages(
   supabase: SupabaseClient,
   userId: string,
   messageIds: number[],
+  [learningLanguage, nativeLanguage]: ProfileLanguagePair,
 ): Promise<Map<number, MessageAnalysis>> {
   const byMessageId = new Map<number, MessageAnalysis>();
   if (messageIds.length === 0) return byMessageId;
@@ -87,6 +89,8 @@ export async function listAnalysisForMessages(
     .from("message_language_analysis")
     .select("message_id, status, tone, tone_confidence")
     .eq("user_id", userId)
+    .eq("learning_language", learningLanguage)
+    .eq("native_language", nativeLanguage)
     .in("message_id", messageIds);
 
   if (analysisError) throw analysisError;
@@ -111,6 +115,8 @@ export async function listAnalysisForMessages(
     .from("detected_phrases")
     .select("id, message_id, phrase, phrase_type, meaning, expanded, position")
     .eq("user_id", userId)
+    .eq("learning_language", learningLanguage)
+    .eq("native_language", nativeLanguage)
     .in("message_id", readyIds)
     .order("position", { ascending: true });
 

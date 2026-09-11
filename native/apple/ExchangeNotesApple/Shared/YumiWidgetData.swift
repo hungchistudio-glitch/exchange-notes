@@ -23,6 +23,17 @@ struct YumiWidgetLocalizedText: Codable {
 
 struct YumiWidgetWord: Codable, Hashable {
     let id: String
+
+    /// Schema-v2 language-neutral card. Optional so App Group files written
+    /// by schema-v1 builds continue to decode.
+    let primaryText: String?
+    let secondaryText: String?
+    let primaryLanguage: String?
+    let secondaryLanguage: String?
+    let primaryPronunciation: String?
+    let secondaryPronunciation: String?
+
+    /// Schema-v1 compatibility aliases.
     let englishWord: String
     let traditionalChineseWord: String
     let pinyin: String
@@ -30,6 +41,12 @@ struct YumiWidgetWord: Codable, Hashable {
 
     static let empty = YumiWidgetWord(
         id: "empty",
+        primaryText: nil,
+        secondaryText: nil,
+        primaryLanguage: nil,
+        secondaryLanguage: nil,
+        primaryPronunciation: nil,
+        secondaryPronunciation: nil,
         englishWord: "",
         traditionalChineseWord: "",
         pinyin: "",
@@ -41,6 +58,16 @@ struct YumiWidgetData: Codable {
     let cookieCount: Int
     let cookieGoal: Int
 
+    /// Schema-v2 current-word fallback. Optional preserves decoding of the
+    /// schema-v1 App Group file already on a reader's phone.
+    let primaryText: String?
+    let secondaryText: String?
+    let primaryLanguage: String?
+    let secondaryLanguage: String?
+    let primaryPronunciation: String?
+    let secondaryPronunciation: String?
+
+    /// Schema-v1 compatibility aliases.
     let englishWord: String
     let traditionalChineseWord: String
     let pinyin: String
@@ -83,7 +110,9 @@ struct YumiWidgetData: Codable {
 
     var availableWords: [YumiWidgetWord] {
         let recent = (words ?? []).filter {
-            !$0.englishWord.isEmpty
+            !($0.primaryText ?? "").isEmpty
+            || !($0.secondaryText ?? "").isEmpty
+            || !$0.englishWord.isEmpty
             || !$0.traditionalChineseWord.isEmpty
         }
 
@@ -91,12 +120,22 @@ struct YumiWidgetData: Codable {
             return recent
         }
 
-        if !englishWord.isEmpty
+        if !(primaryText ?? "").isEmpty
+            || !(secondaryText ?? "").isEmpty
+            || !englishWord.isEmpty
             || !traditionalChineseWord.isEmpty
         {
             return [
                 YumiWidgetWord(
                     id: "legacy-current-word",
+                    primaryText: primaryText,
+                    secondaryText: secondaryText,
+                    primaryLanguage: primaryLanguage,
+                    secondaryLanguage: secondaryLanguage,
+                    primaryPronunciation:
+                        primaryPronunciation,
+                    secondaryPronunciation:
+                        secondaryPronunciation,
                     englishWord: englishWord,
                     traditionalChineseWord:
                         traditionalChineseWord,
@@ -111,11 +150,18 @@ struct YumiWidgetData: Codable {
 
     var isLearningTraditionalChinese: Bool {
         learningLanguage == "traditional-chinese"
+        || learningLanguage == "zh-TW"
     }
 
     static let preview = YumiWidgetData(
         cookieCount: 2,
         cookieGoal: 3,
+        primaryText: "curious",
+        secondaryText: "好奇的",
+        primaryLanguage: "en",
+        secondaryLanguage: "zh-TW",
+        primaryPronunciation: "/ˈkjʊriəs/",
+        secondaryPronunciation: "ㄏㄠˇ ㄑㄧˊ ㄉㄜ˙",
         englishWord: "curious",
         traditionalChineseWord: "好奇的",
         pinyin: "hǎo qí de",
@@ -123,6 +169,12 @@ struct YumiWidgetData: Codable {
         words: [
             YumiWidgetWord(
                 id: "preview-curious",
+                primaryText: "curious",
+                secondaryText: "好奇的",
+                primaryLanguage: "en",
+                secondaryLanguage: "zh-TW",
+                primaryPronunciation: "/ˈkjʊriəs/",
+                secondaryPronunciation: "ㄏㄠˇ ㄑㄧˊ ㄉㄜ˙",
                 englishWord: "curious",
                 traditionalChineseWord: "好奇的",
                 pinyin: "hǎo qí de",
@@ -130,6 +182,12 @@ struct YumiWidgetData: Codable {
             ),
             YumiWidgetWord(
                 id: "preview-discipline",
+                primaryText: "discipline",
+                secondaryText: "自律",
+                primaryLanguage: "en",
+                secondaryLanguage: "zh-TW",
+                primaryPronunciation: "/ˈdɪsəplɪn/",
+                secondaryPronunciation: "ㄗˋ ㄌㄩˋ",
                 englishWord: "discipline",
                 traditionalChineseWord: "自律",
                 pinyin: "zì lǜ",
@@ -137,6 +195,12 @@ struct YumiWidgetData: Codable {
             ),
             YumiWidgetWord(
                 id: "preview-observe",
+                primaryText: "observe",
+                secondaryText: "觀察",
+                primaryLanguage: "en",
+                secondaryLanguage: "zh-TW",
+                primaryPronunciation: "/əbˈzɜːrv/",
+                secondaryPronunciation: "ㄍㄨㄢ ㄔㄚˊ",
                 englishWord: "observe",
                 traditionalChineseWord: "觀察",
                 pinyin: "guān chá",
@@ -153,6 +217,12 @@ struct YumiWidgetData: Codable {
     static let empty = YumiWidgetData(
         cookieCount: 0,
         cookieGoal: 3,
+        primaryText: nil,
+        secondaryText: nil,
+        primaryLanguage: nil,
+        secondaryLanguage: nil,
+        primaryPronunciation: nil,
+        secondaryPronunciation: nil,
         englishWord: "",
         traditionalChineseWord: "",
         pinyin: "",

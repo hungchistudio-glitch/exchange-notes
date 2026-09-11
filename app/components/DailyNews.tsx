@@ -18,7 +18,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import { createNote } from "@/lib/notes/repository";
+import { createNote } from "@/lib/notes/clientRepository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage , type SpeechLanguage } from "@/lib/speech";
 import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
@@ -320,7 +320,8 @@ export default function DailyNews() {
   // toggle / progress). Separate from `speakingKey`, which still drives
   // the per-sentence speakers inside the detail sheet and vocabulary
   // drawer.
-  const [audioMode, setAudioMode] = useState<AudioPlaybackMode>("en");
+  const [audioMode, setAudioMode] =
+    useState<AudioPlaybackMode>("primary");
   const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
 
@@ -554,9 +555,9 @@ export default function DailyNews() {
   }
 
   // Consolidated "Play full story" control for the featured card's audio
-  // rail. Unlike `speak`, this can queue up to two utterances (English
-  // then Chinese, for bilingual mode) and reports overall progress across
-  // the whole queue via each utterance's `boundary` event.
+  // rail. The mode names refer to the two positions in the reader's current
+  // pair, so Spanish/French and every other supported pairing use the same
+  // playback path without being mislabeled as English/Chinese.
   function toggleFullStoryPlayback(card: DailyNewsCard) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       return;
@@ -572,7 +573,7 @@ export default function DailyNews() {
     }
 
     const segments: { text: string; lang: SpeechLanguage }[] =
-      audioMode === "en"
+      audioMode === "primary"
         ? [
             {
               text: `${(card.titles[primaryLanguage] ?? "")}. ${(card.summaries[primaryLanguage] ?? "")}`,
@@ -759,7 +760,6 @@ export default function DailyNews() {
 
       const conversationId = await getOrCreateConversationWithFriend(
         supabase,
-        user.id,
         friendId
       );
 

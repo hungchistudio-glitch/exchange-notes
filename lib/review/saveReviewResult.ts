@@ -1,73 +1,66 @@
 import { createClient } from "@/lib/supabase/client";
-import { scheduleSm2, type ReviewGrade } from "@/lib/review/sm2";
-import type { VocabularyItem } from "@/lib/types/app";
+import type { ReviewGrade, ReviewUpdate } from "@/lib/review/sm2";
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
+}
+
+function isReviewUpdate(value: unknown): value is ReviewUpdate {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const update = value as Record<string, unknown>;
+  const nextReviewAt = update.next_review_at;
+  const lastReviewedAt = update.last_reviewed_at;
+
+  return (
+    (update.status === "learning" || update.status === "mastered")
+    && typeof nextReviewAt === "string"
+    && Number.isFinite(Date.parse(nextReviewAt))
+    && typeof lastReviewedAt === "string"
+    && Number.isFinite(Date.parse(lastReviewedAt))
+    && isFiniteNumber(update.review_interval)
+    && update.review_interval >= 0
+    && isFiniteNumber(update.review_ease)
+    && update.review_ease >= 1.3
+    && update.review_ease <= 3.2
+    && isNonNegativeInteger(update.review_count)
+    && isNonNegativeInteger(update.correct_count)
+    && update.correct_count <= update.review_count
+    && isNonNegativeInteger(update.review_repetitions)
+    && isNonNegativeInteger(update.review_lapses)
+    && isNonNegativeInteger(update.retention_score)
+    && update.retention_score <= 100
+  );
+}
 
 export async function saveReviewResult(
   id: string,
   grade: ReviewGrade,
-) {
+): Promise<ReviewUpdate> {
   const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Please log in to save this review.");
-  }
-
-  const { data: current, error: readError } = await supabase
-    .from("vocabulary_items")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
-
-  if (readError) {
-    throw readError;
-  }
-
-  if (!current) {
-    throw new Error("Vocabulary item not found.");
-  }
-
-  const next = scheduleSm2(
-    current as VocabularyItem,
-    grade,
-  );
-
-  const { error: updateError } = await supabase
-    .from("vocabulary_items")
-    .update(next)
-    .eq("id", id)
-    .eq("user_id", user.id);
-
-  if (updateError) {
-    throw updateError;
-  }
-
-  const { error: eventError } = await supabase
-    .from("review_events")
-    .insert({
-      user_id: user.id,
-      vocabulary_item_id: id,
-      grade,
-      interval_days: next.review_interval ?? 0,
-      ease_factor: next.review_ease ?? 2.5,
-      response_time_ms: null,
-    });
-
   /*
-   * The review itself is saved by this point, so a failed event write is not
-   * the reader's problem and must not become their error. It is still worth
-   * one line in the console for whoever is looking.
+   * Reading the row, calculating SM-2, updating it, and recording the event
+   * happen behind this one call. The database locks the owned vocabulary row
+   * first, so concurrent tabs calculate in sequence instead of overwriting
+   * each other, and an event failure rolls the schedule update back too.
    */
-  if (eventError) {
-    console.warn("A review event could not be recorded.", {
-      code: eventError.code,
-      message: eventError.message,
-    });
+  const { data, error } = await supabase.rpc("save_review_result_atomic", {
+    p_vocabulary_item_id: id,
+    p_grade: grade,
+  });
+
+  if (error) throw error;
+
+  if (!isReviewUpdate(data)) {
+    throw new Error("Review save returned an invalid result.");
   }
 
-  return next;
+  return data;
 }

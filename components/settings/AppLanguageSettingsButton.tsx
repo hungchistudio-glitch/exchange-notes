@@ -36,14 +36,21 @@ const LANGUAGE_OPTIONS: Array<{
 
 export default function AppLanguageSettingsButton() {
   const [open, setOpen] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const { t, language } = useTranslation();
   const copy = t.settings.appLanguage;
 
   async function handleSelect(value: InterfaceLanguage) {
     if (value === language) return;
 
-    await loadTranslations(value);
-    setInterfaceLanguage(value);
+    setLoadError(false);
+    try {
+      await loadTranslations(value);
+      setInterfaceLanguage(value);
+    } catch (error) {
+      setLoadError(true);
+      console.error("Could not load the selected interface language.", error);
+    }
   }
 
   /*
@@ -58,6 +65,7 @@ export default function AppLanguageSettingsButton() {
    * animation covers the fetch.
    */
   function openPicker() {
+    setLoadError(false);
     prefetchTranslations(language);
     setOpen(true);
   }
@@ -91,6 +99,11 @@ export default function AppLanguageSettingsButton() {
               onClick={() => void handleSelect(option.value)}
             />
           ))}
+          {loadError ? (
+            <p role="alert" className="text-xs font-medium text-red-600">
+              {copy.loadError}
+            </p>
+          ) : null}
         </div>
       </BottomSheet>
     </>

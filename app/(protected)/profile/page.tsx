@@ -42,8 +42,8 @@ import {
   subscribeToDeviceConnections,
 } from "@/lib/settings/deviceConnections";
 import {
+  changeProfileLanguagePair,
   DEFAULT_LEARNING_PAIR,
-  getLearningLanguages,
   readLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
@@ -82,8 +82,8 @@ export default function ProfilePage() {
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
-    native_language: DEFAULT_LEARNING_PAIR[0],
-    learning_language: DEFAULT_LEARNING_PAIR[1],
+    native_language: DEFAULT_LEARNING_PAIR[1],
+    learning_language: DEFAULT_LEARNING_PAIR[0],
   });
 
   const [email, setEmail] = useState("");
@@ -152,10 +152,10 @@ export default function ProfilePage() {
           exchange_id: data?.exchange_id ?? "",
           native_language:
             readLanguageCode(data?.native_language) ??
-              DEFAULT_LEARNING_PAIR[0],
+              DEFAULT_LEARNING_PAIR[1],
           learning_language:
             readLanguageCode(data?.learning_language) ??
-              DEFAULT_LEARNING_PAIR[1],
+              DEFAULT_LEARNING_PAIR[0],
         });
 
         // From the session, not the profiles row. The address is the same one
@@ -188,8 +188,6 @@ export default function ProfilePage() {
   ) {
     if (!userId) return;
 
-    const otherField =
-      field === "native_language" ? "learning_language" : "native_language";
     const previous = form;
 
     /*
@@ -197,21 +195,19 @@ export default function ProfilePage() {
      * value that collides with the other field flips that field in the same
      * update rather than sending a lone change the constraint would reject.
      *
-     * Which language it flips to is picked here rather than being the one
-     * left over: with five learnable languages there is no leftover, so the
-     * first that is not the new value stands in until the user says
-     * otherwise.
+     * A collision swaps the two existing values, preserving both explicit
+     * choices across all 20 supported directions.
      */
-    const nextOtherValue: LanguageCode =
-      value === form[otherField]
-        ? (getLearningLanguages().find((meta) => meta.code !== value)?.code ??
-          form[otherField])
-        : form[otherField];
+    const [nextLearning, nextNative] = changeProfileLanguagePair(
+      [form.learning_language, form.native_language],
+      field === "learning_language" ? "learning" : "native",
+      value,
+    );
 
     setForm((current) => ({
       ...current,
-      [field]: value,
-      [otherField]: nextOtherValue,
+      learning_language: nextLearning,
+      native_language: nextNative,
     }));
     setError("");
 
@@ -224,19 +220,17 @@ export default function ProfilePage() {
      * reader just picked it. Persisting it and displaying it are different
      * jobs, and only one of them has to wait for the network.
      */
-    const nextPair =
-      field === "learning_language"
-        ? ([value, nextOtherValue] as const)
-        : ([nextOtherValue, value] as const);
-
-    applyLearningLanguages(nextPair[0], nextPair[1]);
+    applyLearningLanguages(nextLearning, nextNative);
 
     try {
       const supabase = createClient();
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ [field]: value, [otherField]: nextOtherValue })
+        .update({
+          learning_language: nextLearning,
+          native_language: nextNative,
+        })
         .eq("id", userId);
 
       if (updateError) {
@@ -281,13 +275,11 @@ export default function ProfilePage() {
     await forgetDeviceCopies();
 
     /*
-     * A full document load rather than router.replace, which is a soft
-     * navigation: the React tree, the router cache and every client component
-     * still holding the previous user's data would otherwise survive into the
-     * signed-out state. Signing out should leave nothing of the old session in
-     * memory, and the cheapest way to guarantee that is a new document.
+     * Reload the protected URL as a new document. The server auth boundary
+     * redirects it to /login, while the React tree, router cache and every
+     * client component holding the previous user's data are discarded first.
      */
-    window.location.assign("/login");
+    window.location.reload();
   }
 
   return (

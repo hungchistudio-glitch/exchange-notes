@@ -262,6 +262,35 @@ export default function ConversationRoom({
   /** Messages already asked about, so a re-render never asks twice. */
   const requestedAnalysisRef = useRef<Set<number>>(new Set());
 
+  /*
+   * Analysis meanings belong to one directed language pair, and the twenty
+   * pairings do not share a reading. Drop the previous pair's cards during
+   * the render that changes the pair rather than in an effect after it: an
+   * effect commits a frame first, and that frame shows the old pairing's
+   * meanings beside a timeline that has already switched.
+   *
+   * Compared by the two codes rather than by the tuple's identity, so a pair
+   * rebuilt with the same two languages does not throw usable cards away.
+   */
+  const [shownPair, setShownPair] = useState(languagePair);
+
+  if (shownPair[0] !== languagePair[0] || shownPair[1] !== languagePair[1]) {
+    setShownPair(languagePair);
+    setAnalysisByMessageId(new Map());
+    setOpenDecodeId(null);
+  }
+
+  /*
+   * The claim set is released after the commit instead. A render can run more
+   * than once for the same change and a ref is not rolled back with it, so
+   * emptying it above could discard claims made by the render that survived.
+   * This effect is declared before the requesting effect below, so the set is
+   * already empty by the time that one re-asks for the new pair.
+   */
+  useEffect(() => {
+    requestedAnalysisRef.current = new Set();
+  }, [languagePair]);
+
   const [savedCardIds, setSavedCardIds] = useState<Set<number>>(new Set());
   const [savingCardId, setSavingCardId] = useState<number | null>(null);
 
@@ -837,7 +866,12 @@ export default function ConversationRoom({
       const ids = window.map((message) => message.id);
 
       try {
-        const stored = await listAnalysisForMessages(supabase, currentUserId, ids);
+        const stored = await listAnalysisForMessages(
+          supabase,
+          currentUserId,
+          ids,
+          languagePair,
+        );
         if (cancelled) return;
 
         if (stored.size > 0) {
@@ -892,7 +926,7 @@ export default function ConversationRoom({
     return () => {
       cancelled = true;
     };
-  }, [conversationReady, currentUserId, messages, supabase]);
+  }, [conversationReady, currentUserId, languagePair, messages, supabase]);
 
   async function handleSavePhrase(phrase: DetectedPhrase) {
     if (!currentUserId || savingPhraseId || savedPhraseIds.has(phrase.id)) return;

@@ -151,13 +151,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Already answered. Returning the stored row keeps the client's
-    // ask-for-everything-visible loop from costing anything on a revisit.
-    const existing = await readStoredAnalysis(supabase, user.id, messageId);
-    if (existing && existing.status !== "failed") {
-      return NextResponse.json({ analysis: existing }, { status: 200 });
-    }
-
     const { data: profile } = await supabase
       .from("profiles")
       .select("native_language, learning_language")
@@ -168,6 +161,20 @@ export async function POST(request: Request) {
       profile?.learning_language,
       profile?.native_language,
     );
+
+    // Cache identity includes the directed pair. A stored French meaning is
+    // not an Italian meaning just because it belongs to the same reader and
+    // message; switching profile languages must regenerate the enrichment.
+    const existing = await readStoredAnalysis(
+      supabase,
+      user.id,
+      messageId,
+      learningCode,
+      nativeCode,
+    );
+    if (existing && existing.status !== "failed") {
+      return NextResponse.json({ analysis: existing }, { status: 200 });
+    }
 
     const learningLanguage = promptLanguageName(learningCode);
     const nativeLanguage = promptLanguageName(nativeCode);
@@ -320,24 +327,32 @@ ${scriptRule}
           message_id: messageId,
           user_id: user.id,
           conversation_id: message.conversation_id,
+          learning_language: learningCode,
+          native_language: nativeCode,
           status,
           tone: status === "ready" ? tone : null,
           tone_confidence: status === "ready" ? toneConfidence : null,
           model: process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash",
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "message_id,user_id" },
+        {
+          onConflict:
+            "message_id,user_id,learning_language,native_language",
+        },
       );
 
     if (upsertError) throw upsertError;
 
     // Replace rather than append, so a retry after a failure cannot leave two
-    // generations of phrases stacked on one message.
+    // generations of phrases stacked on one message. Scoped to this pair:
+    // another pairing's phrases are a different cache entry, not a stale one.
     await supabase
       .from("detected_phrases")
       .delete()
       .eq("message_id", messageId)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("learning_language", learningCode)
+      .eq("native_language", nativeCode);
 
     if (status === "ready") {
       const { error: phraseError } = await supabase
@@ -346,6 +361,8 @@ ${scriptRule}
           phrases.map((phrase, index) => ({
             message_id: messageId,
             user_id: user.id,
+            learning_language: learningCode,
+            native_language: nativeCode,
             phrase: phrase.phrase.trim().slice(0, 120),
             phrase_type: phrase.type,
             meaning: phrase.meaning.trim().slice(0, 400),
@@ -359,7 +376,13 @@ ${scriptRule}
       if (phraseError) throw phraseError;
     }
 
-    const analysis = await readStoredAnalysis(supabase, user.id, messageId);
+    const analysis = await readStoredAnalysis(
+      supabase,
+      user.id,
+      messageId,
+      learningCode,
+      nativeCode,
+    );
     return NextResponse.json({ analysis }, { status: 200 });
   } catch (error) {
     if (supabase && charged) {
@@ -389,12 +412,16 @@ async function readStoredAnalysis(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   messageId: number,
+  learningLanguage: string,
+  nativeLanguage: string,
 ): Promise<MessageAnalysis | null> {
   const { data: row } = await supabase
     .from("message_language_analysis")
     .select("message_id, status, tone, tone_confidence")
     .eq("user_id", userId)
     .eq("message_id", messageId)
+    .eq("learning_language", learningLanguage)
+    .eq("native_language", nativeLanguage)
     .maybeSingle();
 
   if (!row) return null;
@@ -414,6 +441,8 @@ async function readStoredAnalysis(
     .select("id, phrase, phrase_type, meaning, expanded")
     .eq("user_id", userId)
     .eq("message_id", messageId)
+    .eq("learning_language", learningLanguage)
+    .eq("native_language", nativeLanguage)
     .order("position", { ascending: true });
 
   analysis.phrases = (phraseRows ?? []).map((row) => ({

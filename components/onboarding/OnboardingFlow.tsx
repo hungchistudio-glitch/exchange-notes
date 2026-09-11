@@ -9,7 +9,6 @@ import { setTutorialPending } from "@/lib/appPreferences";
 import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_LEARNING_PAIR,
-  getLearningLanguages,
   readLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
@@ -72,17 +71,17 @@ export default function OnboardingFlow({
    * screen is exactly where someone returns to a half-finished profile.
    */
   const [nativeLanguage, setNativeLanguage] = useState<LanguageCode>(
-    () => readLanguageCode(initialNativeLanguage) ?? DEFAULT_LEARNING_PAIR[0],
+    () => readLanguageCode(initialNativeLanguage) ?? DEFAULT_LEARNING_PAIR[1],
   );
   const [learningLanguage, setLearningLanguage] = useState<LanguageCode>(() => {
     const stored = readLanguageCode(initialLearningLanguage);
     if (stored) return stored;
 
-    const native = readLanguageCode(initialNativeLanguage);
-    return (
-      getLearningLanguages().find((meta) => meta.code !== native)?.code ??
-      DEFAULT_LEARNING_PAIR[1]
-    );
+    const native =
+      readLanguageCode(initialNativeLanguage) ?? DEFAULT_LEARNING_PAIR[1];
+    return native === DEFAULT_LEARNING_PAIR[0]
+      ? DEFAULT_LEARNING_PAIR[1]
+      : DEFAULT_LEARNING_PAIR[0];
   });
 
   const [savingName, setSavingName] = useState(false);

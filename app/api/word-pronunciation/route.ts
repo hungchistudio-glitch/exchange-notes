@@ -1,11 +1,24 @@
 import { NextResponse } from "next/server";
 
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
+import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { getPhonetics, type Phonetics } from "@/lib/pronunciation";
 import { transcribe } from "@/lib/pronunciation/ipaSource";
 import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+
+const MAX_TEXT_LENGTH = 160;
+const MAX_BATCH_ITEMS = 40;
+const MAX_BATCH_CHARACTERS = 2_400;
+const OPERATION = "phonetic_transcription" as const;
+const MAX_REQUESTS_PER_DAY = readBoundedInteger(
+  process.env.PHONETIC_TRANSCRIPTION_DAILY_USER_LIMIT,
+  100,
+  1,
+  1_000,
+);
 
 /*
  * Phonetic annotation for a word, in whichever systems its language uses.
@@ -23,17 +36,28 @@ export const runtime = "nodejs";
 async function annotate(
   text: string,
   code: LanguageCode,
-): Promise<Phonetics & { ipa?: string }> {
+  budget: {
+    consume: () => Promise<boolean>;
+    refund: () => Promise<void>;
+  },
+): Promise<{
+  phonetics: Phonetics & { ipa?: string };
+  limited: boolean;
+}> {
   const trimmed = text.trim();
-  if (!trimmed) return {};
+  if (!trimmed) return { phonetics: {}, limited: false };
 
   // Computed locally — no network, no quota — so a failed IPA lookup can
   // never take zhuyin and pinyin down with it.
   const local = getPhonetics(trimmed, code);
 
-  const ipa = (await transcribe([trimmed], code)).found.get(trimmed);
+  const transcription = await transcribe([trimmed], code, budget);
+  const ipa = transcription.found.get(trimmed);
 
-  return ipa ? { ...local, ipa } : local;
+  return {
+    phonetics: ipa ? { ...local, ipa } : local,
+    limited: transcription.limited.length > 0,
+  };
 }
 
 const EMPTY = {
@@ -54,6 +78,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const budget = {
+      consume: () =>
+        consumeDailyQuota(user.id, OPERATION, MAX_REQUESTS_PER_DAY),
+      refund: () => refundDailyQuota(user.id, OPERATION),
+    };
+
     const body = (await request.json()) as {
       text?: string;
       texts?: unknown;
@@ -70,13 +100,44 @@ export async function POST(request: Request) {
     if (Array.isArray(body.texts) && isLanguageCode(body.language)) {
       const language = body.language;
 
+      if (
+        body.texts.length > MAX_BATCH_ITEMS ||
+        body.texts.some((value) => typeof value !== "string")
+      ) {
+        return NextResponse.json(
+          { error: "Invalid pronunciation batch" },
+          { status: 400 },
+        );
+      }
+
       const texts = body.texts
         .filter((value): value is string => typeof value === "string")
         .map((value) => value.trim())
-        .filter(Boolean)
-        .slice(0, 40);
+        .filter(Boolean);
 
-      const { found, unavailable } = await transcribe(texts, language);
+      if (
+        texts.some((text) => text.length > MAX_TEXT_LENGTH) ||
+        texts.reduce((total, text) => total + text.length, 0) >
+          MAX_BATCH_CHARACTERS
+      ) {
+        return NextResponse.json(
+          { error: "Pronunciation text is too long" },
+          { status: 413 },
+        );
+      }
+
+      const { found, unavailable, limited } = await transcribe(
+        texts,
+        language,
+        budget,
+      );
+
+      if (limited.length > 0) {
+        return NextResponse.json(
+          { error: "Daily pronunciation limit reached", code: "daily_limit" },
+          { status: 429 },
+        );
+      }
 
       return NextResponse.json({
         phonetics: Object.fromEntries(
@@ -98,7 +159,23 @@ export async function POST(request: Request) {
 
     // One text, one language.
     if (typeof body.text === "string" && isLanguageCode(body.language)) {
-      const phonetics = await annotate(body.text, body.language);
+      if (body.text.trim().length > MAX_TEXT_LENGTH) {
+        return NextResponse.json(
+          { error: "Pronunciation text is too long" },
+          { status: 413 },
+        );
+      }
+
+      const result = await annotate(body.text, body.language, budget);
+
+      if (result.limited) {
+        return NextResponse.json(
+          { error: "Daily pronunciation limit reached", code: "daily_limit" },
+          { status: 429 },
+        );
+      }
+
+      const { phonetics } = result;
 
       return NextResponse.json({
         phonetics,
@@ -118,10 +195,30 @@ export async function POST(request: Request) {
     const english = body.english?.trim() ?? "";
     const chinese = body.chinese?.trim() ?? "";
 
+    if (
+      english.length > MAX_TEXT_LENGTH ||
+      chinese.length > MAX_TEXT_LENGTH
+    ) {
+      return NextResponse.json(
+        { error: "Pronunciation text is too long" },
+        { status: 413 },
+      );
+    }
+
     const chinesePhonetics = getPhonetics(chinese, "zh-TW");
-    const englishPronunciation = english
-      ? ((await transcribe([english], "en")).found.get(english) ?? "")
-      : "";
+    const englishTranscription = english
+      ? await transcribe([english], "en", budget)
+      : { found: new Map<string, string>(), limited: [] };
+
+    if (englishTranscription.limited.length > 0) {
+      return NextResponse.json(
+        { error: "Daily pronunciation limit reached", code: "daily_limit" },
+        { status: 429 },
+      );
+    }
+
+    const englishPronunciation =
+      englishTranscription.found.get(english) ?? "";
 
     return NextResponse.json({
       phonetics: {

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { STORES, clearStore } from "@/lib/offline/db";
-import { queueMutation, readOutbox } from "@/lib/offline/vocabulary";
+import {
+  draftVocabularyItem,
+  queueMutation,
+  readOutbox,
+} from "@/lib/offline/vocabulary";
 
 /* =========================================================
    Telling the server what happened while it was away
@@ -16,12 +20,14 @@ const server = vi.hoisted(() => ({
   calls: 0,
   answer: null as { code?: string; message?: string } | null,
   throwNetwork: false,
+  payloads: [] as unknown[],
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => {
-    const result = () => {
+    const result = (payload?: unknown) => {
       server.calls += 1;
+      server.payloads.push(payload);
       if (server.throwNetwork) throw new TypeError("Failed to fetch");
       return Promise.resolve({ error: server.answer });
     };
@@ -44,6 +50,7 @@ describe("flushOutbox", () => {
     server.calls = 0;
     server.answer = null;
     server.throwNetwork = false;
+    server.payloads = [];
   });
 
   it("sends what was saved with no connection, and forgets it once taken", async () => {
@@ -54,6 +61,21 @@ describe("flushOutbox", () => {
 
     expect(result.sent).toBe(2);
     expect(await readOutbox()).toHaveLength(0);
+  });
+
+  it("gives a legacy offline insert a first review date when replayed", async () => {
+    const item = draftVocabularyItem({
+      user_id: "user-1",
+      created_at: "2026-09-01T12:00:00.000Z",
+      next_review_at: null,
+    });
+
+    await queueMutation({ kind: "insert", item });
+    await flushOutbox();
+
+    expect(server.payloads[0]).toMatchObject({
+      next_review_at: "2026-09-01T12:00:00.000Z",
+    });
   });
 
   it("keeps everything when there is still no connection", async () => {

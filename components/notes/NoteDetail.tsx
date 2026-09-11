@@ -9,7 +9,15 @@ import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
 import { getInterfaceLanguageMeta, getLanguage, getLanguageName, LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
-import { createNote, deleteNote, fetchNote, type Note, type NoteInterpretation } from "@/lib/notes/repository";
+import {
+  createNote,
+  cacheNoteForOffline,
+  deleteNote,
+  fetchNote,
+  getNotesSessionUserId,
+  type Note,
+  type NoteInterpretation,
+} from "@/lib/notes/clientRepository";
 import { createClient } from "@/lib/supabase/client";
 import { speak } from "@/lib/speech";
 import { track } from "@/lib/analytics/track";
@@ -55,10 +63,10 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
     setLoadError(false);
     const supabase = createClient();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setCurrentUserId(user.id);
-      const row = await fetchNote(supabase, user.id, noteId);
+      const userId = await getNotesSessionUserId(supabase);
+      if (!userId) return;
+      setCurrentUserId(userId);
+      const row = await fetchNote(supabase, userId, noteId);
       setNote(row);
       setLoadError(!row);
       if (row) track("notes.opened", { shared: row.isSharedWithMe, language: row.originalLanguage });
@@ -95,13 +103,15 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
       const data = (await response.json()) as { interpretation?: NoteInterpretation; error?: string };
       if (!response.ok || !data.interpretation) throw new Error(data.error || "Interpretation failed");
 
-      setNote((current) => current ? {
-        ...current,
+      const updatedNote: Note = {
+        ...note,
         interpretations: [
-          ...current.interpretations.filter((item) => item.targetLanguage !== selectedLanguage),
+          ...note.interpretations.filter((item) => item.targetLanguage !== selectedLanguage),
           data.interpretation!,
         ],
-      } : current);
+      };
+      setNote(updatedNote);
+      await cacheNoteForOffline(updatedNote, currentUserId);
       track("notes.interpretation_completed", { targetLanguage: selectedLanguage });
     } catch (error) {
       console.error("Note interpretation request failed", error);
@@ -113,7 +123,9 @@ export default function NoteDetail({ noteId }: { noteId: string }) {
 
   async function remove() {
     if (!note || note.isSharedWithMe || !window.confirm(copy.deleteConfirm)) return;
-    if (await deleteNote(createClient(), note.id)) router.replace("/notes");
+    if (await deleteNote(createClient(), note.id, currentUserId)) {
+      router.replace("/notes");
+    }
   }
 
   async function saveSharedCopy() {

@@ -1,11 +1,14 @@
 import type {
+  LegacyYumiWidgetLanguage,
   YumiWidgetLanguage,
   YumiWidgetLocalizedText,
   YumiWidgetUpdatePayload,
   YumiWidgetWord,
 } from "@/lib/widget/yumiWidgetBridge";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
+import { isLanguageCode } from "@/lib/languages";
 
-export const SCRIPTABLE_YUMI_SCHEMA_VERSION = 1 as const;
+export const SCRIPTABLE_YUMI_SCHEMA_VERSION = 2 as const;
 export const SCRIPTABLE_YUMI_MAX_WORDS = 12;
 
 const MAX_WORD_ID_LENGTH = 128;
@@ -65,10 +68,10 @@ function clampInteger(
   );
 }
 
-function normalizeLanguage(
+function normalizeLegacyLanguage(
   value: unknown,
-  fallback: YumiWidgetLanguage,
-): YumiWidgetLanguage {
+  fallback: LegacyYumiWidgetLanguage,
+): LegacyYumiWidgetLanguage {
   if (
     value === "english"
     || value === "traditional-chinese"
@@ -77,6 +80,35 @@ function normalizeLanguage(
   }
 
   return fallback;
+}
+
+function normalizeContentLanguage(
+  value: unknown,
+  fallback: YumiWidgetLanguage,
+): YumiWidgetLanguage {
+  return isLanguageCode(value) ? value : fallback;
+}
+
+function normalizeInterfaceLanguage(
+  value: unknown,
+): InterfaceLanguage {
+  switch (value) {
+    case "traditional-chinese":
+    case "spanish":
+    case "french":
+    case "italian":
+      return value;
+    case "zh-TW":
+      return "traditional-chinese";
+    case "es":
+      return "spanish";
+    case "fr":
+      return "french";
+    case "it":
+      return "italian";
+    default:
+      return "english";
+  }
 }
 
 function normalizeLocalizedText(
@@ -106,6 +138,8 @@ function normalizeLocalizedText(
 
 function normalizeWord(
   value: unknown,
+  fallbackPrimaryLanguage: YumiWidgetLanguage,
+  fallbackSecondaryLanguage: YumiWidgetLanguage,
 ): YumiWidgetWord | null {
   const record = asRecord(value);
 
@@ -128,25 +162,57 @@ function normalizeWord(
     MAX_WORD_LENGTH,
   );
 
+  const primaryLanguage = normalizeContentLanguage(
+    record.primaryLanguage,
+    fallbackPrimaryLanguage,
+  );
+  const secondaryLanguage = normalizeContentLanguage(
+    record.secondaryLanguage,
+    fallbackSecondaryLanguage,
+  );
+  const pinyin = cleanString(
+    record.pinyin,
+    MAX_PRONUNCIATION_LENGTH,
+  );
+  const zhuyin = cleanString(
+    record.zhuyin,
+    MAX_PRONUNCIATION_LENGTH,
+  );
+  const legacyText = (language: YumiWidgetLanguage) =>
+    language === "zh-TW" ? traditionalChineseWord : englishWord;
+  const legacyPronunciation = (language: YumiWidgetLanguage) =>
+    language === "zh-TW" ? zhuyin || pinyin : "";
+  const primaryText =
+    cleanString(record.primaryText, MAX_WORD_LENGTH)
+    || legacyText(primaryLanguage);
+  const secondaryText =
+    cleanString(record.secondaryText, MAX_WORD_LENGTH)
+    || legacyText(secondaryLanguage);
+
   if (
     !id
-    || (!englishWord && !traditionalChineseWord)
+    || (!primaryText && !secondaryText)
+    || primaryLanguage === secondaryLanguage
   ) {
     return null;
   }
 
   return {
     id,
+    primaryText,
+    secondaryText,
+    primaryLanguage,
+    secondaryLanguage,
+    primaryPronunciation:
+      cleanString(record.primaryPronunciation, MAX_PRONUNCIATION_LENGTH)
+      || legacyPronunciation(primaryLanguage),
+    secondaryPronunciation:
+      cleanString(record.secondaryPronunciation, MAX_PRONUNCIATION_LENGTH)
+      || legacyPronunciation(secondaryLanguage),
     englishWord,
     traditionalChineseWord,
-    pinyin: cleanString(
-      record.pinyin,
-      MAX_PRONUNCIATION_LENGTH,
-    ),
-    zhuyin: cleanString(
-      record.zhuyin,
-      MAX_PRONUNCIATION_LENGTH,
-    ),
+    pinyin,
+    zhuyin,
   };
 }
 
@@ -179,12 +245,27 @@ export function normalizeYumiWidgetPayload(
     cookieGoal,
   );
 
+  const legacyLearningLanguage = normalizeLegacyLanguage(
+    record.learningLanguage,
+    "english",
+  );
+  const primaryLanguage = normalizeContentLanguage(
+    record.primaryLanguage,
+    legacyLearningLanguage === "traditional-chinese" ? "zh-TW" : "en",
+  );
+  const secondaryLanguage = normalizeContentLanguage(
+    record.secondaryLanguage,
+    primaryLanguage === "zh-TW" ? "en" : "zh-TW",
+  );
+
+  if (primaryLanguage === secondaryLanguage) return null;
+
   const words = (
     Array.isArray(record.words)
       ? record.words
       : []
   )
-    .map(normalizeWord)
+    .map((word) => normalizeWord(word, primaryLanguage, secondaryLanguage))
     .filter(
       (word): word is YumiWidgetWord =>
         word !== null,
@@ -192,53 +273,62 @@ export function normalizeYumiWidgetPayload(
     .slice(0, SCRIPTABLE_YUMI_MAX_WORDS);
 
   const firstWord = words[0];
+  const englishWord =
+    cleanString(record.englishWord, MAX_WORD_LENGTH)
+    || firstWord?.englishWord
+    || "";
+  const traditionalChineseWord =
+    cleanString(record.traditionalChineseWord, MAX_WORD_LENGTH)
+    || firstWord?.traditionalChineseWord
+    || "";
+  const pinyin =
+    cleanString(record.pinyin, MAX_PRONUNCIATION_LENGTH)
+    || firstWord?.pinyin
+    || "";
+  const zhuyin =
+    cleanString(record.zhuyin, MAX_PRONUNCIATION_LENGTH)
+    || firstWord?.zhuyin
+    || "";
+  const legacyText = (language: YumiWidgetLanguage) =>
+    language === "zh-TW" ? traditionalChineseWord : englishWord;
+  const legacyPronunciation = (language: YumiWidgetLanguage) =>
+    language === "zh-TW" ? zhuyin || pinyin : "";
 
   return {
     cookieCount,
     cookieGoal,
 
-    englishWord:
-      cleanString(
-        record.englishWord,
-        MAX_WORD_LENGTH,
-      )
-      || firstWord?.englishWord
-      || "",
+    primaryText:
+      cleanString(record.primaryText, MAX_WORD_LENGTH)
+      || firstWord?.primaryText
+      || legacyText(primaryLanguage),
+    secondaryText:
+      cleanString(record.secondaryText, MAX_WORD_LENGTH)
+      || firstWord?.secondaryText
+      || legacyText(secondaryLanguage),
+    primaryLanguage,
+    secondaryLanguage,
+    primaryPronunciation:
+      cleanString(record.primaryPronunciation, MAX_PRONUNCIATION_LENGTH)
+      || firstWord?.primaryPronunciation
+      || legacyPronunciation(primaryLanguage),
+    secondaryPronunciation:
+      cleanString(record.secondaryPronunciation, MAX_PRONUNCIATION_LENGTH)
+      || firstWord?.secondaryPronunciation
+      || legacyPronunciation(secondaryLanguage),
 
-    traditionalChineseWord:
-      cleanString(
-        record.traditionalChineseWord,
-        MAX_WORD_LENGTH,
-      )
-      || firstWord?.traditionalChineseWord
-      || "",
-
-    pinyin:
-      cleanString(
-        record.pinyin,
-        MAX_PRONUNCIATION_LENGTH,
-      )
-      || firstWord?.pinyin
-      || "",
-
-    zhuyin:
-      cleanString(
-        record.zhuyin,
-        MAX_PRONUNCIATION_LENGTH,
-      )
-      || firstWord?.zhuyin
-      || "",
+    englishWord,
+    traditionalChineseWord,
+    pinyin,
+    zhuyin,
 
     words,
 
-    interfaceLanguage: normalizeLanguage(
-      record.interfaceLanguage,
-      "english",
-    ),
+    interfaceLanguage: normalizeInterfaceLanguage(record.interfaceLanguage),
 
-    learningLanguage: normalizeLanguage(
+    learningLanguage: normalizeLegacyLanguage(
       record.learningLanguage,
-      "english",
+      primaryLanguage === "zh-TW" ? "traditional-chinese" : "english",
     ),
 
     moodKey:
@@ -295,8 +385,10 @@ export function parseScriptableYumiWidgetSnapshot(
 
   if (
     !record
-    || record.schemaVersion
-      !== SCRIPTABLE_YUMI_SCHEMA_VERSION
+    || (
+      record.schemaVersion !== 1
+      && record.schemaVersion !== SCRIPTABLE_YUMI_SCHEMA_VERSION
+    )
   ) {
     return null;
   }

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
@@ -32,12 +34,19 @@ const LANGUAGE_OPTIONS: Array<{
 export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
   const { t, language } = useTranslation();
   const copy = t.onboarding.appLanguage;
+  const [loadError, setLoadError] = useState(false);
 
   async function selectLanguage(value: InterfaceLanguage) {
     if (value === language) return;
 
-    await loadTranslations(value);
-    setInterfaceLanguage(value);
+    setLoadError(false);
+    try {
+      await loadTranslations(value);
+      setInterfaceLanguage(value);
+    } catch (error) {
+      setLoadError(true);
+      console.error("Could not load the selected interface language.", error);
+    }
   }
 
   return (
@@ -63,7 +72,13 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
           ))}
         </div>
 
-        <p className="mt-4 text-xs leading-5 text-ink-faint">{copy.note}</p>
+        {loadError ? (
+          <p role="alert" className="mt-4 text-xs font-medium leading-5 text-red-600">
+            {copy.loadError}
+          </p>
+        ) : (
+          <p className="mt-4 text-xs leading-5 text-ink-faint">{copy.note}</p>
+        )}
       </div>
 
       <button

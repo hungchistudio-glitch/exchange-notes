@@ -91,11 +91,10 @@ export function getTranslations(
 /**
  * Fetches a dictionary, or hands back the fetch already running.
  *
- * A failed load resolves to whatever is already in the cache rather than
- * rejecting, when there is anything: losing the network mid-session should
- * cost a reader the language they switched *to*, not the screen they were
- * already reading. With nothing cached at all there is nothing to render
- * with and the rejection is the honest answer.
+ * A failed load rejects and leaves the cache untouched. Callers switch the
+ * preference only after this promise resolves, so substituting some other
+ * cached dictionary here would publish a language whose own dictionary is
+ * absent and make the next synchronous translation read throw.
  */
 export function loadTranslations(
   language: TranslationLanguage,
@@ -114,10 +113,6 @@ export function loadTranslations(
     })
     .catch((error) => {
       pending.delete(language);
-
-      const fallback = loaded.values().next().value;
-      if (fallback) return fallback;
-
       throw error;
     });
 

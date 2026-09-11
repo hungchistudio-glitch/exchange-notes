@@ -37,6 +37,7 @@ import {
   setSpeechSettings,
   type SpeechSettings,
 } from "@/lib/speech";
+import { SPEECH_TAGS } from "@/lib/languages";
 
 export type AccountPreferences = {
   fontSize: AppFontSize;
@@ -91,7 +92,7 @@ function parseSpeech(value: unknown): SpeechSettings {
   const voiceURIs: SpeechSettings["voiceURIs"] = {};
 
   if (raw.voiceURIs && typeof raw.voiceURIs === "object") {
-    for (const language of ["zh-TW", "en-US"] as const) {
+    for (const language of SPEECH_TAGS) {
       const uri = (raw.voiceURIs as Record<string, unknown>)[language];
       if (typeof uri === "string" && uri) voiceURIs[language] = uri;
     }
@@ -135,7 +136,9 @@ export function preferencesEqual(
     a.dailyGoalWords === b.dailyGoalWords &&
     a.speech.rate === b.speech.rate &&
     a.speech.voiceGender === b.speech.voiceGender &&
-    a.speech.voiceURIs["zh-TW"] === b.speech.voiceURIs["zh-TW"] &&
-    a.speech.voiceURIs["en-US"] === b.speech.voiceURIs["en-US"]
+    SPEECH_TAGS.every(
+      (language) =>
+        a.speech.voiceURIs[language] === b.speech.voiceURIs[language],
+    )
   );
 }

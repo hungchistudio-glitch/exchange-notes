@@ -13,6 +13,7 @@ import {
 import type { ByLanguage, LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { LanguageMetadataSource } from "@/lib/vocabulary/languageIdentity";
+import type { VocabularyEditFields } from "@/lib/vocabulary/editFields";
 
 /* =========================================================
    The reader's words, on the device
@@ -142,12 +143,7 @@ export type PendingMutation =
       kind: "fields";
       at: string;
       itemId: string;
-      fields: {
-        word: string;
-        translation: string;
-        example_sentence: string | null;
-        translated_example: string | null;
-      };
+      fields: VocabularyEditFields;
     }
   | { id?: number; kind: "delete"; at: string; itemId: string };
 
@@ -287,6 +283,7 @@ export function draftVocabularyItem(
     status: "new",
     created_at: now,
     updated_at: now,
+    next_review_at: now,
     ...payload,
   } as VocabularyItem;
 }

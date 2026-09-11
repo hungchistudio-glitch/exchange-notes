@@ -45,6 +45,28 @@ stamping its own version:
 `20260904173633`, and has been renamed on the same pass. All four files now
 match their rows, and the two sets are exactly equal at 66 each.
 
+And twice more, found on 2026-09-11 while checking parity before applying the
+landing-page branch's five migrations:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260910190000_ai_quota_server_only` | `20260910192557` |
+| `20260910190100_ai_quota_drop_client_callable` | `20260910193025` |
+
+That pass also turned up the other direction of the same problem — SQL applied
+to production that was never committed at all:
+
+| recorded in the database | where the file was |
+| --- | --- |
+| `20260909130734_schedule_yumi_reminders` | open on PR #116, unmerged |
+| `20260909130947_move_pg_net_out_of_public` | open on PR #116, unmerged |
+
+Both are committed now, verbatim from that branch, having been checked
+statement-for-statement against
+`supabase_migrations.schema_migrations.statements`. **Applying from a branch
+and merging it are two separate acts, and production only ever saw the first
+one.**
+
 The lesson keeps being the same one: **read the recorded version back
 immediately after applying, and rename the file to match before committing.**
 
@@ -60,6 +82,27 @@ failed on `create policy`, which has no `if not exists` form and raises
 migration runs in its own transaction, so those would have rolled back
 cleanly rather than half-applying. The files have been renamed to the
 recorded versions and the two sets now match exactly.
+
+And five more the same day, applying this branch's own migrations — recorded
+here as it happened rather than discovered later:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260910120000_secure_web_push_endpoints` | `20260911185850` |
+| `20260910121000_review_queue_not_null` | `20260911185858` |
+| `20260910122000_lock_down_social_graph` | `20260911190150` |
+| `20260911114625_message_analysis_language_pair` | `20260911190225` |
+| `20260911114734_atomic_review_save` | `20260911190333` |
+
+The two second-half migrations were renumbered on the same pass — to
+`20260911190400` and `20260911190500` — because the renames above moved their
+first halves past them, and a second half that sorts before its first half is
+a replay that cannot work. They are renamed again once applied, to whatever
+the database says it recorded.
+
+**Ten renames across five occasions now. `apply_migration` always stamps its
+own version; the filename it was given is never what lands.** Read the
+version back and rename before committing, every time.
 
 ## Checking
 

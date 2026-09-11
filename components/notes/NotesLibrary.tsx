@@ -7,7 +7,14 @@ import AppHeader from "@/components/foundation/layout/AppHeader";
 import Screen from "@/components/foundation/layout/Screen";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
-import { createNote, fetchNotes, searchNotes, type Note, type NoteInput } from "@/lib/notes/repository";
+import {
+  createNote,
+  fetchNotes,
+  getNotesSessionUserId,
+  searchNotes,
+  type Note,
+  type NoteInput,
+} from "@/lib/notes/clientRepository";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics/track";
 
@@ -33,10 +40,10 @@ export default function NotesLibrary() {
     setError(false);
     const supabase = createClient();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setCurrentUserId(user.id);
-      setNotes(await fetchNotes(supabase, user.id));
+      const userId = await getNotesSessionUserId(supabase);
+      if (!userId) return;
+      setCurrentUserId(userId);
+      setNotes(await fetchNotes(supabase, userId));
     } catch (loadError) {
       console.error("Notes library load failed", loadError);
       setError(true);

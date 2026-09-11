@@ -78,9 +78,8 @@ export async function yumiReminderCopy(
   }));
 
   /*
-   * Two dictionaries can still say the same thing — a language the app has
-   * not translated differently, or a fallback that resolved both halves to
-   * English. Comparing what came out is what catches that, rather than
+   * Two dictionaries can still say the same thing if their translated copy
+   * happens to match. Comparing what came out is what catches that, rather than
    * trusting that two different codes mean two different sentences.
    */
   const titles = [...new Set(halves.map((half) => half.title))];

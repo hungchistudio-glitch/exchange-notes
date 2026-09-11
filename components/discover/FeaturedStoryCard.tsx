@@ -208,6 +208,7 @@ export default function FeaturedStoryCard({
           isPlaying={isAudioPlaying}
           progress={audioProgress}
           mode={audioMode}
+          pair={pair}
           onModeChange={onAudioModeChange}
           onTogglePlay={onToggleAudio}
         />

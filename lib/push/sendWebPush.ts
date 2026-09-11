@@ -2,6 +2,8 @@ import "server-only";
 
 import webPush from "web-push";
 
+import { normalizeTrustedPushEndpoint } from "@/lib/push/endpoint";
+
 const DEFAULT_TTL_SECONDS = 60;
 const MAX_TTL_SECONDS = 28 * 24 * 60 * 60;
 const MAX_PAYLOAD_BYTES = 3_000;
@@ -257,24 +259,16 @@ function normalizeSubscription(
     MAX_ENDPOINT_LENGTH,
   );
 
-  let endpointUrl: URL;
+  const trustedEndpoint = normalizeTrustedPushEndpoint(endpoint);
 
-  try {
-    endpointUrl = new URL(endpoint);
-  } catch {
+  if (!trustedEndpoint) {
     throw new Error(
-      "Push endpoint must be a valid HTTPS URL.",
-    );
-  }
-
-  if (endpointUrl.protocol !== "https:") {
-    throw new Error(
-      "Push endpoint must use HTTPS.",
+      "Push endpoint must belong to a supported browser push service.",
     );
   }
 
   return {
-    endpoint,
+    endpoint: trustedEndpoint,
     keys: {
       p256dh: normalizeRequiredString(
         subscription.p256dh,
@@ -379,8 +373,20 @@ export async function sendWebPushNotification(
 ): Promise<WebPushSendResult> {
   configureVapidDetails();
 
-  const normalizedSubscription =
-    normalizeSubscription(subscription);
+  let normalizedSubscription: ReturnType<typeof normalizeSubscription>;
+
+  try {
+    normalizedSubscription = normalizeSubscription(subscription);
+  } catch {
+    // A malformed historical row must fail closed without aborting every
+    // other delivery in sendWebPushBatch.
+    return {
+      ok: false,
+      state: "failed",
+      statusCode: null,
+      message: "The Web Push subscription is invalid.",
+    };
+  }
 
   const serializedPayload =
     serializePayload(payload);

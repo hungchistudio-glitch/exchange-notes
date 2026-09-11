@@ -85,5 +85,20 @@ describe("the compact Home notes module", () => {
       originalLanguage: "fr",
       privacy: "private",
     });
+
+    /*
+     * The save is not finished when createNote resolves — the note still has
+     * to reach the list. Ending the test on the call alone left the rest of
+     * save() running after jsdom had been torn down, and React's setState
+     * then threw "window is not defined" as an unhandled rejection, failing
+     * the run while every test still reported passing.
+     *
+     * It was always a race; it became a lost one when notes started going
+     * through the encrypted mirror, which puts an encrypt and an IndexedDB
+     * write between the call and the state update.
+     */
+    expect(
+      await screen.findByText("Bonjour et merci pour cette journée"),
+    ).toBeInTheDocument();
   });
 });

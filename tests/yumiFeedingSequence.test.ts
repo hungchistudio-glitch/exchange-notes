@@ -22,7 +22,8 @@ function cookie(id: string): Cookie {
   return {
     id,
     word: id,
-    translation: id,
+    sourceText: id,
+    language: "en",
     type: "letter",
     glyph: id[0].toUpperCase(),
     status: "learning",
