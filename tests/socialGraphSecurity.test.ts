@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { readMigration } from "./readMigration";
 
 const push = vi.hoisted(() => ({ notifyPushEvent: vi.fn() }));
 
@@ -120,16 +120,17 @@ describe("social graph RPC boundaries", () => {
   });
 });
 
-describe("social graph migration", () => {
-  it("removes direct writes and grants only safe membership/state columns", () => {
-    const sql = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260910122000_lock_down_social_graph.sql",
-      ),
-      "utf8",
-    ).toLowerCase();
+/*
+ * The lock-down is deliberately two migrations, applied either side of the
+ * deploy that stops writing to these tables directly. These tests are split
+ * the same way, because the whole point of the split is that the first half
+ * takes nothing away — a revoke that drifted back into it would be a window
+ * in which the running app cannot send a friend request.
+ */
+describe("social graph migration, first half", () => {
+  const sql = readMigration("lock_down_social_graph").toLowerCase();
 
+  it("defines every relationship mutation as one locked transaction", () => {
     for (const rpc of [
       "send_friend_request",
       "respond_to_friend_request",
@@ -137,15 +138,28 @@ describe("social graph migration", () => {
       "remove_friend",
     ]) {
       expect(sql).toContain(`create or replace function public.${rpc}`);
+      expect(sql).toContain(`grant execute on function public.${rpc}(`);
     }
 
     expect(sql).toContain("security definer");
-    expect(sql).toContain("set search_path = ''");
+    expect(sql).toContain("set search_path = \'\'");
     expect(sql).toContain("pg_advisory_xact_lock");
-    expect(sql).toContain("and status is not null");
     expect(sql).toMatch(
       /insert into public\.friendships[\s\S]*?where not exists \([\s\S]*?user_one_id = v_sender and user_two_id = v_actor/,
     );
+  });
+
+  it("takes nothing away, so it can be applied before the deploy", () => {
+    expect(sql).not.toContain("revoke all privileges on table");
+    expect(sql).not.toContain("drop policy");
+  });
+});
+
+describe("social graph migration, second half", () => {
+  const sql = readMigration("lock_down_social_graph_grants").toLowerCase();
+
+  it("removes direct writes and grants only safe membership/state columns", () => {
+    expect(sql).toContain("and status is not null");
     expect(sql).toContain("revoke all privileges on table public.friendships");
     expect(sql).toContain("revoke all privileges on table public.conversation_members");
     expect(sql).toContain("grant update (last_read_at, hidden_at, muted_at)");
@@ -153,5 +167,9 @@ describe("social graph migration", () => {
     expect(sql).toContain(
       'drop policy if exists "conversation members can create notifications for each other"',
     );
+  });
+
+  it("says out loud that it must not go first", () => {
+    expect(sql).toContain("apply this only once the deploy");
   });
 });

@@ -9,12 +9,24 @@
 -- So the pair becomes part of the cache key rather than a tag on a single row:
 -- every pair caches independently and switching back is free.
 --
--- Rows written before this migration carry no pair. They cannot be labelled
--- retroactively — asserting a pair that was never recorded is how a French
--- meaning gets served as an Italian one — and the application already treats
--- them as misses, so they are deleted rather than left unreachable forever.
--- The cost is that those messages are read once more, at the same price the
--- first reading cost.
+-- ── Half one of two: safe to apply before the deploy ───────────────────
+--
+-- Everything here is additive, with one exception noted below. The columns
+-- arrive nullable and the existing primary key stays, so the browser code in
+-- production right now — which writes no pair at all — keeps working. The
+-- unique index on the full key is created here rather than in the second half
+-- so that the deploy which follows has something for its upsert to conflict
+-- on from its first request.
+--
+-- The exception: rows written before this migration carry no pair. They
+-- cannot be labelled retroactively — asserting a pair that was never recorded
+-- is how a French meaning gets served as an Italian one — and every read in
+-- the new code filters on a pair that a NULL cannot match, so they are
+-- deleted here rather than left unreachable. The cost is that those messages
+-- are read once more, at the price the first reading cost.
+--
+-- 20260911120100_message_analysis_pair_key finishes the job and must be
+-- applied only *after* the deploy is live.
 
 alter table public.message_language_analysis
   add column if not exists learning_language text,
@@ -34,24 +46,21 @@ delete from public.message_language_analysis
 where learning_language is null
    or native_language is null;
 
-alter table public.message_language_analysis
-  alter column learning_language set not null,
-  alter column native_language set not null;
-
-alter table public.detected_phrases
-  alter column learning_language set not null,
-  alter column native_language set not null;
-
+-- Tolerant of the all-NULL shape for as long as the previous deploy is still
+-- writing it. The second half removes that branch.
 alter table public.message_language_analysis
   drop constraint if exists message_language_analysis_language_pair_check;
 
 alter table public.message_language_analysis
   add constraint message_language_analysis_language_pair_check
   check (
-    learning_language in ('en', 'zh-TW', 'es', 'fr', 'it')
-    and native_language in ('en', 'zh-TW', 'es', 'fr', 'it')
-    and learning_language <> native_language
-  );
+    (learning_language is null and native_language is null)
+    or (
+      learning_language in ('en', 'zh-TW', 'es', 'fr', 'it')
+      and native_language in ('en', 'zh-TW', 'es', 'fr', 'it')
+      and learning_language <> native_language
+    )
+  ) not valid;
 
 alter table public.detected_phrases
   drop constraint if exists detected_phrases_language_pair_check;
@@ -59,22 +68,25 @@ alter table public.detected_phrases
 alter table public.detected_phrases
   add constraint detected_phrases_language_pair_check
   check (
-    learning_language in ('en', 'zh-TW', 'es', 'fr', 'it')
-    and native_language in ('en', 'zh-TW', 'es', 'fr', 'it')
-    and learning_language <> native_language
+    (learning_language is null and native_language is null)
+    or (
+      learning_language in ('en', 'zh-TW', 'es', 'fr', 'it')
+      and native_language in ('en', 'zh-TW', 'es', 'fr', 'it')
+      and learning_language <> native_language
+    )
+  ) not valid;
+
+-- The full cache key, as a unique index for now. It becomes the primary key
+-- in the second half, once the columns can be made NOT NULL.
+create unique index if not exists message_language_analysis_pair_key
+  on public.message_language_analysis (
+    message_id,
+    user_id,
+    learning_language,
+    native_language
   );
 
--- The pair joins the primary key. `detected_phrases` has no foreign key into
--- this table — it references `messages` and `auth.users` directly — so the key
--- can be replaced without dropping and rebuilding anything else.
-alter table public.message_language_analysis
-  drop constraint if exists message_language_analysis_pkey;
-
-alter table public.message_language_analysis
-  add constraint message_language_analysis_pkey
-  primary key (message_id, user_id, learning_language, native_language);
-
--- Phrases are read by (reader, messages, pair) and rendered in stored order.
+-- Phrases are read by (reader, pair, messages) and rendered in stored order.
 create index if not exists detected_phrases_reader_pair_idx
   on public.detected_phrases (
     user_id,
@@ -85,10 +97,10 @@ create index if not exists detected_phrases_reader_pair_idx
   );
 
 comment on column public.message_language_analysis.learning_language is
-  'Learning side of the directed profile pair this reading was generated for. Part of the primary key: each pair caches independently.';
+  'Learning side of the directed profile pair this reading was generated for. Becomes part of the primary key so each pair caches independently.';
 
 comment on column public.message_language_analysis.native_language is
-  'Native/support side of the directed profile pair the meanings are written in. Part of the primary key.';
+  'Native/support side of the directed profile pair the meanings are written in. Becomes part of the primary key.';
 
 comment on column public.detected_phrases.learning_language is
   'Learning side of the pair these phrases were detected for, matching the analysis row they belong to.';

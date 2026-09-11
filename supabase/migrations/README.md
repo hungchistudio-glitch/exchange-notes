@@ -45,6 +45,28 @@ stamping its own version:
 `20260904173633`, and has been renamed on the same pass. All four files now
 match their rows, and the two sets are exactly equal at 66 each.
 
+And twice more, found on 2026-09-11 while checking parity before applying the
+landing-page branch's five migrations:
+
+| was committed as | the database recorded |
+| --- | --- |
+| `20260910190000_ai_quota_server_only` | `20260910192557` |
+| `20260910190100_ai_quota_drop_client_callable` | `20260910193025` |
+
+That pass also turned up the other direction of the same problem — SQL applied
+to production that was never committed at all:
+
+| recorded in the database | where the file was |
+| --- | --- |
+| `20260909130734_schedule_yumi_reminders` | open on PR #116, unmerged |
+| `20260909130947_move_pg_net_out_of_public` | open on PR #116, unmerged |
+
+Both are committed now, verbatim from that branch, having been checked
+statement-for-statement against
+`supabase_migrations.schema_migrations.statements`. **Applying from a branch
+and merging it are two separate acts, and production only ever saw the first
+one.**
+
 The lesson keeps being the same one: **read the recorded version back
 immediately after applying, and rename the file to match before committing.**
 

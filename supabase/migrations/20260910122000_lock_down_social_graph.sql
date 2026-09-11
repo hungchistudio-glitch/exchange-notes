@@ -3,6 +3,16 @@
 -- requests, friendships and conversation memberships half-written whenever a
 -- later request failed. Keep reads under RLS, but make every relationship
 -- mutation one authenticated, serialized database transaction.
+--
+-- ── Half one of two: this one is safe to apply before the deploy ───────
+--
+-- Adding the functions takes nothing away. The browser code running in
+-- production right now does not call them and is unaffected; the code in the
+-- deploy that follows calls nothing else. Applying this first is what lets
+-- the two versions overlap without a window in which one of them is broken.
+--
+-- 20260911120000_lock_down_social_graph_grants removes the direct table
+-- writes, and must be applied only *after* that deploy is live.
 
 create or replace function public.is_conversation_member(
   requested_conversation_id uuid
@@ -293,65 +303,6 @@ begin
   return v_removed > 0;
 end;
 $function$;
-
--- Retain user-scoped reads, but remove all direct relationship construction.
-drop policy if exists "Users can send requests" on public.friend_requests;
-drop policy if exists "Users can update their own friend requests" on public.friend_requests;
-drop policy if exists "Receiver can respond to a request" on public.friend_requests;
-drop policy if exists "Sender or receiver can remove a request" on public.friend_requests;
-
-drop policy if exists "Users can create friendships they're part of" on public.friendships;
-drop policy if exists "Users can create a friendship they're part of" on public.friendships;
-drop policy if exists "Users can delete friendships they're part of" on public.friendships;
-
-drop policy if exists "Authenticated users can create conversations" on public.conversations;
-drop policy if exists "Users can add members to conversations they're in" on public.conversation_members;
-drop policy if exists "Users can update their own membership" on public.conversation_members;
-
-drop policy if exists "Conversation members can create notifications for each other" on public.notifications;
-
-revoke all privileges on table public.friend_requests from public, anon, authenticated;
-grant select on table public.friend_requests to authenticated;
-
-revoke all privileges on table public.friendships from public, anon, authenticated;
-grant select on table public.friendships to authenticated;
-
-revoke all privileges on table public.conversations from public, anon, authenticated;
-grant select on table public.conversations to authenticated;
-
-revoke all privileges on table public.conversation_members from public, anon, authenticated;
-grant select on table public.conversation_members to authenticated;
-grant update (last_read_at, hidden_at, muted_at)
-  on table public.conversation_members to authenticated;
-
-revoke update (conversation_id, user_id, joined_at)
-  on table public.conversation_members from public, anon, authenticated;
-
-revoke all privileges on table public.notifications from public, anon, authenticated;
-grant select, delete on table public.notifications to authenticated;
-grant update (read_at) on table public.notifications to authenticated;
-revoke update (user_id, type, actor_id, conversation_id, message_id, title, body, created_at)
-  on table public.notifications from public, anon, authenticated;
-
--- Constraints are enforced for new rows immediately. NOT VALID avoids turning
--- the deployment into an unreviewed cleanup of historical production data.
-alter table public.friend_requests
-  add constraint friend_requests_shape_check
-  check (
-    sender_id is not null
-    and receiver_id is not null
-    and sender_id <> receiver_id
-    and status is not null
-    and status in ('pending', 'accepted', 'declined')
-  ) not valid;
-
-alter table public.friendships
-  add constraint friendships_canonical_pair_check
-  check (
-    user_one_id is not null
-    and user_two_id is not null
-    and user_one_id < user_two_id
-  ) not valid;
 
 revoke all on function public.is_conversation_member(uuid)
   from public, anon, authenticated;

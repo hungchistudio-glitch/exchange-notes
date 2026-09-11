@@ -1,9 +1,8 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 import { listAnalysisForMessages } from "@/lib/messages/decode";
+import { readMigration } from "./readMigration";
 
 type Filters = Record<string, unknown>;
 
@@ -50,13 +49,27 @@ function recordingClient(rowsByTable: Record<string, unknown[]>) {
   };
 }
 
-const migration = readFileSync(
-  join(
-    process.cwd(),
-    "supabase/migrations/20260911114625_message_analysis_language_pair.sql",
-  ),
-  "utf8",
-);
+/*
+ * Two migrations, applied either side of the deploy. The first has to stay
+ * additive or the running app writes a NULL pair into a NOT NULL column; the
+ * second is where the key actually changes.
+ */
+const additive = readMigration("message_analysis_language_pair");
+const restrictive = readMigration("message_analysis_pair_key");
+
+/**
+ * The statements, without the prose around them.
+ *
+ * The headers of these two files discuss the primary key and the NOT NULLs
+ * at length, so an assertion that a migration does *not* do something has to
+ * read the SQL rather than the explanation of it.
+ */
+function statementsOf(sql: string): string {
+  return sql
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("--"))
+    .join("\n");
+}
 
 describe("message-analysis language cache", () => {
   it("loads only the reader's current directed pair", async () => {
@@ -92,36 +105,66 @@ describe("message-analysis language cache", () => {
     });
   });
 
-  it("makes the pair part of the cache key on both tables", () => {
-    expect(migration).toContain(
-      "primary key (message_id, user_id, learning_language, native_language)",
-    );
-    expect(migration).toContain("detected_phrases_reader_pair_idx");
+  it("adds the columns nullable, so the running app keeps writing", () => {
+    for (const table of ["message_language_analysis", "detected_phrases"]) {
+      expect(additive).toContain(`alter table public.${table}
+  add column if not exists learning_language text,
+  add column if not exists native_language text;`);
+    }
 
-    for (const table of [
-      "message_language_analysis",
-      "detected_phrases",
-    ]) {
-      expect(migration).toContain(`alter table public.${table}
+    const statements = statementsOf(additive);
+    expect(statements).not.toContain("set not null");
+    expect(statements).not.toContain("add constraint message_language_analysis_pkey");
+    expect(statements).toContain(
+      "(learning_language is null and native_language is null)",
+    );
+  });
+
+  it("creates the full key up front, for the deploy's first upsert to land on", () => {
+    // The route conflicts on all four columns from its very first request, so
+    // the unique index cannot wait for the second half.
+    expect(additive).toContain(`create unique index if not exists message_language_analysis_pair_key`);
+    expect(additive).toContain("detected_phrases_reader_pair_idx");
+  });
+
+  it("makes the pair mandatory and the key, in the half that runs after", () => {
+    for (const table of ["message_language_analysis", "detected_phrases"]) {
+      expect(restrictive).toContain(`alter table public.${table}
   alter column learning_language set not null,
   alter column native_language set not null;`);
     }
+
+    // Adopted rather than rebuilt, so no second copy of the index is written.
+    expect(restrictive).toContain(
+      "primary key using index message_language_analysis_pair_key",
+    );
+    expect(restrictive.toLowerCase()).toContain("apply this only once the deploy");
   });
 
   it("constrains both sides of the pair to a supported, different language", () => {
-    expect(migration).toContain("learning_language <> native_language");
-    for (const code of ["en", "zh-TW", "es", "fr", "it"]) {
-      expect(migration).toContain(`'${code}'`);
+    for (const sql of [additive, restrictive]) {
+      expect(sql).toContain("learning_language <> native_language");
+      for (const code of ["en", "zh-TW", "es", "fr", "it"]) {
+        expect(sql).toContain(`'${code}'`);
+      }
     }
+
+    // The tolerant branch exists only for the overlap.
+    expect(statementsOf(restrictive)).not.toContain(
+      "(learning_language is null and native_language is null)",
+    );
   });
 
   it("clears rows that were written before a pair was recorded", () => {
     // Left in place they would be unreachable forever: every read filters on
-    // a pair, and a NULL matches none of the twenty.
-    for (const table of ["detected_phrases", "message_language_analysis"]) {
-      expect(migration).toContain(`delete from public.${table}
+    // a pair, and a NULL matches none of the twenty. Both halves sweep, so
+    // anything the previous deploy wrote during the window goes too.
+    for (const sql of [additive, restrictive]) {
+      for (const table of ["detected_phrases", "message_language_analysis"]) {
+        expect(sql).toContain(`delete from public.${table}
 where learning_language is null
    or native_language is null;`);
+      }
     }
   });
 });
