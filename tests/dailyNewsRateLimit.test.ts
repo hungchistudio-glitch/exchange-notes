@@ -93,6 +93,42 @@ describe("running the batches", () => {
     vi.useRealTimers();
   });
 
+  it("stops starting batches once the run is out of time", async () => {
+    /*
+     * Serial batches make the last one the one at risk: a function killed at
+     * sixty seconds writes nothing, so a batch that overruns costs the whole
+     * day's cards rather than its own. Past the deadline the rest are given
+     * up deliberately and whatever finished is kept.
+     */
+    const started: number[] = [];
+    const deadline = Date.now() + 30;
+
+    const results = await runBatches(
+      [1, 2, 3],
+      async (n) => {
+        started.push(n);
+        await new Promise((r) => setTimeout(r, 40));
+        return `cards-${n}`;
+      },
+      deadline,
+    );
+
+    expect(started).toEqual([1]);
+    expect(results[0]).toEqual({ status: "fulfilled", value: "cards-1" });
+    expect(results[1].status).toBe("rejected");
+    expect(results[2].status).toBe("rejected");
+  });
+
+  it("runs every batch when there is time for them", async () => {
+    const results = await runBatches([1, 2, 3], async (n) => `cards-${n}`);
+
+    expect(results.map((r) => r.status)).toEqual([
+      "fulfilled",
+      "fulfilled",
+      "fulfilled",
+    ]);
+  });
+
   it("keeps the other batches when one fails for good", async () => {
     const results = await runBatches([1, 2, 3], async (n) => {
       if (n === 2) throw new Error("model produced nothing");

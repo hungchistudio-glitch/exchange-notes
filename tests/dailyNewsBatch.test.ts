@@ -32,6 +32,24 @@ describe("articlesPerBatch", () => {
     }
   });
 
+  it("keeps twelve articles under the free tier's request allowance", () => {
+    /*
+     * The regression this exists for. NEWS_SLOTS produces twelve articles a
+     * day. At two languages that was two requests. At five the batch shrank
+     * to two articles and it became six — and Gemini's free tier answered
+     * with 429s naming a limit of five, losing three batches on 09-10 and
+     * every batch on several days before it.
+     *
+     * Six is the number that must not come back, whatever the language count.
+     */
+    const ARTICLES_PER_DAY = 12;
+
+    for (let languages = 2; languages <= LANGUAGE_CODES.length; languages += 1) {
+      const requests = Math.ceil(ARTICLES_PER_DAY / articlesPerBatch(languages));
+      expect(requests).toBeLessThanOrEqual(4);
+    }
+  });
+
   it("never asks for a batch of one", () => {
     // A single-article batch loses the shared context that makes the model's
     // vocabulary picks differ from card to card.
