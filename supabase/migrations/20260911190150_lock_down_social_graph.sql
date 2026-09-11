@@ -11,7 +11,7 @@
 -- deploy that follows calls nothing else. Applying this first is what lets
 -- the two versions overlap without a window in which one of them is broken.
 --
--- 20260911190400_lock_down_social_graph_grants removes the direct table
+-- 20260911192656_lock_down_social_graph_grants removes the direct table
 -- writes, and must be applied only *after* that deploy is live.
 
 create or replace function public.is_conversation_member(
