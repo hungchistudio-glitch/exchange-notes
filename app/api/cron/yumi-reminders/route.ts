@@ -45,10 +45,24 @@ const DEFAULT_TIME_ZONE =
  *
  * The hourly knock does not come from vercel.json. Hobby triggers a cron
  * once a day and allows two, both already spoken for, so the cadence comes
- * from .github/workflows/yumi-reminders.yml — which is also where the setup
- * this depends on is written down. The daily entry in vercel.json stays as a
- * backstop; a second call in the same local day finds the claim made and
- * counts it as a duplicate.
+ * from pg_cron inside Supabase: the `yumi-reminders-hourly` job calls
+ * private.dispatch_yumi_reminders(), which reads its bearer token out of the
+ * vault and fires net.http_get at this route. That is set up in
+ * 20260909130734_schedule_yumi_reminders. The daily entry in vercel.json
+ * stays as a backstop; a second call in the same local day finds the claim
+ * made and counts it as a duplicate.
+ *
+ * A scheduled GitHub Actions workflow did this until 2026-09-11. It was
+ * removed because GitHub runs schedules best-effort and was skipping most
+ * hours — measured arrivals three to five hours apart, which for a gate
+ * expressed in whole local hours means whole timezones going unserved.
+ *
+ * One thing to know if the reminders ever go quiet: dispatch_yumi_reminders
+ * returns *successfully* when the vault secret is missing — it raises a
+ * warning and stops. So a green cron.job_run_details is not evidence that
+ * anything was sent. The evidence is net._http_response: a row per attempt,
+ * with the status code this route replied. It sat empty for two days after
+ * the schedule was created, because the secret had never been added.
  */
 const REMINDER_LOCAL_HOUR = 20;
 
