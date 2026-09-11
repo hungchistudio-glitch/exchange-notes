@@ -42,7 +42,6 @@ describe("voice lookup quota", () => {
 
     expect(response.status).toBe(429);
     expect(mocks.consumeDailyQuota).toHaveBeenCalledWith(
-      expect.anything(),
       "reader-1",
       "voice_lookup",
       20,

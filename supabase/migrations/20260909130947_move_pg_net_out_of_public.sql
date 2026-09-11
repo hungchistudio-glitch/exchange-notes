@@ -1,7 +1,3 @@
--- Applied directly to production on 2026-09-09 and never written down. This
--- file is the statement recorded in supabase_migrations.schema_migrations for
--- version 20260909130947.
-
 /*
  * pg_net belongs beside the other extensions, not in public.
  *

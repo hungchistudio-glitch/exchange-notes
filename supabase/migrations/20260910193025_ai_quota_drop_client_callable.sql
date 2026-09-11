@@ -1,7 +1,7 @@
 -- =========================================================
 -- Remove the AI quota functions a browser could still call
 --
--- The second half of 20260910190000, split out so the two can be applied
+-- The second half of 20260910192557, split out so the two can be applied
 -- either side of a deploy. That file added consume/refund in a form that
 -- takes the user id and is granted to service_role alone; this one removes
 -- the auth.uid() forms that any signed-in reader could reach at

@@ -23,7 +23,7 @@
 -- This half is additive on purpose. Removing the old signatures in the
 -- same transaction would break whatever is deployed at the moment it runs,
 -- because the running code still calls them. So this file only adds the
--- locked-down forms; 20260910190100 removes the reachable ones, and is
+-- locked-down forms; 20260910193025 removes the reachable ones, and is
 -- meant to be applied after the deploy that switches the callers over.
 -- =========================================================
 

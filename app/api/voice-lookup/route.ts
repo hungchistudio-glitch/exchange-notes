@@ -61,12 +61,10 @@ const MAX_REQUESTS_PER_DAY = readBoundedInteger(
 );
 
 export async function POST(request: Request) {
-  let quotaClient: Awaited<ReturnType<typeof createClient>> | null = null;
   let chargedUserId: string | null = null;
 
   try {
     const supabase = await createClient();
-    quotaClient = supabase;
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -97,12 +95,7 @@ export async function POST(request: Request) {
     }
 
     if (
-      !(await consumeDailyQuota(
-        supabase,
-        user.id,
-        OPERATION,
-        MAX_REQUESTS_PER_DAY,
-      ))
+      !(await consumeDailyQuota(user.id, OPERATION, MAX_REQUESTS_PER_DAY))
     ) {
       return NextResponse.json(
         { error: "Daily voice lookup limit reached", code: "daily_limit" },
@@ -189,14 +182,14 @@ export async function POST(request: Request) {
     console.error("Voice lookup failed:", lastError);
 
     if (chargedUserId) {
-      await refundDailyQuota(supabase, chargedUserId, OPERATION);
+      await refundDailyQuota(chargedUserId, OPERATION);
       chargedUserId = null;
     }
 
     return NextResponse.json({ heard: false });
   } catch (error) {
-    if (quotaClient && chargedUserId) {
-      await refundDailyQuota(quotaClient, chargedUserId, OPERATION);
+    if (chargedUserId) {
+      await refundDailyQuota(chargedUserId, OPERATION);
     }
 
     console.error("Voice lookup failed:", error);

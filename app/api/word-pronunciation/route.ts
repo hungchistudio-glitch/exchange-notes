@@ -80,13 +80,8 @@ export async function POST(request: Request) {
 
     const budget = {
       consume: () =>
-        consumeDailyQuota(
-          supabase,
-          user.id,
-          OPERATION,
-          MAX_REQUESTS_PER_DAY,
-        ),
-      refund: () => refundDailyQuota(supabase, user.id, OPERATION),
+        consumeDailyQuota(user.id, OPERATION, MAX_REQUESTS_PER_DAY),
+      refund: () => refundDailyQuota(user.id, OPERATION),
     };
 
     const body = (await request.json()) as {

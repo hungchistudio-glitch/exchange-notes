@@ -302,7 +302,7 @@ describe("recovering from a counter that was unreachable", () => {
 describe("the counter is unreachable from a browser", () => {
   /*
    * The database half of this lives in
-   * supabase/migrations/20260910190000_ai_quota_server_only.sql, which
+   * supabase/migrations/20260910192557_ai_quota_server_only.sql, which
    * grants EXECUTE on both functions to service_role alone. This is the
    * application half, and it is asserted from source because the failure
    * it guards against is invisible at runtime: handing these RPCs a
