@@ -92,18 +92,6 @@ const traditionalChinese: TranslationDictionary = {
         image: "影像",
       },
     },
-    lookup: {
-      ariaLabel: "單字查詢預覽",
-      sourceLanguage: "English",
-      targetLanguage: "繁體中文",
-      query: "serendipity",
-      partOfSpeech: "名詞",
-      meaning: "沒有刻意尋找，卻意外遇見美好事物",
-      translation: "意外發現美好事物的機緣",
-      example: "在剛剛好的時刻遇見一個新詞，就像一場美好的巧合。",
-      saved: "已收藏",
-      savedNote: "留下一個詞，等以後再回來。",
-    },
     notes: {
       eyebrow: "留下",
       title: "不只記住意思，也留下當時想說的話。",
@@ -265,7 +253,6 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     login: {
-      eyebrow: "英文 × 繁體中文",
       title: "Exchange Notes",
       subtitle: "登入你的私人語言學習空間。",
       googleSubtitle: "透過真實對話與日常生活，自然地學習語言。",
@@ -656,7 +643,6 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     source: {
-      eyebrow: "英文 × 繁體中文",
       title: "把生活變成單字",
       description:
         "拍攝物品或選擇照片，AI 會建立一張雙語單字卡，讓你確認後再儲存。",

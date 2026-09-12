@@ -95,19 +95,6 @@ const english: TranslationDictionary = {
         image: "image",
       },
     },
-    lookup: {
-      ariaLabel: "Word lookup preview",
-      sourceLanguage: "English",
-      targetLanguage: "繁體中文",
-      query: "serendipity",
-      partOfSpeech: "noun",
-      meaning: "finding something good without looking for it",
-      translation: "意外發現美好事物的機緣",
-      example:
-        "Learning a word at exactly the right moment feels like serendipity.",
-      saved: "Saved",
-      savedNote: "One word, kept for later.",
-    },
     notes: {
       eyebrow: "Keep",
       title: "Save the sentence, not just the definition.",
@@ -269,7 +256,6 @@ const english: TranslationDictionary = {
     },
 
     login: {
-      eyebrow: "English × Traditional Chinese",
       title: "Exchange Notes",
       subtitle: "Log in to your private learning space.",
       googleSubtitle:
@@ -668,7 +654,6 @@ const english: TranslationDictionary = {
     },
 
     source: {
-      eyebrow: "English × Traditional Chinese",
       title: "Turn life into words",
       description:
         "Photograph an object or choose an image. AI will create a bilingual vocabulary card that you can review before saving.",

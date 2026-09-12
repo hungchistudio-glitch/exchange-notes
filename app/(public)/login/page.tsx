@@ -3,6 +3,7 @@
 import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { learningLanguageList } from "@/lib/languages";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -20,10 +21,18 @@ export default function LoginPage() {
         */}
         <ExchangeNotesLogo className="mb-6 h-11 w-11 text-[color:var(--yumi-mark)]" />
 
-        {/* Fixed bilingual brand mark — always shown in both scripts
-            regardless of interface language, not app UI copy. */}
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
-          English × 繁體中文
+        {/*
+          The languages themselves, each in its own name, and deliberately
+          not translated: this is the brand mark rather than UI copy, and a
+          reader who arrives wanting Italian should see Italiano whatever the
+          interface happens to be set to.
+
+          Read from the language table. Written out by hand it said
+          "English × 繁體中文" for as long as the app had five languages — on
+          the one screen every new reader sees before anything else.
+        */}
+        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] leading-5 text-black">
+          {learningLanguageList()}
         </p>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight text-black">

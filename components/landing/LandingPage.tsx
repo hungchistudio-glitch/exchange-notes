@@ -34,6 +34,7 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 import {
   INTERFACE_LANGUAGE_CODE,
   getInterfaceLanguageMeta,
+  learningLanguageList,
 } from "@/lib/languages";
 
 import styles from "./LandingPage.module.css";
@@ -940,7 +941,7 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <span>Exchange Notes</span>
-        <span>English · 繁體中文 · Español · Français · Italiano</span>
+        <span>{learningLanguageList()}</span>
       </footer>
     </main>
   );

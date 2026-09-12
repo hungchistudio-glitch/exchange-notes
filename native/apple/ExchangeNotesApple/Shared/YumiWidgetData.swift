@@ -148,11 +148,6 @@ struct YumiWidgetData: Codable {
         return []
     }
 
-    var isLearningTraditionalChinese: Bool {
-        learningLanguage == "traditional-chinese"
-        || learningLanguage == "zh-TW"
-    }
-
     static let preview = YumiWidgetData(
         cookieCount: 2,
         cookieGoal: 3,
@@ -411,5 +406,63 @@ enum YumiWidgetStore {
         }
 
         return saved
+    }
+}
+
+extension YumiWidgetWord {
+    /*
+     * Which language each side of this card is in, and what to show for it.
+     *
+     * Schema v2 says so directly. A v1 snapshot had only an English side and
+     * a Chinese side — which is the assumption this app outgrew — so those
+     * are the fallback rather than the answer, and a widget that has not
+     * refreshed since the upgrade still reads correctly.
+     */
+
+    var resolvedPrimaryLanguage: String {
+        nonEmpty(primaryLanguage) ?? "en"
+    }
+
+    var resolvedSecondaryLanguage: String {
+        nonEmpty(secondaryLanguage) ?? "zh-TW"
+    }
+
+    var resolvedPrimaryText: String {
+        nonEmpty(primaryText) ?? englishWord
+    }
+
+    var resolvedSecondaryText: String {
+        nonEmpty(secondaryText) ?? traditionalChineseWord
+    }
+
+    var resolvedPrimaryPronunciation: String {
+        nonEmpty(primaryPronunciation) ?? ""
+    }
+
+    /// Zhuyin before pinyin, matching the app: a reader who has chosen zhuyin
+    /// has chosen not to be shown pinyin.
+    var resolvedSecondaryPronunciation: String {
+        nonEmpty(secondaryPronunciation)
+            ?? nonEmpty(zhuyin)
+            ?? nonEmpty(pinyin)
+            ?? ""
+    }
+
+    var hasEitherSide: Bool {
+        !resolvedPrimaryText.isEmpty
+        || !resolvedSecondaryText.isEmpty
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        guard
+            let value,
+            !value.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        else {
+            return nil
+        }
+
+        return value
     }
 }

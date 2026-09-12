@@ -98,19 +98,6 @@ const italian: TranslationDictionary = {
         image: "immagine",
       },
     },
-    lookup: {
-      ariaLabel: "Anteprima della ricerca di una parola",
-      sourceLanguage: "English",
-      targetLanguage: "Italiano",
-      query: "serendipity",
-      partOfSpeech: "sostantivo",
-      meaning: "trovare qualcosa di bello senza cercarlo",
-      translation: "scoperta fortunata e inattesa",
-      example:
-        "Incontrare una parola nel momento perfetto sembra una felice coincidenza.",
-      saved: "Salvata",
-      savedNote: "Una parola conservata per dopo.",
-    },
     notes: {
       eyebrow: "Conserva",
       title: "Salva la frase, non solo la definizione.",
@@ -271,7 +258,6 @@ const italian: TranslationDictionary = {
       continue: "Continua",
     },
     login: {
-      eyebrow: "Inglese × Cinese tradizionale",
       title: "Exchange Notes",
       subtitle: "Accedi al tuo spazio di studio privato.",
       googleSubtitle: "Impara le lingue in modo naturale, con conversazioni vere e vita quotidiana.",
@@ -634,7 +620,6 @@ const italian: TranslationDictionary = {
       save: "Salva",
     },
     source: {
-      eyebrow: "Inglese × Cinese tradizionale",
       title: "Trasforma la vita in parole",
       description: "Fotografa un oggetto o scegli un'immagine. L'IA creerà una scheda bilingue che potrai controllare prima di salvare.",
       useCamera: "Usa la fotocamera",
