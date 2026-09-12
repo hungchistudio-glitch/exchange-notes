@@ -115,18 +115,6 @@ export type TranslationDictionary = {
         image: string;
       };
     };
-    lookup: {
-      ariaLabel: string;
-      sourceLanguage: string;
-      targetLanguage: string;
-      query: string;
-      partOfSpeech: string;
-      meaning: string;
-      translation: string;
-      example: string;
-      saved: string;
-      savedNote: string;
-    };
     notes: {
       eyebrow: string;
       title: string;
@@ -283,7 +271,6 @@ export type TranslationDictionary = {
     };
 
     login: {
-      eyebrow: string;
       title: string;
       subtitle: string;
       googleSubtitle: string;
@@ -631,7 +618,6 @@ export type TranslationDictionary = {
     };
 
     source: {
-      eyebrow: string;
       title: string;
       description: string;
       useCamera: string;

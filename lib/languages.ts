@@ -453,6 +453,37 @@ export function getLearningLanguages(): LanguageMetadata[] {
   );
 }
 
+/**
+ * Every language the app teaches, each in its own name.
+ *
+ * For the screens that introduce the product rather than operate it — the
+ * sign-in card, the error boundary, the landing footer. All three used to
+ * spell "English × 繁體中文" out by hand, and all three were still saying it
+ * long after Spanish, French and Italian arrived: the sign-in card is the
+ * first thing anyone sees, and it was telling them the app spoke two
+ * languages.
+ *
+ * Derived rather than written down, so the sixth language changes these
+ * screens by existing.
+ */
+export function learningLanguageEndonyms(): string[] {
+  return getLearningLanguages().map((language) => language.endonym);
+}
+
+/**
+ * The same list, ready to render.
+ *
+ * All three screens want it identically, so the separator is decided here
+ * rather than three times. The space before each dot is non-breaking: five
+ * names do not fit on one line of a sign-in card, and left to itself the
+ * line broke before a separator and started the second line with a dangling
+ * "· Italiano". Bound to the name in front of it, a break can only happen
+ * after a dot, which is how a separated list is supposed to wrap.
+ */
+export function learningLanguageList(): string {
+  return learningLanguageEndonyms().join("\u00A0· ");
+}
+
 /** Languages the app itself can be displayed in. */
 export function getInterfaceLanguages(): LanguageMetadata[] {
   return LANGUAGE_CODES.map(getLanguage).filter(

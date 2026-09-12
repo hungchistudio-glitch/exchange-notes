@@ -98,19 +98,6 @@ const french: TranslationDictionary = {
         image: "image",
       },
     },
-    lookup: {
-      ariaLabel: "Aperçu de la recherche d'un mot",
-      sourceLanguage: "English",
-      targetLanguage: "Français",
-      query: "serendipity",
-      partOfSpeech: "nom",
-      meaning: "trouver quelque chose de beau sans l'avoir cherché",
-      translation: "heureux hasard · découverte inattendue",
-      example:
-        "Rencontrer un mot au moment parfait ressemble à un heureux hasard.",
-      saved: "Enregistré",
-      savedNote: "Un mot gardé pour plus tard.",
-    },
     notes: {
       eyebrow: "Gardez",
       title: "Gardez la phrase, pas seulement la définition.",
@@ -271,7 +258,6 @@ const french: TranslationDictionary = {
       continue: "Continuer",
     },
     login: {
-      eyebrow: "Anglais × Chinois traditionnel",
       title: "Exchange Notes",
       subtitle: "Connectez-vous à votre espace d'apprentissage privé.",
       googleSubtitle: "Apprenez les langues naturellement, par de vraies conversations et la vie quotidienne.",
@@ -634,7 +620,6 @@ const french: TranslationDictionary = {
       save: "Enregistrer",
     },
     source: {
-      eyebrow: "Anglais × Chinois traditionnel",
       title: "Transformez la vie en mots",
       description: "Photographiez un objet ou choisissez une image. L'IA créera une fiche bilingue que vous pourrez vérifier avant d'enregistrer.",
       useCamera: "Utiliser l'appareil photo",

@@ -1873,86 +1873,76 @@ private struct AudioActions: View {
     let data: YumiWidgetData
     let size: AudioActionSize
 
+    /*
+     * Two buttons, one per side of the card, named by the card's own
+     * languages rather than by the two the app started with.
+     *
+     * These were "A" and "ㄅ" with English and Traditional Chinese labels
+     * hard-coded into them. On a Español × Français card that put a bopomofo
+     * glyph on a button whose text did not exist, and told VoiceOver it was
+     * Traditional Chinese.
+     */
     var body: some View {
         VStack(spacing: 10) {
-            AudioActionButton(
-                badge: "A",
-                text: data.displayedWord.englishWord,
-                style: .english,
-                accessibilityText:
-                    englishAccessibilityText,
-                size: size
-            )
-            .opacity(
-                data.displayedWord.englishWord.isEmpty
-                    ? 0.34
-                    : 1
+            button(
+                language: data.displayedWord
+                    .resolvedPrimaryLanguage,
+                text: data.displayedPrimaryText,
+                style: .primary
             )
 
-            AudioActionButton(
-                badge: "ㄅ",
-                text:
-                    data.displayedWord
-                        .traditionalChineseWord,
-                style: .traditionalChinese,
-                accessibilityText:
-                    chineseAccessibilityText,
-                size: size
-            )
-            .opacity(
-                data.displayedWord
-                    .traditionalChineseWord
-                    .isEmpty
-                    ? 0.34
-                    : 1
+            button(
+                language: data.displayedWord
+                    .resolvedSecondaryLanguage,
+                text: data.displayedSecondaryText,
+                style: .secondary
             )
         }
     }
 
-    private var englishAccessibilityText: String {
-        data.interfaceLanguage
-            == "traditional-chinese"
-            ? "播放英文發音"
-            : "Play English pronunciation"
-    }
-
-    private var chineseAccessibilityText: String {
-        data.interfaceLanguage
-            == "traditional-chinese"
-            ? "播放繁體中文發音"
-            : "Play Traditional Chinese pronunciation"
+    private func button(
+        language: String,
+        text: String,
+        style: AudioLanguageStyle
+    ) -> some View {
+        AudioActionButton(
+            badge: YumiWidgetLanguage.badge(for: language),
+            text: text,
+            language: language,
+            style: style,
+            accessibilityText: YumiWidgetLanguage
+                .playPronunciationLabel(
+                    for: language,
+                    displayedIn: data.interfaceLanguage
+                ),
+            size: size
+        )
+        .opacity(text.isEmpty ? 0.34 : 1)
     }
 }
 
 private struct AudioActionButton: View {
     let badge: String
     let text: String
+    let language: String
     let style: AudioLanguageStyle
     let accessibilityText: String
     let size: AudioActionSize
 
+    /*
+     * One intent carrying the language, rather than one intent per language.
+     * The two that existed — English and Traditional Chinese — could not
+     * speak the other three, and adding three more would have put five
+     * near-identical actions in the Shortcuts app.
+     */
     var body: some View {
-        Group {
-            switch style {
-            case .english:
-                Button(
-                    intent: SpeakYumiEnglishWordIntent(
-                        text: text
-                    )
-                ) {
-                    buttonLabel
-                }
-
-            case .traditionalChinese:
-                Button(
-                    intent:
-                        SpeakYumiTraditionalChineseWordIntent(
-                            text: text
-                        )
-                ) {
-                    buttonLabel
-                }
-            }
+        Button(
+            intent: SpeakYumiCardWordIntent(
+                text: text,
+                language: language
+            )
+        ) {
+            buttonLabel
         }
         .buttonStyle(.plain)
         .disabled(
@@ -1984,9 +1974,14 @@ private struct AudioActionButton: View {
                         width: size.orbitDiameter,
                         height: size.orbitDiameter
                     )
+                    /*
+                      Mirrored between the two buttons. This asked
+                      `badge == "A"`, which stopped being true the moment the
+                      badge came from the language table.
+                    */
                     .rotationEffect(
                         .degrees(
-                            badge == "A"
+                            style == .primary
                             ? -18
                             : 18
                         )
@@ -2044,9 +2039,33 @@ private extension YumiWidgetData {
         YumiWidgetStore.selectedWord(in: self)
     }
 
+    /*
+     * The card's two sides, named by position rather than by language.
+     *
+     * These read `englishWord` and `traditionalChineseWord` before the pool
+     * grew past two languages, which meant a Spanish card had nothing to
+     * show. The resolvers on YumiWidgetWord answer from schema v2 and fall
+     * back to the old pair only for snapshots that predate it.
+     */
+
+    var displayedPrimaryText: String {
+        displayedWord.resolvedPrimaryText
+    }
+
+    var displayedSecondaryText: String {
+        displayedWord.resolvedSecondaryText
+    }
+
+    var displayedPrimaryPronunciation: String {
+        displayedWord.resolvedPrimaryPronunciation
+    }
+
+    var displayedSecondaryPronunciation: String {
+        displayedWord.resolvedSecondaryPronunciation
+    }
+
     var hasWord: Bool {
-        !displayedWord.englishWord.isEmpty
-        || !displayedWord.traditionalChineseWord.isEmpty
+        displayedWord.hasEitherSide
     }
 
     var browsableWordCount: Int {

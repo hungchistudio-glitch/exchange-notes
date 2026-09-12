@@ -2,6 +2,80 @@ import AppIntents
 import AVFoundation
 import Foundation
 
+/*
+ * Speaking one side of a word card, in whatever language that side is in.
+ *
+ * The widget used to hold two intents — English and Traditional Chinese —
+ * one per audio button, because for a long time those were the only two
+ * languages a card could be in. They cannot say a Spanish word, and adding
+ * one apiece for Spanish, French and Italian would have put five
+ * near-identical actions in the Shortcuts app for what is one action with a
+ * parameter.
+ *
+ * The two originals are kept below. They are what any shortcut a reader has
+ * already built refers to, and a shortcut that stops resolving is a worse
+ * outcome than a redundant pair of intents.
+ */
+struct SpeakYumiCardWordIntent: AudioPlaybackIntent {
+    static let title: LocalizedStringResource =
+        "Play Yumi pronunciation"
+
+    static let description = IntentDescription(
+        "Plays a saved word in its own language without opening Exchange Notes."
+    )
+
+    static let openAppWhenRun = false
+
+    @Parameter(title: "Text")
+    var text: String
+
+    /// A BCP-47 content code — `en`, `zh-TW`, `es`, `fr`, `it`. Unknown
+    /// values fall back to a voice rather than to silence.
+    @Parameter(title: "Language")
+    var language: String
+
+    init() {
+        text = ""
+        language = "en"
+    }
+
+    init(text: String, language: String) {
+        self.text = text
+        self.language = language
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        await speakYumiWord(
+            text: text,
+            speechTag: YumiWidgetLanguage.speechTag(
+                for: language
+            )
+        )
+
+        return .result()
+    }
+}
+
+@MainActor
+private func speakYumiWord(
+    text: String,
+    speechTag: String
+) async {
+    YumiSpeechDiagnostics.write(
+        phase: "intent-received",
+        language: speechTag,
+        textReady: !text.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty
+    )
+
+    await YumiSpeechPlayback.shared.speak(
+        text: text,
+        language: speechTag
+    )
+}
+
 struct SpeakYumiEnglishWordIntent: AudioPlaybackIntent {
     static let title: LocalizedStringResource =
         "Play Yumi English pronunciation"
@@ -25,21 +99,7 @@ struct SpeakYumiEnglishWordIntent: AudioPlaybackIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let language = "en-US"
-
-        YumiSpeechDiagnostics.write(
-            phase: "intent-received",
-            language: language,
-            textReady: !text.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ).isEmpty
-        )
-
-        await YumiSpeechPlayback.shared.speak(
-            text: text,
-            language: language
-        )
-
+        await speakYumiWord(text: text, speechTag: "en-US")
         return .result()
     }
 }
@@ -69,21 +129,7 @@ struct SpeakYumiTraditionalChineseWordIntent:
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let language = "zh-TW"
-
-        YumiSpeechDiagnostics.write(
-            phase: "intent-received",
-            language: language,
-            textReady: !text.trimmingCharacters(
-                in: .whitespacesAndNewlines
-            ).isEmpty
-        )
-
-        await YumiSpeechPlayback.shared.speak(
-            text: text,
-            language: language
-        )
-
+        await speakYumiWord(text: text, speechTag: "zh-TW")
         return .result()
     }
 }

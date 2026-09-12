@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { learningLanguageList } from "@/lib/languages";
+
 /* =========================================================
    The screen a failed render lands on
 
@@ -47,8 +49,9 @@ export default function AppError({
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-surface px-5 py-8 text-black">
       <section className="w-full max-w-md rounded-3xl bg-white p-7 shadow-sm sm:p-8">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-black">
-          English × 繁體中文
+        {/* The same brand mark as the sign-in card, from the same table. */}
+        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] leading-5 text-black">
+          {learningLanguageList()}
         </p>
 
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-black">

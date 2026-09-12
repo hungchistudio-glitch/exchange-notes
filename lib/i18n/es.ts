@@ -95,19 +95,6 @@ const spanish: TranslationDictionary = {
         image: "imagen",
       },
     },
-    lookup: {
-      ariaLabel: "Vista previa de búsqueda de palabras",
-      sourceLanguage: "English",
-      targetLanguage: "Español",
-      query: "serendipity",
-      partOfSpeech: "sustantivo",
-      meaning: "encontrar algo bueno sin estar buscándolo",
-      translation: "hallazgo afortunado e inesperado",
-      example:
-        "Encontrar una palabra justo en el momento adecuado parece una serendipia.",
-      saved: "Guardada",
-      savedNote: "Una palabra guardada para después.",
-    },
     notes: {
       eyebrow: "Guarda",
       title: "Guarda la frase, no solo la definición.",
@@ -270,7 +257,6 @@ const spanish: TranslationDictionary = {
     },
 
     login: {
-      eyebrow: "Inglés × Chino tradicional",
       title: "Exchange Notes",
       subtitle: "Entra en tu espacio privado de aprendizaje.",
       googleSubtitle:
@@ -668,7 +654,6 @@ const spanish: TranslationDictionary = {
     },
 
     source: {
-      eyebrow: "Inglés × Chino tradicional",
       title: "Convierte la vida en palabras",
       description:
         "Fotografía un objeto o elige una imagen. La IA creará una tarjeta de vocabulario bilingüe que podrás revisar antes de guardarla.",
