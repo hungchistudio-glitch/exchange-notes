@@ -13,8 +13,8 @@ html[data-interface-mode="yumi-cosmic"] {
 
   /* Vocabulary still consumes the legacy card contract. Keep its surfaces
      opaque and its hover state in this palette as well. */
-  --en-surface: #1c1a21;
-  --en-surface-secondary: #26232c;
+  --en-surface: var(--cosmic-surface-card);
+  --en-surface-secondary: var(--cosmic-surface-instrument);
   --en-page-elevated: #302b36;
   --en-surface-hover: #302b36;
   --en-border: #3d3643;
@@ -36,6 +36,31 @@ html[data-interface-mode="yumi-cosmic"] {
   --cosmic-card-radius: 1.875rem;
   --cosmic-ink: #f5f2f0;
   --cosmic-muted: #bdb9c1;
+  --cosmic-ink-dim: #c5bbc7;
+  /* Ink for a control filled with mint, where pale text would disappear. */
+  --cosmic-on-mint: #172b23;
+
+  /*
+   * Surfaces, sunken to raised. Every panel in this mode takes one of these,
+   * so the palette moves from one place. A raw hex in a rule below means a
+   * surface nobody named — add it here instead.
+   */
+  --cosmic-surface-card: #1c1a21;
+  --cosmic-surface-sheet: #1b191f;
+  --cosmic-surface-panel: #1e1d24;
+  --cosmic-surface-control: #24282a;
+  --cosmic-surface-chip: #242129;
+  --cosmic-surface-instrument: #26232c;
+  --cosmic-surface-note-lit: #27242e;
+  --cosmic-surface-note-shade: #1a191f;
+  --cosmic-surface-notes: #1c1d28;
+  --cosmic-surface-notes-glow: #30354e;
+
+  /* Hairlines, in the same pale violet as --cosmic-ring. */
+  --cosmic-hairline: rgba(229, 221, 231, 0.12);
+  --cosmic-hairline-soft: rgba(229, 221, 231, 0.09);
+  --cosmic-hairline-cool: rgba(164, 182, 239, 0.16);
+  --cosmic-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 
   --accent-amber: #e8ce8c;
   --accent-amber-ink: #242016;
@@ -49,7 +74,7 @@ html[data-interface-mode="yumi-cosmic"] {
   --yumi-wash-bottom: #111115;
 
   --modal-scrim: #030305;
-  --modal-surface: #1b191f;
+  --modal-surface: var(--cosmic-surface-sheet);
   --modal-ink: #f5f2f0;
   --modal-accent: var(--cosmic-cyan);
   --modal-muted: #b9afb9;
@@ -88,7 +113,7 @@ html[data-interface-mode="yumi-cosmic"] {
 
   --msg-page: #08090b;
   --msg-surface: #17171c;
-  --msg-surface-soft: #242129;
+  --msg-surface-soft: var(--cosmic-surface-chip);
   --msg-line: rgba(229, 221, 231, 0.13);
   --msg-ink: #f5f2f0;
   --msg-ink-soft: #bfb5bf;
@@ -154,7 +179,7 @@ html[data-interface-mode="yumi-cosmic"] .hud-label {
   line-height: 1.5;
   letter-spacing: 0.045em;
   text-transform: none;
-  color: #c5bbc7;
+  color: var(--cosmic-ink-dim);
 }
 
 html[data-interface-mode="yumi-cosmic"] .hud-frame {
@@ -403,7 +428,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-lock[data-saved="true"] {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-console {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 26%, transparent);
-  background-color: #24282a;
+  background-color: var(--cosmic-surface-control);
   background-image: linear-gradient(
     180deg,
     color-mix(in oklab, var(--cosmic-cyan) 7%, transparent),
@@ -419,7 +444,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console {
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
-  background-color: #24282a;
+  background-color: var(--cosmic-surface-control);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
@@ -439,7 +464,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
 @supports selector(:has(*)) {
   html[data-interface-mode="yumi-cosmic"]
     .cosmic-panel:has([data-vocabulary-search-input]:focus) {
-    background-color: #1e1d24;
+    background-color: var(--cosmic-surface-panel);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -457,7 +482,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-instrument {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 20%, transparent);
-  background-color: #26232c;
+  background-color: var(--cosmic-surface-instrument);
   color: color-mix(in oklab, var(--cosmic-cyan) 78%, transparent);
 }
 
@@ -482,7 +507,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-instrument:hover {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-chip {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
-  background-color: #242129;
+  background-color: var(--cosmic-surface-chip);
   color: color-mix(in oklab, var(--color-black) 62%, transparent);
 }
 
@@ -516,7 +541,8 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-metric {
    navy every other `bg-white` card becomes, because this one sits directly
    under the hero and a hard edge there would cut the field in half. */
 html[data-interface-mode="yumi-cosmic"] .cosmic-panel {
-  background-color: #1e1d24;
+  background-color: var(--cosmic-surface-panel);
+  border-radius: var(--cosmic-card-radius);
   border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 13%, transparent);
   box-shadow: 0 18px 40px rgba(1, 4, 12, 0.4);
   backdrop-filter: none;
@@ -578,77 +604,94 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::after {
   }
 }
 
-/* Shared content surfaces: notes, settings, pronunciation, review and forms.
-   These classes add no positioning, filters or transforms to scroll/portal
-   ancestors, preserving camera layers and the native keyboard coordinate space. */
+/*
+ * Shared content surfaces: notes, settings, pronunciation, review and forms.
+ *
+ * One rule per surface. These classes add no positioning, filters or
+ * transforms to scroll/portal ancestors, so camera layers and the native
+ * keyboard coordinate space survive the repaint.
+ */
 html[data-interface-mode="yumi-cosmic"] .cosmic-header {
-  background-color: #08090b;
-  border-bottom-color: rgba(229, 221, 231, 0.09);
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-header h1 {
-  font-weight: 500;
-  letter-spacing: -0.035em;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-card {
-  border-radius: var(--cosmic-card-radius);
-  border-color: rgba(229, 221, 231, 0.12);
-  background-color: #1c1a21;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home {
-  border-radius: var(--cosmic-card-radius);
-  border-color: rgba(164, 182, 239, 0.16);
-  background: radial-gradient(ellipse at 100% 0%, #30354e, transparent 65%), #1c1d28;
-  padding: 1.15rem;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home h2 {
-  font-weight: 500;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-note-card {
-  border-color: rgba(229, 221, 231, 0.12);
-  background: linear-gradient(150deg, #27242e, #1a191f);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:focus-visible {
-  outline: 2px solid var(--cosmic-violet);
-  outline-offset: 3px;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-sheet {
-  background: #1b191f;
-  border: 1px solid #403940;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-sheet > footer {
-  background-color: #1b191f;
-}
-html[data-interface-mode="yumi-cosmic"] .cosmic-panel {
-  border-radius: var(--cosmic-card-radius);
-}
-@media (prefers-reduced-motion: reduce) {
-  html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:active {
-    transform: none;
-  }
+  background-color: var(--background);
+  border-bottom-color: var(--cosmic-hairline-soft);
 }
 
-html[data-interface-mode="yumi-cosmic"] .cosmic-sheet-scrim {
-  background-color: rgba(3, 3, 5, 0.72);
-}
-
-/* Headers grow with the reader's text size and translated title. */
+/* The bar grows with the reader's text size and with a translated title
+   instead of clipping either. */
 html[data-interface-mode="yumi-cosmic"] .cosmic-header > div {
   height: auto;
   min-height: 4rem;
   flex-wrap: wrap;
   padding-block: 0.65rem;
 }
+
 html[data-interface-mode="yumi-cosmic"] .cosmic-header > div > div:first-of-type {
   flex-basis: 10rem;
 }
+
 html[data-interface-mode="yumi-cosmic"] .cosmic-header h1 {
+  font-weight: 500;
+  letter-spacing: -0.035em;
   white-space: normal;
   overflow-wrap: anywhere;
   line-height: 1.3;
 }
+
 html[data-interface-mode="yumi-cosmic"] .cosmic-header p {
   overflow-wrap: anywhere;
   letter-spacing: 0.06em;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-card {
+  border-radius: var(--cosmic-card-radius);
+  border-color: var(--cosmic-hairline);
+  background-color: var(--cosmic-surface-card);
+  box-shadow: var(--cosmic-sheen);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home {
+  border-radius: var(--cosmic-card-radius);
+  border-color: var(--cosmic-hairline-cool);
+  background:
+    radial-gradient(ellipse at 100% 0%, var(--cosmic-surface-notes-glow), transparent 65%),
+    var(--cosmic-surface-notes);
+  padding: 1.15rem;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home h2 {
+  font-weight: 500;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-note-card {
+  border-color: var(--cosmic-hairline);
+  background: linear-gradient(
+    150deg,
+    var(--cosmic-surface-note-lit),
+    var(--cosmic-surface-note-shade)
+  );
+  box-shadow: var(--cosmic-sheen);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:focus-visible {
+  outline: 2px solid var(--cosmic-violet);
+  outline-offset: 3px;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet {
+  background: var(--cosmic-surface-sheet);
+  border: 1px solid var(--modal-line);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet > footer {
+  background-color: var(--cosmic-surface-sheet);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet-scrim {
+  background-color: rgba(3, 3, 5, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:active {
+    transform: none;
+  }
 }

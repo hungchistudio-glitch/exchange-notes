@@ -119,4 +119,29 @@ describe("Cosmic progress readings", () => {
     expect(screen.queryByText("—")).not.toBeInTheDocument();
     expect(mocks.fetchVocabulary).toHaveBeenCalledWith("reader");
   });
+
+  it("dashes the two rates before the first review, and still counts the words", async () => {
+    // Saved two words today, reviewed neither. Accuracy has no answers to
+    // divide and retention has no interval to decay, so the maths falls back
+    // to 0% beside 100% — a verdict on someone who has not started.
+    mocks.fetchVocabulary.mockResolvedValue([
+      word({ id: "first" }),
+      word({ id: "second" }),
+    ]);
+
+    render(<ProgressHud />);
+
+    await waitFor(() => expect(panel()).toHaveAttribute("aria-busy", "false"));
+
+    expect(screen.getByText(copy.accuracy).parentElement).toHaveTextContent("—");
+    expect(screen.getByText(copy.retention).parentElement).toHaveTextContent("—");
+    expect(screen.queryByText("100%")).not.toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+
+    // The counts either side of them are real and are still shown.
+    expect(screen.getByText(copy.dailyGoal).parentElement).toHaveTextContent("2/8");
+    expect(screen.getByText(copy.mastered).parentElement).toHaveTextContent("0");
+    expect(screen.getByText(copy.reviewed).parentElement).toHaveTextContent("0");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });

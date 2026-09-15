@@ -117,14 +117,69 @@
   font-size: 0.75rem;
 }
 .deckHeadingDots { letter-spacing: 0.22em; opacity: 0.65; }
+/*
+ * The instrument scale, in the one band that is free.
+ *
+ * Three things already claim a radius on this stage: Yumi's disc out to 20%
+ * of the deck, the six labels whose second line reaches back in to
+ * `--deck-radius` minus about 42px, and the slow `.fieldInner` ring at 28%.
+ * Sized by `inset` the ticks landed across the labels and on top of that
+ * ring — "0 saved" and "All caught up" were struck through at every width.
+ *
+ * So the ring is centred in the gap between Yumi and the labels rather than
+ * placed by eye, and `closest-side` makes the mask percentages read against
+ * the radius instead of the diagonal, which is what made the old numbers so
+ * hard to reason about.
+ *
+ * The gap does not scale with the deck — Yumi grows with it but the labels
+ * are set in rem — so it closes as the window narrows, and closes further
+ * when a caption needs two lines. Traditional Chinese at the large text size
+ * reaches the ring where English at the same width clears it by 6px, so a
+ * plain pixel breakpoint is not the question being asked: the question is
+ * how big the deck is *in labels*.
+ *
+ * `rem` inside a media query cannot answer it — there it is pinned to the
+ * browser's initial 16px however the document's root is set — so the gate is
+ * one query per stored text size, each at about 26.5x that size's root. Under
+ * it the deck goes without a scale, which is better than a scale drawn
+ * through "今天都複習完了".
+ */
 .dialTicks {
+  display: none;
+  --tick-outer: calc(var(--deck-size) * 0.29 - 1.375rem);
   position: absolute;
-  inset: 20%;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--tick-outer) * 2);
+  height: calc(var(--tick-outer) * 2);
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: repeating-conic-gradient(from -0.5deg, rgba(252, 239, 251, 0.6) 0deg 0.7deg, transparent 0.7deg 5deg);
-  mask-image: radial-gradient(circle, transparent 62%, #000 63% 67%, transparent 68%);
-  -webkit-mask-image: radial-gradient(circle, transparent 62%, #000 63% 67%, transparent 68%);
+  background: repeating-conic-gradient(
+    from -0.5deg,
+    rgba(252, 239, 251, 0.6) 0deg 0.7deg,
+    transparent 0.7deg 5deg
+  );
+  mask-image: radial-gradient(circle closest-side, transparent 0 92%, #000 92% 100%);
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent 0 92%, #000 92% 100%);
   pointer-events: none;
+}
+
+@media (min-width: 372px) {
+  :global(html[data-app-font-size="small"]) .dialTicks {
+    display: block;
+  }
+}
+
+@media (min-width: 424px) {
+  :global(html[data-app-font-size="medium"]) .dialTicks {
+    display: block;
+  }
+}
+
+@media (min-width: 504px) {
+  :global(html[data-app-font-size="large"]) .dialTicks {
+    display: block;
+  }
 }
 
 .stage {
@@ -1212,11 +1267,6 @@
 
 /* A label can grow in every supported language without being clipped by the
    circular card. At small sizes the links keep a 44px circular touch target. */
-@media (max-width: 360px) {
-  .content { padding-inline: 0.75rem; }
-  .readout { padding-inline: 0.6rem; }
-  .nodeLink { width: 4.6rem; }
-}
 @media (prefers-reduced-motion: reduce) {
   .nodeLink:active { transform: none; }
 }
@@ -1225,6 +1275,9 @@
    long languages. Reflow the same six links into cards, preserving DOM/tab
    order and their full hit areas instead of shrinking or overlapping text. */
 @media (max-width: 360px) {
+  .content { padding-inline: 0.75rem; }
+  .readout { padding-inline: 0.6rem; }
+
   .stage {
     width: 100%;
     aspect-ratio: auto;
@@ -1237,7 +1290,7 @@
     width: 7rem;
     margin: 2rem auto;
   }
-  .dialTicks, .field, .fieldInner, .signal { display: none; }
+  .field, .fieldInner, .signal { display: none; }
   .node {
     position: static;
     display: block;

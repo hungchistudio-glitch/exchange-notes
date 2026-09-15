@@ -67,13 +67,14 @@ function MetricCard({
   display,
   label,
   tone,
-  loading,
+  unavailable,
 }: {
   value: number;
   display: string;
   label: string;
   tone: "mint" | "pink";
-  loading: boolean;
+  /** No reading to show: the value is a dash and the ruler keeps its marker off. */
+  unavailable: boolean;
 }) {
   return (
     <div className={`${styles.card} ${styles.metric} ${styles[tone]}`}>
@@ -85,7 +86,7 @@ function MetricCard({
         style={{ "--progress": clampProgress(value) } as CSSProperties}
       >
         <span className={styles.rulerTrack} />
-        {!loading && <span className={styles.rulerMarker} />}
+        {!unavailable && <span className={styles.rulerMarker} />}
       </div>
     </div>
   );
@@ -139,6 +140,13 @@ export default function ProgressHud() {
 
   const dash = "—";
   const unavailable = loading || loadError;
+  /*
+   * Accuracy and retention are rates over reviews. With no review behind
+   * them there is no rate, and the empty values the maths falls back to —
+   * 0% accuracy beside 100% retention — read as a verdict on someone who has
+   * not started yet. The counts either side of them are real and stay.
+   */
+  const noReviewsYet = unavailable || reviewStats.reviewed === 0;
 
   return (
     <section className={styles.hud} aria-busy={loading}>
@@ -168,17 +176,17 @@ export default function ProgressHud() {
 
         <MetricCard
           value={reviewStats.accuracy / 100}
-          display={unavailable ? dash : `${reviewStats.accuracy}%`}
+          display={noReviewsYet ? dash : `${reviewStats.accuracy}%`}
           label={copy.accuracy}
           tone="mint"
-          loading={unavailable}
+          unavailable={noReviewsYet}
         />
         <MetricCard
           value={reviewStats.retention / 100}
-          display={unavailable ? dash : `${reviewStats.retention}%`}
+          display={noReviewsYet ? dash : `${reviewStats.retention}%`}
           label={copy.retention}
           tone="pink"
-          loading={unavailable}
+          unavailable={noReviewsYet}
         />
 
         <div className={`${styles.card} ${styles.tile} ${styles.blue}`}>

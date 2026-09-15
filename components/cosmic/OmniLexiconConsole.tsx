@@ -41,16 +41,6 @@ type OmniLexiconConsoleProps = {
   onStateChange?: (state: OmniLexiconState) => void;
 };
 
-// Placed by hand rather than generated — see the .mote note in the stylesheet.
-const MOTES: Array<[left: string, top: string, delay: string]> = [
-  ["12%", "28%", "0s"],
-  ["34%", "72%", "1.6s"],
-  ["58%", "22%", "3.1s"],
-  ["76%", "64%", "0.8s"],
-  ["90%", "36%", "2.4s"],
-  ["22%", "52%", "4.2s"],
-];
-
 const WAVE_BARS = 12;
 
 /**
@@ -223,21 +213,7 @@ export default function OmniLexiconConsole({
       data-state={state}
       aria-label={copy.label}
     >
-      <span className={`${styles.bracket} ${styles.bracketTopLeft}`} aria-hidden="true" />
-      <span className={`${styles.bracket} ${styles.bracketTopRight}`} aria-hidden="true" />
-      <span className={`${styles.bracket} ${styles.bracketBottomLeft}`} aria-hidden="true" />
-      <span className={`${styles.bracket} ${styles.bracketBottomRight}`} aria-hidden="true" />
-
       <span className={styles.beam} aria-hidden="true" />
-
-      {MOTES.map(([left, top, delay]) => (
-        <span
-          key={`${left}-${top}`}
-          className={styles.mote}
-          style={{ left, top, animationDelay: delay }}
-          aria-hidden="true"
-        />
-      ))}
 
       <div className={styles.head}>
         <p className="hud-label">{copy.label}</p>
