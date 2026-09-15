@@ -194,6 +194,9 @@ export default function ProgressHud() {
           <p className={styles.tileValue}>
             {unavailable ? dash : reviewStats.mastered}
           </p>
+          <div className={styles.ruler} aria-hidden="true">
+            <span className={styles.rulerTrack} />
+          </div>
         </div>
 
         <div className={`${styles.card} ${styles.tile} ${styles.amber}`}>
@@ -201,6 +204,9 @@ export default function ProgressHud() {
           <p className={styles.tileValue}>
             {unavailable ? dash : reviewStats.reviewed}
           </p>
+          <div className={styles.ruler} aria-hidden="true">
+            <span className={styles.rulerTrack} />
+          </div>
         </div>
       </div>
     </section>

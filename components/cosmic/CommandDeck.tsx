@@ -16,7 +16,7 @@ import OmniLexiconConsole, {
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
-import { getLanguageName } from "@/lib/languages";
+import { getLanguage, getLanguageName } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
@@ -220,36 +220,49 @@ export default function CommandDeck() {
         <p className={styles.subtitle}>{copy.deck.subtitle}</p>
 
         {/*
-          The bridge readout, in place of the reference's side panels — there
-          is no room for those on a phone, and this is the part of them worth
-          keeping. Three lines, each one a fact the app actually holds: how
-          many words are in the lexicon, how many are due, and which language
-          is being learned. Nothing here is bearing, bandwidth or range.
+          The bridge readout, as one instrument rather than three cards.
+
+          Two counts the app actually holds flank a dial naming the language
+          being learned — the arrangement a cluster falls into when the thing
+          in the middle is a mode and the things either side are numbers.
+          Nothing here is bearing, bandwidth or range.
+
+          The language sits in the dial as its badge — the same "En" / "中" /
+          "Es" the settings pickers and the landing page already use — with
+          the full name below the ring rather than inside it. A language is
+          "Traditional Chinese" in one interface and "Chino tradicional" in
+          another, and neither goes in a circle.
         */}
-        <dl className={styles.readouts}>
-          {[
-            {
-              label: copy.deck.readoutLexicon,
-              value: itemsLoading ? "—" : String(items.length),
-            },
-            {
-              label: copy.deck.readoutDue,
-              value: itemsLoading ? "—" : String(reviewStats.due),
-            },
-            {
-              label: copy.deck.readoutLearning,
-              // The language actually being learned, named in the language
-              // the reader is reading. It used to be one of two constants.
-              value: getLanguageName(learningLanguage, interfaceLanguage),
-            },
-          ].map((readout) => (
-            <div key={readout.label} className={styles.readout}>
-              <dt className="hud-label">{readout.label}</dt>
-              <dd className={styles.readoutValue}>
-                {readout.value}
-              </dd>
-            </div>
-          ))}
+        <dl className={styles.cluster}>
+          <div className={`${styles.gauge} ${styles.lexicon}`}>
+            <dt className={styles.gaugeLabel}>{copy.deck.readoutLexicon}</dt>
+            <dd className={styles.gaugeValue}>
+              {itemsLoading ? "—" : String(items.length)}
+            </dd>
+          </div>
+
+          <div className={styles.dialCell}>
+            <dt className={styles.dialLabel}>{copy.deck.readoutLearning}</dt>
+            <dd className={styles.dialValue}>
+              {/*
+                Hidden from assistive technology: the full name follows
+                immediately, and "En English" is the same fact read twice.
+              */}
+              <span className={styles.dialBadge} aria-hidden="true">
+                {getLanguage(learningLanguage).badge}
+              </span>
+              <span className={styles.dialName}>
+                {getLanguageName(learningLanguage, interfaceLanguage)}
+              </span>
+            </dd>
+          </div>
+
+          <div className={`${styles.gauge} ${styles.due}`}>
+            <dt className={styles.gaugeLabel}>{copy.deck.readoutDue}</dt>
+            <dd className={styles.gaugeValue}>
+              {itemsLoading ? "—" : String(reviewStats.due)}
+            </dd>
+          </div>
         </dl>
       </div>
 
