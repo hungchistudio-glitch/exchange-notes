@@ -12,7 +12,7 @@ export default function Card({
   return (
     <div
       className={[
-        "rounded-3xl",
+        "cosmic-card rounded-3xl",
         "border border-black/[0.06]",
         "bg-white",
         "shadow-sm",

@@ -216,6 +216,11 @@
   padding-bottom: 12px;
 }
 
+.wrap[data-cosmic="true"] .empty,
+.wrap[data-cosmic="true"] .more {
+  color: color-mix(in oklab, var(--color-black) 76%, transparent);
+}
+
 /*
  * The slot is the control; the Core is what is in it.
  *
@@ -261,23 +266,21 @@
  * Deliberately the one tile in the row that is not round and not lit: it is a
  * door, not an object, and giving it a chamber of its own would put a
  * thirteenth thing in the tray that looks collectable and cannot be dragged.
- * The corner brackets are the deck's own idiom — see .hud-frame in
- * app/cosmic.css, which this matches by eye rather than by import because a
- * 52px tile wants tighter insets than a panel does.
+ * Its rounded surface matches the tray, with the count as its only mark.
  */
 .moreCore {
   position: relative;
   width: 52px;
   height: 52px;
-  border-radius: 13px;
-  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 22%, transparent);
-  background: color-mix(in oklab, var(--cosmic-cyan) 6%, transparent);
+  border-radius: 18px;
+  border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 18%, transparent);
+  background: #202026;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 4px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.625rem;
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.02em;
@@ -291,26 +294,7 @@
 
 .moreCore::before,
 .moreCore::after {
-  content: "";
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border-color: var(--cosmic-cyan);
-  border-style: solid;
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-.moreCore::before {
-  top: 4px;
-  left: 4px;
-  border-width: 1px 0 0 1px;
-}
-
-.moreCore::after {
-  right: 4px;
-  bottom: 4px;
-  border-width: 0 1px 1px 0;
+  content: none;
 }
 
 .moreCore:active {
@@ -347,30 +331,26 @@
 }
 
 .wrap[data-cosmic="true"] .collapse {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--cosmic-cyan);
-  opacity: 0.75;
+  opacity: 1;
 }
 
-/* The instruction that makes the signature interaction discoverable, marked
-   either side the way the deck marks a readout. */
+/* Plain multilingual instructions explain the feeding gesture. */
 .wrap[data-cosmic="true"] .hint {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.625rem;
-  letter-spacing: 0.1em;
-  color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  letter-spacing: 0;
+  color: color-mix(in oklab, var(--color-black) 76%, transparent);
 }
 
 .wrap[data-cosmic="true"] .hint::before,
 .wrap[data-cosmic="true"] .hint::after {
-  content: "◆";
-  margin: 0 7px;
-  font-size: 0.375rem;
-  vertical-align: middle;
-  opacity: 0.5;
+  content: none;
 }
 
 /*

@@ -52,7 +52,7 @@ export async function generateViewport(): Promise<Viewport> {
   const interfaceMode = await getServerInterfaceMode();
 
   return {
-    themeColor: interfaceMode === "yumi-cosmic" ? "#060a14" : "#f5f3ed",
+    themeColor: interfaceMode === "yumi-cosmic" ? "#08090b" : "#f5f3ed",
     /* The active opening is a pure-white canvas in every interface mode. */
     colorScheme: "light",
   };

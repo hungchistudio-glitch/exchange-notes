@@ -71,32 +71,19 @@
 }
 
 /*
- * The chassis: machined plating under a single light.
- *
- * Two backgrounds on one element rather than two elements with a blend mode.
- * The lower one is a repeating conic gradient — twelve plates, one per facet,
- * with a dark seam between each — and the upper one is the lighting, a
- * translucent sweep from top-left that has to sit *over* the plates or the
- * seams would be lit as brightly as the faces and the whole thing would go
- * flat. `from 15deg` lands each seam on a vertex instead of across a face.
+ * The matte chassis picks up the lifecycle colour along one edge. Its
+ * footprint is unchanged so the tray, drag ghost and feeding target align.
  */
 .chassis {
   position: absolute;
   inset: 0;
   clip-path: var(--facet);
-  background:
-    linear-gradient(
-      158deg,
-      rgba(255, 255, 255, 0.32) 0%,
-      rgba(255, 255, 255, 0.04) 34%,
-      rgba(0, 0, 0, 0.28) 62%,
-      rgba(0, 0, 0, 0.5) 100%
-    ),
-    repeating-conic-gradient(
-      from 15deg at 50% 50%,
-      var(--core-chassis-lit) 0deg 25deg,
-      var(--core-chassis-seam) 25deg 30deg
-    );
+  background: linear-gradient(
+    150deg,
+    color-mix(in oklab, var(--tone-lift) 40%, #202026),
+    #202026 52%,
+    #08090b
+  );
 }
 
 /*
@@ -193,7 +180,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: ui-monospace, "SF Mono", "Menlo", monospace;
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
   font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -202,9 +189,8 @@
      near-white glyph from reading as a different colour on every core. */
   color: color-mix(in oklab, var(--tone-lift) 72%, #ffffff);
   text-shadow:
-    0 0 10px color-mix(in oklab, var(--tone) 85%, transparent),
-    0 0 3px color-mix(in oklab, var(--tone-lift) 70%, transparent),
-    0 1px 2px rgba(2, 8, 22, 0.8);
+    0 0 6px color-mix(in oklab, var(--tone) 32%, transparent),
+    0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /*
@@ -240,13 +226,13 @@
   top: -3px;
   right: -7px;
   padding: 1px 4px;
-  border-radius: 5px;
+  border-radius: 6px;
   border: 1px solid color-mix(in oklab, var(--tone) 55%, transparent);
   background: color-mix(in oklab, var(--core-chamber) 88%, var(--tone));
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.46875rem;
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  font-size: 0.5625rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   line-height: 1.35;
   color: var(--tone-lift);
   pointer-events: none;

@@ -1,40 +1,17 @@
-/*
- * Yumi OmniLexicon — the language recognition console.
- *
- * The brief is explicit that this must not read as a search bar, and the
- * difference is structural rather than decorative. A search bar is a field you
- * fill in. This is a bay you put something into: it has a frame with corner
- * brackets, a beam that sweeps the cavity whether or not you are using it, and
- * it changes shape depending on which sense it is using — typing, listening,
- * or looking.
- *
- * Rendered only in Cosmic Mode, so this file styles freely rather than
- * overriding anything. Every animation is transform, opacity or filter; the
- * one exception is the voice state's height, which is a deliberate layout
- * change on a single element and is what makes the console feel like it opens.
- */
+/* Yumi's recognition controls: a matte mint-lit surface. Stateful light
+   follows typing, listening and scanning; the idle field stays still. */
 
 .console {
   position: relative;
-  border-radius: 20px;
-  padding: 0.9rem 0.95rem 0.8rem;
-  /* Glass, not a panel: the field behind it stays faintly visible, which is
-     what stops it reading as a card sitting on top of the deck. */
+  border-radius: 1.875rem;
+  padding: 1rem 1.1rem 0.7rem;
   background:
-    linear-gradient(
-      158deg,
-      color-mix(in oklab, var(--color-white) 78%, transparent) 0%,
-      color-mix(in oklab, var(--color-white) 52%, transparent) 100%
-    );
-  border: 1px solid var(--cosmic-ring);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 16%, transparent),
-    0 18px 44px rgba(1, 4, 12, 0.42);
-  backdrop-filter: blur(16px) saturate(1.06);
+    radial-gradient(ellipse at 100% 0%, #354740, transparent 75%),
+    linear-gradient(150deg, #252d2b, #171d1c);
+  border: 1px solid rgba(188, 231, 215, 0.2);
+  box-shadow: inset 0 1px 0 rgba(228, 255, 244, 0.08);
   overflow: hidden;
-  transition:
-    border-color 260ms ease,
-    box-shadow 260ms ease;
+  transition: border-color 260ms ease, box-shadow 260ms ease;
 }
 
 /* Engaged: the bay is receiving. */
@@ -202,13 +179,13 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 0.9375rem;
+  font-size: max(16px, 1rem);
   letter-spacing: -0.01em;
   color: var(--color-black);
 }
 
 .input::placeholder {
-  color: color-mix(in oklab, var(--color-black) 38%, transparent);
+  color: color-mix(in oklab, var(--color-black) 65%, transparent);
 }
 
 /* The submit key. Cyan seam, dark core — the same instrument language as the
@@ -216,13 +193,13 @@
 .submit {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   flex-shrink: 0;
   border-radius: 9999px;
   border: 1px solid var(--cosmic-cyan);
-  background: color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
-  color: var(--cosmic-cyan);
+  background: var(--cosmic-cyan);
+  color: #172b23;
   transition:
     transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease,
@@ -258,7 +235,7 @@
   min-height: 44px;
   padding: 0.35rem 0.15rem;
   border-radius: 12px;
-  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+  color: color-mix(in oklab, var(--color-black) 72%, transparent);
   transition:
     color 180ms ease,
     background 180ms ease,
@@ -353,7 +330,7 @@
   margin-top: 0.5rem;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: color-mix(in oklab, var(--color-black) 48%, transparent);
+  color: color-mix(in oklab, var(--color-black) 68%, transparent);
 }
 
 .resultMeta {
@@ -377,7 +354,7 @@
 
 .note {
   font-size: 0.75rem;
-  color: color-mix(in oklab, var(--color-black) 45%, transparent);
+  color: color-mix(in oklab, var(--color-black) 68%, transparent);
 }
 
 /* Stands where the translation would be. Deliberately not styled like the
@@ -402,7 +379,7 @@
   margin-top: 0.2rem;
   font-size: 0.75rem;
   line-height: 1.55;
-  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+  color: color-mix(in oklab, var(--color-black) 72%, transparent);
 }
 
 .pendingRetry {
@@ -537,8 +514,8 @@
 .action {
   display: grid;
   place-items: center;
-  width: 2.375rem;
-  height: 2.375rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 12px;
   border: 1px solid var(--cosmic-ring);
   background: linear-gradient(
@@ -549,7 +526,7 @@
   box-shadow: inset 0 1px 0
     color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
   color: var(--cosmic-cyan);
-  clip-path: polygon(0 20%, 20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%);
+  clip-path: none;
   transition:
     transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 200ms ease,
@@ -579,4 +556,25 @@
   .action {
     transition: none;
   }
+}
+
+/* Soft light replaces the always-running search sweep. The scan still gives
+   immediate feedback when recognition is actually in progress. */
+.bracket { display: none; }
+.beam, .mote { animation: none; opacity: 0; }
+.console[data-state="scanning"] .beam {
+  opacity: 1;
+  animation: omniBeam 1.4s ease-in-out infinite;
+}
+.mode { border-radius: 999px; }
+.mode[data-active="true"] {
+  color: #172b23;
+  background: var(--cosmic-cyan);
+}
+.mode:focus-visible, .submit:focus-visible, .action:focus-visible, .speak:focus-visible {
+  outline: 2px solid var(--cosmic-cyan);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .console[data-state="scanning"] .beam { animation: none; opacity: 0.3; }
 }

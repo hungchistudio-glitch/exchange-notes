@@ -606,15 +606,14 @@
       color-mix(in oklab, var(--cosmic-violet) 12%, transparent),
       transparent 46%
     ),
-    rgba(2, 6, 16, 0.72);
-  backdrop-filter: blur(6px) saturate(1.05);
+    rgba(8, 9, 11, 0.86);
+  backdrop-filter: blur(6px);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .ring {
-  border-color: color-mix(in oklab, var(--cosmic-cyan) 34%, transparent);
+  border-color: color-mix(in oklab, var(--cosmic-cyan) 22%, transparent);
   box-shadow:
-    0 0 24px color-mix(in oklab, var(--cosmic-cyan) 12%, transparent),
-    inset 0 0 24px color-mix(in oklab, var(--cosmic-cyan) 7%, transparent);
+    0 0 24px color-mix(in oklab, var(--cosmic-cyan) 6%, transparent);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .ringOuter {
@@ -681,23 +680,18 @@
  * further out and turned down.
  */
 :global(html[data-interface-mode="yumi-cosmic"]) .action {
-  border-color: color-mix(in oklab, var(--halo-tone) 45%, transparent);
+  border-color: color-mix(in oklab, var(--halo-tone) 28%, transparent);
   color: var(--halo-tone);
   background:
     radial-gradient(
-      circle at 34% 24%,
-      color-mix(in oklab, var(--halo-tone) 16%, transparent) 0%,
-      transparent 62%
+      circle at 24% 8%,
+      color-mix(in oklab, var(--halo-tone) 34%, transparent) 0%,
+      transparent 74%
     ),
-    linear-gradient(
-      148deg,
-      color-mix(in oklab, var(--color-white) 94%, transparent) 0%,
-      color-mix(in oklab, var(--color-white) 58%, transparent) 100%
-    );
+    #17171c;
   box-shadow:
-    0 16px 34px rgba(1, 4, 12, 0.5),
-    0 0 18px color-mix(in oklab, var(--halo-tone) 16%, transparent),
-    inset 0 1px 0 color-mix(in oklab, var(--halo-tone) 26%, transparent);
+    0 12px 28px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 color-mix(in oklab, var(--halo-tone) 16%, transparent);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"])
@@ -728,18 +722,22 @@
 /* The name takes the capability's colour; the line under it stays quiet. One
    lit word per node is a legend, three is a warning light. */
 :global(html[data-interface-mode="yumi-cosmic"]) .name {
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  letter-spacing: 0;
   color: var(--halo-tone);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .blurb {
-  color: color-mix(in oklab, var(--color-black) 58%, transparent);
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  letter-spacing: 0;
+  color: color-mix(in oklab, var(--color-black) 76%, transparent);
 }
 
 :global(html[data-interface-mode="yumi-cosmic"])
   .node[data-tier="utility"][data-focused="true"]
   .label {
   border-color: color-mix(in oklab, var(--halo-tone) 40%, transparent);
-  background: rgba(7, 15, 32, 0.92);
+  background: #202026;
   box-shadow:
     0 14px 30px rgba(1, 4, 12, 0.55),
     0 0 18px color-mix(in oklab, var(--halo-tone) 14%, transparent);
@@ -747,6 +745,6 @@
 
 :global(html[data-interface-mode="yumi-cosmic"]) .dismiss {
   border-color: var(--cosmic-ring);
-  background: rgba(9, 18, 36, 0.78);
-  color: color-mix(in oklab, var(--color-black) 55%, transparent);
+  background: #17171c;
+  color: color-mix(in oklab, var(--color-black) 76%, transparent);
 }

@@ -2,25 +2,34 @@
 
 import Link from "next/link";
 import { Languages, LockKeyhole, Users } from "lucide-react";
+import { useSyncExternalStore } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { getLanguageName } from "@/lib/languages";
 import type { Note } from "@/lib/notes/repository";
 
+const subscribeNever = () => () => {};
+const serverDate = () => "";
+
 export default function NoteCard({ note }: { note: Note }) {
   const { t, language: interfaceLanguage } = useTranslation();
-  const parsedDate = new Date(note.createdAt);
-  const date = Number.isNaN(parsedDate.getTime())
-    ? ""
-    : new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-      }).format(parsedDate);
+  // Dates follow the reader's locale and time zone. The server cannot know
+  // either; defer this small label until hydration instead of rebuilding the
+  // entire card when “Sep 15” and “15 Sept” disagree.
+  const date = useSyncExternalStore(subscribeNever, () => {
+    const parsedDate = new Date(note.createdAt);
+    return Number.isNaN(parsedDate.getTime())
+      ? ""
+      : new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+        }).format(parsedDate);
+  }, serverDate);
 
   return (
     <Link
       href={`/notes/${note.id}`}
-      className="block rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99]"
+      className="cosmic-note-card block rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-sm transition-transform active:scale-[0.99]"
     >
       <div className="flex items-center justify-between gap-3">
         <span className="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">

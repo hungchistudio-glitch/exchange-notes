@@ -118,6 +118,7 @@ function lookAt(index: number) {
 
   return {
     "--look-x": `${(Math.sin(radians) * 8).toFixed(2)}px`,
+    "--compact-look-x": index % 2 === 0 ? "-6px" : "6px",
     "--look-y": `${(-Math.cos(radians) * 5).toFixed(2)}px`,
   } as CSSProperties;
 }
@@ -203,16 +204,20 @@ export default function CommandDeck() {
     useInView<HTMLDivElement>();
 
   return (
-    <Screen>
+    <Screen contentClassName={styles.content}>
       <div
-        className="px-4"
+        className={styles.header}
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.25rem)" }}
       >
-        <p className="hud-label">{copy.deck.eyebrow}</p>
-        <h1 className="mt-1 text-[1.625rem] font-bold tracking-[-0.02em]">
+        <p className={styles.eyebrow}>
+          <span aria-hidden="true" className={styles.statusDot} />
+          {copy.deck.eyebrow}
+          <span className={styles.edition}>COSMIC</span>
+        </p>
+        <h1 className={styles.title}>
           {copy.deck.title}
         </h1>
-        <p className="mt-1 text-ink-soft">{copy.deck.subtitle}</p>
+        <p className={styles.subtitle}>{copy.deck.subtitle}</p>
 
         {/*
           The bridge readout, in place of the reference's side panels — there
@@ -221,7 +226,7 @@ export default function CommandDeck() {
           many words are in the lexicon, how many are due, and which language
           is being learned. Nothing here is bearing, bandwidth or range.
         */}
-        <dl className="mt-4 grid grid-cols-3 gap-x-3 gap-y-1 border-y border-line py-2.5">
+        <dl className={styles.readouts}>
           {[
             {
               label: copy.deck.readoutLexicon,
@@ -238,9 +243,9 @@ export default function CommandDeck() {
               value: getLanguageName(learningLanguage, interfaceLanguage),
             },
           ].map((readout) => (
-            <div key={readout.label}>
+            <div key={readout.label} className={styles.readout}>
               <dt className="hud-label">{readout.label}</dt>
-              <dd className="mt-0.5 text-sm font-bold tracking-[-0.01em]">
+              <dd className={styles.readoutValue}>
                 {readout.value}
               </dd>
             </div>
@@ -256,12 +261,8 @@ export default function CommandDeck() {
         people arrive with, while the six systems are where they go once they
         already know what they want.
       */}
-      <div className="mt-4 px-4">
+      <div className={styles.consoleSlot}>
         <OmniLexiconConsole onStateChange={setOmniState} />
-      </div>
-
-      <div className="mt-4 px-4">
-        <NotesHomeModule />
       </div>
 
       <nav
@@ -279,7 +280,12 @@ export default function CommandDeck() {
           ))}
         </div>
 
+        <div className={styles.deckHeading}>
+          <span>{copy.deck.coreLabel}</span>
+          <span className={styles.deckHeadingDots} aria-hidden="true">••••</span>
+        </div>
         <div className={styles.stage}>
+          <span className={styles.dialTicks} aria-hidden="true" />
           <span className={styles.field} aria-hidden="true" />
           <span className={styles.fieldInner} aria-hidden="true" />
 
@@ -412,6 +418,8 @@ export default function CommandDeck() {
                   <Link
                     href={room.href}
                     onPointerDown={() => lockRoom(room.key)}
+                    onFocus={() => lockRoom(room.key)}
+                    onBlur={() => setLockedRoom(null)}
                     onPointerUp={() => setLockedRoom(null)}
                     onPointerCancel={() => setLockedRoom(null)}
                     className={[
@@ -445,6 +453,9 @@ export default function CommandDeck() {
           })}
         </div>
       </nav>
+      <div className={styles.notesSlot}>
+        <NotesHomeModule />
+      </div>
     </Screen>
   );
 }

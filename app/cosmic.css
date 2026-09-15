@@ -1,464 +1,164 @@
-/*
- * Yumi Cosmic Mode — the token layer.
- *
- * This file is the whole reason Cosmic Mode could ship without touching the
- * pages it repaints. Tailwind v4 compiles its colour utilities to variable
- * references rather than literals:
- *
- *   .bg-white      → background-color: var(--color-white)
- *   .text-black/40 → color: color-mix(in oklab, var(--color-black) 40%, …)
- *
- * so redefining --color-white and --color-black under one attribute selector
- * carries every `bg-white` panel and every `black/x` piece of text in the app
- * into deep space at once. Roughly 670 utility usages across every screen,
- * with no component edited and — because Standard Mode never matches this
- * selector — nothing at all to regress there.
- *
- * The inversion is deliberate rather than a trick. `bg-black` buttons take
- * --color-black and their `text-white` labels take --color-white, so a black
- * button with white text becomes a pale button with deep navy text and keeps
- * its contrast without a single override.
- *
- * The attribute lands on <html> during the server render (see app/layout.tsx
- * and lib/appPreferences.ts), so the first paint is already correct — there is
- * no standard-surface flash to sit through on the way in.
+/* Yumi Cosmic — obsidian, soft light, precise instruments.
+ * Keep every public token: all routes share the same data and components.
+ * The mode attribute scopes both the palette and the surface treatments.
  */
-
 html[data-interface-mode="yumi-cosmic"] {
-  /* Panels. What every `bg-white` card becomes: lifted just enough off the
-     page behind it to read as a surface, not a hole. */
-  --color-white: #101a30;
+  --color-white: #17171c;
+  --color-black: #f5f2f0;
+  --background: #08090b;
+  --foreground: #f5f2f0;
+  --surface: #202026;
+  --line: #38363e;
+  --font-sans: var(--font-geist-sans), var(--font-cjk), Arial, sans-serif;
 
-  /* Ink. What every `text-black`, `black/50` and `border-black/10` becomes —
-     a cool pale blue rather than pure white, so long passages of text are not
-     glaring at night, which is when this mode will mostly be used. */
-  --color-black: #dce9ff;
-
-  --background: #060a14;
-  --foreground: #dce9ff;
-  --surface: #16223c;
-  --line: #24345a;
-
-  /*
-   * The mark flips to its dark pair, and only the pair flips — the drawing is
-   * the same one. Note that the canvas token stays jet obsidian rather than
-   * becoming this mode's deep navy: it describes the ground the *app icon* is
-   * printed on, which is fixed artwork the OS owns, not the screen behind a
-   * logo in the app.
-   */
+  /* Vocabulary still consumes the legacy card contract. Keep its surfaces
+     opaque and its hover state in this palette as well. */
+  --en-surface: #1c1a21;
+  --en-surface-secondary: #26232c;
+  --en-page-elevated: #302b36;
+  --en-surface-hover: #302b36;
+  --en-border: #3d3643;
+  --en-border-strong: #756678;
+  --en-text-primary: #f5f2f0;
   --yumi-canvas: var(--yumi-canvas-dark);
   --yumi-mark: var(--yumi-mark-dark);
 
-  /* The gold survives the trip: on deep space it reads as a warm signal light
-     instead of a paper highlight. Its dark inks flip to the panel colour so
-     text on an amber fill stays legible. */
-  --accent-amber: #f0b64a;
-  --accent-amber-ink: #0b1220;
-  --accent-amber-deep: #f7d391;
-  --accent-amber-soft: #4a3a17;
-  --accent-amber-wash: #1a2340;
+  --cosmic-cyan: #bce7d7;
+  --cosmic-cyan-dim: rgba(188, 231, 215, 0.35);
+  --cosmic-ring: rgba(229, 221, 231, 0.17);
+  --cosmic-glow: rgba(188, 231, 215, 0.1);
+  --cosmic-star: rgba(245, 242, 240, 0.6);
+  --cosmic-violet: #e5add2;
+  --cosmic-violet-dim: rgba(229, 173, 210, 0.3);
+  --cosmic-blue: #809cf4;
+  --cosmic-amber: #e8ce8c;
+  --cosmic-teal: #9bd5ba;
+  --cosmic-card-radius: 1.875rem;
+  --cosmic-ink: #f5f2f0;
+  --cosmic-muted: #bdb9c1;
 
-  --success: #6ee7a5;
-  --success-soft: #123626;
+  --accent-amber: #e8ce8c;
+  --accent-amber-ink: #242016;
+  --accent-amber-deep: #f1deb4;
+  --accent-amber-soft: #4a3c25;
+  --accent-amber-wash: #26222b;
+  --accent-cool: #b9cafa;
+  --success: #9bd5ba;
+  --success-soft: #19392d;
+  --yumi-wash-top: #282330;
+  --yumi-wash-bottom: #111115;
 
-  --accent-cool: #9ec9ee;
-
-  --yumi-wash-top: #16223c;
-  --yumi-wash-bottom: #0d1526;
-
-  --modal-scrim: #01040c;
-  --modal-surface: #101a30;
-  --modal-ink: #dce9ff;
+  --modal-scrim: #030305;
+  --modal-surface: #1b191f;
+  --modal-ink: #f5f2f0;
   --modal-accent: var(--cosmic-cyan);
-  --modal-muted: #8ba0c6;
-  --modal-line: #24345a;
+  --modal-muted: #b9afb9;
+  --modal-line: #403940;
+  --control-surface: #28252d;
+  --control-ink: #f5f2f0;
 
-  --control-surface: #16223c;
-  --control-ink: #cfe6ff;
+  --dock-surface: #17171c;
+  --dock-line: #36323b;
+  --dock-shadow: 0 12px 38px rgba(0, 0, 0, 0.4);
+  --dock-indicator: #ece9e6;
+  --dock-indicator-border: #ece9e6;
+  --dock-indicator-halo: transparent;
+  --dock-active-ink: #17171c;
 
-  /* The dock as flight hardware: cool glass, a faint cyan seam for the thin
-     orbital halo, and a cyan energy base under the active system. The active
-     icon keeps its `text-white`, which in this mode resolves to the panel
-     navy — dark on cyan, and legible without an override. */
-  /* Opaque — see the note in globals.css. */
-  --dock-surface: #101a30;
-  --dock-line: var(--cosmic-ring);
-  --dock-shadow: 0 10px 36px rgba(1, 4, 12, 0.55);
-  /* Hollow rather than filled. A solid cyan disc is the brightest thing on a
-     dark screen and pulls the eye down to the dock permanently; an outlined
-     ring marks the active system just as clearly and stays quiet. */
-  --dock-indicator: rgba(77, 227, 240, 0.1);
-  --dock-indicator-border: var(--cosmic-cyan);
-  --dock-indicator-halo: var(--cosmic-glow);
-  --dock-active-ink: var(--cosmic-cyan);
-
-  /*
-   * The muted tiers for text on the black cards, raised for this mode.
-   *
-   * --ink-soft and --ink-faint need no entry here: they are written against
-   * --color-black, which the top of this file already repoints at #dce9ff, so
-   * they invert on their own and clear AA on the dark shell at the alphas they
-   * were chosen for (4.82:1 and 5.73:1 on --surface, this mode's worst).
-   *
-   * The invert pair is the case where that is not enough. `bg-black` and
-   * `text-white` both flip, so a `bg-black` card here is a pale #dce9ff panel
-   * carrying #101a30 text — dark ink on light, where Standard has light ink on
-   * dark. Composited over that much brighter panel the same alpha loses roughly
-   * half its ratio (0.48 gives 4.92:1 in Standard and only 3.11:1 here), so
-   * both tiers step up: 0.64 for 4.82:1 and 0.78 for 7.54:1.
-   */
   --ink-invert-soft: color-mix(in oklab, var(--color-white) 78%, transparent);
-  --ink-invert-faint: color-mix(in oklab, var(--color-white) 64%, transparent);
+  --ink-invert-faint: color-mix(in oklab, var(--color-white) 68%, transparent);
 
-  --discover-page: #060a14;
-  --discover-card: #101a30;
-  --discover-text: #dce9ff;
-  --discover-text-secondary: #8ba0c6;
-  --discover-divider: #24345a;
-  --discover-divider-soft: rgba(36, 52, 90, 0.45);
-  /* The same cyan the deck and dock use, not a second one a shade away from
-     it — two near-identical blues on one screen read as a mistake. */
+  --discover-page: #08090b;
+  --discover-card: #17171c;
+  --discover-text: #f5f2f0;
+  --discover-text-secondary: #b8b2bc;
+  --discover-divider: #38363e;
+  --discover-divider-soft: rgba(229, 221, 231, 0.1);
   --discover-accent: var(--cosmic-cyan);
-  --discover-accent-soft: #12243c;
-  --discover-selected: #16223c;
-  --discover-on-accent: #06121f;
+  --discover-accent-soft: #24332d;
+  --discover-selected: #29262e;
+  --discover-on-accent: #13241e;
+  --discover-category-business: #ecb79f;
+  --discover-category-technology: #aabcf6;
+  --discover-category-science: #d0b9eb;
+  --discover-category-culture: #e7cc9b;
+  --discover-category-health: #a6d8c8;
+  --discover-category-environment: #c3d59f;
+  --discover-category-politics: #cac3bd;
 
-  /* The category accents were chosen to sit on paper; on deep space the same
-     hues have to be lifted well past mid-tone to stay readable. */
-  --discover-category-business: #f0a08c;
-  --discover-category-technology: #93b6f0;
-  --discover-category-science: #bda6ee;
-  --discover-category-culture: #e6bd85;
-  --discover-category-health: #79cfbb;
-  --discover-category-environment: #b6cd85;
-  --discover-category-politics: #b9b5ac;
-
-  /*
-   * Messages in deep space, on the Messages V2 spec's own palette (§36).
-   *
-   * These eight values are the spec's, quoted rather than approximated:
-   *
-   *   background        #020A16     primary cyan      #32DDF8
-   *   elevated surface  #07172A     electric blue     #315FFF
-   *   secondary surface #0A1D33     primary text      #F4F7FB
-   *   presence green    #25DF82     secondary text    #8F9EB5
-   *
-   * The spec does not name a line colour, a glow, a second gradient stop or
-   * an ink to sit on cyan, so none of those are invented here either — each
-   * one is mixed or dimmed from the values above, which is why the file has
-   * no ninth hex in it. color-mix in oklab is already how Tailwind v4 renders
-   * every `black/40` in this app, so it costs nothing new.
-   *
-   * Deliberately its own cyan. --cosmic-cyan (#4de3f0) still paints the
-   * Command Deck and the dock; Messages is a shade cooler because the spec
-   * says so. If the two should converge, this is the line to change.
-   */
-  --msg-page: #020a16;
-  --msg-surface: #07172a;
-  --msg-surface-soft: #0a1d33;
-  --msg-line: color-mix(in oklab, #32ddf8 14%, transparent);
-  --msg-ink: #f4f7fb;
-  --msg-ink-soft: #8f9eb5;
-
-  /*
-   * The spec has two text tiers; the design needs a third for timestamps and
-   * @handles. Dimming the secondary is the honest way to get one, and 0.82 is
-   * where it still clears WCAG AA on both the page and an elevated surface
-   * (4.8:1 against #07172A, the worse of the two). Anything dimmer looks
-   * better and fails §50.
-   */
-  --msg-ink-faint: color-mix(in oklab, #8f9eb5 82%, transparent);
-
-  --msg-accent: #32ddf8;
-  --msg-accent-soft: color-mix(in oklab, #32ddf8 12%, transparent);
-  /* On cyan, the page colour is the most readable ink available — 12.2:1. */
-  --msg-accent-ink: #020a16;
-
-  /* Incoming: the two neutral navy surfaces. Outgoing: electric blue, with
-     its second stop mixed toward the page so the gradient has somewhere to
-     go. Both inks are the spec's primary text (15.8:1 and 4.7:1). */
-  --msg-bubble-in: linear-gradient(180deg, #0a1d33, #07172a);
-  --msg-bubble-in-ink: #f4f7fb;
-  --msg-bubble-in-line: color-mix(in oklab, #32ddf8 16%, transparent);
-  --msg-bubble-out: linear-gradient(
-    140deg,
-    #315fff,
-    color-mix(in oklab, #315fff 78%, #020a16)
-  );
-  --msg-bubble-out-ink: #f4f7fb;
-
-  /*
-   * Not dimmed, and it cannot be. Electric blue is light enough that primary
-   * text on it is 4.64:1 — over AA, but with 0.14 to spare. Taking any opacity
-   * out drops it straight through the floor (0.95 → 4.33, 0.62 → 2.71), and a
-   * dark ink is worse still (3.98 at full strength). So the timestamp and
-   * receipt glyph inside your own bubble are the same colour as the message,
-   * and the hierarchy is carried by 10px against 15px instead.
-   */
-  --msg-bubble-out-meta: #f4f7fb;
-
-  --msg-presence: #25df82;
-  --msg-glow: 0 0 24px color-mix(in oklab, #32ddf8 12%, transparent);
-  /* Opaque — see the note in globals.css. Fully the colour it was 82% of,
-     which on this near-black bar is a barely perceptible deepening. */
-  --msg-header: #020a16;
-
-  /* Still light — see the note in globals.css — but cooled to match the field
-     it is lit by, rather than carrying warm paper into deep space. */
-  --msg-mark-surface: #e6f2ff;
+  --msg-page: #08090b;
+  --msg-surface: #17171c;
+  --msg-surface-soft: #242129;
+  --msg-line: rgba(229, 221, 231, 0.13);
+  --msg-ink: #f5f2f0;
+  --msg-ink-soft: #bfb5bf;
+  --msg-ink-faint: #a69da8;
+  --msg-accent: var(--cosmic-cyan);
+  --msg-accent-soft: rgba(188, 231, 215, 0.1);
+  --msg-accent-ink: #13241e;
+  --msg-bubble-in: linear-gradient(150deg, #302a34, #242129);
+  --msg-bubble-in-ink: #f5f2f0;
+  --msg-bubble-in-line: rgba(229, 221, 231, 0.12);
+  --msg-bubble-out: linear-gradient(135deg, #5d405e, #353c68);
+  --msg-bubble-out-ink: #fff9fd;
+  --msg-bubble-out-meta: #eee3ed;
+  --msg-presence: #9bd5ba;
+  --msg-glow: 0 0 24px rgba(229, 173, 210, 0.1);
+  --msg-header: #08090b;
+  --msg-mark-surface: #efeeea;
   --msg-mark-highlight: #ffffff;
 
-  /* Cosmic-only. The cyan that marks an active system, and the field colours
-     the Command Deck and dock draw their rings and glow from. */
-  --cosmic-cyan: #4de3f0;
-  --cosmic-cyan-dim: rgba(77, 227, 240, 0.35);
-  --cosmic-ring: rgba(77, 227, 240, 0.22);
-  --cosmic-glow: rgba(77, 227, 240, 0.14);
-  --cosmic-star: rgba(220, 233, 255, 0.75);
-
-  /*
-   * The Signal Radar's palette.
-   *
-   * Six tokens, and every one of them points at a hue this file already
-   * defines — the radar is a new instrument, not a new colour language. The
-   * only value mixed here is the core's body, which needs to be darker than
-   * any surface in the app so that a lit core has something to be lit against.
-   *
-   * Named for what they mean on the radar rather than for the state that uses
-   * them, because several states share one: success and idle are both cyan,
-   * and what separates them is timing, not hue.
-   */
-  --radar-core-bg: #050c1a;
+  --radar-core-bg: #0c0b10;
   --radar-cyan-primary: var(--cosmic-cyan);
   --radar-blue-secondary: var(--cosmic-blue);
   --radar-violet-accent: var(--cosmic-violet);
   --radar-success: var(--cosmic-teal);
   --radar-warning: var(--cosmic-amber);
 
-  /* The second signal colour. Cyan alone reads as a single-hue skin; the
-     violet is what gives the deck depth, and it carries a different meaning —
-     cyan is a system that is live, violet is a measure of progress. */
-  --cosmic-violet: #8b5cf6;
-  --cosmic-violet-dim: rgba(139, 92, 246, 0.35);
-  --cosmic-amber: #f0b64a;
-
-  /*
-   * The one hue the deck never needed and the vocabulary tray does.
-   *
-   * Cyan already means "live" and violet already means "progress", which
-   * leaves the most common state of all — a word that has simply been saved
-   * and not yet worked on — with nothing to wear. A true blue is far enough
-   * from this file's cyan to be a different answer at a glance and close
-   * enough to belong to the same instrument.
-   */
-  --cosmic-blue: #3187ff;
-
-  /*
-   * The fifth signal, and the last one this palette needs: the teal the
-   * Command Halo's legend gives to memory and reinforcement. Green-shifted
-   * far enough from --cosmic-cyan to be a different answer at a glance —
-   * which is the whole test a fifth hue has to pass on a screen that already
-   * has four.
-   */
-  --cosmic-teal: #2fd6b0;
-
-  /*
-   * Learning Core tones.
-   *
-   * Four states, four tokens, and the names are the vocabulary lifecycle's
-   * rather than the palette's — see cosmicCoreTone in lib/pet/moodEngine.ts
-   * for what resolves to what and in which order.
-   *
-   * Every value is one of the four hues this file already defines. Nothing
-   * new is mixed here on purpose: a fifth cosmic hue invented for the tray
-   * would drift away from the deck and the dock the first time either of them
-   * was retuned, and the whole reason Cosmic Mode holds together across
-   * fifteen screens is that they all read from these same few lines.
-   *
-   * The -lift pair is each hue raised toward white. It lights the glyph and
-   * the centre of the chamber, where the base hue alone sits too dark to read
-   * against the housing around it.
-   */
   --core-tone-new: var(--cosmic-blue);
-  --core-tone-new-lift: #a9cbff;
+  --core-tone-new-lift: #c5d1fa;
   --core-tone-learning: var(--cosmic-cyan);
-  --core-tone-learning-lift: #c2f6fb;
+  --core-tone-learning-lift: #dbf3e9;
   --core-tone-due: var(--cosmic-violet);
-  --core-tone-due-lift: #cfb4ff;
+  --core-tone-due-lift: #f0d4e5;
   --core-tone-mastered: var(--cosmic-amber);
-  --core-tone-mastered-lift: #ffdda2;
-
-  /* The housing the tones sit in. Cool gunmetal against the warm-neutral the
-     standard cookie uses, and one dark fill deep enough that a lit chamber
-     has somewhere to be lit against. */
-  --core-chassis-lit: #46536b;
-  --core-chassis-seam: #222b3c;
-  --core-chamber: #060d1c;
+  --core-tone-mastered-lift: #f6e8bf;
+  --core-chassis-lit: #57505d;
+  --core-chassis-seam: #2e2933;
+  --core-chamber: #0c0b10;
 }
 
-/*
- * The field the deck floats in: a deep violet bloom, faint concentric rings
- * expanding from behind Yumi, a halftone dot grid over the top — and three
- * planets.
- *
- * Painted by a pseudo-element on the body rather than by a component, so it
- * still costs no DOM and no hydration anywhere in the app — and by a *fixed*
- * pseudo-element rather than by the body's own background, which is the part
- * that changed.
- *
- * `background-attachment: fixed` held it still while pages scroll and that is
- * exactly what it should do; the trouble is how. A fixed attachment cannot be
- * promoted, so the browser repaints these eight gradient layers on every
- * scroll frame, for the whole height of every page in the app — and on mobile
- * WebKit that is one of the most reliable ways to make a page feel heavy. A
- * `position: fixed` element gets the identical result by being composited once
- * and never repainted again, because it genuinely does not move.
- *
- * The geometry is unchanged: `background-attachment: fixed` resolves its
- * gradients against the viewport, and a fixed element inset to 0 *is* the
- * viewport, so every vh and vw below means what it meant before.
- *
- * The planets are here, in the background, rather than in a layer of their own
- * for one reason that decides it: a planet has to be *behind* the page. The
- * app's one full-viewport ambience layer (OrbitField) is deliberately in front
- * of it, which is right for a hairline arc at the margin and wrong for a body
- * large enough to read as a world — that would sit on top of cards. Nothing
- * gets behind an opaque body background except the background itself, so the
- * planets became part of it. Cards occlude them, which is what should happen
- * to something a long way behind. They also do not move, and that is not a
- * compromise: at this distance, nothing would.
- *
- * Stop positions in a radial gradient are percentages of its own radius, which
- * is what makes the numbers below readable — 95.6% is "almost at the edge of
- * this planet", not a position on the screen.
- */
+/* The quiet canvas lets the card-local light carry the hierarchy. No moving
+   full-screen blur: text, camera overlays and the iOS caret stay crisp. */
 html[data-interface-mode="yumi-cosmic"] body::before {
   content: "";
   position: fixed;
   inset: 0;
-  /*
-   * Behind the page's content, in front of the body's own fill. `main` is
-   * transparent in this mode (see the rule below), so the field shows through
-   * everywhere reading happens, and every card keeps its own opaque surface —
-   * which is what should occlude something this far away.
-   */
   z-index: -1;
   pointer-events: none;
-  background-image:
-    repeating-radial-gradient(
-      circle at 50% 38%,
-      transparent 0 46px,
-      rgba(77, 227, 240, 0.035) 46px 47px
-    ),
-    /*
-     * The near planet: a limb rising along the bottom of the screen. The
-     * circle is 88vw in radius with its centre pushed that far below 82vh, so
-     * what lands on screen is the top of an arc far too large to fit — and the
-     * crop is the whole illusion, since a circle you can see all of is a ball
-     * and an arc too big to fit is a world.
-     *
-     * The gradient's radius is 92vw rather than 88 so there is room past the
-     * rim for the atmosphere to fade out into. The rim itself is the half a
-     * percent between them: a hairline, because at this crop the edge is
-     * nearly all of what you get to see.
-     */
-    radial-gradient(
-        circle 92vw at 50% calc(82vh + 88vw),
-        #050b16 0 95.6%,
-        rgba(158, 201, 238, 0.34) 95.9% 96.4%,
-        rgba(77, 227, 240, 0.08) 97.6%,
-        transparent 100%
-      ),
-    /*
-     * Two far planets. Each is one gradient whose centre is offset up and left
-     * of the body it draws, so the bright stops land on one side and the dark
-     * ones wrap the other — a lit sphere out of a single circle rather than a
-     * flat dot with a highlight pasted on.
-     */
-    radial-gradient(
-        circle 11px at calc(6vw - 3px) calc(41vh - 3px),
-        rgba(186, 217, 246, 0.5) 0 22%,
-        rgba(120, 160, 205, 0.2) 44%,
-        rgba(8, 15, 30, 0.92) 64% 80%,
-        transparent 84%
-      ),
-    radial-gradient(
-      circle 7px at calc(93vw - 2px) calc(64vh - 2px),
-      rgba(186, 217, 246, 0.34) 0 24%,
-      rgba(120, 160, 205, 0.14) 46%,
-      rgba(8, 15, 30, 0.85) 66% 80%,
-      transparent 84%
-    ),
-    radial-gradient(
-      circle at 22% 12%,
-      rgba(77, 227, 240, 0.16) 0%,
-      transparent 46%
-    ),
-    radial-gradient(
-      ellipse 90% 60% at 50% 8%,
-      rgba(139, 92, 246, 0.26) 0%,
-      transparent 62%
-    ),
-    radial-gradient(
-      ellipse 80% 55% at 50% 104%,
-      rgba(139, 92, 246, 0.2) 0%,
-      transparent 66%
-    );
+  background:
+    radial-gradient(ellipse 75% 38% at 90% 0%, rgba(125, 77, 116, 0.11), transparent 75%),
+    radial-gradient(ellipse 65% 35% at 0% 90%, rgba(105, 143, 134, 0.055), transparent 75%);
 }
 
-/*
- * Screen paints an opaque warm surface, which would cover all of the above on
- * every page in the app. In Cosmic Mode the page surface steps aside and lets
- * the field show through; panels and cards keep their own fills, so content
- * still sits on something solid and legible.
- */
 html[data-interface-mode="yumi-cosmic"] main {
   background-color: transparent;
 }
 
-/*
- * The HUD micro-label: monospace, uppercase, wide-tracked, bracketed at the
- * call site. Used for the readouts across Cosmic Mode. A global class rather
- * than a module because it is shared by components in three directories and
- * only ever exists in this mode.
- */
+/* Sans text covers Chinese, accents and phonetics. Mono is reserved for
+   measured values; forced uppercase and wide tracking hurt long translations. */
 html[data-interface-mode="yumi-cosmic"] .hud-label {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--cosmic-cyan);
-  opacity: 0.85;
+  font-family: var(--font-sans), var(--font-cjk), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.045em;
+  text-transform: none;
+  color: #c5bbc7;
 }
 
-/* Corner brackets, the way an instrument panel frames a readout. Drawn with
-   two gradients on one element so it adds nothing to the DOM. */
 html[data-interface-mode="yumi-cosmic"] .hud-frame {
   position: relative;
-}
-
-html[data-interface-mode="yumi-cosmic"] .hud-frame::before,
-html[data-interface-mode="yumi-cosmic"] .hud-frame::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: var(--cosmic-cyan-dim);
-  border-style: solid;
-  pointer-events: none;
-}
-
-html[data-interface-mode="yumi-cosmic"] .hud-frame::before {
-  top: 8px;
-  left: 8px;
-  border-width: 1px 0 0 1px;
-}
-
-html[data-interface-mode="yumi-cosmic"] .hud-frame::after {
-  right: 8px;
-  bottom: 8px;
-  border-width: 0 1px 1px 0;
 }
 
 /*
@@ -703,15 +403,15 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-lock[data-saved="true"] {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-console {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 26%, transparent);
-  background-color: rgba(9, 18, 36, 0.72);
+  background-color: #24282a;
   background-image: linear-gradient(
     180deg,
     color-mix(in oklab, var(--cosmic-cyan) 7%, transparent),
     transparent 62%
   );
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   transition:
     border-color 200ms ease,
     box-shadow 240ms ease;
@@ -719,7 +419,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console {
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 62%, transparent);
-  background-color: rgba(9, 18, 36, 0.94);
+  background-color: #24282a;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
@@ -739,7 +439,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
 @supports selector(:has(*)) {
   html[data-interface-mode="yumi-cosmic"]
     .cosmic-panel:has([data-vocabulary-search-input]:focus) {
-    background-color: rgba(11, 20, 40, 0.92);
+    background-color: #1e1d24;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -757,7 +457,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-console:focus-within {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-instrument {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 20%, transparent);
-  background-color: rgba(9, 18, 36, 0.55);
+  background-color: #26232c;
   color: color-mix(in oklab, var(--cosmic-cyan) 78%, transparent);
 }
 
@@ -782,7 +482,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-instrument:hover {
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-chip {
   border-color: color-mix(in oklab, var(--cosmic-cyan) 14%, transparent);
-  background-color: rgba(9, 18, 36, 0.6);
+  background-color: #242129;
   color: color-mix(in oklab, var(--color-black) 62%, transparent);
 }
 
@@ -816,11 +516,11 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-metric {
    navy every other `bg-white` card becomes, because this one sits directly
    under the hero and a hard edge there would cut the field in half. */
 html[data-interface-mode="yumi-cosmic"] .cosmic-panel {
-  background-color: rgba(11, 20, 40, 0.66);
+  background-color: #1e1d24;
   border: 1px solid color-mix(in oklab, var(--cosmic-cyan) 13%, transparent);
   box-shadow: 0 18px 40px rgba(1, 4, 12, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /*
@@ -876,4 +576,79 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::after {
   html[data-interface-mode="yumi-cosmic"] .cosmic-orbit-mark::before {
     animation: none;
   }
+}
+
+/* Shared content surfaces: notes, settings, pronunciation, review and forms.
+   These classes add no positioning, filters or transforms to scroll/portal
+   ancestors, preserving camera layers and the native keyboard coordinate space. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-header {
+  background-color: #08090b;
+  border-bottom-color: rgba(229, 221, 231, 0.09);
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-header h1 {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-card {
+  border-radius: var(--cosmic-card-radius);
+  border-color: rgba(229, 221, 231, 0.12);
+  background-color: #1c1a21;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home {
+  border-radius: var(--cosmic-card-radius);
+  border-color: rgba(164, 182, 239, 0.16);
+  background: radial-gradient(ellipse at 100% 0%, #30354e, transparent 65%), #1c1d28;
+  padding: 1.15rem;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-notes-home h2 {
+  font-weight: 500;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-note-card {
+  border-color: rgba(229, 221, 231, 0.12);
+  background: linear-gradient(150deg, #27242e, #1a191f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:focus-visible {
+  outline: 2px solid var(--cosmic-violet);
+  outline-offset: 3px;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet {
+  background: #1b191f;
+  border: 1px solid #403940;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet > footer {
+  background-color: #1b191f;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-panel {
+  border-radius: var(--cosmic-card-radius);
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-note-card:active {
+    transform: none;
+  }
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-sheet-scrim {
+  background-color: rgba(3, 3, 5, 0.72);
+}
+
+/* Headers grow with the reader's text size and translated title. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-header > div {
+  height: auto;
+  min-height: 4rem;
+  flex-wrap: wrap;
+  padding-block: 0.65rem;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-header > div > div:first-of-type {
+  flex-basis: 10rem;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-header h1 {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+html[data-interface-mode="yumi-cosmic"] .cosmic-header p {
+  overflow-wrap: anywhere;
+  letter-spacing: 0.06em;
 }
