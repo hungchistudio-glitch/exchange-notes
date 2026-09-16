@@ -135,6 +135,34 @@ describe("a sheet opened from a control", () => {
     unmount();
   });
 
+  it("gives focus back to the tapped control when nothing was focused", async () => {
+    // A tap on iOS does not focus the button, so `document.activeElement` is
+    // the document — which is the same as having nowhere to send focus back.
+    const box = JSON.stringify({ left: 40, top: 400, width: 320, height: 60 });
+    const { rerender, unmount } = render(<Host open={false} box={box} />);
+
+    const opener = screen.getByRole("button", { name: "Open list picker" });
+    expect(document.activeElement).toBe(document.body);
+
+    fireEvent.pointerDown(opener);
+    rerender(<Host open box={box} />);
+    await frames();
+
+    expect(panel()).toHaveFocus();
+
+    rerender(<Host open={false} box={box} />);
+    // The exit schedules its unmount from inside a frame, so the frame has to
+    // run before the clock is worth advancing.
+    await frames();
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(opener).toHaveFocus();
+
+    unmount();
+  });
+
   it("rises the ordinary way when nothing was tapped", async () => {
     const { rerender, unmount } = render(<Host open={false} />);
 

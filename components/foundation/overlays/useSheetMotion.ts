@@ -491,8 +491,18 @@ export default function useSheetMotion({
     const panel = panelRef.current;
     if (!panel) return;
 
+    /*
+     * body does not count as "where focus was".
+     *
+     * iOS does not focus a button when it is tapped, so for a reader on a
+     * phone document.activeElement is the document itself — and handing focus
+     * back to <body> is the same as dropping it. The control the finger was
+     * on is already known for the entrance, and it is the honest answer to
+     * "what was the reader using before this opened".
+     */
     const previouslyFocused =
       document.activeElement instanceof HTMLElement
+      && document.activeElement !== document.body
         ? document.activeElement
         : null;
 
@@ -509,8 +519,10 @@ export default function useSheetMotion({
       applyInertness();
 
       // Only if it is still on the page, and still somewhere focus can go.
-      if (previouslyFocused && previouslyFocused.isConnected) {
-        previouslyFocused.focus({ preventScroll: true });
+      const returnTo = previouslyFocused ?? originRef.current;
+
+      if (returnTo && returnTo.isConnected) {
+        returnTo.focus({ preventScroll: true });
       }
     };
   }, [rendered]);
