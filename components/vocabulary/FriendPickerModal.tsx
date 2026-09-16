@@ -66,7 +66,6 @@ export default function FriendPickerModal({
   onPick,
   onRetry,
 }: FriendPickerModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const motion = useSheetMotion({ onClose });
   const reducedMotion = useReducedMotion();
@@ -76,11 +75,6 @@ export default function FriendPickerModal({
    * that changes size, so pinning it pins the sheet.
    */
   const [listHeight, setListHeight] = useState(SETTLED_LIST_HEIGHT);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => dialogRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, []);
 
   /*
    * Nothing happens here until the sheet has landed — that is the point.
@@ -96,7 +90,7 @@ export default function FriendPickerModal({
   useEffect(() => {
     if (!motion.settled) return;
 
-    const panel = dialogRef.current;
+    const panel = motion.panelRef.current;
     const list = listRef.current;
     if (!panel || !list) return;
 
@@ -109,7 +103,7 @@ export default function FriendPickerModal({
     setListHeight(
       Math.min(Math.max(SETTLED_LIST_HEIGHT, list.scrollHeight), room),
     );
-  }, [motion.settled, loading, errorMessage, friends]);
+  }, [motion.panelRef, motion.settled, loading, errorMessage, friends]);
 
   return (
     <OverlayPortal>
@@ -123,11 +117,9 @@ export default function FriendPickerModal({
       />
 
       <div
-        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="send-to-partner-title"
-        tabIndex={-1}
         {...motion.panelProps}
         className={`${motion.panelClassName} relative z-10 flex w-full max-w-xl flex-col rounded-t-[28px] border border-white/40 bg-white/75 shadow-2xl backdrop-blur-2xl sm:rounded-[28px]`}
         style={{

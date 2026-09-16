@@ -22,7 +22,6 @@ import {
   Plus,
   Send,
   ShieldCheck,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -31,7 +30,7 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import HighlightedMessageBody from "@/components/messages/HighlightedMessageBody";
 import NewsCardMessage from "@/components/messages/NewsCardMessage";
-import YumiDecodeCard from "@/components/messages/YumiDecodeCard";
+import DecodeSlot from "@/components/messages/DecodeSlot";
 import WordCardMessage from "@/components/messages/WordCardMessage";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -1702,40 +1701,19 @@ export default function ConversationRoom({
                     while the reader has asked for it.
                   */}
                   {hasDecode && analysis && !selectMode && (
-                    <div className="mb-4 flex justify-start">
-                      {decodeOpen ? (
-                        <YumiDecodeCard
-                          analysis={analysis}
-                          conversationId={conversationId}
-                          speechLanguage={getLanguage(languagePair[0]).speechTag}
-                          savedPhraseIds={savedPhraseIds}
-                          savingPhraseId={savingPhraseId}
-                          onSavePhrase={(phrase) => void handleSavePhrase(phrase)}
-                          onInsertReply={handleInsertReply}
-                          onClose={() => setOpenDecodeId(null)}
-                        />
-                      ) : (
-                        /*
-                          Closed, the offer is one quiet line. §18 asks for a
-                          conversation that still reads as a conversation, and a
-                          card that opens itself under every message would be
-                          the opposite of that.
-                        */
-                        <button
-                          type="button"
-                          onClick={() => setOpenDecodeId(message.id)}
-                          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[0.75rem] font-medium"
-                          style={{
-                            borderColor: "var(--msg-line)",
-                            color: "var(--msg-accent)",
-                            background: "var(--msg-accent-soft)",
-                          }}
-                        >
-                          <Sparkles size={13} strokeWidth={1.9} />
-                          {copy.decode.open}
-                        </button>
-                      )}
-                    </div>
+                    <DecodeSlot
+                      analysis={analysis}
+                      conversationId={conversationId}
+                      speechLanguage={getLanguage(languagePair[0]).speechTag}
+                      savedPhraseIds={savedPhraseIds}
+                      savingPhraseId={savingPhraseId}
+                      open={decodeOpen}
+                      openLabel={copy.decode.open}
+                      onOpen={() => setOpenDecodeId(message.id)}
+                      onClose={() => setOpenDecodeId(null)}
+                      onSavePhrase={(phrase) => void handleSavePhrase(phrase)}
+                      onInsertReply={handleInsertReply}
+                    />
                   )}
                 </div>
               );

@@ -29,6 +29,7 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
 import CompactStoryRow from "@/components/discover/CompactStoryRow";
 import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
 import StoryDetailSheet from "@/components/discover/StoryDetailSheet";
+import useRetainedWhileClosing from "@/components/foundation/overlays/useRetainedWhileClosing";
 import VocabularyDrawer from "@/components/discover/VocabularyDrawer";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import {
@@ -843,6 +844,25 @@ export default function DailyNews() {
     setDetailCardId((current) => (current === cardId ? null : current));
   }
 
+  const visibleCards = cards.filter(
+    (card) =>
+      !hiddenIds.has(card.id) &&
+      (selectedTopics.size === 0 || selectedTopics.has(card.category.trim())),
+  );
+  const openDetailCard =
+    visibleCards.find((card) => card.id === detailCardId) ?? null;
+  /*
+   * Held through the sheet's exit. Everything the detail sheet is given is
+   * derived from this one story — its title, its category, its time, whether
+   * it is saved — so letting it go the moment the reader closes the sheet
+   * emptied all of it at once and the story slid away as a blank panel.
+   *
+   * Above the loading return, with the list it reads from, because it is a
+   * hook: behind that return it would not run on the renders where the feed
+   * is still arriving, and the hook order would differ between them.
+   */
+  const detailCard = useRetainedWhileClosing(openDetailCard);
+
   if (loading) {
     return <LoadingHero />;
   }
@@ -862,15 +882,8 @@ export default function DailyNews() {
     ),
   );
 
-  const visibleCards = cards.filter(
-    (card) =>
-      !hiddenIds.has(card.id) &&
-      (selectedTopics.size === 0 || selectedTopics.has(card.category.trim())),
-  );
   const featuredCard = visibleCards[0] ?? null;
   const latestCards = visibleCards.slice(1);
-  const detailCard =
-    visibleCards.find((card) => card.id === detailCardId) ?? null;
   const vocabDrawerCard =
     visibleCards.find((card) => card.id === vocabDrawerCardId) ?? null;
 
@@ -1069,7 +1082,7 @@ export default function DailyNews() {
 
       <StoryDetailSheet
         card={detailCard}
-        open={detailCardId !== null && detailCard !== null}
+        open={detailCardId !== null && openDetailCard !== null}
         onClose={() => setDetailCardId(null)}
         copy={copy}
         isSaved={detailCard ? savedCardIds.has(detailCard.id) : false}

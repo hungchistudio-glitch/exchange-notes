@@ -75,13 +75,13 @@ export default function StoryDetailSheet({
    */
   const [primaryLanguage, secondaryLanguage] = pair;
 
-  if (!card) {
-    return (
-      <BottomSheet open={false} onClose={onClose} title="">
-        <div />
-      </BottomSheet>
-    );
-  }
+  /*
+   * Only before the first story is ever opened. The empty shell that used to
+   * stand here existed so the sheet stayed mounted long enough to animate
+   * out after its card was cleared — which it did, as a blank panel. The
+   * card is now held by the caller for exactly as long as the exit takes.
+   */
+  if (!card) return null;
 
   const titleEnKey = `detail-title-en-${card.id}`;
   const titleZhKey = `detail-title-zh-${card.id}`;

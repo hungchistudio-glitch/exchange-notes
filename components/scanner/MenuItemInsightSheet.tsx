@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import useRetainedWhileClosing from "@/components/foundation/overlays/useRetainedWhileClosing";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -135,7 +136,7 @@ async function publishDishImage(
  * languages happened to fall.
  */
 export default function MenuItemInsightSheet({
-  item,
+  item: selectedItem,
   cuisine,
   targetLanguage,
   pageImage,
@@ -146,6 +147,14 @@ export default function MenuItemInsightSheet({
   const router = useRouter();
 
   const { pair: languagePair } = useDisplayLanguages();
+
+  /*
+   * The selection opens and closes the sheet; the retained copy is what the
+   * sheet draws. Closing clears the selection in the same render that starts
+   * the exit, and this component used to answer that with `return null` — so
+   * the dish did not leave the screen, it stopped existing on it.
+   */
+  const item = useRetainedWhileClosing(selectedItem);
 
 
   const [speaking, setSpeaking] = useState<SpeechLanguage | null>(null);
@@ -390,7 +399,7 @@ export default function MenuItemInsightSheet({
   return (
     <>
       <BottomSheet
-        open={Boolean(item)}
+        open={Boolean(selectedItem)}
         onClose={onClose}
         title={primary}
         description={primaryDescription || undefined}

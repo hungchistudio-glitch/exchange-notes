@@ -167,7 +167,7 @@ describe("the word search drawer", () => {
     expect(input).not.toHaveFocus();
   });
 
-  it("closes when the grip is pulled down", () => {
+  it("closes when the grip is let go past the threshold, and not before", () => {
     const onClose = vi.fn();
     render(<LexiconSearchSheet open onClose={onClose} tone="warm" />);
 
@@ -176,18 +176,37 @@ describe("the word search drawer", () => {
     );
     expect(grip).not.toBeNull();
 
-    fireEvent.pointerDown(grip!, {
-      button: 0,
-      clientY: 12,
-      pointerId: 9,
-    });
-    fireEvent.pointerMove(grip!, {
-      button: 0,
-      clientY: 220,
-      pointerId: 9,
-    });
+    fireEvent.pointerDown(grip!, { button: 0, clientY: 12, pointerId: 9 });
+    fireEvent.pointerMove(grip!, { button: 0, clientY: 220, pointerId: 9 });
+
+    /*
+     * Still held. The drawer used to leave from under the finger the moment
+     * the threshold was crossed, which also meant there was no way to change
+     * your mind by dragging back up.
+     */
+    act(() => vi.advanceTimersByTime(400));
+    expect(onClose).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(grip!, { button: 0, clientY: 220, pointerId: 9 });
 
     act(() => vi.advanceTimersByTime(400));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays open when the grip is dragged past the threshold and back", () => {
+    const onClose = vi.fn();
+    render(<LexiconSearchSheet open onClose={onClose} tone="warm" />);
+
+    const grip = document.querySelector<HTMLElement>(
+      "[data-lexicon-drawer-handle]",
+    );
+
+    fireEvent.pointerDown(grip!, { button: 0, clientY: 12, pointerId: 9 });
+    fireEvent.pointerMove(grip!, { button: 0, clientY: 220, pointerId: 9 });
+    fireEvent.pointerMove(grip!, { button: 0, clientY: 14, pointerId: 9 });
+    fireEvent.pointerUp(grip!, { button: 0, clientY: 14, pointerId: 9 });
+
+    act(() => vi.advanceTimersByTime(400));
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
