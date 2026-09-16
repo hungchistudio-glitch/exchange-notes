@@ -13,6 +13,18 @@ import styles from "./SheetMotion.module.css";
 
 const EXIT_DURATION_MS = 380;
 
+/*
+ * How far down the sheet has to be let go to be dismissed.
+ *
+ * A fraction of the screen so the gesture means the same thing on every
+ * phone, capped so it does not become a long haul on a tall one. Read in two
+ * places — the resistance while dragging and the decision on release — and
+ * they must agree, which is why it is a function and not two constants.
+ */
+function dismissThreshold() {
+  return Math.min(window.innerHeight * 0.16, 150);
+}
+
 type SheetPresentation = "sheet" | "fullscreen";
 
 let bodyLockCount = 0;
@@ -144,6 +156,7 @@ export default function useSheetMotion({
   const [settled, setSettled] = useState(false);
   const [closing, setClosing] = useState(false);
   const [dragY, setDragY] = useState(0);
+  const [dragProgress, setDragProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
 
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -194,6 +207,7 @@ export default function useSheetMotion({
     setClosing(true);
     setSettled(false);
     setDragging(false);
+    setDragProgress(0);
     setVisible(false);
     clearMotionTimers();
 
@@ -300,20 +314,34 @@ export default function useSheetMotion({
     const elapsed = Math.max(1, now - pointer.lastTime);
     const instantVelocity = (event.clientY - pointer.lastY) / elapsed;
     const rawY = event.clientY - pointer.startY;
+    const threshold = dismissThreshold();
+
+    /*
+     * Upward is rubber — the sheet is already as far up as it goes.
+     *
+     * Downward tracks the finger exactly until the dismiss threshold, then
+     * takes on resistance. That change of feel *is* the signal that letting
+     * go now will dismiss: the sheet tells the reader where the edge is by
+     * getting heavier at it, rather than by leaving while they are still
+     * holding it.
+     *
+     * It used to call requestClose() from right here, mid-gesture. The sheet
+     * left from under the finger the instant the threshold was crossed, and
+     * there was no way to change your mind by dragging back up — which is
+     * the whole reason a threshold is judged on release everywhere else.
+     */
     const nextY = rawY < 0
       ? -Math.min(Math.abs(rawY) * 0.12, 18)
-      : rawY;
+      : rawY > threshold
+        ? threshold + (rawY - threshold) * 0.5
+        : rawY;
 
     pointer.lastY = event.clientY;
     pointer.lastTime = now;
     pointer.currentY = nextY;
     pointer.velocityY = pointer.velocityY * 0.64 + instantVelocity * 0.36;
     setDragY(nextY);
-
-    const dismissThreshold = Math.min(window.innerHeight * 0.16, 150);
-    if (nextY > dismissThreshold) {
-      requestClose();
-    }
+    setDragProgress(Math.min(1, Math.max(0, nextY) / threshold));
   }
 
   function finishPointer(event: ReactPointerEvent<HTMLElement>) {
@@ -327,13 +355,13 @@ export default function useSheetMotion({
     setDragging(false);
 
     const projectedY = pointer.currentY + pointer.velocityY * 180;
-    const threshold = Math.min(window.innerHeight * 0.16, 150);
-    if (projectedY > threshold || pointer.velocityY > 0.62) {
+    if (projectedY > dismissThreshold() || pointer.velocityY > 0.62) {
       requestClose();
       return;
     }
 
     setDragY(0);
+    setDragProgress(0);
     settleAfterMotion();
   }
 
@@ -344,6 +372,7 @@ export default function useSheetMotion({
     pointerRef.current = null;
     setDragging(false);
     setDragY(0);
+    setDragProgress(0);
     settleAfterMotion();
   }
 
@@ -358,6 +387,16 @@ export default function useSheetMotion({
     handleClassName: styles.handle,
     backdropProps: {
       "data-visible": visible ? "true" : "false",
+      /*
+       * The scrim lifts as the sheet is pulled down, so the gesture is
+       * answered on the frame it happens rather than only when it ends. With
+       * the dismissal now judged on release (see handlePointerMove), this is
+       * what tells the reader the drag is being received at all.
+       */
+      "data-dragging": dragging ? "true" : "false",
+      style: {
+        "--sheet-drag-progress": dragProgress,
+      } as CSSProperties,
     },
     panelProps: {
       "data-visible": visible ? "true" : "false",
