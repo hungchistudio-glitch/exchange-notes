@@ -348,14 +348,32 @@
   margin-top: 8px;
 }
 
+/*
+ * The pill both rows of buttons are cut from — shape and face, nothing that
+ * one of them then takes back.
+ *
+ * Half of what used to be here was written for the checkpoints and undone by
+ * them twenty lines down: height, ink, and the size inside the `font`
+ * shorthand. Longhands rather than the shorthand now, because the size is
+ * the part they disagree about and a shorthand cannot be shared without it.
+ */
 .controlButtons button,
 .checkpoints button {
-  min-height: 36px;
   border: 1px solid #dedcd5;
   border-radius: 999px;
   background: #ffffff;
+  font-weight: 650;
+  font-family: var(--font-geist-sans), sans-serif;
+  line-height: 1;
+}
+
+.controlButtons button {
+  min-height: 36px;
   color: #34332f;
-  font: 650 11px/1 var(--font-geist-sans), sans-serif;
+  /* 11px at the default root, and 11px is what it was — but as a length that
+     follows the reader's text size, which it could not do from inside the
+     shorthand. The checkpoints beside it were already in rem. */
+  font-size: 0.6875rem;
 }
 
 .controlButtons .primaryControl {

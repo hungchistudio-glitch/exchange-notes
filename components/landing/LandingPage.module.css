@@ -965,12 +965,14 @@
 .sectionDescription,
 .sectionDescriptionZh {
   color: var(--landing-soft);
-  font-size: 1rem;
   line-height: 1.75;
 }
 
+/* Each description sets its own size: the Chinese one runs a step smaller,
+   and 1rem used to sit in the rule above where it read as the size of both. */
 .sectionDescription {
   margin-top: 28px;
+  font-size: 1rem;
 }
 
 .sectionDescriptionZh {
@@ -1003,12 +1005,14 @@
 .noteTextTranslation {
   max-width: 430px;
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: clamp(1.45rem, 2.7vw, 2rem);
   line-height: 1.55;
 }
 
+/* The hand and its gloss share a face and a measure, not a size — the
+   translation is deliberately the quieter of the two. */
 .noteText {
   margin-top: 30px;
+  font-size: clamp(1.45rem, 2.7vw, 2rem);
 }
 
 .noteTextTranslation {
