@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -38,6 +39,121 @@ type SheetPresentation = "sheet" | "fullscreen";
  * A stack rather than a flag, because sheets nest — the friend picker opens
  * over the dish sheet — and only the topmost one should be reachable.
  */
+/*
+ * Where the sheet came from.
+ *
+ * A sheet that grows out of the row you tapped and shrinks back into it is
+ * the whole of what "opening" means on a phone home screen: the thing you
+ * touched became the thing you are looking at. A sheet that always rises from
+ * the bottom edge is a panel being delivered, which is a different idea and a
+ * flatter one.
+ *
+ * Nothing is passed in. The control that opened a sheet is the one the finger
+ * was last on, and — since the focus work below already has to know it — the
+ * one focus goes back to when the sheet closes. Reading it here rather than
+ * threading an `originRef` through fourteen call sites keeps every existing
+ * sheet as it is.
+ *
+ * pointerdown rather than focus alone: iOS does not focus a button when it is
+ * tapped, so focus would find `body` for exactly the readers this is for.
+ */
+let lastPointerDownTarget: Element | null = null;
+let lastPointerDownAt = 0;
+
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "pointerdown",
+    (event) => {
+      lastPointerDownTarget =
+        event.target instanceof Element ? event.target : null;
+      lastPointerDownAt = performance.now();
+    },
+    { capture: true, passive: true },
+  );
+}
+
+/** Controls a sheet can plausibly have been opened from. */
+const ORIGIN_CANDIDATE = [
+  "button",
+  "a[href]",
+  "[role='button']",
+  "[role='switch']",
+  "[role='option']",
+  "li",
+].join(",");
+
+function findOrigin(fallback: HTMLElement | null): HTMLElement | null {
+  const tapped =
+    performance.now() - lastPointerDownAt < 1200 ? lastPointerDownTarget : null;
+
+  const candidate = tapped?.closest(ORIGIN_CANDIDATE) ?? fallback;
+  if (!(candidate instanceof HTMLElement) || !candidate.isConnected) return null;
+
+  return candidate;
+}
+
+/**
+ * The transform that puts the panel over its origin, ready to grow out of it.
+ *
+ * Measured with the panel's own transform switched off for the length of one
+ * layout read, because every other answer — unpicking the computed matrix,
+ * or deriving the layout box from whichever of the four base transforms is
+ * currently winning — is a way of getting the same number wrong later.
+ *
+ * Returns null when the origin is gone or off screen: a sheet flying in from
+ * a point nobody can see is worse than one that simply rises.
+ */
+function originTransform(panel: HTMLElement, origin: HTMLElement) {
+  const originRect = origin.getBoundingClientRect();
+
+  if (originRect.width === 0 || originRect.height === 0) return null;
+  if (originRect.bottom < 0 || originRect.top > window.innerHeight) return null;
+
+  panel.setAttribute("data-measuring", "true");
+  const panelRect = panel.getBoundingClientRect();
+  panel.removeAttribute("data-measuring");
+
+  if (panelRect.width === 0 || panelRect.height === 0) return null;
+
+  /*
+   * Uniform, and floored well short of nothing. A row gives about 0.8 and
+   * reads as the row opening; an icon button would give 0.08, and a panel of
+   * text scaled to a tenth is a smear rather than a sheet on its way.
+   */
+  const scale = Math.min(
+    0.92,
+    Math.max(0.42, originRect.width / panelRect.width),
+  );
+
+  return {
+    x:
+      originRect.left
+      + originRect.width / 2
+      - (panelRect.left + panelRect.width / 2),
+    y:
+      originRect.top
+      + originRect.height / 2
+      - (panelRect.top + panelRect.height / 2),
+    scale,
+  };
+}
+
+function applyOrigin(panel: HTMLElement | null, origin: HTMLElement | null) {
+  if (!panel) return;
+
+  const placement = origin ? originTransform(panel, origin) : null;
+
+  if (!placement) {
+    panel.removeAttribute("data-origin");
+    return;
+  }
+
+  panel.style.setProperty("--sheet-from-x", `${placement.x}px`);
+  panel.style.setProperty("--sheet-from-y", `${placement.y}px`);
+  panel.style.setProperty("--sheet-from-scale", `${placement.scale}`);
+  panel.setAttribute("data-origin", "true");
+}
+
 const openPanels: HTMLElement[] = [];
 const inertedElements = new Set<Element>();
 
@@ -211,6 +327,7 @@ export default function useSheetMotion({
   const closingRef = useRef(false);
   const pointerRef = useRef<DragPointer | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const originRef = useRef<HTMLElement | null>(null);
 
   // A callback ref so it can be spread onto whatever element a sheet uses for
   // its panel — a section, a div — without the hook having to know which.
@@ -256,6 +373,14 @@ export default function useSheetMotion({
 
     closingRef.current = true;
     pointerRef.current = null;
+    /*
+     * Re-measured rather than reused. The page behind is frozen while a sheet
+     * is up, but it need not be where it was when the sheet opened — a new
+     * sheet may have replaced the list, or the row may have been the last one
+     * and since been removed. If it is gone, applyOrigin drops the attribute
+     * and the sheet leaves the ordinary way.
+     */
+    applyOrigin(panelRef.current, originRef.current);
     setClosing(true);
     setSettled(false);
     setDragging(false);
@@ -332,6 +457,34 @@ export default function useSheetMotion({
    * guard — if the sheet has already put focus somewhere inside itself, that
    * was a decision, and this leaves it alone.
    */
+  /*
+   * Before the first paint, not after it.
+   *
+   * The panel is in the document by the time a layout effect runs and the
+   * browser has not drawn it yet, which is the only moment the "from" state
+   * can be installed without a frame of the sheet sitting somewhere else
+   * first. An ordinary effect is one paint too late.
+   */
+  useLayoutEffect(() => {
+    if (!rendered) return;
+
+    /*
+     * On `rendered` alone, not on "rendered and not yet visible". The two
+     * happen a frame apart and the panel has to be measured in between — but
+     * a guard that depends on catching that gap is a guard that fails the
+     * moment the two land in one commit. Writing the offsets while the sheet
+     * is already open costs nothing: the visible rule wins until it closes,
+     * and then they are exactly what the closing rule needs.
+     */
+    originRef.current = findOrigin(
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null,
+    );
+
+    applyOrigin(panelRef.current, originRef.current);
+  }, [rendered]);
+
   useEffect(() => {
     if (!rendered) return;
 

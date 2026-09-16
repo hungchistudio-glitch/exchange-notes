@@ -65,6 +65,55 @@
 }
 
 /*
+ * Opening out of the thing that was tapped.
+ *
+ * The hook measures the control the finger was last on and writes the offset
+ * and scale that put this panel over it; see useSheetMotion. The sheet then
+ * grows from there to where it belongs, and shrinks back into it on the way
+ * out — which is what makes the gesture read as "that row became this" rather
+ * than as a panel being delivered from off screen.
+ *
+ * After the fullscreen rules on purpose. Both are two attributes deep, so the
+ * one further down wins, and a full-screen search drawer growing out of the
+ * search button is the same idea working at a larger size.
+ *
+ * Without an origin — a sheet opened by a keyboard shortcut, or one whose row
+ * has scrolled away — none of this matches and the sheet rises from the
+ * bottom as it always did.
+ */
+.panel[data-origin="true"] {
+  opacity: 0;
+  transform:
+    translate3d(var(--sheet-from-x, 0px), var(--sheet-from-y, 0px), 0)
+    scale(var(--sheet-from-scale, 0.9));
+}
+
+.panel[data-origin="true"][data-visible="true"] {
+  opacity: 1;
+  transform: translate3d(0, var(--sheet-drag-y), 0) scale(1);
+}
+
+.panel[data-origin="true"][data-closing="true"] {
+  opacity: 0;
+  transform:
+    translate3d(var(--sheet-from-x, 0px), var(--sheet-from-y, 0px), 0)
+    scale(var(--sheet-from-scale, 0.9));
+  transition:
+    transform 300ms cubic-bezier(0.4, 0, 1, 1),
+    opacity 220ms ease-in;
+}
+
+/*
+ * One layout read with the panel's own transform switched off, so the hook
+ * can measure where the sheet will actually sit. Added and removed inside a
+ * single task: the browser never paints it.
+ */
+.panel[data-measuring="true"] {
+  transform: none !important;
+  transition: none !important;
+}
+
+/*
  * Leaving is not entering backwards.
  *
  * A sheet arrives on a decelerating curve: it is being placed, and it settles.
@@ -133,5 +182,11 @@
   .backdrop,
   .panel {
     transition-duration: 1ms;
+  }
+
+  /* Nothing travels, including out of a row. */
+  .panel[data-origin="true"],
+  .panel[data-origin="true"][data-closing="true"] {
+    transform: none;
   }
 }
