@@ -280,6 +280,17 @@
 .core[data-state="attracted"] .chamber {
   animation: none;
   opacity: 1;
+}
+
+/*
+ * The held glow, and only for a core in the hand.
+ *
+ * It was written for both states, and then written over for `attracted` forty
+ * lines below — so every core the reader dragged into Yumi's zone had this
+ * one composed and discarded. The two glows are different on purpose; this is
+ * just the one that was never going to be seen saying so.
+ */
+.core[data-state="lifted"] .chamber {
   box-shadow:
     inset 0 0 8px color-mix(in oklab, var(--tone) 62%, transparent),
     0 0 22px color-mix(in oklab, var(--tone) 46%, transparent);
