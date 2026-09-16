@@ -43,7 +43,10 @@
   border-radius: 1.7rem;
   padding: 1.1rem;
   color: #212026;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 15%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    inset 0 -1px 0 rgb(33 32 38 / 10%),
+    0 2px 10px rgb(0 0 0 / 35%);
 }
 
 /*
@@ -58,9 +61,9 @@
 .card::after {
   content: "";
   position: absolute;
-  width: 0.65rem;
-  height: 0.65rem;
-  border-color: rgb(33 32 38 / 20%);
+  width: 0.85rem;
+  height: 0.85rem;
+  border-color: rgb(33 32 38 / 32%);
   border-style: solid;
   pointer-events: none;
 }
@@ -87,26 +90,25 @@
 }
 
 .goal {
-  display: grid;
+  display: flex;
   grid-column: 1 / -1;
-  grid-template-columns: minmax(0, 1fr) auto;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  min-height: 9.5rem;
-  padding: 1.2rem 1.4rem;
+  gap: 0.85rem;
+  padding: 1.2rem 1.4rem 1.5rem;
   background:
     radial-gradient(ellipse at 95% 95%, #edb2ad 0%, transparent 64%),
     radial-gradient(ellipse at 72% 44%, #d99dbf 0%, transparent 55%),
     linear-gradient(150deg, #b9b0bf 0%, #ddb2ce 70%);
 }
 
-.goalCopy {
-  min-width: 0;
+.goal .cardLabel {
+  align-self: flex-start;
 }
 
-.goalValue,
 .metricValue,
-.tileValue {
+.tileValue,
+.dialReading {
   font-variant-numeric: tabular-nums;
   font-weight: 400;
   letter-spacing: -0.065em;
@@ -114,56 +116,62 @@
   overflow-wrap: anywhere;
 }
 
-.goalValue {
-  margin-top: 0.7rem;
-  font-size: clamp(2.1rem, 8vw, 3rem);
-}
-
-.goalTarget {
-  display: inline-block;
-  margin-left: 0.18rem;
-  font-size: 0.46em;
-  letter-spacing: -0.045em;
-}
-
 .dial {
-  width: 6.1rem;
-  max-width: 25vw;
+  position: relative;
+  display: grid;
+  width: 9rem;
+  max-width: 52vw;
   aspect-ratio: 1;
+  place-items: center;
 }
 
 .dialSvg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
+/* Sixty graduations with a major every fifth: the ring reads as a scale
+   rather than as a texture, and the majors give the eye somewhere to land. */
 .dialTick {
-  stroke: rgb(48 31 47 / 45%);
-  stroke-width: 0.65;
+  stroke: rgb(48 31 47 / 34%);
+  stroke-width: 0.6;
+}
+
+.dialTickMajor {
+  stroke: rgb(48 31 47 / 62%);
+  stroke-width: 1.1;
 }
 
 .track {
-  stroke: rgb(48 31 47 / 18%);
+  stroke: rgb(48 31 47 / 14%);
 }
 
+/*
+ * The sweep. It starts from the full-circle offset — while the history is
+ * loading the value is zero — so the arc travels to the reading on the frame
+ * the data lands rather than appearing at its final length.
+ */
 .arc {
-  stroke: #533447;
-  transition: stroke-dashoffset 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  stroke: #4a2c3f;
+  filter: drop-shadow(0 0 2.5px rgb(74 44 63 / 45%));
+  transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.dialCenter {
-  fill: rgb(250 230 239 / 28%);
-  stroke: rgb(75 47 64 / 20%);
-  stroke-width: 0.5;
+.dialReading {
+  position: relative;
+  font-size: clamp(1.9rem, 9vw, 2.6rem);
 }
 
-.dialCross {
-  fill: none;
-  stroke: #533447;
-  stroke-linecap: round;
-  stroke-width: 0.8;
+.dialTarget {
+  display: inline-block;
+  margin-left: 0.14rem;
+  font-size: 0.44em;
+  letter-spacing: -0.04em;
+  opacity: 0.62;
 }
 
 .metric {
@@ -192,48 +200,95 @@
   font-size: clamp(1.8rem, 7vw, 2.4rem);
 }
 
-/* Each mark is a fixed interval on a 0–100% scale; the pointer reads the
-   actual percentage. No generated chart or fabricated history is shown. */
+/*
+ * The scale under a reading.
+ *
+ * One element carries both sets of graduations: a short mark every twentieth
+ * and a full-height one every quarter, drawn as two repeating gradients of
+ * the card's own ink. The lit copy sits exactly on top of the dim one and is
+ * clipped to the reading, so the marks never shift by a sub-pixel between the
+ * two — which is what happens if you size the lit layer instead of clipping
+ * it, because its gradient percentages then resolve against its own width.
+ */
 .ruler {
   position: relative;
-  height: 1.4rem;
-  margin-top: 0.65rem;
-  margin-inline: 0.2rem;
+  height: 1.5rem;
+  margin-top: 0.7rem;
+  /* Clear of the corner marks: the frame holds the scale, it does not cross
+     it. Wide enough that a pointer at 100% still lands inside the card. */
+  margin-inline: 0.5rem;
+}
+
+.rulerTrack,
+.rulerLit {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  height: 0.8rem;
+  background-image:
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 5%),
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 25%);
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size:
+    100% 44%,
+    100% 100%;
 }
 
 .rulerTrack {
-  position: absolute;
-  inset: 0.4rem 0 0;
-  border-top: 1px solid rgb(33 32 38 / 35%);
-  background: repeating-linear-gradient(
-    90deg,
-    rgb(33 32 38 / 30%) 0 1px,
-    transparent 1px 10%
-  );
-  mask-image: linear-gradient(#000 0%, transparent 100%);
+  border-bottom: 1px solid currentcolor;
+  opacity: 0.22;
+}
+
+/* The graduations up to the reading. */
+.rulerLit {
+  opacity: 0.8;
+  clip-path: inset(0 calc(100% - var(--progress) * 100%) 0 0);
+  animation: rulerFill 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .rulerMarker {
   position: absolute;
   top: 0;
+  bottom: 0;
   left: calc(var(--progress) * 100%);
-  width: 0;
-  height: 0;
-  border-top: 0.35rem solid #332636;
-  border-right: 0.23rem solid transparent;
-  border-left: 0.23rem solid transparent;
+  width: 2px;
+  margin-left: -1px;
+  background: currentcolor;
+  filter: drop-shadow(0 0 3px rgb(33 32 38 / 40%));
+  animation: rulerSweep 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The head, so the line reads as a pointer rather than as one more mark. */
+.rulerMarker::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-top: 0.4rem solid currentcolor;
+  border-right: 0.28rem solid transparent;
+  border-left: 0.28rem solid transparent;
   transform: translateX(-50%);
-  transition: left 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Both travel from zero once, on the frame the reading arrives. */
+@keyframes rulerFill {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes rulerSweep {
+  from {
+    left: 0;
+    opacity: 0;
+  }
 }
 
 .tile {
   display: flex;
   min-height: 7.2rem;
   flex-direction: column;
-}
-
-.tile .ruler {
-  margin-top: 0.5rem;
 }
 
 .blue {
@@ -265,8 +320,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arc,
-  .rulerMarker {
+  .arc {
     transition: none;
+  }
+
+  .rulerLit,
+  .rulerMarker {
+    animation: none;
   }
 }

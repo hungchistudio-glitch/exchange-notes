@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
@@ -13,33 +13,75 @@ function clampProgress(value: number) {
   return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 }
 
-/** The dial and its scale both read the same real daily-word progress. */
-function GoalDial({ value }: { value: number }) {
-  const radius = 34;
+/*
+ * The scale under a reading.
+ *
+ * Graduated like a real instrument — minor marks every twentieth, major every
+ * quarter — because a row of identical ticks is a decoration and a graduated
+ * one can be read. Where the reading is a rate the marks up to it are lit and
+ * the rest stay dim, which is what makes 88% and 0% differ at a glance rather
+ * than only in the two characters above them.
+ *
+ * `progress` is null for a count. "Words mastered: 4" has no full mark to be
+ * four out of, so that scale carries no lit region and no pointer: an
+ * instrument may not draw a reading against a maximum nobody set.
+ */
+function Scale({ progress }: { progress: number | null }) {
+  const style =
+    progress === null
+      ? undefined
+      : ({ "--progress": clampProgress(progress) } as CSSProperties);
+
+  return (
+    <div className={styles.ruler} aria-hidden="true" style={style}>
+      <span className={styles.rulerTrack} />
+      {progress !== null && (
+        <>
+          <span className={styles.rulerLit} />
+          <span className={styles.rulerMarker} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The daily goal, as the panel's one dial.
+ *
+ * Sixty graduations with a major every fifth, a sweeping arc, and the reading
+ * inside the ring rather than beside it — the arrangement that makes this the
+ * instrument the rest of the panel is arranged around.
+ */
+function GoalDial({ value, children }: { value: number; children: ReactNode }) {
+  const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const clamped = clampProgress(value);
 
   return (
-    <div className={styles.dial} aria-hidden="true">
-      <svg viewBox="0 0 100 100" className={styles.dialSvg}>
-        {Array.from({ length: 40 }, (_, index) => (
-          <line
-            key={index}
-            className={styles.dialTick}
-            x1="50"
-            y1="5"
-            x2="50"
-            y2={index % 5 === 0 ? "11" : "8"}
-            transform={`rotate(${index * 9} 50 50)`}
-          />
-        ))}
+    <div className={styles.dial}>
+      <svg viewBox="0 0 100 100" className={styles.dialSvg} aria-hidden="true">
+        {Array.from({ length: 60 }, (_, index) => {
+          const major = index % 5 === 0;
+
+          return (
+            <line
+              key={index}
+              className={major ? styles.dialTickMajor : styles.dialTick}
+              x1="50"
+              y1="2.5"
+              x2="50"
+              y2={major ? "9.5" : "6"}
+              transform={`rotate(${index * 6} 50 50)`}
+            />
+          );
+        })}
         <circle
           className={styles.track}
           cx="50"
           cy="50"
           r={radius}
           fill="none"
-          strokeWidth="1"
+          strokeWidth="3"
         />
         <circle
           className={styles.arc}
@@ -47,17 +89,14 @@ function GoalDial({ value }: { value: number }) {
           cy="50"
           r={radius}
           fill="none"
-          strokeWidth="2.5"
+          strokeWidth="3.5"
           strokeLinecap="round"
           strokeDasharray={circumference}
           transform="rotate(-90 50 50)"
-          style={{
-            strokeDashoffset: circumference * (1 - clamped),
-          }}
+          style={{ strokeDashoffset: circumference * (1 - clamped) }}
         />
-        <circle className={styles.dialCenter} cx="50" cy="50" r="19" />
-        <path className={styles.dialCross} d="M46 50h8M50 46v8" />
       </svg>
+      <p className={styles.dialReading}>{children}</p>
     </div>
   );
 }
@@ -80,14 +119,7 @@ function MetricCard({
     <div className={`${styles.card} ${styles.metric} ${styles[tone]}`}>
       <p className={styles.cardLabel}>{label}</p>
       <p className={styles.metricValue}>{display}</p>
-      <div
-        className={styles.ruler}
-        aria-hidden="true"
-        style={{ "--progress": clampProgress(value) } as CSSProperties}
-      >
-        <span className={styles.rulerTrack} />
-        {!unavailable && <span className={styles.rulerMarker} />}
-      </div>
+      <Scale progress={unavailable ? null : value} />
     </div>
   );
 }
@@ -158,20 +190,21 @@ export default function ProgressHud() {
 
       <div className={styles.cards}>
         <div className={`${styles.card} ${styles.goal}`}>
-          <div className={styles.goalCopy}>
-            <p className={styles.cardLabel}>{copy.dailyGoal}</p>
-            <p className={styles.goalValue}>
-              {unavailable ? (
-                dash
-              ) : (
-                <>
-                  {todayAdded}
-                  <span className={styles.goalTarget}>/{dailyGoal}</span>
-                </>
-              )}
-            </p>
-          </div>
-          <GoalDial value={unavailable ? 0 : todayAdded / dailyGoal} />
+          <p className={styles.cardLabel}>{copy.dailyGoal}</p>
+          <GoalDial value={unavailable ? 0 : todayAdded / dailyGoal}>
+            {/*
+              The dash stands alone while the reading is unavailable: "—/10"
+              would be a target held against nothing.
+            */}
+            {unavailable ? (
+              dash
+            ) : (
+              <>
+                {todayAdded}
+                <span className={styles.dialTarget}>/{dailyGoal}</span>
+              </>
+            )}
+          </GoalDial>
         </div>
 
         <MetricCard
@@ -194,9 +227,7 @@ export default function ProgressHud() {
           <p className={styles.tileValue}>
             {unavailable ? dash : reviewStats.mastered}
           </p>
-          <div className={styles.ruler} aria-hidden="true">
-            <span className={styles.rulerTrack} />
-          </div>
+          <Scale progress={null} />
         </div>
 
         <div className={`${styles.card} ${styles.tile} ${styles.amber}`}>
@@ -204,9 +235,7 @@ export default function ProgressHud() {
           <p className={styles.tileValue}>
             {unavailable ? dash : reviewStats.reviewed}
           </p>
-          <div className={styles.ruler} aria-hidden="true">
-            <span className={styles.rulerTrack} />
-          </div>
+          <Scale progress={null} />
         </div>
       </div>
     </section>

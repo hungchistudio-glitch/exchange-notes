@@ -120,6 +120,34 @@ describe("Cosmic progress readings", () => {
     expect(mocks.fetchVocabulary).toHaveBeenCalledWith("reader");
   });
 
+  it("points a scale only where there is a maximum to read it against", async () => {
+    mocks.fetchVocabulary.mockResolvedValue([
+      word({
+        id: "reviewed",
+        review_count: 4,
+        correct_count: 3,
+        last_reviewed_at: yesterday,
+        review_interval: 1,
+      }),
+    ]);
+
+    const { container } = render(<ProgressHud />);
+
+    await waitFor(() => expect(panel()).toHaveAttribute("aria-busy", "false"));
+
+    /*
+     * Accuracy and retention are rates out of a hundred, so their scales set
+     * the reading as a custom property and carry a pointer. "Words mastered"
+     * and "reviews done" are counts with no full mark, and a pointer there
+     * would be drawn against a maximum nobody set — so the graduations are
+     * all those two cards get. Asserted on the inline property rather than on
+     * a class name, because that is the thing that is actually load-bearing.
+     */
+    const pointed = container.querySelectorAll('[style*="--progress"]');
+
+    expect(pointed).toHaveLength(2);
+  });
+
   it("dashes the two rates before the first review, and still counts the words", async () => {
     // Saved two words today, reviewed neither. Accuracy has no answers to
     // divide and retention has no interval to decay, so the maths falls back
