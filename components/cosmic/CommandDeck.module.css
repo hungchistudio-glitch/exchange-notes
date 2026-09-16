@@ -11,23 +11,341 @@
  * tablet without a media query per size.
  */
 
+.content {
+  padding-inline: 1rem;
+}
+
+.header { padding-bottom: 0.25rem; }
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #c5bbc7;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+}
+.statusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cosmic-cyan);
+}
+.edition {
+  margin-left: auto;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.5625rem;
+  letter-spacing: 0.16em;
+  color: var(--cosmic-violet);
+}
+.title {
+  margin-top: 0.8rem;
+  max-width: 24rem;
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.subtitle {
+  margin-top: 0.55rem;
+  color: #ada5b0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+/* =========================================================
+   The bridge cluster
+   ========================================================= */
+
+/*
+ * One instrument, not three cards.
+ *
+ * Drawn from a car's cluster: two figures either side of a dial, held in a
+ * bracketed frame, with the graduations that make a number read as a
+ * measurement rather than as text. What it does not borrow is the crimson —
+ * the deck has a palette — or the tracked mono micro-type, which is exactly
+ * what had to come out of the labels to make them readable in the other four
+ * interface languages. The instrument feel is carried by the frame, the
+ * graduations and the figures; every word stays in the reading typeface.
+ */
+.cluster {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr);
+  margin-top: 1.3rem;
+  border: 1px solid var(--cosmic-hairline-soft, rgba(229, 221, 231, 0.09));
+  border-radius: 1.375rem;
+  background: linear-gradient(180deg, #17171d, #121216);
+  overflow: hidden;
+}
+
+/* The frame's end brackets, kept to the two outer ends so the strip reads as
+   one instrument with a beginning and an end rather than as three boxes. */
+.cluster::before,
+.cluster::after {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 0.45rem;
+  border: 1px solid var(--cosmic-ring, rgba(229, 221, 231, 0.17));
+  pointer-events: none;
+}
+
+.cluster::before {
+  left: 0.4rem;
+  border-right: 0;
+  border-radius: 0.35rem 0 0 0.35rem;
+}
+
+.cluster::after {
+  right: 0.4rem;
+  border-left: 0;
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+.gauge,
+.dialCell {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.8rem 0.55rem 0.7rem;
+  text-align: center;
+}
+
+/* Each cell's tone, so the tint reaches its figure, its graduations and its
+   ring from one place. The dial also carries the hairline seams: one panel
+   divided, not three panels sitting next to each other. */
+.lexicon {
+  --gauge-tone: var(--cosmic-cyan, #bce7d7);
+}
+
+.due {
+  --gauge-tone: var(--cosmic-violet, #e5add2);
+}
+
+.dialCell {
+  --gauge-tone: var(--cosmic-blue, #809cf4);
+  border-inline: 1px solid var(--cosmic-hairline-soft, rgba(229, 221, 231, 0.09));
+}
+
+.gaugeLabel,
+.dialLabel {
+  color: var(--cosmic-muted, #bdb9c1);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.gaugeValue {
+  margin-top: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.7rem, 8.5vw, 2.3rem);
+  font-weight: 300;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--gauge-tone);
+}
+
+/*
+ * A rule, not a meter.
+ *
+ * There is no full mark for a lexicon to be 345 out of, and a pointer against
+ * an invented maximum is the one thing an instrument must not draw. These are
+ * graduations and nothing else — the same distinction the daily-goal dial
+ * gets to be on the other side of, because a goal really does have a target.
+ *
+ * `margin-top: auto` rather than a fixed offset so the two rules stay on one
+ * line when a translated label wraps in one cell and not the other.
+ */
+.gauge::after {
+  content: "";
+  width: 100%;
+  height: 0.45rem;
+  margin-top: auto;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--gauge-tone) 0 1px,
+    transparent 1px 7px
+  );
+  opacity: 0.45;
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 20%,
+    #000 80%,
+    transparent
+  );
+}
+
+.dialValue {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.dialBadge {
+  position: relative;
+  display: grid;
+  width: 3.4rem;
+  height: 3.4rem;
+  place-items: center;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--gauge-tone);
+}
+
+/* The graduated ring and its bezel, on the badge's own pseudo-elements so the
+   dial costs no DOM. `closest-side` so the mask percentages read against the
+   radius rather than the diagonal — see .dialTicks for what happens when they
+   do not. */
+.dialBadge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from -0.7deg,
+    var(--gauge-tone) 0deg 1.4deg,
+    transparent 1.4deg 7.5deg
+  );
+  opacity: 0.55;
+  mask-image: radial-gradient(circle closest-side, transparent 0 84%, #000 86% 100%);
+  -webkit-mask-image: radial-gradient(
+    circle closest-side,
+    transparent 0 84%,
+    #000 86% 100%
+  );
+}
+
+.dialBadge::after {
+  content: "";
+  position: absolute;
+  inset: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--gauge-tone) 34%, transparent);
+  border-radius: 50%;
+}
+
+.dialName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--cosmic-ink, #f5f2f0);
+  overflow-wrap: anywhere;
+}
+.consoleSlot { margin-top: 0.75rem; }
+.notesSlot { margin-top: 0.75rem; }
+
 .deck {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 0.75rem;
+  padding: 1rem 0 1.25rem;
+  border-radius: 2.25rem;
+  border: 1px solid rgba(236, 204, 228, 0.18);
+  background:
+    radial-gradient(ellipse 35% 30% at 50% 52%, #19101e 20%, rgba(71, 24, 67, 0.94) 45%, transparent 100%),
+    radial-gradient(ellipse 64% 56% at 50% 52%, #a74481 5%, #8a4e7d 40%, transparent 80%),
+    radial-gradient(ellipse at 85% 10%, #a980a5, transparent 65%),
+    linear-gradient(155deg, #49424f, #7b6079 50%, #34313f);
+  box-shadow: inset 0 1px 0 rgba(255, 235, 250, 0.12);
+}
+.deckHeading {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: 1.25rem;
+  color: #fff4fc;
+  font-size: 0.75rem;
+}
+.deckHeadingDots { letter-spacing: 0.22em; opacity: 0.65; }
+/*
+ * The instrument scale, in the one band that is free.
+ *
+ * Three things already claim a radius on this stage: Yumi's disc out to 20%
+ * of the deck, the six labels whose second line reaches back in to
+ * `--deck-radius` minus about 42px, and the slow `.fieldInner` ring at 28%.
+ * Sized by `inset` the ticks landed across the labels and on top of that
+ * ring — "0 saved" and "All caught up" were struck through at every width.
+ *
+ * So the ring is centred in the gap between Yumi and the labels rather than
+ * placed by eye, and `closest-side` makes the mask percentages read against
+ * the radius instead of the diagonal, which is what made the old numbers so
+ * hard to reason about.
+ *
+ * The gap does not scale with the deck — Yumi grows with it but the labels
+ * are set in rem — so it closes as the window narrows, and closes further
+ * when a caption needs two lines. Traditional Chinese at the large text size
+ * reaches the ring where English at the same width clears it by 6px, so a
+ * plain pixel breakpoint is not the question being asked: the question is
+ * how big the deck is *in labels*.
+ *
+ * `rem` inside a media query cannot answer it — there it is pinned to the
+ * browser's initial 16px however the document's root is set — so the gate is
+ * one query per stored text size, each at about 26.5x that size's root. Under
+ * it the deck goes without a scale, which is better than a scale drawn
+ * through "今天都複習完了".
+ */
+.dialTicks {
+  display: none;
+  --tick-outer: calc(var(--deck-size) * 0.29 - 1.375rem);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--tick-outer) * 2);
+  height: calc(var(--tick-outer) * 2);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from -0.5deg,
+    rgba(252, 239, 251, 0.6) 0deg 0.7deg,
+    transparent 0.7deg 5deg
+  );
+  mask-image: radial-gradient(circle closest-side, transparent 0 92%, #000 92% 100%);
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent 0 92%, #000 92% 100%);
+  pointer-events: none;
+}
+
+@media (min-width: 372px) {
+  :global(html[data-app-font-size="small"]) .dialTicks {
+    display: block;
+  }
+}
+
+@media (min-width: 424px) {
+  :global(html[data-app-font-size="medium"]) .dialTicks {
+    display: block;
+  }
+}
+
+@media (min-width: 504px) {
+  :global(html[data-app-font-size="large"]) .dialTicks {
+    display: block;
+  }
 }
 
 .stage {
   /* Sized against the shorter of the two axes as well as the width, so the
      deck fits one screen on a small phone instead of pushing its own bottom
      row under the dock. */
-  --deck-size: min(84vw, 60vh, 23rem);
+  --deck-size: min(calc(100vw - 4.5rem), 25rem);
   /* How far out on the ring a node sits. A length, not a percentage: a
      percentage in translateY resolves against the node's own box, which put
      all six of them a couple of centimetres from the centre and straight on
      top of Yumi. */
-  --deck-radius: calc(var(--deck-size) * 0.42);
+  --deck-radius: calc(var(--deck-size) * 0.38);
 
   /*
    * Yumi's optical correction.
@@ -69,7 +387,7 @@
 
 .field {
   inset: 4%;
-  border: 1px dashed var(--cosmic-ring);
+  border: 1px solid rgba(246, 226, 243, 0.13);
   animation: deckSpin 44s linear infinite;
 }
 
@@ -185,7 +503,7 @@
 .core {
   position: relative;
   z-index: 2;
-  width: 38%;
+  width: 40%;
   display: grid;
   place-items: center;
 }
@@ -308,6 +626,11 @@
   transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.nodeLink:focus-visible {
+  outline: 2px solid #fff4fc;
+  outline-offset: 4px;
+}
+
 .nodeLink:active {
   transform: scale(0.94);
 }
@@ -322,8 +645,9 @@
   width: 2.875rem;
   height: 2.875rem;
   border-radius: 9999px;
-  background: var(--color-white);
-  border: 1px solid var(--line);
+  background: rgba(27, 22, 32, 0.9);
+  color: #f9eef8;
+  border: 1px solid rgba(246, 226, 243, 0.26);
   box-shadow: 0 0 0 0 var(--cosmic-glow);
   transition:
     border-color 220ms ease,
@@ -382,15 +706,16 @@
 
 .nodeName {
   font-size: 0.6875rem;
-  font-weight: 600;
-  line-height: 1.15;
+  color: #fff9fd;
+  font-weight: 500;
+  line-height: 1.35;
   letter-spacing: -0.01em;
 }
 
 .nodeFamiliar {
-  font-size: 0.5625rem;
-  line-height: 1.1;
-  opacity: 0.55;
+  font-size: 0.625rem;
+  line-height: 1.35;
+  color: #f2e4ef;
 }
 
 /*
@@ -666,7 +991,7 @@
    * changes size, and Yumi is still visibly alive.
    */
   .coreGlow {
-    animation: coreGlowCalm 14s ease-in-out infinite;
+    animation: none;
   }
 
   /*
@@ -1091,5 +1416,79 @@
 
   .core[data-lock="true"] .pupil {
     transition: none;
+  }
+}
+
+/* A label can grow in every supported language without being clipped by the
+   circular card. At small sizes the links keep a 44px circular touch target. */
+@media (prefers-reduced-motion: reduce) {
+  .nodeLink:active { transform: none; }
+}
+
+/* The orbital labels need more height than a 320px circle can provide in
+   long languages. Reflow the same six links into cards, preserving DOM/tab
+   order and their full hit areas instead of shrinking or overlapping text. */
+@media (max-width: 360px) {
+  .content { padding-inline: 0.75rem; }
+
+  /* Three cells and a 3.4rem dial do not fit a 320px strip. The dial takes a
+     row of its own above the two counts — placed explicitly, because it sits
+     between them in the markup and auto-placement would push it below the
+     first count rather than above both. */
+  .cluster {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dialCell {
+    grid-row: 1;
+    grid-column: 1 / -1;
+    border-inline: 0;
+    border-bottom: 1px solid var(--cosmic-hairline-soft, rgba(229, 221, 231, 0.09));
+  }
+
+  .lexicon {
+    grid-row: 2;
+    grid-column: 1;
+  }
+
+  .due {
+    grid-row: 2;
+    grid-column: 2;
+    border-left: 1px solid var(--cosmic-hairline-soft, rgba(229, 221, 231, 0.09));
+  }
+
+  .gaugeValue { font-size: 1.8rem; }
+
+  .stage {
+    width: 100%;
+    aspect-ratio: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  .core {
+    grid-column: 1 / -1;
+    width: 7rem;
+    margin: 2rem auto;
+  }
+  .field, .fieldInner, .signal { display: none; }
+  .node {
+    position: static;
+    display: block;
+    transform: none;
+  }
+  .nodeInner { height: 100%; transform: none; }
+  .nodeLink {
+    width: 100%;
+    height: 100%;
+    padding: 0.8rem 0.4rem;
+    border: 1px solid rgba(246, 226, 243, 0.14);
+    background: rgba(27, 22, 32, 0.68);
+    border-radius: 1.3rem;
+  }
+  .nodeName, .nodeFamiliar { overflow-wrap: anywhere; }
+  .nodeLocked::after { top: 0.8rem; }
+  .core[data-lock="true"] .pupil {
+    transform: translate(var(--compact-look-x, 0), 7px);
   }
 }

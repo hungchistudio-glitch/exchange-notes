@@ -35,7 +35,7 @@ export default function AppHeader({
        * and against high-contrast content it read as a smudge rather than
        * as glass.
        */
-      className={`sticky top-0 z-30 border-b border-black/[0.05] bg-surface px-4 ${className}`}
+      className={`cosmic-header sticky top-0 z-30 border-b border-black/[0.05] bg-surface px-4 ${className}`}
       style={{
         paddingTop: "env(safe-area-inset-top)",
       }}

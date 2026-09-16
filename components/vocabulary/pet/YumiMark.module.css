@@ -930,7 +930,7 @@
  * already being drawn.
  */
 .stage[data-cosmic="true"] .logo {
-  filter: drop-shadow(0 18px 30px rgba(2, 8, 22, 0.55));
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
 }
 
 /* The halo is the cyan Yumi used to throw from its own filter. A touch
@@ -1023,8 +1023,8 @@
 .orbit[data-ring="secondary"] .orbitRing {
   border-style: solid;
   border-color: transparent;
-  border-top-color: color-mix(in oklab, #cfe6ff 30%, transparent);
-  border-right-color: color-mix(in oklab, #cfe6ff 12%, transparent);
+  border-top-color: color-mix(in oklab, var(--cosmic-cyan) 30%, transparent);
+  border-right-color: color-mix(in oklab, var(--cosmic-cyan) 12%, transparent);
 }
 
 .orbit[data-ring="deep"] .orbitRing {

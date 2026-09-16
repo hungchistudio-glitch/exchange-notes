@@ -21,6 +21,11 @@
   overflow: hidden;
   contain: paint;
   pointer-events: none;
+  background:
+    radial-gradient(ellipse 65% 85% at 92% 20%,
+      color-mix(in oklab, var(--cosmic-violet) 22%, transparent), transparent 80%),
+    radial-gradient(ellipse 60% 75% at 60% 80%,
+      color-mix(in oklab, var(--msg-accent) 12%, transparent), transparent 78%);
 }
 
 /* Distant, sharp, and many. */
@@ -98,6 +103,7 @@
 .starsNear {
   position: absolute;
   inset: -10%;
+  opacity: 0.32;
   animation: twinkle 14s ease-in-out infinite;
 }
 
@@ -108,8 +114,8 @@
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0.72; }
-  50%      { opacity: 1; }
+  0%, 100% { opacity: 0.24; }
+  50%      { opacity: 0.4; }
 }
 
 /* Communication lanes. Faint by contract: they must never compete with Yumi. */
@@ -118,13 +124,13 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.5;
+  opacity: 0.26;
   animation: laneBreathe 18s ease-in-out infinite;
 }
 
 @keyframes laneBreathe {
-  0%, 100% { opacity: 0.34; }
-  50%      { opacity: 0.62; }
+  0%, 100% { opacity: 0.18; }
+  50%      { opacity: 0.34; }
 }
 
 /*
@@ -198,7 +204,7 @@
  */
 .earth {
   inset: 0;
-  border: 1.5px solid #dcf6ff;
+  border: 1px solid color-mix(in oklab, var(--msg-accent) 58%, transparent);
   box-shadow:
     0 0 14px 0 color-mix(in oklab, var(--msg-accent) 55%, transparent),
     0 0 44px 4px color-mix(in oklab, var(--msg-accent) 18%, transparent);
@@ -212,8 +218,8 @@
     radial-gradient(1.3px 1.3px at 34% 2.5%, rgba(255, 216, 162, 0.26) 0%, transparent 100%),
     /* Continental mass and cloud, suggested rather than mapped. */
     radial-gradient(20% 5% at 34% 4.2%, color-mix(in oklab, var(--msg-accent) 16%, transparent) 0%, transparent 100%),
-    radial-gradient(15% 4% at 60% 3.8%, rgba(127, 212, 255, 0.14) 0%, transparent 100%),
-    radial-gradient(28% 4.5% at 47% 7%, rgba(120, 190, 240, 0.08) 0%, transparent 100%),
+    radial-gradient(15% 4% at 60% 3.8%, color-mix(in oklab, var(--cosmic-violet) 14%, transparent) 0%, transparent 100%),
+    radial-gradient(28% 4.5% at 47% 7%, color-mix(in oklab, var(--msg-accent) 8%, transparent) 0%, transparent 100%),
     /*
      * Dark, all the way to the edge.
      *
@@ -226,10 +232,10 @@
      */
     radial-gradient(
       circle at 50% 50%,
-      #04101b 0%,
-      #04101b 49.2%,
-      color-mix(in oklab, var(--msg-accent) 14%, #04101b) 49.85%,
-      color-mix(in oklab, var(--msg-accent) 30%, #04101b) 50%
+      #08090b 0%,
+      #08090b 49.2%,
+      color-mix(in oklab, var(--msg-accent) 14%, #08090b) 49.85%,
+      color-mix(in oklab, var(--msg-accent) 30%, #08090b) 50%
     );
 }
 
@@ -273,7 +279,7 @@
     transparent 0%,
     color-mix(in oklab, var(--msg-accent) 5%, transparent) 22%,
     color-mix(in oklab, var(--msg-accent) 9%, transparent) 40%,
-    color-mix(in oklab, #dff6ff 13%, transparent) 52%,
+    color-mix(in oklab, var(--cosmic-violet) 13%, transparent) 52%,
     color-mix(in oklab, var(--msg-accent) 8%, transparent) 64%,
     color-mix(in oklab, var(--msg-accent) 4%, transparent) 80%,
     transparent 100%
@@ -330,7 +336,7 @@
   transform: translateY(-50%);
   background: linear-gradient(
     270deg,
-    color-mix(in oklab, #eafaff 85%, transparent) 0%,
+    color-mix(in oklab, var(--msg-accent) 85%, transparent) 0%,
     color-mix(in oklab, var(--msg-accent) 35%, transparent) 40%,
     transparent 100%
   );
@@ -446,7 +452,7 @@
   margin-top: -2px;
   margin-left: -2px;
   border-radius: 50%;
-  background: #dffaff;
+  background: var(--msg-accent);
   box-shadow: 0 0 6px 1px color-mix(in oklab, var(--msg-accent) 70%, transparent);
 }
 
@@ -475,7 +481,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 34%, color-mix(in oklab, var(--msg-accent) 26%, transparent) 0%, transparent 62%),
-    radial-gradient(circle at 50% 78%, rgba(140, 200, 255, 0.13) 0%, transparent 58%);
+    radial-gradient(circle at 50% 78%, color-mix(in oklab, var(--cosmic-violet) 18%, transparent) 0%, transparent 58%);
   animation: haloPulse 13s ease-in-out infinite;
 }
 

@@ -142,7 +142,7 @@
    ========================================================= */
 
 /*
- * Yumi grows, and the band it was sitting in gets out of the way.
+ * Yumi's scale stays independent of the decorative panel.
  *
  * clamp rather than a bare vw, because the brief's "45–55% of hero width" and
  * a raw viewport multiplier stop agreeing at both ends: 58vw is 186px on a
@@ -156,7 +156,9 @@
  * scrolls a little more instead of the copy getting smaller.
  */
 .section[data-cosmic="true"] {
-  --yumi-size: clamp(208px, 58vw, 292px);
+  --yumi-size: clamp(208px, 58vw, 264px);
+  margin-top: 12px;
+  padding: 24px 21px 18px;
   /*
    * The one thing the orbital system needs from its container.
    *
@@ -179,32 +181,32 @@
    * of the turning boxes are trimmed.
    */
   overflow: clip visible;
-  /*
-   * The wash goes. In Standard Mode it is a cream band Yumi sits on; here the
-   * page already has a field — stars, orbits, a planet limb along the bottom
-   * — painted on the body (see app/cosmic.css), and laying an opaque navy
-   * band over the top of it would hide exactly the part of the sky that is
-   * directly behind the hero.
-   *
-   * What replaces it is a bloom rather than a fill: light coming off Yumi
-   * into the space around it, fading out entirely well before the vocabulary
-   * panel starts. The field shows through everywhere the bloom is not.
-   */
-  background: radial-gradient(
-    ellipse 78% 62% at 50% 42%,
-    color-mix(in oklab, var(--cosmic-cyan) 7%, transparent) 0%,
-    color-mix(in oklab, var(--cosmic-violet) 5%, transparent) 42%,
-    transparent 72%
-  );
+  background: none;
 }
 
-/*
- * The two hand-drawn rings that suggested an orbit in Standard Mode are
- * retired here. Yumi has three real orbital planes now, on their own clocks
- * and at their own tilts, and a pair of static ellipses cutting across them
- * reads as a fourth ring that forgot to move.
- */
-.section[data-cosmic="true"]::before,
+/* The panel is inset visually while the section keeps its full-width clip
+   boundary. Orbit menu keys can then reach the screen edges on small phones
+   without being cut off by the panel's rounded corners or side margins. */
+.section[data-cosmic="true"]::before {
+  display: block;
+  z-index: -1;
+  inset: 0 14px;
+  width: auto;
+  height: auto;
+  border: 1px solid color-mix(in oklab, var(--color-black) 9%, transparent);
+  border-radius: 36px;
+  transform: none;
+  background:
+    radial-gradient(ellipse 76% 50% at 50% 40%,
+      color-mix(in oklab, var(--cosmic-violet) 28%, transparent),
+      transparent 76%),
+    radial-gradient(ellipse 65% 42% at 6% 4%,
+      color-mix(in oklab, var(--cosmic-cyan) 14%, transparent),
+      transparent 80%),
+    #17171c;
+}
+
+/* The remaining Standard Mode ellipse has no role in the Cosmic panel. */
 .section[data-cosmic="true"]::after {
   display: none;
 }
@@ -226,7 +228,8 @@
 }
 
 .section[data-cosmic="true"] .greeting {
-  color: color-mix(in oklab, var(--color-black) 62%, transparent);
+  font-size: 0.875rem;
+  color: color-mix(in oklab, var(--color-black) 82%, transparent);
 }
 
 .section[data-cosmic="true"] .moodStatus {
@@ -238,41 +241,21 @@
 }
 
 .section[data-cosmic="true"] .summaryLine {
-  font-size: 0.75rem;
-  color: color-mix(in oklab, var(--color-black) 52%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in oklab, var(--color-black) 82%, transparent);
   /* Four facts on a narrow phone will not hold one line, and the brief is
      explicit that they should wrap rather than be shrunk into it. */
   text-wrap: pretty;
 }
 
-/*
- * The tray's shelf, as a seam rather than a rule.
- *
- * Two hairlines that fade out at both ends instead of running edge to edge —
- * on a dark field a full-width line reads as a divider between two pages,
- * and this is one stage with a shelf across it.
- */
+/* A recessed tray keeps the feeding controls legible over the pink bloom. */
 .section[data-cosmic="true"] .foodZone {
-  margin-top: 20px;
-  border-top: 0;
-  border-bottom: 0;
-  background:
-    linear-gradient(
-        90deg,
-        transparent,
-        color-mix(in oklab, var(--cosmic-cyan) 26%, transparent) 22%,
-        color-mix(in oklab, var(--cosmic-cyan) 26%, transparent) 78%,
-        transparent
-      )
-      top / 100% 1px no-repeat,
-    linear-gradient(
-        90deg,
-        transparent,
-        color-mix(in oklab, var(--cosmic-cyan) 16%, transparent) 30%,
-        color-mix(in oklab, var(--cosmic-cyan) 16%, transparent) 70%,
-        transparent
-      )
-      bottom / 100% 1px no-repeat;
+  margin-top: 18px;
+  border: 1px solid color-mix(in oklab, var(--color-black) 8%, transparent);
+  border-radius: 24px;
+  background: color-mix(in oklab, #08090b 72%, transparent);
 }
 
 .section[data-cosmic="true"] .yumiButton:focus-visible {

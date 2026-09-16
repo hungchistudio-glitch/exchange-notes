@@ -1,127 +1,331 @@
-/*
- * The Progress HUD panel.
- *
- * An instrument readout rather than a card: bracketed corners, monospace
- * micro-labels and arc gauges. What it reads out is the app's own review
- * history, which is the whole reason it is allowed to look like this.
- */
-
+/* Rounded, softly coloured readouts on the mode's matte black canvas. */
 .hud {
-  border-radius: 24px;
-  border: 1px solid var(--cosmic-ring);
-  background: linear-gradient(
-    160deg,
-    rgba(22, 34, 60, 0.9) 0%,
-    rgba(12, 20, 38, 0.9) 100%
-  );
-  padding: 1.25rem 1rem 1.1rem;
-  box-shadow: inset 0 1px 0 rgba(77, 227, 240, 0.08);
+  color: var(--cosmic-ink, #f5f2f0);
+}
+
+.eyebrow {
+  color: var(--cosmic-muted, #bdb9c1);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-transform: uppercase;
 }
 
 .title {
-  margin-top: 0.15rem;
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  margin-top: 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
-.gauges {
-  margin-top: 1.1rem;
+.error {
+  margin-top: 0.75rem;
+  color: #f3b7c7;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
+  margin-top: 1.2rem;
 }
 
-.gauge {
+.card {
+  position: relative;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 1.7rem;
+  padding: 1.1rem;
+  color: #212026;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 38%),
+    inset 0 -1px 0 rgb(33 32 38 / 10%),
+    0 2px 10px rgb(0 0 0 / 35%);
+}
+
+/*
+ * Corner marks: the instrument frame, etched in the card's own ink rather
+ * than laid over it in a second colour. Two corners, not four — the pair on
+ * the diagonal is enough to say "this region is an instrument", and four on a
+ * rounded card reads as a border that could not decide.
+ *
+ * On the pseudo-elements so the frame costs no DOM.
+ */
+.card::before,
+.card::after {
+  content: "";
+  position: absolute;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-color: rgb(33 32 38 / 32%);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.card::before {
+  top: 0.6rem;
+  left: 0.6rem;
+  border-width: 1px 0 0 1px;
+  border-top-left-radius: 0.3rem;
+}
+
+.card::after {
+  right: 0.6rem;
+  bottom: 0.6rem;
+  border-width: 0 1px 1px 0;
+  border-bottom-right-radius: 0.3rem;
+}
+
+.cardLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.goal {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.2rem 1.4rem 1.5rem;
+  background:
+    radial-gradient(ellipse at 95% 95%, #edb2ad 0%, transparent 64%),
+    radial-gradient(ellipse at 72% 44%, #d99dbf 0%, transparent 55%),
+    linear-gradient(150deg, #b9b0bf 0%, #ddb2ce 70%);
+}
+
+.goal .cardLabel {
+  align-self: flex-start;
+}
+
+.metricValue,
+.tileValue,
+.dialReading {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.dial {
   position: relative;
   display: grid;
+  width: 9rem;
+  max-width: 52vw;
+  aspect-ratio: 1;
   place-items: center;
 }
 
-.gaugeSvg {
+.dialSvg {
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
-  max-width: 5.25rem;
-  /* Twelve o'clock start. An arc that begins at three o'clock reads as
-     rotated rather than as a measurement. */
-  transform: rotate(-90deg);
+  height: 100%;
+  overflow: visible;
+}
+
+/* Sixty graduations with a major every fifth: the ring reads as a scale
+   rather than as a texture, and the majors give the eye somewhere to land. */
+.dialTick {
+  stroke: rgb(48 31 47 / 34%);
+  stroke-width: 0.6;
+}
+
+.dialTickMajor {
+  stroke: rgb(48 31 47 / 62%);
+  stroke-width: 1.1;
 }
 
 .track {
-  stroke: color-mix(in oklab, var(--color-black) 12%, transparent);
+  stroke: rgb(48 31 47 / 14%);
 }
 
+/*
+ * The sweep. It starts from the full-circle offset — while the history is
+ * loading the value is zero — so the arc travels to the reading on the frame
+ * the data lands rather than appearing at its final length.
+ */
 .arc {
-  stroke-dashoffset: var(--arc-length);
-  animation: arcSweep 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
+  stroke: #4a2c3f;
+  filter: drop-shadow(0 0 2.5px rgb(74 44 63 / 45%));
+  transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes arcSweep {
-  to {
-    stroke-dashoffset: var(--arc-offset);
+.dialReading {
+  position: relative;
+  font-size: clamp(1.9rem, 9vw, 2.6rem);
+}
+
+.dialTarget {
+  display: inline-block;
+  margin-left: 0.14rem;
+  font-size: 0.44em;
+  letter-spacing: -0.04em;
+  opacity: 0.62;
+}
+
+.metric {
+  display: flex;
+  min-height: 10rem;
+  flex-direction: column;
+}
+
+.mint {
+  background:
+    radial-gradient(ellipse at 70% 75%, #e2efe8 0%, transparent 60%),
+    radial-gradient(ellipse at 4% 0%, #99b4ae 0%, transparent 70%),
+    var(--cosmic-cyan);
+}
+
+.pink {
+  background:
+    radial-gradient(ellipse at 85% 100%, #e29ac7 0%, transparent 63%),
+    radial-gradient(ellipse at 3% 3%, #f2d0e4 0%, transparent 68%),
+    var(--cosmic-violet);
+}
+
+.metricValue {
+  margin-top: auto;
+  padding-top: 1rem;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+}
+
+/*
+ * The scale under a reading.
+ *
+ * One element carries both sets of graduations: a short mark every twentieth
+ * and a full-height one every quarter, drawn as two repeating gradients of
+ * the card's own ink. The lit copy sits exactly on top of the dim one and is
+ * clipped to the reading, so the marks never shift by a sub-pixel between the
+ * two — which is what happens if you size the lit layer instead of clipping
+ * it, because its gradient percentages then resolve against its own width.
+ */
+.ruler {
+  position: relative;
+  height: 1.5rem;
+  margin-top: 0.7rem;
+  /* Clear of the corner marks: the frame holds the scale, it does not cross
+     it. Wide enough that a pointer at 100% still lands inside the card. */
+  margin-inline: 0.5rem;
+}
+
+.rulerTrack,
+.rulerLit {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  height: 0.8rem;
+  background-image:
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 5%),
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 25%);
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size:
+    100% 44%,
+    100% 100%;
+}
+
+.rulerTrack {
+  border-bottom: 1px solid currentcolor;
+  opacity: 0.22;
+}
+
+/* The graduations up to the reading. */
+.rulerLit {
+  opacity: 0.8;
+  clip-path: inset(0 calc(100% - var(--progress) * 100%) 0 0);
+  animation: rulerFill 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rulerMarker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--progress) * 100%);
+  width: 2px;
+  margin-left: -1px;
+  background: currentcolor;
+  filter: drop-shadow(0 0 3px rgb(33 32 38 / 40%));
+  animation: rulerSweep 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The head, so the line reads as a pointer rather than as one more mark. */
+.rulerMarker::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-top: 0.4rem solid currentcolor;
+  border-right: 0.28rem solid transparent;
+  border-left: 0.28rem solid transparent;
+  transform: translateX(-50%);
+}
+
+/* Both travel from zero once, on the frame the reading arrives. */
+@keyframes rulerFill {
+  from {
+    clip-path: inset(0 100% 0 0);
   }
 }
 
-.cyan {
-  stroke: var(--cosmic-cyan);
-}
-
-.violet {
-  stroke: var(--cosmic-violet);
-}
-
-.amber {
-  stroke: var(--cosmic-amber);
-}
-
-/* Centred over the arc rather than placed after it, so the number reads as
-   the gauge's value and not as a caption under a decoration. */
-.gaugeValue {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin-top: -0.55rem;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.gaugeLabel {
-  margin-top: 0.35rem;
-  text-align: center;
-}
-
-.tiles {
-  margin-top: 1.1rem;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
+@keyframes rulerSweep {
+  from {
+    left: 0;
+    opacity: 0;
+  }
 }
 
 .tile {
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: color-mix(in oklab, var(--color-white) 70%, transparent);
-  padding: 0.75rem 0.85rem;
+  display: flex;
+  min-height: 7.2rem;
+  flex-direction: column;
+}
+
+.blue {
+  background:
+    radial-gradient(ellipse at 80% 110%, #6f8ef0 0%, transparent 75%),
+    linear-gradient(130deg, #becaf2, #a0b7f4);
+}
+
+.amber {
+  background:
+    radial-gradient(ellipse at 90% 100%, #dcae8b 0%, transparent 70%),
+    linear-gradient(135deg, var(--cosmic-amber), #f1d9b3);
 }
 
 .tileValue {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  margin-top: auto;
+  font-size: 1.9rem;
 }
 
-.tileLabel {
-  margin-top: 0.2rem;
+@media (max-width: 360px) {
+  .card {
+    border-radius: 1.35rem;
+    padding: 1rem 0.85rem;
+  }
+
+  .goal {
+    padding: 1.1rem;
+  }
 }
 
-/* The sweep is the only motion here, and it is the one thing that makes a
-   gauge read as a measurement being taken. Reduced motion keeps the value and
-   drops the sweep: the arc is simply already at its length. */
 @media (prefers-reduced-motion: reduce) {
   .arc {
+    transition: none;
+  }
+
+  .rulerLit,
+  .rulerMarker {
     animation: none;
-    stroke-dashoffset: var(--arc-offset);
   }
 }

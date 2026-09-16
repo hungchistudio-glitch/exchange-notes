@@ -54,7 +54,7 @@ export default function BottomSheet({
         type="button"
         aria-label="Close"
         onClick={motion.requestClose}
-        className={`absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
+        className={`cosmic-sheet-scrim absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
         {...motion.backdropProps}
       />
 
@@ -65,7 +65,7 @@ export default function BottomSheet({
           {...motion.panelProps}
           className={[
             motion.panelClassName,
-            "relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-t-[30px]",
+            "cosmic-sheet relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-t-[30px]",
             "bg-surface text-black",
             "shadow-[0_-18px_60px_rgba(0,0,0,0.28)]",
             "sm:rounded-[30px] sm:shadow-2xl",

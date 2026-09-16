@@ -244,3 +244,8 @@ html[data-interface-mode="yumi-cosmic"] .meteor {
     display: none;
   }
 }
+
+/* Local card light carries Cosmic's hierarchy; the distant field recedes. */
+html[data-interface-mode="yumi-cosmic"] .field {
+  opacity: 0.16;
+}
