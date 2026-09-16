@@ -27,6 +27,51 @@ function dismissThreshold() {
 
 type SheetPresentation = "sheet" | "fullscreen";
 
+/*
+ * Everything an open sheet has to take away from the page behind it.
+ *
+ * The panel says aria-modal="true", which is a promise that the rest of the
+ * app is unavailable. Nothing was keeping it: Tab walked straight out of the
+ * sheet and into the page underneath, and closing left focus wherever it had
+ * wandered to rather than on the control that opened the sheet.
+ *
+ * A stack rather than a flag, because sheets nest — the friend picker opens
+ * over the dish sheet — and only the topmost one should be reachable.
+ */
+const openPanels: HTMLElement[] = [];
+const inertedElements = new Set<Element>();
+
+const FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+/**
+ * Makes every body-level subtree except the topmost panel's inert.
+ *
+ * `inert` is what actually removes the page behind from the tab order, the
+ * accessibility tree and hit testing, in one attribute. The Tab handler below
+ * is the fallback for browsers without it, and the thing that wraps focus
+ * around the ends — inert alone would let Tab escape to the browser chrome.
+ */
+function applyInertness() {
+  for (const element of inertedElements) element.removeAttribute("inert");
+  inertedElements.clear();
+
+  const top = openPanels[openPanels.length - 1];
+  if (!top) return;
+
+  for (const child of Array.from(document.body.children)) {
+    if (child.contains(top)) continue;
+    child.setAttribute("inert", "");
+    inertedElements.add(child);
+  }
+}
+
 let bodyLockCount = 0;
 let previousBodyOverflow = "";
 let previousBodyOverscroll = "";
@@ -165,6 +210,13 @@ export default function useSheetMotion({
   const secondFrameRef = useRef<number | null>(null);
   const closingRef = useRef(false);
   const pointerRef = useRef<DragPointer | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+
+  // A callback ref so it can be spread onto whatever element a sheet uses for
+  // its panel — a section, a div — without the hook having to know which.
+  const setPanelRef = useCallback((node: HTMLElement | null) => {
+    panelRef.current = node;
+  }, []);
 
   const clearMotionTimers = useCallback(() => {
     if (closeTimerRef.current) {
@@ -270,6 +322,86 @@ export default function useSheetMotion({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [rendered, requestClose]);
+
+  /*
+   * Focus goes in when the sheet arrives and comes back when it leaves.
+   *
+   * The panel itself, not the first field in it: several sheets focus their
+   * own input on purpose and a couple deliberately do not, because raising
+   * the keyboard during an entrance is its own kind of rough. Hence the
+   * guard — if the sheet has already put focus somewhere inside itself, that
+   * was a decision, and this leaves it alone.
+   */
+  useEffect(() => {
+    if (!rendered) return;
+
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    openPanels.push(panel);
+    applyInertness();
+
+    if (!panel.contains(document.activeElement)) {
+      panel.focus({ preventScroll: true });
+    }
+
+    return () => {
+      const index = openPanels.indexOf(panel);
+      if (index !== -1) openPanels.splice(index, 1);
+      applyInertness();
+
+      // Only if it is still on the page, and still somewhere focus can go.
+      if (previouslyFocused && previouslyFocused.isConnected) {
+        previouslyFocused.focus({ preventScroll: true });
+      }
+    };
+  }, [rendered]);
+
+  /*
+   * Tab stays inside. `inert` already stops it reaching the page behind; this
+   * is what stops it reaching the browser's own chrome, and what wraps it
+   * from the last control back to the first.
+   */
+  useEffect(() => {
+    if (!rendered) return;
+
+    function handleTab(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel || openPanels[openPanels.length - 1] !== panel) return;
+
+      const stops = Array.from(
+        panel.querySelectorAll<HTMLElement>(FOCUSABLE),
+      ).filter((node) => !node.hasAttribute("hidden"));
+
+      if (stops.length === 0) {
+        event.preventDefault();
+        panel.focus({ preventScroll: true });
+        return;
+      }
+
+      const first = stops[0];
+      const last = stops[stops.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || active === panel)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
+  }, [rendered]);
 
   useEffect(() => clearMotionTimers, [clearMotionTimers]);
 
@@ -398,7 +530,11 @@ export default function useSheetMotion({
         "--sheet-drag-progress": dragProgress,
       } as CSSProperties,
     },
+    panelRef,
     panelProps: {
+      ref: setPanelRef,
+      // So the panel itself can hold focus while a sheet is open.
+      tabIndex: -1,
       "data-visible": visible ? "true" : "false",
       "data-dragging": dragging ? "true" : "false",
       "data-settled": settled ? "true" : "false",
