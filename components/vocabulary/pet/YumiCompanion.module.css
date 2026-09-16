@@ -42,13 +42,16 @@
   position: absolute;
   border: 1px solid color-mix(in oklab, var(--color-black) 5.5%, transparent);
   border-radius: 50%;
-  transform: rotate(-12deg);
 }
 
+/* Each ring's own tilt. The pair share everything except how far over they
+   lean, and -12deg used to sit in the rule above — where it read as the tilt
+   of both rings, and was in fact the tilt of this one. */
 .section::before {
   width: min(96vw, 430px);
   height: 106px;
   top: 96px;
+  transform: rotate(-12deg);
 }
 
 .section::after {

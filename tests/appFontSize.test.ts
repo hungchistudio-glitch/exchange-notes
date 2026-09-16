@@ -101,6 +101,16 @@ describe("nothing opts itself out of the setting", () => {
   it("has no hard-pixel font sizes in stylesheets", () => {
     expect(grep("font-size:\\s*[0-9.]+px", "*.css")).toEqual([]);
   });
+
+  it("has none hidden in a `font` shorthand either", () => {
+    /*
+     * The check above only sees the longhand. A shorthand sets the same thing
+     * and went unnoticed for as long as one existed: the launch screen's
+     * buttons were `font: 650 11px/1 …`, a fixed size in a file whose other
+     * buttons were already in rem, and nothing could see it.
+     */
+    expect(grep("font:\\s*[^;]*[0-9.]+px", "*.css")).toEqual([]);
+  });
 });
 
 describe("the one place pixels are still right", () => {
