@@ -3,7 +3,11 @@
 import type { CSSProperties } from "react";
 
 import { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
-import SplashGate from "@/components/ui/SplashGate";
+import SplashGate, {
+  LAUNCH_REPLAY_AFTER_MS,
+  ageLaunchMarker,
+  forgetLaunchMarker,
+} from "@/components/ui/SplashGate";
 
 const controlStyle: CSSProperties = {
   display: "inline-flex",
@@ -23,14 +27,20 @@ const controlStyle: CSSProperties = {
 
 /** Isolated, guarded harness for actual document-load and keyboard checks. */
 export default function LaunchSessionReview() {
+  /*
+   * Both of these go through the gate rather than writing storage directly.
+   * The gate stamps its marker on the way out of the document, and a reload
+   * is a way out of the document — so a harness that cleared the key here and
+   * then reloaded would watch its own clear be overwritten, and would report
+   * that a replay is impossible when what is broken is the harness.
+   */
   function resetAndReplay() {
-    try {
-      window.sessionStorage.removeItem(
-        `exchange-notes:launch:${ACTIVE_LAUNCH.id}`,
-      );
-    } catch {
-      // The real gate also falls back to playing when storage is unavailable.
-    }
+    forgetLaunchMarker();
+    window.location.reload();
+  }
+
+  function returnAfterTheWindowAndReplay() {
+    ageLaunchMarker(LAUNCH_REPLAY_AFTER_MS + 1000);
     window.location.reload();
   }
 
@@ -74,7 +84,7 @@ export default function LaunchSessionReview() {
             主畫面已就緒
           </h1>
           <p style={{ marginTop: 16, color: "#4c6576", lineHeight: 1.8 }}>
-            開場播放時，下方操作會暫停接收鍵盤焦點。完成後，在同一分頁重新載入應直接顯示這個畫面。
+            開場播放時，下方操作會暫停接收鍵盤焦點。完成後，在同一分頁重新載入應直接顯示這個畫面；離開超過 {Math.round(LAUNCH_REPLAY_AFTER_MS / 60000)} 分鐘再回來，開場會重新完整播放。
           </p>
           <div
             style={{
@@ -88,6 +98,13 @@ export default function LaunchSessionReview() {
             <a href="/launch-review/session" style={controlStyle}>
               重新載入頁面
             </a>
+            <button
+              type="button"
+              onClick={returnAfterTheWindowAndReplay}
+              style={controlStyle}
+            >
+              模擬離開 {Math.round(LAUNCH_REPLAY_AFTER_MS / 60000)} 分鐘後回來
+            </button>
             <button
               type="button"
               onClick={resetAndReplay}

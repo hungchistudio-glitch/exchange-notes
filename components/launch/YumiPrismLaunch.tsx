@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { LOGO_TIERS, exchangeNotesLogoGeometry } from "@/lib/brand/exchangeNotesLogo";
 import type { LaunchRendererProps } from "./types";
-import { YUMI_PRISM_CHECKPOINTS, YUMI_PRISM_DURATION_MS, YUMI_PRISM_REDUCED_DURATION_MS, buildYumiPrismTracks, computeYumiPrismFrame } from "./yumiPrismTimeline";
+import { YUMI_PRISM_CHECKPOINTS, YUMI_PRISM_DURATION_MS, YUMI_PRISM_HOLD_MS, YUMI_PRISM_REDUCED_DURATION_MS, buildYumiPrismTracks, computeYumiPrismFrame } from "./yumiPrismTimeline";
 import styles from "./YumiPrismLaunch.module.css";
 
 const geometry = exchangeNotesLogoGeometry({ canvas: 512, ...LOGO_TIERS.inApp });
@@ -16,13 +16,20 @@ function subscribeMotion(onChange: () => void) {
 const readMotion = () => window.matchMedia(motionQuery).matches;
 const serverMotion = () => false;
 
+/** The reduced-motion film has no beats of its own; these name its three frames. */
+const REDUCED_CHECKPOINTS = [[0, "開始"], [250, "定格"], [YUMI_PRISM_REDUCED_DURATION_MS, "App"]] as const;
+
 type Props = LaunchRendererProps & {
   forceReducedMotion?: boolean;
   showHandoffPreview?: boolean;
   showReviewControls?: boolean;
 };
 
-/** Pearl glass, an ice-blue light pass, and a quiet brand hold. No external assets. */
+/**
+ * Pearl glass, an ice-blue light pass, and a quiet brand hold. No external
+ * assets, and no colour of its own: every value the film paints with comes
+ * from the token block in the stylesheet, which Cosmic Mode redefines.
+ */
 export default function YumiPrismLaunch({
   launchId, reviewMode = false, onComplete, forceReducedMotion,
   showHandoffPreview = reviewMode, showReviewControls = reviewMode,
@@ -89,8 +96,9 @@ export default function YumiPrismLaunch({
     try {
       if (typeof root.animate !== "function") throw new Error("Animations unavailable");
       for (const [name, frames] of Object.entries(buildYumiPrismTracks(reduced))) {
-        const element = root.querySelector<HTMLElement>(`[data-track="${name}"]`);
-        if (element) {
+        // All of them: a track name is a role in the film, and the caption's
+        // two hairlines are one role played by two elements.
+        for (const element of root.querySelectorAll<HTMLElement>(`[data-track="${name}"]`)) {
           const animation = element.animate(frames, { duration, easing: "linear", fill: "both" });
           animations.push(animation);
           // Attach rejection handling immediately, including partial setup failure.
@@ -101,7 +109,7 @@ export default function YumiPrismLaunch({
     } catch {
       for (const animation of animations) animation.cancel();
       // A readable static lockup, then an early handoff; never a blank four seconds.
-      paint(reduced ? 250 : 1500);
+      paint(reduced ? 250 : YUMI_PRISM_HOLD_MS);
       fallback = window.setTimeout(complete, YUMI_PRISM_REDUCED_DURATION_MS);
     }
 
@@ -160,6 +168,7 @@ export default function YumiPrismLaunch({
       aria-label={reviewMode ? "Yumi 光環開場預覽" : undefined}>
       <div className={styles.canvas}>
         <div data-track="sceneWash" className={styles.sceneWash} aria-hidden="true" />
+        <div data-track="dawn" className={styles.dawn} aria-hidden="true" />
         {showHandoffPreview && (
           <div data-track="handoffPreview" className={styles.handoffPreview} aria-hidden="true">
             <span className={styles.previewKicker}>EXCHANGE NOTES</span>
@@ -173,6 +182,7 @@ export default function YumiPrismLaunch({
           <div className={styles.ambient} />
           <div className={styles.composition}>
             <div className={styles.symbol}>
+              <div data-track="aura" className={styles.aura} />
               <div data-track="halo" className={styles.halo}>
                 <div className={styles.haloRing} />
                 <div className={styles.haloInner} />
@@ -189,21 +199,21 @@ export default function YumiPrismLaunch({
                   <svg className={styles.yumi} viewBox="0 0 512 512" fill="none">
                     <defs>
                       <linearGradient id={`${id}-ink`} x1="70" y1="110" x2="440" y2="420" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#142d46" /><stop offset="0.52" stopColor="#233a51" /><stop offset="1" stopColor="#4e799a" />
+                        <stop className={styles.inkFrom} /><stop offset="0.52" className={styles.inkVia} /><stop offset="1" className={styles.inkTo} />
                       </linearGradient>
                       <clipPath id={`${id}-eye`}><circle cx={geometry.eye.cx} cy={geometry.eye.cy} r={geometry.eye.fieldRadius} /></clipPath>
                     </defs>
                     <g stroke={`url(#${id}-ink)`} strokeLinecap="round" strokeLinejoin="round">
                       <path d={geometry.arc.d} strokeWidth={geometry.strokes.main} />
                       <path d={geometry.bridge.d} strokeWidth={geometry.strokes.main} strokeLinecap="butt" />
-                      <circle cx={geometry.eye.cx} cy={geometry.eye.cy} r={geometry.eye.ringRadius} strokeWidth={geometry.strokes.ring} fill="#f8fcff" />
+                      <circle className={styles.eyeField} cx={geometry.eye.cx} cy={geometry.eye.cy} r={geometry.eye.ringRadius} strokeWidth={geometry.strokes.ring} />
                     </g>
                     <g clipPath={`url(#${id}-eye)`}>
                       <g data-track="pupil" className={styles.pupil}>
                         <circle cx={geometry.pupil.cx} cy={geometry.pupil.cy} r={geometry.pupil.r} fill={`url(#${id}-ink)`} />
-                        {geometry.highlight && <circle cx={geometry.highlight.cx} cy={geometry.highlight.cy} r={geometry.highlight.r} fill="white" />}
+                        {geometry.highlight && <circle className={styles.eyeSpark} cx={geometry.highlight.cx} cy={geometry.highlight.cy} r={geometry.highlight.r} />}
                       </g>
-                      <path data-track="closedEye" className={styles.closedEye} d={`M ${geometry.eye.cx - geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy} Q ${geometry.eye.cx} ${geometry.eye.cy + 8} ${geometry.eye.cx + geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy}`} stroke="#233a51" strokeWidth="8" strokeLinecap="round" />
+                      <path data-track="closedEye" className={`${styles.closedEye} ${styles.markStroke}`} d={`M ${geometry.eye.cx - geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy} Q ${geometry.eye.cx} ${geometry.eye.cy + 8} ${geometry.eye.cx + geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy}`} strokeWidth="8" strokeLinecap="round" />
                     </g>
                   </svg>
                 </div>
@@ -211,7 +221,11 @@ export default function YumiPrismLaunch({
             </div>
             <div className={styles.lockup}>
               <div data-track="wordmark" className={styles.wordmark}>Exchange Notes<span className={styles.brandDot}>.</span></div>
-              <div data-track="caption" className={styles.caption}><span />A LITTLE EXCHANGE. A WIDER WORLD.<span /></div>
+              <div className={styles.caption}>
+                <span data-track="captionRule" className={styles.captionRule} />
+                <span data-track="caption" className={styles.captionText}>A LITTLE EXCHANGE. A WIDER WORLD.</span>
+                <span data-track="captionRule" className={styles.captionRule} />
+              </div>
             </div>
           </div>
           <div className={styles.signature}>A WORLD IN YOUR WORDS</div>
@@ -229,7 +243,7 @@ export default function YumiPrismLaunch({
             <button type="button" aria-pressed={phone} onClick={() => setPhone(!phone)}>{phone ? "全螢幕" : "手機比例"}</button>
           </div>
           <div className={styles.checkpoints}>
-            {(reduced ? [[0, "開始"], [250, "定格"], [650, "App"]] as const : YUMI_PRISM_CHECKPOINTS).map(([time, label]) => <button type="button" key={time} onClick={() => seek(time)}>{label}</button>)}
+            {(reduced ? REDUCED_CHECKPOINTS : YUMI_PRISM_CHECKPOINTS).map(([time, label]) => <button type="button" key={time} onClick={() => seek(time)}>{label}</button>)}
           </div>
         </section>
       )}
