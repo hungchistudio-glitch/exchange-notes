@@ -112,7 +112,7 @@ const METEORS: Array<{
  */
 export default function OrbitField() {
   return (
-    <div className={styles.field} aria-hidden="true">
+    <div className={styles.field} data-app-ambience aria-hidden="true">
       <div className={`${styles.orbit} ${styles.orbitA}`}>
         <span className={styles.ring} />
         <span className={styles.comet} />

@@ -2,7 +2,9 @@ import { act, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import YumiMinimalLaunch from "@/components/launch/YumiMinimalLaunch";
+import YumiPrismLaunch from "@/components/launch/YumiPrismLaunch";
 import { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
+import { YUMI_PRISM_DURATION_MS } from "@/components/launch/yumiPrismTimeline";
 import {
   YUMI_MINIMAL_DURATION_MS,
   YUMI_MINIMAL_REDUCED_DURATION_MS,
@@ -84,9 +86,9 @@ describe("active launch experience", () => {
   });
 
   it("exposes one versioned switch point for production and review", () => {
-    expect(ACTIVE_LAUNCH.id).toBe("yumi-minimal-v1");
-    expect(ACTIVE_LAUNCH.durationMs).toBe(YUMI_MINIMAL_DURATION_MS);
-    expect(ACTIVE_LAUNCH.Component).toBe(YumiMinimalLaunch);
+    expect(ACTIVE_LAUNCH.id).toBe("yumi-prism-v1");
+    expect(ACTIVE_LAUNCH.durationMs).toBe(YUMI_PRISM_DURATION_MS);
+    expect(ACTIVE_LAUNCH.Component).toBe(YumiPrismLaunch);
   });
 
   it("renders as decoration, and hands the screen over when it ends", async () => {

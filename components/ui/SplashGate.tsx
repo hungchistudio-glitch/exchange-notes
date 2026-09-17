@@ -1,99 +1,97 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useState } from "react";
 
 import ActiveLaunch, { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
 import { setLaunching } from "@/lib/launchState";
 
-/**
- * The opening, on every load of a signed-in page.
- *
- * There used to be a sessionStorage flag here so it played "once per
- * session". In an installed PWA that is the wrong unit: iOS keeps the web
- * app's session alive across backgrounding, so the flag survived the app
- * being closed and reopened, and the opening played exactly once ever and
- * was silently skipped from then on. Reopening the app is precisely when an
- * opening animation is supposed to run.
- *
- * There is no gate now. It plays whenever this layout mounts, which is once
- * per document load — soft navigation between protected pages keeps the
- * layout, so moving around inside the app does not replay it.
- */
-/*
- * How long after the opening should have ended before the gate stops waiting
- * to be told and simply opens.
- */
 const LAUNCH_GRACE_MS = 1200;
+const SESSION_KEY = `exchange-notes:launch:${ACTIVE_LAUNCH.id}`;
 
+function completedInThisTab() {
+  try {
+    return window.sessionStorage.getItem(SESSION_KEY) === "complete";
+  } catch {
+    // Private browsing or storage policy must never prevent entering the app.
+    return false;
+  }
+}
+
+/** Escape values for an inline script, including the HTML script terminator. */
+function scriptValue(value: string) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+/** One complete opening per version, per browser-tab session. */
 export default function SplashGate() {
+  const gateId = useId();
+  // Identical server and hydrating renders; browser storage is read at commit.
   const [visible, setVisible] = useState(true);
 
-  /*
-   * Everything under the opening holds still while it plays.
-   *
-   * The opening is a fixed, opaque overlay at z-index 1000, and the whole app
-   * mounts underneath it: the home stage starts its wake, its own nineteen
-   * infinite animations and the mark's twenty-eight, the library loads, the
-   * preferences sync — all at once, all behind something nobody can see
-   * through, all competing for the frames the opening needs to be smooth.
-   * That is why it stuttered.
-   *
-   * animation-play-state rather than unmounting: the app carries on loading,
-   * hydrating and fetching, which is the part that has to happen during these
-   * 2.8 seconds. Only the drawing of things nobody can see stops, and it
-   * resumes the moment the overlay goes.
-   */
-  useEffect(() => {
-    if (!visible) {
+  const finish = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, "complete");
+    } catch {
+      // Finishing still releases the page when storage is unavailable.
+    }
+    setVisible(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+
+    if (!visible || completedInThisTab()) {
       setLaunching(false);
+      delete root.dataset.launching;
+      // This storage reconciliation must finish before the hydration paint.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (visible) setVisible(false);
       return;
     }
 
+    // Let the app load underneath, but pause its decorative motion and route
+    // transitions so they do not compete with or paint above the opening.
     setLaunching(true);
-
-    const root = document.documentElement;
     root.dataset.launching = "true";
 
-    /*
-     * Cleared on the way out as well as on completion. Unmounting while the
-     * overlay is still up — a sign-out, a route that leaves the protected
-     * app — would otherwise leave both signals set for the life of the
-     * document: the app's animations paused, and every route transition
-     * suppressed, by an opening that is no longer on screen.
-     */
+    // Keep keyboard focus out of controls hidden beneath the opening. Retain
+    // an existing inert state owned by another overlay when this one leaves.
+    const viewport = document.querySelector<HTMLElement>("[data-app-viewport]");
+    const previousInert = viewport?.getAttribute("inert") ?? null;
+    viewport?.setAttribute("inert", "");
+
     return () => {
       setLaunching(false);
       delete root.dataset.launching;
+      if (previousInert === null) viewport?.removeAttribute("inert");
+      else viewport?.setAttribute("inert", previousInert);
     };
   }, [visible]);
 
-  /*
-   * The overlay leaves on its own, whatever the animation does.
-   *
-   * Until this, the only way out was the opening reporting that it had
-   * finished — so anything that stopped it finishing left an opaque sheet
-   * over the whole app for the life of the document. That is not
-   * hypothetical: browsers suspend animations in a backgrounded tab, and
-   * opening the app and immediately switching away is an ordinary thing to
-   * do. It is the likeliest explanation for the opening "getting stuck".
-   *
-   * A ceiling rather than a race with the animation: the grace is long
-   * enough that a smooth run always reports in first and this never fires,
-   * and short enough that a stalled one is measured in a moment rather than
-   * for as long as the reader keeps the tab open.
-   */
   useEffect(() => {
     if (!visible) return;
 
+    // A suspended or failed animation must never leave an opaque overlay up.
     const timer = window.setTimeout(
-      () => setVisible(false),
+      finish,
       ACTIVE_LAUNCH.durationMs + LAUNCH_GRACE_MS,
     );
 
     return () => window.clearTimeout(timer);
-  }, [visible]);
+  }, [finish, visible]);
 
   if (!visible) return null;
 
-  return <ActiveLaunch onComplete={() => setVisible(false)} />;
+  return (
+    <div id={gateId} suppressHydrationWarning>
+      {/* Runs while HTML is parsed, before the overlay below can be painted.
+          The layout effect handles client navigation, where scripts are inert. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `try{if(sessionStorage.getItem(${scriptValue(SESSION_KEY)})==="complete"){document.getElementById(${scriptValue(gateId)}).hidden=true}}catch{}`,
+        }}
+      />
+      <ActiveLaunch onComplete={finish} />
+    </div>
+  );
 }

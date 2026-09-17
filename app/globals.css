@@ -510,8 +510,12 @@ html {
  * animation-play-state resumes a layer rather than rebuilding it, so there is
  * nothing to pay back when the overlay goes.
  */
-html[data-launching="true"] [data-app-viewport],
-html[data-launching="true"] [data-app-viewport] * {
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]),
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience])::before,
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience])::after,
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *,
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *::before,
+html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *::after {
   animation-play-state: paused !important;
 }
 
