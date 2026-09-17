@@ -65,8 +65,6 @@
   --eye-field: #f8fcff;
   --eye-spark: #ffffff;
   --brand-dot: #7fa9c9;
-  --skip-edge: #cedde766;
-  --skip-face: #ffffffb3;
   --handoff-ground: #fafcfd;
   --focus: #4886b2;
 
@@ -128,8 +126,6 @@
   --eye-field: #0d1720;
   --eye-spark: #eaf6ff;
   --brand-dot: #5fa3d2;
-  --skip-edge: #3a536a80;
-  --skip-face: #101a24b3;
   --handoff-ground: #0a0f14;
   --focus: #6fb6e4;
 }
@@ -334,22 +330,7 @@
   letter-spacing: 0.32em;
 }
 
-.skip {
-  position: absolute;
-  top: max(20px, env(safe-area-inset-top));
-  right: max(20px, env(safe-area-inset-right));
-  min-height: 44px;
-  min-width: 70px;
-  padding: 0 13px;
-  border: 1px solid var(--skip-edge);
-  border-radius: 24px;
-  background: var(--skip-face);
-  color: var(--ink-soft);
-  font-size: 0.6875rem;
-  cursor: pointer;
-}
-.skip span { margin-left: 8px; }
-.skip:focus-visible, .reviewControls button:focus-visible, .reviewControls input:focus-visible {
+.reviewControls button:focus-visible, .reviewControls input:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 4px;
 }
