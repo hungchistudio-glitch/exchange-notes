@@ -174,12 +174,22 @@ describe("Prism production opening", () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it("offers an accessible skip and releases even when tracks never finish", () => {
+  /*
+   * A skip button sat in the corner of this film until it was removed: the
+   * only piece of interface in 2.8 seconds of brand, drawing the eye away
+   * from the mark, and never the safety net it resembled — the ceiling below
+   * and SplashGate's grace both release the page without it. Asserting its
+   * absence is what stops it coming back as an obvious kindness.
+   */
+  it("shows no control of its own, and still ends early on Escape", () => {
     vi.useFakeTimers();
     const animations = installAnimations();
     const onComplete = vi.fn();
-    const { getByRole } = render(<YumiPrismLaunch launchId="skip" onComplete={onComplete} />);
-    fireEvent.click(getByRole("button", { name: /略過/ }));
+    const { queryByRole } = render(<YumiPrismLaunch launchId="skip" onComplete={onComplete} />);
+
+    expect(queryByRole("button")).toBeNull();
+
+    fireEvent.keyDown(document, { key: "Escape" });
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(animations.every(animation => animation.cancelled)).toBe(true);
     act(() => vi.advanceTimersByTime(10000));

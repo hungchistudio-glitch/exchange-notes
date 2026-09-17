@@ -122,6 +122,20 @@ export default function YumiPrismLaunch({
     };
   }, [duration, finish, paint, playing, reduced, reviewMode]);
 
+  /*
+   * The only way out, and there is deliberately no button beside it.
+   *
+   * A skip control sat in the top-right corner until it was taken out: it is
+   * the one piece of interface in a 2.8-second brand film, it has to be
+   * styled for two grounds, and it is the first thing the eye goes to in a
+   * frame whose whole point is the mark. Nothing depends on it either — both
+   * this component's own ceiling and SplashGate's grace release the page on
+   * their own, so it was never the safety net it looked like. And a film this
+   * short is under the 5 seconds at which WCAG 2.2.2 asks for a control at
+   * all; reduced motion cuts it to 650ms.
+   *
+   * Escape stays because it costs nothing and gives a keyboard out.
+   */
   useEffect(() => {
     if (reviewMode || !onComplete) return;
     const escape = (event: KeyboardEvent) => {
@@ -231,7 +245,6 @@ export default function YumiPrismLaunch({
           <div className={styles.signature}>A WORLD IN YOUR WORDS</div>
         </div>
       </div>
-      {!reviewMode && onComplete && <button type="button" className={styles.skip} onClick={finish}>略過 <span aria-hidden="true">↗</span></button>}
       {showReviewControls && (
         <section className={styles.reviewControls} aria-label="開場動畫控制">
           <div className={styles.controlHeading}><span>YUMI / PRISM</span><output ref={readoutRef}>0.00s / {(duration / 1000).toFixed(2)}s</output></div>
