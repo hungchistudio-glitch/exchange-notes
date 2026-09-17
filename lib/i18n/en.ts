@@ -527,6 +527,8 @@ const english: TranslationDictionary = {
       dailyGoal: "Daily goal",
       mastered: "Words mastered",
       reviewed: "Reviews done",
+      noReadings:
+        "No readings yet. The instruments start after your first review.",
     },
   },
 

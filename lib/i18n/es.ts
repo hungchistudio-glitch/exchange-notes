@@ -527,6 +527,8 @@ const spanish: TranslationDictionary = {
       dailyGoal: "Objetivo diario",
       mastered: "Palabras dominadas",
       reviewed: "Repasos hechos",
+      noReadings:
+        "Aún no hay lecturas. Los instrumentos empiezan después de tu primer repaso.",
     },
   },
 

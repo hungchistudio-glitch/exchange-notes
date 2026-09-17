@@ -493,6 +493,8 @@ export type TranslationDictionary = {
       dailyGoal: string;
       mastered: string;
       reviewed: string;
+      /** Shown when the history has loaded and holds no reviews at all. */
+      noReadings: string;
     };
   };
 

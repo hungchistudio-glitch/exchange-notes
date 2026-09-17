@@ -513,6 +513,8 @@ const french: TranslationDictionary = {
       dailyGoal: "Objectif quotidien",
       mastered: "Mots maîtrisés",
       reviewed: "Révisions faites",
+      noReadings:
+        "Pas encore de relevés. Les instruments démarrent après votre première révision.",
     },
   },
   discover: {
