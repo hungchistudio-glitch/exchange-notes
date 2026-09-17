@@ -9,11 +9,12 @@
  * the beat list below rather than in how anything is drawn.
  *
  * So the beats do not overlap where they do not have to, and there is a real
- * still frame before the handoff — 260ms where nothing moves at all. A hold
+ * still frame before the handoff — 280ms where nothing moves at all. A hold
  * is what makes the motion before it look deliberate; without one the film
  * simply stops.
  *
- *   0 –  420   the ground dissolves out of the manifest's pure white
+ *   0 –  260   the curtain of manifest-white lifts off the whole frame
+ * 120 – 1500   the aura blooms, and is the only thing with any depth to it
  * 160 – 1050   the lens arrives, and settles rather than merely stopping
  * 180 – 1080   the halo blooms behind it
  * 480 – 1240   the orbit light travels once around and parks
@@ -48,7 +49,7 @@ export const YUMI_PRISM_HOLD_MS = 2060;
 /** The named frames the review route offers, and the film's structure. */
 export const YUMI_PRISM_CHECKPOINTS = [
   [0, "純光"],
-  [420, "浮現"],
+  [260, "浮現"],
   [900, "透鏡"],
   [1460, "品牌"],
   [YUMI_PRISM_HOLD_MS, "定格"],
@@ -87,7 +88,7 @@ function reducedFrame(t: number): PrismFrame {
   const leave = smooth(phase(t, 470, YUMI_PRISM_REDUCED_DURATION_MS));
 
   return {
-    "--dawn-opacity": value(1 - smooth(phase(t, 0, 150))),
+    "--dawn-opacity": value(1 - smooth(phase(t, 0, 120))),
     "--scene-opacity": value(1 - leave),
     "--scene-y": "0px",
     "--aura-opacity": value(arrive * 0.7),
@@ -116,12 +117,20 @@ export function computeYumiPrismFrame(time: number, reduced = false): PrismFrame
   if (reduced) return reducedFrame(t);
 
   /*
-   * The white sheet the film starts under is the manifest's splash colour,
-   * which the OS has already painted before this document existed. Dissolving
-   * out of it means the opening can have a ground of its own — obsidian in
-   * Cosmic Mode — without the seam between the two being a flash.
+   * The curtain is the manifest's splash colour, which the OS has already
+   * painted before this document existed. Lifting it is what lets the opening
+   * have a ground of its own — obsidian in Cosmic Mode — without the seam
+   * between the two being a flash.
+   *
+   * 260ms rather than the 420 it was written at. The curtain covers the whole
+   * frame (see the render order in YumiPrismLaunch), so every millisecond of
+   * it is also a millisecond of the lens arriving behind gauze. At 420 that
+   * was a visible softening of the pearl film, which does not need a dissolve
+   * at all — its ground is already this colour. At 260 the curtain is down to
+   * 16% by the time the lens is a third of the way in, and the grading is
+   * still there for the mode that needs it.
    */
-  const dawn = smooth(phase(t, 0, 420));
+  const dawn = smooth(phase(t, 0, 260));
   const aura = expo(phase(t, 120, 1500));
   const halo = expo(phase(t, 180, 1080));
   /* Opacity and geometry run on different curves: the lens is fully opaque
@@ -193,15 +202,30 @@ export const PRISM_TRACKS: Record<string, (f: PrismFrame) => Keyframe> = {
  * whatever the sampling happens to straddle.
  */
 const FULL_MOTION_BEATS = [
-  120, 160, 180, 480, 700, 780, 820, 940, 1050, 1080, 1220, 1240, 1320, 1400,
-  1460, 1500, 1640, 1800, 1900, 1960, 2040, 2320,
+  120, 160, 180, 260, 480, 700, 780, 820, 940, 1050, 1080, 1220, 1240, 1320,
+  1400, 1460, 1500, 1640, 1800, 1900, 1960, 2040, 2320,
 ];
+
+/**
+ * How often the curves are sampled into keyframes.
+ *
+ * This was 60Hz, which is 195 keyframes on each of fifteen tracks — 2,925 of
+ * them built and handed to the compositor at mount, measured at 18.5ms for the
+ * animate() calls alone on a development Mac, at the one moment the app is
+ * also hydrating. A phone pays several times that.
+ *
+ * 30 halves it, and the film is identical to look at: the browser interpolates
+ * linearly between keyframes, and the steepest curve here is the expo arrival,
+ * whose linear error over a 33ms step is about 1.5% of opacity at its worst.
+ * Going lower starts to show on that arrival; going higher buys nothing.
+ */
+const SAMPLE_HZ = 30;
 
 export function buildYumiPrismTracks(reduced = false): Record<string, Keyframe[]> {
   const duration = reduced ? YUMI_PRISM_REDUCED_DURATION_MS : YUMI_PRISM_DURATION_MS;
   const times = new Set<number>([0, duration]);
-  for (let t = 0; t < duration; t += 1000 / 60) times.add(t);
-  const beats = reduced ? [150, 180, 470] : FULL_MOTION_BEATS;
+  for (let t = 0; t < duration; t += 1000 / SAMPLE_HZ) times.add(t);
+  const beats = reduced ? [120, 180, 470] : FULL_MOTION_BEATS;
   for (const t of beats) times.add(t);
   if (!reduced) for (const [t] of YUMI_PRISM_CHECKPOINTS) times.add(t);
   const tracks: Record<string, Keyframe[]> = {};

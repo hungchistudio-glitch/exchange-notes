@@ -72,16 +72,47 @@ describe("Prism animation tracks", () => {
    * the whole reason Cosmic Mode can have an obsidian ground without a flash
    * in front of it. Both halves matter: full at the first frame, and gone.
    */
-  it("dissolves out of the OS splash colour, and only once", () => {
+  it("lifts the OS splash colour off the frame, once, and early", () => {
     expect(computeYumiPrismFrame(0)["--dawn-opacity"]).toBe("1");
     expect(computeYumiPrismFrame(0, true)["--dawn-opacity"]).toBe("1");
-    expect(Number(computeYumiPrismFrame(210)["--dawn-opacity"])).toBeLessThan(1);
-    for (const time of [420, 900, YUMI_PRISM_HOLD_MS, YUMI_PRISM_DURATION_MS]) {
+    expect(Number(computeYumiPrismFrame(130)["--dawn-opacity"])).toBeLessThan(1);
+    for (const time of [260, 420, 900, YUMI_PRISM_HOLD_MS, YUMI_PRISM_DURATION_MS]) {
       expect(computeYumiPrismFrame(time)["--dawn-opacity"], `${time}ms`).toBe("0");
     }
     const dawn = buildYumiPrismTracks().dawn.map(frame => Number(frame.opacity));
     for (let index = 1; index < dawn.length; index += 1) {
       expect(dawn[index]).toBeLessThanOrEqual(dawn[index - 1]);
+    }
+  });
+
+  /*
+   * The curtain covers the whole frame, so its length is also how long the
+   * lens spends arriving behind gauze — and the pearl ground, whose colour it
+   * already is, gets nothing back for that. Pinning it against the arrival
+   * rather than against a number is what keeps the two from drifting apart:
+   * lengthen the curtain and this fails before anyone has to notice a softer
+   * opening in a screenshot.
+   */
+  it("is out of the way before the lens is half arrived", () => {
+    const halfArrived = Array.from({ length: YUMI_PRISM_DURATION_MS }, (_, t) => t)
+      .find(t => Number(computeYumiPrismFrame(t)["--actor-opacity"]) >= 0.5)!;
+
+    expect(halfArrived).toBeLessThan(400);
+    expect(Number(computeYumiPrismFrame(halfArrived)["--dawn-opacity"])).toBeLessThan(0.1);
+  });
+
+  /*
+   * Every keyframe here is built on the main thread at mount, on the one beat
+   * the app is also hydrating. At 60Hz that was 195 per track across fifteen
+   * tracks — 2,925 of them, 18.5ms in animate() alone on a development Mac and
+   * several times that on a phone. The browser interpolates between keyframes,
+   * so this number buys accuracy nobody can see past a point.
+   */
+  it("keeps the keyframe budget small enough to build at mount", () => {
+    for (const reduced of [false, true]) {
+      const tracks = buildYumiPrismTracks(reduced);
+      const longest = Math.max(...Object.values(tracks).map(frames => frames.length));
+      expect(longest, `reduced=${reduced}`).toBeLessThanOrEqual(120);
     }
   });
 

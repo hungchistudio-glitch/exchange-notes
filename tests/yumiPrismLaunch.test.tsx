@@ -181,6 +181,34 @@ describe("Prism production opening", () => {
    * and SplashGate's grace both release the page without it. Asserting its
    * absence is what stops it coming back as an obvious kindness.
    */
+  /*
+   * Paint order, asserted because nothing else could catch it.
+   *
+   * None of the canvas layers carries a z-index, so they paint in DOM order —
+   * and the manifest-white curtain sat second, underneath a .brandScene whose
+   * .ambient is an opaque full-bleed gradient. It was never once on screen.
+   * Every test passed, and every screenshot was taken in the pearl ground
+   * where the curtain and the ground are the same white, so nothing looked
+   * wrong; Cosmic Mode simply kept the hard white-to-obsidian cut the curtain
+   * exists to grade.
+   */
+  it("paints the manifest-white curtain over every layer it covers", () => {
+    installAnimations();
+    const { container } = render(
+      <YumiPrismLaunch launchId="order" showHandoffPreview />,
+    );
+    const curtain = container.querySelector<HTMLElement>('[data-track="dawn"]')!;
+    const order = [...curtain.parentElement!.children].map(
+      child => (child as HTMLElement).dataset.track,
+    );
+
+    expect(order.at(-1)).toBe("dawn");
+    for (const covered of ["sceneWash", "handoffPreview", "brandScene"]) {
+      expect(order, covered).toContain(covered);
+      expect(order.indexOf("dawn"), covered).toBeGreaterThan(order.indexOf(covered));
+    }
+  });
+
   it("shows no control of its own, and still ends early on Escape", () => {
     vi.useFakeTimers();
     const animations = installAnimations();
