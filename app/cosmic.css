@@ -32,6 +32,19 @@ html[data-interface-mode="yumi-cosmic"] {
   --cosmic-violet-dim: rgba(229, 173, 210, 0.3);
   --cosmic-blue: #809cf4;
   --cosmic-amber: #e8ce8c;
+
+  /*
+   * The same four hues, at the strength a dark instrument face needs.
+   *
+   * The pastels above are card *faces*; these are card *readings*. A face has
+   * the whole card to be quiet in, a reading has two pixels of pointer and a
+   * clipped row of graduations, and #bce7d7 at that size on obsidian is a
+   * grey smudge. Same hue, carried at the weight its new job asks for.
+   */
+  --cosmic-cyan-lit: #7fd7bb;
+  --cosmic-violet-lit: #e79ac9;
+  --cosmic-blue-lit: #8aa6ff;
+  --cosmic-amber-lit: #e9c57e;
   --cosmic-teal: #9bd5ba;
   --cosmic-card-radius: 1.875rem;
   --cosmic-ink: #f5f2f0;
