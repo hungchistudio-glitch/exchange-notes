@@ -5,6 +5,7 @@ import { useState } from "react";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
+import { markChosenBeforeSignIn } from "@/lib/preferences/pendingChoices";
 import { loadTranslations } from "@/lib/i18n";
 import {
   INTERFACE_LANGUAGE_CODE,
@@ -43,6 +44,14 @@ export default function AppLanguageStep({ onContinue }: AppLanguageStepProps) {
     try {
       await loadTranslations(value);
       setInterfaceLanguage(value);
+      /*
+       * Onboarding is not under the protected layout, so AccountPreferencesSync
+       * is not mounted here and this choice reaches the app the same way the
+       * landing page's does: as device state the account is about to replace.
+       * A profile that saved its name in an earlier session still passes back
+       * through this gate, and that account can already hold preferences.
+       */
+      markChosenBeforeSignIn("interfaceLanguage");
     } catch (error) {
       setLoadError(true);
       console.error("Could not load the selected interface language.", error);

@@ -16,6 +16,11 @@ import {
   readLocalPreferences,
   type AccountPreferences,
 } from "@/lib/preferences/accountPreferences";
+import {
+  applyChosenFields,
+  clearChosenBeforeSignIn,
+  readChosenBeforeSignIn,
+} from "@/lib/preferences/pendingChoices";
 import { subscribeToSpeechSettings } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
 
@@ -95,10 +100,25 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
      */
     if (isEmptyPreferences(stored)) {
       lastWrittenRef.current = null;
+      clearChosenBeforeSignIn();
       write();
     } else {
       applyingRef.current = true;
-      const storedPreferences = parseAccountPreferences(stored);
+      /*
+       * Everything except what the reader chose on the way in.
+       *
+       * "The account wins" is about ambient state: settings nobody said
+       * anything about on this device, which the account is there to replace.
+       * A language picked on the landing page thirty seconds ago is not that,
+       * and overriding it is the app contradicting something the reader just
+       * did — visibly, as a flash of the right language before the wrong one.
+       */
+      const chosen = readChosenBeforeSignIn();
+      const storedPreferences = applyChosenFields(
+        parseAccountPreferences(stored),
+        readLocalPreferences(),
+        chosen,
+      );
 
       void loadTranslations(storedPreferences.interfaceLanguage)
         .then(() => {
@@ -106,6 +126,17 @@ export default function AccountPreferencesSync({ userId, stored }: Props) {
 
           applyPreferencesLocally(storedPreferences);
           lastWrittenRef.current = readLocalPreferences();
+
+          /*
+           * Spent, and carried up. Clearing first means a failed write does
+           * not leave a standing preference on a shared computer for whoever
+           * signs in next; the sync retries on the reader's next change.
+           */
+          if (chosen.length > 0) {
+            clearChosenBeforeSignIn();
+            lastWrittenRef.current = null;
+            write();
+          }
 
           // Cleared after the events from applying have been delivered.
           window.setTimeout(() => {
