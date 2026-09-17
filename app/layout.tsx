@@ -53,8 +53,20 @@ export async function generateViewport(): Promise<Viewport> {
 
   return {
     themeColor: interfaceMode === "yumi-cosmic" ? "#08090b" : "#f5f3ed",
-    /* The active opening is a pure-white canvas in every interface mode. */
-    colorScheme: "light",
+    /*
+     * This used to be the constant "light", on the grounds that the active
+     * opening was a pure-white canvas in every interface mode. The opening
+     * has a ground of its own now — obsidian in Cosmic Mode, after a 420ms
+     * dissolve out of the manifest's white — so the constant described a
+     * screen that no longer exists and left Cosmic Mode asking the browser
+     * for light form controls and a light scrollbar over a deep-space app.
+     *
+     * It is safe for this to disagree with the opening's first frame: what
+     * color-scheme actually decides here is UA-painted furniture, and the
+     * opening has none of it. The canvas is settled separately, by the
+     * inline background on <html> below.
+     */
+    colorScheme: interfaceMode === "yumi-cosmic" ? "dark" : "light",
   };
 }
 
@@ -140,8 +152,14 @@ export default async function RootLayout({
        * render-blocking third-party requests that can push that later still on
        * a cold start.
        *
-       * Pure white matches both the manifest splash and the active Yumi
-       * opening, so the pre-stylesheet gap cannot flash dark between them.
+       * Pure white in both interface modes, which is not the same claim it
+       * once was. The opening is no longer white throughout — in Cosmic Mode
+       * it dissolves into obsidian — but it still *begins* white, because the
+       * manifest splash the OS paints before this document exists is white
+       * and a static manifest cannot follow a per-reader setting. So the
+       * sequence is one colour handed forward twice: OS splash, this
+       * attribute, the opening's first frame, and then a graded dissolve
+       * inside the opening where the seam would otherwise be a flash.
        *
        * body's own background covers this the moment globals.css lands, in
        * whichever mode is active, so nothing downstream is affected.

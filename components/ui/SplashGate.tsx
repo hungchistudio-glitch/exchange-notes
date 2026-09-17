@@ -1,99 +1,210 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useState } from "react";
 
 import ActiveLaunch, { ACTIVE_LAUNCH } from "@/components/launch/activeLaunch";
 import { setLaunching } from "@/lib/launchState";
 
-/**
- * The opening, on every load of a signed-in page.
- *
- * There used to be a sessionStorage flag here so it played "once per
- * session". In an installed PWA that is the wrong unit: iOS keeps the web
- * app's session alive across backgrounding, so the flag survived the app
- * being closed and reopened, and the opening played exactly once ever and
- * was silently skipped from then on. Reopening the app is precisely when an
- * opening animation is supposed to run.
- *
- * There is no gate now. It plays whenever this layout mounts, which is once
- * per document load — soft navigation between protected pages keeps the
- * layout, so moving around inside the app does not replay it.
- */
 /*
  * How long after the opening should have ended before the gate stops waiting
  * to be told and simply opens.
  */
 const LAUNCH_GRACE_MS = 1200;
 
+/** Versioned, so a new opening is always worth watching once. */
+export const LAUNCH_SESSION_KEY = `exchange-notes:launch:${ACTIVE_LAUNCH.id}`;
+
+/**
+ * How long the app has to have been away before the opening plays again.
+ *
+ * ── Why this is a clock and not a flag ─────────────────────────────────
+ *
+ * The obvious implementation is a sessionStorage boolean: played, don't play
+ * again. That shipped once and was removed, because in an installed PWA the
+ * unit is wrong. iOS keeps a web app's session alive across backgrounding,
+ * so the flag survived the app being closed and reopened and the opening
+ * played exactly once ever, then was silently skipped for the life of the
+ * install — and reopening the app is precisely when an opening is supposed
+ * to run.
+ *
+ * A boolean cannot tell those two cases apart, because the question it
+ * answers is "has this played" when the question worth asking is "has this
+ * reader been away long enough for it to be worth seeing". So the marker is
+ * a timestamp written every time the reader leaves, rather than only when
+ * the opening ends — which is what makes the gate measure time away from the
+ * app instead of time since the last opening.
+ *
+ * Half an hour: long enough that moving between tabs, following a link out
+ * and coming back, or reloading after a change never replays it; short
+ * enough that opening the app in the morning does.
+ */
+export const LAUNCH_REPLAY_AFTER_MS = 30 * 60 * 1000;
+
+/**
+ * Whether the app was in use recently enough to go straight in.
+ *
+ * Deliberately strict about what counts. A missing key, a value from an
+ * older build that stored the word "complete", and a stamp from the future —
+ * a clock that has been moved back — all read as "not recently", because
+ * every one of them is a reason to play the opening rather than to skip it.
+ */
+function seenRecently() {
+  try {
+    const stamp = Number(window.sessionStorage.getItem(LAUNCH_SESSION_KEY));
+    const now = Date.now();
+    return stamp > 0 && now >= stamp && now - stamp < LAUNCH_REPLAY_AFTER_MS;
+  } catch {
+    // Private browsing or storage policy must never prevent entering the app.
+    return false;
+  }
+}
+
+/*
+ * Set by the review harness, and by nothing else.
+ *
+ * The gate writes its marker on the way out of every document, which is
+ * exactly what a reload is — so a harness that clears the marker and reloads
+ * has its clear overwritten on the way out and can never ask for a replay.
+ * Suspending the write is the only thing that makes the behaviour reviewable
+ * in a real browser rather than only in jsdom.
+ */
+let markerSuspended = false;
+
+function markLeaving() {
+  if (markerSuspended) return;
+  try {
+    window.sessionStorage.setItem(LAUNCH_SESSION_KEY, `${Date.now()}`);
+  } catch {
+    // Finishing still releases the page when storage is unavailable.
+  }
+}
+
+/** Development review only: play the opening on the next document load. */
+export function forgetLaunchMarker() {
+  markerSuspended = true;
+  try {
+    window.sessionStorage.removeItem(LAUNCH_SESSION_KEY);
+  } catch {
+    // An unwritable store already replays the opening.
+  }
+}
+
+/** Development review only: pretend the app was last left `awayFor` ago. */
+export function ageLaunchMarker(awayFor: number) {
+  markerSuspended = true;
+  try {
+    window.sessionStorage.setItem(LAUNCH_SESSION_KEY, `${Date.now() - awayFor}`);
+  } catch {
+    // As above.
+  }
+}
+
+/** Escape values for an inline script, including the HTML script terminator. */
+function scriptValue(value: string) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+/** The opening, once per stretch of use, on every document load. */
 export default function SplashGate() {
+  const gateId = useId();
+  // Identical server and hydrating renders; browser storage is read at commit.
   const [visible, setVisible] = useState(true);
 
-  /*
-   * Everything under the opening holds still while it plays.
-   *
-   * The opening is a fixed, opaque overlay at z-index 1000, and the whole app
-   * mounts underneath it: the home stage starts its wake, its own nineteen
-   * infinite animations and the mark's twenty-eight, the library loads, the
-   * preferences sync — all at once, all behind something nobody can see
-   * through, all competing for the frames the opening needs to be smooth.
-   * That is why it stuttered.
-   *
-   * animation-play-state rather than unmounting: the app carries on loading,
-   * hydrating and fetching, which is the part that has to happen during these
-   * 2.8 seconds. Only the drawing of things nobody can see stops, and it
-   * resumes the moment the overlay goes.
-   */
-  useEffect(() => {
-    if (!visible) {
+  const finish = useCallback(() => {
+    markLeaving();
+    setVisible(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+
+    if (!visible || seenRecently()) {
       setLaunching(false);
+      delete root.dataset.launching;
+      // This storage reconciliation must finish before the hydration paint.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (visible) setVisible(false);
       return;
     }
 
-    setLaunching(true);
+    // A replay was asked for and is now being given; the request is spent.
+    markerSuspended = false;
 
-    const root = document.documentElement;
+    // Let the app load underneath, but pause its decorative motion and route
+    // transitions so they do not compete with or paint above the opening.
+    setLaunching(true);
     root.dataset.launching = "true";
 
-    /*
-     * Cleared on the way out as well as on completion. Unmounting while the
-     * overlay is still up — a sign-out, a route that leaves the protected
-     * app — would otherwise leave both signals set for the life of the
-     * document: the app's animations paused, and every route transition
-     * suppressed, by an opening that is no longer on screen.
-     */
+    // Keep keyboard focus out of controls hidden beneath the opening. Retain
+    // an existing inert state owned by another overlay when this one leaves.
+    const viewport = document.querySelector<HTMLElement>("[data-app-viewport]");
+    const previousInert = viewport?.getAttribute("inert") ?? null;
+    viewport?.setAttribute("inert", "");
+
     return () => {
       setLaunching(false);
       delete root.dataset.launching;
+      if (previousInert === null) viewport?.removeAttribute("inert");
+      else viewport?.setAttribute("inert", previousInert);
     };
   }, [visible]);
 
-  /*
-   * The overlay leaves on its own, whatever the animation does.
-   *
-   * Until this, the only way out was the opening reporting that it had
-   * finished — so anything that stopped it finishing left an opaque sheet
-   * over the whole app for the life of the document. That is not
-   * hypothetical: browsers suspend animations in a backgrounded tab, and
-   * opening the app and immediately switching away is an ordinary thing to
-   * do. It is the likeliest explanation for the opening "getting stuck".
-   *
-   * A ceiling rather than a race with the animation: the grace is long
-   * enough that a smooth run always reports in first and this never fires,
-   * and short enough that a stalled one is measured in a moment rather than
-   * for as long as the reader keeps the tab open.
-   */
+  useEffect(() => {
+    if (visible) return;
+
+    /*
+     * The marker records when the reader *left*, and only that.
+     *
+     * Recording their return as well is the obvious symmetry and it is wrong:
+     * iOS keeps an installed web app's document alive across backgrounding, so
+     * a resume after two hours fires visibilitychange on a document that is
+     * still running. Writing "now" there would stamp the marker fresh without
+     * anything having asked whether the opening was due — and the reload that
+     * eventually comes would then find a marker a few minutes old and skip an
+     * opening the reader had been away all afternoon from.
+     *
+     * pagehide covers the reload and the navigation away; the hidden half of
+     * visibilitychange covers backgrounding, which is the signal an installed
+     * app actually gets.
+     */
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") markLeaving();
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", markLeaving);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", markLeaving);
+    };
+  }, [visible]);
+
   useEffect(() => {
     if (!visible) return;
 
+    // A suspended or failed animation must never leave an opaque overlay up.
     const timer = window.setTimeout(
-      () => setVisible(false),
+      finish,
       ACTIVE_LAUNCH.durationMs + LAUNCH_GRACE_MS,
     );
 
     return () => window.clearTimeout(timer);
-  }, [visible]);
+  }, [finish, visible]);
 
   if (!visible) return null;
 
-  return <ActiveLaunch onComplete={() => setVisible(false)} />;
+  return (
+    <div id={gateId} suppressHydrationWarning>
+      {/* Runs while HTML is parsed, before the overlay below can be painted.
+          The layout effect handles client navigation, where scripts are inert.
+          It has to reach the same verdict as seenRecently() above, which is
+          why both are this short. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `try{var s=+sessionStorage.getItem(${scriptValue(LAUNCH_SESSION_KEY)}),n=Date.now();if(s>0&&n>=s&&n-s<${LAUNCH_REPLAY_AFTER_MS}){document.getElementById(${scriptValue(gateId)}).hidden=true}}catch{}`,
+        }}
+      />
+      <ActiveLaunch onComplete={finish} />
+    </div>
+  );
 }

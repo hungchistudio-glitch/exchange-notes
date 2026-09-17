@@ -1,20 +1,19 @@
-import YumiMinimalLaunch from "@/components/launch/YumiMinimalLaunch";
+import YumiPrismLaunch from "@/components/launch/YumiPrismLaunch";
 import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 export const metadata = {
-  title: "Yumi minimal opening — clean review",
+  title: "Yumi Prism opening — clean review",
   robots: { index: false, follow: false },
 };
 
-/** Control-free route for full-screen review and screen recording. */
+/** Real compositor playback, without the review tool's JavaScript clock. */
 export default function CleanYumiOpeningReviewPage() {
   reviewRouteOnly();
 
   return (
     <main>
-      <YumiMinimalLaunch
-        launchId="yumi-minimal-v1-clean"
-        reviewMode
+      <YumiPrismLaunch
+        launchId="yumi-prism-v1-clean"
         showHandoffPreview
         showReviewControls={false}
       />
