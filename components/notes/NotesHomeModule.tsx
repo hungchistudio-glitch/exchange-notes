@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import {
@@ -27,6 +27,32 @@ export default function NotesHomeModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  /*
+   * Whether this module is still on screen.
+   *
+   * Both paths below set state after awaiting the network, and until now
+   * nothing stopped either of them. The effect's clearTimeout only stops
+   * `load` from starting — once it has, nothing cancels it — and `save` is
+   * called from the composer sheet, so it is not tied to an effect at all.
+   *
+   * React tolerates a state update on an unmounted component; a torn-down
+   * test environment does not. It surfaced as `window is not defined` out of
+   * dispatchSetState, from a save that resolved a moment too late, reaching
+   * CI as an unhandled rejection with all 1,129 tests still passing. It is a
+   * race either way: the work is wasted in a browser and fatal in a harness.
+   *
+   * Assigned on the way in as well as the way out, because Strict Mode mounts
+   * this twice and the first cleanup would otherwise leave it false forever.
+   */
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(false);
@@ -40,12 +66,13 @@ export default function NotesHomeModule() {
       if (typeof navigator === "undefined" || navigator.onLine !== false) {
         await importLegacyNotes(supabase, userId);
       }
-      setNotes(await fetchNotes(supabase, userId, { limit: 3 }));
+      const fetched = await fetchNotes(supabase, userId, { limit: 3 });
+      if (mounted.current) setNotes(fetched);
     } catch (loadError) {
       console.error("Notes home load failed", loadError);
-      setError(true);
+      if (mounted.current) setError(true);
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, []);
 
@@ -61,7 +88,9 @@ export default function NotesHomeModule() {
     const note = await createNote(supabase, user.id, input);
 
     if (note) {
-      setNotes((current) => [note, ...current].slice(0, 3));
+      // The list only if this module is still here; the event either way,
+      // because the note was created whether or not anyone is looking.
+      if (mounted.current) setNotes((current) => [note, ...current].slice(0, 3));
       track("notes.created", { language: note.originalLanguage, source: note.sourceKind });
     }
 

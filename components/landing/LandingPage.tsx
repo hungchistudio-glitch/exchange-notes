@@ -36,6 +36,7 @@ import {
   getInterfaceLanguageMeta,
   learningLanguageList,
 } from "@/lib/languages";
+import { markChosenBeforeSignIn } from "@/lib/preferences/pendingChoices";
 
 import styles from "./LandingPage.module.css";
 
@@ -75,6 +76,13 @@ function LandingLanguagePicker({
       await loadTranslations(value);
       if (request !== requestRef.current) return;
       setInterfaceLanguage(value);
+      /*
+       * This page is only ever rendered signed out — a signed-in reader is
+       * redirected to /home before it — so a pick here is unambiguously a
+       * choice made before signing in, and the account sync must not quietly
+       * replace it with whatever was stored last time.
+       */
+      markChosenBeforeSignIn("interfaceLanguage");
     } catch (error) {
       if (request === requestRef.current) setLoadError(true);
       console.error("Could not load the selected interface language.", error);
