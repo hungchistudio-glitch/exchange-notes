@@ -182,7 +182,6 @@ export default function YumiPrismLaunch({
       aria-label={reviewMode ? "Yumi 光環開場預覽" : undefined}>
       <div className={styles.canvas}>
         <div data-track="sceneWash" className={styles.sceneWash} aria-hidden="true" />
-        <div data-track="dawn" className={styles.dawn} aria-hidden="true" />
         {showHandoffPreview && (
           <div data-track="handoffPreview" className={styles.handoffPreview} aria-hidden="true">
             <span className={styles.previewKicker}>EXCHANGE NOTES</span>
@@ -244,6 +243,14 @@ export default function YumiPrismLaunch({
           </div>
           <div className={styles.signature}>A WORLD IN YOUR WORDS</div>
         </div>
+        {/* Last, and that is the whole point of it.
+            None of these layers carries a z-index, so the canvas paints in DOM
+            order — and this sat second, under a .brandScene whose .ambient is
+            an opaque full-bleed gradient. The curtain was never once visible,
+            and Cosmic Mode kept the hard white-to-obsidian cut this exists to
+            grade. Moving it last is the fix; tests/yumiPrismLaunch.test.tsx
+            pins the order so it cannot drift back. */}
+        <div data-track="dawn" className={styles.dawn} aria-hidden="true" />
       </div>
       {showReviewControls && (
         <section className={styles.reviewControls} aria-label="開場動畫控制">
