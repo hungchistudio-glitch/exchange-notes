@@ -513,6 +513,8 @@ const italian: TranslationDictionary = {
       dailyGoal: "Obiettivo giornaliero",
       mastered: "Parole padroneggiate",
       reviewed: "Ripassi svolti",
+      noReadings:
+        "Ancora nessuna lettura. Gli strumenti iniziano dopo il primo ripasso.",
     },
   },
   discover: {

@@ -518,6 +518,7 @@ const traditionalChinese: TranslationDictionary = {
       dailyGoal: "每日目標",
       mastered: "已精熟單字",
       reviewed: "已完成複習",
+      noReadings: "還沒有讀數。第一次複習之後，這些儀表就會開始有東西可讀。",
     },
   },
 

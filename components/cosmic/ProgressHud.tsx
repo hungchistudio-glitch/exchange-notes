@@ -179,6 +179,22 @@ export default function ProgressHud() {
    * not started yet. The counts either side of them are real and stay.
    */
   const noReviewsYet = unavailable || reviewStats.reviewed === 0;
+  /*
+   * Five instruments with nothing to read, and not a word about why.
+   *
+   * The dashes above are the honest answer to "what is the accuracy of no
+   * reviews", and they stay. What they cannot do is say which of the three
+   * reasons they are dashes: still loading, failed to load, or nothing has
+   * been reviewed yet. The first is over in a moment and the second already
+   * speaks for itself in the alert above, so the only one left unsaid is the
+   * one a new reader is actually in — and for them a panel of empty gauges
+   * reads as something broken rather than as something not started.
+   *
+   * Deliberately not `noReviewsYet`: that folds the loading and error states
+   * in, and telling someone their history is empty while it is still arriving
+   * would be the same lie the dashes exist to avoid.
+   */
+  const nothingReviewedYet = !unavailable && reviewStats.reviewed === 0;
 
   return (
     <section className={styles.hud} aria-busy={loading}>
@@ -186,6 +202,9 @@ export default function ProgressHud() {
       <h2 className={styles.title}>{copy.title}</h2>
       {loadError && (
         <p className={styles.error} role="alert">{t.common.error}</p>
+      )}
+      {nothingReviewedYet && (
+        <p className={styles.waiting}>{copy.noReadings}</p>
       )}
 
       <div className={styles.cards}>

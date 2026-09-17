@@ -53,6 +53,11 @@ function panel() {
   return screen.getByRole("heading", { name: copy.title }).closest("section");
 }
 
+async function renderAndFind(text: string) {
+  render(<ProgressHud />);
+  return screen.findByText(text);
+}
+
 describe("Cosmic progress readings", () => {
   beforeEach(() => {
     // Keep real timers for async rendering while pinning calendar-day and
@@ -81,6 +86,66 @@ describe("Cosmic progress readings", () => {
     expect(screen.queryByText("0%")).not.toBeInTheDocument();
     expect(screen.queryByText("100%")).not.toBeInTheDocument();
     expect(mocks.fetchVocabulary).toHaveBeenCalledWith("reader");
+  });
+
+  /* =========================================================
+     Which kind of empty the dashes mean
+
+     A dash is the honest reading for "the accuracy of no reviews", and it is
+     the same dash whether the history is still arriving, failed to arrive, or
+     arrived holding nothing. Only the last of those leaves a reader looking at
+     five empty gauges with no idea whether the panel is broken or simply not
+     started, and it is the only one this line is for — saying "nothing
+     reviewed yet" over a history that is still loading would be the same lie
+     the dashes exist to avoid.
+     ========================================================= */
+
+  it("says nothing has been reviewed once an empty history has actually arrived", async () => {
+    mocks.fetchVocabulary.mockResolvedValue([]);
+
+    render(<ProgressHud />);
+
+    // Not while it is still arriving.
+    expect(screen.queryByText(copy.noReadings)).not.toBeInTheDocument();
+
+    expect(await screen.findByText(copy.noReadings)).toBeInTheDocument();
+    expect(panel()).toHaveAttribute("aria-busy", "false");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("says it for a history that holds words nobody has reviewed yet", async () => {
+    mocks.fetchVocabulary.mockResolvedValue([word({ id: "fresh" })]);
+
+    expect(await renderAndFind(copy.noReadings)).toBeInTheDocument();
+  });
+
+  it("stays quiet when the history could not be fetched at all", async () => {
+    mocks.fetchVocabulary.mockRejectedValue(new Error("Network unavailable"));
+
+    render(<ProgressHud />);
+
+    // The alert already says what went wrong; two explanations for one set of
+    // dashes is worse than one.
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText(copy.noReadings)).not.toBeInTheDocument();
+  });
+
+  it("stops saying it as soon as there is a single review behind the readings", async () => {
+    mocks.fetchVocabulary.mockResolvedValue([
+      word({
+        id: "reviewed",
+        status: "learning",
+        review_count: 1,
+        correct_count: 1,
+        last_reviewed_at: yesterday,
+        review_interval: 1,
+      }),
+    ]);
+
+    render(<ProgressHud />);
+
+    await waitFor(() => expect(panel()).toHaveAttribute("aria-busy", "false"));
+    expect(screen.queryByText(copy.noReadings)).not.toBeInTheDocument();
   });
 
   it("shows the fetched history's actual statistics and the selected daily goal", async () => {
