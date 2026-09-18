@@ -54,6 +54,16 @@ const MODEL_COOLDOWN_MS = 65 * 1000;
    budget failing to improve it.
    ========================================================= */
 
+/**
+ * How finely the model samples the photo it is sent.
+ *
+ * "low" matches the single 768px tile the client sizes for; see the note at
+ * the image part below. Raise it with VISION_RESOLUTION if a real photo is
+ * identified worse than it used to be.
+ */
+const VISION_RESOLUTION = (process.env.VISION_RESOLUTION?.trim() ||
+  "low") as "low" | "medium" | "high" | "ultra_high";
+
 /** What one model attempt may take. Measured p50 is three to seven seconds. */
 const REQUEST_TIMEOUT_MS = readBoundedInteger(
   process.env.VISION_REQUEST_TIMEOUT_MS,
@@ -268,8 +278,22 @@ async function identifyWithModel(
         {
           type: "image",
           data: imageBase64,
-          mime_type: mediaType,
-          resolution: "high",
+          /*
+           * Sampled at the size it was actually sent at.
+           *
+           * The client resizes this photo to RECOGNITION_EDGE.object, which
+           * is 768 because "Gemini bills images as 768x768 tiles, so 768 is
+           * one tile and 1280 is four" — the frame is deliberately cut to a
+           * single tile. Asking for "high" then sampled that one tile as
+           * though there were four tiles of detail in it: more tokens and
+           * more time for an image that does not contain the detail being
+           * paid for, on the route whose whole problem is that it runs out
+           * of budget.
+           *
+           * Overridable, because this is the one change here that could cost
+           * recognition quality rather than only time.
+           */
+          resolution: VISION_RESOLUTION,
         },
       ],
       response_format: {
@@ -313,13 +337,17 @@ async function identifyWithFallback(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new ObjectIdentificationUnavailableError();
 
-  const client = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      timeout: REQUEST_TIMEOUT_MS,
-      retryOptions: { attempts: 1 },
-    },
-  });
+  /*
+   * No httpOptions here on purpose.
+   *
+   * This used to carry `timeout` and `retryOptions: { attempts: 1 }`, which
+   * reads like a guard and is not one: measured on 2026-09-18, a client
+   * configured exactly that way still spent 31.9 seconds retrying a refusal
+   * on the interactions API, because that path ignores both. The per-call
+   * options in identifyWithModel are what actually bound an attempt — see
+   * lib/ai/modelRequest.ts.
+   */
+  const client = new GoogleGenAI({ apiKey });
 
   const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lowConfidenceResult: ObjectIdentificationResult | null = null;

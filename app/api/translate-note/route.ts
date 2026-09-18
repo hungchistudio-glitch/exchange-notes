@@ -8,8 +8,17 @@ import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
+/*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 30;
 /**
  * This endpoint spends money on every call, so it is gated the same way the
  * other model-backed routes are. It previously had no sign-in check, no
@@ -141,7 +150,9 @@ export async function POST(request: Request) {
         thinking_level: "low",
       },
       store: false,
-    });
+    },
+      modelRequestOptions(),
+    );
 
     const outputText =
       typeof interaction.output_text === "string"

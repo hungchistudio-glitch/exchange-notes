@@ -15,8 +15,17 @@ import type {
   ToneConfidence,
 } from "@/lib/messages/decode";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
+/*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 60;
 /*
  * Read one message on behalf of one reader.
  *
@@ -286,7 +295,9 @@ ${scriptRule}
       },
       generation_config: { thinking_level: "low" },
       store: false,
-    });
+    },
+      modelRequestOptions(),
+    );
 
     const outputText =
       typeof interaction.output_text === "string" ? interaction.output_text : "";

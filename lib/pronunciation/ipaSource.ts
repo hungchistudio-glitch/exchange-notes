@@ -6,6 +6,7 @@ import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, hasPhonetics, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 /* =========================================================
    Where IPA comes from
 
@@ -188,7 +189,9 @@ async function fromModel(
         },
         generation_config: { thinking_level: "low" },
         store: false,
-      });
+      },
+        modelRequestOptions(),
+      );
 
       const raw =
         typeof interaction.output_text === "string"
