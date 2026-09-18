@@ -77,7 +77,10 @@
 
 .core {
   position: relative;
-  width: min(52vw, 15rem);
+  /* Named, because the nodes below are placed against this and a second copy
+     of the expression is a second thing to keep in step. */
+  --core-size: min(52vw, 15rem);
+  width: var(--core-size);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -215,13 +218,25 @@
   transform: rotate(var(--angle));
 }
 
+/*
+ * Six systems standing around the core, at 46% of its width out from the
+ * middle — which is inside the outer ring, where the ring reads as the thing
+ * they are arranged on.
+ *
+ * The offset has to be a length. It was `translateY(-46%)`, and a percentage
+ * in `translate` resolves against the element's own box: 46% of a 7px dot is
+ * 3.2px, so all six sat on top of each other in the middle of a 195px ring
+ * and the `--angle` each one is given rotated it about its own centre,
+ * changing nothing. Six systems coming online in order looked like one dot
+ * blinking six times.
+ */
 .nodeDot {
   position: relative;
   width: 7px;
   height: 7px;
   border-radius: 9999px;
   background: var(--cosmic-cyan, #bce7d7);
-  transform: translateY(-46%);
+  transform: translateY(calc(var(--core-size) * -0.46));
   opacity: 0;
 }
 
