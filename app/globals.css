@@ -16,6 +16,39 @@
   /* Warm neutral border/divider, replacing #e3e3dc and #e8e8e2. */
   --line: #e3e3dc;
 
+  /* =========================================================
+     The dock's geometry, declared once
+
+     BottomNavigation is fixed to the bottom of every protected screen, and
+     anything that has to sit above it needs to know how tall it is. That
+     number used to be restated: the message composer carried a 5.625rem
+     derived by hand from "p-2 around a 52px row", and when the dock's padding
+     stopped being rem the derivation stopped being true — 180px reserved for
+     a 90px dock at the largest text size.
+
+     So the parts are here and the totals are computed from them. The dock's
+     own box does not move with the text size, which is the whole point of
+     #134: a key must not shrink because the reader asked for bigger type.
+     Only the lift underneath it is rem, because that is breathing room rather
+     than a target.
+     ========================================================= */
+  --dock-key-size: 52px;
+  --dock-padding: 8px;
+  --dock-border: 1px;
+
+  /* 8 + 52 + 8, plus a border each side. Fixed at 70px by construction. */
+  --dock-block-size: calc(
+    var(--dock-key-size) + var(--dock-padding) * 2 + var(--dock-border) * 2
+  );
+
+  /* What the dock floats above the safe area by. */
+  --dock-lift: 0.625rem;
+
+  /* What a fixed element above the dock must clear, safe area excluded so
+     the caller can add its own. The 12px is the gap the composer wants; it
+     is the one number here that is taste rather than measurement. */
+  --dock-clearance: calc(var(--dock-block-size) + var(--dock-lift) + 12px);
+
   /*
    * The brand mark's two colours.
    *

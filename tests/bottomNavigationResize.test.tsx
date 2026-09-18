@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -143,10 +145,34 @@ describe("bottom navigation indicator", () => {
     const dock = nav.firstElementChild!;
 
     expect(nav.className).toContain("px-[16px]");
-    expect(dock.className).toContain("p-[8px]");
+    expect(dock.className).toContain("p-[var(--dock-padding)]");
 
     for (const element of [nav, dock]) {
       expect(element.className).not.toMatch(/(?:^|\s)-?p[xlr]?-\d/);
+    }
+  });
+
+  /*
+   * The half of that invariant the class name cannot carry.
+   *
+   * The dock's box is built from custom properties now, so the message
+   * composer can clear it without recomputing its height by hand. That moves
+   * the value out of the class and into app/globals.css — where a rem would
+   * bring the shrinking keys straight back, and no class-name assertion would
+   * notice. So the stylesheet is read and the parts are checked directly.
+   *
+   * --dock-lift is deliberately not in this list: it is the breathing room
+   * under the dock rather than any part of a target, and it is allowed to
+   * grow with the text.
+   */
+  it("builds that padding out of fixed lengths, not text-relative ones", () => {
+    const css = readFileSync("app/globals.css", "utf8");
+
+    for (const name of ["--dock-key-size", "--dock-padding", "--dock-border"]) {
+      const declared = new RegExp(`${name}:\\s*([^;]+);`).exec(css)?.[1]?.trim();
+
+      expect(declared, `${name} is not declared in app/globals.css`).toBeDefined();
+      expect(declared).toMatch(/^\d+(?:\.\d+)?px$/);
     }
   });
 
