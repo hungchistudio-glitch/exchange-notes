@@ -135,9 +135,25 @@ export default function BottomNavigation({
   }, [activeIndex, activeLabel, items.length]);
 
   return (
+    /*
+     * The dock's own padding is hardware, not text.
+     *
+     * px-5 out here and p-2 on the surface below were both rem, so every step
+     * up in the reader's text size took width away from the six 1fr columns
+     * the keys divide. Measured at a 320pt viewport, a key was 43.7pt wide at
+     * a 16px root, 41.3pt at 20px and 34.3pt at the 32px a reader on 200% gets
+     * — the targets shrinking precisely as the reader asked for things to be
+     * bigger. Nothing inside the dock wants the extra room: the icons are
+     * 19px, the key row is 52px, and the indicator is 44px, all fixed.
+     *
+     * 16 rather than the 20 px-5 was, because the budget is tight and it was
+     * already overspent. Six 44pt keys plus the surface's 1px border need
+     * 266 of the 320, which leaves 27 a side for these two paddings — and
+     * 20 + 8 was 28, which is why even a 16px root measured 43.7 here.
+     */
     <nav
       data-app-bottom-navigation
-      className="absolute inset-x-0 bottom-0 z-40 flex w-full justify-center px-5 [transform:translateZ(0)]"
+      className="absolute inset-x-0 bottom-0 z-40 flex w-full justify-center px-[16px] [transform:translateZ(0)]"
       style={{
         paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
       }}
@@ -148,7 +164,7 @@ export default function BottomNavigation({
         /* Opaque, and no backdrop-filter — see the note in AppHeader. This
            one is fixed rather than sticky, so it re-blurs on every scroll
            frame of every screen in the app. */
-        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-2 shadow-[var(--dock-shadow)]"
+        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[8px] shadow-[var(--dock-shadow)]"
       >
         {offset && (
           <div

@@ -1765,10 +1765,23 @@ export default function ConversationRoom({
         bottom-0 and above this in the stacking order — so the composer has to
         step up over it or the send button ends up underneath.
 
-        5.625rem is BottomNavigation measured rather than guessed: p-2 around a
-        52px row plus 0.625rem of its own bottom padding is 78px, plus a 12px
+        5.625rem is BottomNavigation measured rather than guessed: the padding
+        around a 52px row plus 0.625rem of its own bottom padding, plus a 12px
         gap. The arithmetic is upstream's, from the commit that stopped the
         composer floating 38px above the dock.
+
+        It is only right at the default text size, and it was already only
+        right there before the dock's padding stopped scaling. Measured on the
+        real dock: 80px tall at a 16px root against the 90px this reserves,
+        and 90px tall at a 32px root against 180px. The error is always in the
+        safe direction — too much clearance, never too little, so the send
+        button cannot end up underneath — but at the largest text size this
+        leaves about 90px of empty space above the composer.
+
+        Not fixed here, deliberately: the honest version tracks the dock's real
+        height rather than restating it, and getting it wrong on this screen
+        puts the send button back under the dock. That is worth doing against
+        a conversation someone can actually open.
       */}
       <div
         className="relative z-30 shrink-0 border-t pb-[env(safe-area-inset-bottom)] sm:pb-[calc(5.625rem+env(safe-area-inset-bottom))]"
