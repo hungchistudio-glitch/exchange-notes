@@ -93,7 +93,8 @@ export function exampleSentenceRules({ indent = "" } = {}): string {
 
 const CJK = /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff]/;
 const BRACKETED = /[（(][^）)]*[）)]/g;
-const LATIN_ISH = /[A-Za-z\u00c0-\u024f]/g;
+const LATIN_ISH = /[A-Za-z\u00c0-\u024f]/;
+const LATIN_ISH_ALL = /[A-Za-z\u00c0-\u024f]/g;
 
 /**
  * Drops a parenthesised romanisation from a sentence written in a script that
@@ -115,12 +116,107 @@ export function stripRomanisation(example: string | undefined | null) {
       if (!inner.trim()) return group;
       if (CJK.test(inner)) return group;
 
-      const latin = (inner.match(LATIN_ISH) ?? []).length;
+      const latin = (inner.match(LATIN_ISH_ALL) ?? []).length;
       return latin / inner.length >= 0.5 ? "" : group;
     })
     .trim();
 
   return cleaned || undefined;
+}
+
+/* =========================================================
+   Where the sentence ends and the model's notes begin
+
+   `maxLength` in a response schema is advisory. The rewrite script asks for
+   at most 300 characters per sentence and the library holds one of 2,486 —
+   a correct Chinese sentence followed by its pinyin, its English gloss, the
+   Spanish, French and Italian versions, and in the worst cases the model's
+   own deliberation, truncated mid-word: "Wait, the prompt requires".
+
+   All 20 of the over-long rows are Traditional Chinese. Every one of the
+   1,525 rows in the other four languages is a single sentence under 132
+   characters. So this is not a length problem to be solved by trimming at a
+   character count — it is one field that sometimes receives a whole answer,
+   and the sentence wanted is always the part before the model changed
+   subject.
+
+   Every marker below opens something that is not the sentence: a new line, a
+   bracketed pronunciation or gloss, another language's heading, a JSON key,
+   an arrow, or a word the model uses when it starts talking to itself. The
+   earliest one wins and everything from there is dropped.
+   ========================================================= */
+
+/*
+ * A newline never belongs in an example. One sentence is the whole contract,
+ * and every one of the 1,989 stored examples that is a sentence is on one
+ * line; a second line is always the model having moved on to something else.
+ */
+const ALWAYS_ENDS_IT = /\n/;
+
+/*
+ * These only apply to a sentence written in CJK, and that restriction is not
+ * caution — it is the difference between repairing and damaging.
+ *
+ * Every marker here is an English word or an English-language heading. In a
+ * Chinese sentence those are the model talking about its own answer. In an
+ * English one they are the answer: "Grab your keys, let's go!" is a correct
+ * example for "let's go", and a dry run over the live library cut it to
+ * "Grab your keys," before this was scoped. All 20 of the over-long rows are
+ * Chinese and the longest English example in the library is 116 characters,
+ * so there is nothing here to repair outside CJK and 1,525 Latin-script rows
+ * to protect.
+ */
+const ENDS_A_CJK_SENTENCE = [
+  /\*?\s*(?:English|Spanish|French|Italian|Chinese|Traditional Chinese)\s*:/i,
+  /'(?:en|es|fr|it|zh-TW)'\s*:/,
+  /\s->\s/,
+  /\s?\[/,
+  /\s(?:Wait|Actually|Correction|Note|Okay|Perfect)\b[,.:]/i,
+  /\bLet's\s/i,
+];
+
+/* Every bracket group, so one can be judged by what is inside it. */
+const BRACKET_GROUP = /[（(][^）)]*[）)]/g;
+
+/**
+ * The sentence, with anything the model added after it removed.
+ *
+ * Returns undefined when nothing usable is left, so the field stays unset and
+ * the card shows no example rather than a blank line or a paragraph of
+ * English. Deliberately keeps whatever came *before* the first marker: in
+ * every polluted row inspected the opening sentence is correct and complete,
+ * so cutting recovers it where discarding the row would lose it.
+ *
+ * Brackets are judged rather than cut at. "Il est arrivé en retard (comme
+ * toujours) à la réunion" is an ordinary French sentence and its parenthesis
+ * is the writer's; inside a Chinese sentence a bracket holding Latin is a
+ * pronunciation or a gloss and the sentence has ended, while （不是台中）is
+ * part of what is being said.
+ */
+export function cleanExampleSentence(example: string | undefined | null) {
+  const text = example?.trim();
+  if (!text) return undefined;
+
+  let cut = text.length;
+
+  const newline = text.search(ALWAYS_ENDS_IT);
+  if (newline > 0) cut = newline;
+
+  if (CJK.test(text)) {
+    for (const marker of ENDS_A_CJK_SENTENCE) {
+      const found = text.search(marker);
+      if (found > 0 && found < cut) cut = found;
+    }
+
+    for (const match of text.matchAll(BRACKET_GROUP)) {
+      if (match.index === undefined || match.index === 0) continue;
+      if (!LATIN_ISH.test(match[0].slice(1, -1))) continue;
+      if (match.index < cut) cut = match.index;
+      break;
+    }
+  }
+
+  return stripRomanisation(text.slice(0, cut));
 }
 
 /** One saved word, in every language it is already known in. */

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
-const { buildRewriteExamplesPrompt } = await import(
+const { buildRewriteExamplesPrompt, cleanExampleSentence } = await import(
   "@/lib/ai/prompts/exampleSentence"
 );
 const { LANGUAGE_CODES } = await import("@/lib/languages");
@@ -193,7 +193,13 @@ function merge(row, fresh) {
   let changed = false;
 
   for (const code of LANGUAGE_CODES) {
-    const sentence = fresh?.[code]?.trim();
+    /*
+     * Cut to the sentence before anything is compared or stored. This script
+     * is where the library's 2,486-character example came from: the schema's
+     * maxLength is advisory, and a model that keeps talking is answered in
+     * full. See cleanExampleSentence in lib/ai/prompts/exampleSentence.ts.
+     */
+    const sentence = cleanExampleSentence(fresh?.[code]);
     if (!sentence || !row.texts?.[code]?.trim()) continue;
     if (examples[code] === sentence) continue;
 

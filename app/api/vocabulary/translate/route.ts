@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { getTextModelCandidates, readBoundedInteger } from "@/lib/ai/modelConfig";
 import { withModelCandidates } from "@/lib/ai/modelRequest";
-import { stripRomanisation } from "@/lib/ai/prompts/exampleSentence";
+import { cleanExampleSentence } from "@/lib/ai/prompts/exampleSentence";
 import {
   buildTranslateVocabularyPrompt,
   promptId,
@@ -318,7 +318,7 @@ export async function POST(request: Request) {
       const row = missing.find((candidate) => candidate.id === item.id);
       if (!row || row.texts?.[target]?.trim()) continue;
 
-      const example = stripRomanisation(answer?.example);
+      const example = cleanExampleSentence(answer?.example);
 
       const nextTexts = { ...row.texts, [target]: text };
       const nextExamples = example
