@@ -12,6 +12,7 @@ import {
 import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -141,7 +142,9 @@ export async function POST(request: Request) {
             schema: RESULT_SCHEMA,
           },
           store: false,
-        });
+        },
+          modelRequestOptions(),
+        );
 
         const raw =
           typeof interaction.output_text === "string"

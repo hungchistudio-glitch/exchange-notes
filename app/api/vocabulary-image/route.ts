@@ -25,6 +25,14 @@ import { VOCABULARY_BUCKET } from "@/lib/media/record";
 
 export const runtime = "nodejs";
 
+/*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 30;
 /**
  * How long a signed link lives.
  *

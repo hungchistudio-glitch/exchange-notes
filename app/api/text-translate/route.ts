@@ -12,6 +12,14 @@ import {
 export const runtime = "nodejs";
 
 /*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 60;
+/*
  * Translation for text that is not in a row anybody owns.
  *
  * A word card in a conversation belongs to whoever sent it. Their message

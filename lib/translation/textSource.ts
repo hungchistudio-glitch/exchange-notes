@@ -6,6 +6,7 @@ import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 /* =========================================================
    Translating text nobody owns
 
@@ -193,7 +194,9 @@ export async function translateMissing(
         },
         generation_config: { thinking_level: "low" },
         store: false,
-      });
+      },
+        modelRequestOptions(),
+      );
 
       const raw =
         typeof interaction.output_text === "string"

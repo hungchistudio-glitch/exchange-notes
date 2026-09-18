@@ -7,6 +7,7 @@ import {
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 /**
  * Daily News generation, redesigned to NOT depend on Gemini's Google Search
  * grounding tool. As of late 2025 / 2026, Google appears to require a
@@ -565,7 +566,9 @@ async function buildLearningBatch(
       thinking_level: "low",
     },
     store: false,
-  });
+  },
+    modelRequestOptions(),
+  );
 
   const outputText =
     typeof interaction.output_text === "string" ? interaction.output_text : "";

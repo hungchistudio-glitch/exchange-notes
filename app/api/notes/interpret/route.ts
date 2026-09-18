@@ -9,8 +9,17 @@ import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createServiceClient } from "@/lib/supabase/service";
 
+import { modelRequestOptions } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
+/*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 30;
 const MAX_INTERPRETATIONS_PER_DAY = readBoundedInteger(
   process.env.NOTE_INTERPRET_DAILY_USER_LIMIT,
   30,
@@ -155,7 +164,9 @@ export async function POST(request: Request) {
           },
           generation_config: { thinking_level: "low" },
           store: false,
-        });
+        },
+          modelRequestOptions(),
+        );
 
         outputText = typeof interaction.output_text === "string"
           ? interaction.output_text

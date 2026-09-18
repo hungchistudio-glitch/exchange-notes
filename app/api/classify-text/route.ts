@@ -28,6 +28,14 @@ import {
 export const runtime = "nodejs";
 
 /*
+ * A ceiling of its own, rather than the platform default.
+ *
+ * Every model call under this route is bounded per attempt now (see
+ * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
+ * rather than the thing a reader waits out.
+ */
+export const maxDuration = 30;
+/*
  * Long enough for a sentence, because the app now accepts one.
  *
  * The shared cache's key column stops at 80 characters, so anything past
