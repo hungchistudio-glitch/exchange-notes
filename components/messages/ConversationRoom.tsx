@@ -1765,26 +1765,22 @@ export default function ConversationRoom({
         bottom-0 and above this in the stacking order — so the composer has to
         step up over it or the send button ends up underneath.
 
-        5.625rem is BottomNavigation measured rather than guessed: the padding
-        around a 52px row plus 0.625rem of its own bottom padding, plus a 12px
-        gap. The arithmetic is upstream's, from the commit that stopped the
-        composer floating 38px above the dock.
+        --dock-clearance is the dock's own height plus the gap above it, built
+        in app/globals.css from the same parts BottomNavigation is drawn with.
 
-        It is only right at the default text size, and it was already only
-        right there before the dock's padding stopped scaling. Measured on the
-        real dock: 80px tall at a 16px root against the 90px this reserves,
-        and 90px tall at a 32px root against 180px. The error is always in the
-        safe direction — too much clearance, never too little, so the send
-        button cannot end up underneath — but at the largest text size this
-        leaves about 90px of empty space above the composer.
+        This was 5.625rem, derived by hand from "p-2 around a 52px row". The
+        hand-derivation went stale the moment the dock's padding stopped being
+        rem: measured, the dock is 80px tall at a 16px root and 90px at a 32px
+        one, while 5.625rem reserved 90px and 180px. Always too much rather
+        than too little — the send button never ended up underneath, which is
+        the failure the original number was written for — but at the largest
+        text size it left about 90px of empty space above the composer.
 
-        Not fixed here, deliberately: the honest version tracks the dock's real
-        height rather than restating it, and getting it wrong on this screen
-        puts the send button back under the dock. That is worth doing against
-        a conversation someone can actually open.
+        The safe area stays the caller's, because the dock adds its own and
+        this element is not always below it.
       */}
       <div
-        className="relative z-30 shrink-0 border-t pb-[env(safe-area-inset-bottom)] sm:pb-[calc(5.625rem+env(safe-area-inset-bottom))]"
+        className="relative z-30 shrink-0 border-t pb-[env(safe-area-inset-bottom)] sm:pb-[calc(var(--dock-clearance)+env(safe-area-inset-bottom))]"
         style={{
           background: "var(--msg-header)",
           borderColor: "var(--msg-line)",

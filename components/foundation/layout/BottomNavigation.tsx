@@ -150,12 +150,17 @@ export default function BottomNavigation({
      * already overspent. Six 44pt keys plus the surface's 1px border need
      * 266 of the 320, which leaves 27 a side for these two paddings — and
      * 20 + 8 was 28, which is why even a 16px root measured 43.7 here.
+     *
+     * The padding, the key height and the lift below all come from
+     * app/globals.css, because the message composer has to clear this dock
+     * and was computing its height by hand. Change one of them there and
+     * both move; change one of them here and only one does.
      */
     <nav
       data-app-bottom-navigation
       className="absolute inset-x-0 bottom-0 z-40 flex w-full justify-center px-[16px] [transform:translateZ(0)]"
       style={{
-        paddingBottom: "calc(env(safe-area-inset-bottom) + 0.625rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom) + var(--dock-lift))",
       }}
       aria-label={label}
     >
@@ -164,7 +169,7 @@ export default function BottomNavigation({
         /* Opaque, and no backdrop-filter — see the note in AppHeader. This
            one is fixed rather than sticky, so it re-blurs on every scroll
            frame of every screen in the app. */
-        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[8px] shadow-[var(--dock-shadow)]"
+        className="relative w-full max-w-xl rounded-[28px] border border-[var(--dock-line)] bg-[var(--dock-surface)] p-[var(--dock-padding)] shadow-[var(--dock-shadow)]"
       >
         {offset && (
           <div
@@ -188,7 +193,7 @@ export default function BottomNavigation({
           }}
         >
           {items.map((item, index) => {
-            const className = `relative z-10 flex h-[52px] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            const className = `relative z-10 flex h-[var(--dock-key-size)] items-center justify-center rounded-full transition-transform duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
               item.active
                 ? "scale-[1.05] text-[var(--dock-active-ink)]"
                 : "text-ink-faint hover:text-ink-strong"
