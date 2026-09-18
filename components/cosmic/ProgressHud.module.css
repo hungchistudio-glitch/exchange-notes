@@ -1,14 +1,21 @@
-/* Rounded, softly coloured readouts on the mode's matte black canvas. */
+/* Dark cast-metal housings, glass readouts, and silver instrument indices. */
 .hud {
-  color: var(--cosmic-ink, #f5f2f0);
+  --instrument-ink: #f1f3f1;
+  --instrument-muted: #a6aeae;
+  /* Overridden per card by the four tone classes. Named here so a card that
+     somehow arrives without one still mixes to a legible silver rather than
+     dropping the whole background or box-shadow it is mixed into. */
+  --card-accent: #dce7e3;
+  color: var(--instrument-ink);
+  container-type: inline-size;
 }
 
 .eyebrow {
-  color: var(--cosmic-muted, #bdb9c1);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  line-height: 1.5;
+  color: var(--instrument-muted);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.6;
   text-transform: uppercase;
 }
 
@@ -21,91 +28,76 @@
   overflow-wrap: anywhere;
 }
 
-/*
- * The line that says which kind of empty this is. Sized and coloured like the
- * panel's own quiet copy rather than like the alert above it — nothing has
- * gone wrong here, there is simply nothing to read yet.
- */
-.waiting {
+.waiting,
+.error {
   margin-top: 0.75rem;
-  max-width: 34ch;
-  color: var(--cosmic-muted, #bdb9c1);
+  max-width: 40ch;
+  color: var(--instrument-muted);
   font-size: 0.8125rem;
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .error {
-  margin-top: 0.75rem;
   color: #f3b7c7;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
 }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin-top: 1.2rem;
+  gap: 0.8rem;
+  margin-top: 1.25rem;
 }
 
 .card {
   position: relative;
+  isolation: isolate;
   min-width: 0;
-  /* The pointer's box extends past the scale it travels on — see
-     .rulerMarker. Nothing should be able to push the page sideways. */
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 10%);
-  border-radius: 1.7rem;
-  padding: 1.1rem;
-  /* Flipped by the four seated instruments below; the daily goal keeps it. */
-  --card-ink: #212026;
-  --card-edge: rgb(33 32 38 / 32%);
-  color: var(--card-ink);
+  border: 1px solid #101415;
+  border-radius: 1.35rem;
+  padding: 1.05rem;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 5%), transparent 70%),
+    linear-gradient(145deg, #282e2f, #202526 65%, #1d2223);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 38%),
-    inset 0 -1px 0 rgb(33 32 38 / 10%),
-    0 2px 10px rgb(0 0 0 / 35%);
+    inset 0 1px 1px rgb(255 255 255 / 18%),
+    inset 1px 0 1px rgb(255 255 255 / 4%),
+    inset 0 -2px 2px rgb(0 0 0 / 35%),
+    0 5px 10px rgb(0 0 0 / 23%),
+    0 1px 1px rgb(0 0 0 / 70%);
 }
 
-/*
- * Corner marks: the instrument frame, etched in the card's own ink rather
- * than laid over it in a second colour. Two corners, not four — the pair on
- * the diagonal is enough to say "this region is an instrument", and four on a
- * rounded card reads as a border that could not decide.
- *
- * On the pseudo-elements so the frame costs no DOM.
- */
-.card::before,
-.card::after {
+/* Tiny fasteners belong to the housing, away from labels and readings. */
+.goal::before,
+.goal::after {
   content: "";
   position: absolute;
-  width: 0.85rem;
-  height: 0.85rem;
-  border-color: var(--card-edge);
-  border-style: solid;
+  bottom: 0.8rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border: 1px solid #121617;
+  border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 43%, #101415 44% 55%, transparent 56%),
+    linear-gradient(135deg, #90999a, #303637);
+  box-shadow: 0 1px 1px rgb(255 255 255 / 12%), 0 -1px 2px #101313;
   pointer-events: none;
 }
 
-.card::before {
-  top: 0.6rem;
-  left: 0.6rem;
-  border-width: 1px 0 0 1px;
-  border-top-left-radius: 0.3rem;
-}
-
-.card::after {
-  right: 0.6rem;
-  bottom: 0.6rem;
-  border-width: 0 1px 1px 0;
-  border-bottom-right-radius: 0.3rem;
-}
+.goal::before { left: 0.9rem; }
+.goal::after { right: 0.9rem; }
 
 .cardLabel {
+  position: relative;
+  z-index: 1;
+  color: #c9cece;
   font-size: 0.75rem;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.45;
+  letter-spacing: 0.015em;
   overflow-wrap: anywhere;
+  text-shadow: 0 1px 1px #111516;
 }
 
 .goal {
@@ -113,35 +105,51 @@
   grid-column: 1 / -1;
   flex-direction: column;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1.2rem 1.4rem 1.5rem;
+  gap: 0.25rem;
+  padding: 1.1rem 1.3rem 1.4rem;
   background:
-    radial-gradient(ellipse at 95% 95%, #edb2ad 0%, transparent 64%),
-    radial-gradient(ellipse at 72% 44%, #d99dbf 0%, transparent 55%),
-    linear-gradient(150deg, #b9b0bf 0%, #ddb2ce 70%);
+    radial-gradient(ellipse at 50% 47%, rgb(125 139 138 / 10%), transparent 58%),
+    linear-gradient(140deg, #292f30, #202627 55%, #1c2223);
 }
 
 .goal .cardLabel {
   align-self: flex-start;
 }
 
-.metricValue,
-.tileValue,
-.dialReading {
-  font-variant-numeric: tabular-nums;
-  font-weight: 400;
-  letter-spacing: -0.065em;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-
 .dial {
   position: relative;
   display: grid;
-  width: 9rem;
-  max-width: 52vw;
+  width: 11rem;
+  max-width: 100%;
   aspect-ratio: 1;
   place-items: center;
+}
+
+/* The ring seats a convex glass face in a grooved, machined metal bezel. */
+.dialBezel {
+  position: absolute;
+  inset: 16%;
+  border: 1px solid #161b1c;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 36% 12%, rgb(255 255 255 / 9%), transparent 48%),
+    linear-gradient(145deg, #2a3031, #1d2324 62%, #171d1e);
+  box-shadow:
+    inset 0 1px 2px rgb(255 255 255 / 16%),
+    inset 0 -2px 3px rgb(0 0 0 / 70%),
+    0 0 0 2px #333c3d,
+    0 0 0 4px #131819,
+    0 0 0 5px rgb(160 174 174 / 13%),
+    0 7px 12px rgb(0 0 0 / 50%),
+    -3px -4px 9px rgb(255 255 255 / 4%);
+}
+
+.dialBezel::after {
+  content: "";
+  position: absolute;
+  inset: 5%;
+  border: 1px solid rgb(179 194 194 / 4%);
+  border-radius: inherit;
 }
 
 .dialSvg {
@@ -153,246 +161,232 @@
   overflow: visible;
 }
 
-/* Sixty graduations with a major every fifth: the ring reads as a scale
-   rather than as a texture, and the majors give the eye somewhere to land. */
 .dialTick {
-  stroke: rgb(48 31 47 / 34%);
-  stroke-width: 0.6;
+  stroke: #768182;
+  stroke-width: 0.5;
+  opacity: 0.64;
 }
 
 .dialTickMajor {
-  stroke: rgb(48 31 47 / 62%);
-  stroke-width: 1.1;
+  stroke: #cad3d2;
+  stroke-width: 0.8;
 }
 
 .track {
-  stroke: rgb(48 31 47 / 14%);
+  stroke: #111617;
+  filter: drop-shadow(0 0.5px 0 rgb(190 207 206 / 19%));
 }
 
-/*
- * The sweep. It starts from the full-circle offset — while the history is
- * loading the value is zero — so the arc travels to the reading on the frame
- * the data lands rather than appearing at its final length.
- */
 .arc {
-  stroke: #4a2c3f;
-  filter: drop-shadow(0 0 2.5px rgb(74 44 63 / 45%));
+  stroke: #ecf4f1;
+  filter: drop-shadow(0 0 2px rgb(223 245 240 / 62%));
   transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.metricValue,
+.tileValue,
+.dialReading {
+  font-family: var(--font-geist-mono), "SFMono-Regular", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .dialReading {
   position: relative;
-  font-size: clamp(1.9rem, 9vw, 2.6rem);
+  max-width: 66%;
+  color: #f2f5f2;
+  font-size: clamp(1.75rem, 7.5vw, 2.35rem);
+  letter-spacing: -0.075em;
+  text-align: center;
+  text-shadow: 0 0 12px rgb(230 249 239 / 16%);
 }
 
 .dialTarget {
   display: inline-block;
-  margin-left: 0.14rem;
-  font-size: 0.44em;
+  margin-left: 0.2rem;
+  color: #aab5b4;
+  font-size: 0.42em;
   letter-spacing: -0.04em;
-  opacity: 0.62;
 }
 
 .metric {
   display: flex;
-  min-height: 10rem;
+  min-height: 10.35rem;
   flex-direction: column;
 }
 
 /*
  * The four hues survive as readings, not as faces.
  *
- * Five pastel cards were the only surface in Cosmic Mode that was not
- * obsidian, and four hues side by side had nothing holding them together —
- * mint, pink, blue and gold read as four unrelated stickers on a dark panel.
- * The daily goal keeps its face, because the fourth round made it the
- * instrument the whole panel is arranged around and there is exactly one of
- * it. These four are seated in the panel instead, and their colour moves to
- * the only place on a gauge that is supposed to be coloured: the lit part of
- * the scale and the pointer standing on it.
+ * Every housing on this panel is the same cast graphite; what tells the four
+ * seated cards apart is where their colour goes — the lit part of the scale,
+ * the carriage standing on it, and a bloom in the far corner at a strength
+ * you read as a tint rather than as a colour. The daily goal has no hue of
+ * its own because it has no scale to light: it is the one dial, and the
+ * panel is arranged around it.
  */
 .mint { --card-accent: var(--cosmic-cyan-lit); }
 .pink { --card-accent: var(--cosmic-violet-lit); }
 
 .metricValue {
   margin-top: auto;
-  padding-top: 1rem;
-  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  padding-top: 0.9rem;
+  font-size: clamp(1.65rem, 6.5vw, 2.15rem);
+  letter-spacing: -0.08em;
+  text-shadow: 0 0 12px rgb(236 247 243 / 10%);
 }
 
-/*
- * The scale under a reading.
- *
- * One element carries both sets of graduations: a short mark every twentieth
- * and a full-height one every quarter, drawn as two repeating gradients of
- * the card's own ink. The lit copy sits exactly on top of the dim one and is
- * clipped to the reading, so the marks never shift by a sub-pixel between the
- * two — which is what happens if you size the lit layer instead of clipping
- * it, because its gradient percentages then resolve against its own width.
- */
+/* The cap travels along a recessed horizontal glass scale. It is a reading,
+   not an interactive slider; the containing decoration is aria-hidden. */
+.scale {
+  margin-top: 0.8rem;
+  padding: 0.5rem 0.65rem 0.35rem;
+  border: 1px solid #101516;
+  border-radius: 0.55rem;
+  background:
+    linear-gradient(165deg, rgb(205 225 224 / 8%), transparent 45%),
+    #161c1d;
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 75%),
+    inset 0 -1px 1px rgb(255 255 255 / 4%),
+    0 1px 0 rgb(255 255 255 / 10%);
+}
+
 .ruler {
   position: relative;
-  height: 1.5rem;
-  margin-top: 0.7rem;
-  /* Clear of the corner marks: the frame holds the scale, it does not cross
-     it. Wide enough that a pointer at 100% still lands inside the card. */
-  margin-inline: 0.5rem;
+  height: 1.2rem;
+  margin-inline: 0.25rem;
 }
 
 .rulerTrack,
 .rulerLit {
   position: absolute;
-  bottom: 0;
-  inset-inline: 0;
-  height: 0.8rem;
+  inset: 0;
   background-image:
-    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 5%),
-    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 25%);
-  background-position: left bottom;
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(90deg, currentcolor 0 1px, transparent 1px 50%);
+  background-position: left center;
   background-repeat: repeat-x;
-  background-size:
-    100% 44%,
-    100% 100%;
+  background-size: 100% 35%, 100% 70%;
 }
 
 .rulerTrack {
-  border-bottom: 1px solid currentcolor;
-  opacity: 0.22;
+  color: #687172;
+  opacity: 0.7;
 }
 
-/* The graduations up to the reading. */
 .rulerLit {
-  opacity: 0.8;
+  color: var(--card-accent);
   clip-path: inset(0 calc(100% - var(--progress) * 100%) 0 0);
-  animation: rulerFill 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/*
- * The pointer travels on a transform, and its box is the whole scale.
- *
- * A percentage in translateX is a share of the element's own width, so a
- * 2px-wide marker could only ever move 2px that way. That is why this used
- * to set `left` and animate it — which relaid the card on every frame of the
- * sweep, on a page that is a scrolling column of cards.
- *
- * Giving the marker the full width of the ruler makes the percentage mean
- * what it looks like it means. The box itself paints nothing; the line and
- * its head are drawn on its leading edge.
- */
 .rulerMarker {
   position: absolute;
   inset: 0;
   transform: translateX(calc(var(--progress) * 100%));
-  animation: rulerSweep 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
   pointer-events: none;
 }
 
-.rulerMarker::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -1px;
-  width: 2px;
-  background: currentcolor;
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--card-accent) 55%, transparent));
-}
-
-/* The head, so the line reads as a pointer rather than as one more mark. */
+/*
+ * The carriage standing on the reading.
+ *
+ * Machined metal, knurled like the switch carriages elsewhere on this page,
+ * but mixed with the card's hue and glowing in it: at half a centimetre wide
+ * a fully coloured pointer is a smudge and a fully silver one says nothing,
+ * so the hue arrives as a tint in the metal and as the light around it. That
+ * is the same job the lit graduations do, at the one point that matters.
+ */
 .rulerMarker::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  border-top: 0.4rem solid currentcolor;
-  border-right: 0.28rem solid transparent;
-  border-left: 0.28rem solid transparent;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: -0.25rem;
+  width: 0.5rem;
+  border: 1px solid color-mix(in oklab, var(--card-accent) 45%, #bac4c3);
+  border-radius: 0.17rem;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgb(18 30 29 / 28%) 3px 4px, rgb(255 255 255 / 55%) 4px 5px) center / 55% 70% no-repeat,
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--card-accent) 18%, #eef3f0),
+      color-mix(in oklab, var(--card-accent) 42%, #bbc5c2) 38%,
+      color-mix(in oklab, var(--card-accent) 12%, #f6faf7) 70%,
+      color-mix(in oklab, var(--card-accent) 46%, #8b9593)
+    );
+  box-shadow:
+    0 2px 3px #080d0e,
+    0 0 5px color-mix(in oklab, var(--card-accent) 55%, transparent);
 }
 
-/* Both travel from zero once, on the frame the reading arrives. */
-@keyframes rulerFill {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-}
-
-@keyframes rulerSweep {
-  from {
-    opacity: 0;
-    transform: translateX(0);
-  }
+.scaleLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  color: #a1acab;
+  font-family: var(--font-geist-mono), "SFMono-Regular", Consolas, monospace;
+  font-size: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
 }
 
 .tile {
   display: flex;
   min-height: 7.2rem;
   flex-direction: column;
+  gap: 0.65rem;
 }
 
 .blue { --card-accent: var(--cosmic-blue-lit); }
 .amber { --card-accent: var(--cosmic-amber-lit); }
 
 /*
- * The seat. One rule for all four, because the only thing that differs
- * between them is the accent above.
- *
- * The bloom in the corner is the hue at a strength you read as a tint rather
- * than as a colour — enough that the four cards are still told apart at a
- * glance, not enough to be a face again. The inner highlight that gives a
- * pastel card its lift drops to a tenth of its strength: on obsidian the same
- * value reads as a scratch.
+ * One rule for all four seated cards, because the only thing that differs
+ * between them is the accent above. The bloom sits in the corner furthest
+ * from the label and the reading, so nothing has to be read through it.
  */
 .metric,
 .tile {
-  --card-ink: var(--cosmic-ink, #f5f2f0);
-  --card-edge: rgb(245 242 240 / 22%);
   background:
     radial-gradient(
-      ellipse at 86% 104%,
-      color-mix(in oklab, var(--card-accent) 20%, transparent) 0%,
-      transparent 64%
+      ellipse at 88% 106%,
+      color-mix(in oklab, var(--card-accent) 16%, transparent) 0%,
+      transparent 62%
     ),
-    var(--cosmic-surface-instrument, #26232c);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 8%),
-    inset 0 -1px 0 rgb(0 0 0 / 30%),
-    0 2px 10px rgb(0 0 0 / 45%);
+    radial-gradient(ellipse at 20% 0%, rgb(255 255 255 / 5%), transparent 70%),
+    linear-gradient(145deg, #282e2f, #202526 65%, #1d2223);
 }
 
-/*
- * The scale reads in the card's ink; the reading on it reads in the hue.
- * Only these four carry a ruler — the daily goal has the dial instead — so
- * this needs no scoping.
- */
-.rulerLit,
-.rulerMarker {
-  color: var(--card-accent);
-}
-
+/* Counts have no invented maximum: a simple recessed counter has no scale. */
 .tileValue {
+  position: relative;
   margin-top: auto;
-  font-size: 1.9rem;
+  border: 1px solid #101516;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  background:
+    linear-gradient(180deg, rgb(0 0 0 / 20%), transparent 50%, rgb(255 255 255 / 3%) 51%, transparent),
+    #171d1e;
+  color: #e7eeea;
+  font-size: 1.7rem;
+  letter-spacing: 0.025em;
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / 45%), 0 1px 0 rgb(255 255 255 / 9%);
+  text-shadow: 0 0 8px rgb(231 251 240 / 12%);
 }
 
 @media (max-width: 360px) {
-  .card {
-    border-radius: 1.35rem;
-    padding: 1rem 0.85rem;
-  }
+  .cards { gap: 0.65rem; }
+  .card { padding: 0.85rem; border-radius: 1.1rem; }
+  .goal { padding: 1rem 1rem 1.3rem; }
+  .scale { padding-inline: 0.4rem; }
+}
 
-  .goal {
-    padding: 1.1rem;
-  }
+@container (max-width: 16rem) {
+  .cards { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .arc {
-    transition: none;
-  }
-
-  .rulerLit,
-  .rulerMarker {
-    animation: none;
-  }
+  .arc { transition: none; }
 }

@@ -102,7 +102,7 @@ export default function SettingsSearch() {
         onClick={() => setOpen(true)}
         aria-label={copy.open}
         aria-expanded={open}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-strong transition-colors duration-100 hover:bg-black/[0.03] active:bg-black/[0.06]"
+        className="settings-search-trigger flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.07] bg-white text-ink-strong transition-colors duration-100 hover:bg-black/[0.03] active:bg-black/[0.06]"
       >
         <Search size={17} strokeWidth={1.9} />
       </button>
@@ -120,7 +120,7 @@ export default function SettingsSearch() {
           role="dialog"
           aria-modal="true"
           aria-label={copy.open}
-          className="fixed inset-0 z-50 flex flex-col bg-surface"
+          className="settings-search-overlay fixed inset-0 z-50 flex flex-col bg-surface"
         >
           <div
             className="flex items-center gap-2 px-4 pb-3"

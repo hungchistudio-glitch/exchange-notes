@@ -22,7 +22,7 @@ export default function SettingsChoiceCard({
       aria-pressed={selected}
       onClick={onClick}
       className={[
-        "flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-[0.99]",
+        "settings-choice flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all active:scale-[0.99]",
         selected
           ? "bg-black text-white"
           : "border border-black/[0.08] bg-white text-black hover:border-black/[0.16]",

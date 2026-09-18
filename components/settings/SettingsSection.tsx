@@ -24,12 +24,12 @@ export default function SettingsSection({
   className = "",
 }: SettingsSectionProps) {
   return (
-    <section className={className}>
-      <h2 className="mb-2 px-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+    <section className={`settings-section ${className}`}>
+      <h2 className="settings-section-label mb-2 px-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-faint">
         {label}
       </h2>
 
-      <div className="divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
+      <div className="settings-panel divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
         {children}
       </div>
 

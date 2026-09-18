@@ -72,6 +72,13 @@ export default function BottomNavigation({
   const [offset, setOffset] = useState<{ x: number; y: number } | null>(null);
 
   const activeIndex = items.findIndex((item) => item.active);
+  /*
+   * A key is keyed by its label, so a label that changes — every one of them
+   * does when the app language changes — replaces the node. The index and the
+   * count would both be unchanged, and without this the effect would keep
+   * measuring, and keep observing, an element that is no longer in the page.
+   */
+  const activeLabel = items[activeIndex]?.label;
 
   useIsomorphicLayoutEffect(() => {
     const container = containerRef.current;
@@ -82,25 +89,50 @@ export default function BottomNavigation({
       return;
     }
 
-    // getBoundingClientRect for both, in the same (viewport) coordinate
-    // space, so the delta is exact regardless of the container's own
-    // border/padding — no dependence on offsetParent semantics, which is
-    // what made the previous version's circle land a few pixels off from
-    // the icon it was supposed to sit behind.
-    const containerRect = container.getBoundingClientRect();
-    const linkRect = activeElement.getBoundingClientRect();
+    function measure() {
+      // Both rectangles use viewport coordinates, so borders, padding, and
+      // the active key's scale do not move the indicator away from its centre.
+      const containerRect = container!.getBoundingClientRect();
+      const linkRect = activeElement!.getBoundingClientRect();
+      const next = {
+        x:
+          linkRect.left +
+          linkRect.width / 2 -
+          (containerRect.left + containerRect.width / 2),
+        y:
+          linkRect.top +
+          linkRect.height / 2 -
+          (containerRect.top + containerRect.height / 2),
+      };
 
-    setOffset({
-      x:
-        linkRect.left +
-        linkRect.width / 2 -
-        (containerRect.left + containerRect.width / 2),
-      y:
-        linkRect.top +
-        linkRect.height / 2 -
-        (containerRect.top + containerRect.height / 2),
-    });
-  }, [activeIndex, items.length]);
+      setOffset((current) =>
+        current?.x === next.x && current.y === next.y ? current : next,
+      );
+    }
+
+    measure();
+
+    /*
+     * Rotation, a window drag and a change of text size all resize the dock
+     * without changing which key is selected, and the effect above only ran
+     * because one of those three deps changed — so on its own it measures the
+     * portrait dock once and leaves the circle behind when the phone turns.
+     *
+     * Both boxes are measured, so what is observed is both: the dock, whose
+     * width is what the six columns divide, and the selected key, which also
+     * changes size on its own when a row of labels rewraps. The indicator is
+     * absolutely positioned and outside the grid, so moving it can never
+     * resize either of the boxes that asked for it to move — there is no loop
+     * here to guard against.
+     */
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    observer.observe(activeElement);
+
+    return () => observer.disconnect();
+  }, [activeIndex, activeLabel, items.length]);
 
   return (
     <nav

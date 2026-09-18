@@ -77,7 +77,10 @@
 
 .core {
   position: relative;
-  width: min(52vw, 15rem);
+  /* Named, because the nodes below are placed against this and a second copy
+     of the expression is a second thing to keep in step. */
+  --core-size: min(52vw, 15rem);
+  width: var(--core-size);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -215,13 +218,25 @@
   transform: rotate(var(--angle));
 }
 
+/*
+ * Six systems standing around the core, at 46% of its width out from the
+ * middle — which is inside the outer ring, where the ring reads as the thing
+ * they are arranged on.
+ *
+ * The offset has to be a length. It was `translateY(-46%)`, and a percentage
+ * in `translate` resolves against the element's own box: 46% of a 7px dot is
+ * 3.2px, so all six sat on top of each other in the middle of a 195px ring
+ * and the `--angle` each one is given rotated it about its own centre,
+ * changing nothing. Six systems coming online in order looked like one dot
+ * blinking six times.
+ */
 .nodeDot {
   position: relative;
   width: 7px;
   height: 7px;
   border-radius: 9999px;
   background: var(--cosmic-cyan, #bce7d7);
-  transform: translateY(-46%);
+  transform: translateY(calc(var(--core-size) * -0.46));
   opacity: 0;
 }
 
@@ -249,19 +264,24 @@
   pointer-events: none;
 }
 
+/*
+ * Both the delay and the length come from the component, because it is the
+ * component that knows how long the scene it is inside runs for — see the
+ * schedule note there. A duration written here could not tell the difference
+ * between the 1150ms scene and the 800ms one, and did not.
+ */
 .entering .nodeDot {
-  /* Staggered by the component, one system at a time. */
-  animation: nodeOnline 620ms cubic-bezier(0.22, 1, 0.36, 1)
+  animation: nodeOnline var(--node-duration) cubic-bezier(0.22, 1, 0.36, 1)
     var(--node-delay) both;
 }
 
 .entering .nodeDot::after {
-  animation: nodeGlow 620ms cubic-bezier(0.22, 1, 0.36, 1) var(--node-delay)
-    both;
+  animation: nodeGlow var(--node-duration) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--node-delay) both;
 }
 
 .leaving .nodeDot {
-  animation: nodeOffline 340ms ease var(--node-delay) both;
+  animation: nodeOffline var(--node-duration) ease var(--node-delay) both;
 }
 
 @keyframes nodeOnline {

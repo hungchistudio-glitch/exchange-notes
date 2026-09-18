@@ -1,0 +1,515 @@
+/*
+ * Settings, in Cosmic Mode, has a physical graphite finish.
+ *
+ * Nothing here is a second copy of a component. Every rule hangs off a marker
+ * class the real component already renders, so Standard Mode and every other
+ * Cosmic screen keep the markup and the behaviour they have, and this file is
+ * the only place the finish lives.
+ *
+ * Two scopes, and the difference matters:
+ *
+ *   .cosmic-settings-page …   the page's own subtree.
+ *   html:has(.cosmic-settings-page) …   the page plus what it opens. Sheets
+ *       and the search overlay are portalled to <body> and the dock is
+ *       shared, so none of them are inside the page — but all of them are on
+ *       screen because of it, and a chrome sheet rising out of a graphite
+ *       page should not arrive in obsidian.
+ *
+ * The finish comes off the moment the route does, because :has() stops
+ * matching when the page unmounts. That is the whole mechanism; there is no
+ * class to add to <html> and none to remember to take off again.
+ */
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) {
+  /*
+   * One scale of metal, dark to light. Before this block the file carried
+   * forty-eight separate hex values, nine of which were near-blacks within a
+   * point or two of each other — which is not a palette, it is the residue of
+   * picking a colour per rule. A part is now described by what it is (a seam,
+   * a recess, a raised face) rather than by a number, so a change to the
+   * finish is a change in one place and every part moves together.
+   */
+  --m-shadow: #070a0b; /* inside a sunken channel, under a carriage */
+  --m-seam: #12171a; /* every hairline where two metal parts meet */
+  --m-well: #141a1b; /* the floor of a recess: switch and segment tracks */
+  --m-face: #222729; /* the page's own ground */
+  --m-panel: #292f31; /* a panel's lit face, top of its gradient */
+  --m-panel-low: #212628; /* …and the bottom */
+  --m-raise: #343a3c; /* top of a raised control: icon chip, search key */
+  --m-sink: #1e2426; /* …and the bottom */
+  --m-edge: #414749; /* the lit rim of the dock and the sheet */
+
+  --m-text: #edf0ef;
+  --m-label: #c4cbcc; /* section labels, row values, icon strokes */
+  --m-muted: #adb5b7; /* row descriptions, unselected segment keys */
+
+  /*
+   * Polished chrome, for the parts a finger moves: the carriage in a switch,
+   * the selected key in a segmented control, the dock's indicator. The angle
+   * is what makes it read as metal rather than as a grey gradient — the light
+   * band crosses the part instead of running along it.
+   */
+  --m-chrome: linear-gradient(160deg, #fbfcfc 0%, #c9cecf 39%, #f2f4f3 53%, #91989a 100%);
+  --m-chrome-edge: #eceff0;
+  --m-chrome-ink: #202628; /* what is legible against that gradient */
+  --m-chrome-ink-soft: #465154;
+  --m-knurl: repeating-linear-gradient(90deg, #8d9698 0 1px, #e5e9e9 1px 2px, transparent 2px 4px);
+
+  /*
+   * The shared tokens, repointed for as long as this route is mounted. The
+   * dock and the sheet read these from app/cosmic.css, so setting them here
+   * is how a shared component arrives in graphite without learning the word
+   * "settings".
+   */
+  --dock-surface: var(--m-panel-low);
+  --dock-line: var(--m-edge);
+  --dock-shadow: inset 0 1px 1px rgb(255 255 255 / 9%), 0 8px 24px rgb(0 0 0 / 60%);
+  --dock-active-ink: var(--m-chrome-ink);
+  --dock-indicator: var(--m-chrome-edge);
+  --dock-indicator-border: #f2f4f3;
+
+  /* The sheet's rim. Its face is painted below, because a gradient cannot
+     travel through a colour token. */
+  --modal-line: #4a5153;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page {
+  --surface: var(--m-face);
+  color: var(--m-text);
+  background:
+    radial-gradient(ellipse at 5% 0%, rgb(255 255 255 / 3%), transparent 48%),
+    var(--m-face);
+}
+
+/* ---------------------------------------------------------------- header */
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .cosmic-header {
+  background: var(--m-face);
+  border-bottom: 1px solid var(--m-seam);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .cosmic-header h1 {
+  font-size: 1.25rem;
+  font-weight: 550;
+  letter-spacing: -0.035em;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 70%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-search-trigger {
+  width: 44px;
+  height: 44px;
+  color: var(--m-text);
+  border: 1px solid var(--m-seam);
+  background: linear-gradient(145deg, var(--m-raise), var(--m-sink));
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 15%), 0 3px 6px rgb(0 0 0 / 45%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-content {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+/* --------------------------------------------------------- section labels */
+
+/*
+ * An engraved label: a lit pip, the name, and a rule scored into the metal.
+ * The rule is two half-pixel bands rather than a line — dark above, light
+ * below — which is what a groove cut into a surface lit from the top looks
+ * like, and why it reads as engraving rather than as a border.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  color: var(--m-label);
+  font-size: 0.625rem;
+  letter-spacing: 0.17em;
+  line-height: 1.6;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-section-label::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #dce4e5;
+  box-shadow: 0 0 5px rgb(223 240 243 / 35%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-section-label::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  margin-left: 0.35rem;
+  background: linear-gradient(var(--m-seam) 50%, rgb(255 255 255 / 6%) 50%);
+}
+
+/* ----------------------------------------------------------- panels, rows */
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(.settings-panel, .settings-profile-card) {
+  border: 1px solid var(--m-seam);
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, var(--m-panel), #242a2c 60%, var(--m-panel-low));
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 10%),
+    inset 0 -1px 1px rgb(0 0 0 / 28%),
+    0 5px 12px rgb(0 0 0 / 24%);
+}
+
+/*
+ * A panel is a query container, because what has to change at the largest
+ * text sizes is the row's own layout and a row knows nothing about the
+ * viewport. Container `rem` resolves against the root font, so the thresholds
+ * below move with the reader's text-size preference — which is the whole
+ * reason they are not media queries. The profile card declares its own
+ * container in the component, since it needs one in Standard Mode too.
+ *
+ * `container-type` has a second effect worth knowing before adding anything
+ * to a row: it makes the panel the containing block for `position: fixed`
+ * descendants, so a full-screen overlay rendered from inside a row would be
+ * trapped in the panel rather than covering the viewport. Nothing on this
+ * page does that today — the tour's overlay is rendered from a row, but on
+ * Help & About, which is not a `.cosmic-settings-page` — and SettingsSearch
+ * already portals to the body for the same reason, one containing block
+ * further up. Anything new that needs `fixed` from inside a panel has to
+ * portal out too.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-panel {
+  container-type: inline-size;
+}
+
+/* The divider, as a seam with a lit underside rather than a grey line. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-panel > :not(:last-child) {
+  border-bottom-color: var(--m-seam);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(.settings-row, .settings-control-row) {
+  padding: 1rem;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(button.settings-row, a.settings-row):hover {
+  background: rgb(255 255 255 / 3%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(button.settings-row, a.settings-row):active {
+  background: rgb(0 0 0 / 12%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--m-seam);
+  color: var(--m-label);
+  background: linear-gradient(145deg, var(--m-raise), #202628 70%);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 12%), 0 3px 5px rgb(0 0 0 / 35%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row-description {
+  margin-top: 0.25rem;
+  color: var(--m-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The value wraps instead of truncating. "繁體中文" and "Not set up" are the
+ * answer the row exists to give, and an ellipsis in place of it makes the row
+ * a question with no answer — the row is allowed to be taller.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row-value {
+  max-width: 36%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: var(--m-label);
+  font-size: 0.75rem;
+  text-align: end;
+}
+
+/* A stacked control lines up under the text column, not under the icon. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-control-slot {
+  padding-left: calc(36px + 0.8rem);
+}
+
+/* --------------------------------------------------------------- switches */
+
+/*
+ * A sunken channel and a machined carriage, like the faders on the reference
+ * panel. Every accessible fact about the control — its role, its state, its
+ * name — still belongs to the button this decoration sits inside; this file
+ * changes what the switch looks like and nothing about what it is.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-switch] {
+  width: 58px;
+  height: 30px;
+  border: 1px solid var(--m-seam);
+  background: var(--m-well);
+  box-shadow: inset 0 3px 6px var(--m-shadow), 0 1px 1px rgb(255 255 255 / 14%);
+}
+
+/* The lit length of channel behind the carriage: the "on" half of the throw. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-switch]::before {
+  content: "";
+  position: absolute;
+  inset: 6px 8px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #aeb9bc, #e6eeee);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-switch="on"]::before {
+  opacity: 0.8;
+  box-shadow: 0 0 7px rgb(218 238 240 / 18%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-switch-thumb {
+  position: relative;
+  z-index: 1;
+  width: 27px;
+  height: 24px;
+  border: 1px solid #f0f3f3;
+  border-radius: 7px;
+  background: var(--m-chrome);
+  box-shadow: 0 2px 3px rgb(0 0 0 / 80%), inset 0 -2px 1px rgb(55 63 65 / 22%);
+  /*
+   * The travel, restated.
+   *
+   * The carriage is wider than the round knob it replaces, so the two
+   * distances Tailwind renders — `translate-x-[2px]` and `translate-x-[22px]`
+   * — would leave it short of one end and over the other. Tailwind v4 drives
+   * that with the independent `translate` property via `--tw-translate-x`, so
+   * the distance is overridden at the variable rather than with a `transform`
+   * beside it: a `transform` here would be composed *with* `translate`, and
+   * the carriage would travel twice.
+   *
+   * 3px and 26px leave the same 3px of channel at both ends of a 58px track
+   * (2px of border, a 27px carriage, 23px of throw), and `transition-transform`
+   * in Tailwind v4 already animates `translate`, so the movement is kept.
+   */
+  --tw-translate-x: 3px;
+}
+
+/* Knurling, so the part reads as something a thumb could actually grip. */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-switch-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 5px 7px;
+  background: var(--m-knurl);
+  opacity: 0.8;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-switch="on"] .settings-switch-thumb {
+  --tw-translate-x: 26px;
+}
+
+/* ------------------------------------------------------ segmented controls */
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radiogroup"],
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radiogroup"] {
+  max-width: 100%;
+  border: 1px solid var(--m-seam);
+  border-radius: 0.7rem;
+  padding: 4px;
+  background: var(--m-well);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 55%), 0 1px 0 rgb(255 255 255 / 10%);
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radio"],
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radio"] {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--m-muted);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radio"][aria-checked="true"],
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radio"][aria-checked="true"] {
+  color: var(--m-chrome-ink);
+  border-color: var(--m-chrome-edge);
+  background: var(--m-chrome);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 55%);
+  box-shadow: inset 0 1px 1px white, 0 2px 4px rgb(0 0 0 / 50%);
+}
+
+/* ------------------------------------------------- narrow panels, big text */
+
+/*
+ * 20rem of panel is where a stacked control stops fitting beside its own
+ * indent; at the 200% text preference that is 640 real pixels, which is why
+ * this is a container query and not a media query. The indent goes first,
+ * because it is alignment, and the control is the thing being used.
+ */
+@container (max-width: 20rem) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-control-slot {
+    padding-left: 0;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-control-slot > div {
+    max-width: 100%;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radio"] {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 0.5rem;
+  }
+}
+
+/*
+ * Narrower still, and a row stops being a row. The icon keeps its column and
+ * the chevron moves up beside it; the title and its sentence take the middle
+ * column, and the value or the switch drops to a second line underneath them
+ * rather than being squeezed against the edge.
+ */
+@container (max-width: 16rem) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row-copy {
+    grid-column: 2;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(.settings-row-value, [data-settings-switch]) {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: none;
+    text-align: start;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-row > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+/* --------------------------------------------- sheets, choices, the search */
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet {
+  background: linear-gradient(145deg, #2b3234, var(--m-panel-low));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 20px 70px rgb(0 0 0 / 65%);
+}
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet > footer {
+  background: #242a2c;
+}
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice {
+  color: #e4e9e9;
+  border: 1px solid var(--m-seam);
+  background: linear-gradient(145deg, #303739, #242a2c);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 2px 4px rgb(0 0 0 / 25%);
+}
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] {
+  color: var(--m-chrome-ink);
+  border-color: var(--m-chrome-edge);
+  background: var(--m-chrome);
+  box-shadow: inset 0 1px 0 white, 0 3px 7px rgb(0 0 0 / 45%);
+}
+
+/* The chosen card's own second line keeps its hierarchy against the chrome. */
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] > span {
+  color: inherit;
+}
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] .text-ink-invert-soft {
+  color: var(--m-chrome-ink-soft);
+}
+
+/*
+ * The search is a full-screen surface of its own, so it is repointed at the
+ * two tokens it is built from rather than restyled rule by rule.
+ */
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-search-overlay {
+  --surface: var(--m-face);
+  --color-white: #2c3335;
+  --line: var(--m-edge);
+}
+
+/* ------------------------------------------------------------------- dock */
+
+/*
+ * `background-image` rather than `background`, so the gradient sits on top of
+ * the colour --dock-surface already put down instead of discarding it: the
+ * dock's own utility sets that colour, and a shorthand here would throw it
+ * away and leave nothing behind a gradient that fails to paint.
+ */
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) [data-app-bottom-navigation] > div {
+  background-image: linear-gradient(165deg, var(--m-raise), #212729 70%);
+}
+
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) [data-app-bottom-navigation] > div > [aria-hidden="true"] {
+  background-image: var(--m-chrome);
+}
+
+/* ------------------------------------------------------------------ focus */
+
+/*
+ * Inset, because every one of these controls is flush with the edge of a
+ * panel or a track — an outline drawn outside the part would be clipped by
+ * the panel's own overflow and lost exactly where it is needed.
+ */
+html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(button, a):focus-visible,
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice:focus-visible,
+html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet :is(button, a):focus-visible {
+  outline: 2px solid #f0f7f8;
+  outline-offset: -3px;
+}
+
+/* ------------------------------------------------------------ phone width */
+
+@media (max-width: 380px) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-content {
+    padding-inline: 1rem;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(.settings-row, .settings-control-row) {
+    padding-inline: 0.75rem;
+    gap: 0.6rem;
+  }
+
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-control-slot {
+    padding-left: 0;
+  }
+}
+
+/* ---------------------------------------------------------- reduced motion */
+
+/*
+ * This finish adds exactly two moving parts: the carriage travelling down the
+ * channel, and the channel lighting up behind it. Tailwind's own
+ * `motion-reduce:transition-none` on the thumb stands the first one down; the
+ * second is declared here, so it has to be stood down here. Both then change
+ * between two states instantly, which loses nothing — the lit channel and the
+ * carriage's position each say on or off without any travel at all.
+ *
+ * Deliberately not a blanket `* { transition: none }` across the page. The
+ * row's tap acknowledgement and the dock's indicator are not motion in the
+ * sense this preference is about; they are how a control says it heard you,
+ * and taking them away makes the page feel broken rather than calm.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-switch]::before {
+    transition: none;
+  }
+}

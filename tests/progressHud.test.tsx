@@ -204,9 +204,11 @@ describe("Cosmic progress readings", () => {
      * Accuracy and retention are rates out of a hundred, so their scales set
      * the reading as a custom property and carry a pointer. "Words mastered"
      * and "reviews done" are counts with no full mark, and a pointer there
-     * would be drawn against a maximum nobody set — so the graduations are
-     * all those two cards get. Asserted on the inline property rather than on
-     * a class name, because that is the thing that is actually load-bearing.
+     * would be drawn against a maximum nobody set — so those two cards get a
+     * plain counter and no scale at all. Asserted on the inline property
+     * rather than on a class name, because that is the thing that is actually
+     * load-bearing: however the two counts are drawn, exactly two elements on
+     * this panel may carry a reading.
      */
     const pointed = container.querySelectorAll('[style*="--progress"]');
 
