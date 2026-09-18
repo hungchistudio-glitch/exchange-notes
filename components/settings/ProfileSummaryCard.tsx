@@ -36,17 +36,21 @@ export default function ProfileSummaryCard({
       type="button"
       onClick={onOpen}
       aria-label={editLabel}
-      className="flex w-full items-center gap-4 rounded-[18px] border border-black/[0.06] bg-white px-4 py-4 text-left transition-colors duration-100 ease-out hover:bg-black/[0.015] active:bg-black/[0.03]"
+      className="@container flex w-full flex-wrap items-center gap-4 rounded-[18px] border border-black/[0.06] bg-white px-4 py-4 text-left transition-colors duration-100 ease-out hover:bg-black/[0.015] active:bg-black/[0.03]"
     >
       <Avatar src={avatarUrl} fallback={displayName} size="lg" />
 
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[1.1875rem] font-bold tracking-[-0.03em] text-black">
+      {/*
+        `basis-0` rather than `flex-1`, so the container query below can hand
+        this column a full line without a shorthand resetting the basis back.
+      */}
+      <span className="min-w-0 grow basis-0 @max-[15rem]:basis-full">
+        <span className="block truncate text-[1.1875rem] font-bold tracking-[-0.03em] text-black @max-[15rem]:whitespace-normal">
           {displayName}
         </span>
 
         {exchangeId ? (
-          <span className="mt-0.5 block truncate text-[0.875rem] font-semibold text-blue-600">
+          <span className="mt-0.5 block truncate text-[0.875rem] font-semibold text-blue-600 @max-[15rem]:whitespace-normal">
             @{exchangeId}
           </span>
         ) : null}
@@ -55,7 +59,7 @@ export default function ProfileSummaryCard({
           The address is the quietest line of the three: it identifies the
           account, but it is not what anyone came to this card to read.
         */}
-        <span className="mt-0.5 block truncate text-[0.8125rem] leading-[1.125rem] text-ink-soft">
+        <span className="mt-0.5 block truncate text-[0.8125rem] leading-[1.125rem] text-ink-soft @max-[15rem]:whitespace-normal">
           {loading ? "" : email}
         </span>
       </span>
@@ -63,10 +67,21 @@ export default function ProfileSummaryCard({
       {/*
         A span, not a button. It opens exactly what the card opens, and two
         controls that do the same thing would only be two things to miss.
+
+        It is also the first thing to go when the card runs out of room. The
+        avatar, the pencil and their gaps are all sized in rem, so at the
+        largest text preference they claim more than a 320-point card has:
+        before this query existed the name column was squeezed to zero width
+        and the pencil pushed past the right edge of the screen — a card that
+        showed a photo, a chevron-sized decoration, and none of the identity
+        it exists to show. Below that width the column takes a line of its
+        own, and the pencil stands down: it is aria-hidden decoration for a
+        card that is entirely one button, so dropping it costs a reader
+        nothing and dropping the name costs them the card.
       */}
       <span
         aria-hidden="true"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.08] text-ink-soft"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/[0.08] text-ink-soft @max-[15rem]:hidden"
       >
         <Pencil size={15} strokeWidth={1.8} />
       </span>
