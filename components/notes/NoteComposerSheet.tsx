@@ -1,7 +1,7 @@
 "use client";
 
 import { LockKeyhole } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import TextArea from "@/components/foundation/forms/TextArea";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
@@ -32,6 +32,31 @@ export default function NoteComposerSheet({
   const [source, setSource] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  /*
+   * Whether this sheet is still on screen.
+   *
+   * `save` awaits the caller's network write and then sets state either way —
+   * the error path directly, the success path through `close`, which resets
+   * nine fields on the way out. Nothing stopped either of them. React discards
+   * an update to an unmounted component and wastes the work; a torn-down test
+   * environment throws "window is not defined" out of dispatchSetState, as an
+   * unhandled rejection that fails the run with every test still passing.
+   *
+   * This is the same guard NotesHomeModule was given for the same reason, one
+   * level up, and the same reason it is a ref assigned on the way in as well
+   * as on the way out: Strict Mode mounts twice, and a ref initialised once
+   * would be left false by the first unmount.
+   */
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const effectiveLanguage = languageOverridden
     ? language
@@ -74,6 +99,13 @@ export default function NoteComposerSheet({
       sourceKind: "manual",
       privacy: "private",
     });
+
+    /*
+     * The note is written, or it is not, whether or not anyone is still
+     * looking — so nothing above this line is conditional on the sheet still
+     * being here. Everything below it is only about what the sheet shows.
+     */
+    if (!mounted.current) return;
 
     if (!note) {
       setError(copy.saveError);
