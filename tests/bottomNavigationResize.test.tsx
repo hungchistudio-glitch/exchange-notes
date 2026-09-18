@@ -130,6 +130,26 @@ describe("bottom navigation indicator", () => {
     expect(elements().indicator.style.transform).toBe("translate(145px, 0px)");
   });
 
+  /*
+   * jsdom has no layout, so this cannot measure a key. What it can hold is
+   * the reason the keys were shrinking: both of the dock's paddings were rem,
+   * so a reader on a larger text size spent the width the six 1fr columns
+   * divide, and on a 320pt phone a key went from 43.7pt to 34.3pt as the text
+   * grew. A rem-scaled padding utility here is that regression coming back.
+   */
+  it("measures its own padding in pixels rather than in text", () => {
+    render(navigation());
+    const nav = screen.getByRole("navigation");
+    const dock = nav.firstElementChild!;
+
+    expect(nav.className).toContain("px-[16px]");
+    expect(dock.className).toContain("p-[8px]");
+
+    for (const element of [nav, dock]) {
+      expect(element.className).not.toMatch(/(?:^|\s)-?p[xlr]?-\d/);
+    }
+  });
+
   it("disconnects old observers on selection changes and unmount", () => {
     const { rerender, unmount } = render(navigation());
     const oldObserver = [...observers][0];
