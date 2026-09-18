@@ -3,8 +3,11 @@ import { GoogleGenAI } from "@google/genai";
 
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { getTextModelCandidates, readBoundedInteger } from "@/lib/ai/modelConfig";
+import { withModelCandidates } from "@/lib/ai/modelRequest";
+import { stripRomanisation } from "@/lib/ai/prompts/exampleSentence";
 import {
   buildTranslateVocabularyPrompt,
+  promptId,
   type VocabularyToTranslate,
 } from "@/lib/ai/prompts/translateVocabulary";
 import {
@@ -17,6 +20,12 @@ import { readLearningPair } from "@/lib/profile/languagePair";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+/*
+ * One batch, with room for a candidate that has to be given up on.
+ * See lib/ai/modelRequest.ts for why a failure is now fast enough that this
+ * is a ceiling rather than the thing the reader waits for.
+ */
+export const maxDuration = 60;
 
 /*
  * One batch is twenty words.
@@ -62,10 +71,12 @@ const RESULT_SCHEMA = {
         type: "object",
         additionalProperties: false,
         properties: {
+          /* Which word this answers. See the pairing note below. */
+          id: { type: "string", minLength: 1, maxLength: 8 },
           text: { type: "string", minLength: 1, maxLength: 120 },
           example: { type: "string", maxLength: 300 },
         },
-        required: ["text", "example"],
+        required: ["id", "text", "example"],
       },
     },
   },
@@ -209,51 +220,73 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     /*
-     * Every candidate, not just the first.
+     * Every candidate, not just the first — and each one with a ceiling.
      *
-     * This route was the last one still asking a single model, and it is
-     * the one production was actually failing on: twenty-four 429s in an
-     * hour, all from the same busy model, while a second one sharing the
-     * same key sat idle. A library fill is a long run of requests — the
-     * shape most likely to meet a rate limit and the least able to afford
-     * losing the batch when it does.
+     * This route was the one production was actually failing on: twenty-four
+     * 429s in an hour, all from the same busy model, while a second one
+     * sharing the same key sat idle. A library fill is a long run of
+     * requests, the shape most likely to meet a rate limit.
+     *
+     * What the list could not fix on its own was the cost of using it. The
+     * SDK retries a 429 five times with backoff, so falling through to the
+     * second model took 34.8 seconds of waiting to learn something the first
+     * response already said. withModelCandidates passes maxRetries: 0, which
+     * measured 225ms for the same refusal.
      */
-    let outputText = "";
-    let lastError: unknown = null;
-
-    for (const model of getTextModelCandidates()) {
-      try {
-        const interaction = await client.interactions.create({
-          model,
-          input: buildTranslateVocabularyPrompt(items, target),
-          response_format: {
-            type: "text",
-            mime_type: "application/json",
-            schema: RESULT_SCHEMA,
+    const outputText = await withModelCandidates(
+      getTextModelCandidates(),
+      async (model, options) => {
+        const interaction = await client.interactions.create(
+          {
+            model,
+            input: buildTranslateVocabularyPrompt(items, target),
+            response_format: {
+              type: "text",
+              mime_type: "application/json",
+              schema: RESULT_SCHEMA,
+            },
+            generation_config: { thinking_level: "low" },
+            store: false,
           },
-          generation_config: { thinking_level: "low" },
-          store: false,
-        });
+          options,
+        );
 
-        outputText =
-          typeof interaction.output_text === "string"
-            ? interaction.output_text
-            : "";
-
-        lastError = null;
-        break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (lastError) throw lastError;
+        return typeof interaction.output_text === "string"
+          ? interaction.output_text
+          : "";
+      },
+    );
 
     const parsed = JSON.parse(
       outputText.replace(/^```json\s*|```$/g, "").trim(),
-    ) as { words?: Array<{ text?: string; example?: string }> };
+    ) as {
+      words?: Array<{ id?: string; text?: string; example?: string }>;
+    };
 
-    const answers = parsed.words ?? [];
+    /*
+     * Answers are matched by the id the model was given, never by position.
+     *
+     * This used to be `answers[index]`, against a schema with no id in it and
+     * a prompt that asked for "one entry per word, in the same order". When
+     * the model honoured that, it worked. When it dropped a single word —
+     * which is the one thing a list of twenty is likely to do — every word
+     * after the gap silently took its neighbour's translation and its
+     * neighbour's example sentence, and they were written to the reader's
+     * own library as if they were right. An audit on 2026-09-18 found three
+     * rows carrying someone else's sentence.
+     *
+     * An unrecognised id is dropped rather than guessed at, and a word with
+     * no answer is simply left for the next batch: `remaining` already tells
+     * the caller the truth, and a missing row is a retry where a wrong row
+     * is a correction nobody knows to make.
+     */
+    const byId = new Map<string, { text?: string; example?: string }>();
+
+    for (const answer of parsed.words ?? []) {
+      const id = answer?.id?.trim();
+      if (!id || byId.has(id)) continue;
+      byId.set(id, answer);
+    }
 
     /*
      * Written one row at a time, and only into the key that was missing.
@@ -278,14 +311,14 @@ export async function POST(request: Request) {
     }> = [];
 
     for (const [index, item] of items.entries()) {
-      const answer = answers[index];
+      const answer = byId.get(promptId(index));
       const text = answer?.text?.trim();
       if (!text) continue;
 
       const row = missing.find((candidate) => candidate.id === item.id);
       if (!row || row.texts?.[target]?.trim()) continue;
 
-      const example = answer.example?.trim();
+      const example = stripRomanisation(answer?.example);
 
       const nextTexts = { ...row.texts, [target]: text };
       const nextExamples = example

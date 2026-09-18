@@ -2,6 +2,24 @@ import { promptLanguageName, whenScriptRuleApplies } from "@/lib/ai/languageProm
 import { exampleSentenceRules } from "@/lib/ai/prompts/exampleSentence";
 import type { LanguageCode } from "@/lib/languages";
 
+/*
+ * The label a word is given in the prompt, and the label its answer must come
+ * back under.
+ *
+ * Exported because the route matches on it. The two used to agree only by
+ * both counting from zero — the prompt numbered the words, the schema had no
+ * id at all, and the route read `answers[index]`. One dropped word shifted
+ * every answer after it onto the wrong word, and it was written to the
+ * reader's library looking exactly like a right answer.
+ *
+ * Short and opaque on purpose: a row's real UUID is 36 characters, twenty of
+ * them is most of a prompt, and models mangle long identifiers they have no
+ * use for.
+ */
+export function promptId(index: number) {
+  return `w${index + 1}`;
+}
+
 export type VocabularyToTranslate = {
   id: string;
   /** What the word already is, in the languages it is already known in. */
@@ -42,7 +60,7 @@ export function buildTranslateVocabularyPrompt(
         )
         .join("\n");
 
-      return `Word ${index + 1}${
+      return `Word ${promptId(index)}${
         item.partOfSpeech ? ` (${item.partOfSpeech})` : ""
       }:\n${known}`;
     })
@@ -68,6 +86,11 @@ ${exampleSentenceRules()}
 - If a word has no ordinary equivalent in ${targetName} — a name, a piece of
   culture with no counterpart — give the form a ${targetName} speaker would
   actually use, borrowed or transliterated, rather than inventing one.
-- Return one entry per word, in the same order, and nothing else.${scriptRule}
+- "id" is the word's own label, copied exactly: the entry for Word w7 carries
+  "id": "w7". It is what pairs your answer to the word it answers, so it is
+  never renumbered, never reused, and never left out.
+- Return one entry per word and nothing else. If a word genuinely cannot be
+  answered, leave it out entirely rather than shifting the others up — a
+  missing entry is handled, a misaligned one is not.${scriptRule}
   `.trim();
 }
