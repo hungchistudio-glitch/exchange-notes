@@ -37,7 +37,7 @@ const TONE_CLASSES: Record<SettingsRowTone, string> = {
 };
 
 const ROW_BASE =
-  "flex min-h-[62px] w-full items-center gap-3.5 px-4 py-3 text-left";
+  "settings-row flex min-h-[62px] w-full items-center gap-3.5 px-4 py-3 text-left";
 
 // 100ms and a 3.5% darkening: enough that a tap is acknowledged before the
 // screen it opens arrives, quiet enough that a list of them never flickers.
@@ -85,7 +85,7 @@ function RowIcon({
   return (
     <span
       className={[
-        "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full",
+        "settings-row-icon flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full",
         danger ? TONE_CLASSES.red : TONE_CLASSES[tone],
       ].join(" ")}
     >
@@ -105,7 +105,7 @@ function RowText({
   descriptionId?: string;
 }) {
   return (
-    <span className="min-w-0 flex-1">
+    <span className="settings-row-copy min-w-0 flex-1">
       {/*
         Wraps rather than truncates. "Devices & Widgets" beside a value does
         not fit on one line at 375 points, and a row is allowed to be taller —
@@ -114,7 +114,7 @@ function RowText({
       <span
         id={titleId}
         className={[
-          "block text-[1rem] font-semibold leading-[1.3125rem] tracking-[-0.02em]",
+          "settings-row-title block text-[1rem] font-semibold leading-[1.3125rem] tracking-[-0.02em]",
           danger ? "text-red-600" : "text-black",
         ].join(" ")}
       >
@@ -126,7 +126,7 @@ function RowText({
         // sentence that is worth reading in full.
         <span
           id={descriptionId}
-          className="mt-0.5 block text-[0.8125rem] leading-[1.125rem] text-ink-soft"
+          className="settings-row-description mt-0.5 block text-[0.8125rem] leading-[1.125rem] text-ink-soft"
         >
           {description}
         </span>
@@ -139,7 +139,7 @@ function RowValue({ value }: Pick<SharedProps, "value">) {
   if (!value) return null;
 
   return (
-    <span className="max-w-[42%] shrink-0 truncate text-[0.875rem] font-medium text-ink-soft">
+    <span className="settings-row-value max-w-[42%] shrink-0 truncate text-[0.875rem] font-medium text-ink-soft">
       {value}
     </span>
   );
@@ -310,7 +310,7 @@ export function SettingsControlRow({
     return (
       <div
         id={id}
-        className={["w-full px-4 py-3.5", className].filter(Boolean).join(" ")}
+        className={["settings-control-row w-full px-4 py-3.5", className].filter(Boolean).join(" ")}
       >
         <div className="flex items-center gap-3.5">
           <RowIcon icon={icon} tone={tone} />
@@ -318,7 +318,7 @@ export function SettingsControlRow({
         </div>
 
         {/* Indented to the text column, so the group still reads as rows. */}
-        <div className="mt-3 pl-[48px]">{control}</div>
+        <div className="settings-control-slot mt-3 pl-[48px]">{control}</div>
       </div>
     );
   }

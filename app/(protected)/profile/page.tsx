@@ -283,11 +283,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-surface text-black">
+    <main className="cosmic-settings-page min-h-[100dvh] bg-surface text-black">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader title={copy.pageTitle} action={<SettingsSearch />} />
 
-        <div className="flex-1 space-y-8 px-5 pt-5 sm:px-6">
+        <div className="cosmic-settings-content flex-1 space-y-8 px-5 pt-5 sm:px-6">
           {(error || message) && (
             <div className="space-y-2">
               {error && <StatusMessage tone="danger">{error}</StatusMessage>}

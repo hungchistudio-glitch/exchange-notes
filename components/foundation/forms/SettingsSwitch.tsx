@@ -20,6 +20,7 @@ export default function SettingsSwitch({
   return (
     <span
       aria-hidden="true"
+      data-settings-switch={checked ? "on" : "off"}
       className={[
         "relative flex h-[31px] w-[51px] shrink-0 items-center rounded-full",
         "transition-colors duration-200 ease-out motion-reduce:transition-none",
@@ -36,7 +37,7 @@ export default function SettingsSwitch({
       */}
       <span
         className={[
-          "h-[27px] w-[27px] rounded-full bg-[#ffffff]",
+          "settings-switch-thumb h-[27px] w-[27px] rounded-full bg-[#ffffff]",
           "shadow-[0_1px_3px_rgba(0,0,0,0.18)]",
           // The colour change alone still says on or off, so reduced
           // motion loses the travel and keeps the answer.

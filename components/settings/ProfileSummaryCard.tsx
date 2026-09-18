@@ -36,7 +36,7 @@ export default function ProfileSummaryCard({
       type="button"
       onClick={onOpen}
       aria-label={editLabel}
-      className="@container flex w-full flex-wrap items-center gap-4 rounded-[18px] border border-black/[0.06] bg-white px-4 py-4 text-left transition-colors duration-100 ease-out hover:bg-black/[0.015] active:bg-black/[0.03]"
+      className="settings-profile-card @container flex w-full flex-wrap items-center gap-4 rounded-[18px] border border-black/[0.06] bg-white px-4 py-4 text-left transition-colors duration-100 ease-out hover:bg-black/[0.015] active:bg-black/[0.03]"
     >
       <Avatar src={avatarUrl} fallback={displayName} size="lg" />
 
