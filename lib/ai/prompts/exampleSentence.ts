@@ -64,7 +64,9 @@ export function exampleSentenceRules({ indent = "" } = {}): string {
   as part of a longer story.
 - Use the word in its most ordinary sense, not a specialised or technical one,
   unless the word only has the specialised sense.
-- Keep it short enough to remember and repeat.`.trim();
+- Keep it short enough to remember and repeat.
+- The sentence only, in its own script. No pronunciation guide, no
+  romanisation, no pinyin, no translation, and nothing in brackets after it.`.trim();
 
   if (!indent) return rules;
 
@@ -72,6 +74,53 @@ export function exampleSentenceRules({ indent = "" } = {}): string {
     .split("\n")
     .map((line) => (line ? indent + line : line))
     .join("\n");
+}
+
+/* =========================================================
+   Taking the pronunciation guide back out
+
+   The rule above is new; 29 of the library's 464 Traditional Chinese
+   sentences were written before it existed and carry a parenthesised pinyin
+   gloss the schema never asked for — 發生這起漏洞之後，他們不得不更改所有
+   的密碼。(Fāshēng zhè qǐ lòudòng…) — which is then clipped mid-syllable by
+   every surface that shows an example in a fixed width. No other language
+   has a single one, which is what says this is a habit of the model on
+   Chinese rather than anything a reader asked for.
+
+   A rule in a prompt governs the next word and no others, so the write path
+   checks too. Cheap, and it does not depend on the model having complied.
+   ========================================================= */
+
+const CJK = /[\u3400-\u4dbf\u4e00-\u9fff\u3040-\u30ff]/;
+const BRACKETED = /[（(][^）)]*[）)]/g;
+const LATIN_ISH = /[A-Za-z\u00c0-\u024f]/g;
+
+/**
+ * Drops a parenthesised romanisation from a sentence written in a script that
+ * does not use the Latin alphabet.
+ *
+ * Deliberately conditional on the sentence itself containing CJK: a French or
+ * Spanish example is Latin from end to end, and a bracketed aside in one of
+ * those is the writer's, not a pronunciation guide. Returns undefined for an
+ * empty result so the caller stores nothing rather than an empty string.
+ */
+export function stripRomanisation(example: string | undefined | null) {
+  const text = example?.trim();
+  if (!text) return undefined;
+  if (!CJK.test(text)) return text;
+
+  const cleaned = text
+    .replace(BRACKETED, (group) => {
+      const inner = group.slice(1, -1);
+      if (!inner.trim()) return group;
+      if (CJK.test(inner)) return group;
+
+      const latin = (inner.match(LATIN_ISH) ?? []).length;
+      return latin / inner.length >= 0.5 ? "" : group;
+    })
+    .trim();
+
+  return cleaned || undefined;
 }
 
 /** One saved word, in every language it is already known in. */
