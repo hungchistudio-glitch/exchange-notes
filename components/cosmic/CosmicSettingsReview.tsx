@@ -1,8 +1,9 @@
 "use client";
 
 import { Bell, BellRing, CircleHelp, Globe, GraduationCap, Languages, LogOut, Orbit, Smartphone, Target, Type, Volume2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { ModeTransitionScene } from "@/components/cosmic/ModeTransitionStage";
 import { ProgressHudDisplay } from "@/components/cosmic/ProgressHud";
 import SegmentedControl from "@/components/foundation/forms/SegmentedControl";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
@@ -20,6 +21,13 @@ import SettingsChoiceCard from "@/components/settings/SettingsChoiceCard";
 import ProfileSummaryCard from "@/components/settings/ProfileSummaryCard";
 import SettingsSearch from "@/components/settings/SettingsSearch";
 import SettingsSection from "@/components/settings/SettingsSection";
+import {
+  ENTER_COMMIT_MS,
+  ENTER_TOTAL_MS,
+  LEAVE_COMMIT_MS,
+  LEAVE_TOTAL_MS,
+  type ModeTransitionPhase,
+} from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
 
@@ -42,6 +50,8 @@ export default function CosmicSettingsReview() {
   const [voice, setVoice] = useState("female");
   const [speed, setSpeed] = useState("1");
   const [sheet, setSheet] = useState<PreviewSheet | null>(null);
+  const [phase, setPhase] = useState<ModeTransitionPhase | null>(null);
+  const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -52,6 +62,42 @@ export default function CosmicSettingsReview() {
       else root.setAttribute("data-interface-mode", previous);
     };
   }, [mode]);
+
+  /*
+   * The mode change, played the way the app plays it.
+   *
+   * InterfaceModeProvider is not mounted here on purpose: its commit writes
+   * the stored preference and then the signed-in profile row, and this page
+   * promises neither. What it does own is the shape of the sequence — set the
+   * phase, flip the shell at COMMIT while the veil is at its densest, clear
+   * the phase at TOTAL — so that shape is what runs here, against the same
+   * four exported constants, with the local `mode` state standing in for the
+   * commit. Change the timings there and this moves with them.
+   */
+  function changeMode(next: InterfaceMode) {
+    if (next === mode || phase) return;
+
+    const entering = next === "yumi-cosmic";
+    setPhase(entering ? "entering-cosmic" : "leaving-cosmic");
+
+    const commit = window.setTimeout(
+      () => setMode(next),
+      entering ? ENTER_COMMIT_MS : LEAVE_COMMIT_MS,
+    );
+    const end = window.setTimeout(
+      () => setPhase(null),
+      entering ? ENTER_TOTAL_MS : LEAVE_TOTAL_MS,
+    );
+
+    timersRef.current = [commit, end];
+  }
+
+  useEffect(
+    () => () => {
+      for (const timer of timersRef.current) window.clearTimeout(timer);
+    },
+    [],
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -121,7 +167,7 @@ export default function CosmicSettingsReview() {
           <SettingsSection label={copy.sections.yumi} footnote={copy.interfaceMode.sharedDataNote}>
             <SettingsAnchor id="setting-interface-mode">
               <SettingsControlRow title={copy.interfaceMode.rowTitle} description={copy.interfaceMode.rowDescription} icon={<Orbit size={16} strokeWidth={1.8} />} tone="blue" stacked control={
-                <SegmentedControl<InterfaceMode> fill groupLabel={copy.interfaceMode.rowTitle} value={mode} onChange={setMode} options={[
+                <SegmentedControl<InterfaceMode> fill groupLabel={copy.interfaceMode.rowTitle} value={mode} onChange={changeMode} options={[
                   { value: "standard", content: copy.interfaceMode.standardShort, label: copy.interfaceMode.standardTitle },
                   { value: "yumi-cosmic", content: copy.interfaceMode.cosmicShort, label: copy.interfaceMode.cosmicTitle },
                 ]} />
@@ -170,6 +216,8 @@ export default function CosmicSettingsReview() {
           onSelect: () => index === 5 ? window.scrollTo({ top: 0 }) : setSheet("navigation"),
         }))} />
       </div>
+
+      <ModeTransitionScene phase={phase} />
 
       <BottomSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet ? sheetTitles[sheet] : ""} description="Development preview · Changes here stay on this page.">
         <div className="space-y-3">

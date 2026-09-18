@@ -41,11 +41,15 @@ type InterfaceModeContextType = {
  * the veil is at its densest, so the underlying app repaints from one shell
  * to the other while nothing of it is visible — that is what removes the
  * hard cut that a mode switch would otherwise be.
+ *
+ * Exported so the review route can play the real sequence rather than a
+ * second copy of these four numbers. A scene whose timing is approximated
+ * somewhere else is a scene that stops being the one that ships.
  */
-const ENTER_COMMIT_MS = 280;
-const ENTER_TOTAL_MS = 1150;
-const LEAVE_COMMIT_MS = 460;
-const LEAVE_TOTAL_MS = 800;
+export const ENTER_COMMIT_MS = 280;
+export const ENTER_TOTAL_MS = 1150;
+export const LEAVE_COMMIT_MS = 460;
+export const LEAVE_TOTAL_MS = 800;
 
 function prefersReducedMotion() {
   if (typeof window === "undefined") return false;

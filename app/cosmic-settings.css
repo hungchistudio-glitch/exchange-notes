@@ -166,6 +166,16 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(.settings-pane
  * below move with the reader's text-size preference — which is the whole
  * reason they are not media queries. The profile card declares its own
  * container in the component, since it needs one in Standard Mode too.
+ *
+ * `container-type` has a second effect worth knowing before adding anything
+ * to a row: it makes the panel the containing block for `position: fixed`
+ * descendants, so a full-screen overlay rendered from inside a row would be
+ * trapped in the panel rather than covering the viewport. Nothing on this
+ * page does that today — the tour's overlay is rendered from a row, but on
+ * Help & About, which is not a `.cosmic-settings-page` — and SettingsSearch
+ * already portals to the body for the same reason, one containing block
+ * further up. Anything new that needs `fixed` from inside a panel has to
+ * portal out too.
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page .settings-panel {
   container-type: inline-size;
