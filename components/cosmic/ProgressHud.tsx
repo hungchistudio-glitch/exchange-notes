@@ -18,9 +18,11 @@ function clampProgress(value: number) {
  *
  * Graduated like a real instrument — minor marks every twentieth, major every
  * quarter — because a row of identical ticks is a decoration and a graduated
- * one can be read. Where the reading is a rate the marks up to it are lit and
- * the rest stay dim, which is what makes 88% and 0% differ at a glance rather
- * than only in the two characters above them.
+ * one can be read. Where the reading is a rate the marks up to it are lit in
+ * the card's hue and the rest stay dim, which is what makes 88% and 0% differ
+ * at a glance rather than only in the two characters above them. The printed
+ * 0 / 50 / 100 under the glass says what the graduations are counting, so the
+ * lit region is a quantity rather than a bar that happens to be part-full.
  *
  * `progress` is null for a count. "Words mastered: 4" has no full mark to be
  * four out of, so that scale carries no lit region and no pointer: an
@@ -33,14 +35,19 @@ function Scale({ progress }: { progress: number | null }) {
       : ({ "--progress": clampProgress(progress) } as CSSProperties);
 
   return (
-    <div className={styles.ruler} aria-hidden="true" style={style}>
-      <span className={styles.rulerTrack} />
-      {progress !== null && (
-        <>
-          <span className={styles.rulerLit} />
-          <span className={styles.rulerMarker} />
-        </>
-      )}
+    <div className={styles.scale} aria-hidden="true">
+      <div className={styles.ruler} style={style}>
+        <span className={styles.rulerTrack} />
+        {progress !== null && (
+          <>
+            <span className={styles.rulerLit} />
+            <span className={styles.rulerMarker} />
+          </>
+        )}
+      </div>
+      <div className={styles.scaleLabels}>
+        <span>0</span><span>50</span><span>100</span>
+      </div>
     </div>
   );
 }
@@ -59,6 +66,7 @@ function GoalDial({ value, children }: { value: number; children: ReactNode }) {
 
   return (
     <div className={styles.dial}>
+      <span className={styles.dialBezel} aria-hidden="true" />
       <svg viewBox="0 0 100 100" className={styles.dialSvg} aria-hidden="true">
         {Array.from({ length: 60 }, (_, index) => {
           const major = index % 5 === 0;
@@ -68,9 +76,9 @@ function GoalDial({ value, children }: { value: number; children: ReactNode }) {
               key={index}
               className={major ? styles.dialTickMajor : styles.dialTick}
               x1="50"
-              y1="2.5"
+              y1="2"
               x2="50"
-              y2={major ? "9.5" : "6"}
+              y2={major ? "8" : "5"}
               transform={`rotate(${index * 6} 50 50)`}
             />
           );
@@ -81,7 +89,7 @@ function GoalDial({ value, children }: { value: number; children: ReactNode }) {
           cy="50"
           r={radius}
           fill="none"
-          strokeWidth="3"
+          strokeWidth="1.4"
         />
         <circle
           className={styles.arc}
@@ -89,7 +97,7 @@ function GoalDial({ value, children }: { value: number; children: ReactNode }) {
           cy="50"
           r={radius}
           fill="none"
-          strokeWidth="3.5"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeDasharray={circumference}
           transform="rotate(-90 50 50)"
@@ -111,6 +119,12 @@ function MetricCard({
   value: number;
   display: string;
   label: string;
+  /*
+   * Which hue this card reads in. Not a face colour — the housing is the same
+   * cast graphite on all four — but the colour of the lit graduations and of
+   * the pointer standing on them, so what the hue names is the measurement
+   * rather than the container.
+   */
   tone: "mint" | "pink";
   /** No reading to show: the value is a dash and the ruler keeps its marker off. */
   unavailable: boolean;
@@ -134,8 +148,6 @@ function MetricCard({
  * invented to fill an instrument.
  */
 export default function ProgressHud() {
-  const { t } = useTranslation();
-  const copy = t.cosmic.hud;
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -170,6 +182,47 @@ export default function ProgressHud() {
     };
   }, []);
 
+  return (
+    <ProgressHudDisplay
+      readings={{ todayAdded, dailyGoal, ...reviewStats }}
+      loading={loading}
+      loadError={loadError}
+    />
+  );
+}
+
+/** Everything the panel draws, and nothing it has to fetch to know. */
+export type ProgressHudReadings = {
+  todayAdded: number;
+  dailyGoal: number;
+  accuracy: number;
+  retention: number;
+  mastered: number;
+  reviewed: number;
+};
+
+/*
+ * The instruments, with the readings handed to them.
+ *
+ * Split out from the component above so a review route can hold a needle at a
+ * chosen value without a signed-in account or a seeded database behind it —
+ * 88% accuracy beside 0% retention is a five-second check of the lit region,
+ * the pointer and the two hues, and it is not a state the real data will
+ * reach on demand. The fetching half stays in ProgressHud, so nothing that
+ * ships to a reader can pass this panel a number the app did not derive.
+ */
+export function ProgressHudDisplay({
+  readings,
+  loading = false,
+  loadError = false,
+}: {
+  readings: ProgressHudReadings;
+  loading?: boolean;
+  loadError?: boolean;
+}) {
+  const { t } = useTranslation();
+  const copy = t.cosmic.hud;
+  const { todayAdded, dailyGoal } = readings;
   const dash = "—";
   const unavailable = loading || loadError;
   /*
@@ -178,7 +231,7 @@ export default function ProgressHud() {
    * 0% accuracy beside 100% retention — read as a verdict on someone who has
    * not started yet. The counts either side of them are real and stay.
    */
-  const noReviewsYet = unavailable || reviewStats.reviewed === 0;
+  const noReviewsYet = unavailable || readings.reviewed === 0;
   /*
    * Five instruments with nothing to read, and not a word about why.
    *
@@ -194,7 +247,7 @@ export default function ProgressHud() {
    * in, and telling someone their history is empty while it is still arriving
    * would be the same lie the dashes exist to avoid.
    */
-  const nothingReviewedYet = !unavailable && reviewStats.reviewed === 0;
+  const nothingReviewedYet = !unavailable && readings.reviewed === 0;
 
   return (
     <section className={styles.hud} aria-busy={loading}>
@@ -227,15 +280,15 @@ export default function ProgressHud() {
         </div>
 
         <MetricCard
-          value={reviewStats.accuracy / 100}
-          display={noReviewsYet ? dash : `${reviewStats.accuracy}%`}
+          value={readings.accuracy / 100}
+          display={noReviewsYet ? dash : `${readings.accuracy}%`}
           label={copy.accuracy}
           tone="mint"
           unavailable={noReviewsYet}
         />
         <MetricCard
-          value={reviewStats.retention / 100}
-          display={noReviewsYet ? dash : `${reviewStats.retention}%`}
+          value={readings.retention / 100}
+          display={noReviewsYet ? dash : `${readings.retention}%`}
           label={copy.retention}
           tone="pink"
           unavailable={noReviewsYet}
@@ -244,17 +297,15 @@ export default function ProgressHud() {
         <div className={`${styles.card} ${styles.tile} ${styles.blue}`}>
           <p className={styles.cardLabel}>{copy.mastered}</p>
           <p className={styles.tileValue}>
-            {unavailable ? dash : reviewStats.mastered}
+            {unavailable ? dash : readings.mastered}
           </p>
-          <Scale progress={null} />
         </div>
 
         <div className={`${styles.card} ${styles.tile} ${styles.amber}`}>
           <p className={styles.cardLabel}>{copy.reviewed}</p>
           <p className={styles.tileValue}>
-            {unavailable ? dash : reviewStats.reviewed}
+            {unavailable ? dash : readings.reviewed}
           </p>
-          <Scale progress={null} />
         </div>
       </div>
     </section>
