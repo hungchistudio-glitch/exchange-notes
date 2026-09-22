@@ -716,6 +716,14 @@ const french: TranslationDictionary = {
       afternoon: "Bon après-midi",
       evening: "Bonsoir",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Tire sur son œil pour ouvrir le menu",
     hero: {
       title: "Continuez d'apprendre",
       description: "Construisez un vocabulaire utile à partir du monde qui vous entoure.",

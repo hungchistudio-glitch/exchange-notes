@@ -763,6 +763,14 @@ const spanish: TranslationDictionary = {
       afternoon: "Buenas tardes",
       evening: "Buenas noches",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Tira de su ojo para abrir el menú",
 
     hero: {
       title: "Sigue aprendiendo",

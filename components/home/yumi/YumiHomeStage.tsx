@@ -42,9 +42,26 @@ import styles from "./YumiHomeStage.module.css";
 
 type YumiCopy = TranslationDictionary["home"]["yumi"];
 
+export type YumiLines = {
+  /** Her status — the mood line, or what she is saying mid-bite. */
+  primary: string;
+  /** The hint under it, empty while she is eating or reacting. */
+  secondary: string;
+};
+
 type YumiHomeStageProps = {
   items: VocabularyItem[];
   onMoodChange?: (mood: HomeMood) => void;
+  /**
+   * Her voice, for a screen that is not painting this stage.
+   *
+   * Eleven moods' worth of lines are written here and translated into five
+   * languages, and on the home screen the 3D scene hides the whole stage the
+   * moment it goes live — so the lines were being computed and shown to
+   * nobody. Rather than write a second set for the overlay to say, the
+   * overlay asks for these.
+   */
+  onLinesChange?: (lines: YumiLines) => void;
 };
 
 const REACTION_DURATION_MS = 3900;
@@ -187,7 +204,11 @@ const REVIEW_HREF = "/review";
 // word count, and drifts into a quieter mood after a few days away. Shares
 // the same yumi_pet_state row (and cookie tray) as the Vocabulary page's
 // YumiCompanion, so it's the same pet remembering the same history.
-export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
+export default function YumiHomeStage({
+  items,
+  onMoodChange,
+  onLinesChange,
+}: YumiHomeStageProps) {
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
   const { supportLanguage } = useDisplayLanguages();
@@ -644,6 +665,21 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
   const primaryText = feedingText
     ?? (reaction ? getReactionText(reaction, copy) : lines.primary);
   const secondaryText = feeding.isFeeding || reaction ? "" : lines.secondary;
+
+  /* Kept in a ref so a caller passing an inline arrow does not re-fire this
+     on every render of the screen above. The two strings are the dependency,
+     which is what actually changed when there is something new to say. */
+  const onLinesChangeRef = useRef(onLinesChange);
+  useEffect(() => {
+    onLinesChangeRef.current = onLinesChange;
+  }, [onLinesChange]);
+
+  useEffect(() => {
+    onLinesChangeRef.current?.({
+      primary: primaryText,
+      secondary: secondaryText,
+    });
+  }, [primaryText, secondaryText]);
 
   return (
     <div

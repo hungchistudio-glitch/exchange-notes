@@ -744,6 +744,8 @@ export type TranslationDictionary = {
       afternoon: string;
       evening: string;
     };
+    /** The pull that opens the ring, shown until it has been used once. */
+    yumiHint: string;
 
     hero: {
       title: string;

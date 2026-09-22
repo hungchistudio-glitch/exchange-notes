@@ -180,23 +180,116 @@
 }
 
 /*
-  The review key, under her while the ring is shut.
+  Everything that is not her.
 
-  Black, on a screen whose ground is now three saturated planes. That is the
-  palette's rule rather than a fallback: saturated colour is a plane, black
-  is the line. The one key that has to read against sky, mountain and grass
-  alike is therefore the one that is not coloured at all — 19.6:1 on every
-  band, and it needs no per-band variant.
+  Two columns placed from the ring's own box — the one the frame loop puts on
+  her eye's projected point every frame — so they follow her without a second
+  thing tracking her. Above: who is reading, and when. Below: what she is
+  saying, the review key, and the gesture that is nowhere on screen.
 
-  Placed from the ring's own box, which the frame loop already puts on her
-  eye's projected point, so it travels with her at no extra cost.
+  94px of clearance is her 72px radius plus 22 of air. Everything inside
+  stacks in normal flow from there rather than at hand-counted offsets, which
+  is what lets a reader at the largest text size get a taller column instead
+  of overlapping lines.
+
+  Both are inert until the scene is live, and both get out of the way when
+  the ring is out: the spokes need that space, and a screen that is asking
+  you to choose should not also be talking.
 */
-.reviewKey {
+.above,
+.below {
   position: absolute;
   left: 0;
   top: 0;
-  transform: translate(-50%, -50%) translateY(86px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /*
+    An explicit width, not a max-width.
 
+    The ring's own box is zero-wide — it is a point she is tracked by, not a
+    container — and an absolutely positioned child of a zero-wide containing
+    block shrinks to its minimum content width, which for a Chinese line is
+    one character per row. A max-width never gets consulted. Setting the
+    width outright is what stops the shrink-to-fit from ever running.
+  */
+  width: min(18rem, 78vw);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.above {
+  transform: translate(-50%, -100%) translateY(-94px);
+  gap: 0.125rem;
+}
+
+.below {
+  transform: translate(-50%, 0) translateY(94px);
+  gap: 0.875rem;
+}
+
+.live .above,
+.live .below {
+  opacity: 1;
+}
+
+/*
+  Source order is the mechanism: same specificity as the rule above and
+  declared after it, so the ring being out beats the scene being live.
+*/
+.open .above,
+.open .below {
+  opacity: 0;
+}
+
+.greeting,
+.when,
+.voice,
+.hint {
+  margin: 0;
+}
+
+/* 8.8:1 on the page's pearl. */
+.greeting {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.72);
+}
+
+/* 5.2:1 — the floor for anything here that is still a sentence. */
+.when,
+.hint {
+  font-size: 0.8125rem;
+  color: rgb(0 0 0 / 0.58);
+}
+
+/* A separator, not a word: aria-hidden in the markup, and lighter than the
+   text on either side so it reads as spacing rather than as a character. */
+.dot {
+  padding: 0 0.4em;
+  color: rgb(0 0 0 / 0.32);
+}
+
+/* Hers. The darkest thing on the screen that is not the key. */
+.voice {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #171717;
+}
+
+/*
+  The review key.
+
+  Black, and the only filled thing here. The palette's rule is that saturated
+  colour is a plane and black is the line; there is no plane for this to be,
+  so it is the line — 19.6:1 on the pearl, and still right if the ground is
+  ever repainted.
+*/
+.reviewKey {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -208,10 +301,6 @@
   color: #ffffff;
   text-decoration: none;
   white-space: nowrap;
-
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 320ms ease;
 }
 
 .reviewKey span {
@@ -219,24 +308,18 @@
   font-weight: 600;
 }
 
-/* The count is quieter than the verb, but still 8.2:1 on the key. */
+/* The count is quieter than the verb, and still 8.2:1 on the key. */
 .reviewKey i {
   font-style: normal;
   font-size: 0.8125rem;
   color: rgb(255 255 255 / 0.66);
 }
 
+/* The one thing in either column a finger is meant to reach. */
 .live .reviewKey {
-  opacity: 1;
   pointer-events: auto;
 }
 
-/*
-  Source order is the whole mechanism here: same specificity as the rule
-  above, declared after it, so the ring being out beats the scene being live
-  and the key gets out of the way of the spokes.
-*/
 .open .reviewKey {
-  opacity: 0;
   pointer-events: none;
 }

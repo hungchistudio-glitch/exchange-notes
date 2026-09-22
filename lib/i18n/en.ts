@@ -763,6 +763,14 @@ const english: TranslationDictionary = {
       afternoon: "Good afternoon",
       evening: "Good evening",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Pull her eye open for the menu",
 
     hero: {
       title: "Keep learning",

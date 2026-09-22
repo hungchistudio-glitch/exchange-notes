@@ -747,6 +747,14 @@ const traditionalChinese: TranslationDictionary = {
       afternoon: "午安",
       evening: "晚安",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "拉開她的眼睛打開選單",
 
     hero: {
       title: "繼續學習",

@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
@@ -82,8 +88,17 @@ const ICON = {
   ),
 } as const;
 
-/** Her radius on screen, in CSS pixels, at rest and with the ring open. */
-const REST_RADIUS = 48;
+/**
+ * Her radius on screen, in CSS pixels, at rest and with the ring open.
+ *
+ * At rest she was 96px across, inherited from the slot she used to occupy in
+ * a stage with ten modules under it. She is the screen now, so she is sized
+ * like it: 144 across, a little over a third of the narrowest phone's width.
+ * The open radius is unchanged — that one is set against the ring's own
+ * geometry, which is verified, and she does not need to be larger once seven
+ * keys are out around her.
+ */
+const REST_RADIUS = 72;
 const OPEN_RADIUS = 86;
 
 /** How far the keys sit from her centre once the ring is out. */
@@ -101,6 +116,64 @@ const PRESS_SLOP_PX = 10;
    enough that a device which is never going to manage it is not left on a
    screen it cannot leave. */
 const RING_GIVE_UP_MS = 8000;
+
+/* Per device, not per account: the gesture is learned by a pair of hands. */
+const HINT_KEY = "yumi-ring-hint-retired";
+
+/*
+ * Whether the pull has been learned on this device.
+ *
+ * Read through a store rather than an effect, which is what this shape is
+ * for: an effect that calls setState on mount is a second render of the
+ * whole screen to answer a question the browser could have answered during
+ * the first one.
+ *
+ * The answer is cached because getSnapshot has to return the same value
+ * between renders or React re-renders forever — and reading localStorage
+ * fresh each time would also be a synchronous disk hit per frame.
+ *
+ * The server says "retired", so a reader who learned the gesture months ago
+ * never watches a line they have finished with flash past on a cold load.
+ * A new reader sees it a tick later, which costs nothing: the scene is not
+ * live on the first frame either, and nothing in these columns is drawn
+ * until it is.
+ */
+let hintRetiredCache: boolean | null = null;
+const hintListeners = new Set<() => void>();
+
+function subscribeToHint(listener: () => void) {
+  hintListeners.add(listener);
+  return () => {
+    hintListeners.delete(listener);
+  };
+}
+
+function getHintSnapshot(): boolean {
+  if (hintRetiredCache === null) {
+    try {
+      hintRetiredCache = window.localStorage.getItem(HINT_KEY) === "1";
+    } catch {
+      /* Private windows and blocked site data land here. Keeping the hint on
+         offer is the safe way to be wrong about this. */
+      hintRetiredCache = false;
+    }
+  }
+
+  return hintRetiredCache;
+}
+
+const getHintServerSnapshot = () => true;
+
+function retireHint() {
+  if (hintRetiredCache === true) return;
+  hintRetiredCache = true;
+  try {
+    window.localStorage.setItem(HINT_KEY, "1");
+  } catch {
+    /* It simply stays on offer next time. */
+  }
+  for (const listener of hintListeners) listener();
+}
 
 /* She reaches occasionally, not rhythmically: a fixed interval reads as a
    machine ticking rather than as an animal noticing something. */
@@ -125,6 +198,22 @@ export type YumiRingOverlayProps = {
   unreadCount?: number;
   /** Words waiting. The key under her is drawn only while this is above zero. */
   reviewDue?: number;
+  /**
+   * Her voice, from the stage underneath. Eleven moods, five languages, all
+   * of it already written — the overlay says it rather than restating it.
+   */
+  lines?: { primary: string; secondary: string } | null;
+  /**
+   * Where and when the reader is. Null until the browser has answered: the
+   * server has no clock and no time zone, and a guess at either is a
+   * hydration mismatch over a line of decoration.
+   */
+  meta?: {
+    greeting: string;
+    place: string | null;
+    date: string;
+    time: string;
+  } | null;
   /** Rendered underneath while the scene is starting, or if it cannot. */
   children: React.ReactNode;
 };
@@ -134,6 +223,8 @@ export default function YumiRingOverlay({
   onLungeArrive,
   unreadCount = 0,
   reviewDue = 0,
+  lines = null,
+  meta = null,
   children,
 }: YumiRingOverlayProps) {
   const router = useRouter();
@@ -161,6 +252,14 @@ export default function YumiRingOverlay({
    * A press that turned into a drag is a drag. She can be turned and her eye
    * can be pulled, and neither may end up somewhere else.
    */
+  /* The pull is the only way to the ring, and nobody is born knowing it, so
+     the hint sits under her until the ring has been opened once. */
+  const hintRetired = useSyncExternalStore(
+    subscribeToHint,
+    getHintSnapshot,
+    getHintServerSnapshot,
+  );
+
   const pressTimer = useRef<number | null>(null);
   const pressFrom = useRef<{ x: number; y: number } | null>(null);
   const pressWentLong = useRef(false);
@@ -229,6 +328,7 @@ export default function YumiRingOverlay({
           onPullOpen: () => {
             openRef.current = true;
             setOpen(true);
+            retireHint();
           },
           onTap: () => {
             /* The scene reports a tap on pointer-up, which is also when a
@@ -242,6 +342,7 @@ export default function YumiRingOverlay({
                the ring is out it is the way home. */
             openRef.current = !openRef.current;
             setOpen(openRef.current);
+            if (openRef.current) retireHint();
           },
           onLungeArrive: () => {
             /*
@@ -471,26 +572,65 @@ export default function YumiRingOverlay({
           })}
 
           {/*
-            The one key on this screen that needs no gesture to find.
+            Everything that is not her, placed from her.
 
-            It is here rather than in the stage underneath because the stage
-            is hidden the moment the scene goes live, and it is inside the
-            ring element because that element is already being placed on her
-            eye's projected point every frame — so it follows her for free.
+            Both blocks live inside the ring element, which the frame loop
+            already puts on her eye's projected point every frame — so they
+            travel with her for free, and they stack in normal flow rather
+            than at hand-counted offsets, which is what lets them grow with
+            the reader's text size without colliding.
+
+            Neither is in the stage underneath, because the stage is hidden
+            the moment the scene goes live.
           */}
-          {reviewDue > 0 ? (
-            <Link
-              href="/review"
-              className={styles.reviewKey}
-              tabIndex={open ? -1 : 0}
-            >
-              <span>{t.home.quickStart.review}</span>
-              <i>
-                {reviewDue}{" "}
-                {reviewDue === 1 ? t.home.progress.word : t.home.progress.words}
-              </i>
-            </Link>
+          {meta ? (
+            <div className={styles.above}>
+              <p className={styles.greeting}>
+                {meta.greeting}
+                {meta.place ? (
+                  <>
+                    <span className={styles.dot} aria-hidden="true">
+                      ·
+                    </span>
+                    {meta.place}
+                  </>
+                ) : null}
+              </p>
+              <p className={styles.when}>
+                {meta.date}
+                <span className={styles.dot} aria-hidden="true">
+                  ·
+                </span>
+                {meta.time}
+              </p>
+            </div>
           ) : null}
+
+          <div className={styles.below}>
+            {lines?.primary ? (
+              <p className={styles.voice}>{lines.primary}</p>
+            ) : null}
+
+            {reviewDue > 0 ? (
+              <Link
+                href="/review"
+                className={styles.reviewKey}
+                tabIndex={open ? -1 : 0}
+              >
+                <span>{t.home.quickStart.review}</span>
+                <i>
+                  {reviewDue}{" "}
+                  {reviewDue === 1
+                    ? t.home.progress.word
+                    : t.home.progress.words}
+                </i>
+              </Link>
+            ) : null}
+
+            {hintRetired ? null : (
+              <p className={styles.hint}>{t.home.yumiHint}</p>
+            )}
+          </div>
 
           {/* She is the home key, and a character you have to guess at is
               not a key. So it is said out loud, only while the ring is out. */}

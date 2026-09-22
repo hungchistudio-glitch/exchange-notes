@@ -716,6 +716,14 @@ const italian: TranslationDictionary = {
       afternoon: "Buon pomeriggio",
       evening: "Buonasera",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Tira il suo occhio per aprire il menu",
     hero: {
       title: "Continua a imparare",
       description: "Costruisci un vocabolario utile a partire dal mondo intorno a te.",
