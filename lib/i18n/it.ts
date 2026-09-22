@@ -287,8 +287,12 @@ const italian: TranslationDictionary = {
         body: "Sono Yumi. Tu noti una parola, un pensiero, un suono o una scena; io ti aiuto a conservarne il primo significato e a ritrovarlo più avanti. Exchange Notes è uno spazio di studio privato, non un feed in cui esibirsi.",
       },
       dock: {
-        title: "Sei tasti che non cambiano mai posto",
-        body: "La barra in basso resta sempre nello stesso ordine: Vocabolario, Messaggi, Home, Cerca, Scopri e Impostazioni. Si muove solo l’anello attivo, così il pollice impara dove si trova ogni strumento.",
+        title:
+          "Yumi nella home, sei tasti ovunque altrove",
+        body:
+          "Nella home Yumi è la navigazione: tira il suo occhio e le sezioni si aprono intorno a lei; toccala per tornare. Ovunque altrove la barra in basso tiene gli stessi sei nello stesso ordine — vocabolario, messaggi, home, cerca, scopri e impostazioni. Si muove solo il cerchio.",
+        homeLabel: "Nella home",
+        dockLabel: "Ovunque altrove",
       },
       setup: {
         title: "Benvenuto. Rendilo tuo",

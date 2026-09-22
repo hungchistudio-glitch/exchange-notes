@@ -1,0 +1,43 @@
+.box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hidden rather than unmounted: it holds the box open, so swapping to 3D
+   never changes the layout around her. */
+.replaced {
+  visibility: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.live {
+  opacity: 1;
+}
+
+.live.interactive {
+  pointer-events: auto;
+  /* A drag on her is a turn, not a page scroll. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.live.interactive:active {
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    transition-duration: 1ms;
+  }
+}

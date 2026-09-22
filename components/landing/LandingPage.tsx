@@ -22,6 +22,7 @@ import {
 
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
+import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import YumiMark from "@/components/vocabulary/pet/YumiMark";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
@@ -324,13 +325,18 @@ function MemoryJourneyPreview({ copy }: { copy: LandingCopy }) {
       </article>
 
       <div className={styles.memoryJourneyYumi}>
-        <YumiMark
-          mood="curious"
-          isWaking={false}
-          isEating={false}
-          growthStage={0}
-          crownEarned={false}
-        />
+        {/* Illustration inside a diagram rather than the subject of it, so
+            she turns on her own and does not invite a drag that would pull
+            focus from the three cards she sits among. */}
+        <Yumi3DFigure interactive={false} fill={0.4}>
+          <YumiMark
+            mood="curious"
+            isWaking={false}
+            isEating={false}
+            growthStage={0}
+            crownEarned={false}
+          />
+        </Yumi3DFigure>
       </div>
     </div>
   );
@@ -603,14 +609,22 @@ function YumiPreview({
 }) {
   return (
     <div className={styles.yumiPreview} aria-label={copy.previewAriaLabel}>
+      {/*
+        The one place on this page a stranger can touch her before signing
+        up: turn her, pull her eye, let it snap back. The flat mark is what
+        shows until the engine chunk lands and what stays without WebGL, so
+        the page that has to paint for a stranger never paints a blank box.
+      */}
       <div className={styles.yumiStage}>
-        <YumiMark
-          mood="curious"
-          isWaking={false}
-          isEating={false}
-          growthStage={0}
-          crownEarned={false}
-        />
+        <Yumi3DFigure>
+          <YumiMark
+            mood="curious"
+            isWaking={false}
+            isEating={false}
+            growthStage={0}
+            crownEarned={false}
+          />
+        </Yumi3DFigure>
       </div>
       <div className={styles.yumiMessage}>
         <p lang={interfaceLang}>{copy.message}</p>

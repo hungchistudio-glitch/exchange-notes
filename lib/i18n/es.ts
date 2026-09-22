@@ -291,9 +291,12 @@ const spanish: TranslationDictionary = {
           "Soy Yumi. Tú notas una palabra, una idea, un sonido o una escena; yo te ayudo a conservar su primer significado y a encontrarlo después. Exchange Notes es un espacio privado para aprender, no un feed en el que tengas que actuar.",
       },
       dock: {
-        title: "Seis teclas que nunca cambian de sitio",
+        title:
+          "Yumi en el inicio, seis teclas en todo lo demás",
         body:
-          "La barra inferior mantiene siempre el mismo orden: Vocabulario, Mensajes, Inicio, Buscar, Descubrir y Ajustes. Solo se mueve el anillo activo, para que tu pulgar aprenda dónde vive cada herramienta.",
+          "En la pantalla de inicio Yumi es la navegación: tira de su ojo y las secciones se abren a su alrededor; tócala para volver. En todo lo demás, la barra inferior mantiene las mismas seis en el mismo orden: vocabulario, mensajes, inicio, buscar, descubrir y ajustes. Solo se mueve el círculo.",
+        homeLabel: "En el inicio",
+        dockLabel: "En todo lo demás",
       },
       setup: {
         title: "Te damos la bienvenida. Hazlo tuyo",

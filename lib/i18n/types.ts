@@ -306,7 +306,15 @@ export type TranslationDictionary = {
         note: string;
         saveError: string;
       };
-      dock: { title: string; body: string };
+      /* The step teaches two things now, because the home screen navigates
+         differently from every other screen: Yumi is the navigation there,
+         and the six keys are everywhere else. */
+      dock: {
+        title: string;
+        body: string;
+        homeLabel: string;
+        dockLabel: string;
+      };
       home: { title: string; body: string };
       search: { title: string; body: string };
       notes: { title: string; body: string };

@@ -287,8 +287,12 @@ const french: TranslationDictionary = {
         body: "Je suis Yumi. Vous remarquez un mot, une idée, un son ou une scène ; je vous aide à en garder le premier sens et à le retrouver plus tard. Exchange Notes est un espace d’apprentissage privé, pas un fil où il faut se mettre en scène.",
       },
       dock: {
-        title: "Six touches qui ne bougent jamais",
-        body: "La barre du bas garde toujours le même ordre : Vocabulaire, Messages, Accueil, Recherche, Découvrir et Réglages. Seul l’anneau actif se déplace, pour que votre pouce apprenne où vit chaque outil.",
+        title:
+          "Yumi à l'accueil, six touches partout ailleurs",
+        body:
+          "Sur l'accueil, Yumi est la navigation : tirez son œil et les sections s'ouvrent autour d'elle ; touchez-la pour revenir. Partout ailleurs, la barre du bas garde les mêmes six dans le même ordre — vocabulaire, messages, accueil, rechercher, découvrir et réglages. Seul le cercle bouge.",
+        homeLabel: "Sur l'accueil",
+        dockLabel: "Partout ailleurs",
       },
       setup: {
         title: "Bienvenue. Faites-en votre espace",
