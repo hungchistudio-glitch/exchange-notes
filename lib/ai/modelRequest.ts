@@ -58,6 +58,36 @@ export function getErrorStatus(error: unknown) {
   return typeof status === "number" ? status : null;
 }
 
+/*
+ * A model that spent the entire budget and told us nothing.
+ *
+ * Measured in production on 2026-09-22: `gemini-3.5-flash` returned at
+ * 14003ms, 14007ms and 14003ms against a 14000ms ceiling — three for three,
+ * to the millisecond. That is not a slow answer, it is no answer, and the
+ * reader paid the whole ceiling for it before the next candidate was even
+ * tried.
+ *
+ * Treated like a rate limit for cooldown purposes, because from this app's
+ * side they are the same event: the model is not going to serve this request
+ * shape right now, and asking it again in thirty seconds costs another full
+ * ceiling. A rate limit is cheap to discover and a timeout is the most
+ * expensive thing here — if anything this is the one that matters more.
+ */
+export function isTimeoutError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const named = (error as { name?: unknown }).name;
+  if (named === "TimeoutError" || named === "AbortError") return true;
+  return (
+    error instanceof Error &&
+    /timed out|timeout|aborted due to timeout/i.test(error.message)
+  );
+}
+
+/** Either reason to stop asking this model for a while. */
+export function shouldCoolDown(error: unknown) {
+  return isRateLimitError(error) || isTimeoutError(error);
+}
+
 export function isRateLimitError(error: unknown) {
   if (getErrorStatus(error) === 429) return true;
   return (
@@ -121,7 +151,7 @@ export async function withModelCandidates<T>(
       return await attempt(model, modelRequestOptions(timeoutMs));
     } catch (error) {
       lastError = error;
-      if (isRateLimitError(error)) startModelCooldown(model);
+      if (shouldCoolDown(error)) startModelCooldown(model);
     }
   }
 

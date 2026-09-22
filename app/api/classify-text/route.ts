@@ -24,6 +24,21 @@ import {
   getTextModelCandidates,
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
+/*
+ * Shared, not re-declared.
+ *
+ * This route carried its own copies of getErrorStatus and isRateLimitError,
+ * its own cooldown map and its own 6-second ceiling, and that is precisely
+ * how it ended up as the one text route in the app that never worked: the
+ * shared module's 15s and its cooldown rules were improved and this file
+ * never heard about it.
+ */
+import {
+  getErrorStatus,
+  isRateLimitError,
+  isTimeoutError,
+  shouldCoolDown,
+} from "@/lib/ai/modelRequest";
 
 export const runtime = "nodejs";
 
@@ -34,7 +49,16 @@ export const runtime = "nodejs";
  * lib/ai/modelRequest.ts), so this is the backstop for the sum of them
  * rather than the thing a reader waits out.
  */
-export const maxDuration = 30;
+/*
+ * 45, not 30.
+ *
+ * A total budget of 24 inside a limit of 30 left the auth call, the shared
+ * cache read and the response to fit in six seconds, and on 2026-09-22 one
+ * request did not: "Vercel Runtime Timeout Error: Task timed out after 30
+ * seconds", which is a 504 and the one failure the client cannot even show a
+ * degraded card for. The vision route has had 45 for the same reason.
+ */
+export const maxDuration = 45;
 /*
  * Long enough for a sentence, because the app now accepts one.
  *
@@ -86,14 +110,14 @@ const REQUEST_TIMEOUT_MS = readBoundedInteger(
  * second — still leaves the next one a real chance, and a model that burns
  * the whole ceiling leaves none, which is correct.
  *
- * 24 against a maxDuration of 30 leaves room for the auth call, the shared
- * cache read and the response.
+ * 20 against a maxDuration of 45 leaves the auth call, the shared cache read
+ * and the response the room that 24-against-30 did not.
  */
 const TOTAL_BUDGET_MS = readBoundedInteger(
   process.env.TEXT_TOTAL_BUDGET_MS,
-  24_000,
+  20_000,
   5_000,
-  28_000,
+  30_000,
 );
 
 /*
@@ -267,22 +291,6 @@ function stripJsonCodeFence(text: string) {
     .trim();
 }
 
-function getErrorStatus(error: unknown) {
-  if (!error || typeof error !== "object") return null;
-
-  const candidate = error as {
-    status?: unknown;
-    statusCode?: unknown;
-  };
-  const status = candidate.status ?? candidate.statusCode;
-  return typeof status === "number" ? status : null;
-}
-
-function isRateLimitError(error: unknown) {
-  if (getErrorStatus(error) === 429) return true;
-  return error instanceof Error && /quota|rate.?limit|too many requests/i.test(error.message);
-}
-
 /**
  * The model's flat answer, folded into the shape the app carries.
  *
@@ -454,14 +462,26 @@ async function lookupWithModelFallback(context: LookupContext) {
     } catch (error) {
       const status = getErrorStatus(error);
 
-      if (isRateLimitError(error)) {
+      /*
+       * A timeout puts the model away too, not just a rate limit.
+       *
+       * This is the whole reason a reader saw nothing: the first candidate
+       * spent the entire ceiling answering nothing, on every single request,
+       * because a timeout was not a reason to stop asking it. A rate limit is
+       * cheap to discover; a timeout is the most expensive failure here.
+       */
+      if (shouldCoolDown(error)) {
         modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
       }
 
       console.warn("Vocabulary model unavailable; trying fallback.", {
         model,
         status,
-        reason: isRateLimitError(error) ? "rate_limit" : "model_error",
+        reason: isRateLimitError(error)
+          ? "rate_limit"
+          : isTimeoutError(error)
+            ? "timeout"
+            : "model_error",
         ms: Date.now() - startedAt,
         budgetMs: timeoutMs,
       });
