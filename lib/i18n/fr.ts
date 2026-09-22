@@ -341,6 +341,8 @@ const french: TranslationDictionary = {
     discover: "Découvrir",
     settings: "Réglages",
     search: "Rechercher",
+    notes: "Notes",
+    pronunciation: "Parole",
     primaryLabel: "Navigation principale",
   },
 

@@ -115,6 +115,21 @@ export default function ProtectedNav() {
    * focusing it brings it back to full strength, so "quieter" never means
    * "harder to use".
    */
+  /*
+   * Standard Mode's home screen has no dock, because Yumi is the dock there:
+   * the ring she opens carries every key this row has except 首頁, and she
+   * is 首頁. This is the one screen where that is true — every sub-page keeps
+   * the six keys, and Cosmic Mode keeps them everywhere including its own
+   * Command Deck, which this change does not touch.
+   *
+   * Safe only because it is the home screen: the reason the dock could never
+   * give up its centre key is that nothing else in the app links to /home,
+   * and a screen cannot fail to link to itself.
+   */
+  if (!isCosmic && pathname === "/home") {
+    return null;
+  }
+
   if (isInsideConversation(pathname)) {
     return (
       <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">

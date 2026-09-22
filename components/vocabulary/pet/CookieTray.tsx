@@ -748,6 +748,10 @@ export default function CookieTray({
                 <button
                   key={cookie.id}
                   type="button"
+                  /* Yumi reaches for these on her own; see YumiRingOverlay.
+                     A data hook rather than a ref, because the tray is shared
+                     with screens that have no 3D Yumi on them. */
+                  data-yumi-cookie=""
                   disabled={disabled}
                   aria-label={
                     cosmic

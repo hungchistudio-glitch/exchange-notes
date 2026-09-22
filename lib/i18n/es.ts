@@ -354,6 +354,8 @@ const spanish: TranslationDictionary = {
     discover: "Descubrir",
     settings: "Ajustes",
     search: "Buscar",
+    notes: "Notas",
+    pronunciation: "Habla",
     primaryLabel: "Navegación principal",
   },
 

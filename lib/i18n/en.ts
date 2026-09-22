@@ -353,6 +353,8 @@ const english: TranslationDictionary = {
     discover: "Discover",
     settings: "Settings",
     search: "Search",
+    notes: "Notes",
+    pronunciation: "Speech",
     primaryLabel: "Primary navigation",
   },
 

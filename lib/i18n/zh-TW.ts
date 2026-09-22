@@ -348,6 +348,8 @@ const traditionalChinese: TranslationDictionary = {
     discover: "探索",
     settings: "設定",
     search: "搜尋",
+    notes: "筆記",
+    pronunciation: "發音",
     primaryLabel: "主要導覽",
   },
 

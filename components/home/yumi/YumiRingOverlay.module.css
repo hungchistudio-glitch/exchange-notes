@@ -1,0 +1,180 @@
+/*
+  Yumi's canvas is one fixed full-viewport surface that is always mounted,
+  and she is placed within it in screen coordinates. That is what lets her
+  sit in the home stage, scroll with it, and then fly to the middle for the
+  ring without a second WebGL context or a handoff between two of her.
+
+  Everything here is inert until the scene reports itself live, so a device
+  that cannot start WebGL keeps the 2D stage and never sees an empty box.
+*/
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 45; /* Under the dock's 40-and-up siblings only where it must be. */
+  pointer-events: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.live .canvas {
+  opacity: 1;
+  /* She is the only thing on this layer a finger may reach while the ring
+     is shut, and the canvas is the whole viewport — so the surface takes
+     pointer events but the page beneath keeps scrolling everywhere she is
+     not. `touch-action: none` only where she is would need a second box to
+     track her; the scene ignores a drag that did not start on the eye, and
+     a drag that did should not also scroll the page. */
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Hidden rather than unmounted: it keeps the moods, the feeding sequence,
+   the pet state and the widget bridge running, and `visibility` leaves its
+   layout — and so the anchor this canvas positions her from — intact. */
+.replaced {
+  visibility: hidden;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(0 0 0 / 0.38);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+  cursor: default;
+}
+
+.open .scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Positioned on the eye's own projected point every frame by the loop, so
+   it stays with her while she flies and while the band is stretched. */
+.ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+.spoke {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  transition: opacity 260ms ease, scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  scale: 0.55;
+}
+
+.open .spoke {
+  opacity: 1;
+  scale: 1;
+  pointer-events: auto;
+}
+
+.spoke button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+  transition: transform 160ms ease;
+}
+
+.spoke button:active {
+  transform: scale(0.94);
+}
+
+.spoke span {
+  /* One line. A key whose label wraps is a key that has changed size, and
+     seven of them in a ring cannot each be a different size. */
+  max-width: 54px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* In the dock this count badges 訊息 and the friend-request count badges
+   首頁 — which is Yumi now, so that one belongs on her, not here. */
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  letter-spacing: 0;
+  /* A ring of the key's own colour, so the count still reads where it sits
+     over Yumi's shell rather than over the page. */
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.homecap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  transform: translate(-50%, -50%) translateY(192px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft, rgb(0 0 0 / 0.55));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+.open .homecap {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spoke,
+  .scrim,
+  .canvas,
+  .homecap {
+    transition-duration: 1ms;
+  }
+}

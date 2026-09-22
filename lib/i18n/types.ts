@@ -326,6 +326,11 @@ export type TranslationDictionary = {
     settings: string;
     /** The dock's centre slot, everywhere except the home screen itself. */
     search: string;
+    /* Two sections the dock never had a key for. The ring does: notes was
+       reachable only from one link on the home screen, and the speech lab
+       only from a home module. */
+    notes: string;
+    pronunciation: string;
     primaryLabel: string;
   };
 

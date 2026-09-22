@@ -341,6 +341,8 @@ const italian: TranslationDictionary = {
     discover: "Scopri",
     settings: "Impostazioni",
     search: "Cerca",
+    notes: "Note",
+    pronunciation: "Voce",
     primaryLabel: "Navigazione principale",
   },
 

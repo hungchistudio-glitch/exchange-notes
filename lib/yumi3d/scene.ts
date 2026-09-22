@@ -91,6 +91,21 @@ export type YumiSceneHandle = {
   /** 0 .. 1. Lifts and shrinks her so a panel can have the lower half. */
   setFocusLevel(level: number): void;
 
+  /**
+   * Put her at a point on screen, at a given on-screen radius.
+   *
+   * The canvas is one fixed full-viewport surface and she is placed within
+   * it, rather than living in a canvas of her own inside the page. That is
+   * what lets her sit small in the home stage, scroll with it, and then fly
+   * out to the middle of the viewport at full size for the ring without a
+   * second WebGL context or a handoff between two of her.
+   *
+   * Both values are CSS pixels relative to the canvas. `radiusPx` is the
+   * radius of the shell, so the caller sizes her the way it would size an
+   * avatar, with no knowledge of the camera.
+   */
+  setScreenAnchor(xPx: number, yPx: number, radiusPx: number): void;
+
   pointerDown(clientX: number, clientY: number): void;
   pointerMove(clientX: number, clientY: number): void;
   pointerUp(): void;
@@ -311,6 +326,11 @@ export function createYumiScene(
   let film: YumiFilmFrame | null = null;
   let focusLevel = 0;
 
+  /* Where she is asked to be, and where she actually is. The gap between
+     them is the flight out to the middle and back. */
+  const anchorWanted = { x: 0, y: 0, r: 48 };
+  const anchorNow = { x: 0, y: 0, r: 48, started: false };
+
   let dragging = false;
   let orbiting = false;
   let moved = 0;
@@ -495,6 +515,26 @@ export function createYumiScene(
     };
   }
 
+  /** World units per CSS pixel on the z = 0 plane the model sits in. */
+  function unitsPerPixel() {
+    const rect = canvasRect();
+    if (rect.height === 0) return 0.01;
+    const visibleHeight = 2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
+    return visibleHeight / rect.height;
+  }
+
+  /* The shell's own radius in world units, including the tube, so a caller
+     asking for a 48px Yumi gets a 96px-wide Yumi. */
+  const SHELL_OUTER = SHELL_RADIUS + TUBE_RADIUS;
+
+  function applyAnchor() {
+    const rect = canvasRect();
+    const upp = unitsPerPixel();
+    model.position.x = (anchorNow.x - rect.width / 2) * upp;
+    model.position.y = -(anchorNow.y - rect.height / 2) * upp;
+    return (anchorNow.r * upp) / SHELL_OUTER;
+  }
+
   function resize() {
     const rect = canvasRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -511,6 +551,24 @@ export function createYumiScene(
       const dt = Math.min((nowMs - previous) / 1000, 1 / 30);
       previous = nowMs;
 
+      /*
+       * Snap on the first frame — easing in from (0,0) would show her
+       * sliding in from the corner on load — and ease every time after,
+       * which is the flight out to the ring and back.
+       */
+      if (!anchorNow.started) {
+        anchorNow.x = anchorWanted.x;
+        anchorNow.y = anchorWanted.y;
+        anchorNow.r = anchorWanted.r;
+        anchorNow.started = true;
+      } else {
+        const k = Math.min(1, dt * 7);
+        anchorNow.x += (anchorWanted.x - anchorNow.x) * k;
+        anchorNow.y += (anchorWanted.y - anchorNow.y) * k;
+        anchorNow.r += (anchorWanted.r - anchorNow.r) * k;
+      }
+      const anchorScale = applyAnchor();
+
       if (film) {
         for (const material of fadeMaterials) material.opacity = film.actor;
         keyLight.intensity = LIGHT_REST.key * film.light;
@@ -518,8 +576,8 @@ export function createYumiScene(
         rimLight.intensity = LIGHT_REST.rim * film.light;
         ambient.intensity = LIGHT_REST.ambient * film.light;
         eyeMaterial.emissiveIntensity = film.glow;
-        model.position.y = MODEL_REST_Y + film.actorY;
-        model.scale.setScalar(film.actorScale);
+        model.position.y += film.actorY;
+        model.scale.setScalar(anchorScale * film.actorScale);
         blink = Math.max(0.03, 1 - film.blink);
         if (film.look) {
           model.rotation.y = film.look.x * 0.02;
@@ -551,8 +609,9 @@ export function createYumiScene(
         if (!dragging && !lungePhase) updateIdleBlink(nowMs);
         else blink = 1;
 
-        model.position.y = MODEL_REST_Y + 3.0 * focusLevel;
-        model.scale.setScalar(1 - 0.28 * focusLevel);
+        /* focusLevel shrinks her a little further so an open panel has the
+           lower half of the screen; the anchor has already placed her. */
+        model.scale.setScalar(anchorScale * (1 - 0.18 * focusLevel));
       }
 
       stepLunge(nowMs);
@@ -588,6 +647,12 @@ export function createYumiScene(
 
     setFocusLevel(level) {
       focusLevel = level;
+    },
+
+    setScreenAnchor(xPx, yPx, radiusPx) {
+      anchorWanted.x = xPx;
+      anchorWanted.y = yPx;
+      anchorWanted.r = radiusPx;
     },
 
     pointerDown(clientX, clientY) {

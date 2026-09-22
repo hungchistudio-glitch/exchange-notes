@@ -661,6 +661,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
 
             <div
               ref={figureRef}
+              /* Where the 3D Yumi sits while the ring is shut, so she rides
+                 this screen's scroll instead of floating over it. */
+              data-yumi-figure=""
               className={`${styles.figure} ${isWaking ? styles.waking : ""} ${
                 pupilOffset ? styles.tracking : ""
               }`}

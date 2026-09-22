@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 import Card from "@/components/foundation/cards/Card";
@@ -9,6 +9,7 @@ import BookIcon from "@/components/foundation/icons/BookIcon";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import LearningPartnerCard from "@/components/home/LearningPartnerCard";
 import YumiHomeStage from "@/components/home/yumi/YumiHomeStage";
+import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
@@ -19,6 +20,9 @@ import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
+import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
+
+import styles from "./StandardHome.module.css";
 import type { HomeMood } from "@/lib/pet/homeMoodEngine";
 
 function ArrowRightIcon() {
@@ -97,6 +101,9 @@ export default function StandardHome() {
   const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
   const [yumiMood, setYumiMood] = useState<HomeMood>("waiting");
+  /* The dock is gone on this screen, so its unread count comes with it. */
+  const { unreadCount } = useUnreadMessageCount();
+  const stageRef = useRef<HTMLDivElement>(null);
 
   /*
    * The hour is the reader's, and the server does not have it.
@@ -162,7 +169,7 @@ export default function StandardHome() {
   };
 
   return (
-    <Screen>
+    <Screen contentClassName={styles.surface}>
       <HomeInstallPrompt />
 
       <div
@@ -178,8 +185,19 @@ export default function StandardHome() {
         </p>
       </div>
 
-      <div className="mt-1.5">
-        <YumiHomeStage items={items} onMoodChange={setYumiMood} />
+      {/*
+        Yumi in three dimensions, over the stage she already had.
+
+        The 2D stage stays mounted underneath and keeps every bit of what it
+        does — the eleven moods, the cookie tray and its feeding sequence,
+        the pet row, the widget bridge — and is simply not painted once the
+        scene reports itself live. A device that cannot start WebGL never
+        reaches that point and keeps the screen it has always had.
+      */}
+      <div ref={stageRef} className="mt-1.5">
+        <YumiRingOverlay stageRef={stageRef} unreadCount={unreadCount}>
+          <YumiHomeStage items={items} onMoodChange={setYumiMood} />
+        </YumiRingOverlay>
       </div>
 
       <div className="px-4 pt-3">
