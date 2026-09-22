@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
 } from "react";
 
@@ -31,6 +32,11 @@ import {
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
+import {
+  getServerYumiRingState,
+  getYumiRingState,
+  subscribeToYumiRing,
+} from "@/lib/home/yumiRing";
 import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
 import type { Cookie, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
@@ -209,6 +215,23 @@ export default function YumiHomeStage({
   onMoodChange,
   onLinesChange,
 }: YumiHomeStageProps) {
+  /*
+   * Whether the 3D scene has taken over this stage.
+   *
+   * Read through the store the overlay already sets rather than through a
+   * prop, because the overlay renders this component as its children — it
+   * cannot pass anything down without the parent holding the state, and the
+   * state is the scene's, not the parent's. "pending" and "failed" both mean
+   * the 2D stage is what the reader sees, and the corner tray is correct for
+   * both.
+   */
+  const ringLive =
+    useSyncExternalStore(
+      subscribeToYumiRing,
+      getYumiRingState,
+      getServerYumiRingState,
+    ) === "live";
+
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
   const { supportLanguage } = useDisplayLanguages();
@@ -755,6 +778,17 @@ export default function YumiHomeStage({
 
         <div className={styles.trayCorner}>
           <CookieTray
+            /*
+             * Around her once the 3D scene has her, in the corner until then.
+             *
+             * This whole stage is hidden behind the live scene, and the tray
+             * was hidden with it: the cookies stayed in the document, stayed
+             * reachable by her lunge, and were invisible — she spent the day
+             * reaching for biscuits nobody could see. In orbit they come back
+             * out and place themselves on her, from the two custom properties
+             * the scene's frame loop writes on the stage element.
+             */
+            orbit={ringLive}
             cookies={cookies}
             yumiZoneRef={yumiZoneRef}
             onFeed={feeding.consume}

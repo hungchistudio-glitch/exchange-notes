@@ -434,3 +434,132 @@
     transition: none;
   }
 }
+
+/* =========================================================
+   Orbit — the cookies around the 3D Yumi
+
+   Standard Mode's home screen hides the whole 2D stage behind the live WebGL
+   scene, and this tray is inside that stage. So the cookies stayed in the
+   document, stayed reachable by her lunge, and were invisible: she spent the
+   day reaching for biscuits nobody could see.
+
+   Rather than move the tray out — the pet state, the feeding sequence, the
+   economy and the widget bridge are all in the stage with it — the tray comes
+   back out of hiding and places itself on her, from two custom properties the
+   scene's frame loop writes on the stage element.
+
+   Where they can go is decided by what is already around her. Her silhouette
+   is 72px of radius and a cookie is 23, so nothing may sit closer than 95
+   from her centre. The greeting sits 94 above her and the search column 94
+   below, so nothing may sit further than 71 from her middle vertically. And
+   the far side of each cookie has to stay on a 320px screen. What is left is
+   the two flanks, which is where these three are.
+   ========================================================= */
+
+.orbit {
+  position: fixed;
+  left: var(--yumi-x, 50%);
+  top: var(--yumi-y, 50%);
+  width: 0;
+  height: 0;
+
+  /* Back out of the stage's `visibility: hidden`. Everything else in there
+     stays hidden; this is the one part of it a reader is meant to touch. */
+  visibility: visible;
+
+  /* Over the scene's canvas (45), or a tap would land on her instead of on
+     the cookie. The container takes no pointer events itself — it is a point,
+     not a surface — and each cookie turns them back on. */
+  z-index: 46;
+  pointer-events: none;
+
+  opacity: 1;
+  transition: opacity 280ms ease;
+
+  /*
+   * 95 is the floor her silhouette sets and 121 is the ceiling a 320px screen
+   * sets. 28vw lands inside both on every phone in between.
+   */
+  --orbit-r: clamp(98px, 28vw, 118px);
+}
+
+/*
+ * Out of the way when the screen is doing something else.
+ *
+ * The ring's keys land at 132 — straight through all three of these — and a
+ * reader who is reading a definition is not looking for a biscuit. Both of
+ * those states live on the overlay's own root, which is this element's
+ * sibling, so they arrive here as an attribute on the shared ancestor.
+ */
+:global([data-yumi-mode="open"]) .orbit,
+:global([data-yumi-mode="answering"]) .orbit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The row stops being a row: it is the same point she is on, and each cookie
+   is placed from it. */
+.orbit .tray {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  width: 0;
+  height: 0;
+  gap: 0;
+}
+
+.orbit .tray > button {
+  position: absolute;
+  /* Centred on its own point by margin rather than by a transform, so
+     `transform` stays free for the press state and `translate` stays free for
+     the drift. */
+  margin: -23px 0 0 -23px;
+  pointer-events: auto;
+  animation: orbitDrift 7s ease-in-out infinite;
+}
+
+.orbit .tray > button:nth-child(1) {
+  left: calc(var(--orbit-r) * -0.94);
+  top: calc(var(--orbit-r) * -0.34);
+  animation-duration: 6.4s;
+}
+
+.orbit .tray > button:nth-child(2) {
+  left: calc(var(--orbit-r) * 0.97);
+  top: calc(var(--orbit-r) * 0.24);
+  animation-duration: 7.8s;
+  animation-delay: -2.1s;
+}
+
+.orbit .tray > button:nth-child(3) {
+  left: calc(var(--orbit-r) * -0.87);
+  top: calc(var(--orbit-r) * 0.49);
+  animation-duration: 5.9s;
+  animation-delay: -4.3s;
+}
+
+/* A count and an empty line are tray furniture. Floating beside her they are
+   two labels attached to nothing, so out here they simply do not appear. */
+.orbit .more,
+.orbit .moreButton,
+.orbit .empty,
+.orbit .hint {
+  display: none;
+}
+
+@keyframes orbitDrift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit .tray > button {
+    animation: none;
+  }
+}

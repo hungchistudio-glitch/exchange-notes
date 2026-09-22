@@ -615,6 +615,25 @@ export default function YumiRingOverlay({
             const eye = handle.eyeScreenPosition();
             ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
 
+            /*
+             * Where she is, for everything outside this element.
+             *
+             * The cookie tray lives in the 2D stage — it has to, because the
+             * pet state, the feeding sequence and the widget bridge are all
+             * in there — and the stage is a sibling of this layer, hidden
+             * behind the live scene. Two custom properties are how it finds
+             * her without either of them holding a reference to the other.
+             *
+             * Written on the stage element rather than on the document, so
+             * the per-frame style invalidation is one small subtree and not
+             * the whole page on the one screen already running WebGL.
+             */
+            const stage = stageRef.current;
+            if (stage) {
+              stage.style.setProperty("--yumi-x", `${eye.x}px`);
+              stage.style.setProperty("--yumi-y", `${eye.y}px`);
+            }
+
             /* Only while answering: this is the one state whose column needs
                a height, and a custom property written every frame on the idle
                screen would be a style invalidation nothing reads. */
@@ -660,6 +679,27 @@ export default function YumiRingOverlay({
   useEffect(() => {
     sceneRef.current?.setFocusLevel(0);
   }, [open]);
+
+  /*
+   * The same signal, as an attribute, for the things CSS has to decide.
+   *
+   * `.open` and `.answering` sit on this layer's own root, and the stage is
+   * its sibling — so a rule inside the stage cannot see them. This is set on
+   * state change rather than in the loop because an attribute written sixty
+   * times a second to say the same word is sixty style recalculations for
+   * nothing.
+   */
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    stage.dataset.yumiMode = open
+      ? "open"
+      : answering
+        ? "answering"
+        : live
+          ? "rest"
+          : "starting";
+  }, [open, answering, live, stageRef]);
 
   /*
    * The keyboard, while the ring is out.

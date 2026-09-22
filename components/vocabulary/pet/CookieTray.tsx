@@ -52,6 +52,20 @@ type CookieTrayProps = {
    * opts out; the vocabulary page's full tray is where the inventory lives.
    */
   expandable?: boolean;
+  /*
+   * Float the cookies around the 3D Yumi instead of stacking them in a row.
+   *
+   * The Standard Mode home screen hides the whole 2D stage behind the live
+   * WebGL scene, and this tray is inside that stage — so the cookies were
+   * still in the document, still reachable by her lunge, and invisible. She
+   * spent the day reaching for biscuits nobody could see.
+   *
+   * The tray stays where it is rather than moving into the overlay, because
+   * everything it needs — the pet state, the feeding sequence, the economy,
+   * the widget bridge — is in the stage with it. It finds her through two
+   * custom properties the scene's frame loop writes on the stage element.
+   */
+  orbit?: boolean;
 };
 
 const DEFAULT_VISIBLE_LIMIT = 8;
@@ -163,6 +177,7 @@ export default function CookieTray({
   copy,
   maxVisible = DEFAULT_VISIBLE_LIMIT,
   hideHint = false,
+  orbit = false,
   onDragPoint,
   cosmic = false,
   onAttractChange,
@@ -733,7 +748,10 @@ export default function CookieTray({
   const empty = cosmic ? copy.coreTrayEmpty : copy.cookieTrayEmpty;
 
   return (
-    <div className={styles.wrap} data-cosmic={cosmic ? "true" : "false"}>
+    <div
+      className={`${styles.wrap} ${orbit ? styles.orbit : ""}`}
+      data-cosmic={cosmic ? "true" : "false"}
+    >
       {visible.length === 0 ? (
         <p className={styles.empty}>{empty}</p>
       ) : (
