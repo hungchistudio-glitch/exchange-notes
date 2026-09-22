@@ -483,6 +483,22 @@
   opacity: 0;
 }
 
+/*
+  The greeting steps aside for a tour step.
+
+  The coach card stands at the top of the screen; this stands just above her.
+  On a 320px phone with Chinese copy the card wraps to four lines and the two
+  overlap — measured — and at 375 they clear by seventeen pixels, which is
+  not clearance a reader who has turned their text size up still has.
+
+  Declared last so it wins over `.live .above` on equal specificity, and
+  keyed off the stage, which is this layer's parent and the only element both
+  the coach and this one can see.
+*/
+:global([data-coach="on"]) .above {
+  opacity: 0;
+}
+
 .greeting,
 .when,
 .voice,

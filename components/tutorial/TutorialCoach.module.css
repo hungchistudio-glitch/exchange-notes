@@ -1,0 +1,165 @@
+/*
+  The coach strip.
+
+  At the top, and deliberately not anywhere else. Everything this tour asks
+  for lives in the lower two thirds of the home screen — Yumi in the middle,
+  her voice line, the search field, the counts and the biscuits around her —
+  so the one place a card can stand without covering the thing it is pointing
+  at is above all of it.
+
+  No scrim, no focus trap, no dialog role. The reader is meant to keep using
+  the screen while this is up; that is the whole difference between this and
+  the seven pages it replaces.
+*/
+.coach {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(env(safe-area-inset-top) + 0.75rem);
+  z-index: 47; /* over the scene's canvas and its scrim, which are 45. */
+  display: flex;
+  justify-content: center;
+  padding: 0 1.25rem;
+
+  /* The strip itself is not a surface. Only the keys inside it take a
+     touch, so a finger that lands beside them reaches the page. */
+  pointer-events: none;
+}
+
+/*
+  Out of the way while the ring is out.
+
+  The keys land at a radius of 132 around her, and on a short phone the
+  topmost of them arrives exactly where this is standing. The step that asks
+  for the ring is satisfied the moment it opens, so there is nothing here
+  worth reading by then anyway.
+
+  Keyed off the attribute the scene's frame loop already writes on the stage,
+  which is this element's ancestor — the overlay's own `.open` class is on a
+  sibling and cannot be seen from in here.
+*/
+:global([data-yumi-mode="open"]) .coach {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card {
+  width: min(24rem, 100%);
+  padding: 0.875rem 1rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+
+  /* Matte, like everything else in Standard Mode: a shadow to lift it off
+     the page, and no glow to make it look like it is lit from behind. */
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.10);
+
+  pointer-events: auto;
+  transition: opacity 260ms ease;
+}
+
+/*
+  The step number, in the ring's own language.
+
+  Mono and wide-tracked, the same as the numbers on the ring's keys, because
+  they are the same kind of thing: a position in a sequence that has a known
+  length. It is the one piece of furniture here that says how much is left.
+*/
+.label {
+  margin: 0 0 0.375rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(0 0 0 / 0.38);
+}
+
+.body {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #171717;
+}
+
+.keys {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.next,
+.door {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 0.9375rem;
+  border: 0;
+  border-radius: 999px;
+  background: #0c0c0c;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.skip {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.42);
+  cursor: pointer;
+}
+
+/*
+  Three dots, while it waits for the reader to do the thing.
+
+  Not a spinner. Nothing is loading — the app is waiting for a person, and a
+  spinner would say the opposite. They breathe rather than chase, for the
+  same reason.
+*/
+.waiting {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.waiting i {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.26);
+  animation: coachBreath 1.8s ease-in-out infinite;
+}
+
+.waiting i:nth-child(2) {
+  animation-delay: 0.22s;
+}
+
+.waiting i:nth-child(3) {
+  animation-delay: 0.44s;
+}
+
+@keyframes coachBreath {
+  0%,
+  100% {
+    opacity: 0.26;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting i {
+    animation: none;
+    opacity: 0.6;
+  }
+}

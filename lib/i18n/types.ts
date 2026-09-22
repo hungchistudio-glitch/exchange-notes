@@ -296,6 +296,34 @@ export type TranslationDictionary = {
     stepLabel: string;
     replay: string;
 
+    /*
+     * The tour you do rather than read.
+     *
+     * The stepped overlay stays for the two things that have to happen
+     * before anything else can — welcome, and choosing the two languages —
+     * and hands over to this on the home screen, where the rest of it is
+     * things the reader performs: open the ring, look a word up, keep it,
+     * feed it to her. Each step waits for the real event, so the copy can
+     * say "now do it" and mean it.
+     */
+    coach: {
+      label: string;
+      skip: string;
+      next: string;
+      finish: string;
+      /** Said once, briefly, when a step is satisfied. */
+      done: string;
+      steps: {
+        meet: { body: string };
+        ask: { body: string };
+        keep: { body: string };
+        feed: { body: string };
+        share: { body: string; action: string };
+        notes: { body: string; action: string };
+        close: { body: string };
+      };
+    };
+
     steps: {
       meet: { title: string; body: string };
       setup: {

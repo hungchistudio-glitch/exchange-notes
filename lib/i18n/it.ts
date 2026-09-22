@@ -281,6 +281,45 @@ const italian: TranslationDictionary = {
     close: "Chiudi",
     stepLabel: "{current} di {total}",
     replay: "Puoi riaprirla quando vuoi dalla Home o dalle impostazioni.",
+
+    coach: {
+      label: "Passo {current} di {total}",
+      skip: "Salta",
+      next: "Avanti",
+      finish: "Inizia",
+      done: "Bene.",
+      steps: {
+        meet: {
+          body:
+            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Tira il mio occhio e lascia.",
+        },
+        ask: {
+          body:
+            "Cerca una parola. Scrivila, dilla, fotografa quello che hai davanti oppure passami un menù, un cartello, un modulo: tutte e quattro tornano sulla stessa scheda.",
+        },
+        keep: {
+          body:
+            "Tienila. Ogni parola che tieni diventa uno dei miei biscotti di energia.",
+        },
+        feed: {
+          body:
+            "Dammene uno. Una parola nuova al giorno e ho qualcosa da mangiare. Troppi giorni senza, e mi viene fame — e resto qui a sentire la tua mancanza.",
+        },
+        share: {
+          body:
+            "Quella parola può andare a un amico, adesso. Una parola cercata da soli è un'informazione; una parola mandata a qualcuno diventa un ricordo.",
+          action: "Apri Messaggi",
+        },
+        notes: {
+          body:
+            "Certe cose non stanno in una parola: perché l'hanno detto così, cosa è successo quel giorno, quanto era scortese in quella stanza. Quelle vanno nelle Note.",
+          action: "Apri le Note",
+        },
+        close: {
+          body: "È tutto. Chiedi, tieni, dammi da mangiare. Una volta al giorno basta.",
+        },
+      },
+    },
     steps: {
       meet: {
         title: "Conserva ciò che conta prima che scompaia",

@@ -31,6 +31,7 @@ import {
   type HomeReactionMood,
 } from "@/lib/pet/homeMoodEngine";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
+import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 import {
   getServerYumiRingState,
@@ -805,7 +806,13 @@ export default function YumiHomeStage({
             orbit={ringLive}
             cookies={cookies}
             yumiZoneRef={yumiZoneRef}
-            onFeed={feeding.consume}
+            /* The bite, and the fact that it happened. `consume` is what
+               the feeding sequence needs; the moment is what anything
+               watching the screen needs, and today that is the tour. */
+            onFeed={(cookie) => {
+              feeding.consume(cookie);
+              announceHomeMoment("word-fed");
+            }}
             onFeedStart={feeding.beginApproach}
             feedTargetRef={feedTargetRef}
             onDragPoint={handleDragPoint}

@@ -284,6 +284,45 @@ const spanish: TranslationDictionary = {
     stepLabel: "{current} de {total}",
     replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
 
+    coach: {
+      label: "Paso {current} de {total}",
+      skip: "Saltar",
+      next: "Siguiente",
+      finish: "Empezar",
+      done: "Bien.",
+      steps: {
+        meet: {
+          body:
+            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tira de mi ojo y suelta.",
+        },
+        ask: {
+          body:
+            "Busca algo. Escríbelo, dilo, fotografía lo que tengas delante o pásame una carta, un cartel, un formulario: las cuatro vuelven a la misma ficha.",
+        },
+        keep: {
+          body:
+            "Guárdala. Cada palabra que guardas se convierte en una de mis galletas de energía.",
+        },
+        feed: {
+          body:
+            "Dame una. Una palabra nueva al día y tengo qué comer. Si pasan demasiados días, me entra hambre, y entonces me quedo aquí echándote de menos.",
+        },
+        share: {
+          body:
+            "Esa palabra ya puede ir a un amigo. Una palabra que buscas sola es información; una palabra que le mandas a alguien se vuelve recuerdo.",
+          action: "Abrir Mensajes",
+        },
+        notes: {
+          body:
+            "Hay cosas que no caben en una palabra: por qué lo dijeron así, qué pasó ese día, cuánto incomodaba esa frase en esa sala. Eso va en Notas.",
+          action: "Abrir Notas",
+        },
+        close: {
+          body: "Ya está. Pregunta, guarda, dame de comer. Una vez al día basta.",
+        },
+      },
+    },
+
     steps: {
       meet: {
         title: "Guarda lo importante antes de que desaparezca",

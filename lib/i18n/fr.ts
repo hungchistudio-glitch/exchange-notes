@@ -281,6 +281,45 @@ const french: TranslationDictionary = {
     close: "Fermer",
     stepLabel: "{current} sur {total}",
     replay: "Vous pouvez rouvrir ceci à tout moment depuis l'accueil ou les réglages.",
+
+    coach: {
+      label: "Étape {current} sur {total}",
+      skip: "Passer",
+      next: "Suivant",
+      finish: "Commencer",
+      done: "Bien.",
+      steps: {
+        meet: {
+          body:
+            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Tire sur mon œil, puis lâche.",
+        },
+        ask: {
+          body:
+            "Cherche un mot. Écris-le, dis-le, photographie ce que tu as devant toi, ou donne-moi une carte, un panneau, un formulaire : les quatre reviennent à la même fiche.",
+        },
+        keep: {
+          body:
+            "Garde-le. Chaque mot que tu gardes devient un de mes biscuits d'énergie.",
+        },
+        feed: {
+          body:
+            "Donne-m'en un. Un mot nouveau par jour et j'ai de quoi manger. Trop de jours sans, et j'ai faim — et je reste là, tu me manques.",
+        },
+        share: {
+          body:
+            "Ce mot peut aller à un ami, maintenant. Un mot cherché seul est une information ; un mot envoyé à quelqu'un devient un souvenir.",
+          action: "Ouvrir Messages",
+        },
+        notes: {
+          body:
+            "Certaines choses n'entrent pas dans un mot : pourquoi ils l'ont dit comme ça, ce qui s'est passé ce jour-là, à quel point c'était impoli dans cette pièce. Ça va dans les Notes.",
+          action: "Ouvrir les Notes",
+        },
+        close: {
+          body: "C'est tout. Demande, garde, nourris-moi. Une fois par jour suffit.",
+        },
+      },
+    },
     steps: {
       meet: {
         title: "Gardez l’essentiel avant qu’il ne disparaisse",

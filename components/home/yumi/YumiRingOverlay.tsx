@@ -15,6 +15,7 @@ import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { ReactNode } from "react";
 
 import LiquidRingKey from "@/components/home/yumi/LiquidRingKey";
+import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
@@ -718,6 +719,13 @@ export default function YumiRingOverlay({
 
   useEffect(() => {
     sceneRef.current?.setFocusLevel(0);
+  }, [open]);
+
+  /* Announced here rather than at each of the three ways to open it — a
+     pull, a tap and the keyboard key — so there is one place that is right
+     rather than three that have to stay in step. */
+  useEffect(() => {
+    if (open) announceHomeMoment("ring-opened");
   }, [open]);
 
   /*

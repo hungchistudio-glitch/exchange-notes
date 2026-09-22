@@ -29,6 +29,7 @@ import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
 import stageStyles from "@/components/tutorial/TutorialStage.module.css";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
+import { armCoach } from "@/lib/home/tutorialCoach";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
 import { insertValues } from "@/lib/utils";
@@ -53,25 +54,26 @@ type StepKey =
  * re-renders every remaining step in 繁體中文 immediately. Asking later would
  * mean introducing the app in a language the user had not chosen.
  */
-const STEP_ORDER: StepKey[] = [
-  "setup",
-  "meet",
-  "dock",
-  /*
-   * The rest follows one human journey instead of the navigation tree:
-   * notice something, keep it, remember it, return to it, share it, then tune
-   * the space. That is the order someone learns the product in, even though
-   * it is not the order its routes happen to be stored in.
-   */
-  "search",
-  "notes",
-  "vocabulary",
-  "home",
-  "messages",
-  "settings",
-  "cosmic",
-  "done",
-];
+/*
+ * Two steps, where there were eleven.
+ *
+ * The other nine described the app, and one of them — "dock" — described a
+ * bottom bar of six keys that has since become five and a ring of eight
+ * around Yumi. It had been wrong for a while, which is the ordinary fate of
+ * a tour written as prose about a moving product: nothing fails when it goes
+ * stale, so nothing tells you.
+ *
+ * What is left is the part that genuinely has to happen before anything
+ * else, and could not be done by doing: a hello, and picking the two
+ * languages, because every screen after this is rendered in one of them.
+ *
+ * The rest of the tour is TutorialCoach, on the home screen, where it asks
+ * the reader to open the ring, look a word up, keep it and feed it to her —
+ * and waits for each of those to actually happen. A step that waits for the
+ * real event cannot describe the app wrongly, because it is not describing
+ * it.
+ */
+const STEP_ORDER: StepKey[] = ["setup", "meet"];
 
 type TutorialOverlayProps = {
   onClose: () => void;
@@ -191,6 +193,18 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
     setTutorialPending(false);
     onClose();
   }, [onClose]);
+
+  /*
+   * Finishing hands over rather than ending.
+   *
+   * Skipping does not: someone who skipped the hello has said they do not
+   * want a tour, and arming the coach would be the same tour arriving again
+   * by another door thirty seconds later.
+   */
+  const handOver = useCallback(() => {
+    armCoach();
+    dismiss();
+  }, [dismiss]);
 
   /*
    * A full-screen tour is still a modal. Freeze the page beneath it, return
@@ -422,7 +436,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
             type="button"
             onClick={() =>
               isLast
-                ? dismiss()
+                ? handOver()
                 : setIndex((current) =>
                     Math.min(STEP_ORDER.length - 1, current + 1),
                   )

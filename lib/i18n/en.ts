@@ -283,6 +283,45 @@ const english: TranslationDictionary = {
     stepLabel: "{current} of {total}",
     replay: "You can reopen this any time from Home or Settings.",
 
+    coach: {
+      label: "Step {current} of {total}",
+      skip: "Skip",
+      next: "Next",
+      finish: "Start",
+      done: "Good.",
+      steps: {
+        meet: {
+          body:
+            "I'm Yumi. There is no menu on this screen — I am it. Pull my eye, then let go.",
+        },
+        ask: {
+          body:
+            "Look something up. Type it, say it, photograph whatever is in front of you, or hand me a menu, a sign, a form — all four come back to the same card.",
+        },
+        keep: {
+          body:
+            "Keep it. Every word you keep becomes one of my energy cookies.",
+        },
+        feed: {
+          body:
+            "Feed me one. One new word a day and I have something to eat. Too many days without, and I get hungry — and then I just sit here missing you.",
+        },
+        share: {
+          body:
+            "That word can go to a friend now. A word you looked up alone is information; a word you sent someone becomes a memory.",
+          action: "Open Messages",
+        },
+        notes: {
+          body:
+            "Some things do not fit in a word: why they said it that way, what happened that day, how rude that phrase was in that room. Those go in Notes.",
+          action: "Open Notes",
+        },
+        close: {
+          body: "That is all of it. Ask, keep, feed me. Once a day is enough.",
+        },
+      },
+    },
+
     steps: {
       meet: {
         title: "Keep what matters before it disappears",

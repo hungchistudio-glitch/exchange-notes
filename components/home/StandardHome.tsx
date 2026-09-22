@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import Screen from "@/components/foundation/layout/Screen";
 import YumiHomeStage, {
@@ -9,6 +15,7 @@ import YumiHomeStage, {
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
+import TutorialCoach from "@/components/tutorial/TutorialCoach";
 import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -18,6 +25,12 @@ import useVocabularyStats from "@/hooks/useVocabularyStats";
 import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import { getLocalCity } from "@/lib/home/localPlace";
+import {
+  COACH_FINISHED,
+  getCoachStep,
+  getServerCoachStep,
+  subscribeToCoach,
+} from "@/lib/home/tutorialCoach";
 import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
 
 import styles from "./StandardHome.module.css";
@@ -73,6 +86,27 @@ export default function StandardHome() {
   const [lines, setLines] = useState<YumiLines | null>(null);
   const handleLines = useCallback((next: YumiLines) => setLines(next), []);
 
+  /*
+   * Whether a tour is running, for the layout rather than for the tour.
+   *
+   * The coach stands at the top of the screen and the greeting stands just
+   * above Yumi, and on a 320px phone with Chinese copy the two meet: the
+   * card wraps to four lines, reaches 174px, and the greeting starts at 129.
+   * Measured, not guessed — and at 375 they clear by seventeen pixels, which
+   * a reader who has turned their text size up does not have.
+   *
+   * So the greeting steps aside while there is a step to do, the same way it
+   * does while she is answering. A date and a hello are what the screen says
+   * when nobody has asked it for anything; a tour asking you to photograph
+   * something is not that.
+   */
+  const coaching =
+    useSyncExternalStore(
+      subscribeToCoach,
+      getCoachStep,
+      getServerCoachStep,
+    ) !== COACH_FINISHED;
+
   const now = useLocalClock();
   const locale = INTERFACE_LANGUAGE_CODE[language];
 
@@ -121,7 +155,11 @@ export default function StandardHome() {
         the stage is hidden behind the live scene. So centring her is centring
         this block, not the canvas.
       */}
-      <div ref={stageRef} className={styles.centre}>
+      <div
+        ref={stageRef}
+        className={styles.centre}
+        data-coach={coaching ? "on" : undefined}
+      >
         <YumiRingOverlay
           stageRef={stageRef}
           unreadCount={unreadCount}
@@ -144,6 +182,19 @@ export default function StandardHome() {
         >
           <YumiHomeStage items={items} onLinesChange={handleLines} />
         </YumiRingOverlay>
+
+        {/*
+          The doing half of the tour.
+
+          Inside this element rather than beside it, because the scene writes
+          `data-yumi-mode` here every time the ring opens or she starts
+          answering, and the coach steps aside on both. Its own position is
+          fixed to the viewport — this block has no transform, so nothing
+          between it and the page changes what fixed means.
+
+          It draws nothing at all unless a reader is mid-tour.
+        */}
+        <TutorialCoach />
       </div>
 
       {/*
