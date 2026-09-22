@@ -356,6 +356,7 @@ export default function YumiRingOverlay({
   const { t } = useTranslation();
   const { openSearch } = useLexiconSearchSheet();
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
   const [live, setLive] = useState(false);
@@ -741,6 +742,85 @@ export default function YumiRingOverlay({
   }, [open, answering, live, stageRef]);
 
   /*
+   * Hold the page still while the field has the keyboard.
+   *
+   * `Screen` sizes this page at `min-h-[100dvh]`, and `dvh` does not shrink
+   * when a phone keyboard opens — it tracks the browser's own chrome, not
+   * the keyboard. So the moment the keyboard appears the document is taller
+   * than the part of it anybody can see, by exactly the height of the
+   * keyboard, and a page that could not scroll a second ago can.
+   *
+   * Safari then scrolls it, on its own, to bring the focused input into
+   * view. But this input is inside a `position: fixed` layer, which document
+   * scrolling does not move — so the field stays where it is and the whole
+   * page slides underneath it. Every keystroke that changes the layout can
+   * trigger it again, which is why it reads as the screen running away as
+   * you type rather than as one jump.
+   *
+   * Locking the document is the fix rather than a workaround, because this
+   * screen has nothing to scroll: it is one viewport with Yumi in the middle
+   * of it, and the answer scrolls inside its own column. There is no scroll
+   * position to preserve and none to give back.
+   *
+   * The scroll listener is the part that is not optional. `overflow: hidden`
+   * on the document stops a reader dragging the page, and does not reliably
+   * stop Safari's own caret-into-view scroll on iOS; putting it back to zero
+   * does. It is guarded so it only ever acts on a scroll that already
+   * happened, and this screen never has a legitimate one.
+   */
+  useEffect(() => {
+    const layer = rootRef.current;
+    if (!layer) return;
+
+    let locked = false;
+
+    const holdStill = () => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+
+    const lock = () => {
+      if (locked) return;
+      locked = true;
+      document.documentElement.style.overflow = "hidden";
+      window.addEventListener("scroll", holdStill, { passive: true });
+      holdStill();
+    };
+
+    const unlock = () => {
+      if (!locked) return;
+      locked = false;
+      document.documentElement.style.overflow = "";
+      window.removeEventListener("scroll", holdStill);
+    };
+
+    /* Only a real text field, and only one of ours: the ring's keys take
+       focus too, and they do not summon a keyboard. */
+    const isOurField = (node: EventTarget | null) =>
+      node instanceof HTMLElement &&
+      layer.contains(node) &&
+      (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement);
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (isOurField(event.target)) lock();
+    };
+
+    const onFocusOut = (event: FocusEvent) => {
+      /* `relatedTarget` is where focus is going. Moving between two fields
+         inside the layer must not flicker the lock off and on. */
+      if (isOurField(event.target) && !isOurField(event.relatedTarget)) unlock();
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      unlock();
+    };
+  }, []);
+
+  /*
    * The keyboard, while the ring is out.
    *
    * Escape closes, the way it closes every other overlay in the app. The
@@ -820,6 +900,7 @@ export default function YumiRingOverlay({
       <div className={live ? styles.replaced : undefined}>{children}</div>
 
       <div
+        ref={rootRef}
         className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""} ${
           answering ? styles.answering : ""
         }`}
