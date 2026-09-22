@@ -65,6 +65,13 @@ export type YumiSceneOptions = {
   onPullOpen?: () => void;
   /** Called on a tap that was not a drag. */
   onTap?: () => void;
+  /**
+   * Called at the far end of a lunge, when the eye has reached the cookie.
+   * This is the moment the bite happens; the snap back is the follow through.
+   */
+  onLungeArrive?: () => void;
+  /** Called once the eye is home again and the band is at rest. */
+  onLungeEnd?: () => void;
   /** Skips the idle blink and damps the spring hard. */
   reducedMotion?: boolean;
 };
@@ -88,6 +95,19 @@ export type YumiSceneHandle = {
   pointerMove(clientX: number, clientY: number): void;
   pointerUp(): void;
 
+  /**
+   * Shoot the eye out at a point on screen and snap it back — the whole
+   * reach, grab and return, on the same band the reader pulls.
+   *
+   * Ignored while the reader has hold of the eye, while the film is playing,
+   * and while a lunge is already out: she reaches for one cookie at a time.
+   * Returns whether the lunge was accepted.
+   */
+  lungeAt(clientX: number, clientY: number): boolean;
+
+  /** True while a lunge is out or returning. */
+  isLunging(): boolean;
+
   /** The eye's centre in CSS pixels within the canvas, for the ring. */
   eyeScreenPosition(): { x: number; y: number };
 
@@ -96,6 +116,7 @@ export type YumiSceneHandle = {
     stretch: number;
     pull: number;
     dragging: boolean;
+    lunging: "out" | "hold" | "back" | null;
   };
 };
 
@@ -309,6 +330,24 @@ export function createYumiScene(
   const OPEN_THRESHOLD = 0.5;
   const worldScratch = new THREE.Vector3();
 
+  /*
+   * The lunge.
+   *
+   * A chameleon does not pull its tongue back the instant it lands — it
+   * holds, then returns loaded. The hold is what makes the reach read as
+   * deliberate rather than as a twitch, and it is also where the bite is
+   * reported, so the cookie leaves the tray at the moment she reaches it
+   * rather than at the moment she started moving.
+   */
+  type LungePhase = "out" | "hold" | "back";
+  let lungePhase: LungePhase | null = null;
+  let lungeUntil = 0;
+  const LUNGE_HOLD_MS = 170;
+  /* Out is faster than a pull and back is faster still. Reaching is an
+     intention; returning is a release. */
+  const LUNGE_OUT_STIFFNESS = 520;
+  const LUNGE_BACK_STIFFNESS = 300;
+
   function canvasRect() {
     return canvas.getBoundingClientRect();
   }
@@ -350,15 +389,51 @@ export function createYumiScene(
    * which is what a single `dt` of 200ms does to a spring this stiff.
    */
   function integrateSpring(dt: number) {
+    const reaching = lungePhase === "out" || lungePhase === "hold";
+    const target = dragging || reaching ? dragTarget : EYE_REST;
+    const stiffness = lungePhase === "out" ? LUNGE_OUT_STIFFNESS
+      : lungePhase === "back" ? LUNGE_BACK_STIFFNESS
+      : STIFFNESS;
+
     const steps = 3;
     const step = dt / steps;
     for (let i = 0; i < steps; i += 1) {
-      const target = dragging ? dragTarget : EYE_REST;
       const toTarget = target.clone().sub(eyePosition);
-      const acceleration = toTarget.multiplyScalar(STIFFNESS)
+      const acceleration = toTarget.multiplyScalar(stiffness)
         .sub(eyeVelocity.clone().multiplyScalar(DAMPING));
       eyeVelocity.addScaledVector(acceleration, step);
       eyePosition.addScaledVector(eyeVelocity, step);
+    }
+  }
+
+  /** Advances the reach. Called once a frame, before the spring integrates. */
+  function stepLunge(nowMs: number) {
+    if (!lungePhase) return;
+
+    /* The reader always wins the band. Taking hold of the eye mid-reach
+       cancels the lunge rather than fighting it for the same target. */
+    if (dragging || film) { lungePhase = null; return; }
+
+    if (lungePhase === "out") {
+      const reached = eyePosition.distanceTo(dragTarget) < EYE_RADIUS * 0.5;
+      if (reached || nowMs > lungeUntil) {
+        lungePhase = "hold";
+        lungeUntil = nowMs + LUNGE_HOLD_MS;
+        options.onLungeArrive?.();
+      }
+      return;
+    }
+
+    if (lungePhase === "hold") {
+      if (nowMs > lungeUntil) lungePhase = "back";
+      return;
+    }
+
+    /* Home when it is both near rest and no longer moving — distance alone
+       ends it at the top of the overshoot, mid-wobble. */
+    if (eyePosition.distanceTo(EYE_REST) < 0.05 && eyeVelocity.length() < 0.35) {
+      lungePhase = null;
+      options.onLungeEnd?.();
     }
   }
 
@@ -471,13 +546,16 @@ export function createYumiScene(
           model.rotation.x = pitch;
         }
 
-        if (!dragging) updateIdleBlink(nowMs);
+        /* Not while the reader has her, and not mid-reach: an eye that
+           blinks while it is flying at a cookie has lost the plot. */
+        if (!dragging && !lungePhase) updateIdleBlink(nowMs);
         else blink = 1;
 
         model.position.y = MODEL_REST_Y + 3.0 * focusLevel;
         model.scale.setScalar(1 - 0.28 * focusLevel);
       }
 
+      stepLunge(nowMs);
       integrateSpring(dt);
       poseRig();
       poseIris();
@@ -578,6 +656,39 @@ export function createYumiScene(
       idleSince = performance.now();
     },
 
+    lungeAt(clientX, clientY) {
+      if (film || dragging || lungePhase) return false;
+
+      /* The cookie is a DOM element on the page, so its point is unprojected
+         onto the same camera-facing plane through the eye that a finger drags
+         in. That keeps a reach and a pull the same motion in the same space. */
+      raycaster.setFromCamera(toNdc(clientX, clientY), camera);
+      const normal = new THREE.Vector3();
+      camera.getWorldDirection(normal);
+      const eyeWorld = new THREE.Vector3();
+      eyeGroup.getWorldPosition(eyeWorld);
+      dragPlane.setFromNormalAndCoplanarPoint(normal, eyeWorld);
+
+      const point = new THREE.Vector3();
+      if (!raycaster.ray.intersectPlane(dragPlane, point)) return false;
+
+      model.worldToLocal(point);
+      const fromRoot = point.sub(ARM_ROOT);
+      if (fromRoot.length() > MAX_PULL) fromRoot.setLength(MAX_PULL);
+      dragTarget.copy(ARM_ROOT).add(fromRoot);
+
+      lungePhase = "out";
+      /* A ceiling, not a duration: the spring normally arrives well inside
+         it, and this only catches a cookie it cannot physically reach. */
+      lungeUntil = performance.now() + 700;
+      idleSince = performance.now();
+      return true;
+    },
+
+    isLunging() {
+      return lungePhase !== null;
+    },
+
     eyeScreenPosition() {
       return project(eyeGroup.position);
     },
@@ -588,6 +699,7 @@ export function createYumiScene(
         stretch: stretchRatio,
         pull: pullProgress(),
         dragging,
+        lunging: lungePhase,
       };
     },
   };
