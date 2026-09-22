@@ -279,6 +279,21 @@ async function identifyWithModel(
           type: "image",
           data: imageBase64,
           /*
+           * What kind of image this is.
+           *
+           * This was missing, and `mediaType` was threaded the whole way
+           * down to this function as a parameter that nothing read. The API
+           * answered 400 to every recognition — a base64 blob with no
+           * declared type is not a request it can act on — and nobody saw
+           * it, because the model in front of it was spending the entire
+           * budget timing out before the API could object. Fixing the model
+           * is what made this visible.
+           *
+           * lib/ai/menuScan.ts, which is the same call with a different
+           * prompt, has always sent it.
+           */
+          mime_type: mediaType,
+          /*
            * Sampled at the size it was actually sent at.
            *
            * The client resizes this photo to RECOGNITION_EDGE.object, which
@@ -386,10 +401,21 @@ async function identifyWithFallback(
         modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
       }
 
+      /*
+       * The message, not only the status.
+       *
+       * A 400 here meant "this request is malformed" and the log said only
+       * `status: 400`, which is the same line a quota problem or a bad model
+       * name would print. The API says which field it objected to; there is
+       * no reason to make the next person guess from a number. Truncated
+       * because a rejected request can come back with the prompt attached.
+       */
       console.warn("Vision model unavailable; trying fallback.", {
         model,
         status,
         reason: isRateLimitError(error) ? "rate_limit" : "model_error",
+        detail:
+          error instanceof Error ? error.message.slice(0, 300) : String(error),
       });
     }
   }

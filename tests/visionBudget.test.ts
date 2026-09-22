@@ -32,7 +32,12 @@ type Attempt = {
 };
 
 const script: Attempt[] = [];
-const made: Array<{ model: string; timeout: number }> = [];
+type ImagePart = { type: string; data?: string; mime_type?: string };
+const made: Array<{
+  model: string;
+  timeout: number;
+  input: ImagePart[];
+}> = [];
 let clock = 0;
 
 function answer(confidence: "high" | "low") {
@@ -52,10 +57,14 @@ vi.mock("@google/genai", () => ({
   GoogleGenAI: class {
     interactions = {
       create: async (
-        body: { model: string },
+        body: { model: string; input: ImagePart[] },
         options: { timeout: number },
       ) => {
-        made.push({ model: body.model, timeout: options.timeout });
+        made.push({
+          model: body.model,
+          timeout: options.timeout,
+          input: body.input,
+        });
 
         const step = script.shift();
         if (!step) throw new Error("An unscripted attempt was made.");
@@ -102,6 +111,30 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+});
+
+describe("the request that is actually sent", () => {
+  /*
+   * This is the test that was missing, and the bug it would have caught cost
+   * a day: the image part went out with no `mime_type`. `mediaType` was
+   * threaded the whole way down to the call as a parameter nothing read, so
+   * every recognition got a 400 from the API — and nobody saw it, because
+   * the model in front of it was burning the whole budget timing out before
+   * the API could object.
+   *
+   * Every other test in this file asserts on timing. None of them looked at
+   * what was in the envelope.
+   */
+  it("declares the image's media type", async () => {
+    script.push({ elapsed: 3_000, outcome: { confidence: "high" } });
+
+    await expect(identify()).resolves.toMatchObject({ term: "lamp" });
+
+    const image = made[0].input.find((part) => part.type === "image");
+    expect(image).toBeDefined();
+    expect(image?.mime_type).toBe("image/webp");
+    expect(image?.data).toBeTruthy();
+  });
 });
 
 describe("a photograph the first model reads confidently", () => {
