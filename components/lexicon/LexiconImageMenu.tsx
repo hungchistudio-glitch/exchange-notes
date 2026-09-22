@@ -106,6 +106,19 @@ export default function LexiconImageMenu({
               await onFile(file);
               setOpen(false);
             }}
+            /*
+             * The document key, which this menu never passed through.
+             *
+             * TargetCamera has always had a second input for it — the one
+             * that accepts application/pdf — and it draws its key only when
+             * a handler is given. Nobody gave one here, so reading a word
+             * out of a PDF was reachable from the capture page and nowhere
+             * else. The lookup takes both now, so it is the same handler.
+             */
+            onPickFile={async (file) => {
+              await onFile(file);
+              setOpen(false);
+            }}
           />
         </OverlayPortal>
       )}

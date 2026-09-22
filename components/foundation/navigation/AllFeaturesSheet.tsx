@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   BookOpen,
-  Camera,
   Compass,
   FileText,
   GraduationCap,
@@ -103,20 +102,24 @@ export default function AllFeaturesSheet({
           Icon: Compass,
         },
         /*
-         * Two camera entries, not one.
+         * One camera row, where there used to be two.
          *
-         * They both open a camera, which is the implementation, not the
-         * thing. One names a single object; the other reads a whole menu
-         * and hands back a translated page. Folding them into one "camera"
-         * key would file them by how they are built, and a reader looking
-         * for menu translation would never find it.
+         * The argument for two was that they are different things rather
+         * than one implementation — name an object, or read a whole menu —
+         * and that half still holds, which is why the menu is still here.
+         *
+         * What changed is the other half. Naming an object is now the camera
+         * key on the home screen's search field: it identifies in place,
+         * hands back the same result card that typing and speaking do, and
+         * keeps the photograph with the word it saves. A row here pointing
+         * at /capture is a second, worse door to that — and /capture is not
+         * really the same errand anyway. It carries `source`, `with` and
+         * `returnTo`, because it exists to bring a word into a conversation
+         * you came from, and it is reached from that conversation and from
+         * the iOS widget. It is not a general "identify a thing" screen, and
+         * listing it as one sent readers the long way round to a version
+         * that cannot send the word where they meant it to go.
          */
-        {
-          key: "capture",
-          href: "/capture",
-          label: t.home.toolCapture,
-          Icon: Camera,
-        },
         {
           key: "menu",
           href: "/scanner/menu",

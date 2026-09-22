@@ -10,6 +10,7 @@ import {
 } from "@/lib/lexicon/imageRecognition";
 import { holdImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type { NormalizedRect } from "@/lib/media/geometry";
+import { PdfRenderError, isPdf, openPdf, type PdfDocument } from "@/lib/media/pdf";
 import type { Raster } from "@/lib/media/raster";
 import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
@@ -150,6 +151,19 @@ export default function useLexiconImageLookup({
     [errorMessage, readRaster],
   );
 
+  /**
+   * A file the reader picked: a photograph, or the first page of a document.
+   *
+   * The PDF half used to live on the capture page, which was the only entry
+   * point in the app that accepted something that is not an image. Merging
+   * the two camera doors would have quietly taken that away, so it moved
+   * here instead — and having moved, it is now reachable from every lexicon
+   * camera rather than from one screen.
+   *
+   * Page one, always. Somebody photographing a menu, a form or a label means
+   * the first page nine times in ten, and this path exists to read a word
+   * out of a document rather than to browse it.
+   */
   const handleFile = useCallback(
     async (file: File) => {
       if (readingRef.current) return;
@@ -159,9 +173,12 @@ export default function useLexiconImageLookup({
       setReading(true);
 
       let raster = null;
+      let document_: PdfDocument | null = null;
 
       try {
-        if (!file.type.startsWith("image/")) {
+        const pdf = isPdf(file);
+
+        if (!pdf && !file.type.startsWith("image/")) {
           throw new ImageRecognitionError("not-an-image");
         }
 
@@ -169,7 +186,24 @@ export default function useLexiconImageLookup({
           throw new ImageRecognitionError("too-large");
         }
 
-        raster = await decodeBlob(file);
+        if (pdf) {
+          try {
+            document_ = await openPdf(file);
+            raster = await document_.renderPage(1);
+          } catch (pdfError) {
+            /*
+             * A document this module cannot open is the same story to the
+             * reader as a photograph it cannot decode, and `unreadable` is
+             * already the code that says so. The capture page showed the
+             * same sentence for the same failure.
+             */
+            throw pdfError instanceof PdfRenderError
+              ? new ImageRecognitionError("unreadable")
+              : pdfError;
+          }
+        } else {
+          raster = await decodeBlob(file);
+        }
 
         /*
          * Ownership moves with the value. Past this point the capture frees
@@ -178,7 +212,12 @@ export default function useLexiconImageLookup({
         const decoded = raster;
         raster = null;
 
-        await readRaster(decoded, DEFAULT_TARGET_RECT, "photo", file.name);
+        await readRaster(
+          decoded,
+          DEFAULT_TARGET_RECT,
+          pdf ? "file" : "photo",
+          file.name,
+        );
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
         setError(
@@ -194,6 +233,13 @@ export default function useLexiconImageLookup({
          * file refused for its type or size, or a decode that failed.
          */
         raster?.close();
+
+        /*
+         * The page is a canvas of its own with its own `close`, so the
+         * document can go the moment it has been rendered — destroying the
+         * pdf.js task does not touch the bitmap the capture is now holding.
+         */
+        document_?.close();
 
         readingRef.current = false;
         setReading(false);

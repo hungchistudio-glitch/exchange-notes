@@ -22,6 +22,7 @@ const media = vi.hoisted(() => ({
   decodeBlob: vi.fn(),
   startCapture: vi.fn(),
   holdImageCapture: vi.fn(),
+  openPdf: vi.fn(),
 }));
 
 vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({
@@ -48,6 +49,14 @@ vi.mock("@/lib/lexicon/pendingImageCapture", () => ({
   holdImageCapture: media.holdImageCapture,
 }));
 
+vi.mock("@/lib/media/pdf", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/media/pdf")>();
+
+  /* isPdf and PdfRenderError are real; only the renderer is a double, since
+     opening a PDF needs pdf.js and a document that actually parses. */
+  return { ...actual, openPdf: media.openPdf };
+});
+
 const { ImageRecognitionError, MAX_IMAGE_FILE_SIZE } = await import(
   "@/lib/lexicon/imageRecognition"
 );
@@ -72,7 +81,19 @@ beforeEach(() => {
   media.decodeBlob.mockReset();
   media.startCapture.mockReset();
   media.holdImageCapture.mockReset();
+  media.openPdf.mockReset();
   close.mockReset();
+
+  media.openPdf.mockResolvedValue({
+    pageCount: 3,
+    renderPage: vi.fn().mockResolvedValue({
+      source: {},
+      width: 1400,
+      height: 1980,
+      close,
+    }),
+    close: vi.fn(),
+  });
 
   media.decodeBlob.mockResolvedValue({
     source: {},
@@ -253,5 +274,65 @@ describe("the shared lexicon image lookup", () => {
     });
 
     expect(dropped.close).toHaveBeenCalled();
+  });
+
+  /* =========================================================
+     Documents
+
+     Reading a word out of a PDF lived on the capture page, which was the
+     only entry point in the app that took something that is not an image.
+     Merging the camera doors would have taken it away with the page, so it
+     moved here — and these hold it here.
+     ========================================================= */
+
+  it("reads the first page of a PDF instead of refusing it", async () => {
+    recognition.identifyImage.mockResolvedValue({ term: "biblioteca" });
+
+    const onTerm = vi.fn();
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => {
+      await result.current.handleFile(
+        photo("menu.pdf", "application/pdf", 2048),
+      );
+    });
+
+    const document_ = await media.openPdf.mock.results[0].value;
+
+    /* Page one, not whichever page a reader last looked at: this path is
+       for reading a word out of a document, not for browsing it. */
+    expect(document_.renderPage).toHaveBeenCalledWith(1);
+    expect(onTerm).toHaveBeenCalledWith("biblioteca");
+    expect(result.current.error).toBe("");
+
+    /* Filed as a document rather than as a photograph, because that is what
+       the reader handed over. */
+    expect(media.startCapture).toHaveBeenCalledWith(
+      expect.objectContaining({ sourceType: "file" }),
+    );
+
+    /* The page is a canvas of its own, so the document goes as soon as it is
+       rendered — and the capture still owns the bitmap. */
+    expect(document_.close).toHaveBeenCalled();
+    expect(media.decodeBlob).not.toHaveBeenCalled();
+  });
+
+  it("says a document it cannot open is unreadable, not the wrong type", async () => {
+    const { PdfRenderError } = await import("@/lib/media/pdf");
+    media.openPdf.mockRejectedValue(new PdfRenderError());
+
+    const onTerm = vi.fn();
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => {
+      await result.current.handleFile(photo("broken.pdf", "application/pdf"));
+    });
+
+    /* "Select a photo" would be a lie — they did select one, and it is a
+       kind this path accepts. This is the same sentence the capture page
+       showed for the same failure; it says "image" where it now sometimes
+       means "document", which is worth its own copy key one day. */
+    expect(result.current.error).toBe("Could not process this image.");
+    expect(onTerm).not.toHaveBeenCalled();
   });
 });
