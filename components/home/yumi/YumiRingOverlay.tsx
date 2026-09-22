@@ -73,6 +73,12 @@ const ICON = {
       <path d="m20 20-4.4-4.4" />
     </>
   ),
+  review: (
+    <>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v14.5H6.5A2.5 2.5 0 0 0 4 20z" />
+      <path d="M9.2 8.6h5.6M9.2 12h3.4" />
+    </>
+  ),
   messages: <path d="M21 11.6a8.4 8.4 0 0 1-12.8 7.4L3 20.5l1.6-4.8A8.4 8.4 0 1 1 21 11.6z" />,
   discover: (
     <>
@@ -101,15 +107,68 @@ const ICON = {
 const REST_RADIUS = 72;
 const OPEN_RADIUS = 86;
 
-/** How far the keys sit from her centre once the ring is out. */
+/**
+ * How far the keys sit from her centre once the ring is out.
+ *
+ * 132 is the tuned value and it stands on any phone with room for it. What
+ * follows is what happens when there is not.
+ *
+ * Eight equal steps put two keys on the horizontal axis, at exactly ±R, so
+ * the ring is at its widest possible: 2R + a key = 326px. A 320px screen
+ * cannot hold that. Seven was 319.4px, which is to say seven was already out
+ * of room and nobody had measured it.
+ *
+ * Two things fix it together. Turning the whole ring an eighth of a turn
+ * moves those two keys off the axis, taking the widest points to ±R·cos(π/8)
+ * and the span to 306px. And the radius itself gives way on a narrow screen
+ * rather than the layout breaking. Below MIN_RING_RADIUS the keys would
+ * crowd her open silhouette, and at that point the ring is the wrong shape
+ * for the screen — see PANEL_BELOW_PX.
+ */
 const RING_RADIUS = 132;
 
-/* How long she has to be held before the press means review rather than a
-   tap, and how far a finger may wander inside that time and still be a
-   press. She can be turned and her eye can be pulled, so a press that
-   became a drag has to stop being a press. */
-const LONG_PRESS_MS = 450;
-const PRESS_SLOP_PX = 10;
+/** An eighth of a turn, so no key sits on the widest part of the circle. */
+const RING_ROTATION = Math.PI / 8;
+
+/**
+ * Her open radius (86) plus half a key (31) plus air. Below this the keys
+ * sit on her face. It is a floor, not a working value: above the panel
+ * threshold the measured radius never reaches it.
+ */
+const MIN_RING_RADIUS = 123;
+
+/** Room for a key on each side of the ring, plus a margin. */
+const RING_MARGIN = 24;
+
+function ringRadiusFor(width: number) {
+  return Math.max(
+    MIN_RING_RADIUS,
+    Math.min(RING_RADIUS, (width - SPOKE_SIZE - RING_MARGIN * 2) / 2 / Math.cos(RING_ROTATION)),
+  );
+}
+
+/**
+ * The key's widest part — its label, not its disc.
+ *
+ * The disc is 62. The label under it is allowed to be wider, because
+ * "Impostazioni" and "Vocabolario" do not fit inside 62 at any size a person
+ * can read: clamped to the disc they broke mid-word into "Vocabolari / o".
+ * The geometry has to reserve the wider number or the outermost keys run off
+ * the screen.
+ */
+const SPOKE_SIZE = 84;
+
+/**
+ * Narrower than this and the ring stops being the right shape.
+ *
+ * It is not a failure state: eight destinations in a list, in the same
+ * order, is a clearer thing on a small screen than eight discs crowded
+ * around a face. The same switch catches a reader who has turned their text
+ * size up, since the labels are what runs out of room first.
+ */
+const PANEL_BELOW_PX = 360;
+
+
 
 /* How long the scene gets before the dock is brought back as a rescue. Long
    enough that a slow phone finishes first and nobody sees a dock; short
@@ -196,8 +255,6 @@ export type YumiRingOverlayProps = {
   /** Fired when a reach lands, so the feeding sequence can take the bite. */
   onLungeArrive?: () => void;
   unreadCount?: number;
-  /** Words waiting. The key under her is drawn only while this is above zero. */
-  reviewDue?: number;
   /**
    * Her voice, from the stage underneath. Eleven moods, five languages, all
    * of it already written — the overlay says it rather than restating it.
@@ -214,6 +271,21 @@ export type YumiRingOverlayProps = {
     date: string;
     time: string;
   } | null;
+  /**
+   * The three things that can be waiting, counted separately.
+   *
+   * Never summed. A message someone sent you, a person asking to be added
+   * and a word due for review are three different asks, and one number
+   * covering all of them is a number that means nothing. Null while the
+   * library is still loading, which is not the same as nothing waiting —
+   * showing a confident zero to a reader with forty words due is worse than
+   * showing nothing at all.
+   */
+  notices?: {
+    unread: number;
+    friendRequests: number;
+    reviewDue: number;
+  } | null;
   /** Rendered underneath while the scene is starting, or if it cannot. */
   children: React.ReactNode;
 };
@@ -222,9 +294,9 @@ export default function YumiRingOverlay({
   stageRef,
   onLungeArrive,
   unreadCount = 0,
-  reviewDue = 0,
   lines = null,
   meta = null,
+  notices = null,
   children,
 }: YumiRingOverlayProps) {
   const router = useRouter();
@@ -252,37 +324,32 @@ export default function YumiRingOverlay({
    * A press that turned into a drag is a drag. She can be turned and her eye
    * can be pulled, and neither may end up somewhere else.
    */
-  /* The pull is the only way to the ring, and nobody is born knowing it, so
-     the hint sits under her until the ring has been opened once. */
+  /*
+   * How wide the screen is, for the ring's radius and for whether it should
+   * be a ring at all. Measured rather than guessed with a media query,
+   * because the radius is a number the layout loop needs, not a breakpoint.
+   */
+  const [viewport, setViewport] = useState(0);
+  useEffect(() => {
+    const read = () => setViewport(window.innerWidth);
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, []);
+
+  const asPanel = viewport > 0 && viewport < PANEL_BELOW_PX;
+  const ringRadius = viewport > 0 ? ringRadiusFor(viewport) : RING_RADIUS;
+
+  /* Tapping her is the only way to the ring, and nobody is born knowing it,
+     so the hint sits under her until the ring has been opened once. */
   const hintRetired = useSyncExternalStore(
     subscribeToHint,
     getHintSnapshot,
     getHintServerSnapshot,
   );
 
-  /*
-   * Where her eye is on screen, as of the last frame.
-   *
-   * The canvas is the whole viewport — that is what lets her sit in the
-   * stage, scroll with it and fly to the middle without a second context —
-   * so a pointer event on it says nothing about whether it touched her. The
-   * long press needs to know, and the frame loop is already asking the scene
-   * this question to place the ring, so it is written down rather than asked
-   * again.
-   */
-  const eyeAt = useRef<{ x: number; y: number } | null>(null);
 
-  const pressTimer = useRef<number | null>(null);
-  const pressFrom = useRef<{ x: number; y: number } | null>(null);
-  const pressWentLong = useRef(false);
 
-  const endPress = useCallback(() => {
-    if (pressTimer.current !== null) {
-      window.clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-    pressFrom.current = null;
-  }, []);
 
   /*
    * The ring is positioned from the eye's own projected point every frame,
@@ -294,6 +361,11 @@ export default function YumiRingOverlay({
 
   const spokes: Spoke[] = [
     { key: "words", label: t.navigation.vocabulary, href: "/vocabulary", icon: ICON.words },
+    /* Review sits next to Vocabulary because they are two stages of one
+       thing: the words you kept, and the words asking to be kept. It used to
+       be a capsule under her and a 450ms press on her, and neither was a
+       place a reader would look for it. */
+    { key: "review", label: t.navigation.review, href: "/review", icon: ICON.review },
     { key: "notes", label: t.navigation.notes, href: "/notes", icon: ICON.notes },
     { key: "speech", label: t.navigation.pronunciation, href: "/pronunciation", icon: ICON.speech },
     { key: "search", label: t.navigation.search, action: "search", icon: ICON.search },
@@ -381,13 +453,6 @@ export default function YumiRingOverlay({
             retireHint();
           },
           onTap: () => {
-            /* The scene reports a tap on pointer-up, which is also when a
-               long press has already fired and taken the reader to review.
-               Swallow that one so the ring does not open behind it. */
-            if (pressWentLong.current) {
-              pressWentLong.current = false;
-              return;
-            }
             /* A tap is the same key either way: it opens the ring, and once
                the ring is out it is the way home. */
             openRef.current = !openRef.current;
@@ -467,12 +532,9 @@ export default function YumiRingOverlay({
           handle.frame(now);
 
           // --- the ring rides on the eye
-          {
+          if (ringRef.current) {
             const eye = handle.eyeScreenPosition();
-            eyeAt.current = eye;
-            if (ringRef.current) {
-              ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
-            }
+            ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
           }
 
           raf = requestAnimationFrame(loop);
@@ -565,71 +627,39 @@ export default function YumiRingOverlay({
           onPointerDown={event => {
             sceneRef.current?.pointerDown(event.clientX, event.clientY);
             (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
-
-            /* Only while the ring is shut. With it out, holding a key is
-               how a reader reads a label, not how they leave. */
-            if (openRef.current) return;
-
-            /*
-             * And only on her.
-             *
-             * This canvas covers the viewport, so without this a press held
-             * anywhere on an otherwise empty screen — the corner, the margin
-             * beside the review key — left for review. Her silhouette is the
-             * eye's projected centre out to her resting radius, which is the
-             * same circle the reader sees.
-             */
-            const eye = eyeAt.current;
-            const box = canvasRef.current?.getBoundingClientRect();
-            if (!eye || !box) return;
-
-            const dx = event.clientX - box.left - eye.x;
-            const dy = event.clientY - box.top - eye.y;
-            if (dx * dx + dy * dy > REST_RADIUS * REST_RADIUS) return;
-
-            pressWentLong.current = false;
-            pressFrom.current = { x: event.clientX, y: event.clientY };
-            pressTimer.current = window.setTimeout(() => {
-              pressTimer.current = null;
-              pressFrom.current = null;
-              pressWentLong.current = true;
-              router.push("/review");
-            }, LONG_PRESS_MS);
           }}
-          onPointerMove={event => {
-            sceneRef.current?.pointerMove(event.clientX, event.clientY);
-
-            const from = pressFrom.current;
-            if (!from) return;
-            if (
-              Math.abs(event.clientX - from.x) > PRESS_SLOP_PX ||
-              Math.abs(event.clientY - from.y) > PRESS_SLOP_PX
-            ) {
-              endPress();
-            }
-          }}
-          onPointerUp={() => {
-            endPress();
-            sceneRef.current?.pointerUp();
-          }}
-          onPointerCancel={() => {
-            endPress();
-            sceneRef.current?.pointerUp();
-          }}
+          onPointerMove={event =>
+            sceneRef.current?.pointerMove(event.clientX, event.clientY)
+          }
+          onPointerUp={() => sceneRef.current?.pointerUp()}
+          onPointerCancel={() => sceneRef.current?.pointerUp()}
         />
 
-        <div ref={ringRef} className={styles.ring} role={open ? "menu" : undefined}>
+        <div
+          ref={ringRef}
+          className={`${styles.ring} ${asPanel ? styles.asPanel : ""}`}
+        >
           {spokes.map((spoke, index) => {
-            const angle = -Math.PI / 2 + (index * Math.PI * 2) / spokes.length;
-            const x = Math.cos(angle) * RING_RADIUS;
-            const y = Math.sin(angle) * RING_RADIUS;
+            const angle =
+              -Math.PI / 2 +
+              RING_ROTATION +
+              (index * Math.PI * 2) / spokes.length;
+            const x = Math.cos(angle) * ringRadius;
+            const y = Math.sin(angle) * ringRadius;
 
             return (
               <div
                 key={spoke.key}
                 className={styles.spoke}
                 ref={element => { spokeRefs.current[index] = element; }}
-                style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
+                /* In panel form the stylesheet stacks them; a transform per
+                   key would fight it, so the ring's own geometry is only
+                   applied while it is a ring. */
+                style={
+                  asPanel
+                    ? undefined
+                    : { transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }
+                }
               >
                 <button
                   type="button"
@@ -637,17 +667,22 @@ export default function YumiRingOverlay({
                   tabIndex={open ? 0 : -1}
                   aria-label={spoke.label}
                 >
-                  <svg
-                    width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="1.9"
-                    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-                  >
-                    {spoke.icon}
-                  </svg>
-                  <span>{spoke.label}</span>
-                  {spoke.badge ? (
-                    <i className={styles.badge}>{spoke.badge > 9 ? "9+" : spoke.badge}</i>
-                  ) : null}
+                  {/* The disc is the key; the label is a caption under it and
+                      may be wider. Keeping them as two boxes is what lets a
+                      long word finish without the circle growing. */}
+                  <span className={styles.disc}>
+                    <svg
+                      width="20" height="20" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="1.9"
+                      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                    >
+                      {spoke.icon}
+                    </svg>
+                    {spoke.badge ? (
+                      <i className={styles.badge}>{spoke.badge > 9 ? "9+" : spoke.badge}</i>
+                    ) : null}
+                  </span>
+                  <span className={styles.spokeLabel}>{spoke.label}</span>
                 </button>
               </div>
             );
@@ -693,20 +728,29 @@ export default function YumiRingOverlay({
               <p className={styles.voice}>{lines.primary}</p>
             ) : null}
 
-            {reviewDue > 0 ? (
-              <Link
-                href="/review"
-                className={styles.reviewKey}
-                tabIndex={open ? -1 : 0}
-              >
-                <span>{t.home.quickStart.review}</span>
-                <i>
-                  {reviewDue}{" "}
-                  {reviewDue === 1
-                    ? t.home.progress.word
-                    : t.home.progress.words}
-                </i>
-              </Link>
+            {notices ? (
+              <div className={styles.notices}>
+                {notices.reviewDue > 0 ? (
+                  <Link href="/review" className={styles.notice}>
+                    <span>{t.navigation.review}</span>
+                    <i>{notices.reviewDue}</i>
+                  </Link>
+                ) : null}
+
+                {notices.unread > 0 ? (
+                  <Link href="/messages" className={styles.notice}>
+                    <span>{t.navigation.messages}</span>
+                    <i>{notices.unread}</i>
+                  </Link>
+                ) : null}
+
+                {notices.friendRequests > 0 ? (
+                  <Link href="/friends" className={styles.notice}>
+                    <span>{t.home.panelPeople}</span>
+                    <i>{notices.friendRequests}</i>
+                  </Link>
+                ) : null}
+              </div>
             ) : null}
 
             {hintRetired ? null : (

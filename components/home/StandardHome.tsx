@@ -13,6 +13,7 @@ import { useVocabulary } from "@/contexts/VocabularyContext";
 import useLocalClock from "@/hooks/home/useLocalClock";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
+import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 import { getLocalCity } from "@/lib/home/localPlace";
 import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
@@ -56,8 +57,15 @@ export default function StandardHome() {
    */
   const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
-  /* The dock is gone on this screen, so its unread count comes with it. */
+  /*
+   * The dock is gone on this screen, so everything it used to badge has to
+   * be carried here instead. The friend-request count in particular used to
+   * ride on the dock's Home key, and hiding the dock took it off the home
+   * screen entirely — a request could sit unanswered with nothing anywhere
+   * saying so.
+   */
   const { unreadCount } = useUnreadMessageCount();
+  const { count: friendRequestCount } = useIncomingFriendRequestCount();
   const stageRef = useRef<HTMLDivElement>(null);
 
   const [lines, setLines] = useState<YumiLines | null>(null);
@@ -115,9 +123,19 @@ export default function StandardHome() {
         <YumiRingOverlay
           stageRef={stageRef}
           unreadCount={unreadCount}
-          reviewDue={itemsLoading ? 0 : reviewStats.due}
           lines={lines}
           meta={meta}
+          /* Null, not zeroes, until the library is in: a confident "nothing
+             waiting" is the one wrong answer here. */
+          notices={
+            itemsLoading
+              ? null
+              : {
+                  unread: unreadCount,
+                  friendRequests: friendRequestCount,
+                  reviewDue: reviewStats.due,
+                }
+          }
         >
           <YumiHomeStage items={items} onLinesChange={handleLines} />
         </YumiRingOverlay>
