@@ -1,4 +1,5 @@
 import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
+import { DEFAULT_STRONG_MODEL } from "@/lib/ai/modelConfig";
 import {
   DEFAULT_LEARNING_PAIR,
   type ByLanguage,
@@ -803,7 +804,7 @@ export async function buildLearningCards(
     throw new Error("GEMINI_API_KEY is not configured on the server.");
   }
 
-  const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+  const model = process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL;
   const client = new GoogleGenAI({ apiKey });
 
   const perBatch = articlesPerBatch(languages.length);

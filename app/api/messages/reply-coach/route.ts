@@ -6,7 +6,10 @@ import { toLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-import { readBoundedInteger } from "@/lib/ai/modelConfig";
+import {
+  DEFAULT_STRONG_MODEL,
+  readBoundedInteger,
+} from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type { ReplyDirection, ReplySuggestion } from "@/lib/messages/decode";
@@ -192,7 +195,7 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     const interaction = await client.interactions.create({
-      model: process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash",
+      model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
       input: `
 Someone is learning ${learningLanguage} and wants to reply to their language
 partner. Draft three different replies they could send.

@@ -6,7 +6,10 @@ import { toLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-import { readBoundedInteger } from "@/lib/ai/modelConfig";
+import {
+  DEFAULT_STRONG_MODEL,
+  readBoundedInteger,
+} from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type {
@@ -255,7 +258,7 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     const interaction = await client.interactions.create({
-      model: process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash",
+      model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
       input: `
 You help someone learning ${learningLanguage} understand a message a friend
 just sent them. Explain in ${nativeLanguage}.
@@ -343,7 +346,7 @@ ${scriptRule}
           status,
           tone: status === "ready" ? tone : null,
           tone_confidence: status === "ready" ? toneConfidence : null,
-          model: process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash",
+          model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
           updated_at: new Date().toISOString(),
         },
         {

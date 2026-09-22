@@ -4,7 +4,10 @@ import { NextResponse } from "next/server";
 import { buildTranslateNotePrompt } from "@/lib/ai/prompts/translateNote";
 import { readLearningPair } from "@/lib/profile/languagePair";
 
-import { readBoundedInteger } from "@/lib/ai/modelConfig";
+import {
+  DEFAULT_STRONG_MODEL,
+  readBoundedInteger,
+} from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
@@ -132,7 +135,7 @@ export async function POST(request: Request) {
     // Spent; handed back below if the model never answers.
     charged = user.id;
 
-    const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash";
+    const model = process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL;
 
     const languagePair = await readLearningPair(supabase, user.id);
 

@@ -623,7 +623,31 @@ export default function YumiRingOverlay({
           // --- the ring rides on the eye
           if (ringRef.current) {
             const eye = handle.eyeScreenPosition();
-            ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+
+            /*
+             * Anchored while answering, tracked the rest of the time.
+             *
+             * Her eye is never still — she breathes, she blinks, she leans —
+             * and this element rides on its projected point, which is exactly
+             * what makes the greeting and her mood line feel attached to her.
+             * The search field is in that same column, and a field you are
+             * typing into must not move. Tracking her meant the input drifted
+             * under the reader's finger on every frame, and jumped again each
+             * time she flew.
+             *
+             * So while she is answering the column is placed on the anchor
+             * she is flying to rather than on where she currently is. That
+             * point is a constant — the same one setScreenAnchor is given
+             * above — so the field is still from the first keystroke, and she
+             * is free to keep breathing next to it. The spokes are the only
+             * other thing in here and they are not on screen in this state.
+             */
+            if (answeringRef.current) {
+              ringRef.current.style.transform =
+                `translate(${rect.width / 2}px, ${rect.height * ANSWER_HEIGHT}px)`;
+            } else {
+              ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+            }
 
             /*
              * Where she is, for everything outside this element.
@@ -648,9 +672,14 @@ export default function YumiRingOverlay({
                a height, and a custom property written every frame on the idle
                screen would be a style invalidation nothing reads. */
             if (answeringRef.current) {
+              /* From the anchor as well: a max-height recomputed off a
+                 moving eye is the same jitter one property along. */
               ringRef.current.style.setProperty(
                 "--below-room",
-                `${Math.max(0, rect.height - eye.y - BELOW_OFFSET - BELOW_AIR)}px`,
+                `${Math.max(
+                  0,
+                  rect.height * (1 - ANSWER_HEIGHT) - BELOW_OFFSET - BELOW_AIR,
+                )}px`,
               );
             }
           }

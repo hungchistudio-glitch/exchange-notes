@@ -1,4 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  DEFAULT_FAST_MODEL,
+  DEFAULT_STRONG_MODEL,
+} from "@/lib/ai/modelConfig";
 
 /* =========================================================
    The recognition has a budget, and the fallback has to fit inside it
@@ -106,7 +110,10 @@ describe("a photograph the first model reads confidently", () => {
 
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
     expect(made).toHaveLength(1);
-    expect(made[0].model).toBe("gemini-3.1-flash-lite");
+    /* The fast model, whichever it currently is. Naming the string here is
+       how the app ended up with a dead model in six places: the test passed
+       because it asserted the same stale name the code had. */
+    expect(made[0].model).toBe(DEFAULT_FAST_MODEL);
   });
 
   it("gives that attempt the per-attempt timeout, not the whole budget", async () => {
@@ -131,7 +138,7 @@ describe("a first attempt that times out", () => {
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
 
     expect(made.map((attempt) => attempt.timeout)).toEqual([12_000, 8_000]);
-    expect(made[1].model).toBe("gemini-3.5-flash");
+    expect(made[1].model).toBe(DEFAULT_STRONG_MODEL);
   });
 
   it("does not start a fallback there is no time to finish", async () => {

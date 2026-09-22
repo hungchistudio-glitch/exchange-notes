@@ -776,7 +776,21 @@ export default function YumiHomeStage({
           </div>
         </div>
 
-        <div className={styles.trayCorner}>
+        {/*
+          No corner while she is orbiting.
+
+          `.trayCorner` carries `transform: scale(0.8)`, and a transformed
+          ancestor becomes the containing block for `position: fixed`
+          descendants — so the orbiting tray was being placed against a small
+          box pinned to this stage's bottom-right corner instead of against
+          the viewport. On a 390x844 screen that put the three cookies at
+          (458, 1128), (625, 1179) and (464, 1201): off the screen entirely,
+          and scaled to 37px on the way out.
+
+          The corner is exactly what the orbit replaces, so it is not
+          neutralised, it is simply not applied.
+        */}
+        <div className={ringLive ? undefined : styles.trayCorner}>
           <CookieTray
             /*
              * Around her once the 3D scene has her, in the corner until then.
