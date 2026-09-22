@@ -12,6 +12,8 @@ import {
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
+import type { ReactNode } from "react";
+
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
@@ -107,6 +109,26 @@ const ICON = {
 const REST_RADIUS = 72;
 const OPEN_RADIUS = 86;
 
+/*
+ * Where she goes while she is answering, and how small she gets.
+ *
+ * A dictionary entry is 600px tall and the room under her at rest is 334 on a
+ * 390-wide phone and 245 on a 375 — so at rest the answer's own save key sits
+ * below the bottom of a screen that cannot scroll. Lifting her to a fifth of
+ * the way down and taking her to a 48px radius turns that into 565px, which
+ * is a page you can read rather than a card you can see the top of.
+ *
+ * She does not leave: she is the one being asked, and a question whose
+ * listener walks off screen is a different screen.
+ */
+const ANSWER_HEIGHT = 0.2;
+const ANSWER_RADIUS = 48;
+
+/** Her column's own offset below the eye, and the air under the page. */
+const BELOW_OFFSET = 94;
+const BELOW_AIR = 24;
+
+
 /**
  * How far the keys sit from her centre once the ring is out.
  *
@@ -121,9 +143,9 @@ const OPEN_RADIUS = 86;
  * Two things fix it together. Turning the whole ring an eighth of a turn
  * moves those two keys off the axis, taking the widest points to ±R·cos(π/8)
  * and the span to 306px. And the radius itself gives way on a narrow screen
- * rather than the layout breaking. Below MIN_RING_RADIUS the keys would
- * crowd her open silhouette, and at that point the ring is the wrong shape
- * for the screen — see PANEL_BELOW_PX.
+ * rather than the layout breaking. MIN_RING_RADIUS is the floor where the
+ * keys would start to crowd her open silhouette; at 375 — the narrowest phone
+ * the app supports — the measured radius is 131.5, so the floor never binds.
  */
 const RING_RADIUS = 132;
 
@@ -158,15 +180,23 @@ function ringRadiusFor(width: number) {
  */
 const SPOKE_SIZE = 84;
 
-/**
- * Narrower than this and the ring stops being the right shape.
+/*
+ * There is no list form of this ring.
  *
- * It is not a failure state: eight destinations in a list, in the same
- * order, is a clearer thing on a small screen than eight discs crowded
- * around a face. The same switch catches a reader who has turned their text
- * size up, since the labels are what runs out of room first.
+ * One was written — eight keys stacking into a panel below 360px — and it
+ * never worked for a single frame: it was applied on width alone rather than
+ * only while the ring was out, so its panel chrome drew on the collapsed home
+ * screen; its `!important` transform overrode the per-frame one that is the
+ * only thing placing this element on her eye, so it sat in the viewport's
+ * corner; and `.ring` is zero-height, which the panel never overrode, so the
+ * box had no height to show anything in. Type-checked, linted, tested, and
+ * broken on every phone narrower than 360px.
+ *
+ * It is gone rather than repaired because the width it existed for is not a
+ * width the app supports: 375 is the narrowest phone in use, and at 375 the
+ * measured radius comes out at 131.5 — the tuned value, untouched. The clamp
+ * below is what remains, and it is a floor that never binds above 375.
  */
-const PANEL_BELOW_PX = 360;
 
 
 
@@ -286,6 +316,27 @@ export type YumiRingOverlayProps = {
     friendRequests: number;
     reviewDue: number;
   } | null;
+  /**
+   * The one control that comes back to this screen.
+   *
+   * Ten modules came off the home because each was a second door to
+   * somewhere the ring already went. A search field is the exception, and
+   * not a grudging one: the ring's Search key opens a sheet, and a sheet you
+   * open is not the same affordance as a field you type into. This one owns
+   * the lexicon engine itself — type, speak or scan, and read the answer
+   * without another view covering the page.
+   *
+   * It rides in the column under her so it moves with her, gets out of the
+   * way when the ring is out, and cannot collide with the absolutely
+   * positioned lines it shares that column with.
+   *
+   * A function rather than a node, because the field has to say when it is
+   * showing an answer: that is what moves her, silences the idle lines and
+   * gives the column a height to scroll inside. Passing the callback down is
+   * what keeps that one piece of state here, on the screen it belongs to,
+   * rather than split between this and its parent.
+   */
+  field?: (props: { onAnswerChange: (hasAnswer: boolean) => void }) => ReactNode;
   /** Rendered underneath while the scene is starting, or if it cannot. */
   children: React.ReactNode;
 };
@@ -297,6 +348,7 @@ export default function YumiRingOverlay({
   lines = null,
   meta = null,
   notices = null,
+  field,
   children,
 }: YumiRingOverlayProps) {
   const router = useRouter();
@@ -311,6 +363,27 @@ export default function YumiRingOverlay({
   const reachingFor = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
+
+  /*
+   * Whether the field under her has something to show.
+   *
+   * Held here rather than inside the field because it is the screen's state,
+   * not the field's: it moves her, it silences the idle lines, and it is what
+   * gives the column a height to scroll inside. The ref is for the frame
+   * loop, which runs outside React and reads it every frame — the same pair
+   * `open` already keeps for the same reason.
+   */
+  const [answering, setAnswering] = useState(false);
+  const answeringRef = useRef(false);
+  const handleAnswerChange = useCallback((next: boolean) => setAnswering(next), []);
+
+  /* Mirrored in an effect rather than written by the callback: the callback
+     is handed to the field during render, and a callback that writes a ref
+     is a ref written during render as far as the compiler can tell. The
+     effect commits before paint, and the loop reads it on the next frame. */
+  useEffect(() => {
+    answeringRef.current = answering;
+  }, [answering]);
 
   /*
    * Review lives on her.
@@ -337,7 +410,6 @@ export default function YumiRingOverlay({
     return () => window.removeEventListener("resize", read);
   }, []);
 
-  const asPanel = viewport > 0 && viewport < PANEL_BELOW_PX;
   const ringRadius = viewport > 0 ? ringRadiusFor(viewport) : RING_RADIUS;
 
   /* Tapping her is the only way to the ring, and nobody is born knowing it,
@@ -491,6 +563,13 @@ export default function YumiRingOverlay({
           const rect = canvas.getBoundingClientRect();
           if (openRef.current) {
             handle.setScreenAnchor(rect.width / 2, rect.height * 0.42, OPEN_RADIUS);
+          } else if (answeringRef.current) {
+            /* Up and smaller, so the answer has the page. */
+            handle.setScreenAnchor(
+              rect.width / 2,
+              rect.height * ANSWER_HEIGHT,
+              ANSWER_RADIUS,
+            );
           } else {
             const figure = stageRef.current?.querySelector("[data-yumi-figure]");
             const anchor = figure?.getBoundingClientRect();
@@ -535,6 +614,16 @@ export default function YumiRingOverlay({
           if (ringRef.current) {
             const eye = handle.eyeScreenPosition();
             ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+
+            /* Only while answering: this is the one state whose column needs
+               a height, and a custom property written every frame on the idle
+               screen would be a style invalidation nothing reads. */
+            if (answeringRef.current) {
+              ringRef.current.style.setProperty(
+                "--below-room",
+                `${Math.max(0, rect.height - eye.y - BELOW_OFFSET - BELOW_AIR)}px`,
+              );
+            }
           }
 
           raf = requestAnimationFrame(loop);
@@ -572,12 +661,66 @@ export default function YumiRingOverlay({
     sceneRef.current?.setFocusLevel(0);
   }, [open]);
 
-  // Escape closes, the way it closes every other overlay in the app.
+  /*
+   * The keyboard, while the ring is out.
+   *
+   * Escape closes, the way it closes every other overlay in the app. The
+   * arrow keys step around the circle and wrap, because eight things
+   * arranged in a ring are a ring to a keyboard too: Down and Right go
+   * clockwise, Up and Left go back, and the last key's neighbour is the
+   * first. Home and End jump to the ends of the order.
+   *
+   * Tab is left alone deliberately — it steps through the keys in document
+   * order, which is the same order, and taking it over would be replacing a
+   * behaviour every reader already has with one only this screen knows.
+   */
   useEffect(() => {
     if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+
+    const focusSpoke = (index: number) => {
+      const count = spokeRefs.current.length;
+      if (count === 0) return;
+      const wrapped = ((index % count) + count) % count;
+      spokeRefs.current[wrapped]?.querySelector("button")?.focus();
     };
+
+    const currentIndex = () =>
+      spokeRefs.current.findIndex(spoke =>
+        spoke?.contains(document.activeElement),
+      );
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+        return;
+      }
+
+      const step =
+        event.key === "ArrowDown" || event.key === "ArrowRight"
+          ? 1
+          : event.key === "ArrowUp" || event.key === "ArrowLeft"
+            ? -1
+            : 0;
+
+      if (step !== 0) {
+        event.preventDefault();
+        const from = currentIndex();
+        /* Arriving from outside the ring starts at the first key going
+           forward and the last one going back, rather than jumping to
+           whichever end happens to be index 0. */
+        focusSpoke(from < 0 ? (step > 0 ? 0 : -1) : from + step);
+        return;
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        focusSpoke(0);
+      } else if (event.key === "End") {
+        event.preventDefault();
+        focusSpoke(-1);
+      }
+    };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close, open]);
@@ -598,7 +741,9 @@ export default function YumiRingOverlay({
       <div className={live ? styles.replaced : undefined}>{children}</div>
 
       <div
-        className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""}`}
+        className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""} ${
+          answering ? styles.answering : ""
+        }`}
         data-yumi-ring-open={open ? "true" : "false"}
       >
         {/* The keyboard's way in. See openFromKey. */}
@@ -637,7 +782,7 @@ export default function YumiRingOverlay({
 
         <div
           ref={ringRef}
-          className={`${styles.ring} ${asPanel ? styles.asPanel : ""}`}
+          className={styles.ring}
         >
           {spokes.map((spoke, index) => {
             const angle =
@@ -652,14 +797,9 @@ export default function YumiRingOverlay({
                 key={spoke.key}
                 className={styles.spoke}
                 ref={element => { spokeRefs.current[index] = element; }}
-                /* In panel form the stylesheet stacks them; a transform per
-                   key would fight it, so the ring's own geometry is only
-                   applied while it is a ring. */
-                style={
-                  asPanel
-                    ? undefined
-                    : { transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }
-                }
+                style={{
+                  transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
+                }}
               >
                 <button
                   type="button"
@@ -728,6 +868,12 @@ export default function YumiRingOverlay({
               <p className={styles.voice}>{lines.primary}</p>
             ) : null}
 
+            {field ? (
+              <div className={styles.field}>
+                {field({ onAnswerChange: handleAnswerChange })}
+              </div>
+            ) : null}
+
             {notices ? (
               <div className={styles.notices}>
                 {notices.reviewDue > 0 ? (
@@ -746,7 +892,7 @@ export default function YumiRingOverlay({
 
                 {notices.friendRequests > 0 ? (
                   <Link href="/friends" className={styles.notice}>
-                    <span>{t.home.panelPeople}</span>
+                    <span>{t.navigation.friends}</span>
                     <i>{notices.friendRequests}</i>
                   </Link>
                 ) : null}

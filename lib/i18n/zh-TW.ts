@@ -355,6 +355,7 @@ const traditionalChinese: TranslationDictionary = {
     pronunciation: "發音",
     review: "複習",
     allFeatures: "全部功能",
+    friends: "好友",
     primaryLabel: "主要導覽",
   },
 

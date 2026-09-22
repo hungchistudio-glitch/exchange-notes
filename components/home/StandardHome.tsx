@@ -7,6 +7,8 @@ import YumiHomeStage, {
   type YumiLines,
 } from "@/components/home/yumi/YumiHomeStage";
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
+import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
+import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
 import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -136,12 +138,30 @@ export default function StandardHome() {
                   reviewDue: reviewStats.due,
                 }
           }
+          field={({ onAnswerChange }) => (
+            <UniversalSearchField onAnswerChange={onAnswerChange} />
+          )}
         >
           <YumiHomeStage items={items} onLinesChange={handleLines} />
         </YumiRingOverlay>
       </div>
 
+      {/*
+        Two things that draw nothing until they decide to.
+
+        The tour opens itself once, when onboarding has just finished. The
+        install prompt offers itself once per snooze window, a moment after
+        the opening film ends — and it is the app's ONLY unprompted offer to
+        install. Settings › Devices has a button, but a button is not an
+        offer: a reader who never opens Settings would never be asked.
+
+        Emptying this screen took the prompt off it, and the commit that did
+        so recorded install as "still reachable from Settings", which was true
+        and beside the point. Both of these mount here and render an overlay
+        that is closed until it isn't, so neither costs the screen a pixel.
+      */}
       <TutorialLauncher showButton={false} />
+      <HomeInstallPrompt />
     </Screen>
   );
 }

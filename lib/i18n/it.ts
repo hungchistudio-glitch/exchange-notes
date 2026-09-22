@@ -349,6 +349,7 @@ const italian: TranslationDictionary = {
     pronunciation: "Voce",
     review: "Ripassa",
     allFeatures: "Tutto",
+    friends: "Amici",
     primaryLabel: "Navigazione principale",
   },
 

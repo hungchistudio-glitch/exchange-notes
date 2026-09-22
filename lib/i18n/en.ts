@@ -360,6 +360,7 @@ const english: TranslationDictionary = {
     pronunciation: "Speech",
     review: "Review",
     allFeatures: "All",
+    friends: "Friends",
     primaryLabel: "Primary navigation",
   },
 

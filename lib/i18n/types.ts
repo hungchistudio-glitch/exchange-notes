@@ -343,6 +343,8 @@ export type TranslationDictionary = {
     review: string;
     /** The dock's fifth key: everything that is not one of the other four. */
     allFeatures: string;
+    /** Reached through Messages and the sheet; it is not Messages. */
+    friends: string;
     primaryLabel: string;
   };
 

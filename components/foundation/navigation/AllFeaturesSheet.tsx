@@ -132,7 +132,7 @@ export default function AllFeaturesSheet({
         {
           key: "friends",
           href: "/friends",
-          label: t.navigation.messages,
+          label: t.navigation.friends,
           Icon: UsersRound,
         },
       ],

@@ -361,6 +361,7 @@ const spanish: TranslationDictionary = {
     pronunciation: "Habla",
     review: "Repasar",
     allFeatures: "Todo",
+    friends: "Amigos",
     primaryLabel: "Navegación principal",
   },
 

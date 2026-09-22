@@ -349,6 +349,7 @@ const french: TranslationDictionary = {
     pronunciation: "Parole",
     review: "Réviser",
     allFeatures: "Tout",
+    friends: "Amis",
     primaryLabel: "Navigation principale",
   },
 

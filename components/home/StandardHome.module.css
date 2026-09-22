@@ -43,6 +43,39 @@
       rgb(255 255 255 / 0.75) 0%,
       rgb(255 255 255 / 0) 62%
     ),
+    /*
+      Three alignment rings around her.
+
+      The innermost is 132px because that is RING_RADIUS — where her keys
+      land when the ring opens. So the ground quietly says, before anything
+      has been pressed, where the thing that is about to appear will appear.
+      That is why this layer exists and why it is not simply a decoration
+      that could be any radius.
+
+      It is drawn at 2–5% rather than as a hard line for a reason: she is
+      centred by the flex box after the safe areas, not at exactly 50% of the
+      viewport, so on a phone with a notch she sits a few pixels below this
+      circle's centre. At this weight that is invisible; at a hairline it
+      would read as a miss.
+    */
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 131px,
+      rgb(0 0 0 / 0.05) 131px 132px,
+      transparent 132px 173px,
+      rgb(0 0 0 / 0.028) 173px 174px,
+      transparent 174px 250px,
+      rgb(0 0 0 / 0.018) 250px 251px,
+      transparent 251px
+    ),
+    /* A registration point at every major intersection — the mark a
+       technical drawing puts where two rules cross, so the grid reads as
+       something set out rather than something tiled. */
+    radial-gradient(
+      circle at 0 0,
+      rgb(0 0 0 / 0.11) 0 1.6px,
+      transparent 1.7px
+    ),
     /* 96px rules: the structure you notice only once you look for it */
     linear-gradient(to right, rgb(0 0 0 / 0.035) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(0 0 0 / 0.035) 1px, transparent 1px),
@@ -51,11 +84,51 @@
     linear-gradient(to bottom, rgb(0 0 0 / 0.016) 1px, transparent 1px);
   background-size:
     100% 100%,
+    100% 100%,
+    96px 96px,
     96px 96px,
     96px 96px,
     24px 24px,
     24px 24px;
-  background-repeat: no-repeat, repeat, repeat, repeat, repeat;
+  background-repeat:
+    no-repeat,
+    no-repeat,
+    repeat,
+    repeat,
+    repeat,
+    repeat,
+    repeat;
+}
+
+/*
+  Crop marks, the way a plate is trimmed.
+
+  Inset from the safe area rather than the viewport edge, so they sit where
+  the page actually begins on a phone with a notch or a home indicator. One
+  element draws all four with a border and two clip paths would be neater
+  than four boxes, so it is two pseudo-elements carrying two corners each.
+*/
+.surface::before,
+.surface::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.surface::before {
+  left: calc(env(safe-area-inset-left) + 20px);
+  top: calc(env(safe-area-inset-top) + 20px);
+  border-left: 1px solid rgb(0 0 0 / 0.16);
+  border-top: 1px solid rgb(0 0 0 / 0.16);
+}
+
+.surface::after {
+  right: calc(env(safe-area-inset-right) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 20px);
+  border-right: 1px solid rgb(0 0 0 / 0.16);
+  border-bottom: 1px solid rgb(0 0 0 / 0.16);
 }
 
 /* She takes the middle of what is left after the safe areas. */
@@ -70,5 +143,10 @@
 @media (prefers-contrast: more) {
   .surface {
     background-image: none;
+  }
+
+  .surface::before,
+  .surface::after {
+    display: none;
   }
 }
