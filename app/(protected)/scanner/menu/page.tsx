@@ -15,7 +15,6 @@ import MenuProcessing from "@/components/scanner/MenuProcessing";
 import MenuResultViewer from "@/components/scanner/MenuResultViewer";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
-import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useScanSession, type ScanFailure } from "@/lib/scanner/scanSession";
 import type { MenuAnalyzeResponse } from "@/lib/scanner/menuTypes";
 
@@ -45,7 +44,6 @@ function failureFromResponse(
  */
 export default function MenuTranslatorPage() {
   const { t } = useTranslation();
-  const { isCosmic } = useInterfaceMode();
   const interfaceLanguage = useInterfaceLanguage();
   const router = useRouter();
   const copy = t.scanner.menu;
@@ -81,9 +79,20 @@ export default function MenuTranslatorPage() {
   // development it always does — would pay for the same menu twice.
   const analysedImageRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!isCosmic) router.replace("/capture");
-  }, [isCosmic, router]);
+  /*
+   * No mode gate here any more.
+   *
+   * This screen used to send anyone not in Cosmic Mode to /capture, which is
+   * a different feature — identify one object — and Standard Mode's All
+   * Features sheet lists "Translate a menu" all the same. So the row was
+   * there, it was labelled correctly, and pressing it took you somewhere
+   * else. A door that leads to another room is worse than no door.
+   *
+   * Nothing here was ever Cosmic: AppHeader, MenuCamera, MenuProcessing and
+   * MenuResultViewer are the shared components, and the only mention of the
+   * mode in any of them is a comment about colour. The feature was finished
+   * and fenced.
+   */
 
   // The camera is the screen. Nothing here waits for a tap to start it, so
   // pointing the phone at a menu is the only step before capturing one.
@@ -140,8 +149,6 @@ export default function MenuTranslatorPage() {
     analysedImageRef.current = session.image;
     void analyze(session.image);
   }, [session.state, session.image, analyze]);
-
-  if (!isCosmic) return null;
 
   const showCamera =
     session.state === "camera_ready" ||
