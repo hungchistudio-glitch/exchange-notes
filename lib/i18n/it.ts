@@ -347,6 +347,8 @@ const italian: TranslationDictionary = {
     search: "Cerca",
     notes: "Note",
     pronunciation: "Voce",
+    review: "Ripassa",
+    allFeatures: "Tutto",
     primaryLabel: "Navigazione principale",
   },
 
@@ -723,7 +725,15 @@ const italian: TranslationDictionary = {
      * nobody is born knowing, so the hint sits under her until it has been
      * used once. Review needs no line here — its key is on screen.
      */
-    yumiHint: "Tira il suo occhio per aprire il menu",
+    yumiHint: "Tocca Yumi per aprire il menu",
+    panelTitle: "Tutte le funzioni",
+    panelLearning: "Studio",
+    panelDiscover: "Scopri",
+    panelPeople: "Persone",
+    panelMine: "Io",
+    toolCapture: "Identifica un oggetto",
+    toolMenu: "Traduci un menù",
+    yumiPanelTitle: "Come sta Yumi",
     hero: {
       title: "Continua a imparare",
       description: "Costruisci un vocabolario utile a partire dal mondo intorno a te.",

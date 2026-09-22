@@ -339,6 +339,10 @@ export type TranslationDictionary = {
        only from a home module. */
     notes: string;
     pronunciation: string;
+    /** The ring's eighth key, and the panel's. Not /pronunciation/review. */
+    review: string;
+    /** The dock's fifth key: everything that is not one of the other four. */
+    allFeatures: string;
     primaryLabel: string;
   };
 
@@ -744,8 +748,16 @@ export type TranslationDictionary = {
       afternoon: string;
       evening: string;
     };
-    /** The pull that opens the ring, shown until it has been used once. */
+    /** The tap that opens the ring, shown until it has been used once. */
     yumiHint: string;
+    panelTitle: string;
+    panelLearning: string;
+    panelDiscover: string;
+    panelPeople: string;
+    panelMine: string;
+    toolCapture: string;
+    toolMenu: string;
+    yumiPanelTitle: string;
 
     hero: {
       title: string;

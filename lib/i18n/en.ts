@@ -358,6 +358,8 @@ const english: TranslationDictionary = {
     search: "Search",
     notes: "Notes",
     pronunciation: "Speech",
+    review: "Review",
+    allFeatures: "All",
     primaryLabel: "Primary navigation",
   },
 
@@ -770,7 +772,15 @@ const english: TranslationDictionary = {
      * nobody is born knowing, so the hint sits under her until it has been
      * used once. Review needs no line here — its key is on screen.
      */
-    yumiHint: "Pull her eye open for the menu",
+    yumiHint: "Tap Yumi for the menu",
+    panelTitle: "All features",
+    panelLearning: "Learning",
+    panelDiscover: "Discover",
+    panelPeople: "People",
+    panelMine: "Mine",
+    toolCapture: "Identify a thing",
+    toolMenu: "Translate a menu",
+    yumiPanelTitle: "How Yumi is",
 
     hero: {
       title: "Keep learning",

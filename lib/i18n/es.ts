@@ -359,6 +359,8 @@ const spanish: TranslationDictionary = {
     search: "Buscar",
     notes: "Notas",
     pronunciation: "Habla",
+    review: "Repasar",
+    allFeatures: "Todo",
     primaryLabel: "Navegación principal",
   },
 
@@ -770,7 +772,15 @@ const spanish: TranslationDictionary = {
      * nobody is born knowing, so the hint sits under her until it has been
      * used once. Review needs no line here — its key is on screen.
      */
-    yumiHint: "Tira de su ojo para abrir el menú",
+    yumiHint: "Toca a Yumi para abrir el menú",
+    panelTitle: "Todas las funciones",
+    panelLearning: "Aprender",
+    panelDiscover: "Descubrir",
+    panelPeople: "Personas",
+    panelMine: "Yo",
+    toolCapture: "Identificar algo",
+    toolMenu: "Traducir un menú",
+    yumiPanelTitle: "Cómo está Yumi",
 
     hero: {
       title: "Sigue aprendiendo",

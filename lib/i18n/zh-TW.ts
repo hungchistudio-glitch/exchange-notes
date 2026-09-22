@@ -353,6 +353,8 @@ const traditionalChinese: TranslationDictionary = {
     search: "搜尋",
     notes: "筆記",
     pronunciation: "發音",
+    review: "複習",
+    allFeatures: "全部功能",
     primaryLabel: "主要導覽",
   },
 
@@ -754,7 +756,15 @@ const traditionalChinese: TranslationDictionary = {
      * nobody is born knowing, so the hint sits under her until it has been
      * used once. Review needs no line here — its key is on screen.
      */
-    yumiHint: "拉開她的眼睛打開選單",
+    yumiHint: "點一下 Yumi 打開選單",
+    panelTitle: "全部功能",
+    panelLearning: "學習",
+    panelDiscover: "發現",
+    panelPeople: "人",
+    panelMine: "我",
+    toolCapture: "拍照辨識",
+    toolMenu: "菜單翻譯",
+    yumiPanelTitle: "Yumi 的狀態",
 
     hero: {
       title: "繼續學習",

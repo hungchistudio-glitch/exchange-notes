@@ -347,6 +347,8 @@ const french: TranslationDictionary = {
     search: "Rechercher",
     notes: "Notes",
     pronunciation: "Parole",
+    review: "Réviser",
+    allFeatures: "Tout",
     primaryLabel: "Navigation principale",
   },
 
@@ -723,7 +725,15 @@ const french: TranslationDictionary = {
      * nobody is born knowing, so the hint sits under her until it has been
      * used once. Review needs no line here — its key is on screen.
      */
-    yumiHint: "Tire sur son œil pour ouvrir le menu",
+    yumiHint: "Touche Yumi pour ouvrir le menu",
+    panelTitle: "Toutes les fonctions",
+    panelLearning: "Apprendre",
+    panelDiscover: "Découvrir",
+    panelPeople: "Contacts",
+    panelMine: "Moi",
+    toolCapture: "Identifier un objet",
+    toolMenu: "Traduire un menu",
+    yumiPanelTitle: "Où en est Yumi",
     hero: {
       title: "Continuez d'apprendre",
       description: "Construisez un vocabulaire utile à partir du monde qui vous entoure.",
