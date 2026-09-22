@@ -583,8 +583,17 @@ export default function YumiRingOverlay({
             }
           }
 
-          // --- the occasional reach for a cookie
-          if (!openRef.current && !reduced && now > lungeAt) {
+          /*
+           * --- the occasional reach for a cookie
+           *
+           * Only while the screen is at rest. The cookies are hidden with
+           * `opacity` in both of the other states, which keeps their boxes —
+           * and a box is all the reachability test below can see. Without
+           * this she reaches for a biscuit the reader cannot see while they
+           * are reading a definition, which is a quieter version of the bug
+           * that hid the tray in the first place.
+           */
+          if (!openRef.current && !answeringRef.current && !reduced && now > lungeAt) {
             const cookies = Array.from(
               stageRef.current?.querySelectorAll<HTMLElement>("[data-yumi-cookie]") ?? [],
             );

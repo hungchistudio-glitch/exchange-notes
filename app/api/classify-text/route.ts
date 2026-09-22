@@ -89,9 +89,22 @@ const MODEL_COOLDOWN_MS = 65 * 1000;
  *
  * 14 rather than the vision path's 12 for the one difference that matters:
  * that call returns four short fields about a photo, this one returns
- * fourteen with a language enum. The measurement behind both is the note in
- * lib/ai/identifyObject.ts — p50 three to seven seconds — which is what the
- * `ms` in this route's own log lines now confirms or corrects.
+ * fourteen with a language enum.
+ *
+ * This route's own numbers, once it had a model that answers
+ * (gemini-3.5-flash-lite, production, 2026-09-22):
+ *
+ *   1405ms   8527ms
+ *
+ * Which settles the original question better than the fix did. The slower of
+ * those two is past the 6s ceiling this route used to have — so even on a
+ * healthy model, one lookup in some fraction of them was always going to be
+ * cut off and reported to the reader as "could not reach the dictionary".
+ * The ceiling was wrong independently of the model being wrong.
+ *
+ * Do not tighten this on the strength of the 1405. Two samples is a range,
+ * not a distribution, and the cost of being too tight here is the exact bug
+ * that took two days to find.
  */
 const REQUEST_TIMEOUT_MS = readBoundedInteger(
   process.env.TEXT_REQUEST_TIMEOUT_MS,
