@@ -1,27 +1,25 @@
 /*
-  The home screen as a painted ground.
+  A quiet technical ground for the home screen.
 
-  Three planes, hard-edged, one light. It replaces the faint technical grid
-  this screen used to carry, and it had to: that grid existed for exactly one
-  reason — to make white cards read as raised — and there are no cards left.
-  A saturated plane under a white card does not lift it, it cuts it out.
+  Three layers, all of them nearly invisible on their own: a fine grid, a
+  wider one over it, and a single soft light from the upper left. Together
+  they give the page the feel of something engineered rather than a blank
+  sheet — the same read the shell's machined highlight gives Yumi.
 
-  The three bands are the reference's own composition: sky, the mountain
-  behind her, the ground she stands on. Yumi sits at the centre of the
-  viewport, which puts her head against the mountain and her feet on the line
-  where the mountain meets the grass.
+  Everything here is black on the page's own pearl at between 1.5% and 3.5%
+  opacity. That is the whole budget.
 
-  Rules this follows, from the palette spec:
-    - saturated colour is only ever a plane; ink on it is black or white
-    - two hues meet at a hard edge, never through a gradient
-    - the shade inside a plane is the same hue pressed darker, one light
-      source for the whole app, upper left, so every dark side is 145deg
-    - the weave is 3.5% black over 4% white at 45deg, and nothing else:
-      no gloss, no glass, no highlight. That is Cosmic's language.
+  It was written to make white cards read as raised, and the cards are gone —
+  the screen is only Yumi now. It stays because the read it gives the page
+  outlived its reason: something engineered rather than a blank sheet, which
+  is the right ground for her whether or not anything is sitting on it. A
+  version of this screen with the palette's three planes as the ground was
+  tried and taken back out; saturated colour behind her competes with her
+  instead of carrying her, and colour belongs on elements, not on the page.
 
-  `background-attachment` stays at its default. This screen no longer
-  scrolls, but a fixed ground would still cost a full-surface repaint per
-  frame on the one screen already running a WebGL canvas.
+  `background-attachment` is deliberately left at its default: a fixed
+  ground on a scrolling page costs a full-surface repaint on every frame of
+  every scroll, on the one screen with a WebGL canvas already running.
 */
 
 .surface {
@@ -37,34 +35,27 @@
   */
   padding-bottom: 0;
 
-  background-color: #8fa4da;
+  background-color: var(--bg, #f4f1ea);
   background-image:
-    /* the weave, over everything */
-    repeating-linear-gradient(
-      45deg,
-      rgb(0 0 0 / 0.035) 0 1px,
-      transparent 1px 3px
+    /* the light, so the top of the page is where the page begins */
+    radial-gradient(
+      120% 70% at 12% -8%,
+      rgb(255 255 255 / 0.75) 0%,
+      rgb(255 255 255 / 0) 62%
     ),
-    repeating-linear-gradient(
-      -45deg,
-      rgb(255 255 255 / 0.04) 0 1px,
-      transparent 1px 3px
-    ),
-    /* one light, upper left, across all three planes at once */
-    linear-gradient(145deg, rgb(0 0 0 / 0) 46%, rgb(0 0 0 / 0.16) 100%),
-    /* sky · mountain · ground, cut not blended */
-    linear-gradient(
-      to bottom,
-      #8fa4da 0 40%,
-      #e2452b 40% 56%,
-      #2f7a3e 56% 100%
-    );
+    /* 96px rules: the structure you notice only once you look for it */
+    linear-gradient(to right, rgb(0 0 0 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.035) 1px, transparent 1px),
+    /* 24px grid: texture, not structure */
+    linear-gradient(to right, rgb(0 0 0 / 0.016) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.016) 1px, transparent 1px);
   background-size:
-    auto,
-    auto,
     100% 100%,
-    100% 100%;
-  background-repeat: repeat, repeat, no-repeat, no-repeat;
+    96px 96px,
+    96px 96px,
+    24px 24px,
+    24px 24px;
+  background-repeat: no-repeat, repeat, repeat, repeat, repeat;
 }
 
 /* She takes the middle of what is left after the safe areas. */
@@ -74,13 +65,10 @@
 
 /*
   Contrast settings are a request, not a preference to average with ours.
-  The planes are decoration carrying no information — the ring, the review
-  key and Yumi carry all of it — so they go entirely and the page returns to
-  the surface every other screen uses.
+  The grid is decoration by definition, so it goes entirely.
 */
 @media (prefers-contrast: more) {
   .surface {
-    background-color: var(--surface, #f5f3ed);
     background-image: none;
   }
 }
