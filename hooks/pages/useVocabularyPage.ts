@@ -206,6 +206,22 @@ export default function useVocabularyPage({
 
       setQuery("");
       setQuickFilter("all");
+
+      /*
+       * The word, not the shelf it is on.
+       *
+       * This expanded the card in the list and scrolled to it, which is
+       * where "open the saved word" landed you: the vocabulary page, with a
+       * card open somewhere in it. Every caller of this link says the same
+       * thing — the lexicon result card's "Open the saved word", the
+       * Cosmic console, today's word, the search sheet, and the iOS widget —
+       * and none of them mean "take me to the list".
+       *
+       * The card underneath still expands and still scrolls into view, so
+       * closing the sheet leaves the reader on the word they were looking
+       * at rather than at the top of the library.
+       */
+      setDetailItemId(matchingItem.id);
       setExpandedItemId(matchingItem.id);
       setCardGlancePulse((count) => count + 1);
       handledWidgetWordRequestRef.current = requestKey;
