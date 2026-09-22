@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toWidgetLanguage } from "@/lib/widget/yumiWidgetBridge";
 import {
   useCallback,
@@ -170,11 +171,16 @@ function getReactionText(reaction: HomeReactionMood, copy: YumiCopy) {
   }
 }
 
-function scrollToDailyFocus() {
-  document
-    .getElementById("daily-focus-card")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+/*
+ * Her status line is a key now, not a scroll.
+ *
+ * It used to jump to the home screen's daily-focus card. That card is gone
+ * with the rest of the modules, so the scroll had nothing left to find — and
+ * review, which the card was the way into, now lives on Yumi herself. This
+ * line is the visible half of that on the 2D stage, exactly as the key under
+ * the 3D one is on the ring's layer.
+ */
+const REVIEW_HREF = "/review";
 
 // The Home page's "little stage" for Yumi — same breathing eye-mark as
 // everywhere else, but here it roams a small ground, reacts to today's
@@ -742,13 +748,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
         <p className={styles.primaryText}>{primaryText}</p>
 
         {secondaryText ? (
-          <button
-            type="button"
-            className={styles.secondaryText}
-            onClick={scrollToDailyFocus}
-          >
+          <Link href={REVIEW_HREF} className={styles.secondaryText}>
             {secondaryText}
-          </button>
+          </Link>
         ) : null}
       </div>
     </div>

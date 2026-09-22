@@ -33,7 +33,20 @@ const TutorialOverlay = dynamic(
  * set, so no effect writes state on mount. Dismissing clears the flag, the
  * store notifies, and this unmounts on its own.
  */
-export default function TutorialLauncher() {
+export type TutorialLauncherProps = {
+  /**
+   * Draw the button. The home screen passes false: its button was one of the
+   * ten modules that screen used to carry, and Settings › Help has offered
+   * the same tour for as long as it has existed — but the unprompted first
+   * opening, right after onboarding, only ever happened on Home. So Home
+   * keeps mounting this for that one job and nothing else.
+   */
+  showButton?: boolean;
+};
+
+export default function TutorialLauncher({
+  showButton = true,
+}: TutorialLauncherProps) {
   const { t } = useTranslation();
   const copy = t.tutorial;
 
@@ -44,6 +57,7 @@ export default function TutorialLauncher() {
 
   return (
     <>
+      {showButton ? (
       <button
         type="button"
         onClick={() => setReopened(true)}
@@ -66,6 +80,7 @@ export default function TutorialLauncher() {
           />
         </span>
       </button>
+      ) : null}
 
       {showing && (
         <TutorialOverlay onClose={() => setReopened(false)} />

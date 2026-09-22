@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
+import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
 import styles from "./YumiRingOverlay.module.css";
@@ -87,6 +89,19 @@ const OPEN_RADIUS = 86;
 /** How far the keys sit from her centre once the ring is out. */
 const RING_RADIUS = 132;
 
+/* How long she has to be held before the press means review rather than a
+   tap, and how far a finger may wander inside that time and still be a
+   press. She can be turned and her eye can be pulled, so a press that
+   became a drag has to stop being a press. */
+const LONG_PRESS_MS = 450;
+const PRESS_SLOP_PX = 10;
+
+/* How long the scene gets before the dock is brought back as a rescue. Long
+   enough that a slow phone finishes first and nobody sees a dock; short
+   enough that a device which is never going to manage it is not left on a
+   screen it cannot leave. */
+const RING_GIVE_UP_MS = 8000;
+
 /* She reaches occasionally, not rhythmically: a fixed interval reads as a
    machine ticking rather than as an animal noticing something. */
 const LUNGE_MIN_MS = 8000;
@@ -108,6 +123,8 @@ export type YumiRingOverlayProps = {
   /** Fired when a reach lands, so the feeding sequence can take the bite. */
   onLungeArrive?: () => void;
   unreadCount?: number;
+  /** Words waiting. The key under her is drawn only while this is above zero. */
+  reviewDue?: number;
   /** Rendered underneath while the scene is starting, or if it cannot. */
   children: React.ReactNode;
 };
@@ -116,6 +133,7 @@ export default function YumiRingOverlay({
   stageRef,
   onLungeArrive,
   unreadCount = 0,
+  reviewDue = 0,
   children,
 }: YumiRingOverlayProps) {
   const router = useRouter();
@@ -130,6 +148,30 @@ export default function YumiRingOverlay({
   const reachingFor = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
+
+  /*
+   * Review lives on her.
+   *
+   * It is the one destination this screen used to offer that the ring has no
+   * door for, and the ring is seven keys because seven is the geometry that
+   * was verified. So a long press goes straight there — and the count below
+   * her is the key you can actually see, because a gesture nobody is told
+   * about is not a route.
+   *
+   * A press that turned into a drag is a drag. She can be turned and her eye
+   * can be pulled, and neither may end up somewhere else.
+   */
+  const pressTimer = useRef<number | null>(null);
+  const pressFrom = useRef<{ x: number; y: number } | null>(null);
+  const pressWentLong = useRef(false);
+
+  const endPress = useCallback(() => {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+    pressFrom.current = null;
+  }, []);
 
   /*
    * The ring is positioned from the eye's own projected point every frame,
@@ -162,6 +204,14 @@ export default function YumiRingOverlay({
     let handle: YumiSceneHandle | null = null;
     let raf = 0;
     let cancelled = false;
+
+    /* The dock is hidden on this screen on the strength of this ring
+       existing, so every way of not existing has to say so. */
+    setYumiRingState("pending");
+    const giveUp = window.setTimeout(
+      () => setYumiRingState("failed"),
+      RING_GIVE_UP_MS,
+    );
     let lungeAt = performance.now() + nextLungeDelay();
 
     const reduced =
@@ -181,6 +231,13 @@ export default function YumiRingOverlay({
             setOpen(true);
           },
           onTap: () => {
+            /* The scene reports a tap on pointer-up, which is also when a
+               long press has already fired and taken the reader to review.
+               Swallow that one so the ring does not open behind it. */
+            if (pressWentLong.current) {
+              pressWentLong.current = false;
+              return;
+            }
             /* A tap is the same key either way: it opens the ring, and once
                the ring is out it is the way home. */
             openRef.current = !openRef.current;
@@ -201,8 +258,14 @@ export default function YumiRingOverlay({
           },
         });
 
-        if (!handle) return;
+        if (!handle) {
+          window.clearTimeout(giveUp);
+          setYumiRingState("failed");
+          return;
+        }
         sceneRef.current = handle;
+        window.clearTimeout(giveUp);
+        setYumiRingState("live");
         setLive(true);
 
         const loop = (now: number) => {
@@ -265,7 +328,10 @@ export default function YumiRingOverlay({
       })
       .catch(() => {
         /* No 3D on this device. The 2D stage underneath is already correct
-           and stays visible; nothing else has to know. */
+           and stays visible — but the dock has to come back, because the
+           ring was what it stepped aside for. */
+        window.clearTimeout(giveUp);
+        setYumiRingState("failed");
       });
 
     const onResize = () => handle?.resize();
@@ -274,9 +340,13 @@ export default function YumiRingOverlay({
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
+      window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
       sceneRef.current = null;
       handle?.dispose();
+      /* Leaving the screen leaves no opinion behind: the next screen's dock
+         is not this screen's business. */
+      setYumiRingState("pending");
     };
     // stageRef and the callbacks are refs/stable for this screen's lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -330,10 +400,39 @@ export default function YumiRingOverlay({
           onPointerDown={event => {
             sceneRef.current?.pointerDown(event.clientX, event.clientY);
             (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+
+            /* Only while the ring is shut. With it out, holding a key is
+               how a reader reads a label, not how they leave. */
+            if (openRef.current) return;
+            pressWentLong.current = false;
+            pressFrom.current = { x: event.clientX, y: event.clientY };
+            pressTimer.current = window.setTimeout(() => {
+              pressTimer.current = null;
+              pressFrom.current = null;
+              pressWentLong.current = true;
+              router.push("/review");
+            }, LONG_PRESS_MS);
           }}
-          onPointerMove={event => sceneRef.current?.pointerMove(event.clientX, event.clientY)}
-          onPointerUp={() => sceneRef.current?.pointerUp()}
-          onPointerCancel={() => sceneRef.current?.pointerUp()}
+          onPointerMove={event => {
+            sceneRef.current?.pointerMove(event.clientX, event.clientY);
+
+            const from = pressFrom.current;
+            if (!from) return;
+            if (
+              Math.abs(event.clientX - from.x) > PRESS_SLOP_PX ||
+              Math.abs(event.clientY - from.y) > PRESS_SLOP_PX
+            ) {
+              endPress();
+            }
+          }}
+          onPointerUp={() => {
+            endPress();
+            sceneRef.current?.pointerUp();
+          }}
+          onPointerCancel={() => {
+            endPress();
+            sceneRef.current?.pointerUp();
+          }}
         />
 
         <div ref={ringRef} className={styles.ring} role={open ? "menu" : undefined}>
@@ -370,6 +469,28 @@ export default function YumiRingOverlay({
               </div>
             );
           })}
+
+          {/*
+            The one key on this screen that needs no gesture to find.
+
+            It is here rather than in the stage underneath because the stage
+            is hidden the moment the scene goes live, and it is inside the
+            ring element because that element is already being placed on her
+            eye's projected point every frame — so it follows her for free.
+          */}
+          {reviewDue > 0 ? (
+            <Link
+              href="/review"
+              className={styles.reviewKey}
+              tabIndex={open ? -1 : 0}
+            >
+              <span>{t.home.quickStart.review}</span>
+              <i>
+                {reviewDue}{" "}
+                {reviewDue === 1 ? t.home.progress.word : t.home.progress.words}
+              </i>
+            </Link>
+          ) : null}
 
           {/* She is the home key, and a character you have to guess at is
               not a key. So it is said out loud, only while the ring is out. */}

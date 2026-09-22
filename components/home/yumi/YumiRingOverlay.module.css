@@ -178,3 +178,65 @@
     transition-duration: 1ms;
   }
 }
+
+/*
+  The review key, under her while the ring is shut.
+
+  Black, on a screen whose ground is now three saturated planes. That is the
+  palette's rule rather than a fallback: saturated colour is a plane, black
+  is the line. The one key that has to read against sky, mountain and grass
+  alike is therefore the one that is not coloured at all — 19.6:1 on every
+  band, and it needs no per-band variant.
+
+  Placed from the ring's own box, which the frame loop already puts on her
+  eye's projected point, so it travels with her at no extra cost.
+*/
+.reviewKey {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%) translateY(86px);
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+
+  background: #0c0c0c;
+  color: #ffffff;
+  text-decoration: none;
+  white-space: nowrap;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.reviewKey span {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* The count is quieter than the verb, but still 8.2:1 on the key. */
+.reviewKey i {
+  font-style: normal;
+  font-size: 0.8125rem;
+  color: rgb(255 255 255 / 0.66);
+}
+
+.live .reviewKey {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+  Source order is the whole mechanism here: same specificity as the rule
+  above, declared after it, so the ring being out beats the scene being live
+  and the key gets out of the way of the spokes.
+*/
+.open .reviewKey {
+  opacity: 0;
+  pointer-events: none;
+}

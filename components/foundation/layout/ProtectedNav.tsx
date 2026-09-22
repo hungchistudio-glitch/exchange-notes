@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
@@ -10,6 +11,11 @@ import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import {
+  getServerYumiRingState,
+  getYumiRingState,
+  subscribeToYumiRing,
+} from "@/lib/home/yumiRing";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -52,6 +58,11 @@ export default function ProtectedNav() {
   const { isCosmic } = useInterfaceMode();
   const { openSearch } = useLexiconSearchSheet();
   const { unreadCount, pulseToken } = useUnreadMessageCount();
+  const ringState = useSyncExternalStore(
+    subscribeToYumiRing,
+    getYumiRingState,
+    getServerYumiRingState,
+  );
   const { count: pendingFriendRequestCount, pulseToken: friendRequestPulseToken } =
     useIncomingFriendRequestCount();
 
@@ -126,7 +137,14 @@ export default function ProtectedNav() {
    * give up its centre key is that nothing else in the app links to /home,
    * and a screen cannot fail to link to itself.
    */
-  if (!isCosmic && pathname === "/home") {
+  /*
+   * ...unless the ring never arrived. The home screen is only Yumi now, so
+   * if her scene cannot start there is nothing else on it to navigate from,
+   * and a dock that stepped aside for a ring has to step back when there is
+   * no ring. "pending" still hides it: the dock must not flash in during the
+   * second the scene is starting. See lib/home/yumiRing.
+   */
+  if (!isCosmic && pathname === "/home" && ringState !== "failed") {
     return null;
   }
 
