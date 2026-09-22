@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
 import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
@@ -11,8 +13,9 @@ import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import styles from "@/components/tutorial/NavKeyMap.module.css";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
-/* The dock's own order, and it has to stay the dock's own order — the whole
-   claim of this slide is that these six never move. See ProtectedNav. */
+/* The dock's own order, and it has to stay the dock's own order — the claim
+   of the lower half of this slide is that these six never move, once you have
+   left the home screen. See ProtectedNav. */
 const KEYS = [
   { key: "vocabulary", Icon: NavVocabularyIcon },
   { key: "messages", Icon: NavMessagesIcon },
@@ -58,6 +61,25 @@ export default function NavKeyMap() {
 
   return (
     <div className={styles.wrap}>
+      {/*
+        Two halves, because the app now navigates two ways and a slide that
+        showed only one of them would be teaching something false. Above: the
+        home screen, where Yumi is the navigation. Below: everywhere else,
+        where the six keys are, in the order they are always in.
+      */}
+      <p className={styles.caption}>{t.tutorial.steps.dock.homeLabel}</p>
+
+      <div className={styles.homeKey}>
+        <div className={styles.yumiWell}>
+          <Yumi3DFigure interactive={false} fill={0.44}>
+            <ExchangeNotesMark />
+          </Yumi3DFigure>
+        </div>
+        <span className={styles.ringHint} aria-hidden="true" />
+      </div>
+
+      <p className={styles.caption}>{t.tutorial.steps.dock.dockLabel}</p>
+
       <div
         className={styles.grid}
         role="list"

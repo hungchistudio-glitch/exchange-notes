@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, 
 import { LOGO_TIERS, exchangeNotesLogoGeometry } from "@/lib/brand/exchangeNotesLogo";
 import type { LaunchRendererProps } from "./types";
 import { YUMI_PRISM_CHECKPOINTS, YUMI_PRISM_DURATION_MS, YUMI_PRISM_HOLD_MS, YUMI_PRISM_REDUCED_DURATION_MS, buildYumiPrismTracks, computeYumiPrismFrame } from "./yumiPrismTimeline";
+import YumiPrismActor3D from "./YumiPrismActor3D";
 import styles from "./YumiPrismLaunch.module.css";
 
 const geometry = exchangeNotesLogoGeometry({ canvas: 512, ...LOGO_TIERS.inApp });
@@ -47,6 +48,9 @@ export default function YumiPrismLaunch({
   const [playing, setPlaying] = useState(true);
   const [run, setRun] = useState(0);
   const [phone, setPhone] = useState(false);
+  /* The flat lens steps aside only once the model is actually drawing, so a
+     device that cannot start WebGL never sees an empty actor. */
+  const [actorIs3D, setActorIs3D] = useState(false);
   const duration = reduced ? YUMI_PRISM_REDUCED_DURATION_MS : YUMI_PRISM_DURATION_MS;
 
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
@@ -209,7 +213,24 @@ export default function YumiPrismLaunch({
               <div data-track="actor" className={styles.actor}>
                 <div className={styles.glass}>
                   <div data-track="sweep" className={styles.sweep} />
-                  <svg className={styles.yumi} viewBox="0 0 512 512" fill="none">
+                  {/*
+                    The lens is Yumi herself now, so the film resolves into
+                    the thing you then touch rather than dissolving to make
+                    way for it. Everything around it — the aura, the halo,
+                    the orbit light, this sweep, the lockup, the hold and the
+                    handoff — is the same film on the same clock.
+                  */}
+                  <YumiPrismActor3D
+                    timeRef={reviewMode ? currentTime : null}
+                    reduced={reduced}
+                    onLive={() => setActorIs3D(true)}
+                  />
+                  <svg
+                    className={styles.yumi}
+                    viewBox="0 0 512 512"
+                    fill="none"
+                    style={actorIs3D ? { visibility: "hidden" } : undefined}
+                  >
                     <defs>
                       <linearGradient id={`${id}-ink`} x1="70" y1="110" x2="440" y2="420" gradientUnits="userSpaceOnUse">
                         <stop className={styles.inkFrom} /><stop offset="0.52" className={styles.inkVia} /><stop offset="1" className={styles.inkTo} />

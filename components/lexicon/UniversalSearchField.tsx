@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, LoaderCircle, Mic, Search } from "lucide-react";
-import { useCallback, useRef, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
@@ -32,7 +32,24 @@ import { insertValues } from "@/lib/utils";
    read the answer without leaving or covering the home page.
    ========================================================= */
 
-export default function UniversalSearchField() {
+export type UniversalSearchFieldProps = {
+  /*
+   * Fired when the field starts or stops showing something.
+   *
+   * On the home screen this is what lifts Yumi out of the way and gives the
+   * column under her a height to scroll inside — a dictionary entry is taller
+   * than the room she leaves at rest, and that layer is `position: fixed`, so
+   * an answer that overruns it cannot be scrolled to at all.
+   *
+   * Optional because this field is not only a home-screen thing: anywhere
+   * that has room for it simply does not pass one.
+   */
+  onAnswerChange?: (hasAnswer: boolean) => void;
+};
+
+export default function UniversalSearchField({
+  onAnswerChange,
+}: UniversalSearchFieldProps = {}) {
   const router = useRouter();
   const { t, language: interfaceLanguage } = useTranslation();
   const copy = t.lexicon;
@@ -133,6 +150,10 @@ export default function UniversalSearchField() {
 
   const hasAnswer =
     search.status !== "idle" || search.savedMatches.length > 0;
+
+  useEffect(() => {
+    onAnswerChange?.(hasAnswer);
+  }, [hasAnswer, onAnswerChange]);
 
   return (
     <div className="min-w-0">

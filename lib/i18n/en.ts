@@ -290,9 +290,12 @@ const english: TranslationDictionary = {
           "I'm Yumi. You notice a word, thought, sound, or scene; I help you keep its first meaning and find it again later. Exchange Notes is a private learning space, not a feed you have to perform for.",
       },
       dock: {
-        title: "Six keys that never move",
+        title:
+          "Yumi at home, six keys everywhere else",
         body:
-          "The bottom bar always stays in the same order: Vocabulary, Messages, Home, Search, Discover, and Settings. Only the active ring moves, so your thumb can learn where everything lives.",
+          "On the home screen Yumi is the navigation: pull her eye and the sections burst open around her, then tap her to come back. Everywhere else the bar along the bottom holds the same six in the same order — vocabulary, messages, home, search, discover and settings. Only the ring moves.",
+        homeLabel: "On the home screen",
+        dockLabel: "Everywhere else",
       },
       setup: {
         title: "Welcome. Let's make this yours",
@@ -353,6 +356,11 @@ const english: TranslationDictionary = {
     discover: "Discover",
     settings: "Settings",
     search: "Search",
+    notes: "Notes",
+    pronunciation: "Speech",
+    review: "Review",
+    allFeatures: "All",
+    friends: "Friends",
     primaryLabel: "Primary navigation",
   },
 
@@ -758,6 +766,22 @@ const english: TranslationDictionary = {
       afternoon: "Good afternoon",
       evening: "Good evening",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Tap Yumi for the menu",
+    panelTitle: "All features",
+    panelLearning: "Learning",
+    panelDiscover: "Discover",
+    panelPeople: "People",
+    panelMine: "Mine",
+    toolCapture: "Identify a thing",
+    toolMenu: "Translate a menu",
+    yumiPanelTitle: "How Yumi is",
 
     hero: {
       title: "Keep learning",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toWidgetLanguage } from "@/lib/widget/yumiWidgetBridge";
 import {
   useCallback,
@@ -41,9 +42,26 @@ import styles from "./YumiHomeStage.module.css";
 
 type YumiCopy = TranslationDictionary["home"]["yumi"];
 
+export type YumiLines = {
+  /** Her status — the mood line, or what she is saying mid-bite. */
+  primary: string;
+  /** The hint under it, empty while she is eating or reacting. */
+  secondary: string;
+};
+
 type YumiHomeStageProps = {
   items: VocabularyItem[];
   onMoodChange?: (mood: HomeMood) => void;
+  /**
+   * Her voice, for a screen that is not painting this stage.
+   *
+   * Eleven moods' worth of lines are written here and translated into five
+   * languages, and on the home screen the 3D scene hides the whole stage the
+   * moment it goes live — so the lines were being computed and shown to
+   * nobody. Rather than write a second set for the overlay to say, the
+   * overlay asks for these.
+   */
+  onLinesChange?: (lines: YumiLines) => void;
 };
 
 const REACTION_DURATION_MS = 3900;
@@ -170,18 +188,27 @@ function getReactionText(reaction: HomeReactionMood, copy: YumiCopy) {
   }
 }
 
-function scrollToDailyFocus() {
-  document
-    .getElementById("daily-focus-card")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+/*
+ * Her status line is a key now, not a scroll.
+ *
+ * It used to jump to the home screen's daily-focus card. That card is gone
+ * with the rest of the modules, so the scroll had nothing left to find — and
+ * review, which the card was the way into, now lives on Yumi herself. This
+ * line is the visible half of that on the 2D stage, exactly as the key under
+ * the 3D one is on the ring's layer.
+ */
+const REVIEW_HREF = "/review";
 
 // The Home page's "little stage" for Yumi — same breathing eye-mark as
 // everywhere else, but here it roams a small ground, reacts to today's
 // word count, and drifts into a quieter mood after a few days away. Shares
 // the same yumi_pet_state row (and cookie tray) as the Vocabulary page's
 // YumiCompanion, so it's the same pet remembering the same history.
-export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProps) {
+export default function YumiHomeStage({
+  items,
+  onMoodChange,
+  onLinesChange,
+}: YumiHomeStageProps) {
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
   const { supportLanguage } = useDisplayLanguages();
@@ -639,6 +666,21 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
     ?? (reaction ? getReactionText(reaction, copy) : lines.primary);
   const secondaryText = feeding.isFeeding || reaction ? "" : lines.secondary;
 
+  /* Kept in a ref so a caller passing an inline arrow does not re-fire this
+     on every render of the screen above. The two strings are the dependency,
+     which is what actually changed when there is something new to say. */
+  const onLinesChangeRef = useRef(onLinesChange);
+  useEffect(() => {
+    onLinesChangeRef.current = onLinesChange;
+  }, [onLinesChange]);
+
+  useEffect(() => {
+    onLinesChangeRef.current?.({
+      primary: primaryText,
+      secondary: secondaryText,
+    });
+  }, [primaryText, secondaryText]);
+
   return (
     <div
       ref={stageRef}
@@ -661,6 +703,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
 
             <div
               ref={figureRef}
+              /* Where the 3D Yumi sits while the ring is shut, so she rides
+                 this screen's scroll instead of floating over it. */
+              data-yumi-figure=""
               className={`${styles.figure} ${isWaking ? styles.waking : ""} ${
                 pupilOffset ? styles.tracking : ""
               }`}
@@ -739,13 +784,9 @@ export default function YumiHomeStage({ items, onMoodChange }: YumiHomeStageProp
         <p className={styles.primaryText}>{primaryText}</p>
 
         {secondaryText ? (
-          <button
-            type="button"
-            className={styles.secondaryText}
-            onClick={scrollToDailyFocus}
-          >
+          <Link href={REVIEW_HREF} className={styles.secondaryText}>
             {secondaryText}
-          </button>
+          </Link>
         ) : null}
       </div>
     </div>

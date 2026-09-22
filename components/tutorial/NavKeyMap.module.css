@@ -113,3 +113,57 @@
     transition: none;
   }
 }
+
+/*
+  The slide has two halves now: the home screen, where Yumi is the
+  navigation, and everywhere else, where the six keys are. The captions are
+  what make it two halves rather than one confusing picture.
+*/
+.caption {
+  margin: 0 0 8px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint, rgb(0 0 0 / 0.4));
+  text-align: center;
+}
+
+.grid + .caption,
+.homeKey + .caption {
+  margin-top: 18px;
+}
+
+.homeKey {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 78px;
+}
+
+.yumiWell {
+  width: 62px;
+  height: 62px;
+}
+
+/*
+  One faint ring, held still. The sections really do burst out of her, but a
+  slide that animated that would be competing with the row underneath for
+  the same glance — and the sentence beside it already says what happens.
+*/
+.ringHint {
+  position: absolute;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 1px dashed rgb(0 0 0 / 0.16);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ringHint {
+    border-style: solid;
+    border-color: rgb(0 0 0 / 0.1);
+  }
+}

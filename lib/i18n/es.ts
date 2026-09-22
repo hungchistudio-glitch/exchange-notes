@@ -291,9 +291,12 @@ const spanish: TranslationDictionary = {
           "Soy Yumi. Tú notas una palabra, una idea, un sonido o una escena; yo te ayudo a conservar su primer significado y a encontrarlo después. Exchange Notes es un espacio privado para aprender, no un feed en el que tengas que actuar.",
       },
       dock: {
-        title: "Seis teclas que nunca cambian de sitio",
+        title:
+          "Yumi en el inicio, seis teclas en todo lo demás",
         body:
-          "La barra inferior mantiene siempre el mismo orden: Vocabulario, Mensajes, Inicio, Buscar, Descubrir y Ajustes. Solo se mueve el anillo activo, para que tu pulgar aprenda dónde vive cada herramienta.",
+          "En la pantalla de inicio Yumi es la navegación: tira de su ojo y las secciones se abren a su alrededor; tócala para volver. En todo lo demás, la barra inferior mantiene las mismas seis en el mismo orden: vocabulario, mensajes, inicio, buscar, descubrir y ajustes. Solo se mueve el círculo.",
+        homeLabel: "En el inicio",
+        dockLabel: "En todo lo demás",
       },
       setup: {
         title: "Te damos la bienvenida. Hazlo tuyo",
@@ -354,6 +357,11 @@ const spanish: TranslationDictionary = {
     discover: "Descubrir",
     settings: "Ajustes",
     search: "Buscar",
+    notes: "Notas",
+    pronunciation: "Habla",
+    review: "Repasar",
+    allFeatures: "Todo",
+    friends: "Amigos",
     primaryLabel: "Navegación principal",
   },
 
@@ -758,6 +766,22 @@ const spanish: TranslationDictionary = {
       afternoon: "Buenas tardes",
       evening: "Buenas noches",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "Toca a Yumi para abrir el menú",
+    panelTitle: "Todas las funciones",
+    panelLearning: "Aprender",
+    panelDiscover: "Descubrir",
+    panelPeople: "Personas",
+    panelMine: "Yo",
+    toolCapture: "Identificar algo",
+    toolMenu: "Traducir un menú",
+    yumiPanelTitle: "Cómo está Yumi",
 
     hero: {
       title: "Sigue aprendiendo",

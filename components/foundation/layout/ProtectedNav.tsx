@@ -1,6 +1,8 @@
 "use client";
 
+import { LayoutGrid } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 
 import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
 import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
@@ -9,15 +11,36 @@ import NavSearchIcon from "@/components/foundation/icons/NavSearchIcon";
 import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
 import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import BottomNavigation from "@/components/foundation/layout/BottomNavigation";
+import AllFeaturesSheet from "@/components/foundation/navigation/AllFeaturesSheet";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import {
+  getServerYumiRingState,
+  getYumiRingState,
+  subscribeToYumiRing,
+} from "@/lib/home/yumiRing";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import useIncomingFriendRequestCount from "@/hooks/friends/useIncomingFriendRequestCount";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useUnreadMessageCount from "@/hooks/messages/useUnreadMessageCount";
 
+/*
+ * Which key a route belongs to.
+ *
+ * Friends sits under Messages: the only screens that link to it are a
+ * conversation list and the features sheet, and a reader who reached it came
+ * through the first.
+ */
 function isActive(pathname: string, href: string) {
   if (href === "/home") {
     return pathname === "/home";
+  }
+
+  if (href === "/messages") {
+    return (
+      pathname === "/messages" ||
+      pathname.startsWith("/messages/") ||
+      pathname === "/friends"
+    );
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -46,6 +69,13 @@ function isInsideConversation(pathname: string) {
 const ICON_CLASS_NAME = "h-[22px] w-[22px]";
 const COSMIC_ICON_CLASS_NAME = "h-[19px] w-[19px]";
 
+type NavRoute = {
+  href?: string;
+  label: string;
+  renderIcon: (active: boolean, className: string) => ReactNode;
+  onSelect?: () => void;
+};
+
 export default function ProtectedNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -54,60 +84,179 @@ export default function ProtectedNav() {
   const { unreadCount, pulseToken } = useUnreadMessageCount();
   const { count: pendingFriendRequestCount, pulseToken: friendRequestPulseToken } =
     useIncomingFriendRequestCount();
+  const ringState = useSyncExternalStore(
+    subscribeToYumiRing,
+    getYumiRingState,
+    getServerYumiRingState,
+  );
+
+  const [featuresOpen, setFeaturesOpen] = useState(false);
 
   /*
-   * Six keys, and the sixth is Search.
+   * Two rows, because the two modes were asked to stay different.
    *
-   * The plan was to swap the centre key — Home on the home screen, Search
-   * everywhere else — until a grep turned up the thing that makes that
-   * unshippable: this dock is the only route back to `/home` in the entire app.
-   * Nothing else links there. Trading the centre key away would have left a
-   * reader on the Vocabulary screen with no way home at all.
+   * Standard Mode's row is five keys: four destinations and a sheet holding
+   * everything else. Vocabulary and Discover moved into that sheet, which is
+   * the cost of the fifth slot and the reason the sheet opens on Vocabulary.
    *
-   * So Search is added rather than substituted, directly beside Home, and
-   * every existing key keeps its position. Six icon-only keys still clear
-   * the 44px touch target on the narrowest phone the app supports (53px each
-   * at 375px wide), which is what makes the extra slot affordable.
+   * Cosmic Mode keeps the six it has always had. Its Command Deck is built
+   * around that set, and this change was scoped to Standard Mode on purpose:
+   * one mode's navigation is not evidence about the other's.
    *
-   * It is present on the home screen too, where the field above it does the
-   * same job. A dock whose keys appear and disappear by route is a dock
-   * nobody can build a habit around, and the habit is the whole point.
+   * Search is an action in both. It opens a sheet, not a route — rendering it
+   * as a link to nowhere would put a URL in the status bar, offer a useless
+   * "open in new tab", and hand the wrong role to a screen reader.
+   *
+   * The reason Home is a key at all, in either row: this dock is the only
+   * route back to `/home` in the entire app. Nothing else links there. Every
+   * rearrangement has to keep that.
    */
-  const navRoutes = [
+  const cosmicRoutes: NavRoute[] = [
     {
       href: "/vocabulary",
       label: t.navigation.vocabulary,
-      Icon: NavVocabularyIcon,
+      renderIcon: (active, className) => (
+        <NavVocabularyIcon className={className} active={active} />
+      ),
     },
     {
       href: "/messages",
       label: t.navigation.messages,
-      Icon: NavMessagesIcon,
+      renderIcon: (active, className) => (
+        <NavMessagesIcon className={className} active={active} />
+      ),
     },
     {
       href: "/home",
       label: t.navigation.home,
-      Icon: NavHomeIcon,
+      renderIcon: (active, className) => (
+        <NavHomeIcon className={className} active={active} />
+      ),
     },
     {
-      // No href: this opens a sheet, not a route. See BottomNavigation.
       label: t.navigation.search,
-      Icon: NavSearchIcon,
+      renderIcon: (active, className) => (
+        <NavSearchIcon className={className} active={active} />
+      ),
       onSelect: () => openSearch(),
     },
     {
       href: "/discover",
       label: t.navigation.discover,
-      Icon: NavDiscoverIcon,
+      renderIcon: (active, className) => (
+        <NavDiscoverIcon className={className} active={active} />
+      ),
     },
     {
       href: "/profile",
       label: t.navigation.settings,
-      Icon: NavSettingsIcon,
+      renderIcon: (active, className) => (
+        <NavSettingsIcon className={className} active={active} />
+      ),
     },
   ];
 
+  const standardRoutes: NavRoute[] = [
+    {
+      href: "/home",
+      label: t.navigation.home,
+      renderIcon: (active, className) => (
+        <NavHomeIcon className={className} active={active} />
+      ),
+    },
+    {
+      label: t.navigation.search,
+      renderIcon: (active, className) => (
+        <NavSearchIcon className={className} active={active} />
+      ),
+      onSelect: () => openSearch(),
+    },
+    {
+      href: "/messages",
+      label: t.navigation.messages,
+      renderIcon: (active, className) => (
+        <NavMessagesIcon className={className} active={active} />
+      ),
+    },
+    {
+      href: "/profile",
+      label: t.navigation.settings,
+      renderIcon: (active, className) => (
+        <NavSettingsIcon className={className} active={active} />
+      ),
+    },
+    {
+      /*
+       * No href, like Search: a sheet is not a place. It never lights up,
+       * not even on the pages it leads to — lighting it on Vocabulary would
+       * tell the reader the sheet is where they are, and it is closed.
+       */
+      label: t.navigation.allFeatures,
+      renderIcon: (_active, className) => (
+        <LayoutGrid className={className} strokeWidth={1.8} aria-hidden="true" />
+      ),
+      onSelect: () => setFeaturesOpen(true),
+    },
+  ];
+
+  const navRoutes = isCosmic ? cosmicRoutes : standardRoutes;
   const iconClassName = isCosmic ? COSMIC_ICON_CLASS_NAME : ICON_CLASS_NAME;
+
+  function toItems() {
+    return navRoutes.map(route => {
+      const active = Boolean(route.href) && isActive(pathname, route.href!);
+      const isMessages = route.href === "/messages";
+      /*
+       * A pending friend request badges Home, not Messages.
+       *
+       * Both live under the Messages key now, but a dock key carries one
+       * number and these are two different things — a message someone sent
+       * you and a person asking to be added. Summing them would make a "3"
+       * that means nothing. Home keeps the request badge it has always had,
+       * and the home screen itself names the two separately.
+       */
+      const isHome = route.href === "/home";
+
+      return {
+        href: route.href,
+        label: route.label,
+        active,
+        icon: route.renderIcon(active, iconClassName),
+        onSelect: route.onSelect,
+        badgeCount: isMessages
+          ? unreadCount
+          : isHome
+            ? pendingFriendRequestCount
+            : undefined,
+        pulseToken: isMessages
+          ? pulseToken
+          : isHome
+            ? friendRequestPulseToken
+            : undefined,
+      };
+    });
+  }
+
+  const sheet = isCosmic ? null : (
+    <AllFeaturesSheet
+      open={featuresOpen}
+      onClose={() => setFeaturesOpen(false)}
+    />
+  );
+
+  /*
+   * Standard Mode's home screen has no dock, because Yumi is the dock there:
+   * the ring she opens carries every key this row has and she is Home.
+   *
+   * ...unless the ring never arrived. The home screen is only Yumi now, so if
+   * her scene cannot start there is nothing else on it to navigate from, and
+   * a dock that stepped aside for a ring has to step back when there is no
+   * ring. "pending" still hides it: the dock must not flash in during the
+   * second the scene is starting. See lib/home/yumiRing.
+   */
+  if (!isCosmic && pathname === "/home" && ringState !== "failed") {
+    return null;
+  }
 
   /*
    * Hidden outright on a phone, dimmed on a desktop where there is room for
@@ -117,54 +266,25 @@ export default function ProtectedNav() {
    */
   if (isInsideConversation(pathname)) {
     return (
-      <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">
-        <BottomNavigation
-          label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
-          items={navRoutes.map((route) => {
-            const active = Boolean(route.href) && isActive(pathname, route.href!);
-
-            return {
-              href: route.href,
-              label: route.label,
-              active,
-              icon: <route.Icon className={iconClassName} active={active} />,
-              onSelect: route.onSelect,
-            };
-          })}
-        />
-      </div>
+      <>
+        <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">
+          <BottomNavigation
+            label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
+            items={toItems()}
+          />
+        </div>
+        {sheet}
+      </>
     );
   }
 
   return (
-    <BottomNavigation
-      label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
-      items={navRoutes.map((route) => {
-        const active = Boolean(route.href) && isActive(pathname, route.href!);
-        const isMessages = route.href === "/messages";
-        // Home is where the "add friends" entry point (LearningPartnerCard)
-        // lives, and there's no dedicated Friends tab, so a pending
-        // incoming request badges Home instead of going unnoticed.
-        const isHome = route.href === "/home";
-
-        return {
-          href: route.href,
-          label: route.label,
-          active,
-          icon: <route.Icon className={iconClassName} active={active} />,
-          onSelect: route.onSelect,
-          badgeCount: isMessages
-            ? unreadCount
-            : isHome
-              ? pendingFriendRequestCount
-              : undefined,
-          pulseToken: isMessages
-            ? pulseToken
-            : isHome
-              ? friendRequestPulseToken
-              : undefined,
-        };
-      })}
-    />
+    <>
+      <BottomNavigation
+        label={isCosmic ? t.cosmic.deck.dockLabel : t.navigation.primaryLabel}
+        items={toItems()}
+      />
+      {sheet}
+    </>
   );
 }

@@ -285,9 +285,12 @@ const traditionalChinese: TranslationDictionary = {
           "我是 Yumi。你留意到一個字、一個想法、一段聲音或眼前的畫面；我幫你保留第一次理解它的方式，之後再帶它回來。Exchange Notes 是你的私人學習空間，不是需要表演的動態牆。",
       },
       dock: {
-        title: "六個位置永遠不會改變",
+        title:
+          "首頁是 Yumi，其他地方是六個位置",
         body:
-          "底部 Bar 會固定依序放著：單字、訊息、首頁、搜尋、探索與設定。只有目前位置的圓環會移動，讓你的手指很快就能記住每個工具在哪裡。",
+          "在首頁，Yumi 就是導覽：拉開她的眼睛，分頁會繞著她彈開，點她一下就回來。離開首頁之後，底部 Bar 依序固定放著單字、訊息、首頁、搜尋、探索與設定，只有目前位置的圓環會移動。",
+        homeLabel: "在首頁",
+        dockLabel: "其他頁面",
       },
       setup: {
         title: "歡迎，先調整成你的樣子",
@@ -348,6 +351,11 @@ const traditionalChinese: TranslationDictionary = {
     discover: "探索",
     settings: "設定",
     search: "搜尋",
+    notes: "筆記",
+    pronunciation: "發音",
+    review: "複習",
+    allFeatures: "全部功能",
+    friends: "好友",
     primaryLabel: "主要導覽",
   },
 
@@ -742,6 +750,22 @@ const traditionalChinese: TranslationDictionary = {
       afternoon: "午安",
       evening: "晚安",
     },
+    /*
+     * The one gesture the home screen cannot show you.
+     *
+     * The ring is the only navigation on this screen and it is behind a pull
+     * nobody is born knowing, so the hint sits under her until it has been
+     * used once. Review needs no line here — its key is on screen.
+     */
+    yumiHint: "點一下 Yumi 打開選單",
+    panelTitle: "全部功能",
+    panelLearning: "學習",
+    panelDiscover: "發現",
+    panelPeople: "人",
+    panelMine: "我",
+    toolCapture: "拍照辨識",
+    toolMenu: "菜單翻譯",
+    yumiPanelTitle: "Yumi 的狀態",
 
     hero: {
       title: "繼續學習",

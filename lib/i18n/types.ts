@@ -306,7 +306,15 @@ export type TranslationDictionary = {
         note: string;
         saveError: string;
       };
-      dock: { title: string; body: string };
+      /* The step teaches two things now, because the home screen navigates
+         differently from every other screen: Yumi is the navigation there,
+         and the six keys are everywhere else. */
+      dock: {
+        title: string;
+        body: string;
+        homeLabel: string;
+        dockLabel: string;
+      };
       home: { title: string; body: string };
       search: { title: string; body: string };
       notes: { title: string; body: string };
@@ -326,6 +334,17 @@ export type TranslationDictionary = {
     settings: string;
     /** The dock's centre slot, everywhere except the home screen itself. */
     search: string;
+    /* Two sections the dock never had a key for. The ring does: notes was
+       reachable only from one link on the home screen, and the speech lab
+       only from a home module. */
+    notes: string;
+    pronunciation: string;
+    /** The ring's eighth key, and the panel's. Not /pronunciation/review. */
+    review: string;
+    /** The dock's fifth key: everything that is not one of the other four. */
+    allFeatures: string;
+    /** Reached through Messages and the sheet; it is not Messages. */
+    friends: string;
     primaryLabel: string;
   };
 
@@ -731,6 +750,16 @@ export type TranslationDictionary = {
       afternoon: string;
       evening: string;
     };
+    /** The tap that opens the ring, shown until it has been used once. */
+    yumiHint: string;
+    panelTitle: string;
+    panelLearning: string;
+    panelDiscover: string;
+    panelPeople: string;
+    panelMine: string;
+    toolCapture: string;
+    toolMenu: string;
+    yumiPanelTitle: string;
 
     hero: {
       title: string;

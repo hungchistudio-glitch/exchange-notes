@@ -1,0 +1,455 @@
+/*
+  Yumi's canvas is one fixed full-viewport surface that is always mounted,
+  and she is placed within it in screen coordinates. That is what lets her
+  sit in the home stage, scroll with it, and then fly to the middle for the
+  ring without a second WebGL context or a handoff between two of her.
+
+  Everything here is inert until the scene reports itself live, so a device
+  that cannot start WebGL keeps the 2D stage and never sees an empty box.
+*/
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 45; /* Under the dock's 40-and-up siblings only where it must be. */
+  pointer-events: none;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.live .canvas {
+  opacity: 1;
+  /* She is the only thing on this layer a finger may reach while the ring
+     is shut, and the canvas is the whole viewport — so the surface takes
+     pointer events but the page beneath keeps scrolling everywhere she is
+     not. `touch-action: none` only where she is would need a second box to
+     track her; the scene ignores a drag that did not start on the eye, and
+     a drag that did should not also scroll the page. */
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Hidden rather than unmounted: it keeps the moods, the feeding sequence,
+   the pet state and the widget bridge running, and `visibility` leaves its
+   layout — and so the anchor this canvas positions her from — intact. */
+.replaced {
+  visibility: hidden;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgb(0 0 0 / 0.38);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+  cursor: default;
+}
+
+.open .scrim {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Positioned on the eye's own projected point every frame by the loop, so
+   it stays with her while she flies and while the band is stretched. */
+.ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+
+.spoke {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  transition: opacity 260ms ease, scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  scale: 0.55;
+}
+
+.open .spoke {
+  opacity: 1;
+  scale: 1;
+  pointer-events: auto;
+}
+
+/*
+  A key is a disc and a caption, not one box.
+
+  The disc stays 62px so the ring reads as a ring. The caption under it is
+  84px, because "Impostazioni" and "Vocabolario" broke mid-word inside 62 —
+  and a word split across two lines at an arbitrary letter is not a word.
+  The ring's geometry reserves the caption's width, not the disc's.
+*/
+.spoke button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 84px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: transform 160ms ease;
+}
+
+.spoke button:active {
+  transform: scale(0.94);
+}
+
+.disc {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+}
+
+/*
+  Two lines, no ellipsis, and no breaking inside a word.
+
+  This was one line clipped at 54px, which is fine in Chinese — every label
+  is two characters — and wrong in every other language the app speaks. A
+  truncated word is not a localised word, and a reader turning their text
+  size up made it worse rather than better.
+*/
+.spokeLabel {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  width: 100%;
+  text-align: center;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px var(--surface);
+}
+
+/* In the dock this count badges 訊息 and the friend-request count badges
+   首頁 — which is Yumi now, so that one belongs on her, not here. */
+.badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.5625rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  letter-spacing: 0;
+  /* A ring of the key's own colour, so the count still reads where it sits
+     over Yumi's shell rather than over the page. */
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.homecap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  transform: translate(-50%, -50%) translateY(192px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft, rgb(0 0 0 / 0.55));
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+.open .homecap {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spoke,
+  .scrim,
+  .canvas,
+  .homecap {
+    transition-duration: 1ms;
+  }
+}
+
+/*
+  Everything that is not her.
+
+  Two columns placed from the ring's own box — the one the frame loop puts on
+  her eye's projected point every frame — so they follow her without a second
+  thing tracking her. Above: who is reading, and when. Below: what she is
+  saying, the review key, and the gesture that is nowhere on screen.
+
+  94px of clearance is her 72px radius plus 22 of air. Everything inside
+  stacks in normal flow from there rather than at hand-counted offsets, which
+  is what lets a reader at the largest text size get a taller column instead
+  of overlapping lines.
+
+  Both are inert until the scene is live, and both get out of the way when
+  the ring is out: the spokes need that space, and a screen that is asking
+  you to choose should not also be talking.
+*/
+.above,
+.below {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /*
+    An explicit width, not a max-width.
+
+    The ring's own box is zero-wide — it is a point she is tracked by, not a
+    container — and an absolutely positioned child of a zero-wide containing
+    block shrinks to its minimum content width, which for a Chinese line is
+    one character per row. A max-width never gets consulted. Setting the
+    width outright is what stops the shrink-to-fit from ever running.
+  */
+  width: min(22rem, calc(100vw - 2.5rem));
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.above {
+  transform: translate(-50%, -100%) translateY(-94px);
+  gap: 0.125rem;
+}
+
+.below {
+  transform: translate(-50%, 0) translateY(94px);
+  gap: 0.875rem;
+}
+
+.live .above,
+.live .below {
+  opacity: 1;
+}
+
+/*
+  The column below her takes pointer events as a whole, because the search
+  field in it is a real input and a field you cannot focus is a picture of a
+  field. The column is only as tall as its own content, so this blocks
+  nothing that is not in it.
+*/
+.live .below {
+  pointer-events: auto;
+}
+
+.open .below {
+  pointer-events: none;
+}
+
+/* The field spans the column; everything else in it is centred to its own
+   width. */
+.field {
+  width: 100%;
+}
+
+/*
+  While she is answering.
+
+  A search result is not one more line in the column — a dictionary entry with
+  its examples and its save key is taller than the room under her, and this
+  layer is `position: fixed`, so an answer that runs past the bottom of the
+  screen cannot be scrolled to. It is simply gone, along with 儲存.
+
+  So answering is a state of the screen, the way the ring being out is. The
+  idle furniture — the greeting, her mood line, the counts, the gesture hint —
+  is what the screen says when nobody has asked it anything, and it steps
+  aside for the answer rather than competing with it. She flies up and shrinks
+  at the same time, which is the same body language the ring already uses and
+  is what turns the room below her from 245px into most of the page.
+
+  `--below-room` is written by the frame loop from her eye's own projected
+  position, because that is the only place the number exists: she is moving
+  while this is true. It is only written while answering, so the idle screen's
+  per-frame cost is exactly what it was.
+*/
+.answering .above {
+  opacity: 0;
+}
+
+.answering .voice,
+.answering .notices,
+.answering .hint {
+  display: none;
+}
+
+.answering .below {
+  max-height: var(--below-room, 60vh);
+  overflow-y: auto;
+  /* Reaching the end of the answer must not start dragging the page behind
+     it, which on iOS is a rubber-band over a screen that does not scroll. */
+  overscroll-behavior: contain;
+}
+
+/*
+  Source order is the mechanism: same specificity as the rule above and
+  declared after it, so the ring being out beats the scene being live.
+*/
+.open .above,
+.open .below {
+  opacity: 0;
+}
+
+.greeting,
+.when,
+.voice,
+.hint {
+  margin: 0;
+}
+
+/* 8.8:1 on the page's pearl. */
+.greeting {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgb(0 0 0 / 0.72);
+}
+
+/* 5.2:1 — the floor for anything here that is still a sentence. */
+.when,
+.hint {
+  font-size: 0.8125rem;
+  color: rgb(0 0 0 / 0.58);
+}
+
+/* A separator, not a word: aria-hidden in the markup, and lighter than the
+   text on either side so it reads as spacing rather than as a character. */
+.dot {
+  padding: 0 0.4em;
+  color: rgb(0 0 0 / 0.32);
+}
+
+/* Hers. The darkest thing on the screen that is not the key. */
+.voice {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #171717;
+}
+
+
+/*
+  The keyboard's way into the ring.
+
+  Off-screen until it takes focus, then plainly visible — a skip link, and
+  for the same reason: it exists for the reader who is already tabbing, and
+  it must not become furniture for the one who is not. It is a real button
+  with a real name, because a role on a canvas would announce a menu that
+  nothing can open.
+
+  Pinned to the viewport rather than to her, since focus arrives before the
+  scene does and the top of the screen is where a reader tabbing through the
+  page expects the first thing to be.
+*/
+.ringKey {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -150%);
+
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border: 0;
+  border-radius: 0 0 999px 999px;
+
+  background: #0c0c0c;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  pointer-events: auto;
+  transition: transform 180ms ease;
+}
+
+.ringKey:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 2px solid #ffffff;
+  outline-offset: -4px;
+}
+
+/*
+  What is waiting, under her.
+
+  Three separate counts, never added together. Each one is its own key to its
+  own destination, and a count that is zero draws nothing — an empty row of
+  zeroes would be the screen insisting it has something to say.
+*/
+.notices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 28px;
+  padding: 0 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: #171717;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.notice i {
+  font-style: normal;
+  font-weight: 700;
+  color: rgb(0 0 0 / 0.58);
+}
+
+.live .notices {
+  pointer-events: auto;
+}
+
+.open .notices {
+  pointer-events: none;
+}
