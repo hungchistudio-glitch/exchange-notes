@@ -109,13 +109,61 @@
   font-family: inherit;
   font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  /*
+   * Opened out from -0.01em.
+   *
+   * Tracking is the one instrument cue that costs nothing anywhere else: no
+   * uppercase, which would widen Latin and mean nothing in Chinese, and no
+   * mono for the label, which would widen it further inside a box that took
+   * two goes to make "Vocabolario" fit. 0.03em on a 10px label is 0.3px a
+   * character — measured against the widest word in all five languages
+   * before it went in.
+   */
+  letter-spacing: 0.03em;
   cursor: pointer;
-  transition: transform 160ms ease;
 }
 
-.spoke button:active {
-  transform: scale(0.94);
+/*
+ * The surface answers the finger; the hit area does not move.
+ *
+ * Only `.disc` is transformed, so a press that slides a few pixels still
+ * lifts inside the key it pressed. The custom properties are written by
+ * LiquidRingKey once per frame, and every one of them has a resting value
+ * here so this rule is complete before a finger has ever touched it.
+ */
+.spoke button {
+  --liquid-x: 0px;
+  --liquid-y: 0px;
+  --liquid-angle: 0rad;
+  --liquid-pull: 0;
+}
+
+.spoke button:active .disc {
+  scale: 0.94;
+}
+
+.spoke button[data-dragging="true"] .disc {
+  /* Following a finger, so no easing — the transition is for the spring
+     back, and a 220ms lag on the way out reads as lag, not as weight. */
+  transition: none;
+}
+
+/*
+ * The caption steps back while the key is in hand.
+ *
+ * The surface may trail the finger by 18px and the caption sits 6px under
+ * it, so a downward drag puts the disc across its own word. Fading it is
+ * better than shortening the trail: the drag is the thing being looked at,
+ * the word has already been read, and a key that dims its label while held
+ * says "this one" more clearly than one that does not move far enough to
+ * reach it.
+ */
+.spokeLabel {
+  transition: opacity 160ms ease;
+}
+
+.spoke button[data-dragging="true"] .spokeLabel {
+  opacity: 0.35;
 }
 
 .disc {
@@ -129,6 +177,111 @@
   border: 1px solid var(--line);
   background: var(--surface);
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+
+  /*
+   * Liquid, in two parts.
+   *
+   * `translate` trails the finger. `transform` stretches along the drag axis
+   * and narrows across it — rotate into the drag's frame, scale, rotate back,
+   * which is how you scale along an arbitrary axis without skewing. The two
+   * properties stay separate so the press scale above can use `scale` without
+   * any of them overwriting each other.
+   */
+  translate: var(--liquid-x) var(--liquid-y);
+  transform: rotate(var(--liquid-angle))
+    scale(calc(1 + var(--liquid-pull) * 0.2), calc(1 - var(--liquid-pull) * 0.12))
+    rotate(calc(var(--liquid-angle) * -1));
+
+  /* The spring back. Overshoots a little, the way something with surface
+     tension does. */
+  transition:
+    translate 340ms cubic-bezier(0.22, 1.4, 0.36, 1),
+    transform 340ms cubic-bezier(0.22, 1.4, 0.36, 1),
+    scale 160ms ease;
+}
+
+/*
+ * Its stop on the dial.
+ *
+ * Mono, wide-tracked, and quiet: an instrument numbers its positions, and the
+ * number is not the label — it is there to say the ring is a measured thing.
+ * Matte like everything else on this screen, so it reads as printed on the
+ * disc rather than lit from behind it.
+ */
+.index {
+  position: absolute;
+  top: 7px;
+  left: 9px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  color: rgb(0 0 0 / 0.34);
+}
+
+/*
+ * The dial the keys sit on.
+ *
+ * One hairline circle, centred on her, at the radius the layout actually
+ * measured. No glow and no backdrop — this screen's whole texture rule is
+ * that colour and light are painted, not emitted, and a ring that lit up
+ * would be Cosmic's language on Standard's page.
+ */
+.dial {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 1px solid rgb(0 0 0 / 0.11);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease, scale 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  scale: 0.86;
+}
+
+.open .dial {
+  opacity: 1;
+  scale: 1;
+}
+
+/*
+ * Graduations, between the keys rather than under them.
+ *
+ * A tick under each key had nowhere to be. The disc's inner edge sits about
+ * ten pixels off her open silhouette, so a mark pointing inward has no room;
+ * pointing outward it runs into the key's own caption on the lower half of
+ * the circle. The midpoints are the empty part of the dial, and a scale
+ * graduated between its stops is what an instrument actually looks like.
+ *
+ * One conic gradient rather than eight elements: the keys are eight equal
+ * steps, so the marks are a 45-degree repeat, and `from 45deg` lands them
+ * exactly halfway between two keys given the ring's eighth-turn rotation.
+ * Masked to a narrow band at the dial's own edge so the rays do not run all
+ * the way to her.
+ */
+.dial::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-conic-gradient(
+    from 45deg,
+    rgb(0 0 0 / 0.26) 0deg 0.45deg,
+    transparent 0.45deg 45deg
+  );
+  -webkit-mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - 8px),
+    #000 calc(100% - 8px)
+  );
+  mask: radial-gradient(
+    closest-side,
+    transparent calc(100% - 8px),
+    #000 calc(100% - 8px)
+  );
 }
 
 /*

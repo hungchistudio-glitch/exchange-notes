@@ -14,6 +14,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { ReactNode } from "react";
 
+import LiquidRingKey from "@/components/home/yumi/LiquidRingKey";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
@@ -841,16 +842,23 @@ export default function YumiRingOverlay({
                   transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => choose(spoke)}
-                  tabIndex={open ? 0 : -1}
-                  aria-label={spoke.label}
+                <LiquidRingKey
+                  label={spoke.label}
+                  enabled={open}
+                  onChoose={() => choose(spoke)}
                 >
                   {/* The disc is the key; the label is a caption under it and
                       may be wider. Keeping them as two boxes is what lets a
                       long word finish without the circle growing. */}
                   <span className={styles.disc}>
+                    {/* Its position on the dial, read the way an instrument
+                        numbers its own stops. Mono and wide-tracked because
+                        that is what a measured scale looks like, and because
+                        a proportional 01 is not a number on a dial. */}
+                    <i className={styles.index} aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </i>
+
                     <svg
                       width="20" height="20" viewBox="0 0 24 24" fill="none"
                       stroke="currentColor" strokeWidth="1.9"
@@ -863,10 +871,27 @@ export default function YumiRingOverlay({
                     ) : null}
                   </span>
                   <span className={styles.spokeLabel}>{spoke.label}</span>
-                </button>
+                </LiquidRingKey>
               </div>
             );
           })}
+
+          {/*
+            The circle the keys are actually on.
+
+            The ground under this screen already draws an alignment ring at
+            132 — RING_RADIUS — so that the page says where the keys will land
+            before anything has been pressed. This is that same circle becoming
+            real when they do land: a hairline at the measured radius, with a
+            tick under each key. Drawn at the radius the layout computed rather
+            than at the constant, so on a screen that had to give way the ring
+            and its dial are still the same circle.
+          */}
+          <div
+            className={styles.dial}
+            aria-hidden="true"
+            style={{ width: ringRadius * 2, height: ringRadius * 2 }}
+          />
 
           {/*
             Everything that is not her, placed from her.
