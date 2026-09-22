@@ -14,6 +14,7 @@ import {
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import ProgressHud from "@/components/cosmic/ProgressHud";
+import LearningProgressPanel from "@/components/settings/LearningProgressPanel";
 import AppHeader from "@/components/foundation/layout/AppHeader";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
@@ -316,7 +317,22 @@ export default function ProfilePage() {
             configure it. Standard Mode is unchanged — this is an instrument
             panel, and it belongs to the mode that has instruments.
           */}
-          {isCosmic && <ProgressHud />}
+          {isCosmic ? (
+            <ProgressHud />
+          ) : (
+            /*
+              Standard Mode's counterpart, in the same slot.
+              
+              These four readings were the bottom of the old home screen. The
+              home is only Yumi now, and unlike today's word and today's
+              focus — which moved to the vocabulary screen, where they are
+              about the words in front of you — these answer "how is it
+              going", which is a question a reader asks on purpose.
+            */
+            <SettingsSection label={t.home.progress.title}>
+              <LearningProgressPanel />
+            </SettingsSection>
+          )}
 
           <SettingsSection label={sections.learning}>
             <SettingsAnchor id="setting-native-language">
