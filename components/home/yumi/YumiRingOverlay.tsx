@@ -260,6 +260,18 @@ export default function YumiRingOverlay({
     getHintServerSnapshot,
   );
 
+  /*
+   * Where her eye is on screen, as of the last frame.
+   *
+   * The canvas is the whole viewport — that is what lets her sit in the
+   * stage, scroll with it and fly to the middle without a second context —
+   * so a pointer event on it says nothing about whether it touched her. The
+   * long press needs to know, and the frame loop is already asking the scene
+   * this question to place the ring, so it is written down rather than asked
+   * again.
+   */
+  const eyeAt = useRef<{ x: number; y: number } | null>(null);
+
   const pressTimer = useRef<number | null>(null);
   const pressFrom = useRef<{ x: number; y: number } | null>(null);
   const pressWentLong = useRef(false);
@@ -294,6 +306,44 @@ export default function YumiRingOverlay({
     openRef.current = false;
     setOpen(false);
   }, []);
+
+  /*
+   * A key a keyboard can reach.
+   *
+   * The ring is the only navigation this screen has, and every way into it
+   * was a pointer: a tap or a pull, both on a canvas, which is not focusable
+   * and has no role. The spokes are tabIndex -1 while it is shut, so tabbing
+   * through the home screen went past the review key and off the end without
+   * ever meeting the menu.
+   *
+   * So there is a real button. It is off-screen until it takes focus and
+   * then it is plainly visible, which is what a skip-link does and for the
+   * same reason: it is for the reader who is already tabbing, and it must
+   * not become furniture for the one who is not.
+   */
+  const ringKeyRef = useRef<HTMLButtonElement>(null);
+
+  const openFromKey = useCallback(() => {
+    openRef.current = true;
+    setOpen(true);
+    retireHint();
+  }, []);
+
+  /*
+   * Focus follows the ring. Opening hands it to the first spoke, because a
+   * menu that opens behind the focus is a menu a keyboard cannot use; closing
+   * gives it back to the key it came from, rather than dropping it on <body>
+   * and making the reader tab in from the top of the document again.
+   */
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      spokeRefs.current[0]?.querySelector("button")?.focus();
+    } else if (!open && wasOpen.current) {
+      ringKeyRef.current?.focus();
+    }
+    wasOpen.current = open;
+  }, [open]);
 
   // ------------------------------------------------------------- the scene
   useEffect(() => {
@@ -417,9 +467,12 @@ export default function YumiRingOverlay({
           handle.frame(now);
 
           // --- the ring rides on the eye
-          if (ringRef.current) {
+          {
             const eye = handle.eyeScreenPosition();
-            ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+            eyeAt.current = eye;
+            if (ringRef.current) {
+              ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+            }
           }
 
           raf = requestAnimationFrame(loop);
@@ -486,6 +539,17 @@ export default function YumiRingOverlay({
         className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""}`}
         data-yumi-ring-open={open ? "true" : "false"}
       >
+        {/* The keyboard's way in. See openFromKey. */}
+        <button
+          ref={ringKeyRef}
+          type="button"
+          className={styles.ringKey}
+          onClick={openFromKey}
+          tabIndex={open ? -1 : 0}
+        >
+          {t.navigation.primaryLabel}
+        </button>
+
         {/* Dims the page so the ring is the only thing being decided on. */}
         <button
           type="button"
@@ -505,6 +569,24 @@ export default function YumiRingOverlay({
             /* Only while the ring is shut. With it out, holding a key is
                how a reader reads a label, not how they leave. */
             if (openRef.current) return;
+
+            /*
+             * And only on her.
+             *
+             * This canvas covers the viewport, so without this a press held
+             * anywhere on an otherwise empty screen — the corner, the margin
+             * beside the review key — left for review. Her silhouette is the
+             * eye's projected centre out to her resting radius, which is the
+             * same circle the reader sees.
+             */
+            const eye = eyeAt.current;
+            const box = canvasRef.current?.getBoundingClientRect();
+            if (!eye || !box) return;
+
+            const dx = event.clientX - box.left - eye.x;
+            const dy = event.clientY - box.top - eye.y;
+            if (dx * dx + dy * dy > REST_RADIUS * REST_RADIUS) return;
+
             pressWentLong.current = false;
             pressFrom.current = { x: event.clientX, y: event.clientY };
             pressTimer.current = window.setTimeout(() => {

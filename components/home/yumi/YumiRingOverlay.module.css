@@ -323,3 +323,46 @@
 .open .reviewKey {
   pointer-events: none;
 }
+
+/*
+  The keyboard's way into the ring.
+
+  Off-screen until it takes focus, then plainly visible — a skip link, and
+  for the same reason: it exists for the reader who is already tabbing, and
+  it must not become furniture for the one who is not. It is a real button
+  with a real name, because a role on a canvas would announce a menu that
+  nothing can open.
+
+  Pinned to the viewport rather than to her, since focus arrives before the
+  scene does and the top of the screen is where a reader tabbing through the
+  page expects the first thing to be.
+*/
+.ringKey {
+  position: fixed;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -150%);
+
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.125rem;
+  border: 0;
+  border-radius: 0 0 999px 999px;
+
+  background: #0c0c0c;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+
+  pointer-events: auto;
+  transition: transform 180ms ease;
+}
+
+.ringKey:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 2px solid #ffffff;
+  outline-offset: -4px;
+}
