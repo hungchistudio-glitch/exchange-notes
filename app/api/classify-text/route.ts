@@ -46,12 +46,63 @@ const MAX_QUERY_LENGTH = 240;
 const MEMORY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_MAX_ITEMS = 500;
 const MODEL_COOLDOWN_MS = 65 * 1000;
+/*
+ * What one lookup attempt may take.
+ *
+ * This was 6 seconds, and 6 seconds is not enough time for this particular
+ * call: a structured result with fourteen required fields, a language enum
+ * and `thinking_level: "low"`. The route's own logs say so — five requests
+ * over the week to 2026-09-22, five failures, every one of them
+ * `status: null`, which is this client aborting rather than Gemini
+ * answering. Meanwhile /api/word-pronunciation makes the same shape of call
+ * against the same key on the shared 15s budget and comes back most of the
+ * time.
+ *
+ * A short ceiling does not make a lookup fast. It makes it fail slowly: two
+ * candidates at 6 seconds is twelve seconds of waiting for a card that then
+ * says it could not reach the dictionary. The ceiling that matters to a
+ * reader is the total, which is what TOTAL_BUDGET_MS below is for.
+ *
+ * 14 rather than the vision path's 12 for the one difference that matters:
+ * that call returns four short fields about a photo, this one returns
+ * fourteen with a language enum. The measurement behind both is the note in
+ * lib/ai/identifyObject.ts — p50 three to seven seconds — which is what the
+ * `ms` in this route's own log lines now confirms or corrects.
+ */
 const REQUEST_TIMEOUT_MS = readBoundedInteger(
   process.env.TEXT_REQUEST_TIMEOUT_MS,
-  6_000,
+  14_000,
   2_000,
   20_000,
 );
+
+/*
+ * What the whole lookup may take, across every candidate.
+ *
+ * The candidate list is the retry policy, and a retry that starts its own
+ * full-length clock is how a bounded-per-attempt route runs past the
+ * function's `maxDuration` anyway. Each attempt gets whatever is left, so a
+ * model that fails fast — the 503 in these logs came back in well under a
+ * second — still leaves the next one a real chance, and a model that burns
+ * the whole ceiling leaves none, which is correct.
+ *
+ * 24 against a maxDuration of 30 leaves room for the auth call, the shared
+ * cache read and the response.
+ */
+const TOTAL_BUDGET_MS = readBoundedInteger(
+  process.env.TEXT_TOTAL_BUDGET_MS,
+  24_000,
+  5_000,
+  28_000,
+);
+
+/*
+ * Below this an attempt is a way of spending the rest of the budget on a
+ * certain timeout. Four seconds is lib/ai/identifyObject.ts's floor and the
+ * reason it gives holds here too: nothing has ever come back from this model
+ * in under three.
+ */
+const MIN_ATTEMPT_MS = 4_000;
 
 /*
  * Every supported language, every time.
@@ -293,6 +344,7 @@ async function lookupWithModel(
   client: GoogleGenAI,
   model: string,
   context: LookupContext,
+  timeoutMs: number,
 ) {
   const interaction = await client.interactions.create(
     {
@@ -316,7 +368,7 @@ async function lookupWithModel(
     },
     {
       maxRetries: 0,
-      timeout: REQUEST_TIMEOUT_MS,
+      timeout: timeoutMs,
     },
   );
 
@@ -355,20 +407,49 @@ async function lookupWithModelFallback(context: LookupContext) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const client = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      timeout: REQUEST_TIMEOUT_MS,
-      retryOptions: { attempts: 1 },
-    },
-  });
+  /*
+   * No `httpOptions` here on purpose.
+   *
+   * A client configured with `timeout` and `retryOptions` looks like it
+   * bounds the request and does not: lib/ai/modelRequest.ts records the
+   * measurement — a client set up exactly that way still took 31.9s on the
+   * `interactions.create` path. Only the per-call second argument is
+   * honoured. Leaving the dead config in place would tell the next reader
+   * this route is bounded twice when it is bounded once.
+   */
+  const client = new GoogleGenAI({ apiKey });
+
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
 
   for (const model of getTextModelCandidates()) {
     const cooldownUntil = modelCooldowns.get(model) ?? 0;
     if (cooldownUntil > Date.now()) continue;
 
+    /* Whatever is left of the reader's wait, never more than one attempt's
+       share of it. */
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_ATTEMPT_MS) break;
+    const timeoutMs = Math.min(REQUEST_TIMEOUT_MS, remaining);
+
+    const startedAt = Date.now();
+
     try {
-      const result = await lookupWithModel(client, model, context);
+      const result = await lookupWithModel(client, model, context, timeoutMs);
+
+      /*
+       * How long a good lookup takes, in the log.
+       *
+       * This route's ceiling was set to 6s by a guess and it was wrong by a
+       * factor nobody could see, because a timeout leaves no trace of how
+       * close it came. At five requests a week the line costs nothing, and
+       * it is the only way the next person changing this number will be
+       * changing it against a measurement.
+       */
+      console.info("Vocabulary lookup answered.", {
+        model,
+        ms: Date.now() - startedAt,
+      });
+
       return { result, model };
     } catch (error) {
       const status = getErrorStatus(error);
@@ -381,6 +462,8 @@ async function lookupWithModelFallback(context: LookupContext) {
         model,
         status,
         reason: isRateLimitError(error) ? "rate_limit" : "model_error",
+        ms: Date.now() - startedAt,
+        budgetMs: timeoutMs,
       });
     }
   }
