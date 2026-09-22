@@ -1,0 +1,20 @@
+/*
+  Fills the actor element the film is already animating, so the arrival —
+  opacity, the damped overshoot, the scale — stays on the compositor and is
+  not reimplemented here.
+*/
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* No transition. The film's own actor track is the fade; a second one here
+   would show as the lens arriving twice. */
+.live {
+  opacity: 1;
+}

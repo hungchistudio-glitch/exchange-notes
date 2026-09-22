@@ -125,6 +125,9 @@ export default function YumiRingOverlay({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
   const [live, setLive] = useState(false);
+  /* The cookie the current reach is for, so arriving can take that exact
+     one rather than whichever is first in the tray a moment later. */
+  const reachingFor = useRef<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const openRef = useRef(false);
 
@@ -183,7 +186,19 @@ export default function YumiRingOverlay({
             openRef.current = !openRef.current;
             setOpen(openRef.current);
           },
-          onLungeArrive,
+          onLungeArrive: () => {
+            /*
+             * The bite goes through the tray's own click path rather than
+             * through a second copy of it. Everything downstream — the
+             * cookie leaving the tray, the feeding sequence, the pet row,
+             * the mood reaction, the widget — then happens exactly as it
+             * does when a reader hands her one, and there is one feeding
+             * implementation rather than two that can drift.
+             */
+            reachingFor.current?.click();
+            reachingFor.current = null;
+            onLungeArrive?.();
+          },
         });
 
         if (!handle) return;
@@ -211,17 +226,26 @@ export default function YumiRingOverlay({
 
           // --- the occasional reach for a cookie
           if (!openRef.current && !reduced && now > lungeAt) {
-            const targets = Array.from(
-              stageRef.current?.querySelectorAll("[data-yumi-cookie]") ?? [],
-            ).map(element => element.getBoundingClientRect());
-            /* Only for a cookie that is actually on screen. Reaching for
-               something scrolled out of view is a reach into nothing. */
-            const visible = targets.filter(
-              box => box.bottom > 0 && box.top < window.innerHeight && box.width > 0,
+            const cookies = Array.from(
+              stageRef.current?.querySelectorAll<HTMLElement>("[data-yumi-cookie]") ?? [],
             );
-            if (visible.length > 0) {
-              const pick = visible[Math.floor(Math.random() * visible.length)];
-              handle.lungeAt(pick.left + pick.width / 2, pick.top + pick.height / 2);
+            /* Only a cookie that is actually on screen and can still be
+               taken. Reaching for one scrolled out of view, or for a
+               disabled tray, is a reach into nothing. */
+            const reachable = cookies.filter(element => {
+              if (element.hasAttribute("disabled")) return false;
+              const box = element.getBoundingClientRect();
+              return box.width > 0 && box.bottom > 0 && box.top < window.innerHeight;
+            });
+
+            if (reachable.length > 0) {
+              const pick = reachable[Math.floor(Math.random() * reachable.length)];
+              const box = pick.getBoundingClientRect();
+              const started = handle.lungeAt(
+                box.left + box.width / 2,
+                box.top + box.height / 2,
+              );
+              if (started) reachingFor.current = pick;
             }
             lungeAt = now + nextLungeDelay();
           }
