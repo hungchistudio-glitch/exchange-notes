@@ -301,6 +301,8 @@ type DragPointer = {
   velocityY: number;
 };
 
+const EMPTY_STYLE: CSSProperties = {};
+
 export default function useSheetMotion({
   open = true,
   onClose,
@@ -316,8 +318,24 @@ export default function useSheetMotion({
   const [visible, setVisible] = useState(false);
   const [settled, setSettled] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [dragY, setDragY] = useState(0);
-  const [dragProgress, setDragProgress] = useState(0);
+  /* =========================================================
+     The drag is written to the DOM, not to React
+
+     These were two useState values set on every pointermove. A finger on an
+     iPhone produces pointer events at up to 120Hz, so dragging a sheet
+     re-rendered the sheet and its entire subtree — every choice card, every
+     row, the whole vocabulary detail — a hundred-odd times a second, to move
+     one element by a few pixels.
+
+     Both values only ever reach CSS custom properties, and a custom property
+     written straight onto the node does the same thing without a render. The
+     defaults live in SheetMotion.module.css, so clearing the property is how
+     the drag resets — there is no value to keep in sync anywhere.
+
+     `dragging` stays state: it flips twice per gesture and real things
+     besides the transform read it.
+     ========================================================= */
+  const backdropRef = useRef<HTMLElement | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -334,6 +352,33 @@ export default function useSheetMotion({
   const setPanelRef = useCallback((node: HTMLElement | null) => {
     panelRef.current = node;
   }, []);
+
+  const setBackdropRef = useCallback((node: HTMLElement | null) => {
+    backdropRef.current = node;
+  }, []);
+
+  /**
+   * Where the sheet is under the finger, and how far the scrim has lifted.
+   *
+   * Passing null puts both back to the stylesheet's own values, which is what
+   * "not being dragged" is — rather than a zero this hook has to remember.
+   */
+  const writeDrag = useCallback(
+    (drag: { y: number; progress: number } | null) => {
+      const panel = panelRef.current;
+      const backdrop = backdropRef.current;
+
+      if (!drag) {
+        panel?.style.removeProperty("--sheet-drag-y");
+        backdrop?.style.removeProperty("--sheet-drag-progress");
+        return;
+      }
+
+      panel?.style.setProperty("--sheet-drag-y", `${drag.y}px`);
+      backdrop?.style.setProperty("--sheet-drag-progress", `${drag.progress}`);
+    },
+    [],
+  );
 
   const clearMotionTimers = useCallback(() => {
     if (closeTimerRef.current) {
@@ -384,19 +429,19 @@ export default function useSheetMotion({
     setClosing(true);
     setSettled(false);
     setDragging(false);
-    setDragProgress(0);
+    writeDrag(null);
     setVisible(false);
     clearMotionTimers();
 
     closeTimerRef.current = setTimeout(() => {
       closeTimerRef.current = null;
       setRendered(false);
-      setDragY(0);
+      writeDrag(null);
       onClose();
       closingRef.current = false;
       setClosing(false);
     }, animationDuration());
-  }, [animationDuration, clearMotionTimers, closeDisabled, onClose]);
+  }, [animationDuration, clearMotionTimers, closeDisabled, onClose, writeDrag]);
 
   useEffect(() => {
     if (open) {
@@ -407,7 +452,7 @@ export default function useSheetMotion({
         setClosing(false);
         setSettled(false);
         setRendered(true);
-        setDragY(0);
+        writeDrag(null);
         secondFrameRef.current = requestAnimationFrame(() => {
           secondFrameRef.current = null;
           setVisible(true);
@@ -425,11 +470,11 @@ export default function useSheetMotion({
       closeTimerRef.current = setTimeout(() => {
         closeTimerRef.current = null;
         setRendered(false);
-        setDragY(0);
+        writeDrag(null);
         setClosing(false);
       }, animationDuration());
     });
-  }, [animationDuration, clearMotionTimers, open, settleAfterMotion]);
+  }, [animationDuration, clearMotionTimers, open, settleAfterMotion, writeDrag]);
 
   useEffect(() => {
     if (!rendered) return;
@@ -637,8 +682,10 @@ export default function useSheetMotion({
     pointer.lastTime = now;
     pointer.currentY = nextY;
     pointer.velocityY = pointer.velocityY * 0.64 + instantVelocity * 0.36;
-    setDragY(nextY);
-    setDragProgress(Math.min(1, Math.max(0, nextY) / threshold));
+    writeDrag({
+      y: nextY,
+      progress: Math.min(1, Math.max(0, nextY) / threshold),
+    });
   }
 
   function finishPointer(event: ReactPointerEvent<HTMLElement>) {
@@ -657,8 +704,7 @@ export default function useSheetMotion({
       return;
     }
 
-    setDragY(0);
-    setDragProgress(0);
+    writeDrag(null);
     settleAfterMotion();
   }
 
@@ -668,8 +714,7 @@ export default function useSheetMotion({
 
     pointerRef.current = null;
     setDragging(false);
-    setDragY(0);
-    setDragProgress(0);
+    writeDrag(null);
     settleAfterMotion();
   }
 
@@ -683,6 +728,7 @@ export default function useSheetMotion({
     panelClassName: styles.panel,
     handleClassName: styles.handle,
     backdropProps: {
+      ref: setBackdropRef,
       "data-visible": visible ? "true" : "false",
       /*
        * The scrim lifts as the sheet is pulled down, so the gesture is
@@ -691,9 +737,6 @@ export default function useSheetMotion({
        * what tells the reader the drag is being received at all.
        */
       "data-dragging": dragging ? "true" : "false",
-      style: {
-        "--sheet-drag-progress": dragProgress,
-      } as CSSProperties,
     },
     panelRef,
     panelProps: {
@@ -705,9 +748,12 @@ export default function useSheetMotion({
       "data-settled": settled ? "true" : "false",
       "data-closing": closing ? "true" : "false",
       "data-presentation": presentation,
-      style: {
-        "--sheet-drag-y": `${dragY}px`,
-      } as CSSProperties,
+      /*
+       * Kept, and kept empty: callers spread it into their own style object,
+       * and the drag value it used to carry is now written straight to the
+       * node. The stylesheet declares the resting values.
+       */
+      style: EMPTY_STYLE,
     },
     handleProps: {
       "data-dragging": dragging ? "true" : "false",

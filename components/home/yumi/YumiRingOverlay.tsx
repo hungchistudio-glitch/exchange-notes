@@ -510,6 +510,12 @@ export default function YumiRingOverlay({
     );
     let lungeAt = performance.now() + nextLungeDelay();
 
+    /* The last whole-pixel eye position handed to the stage — see the write
+       below for why it is worth remembering. NaN so the first frame always
+       writes. */
+    let lastEyeX = Number.NaN;
+    let lastEyeY = Number.NaN;
+
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -666,8 +672,33 @@ export default function YumiRingOverlay({
              */
             const stage = stageRef.current;
             if (stage) {
-              stage.style.setProperty("--yumi-x", `${eye.x}px`);
-              stage.style.setProperty("--yumi-y", `${eye.y}px`);
+              /*
+               * Rounded, and only written when the rounded value moves.
+               *
+               * A custom property inherits, so setting one on the stage
+               * invalidates the computed style of everything under it — the
+               * 2D mark with its thirty animations, the tray, every cookie —
+               * once per frame, on the one screen already running WebGL. Her
+               * eye drifts by fractions of a pixel for most of that time, and
+               * a fraction of a pixel is a style recalculation nobody can
+               * see.
+               *
+               * Whole pixels are what the tray positions against anyway, so
+               * the skipped frames cost nothing and the kept ones are
+               * identical.
+               */
+              const x = Math.round(eye.x);
+              const y = Math.round(eye.y);
+
+              if (x !== lastEyeX) {
+                lastEyeX = x;
+                stage.style.setProperty("--yumi-x", `${x}px`);
+              }
+
+              if (y !== lastEyeY) {
+                lastEyeY = y;
+                stage.style.setProperty("--yumi-y", `${y}px`);
+              }
             }
 
             /* Only while answering: this is the one state whose column needs

@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 
 import { hasPhonetics, type LanguageCode } from "@/lib/languages";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
-import { toPinyin } from "@/lib/pinyin";
 
 /* =========================================================
    Handing a word to something outside the app
@@ -20,12 +19,38 @@ import { toPinyin } from "@/lib/pinyin";
    nonsense syllables attached to a word somebody was about to send a friend.
    ========================================================= */
 
-function romanise(text: string, language: LanguageCode): string {
+/*
+ * The romaniser, fetched the first time somebody shares something.
+ *
+ * `toPinyin` is four lines around pinyin-pro, and pinyin-pro is a megabyte
+ * of dictionary. Imported at the top of this file it was a megabyte on the
+ * home screen: this hook is used by the universal search field, the search
+ * sheet and the Cosmic console, so the dictionary was parsed and compiled
+ * during hydration on nearly every route — while the opening animation was
+ * playing — to produce a line of pinyin that appears only inside a share
+ * sheet somebody has yet to open.
+ *
+ * Now it arrives when that sheet is opened. Nothing about the shared text
+ * changes; the await simply happens before the share instead of before the
+ * screen.
+ */
+async function romanise(text: string, language: LanguageCode): Promise<string> {
   if (!text.trim()) return "";
 
   // Only Chinese has a romanisation this app can produce. Everything else
   // is written in an alphabet the reader can already sound out.
-  return hasPhonetics(language, "pinyin") ? (toPinyin(text) ?? "") : "";
+  if (!hasPhonetics(language, "pinyin")) return "";
+
+  try {
+    const { toPinyin } = await import("@/lib/pinyin");
+    return toPinyin(text) ?? "";
+  } catch (error) {
+    // A share without the reading is still the word, the translation and
+    // both examples. Losing the whole share over a chunk that would not
+    // load would be the worse trade.
+    console.error("Could not load the romaniser for sharing.", error);
+    return "";
+  }
 }
 
 export default function useLexiconShare(
@@ -39,12 +64,12 @@ export default function useLexiconShare(
     window.setTimeout(() => setCopied(false), 1800);
   }, []);
 
-  const buildShareText = useCallback(() => {
+  const buildShareText = useCallback(async () => {
     if (!entry || !languages) return "";
 
     const reading =
-      romanise(entry.term, languages.sourceLanguage) ||
-      romanise(entry.translation, languages.glossLanguage);
+      (await romanise(entry.term, languages.sourceLanguage)) ||
+      (await romanise(entry.translation, languages.glossLanguage));
 
     const meta = [reading, entry.partOfSpeech?.toLowerCase()]
       .filter(Boolean)
@@ -68,7 +93,7 @@ export default function useLexiconShare(
   const share = useCallback(async () => {
     if (!entry) return;
 
-    const text = buildShareText();
+    const text = await buildShareText();
 
     try {
       if (navigator.share) {

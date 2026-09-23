@@ -7,7 +7,7 @@ import { Volume2 } from "lucide-react";
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
 import usePhonetics from "@/hooks/usePhonetics";
-import { getPhonetics } from "@/lib/pronunciation";
+import useLocalPhonetics from "@/hooks/useLocalPhonetics";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 
 /*
@@ -64,11 +64,11 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
    */
   const [primaryLanguage, secondaryLanguage] = pair;
 
-  const titlePronunciation = getPhonetics(
+  const titlePronunciation = useLocalPhonetics(
     card.titles[secondaryLanguage] ?? "",
     secondaryLanguage,
   );
-  const summaryPronunciation = getPhonetics(
+  const summaryPronunciation = useLocalPhonetics(
     card.summaries[secondaryLanguage] ?? "",
     secondaryLanguage,
   );
@@ -76,7 +76,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
   /*
    * The words, asked for in the one way that can answer for every language.
    *
-   * `getPhonetics` above is Chinese by construction — it computes pinyin and
+   * `useLocalPhonetics` above is Chinese by construction — it computes pinyin and
    * zhuyin locally and returns nothing at all for anything else, which its
    * own comment says is deliberate. That is the right tool for the title and
    * the summary, where a romanisation of a Chinese sentence is how the

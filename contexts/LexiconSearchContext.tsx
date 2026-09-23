@@ -8,12 +8,18 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import {
+  isLaunching,
+  isLaunchingOnServer,
+  subscribeToLaunching,
+} from "@/lib/launchState";
 
 /*
  * This is the heaviest global overlay in the protected shell: camera/image
@@ -156,17 +162,38 @@ export function LexiconSearchProvider({ children }: { children: ReactNode }) {
   }>({ open: false, query: "", autoSubmit: false, token: 0 });
 
   /*
-   * Download the search chunk only after the current screen has had a chance
-   * to paint. The opening animation gives most app starts a generous quiet
-   * window, so Search is normally ready before the first possible tap while
-   * still staying out of the critical hydration path. A timer is used rather
-   * than requestIdleCallback because iOS Safari does not expose it.
+   * Download the search chunk once the screen is actually quiet.
+   *
+   * This used to fire 900ms after mount, on the theory that the opening
+   * animation gives most app starts a generous quiet window. It does not:
+   * the opening is the busiest 2.8 seconds of the session — its own
+   * per-frame timeline, a WebGL actor, and the whole app hydrating behind
+   * it — so a chunk fetched at 900ms was parsed and compiled in the middle
+   * of the one animation every reader sees every time they open the app.
+   *
+   * It waits for the opening to leave now, and takes its beat from there.
+   * Nobody can reach Search before the home screen is on screen, so the
+   * sheet is still warm before the first possible tap.
+   *
+   * A timer rather than requestIdleCallback because iOS Safari does not
+   * expose it.
    */
+  const launching = useSyncExternalStore(
+    subscribeToLaunching,
+    isLaunching,
+    isLaunchingOnServer,
+  );
+
   useEffect(() => {
-    const warm = () => void loadLexiconSearchSheet();
-    const timer = window.setTimeout(warm, 900);
+    if (launching) return;
+
+    const timer = window.setTimeout(
+      () => void loadLexiconSearchSheet(),
+      400,
+    );
+
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [launching]);
 
   const openSearch = useCallback((options?: OpenOptions) => {
     setState((current) => {
