@@ -359,8 +359,38 @@ export function isRateLimitError(error: unknown) {
  * still costs nothing, and the 225ms failure above is what makes a miss
  * survivable.
  */
-const MODEL_COOLDOWN_MS = 65 * 1000;
+export const MODEL_COOLDOWN_MS = 65 * 1000;
 const cooldowns = new Map<string, number>();
+
+/*
+ * How long to stop asking, when the refusal says so itself.
+ *
+ * A Gemini 429 carries its own answer to this question:
+ *
+ *   * Quota exceeded for metric:
+ *     generativelanguage.googleapis.com/generate_content_free_tier_requests,
+ *     limit: 20, model: gemini-3.6-flash
+ *   Please retry in 18.829367833s.
+ *
+ * Measured on production 2026-09-23. A flat sixty-five seconds is the right
+ * guess for a limit that does not say — and it is three times too long for
+ * one that does. On the free tier's twenty requests a minute, a reader who
+ * looks up a page of words spends the difference on the slower model for no
+ * reason: the minute window has already rolled over.
+ *
+ * A second of slack on top of the hint, and never longer than the flat
+ * default, so this can only shorten a cooldown and never extend one.
+ */
+export function cooldownMsFor(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const hint = /retry in ([\d.]+)\s*s/i.exec(message);
+  if (!hint) return MODEL_COOLDOWN_MS;
+
+  const seconds = Number.parseFloat(hint[1]);
+  if (!Number.isFinite(seconds) || seconds <= 0) return MODEL_COOLDOWN_MS;
+
+  return Math.min(MODEL_COOLDOWN_MS, Math.ceil(seconds * 1_000) + 1_000);
+}
 
 export function isModelCoolingDown(model: string) {
   const until = cooldowns.get(model) ?? 0;
@@ -369,8 +399,11 @@ export function isModelCoolingDown(model: string) {
   return false;
 }
 
-export function startModelCooldown(model: string) {
-  cooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
+export function startModelCooldown(
+  model: string,
+  cooldownMs: number = MODEL_COOLDOWN_MS,
+) {
+  cooldowns.set(model, Date.now() + cooldownMs);
 }
 
 /**
@@ -400,7 +433,7 @@ export async function withModelCandidates<T>(
       return await attempt(model, timeoutMs);
     } catch (error) {
       lastError = error;
-      if (shouldCoolDown(error)) startModelCooldown(model);
+      if (shouldCoolDown(error)) startModelCooldown(model, cooldownMsFor(error));
     }
   }
 

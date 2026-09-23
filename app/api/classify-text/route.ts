@@ -34,6 +34,7 @@ import {
  * never heard about it.
  */
 import {
+  cooldownMsFor,
   generateJson,
   getErrorStatus,
   isRateLimitError,
@@ -70,7 +71,6 @@ export const maxDuration = 45;
 const MAX_QUERY_LENGTH = 240;
 const MEMORY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_MAX_ITEMS = 500;
-const MODEL_COOLDOWN_MS = 65 * 1000;
 /*
  * What one lookup attempt may take.
  *
@@ -462,7 +462,7 @@ async function lookupWithModelFallback(context: LookupContext) {
        * cheap to discover; a timeout is the most expensive failure here.
        */
       if (shouldCoolDown(error)) {
-        modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
+        modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
       }
 
       console.warn("Vocabulary model unavailable; trying fallback.", {

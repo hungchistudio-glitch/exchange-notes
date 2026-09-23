@@ -1,6 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 
-import { generateJson } from "@/lib/ai/modelRequest";
+import {
+  cooldownMsFor,
+  generateJson,
+  isTimeoutError,
+  shouldCoolDown,
+} from "@/lib/ai/modelRequest";
 
 import {
   getMenuModelCandidates,
@@ -34,7 +39,6 @@ import {
  * twice would cost twice and read it worse.
  */
 
-const MODEL_COOLDOWN_MS = 65 * 1000;
 
 export const MENU_REQUEST_TIMEOUT_MS = readBoundedInteger(
   process.env.MENU_SCAN_TIMEOUT_MS,
@@ -363,47 +367,6 @@ async function scanWithModel(
   );
 }
 
-function getErrorStatus(error: unknown) {
-  if (!error || typeof error !== "object") return null;
-
-  const candidate = error as { status?: unknown; statusCode?: unknown };
-  const status = candidate.status ?? candidate.statusCode;
-  return typeof status === "number" ? status : null;
-}
-
-function isRateLimitError(error: unknown) {
-  if (getErrorStatus(error) === 429) return true;
-
-  return (
-    error instanceof Error &&
-    /quota|rate.?limit|too many requests/i.test(error.message)
-  );
-}
-
-/*
- * A timeout, and not merely a failure that used the word "aborted".
- *
- * The distinction reaches the user: a timeout tells them to try a tighter
- * photo of one page, which is good advice for a slow read and useless advice
- * for a 500 from the model. Matching loosely on the message sent them to
- * re-shoot a photograph that was never the problem.
- */
-function isTimeoutError(error: unknown) {
-  if (getErrorStatus(error) === 504) return true;
-
-  if (
-    error instanceof Error &&
-    (error.name === "AbortError" || error.name === "TimeoutError")
-  ) {
-    return true;
-  }
-
-  return (
-    error instanceof Error &&
-    /\btimed? ?out\b|deadline exceeded/i.test(error.message)
-  );
-}
-
 export async function scanMenu(
   imageBase64: string,
   mediaType: string,
@@ -437,8 +400,9 @@ export async function scanMenu(
         languagePair,
       );
     } catch (error) {
-      if (isRateLimitError(error)) {
-        modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
+      // A timeout is a reason to stop asking too — see identifyObject.
+      if (shouldCoolDown(error)) {
+        modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
       }
 
       lastTimedOut = isTimeoutError(error);

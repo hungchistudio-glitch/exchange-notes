@@ -87,8 +87,13 @@ vi.mock("@google/genai", () => ({
         clock += step.elapsed;
 
         if (step.outcome === "timeout") {
-          // Deliberately not a 429: a rate limit would put the model on a
-          // cooldown that outlives the test.
+          /*
+           * A 504, which this app now treats exactly like a rate limit for
+           * cooldown purposes — a model that spent the whole ceiling saying
+           * nothing is the expensive failure, not the cheap one. That
+           * cooldown outlives a single case, which is what the clock in
+           * beforeEach is for.
+           */
           throw Object.assign(new Error("Request timed out."), { status: 504 });
         }
 
@@ -116,7 +121,13 @@ function identify() {
 }
 
 beforeEach(() => {
-  clock = 0;
+  /*
+   * Forward, never back. Cooldowns live in module state that outlives a
+   * case, so a clock reset to zero left every later case looking at a
+   * candidate list still cooling from the case before it. Ten minutes is
+   * longer than any cooldown this app sets.
+   */
+  clock += 10 * 60_000;
   script.length = 0;
   made.length = 0;
   vi.stubEnv("GEMINI_API_KEY", "test-key");
@@ -231,5 +242,31 @@ describe("a first answer the model is unsure of", () => {
 
     await expect(identify()).resolves.toMatchObject({ confidence: "low" });
     expect(made).toHaveLength(1);
+  });
+});
+
+describe("a model that timed out on the last photograph", () => {
+  /*
+   * The camera's half of the bug the text route found first. This loop put a
+   * model away for a rate limit and not for a timeout, so the candidate that
+   * had just spent twelve seconds saying nothing was first in the queue for
+   * the very next photograph, and the one after that. Every shot paid the
+   * full ceiling to learn something already known.
+   */
+  it("is not asked again on the next one", async () => {
+    script.push({ elapsed: 12_000, outcome: "timeout" });
+    script.push({ elapsed: 3_000, outcome: { confidence: "high" } });
+
+    await expect(identify()).resolves.toMatchObject({ term: "lamp" });
+    expect(made.map((attempt) => attempt.model)).toEqual([
+      FIRST_CANDIDATE,
+      SECOND_CANDIDATE,
+    ]);
+
+    made.length = 0;
+    script.push({ elapsed: 3_000, outcome: { confidence: "high" } });
+
+    await expect(identify()).resolves.toMatchObject({ term: "lamp" });
+    expect(made.map((attempt) => attempt.model)).toEqual([SECOND_CANDIDATE]);
   });
 });

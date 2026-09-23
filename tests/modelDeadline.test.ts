@@ -39,8 +39,14 @@ vi.mock("@google/genai", () => ({
 }));
 
 const { GoogleGenAI } = await import("@google/genai");
-const { generateJson, isTimeoutError, shouldCoolDown, MIN_MODEL_DEADLINE_MS } =
-  await import("@/lib/ai/modelRequest");
+const {
+  generateJson,
+  isTimeoutError,
+  shouldCoolDown,
+  cooldownMsFor,
+  MIN_MODEL_DEADLINE_MS,
+  MODEL_COOLDOWN_MS,
+} = await import("@/lib/ai/modelRequest");
 
 function ask(timeoutMs: number) {
   return generateJson(new GoogleGenAI({ apiKey: "test" }), {
@@ -115,5 +121,44 @@ describe("a model that spent the budget and said nothing", () => {
     expect(
       isTimeoutError(Object.assign(new Error("bad request"), { status: 400 })),
     ).toBe(false);
+  });
+});
+
+describe("how long to stop asking", () => {
+  /*
+   * A Gemini 429 says so itself, and until now nobody read it:
+   *
+   *   * Quota exceeded for metric:
+   *     generativelanguage.googleapis.com/generate_content_free_tier_requests,
+   *     limit: 20, model: gemini-3.6-flash
+   *   Please retry in 18.829367833s.
+   *
+   * Measured on production 2026-09-23. Sixty-five seconds on a nineteen
+   * second window is forty-six seconds of the slower model for nothing.
+   */
+  const quota = new Error(
+    "You exceeded your current quota. * Quota exceeded for metric: " +
+      "generativelanguage.googleapis.com/generate_content_free_tier_requests, " +
+      "limit: 20, model: gemini-3.6-flash\nPlease retry in 18.829367833s.",
+  );
+
+  it("takes the window the refusal names, plus a second of slack", () => {
+    expect(cooldownMsFor(quota)).toBe(19_830);
+  });
+
+  it("falls back to the flat default when nothing is named", () => {
+    expect(cooldownMsFor(new Error("You exceeded your current quota."))).toBe(
+      MODEL_COOLDOWN_MS,
+    );
+    expect(cooldownMsFor(undefined)).toBe(MODEL_COOLDOWN_MS);
+  });
+
+  it("can only shorten a cooldown, never extend one", () => {
+    expect(cooldownMsFor(new Error("Please retry in 600s."))).toBe(
+      MODEL_COOLDOWN_MS,
+    );
+    expect(cooldownMsFor(new Error("Please retry in 0s."))).toBe(
+      MODEL_COOLDOWN_MS,
+    );
   });
 });

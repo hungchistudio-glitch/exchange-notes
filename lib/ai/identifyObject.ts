@@ -4,7 +4,13 @@ import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
 
-import { generateJson } from "@/lib/ai/modelRequest";
+import {
+  cooldownMsFor,
+  generateJson,
+  getErrorStatus,
+  isRateLimitError,
+  shouldCoolDown,
+} from "@/lib/ai/modelRequest";
 import {
   getVisionModelCandidates,
   readBoundedInteger,
@@ -33,7 +39,6 @@ export type ObjectIdentificationResult = {
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const CACHE_MAX_ITEMS = 200;
-const MODEL_COOLDOWN_MS = 65 * 1000;
 /* =========================================================
    How long a recognition is given, and by whom
 
@@ -183,22 +188,6 @@ function isOptionalLanguage(value: unknown): boolean {
   return value === undefined || value === null || isLanguageCode(value);
 }
 
-function getErrorStatus(error: unknown) {
-  if (!error || typeof error !== "object") return null;
-
-  const candidate = error as { status?: unknown; statusCode?: unknown };
-  const status = candidate.status ?? candidate.statusCode;
-  return typeof status === "number" ? status : null;
-}
-
-function isRateLimitError(error: unknown) {
-  if (getErrorStatus(error) === 429) return true;
-  return (
-    error instanceof Error &&
-    /quota|rate.?limit|too many requests/i.test(error.message)
-  );
-}
-
 /**
  * The same photograph answered for two different learners is two different
  * answers, so the pair is part of the key.
@@ -345,8 +334,17 @@ async function identifyWithFallback(
     } catch (error) {
       const status = getErrorStatus(error);
 
-      if (isRateLimitError(error)) {
-        modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
+      /*
+       * A timeout puts the model away too, not only a rate limit.
+       *
+       * This line read `isRateLimitError` and the camera paid for it on
+       * every photograph: the first candidate spent its whole twelve
+       * seconds answering nothing, was never put away for it, and was asked
+       * again on the next shot. The text route learned this on 2026-09-22
+       * and this one did not hear about it.
+       */
+      if (shouldCoolDown(error)) {
+        modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
       }
 
       /*
