@@ -29,6 +29,8 @@ import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
 import stageStyles from "@/components/tutorial/TutorialStage.module.css";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
+import { usePathname, useRouter } from "next/navigation";
+
 import { armCoach } from "@/lib/home/tutorialCoach";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
@@ -177,6 +179,9 @@ function stepVisual(step: StepKey): ReactNode {
 }
 
 export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   /* The active dictionary is primed before a language preference is published. */
   const [index, setIndex] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -200,11 +205,23 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
    * Skipping does not: someone who skipped the hello has said they do not
    * want a tour, and arming the coach would be the same tour arriving again
    * by another door thirty seconds later.
+   *
+   * And handing over means going to where the hand is. The rest of this tour
+   * is on the home screen — it asks you to pull her eye, photograph
+   * something, feed her — so finishing it in Settings used to leave the
+   * reader looking at Settings with a tour armed and invisible. It had begun
+   * and there was nothing on screen to say so.
+   *
+   * Only when they are not already there. The unprompted opening happens on
+   * the home screen itself, and pushing the same route from it would remount
+   * the screen and start her opening film over — the reader would be sent
+   * back to the beginning of something as a reward for finishing.
    */
   const handOver = useCallback(() => {
     armCoach();
     dismiss();
-  }, [dismiss]);
+    if (pathname !== "/home") router.push("/home");
+  }, [dismiss, pathname, router]);
 
   /*
    * A full-screen tour is still a modal. Freeze the page beneath it, return
