@@ -26,6 +26,46 @@ function qualityForGrade(grade: ReviewGrade) {
   return { again: 1, hard: 3, good: 4, easy: 5 }[grade];
 }
 
+/**
+ * The chance this word is still in there, as a percentage.
+ *
+ * ── Why the curve changed ──────────────────────────────────────────────
+ *
+ * This used to be `exp(-elapsed / interval)`, which decays to 1/e — 37% — at
+ * exactly the interval the scheduler chose. That is the wrong reading by
+ * construction: SM-2 picks its interval to land a review while the word is
+ * still *mostly* remembered, around nine times in ten. A word reviewed
+ * precisely on schedule was therefore reported as barely held, and the panel
+ * that showed it said so in the plainest possible terms.
+ *
+ * The old test for the Cosmic panel is the evidence, and it wrote the bug
+ * down in its own comment: two words "last seen one interval ago", expected
+ * retention 37%. On schedule is not two-thirds forgotten.
+ *
+ * Past the interval the old curve fell off a cliff. Five intervals late it
+ * reads 0.7%; a word answered wrong is rescheduled ten minutes out, the floor
+ * below pins its stability at a quarter of a day, and two days later it reads
+ * 0.03% — so a single wrong answer made a word read as gone forever, until it
+ * was reviewed again. A library of those averages to zero. That is how a
+ * reader with 88% accuracy over 114 reviews was told their memory retention
+ * was 0%, which is both false and a miserable thing to be told by something
+ * that is supposed to be on your side.
+ *
+ * ── The curve now ──────────────────────────────────────────────────────
+ *
+ * `0.9 ^ (elapsed / interval)`: 90% at the scheduled interval, which is the
+ * target the schedule was built around, and a decay from there that is honest
+ * without being punitive — 81% at twice the interval, 59% at five times, 12%
+ * at twenty. The interval is still the only measure of strength there is, so
+ * a word held for six days decays six times slower than one held for one.
+ *
+ * The quarter-day floor stays. It is what keeps a freshly-failed word from
+ * dividing by ten minutes, and at this base it gives that word 66% a day
+ * later and 43% after two — forgetting, which is what a wrong answer means,
+ * rather than erasure.
+ */
+const TARGET_RETENTION = 0.9;
+
 export function calculateRetention(item: VocabularyItem, now = new Date()) {
   if (!item.last_reviewed_at || !item.review_interval) return 100;
   const elapsedDays = Math.max(
@@ -33,7 +73,9 @@ export function calculateRetention(item: VocabularyItem, now = new Date()) {
     (now.getTime() - new Date(item.last_reviewed_at).getTime()) / DAY_MS,
   );
   const stability = Math.max(0.25, item.review_interval);
-  return Math.round(clamp(Math.exp(-elapsedDays / stability) * 100, 0, 100));
+  return Math.round(
+    clamp(TARGET_RETENTION ** (elapsedDays / stability) * 100, 0, 100),
+  );
 }
 
 export function scheduleSm2(

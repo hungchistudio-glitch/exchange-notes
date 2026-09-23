@@ -177,7 +177,13 @@ describe("Cosmic progress readings", () => {
 
     expect(screen.getByText(copy.dailyGoal).parentElement).toHaveTextContent("2/8");
     expect(screen.getByText(copy.accuracy).parentElement).toHaveTextContent("75%");
-    expect(screen.getByText(copy.retention).parentElement).toHaveTextContent("37%");
+    /*
+     * Both were last reviewed exactly one interval ago — on schedule, which
+     * is the moment SM-2 aims at and aims at because the word is still held
+     * about nine times in ten. This expected 37% before, which was the old
+     * curve's 1/e and said the opposite of what the schedule meant.
+     */
+    expect(screen.getByText(copy.retention).parentElement).toHaveTextContent("90%");
     expect(screen.getByText(copy.mastered).parentElement).toHaveTextContent("1");
     expect(screen.getByText(copy.reviewed).parentElement).toHaveTextContent("8");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
