@@ -8,7 +8,7 @@ import {
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 /**
  * Daily News generation, redesigned to NOT depend on Gemini's Google Search
  * grounding tool. As of late 2025 / 2026, Google appears to require a
@@ -555,28 +555,11 @@ async function buildLearningBatch(
   // Deliberately no `tools` field here — this call never touches Google
   // Search grounding, so it only ever draws on the normal (non-grounded)
   // Gemini free tier.
-  const interaction = await client.interactions.create({
+  const outputText = await generateJson(client, {
     model,
     input: buildDailyNewsPrompt(articles, languages),
-    response_format: {
-      type: "text",
-      mime_type: "application/json",
-      schema: buildLearningSchema(articles.length, [...languages]),
-    },
-    generation_config: {
-      thinking_level: "low",
-    },
-    store: false,
-  },
-    modelRequestOptions(),
-  );
-
-  const outputText =
-    typeof interaction.output_text === "string" ? interaction.output_text : "";
-
-  if (!outputText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
+    schema: buildLearningSchema(articles.length, [...languages]),
+  });
 
   const parsed = JSON.parse(
     stripJsonCodeFence(outputText)

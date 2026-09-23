@@ -6,7 +6,7 @@ import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, hasPhonetics, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 /* =========================================================
    Where IPA comes from
 
@@ -168,7 +168,7 @@ async function fromModel(
 
   for (const model of getTextModelCandidates()) {
     try {
-      const interaction = await client.interactions.create({
+      const raw = await generateJson(client, {
         model,
         input: [
           `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,
@@ -182,21 +182,8 @@ async function fromModel(
           ``,
           ...texts.map((text, index) => `${index + 1}. ${text}`),
         ].join("\n"),
-        response_format: {
-          type: "text",
-          mime_type: "application/json",
-          schema: RESULT_SCHEMA,
-        },
-        generation_config: { thinking_level: "low" },
-        store: false,
-      },
-        modelRequestOptions(),
-      );
-
-      const raw =
-        typeof interaction.output_text === "string"
-          ? interaction.output_text
-          : "";
+        schema: RESULT_SCHEMA,
+      });
 
       const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
         words?: Array<{ text?: string; ipa?: string }>;

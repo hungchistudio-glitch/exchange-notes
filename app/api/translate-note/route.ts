@@ -11,7 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
 /*
@@ -141,30 +141,11 @@ export async function POST(request: Request) {
 
     const client = new GoogleGenAI({ apiKey });
 
-    const interaction = await client.interactions.create({
+    const outputText = await generateJson(client, {
       model,
       input: buildTranslateNotePrompt(text, languagePair),
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: TRANSLATE_RESULT_SCHEMA,
-      },
-      generation_config: {
-        thinking_level: "low",
-      },
-      store: false,
-    },
-      modelRequestOptions(),
-    );
-
-    const outputText =
-      typeof interaction.output_text === "string"
-        ? interaction.output_text
-        : "";
-
-    if (!outputText.trim()) {
-      throw new Error("Gemini returned an empty response.");
-    }
+      schema: TRANSLATE_RESULT_SCHEMA,
+    });
 
     const result = JSON.parse(
       stripJsonCodeFence(outputText)

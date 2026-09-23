@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createServiceClient } from "@/lib/supabase/service";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
 /*
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
 
     for (const model of getTextModelCandidates()) {
       try {
-        const interaction = await client.interactions.create({
+        const modelText = await generateJson(client, {
           model,
           input: buildInterpretNotePrompt({
             text: note.originalText,
@@ -157,20 +157,10 @@ export async function POST(request: Request) {
             personalMeaning: note.personalMeaning,
             context: note.context,
           }),
-          response_format: {
-            type: "text",
-            mime_type: "application/json",
-            schema: RESULT_SCHEMA,
-          },
-          generation_config: { thinking_level: "low" },
-          store: false,
-        },
-          modelRequestOptions(),
-        );
+          schema: RESULT_SCHEMA,
+        });
 
-        outputText = typeof interaction.output_text === "string"
-          ? interaction.output_text
-          : "";
+        outputText = modelText;
         usedModel = model;
         lastError = null;
         break;

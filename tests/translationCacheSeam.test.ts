@@ -40,12 +40,12 @@ vi.mock("@/lib/supabase/service", () => ({
 
 vi.mock("@google/genai", () => ({
   GoogleGenAI: class {
-    interactions = {
-      create: async () => {
+    models = {
+      generateContent: async () => {
         model.calls += 1;
 
         return {
-          output_text: JSON.stringify({
+          text: JSON.stringify({
             items: [{ source: "海鮮燉飯", text: "seafood risotto" }],
           }),
         };

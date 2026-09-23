@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
+import { generateJson } from "@/lib/ai/modelRequest";
+
 import {
   getMenuModelCandidates,
   readBoundedInteger,
@@ -333,38 +335,22 @@ async function scanWithModel(
   targetLanguage: LanguageCode,
   languagePair: readonly [LanguageCode, LanguageCode],
 ) {
-  const interaction = await client.interactions.create(
-    {
-      model,
-      input: [
-        { type: "text", text: buildMenuScanPrompt(languagePair) },
-        {
-          type: "image",
-          data: imageBase64,
-          mime_type: mediaType,
-          // Menus are small type photographed from a metre away. This is the
-          // one setting that decides whether the prices come back right.
-          resolution: "high",
-        },
-      ],
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: MENU_RESULT_SCHEMA,
-      },
-      generation_config: {
-        thinking_level: "low",
-      },
-      store: false,
-    },
-    {
-      maxRetries: 0,
-      timeout: MENU_REQUEST_TIMEOUT_MS,
-    },
-  );
-
-  const outputText =
-    typeof interaction.output_text === "string" ? interaction.output_text : "";
+  const outputText = await generateJson(client, {
+    model,
+    input: [
+      { text: buildMenuScanPrompt(languagePair) },
+      /*
+       * Menus are small type photographed from a metre away, and they used
+       * to ask for `resolution: "high"` to be sampled at the detail they
+       * carry. The standard endpoint has no such option: what the model sees
+       * is the image it is given, so the detail is decided upstream by
+       * MENU_EDGE on the client rather than by a flag here.
+       */
+      { media: { data: imageBase64, mimeType: mediaType } },
+    ],
+    schema: MENU_RESULT_SCHEMA,
+    timeoutMs: MENU_REQUEST_TIMEOUT_MS,
+  });
 
   if (!outputText.trim()) {
     throw new Error("Gemini returned an empty menu response.");

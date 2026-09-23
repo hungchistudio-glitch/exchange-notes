@@ -34,6 +34,7 @@ import {
  * never heard about it.
  */
 import {
+  generateJson,
   getErrorStatus,
   isRateLimitError,
   isTimeoutError,
@@ -367,40 +368,18 @@ async function lookupWithModel(
   context: LookupContext,
   timeoutMs: number,
 ) {
-  const interaction = await client.interactions.create(
-    {
-      model,
-      input: buildClassifyTextPrompt({
+  const outputText = await generateJson(client, {
+    model,
+    input: buildClassifyTextPrompt({
         query: context.query,
         roles: context.roles,
         detected: context.detected,
         chosenHead: context.chosenHead,
         kind: context.kind,
       }),
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: buildTextResultSchema(),
-      },
-      generation_config: {
-        thinking_level: "low",
-      },
-      store: false,
-    },
-    {
-      maxRetries: 0,
-      timeout: timeoutMs,
-    },
-  );
-
-  const outputText =
-    typeof interaction.output_text === "string"
-      ? interaction.output_text
-      : "";
-
-  if (!outputText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
+    schema: buildTextResultSchema(),
+    timeoutMs: timeoutMs,
+  });
 
   const parsed = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
   const result = toLexiconEntry(parsed);
@@ -431,12 +410,11 @@ async function lookupWithModelFallback(context: LookupContext) {
   /*
    * No `httpOptions` here on purpose.
    *
-   * A client configured with `timeout` and `retryOptions` looks like it
-   * bounds the request and does not: lib/ai/modelRequest.ts records the
-   * measurement — a client set up exactly that way still took 31.9s on the
-   * `interactions.create` path. Only the per-call second argument is
-   * honoured. Leaving the dead config in place would tell the next reader
-   * this route is bounded twice when it is bounded once.
+   * The ceiling is not here. Every attempt is bounded by generateJson, which
+   * sets both the transport timeout and an abort signal per call — see
+   * lib/ai/modelRequest.ts. Configuring the client as well would say this
+   * route is bounded twice when it is bounded once, and the client-level
+   * version is the one that was measured not to hold.
    */
   const client = new GoogleGenAI({ apiKey });
 

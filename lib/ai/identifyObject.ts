@@ -3,6 +3,8 @@ import { isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
+
+import { generateJson } from "@/lib/ai/modelRequest";
 import {
   getVisionModelCandidates,
   readBoundedInteger,
@@ -53,16 +55,6 @@ const MODEL_COOLDOWN_MS = 65 * 1000;
    to return the imperfect answer we have than to spend the rest of the
    budget failing to improve it.
    ========================================================= */
-
-/**
- * How finely the model samples the photo it is sent.
- *
- * "low" matches the single 768px tile the client sizes for; see the note at
- * the image part below. Raise it with VISION_RESOLUTION if a real photo is
- * identified worse than it used to be.
- */
-const VISION_RESOLUTION = (process.env.VISION_RESOLUTION?.trim() ||
-  "low") as "low" | "medium" | "high" | "ultra_high";
 
 /** What one model attempt may take. Measured p50 is three to seven seconds. */
 const REQUEST_TIMEOUT_MS = readBoundedInteger(
@@ -267,74 +259,31 @@ async function identifyWithModel(
   languagePair: readonly [LanguageCode, LanguageCode],
   timeoutMs: number,
 ) {
-  const interaction = await client.interactions.create(
-    {
-      model,
-      input: [
-        {
-          type: "text",
-          text: buildIdentifyObjectPrompt(languagePair),
-        },
-        {
-          type: "image",
-          data: imageBase64,
-          /*
-           * What kind of image this is.
-           *
-           * This was missing, and `mediaType` was threaded the whole way
-           * down to this function as a parameter that nothing read. The API
-           * answered 400 to every recognition — a base64 blob with no
-           * declared type is not a request it can act on — and nobody saw
-           * it, because the model in front of it was spending the entire
-           * budget timing out before the API could object. Fixing the model
-           * is what made this visible.
-           *
-           * lib/ai/menuScan.ts, which is the same call with a different
-           * prompt, has always sent it.
-           */
-          mime_type: mediaType,
-          /*
-           * Sampled at the size it was actually sent at.
-           *
-           * The client resizes this photo to RECOGNITION_EDGE.object, which
-           * is 768 because "Gemini bills images as 768x768 tiles, so 768 is
-           * one tile and 1280 is four" — the frame is deliberately cut to a
-           * single tile. Asking for "high" then sampled that one tile as
-           * though there were four tiles of detail in it: more tokens and
-           * more time for an image that does not contain the detail being
-           * paid for, on the route whose whole problem is that it runs out
-           * of budget.
-           *
-           * Overridable, because this is the one change here that could cost
-           * recognition quality rather than only time.
-           */
-          resolution: VISION_RESOLUTION,
-        },
-      ],
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: buildObjectResultSchema(languagePair),
-      },
-      generation_config: {
-        thinking_level: "low",
-      },
-      store: false,
-    },
-    {
-      maxRetries: 0,
-      timeout: timeoutMs,
-    },
-  );
-
-  const outputText =
-    typeof interaction.output_text === "string"
-      ? interaction.output_text
-      : "";
-
-  if (!outputText.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
+  const outputText = await generateJson(client, {
+    model,
+    input: [
+      { text: buildIdentifyObjectPrompt(languagePair) },
+      /*
+       * The photo, and what kind of photo it is.
+       *
+       * The media type was once missing here while `mediaType` was threaded
+       * the whole way down as a parameter nothing read; the API answered 400
+       * to every recognition, invisibly, because the model in front of it
+       * spent the entire budget timing out before the API could object. It
+       * cannot go missing again: the part carries the two together or it
+       * does not typecheck.
+       *
+       * There is no `resolution` any more. The old endpoint took one and
+       * this one does not, which costs nothing: the client already resizes
+       * this frame to RECOGNITION_EDGE.object — 768px, deliberately one
+       * billing tile — so the detail the flag used to ask for is the detail
+       * the image has.
+       */
+      { media: { data: imageBase64, mimeType: mediaType } },
+    ],
+    schema: buildObjectResultSchema(languagePair),
+    timeoutMs: timeoutMs,
+  });
 
   const result = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
   if (!isObjectIdentificationResult(result)) {
@@ -356,11 +305,10 @@ async function identifyWithFallback(
    * No httpOptions here on purpose.
    *
    * This used to carry `timeout` and `retryOptions: { attempts: 1 }`, which
-   * reads like a guard and is not one: measured on 2026-09-18, a client
-   * configured exactly that way still spent 31.9 seconds retrying a refusal
-   * on the interactions API, because that path ignores both. The per-call
-   * options in identifyWithModel are what actually bound an attempt — see
-   * lib/ai/modelRequest.ts.
+   * reads like a guard and was not one: measured on 2026-09-18, a client
+   * configured exactly that way still spent 31.9 seconds retrying a refusal,
+   * because the endpoint this app then called ignored both. What bounds an
+   * attempt is generateJson, per call — see lib/ai/modelRequest.ts.
    */
   const client = new GoogleGenAI({ apiKey });
 

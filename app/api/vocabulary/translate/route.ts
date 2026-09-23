@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { getTextModelCandidates, readBoundedInteger } from "@/lib/ai/modelConfig";
-import { withModelCandidates } from "@/lib/ai/modelRequest";
+import { generateJson, withModelCandidates } from "@/lib/ai/modelRequest";
 import { cleanExampleSentence } from "@/lib/ai/prompts/exampleSentence";
 import {
   buildTranslateVocabularyPrompt,
@@ -230,31 +230,18 @@ export async function POST(request: Request) {
      * What the list could not fix on its own was the cost of using it. The
      * SDK retries a 429 five times with backoff, so falling through to the
      * second model took 34.8 seconds of waiting to learn something the first
-     * response already said. withModelCandidates passes maxRetries: 0, which
-     * measured 225ms for the same refusal.
+     * response already said. Every attempt is bounded now — one try, one
+     * ceiling — which measured 225ms for the same refusal.
      */
     const outputText = await withModelCandidates(
       getTextModelCandidates(),
-      async (model, options) => {
-        const interaction = await client.interactions.create(
-          {
-            model,
-            input: buildTranslateVocabularyPrompt(items, target),
-            response_format: {
-              type: "text",
-              mime_type: "application/json",
-              schema: RESULT_SCHEMA,
-            },
-            generation_config: { thinking_level: "low" },
-            store: false,
-          },
-          options,
-        );
-
-        return typeof interaction.output_text === "string"
-          ? interaction.output_text
-          : "";
-      },
+      async (model, timeoutMs) =>
+        generateJson(client, {
+          model,
+          input: buildTranslateVocabularyPrompt(items, target),
+          schema: RESULT_SCHEMA,
+          timeoutMs,
+        }),
     );
 
     const parsed = JSON.parse(

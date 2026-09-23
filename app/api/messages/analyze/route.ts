@@ -18,7 +18,7 @@ import type {
   ToneConfidence,
 } from "@/lib/messages/decode";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
 /*
@@ -257,7 +257,7 @@ export async function POST(request: Request) {
 
     const client = new GoogleGenAI({ apiKey });
 
-    const interaction = await client.interactions.create({
+    const outputText = await generateJson(client, {
       model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
       input: `
 You help someone learning ${learningLanguage} understand a message a friend
@@ -291,19 +291,8 @@ Return at most ${MAX_PHRASES} items, and usually fewer. Rules:
   string and set toneConfidence to "unknown". Do not guess at feelings.
 ${scriptRule}
       `.trim(),
-      response_format: {
-        type: "text",
-        mime_type: "application/json",
-        schema: ANALYSIS_SCHEMA,
-      },
-      generation_config: { thinking_level: "low" },
-      store: false,
-    },
-      modelRequestOptions(),
-    );
-
-    const outputText =
-      typeof interaction.output_text === "string" ? interaction.output_text : "";
+      schema: ANALYSIS_SCHEMA,
+    });
 
     if (!outputText.trim()) {
       throw new Error("The model returned nothing.");

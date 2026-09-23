@@ -12,7 +12,7 @@ import {
 import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
-import { modelRequestOptions } from "@/lib/ai/modelRequest";
+import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -114,11 +114,10 @@ export async function POST(request: Request) {
 
     for (const model of getTextModelCandidates()) {
       try {
-        const interaction = await client.interactions.create({
+        const raw = await generateJson(client, {
           model,
           input: [
             {
-              type: "text",
               text: [
                 "Listen to this audio and write down the single word or short phrase that was said.",
                 "",
@@ -130,26 +129,10 @@ export async function POST(request: Request) {
                 "- Set confident to false if the audio is unclear, silent, or in none of those languages. Do not guess.",
               ].join("\n"),
             },
-            {
-              type: "audio",
-              mime_type: mimeType,
-              data: base64,
-            },
+            { media: { data: base64, mimeType } },
           ],
-          response_format: {
-            type: "text",
-            mime_type: "application/json",
-            schema: RESULT_SCHEMA,
-          },
-          store: false,
-        },
-          modelRequestOptions(),
-        );
-
-        const raw =
-          typeof interaction.output_text === "string"
-            ? interaction.output_text
-            : "";
+          schema: RESULT_SCHEMA,
+        });
 
         const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
           text?: string;

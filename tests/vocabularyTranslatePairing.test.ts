@@ -56,7 +56,7 @@ vi.mock("@/lib/profile/languagePair", () => ({
 vi.mock("@google/genai", () => ({
   /* A class, because the route calls `new GoogleGenAI(...)`. */
   GoogleGenAI: class {
-    interactions = { create: mocks.create };
+    models = { generateContent: mocks.create };
   },
 }));
 
@@ -82,7 +82,7 @@ describe("library fill pairing", () => {
     // The model answers the first and third words and says nothing about the
     // second — the shape that used to shift "nuage" onto "bridge".
     mocks.create.mockResolvedValue({
-      output_text: JSON.stringify({
+      text: JSON.stringify({
         words: [
           { id: "w1", text: "pomme", example: "Je mange une pomme." },
           { id: "w3", text: "nuage", example: "Un nuage passe." },
@@ -108,7 +108,7 @@ describe("library fill pairing", () => {
 
   it("ignores an answer whose id belongs to no word in the batch", async () => {
     mocks.create.mockResolvedValue({
-      output_text: JSON.stringify({
+      text: JSON.stringify({
         words: [
           { id: "w1", text: "pomme", example: "Je mange une pomme." },
           { id: "w9", text: "inventé", example: "Rien." },
@@ -131,7 +131,7 @@ describe("library fill pairing", () => {
    */
   it("fills every word when every word is answered", async () => {
     mocks.create.mockResolvedValue({
-      output_text: JSON.stringify({
+      text: JSON.stringify({
         words: [
           { id: "w1", text: "pomme", example: "Je mange une pomme." },
           { id: "w2", text: "pont", example: "Le pont est fermé." },

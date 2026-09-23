@@ -32,11 +32,11 @@ type Attempt = {
 };
 
 const script: Attempt[] = [];
-type ImagePart = { type: string; data?: string; mime_type?: string };
+type SentPart = { text?: string; inlineData?: { data?: string; mimeType?: string } };
 const made: Array<{
   model: string;
   timeout: number;
-  input: ImagePart[];
+  parts: SentPart[];
 }> = [];
 let clock = 0;
 
@@ -53,17 +53,22 @@ function answer(confidence: "high" | "low") {
   });
 }
 
+/*
+ * The standard endpoint, mocked at the shape the app now sends: contents
+ * with parts, a config carrying the ceiling, and `text` on the response.
+ */
 vi.mock("@google/genai", () => ({
   GoogleGenAI: class {
-    interactions = {
-      create: async (
-        body: { model: string; input: ImagePart[] },
-        options: { timeout: number },
-      ) => {
+    models = {
+      generateContent: async (params: {
+        model: string;
+        contents: Array<{ parts: SentPart[] }>;
+        config: { httpOptions: { timeout: number } };
+      }) => {
         made.push({
-          model: body.model,
-          timeout: options.timeout,
-          input: body.input,
+          model: params.model,
+          timeout: params.config.httpOptions.timeout,
+          parts: params.contents[0].parts,
         });
 
         const step = script.shift();
@@ -77,7 +82,7 @@ vi.mock("@google/genai", () => ({
           throw Object.assign(new Error("Request timed out."), { status: 504 });
         }
 
-        return { output_text: answer(step.outcome.confidence) };
+        return { text: answer(step.outcome.confidence) };
       },
     };
   },
@@ -120,7 +125,8 @@ describe("the request that is actually sent", () => {
    * threaded the whole way down to the call as a parameter nothing read, so
    * every recognition got a 400 from the API — and nobody saw it, because
    * the model in front of it was burning the whole budget timing out before
-   * the API could object.
+   * the API could object. The part carries both together now, so it cannot
+   * come apart again without failing to compile.
    *
    * Every other test in this file asserts on timing. None of them looked at
    * what was in the envelope.
@@ -130,10 +136,10 @@ describe("the request that is actually sent", () => {
 
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
 
-    const image = made[0].input.find((part) => part.type === "image");
+    const image = made[0].parts.find((part) => part.inlineData);
     expect(image).toBeDefined();
-    expect(image?.mime_type).toBe("image/webp");
-    expect(image?.data).toBeTruthy();
+    expect(image?.inlineData?.mimeType).toBe("image/webp");
+    expect(image?.inlineData?.data).toBeTruthy();
   });
 });
 
