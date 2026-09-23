@@ -1,3 +1,4 @@
+import info from "@/lib/i18n/info/fr";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 /*
@@ -6,6 +7,7 @@ import type { TranslationDictionary } from "@/lib/i18n/types";
  * lib/i18n/types.ts still enforces completeness at build time.
  */
 const french: TranslationDictionary = {
+  info,
   offline: {
     title: "Vous êtes hors ligne",
     body: "Vos mots, vos révisions et vos articles sont sur cet appareil. Tout ce que vous modifiez est enregistré et envoyé dès votre retour en ligne.",

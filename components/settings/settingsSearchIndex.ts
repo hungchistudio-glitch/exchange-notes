@@ -114,6 +114,13 @@ export function buildSettingsSearchIndex(
       keywords: ["tour", "tutorial", "help", "how to", "guide"],
       href: "/profile/help",
     },
+    ...(["about", "community", "privacy"] as const).map((page) => ({
+      id: `setting-${page}`,
+      title: t.info.nav[page],
+      section: sections.help,
+      keywords: [page, t.info.help[page].toLowerCase(), ...(page === "about" ? ["yumi", "exchange notes"] : [])],
+      href: "/profile/help",
+    })),
     {
       id: "setting-logout",
       title: settings.profile.logout,

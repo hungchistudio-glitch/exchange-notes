@@ -1,3 +1,4 @@
+import type { InfoCopy } from "@/lib/i18n/info/types";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
 /**
@@ -10,6 +11,7 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 export type TranslationLanguage = InterfaceLanguage;
 
 export type TranslationDictionary = {
+  info: InfoCopy;
   /**
    * What the app says when there is no network.
    *

@@ -1,6 +1,8 @@
+import info from "@/lib/i18n/info/es";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const spanish: TranslationDictionary = {
+  info,
   offline: {
     title: "Estás sin conexión",
     body: "Tus palabras, repasos e historias están en este dispositivo. Todo lo que cambies se guarda y se envía cuando vuelvas a tener conexión.",

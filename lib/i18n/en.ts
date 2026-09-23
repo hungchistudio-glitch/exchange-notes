@@ -1,6 +1,8 @@
+import info from "@/lib/i18n/info/en";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const english: TranslationDictionary = {
+  info,
   offline: {
     title: "You are offline",
     body: "Your words, reviews and stories are on this device. Anything you change is saved and sent when you are back.",

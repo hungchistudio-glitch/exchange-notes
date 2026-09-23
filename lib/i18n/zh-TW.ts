@@ -1,6 +1,8 @@
+import info from "@/lib/i18n/info/zh-TW";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 const traditionalChinese: TranslationDictionary = {
+  info,
   offline: {
     title: "目前離線",
     body: "你的單字、複習和報導都在這台裝置上。任何更動都會存起來，回到連線時自動送出。",
