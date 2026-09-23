@@ -109,17 +109,11 @@ export default function WordCardMessage({
     const language = getLanguage(code);
     const phonetics = phoneticsFor({ text, language: code });
 
-    /*
-     * Whatever systems this language actually uses, in the order the rest of
-     * the app shows them: IPA for the Latin languages, zhuyin and pinyin for
-     * Chinese. This listed only the Chinese two, so a word card in a
-     * conversation carried an annotation for exactly one of the five
-     * languages the app teaches — and the reader had no way to tell that
-     * from the word simply not having one.
-     */
-    const annotation = [phonetics?.ipa, phonetics?.pinyin, phonetics?.zhuyin]
-      .filter(Boolean)
-      .join("  ");
+    const readings = ([
+      ["zhuyin", phonetics?.zhuyin],
+      ["pinyin", phonetics?.pinyin],
+      ["ipa", phonetics?.ipa],
+    ] as const).flatMap(([script, label]) => label ? [{ script, label }] : []);
 
     return (
       <div key={code}>
@@ -150,12 +144,21 @@ export default function WordCardMessage({
             <Volume2 size={15} strokeWidth={1.8} />
           </button>
         </div>
-        {annotation ? (
+        {readings.length ? (
           <p
-            className="mt-0.5 text-xs"
+            className="mt-1 space-y-0.5 break-words text-xs leading-relaxed"
             style={{ color: "var(--msg-ink-faint)" }}
           >
-            {annotation}
+            {readings.map((reading) => (
+              <span
+                key={reading.script}
+                data-script={reading.script}
+                lang={reading.script === "pinyin" ? "zh-Latn" : code}
+                className={`block ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
+              >
+                {reading.label}
+              </span>
+            ))}
           </p>
         ) : null}
       </div>

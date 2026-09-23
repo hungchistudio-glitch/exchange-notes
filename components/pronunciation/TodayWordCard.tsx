@@ -114,7 +114,7 @@ function EmptyCard({
   );
 }
 
-function DeckWordCard({
+export function DeckWordCard({
   item,
   index,
   total,
@@ -156,10 +156,6 @@ function DeckWordCard({
   ]);
   const primaryWord = sides.primary.text || word;
   const secondaryWord = sides.secondary.text;
-  const secondaryPhonetics = sidePhoneticsFor({
-    text: sides.secondary.text,
-    language: sides.secondary.language,
-  });
   const primaryWordLength = Array.from(primaryWord).length;
   const primaryWordSize = primaryWordLength >= 20
     ? "extra-long"
@@ -224,47 +220,65 @@ function DeckWordCard({
             <p className={styles.secondaryWord}>{secondaryWord}</p>
           ) : null}
           {/*
-            The reading of the word above, in whatever its language writes
-            readings with.
+            No reading line here any more.
 
-            This asked for the zh-TW reading of the translation, with the
-            language written into the call — so it was right for exactly one
-            pairing and rendered a non-breaking space for every other. An
-            English and Spanish reader got a blank line where the IPA should
-            be, on every card, and never knew there was supposed to be
-            anything there.
+            There was one, and it printed the *gloss's* reading — which is the
+            one reading on the card nobody needs. A Chinese reader learning
+            English was given the pinyin of 川普, a word they can already read;
+            a Spanish reader learning Chinese was given the IPA of the English
+            gloss. Whichever way round the pairing went, the line annotated the
+            word the reader already knew.
 
-            The rule is the one PronunciationBlock states: IPA for en, es, fr
-            and it; zhuyin and pinyin for Traditional Chinese, both of them.
-            Joined rather than picked between, because a reader who uses
-            zhuyin and a reader who uses pinyin are not the same reader and
-            this card has one line for them both.
+            Both readings now sit in the panels below, each under the name of
+            its own language, where they are also the button that says the word
+            out loud. That is one place per reading instead of two, and the
+            panels have the room to give a language more than one — which
+            Traditional Chinese needs, and never had here.
           */}
-          <p className={styles.phonetic}>
-            {[
-              secondaryPhonetics?.ipa,
-              secondaryPhonetics?.pinyin,
-              secondaryPhonetics?.zhuyin,
-            ]
-              .filter(Boolean)
-              .join("　") || "\u00a0"}
-          </p>
         </div>
 
         {/*
-          One button per side, each showing whatever annotation its own
-          language has: zhuyin under Chinese, the word itself under a
-          language whose spelling already tells you how to say it. The
-          labels used to be two dictionary keys named after two languages.
+          One panel per side, carrying every reading its own language has.
+
+          This showed a single line: `zhuyin || the word itself`. Two things
+          were wrong with that. Traditional Chinese has two readings and only
+          one of them was printed — zhuyin, which a reader who learned Chinese
+          in pinyin cannot use at all, so the panel meant to tell them how to
+          say the word told them nothing. And the languages with IPA never
+          showed it: the transcription was already in the same response,
+          already cached, and thrown away in favour of spelling the word out a
+          second time.
+
+          So: zhuyin, and pinyin under it, for Traditional Chinese — both,
+          because someone who reads one of them usually cannot read the other,
+          and a card with one line for the two of them has quietly chosen a
+          side. IPA for the Latin-script languages. And the word itself only
+          when a language has no reading yet, so a panel is never blank while
+          the lookup is still in flight.
         */}
         <div className={styles.soundGrid}>
-          {[sides.primary, sides.secondary].map((side) => {
+          {/*
+            A side with no text is not a language the card has; it is the
+            absence of one. A word saved with no gloss — or glossed in the
+            language it is already in — drew a second panel here with a name
+            on it and nothing under it, permanently disabled. Now there is
+            one panel, full width, which is what one language looks like.
+          */}
+          {[sides.primary, sides.secondary].filter((side) => side.text).map((side) => {
             const language = getLanguage(side.language);
             const phonetics = sidePhoneticsFor({
               text: side.text,
               language: side.language,
             });
-            const annotation = phonetics?.zhuyin || side.text;
+
+            const readings = (
+              [
+                ["zhuyin", phonetics?.zhuyin],
+                ["pinyin", phonetics?.pinyin],
+                ["ipa", phonetics?.ipa],
+              ] as const
+            ).flatMap(([script, text]) => (text ? [{ script, text }] : []));
+
             const label = language.endonym;
 
             return (
@@ -274,17 +288,49 @@ function DeckWordCard({
                 disabled={!interactive || !side.text}
                 tabIndex={interactive ? 0 : -1}
                 onClick={() => speakText(side.text, language.speechTag)}
-                aria-label={`${label}: ${annotation}`}
+                // The button says the word, so the word is what it is called.
+                aria-label={`${label}: ${side.text}`}
                 className={styles.soundButton}
               >
                 <span className={styles.soundCopy}>
                   <span className={styles.soundLabel}>{label}</span>
-                  <span
-                    className={styles.soundValue}
-                    data-script={phonetics?.zhuyin ? "zhuyin" : "english"}
-                  >
-                    {annotation}
-                  </span>
+
+                  {readings.length ? (
+                    readings.map((reading) => (
+                      <span
+                        key={`${reading.script}-${reading.text}`}
+                        className={`${styles.soundValue} ${
+                          reading.script === "zhuyin"
+                            ? "font-zhuyin"
+                            : "font-phonetic"
+                        }`}
+                        data-script={reading.script}
+                        /*
+                         * Pinyin is Mandarin written in Latin letters. Saying
+                         * so is what stops the browser reaching for a CJK face
+                         * to draw "chuān pǔ", and what stops a screen reader
+                         * spelling it out as Chinese.
+                         */
+                        lang={
+                          reading.script === "pinyin"
+                            ? "zh-Latn"
+                            : reading.script === "zhuyin"
+                              ? side.language
+                              : undefined
+                        }
+                      >
+                        {reading.text}
+                      </span>
+                    ))
+                  ) : (
+                    <span
+                      className={styles.soundValue}
+                      data-script="word"
+                      lang={side.language}
+                    >
+                      {side.text}
+                    </span>
+                  )}
                 </span>
               </button>
             );

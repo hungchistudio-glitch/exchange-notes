@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
+import { speak } from "@/lib/speech";
 
 /* =========================================================
    Phonetic annotation, per language
@@ -85,10 +86,18 @@ describe("PronunciationBlock", () => {
     };
     serve();
 
-    render(<PronunciationBlock entries={[{ text: "監獄", language: "zh-TW" }]} />);
+    render(<PronunciationBlock entries={[{ text: "監獄", language: "zh-TW" }]} className="flex flex-wrap" />);
 
-    expect(await screen.findByText("ㄐㄧㄢ ㄩˋ")).toBeTruthy();
-    expect(screen.getByText("jiān yù")).toBeTruthy();
+    const zhuyin = await screen.findByText("ㄐㄧㄢ ㄩˋ");
+    const pinyin = screen.getByText("jiān yù");
+    expect(zhuyin.nextElementSibling).toBe(pinyin);
+    expect(pinyin).toHaveClass("block", "font-phonetic");
+    expect(zhuyin).toHaveClass("block", "font-zhuyin");
+    expect(zhuyin.closest("button")).toBe(pinyin.closest("button"));
+    expect(screen.getAllByRole("button", { name: "Listen to 監獄" })).toHaveLength(1);
+
+    fireEvent.click(pinyin);
+    expect(speak).toHaveBeenCalledWith("監獄", "zh-TW");
   });
 
   it("asks once for a word that appears many times on screen", async () => {

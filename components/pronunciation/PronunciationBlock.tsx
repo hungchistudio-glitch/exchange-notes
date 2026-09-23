@@ -53,7 +53,7 @@ export default function PronunciationBlock({
   const { t } = useTranslation();
   const phoneticsFor = usePhonetics(entries);
 
-  const rows = useMemo(
+  const groups = useMemo(
     () =>
       entries.flatMap((entry) => {
         const text = entry.text?.trim() ?? "";
@@ -66,34 +66,65 @@ export default function PronunciationBlock({
         // gets the looked-up one.
         const ipa = entry.ipa?.trim() || phonetics?.ipa;
 
-        return [ipa, phonetics?.pinyin, phonetics?.zhuyin]
-          .filter((label): label is string => Boolean(label))
-          .map((label) => ({ label, text, speechTag }));
+        /*
+         * Every reading this language has, stacked, in the order a reader
+         * uses them: zhuyin, then pinyin under it, then IPA. Traditional
+         * Chinese has the first two and nothing else has either, so in
+         * practice a language contributes one line or two.
+         *
+         * They used to be one button per line, which made the same word
+         * two and three tap targets that all did the same thing. One
+         * language is one button now, and the readings are what is printed
+         * on it.
+         */
+        const readings = ([
+          ["zhuyin", phonetics?.zhuyin],
+          ["pinyin", phonetics?.pinyin],
+          ["ipa", ipa],
+        ] as const).flatMap(([script, label]) => label ? [{ script, label }] : []);
+
+        return readings.length ? [{ readings, text, speechTag, language: entry.language }] : [];
       }),
     [entries, phoneticsFor],
   );
 
-  if (rows.length === 0) return null;
+  if (groups.length === 0) return null;
 
   return (
     <div
       className={`space-y-1.5 break-words font-sans text-[0.6875rem] font-normal leading-[1.5] tracking-[-0.01em] text-ink-soft ${className}`}
     >
-      {rows.map((row) => (
+      {groups.map((group) => (
         <button
-          key={`${row.speechTag}-${row.label}`}
+          key={`${group.language}-${group.text}`}
           type="button"
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            speak(row.text, row.speechTag);
+            speak(group.text, group.speechTag);
           }}
           aria-label={insertValues(t.vocabulary.detail.listenAriaLabel, {
-            text: row.text,
+            text: group.text,
           })}
-          className="block max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
+          lang={group.language}
+          className="block min-w-0 max-w-full rounded-md text-left transition-colors hover:text-ink-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/30 active:text-black"
         >
-          {row.label}
+          {group.readings.map((reading) => (
+            <span
+              key={reading.script}
+              data-script={reading.script}
+              /*
+               * Pinyin is Mandarin written in Latin letters, and saying so
+               * is what stops a browser reaching for a CJK face to draw
+               * "tú shū guǎn" and a screen reader from spelling it out
+               * character by character in Chinese.
+               */
+              lang={reading.script === "pinyin" ? "zh-Latn" : group.language}
+              className={`block break-words ${reading.script === "zhuyin" ? "font-zhuyin" : "font-phonetic"}`}
+            >
+              {reading.label}
+            </span>
+          ))}
         </button>
       ))}
     </div>

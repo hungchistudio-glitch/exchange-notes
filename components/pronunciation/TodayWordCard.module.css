@@ -310,7 +310,7 @@
 }
 
 .hero {
-  margin-top: 21px;
+  margin-top: 18px;
 }
 
 .primaryWord {
@@ -347,37 +347,57 @@
   color: var(--card-muted);
 }
 
-.phonetic {
-  margin-top: 7px;
-  min-height: 17px;
-  overflow-wrap: anywhere;
-  font-size: 0.6875rem;
-  line-height: 1.42;
-  letter-spacing: 0.015em;
-  color: var(--card-muted);
-}
-
 /* Takes the slack instead of leaving it between here and the footer, which
    is pinned to the bottom by margin-top:auto. On a 370px card that gap ran
-   to roughly 77px of nothing. */
+   to roughly 77px of nothing.
+
+   One panel per row, not two side by side.
+
+   Two columns gave each language about 123 points of line, and a zhuyin
+   reading does not fit in 123 points: 圖書館 — three characters, an ordinary
+   word — wrapped to two lines and the second one was clipped off the bottom
+   of a panel whose height the grid had already decided. Six characters wrapped
+   to three. The reading that was added so the card could be read was the thing
+   being cut in half.
+
+   Full width doubles the line to about 232 and every reading this card can
+   produce fits on it. It also reads better: the name of a language, and under
+   it how the word sounds in that language — which is what a dictionary entry
+   looks like, rather than two chips. */
 .soundGrid {
   display: grid;
   min-height: 0;
   flex: 1;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 21px;
+  grid-template-columns: 1fr;
+  /* Even rows, and never shorter than what is in them: `1fr` alone hands each
+     row a share of the flex height and clips whatever does not fit, which is
+     the bug above. */
+  grid-auto-rows: minmax(min-content, 1fr);
+  /* Every point in here was counted. Two panels, the taller of them holding
+     two lines of zhuyin and one of pinyin, come to 157 points; the card has
+     165 between the gloss and the footer once these three values are what
+     they are. It is not generous, and it is not supposed to be — it is the
+     difference between a reading you can see and a reading cut off by a
+     rule. */
+  gap: 7px;
+  margin-top: 15px;
+  /* The floor. Every word a reader will actually save fits above; this is
+     what stops a pathological one — an eleven-syllable phrase under a
+     fifty-character transcription — from pushing a panel out through the
+     footer and off the bottom of the card. It trims a reading instead of
+     breaking the card, which is the right way round. */
+  overflow: hidden;
 }
 
 .soundButton {
   display: flex;
   min-width: 0;
-  min-height: 62px;
+  min-height: 58px;
   align-items: center;
   justify-content: flex-start;
   border: 1px solid var(--card-line);
   border-radius: 15px;
-  padding: 13px 14px;
+  padding: 10px 14px;
   color: var(--card-fg);
   background: var(--card-control);
   backdrop-filter: blur(13px);
@@ -418,7 +438,15 @@
    a 62px box; with the reclaimed space they can be read at a glance, which
    is the whole point of the pronunciation row. */
 .soundValue {
-  display: block;
+  /* Two lines at most, like every other caption in the app that has to live
+     in a box somebody else sized. A six-syllable Chinese phrase wraps to
+     three, which is the one input that pushed the panels past the footer;
+     the word itself is in the hero above, so the tail of its reading is the
+     right thing to give up and the only thing given up. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   margin-top: 6px;
   overflow-wrap: anywhere;
   font-size: 0.8125rem;
@@ -426,14 +454,34 @@
   line-height: 1.4;
 }
 
-.soundValue[data-script="english"] {
-  font-size: 0.6875rem;
-  letter-spacing: -0.015em;
+/* A language may have two readings — zhuyin and pinyin — and the second one
+   sits under the first rather than beside it. Tighter than the gap under the
+   label, so the two lines read as one answer in two alphabets rather than as
+   two separate facts. */
+.soundValue + .soundValue {
+  margin-top: 2px;
 }
 
+/* Zhuyin is vertical marks and tone diacritics at small sizes, so it gets the
+   extra tracking; pinyin and IPA are Latin and get the size they are read at
+   everywhere else on this card. */
 .soundValue[data-script="zhuyin"] {
   font-size: 0.75rem;
   letter-spacing: 0.01em;
+}
+
+.soundValue[data-script="pinyin"],
+.soundValue[data-script="ipa"] {
+  font-size: 0.6875rem;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  opacity: 0.86;
+}
+
+/* The fallback: a language with no reading yet, printed as itself. */
+.soundValue[data-script="word"] {
+  font-size: 0.6875rem;
+  letter-spacing: -0.015em;
 }
 
 .cardFooter {
