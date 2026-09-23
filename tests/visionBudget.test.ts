@@ -1,8 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  DEFAULT_FAST_MODEL,
-  DEFAULT_STRONG_MODEL,
-} from "@/lib/ai/modelConfig";
+import { getVisionModelCandidates } from "@/lib/ai/modelConfig";
+
+/*
+ * Asked of the configuration rather than written out.
+ *
+ * These lines used to name the two models, and the names are the one thing
+ * here that is meant to change: the order they are tried in is a measurement
+ * of which is answering this week, not a design decision. A test that pins
+ * the names fails every time that measurement is acted on, which teaches the
+ * next person to edit the test rather than read it. What is worth holding is
+ * that the first candidate is tried first and the second is the fallback.
+ */
+const [FIRST_CANDIDATE, SECOND_CANDIDATE] = getVisionModelCandidates();
 
 /* =========================================================
    The recognition has a budget, and the fallback has to fit inside it
@@ -152,7 +161,7 @@ describe("a photograph the first model reads confidently", () => {
     /* The fast model, whichever it currently is. Naming the string here is
        how the app ended up with a dead model in six places: the test passed
        because it asserted the same stale name the code had. */
-    expect(made[0].model).toBe(DEFAULT_FAST_MODEL);
+    expect(made[0].model).toBe(FIRST_CANDIDATE);
   });
 
   it("gives that attempt the per-attempt timeout, not the whole budget", async () => {
@@ -177,7 +186,7 @@ describe("a first attempt that times out", () => {
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
 
     expect(made.map((attempt) => attempt.timeout)).toEqual([12_000, 8_000]);
-    expect(made[1].model).toBe(DEFAULT_STRONG_MODEL);
+    expect(made[1].model).toBe(SECOND_CANDIDATE);
   });
 
   it("does not start a fallback there is no time to finish", async () => {

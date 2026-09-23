@@ -446,6 +446,10 @@ export async function scanMenu(
       console.warn("Menu scan model failed; trying the next candidate.", {
         model,
         name: error instanceof Error ? error.name : "UnknownError",
+        // The API's own words. A name alone cannot tell a rejected request
+        // from an exhausted one, and both arrive as an Error.
+        detail:
+          error instanceof Error ? error.message.slice(0, 300) : String(error),
       });
     }
   }

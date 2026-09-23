@@ -475,6 +475,18 @@ async function lookupWithModelFallback(context: LookupContext) {
             : "model_error",
         ms: Date.now() - startedAt,
         budgetMs: timeoutMs,
+        /*
+         * What the API actually objected to.
+         *
+         * This line printed a model name, a status and a duration, and on
+         * the day every route went dark it printed `status: 400, ms: 109`
+         * — enough to know the request was rejected before it was read, and
+         * not enough to know which field it was rejected for. The API says
+         * so in the message. Truncated, because a rejected request can come
+         * back with the prompt attached.
+         */
+        detail:
+          error instanceof Error ? error.message.slice(0, 300) : String(error),
       });
     }
   }

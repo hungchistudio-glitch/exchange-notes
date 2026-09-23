@@ -23,6 +23,23 @@
  * had their own `|| "gemini-3.5-flash"`, so fixing the candidate list fixed
  * none of them.
  */
+/*
+ * ── Measured again on 2026-09-23, on the standard endpoint ─────────────
+ *
+ * Three lookups on production, both models, the same request:
+ *
+ *   gemini-3.5-flash-lite   504 after 13457ms, 13489ms, 13457ms
+ *   gemini-3.6-flash        400 after   109ms,   107ms,   109ms
+ *
+ * The flash-lite figures are the ceiling, to the millisecond, three times
+ * over: that is not a slow reply, it is no reply — the same thing it has
+ * been doing since the 18th. The flash figures are a rejected request,
+ * which was the schema and is fixed in modelRequest.ts; they are also
+ * proof that the model is there and answers in a tenth of a second.
+ *
+ * The names below say what each model is, and they have not changed. What
+ * changed is the order the lists try them in — see below.
+ */
 export const DEFAULT_FAST_MODEL = "gemini-3.5-flash-lite";
 export const DEFAULT_STRONG_MODEL = "gemini-3.6-flash";
 
@@ -36,13 +53,27 @@ function uniqueModels(values: Array<string | undefined>) {
   ];
 }
 
+/*
+ * The strong model leads, for now.
+ *
+ * Flash-Lite is the right first choice on paper — cheaper, quicker, and
+ * enough for a single word or a single object. It has also not answered a
+ * request from this app since 18 September, and a candidate list tries its
+ * first entry in full before it reaches the second. Leading with it cost
+ * every reader the thirteen-second ceiling before the model that works was
+ * even asked.
+ *
+ * So the order is a measurement, not a preference, and putting it back is a
+ * one-line change the day Flash-Lite answers again. The environment can
+ * override either end of it without touching this file.
+ */
 export function getTextModelCandidates() {
   return uniqueModels([
     process.env.GEMINI_TEXT_MODEL,
     process.env.GEMINI_MODEL,
-    DEFAULT_FAST_MODEL,
-    process.env.GEMINI_FALLBACK_MODEL,
     DEFAULT_STRONG_MODEL,
+    process.env.GEMINI_FALLBACK_MODEL,
+    DEFAULT_FAST_MODEL,
   ]);
 }
 
@@ -50,9 +81,9 @@ export function getVisionModelCandidates() {
   return uniqueModels([
     process.env.GEMINI_VISION_MODEL,
     process.env.GEMINI_MODEL,
-    DEFAULT_FAST_MODEL,
-    process.env.GEMINI_FALLBACK_MODEL,
     DEFAULT_STRONG_MODEL,
+    process.env.GEMINI_FALLBACK_MODEL,
+    DEFAULT_FAST_MODEL,
   ]);
 }
 

@@ -82,6 +82,91 @@ export const TEXT_REQUEST_TIMEOUT_MS = readBoundedInteger(
      the image can support.
    ========================================================= */
 
+/* =========================================================
+   The schema, in the dialect this endpoint speaks
+
+   ── What went wrong ────────────────────────────────────────────────────
+
+   Every schema in this app is written as ordinary JSON Schema, because the
+   endpoint it used to be sent to accepted ordinary JSON Schema. Gemini's
+   `responseSchema` is a narrower thing — the OpenAPI subset — and it rejects
+   what it does not recognise rather than ignoring it.
+
+   Two differences, and all twelve of the app's schemas have both:
+
+   - `additionalProperties` does not exist here. All twelve set it to false.
+   - `minLength`, `maxLength`, `minItems` and `maxItems` are **strings** in
+     this dialect, and all twelve pass numbers.
+
+   Measured on production the day the endpoint changed: gemini-3.6-flash
+   answered `400` in 109 milliseconds — far too fast to have read a word of
+   the prompt, which is what a rejected request looks like. Every route that
+   reaches Gemini was failing that way at once, which is exactly what the
+   reader met: no lookups, no recognition, no translation.
+
+   ── Why it is fixed here and not in twelve schemas ─────────────────────
+
+   Because there are twelve of them. A rule enforced in one place is a rule;
+   twelve copies of it are a thing that drifts, which is the lesson this file
+   already exists to hold. The schemas stay readable as what they are, and
+   this translates them on the way out.
+   ========================================================= */
+
+const SCHEMA_KEYS = new Set([
+  "anyOf", "default", "description", "enum", "example", "format", "items",
+  "maxItems", "maxLength", "maxProperties", "maximum", "minItems", "minLength",
+  "minProperties", "minimum", "nullable", "pattern", "properties",
+  "propertyOrdering", "required", "title", "type",
+]);
+
+/** The bounds this dialect spells as strings rather than numbers. */
+const STRING_BOUNDS = new Set([
+  "maxItems", "maxLength", "maxProperties",
+  "minItems", "minLength", "minProperties",
+]);
+
+function toGeminiSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(toGeminiSchema);
+  if (!schema || typeof schema !== "object") return schema;
+
+  const out: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(schema as Record<string, unknown>)) {
+    /*
+     * Dropped rather than reported. A keyword this endpoint has no opinion
+     * about — `additionalProperties`, say — is a constraint the prompt
+     * beside it still states in words, and failing the whole request over
+     * one is how every route in the app went dark at once.
+     */
+    if (!SCHEMA_KEYS.has(key)) continue;
+
+    if (STRING_BOUNDS.has(key) && typeof value === "number") {
+      out[key] = String(value);
+      continue;
+    }
+
+    if (key === "type" && typeof value === "string") {
+      out[key] = value.toUpperCase();
+      continue;
+    }
+
+    if (key === "properties" && value && typeof value === "object") {
+      out[key] = Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([name, child]) => [
+          name,
+          toGeminiSchema(child),
+        ]),
+      );
+      continue;
+    }
+
+    out[key] =
+      key === "items" || key === "anyOf" ? toGeminiSchema(value) : value;
+  }
+
+  return out;
+}
+
 /**
  * One piece of what is being asked.
  *
@@ -140,7 +225,7 @@ export async function generateJson(
       abortSignal: AbortSignal.timeout(timeout),
       httpOptions: { timeout, retryOptions: { attempts: 1 } },
       responseMimeType: "application/json",
-      ...(schema ? { responseSchema: schema as never } : {}),
+      ...(schema ? { responseSchema: toGeminiSchema(schema) as never } : {}),
       /*
        * Every one of these is an extraction or a translation with a schema
        * attached. None of them is improved by the model reasoning at length
