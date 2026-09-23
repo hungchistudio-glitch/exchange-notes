@@ -75,7 +75,7 @@ async function probe(client: GoogleGenAI, model: string): Promise<Attempt> {
       ms: Date.now() - startedAt,
       status: 200,
       kind: "answered",
-      detail: text.slice(0, 120),
+      detail: text.slice(0, 400),
     };
   } catch (error) {
     const message =
@@ -92,7 +92,7 @@ async function probe(client: GoogleGenAI, model: string): Promise<Attempt> {
       ms: Date.now() - startedAt,
       status: getErrorStatus(error),
       kind: timedOut ? "timeout" : "refused",
-      detail: message.slice(0, 300),
+      detail: message.slice(0, 600),
     };
   }
 }

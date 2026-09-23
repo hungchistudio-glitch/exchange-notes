@@ -484,9 +484,17 @@ async function lookupWithModelFallback(context: LookupContext) {
          * not enough to know which field it was rejected for. The API says
          * so in the message. Truncated, because a rejected request can come
          * back with the prompt attached.
+         *
+         * 600 rather than 300, because 300 was the exact length of the
+         * preamble on a quota refusal — "You exceeded your current quota,
+         * please check your plan and billing details… To monitor your
+         * current usage, head to: https://ai.dev/rate-limit. * Quota
+         * exceeded for metri" — and the words after "metric:" are the only
+         * part of it that says which limit was hit, which is the difference
+         * between a burst to wait out and a day that is over.
          */
         detail:
-          error instanceof Error ? error.message.slice(0, 300) : String(error),
+          error instanceof Error ? error.message.slice(0, 600) : String(error),
       });
     }
   }
