@@ -135,7 +135,7 @@ describe("the schema on the way out", () => {
     await generateJson(new GoogleGenAI({ apiKey: "test" }), {
       model: "gemini-3.6-flash",
       input: "anything",
-      timeoutMs: 9_000,
+      timeoutMs: 12_000,
     });
 
     const config = sent[0].config as unknown as {
@@ -144,7 +144,7 @@ describe("the schema on the way out", () => {
       responseSchema?: unknown;
     };
 
-    expect(config.httpOptions.timeout).toBe(9_000);
+    expect(config.httpOptions.timeout).toBe(12_000);
     expect(config.httpOptions.retryOptions.attempts).toBe(1);
     expect(config.abortSignal).toBeInstanceOf(AbortSignal);
     expect(config.responseSchema).toBeUndefined();

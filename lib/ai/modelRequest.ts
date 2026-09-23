@@ -42,6 +42,32 @@ export const TEXT_REQUEST_TIMEOUT_MS = readBoundedInteger(
   45_000,
 );
 
+/*
+ * The shortest deadline this endpoint will accept.
+ *
+ * `httpOptions.timeout` is not a local stopwatch — the SDK sends it on to
+ * Gemini as the request's deadline, and Gemini refuses one it considers too
+ * short. Measured on production 2026-09-23, /api/classify-text, second
+ * candidate:
+ *
+ *   gemini-3.6-flash   400 after 124ms
+ *   {"error":{"code":400,"message":"Manually set deadline 7s is too short.
+ *    Minimum allowed deadline is 10s.","status":"INVALID_ARGUMENT"}}
+ *
+ * That is the whole outage in one line. A candidate list hands each attempt
+ * whatever is left of the total budget, so the *second* candidate is almost
+ * always under ten seconds — which means the fallback model in this app was
+ * never once asked a question it was allowed to answer. The same model
+ * replied `{"ok": true}` in 893ms when the diagnostics route asked it with a
+ * legal deadline, a minute earlier.
+ *
+ * So the deadline sent to Gemini has a floor, and the real ceiling stays
+ * local: `abortSignal` still fires at the caller's budget. A model that
+ * answers in under a second answers well inside six, and an attempt that
+ * runs long is still cut off exactly when the route says so.
+ */
+export const MIN_MODEL_DEADLINE_MS = 10_000;
+
 /* =========================================================
    One way to ask a model something
 
@@ -217,13 +243,21 @@ export async function generateJson(
     contents: [{ role: "user", parts: toParts(input) }],
     config: {
       /*
-       * Both, deliberately. The transport timeout is what the SDK offers and
-       * the abort is what the platform guarantees — and the whole reason
-       * this module exists is that a request which ignored its ceiling was
-       * indistinguishable from a model thinking hard.
+       * Both, deliberately, and they are not the same number. The abort is
+       * this attempt's real ceiling — the one the route's budget decided and
+       * the platform guarantees. The transport timeout is a deadline Gemini
+       * reads and can reject, so it has a floor of its own.
        */
       abortSignal: AbortSignal.timeout(timeout),
-      httpOptions: { timeout, retryOptions: { attempts: 1 } },
+      httpOptions: {
+        /*
+         * Never below the floor, because this number leaves the process:
+         * see MIN_MODEL_DEADLINE_MS. The abort above is the ceiling that
+         * actually binds this attempt.
+         */
+        timeout: Math.max(MIN_MODEL_DEADLINE_MS, timeout),
+        retryOptions: { attempts: 1 },
+      },
       responseMimeType: "application/json",
       ...(schema ? { responseSchema: toGeminiSchema(schema) as never } : {}),
       /*
@@ -269,11 +303,32 @@ export function getErrorStatus(error: unknown) {
  */
 export function isTimeoutError(error: unknown) {
   if (!error || typeof error !== "object") return false;
+
   const named = (error as { name?: unknown }).name;
   if (named === "TimeoutError" || named === "AbortError") return true;
+
+  /*
+   * Gemini's own word for it, which does not contain the word "timeout".
+   *
+   * When the deadline we sent runs out at Gemini's end rather than ours, the
+   * failure arrives as an ordinary API error and the client never aborts:
+   *
+   *   504 {"error":{"code":504,"message":"Deadline expired before operation
+   *    could complete.","status":"DEADLINE_EXCEEDED"}}
+   *
+   * Measured on production 2026-09-23: gemini-3.5-flash-lite returned that
+   * at 13478ms against a 14000ms budget, and because the text below did not
+   * match it, the model was never put into cooldown — so the next lookup,
+   * and the one after, each paid the same fourteen seconds to learn the same
+   * thing. That is the difference between one slow lookup and a slow app.
+   */
+  if (getErrorStatus(error) === 504) return true;
+
   return (
     error instanceof Error &&
-    /timed out|timeout|aborted due to timeout/i.test(error.message)
+    /timed out|timeout|aborted due to timeout|deadline expired|DEADLINE_EXCEEDED/i.test(
+      error.message,
+    )
   );
 }
 

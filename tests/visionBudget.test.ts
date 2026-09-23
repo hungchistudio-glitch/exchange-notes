@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getVisionModelCandidates } from "@/lib/ai/modelConfig";
+import { MIN_MODEL_DEADLINE_MS } from "@/lib/ai/modelRequest";
 
 /*
  * Asked of the configuration rather than written out.
@@ -179,13 +180,24 @@ describe("a first attempt that times out", () => {
      * Twelve seconds spent of twenty. The fallback is worth starting and gets
      * the eight that remain — under the old numbers it was handed a fresh
      * eight seconds the reader had already stopped waiting for.
+     *
+     * Eight is what binds the attempt; ten is what is written on it. The
+     * number recorded here is `httpOptions.timeout`, which does not stay in
+     * this process — Gemini reads it as the request's deadline and refuses
+     * one under ten seconds, which is how the fallback model in this app
+     * spent a week answering 400 in a tenth of a second and never once being
+     * asked anything (see MIN_MODEL_DEADLINE_MS). The eight seconds are
+     * still real and still enforced, by the abort rather than by this.
      */
     script.push({ elapsed: 12_000, outcome: "timeout" });
     script.push({ elapsed: 5_000, outcome: { confidence: "high" } });
 
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
 
-    expect(made.map((attempt) => attempt.timeout)).toEqual([12_000, 8_000]);
+    expect(made.map((attempt) => attempt.timeout)).toEqual([
+      12_000,
+      MIN_MODEL_DEADLINE_MS,
+    ]);
     expect(made[1].model).toBe(SECOND_CANDIDATE);
   });
 
