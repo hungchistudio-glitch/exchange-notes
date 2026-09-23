@@ -20,7 +20,7 @@ const info: InfoCopy = {
     ],
     ai: { title: "Learn with AI. Keep your own judgment.", body: "AI helps identify, translate, and organize, so you can start understanding and practicing sooner. Yumi is your AI learning companion. Its cultural interpretations are suggestions: they can be wrong and cannot determine anyone’s true intentions. When meaning is unclear, asking another question is part of learning." },
     closing: "Turn the world you encounter into notes you can exchange.",
-    planet: "Our home planet: Earth.",
+    planet: "Primary service planet: Earth.",
   },
   community: {
     intro: "Every story deserves respect. Help make Exchange Notes a place where people can ask, share, and learn with care.",

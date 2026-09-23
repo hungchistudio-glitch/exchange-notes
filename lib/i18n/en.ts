@@ -2009,10 +2009,8 @@ const english: TranslationDictionary = {
 
     help: {
       rowTitle: "Help & About",
-      rowDescription: "The tour, and how Exchange Notes works",
+      rowDescription: "The story, the community rules, privacy, and the tour",
       pageTitle: "Help & About",
-      pageDescription:
-        "Take the tour again whenever you want it — it never opens on its own from here.",
       back: "Back to Settings",
     },
 

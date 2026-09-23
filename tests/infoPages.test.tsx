@@ -103,3 +103,64 @@ describe("localized information pages", () => {
     }
   });
 });
+
+describe("where these pages sit in the app", () => {
+  /*
+   * Signed in, a reader reaches all three from one row in Settings, so that
+   * is where back belongs. This used to send them to About instead — a page
+   * they had not been on, from a page they had reached from Help.
+   */
+  it.each(["about", "community", "privacy"] as const)(
+    "sends %s back to Help & About inside Settings",
+    (page) => {
+      const copy = i18n.getTranslations("english")!.info;
+      render(<InfoPage page={page} />);
+
+      const back = screen.getByRole("link", { name: copy.nav.back });
+      expect(back).toHaveAttribute("href", "/profile/help");
+    },
+  );
+
+  it("sends the signed-out About page home, and the other two to About", () => {
+    const copy = i18n.getTranslations("english")!.info;
+
+    const { unmount } = render(<InfoPage page="about" publicView />);
+    expect(screen.getByRole("link", { name: copy.nav.home })).toHaveAttribute("href", "/");
+    unmount();
+
+    for (const page of ["community", "privacy"] as const) {
+      const view = render(<InfoPage page={page} publicView />);
+      const back = view.container.querySelector("header a");
+      expect(back).toHaveAttribute("href", "/about");
+      expect(back).toHaveTextContent(copy.nav.about);
+      view.unmount();
+    }
+  });
+
+  /*
+   * The privacy page's last sentence ends in a colon, so the address has to
+   * be the next thing read. The footer used to open with the planet line.
+   */
+  it("puts the contact address before the sign-off on every page", () => {
+    const copy = i18n.getTranslations("english")!.info;
+
+    for (const page of ["about", "community", "privacy"] as const) {
+      const view = render(<InfoPage page={page} />);
+      const email = screen.getByRole("link", { name: new RegExp(INFO_CONTACT_EMAIL) });
+      const planet = screen.getByText(copy.about.planet);
+
+      expect(planet).toBeVisible();
+      expect(
+        email.compareDocumentPosition(planet) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      view.unmount();
+    }
+  });
+
+  it("names Chi's service planet in every language", () => {
+    for (const language of i18n.TRANSLATION_LANGUAGES) {
+      const planet = i18n.getTranslations(language)!.info.about.planet;
+      expect(planet).toMatch(/earth|tierra|terre|terra|地球/i);
+    }
+  });
+});

@@ -20,7 +20,7 @@ const info: InfoCopy = {
     ],
     ai: { title: "Impara con l’IA, conserva il tuo giudizio", body: "L’IA aiuta a riconoscere, tradurre e organizzare, per iniziare prima a comprendere e a esercitarti. Yumi è la tua compagna di apprendimento con IA. Le sue interpretazioni culturali sono spunti: possono essere sbagliate e non determinano le vere intenzioni di nessuno. Se il significato non è chiaro, fare un’altra domanda è parte dell’apprendimento." },
     closing: "Trasforma il mondo che incontri in appunti da scambiare.",
-    planet: "Il nostro pianeta: la Terra.",
+    planet: "Pianeta di servizio principale: la Terra.",
   },
   community: {
     intro: "Ogni storia merita rispetto. Aiutaci a rendere Exchange Notes un luogo dove fare domande, condividere e imparare con attenzione agli altri.",

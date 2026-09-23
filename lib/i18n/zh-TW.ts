@@ -1966,9 +1966,8 @@ const traditionalChinese: TranslationDictionary = {
 
     help: {
       rowTitle: "說明與關於",
-      rowDescription: "使用教學，以及 Exchange Notes 的運作方式",
+      rowDescription: "創作理念、社群原則、隱私說明，以及使用教學",
       pageTitle: "說明與關於",
-      pageDescription: "隨時都能重看一次教學 —— 只有從這裡開啟才會出現。",
       back: "回到設定",
     },
 

@@ -1854,9 +1854,8 @@ const french: TranslationDictionary = {
     },
     help: {
       rowTitle: "Aide et à propos",
-      rowDescription: "La visite guidée, et comment fonctionne Exchange Notes",
+      rowDescription: "L’histoire, les règles de la communauté, la confidentialité et la visite guidée",
       pageTitle: "Aide et à propos",
-      pageDescription: "Refaites la visite quand vous voulez — elle ne s'ouvre jamais toute seule depuis ici.",
       back: "Retour aux réglages",
     },
     profile: {

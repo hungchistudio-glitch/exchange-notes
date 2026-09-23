@@ -1854,9 +1854,8 @@ const italian: TranslationDictionary = {
     },
     help: {
       rowTitle: "Aiuto e informazioni",
-      rowDescription: "La visita guidata e come funziona Exchange Notes",
+      rowDescription: "L’idea, le regole della comunità, la privacy e la visita guidata",
       pageTitle: "Aiuto e informazioni",
-      pageDescription: "Rifai la visita quando vuoi — da qui non si apre mai da sola.",
       back: "Torna alle impostazioni",
     },
     profile: {

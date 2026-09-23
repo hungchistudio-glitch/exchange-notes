@@ -20,7 +20,7 @@ const info: InfoCopy = {
     ],
     ai: { title: "Apprendre avec l’IA, garder son jugement", body: "L’IA aide à reconnaître, traduire et organiser pour commencer plus facilement à comprendre et à pratiquer. Yumi vous accompagne dans l’apprentissage grâce à l’IA. Ses interprétations culturelles sont des pistes : elles peuvent être erronées et ne révèlent pas les véritables intentions d’une personne. Si le sens reste incertain, poser une question fait aussi partie de l’apprentissage." },
     closing: "Faites du monde que vous découvrez des notes à échanger.",
-    planet: "Notre planète : la Terre.",
+    planet: "Planète desservie en priorité : la Terre.",
   },
   community: {
     intro: "Chaque histoire mérite le respect. Faisons d’Exchange Notes un lieu où l’on peut poser des questions, partager et apprendre avec attention.",

@@ -1990,7 +1990,6 @@ export type TranslationDictionary = {
       rowTitle: string;
       rowDescription: string;
       pageTitle: string;
-      pageDescription: string;
       back: string;
     };
 

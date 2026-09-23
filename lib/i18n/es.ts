@@ -2006,10 +2006,8 @@ const spanish: TranslationDictionary = {
 
     help: {
       rowTitle: "Ayuda e información",
-      rowDescription: "La visita guiada y cómo funciona Exchange Notes",
+      rowDescription: "La idea, las normas de la comunidad, la privacidad y la visita guiada",
       pageTitle: "Ayuda e información",
-      pageDescription:
-        "Repite la visita cuando quieras: desde aquí nunca se abre sola.",
       back: "Volver a Ajustes",
     },
 
