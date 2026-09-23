@@ -30,6 +30,20 @@
    */
   --info-panel: color-mix(in oklab, var(--color-white, #fff) 70%, var(--surface));
 
+  /*
+   * Above the ambient orbit lines, the way the landing page is.
+   *
+   * OrbitField is a fixed layer at z-index 0 mounted in the root layout, and
+   * it sits deliberately *over* the opaque surfaces of the app rather than
+   * behind them — which is fine on a home screen, where an arc clips a
+   * corner. These are documents read top to bottom: on a 375px phone the
+   * text column is the whole width, and one of the arcs put a dot on the
+   * word "you" in the middle of a sentence. LandingPage.module.css lifts
+   * itself for the same reason, and these three pages are its neighbours.
+   */
+  position: relative;
+  z-index: 1;
+
   min-height: 100dvh;
   color: var(--info-ink);
   background: var(--surface);
