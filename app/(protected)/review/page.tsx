@@ -17,6 +17,7 @@ import { saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { speak } from "@/lib/speech";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
+import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -356,12 +357,50 @@ export default function ReviewPage() {
               {currentWord.translation}
             </p>
 
+            {/*
+              How to say it, written down.
+
+              This screen had a speaker key and no reading at all — 686 lines
+              of the one surface where somebody is actively trying to recall a
+              word, and nothing on it said how the word sounds unless they
+              could play audio. On a train, in a lecture, next to a sleeping
+              child, the card was mute and silent both.
+
+              PronunciationBlock is the rule already written down elsewhere in
+              the app: IPA for en, es, fr and it, and zhuyin *and* pinyin for
+              Traditional Chinese — both, not whichever came back first. It
+              fetches its own, batched into one request per language per tick,
+              so a review session of forty cards is a request rather than
+              forty.
+            */}
+            <PronunciationBlock
+              className="mt-2"
+              entries={[
+                {
+                  text: currentWord.translation,
+                  language: currentWord.translationLanguage,
+                },
+              ]}
+            />
+
             {revealed && (
               <>
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-5">
-                  <p className="min-w-0 break-words text-2xl font-bold">
-                    {currentWord.term}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="break-words text-2xl font-bold">
+                      {currentWord.term}
+                    </p>
+
+                    <PronunciationBlock
+                      className="mt-1.5"
+                      entries={[
+                        {
+                          text: currentWord.term,
+                          language: currentWord.termLanguage,
+                        },
+                      ]}
+                    />
+                  </div>
 
                   <div className="flex shrink-0 items-center gap-2">
                     <LanguageOriginBadge

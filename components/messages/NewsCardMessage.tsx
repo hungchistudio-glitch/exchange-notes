@@ -6,6 +6,7 @@ import { Volume2 } from "lucide-react";
 
 import { formatMessageTime } from "@/lib/messages/format";
 import type { SharedNewsCard as SharedNewsCardData } from "@/lib/messages/newsCard";
+import usePhonetics from "@/hooks/usePhonetics";
 import { getPhonetics } from "@/lib/pronunciation";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 
@@ -70,6 +71,29 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
   const summaryPronunciation = getPhonetics(
     card.summaries[secondaryLanguage] ?? "",
     secondaryLanguage,
+  );
+
+  /*
+   * The words, asked for in the one way that can answer for every language.
+   *
+   * `getPhonetics` above is Chinese by construction — it computes pinyin and
+   * zhuyin locally and returns nothing at all for anything else, which its
+   * own comment says is deliberate. That is the right tool for the title and
+   * the summary, where a romanisation of a Chinese sentence is how the
+   * sentence is read and IPA strung under a Spanish one is not how anybody
+   * reads.
+   *
+   * It is the wrong tool for a single word. A word in Spanish, French,
+   * Italian or English had no reading here at all, because the helper this
+   * row used could not have one — so the gap was invisible from inside the
+   * file. The hook asks the server, batched into one request per language
+   * per tick, and answers with whatever that language writes readings with.
+   */
+  const wordPhoneticsFor = usePhonetics(
+    card.vocabulary.map((item) => ({
+      text: item.texts[secondaryLanguage] ?? "",
+      language: secondaryLanguage,
+    })),
   );
 
   return (
@@ -192,10 +216,11 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                * up under Chinese and nowhere else, rather than under
                * whichever field happened to be called "chinese".
                */
-              const wordPronunciation = getPhonetics(
-                (item.texts[secondaryLanguage] ?? ""),
-                secondaryLanguage,
-              );
+              const wordPronunciation =
+                wordPhoneticsFor({
+                  text: item.texts[secondaryLanguage] ?? "",
+                  language: secondaryLanguage,
+                }) ?? {};
 
               return (
                 <div
@@ -222,13 +247,33 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
                       >
                         {(item.texts[secondaryLanguage] ?? "")}
                       </p>
-                      {(wordPronunciation.pinyin ||
+                      {/*
+                        IPA belongs here too, and only here.
+                        
+                        This listed pinyin and zhuyin and stopped, so a word
+                        in Spanish, French, Italian or English got no reading
+                        at all — the row was built when a romanisation was the
+                        only annotation anyone had in mind, and the four
+                        languages that use IPA were simply not thought of.
+                        
+                        The title and the summary above still do not carry it,
+                        deliberately: a romanisation of a Chinese sentence is
+                        how that sentence is read, and IPA strung under a
+                        Spanish sentence is not how anybody reads one. A
+                        single word is the other case.
+                      */}
+                      {(wordPronunciation.ipa ||
+                        wordPronunciation.pinyin ||
                         wordPronunciation.zhuyin) && (
                         <p
                           className="text-[0.625rem]"
                           style={{ color: "var(--msg-ink-faint)" }}
                         >
-                          {[wordPronunciation.pinyin, wordPronunciation.zhuyin]
+                          {[
+                            wordPronunciation.ipa,
+                            wordPronunciation.pinyin,
+                            wordPronunciation.zhuyin,
+                          ]
                             .filter(Boolean)
                             .join("  ")}
                         </p>

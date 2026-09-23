@@ -136,7 +136,6 @@ function DeckWordCard({
   supportLanguage: LanguageCode;
 }) {
   const word = item.word?.trim() || copy.untitledWord;
-  const translation = item.translation?.trim() || "";
   /*
    * Both readings on this card, looked up together.
    *
@@ -145,13 +144,6 @@ function DeckWordCard({
    * per language answers them, cached for the session and mirrored to the
    * device, so it is a round trip once and instant afterwards.
    */
-  const phoneticsFor = usePhonetics([
-    { text: translation, language: "zh-TW" as const },
-  ]);
-  const pronunciation = phoneticsFor({
-    text: translation,
-    language: "zh-TW",
-  });
   /*
    * The row records its own two languages, so which side leads is read from
    * it rather than from a yes/no about Chinese — a question with no answer
@@ -164,6 +156,10 @@ function DeckWordCard({
   ]);
   const primaryWord = sides.primary.text || word;
   const secondaryWord = sides.secondary.text;
+  const secondaryPhonetics = sidePhoneticsFor({
+    text: sides.secondary.text,
+    language: sides.secondary.language,
+  });
   const primaryWordLength = Array.from(primaryWord).length;
   const primaryWordSize = primaryWordLength >= 20
     ? "extra-long"
@@ -227,8 +223,31 @@ function DeckWordCard({
           {secondaryWord ? (
             <p className={styles.secondaryWord}>{secondaryWord}</p>
           ) : null}
+          {/*
+            The reading of the word above, in whatever its language writes
+            readings with.
+
+            This asked for the zh-TW reading of the translation, with the
+            language written into the call — so it was right for exactly one
+            pairing and rendered a non-breaking space for every other. An
+            English and Spanish reader got a blank line where the IPA should
+            be, on every card, and never knew there was supposed to be
+            anything there.
+
+            The rule is the one PronunciationBlock states: IPA for en, es, fr
+            and it; zhuyin and pinyin for Traditional Chinese, both of them.
+            Joined rather than picked between, because a reader who uses
+            zhuyin and a reader who uses pinyin are not the same reader and
+            this card has one line for them both.
+          */}
           <p className={styles.phonetic}>
-            {pronunciation?.pinyin || pronunciation?.zhuyin || "\u00a0"}
+            {[
+              secondaryPhonetics?.ipa,
+              secondaryPhonetics?.pinyin,
+              secondaryPhonetics?.zhuyin,
+            ]
+              .filter(Boolean)
+              .join("　") || "\u00a0"}
           </p>
         </div>
 
