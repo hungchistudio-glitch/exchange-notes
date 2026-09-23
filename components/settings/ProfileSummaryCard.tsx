@@ -50,7 +50,7 @@ export default function ProfileSummaryCard({
         </span>
 
         {exchangeId ? (
-          <span className="mt-0.5 block truncate text-[0.875rem] font-semibold text-blue-600 @max-[15rem]:whitespace-normal">
+          <span className="settings-profile-handle mt-0.5 block truncate text-[0.875rem] font-semibold text-blue-600 @max-[15rem]:whitespace-normal">
             @{exchangeId}
           </span>
         ) : null}

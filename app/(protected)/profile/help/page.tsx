@@ -18,7 +18,7 @@ export default function HelpSettingsPage() {
   const copy = t.settings.help;
 
   return (
-    <main className="min-h-[100dvh] bg-surface text-black">
+    <main className="settings-screen min-h-[100dvh] bg-surface text-black">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader
           title={copy.pageTitle}

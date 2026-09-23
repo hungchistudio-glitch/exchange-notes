@@ -11,7 +11,7 @@ import {
   LogOut,
   Smartphone,
 } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import ProgressHud from "@/components/cosmic/ProgressHud";
 import LearningProgressPanel from "@/components/settings/LearningProgressPanel";
@@ -80,11 +80,18 @@ export default function ProfilePage() {
   const helpCopy = t.settings.help;
 
   const [userId, setUserId] = useState<string | null>(null);
+  /*
+   * Seeded from the pair the app is already running on, not from the
+   * constant. The profile read below confirms it a moment later; until then
+   * DEFAULT_LEARNING_PAIR made the two rows claim English and Chinese to
+   * every reader who had chosen anything else, and then corrected itself on
+   * screen.
+   */
   const [form, setForm] = useState<ProfileForm>({
     display_name: "",
     exchange_id: "",
-    native_language: DEFAULT_LEARNING_PAIR[1],
-    learning_language: DEFAULT_LEARNING_PAIR[0],
+    native_language: savedLanguagePair[1],
+    learning_language: savedLanguagePair[0],
   });
 
   const [email, setEmail] = useState("");
@@ -95,6 +102,16 @@ export default function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+  const [savingLanguage, setSavingLanguage] = useState(false);
+
+  /*
+   * Refs, not the state beside them, because both guards have to hold within
+   * the same tick a second tap arrives in — a state update scheduled by the
+   * first tap has not been applied yet when the second one runs.
+   */
+  const languageSaveInFlight = useRef(false);
+  const logoutInFlight = useRef(false);
 
   /*
    * What this device has connected, from the cache the Devices & Widgets
@@ -187,7 +204,15 @@ export default function ProfilePage() {
     field: "native_language" | "learning_language",
     value: LanguageCode,
   ) {
-    if (!userId) return;
+    /*
+     * One change at a time, and none before the profile is here.
+     *
+     * Two overlapping saves each captured their own `previous` and each
+     * restored it on failure, so a failed second save could put back the
+     * state the first one had already replaced. The row is disabled while a
+     * save is in flight, and this is the guard behind the disabling.
+     */
+    if (!userId || loading || languageSaveInFlight.current) return;
 
     const previous = form;
 
@@ -204,6 +229,18 @@ export default function ProfilePage() {
       field === "learning_language" ? "learning" : "native",
       value,
     );
+
+    // Choosing what is already chosen is not a change, and sending it would
+    // spend a request and a disabled row on nothing.
+    if (
+      nextLearning === form.learning_language &&
+      nextNative === form.native_language
+    ) {
+      return;
+    }
+
+    languageSaveInFlight.current = true;
+    setSavingLanguage(true);
 
     setForm((current) => ({
       ...current,
@@ -235,10 +272,7 @@ export default function ProfilePage() {
         .eq("id", userId);
 
       if (updateError) {
-        setForm(previous);
-        // Put the cards back too: they were changed on the promise that this
-        // would be saved, and it was not.
-        applyLearningLanguages(savedLanguagePair[0], savedLanguagePair[1]);
+        restore();
         setError(
           updateError.code === "23514"
             ? copy.languagesMustDifferError
@@ -247,50 +281,123 @@ export default function ProfilePage() {
         return;
       }
     } catch {
-      setForm(previous);
-      applyLearningLanguages(savedLanguagePair[0], savedLanguagePair[1]);
+      restore();
       setError(copy.profileUpdateError);
+    } finally {
+      languageSaveInFlight.current = false;
+      setSavingLanguage(false);
+    }
+
+    /*
+     * Puts back the pair this call found, which is not the same as the pair
+     * the context is holding.
+     *
+     * The failure path used to restore from `savedLanguagePair` — the shared
+     * context — and the optimistic update at the top of this function had
+     * already moved it. So a failed save restored the value that had just
+     * failed to save: the error message appeared, and every card on screen
+     * stayed in the language the database had refused.
+     */
+    function restore() {
+      setForm((current) => ({
+        ...current,
+        learning_language: previous.learning_language,
+        native_language: previous.native_language,
+      }));
+      applyLearningLanguages(
+        previous.learning_language,
+        previous.native_language,
+      );
     }
   }
 
   async function handleLogout() {
+    if (logoutInFlight.current) return;
+
+    logoutInFlight.current = true;
     setLoggingOut(true);
-
-    const supabase = createClient();
-
-    await disableNativePushRegistration();
-
-    // "global" revokes every refresh token for the account, not just this
-    // tab's — a session left open on another device should not survive a
-    // deliberate sign-out here.
-    await supabase.auth.signOut({ scope: "global" });
+    setLogoutError("");
 
     /*
-     * Awaited, and awaited here rather than left to the SIGNED_OUT listener
-     * alone. That listener does call this too, but it calls it as `void` and
-     * the navigation below replaces the document a moment later — clearing
-     * the caches is asynchronous, and work nobody waited for is work a
-     * discarded document may not finish. The listener covers the sign-out
-     * nobody pressed; this covers the one that did.
+     * Best-effort, and deliberately outside the decision below.
+     *
+     * Telling the push server to forget this device is a courtesy; it is not
+     * what signing out means. Letting it fail the sign-out would mean a
+     * reader whose push endpoint is unreachable cannot leave their account
+     * on a shared phone, which is the one moment signing out actually
+     * matters.
      */
-    await forgetDeviceCopies();
+    try {
+      await disableNativePushRegistration();
+    } catch (error) {
+      console.error("Could not unregister this device for push.", error);
+    }
 
-    /*
-     * Reload the protected URL as a new document. The server auth boundary
-     * redirects it to /login, while the React tree, router cache and every
-     * client component holding the previous user's data are discarded first.
-     */
-    window.location.reload();
+    try {
+      const supabase = createClient();
+
+      // "global" revokes every refresh token for the account, not just this
+      // tab's — a session left open on another device should not survive a
+      // deliberate sign-out here.
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "global",
+      });
+
+      /*
+       * Checked, which it never used to be. signOut resolves with an error
+       * rather than throwing, so a failed sign-out read exactly like a
+       * successful one: the next two lines deleted every offline copy on the
+       * device and reloaded — into the same account, still signed in, with
+       * its saved words, drafts and phonetics gone. Nothing is deleted now
+       * until the session is actually over.
+       */
+      if (signOutError) throw signOutError;
+
+      /*
+       * Awaited, and awaited here rather than left to the SIGNED_OUT listener
+       * alone. That listener does call this too, but it calls it as `void` and
+       * the navigation below replaces the document a moment later — clearing
+       * the caches is asynchronous, and work nobody waited for is work a
+       * discarded document may not finish. The listener covers the sign-out
+       * nobody pressed; this covers the one that did.
+       */
+      await forgetDeviceCopies();
+
+      /*
+       * Reload the protected URL as a new document. The server auth boundary
+       * redirects it to /login, while the React tree, router cache and every
+       * client component holding the previous user's data are discarded first.
+       *
+       * Nothing resets the busy state on this path on purpose: the document
+       * is on its way out, and a button that springs back to life during the
+       * teardown only invites a second press.
+       */
+      window.location.reload();
+    } catch (error) {
+      /*
+       * The reason goes to the console and the reader gets the sentence in
+       * their own language. Unlike a profile update — where the database's
+       * own message names the constraint and is worth showing — a failed
+       * sign-out fails for reasons that are never the reader's to act on,
+       * and an English network error under a Chinese interface is a worse
+       * answer than "that did not work, try again".
+       */
+      console.error("Could not sign out.", error);
+      setLogoutError(t.common.error);
+
+      logoutInFlight.current = false;
+      setLoggingOut(false);
+    }
   }
 
   return (
-    <main className="cosmic-settings-page min-h-[100dvh] bg-surface text-black">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
+    <main className="settings-screen cosmic-settings-page min-h-[100dvh] bg-surface text-black">
+      <div className="settings-shell mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col pb-28">
         <AppHeader title={copy.pageTitle} action={<SettingsSearch />} />
 
-        <div className="cosmic-settings-content flex-1 space-y-8 px-5 pt-5 sm:px-6">
+        <div className="settings-content cosmic-settings-content flex-1 space-y-8 px-5 pt-5 sm:px-6">
           {(error || message) && (
-            <div className="space-y-2">
+            <div className="settings-feedback space-y-2">
               {error && <StatusMessage tone="danger">{error}</StatusMessage>}
               {message && (
                 <StatusMessage tone="success">{message}</StatusMessage>
@@ -329,7 +436,13 @@ export default function ProfilePage() {
               about the words in front of you — these answer "how is it
               going", which is a question a reader asks on purpose.
             */
-            <SettingsSection label={t.home.progress.title}>
+            <SettingsSection
+              label={t.home.progress.title}
+              bare
+              /* Four readings across, rather than two squeezed into half a
+                 window, once the layout has two columns to give. */
+              className="settings-span"
+            >
               <LearningProgressPanel />
             </SettingsSection>
           )}
@@ -343,6 +456,8 @@ export default function ProfilePage() {
                 sheetDescription={copy.nativeLanguageDescription}
                 icon={<Globe size={16} strokeWidth={1.8} />}
                 value={form.native_language}
+                disabled={loading || !userId || savingLanguage}
+                busy={savingLanguage}
                 onChange={(value) =>
                   handleLanguageChange("native_language", value)
                 }
@@ -357,6 +472,8 @@ export default function ProfilePage() {
                 sheetDescription={copy.learningLanguageDescription}
                 icon={<GraduationCap size={16} strokeWidth={1.8} />}
                 value={form.learning_language}
+                disabled={loading || !userId || savingLanguage}
+                busy={savingLanguage}
                 onChange={(value) =>
                   handleLanguageChange("learning_language", value)
                 }
@@ -462,6 +579,9 @@ export default function ProfilePage() {
         onClose={() => setLogoutOpen(false)}
         title={copy.logout}
         description={copy.logoutConfirm}
+        /* Closing mid-sign-out would leave the request running behind a sheet
+           that is no longer there to report what happened to it. */
+        closeDisabled={loggingOut}
         footer={
           <div className="flex gap-2">
             <button
@@ -487,9 +607,19 @@ export default function ProfilePage() {
           </div>
         }
       >
-        <p className="text-sm leading-6 text-ink-soft">
-          {email || copy.accountFallback}
-        </p>
+        <div className="space-y-3">
+          <p className="text-sm leading-6 text-ink-soft">
+            {email || copy.accountFallback}
+          </p>
+
+          {/* Inside the sheet, because that is where the button that failed
+              is, and the page behind is covered. */}
+          {logoutError ? (
+            <p role="alert" className="text-sm font-medium text-red-600">
+              {logoutError}
+            </p>
+          ) : null}
+        </div>
       </BottomSheet>
     </main>
   );

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./cosmic.css";
 @import "./cosmic-settings.css";
+@import "./standard-settings.css";
 @import "./yumi-motion.css";
 
 :root {

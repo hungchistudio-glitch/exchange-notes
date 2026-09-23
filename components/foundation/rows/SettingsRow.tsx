@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, LoaderCircle } from "lucide-react";
 import { ReactNode, useId } from "react";
 
 import SettingsSwitch from "@/components/foundation/forms/SettingsSwitch";
@@ -52,6 +52,7 @@ type SharedProps = {
   tone?: SettingsRowTone;
   danger?: boolean;
   disabled?: boolean;
+  busy?: boolean;
   className?: string;
   // Anchors the row for Settings search, which scrolls to a result and
   // pulses it rather than opening it on the user's behalf.
@@ -171,12 +172,14 @@ export default function SettingsRow(props: SettingsRowProps) {
         a row that cannot be tapped is not offering one — the installed state
         of "Install Exchange Notes" is the case that proves it.
       */}
-      {disabled ? null : (
+      {props.busy ? (
+        <LoaderCircle aria-hidden="true" size={17} className="settings-row-chevron shrink-0 animate-spin text-ink-faint motion-reduce:animate-none" />
+      ) : disabled ? null : (
         <ChevronRight
           aria-hidden="true"
           size={17}
           strokeWidth={1.8}
-          className="shrink-0 text-ink-faint"
+          className="settings-row-chevron shrink-0 text-ink-faint"
         />
       )}
     </>
@@ -184,7 +187,17 @@ export default function SettingsRow(props: SettingsRowProps) {
 
   if ("href" in props && props.href) {
     return (
-      <Link id={id} href={props.href} className={sharedClassName}>
+      <Link
+        id={id}
+        href={props.href}
+        aria-disabled={disabled || undefined}
+        aria-busy={props.busy || undefined}
+        data-danger={props.danger || undefined}
+        data-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : undefined}
+        onClick={disabled ? (event) => event.preventDefault() : undefined}
+        className={sharedClassName}
+      >
         {content}
       </Link>
     );
@@ -197,6 +210,9 @@ export default function SettingsRow(props: SettingsRowProps) {
         type="button"
         onClick={props.onClick}
         disabled={disabled}
+        aria-busy={props.busy || undefined}
+        data-danger={props.danger || undefined}
+        data-disabled={disabled || undefined}
         className={sharedClassName}
       >
         {content}
@@ -205,7 +221,7 @@ export default function SettingsRow(props: SettingsRowProps) {
   }
 
   return (
-    <div id={id} className={sharedClassName}>
+    <div id={id} data-danger={props.danger || undefined} data-disabled={disabled || undefined} className={sharedClassName}>
       <RowIcon icon={props.icon} tone={props.tone} danger={props.danger} />
       <RowText
         title={props.title}
@@ -258,6 +274,8 @@ export function SettingsToggleRow({
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       disabled={disabled}
+      aria-busy={busy || undefined}
+      data-disabled={disabled || undefined}
       onClick={() => onChange(!checked)}
       className={[
         ROW_BASE,

@@ -34,6 +34,8 @@ type ProfileLanguageSettingsButtonProps = {
   icon: ReactNode;
   value: LanguageCode;
   onChange: (value: LanguageCode) => void;
+  disabled?: boolean;
+  busy?: boolean;
 };
 
 export default function ProfileLanguageSettingsButton({
@@ -44,6 +46,8 @@ export default function ProfileLanguageSettingsButton({
   icon,
   value,
   onChange,
+  disabled = false,
+  busy = false,
 }: ProfileLanguageSettingsButtonProps) {
   const [open, setOpen] = useState(false);
 
@@ -51,6 +55,7 @@ export default function ProfileLanguageSettingsButton({
     getLanguage(value).endonym;
 
   function handleSelect(next: LanguageCode) {
+    if (disabled) return;
     onChange(next);
     setOpen(false);
   }
@@ -62,6 +67,8 @@ export default function ProfileLanguageSettingsButton({
         description={rowDescription}
         value={currentLabel}
         icon={icon}
+        disabled={disabled}
+        busy={busy}
         onClick={() => setOpen(true)}
       />
 
@@ -79,6 +86,7 @@ export default function ProfileLanguageSettingsButton({
               badge={<span className="text-[0.9375rem]">{option.badge}</span>}
               title={option.label}
               onClick={() => handleSelect(option.value)}
+              disabled={disabled}
             />
           ))}
         </div>

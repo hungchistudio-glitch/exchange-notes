@@ -26,6 +26,7 @@ type BottomSheetProps = {
    * as the app taking over rather than asking a question.
    */
   maxHeight?: string;
+  closeDisabled?: boolean;
 };
 
 export default function BottomSheet({
@@ -38,9 +39,10 @@ export default function BottomSheet({
   footer,
   className = "",
   maxHeight = "calc(100dvh - max(3rem, env(safe-area-inset-top)))",
+  closeDisabled = false,
 }: BottomSheetProps) {
   const titleId = useId();
-  const motion = useSheetMotion({ open, onClose });
+  const motion = useSheetMotion({ open, onClose, closeDisabled });
 
   if (!motion.rendered) return null;
 
@@ -54,6 +56,7 @@ export default function BottomSheet({
         type="button"
         aria-label="Close"
         onClick={motion.requestClose}
+        disabled={closeDisabled}
         className={`cosmic-sheet-scrim absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
         {...motion.backdropProps}
       />
@@ -112,6 +115,7 @@ export default function BottomSheet({
               aria-label="Close"
               title="Close"
               onClick={motion.requestClose}
+              disabled={closeDisabled}
               className={[
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
                 "bg-black/[0.05] text-ink-soft",

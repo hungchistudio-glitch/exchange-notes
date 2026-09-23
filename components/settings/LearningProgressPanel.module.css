@@ -1,0 +1,261 @@
+/*
+  Four readings, drawn as instruments rather than as coloured cards.
+
+  ── What they were ─────────────────────────────────────────────────────
+
+  Four pastel gradients — amber, sky, green, rose, each fading to white.
+  They were the one piece of colour on the old home screen and they were
+  fine there. On Settings they are the only thing in their section, two rows
+  above a page of white surfaces and hairlines, so four sherbet squares read
+  as another app's furniture.
+
+  ── What they are ──────────────────────────────────────────────────────
+
+  Standard Mode's rule is the one the home screen's ground states: colour and
+  light are painted, not emitted. So the difference between the four readings
+  is carried by what a technical drawing carries it with — an index, a
+  graduated scale, and the figure set in the mono face the rest of the app
+  uses for serials.
+
+  Everything is black on the page's own white, between 1.6% and 100%, through
+  the same `--ink-*` tokens as every other surface — which is also what lets
+  Cosmic Mode restyle this panel from its own stylesheet rather than fight a
+  hex code. Nothing glows: no backdrop-filter, no white box-shadow, no inset
+  bright edge.
+*/
+
+.panel {
+  container-type: inline-size;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  counter-reset: reading;
+}
+
+/*
+  Two across on a phone, four across on anything wide enough to read them
+  side by side. A container query rather than a media query, because this
+  panel also appears in a review route at a width the viewport knows nothing
+  about — and because `rem` thresholds move with the reader's text-size
+  preference, which is the width that actually matters here.
+*/
+@container (max-width: 34rem) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 15rem) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tile {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 0.07);
+  border-radius: 14px;
+  padding: 13px 14px 14px;
+  background-color: #fff;
+  /* The same 24px grid the home screen's ground uses, at the same weight,
+     clipped to the tile. Invisible until you look, which is the point of it:
+     the surface reads as ruled rather than as blank. */
+  background-image:
+    linear-gradient(to right, rgb(0 0 0 / 0.016) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.016) 1px, transparent 1px);
+  background-size: 24px 24px;
+  counter-increment: reading;
+}
+
+/* A registration mark in the corner: where two rules cross on a drawing. */
+.tile::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-top: 1px solid rgb(0 0 0 / 0.14);
+  border-right: 1px solid rgb(0 0 0 / 0.14);
+  pointer-events: none;
+}
+
+.head {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  /* Clears the registration mark, so a long label never runs under it. */
+  padding-right: 14px;
+}
+
+.index {
+  flex: 0 0 auto;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  color: rgb(0 0 0 / 0.32);
+}
+
+.index::before {
+  content: counter(reading, decimal-leading-zero);
+}
+
+.label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.value {
+  margin: 9px 0 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 1.625rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  color: #000;
+}
+
+/* The unit is not the figure. Smaller and quieter is what lets four values
+   line up as four readings rather than four strings. */
+.unit {
+  margin-left: 2px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgb(0 0 0 / 0.42);
+}
+
+/*
+  A scale, for the two readings that are rates out of a hundred.
+
+  Words mastered and words to revisit are counts with no full mark, so they
+  get no scale — a pointer drawn against a maximum nobody set is an invented
+  number, and this panel has none. Cosmic's ProgressHud draws exactly the
+  same distinction, and its test asserts that only two of its four cards may
+  carry a reading.
+*/
+.scale,
+.noScale {
+  margin-top: 11px;
+  height: 3px;
+}
+
+.scale {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 0.07);
+}
+
+.scale::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--reading) * 1%);
+  border-radius: inherit;
+  background: rgb(0 0 0 / 0.72);
+}
+
+/* Quarter graduations, over the track and the fill alike, so a reading can
+   be placed by eye without reading the number above it. */
+.scale::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0 calc(25% - 1px),
+    rgb(255 255 255 / 0.92) calc(25% - 1px) 25%
+  );
+}
+
+.sublabel {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.6875rem;
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+  color: var(--ink-faint);
+}
+
+/* Said once, above the tiles, when there is nothing in them worth reading. */
+.notice {
+  margin: 0 0 10px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/*
+  The way out of the panel.
+
+  Four readings about how the reviewing is going, and no way to review from
+  here, is a dashboard. One row, 44 points tall, under a hairline.
+*/
+.review {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  /*
+   * A surface, not a hairline under the grid.
+   *
+   * With only a top border it sat on the page's own ground between the last
+   * tile and the next section heading, belonging to neither — a bold line of
+   * text floating on the grid. Bordered like the tiles above it, it reads as
+   * the last thing in the group, which is what it is.
+   */
+  border: 1px solid rgb(0 0 0 / 0.07);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-soft);
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.review:hover {
+  color: #000;
+  background: rgb(0 0 0 / 0.015);
+}
+
+.review:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid rgb(0 0 0 / 0.4);
+  outline-offset: 3px;
+}
+
+@media (max-width: 340px) {
+  .grid {
+    gap: 8px;
+  }
+
+  .tile {
+    padding: 11px 12px 12px;
+  }
+
+  .value {
+    font-size: 1.5rem;
+  }
+}

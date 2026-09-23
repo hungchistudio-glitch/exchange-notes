@@ -6,6 +6,16 @@ type SettingsSectionProps = {
   // Sits below the surface in the quietest type on the page. For the one or
   // two things that are worth saying once and never again.
   footnote?: string;
+  /**
+   * The group brings its own surface, so this one supplies only the label.
+   *
+   * For the learning-progress tiles, which are four bordered cards in a
+   * grid: putting them inside the panel's own bordered white box drew a box
+   * around four boxes. They still want the heading — the index, the label
+   * and the rule are what make them the fourth group on the page rather
+   * than something that wandered in.
+   */
+  bare?: boolean;
   className?: string;
 };
 
@@ -21,6 +31,7 @@ export default function SettingsSection({
   label,
   children,
   footnote,
+  bare = false,
   className = "",
 }: SettingsSectionProps) {
   return (
@@ -29,9 +40,13 @@ export default function SettingsSection({
         {label}
       </h2>
 
-      <div className="settings-panel divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
-        {children}
-      </div>
+      {bare ? (
+        children
+      ) : (
+        <div className="settings-panel divide-y divide-black/[0.05] overflow-hidden rounded-[18px] border border-black/[0.06] bg-white">
+          {children}
+        </div>
+      )}
 
       {footnote ? (
         <p className="mt-2.5 px-1.5 text-[0.75rem] leading-[1.125rem] text-ink-faint">

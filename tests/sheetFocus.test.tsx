@@ -51,6 +51,18 @@ describe("a sheet while it is open", () => {
     vi.useRealTimers();
   });
 
+  it("keeps a pending operation visible until closing is enabled again", async () => {
+    const onClose = vi.fn();
+    render(<BottomSheet open closeDisabled onClose={onClose} title="Signing out"><p>Please wait</p></BottomSheet>);
+    for (const button of screen.getAllByRole("button", { name: "Close" })) {
+      expect(button).toBeDisabled();
+    }
+    fireEvent.keyDown(window, { key: "Escape" });
+    await settle();
+    expect(panel()).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("takes focus itself rather than raising a keyboard", () => {
     render(
       <BottomSheet open onClose={vi.fn()} title="Pick a list">
