@@ -58,6 +58,46 @@ type Attempt = {
   detail: string | null;
 };
 
+/* =========================================================
+   Which models this key can actually reach
+
+   ── Why ask, rather than name them ─────────────────────────────────────
+
+   Four model names were tried between 18 and 23 September and every one of
+   them behaved the same way, because the name was never the variable. The
+   fallback model this app ships with, gemini-3.5-flash-lite, has now spent
+   most of a week answering 504 DEADLINE_EXCEEDED at whatever ceiling it is
+   given — which means the fallback in a two-model candidate list is
+   decorative, and the next guess at a replacement would be the fifth.
+
+   So this stops guessing. `models.list` is Google answering the question
+   directly: every model this key can see, and which methods each supports.
+   Pair it with `?models=a,b` below and a replacement is a measurement.
+   ========================================================= */
+async function catalogue(client: GoogleGenAI) {
+  const pager = await client.models.list({ config: { queryBase: true } });
+  const rows: Array<{
+    name: string;
+    displayName: string | null;
+    actions: string[];
+    inputTokenLimit: number | null;
+  }> = [];
+
+  // One page. This is a list to read, not a dataset to walk, and the free
+  // tier's catalogue fits inside the first one.
+  for (const model of pager.page) {
+    rows.push({
+      // "models/gemini-3.6-flash" — the app names them without the prefix.
+      name: (model.name ?? "").replace(/^models\//, ""),
+      displayName: model.displayName ?? null,
+      actions: model.supportedActions ?? [],
+      inputTokenLimit: model.inputTokenLimit ?? null,
+    });
+  }
+
+  return rows.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 async function probe(client: GoogleGenAI, model: string): Promise<Attempt> {
   const startedAt = Date.now();
 
@@ -97,7 +137,14 @@ async function probe(client: GoogleGenAI, model: string): Promise<Attempt> {
   }
 }
 
-export async function GET() {
+/*
+ * Three at a time, at twelve seconds each, inside a maxDuration of 45. A
+ * dead model costs its whole ceiling, so a longer list would be a 504 from
+ * this route rather than a report about somebody else's.
+ */
+const MAX_PROBES = 3;
+
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -129,16 +176,53 @@ export async function GET() {
   }
 
   const client = new GoogleGenAI({ apiKey });
+  const parameters = new URL(request.url).searchParams;
 
   /*
-   * Text and vision share a candidate list unless the environment splits
-   * them, so the set is deduplicated — this is a diagnosis, not a benchmark,
-   * and asking the same model twice only spends more of the quota that may
-   * be the problem.
+   * ?catalogue — no probing at all, just what this key can see. Cheap, and
+   * the only honest way to pick a name to probe next.
    */
-  const models = [
-    ...new Set([...getTextModelCandidates(), ...getVisionModelCandidates()]),
-  ];
+  if (parameters.has("catalogue") || parameters.has("catalog")) {
+    try {
+      return NextResponse.json({
+        checkedAt: new Date().toISOString(),
+        key,
+        models: await catalogue(client),
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          key,
+          error: "Could not list models.",
+          status: getErrorStatus(error),
+          detail:
+            error instanceof Error ? error.message.slice(0, 600) : String(error),
+        },
+        { status: 502 },
+      );
+    }
+  }
+
+  /*
+   * ?models=a,b — probe exactly these instead of the configured pair. This
+   * is how a fallback gets chosen: name the candidates, read the latencies,
+   * and put the winner in lib/ai/modelConfig.ts with the numbers beside it.
+   *
+   * Text and vision otherwise share a candidate list unless the environment
+   * splits them, so the default set is deduplicated — this is a diagnosis,
+   * not a benchmark, and asking the same model twice only spends more of the
+   * quota that may be the problem.
+   */
+  const requested = (parameters.get("models") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const models = (
+    requested.length
+      ? [...new Set(requested)]
+      : [...new Set([...getTextModelCandidates(), ...getVisionModelCandidates()])]
+  ).slice(0, MAX_PROBES);
 
   // In sequence rather than at once: a key that is out of quota answers
   // differently under three simultaneous requests than under one.
