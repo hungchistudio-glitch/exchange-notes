@@ -158,15 +158,29 @@ beforeEach(() => {
 });
 
 describe("a list with no scroller to virtualise against", () => {
-  it("renders every word rather than none", () => {
-    // The failure mode has to be "slow", never "the reader's words are
-    // missing" — a surface without the app frame gets the whole list.
-    const { container } = render(<VocabularyList {...props(library(40))} />);
+  /*
+   * Fifteen seconds, because this case is the slow path on purpose.
+   *
+   * It builds forty complete word cards — that is what "renders every word"
+   * means, and the assertion is worth having for it. On an idle machine it
+   * takes about four, which is close enough to the default five that a busy
+   * laptop turned it red while nothing about the list had changed. A test
+   * whose result depends on what else is running is a test nobody believes
+   * the third time.
+   */
+  it(
+    "renders every word rather than none",
+    () => {
+      // The failure mode has to be "slow", never "the reader's words are
+      // missing" — a surface without the app frame gets the whole list.
+      const { container } = render(<VocabularyList {...props(library(40))} />);
 
-    expect(container.querySelectorAll("[data-index]")).toHaveLength(0);
-    expect(screen.getByText("word0")).toBeInTheDocument();
-    expect(screen.getByText("word39")).toBeInTheDocument();
-  });
+      expect(container.querySelectorAll("[data-index]")).toHaveLength(0);
+      expect(screen.getByText("word0")).toBeInTheDocument();
+      expect(screen.getByText("word39")).toBeInTheDocument();
+    },
+    15_000,
+  );
 });
 
 describe("a list inside the app frame", () => {
