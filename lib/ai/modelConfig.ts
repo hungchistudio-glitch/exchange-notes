@@ -24,24 +24,46 @@
  * none of them.
  */
 /*
- * ── Measured again on 2026-09-23, on the standard endpoint ─────────────
+ * ── Measured on 2026-09-24, against the catalogue this key can see ─────
  *
- * Three lookups on production, both models, the same request:
+ * /api/diagnostics/gemini?catalogue lists fifty models, and ?models= probes
+ * any three of them with the same call shape the app makes. Four rounds
+ * across half an hour, production, the same request each time:
  *
- *   gemini-3.5-flash-lite   504 after 13457ms, 13489ms, 13457ms
- *   gemini-3.6-flash        400 after   109ms,   107ms,   109ms
+ *   gemini-3.6-flash           4/4   746, 955, 1094, 1260 ms
+ *   gemini-flash-lite-latest   4/4   619, 664, 2993, 5571 ms
+ *   gemini-3.5-flash-lite      2/3   583, 583 ms — and one 504 at 11101 ms
+ *   gemini-3.7-flash           1/2   4422 ms    — and one 503 at   762 ms
+ *   gemini-3.8-flash           0/1              — 503 at   666 ms
+ *   gemini-flash-latest        0/1              — 503 at   248 ms
+ *   gemini-3.1-flash-lite      0/1              — 503 at   310 ms
+ *   gemini-2.5-flash-lite      0/1              — 404 at   102 ms, retired
  *
- * The flash-lite figures are the ceiling, to the millisecond, three times
- * over: that is not a slow reply, it is no reply — the same thing it has
- * been doing since the 18th. The flash figures are a rejected request,
- * which was the schema and is fixed in modelRequest.ts; they are also
- * proof that the model is there and answers in a tenth of a second.
+ * ── What that actually says ────────────────────────────────────────────
  *
- * The names below say what each model is, and they have not changed. What
- * changed is the order the lists try them in — see below.
+ * Not "which model is best". Which *failure* is affordable. Every refusal
+ * above comes back in a tenth to three quarters of a second — a busy model,
+ * a retired one — and a candidate list absorbs those without a reader
+ * noticing. There is exactly one expensive failure in the table, the 504
+ * DEADLINE_EXCEEDED at eleven seconds, and it is the whole reason this app
+ * looked broken for a week.
+ *
+ * So flash-lite is not dead, which is what it looked like from inside the
+ * app. It is intermittent, and when it is unwell it hangs rather than
+ * refusing. That is a fine third choice and a terrible second one.
+ *
+ * ── Why an alias in the middle ─────────────────────────────────────────
+ *
+ * Four model names were pinned into this file between 18 and 23 September
+ * and every one of them went stale or went quiet. `gemini-flash-lite-latest`
+ * cannot go stale: Google repoints it. It answered four times out of four
+ * here, and it is the one entry in this list that will not need a commit
+ * the next time a version number moves.
  */
 export const DEFAULT_FAST_MODEL = "gemini-3.5-flash-lite";
 export const DEFAULT_STRONG_MODEL = "gemini-3.6-flash";
+/** The alias, so at least one entry in every list cannot go stale. */
+export const DEFAULT_ALIAS_LITE_MODEL = "gemini-flash-lite-latest";
 
 function uniqueModels(values: Array<string | undefined>) {
   return [
@@ -54,18 +76,21 @@ function uniqueModels(values: Array<string | undefined>) {
 }
 
 /*
- * The strong model leads, for now.
+ * Three deep, in the order the measurements above put them.
  *
- * Flash-Lite is the right first choice on paper — cheaper, quicker, and
- * enough for a single word or a single object. It has also not answered a
- * request from this app since 18 September, and a candidate list tries its
- * first entry in full before it reaches the second. Leading with it cost
- * every reader the thirteen-second ceiling before the model that works was
- * even asked.
+ * It was two, and the second entry was the one model in the table that
+ * hangs — which is the same as having no fallback at all, on a free tier
+ * whose twenty requests a minute the first entry runs out of regularly.
  *
- * So the order is a measurement, not a preference, and putting it back is a
- * one-line change the day Flash-Lite answers again. The environment can
- * override either end of it without touching this file.
+ * Three is affordable now for the reason the table gives: every failure but
+ * the hang costs under a second, so reaching the third candidate is cheap
+ * whenever the first two are merely busy. When the first one hangs instead,
+ * the budget arithmetic in each route cuts the chain short on its own — and
+ * lib/ai/modelRequest.ts puts a model that hung into cooldown, so the next
+ * request starts at the second entry rather than paying for the lesson
+ * twice.
+ *
+ * The environment can still override either end without touching this file.
  */
 export function getTextModelCandidates() {
   return uniqueModels([
@@ -73,6 +98,7 @@ export function getTextModelCandidates() {
     process.env.GEMINI_MODEL,
     DEFAULT_STRONG_MODEL,
     process.env.GEMINI_FALLBACK_MODEL,
+    DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
   ]);
 }
@@ -83,6 +109,7 @@ export function getVisionModelCandidates() {
     process.env.GEMINI_MODEL,
     DEFAULT_STRONG_MODEL,
     process.env.GEMINI_FALLBACK_MODEL,
+    DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
   ]);
 }
@@ -102,6 +129,7 @@ export function getMenuModelCandidates() {
     process.env.GEMINI_MENU_MODEL,
     process.env.GEMINI_VISION_MODEL,
     DEFAULT_STRONG_MODEL,
+    DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
   ]);
 }
