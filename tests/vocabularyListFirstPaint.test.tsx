@@ -171,6 +171,17 @@ describe("arriving at the vocabulary list", () => {
    * the pass under discussion: what the component produces before it has
    * found anything to measure against.
    */
+  /*
+   * Six, not twelve, and the difference is the point.
+   *
+   * This pass used to build a flat twelve rows whatever mode it was in,
+   * which is a screen and a half of compact rows and very nearly four
+   * screens of cards — the mode that costs the most to build was building
+   * the most of it, for a pass the reader is not supposed to see. It is
+   * measured against the row's own estimate now: a tall phone and a half,
+   * floored at six. Cards measure 299px on a 375px screen (production,
+   * 2026-09-24), so six of them is the screenful this always meant.
+   */
   it("puts a screenful on screen before it has measured anything", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
 
@@ -179,13 +190,21 @@ describe("arriving at the vocabulary list", () => {
     );
 
     // Enough to fill a phone, and no more — not the whole library.
-    expect(builtRows.length).toBe(12);
+    expect(builtRows.length).toBe(6);
     expect(large).toContain("word 0");
     expect(large).not.toContain("word 300");
 
     builtRows.length = 0;
 
-    // A short library is not padded out to twelve.
+    // Compact rows are less than half as tall, so twice as many fit.
+    renderToStaticMarkup(
+      <VocabularyList {...listProps(makeItems(329))} viewMode="compact" />,
+    );
+    expect(builtRows.length).toBe(12);
+
+    builtRows.length = 0;
+
+    // A short library is not padded out to a screenful.
     renderToStaticMarkup(<VocabularyList {...listProps(makeItems(4))} />);
     expect(builtRows.length).toBe(4);
   });

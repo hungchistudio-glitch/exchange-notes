@@ -255,18 +255,75 @@ function VocabularyList({
  * renders reports its real height back and the positions settle.
  */
 const ROW_GAP: Record<VocabularyViewMode, number> = { compact: 8, cards: 12 };
+
+/* =========================================================
+   What a row is, before anybody has measured one
+
+   ── These were half the real number, and it showed ─────────────────────
+
+   Measured on production 2026-09-24, a 375px viewport, every row in a
+   21-word library measured after scrolling the whole list:
+
+     compact   125px, all twenty-one identical
+     cards     299px for seventeen of them, 485px for four
+
+   The estimates here were 76 + 8 and 132 + 12 — 84 and 144 against 125 and
+   299. Cards were out by a factor of 2.1.
+
+   An estimate that low is not a rounding error, because the virtualiser
+   places every unmeasured row with it and corrects as each one reports its
+   real height. Frame times through one scroll of the same list, same
+   session, cards mode:
+
+     cold (first scroll after load)    longest frame  616.3 ms
+     warm (the same scroll again)      longest frame   17.7 ms
+
+   Nothing about the second pass is cheaper except that the heights are
+   already known. And while that first pass ran, the list grew 1,973px
+   underneath the reader's thumb — the scrollbar and everything below the
+   row being measured moving as it settled. Compact, whose rows are all
+   exactly the same height, never stutters at all: its longest frame across
+   two seconds of scrolling is 17.8ms.
+
+   ── What these numbers are, and are not ────────────────────────────────
+
+   They are the median measured row, gap included, minus the gap this file
+   adds back. They are a placement hint and nothing else: every row still
+   reports its real height and still corrects. What changes is that the
+   correction is now small enough not to cascade.
+
+   They are also one device at one width with one reader's words, and row
+   height depends on both. If this stutters again on a much wider screen or
+   a library full of long examples, the answer is not a bigger constant —
+   it is to seed the estimate from `getTotalSize() / count` of the last time
+   this list was measured, which costs no layout read and converges on
+   whatever that reader's rows actually are.
+   ========================================================= */
 const ROW_ESTIMATE: Record<VocabularyViewMode, number> = {
-  compact: 76,
-  cards: 132,
+  compact: 117,
+  cards: 287,
 };
 
 /*
- * Enough to cover a tall phone before anything has been measured — a little
- * over a screenful of the shorter compact rows. It is a fixed number rather
- * than a calculation because there is nothing to calculate from yet: the
- * viewport has not been found, which is the whole reason this pass exists.
+ * Enough to cover a tall phone before anything has been measured.
+ *
+ * This was a flat twelve, on the grounds that there is nothing to calculate
+ * from yet — the viewport has not been found, which is the whole reason
+ * this pass exists. True of the viewport; not true of the row. Twelve is
+ * about a screen and a half of compact rows and nearly four screens of
+ * cards, so the mode that costs the most to build was the one building the
+ * most of it, for a pass a reader is not supposed to see.
+ *
+ * Measured against the estimate instead, with a tall phone as the target
+ * and a floor of six so a short list still fills the screen if this pass
+ * ever is seen. At the numbers above that is twelve compact rows — exactly
+ * what it was — and six cards instead of twelve.
  */
-const FIRST_PAINT_ROWS = 12;
+const FIRST_PAINT_VIEWPORT = 1000;
+
+function firstPaintRows(estimatedRowHeight: number) {
+  return Math.max(6, Math.ceil((FIRST_PAINT_VIEWPORT * 1.5) / estimatedRowHeight));
+}
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -375,7 +432,7 @@ function VirtualWordList({
             position: "relative",
           }}
         >
-          {items.slice(0, FIRST_PAINT_ROWS).map((item, index) => (
+          {items.slice(0, firstPaintRows(estimatedRowHeight)).map((item, index) => (
             <div
               key={item.id}
               style={{
