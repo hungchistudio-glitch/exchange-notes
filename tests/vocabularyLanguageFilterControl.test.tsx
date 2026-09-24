@@ -96,7 +96,21 @@ beforeEach(() => {
 });
 
 describe("the vocabulary camera key", () => {
-  it("opens this app's camera rather than the system picker", () => {
+  /*
+   * Pressed, then waited for. The camera is a `next/dynamic` import as of
+   * 2026-09-24 — it was sixteen files on this screen's first render for a
+   * viewfinder behind a button — so it arrives a tick after the tap rather
+   * than with the module. The key warms it on pointerdown, which is why a
+   * reader does not experience that tick; these cases have to spell it out.
+   */
+  async function press() {
+    const key = screen.getByRole("button", { name: "Scan" });
+    fireEvent.pointerDown(key);
+    fireEvent.click(key);
+    await screen.findByRole("button", { name: "Capture photo" });
+  }
+
+  it("opens this app's camera rather than the system picker", async () => {
     /*
      * This used to assert one inline file input, back when the key handed
      * straight to the platform sheet. It opens TargetCamera now — the same
@@ -107,17 +121,17 @@ describe("the vocabulary camera key", () => {
 
     expect(container.querySelectorAll('input[type="file"]')).toHaveLength(0);
 
-    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+    await press();
 
     expect(
       screen.getByRole("button", { name: "Capture photo" }),
     ).toBeInTheDocument();
   });
 
-  it("still reaches recognition from the photo library", () => {
+  it("still reaches recognition from the photo library", async () => {
     renderSearch();
 
-    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+    await press();
 
     const picker = document.querySelector<HTMLInputElement>(
       'input[type="file"][accept="image/*"]',
