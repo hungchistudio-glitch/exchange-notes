@@ -28,12 +28,23 @@ const { default: LexiconImageMenu } = await import(
   "@/components/lexicon/LexiconImageMenu"
 );
 
-function open() {
-  fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+/*
+ * The key warms the camera's chunk on pointerdown and opens it on click,
+ * which is how a screen that carries this key stopped paying for sixteen
+ * files it might never show (see LexiconImageMenu). So "opened" is now one
+ * tick away rather than synchronous, and these cases wait for the shutter
+ * the way a reader waits for it: not at all, in practice, because the
+ * module is already in hand by the time the tap resolves.
+ */
+async function open() {
+  const key = screen.getByRole("button", { name: "Scan" });
+  fireEvent.pointerDown(key);
+  fireEvent.click(key);
+  await screen.findByRole("button", { name: "Capture photo" });
 }
 
 describe("the search camera key", () => {
-  it("opens no camera until it is pressed", () => {
+  it("opens no camera until it is pressed", async () => {
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
     expect(
@@ -41,10 +52,10 @@ describe("the search camera key", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("opens this app's camera rather than the system one", () => {
+  it("opens this app's camera rather than the system one", async () => {
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    open();
+    await open();
 
     // The shutter and the close control are TargetCamera's, and are what
     // tells this apart from the platform sheet that used to appear.
@@ -56,24 +67,32 @@ describe("the search camera key", () => {
     ).toBeInTheDocument();
   });
 
-  it("still offers the photo library, one level in", () => {
+  it("still offers the photo library, one level in", async () => {
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    open();
+    await open();
 
+    /*
+     * All, not one. The camera offers the library twice on purpose — the
+     * key in its toolbar, and again in the panel a reader meets when the
+     * camera is refused — and which of the two is on screen depends on a
+     * permission this environment does not grant. What this case is about
+     * is that the library did not go away when the system sheet did, and
+     * either button says so.
+     */
     expect(
-      screen.getByRole("button", { name: "Photo library" }),
-    ).toBeInTheDocument();
+      screen.getAllByRole("button", { name: "Photo library" }).length,
+    ).toBeGreaterThan(0);
 
     const picker = document.querySelector('input[type="file"][accept="image/*"]');
 
     expect(picker).not.toBeNull();
   });
 
-  it("closes when the camera is dismissed", () => {
+  it("closes when the camera is dismissed", async () => {
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    open();
+    await open();
     fireEvent.click(screen.getByRole("button", { name: "Close camera" }));
 
     expect(
@@ -91,7 +110,7 @@ describe("the search camera key", () => {
     const onFile = vi.fn();
     render(<LexiconImageMenu onFile={onFile} onCapture={vi.fn()} />);
 
-    open();
+    await open();
 
     const picker = document.querySelector<HTMLInputElement>(
       'input[type="file"][accept="image/*"]',
@@ -118,7 +137,7 @@ describe("the search camera key", () => {
      */
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    open();
+    await open();
 
     await screen.findByRole("button", { name: "Try again" });
 
@@ -141,7 +160,7 @@ describe("the search camera key", () => {
      */
     render(<LexiconImageMenu onFile={vi.fn()} onCapture={vi.fn()} />);
 
-    open();
+    await open();
 
     expect(
       await screen.findByRole("button", { name: "Try again" }),

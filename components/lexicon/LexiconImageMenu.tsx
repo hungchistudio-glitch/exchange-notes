@@ -1,13 +1,49 @@
 "use client";
 
 import { Camera } from "lucide-react";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useRef, useState } from "react";
 
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
-import TargetCamera, {
-  type CameraCapture,
-} from "@/components/camera/TargetCamera";
+import type { CameraCapture } from "@/components/camera/TargetCamera";
 import useTranslation from "@/hooks/i18n/useTranslation";
+
+/* =========================================================
+   The camera arrives with the tap, not with the screen
+
+   ── What this was costing ──────────────────────────────────────────────
+
+   This file renders a 44px button. Behind `{open && …}` it renders the
+   app's whole camera, and until now that camera was a static import — so
+   every screen carrying this key parsed it before it could paint anything.
+
+   Measured on 2026-09-24 by walking the static import graph from each tab's
+   entry point, counting source bytes and following neither `import type`
+   nor `import()`:
+
+     /vocabulary   162 files  1075 KB   — TargetCamera reached via
+                                          VocabularyMainContent → …Search
+     /home         157 files  1115 KB   — reached via CommandDeck →
+                                          OmniLexiconConsole
+     TargetCamera   16 files   122 KB
+
+   Sixteen files and a hundred and twenty kilobytes of source, on the first
+   render of the two heaviest screens in the app, for a viewfinder that does
+   not exist until somebody taps a button. The word list is the screen a
+   reader opens most, and it was paying for the camera every time.
+
+   ── Why this changes nothing on screen ─────────────────────────────────
+
+   The chunk is warmed on `pointerdown`, which lands before `click` — and on
+   focus, for a reader arriving by keyboard. So by the time the tap resolves
+   the module is already in flight or in hand, and the camera opens exactly
+   as it did. `loading` is null rather than a spinner for the same reason:
+   there is nothing to show for the handful of milliseconds between, and a
+   flash of anything would be a change to what the reader sees.
+   ========================================================= */
+const loadCamera = () => import("@/components/camera/TargetCamera");
+
+const TargetCamera = dynamic(loadCamera, { loading: () => null });
 
 /**
  * One camera key, and the app's own camera behind it.
@@ -42,6 +78,18 @@ export default function LexiconImageMenu({
 }: LexiconImageMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const warmed = useRef(false);
+
+  /*
+   * Once per mount. `dynamic` caches the module itself, but a pointer that
+   * wanders across this key several times should not queue several imports
+   * for the bundler to deduplicate.
+   */
+  const warm = useCallback(() => {
+    if (warmed.current) return;
+    warmed.current = true;
+    void loadCamera();
+  }, []);
 
   const camera = t.capture.camera;
 
@@ -50,6 +98,8 @@ export default function LexiconImageMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        onPointerDown={warm}
+        onFocus={warm}
         disabled={disabled}
         aria-label={t.lexicon.modeCamera}
         title={t.lexicon.modeCamera}
