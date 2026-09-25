@@ -177,3 +177,49 @@
     opacity: 0.6;
   }
 }
+
+/*
+  Cosmic Mode.
+
+  The card takes `var(--surface)`, and Cosmic redefines that token as a
+  near-black (#202026) — while every piece of text on the card was a fixed
+  Standard-Mode dark: #171717 for the body, black at 38% and 42% for the
+  step count and Skip, #0c0c0c for the button. Dark on dark, about 1.1:1.
+  A reader on the Command Deck on 2026-09-25 saw a grey slab with the words
+  pressed into it.
+
+  So in Cosmic the card speaks the deck's own language, the same one the
+  OmniLexicon console uses: the Cosmic panel surface and hairline, its ink
+  and muted ink for the words, and the mint pill for the one thing to press.
+  Tokens rather than values, so a palette change on the deck reaches the
+  tour too.
+*/
+:global(html[data-interface-mode="yumi-cosmic"]) .card {
+  border-color: var(--cosmic-hairline);
+  background: var(--cosmic-surface-panel);
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .label {
+  color: var(--cosmic-cyan);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .body {
+  color: var(--cosmic-ink);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .next,
+:global(html[data-interface-mode="yumi-cosmic"]) .door {
+  background: var(--cosmic-cyan);
+  color: var(--cosmic-on-mint);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .skip {
+  color: var(--cosmic-muted);
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .waiting i {
+  background: var(--cosmic-cyan);
+}
