@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
+import { armCoach } from "@/lib/home/tutorialCoach";
 import { createClient } from "@/lib/supabase/client";
 import {
   DEFAULT_LEARNING_PAIR,
@@ -59,7 +60,19 @@ export default function OnboardingFlow({
    * then returns directly to Languages instead of being asked for the name
    * again.
    */
-  const resumingAfterName = initialStep === "languages";
+  /*
+   * State, not a value derived from the server's initialStep.
+   *
+   * It used to be `initialStep === "languages"`, which is only ever true for
+   * someone who saved their name on an earlier visit. A brand-new account
+   * saving its name in this same session stayed `false`, so the language gate
+   * that follows sent them to Welcome, Welcome to Name, and Name back to the
+   * gate — a loop with no way out short of reloading the page. Every account
+   * created after the language-first change on 2026-09-11 met it.
+   */
+  const [resumingAfterName, setResumingAfterName] = useState(
+    initialStep === "languages",
+  );
   const [step, setStep] = useState<Step>("app-language");
 
   const [displayName, setDisplayName] = useState(initialDisplayName);
@@ -115,7 +128,13 @@ export default function OnboardingFlow({
       return;
     }
 
-    setStep("app-language");
+    /*
+     * Straight on to the two languages. The interface language was chosen at
+     * the very start of this flow, so there is nothing to go back for — and
+     * going back to it is what made this a loop.
+     */
+    setResumingAfterName(true);
+    setStep("languages");
   }
 
   async function handleStartLearning() {
@@ -145,12 +164,19 @@ export default function OnboardingFlow({
     }
 
     /*
-     * The only place a tour is ever armed. Arming it here rather than treating
-     * "this device has no record" as new is what keeps it away from accounts
-     * that have been in use for months — they reach it from Home or Settings
-     * instead. Cleared by the tour itself the moment it is dismissed.
+     * The only place a tour is ever armed unasked. Arming it here rather than
+     * treating "this device has no record" as new is what keeps it away from
+     * accounts that have been in use for months — they reach it from
+     * Settings instead.
+     *
+     * The doing-tour, not the stepped overlay. The overlay opens by asking
+     * for the two languages, and this reader has just answered exactly that
+     * one screen ago; asking again is the first thing the app would say to
+     * them after "welcome". So a new account goes straight to the coach, and
+     * the overlay stays where Settings › Help can replay it.
      */
-    setTutorialPending(true);
+    setTutorialPending(false);
+    armCoach();
 
     router.replace("/home");
     router.refresh();
@@ -159,9 +185,10 @@ export default function OnboardingFlow({
   function goBack() {
     if (step === "welcome") setStep("app-language");
     else if (step === "name") setStep("welcome");
-    else if (step === "languages") {
-      setStep(resumingAfterName ? "app-language" : "name");
-    }
+    // Always the name, which is the step before this one in every path —
+    // a returning reader's name is prefilled, and saving it again brings
+    // them straight back here.
+    else if (step === "languages") setStep("name");
     else if (step === "confirm") setStep("languages");
   }
 
