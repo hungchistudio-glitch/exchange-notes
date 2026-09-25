@@ -34,13 +34,27 @@
   for the ring is satisfied the moment it opens, so there is nothing here
   worth reading by then anyway.
 
-  Keyed off the attribute the scene's frame loop already writes on the stage,
-  which is this element's ancestor — the overlay's own `.open` class is on a
-  sibling and cannot be seen from in here.
+  Keyed off the attribute the scene's frame loop already writes on the stage.
+  The coach is mounted by the protected layout now, beside the page rather
+  than inside it, so the stage is no longer an ancestor — `:has` asks the
+  document whether the ring is out anywhere on it.
 */
-:global([data-yumi-mode="open"]) .coach {
+:global(body:has([data-yumi-mode="open"])) .coach {
   opacity: 0;
   pointer-events: none;
+}
+
+/*
+  Everywhere but Home: above the dock rather than at the top.
+
+  Every other main screen has a header at the top — a title, a back button,
+  a search field — and those are the controls the page steps ask the reader
+  to look at. The dock's own clearance token is the distance a fixed element
+  has to keep from it.
+*/
+.docked {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + var(--dock-clearance));
 }
 
 .card {

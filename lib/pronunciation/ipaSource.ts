@@ -169,6 +169,7 @@ async function fromModel(
   for (const model of getTextModelCandidates()) {
     try {
       const raw = await generateJson(client, {
+        purpose: "phonetics",
         model,
         input: [
           `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,

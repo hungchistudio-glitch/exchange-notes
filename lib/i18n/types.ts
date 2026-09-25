@@ -315,13 +315,29 @@ export type TranslationDictionary = {
       finish: string;
       /** Said once, briefly, when a step is satisfied. */
       done: string;
+      /** The door on a home-screen step, when the reader is somewhere else. */
+      backHome: string;
+      /**
+       * Said on the keep step when the lookup came back without a meaning,
+       * so there is nothing to keep. Offers another word or the next step
+       * instead of waiting for a save that cannot happen.
+       */
+      unavailable: string;
       steps: {
         meet: { body: string };
         ask: { body: string };
         keep: { body: string };
         feed: { body: string };
+        /*
+         * The page steps. `action` labels the door that takes the reader
+         * there when they are not on that page yet; the body is what is said
+         * once they are.
+         */
+        library: { body: string; action: string };
         share: { body: string; action: string };
         notes: { body: string; action: string };
+        discover: { body: string; action: string };
+        settings: { body: string; action: string };
         close: { body: string };
       };
     };
@@ -407,6 +423,8 @@ export type TranslationDictionary = {
     emptyTitle: string;
     emptyDescription: string;
     searching: string;
+    /** Shown while a busy model is waited out before one more try. */
+    retrying: string;
     listening: string;
     offlineTitle: string;
     offlineDescription: string;

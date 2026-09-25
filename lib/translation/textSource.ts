@@ -175,6 +175,7 @@ export async function translateMissing(
   for (const model of getTextModelCandidates()) {
     try {
       const raw = await generateJson(client, {
+        purpose: "text-translate",
         model,
         input: [
           `Translate each ${fromName} phrase below into ${toName}.`,

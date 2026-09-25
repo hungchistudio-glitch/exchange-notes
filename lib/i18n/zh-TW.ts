@@ -286,6 +286,9 @@ const traditionalChinese: TranslationDictionary = {
       next: "下一步",
       finish: "開始吧",
       done: "很好。",
+      backHome: "回到首頁",
+      unavailable:
+        "這個字這次沒查到意思，所以還不能存。換一個字試試，或先到下一步。",
       steps: {
         meet: {
           body: "我是 Yumi。這個畫面上沒有選單 —— 我就是。拉一下我的眼睛，然後放開。",
@@ -301,15 +304,30 @@ const traditionalChinese: TranslationDictionary = {
           body:
             "餵我一塊。每天存一個新字，我就有得吃。太多天沒有，我會餓 —— 然後我會坐在這裡想你。",
         },
+        library: {
+          body:
+            "這是你的單字庫。存過的每一個字都在這裡，可以重聽發音、看例句，也可以從這裡開始複習。",
+          action: "去看看單字庫",
+        },
         share: {
           body:
-            "這個字現在也可以傳給朋友。一個人查到的字是資訊；傳給過某個人的字，才會變成記憶。",
+            "這是訊息。加一位朋友，就能把查到的字直接傳給他。一個人查到的字是資訊；傳給過某個人的字，才會變成記憶。",
           action: "去看看訊息",
         },
         notes: {
           body:
-            "有些東西裝不進一個單字：他們為什麼那樣說、那天發生了什麼、那句話在那個場合有多失禮。那些寫進筆記。",
+            "這是筆記。有些東西裝不進一個單字：他們為什麼那樣說、那天發生了什麼、那句話在那個場合有多失禮。那些寫在這裡。",
           action: "去看看筆記",
+        },
+        discover: {
+          body:
+            "這是探索。每天會有幾則新聞，用你正在學的語言寫成，值得記的字都幫你標出來了。",
+          action: "去看看探索",
+        },
+        settings: {
+          body:
+            "最後是設定。App 語言、學習語言和介面模式都在這裡改。想重看這個教學，到「說明與關於」裡找。",
+          action: "去看看設定",
         },
         close: {
           body: "就這樣。查、存、餵我。一天一次就夠了。",
@@ -419,6 +437,7 @@ const traditionalChinese: TranslationDictionary = {
     emptyDescription:
       "Yumi 會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。",
     searching: "查詢中…",
+    retrying: "Yumi 有點忙，馬上再試一次…",
     listening: "聆聽中…",
     offlineTitle: "目前離線",
     offlineDescription: "現在只能搜尋這台裝置上已經有的單字。",
@@ -440,7 +459,8 @@ const traditionalChinese: TranslationDictionary = {
     alreadySavedDescription: "你在 {date} 存過這個字。",
     openSavedWord: "開啟已儲存的單字",
     noTranslation: "還沒有意思",
-    noTranslationDetail: "目前連不上字典，所以這個字還沒有對應的意思。",
+    noTranslationDetail:
+      "Yumi 的 AI 字典現在太忙，沒拿到這個字的意思。過一下再試一次通常就會好。",
     degradedNotice: "單字和意思是對的，例句是通用的範本。",
     lowConfidence: "這是最接近的猜測，儲存前請先確認。",
     example: "例句",

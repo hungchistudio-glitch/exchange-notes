@@ -14,6 +14,7 @@ import OfflineBanner from "@/components/foundation/OfflineBanner";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import AppViewport from "@/components/foundation/layout/AppViewport";
 import SplashGate from "@/components/ui/SplashGate";
+import { AppTutorialCoach } from "@/components/tutorial/TutorialCoach";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
@@ -183,6 +184,14 @@ export default async function ProtectedLayout({
                 {children}
               </RouteStage>
             </AppViewport>
+
+            {/*
+              The doing-tour, once for the whole app rather than on one home
+              screen. Its steps walk Home, Vocabulary, Messages, Notes,
+              Discover and Settings in order, in either interface mode, and
+              it draws nothing at all unless a reader is mid-tour.
+            */}
+            <AppTutorialCoach />
           </LexiconSearchProvider>
         </VocabularyProvider>
 

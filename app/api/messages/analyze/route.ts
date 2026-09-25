@@ -258,6 +258,7 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     const outputText = await generateJson(client, {
+      purpose: "message-analyze",
       model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
       input: `
 You help someone learning ${learningLanguage} understand a message a friend

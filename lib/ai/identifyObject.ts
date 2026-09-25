@@ -249,6 +249,7 @@ async function identifyWithModel(
   timeoutMs: number,
 ) {
   const outputText = await generateJson(client, {
+    purpose: "identify-object",
     model,
     input: [
       { text: buildIdentifyObjectPrompt(languagePair) },

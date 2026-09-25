@@ -115,6 +115,7 @@ export async function POST(request: Request) {
     for (const model of getTextModelCandidates()) {
       try {
         const raw = await generateJson(client, {
+          purpose: "voice-lookup",
           model,
           input: [
             {

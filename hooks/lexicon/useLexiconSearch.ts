@@ -11,6 +11,7 @@ import {
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { reportNetworkFailure } from "@/hooks/useOnline";
+import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { readCachedEntry, writeCachedEntry } from "@/lib/lexicon/cache";
 import {
   routeQuery,
@@ -54,6 +55,35 @@ import type { VocabularyItem } from "@/lib/types/app";
 /** How many of the reader's own words to offer. */
 const MAX_SAVED_MATCHES = 6;
 
+/*
+ * One automatic second try, and only one.
+ *
+ * A lookup that comes back from the offline dictionary means every model the
+ * server tried was busy — on this key, almost always Gemini's free-tier
+ * request limit, which the server now reports as `retryAfterMs`: how long
+ * until the soonest model it put away can be asked again. Waiting that long
+ * and asking once more turns most of those into a real answer, where before
+ * the reader was handed "no meaning yet" and a retry link to find.
+ *
+ * Bounded, because a wait the reader cannot see the end of is worse than an
+ * honest failure: nothing past twenty seconds is waited for — a free-tier
+ * refusal typically asks for about nineteen, and never less
+ * than a second and a half, which is about how long a busy model takes to
+ * become a different answer.
+ */
+const AUTO_RETRY_MAX_WAIT_MS = 20_000;
+const AUTO_RETRY_MIN_WAIT_MS = 1_500;
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+type LookupResponse = LexiconEntry & {
+  degraded?: boolean;
+  retryAfterMs?: number | null;
+  error?: string;
+};
+
 type UseLexiconSearchOptions = {
   /**
    * The reader's library, live.
@@ -75,6 +105,8 @@ export type LexiconSearch = {
   /** The offline dictionary's early answer, while the real one is in flight. */
   preview: LexiconPreview | null;
   error: string;
+  /** Waiting out a busy model before asking once more. See AUTO_RETRY. */
+  retrying: boolean;
 
   /** The reader's own matching words, live as they type. */
   savedMatches: readonly VocabularyItem[];
@@ -119,6 +151,7 @@ export default function useLexiconSearch({
   const [result, setResult] = useState<LexiconResult | null>(null);
   const [preview, setPreview] = useState<LexiconPreview | null>(null);
   const [error, setError] = useState("");
+  const [retrying, setRetrying] = useState(false);
   const [inputMode, setInputMode] = useState<LexiconInputMode>("type");
 
   /*
@@ -199,6 +232,7 @@ export default function useLexiconSearch({
     setResult(null);
     setPreview(null);
     setError("");
+    setRetrying(false);
     setInputMode("type");
   }, []);
 
@@ -217,6 +251,7 @@ export default function useLexiconSearch({
       setStatus("searching");
       setError("");
       setPreview(null);
+      setRetrying(false);
 
       const routing = routeQuery(text, roles, chosenHead);
       const queryKind = classifyQueryKind(text);
@@ -262,6 +297,7 @@ export default function useLexiconSearch({
 
         setResult(settle(cached, { degraded: false, offline: false }));
         setStatus("ready");
+        announceHomeMoment("word-answered");
         return;
       }
 
@@ -290,24 +326,51 @@ export default function useLexiconSearch({
           .catch(() => undefined);
       }
 
-      try {
+      const ask = async (): Promise<LookupResponse> => {
         const response = await fetch("/api/classify-text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, headLanguage: chosenHead ?? undefined }),
         });
 
-        const data = (await response.json()) as LexiconEntry & {
-          degraded?: boolean;
-          error?: string;
-        };
+        const data = (await response.json()) as LookupResponse;
 
         if (!response.ok || data.error) {
           throw new Error(data.error || "Couldn't look up that word.");
         }
 
-        const { degraded, error: _unused, ...entry } = data;
+        return data;
+      };
+
+      try {
+        let data = await ask();
+
+        if (
+          data.degraded &&
+          typeof data.retryAfterMs === "number" &&
+          data.retryAfterMs <= AUTO_RETRY_MAX_WAIT_MS
+        ) {
+          if (!isCurrent()) return;
+          setRetrying(true);
+
+          await wait(Math.max(AUTO_RETRY_MIN_WAIT_MS, data.retryAfterMs));
+          if (!isCurrent()) return;
+
+          try {
+            data = await ask();
+          } catch {
+            /* The first answer is still an answer. Keep it. */
+          }
+        }
+
+        const {
+          degraded,
+          error: _unused,
+          retryAfterMs: _hint,
+          ...entry
+        } = data;
         void _unused;
+        void _hint;
 
         // Caching a degraded result would keep the canned example sentences
         // in front of this reader long after the model recovered.
@@ -315,9 +378,19 @@ export default function useLexiconSearch({
 
         if (!isCurrent()) return;
 
+        setRetrying(false);
         setPreview(null);
         setResult(settle(entry, { degraded: Boolean(degraded), offline: false }));
         setStatus("ready");
+
+        /*
+         * Announced here, once, for every surface that searches — the home
+         * field, the app-wide sheet and the Cosmic console alike — so the
+         * tour hears about a lookup in either interface mode.
+         */
+        announceHomeMoment(
+          entry.translationUnavailable ? "word-unavailable" : "word-answered",
+        );
       } catch (lookupError) {
         /*
          * No connection: answer from the words the reader already has.
@@ -332,7 +405,9 @@ export default function useLexiconSearch({
 
         if (!isCurrent()) return;
 
+        setRetrying(false);
         setPreview(null);
+        announceHomeMoment("word-unavailable");
 
         const [local] = searchPersonal(items, text, 1);
 
@@ -419,6 +494,7 @@ export default function useLexiconSearch({
     result: resultWithSaved,
     preview,
     error,
+    retrying,
     savedMatches,
     kind,
     submit,

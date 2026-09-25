@@ -18,7 +18,6 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
-import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
@@ -157,15 +156,11 @@ export default function UniversalSearchField({
   }, [hasAnswer, onAnswerChange]);
 
   /*
-   * A word came back — and this fires for all four ways of asking, because
-   * all four land on the same result. That is the point of the moment: the
-   * tour asks the reader to look something up and does not care whether they
-   * typed it, said it, photographed it or handed over a document.
+   * "A word came back" is announced by useLexiconSearch itself now, for
+   * every surface that searches — it fires for all four ways of asking,
+   * because all four land on the same lookup, and it can tell an answer from
+   * a card with no meaning on it, which this field could not.
    */
-  const answeredTerm = search.result?.entry?.term ?? null;
-  useEffect(() => {
-    if (answeredTerm) announceHomeMoment("word-answered");
-  }, [answeredTerm]);
 
   return (
     <div className="min-w-0">

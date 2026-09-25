@@ -291,6 +291,9 @@ const english: TranslationDictionary = {
       next: "Next",
       finish: "Start",
       done: "Good.",
+      backHome: "Back to Home",
+      unavailable:
+        "That word came back without a meaning this time, so there is nothing to keep yet. Try another word, or go on to the next step.",
       steps: {
         meet: {
           body:
@@ -308,15 +311,30 @@ const english: TranslationDictionary = {
           body:
             "Feed me one. One new word a day and I have something to eat. Too many days without, and I get hungry — and then I just sit here missing you.",
         },
+        library: {
+          body:
+            "This is your Vocabulary. Every word you keep lives here — play it again, read its examples, and start a review from here.",
+          action: "Open Vocabulary",
+        },
         share: {
           body:
-            "That word can go to a friend now. A word you looked up alone is information; a word you sent someone becomes a memory.",
+            "These are your Messages. Add a friend and you can send them any word you look up. A word you looked up alone is information; a word you sent someone becomes a memory.",
           action: "Open Messages",
         },
         notes: {
           body:
-            "Some things do not fit in a word: why they said it that way, what happened that day, how rude that phrase was in that room. Those go in Notes.",
+            "These are your Notes. Some things do not fit in a word: why they said it that way, what happened that day, how rude that phrase was in that room. Those go here.",
           action: "Open Notes",
+        },
+        discover: {
+          body:
+            "This is Discover. A few news stories arrive every day, written in the language you are learning, with the words worth keeping already marked.",
+          action: "Open Discover",
+        },
+        settings: {
+          body:
+            "Last, Settings. App language, the languages you are learning and the interface mode all change here. To see this tour again, look in Help & About.",
+          action: "Open Settings",
         },
         close: {
           body: "That is all of it. Ask, keep, feed me. Once a day is enough.",
@@ -426,6 +444,7 @@ const english: TranslationDictionary = {
     emptyDescription:
       "Yumi works out what language it is, what it means, and whether you have met it before.",
     searching: "Looking it up…",
+    retrying: "Yumi is busy — trying again in a moment…",
     listening: "Listening…",
     offlineTitle: "You are offline",
     offlineDescription:
@@ -449,7 +468,7 @@ const english: TranslationDictionary = {
     openSavedWord: "Open the saved word",
     noTranslation: "No meaning yet",
     noTranslationDetail:
-      "The dictionary could not be reached, so this word has no meaning attached yet.",
+      "Yumi's AI dictionary was too busy to answer for this word. Trying again in a little while usually works.",
     degradedNotice:
       "The word and its meaning are right; the example sentence is a generic one.",
     lowConfidence: "This is a best guess. Check it before you keep it.",

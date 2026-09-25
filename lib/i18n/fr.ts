@@ -290,6 +290,9 @@ const french: TranslationDictionary = {
       next: "Suivant",
       finish: "Commencer",
       done: "Bien.",
+      backHome: "Retour à l'accueil",
+      unavailable:
+        "Ce mot est revenu sans signification cette fois, donc il n'y a encore rien à garder. Essaie un autre mot, ou passe à l'étape suivante.",
       steps: {
         meet: {
           body:
@@ -307,15 +310,30 @@ const french: TranslationDictionary = {
           body:
             "Donne-m'en un. Un mot nouveau par jour et j'ai de quoi manger. Trop de jours sans, et j'ai faim — et je reste là, tu me manques.",
         },
+        library: {
+          body:
+            "Voici ton Vocabulaire. Chaque mot que tu gardes vit ici : réécoute-le, lis ses exemples et lance une révision d'ici.",
+          action: "Ouvrir le Vocabulaire",
+        },
         share: {
           body:
-            "Ce mot peut aller à un ami, maintenant. Un mot cherché seul est une information ; un mot envoyé à quelqu'un devient un souvenir.",
+            "Voici tes Messages. Ajoute un ami et tu pourras lui envoyer n'importe quel mot que tu cherches. Un mot cherché seul est une information ; un mot envoyé à quelqu'un devient un souvenir.",
           action: "Ouvrir Messages",
         },
         notes: {
           body:
-            "Certaines choses n'entrent pas dans un mot : pourquoi ils l'ont dit comme ça, ce qui s'est passé ce jour-là, à quel point c'était impoli dans cette pièce. Ça va dans les Notes.",
+            "Voici tes Notes. Certaines choses n'entrent pas dans un mot : pourquoi ils l'ont dit comme ça, ce qui s'est passé ce jour-là, à quel point c'était impoli dans cette pièce. Ça va ici.",
           action: "Ouvrir les Notes",
+        },
+        discover: {
+          body:
+            "Voici Découvrir. Quelques articles arrivent chaque jour, écrits dans la langue que tu apprends, avec les mots à garder déjà repérés.",
+          action: "Ouvrir Découvrir",
+        },
+        settings: {
+          body:
+            "Enfin, les Réglages. La langue de l'app, les langues que tu apprends et le mode d'interface se changent ici. Pour revoir ce tour, regarde dans Aide et à propos.",
+          action: "Ouvrir les Réglages",
         },
         close: {
           body: "C'est tout. Demande, garde, nourris-moi. Une fois par jour suffit.",
@@ -415,6 +433,7 @@ const french: TranslationDictionary = {
     emptyDescription:
       "Yumi détermine la langue, le sens, et si vous l'avez déjà rencontré.",
     searching: "Recherche en cours…",
+    retrying: "Yumi est occupée — nouvel essai dans un instant…",
     listening: "Écoute…",
     offlineTitle: "Vous êtes hors ligne",
     offlineDescription:
@@ -438,7 +457,7 @@ const french: TranslationDictionary = {
     openSavedWord: "Ouvrir le mot enregistré",
     noTranslation: "Pas encore de sens",
     noTranslationDetail:
-      "Le dictionnaire est injoignable, ce mot n'a donc pas encore de sens associé.",
+      "Le dictionnaire IA de Yumi était trop occupé pour répondre pour ce mot. Réessayer un peu plus tard fonctionne en général.",
     degradedNotice:
       "Le mot et son sens sont justes ; l'exemple est générique.",
     lowConfidence: "C'est une supposition. Vérifiez-la avant de l'enregistrer.",

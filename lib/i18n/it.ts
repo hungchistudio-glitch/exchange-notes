@@ -290,6 +290,9 @@ const italian: TranslationDictionary = {
       next: "Avanti",
       finish: "Inizia",
       done: "Bene.",
+      backHome: "Torna alla Home",
+      unavailable:
+        "Questa volta la parola è tornata senza significato, quindi non c'è ancora niente da tenere. Prova un'altra parola o passa al passo successivo.",
       steps: {
         meet: {
           body:
@@ -307,15 +310,30 @@ const italian: TranslationDictionary = {
           body:
             "Dammene uno. Una parola nuova al giorno e ho qualcosa da mangiare. Troppi giorni senza, e mi viene fame — e resto qui a sentire la tua mancanza.",
         },
+        library: {
+          body:
+            "Questo è il tuo Vocabolario. Qui vive ogni parola che tieni: riascoltala, leggi i suoi esempi e inizia un ripasso da qui.",
+          action: "Apri il Vocabolario",
+        },
         share: {
           body:
-            "Quella parola può andare a un amico, adesso. Una parola cercata da soli è un'informazione; una parola mandata a qualcuno diventa un ricordo.",
+            "Questi sono i tuoi Messaggi. Aggiungi un amico e potrai mandargli qualsiasi parola cerchi. Una parola cercata da soli è un'informazione; una parola mandata a qualcuno diventa un ricordo.",
           action: "Apri Messaggi",
         },
         notes: {
           body:
-            "Certe cose non stanno in una parola: perché l'hanno detto così, cosa è successo quel giorno, quanto era scortese in quella stanza. Quelle vanno nelle Note.",
+            "Queste sono le tue Note. Certe cose non stanno in una parola: perché l'hanno detto così, cosa è successo quel giorno, quanto era scortese in quella stanza. Quelle vanno qui.",
           action: "Apri le Note",
+        },
+        discover: {
+          body:
+            "Questo è Scopri. Ogni giorno arrivano alcune notizie scritte nella lingua che stai imparando, con le parole da tenere già segnate.",
+          action: "Apri Scopri",
+        },
+        settings: {
+          body:
+            "Infine, le Impostazioni. Qui cambi la lingua dell'app, le lingue che stai imparando e la modalità dell'interfaccia. Per rivedere questo tour, cercalo in Aiuto e informazioni.",
+          action: "Apri le Impostazioni",
         },
         close: {
           body: "È tutto. Chiedi, tieni, dammi da mangiare. Una volta al giorno basta.",
@@ -415,6 +433,7 @@ const italian: TranslationDictionary = {
     emptyDescription:
       "Yumi capisce in che lingua è, cosa significa e se l'hai già incontrata.",
     searching: "Ricerca in corso…",
+    retrying: "Yumi è occupata — riprovo tra un attimo…",
     listening: "In ascolto…",
     offlineTitle: "Sei offline",
     offlineDescription:
@@ -438,7 +457,7 @@ const italian: TranslationDictionary = {
     openSavedWord: "Apri la parola salvata",
     noTranslation: "Ancora senza significato",
     noTranslationDetail:
-      "Il dizionario non è raggiungibile, quindi questa parola non ha ancora un significato.",
+      "Il dizionario IA di Yumi era troppo occupato per rispondere per questa parola. Riprovare tra poco di solito funziona.",
     degradedNotice:
       "La parola e il suo significato sono giusti; l'esempio è generico.",
     lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",

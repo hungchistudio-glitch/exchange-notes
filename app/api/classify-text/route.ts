@@ -9,7 +9,9 @@ import { classifyQueryKind } from "@/lib/lexicon/queryKind";
 import { normalizeQuery } from "@/lib/lexicon/normalize";
 import { readLanguageRoles } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+
+import { recordAiFailure } from "@/lib/ai/callLog";
 
 import { createClient } from "@/lib/supabase/server";
 import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
@@ -232,7 +234,18 @@ type ResolvedLookup = {
    * Gemini outage would outlive itself in every cache layer.
    */
   fromModel: boolean;
+  /**
+   * On an offline answer only: how long until asking again is worth it.
+   * See retryHint below.
+   */
+  retryAfterMs?: number | null;
 };
+
+/*
+ * A model answered, but not with something this app can show. Thrown after
+ * generateJson has already succeeded, so its failure log never saw it.
+ */
+class LookupRejected extends Error {}
 
 const resultCache = new Map<string, CacheEntry>();
 const inFlightLookups = new Map<string, Promise<ResolvedLookup>>();
@@ -369,6 +382,7 @@ async function lookupWithModel(
   timeoutMs: number,
 ) {
   const outputText = await generateJson(client, {
+    purpose: "word-lookup",
     model,
     input: buildClassifyTextPrompt({
         query: context.query,
@@ -385,7 +399,7 @@ async function lookupWithModel(
   const result = toLexiconEntry(parsed);
 
   if (!result) {
-    throw new Error("Gemini returned an invalid vocabulary result.");
+    throw new LookupRejected("Gemini returned an invalid vocabulary result.");
   }
 
   /*
@@ -397,15 +411,52 @@ async function lookupWithModel(
    * a failed save several screens later.
    */
   if (result.termLanguage && result.termLanguage === result.translationLanguage) {
-    throw new Error("Gemini glossed the word in its own language.");
+    throw new LookupRejected("Gemini glossed the word in its own language.");
   }
 
   return result;
 }
 
-async function lookupWithModelFallback(context: LookupContext) {
+/*
+ * How long until asking again is worth it, told to the client with an
+ * offline answer so it can wait that long and try once more by itself.
+ *
+ * The soonest a model this instance put away comes back. A busy model that
+ * refused without being put away — a 503, an overloaded answer — is worth
+ * asking again almost at once, so it answers two seconds. When nothing here
+ * says a retry would go differently, it answers null and the client does not
+ * try: a model that just spent the whole budget saying nothing will spend
+ * it again.
+ */
+const QUICK_RETRY_MS = 2_000;
+
+function retryHint(transientRefusal: boolean): number | null {
+  const now = Date.now();
+  let soonest: number | null = null;
+
+  for (const model of getTextModelCandidates()) {
+    const until = modelCooldowns.get(model) ?? 0;
+    if (until <= now) continue;
+    const wait = until - now;
+    soonest = soonest === null ? wait : Math.min(soonest, wait);
+  }
+
+  if (transientRefusal) {
+    return soonest === null ? QUICK_RETRY_MS : Math.min(soonest, QUICK_RETRY_MS);
+  }
+
+  return soonest;
+}
+
+type ModelLookup =
+  | { result: LexiconEntry; model: string }
+  | { result: null; retryAfterMs: number | null };
+
+async function lookupWithModelFallback(
+  context: LookupContext,
+): Promise<ModelLookup> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { result: null, retryAfterMs: null };
 
   /*
    * No `httpOptions` here on purpose.
@@ -419,6 +470,7 @@ async function lookupWithModelFallback(context: LookupContext) {
   const client = new GoogleGenAI({ apiKey });
 
   const deadline = Date.now() + TOTAL_BUDGET_MS;
+  let transientRefusal = false;
 
   for (const model of getTextModelCandidates()) {
     const cooldownUntil = modelCooldowns.get(model) ?? 0;
@@ -463,6 +515,19 @@ async function lookupWithModelFallback(context: LookupContext) {
        */
       if (shouldCoolDown(error)) {
         modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
+      } else if (status !== null && status >= 500) {
+        transientRefusal = true;
+      }
+
+      if (error instanceof LookupRejected) {
+        recordAiFailure({
+          purpose: "word-lookup",
+          model,
+          reason: "model_error",
+          status: null,
+          ms: Date.now() - startedAt,
+          detail: error.message,
+        });
       }
 
       console.warn("Vocabulary model unavailable; trying fallback.", {
@@ -499,7 +564,7 @@ async function lookupWithModelFallback(context: LookupContext) {
     }
   }
 
-  return null;
+  return { result: null, retryAfterMs: retryHint(transientRefusal) };
 }
 
 async function performLookup(
@@ -513,20 +578,41 @@ async function performLookup(
     return { result: shared, origin: "shared", fromModel: true };
   }
 
+  const startedAt = Date.now();
   const modelResult = await lookupWithModelFallback(context);
-  if (modelResult) {
-    // Not awaited: persisting for other users must not delay this response,
-    // and a cache that cannot be written is not a failed lookup.
-    void writeSharedLookupCache(key, modelResult.result, modelResult.model);
+  if (modelResult.result) {
+    const { result, model } = modelResult;
+
+    /*
+     * After the response rather than beside it.
+     *
+     * This was `void writeSharedLookupCache(…)`, and a serverless function is
+     * frozen the moment its response is sent: the row for "bonjour" looked up
+     * at 15:10:00 on 2026-09-25 reached the table at 15:11:47, when the next
+     * lookup happened to wake the same instance. A word looked up once and
+     * never again could simply never be written. `after` is the platform's
+     * promise that the work runs to the end without the reader waiting on it.
+     */
+    after(() => writeSharedLookupCache(key, result, model));
 
     return {
-      result: modelResult.result,
-      origin: modelResult.model,
+      result,
+      origin: model,
       fromModel: true,
     };
   }
 
+  recordAiFailure({
+    purpose: "word-lookup",
+    model: getTextModelCandidates().join(","),
+    reason: "served_offline",
+    status: null,
+    ms: Date.now() - startedAt,
+    detail: null,
+  });
+
   return {
+    retryAfterMs: modelResult.retryAfterMs,
     result: await lookupOffline(context.query, {
       source: context.detected,
       head: context.chosenHead,
@@ -627,6 +713,9 @@ export async function POST(request: Request) {
         // rather than a real one, so it can say so and offer a retry instead
         // of passing the degraded copy off as a normal result.
         degraded: !resolved.fromModel,
+        ...(resolved.fromModel
+          ? {}
+          : { retryAfterMs: resolved.retryAfterMs ?? null }),
       },
       {
         headers: {

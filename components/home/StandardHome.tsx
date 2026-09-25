@@ -15,7 +15,6 @@ import YumiHomeStage, {
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
-import TutorialCoach from "@/components/tutorial/TutorialCoach";
 import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
@@ -184,17 +183,10 @@ export default function StandardHome() {
         </YumiRingOverlay>
 
         {/*
-          The doing half of the tour.
-
-          Inside this element rather than beside it, because the scene writes
-          `data-yumi-mode` here every time the ring opens or she starts
-          answering, and the coach steps aside on both. Its own position is
-          fixed to the viewport — this block has no transform, so nothing
-          between it and the page changes what fixed means.
-
-          It draws nothing at all unless a reader is mid-tour.
+          The doing half of the tour is mounted by the protected layout now,
+          so it can follow the reader to every main screen. It still steps
+          aside when the ring opens here; see TutorialCoach.module.css.
         */}
-        <TutorialCoach />
       </div>
 
       {/*

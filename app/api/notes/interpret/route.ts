@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     for (const model of getTextModelCandidates()) {
       try {
         const modelText = await generateJson(client, {
+          purpose: "note-interpret",
           model,
           input: buildInterpretNotePrompt({
             text: note.originalText,

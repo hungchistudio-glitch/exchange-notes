@@ -340,6 +340,7 @@ async function scanWithModel(
   languagePair: readonly [LanguageCode, LanguageCode],
 ) {
   const outputText = await generateJson(client, {
+    purpose: "menu-scan",
     model,
     input: [
       { text: buildMenuScanPrompt(languagePair) },

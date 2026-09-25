@@ -292,6 +292,9 @@ const spanish: TranslationDictionary = {
       next: "Siguiente",
       finish: "Empezar",
       done: "Bien.",
+      backHome: "Volver a Inicio",
+      unavailable:
+        "Esta vez esa palabra no trajo significado, así que todavía no hay nada que guardar. Prueba con otra palabra o pasa al siguiente paso.",
       steps: {
         meet: {
           body:
@@ -309,15 +312,30 @@ const spanish: TranslationDictionary = {
           body:
             "Dame una. Una palabra nueva al día y tengo qué comer. Si pasan demasiados días, me entra hambre, y entonces me quedo aquí echándote de menos.",
         },
+        library: {
+          body:
+            "Este es tu Vocabulario. Aquí vive cada palabra que guardas: vuelve a escucharla, lee sus ejemplos y empieza un repaso desde aquí.",
+          action: "Abrir Vocabulario",
+        },
         share: {
           body:
-            "Esa palabra ya puede ir a un amigo. Una palabra que buscas sola es información; una palabra que le mandas a alguien se vuelve recuerdo.",
+            "Estos son tus Mensajes. Añade a un amigo y podrás mandarle cualquier palabra que busques. Una palabra que buscas sola es información; una palabra que le mandas a alguien se vuelve recuerdo.",
           action: "Abrir Mensajes",
         },
         notes: {
           body:
-            "Hay cosas que no caben en una palabra: por qué lo dijeron así, qué pasó ese día, cuánto incomodaba esa frase en esa sala. Eso va en Notas.",
+            "Estas son tus Notas. Hay cosas que no caben en una palabra: por qué lo dijeron así, qué pasó ese día, cuánto incomodaba esa frase en esa sala. Eso va aquí.",
           action: "Abrir Notas",
+        },
+        discover: {
+          body:
+            "Esto es Descubrir. Cada día llegan unas cuantas noticias escritas en el idioma que estudias, con las palabras que vale la pena guardar ya marcadas.",
+          action: "Abrir Descubrir",
+        },
+        settings: {
+          body:
+            "Por último, Ajustes. Aquí cambias el idioma de la app, los idiomas que estudias y el modo de interfaz. Para ver este recorrido otra vez, búscalo en Ayuda e información.",
+          action: "Abrir Ajustes",
         },
         close: {
           body: "Ya está. Pregunta, guarda, dame de comer. Una vez al día basta.",
@@ -427,6 +445,7 @@ const spanish: TranslationDictionary = {
     emptyDescription:
       "Yumi averigua en qué idioma está, qué significa y si ya la habías guardado.",
     searching: "Buscando…",
+    retrying: "Yumi está ocupada; lo intento de nuevo en un momento…",
     listening: "Escuchando…",
     offlineTitle: "Estás sin conexión",
     offlineDescription:
@@ -450,7 +469,7 @@ const spanish: TranslationDictionary = {
     openSavedWord: "Abrir la palabra guardada",
     noTranslation: "Todavía sin significado",
     noTranslationDetail:
-      "No se pudo llegar al diccionario, así que esta palabra aún no tiene significado.",
+      "El diccionario de IA de Yumi estaba demasiado ocupado para responder por esta palabra. Volver a intentarlo en un rato suele funcionar.",
     degradedNotice:
       "La palabra y su significado son correctos; el ejemplo es genérico.",
     lowConfidence: "Es la mejor suposición. Compruébala antes de guardarla.",

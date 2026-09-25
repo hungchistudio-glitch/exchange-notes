@@ -237,6 +237,7 @@ export async function POST(request: Request) {
       getTextModelCandidates(),
       async (model, timeoutMs) =>
         generateJson(client, {
+          purpose: "vocabulary-translate",
           model,
           input: buildTranslateVocabularyPrompt(items, target),
           schema: RESULT_SCHEMA,

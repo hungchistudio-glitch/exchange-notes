@@ -1,5 +1,6 @@
 import type { GoogleGenAI, Part } from "@google/genai";
 
+import { recordAiFailure } from "@/lib/ai/callLog";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 
 /* =========================================================
@@ -212,6 +213,11 @@ export type GenerateJsonOptions = {
   schema?: unknown;
   /** What this one attempt may take. The caller's candidate list is the retry. */
   timeoutMs?: number;
+  /**
+   * Which feature is asking, for the failure log. Not sent to the model.
+   * See lib/ai/callLog.ts.
+   */
+  purpose?: string;
 };
 
 function toParts(input: string | ModelInputPart[]): Part[] {
@@ -234,10 +240,47 @@ function toParts(input: string | ModelInputPart[]): Part[] {
  */
 export async function generateJson(
   client: GoogleGenAI,
-  { model, input, schema, timeoutMs = TEXT_REQUEST_TIMEOUT_MS }: GenerateJsonOptions,
+  {
+    model,
+    input,
+    schema,
+    timeoutMs = TEXT_REQUEST_TIMEOUT_MS,
+    purpose = "unlabelled",
+  }: GenerateJsonOptions,
 ): Promise<string> {
   const timeout = Math.max(1_000, Math.round(timeoutMs));
+  const startedAt = Date.now();
 
+  try {
+    return await requestJson(client, { model, input, schema }, timeout);
+  } catch (error) {
+    /*
+     * Every route's failures, in one place, written somewhere that outlives
+     * Vercel's one-hour log window. Rethrown untouched: the candidate list
+     * above this is still the thing that decides what happens next.
+     */
+    recordAiFailure({
+      purpose,
+      model,
+      reason: isRateLimitError(error)
+        ? "rate_limit"
+        : isTimeoutError(error)
+          ? "timeout"
+          : "model_error",
+      status: getErrorStatus(error),
+      ms: Date.now() - startedAt,
+      detail: error instanceof Error ? error.message : String(error),
+    });
+
+    throw error;
+  }
+}
+
+async function requestJson(
+  client: GoogleGenAI,
+  { model, input, schema }: Pick<GenerateJsonOptions, "model" | "input" | "schema">,
+  timeout: number,
+): Promise<string> {
   const response = await client.models.generateContent({
     model,
     contents: [{ role: "user", parts: toParts(input) }],

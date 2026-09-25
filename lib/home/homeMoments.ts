@@ -27,6 +27,11 @@ export type HomeMoment =
   /** A lookup came back with a word — typed, spoken, photographed or read
       off a document. Which one it was does not matter here. */
   | "word-answered"
+  /** A lookup came back without a meaning — every model was busy and the
+      offline dictionary does not speak this pair — or did not come back at
+      all. Nothing can be kept from it, and a tour waiting for a save has to
+      know that rather than wait forever. */
+  | "word-unavailable"
   /** A cookie reached her. */
   | "word-fed";
 

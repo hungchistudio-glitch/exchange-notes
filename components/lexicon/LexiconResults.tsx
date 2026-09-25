@@ -337,7 +337,7 @@ export default function LexiconResults({
 
             <p className="mt-4 flex items-center gap-2 text-[0.75rem] text-ink-faint">
               <LoaderCircle size={13} className="animate-spin" aria-hidden="true" />
-              {copy.searching}
+              {search.retrying ? copy.retrying : copy.searching}
             </p>
           </div>
         </section>

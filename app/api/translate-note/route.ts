@@ -142,6 +142,7 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     const outputText = await generateJson(client, {
+      purpose: "translate-note",
       model,
       input: buildTranslateNotePrompt(text, languagePair),
       schema: TRANSLATE_RESULT_SCHEMA,

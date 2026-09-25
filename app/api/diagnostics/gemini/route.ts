@@ -103,6 +103,7 @@ async function probe(client: GoogleGenAI, model: string): Promise<Attempt> {
 
   try {
     const text = await generateJson(client, {
+      purpose: "diagnostics",
       model,
       input: 'Reply with {"ok":true} and nothing else.',
       schema: PROBE_SCHEMA,

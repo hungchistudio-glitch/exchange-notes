@@ -195,6 +195,7 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     const outputText = await generateJson(client, {
+      purpose: "reply-coach",
       model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
       input: `
 Someone is learning ${learningLanguage} and wants to reply to their language

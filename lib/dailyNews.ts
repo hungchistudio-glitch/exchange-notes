@@ -556,6 +556,7 @@ async function buildLearningBatch(
   // Search grounding, so it only ever draws on the normal (non-grounded)
   // Gemini free tier.
   const outputText = await generateJson(client, {
+    purpose: "daily-news",
     model,
     input: buildDailyNewsPrompt(articles, languages),
     schema: buildLearningSchema(articles.length, [...languages]),
