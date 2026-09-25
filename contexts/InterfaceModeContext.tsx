@@ -226,6 +226,15 @@ export function InterfaceModeProvider({
   );
 }
 
+/**
+ * The same context, or null outside a provider — for the few components
+ * that are also rendered on public review pages, where there is no signed-in
+ * shell to switch.
+ */
+export function useOptionalInterfaceMode() {
+  return useContext(InterfaceModeContext);
+}
+
 export function useInterfaceMode() {
   const context = useContext(InterfaceModeContext);
 

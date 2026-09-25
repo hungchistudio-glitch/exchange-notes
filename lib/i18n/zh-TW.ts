@@ -281,7 +281,7 @@ const traditionalChinese: TranslationDictionary = {
     replay: "隨時可以從首頁或設定重新打開。",
 
     coach: {
-      label: "第 {current} / {total} 步",
+      label: "第 {chapter} 章・{name}　{current}/{total}",
       skip: "先跳過",
       next: "下一步",
       finish: "開始吧",
@@ -289,6 +289,19 @@ const traditionalChinese: TranslationDictionary = {
       backHome: "回到首頁",
       unavailable:
         "這個字這次沒查到意思，所以還不能存。換一個字試試，或先到下一步。",
+      chapters: {
+        home: "首頁",
+        pages: "各個頁面",
+        cosmic: "另一種樣子",
+      },
+      needsStandard:
+        "這一段教學在{standard}裡進行。切換過去，我們從那裡繼續。",
+      toStandard: "切換到{standard}",
+      needsCosmic:
+        "這一段教學在{cosmic}裡進行。切換過去，我們從那裡繼續。",
+      toCosmic: "切換到{cosmic}",
+      useStandard: "用{standard}開始",
+      useCosmic: "用{cosmic}開始",
       steps: {
         meet: {
           body: "我是 Yumi。這個畫面上沒有選單 —— 我就是。拉一下我的眼睛，然後放開。",
@@ -326,11 +339,33 @@ const traditionalChinese: TranslationDictionary = {
         },
         settings: {
           body:
-            "最後是設定。App 語言、學習語言和介面模式都在這裡改。想重看這個教學，到「說明與關於」裡找。",
+            "這是設定。App 語言和學習語言都在這裡改。想重看這個教學，到「說明與關於」裡找。",
           action: "去看看設定",
         },
-        close: {
-          body: "就這樣。查、存、餵我。一天一次就夠了。",
+        modeSwitch: {
+          body:
+            "Exchange Notes 有兩種樣子。往下找到「介面模式」，選「{cosmic}」。你的單字和進度都不會變，隨時可以切回來。",
+          action: "帶我到介面模式",
+        },
+        deck: {
+          body:
+            "這是{cosmic}的首頁。我還是在中間，六個系統圍著我：{lexicon}、{mission}、{scanner}、{comms}、{earth}、{memory}。點任何一個就會進去。",
+        },
+        omni: {
+          body:
+            "上面的「{omni}」跟{standard}的搜尋是同一個：打字、說話或拍照，答案一樣，存下來的字也在同一個單字庫。",
+        },
+        scanner: {
+          body:
+            "「{scanner}」是這裡最常用的工具：對著菜單或招牌拍一張，整頁翻給你，連價格一起。",
+        },
+        dock: {
+          body:
+            "最下面這一排是{cosmic}的導覽列，六個系統一鍵就到。「{mission}」是每天的複習，記得回來。",
+        },
+        choose: {
+          body:
+            "兩種樣子你都看過了。選一個開始吧，之後隨時可以在設定裡換。",
         },
       },
     },

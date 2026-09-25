@@ -32,6 +32,7 @@ import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
 import { usePathname, useRouter } from "next/navigation";
 
 import { armCoach } from "@/lib/home/tutorialCoach";
+import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
 import { insertValues } from "@/lib/utils";
@@ -217,11 +218,19 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
    * the screen and start her opening film over — the reader would be sent
    * back to the beginning of something as a reward for finishing.
    */
+  /*
+   * The tour always starts in Standard Mode, whichever look it was opened
+   * from: chapter one is Standard's home screen, and chapter three is where
+   * the reader is shown Cosmic and switches to it themselves.
+   */
+  const modeContext = useOptionalInterfaceMode();
+
   const handOver = useCallback(() => {
     armCoach();
     dismiss();
+    modeContext?.setInterfaceMode("standard");
     if (pathname !== "/home") router.push("/home");
-  }, [dismiss, pathname, router]);
+  }, [dismiss, modeContext, pathname, router]);
 
   /*
    * A full-screen tour is still a modal. Freeze the page beneath it, return

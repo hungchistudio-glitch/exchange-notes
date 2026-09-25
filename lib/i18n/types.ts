@@ -323,6 +323,20 @@ export type TranslationDictionary = {
        * instead of waiting for a save that cannot happen.
        */
       unavailable: string;
+      /*
+       * The tour runs in chapters: Home and Around the app in Standard Mode,
+       * then The other look in Cosmic. `label` takes {chapter}, {name},
+       * {current} and {total}.
+       */
+      chapters: { home: string; pages: string; cosmic: string };
+      /** A step that needs the other interface mode, and the key that switches. */
+      needsStandard: string;
+      toStandard: string;
+      needsCosmic: string;
+      toCosmic: string;
+      /** The two keys on the final step. */
+      useStandard: string;
+      useCosmic: string;
       steps: {
         meet: { body: string };
         ask: { body: string };
@@ -338,7 +352,18 @@ export type TranslationDictionary = {
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
-        close: { body: string };
+        /*
+         * Chapter three. Bodies may name things with {standard}, {cosmic},
+         * {omni}, {lexicon}, {mission}, {scanner}, {comms}, {earth} and
+         * {memory}, filled from the app's own dictionary so the tour always
+         * calls a thing what the screen calls it.
+         */
+        modeSwitch: { body: string; action: string };
+        deck: { body: string };
+        omni: { body: string };
+        scanner: { body: string };
+        dock: { body: string };
+        choose: { body: string };
       };
     };
 

@@ -287,7 +287,7 @@ const spanish: TranslationDictionary = {
     replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
 
     coach: {
-      label: "Paso {current} de {total}",
+      label: "Capítulo {chapter} · {name} · {current}/{total}",
       skip: "Saltar",
       next: "Siguiente",
       finish: "Empezar",
@@ -295,6 +295,19 @@ const spanish: TranslationDictionary = {
       backHome: "Volver a Inicio",
       unavailable:
         "Esta vez esa palabra no trajo significado, así que todavía no hay nada que guardar. Prueba con otra palabra o pasa al siguiente paso.",
+      chapters: {
+        home: "Inicio",
+        pages: "Por la app",
+        cosmic: "El otro aspecto",
+      },
+      needsStandard:
+        "Esta parte del recorrido ocurre en {standard}. Cambia y seguimos desde ahí.",
+      toStandard: "Cambiar a {standard}",
+      needsCosmic:
+        "Esta parte del recorrido ocurre en {cosmic}. Cambia y seguimos desde ahí.",
+      toCosmic: "Cambiar a {cosmic}",
+      useStandard: "Empezar en {standard}",
+      useCosmic: "Empezar en {cosmic}",
       steps: {
         meet: {
           body:
@@ -334,11 +347,33 @@ const spanish: TranslationDictionary = {
         },
         settings: {
           body:
-            "Por último, Ajustes. Aquí cambias el idioma de la app, los idiomas que estudias y el modo de interfaz. Para ver este recorrido otra vez, búscalo en Ayuda e información.",
+            "Estos son los Ajustes. Aquí cambias el idioma de la app y los idiomas que estudias. Para ver este recorrido otra vez, búscalo en Ayuda e información.",
           action: "Abrir Ajustes",
         },
-        close: {
-          body: "Ya está. Pregunta, guarda, dame de comer. Una vez al día basta.",
+        modeSwitch: {
+          body:
+            "Exchange Notes tiene dos aspectos. Busca Modo de interfaz más abajo y elige {cosmic}. Tus palabras y tu progreso no cambian, y puedes volver cuando quieras.",
+          action: "Llévame a Modo de interfaz",
+        },
+        deck: {
+          body:
+            "Este es el inicio de {cosmic}. Sigo en el centro, con seis sistemas a mi alrededor: {lexicon}, {mission}, {scanner}, {comms}, {earth} y {memory}. Toca cualquiera para entrar.",
+        },
+        omni: {
+          body:
+            "{omni}, arriba, es la misma búsqueda que en {standard}: escribe, habla o haz una foto. Las mismas respuestas, y lo que guardas va al mismo vocabulario.",
+        },
+        scanner: {
+          body:
+            "{scanner} es la herramienta que más usarás aquí: fotografía una carta o un cartel y te traduzco la página entera, precios incluidos.",
+        },
+        dock: {
+          body:
+            "La fila de abajo es la barra de {cosmic}: cada sistema a un toque. {mission} es tu repaso diario; vuelve a él.",
+        },
+        choose: {
+          body:
+            "Ya has visto los dos aspectos. Elige uno para empezar; puedes cambiarlo en Ajustes cuando quieras.",
         },
       },
     },

@@ -147,6 +147,13 @@ export default function OnboardingFlow({
       .update({
         native_language: nativeLanguage,
         learning_language: learningLanguage,
+        /*
+         * A new account starts in Standard Mode, where chapter one of the
+         * tour happens. A browser that visited before may carry a Cosmic
+         * cookie from someone else's session; the account decides, and this
+         * is the account deciding.
+         */
+        interface_mode: "standard",
         onboarding_completed: true,
         onboarding_step: null,
       })

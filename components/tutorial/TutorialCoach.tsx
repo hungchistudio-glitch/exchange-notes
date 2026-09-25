@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
+import { focusSetting } from "@/components/settings/SettingsAnchor";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import type { InterfaceMode } from "@/lib/appPreferences";
 import { subscribeToHomeMoments, type HomeMoment } from "@/lib/home/homeMoments";
 import {
   COACH_FINISHED,
@@ -14,44 +16,50 @@ import {
   setCoachStep,
   subscribeToCoach,
 } from "@/lib/home/tutorialCoach";
+import type { TranslationDictionary } from "@/lib/i18n/types";
 import { subscribeToWordSaved } from "@/lib/pet/wordSaved";
 
 import styles from "./TutorialCoach.module.css";
 
 /* =========================================================
-   The tour you do — across the whole app
+   The tour you do — in three chapters, across both looks
 
    The old one was seven pages of description, and the page about navigation
-   described a dock that no longer exists. Somebody read it, pressed Finish,
-   and arrived on a screen they had still never touched.
+   described a dock that no longer exists. This one asks: each step names one
+   thing to do on the screen the reader is already looking at, and waits for
+   that thing to actually happen.
 
-   This one asks. Each step names one thing to do on the screen the reader is
-   already looking at, and then waits for that thing to actually happen — the
-   ring coming out, a lookup coming back, a word being kept, a cookie
-   reaching her. Nothing advances because a button was pressed to make the
-   words go away.
+   ── Why chapters ────────────────────────────────────────────────────────
 
-   ── Why it lives in the protected layout now ───────────────────────────
+   Exchange Notes has two looks, Standard and Cosmic, over the same library.
+   The tour used to run in whichever the reader happened to be in, which
+   meant a Cosmic reader was taught Standard's ring and cookies by a card
+   the deck could not even display legibly, and nobody was ever shown that
+   the other look existed.
 
-   It used to be mounted inside the Standard home screen only. The two steps
-   that pointed elsewhere were links, and following one took the reader to a
-   screen with no tour on it: the step count said 5 of 7, and then there was
-   nothing, until they happened to go home again. And Cosmic Mode's home had
-   no tour at all.
+   So there is one tour, in one order, and it teaches both:
 
-   So it is mounted once for every signed-in screen, and every step says
-   which screen it belongs to. On that screen it asks for the thing; on any
-   other main screen it offers a door there. The reader is walked through
-   Home, Vocabulary, Messages, Notes, Discover and Settings in one line, in
-   either interface mode.
+     1. Home            — Standard: pull her eye, look up, keep, feed.
+     2. Around the app  — Vocabulary, Messages, Notes, Discover, Settings.
+     3. The other look  — the reader switches to Cosmic themselves, in
+                          Settings, and is shown what is different there:
+                          the six systems, OmniLexicon, Menu Translator,
+                          the dock. Nothing both looks share is taught twice.
+
+   and ends by asking which look to start in, and taking them there.
+
+   Chapters rather than one count, because fifteen steps in a row is a tour
+   people skip at step four. "Chapter 2 · 3/5" is a short thing to finish;
+   "9 of 15" is not.
 
    ── What it leaves alone ───────────────────────────────────────────────
 
-   Anything that is not one of the six main screens: a conversation, a note,
-   a pronunciation drill. Those have their own controls at the top and the
-   bottom, and a tour card over a message composer is in the way of the very
-   thing the tour is trying to get someone to use.
+   Anything that is not one of the six main screens, and the mode-switch
+   animation itself: a card over a message composer, or over the deck
+   waking up, is in the way of the very thing it wants the reader to see.
    ========================================================= */
+
+type Chapter = "home" | "pages" | "cosmic";
 
 type StepKey =
   | "meet"
@@ -63,24 +71,31 @@ type StepKey =
   | "notes"
   | "discover"
   | "settings"
-  | "close";
+  | "modeSwitch"
+  | "deck"
+  | "omni"
+  | "scanner"
+  | "dock"
+  | "choose";
 
 type Step = {
   key: StepKey;
+  chapter: Chapter;
   /** The screen this step happens on. Absent: it can be said anywhere. */
   route?: string;
+  /** The look this step is about. The reader is offered the switch if not. */
+  mode?: InterfaceMode;
   /** The events that satisfy it. Absent on the steps that only show. */
   awaits?: ReadonlyArray<HomeMoment | "word-saved">;
-  /**
-   * The ring and the cookie tray are Standard Mode's home screen. Cosmic
-   * Mode's deck has neither, so those two steps are simply not in its tour —
-   * asking for a gesture the screen cannot receive is how a tour gets stuck.
-   */
-  standardOnly?: boolean;
+  /** Take the reader to `route` without asking — used right after a switch. */
+  autoGo?: boolean;
 };
 
+const STANDARD: InterfaceMode = "standard";
+const COSMIC: InterfaceMode = "yumi-cosmic";
+
 export const COACH_STEPS: readonly Step[] = [
-  { key: "meet", route: "/home", awaits: ["ring-opened"], standardOnly: true },
+  { key: "meet", chapter: "home", route: "/home", mode: STANDARD, awaits: ["ring-opened"] },
   /*
    * A lookup that came back empty still counts as having asked. Waiting here
    * for a real answer would hold the whole tour hostage to Gemini being up;
@@ -88,18 +103,34 @@ export const COACH_STEPS: readonly Step[] = [
    */
   {
     key: "ask",
+    chapter: "home",
     route: "/home",
+    mode: STANDARD,
     awaits: ["word-answered", "word-unavailable"],
   },
-  { key: "keep", route: "/home", awaits: ["word-saved"] },
-  { key: "feed", route: "/home", awaits: ["word-fed"], standardOnly: true },
-  { key: "library", route: "/vocabulary" },
-  { key: "share", route: "/messages" },
-  { key: "notes", route: "/notes" },
-  { key: "discover", route: "/discover" },
-  { key: "settings", route: "/profile" },
-  { key: "close" },
+  { key: "keep", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-saved"] },
+  { key: "feed", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-fed"] },
+
+  { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
+  { key: "share", chapter: "pages", route: "/messages", mode: STANDARD },
+  { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
+  { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
+  { key: "settings", chapter: "pages", route: "/profile", mode: STANDARD },
+
+  /*
+   * The reader makes the switch, with the real control, and the step waits
+   * for the mode to actually change. It is the one thing in chapter three
+   * worth remembering: where the switch is, for the next time they want it.
+   */
+  { key: "modeSwitch", chapter: "cosmic", route: "/profile" },
+  { key: "deck", chapter: "cosmic", route: "/home", mode: COSMIC, autoGo: true },
+  { key: "omni", chapter: "cosmic", route: "/home", mode: COSMIC },
+  { key: "scanner", chapter: "cosmic", route: "/home", mode: COSMIC },
+  { key: "dock", chapter: "cosmic", route: "/home", mode: COSMIC },
+  { key: "choose", chapter: "cosmic" },
 ];
+
+const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, cosmic: 3 };
 
 /** The screens the coach speaks on. Everything else, it steps aside. */
 const MAIN_SCREENS = new Set(
@@ -109,30 +140,42 @@ const MAIN_SCREENS = new Set(
 /** Long enough to read one word, short enough not to be a wait. */
 const DONE_BEAT_MS = 900;
 
-function stepApplies(step: Step, isCosmic: boolean) {
-  return !(isCosmic && step.standardOnly);
-}
-
 /**
- * The first step at or after `from` that this interface mode has. A stored
- * index can point at a Standard-only step when the reader switched modes
- * mid-tour; the tour carries on from the next thing they can actually do.
+ * Every name the chapter-three copy may use, from the app's own dictionary,
+ * so the tour calls a thing exactly what the screen in front of the reader
+ * calls it — including after someone renames a room.
  */
-function resolveIndex(from: number, isCosmic: boolean) {
-  for (let index = from; index < COACH_STEPS.length; index += 1) {
-    if (stepApplies(COACH_STEPS[index], isCosmic)) return index;
-  }
-  return COACH_FINISHED;
+function fill(text: string, t: TranslationDictionary) {
+  const names: Record<string, string> = {
+    standard: t.settings.interfaceMode.standardTitle,
+    cosmic: t.settings.interfaceMode.cosmicTitle,
+    omni: t.cosmic.omni.label,
+    lexicon: t.cosmic.rooms.lexicon.name,
+    mission: t.cosmic.rooms.mission.name,
+    scanner: t.cosmic.rooms.scanner.name,
+    comms: t.cosmic.rooms.comms.name,
+    earth: t.cosmic.rooms.earth.name,
+    memory: t.cosmic.rooms.memory.name,
+  };
+
+  return text.replace(/\{(\w+)\}/g, (match, key: string) => names[key] ?? match);
 }
 
 export type TutorialCoachProps = {
   pathname: string;
-  isCosmic: boolean;
+  interfaceMode: InterfaceMode;
+  /** The switch animation is running; the card waits it out. */
+  switching?: boolean;
+  onSetMode: (mode: InterfaceMode) => void;
+  onNavigate: (href: string) => void;
 };
 
 export default function TutorialCoach({
   pathname,
-  isCosmic,
+  interfaceMode,
+  switching = false,
+  onSetMode,
+  onNavigate,
 }: TutorialCoachProps) {
   const { t } = useTranslation();
   const copy = t.tutorial.coach;
@@ -143,7 +186,7 @@ export default function TutorialCoach({
     getServerCoachStep,
   );
 
-  const index = stored >= COACH_STEPS.length ? COACH_FINISHED : resolveIndex(stored, isCosmic);
+  const index = stored >= 0 && stored < COACH_STEPS.length ? stored : COACH_FINISHED;
   const current = index === COACH_FINISHED ? undefined : COACH_STEPS[index];
 
   const [satisfied, setSatisfied] = useState(false);
@@ -166,15 +209,14 @@ export default function TutorialCoach({
   }, []);
 
   const awaiting = current?.awaits;
-  const onRoute = current?.route
-    ? pathname === current.route
-    : true;
+  const onRoute = current?.route ? pathname === current.route : true;
+  const wrongMode = Boolean(current?.mode && current.mode !== interfaceMode);
 
   const advance = useCallback(() => {
     setSatisfied(false);
-    const next = resolveIndex(index + 1, isCosmic);
+    const next = index + 1;
     setCoachStep(next >= COACH_STEPS.length ? COACH_FINISHED : next);
-  }, [index, isCosmic]);
+  }, [index]);
 
   /*
    * Watching the screen rather than the reader's patience.
@@ -214,24 +256,58 @@ export default function TutorialCoach({
     };
   }, [awaiting]);
 
+  /*
+   * The switch step is satisfied by the switch — once the deck has finished
+   * waking, not the moment the control is pressed, so the "good" is not said
+   * over the top of the animation.
+   */
+  const switched =
+    current?.key === "modeSwitch" && interfaceMode === COSMIC && !switching;
+
+  /* Derived rather than stored: the switch is a fact about the props. */
+  const done = satisfied || switched;
+
   /* The beat between doing it and being asked for the next thing. */
   useEffect(() => {
-    if (!satisfied) return;
+    if (!done) return;
     const timer = window.setTimeout(advance, DONE_BEAT_MS);
     return () => window.clearTimeout(timer);
-  }, [advance, satisfied]);
+  }, [advance, done]);
+
+  /*
+   * Straight to the deck after the switch. The reader has just done the one
+   * thing they were asked; making them find Home as well would be a second
+   * errand nobody explained.
+   */
+  const autoRoute =
+    current?.autoGo && current.route && !onRoute && !wrongMode && !switching
+      ? current.route
+      : null;
+
+  useEffect(() => {
+    if (autoRoute) onNavigate(autoRoute);
+  }, [autoRoute, onNavigate]);
 
   if (!current) return null;
 
   /* A conversation, a note, a drill: not a place to stand a card. */
   if (!MAIN_SCREENS.has(pathname)) return null;
 
+  /* The deck waking up, or standing down, is the thing to watch. */
+  if (switching || autoRoute) return null;
+
   const stepCopy = copy.steps[current.key];
-  const total = COACH_STEPS.filter((step) => stepApplies(step, isCosmic)).length;
-  const position =
-    COACH_STEPS.slice(0, index + 1).filter((step) => stepApplies(step, isCosmic))
-      .length;
-  const isLast = index === COACH_STEPS.length - 1;
+
+  const chapterSteps = COACH_STEPS.filter(
+    (step) => step.chapter === current.chapter,
+  );
+  const position = chapterSteps.indexOf(current) + 1;
+
+  const label = copy.label
+    .replace("{chapter}", String(CHAPTER_NUMBER[current.chapter]))
+    .replace("{name}", copy.chapters[current.chapter])
+    .replace("{current}", String(position))
+    .replace("{total}", String(chapterSteps.length));
 
   /*
    * The keep step, when there is nothing to keep.
@@ -242,27 +318,105 @@ export default function TutorialCoach({
    * Skip. Say what happened, and let them either try another word or move on.
    */
   const keepBlocked =
-    current.key === "keep" && lastLookupEmpty && !satisfied && onRoute;
+    current.key === "keep" && lastLookupEmpty && !done && onRoute && !wrongMode;
 
-  const body = satisfied
+  const body = done
     ? copy.done
-    : keepBlocked
-      ? copy.unavailable
-      : stepCopy.body;
+    : wrongMode
+      ? current.mode === COSMIC
+        ? copy.needsCosmic
+        : copy.needsStandard
+      : keepBlocked
+        ? copy.unavailable
+        : stepCopy.body;
 
-  const door = !onRoute && current.route
-    ? {
-        href: current.route,
-        label:
-          "action" in stepCopy && current.route !== "/home"
-            ? stepCopy.action
-            : copy.backHome,
-      }
-    : null;
+  const door =
+    !wrongMode && !onRoute && current.route
+      ? {
+          href:
+            current.key === "modeSwitch"
+              ? "/profile#setting-interface-mode"
+              : current.route,
+          label:
+            "action" in stepCopy && current.route !== "/home"
+              ? stepCopy.action
+              : copy.backHome,
+        }
+      : null;
 
   /* Home keeps the strip at the top, above Yumi; everywhere else it sits
      above the dock, clear of each screen's own header and back button. */
   const placement = pathname === "/home" ? "" : ` ${styles.docked}`;
+
+  const finish = (mode: InterfaceMode) => {
+    setCoachStep(COACH_FINISHED);
+    onSetMode(mode);
+    if (pathname !== "/home") onNavigate("/home");
+  };
+
+  let keys;
+
+  if (done) {
+    keys = null;
+  } else if (wrongMode && current.mode) {
+    const mode = current.mode;
+    keys = (
+      <button type="button" className={styles.next} onClick={() => onSetMode(mode)}>
+        {fill(mode === COSMIC ? copy.toCosmic : copy.toStandard, t)}
+      </button>
+    );
+  } else if (door) {
+    /* Following the door does not advance: the step is done on the screen
+       it names, and arriving there is what shows it. */
+    keys = (
+      <Link href={door.href} className={styles.door}>
+        {door.label}
+      </Link>
+    );
+  } else if (current.key === "modeSwitch") {
+    keys = (
+      <button
+        type="button"
+        className={styles.next}
+        onClick={() => focusSetting("setting-interface-mode")}
+      >
+        {"action" in stepCopy ? stepCopy.action : ""}
+      </button>
+    );
+  } else if (current.key === "choose") {
+    keys = (
+      <>
+        <button type="button" className={styles.next} onClick={() => finish(STANDARD)}>
+          {fill(copy.useStandard, t)}
+        </button>
+        <button type="button" className={styles.next} onClick={() => finish(COSMIC)}>
+          {fill(copy.useCosmic, t)}
+        </button>
+      </>
+    );
+  } else if (awaiting && !keepBlocked) {
+    /*
+     * A waiting step has no "next".
+     *
+     * Offering one would make every instruction optional, and an instruction
+     * the reader can dismiss is a sentence rather than a step. Skip is always
+     * there, because a tour nobody can leave is a worse thing than a tour
+     * nobody finishes.
+     */
+    keys = (
+      <span className={styles.waiting} aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </span>
+    );
+  } else {
+    keys = (
+      <button type="button" className={styles.next} onClick={advance}>
+        {copy.next}
+      </button>
+    );
+  }
 
   return (
     <aside
@@ -274,48 +428,22 @@ export default function TutorialCoach({
       aria-live="polite"
     >
       <div className={styles.card}>
-        <p className={styles.label}>
-          {copy.label
-            .replace("{current}", String(position))
-            .replace("{total}", String(total))}
-        </p>
+        <p className={styles.label}>{label}</p>
 
-        <p className={styles.body}>{body}</p>
+        <p className={styles.body}>{fill(body, t)}</p>
 
         <div className={styles.keys}>
-          {door ? (
-            /* Following the door does not advance: the step is done on the
-               screen it names, and arriving there is what shows it. */
-            <Link href={door.href} className={styles.door}>
-              {door.label}
-            </Link>
-          ) : awaiting && !keepBlocked ? (
-            /*
-             * A waiting step has no "next".
-             *
-             * Offering one would make every instruction optional, and an
-             * instruction the reader can dismiss is a sentence rather than a
-             * step. Skip is always there, because a tour nobody can leave is
-             * a worse thing than a tour nobody finishes.
-             */
-            <span className={styles.waiting} aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-          ) : (
-            <button type="button" className={styles.next} onClick={advance}>
-              {isLast ? copy.finish : copy.next}
+          {keys}
+
+          {current.key === "choose" ? null : (
+            <button
+              type="button"
+              className={styles.skip}
+              onClick={() => setCoachStep(COACH_FINISHED)}
+            >
+              {copy.skip}
             </button>
           )}
-
-          <button
-            type="button"
-            className={styles.skip}
-            onClick={() => setCoachStep(COACH_FINISHED)}
-          >
-            {copy.skip}
-          </button>
         </div>
       </div>
     </aside>
@@ -323,13 +451,25 @@ export default function TutorialCoach({
 }
 
 /**
- * The coach as the protected layout mounts it: told where the reader is and
- * which interface they are in, so the component itself stays a pure function
- * of those two things and its tests do not need a router or a provider.
+ * The coach as the protected layout mounts it: told where the reader is,
+ * which look they are in, and given the two things it may do about either —
+ * so the component itself stays a pure function of its props and its tests
+ * need neither a router nor a provider.
  */
 export function AppTutorialCoach() {
   const pathname = usePathname() ?? "";
-  const { isCosmic } = useInterfaceMode();
+  const router = useRouter();
+  const { interfaceMode, setInterfaceMode, modeTransition } = useInterfaceMode();
 
-  return <TutorialCoach pathname={pathname} isCosmic={isCosmic} />;
+  const navigate = useCallback((href: string) => router.push(href), [router]);
+
+  return (
+    <TutorialCoach
+      pathname={pathname}
+      interfaceMode={interfaceMode}
+      switching={modeTransition !== null}
+      onSetMode={setInterfaceMode}
+      onNavigate={navigate}
+    />
+  );
 }

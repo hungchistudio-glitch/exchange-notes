@@ -286,7 +286,7 @@ const english: TranslationDictionary = {
     replay: "You can reopen this any time from Home or Settings.",
 
     coach: {
-      label: "Step {current} of {total}",
+      label: "Chapter {chapter} · {name} · {current}/{total}",
       skip: "Skip",
       next: "Next",
       finish: "Start",
@@ -294,6 +294,19 @@ const english: TranslationDictionary = {
       backHome: "Back to Home",
       unavailable:
         "That word came back without a meaning this time, so there is nothing to keep yet. Try another word, or go on to the next step.",
+      chapters: {
+        home: "Home",
+        pages: "Around the app",
+        cosmic: "The other look",
+      },
+      needsStandard:
+        "This part of the tour happens in {standard}. Switch over and we'll carry on from there.",
+      toStandard: "Switch to {standard}",
+      needsCosmic:
+        "This part of the tour happens in {cosmic}. Switch over and we'll carry on from there.",
+      toCosmic: "Switch to {cosmic}",
+      useStandard: "Start in {standard}",
+      useCosmic: "Start in {cosmic}",
       steps: {
         meet: {
           body:
@@ -333,11 +346,33 @@ const english: TranslationDictionary = {
         },
         settings: {
           body:
-            "Last, Settings. App language, the languages you are learning and the interface mode all change here. To see this tour again, look in Help & About.",
+            "This is Settings. App language and the languages you are learning change here. To see this tour again, look in Help & About.",
           action: "Open Settings",
         },
-        close: {
-          body: "That is all of it. Ask, keep, feed me. Once a day is enough.",
+        modeSwitch: {
+          body:
+            "Exchange Notes has two looks. Find Interface mode below and choose {cosmic}. Your words and progress stay exactly the same, and you can switch back any time.",
+          action: "Show me Interface mode",
+        },
+        deck: {
+          body:
+            "This is the {cosmic} home. I'm still in the middle, with six systems around me: {lexicon}, {mission}, {scanner}, {comms}, {earth} and {memory}. Tap any of them to go in.",
+        },
+        omni: {
+          body:
+            "{omni} up top is the same search as in {standard}: type, speak or take a photo. Same answers, and the words you keep go to the same library.",
+        },
+        scanner: {
+          body:
+            "{scanner} is the tool you'll reach for most here: photograph a menu or a sign and get the whole page translated, prices included.",
+        },
+        dock: {
+          body:
+            "The row at the bottom is the {cosmic} dock — every system is one tap away. {mission} is your daily review; come back to it.",
+        },
+        choose: {
+          body:
+            "You've seen both looks. Pick one to start with — you can change it in Settings whenever you like.",
         },
       },
     },

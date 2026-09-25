@@ -285,7 +285,7 @@ const italian: TranslationDictionary = {
     replay: "Puoi riaprirla quando vuoi dalla Home o dalle impostazioni.",
 
     coach: {
-      label: "Passo {current} di {total}",
+      label: "Capitolo {chapter} · {name} · {current}/{total}",
       skip: "Salta",
       next: "Avanti",
       finish: "Inizia",
@@ -293,6 +293,19 @@ const italian: TranslationDictionary = {
       backHome: "Torna alla Home",
       unavailable:
         "Questa volta la parola è tornata senza significato, quindi non c'è ancora niente da tenere. Prova un'altra parola o passa al passo successivo.",
+      chapters: {
+        home: "Home",
+        pages: "Nell'app",
+        cosmic: "L'altro aspetto",
+      },
+      needsStandard:
+        "Questa parte del tour si svolge in {standard}. Passa lì e continuiamo da quel punto.",
+      toStandard: "Passa a {standard}",
+      needsCosmic:
+        "Questa parte del tour si svolge in {cosmic}. Passa lì e continuiamo da quel punto.",
+      toCosmic: "Passa a {cosmic}",
+      useStandard: "Inizia in {standard}",
+      useCosmic: "Inizia in {cosmic}",
       steps: {
         meet: {
           body:
@@ -332,11 +345,33 @@ const italian: TranslationDictionary = {
         },
         settings: {
           body:
-            "Infine, le Impostazioni. Qui cambi la lingua dell'app, le lingue che stai imparando e la modalità dell'interfaccia. Per rivedere questo tour, cercalo in Aiuto e informazioni.",
+            "Queste sono le Impostazioni. Qui cambi la lingua dell'app e le lingue che stai imparando. Per rivedere questo tour, cercalo in Aiuto e informazioni.",
           action: "Apri le Impostazioni",
         },
-        close: {
-          body: "È tutto. Chiedi, tieni, dammi da mangiare. Una volta al giorno basta.",
+        modeSwitch: {
+          body:
+            "Exchange Notes ha due aspetti. Trova Modalità interfaccia qui sotto e scegli {cosmic}. Le tue parole e i tuoi progressi restano uguali, e puoi tornare indietro quando vuoi.",
+          action: "Mostrami Modalità interfaccia",
+        },
+        deck: {
+          body:
+            "Questa è la home di {cosmic}. Sono sempre al centro, con sei sistemi intorno: {lexicon}, {mission}, {scanner}, {comms}, {earth} e {memory}. Tocca uno qualsiasi per entrare.",
+        },
+        omni: {
+          body:
+            "{omni}, in alto, è la stessa ricerca di {standard}: scrivi, parla o scatta una foto. Stesse risposte, e le parole che tieni finiscono nello stesso vocabolario.",
+        },
+        scanner: {
+          body:
+            "{scanner} è lo strumento che userai di più qui: fotografa un menù o un cartello e ti traduco l'intera pagina, prezzi compresi.",
+        },
+        dock: {
+          body:
+            "La fila in basso è la barra di {cosmic}: ogni sistema a un tocco. {mission} è il tuo ripasso quotidiano; torna a trovarlo.",
+        },
+        choose: {
+          body:
+            "Hai visto entrambi gli aspetti. Scegline uno per iniziare — puoi cambiarlo nelle Impostazioni quando vuoi.",
         },
       },
     },
