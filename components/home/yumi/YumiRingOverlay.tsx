@@ -16,6 +16,8 @@ import type { ReactNode } from "react";
 
 import LiquidRingKey from "@/components/home/yumi/LiquidRingKey";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
+import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
+import { getCoachStep } from "@/lib/home/tutorialCoach";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
@@ -125,6 +127,35 @@ const OPEN_RADIUS = 86;
  */
 const ANSWER_HEIGHT = 0.2;
 const ANSWER_RADIUS = 48;
+
+/*
+ * Where she sits while the reader is typing or reading an answer, in pixels
+ * from the top of the layer.
+ *
+ * It was always 20% of the layer's height, and the layer is the *layout*
+ * viewport, which does not shrink when a phone keyboard opens. With the
+ * keyboard up on an 844px iPhone, 20% put her eye at 169px and the field
+ * well below that — and the answer column ran on underneath the keyboard.
+ *
+ * So the height is taken from what is actually visible: never lower than
+ * it used to be, and with a keyboard up, a quarter of the visible height —
+ * floored at ANSWER_TOP_FLOOR so she clears the status bar and notch.
+ */
+const ANSWER_TOP_FLOOR = 120;
+
+export function visibleBottom(layerHeight: number) {
+  const viewport = typeof window !== "undefined" ? window.visualViewport : null;
+  if (!viewport) return layerHeight;
+  return Math.min(layerHeight, viewport.offsetTop + viewport.height);
+}
+
+export function answerAnchorY(layerHeight: number) {
+  const visible = visibleBottom(layerHeight);
+  return Math.max(
+    ANSWER_TOP_FLOOR,
+    Math.min(layerHeight * ANSWER_HEIGHT, visible * 0.24),
+  );
+}
 
 /** Her column's own offset below the eye, and the air under the page. */
 const BELOW_OFFSET = 94;
@@ -271,6 +302,29 @@ function retireHint() {
 const LUNGE_MIN_MS = 8000;
 const LUNGE_MAX_MS = 18000;
 
+/*
+ * How long the screen has to be left alone before she may reach.
+ *
+ * She used to reach whenever the ring was shut and nothing was being
+ * answered — so the moment a reader saved a word and closed the answer, a
+ * timer that had long since run out sent her straight at the new cookie,
+ * before they were back on the home screen at all. Now every frame in which
+ * the reader is busy here — the ring out, a field focused, an answer up, a
+ * sheet or dialog open, the app in the background — pushes her next reach
+ * to at least this far away.
+ */
+const SETTLE_MS = 3000;
+
+/* The tour's "feed me one" step asks the *reader* to hand her a cookie; if
+   she helps herself, the lesson is gone. */
+const FEED_STEP = COACH_STEPS.findIndex((step) => step.key === "feed");
+
+function somethingElseIsUp() {
+  if (typeof document === "undefined") return false;
+  if (document.visibilityState !== "visible") return true;
+  return Boolean(document.querySelector('[aria-modal="true"]'));
+}
+
 function nextLungeDelay() {
   return LUNGE_MIN_MS + Math.random() * (LUNGE_MAX_MS - LUNGE_MIN_MS);
 }
@@ -376,9 +430,20 @@ export default function YumiRingOverlay({
    * loop, which runs outside React and reads it every frame — the same pair
    * `open` already keeps for the same reason.
    */
-  const [answering, setAnswering] = useState(false);
+  const [hasAnswer, setHasAnswer] = useState(false);
+  const handleAnswerChange = useCallback((next: boolean) => setHasAnswer(next), []);
+
+  /*
+   * Whether the reader is typing into the field under her.
+   *
+   * The screen moved her up and out of the way only once there was an
+   * answer — a keystroke after the keyboard had already arrived and covered
+   * the field. The keyboard arrives on focus, so the layout does too: a
+   * focused field is treated exactly like an answer on screen.
+   */
+  const [typing, setTyping] = useState(false);
+  const answering = hasAnswer || typing;
   const answeringRef = useRef(false);
-  const handleAnswerChange = useCallback((next: boolean) => setAnswering(next), []);
 
   /* Mirrored in an effect rather than written by the callback: the callback
      is handed to the field during render, and a callback that writes a ref
@@ -576,7 +641,7 @@ export default function YumiRingOverlay({
             /* Up and smaller, so the answer has the page. */
             handle.setScreenAnchor(
               rect.width / 2,
-              rect.height * ANSWER_HEIGHT,
+              answerAnchorY(rect.height),
               ANSWER_RADIUS,
             );
           } else {
@@ -601,6 +666,11 @@ export default function YumiRingOverlay({
            * are reading a definition, which is a quieter version of the bug
            * that hid the tray in the first place.
            */
+          /* Busy here means no reach for SETTLE_MS after it stops. */
+          if (openRef.current || answeringRef.current) {
+            lungeAt = Math.max(lungeAt, now + SETTLE_MS);
+          }
+
           if (!openRef.current && !answeringRef.current && !reduced && now > lungeAt) {
             const cookies = Array.from(
               stageRef.current?.querySelectorAll<HTMLElement>("[data-yumi-cookie]") ?? [],
@@ -614,7 +684,11 @@ export default function YumiRingOverlay({
               return box.width > 0 && box.bottom > 0 && box.top < window.innerHeight;
             });
 
-            if (reachable.length > 0) {
+            if (somethingElseIsUp() || getCoachStep() === FEED_STEP) {
+              /* A sheet, a dialog, the app in the background, or the tour
+                 asking the reader to do the feeding: not now. */
+              lungeAt = now + SETTLE_MS;
+            } else if (reachable.length > 0) {
               const pick = reachable[Math.floor(Math.random() * reachable.length)];
               const box = pick.getBoundingClientRect();
               const started = handle.lungeAt(
@@ -622,8 +696,10 @@ export default function YumiRingOverlay({
                 box.top + box.height / 2,
               );
               if (started) reachingFor.current = pick;
+              lungeAt = now + nextLungeDelay();
+            } else {
+              lungeAt = now + nextLungeDelay();
             }
-            lungeAt = now + nextLungeDelay();
           }
 
           handle.frame(now);
@@ -652,7 +728,7 @@ export default function YumiRingOverlay({
              */
             if (answeringRef.current) {
               ringRef.current.style.transform =
-                `translate(${rect.width / 2}px, ${rect.height * ANSWER_HEIGHT}px)`;
+                `translate(${rect.width / 2}px, ${answerAnchorY(rect.height)}px)`;
             } else {
               ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
             }
@@ -711,7 +787,10 @@ export default function YumiRingOverlay({
                 "--below-room",
                 `${Math.max(
                   0,
-                  rect.height * (1 - ANSWER_HEIGHT) - BELOW_OFFSET - BELOW_AIR,
+                  visibleBottom(rect.height) -
+                    answerAnchorY(rect.height) -
+                    BELOW_OFFSET -
+                    BELOW_AIR,
                 )}px`,
               );
             }
@@ -840,13 +919,19 @@ export default function YumiRingOverlay({
       (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement);
 
     const onFocusIn = (event: FocusEvent) => {
-      if (isOurField(event.target)) lock();
+      if (isOurField(event.target)) {
+        lock();
+        setTyping(true);
+      }
     };
 
     const onFocusOut = (event: FocusEvent) => {
       /* `relatedTarget` is where focus is going. Moving between two fields
          inside the layer must not flicker the lock off and on. */
-      if (isOurField(event.target) && !isOurField(event.relatedTarget)) unlock();
+      if (isOurField(event.target) && !isOurField(event.relatedTarget)) {
+        unlock();
+        setTyping(false);
+      }
     };
 
     document.addEventListener("focusin", onFocusIn);
