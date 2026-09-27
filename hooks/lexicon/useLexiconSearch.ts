@@ -12,6 +12,7 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { reportNetworkFailure } from "@/hooks/useOnline";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
+import { primePhonetics } from "@/hooks/usePhonetics";
 import { readCachedEntry, writeCachedEntry } from "@/lib/lexicon/cache";
 import {
   routeQuery,
@@ -71,6 +72,17 @@ const MAX_SAVED_MATCHES = 6;
  * than a second and a half, which is about how long a busy model takes to
  * become a different answer.
  */
+/*
+ * The headword's IPA, when the lookup brought it, straight into the
+ * phonetics store — so the pronunciation row renders with the card instead
+ * of asking a model for it afterwards.
+ */
+function primeFromEntry(entry: LexiconEntry | null) {
+  const ipa = entry?.termIpa?.trim();
+  if (!entry || !ipa || !entry.termLanguage) return;
+  primePhonetics(entry.termLanguage, entry.term, { ipa });
+}
+
 const AUTO_RETRY_MAX_WAIT_MS = 20_000;
 const AUTO_RETRY_MIN_WAIT_MS = 1_500;
 
@@ -295,6 +307,7 @@ export default function useLexiconSearch({
       if (cached) {
         if (!isCurrent()) return;
 
+        primeFromEntry(cached);
         setResult(settle(cached, { degraded: false, offline: false }));
         setStatus("ready");
         announceHomeMoment("word-answered");
@@ -380,6 +393,7 @@ export default function useLexiconSearch({
 
         setRetrying(false);
         setPreview(null);
+        if (!degraded) primeFromEntry(entry);
         setResult(settle(entry, { degraded: Boolean(degraded), offline: false }));
         setStatus("ready");
 

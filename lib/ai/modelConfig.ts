@@ -92,13 +92,30 @@ function uniqueModels(values: Array<string | undefined>) {
  *
  * The environment can still override either end without touching this file.
  */
+/*
+ * ── Text: the alias first, from 2026-09-27 ─────────────────────────────
+ *
+ * gemini-3.6-flash led this list on the strength of four clean rounds on
+ * 2026-09-24. In production since, it has done the one expensive thing in
+ * the table: hung. ai_call_log, 25–27 September — word lookups and
+ * phonetics timing out at 13.5–14.5s with DEADLINE_EXCEEDED, and on the
+ * free tier its twenty requests *a day* (GenerateRequestsPerDay…, not per
+ * minute) are gone by the afternoon. A French lookup on the 27th waited the
+ * full 13.5s on it, then gemini-flash-lite-latest answered in 1,044ms.
+ *
+ * Text requests are extractions and translations with a schema; the lite
+ * alias does them well and answers fast. The strong model moves to second,
+ * where lib/ai/hedge.ts asks it alongside rather than after when the first
+ * is slow. Vision keeps the strong model first: reading a photograph is
+ * where it earns its place.
+ */
 export function getTextModelCandidates() {
   return uniqueModels([
     process.env.GEMINI_TEXT_MODEL,
     process.env.GEMINI_MODEL,
+    DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_STRONG_MODEL,
     process.env.GEMINI_FALLBACK_MODEL,
-    DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
   ]);
 }

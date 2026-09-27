@@ -1,6 +1,7 @@
 import type { GoogleGenAI, Part } from "@google/genai";
 
 import { recordAiFailure } from "@/lib/ai/callLog";
+import { awayFor, markModelAway } from "@/lib/ai/modelHealth";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 
 /* =========================================================
@@ -218,6 +219,13 @@ export type GenerateJsonOptions = {
    * See lib/ai/callLog.ts.
    */
   purpose?: string;
+  /**
+   * An abort from the caller, on top of the attempt's own timeout — used by
+   * lib/ai/hedge.ts to stop the slower of two attempts once the other has
+   * answered. An attempt stopped this way did not fail, and is neither
+   * logged nor held against the model.
+   */
+  signal?: AbortSignal;
 };
 
 function toParts(input: string | ModelInputPart[]): Part[] {
@@ -246,14 +254,33 @@ export async function generateJson(
     schema,
     timeoutMs = TEXT_REQUEST_TIMEOUT_MS,
     purpose = "unlabelled",
+    signal,
   }: GenerateJsonOptions,
 ): Promise<string> {
   const timeout = Math.max(1_000, Math.round(timeoutMs));
   const startedAt = Date.now();
 
   try {
-    return await requestJson(client, { model, input, schema }, timeout);
+    return await requestJson(client, { model, input, schema }, timeout, signal);
   } catch (error) {
+    /* Stopped because another model answered first: not a failure. */
+    if (signal?.aborted) throw error;
+
+    /*
+     * A hang or a quota refusal is a fact about the model, not about this
+     * request — so it is written where every server instance reads it, and
+     * none of them pays for it again. See lib/ai/modelHealth.ts.
+     */
+    const verdict = awayFor(
+      {
+        rateLimited: isRateLimitError(error),
+        timedOut: isTimeoutError(error),
+        message: error instanceof Error ? error.message : "",
+      },
+      cooldownMsFor(error),
+    );
+    if (verdict) void markModelAway(model, verdict);
+
     /*
      * Every route's failures, in one place, written somewhere that outlives
      * Vercel's one-hour log window. Rethrown untouched: the candidate list
@@ -280,7 +307,11 @@ async function requestJson(
   client: GoogleGenAI,
   { model, input, schema }: Pick<GenerateJsonOptions, "model" | "input" | "schema">,
   timeout: number,
+  signal?: AbortSignal,
 ): Promise<string> {
+  const ceiling = AbortSignal.timeout(timeout);
+  const abortSignal = signal ? anySignal([ceiling, signal]) : ceiling;
+
   const response = await client.models.generateContent({
     model,
     contents: [{ role: "user", parts: toParts(input) }],
@@ -291,7 +322,7 @@ async function requestJson(
        * the platform guarantees. The transport timeout is a deadline Gemini
        * reads and can reject, so it has a floor of its own.
        */
-      abortSignal: AbortSignal.timeout(timeout),
+      abortSignal,
       httpOptions: {
         /*
          * Never below the floor, because this number leaves the process:
@@ -319,6 +350,23 @@ async function requestJson(
   }
 
   return outputText;
+}
+
+/** AbortSignal.any where the runtime has it, and the same by hand where not. */
+function anySignal(signals: AbortSignal[]): AbortSignal {
+  if (typeof AbortSignal.any === "function") return AbortSignal.any(signals);
+
+  const controller = new AbortController();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      break;
+    }
+    signal.addEventListener("abort", () => controller.abort(signal.reason), {
+      once: true,
+    });
+  }
+  return controller.signal;
 }
 
 export function getErrorStatus(error: unknown) {

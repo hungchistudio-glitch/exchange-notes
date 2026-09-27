@@ -49,12 +49,14 @@ const {
 } = await import("@/lib/ai/modelConfig");
 
 describe("who gets asked, and in what order", () => {
-  it("leads with the model that answered every time", () => {
+  it("leads vision with the strong model, and text with the alias that does not hang", () => {
     clearOverrides();
 
-    for (const candidates of [getTextModelCandidates(), getVisionModelCandidates()]) {
-      expect(candidates[0]).toBe(DEFAULT_STRONG_MODEL);
-    }
+    expect(getVisionModelCandidates()[0]).toBe(DEFAULT_STRONG_MODEL);
+    /* Production, 2026-09-25 to 27: the strong model hung on text for
+       13.5s at a time and ran out of its daily quota; the alias answered. */
+    expect(getTextModelCandidates()[0]).toBe(DEFAULT_ALIAS_LITE_MODEL);
+    expect(getTextModelCandidates()[1]).toBe(DEFAULT_STRONG_MODEL);
   });
 
   /*
@@ -114,7 +116,7 @@ describe("who gets asked, and in what order", () => {
     process.env.GEMINI_TEXT_MODEL = "";
     process.env.GEMINI_MODEL = "   ";
 
-    expect(getTextModelCandidates()[0]).toBe(DEFAULT_STRONG_MODEL);
+    expect(getTextModelCandidates()[0]).toBe(DEFAULT_ALIAS_LITE_MODEL);
     expect(getTextModelCandidates()).toHaveLength(3);
   });
 

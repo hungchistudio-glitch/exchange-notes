@@ -172,5 +172,9 @@ ${exampleSentenceRules()}
 - If you cannot tell what was meant, make your best guess and use low
   confidence rather than refusing.
 - "kind" is ${JSON.stringify(kind)} unless the text is plainly something else.
+- "termIpa" is the IPA of "term" as a speaker of termLanguage says it: broad
+  phonemic, in forward slashes, with ˈ before the stressed syllable, e.g.
+  /sa.ly/. Leave it empty when termLanguage is Chinese, or when you are
+  unsure — an empty transcription is better than a wrong one.
   `.trim();
 }

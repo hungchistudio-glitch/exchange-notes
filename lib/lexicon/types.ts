@@ -54,6 +54,11 @@ export type LexiconEntry = {
   term: string;
   translation: string;
   partOfSpeech: string;
+  /**
+   * The headword's IPA, when the lookup brought one. See the termIpa note in
+   * app/api/classify-text/route.ts. Absent on cached rows written before it.
+   */
+  termIpa?: string;
   termExample: string;
   translationExample: string;
   confidence: "high" | "medium" | "low";

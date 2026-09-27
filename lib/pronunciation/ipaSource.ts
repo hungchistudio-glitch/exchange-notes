@@ -7,6 +7,8 @@ import { getLanguage, hasPhonetics, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
 
 import { generateJson } from "@/lib/ai/modelRequest";
+import { firstAnswer } from "@/lib/ai/hedge";
+import { healthyModels } from "@/lib/ai/modelHealth";
 /* =========================================================
    Where IPA comes from
 
@@ -34,6 +36,15 @@ type DictionaryEntry = {
 
 /** Languages a free dictionary can answer for, so the model is not asked. */
 const DICTIONARY_LANGUAGES: readonly LanguageCode[] = ["en"];
+
+/*
+ * The model half's time limits. The route allows 30s; the budget leaves the
+ * auth call, the cache read and write, and the response well inside it.
+ */
+const TOTAL_BUDGET_MS = 18_000;
+const ATTEMPT_MS = 10_000;
+const MIN_ATTEMPT_MS = 3_000;
+const HEDGE_AFTER_MS = 4_000;
 
 const RESULT_SCHEMA = {
   type: "object",
@@ -107,6 +118,24 @@ async function writeCache(
   }
 }
 
+/**
+ * File a transcription that arrived some other way — the word lookup now
+ * asks for the headword's IPA in the same call — so the pronunciation row
+ * finds it in the cache instead of asking a model again.
+ */
+export async function rememberIpa(
+  language: LanguageCode,
+  text: string,
+  ipa: string,
+): Promise<void> {
+  const word = cacheKey(text);
+  const value = ipa.trim();
+  if (!word || !value || !hasPhonetics(language, "ipa")) return;
+  if (process.env.NODE_ENV === "test") return;
+
+  await writeCache(language, new Map([[word, value]]), "model");
+}
+
 async function fromDictionary(word: string): Promise<string> {
   try {
     const response = await fetch(
@@ -166,11 +195,25 @@ async function fromModel(
    */
   let lastError: unknown = null;
 
-  for (const model of getTextModelCandidates()) {
-    try {
+  /*
+   * Bounded as a whole, and hedged.
+   *
+   * This asked each candidate in turn at the shared fifteen-second ceiling
+   * with no total at all, so a hang on the first and a slow second added up
+   * past the route's 30s maxDuration: on 2026-09-27 a French word's
+   * transcription ended in "Vercel Runtime Timeout Error". Now the whole
+   * thing has TOTAL_BUDGET_MS, no attempt starts with less than
+   * MIN_ATTEMPT_MS left, and a slow first model gets company after
+   * HEDGE_AFTER_MS — the same shape as the word lookup.
+   */
+  const answered = await firstAnswer(
+    await healthyModels(getTextModelCandidates()),
+    async (model, timeoutMs, signal) => {
       const raw = await generateJson(client, {
         purpose: "phonetics",
         model,
+        signal,
+        timeoutMs,
         input: [
           `Give the IPA transcription of each ${meta.name.english} word or phrase below.`,
           ``,
@@ -186,28 +229,37 @@ async function fromModel(
         schema: RESULT_SCHEMA,
       });
 
-      const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
+      return JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
         words?: Array<{ text?: string; ipa?: string }>;
       };
-
-      (parsed.words ?? []).forEach((answer, index) => {
-        // Positional, with the echoed text as a cross-check: a model that
-        // renamed or reordered an entry must not have its answer filed under
-        // somebody else's word.
-        const asked = texts[index];
-        if (!asked) return;
-
-        const echoed = answer.text?.trim();
-        if (echoed && echoed !== asked) return;
-
-        const ipa = answer.ipa?.trim();
-        if (ipa) out.set(asked, ipa);
-      });
-
-      return { found: out, failed: false };
-    } catch (error) {
+    },
+    {
+      hedgeAfterMs: HEDGE_AFTER_MS,
+      deadline: Date.now() + TOTAL_BUDGET_MS,
+      minAttemptMs: MIN_ATTEMPT_MS,
+      maxAttemptMs: ATTEMPT_MS,
+    },
+    (_model, error) => {
       lastError = error;
-    }
+    },
+  );
+
+  if (answered) {
+    (answered.value.words ?? []).forEach((answer, index) => {
+      // Positional, with the echoed text as a cross-check: a model that
+      // renamed or reordered an entry must not have its answer filed under
+      // somebody else's word.
+      const asked = texts[index];
+      if (!asked) return;
+
+      const echoed = answer.text?.trim();
+      if (echoed && echoed !== asked) return;
+
+      const ipa = answer.ipa?.trim();
+      if (ipa) out.set(asked, ipa);
+    });
+
+    return { found: out, failed: false };
   }
 
   console.error("IPA transcription failed:", lastError);

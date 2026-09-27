@@ -248,6 +248,28 @@ async function flush() {
   backoff.scheduleWake();
 }
 
+/**
+ * Hand the store a transcription that arrived some other way.
+ *
+ * The word lookup now brings the headword's IPA back in the same call, so a
+ * French card no longer has to ask /api/word-pronunciation — and wait on a
+ * second model — for the one thing it already has. Never over something
+ * this session already knows.
+ */
+export function primePhonetics(
+  language: LanguageCode,
+  text: string,
+  phonetics: WordPhonetics,
+) {
+  const id = key(language, text);
+  if (!text.trim() || cache.has(id)) return;
+  if (!phonetics.ipa && !phonetics.pinyin && !phonetics.zhuyin) return;
+
+  cache.set(id, phonetics);
+  void persist(PHONETICS_STORE, [[id, JSON.stringify(phonetics)]]);
+  notify();
+}
+
 function request(language: LanguageCode, text: string) {
   const id = key(language, text);
   if (cache.has(id) || inFlight.has(id)) return;

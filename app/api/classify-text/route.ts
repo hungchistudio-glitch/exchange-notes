@@ -12,6 +12,9 @@ import { GoogleGenAI } from "@google/genai";
 import { after, NextResponse } from "next/server";
 
 import { recordAiFailure } from "@/lib/ai/callLog";
+import { firstAnswer } from "@/lib/ai/hedge";
+import { healthyModels } from "@/lib/ai/modelHealth";
+import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 
 import { createClient } from "@/lib/supabase/server";
 import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
@@ -145,6 +148,20 @@ const TOTAL_BUDGET_MS = readBoundedInteger(
 const MIN_ATTEMPT_MS = 4_000;
 
 /*
+ * When to ask the next model alongside a slow first one.
+ *
+ * Most answers from the lite alias arrive in under two seconds (1,044ms on
+ * 2026-09-27; 619–5,571ms across four rounds on the 24th), so four seconds
+ * rarely spends a second request — and caps a hang at about five.
+ */
+const HEDGE_AFTER_MS = readBoundedInteger(
+  process.env.TEXT_HEDGE_AFTER_MS,
+  4_000,
+  1_500,
+  12_000,
+);
+
+/*
  * Every supported language, every time.
  *
  * This enum used to hold exactly the two languages the reader had set, and
@@ -194,6 +211,17 @@ function buildTextResultSchema() {
       highlightTerm: { type: "string", maxLength: 120 },
       highlightTranslation: { type: "string", maxLength: 120 },
       highlightPartOfSpeech: { type: "string", maxLength: 40 },
+      /*
+       * The headword's IPA, in the same call.
+       *
+       * French, Spanish and Italian have no dictionary this app can ask for
+       * a transcription, so the pronunciation row used to make a second
+       * Gemini call for every new word — another wait, another request off
+       * a free tier of twenty a day per model, and on 2026-09-27 a second
+       * hang that ran into Vercel's 30s ceiling. Asking here costs a few
+       * output tokens. Empty for Chinese, whose readings come from pinyin.
+       */
+      termIpa: { type: "string", maxLength: 120 },
       confidence: { type: "string", enum: ["high", "medium", "low"] },
       category: {
         type: "string",
@@ -213,6 +241,7 @@ function buildTextResultSchema() {
       "highlightTerm",
       "highlightTranslation",
       "highlightPartOfSpeech",
+      "termIpa",
       "confidence",
       "category",
     ],
@@ -380,9 +409,11 @@ async function lookupWithModel(
   model: string,
   context: LookupContext,
   timeoutMs: number,
+  signal?: AbortSignal,
 ) {
   const outputText = await generateJson(client, {
     purpose: "word-lookup",
+    signal,
     model,
     input: buildClassifyTextPrompt({
         query: context.query,
@@ -469,49 +500,41 @@ async function lookupWithModelFallback(
    */
   const client = new GoogleGenAI({ apiKey });
 
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const startedAt = Date.now();
+  const deadline = startedAt + TOTAL_BUDGET_MS;
   let transientRefusal = false;
 
-  for (const model of getTextModelCandidates()) {
-    const cooldownUntil = modelCooldowns.get(model) ?? 0;
-    if (cooldownUntil > Date.now()) continue;
+  /*
+   * The healthy candidates, in order: minus anything another instance has
+   * put away (lib/ai/modelHealth.ts), minus anything this instance has.
+   */
+  const shared = await healthyModels(getTextModelCandidates());
+  const candidates = shared.filter(
+    (model) => (modelCooldowns.get(model) ?? 0) <= Date.now(),
+  );
 
-    /* Whatever is left of the reader's wait, never more than one attempt's
-       share of it. */
-    const remaining = deadline - Date.now();
-    if (remaining < MIN_ATTEMPT_MS) break;
-    const timeoutMs = Math.min(REQUEST_TIMEOUT_MS, remaining);
-
-    const startedAt = Date.now();
-
-    try {
-      const result = await lookupWithModel(client, model, context, timeoutMs);
-
-      /*
-       * How long a good lookup takes, in the log.
-       *
-       * This route's ceiling was set to 6s by a guess and it was wrong by a
-       * factor nobody could see, because a timeout leaves no trace of how
-       * close it came. At five requests a week the line costs nothing, and
-       * it is the only way the next person changing this number will be
-       * changing it against a measurement.
-       */
-      console.info("Vocabulary lookup answered.", {
-        model,
-        ms: Date.now() - startedAt,
-      });
-
-      return { result, model };
-    } catch (error) {
+  /*
+   * Hedged rather than one after another: if the model in front has not
+   * answered in HEDGE_AFTER_MS, the next is asked alongside it and the first
+   * answer wins. The 13.5s hang on 2026-09-27 becomes a four-second wait.
+   */
+  const answered = await firstAnswer(
+    candidates,
+    (model, timeoutMs, signal) =>
+      lookupWithModel(client, model, context, timeoutMs, signal),
+    {
+      hedgeAfterMs: HEDGE_AFTER_MS,
+      deadline,
+      minAttemptMs: MIN_ATTEMPT_MS,
+      maxAttemptMs: REQUEST_TIMEOUT_MS,
+    },
+    (model, error, ms, timeoutMs) => {
       const status = getErrorStatus(error);
 
       /*
-       * A timeout puts the model away too, not just a rate limit.
-       *
-       * This is the whole reason a reader saw nothing: the first candidate
-       * spent the entire ceiling answering nothing, on every single request,
-       * because a timeout was not a reason to stop asking it. A rate limit is
-       * cheap to discover; a timeout is the most expensive failure here.
+       * A timeout puts the model away too, not just a rate limit: a rate
+       * limit is cheap to discover, and a timeout is the most expensive
+       * failure there is.
        */
       if (shouldCoolDown(error)) {
         modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
@@ -525,7 +548,7 @@ async function lookupWithModelFallback(
           model,
           reason: "model_error",
           status: null,
-          ms: Date.now() - startedAt,
+          ms,
           detail: error.message,
         });
       }
@@ -538,30 +561,23 @@ async function lookupWithModelFallback(
           : isTimeoutError(error)
             ? "timeout"
             : "model_error",
-        ms: Date.now() - startedAt,
+        ms,
         budgetMs: timeoutMs,
-        /*
-         * What the API actually objected to.
-         *
-         * This line printed a model name, a status and a duration, and on
-         * the day every route went dark it printed `status: 400, ms: 109`
-         * — enough to know the request was rejected before it was read, and
-         * not enough to know which field it was rejected for. The API says
-         * so in the message. Truncated, because a rejected request can come
-         * back with the prompt attached.
-         *
-         * 600 rather than 300, because 300 was the exact length of the
-         * preamble on a quota refusal — "You exceeded your current quota,
-         * please check your plan and billing details… To monitor your
-         * current usage, head to: https://ai.dev/rate-limit. * Quota
-         * exceeded for metri" — and the words after "metric:" are the only
-         * part of it that says which limit was hit, which is the difference
-         * between a burst to wait out and a day that is over.
-         */
+        // Truncated: a rejected request can come back with the prompt
+        // attached, and the part after "metric:" is what says which quota.
         detail:
           error instanceof Error ? error.message.slice(0, 600) : String(error),
       });
-    }
+    },
+  );
+
+  if (answered) {
+    console.info("Vocabulary lookup answered.", {
+      model: answered.model,
+      ms: Date.now() - startedAt,
+    });
+
+    return { result: answered.value, model: answered.model };
   }
 
   return { result: null, retryAfterMs: retryHint(transientRefusal) };
@@ -594,6 +610,17 @@ async function performLookup(
      * promise that the work runs to the end without the reader waiting on it.
      */
     after(() => writeSharedLookupCache(key, result, model));
+
+    /*
+     * The transcription the lookup brought with it goes straight into the
+     * phonetics cache, so the pronunciation row finds it rather than asking
+     * a model again.
+     */
+    const ipa = typeof result.termIpa === "string" ? result.termIpa.trim() : "";
+    if (ipa && result.termLanguage) {
+      const language = result.termLanguage;
+      after(() => rememberIpa(language, result.term, ipa));
+    }
 
     return {
       result,
