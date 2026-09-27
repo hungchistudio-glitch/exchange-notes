@@ -18,7 +18,7 @@ const info: InfoCopy = {
       { title: "Find the words you need", body: "Use text input, speech recognition, and translation to practice expressing yourself and explore possible tones and cultural contexts." },
       { title: "Keep your curiosity", body: "Explore the world through Discovery news, capture words you want to learn, and save and review them in your own language notebook." },
     ],
-    ai: { title: "Learn with AI. Keep your own judgment.", body: "AI helps identify, translate, and organize, so you can start understanding and practicing sooner. Yumi is your AI learning companion. Its cultural interpretations are suggestions: they can be wrong and cannot determine anyone’s true intentions. When meaning is unclear, asking another question is part of learning." },
+    ai: { title: "Learn with AI. Keep your own judgment.", body: "AI helps identify, translate, and organize, so you can start understanding and practicing sooner. Yumi is your AI learning companion. Its cultural interpretations are suggestions: they can be wrong and cannot determine anyone’s true intentions. When meaning is unclear, asking another question is part of learning. Exchange Notes is in beta, and its AI features share a daily limit across everyone. If it runs out, the word card tells you when it comes back." },
     closing: "Turn the world you encounter into notes you can exchange.",
     planet: "Primary service planet: Earth.",
   },

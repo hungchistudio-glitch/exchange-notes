@@ -480,6 +480,9 @@ const english: TranslationDictionary = {
       "Yumi works out what language it is, what it means, and whether you have met it before.",
     searching: "Looking it up…",
     retrying: "Yumi is busy — trying again in a moment…",
+    quotaTitle: "Yumi has used up today's AI allowance",
+    quotaDetail:
+      "It comes back at about {time}. Until then, your saved words, reviews and pronunciation practice all work as usual.",
     listening: "Listening…",
     offlineTitle: "You are offline",
     offlineDescription:

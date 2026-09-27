@@ -174,3 +174,30 @@ describe("choosing whom to ask", () => {
     expect(await healthyModels(["a"])).toEqual(["a"]);
   });
 });
+
+describe("telling the reader when the quota comes back", () => {
+  beforeEach(() => resetModelHealthForTests());
+
+  it("gives the soonest reset only when every model is out for the day", async () => {
+    const { dailyQuotaResetAt } = await import("@/lib/ai/modelHealth");
+    const soon = Date.now() + 60 * 60 * 1000;
+    const later = soon + 60 * 60 * 1000;
+
+    await healthyModels(["a", "b"]);
+    await markModelAway("a", { until: later, reason: "daily_quota" });
+    expect(await dailyQuotaResetAt(["a", "b"])).toBeNull();
+
+    await markModelAway("b", { until: soon, reason: "daily_quota" });
+    expect(await dailyQuotaResetAt(["a", "b"])).toBe(soon);
+  });
+
+  it("says nothing when one model is only away for a hang", async () => {
+    const { dailyQuotaResetAt } = await import("@/lib/ai/modelHealth");
+
+    await healthyModels(["a", "b"]);
+    await markModelAway("a", { until: Date.now() + 3_600_000, reason: "daily_quota" });
+    await markModelAway("b", { until: Date.now() + 300_000, reason: "timeout" });
+
+    expect(await dailyQuotaResetAt(["a", "b"])).toBeNull();
+  });
+});

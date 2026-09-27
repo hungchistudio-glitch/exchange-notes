@@ -23,6 +23,7 @@ import { peekImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
 import {
+  INTERFACE_LANGUAGE_CODE,
   LANGUAGES,
   LANGUAGE_CODES,
   getInterfaceLanguageMeta,
@@ -66,6 +67,27 @@ type LexiconResultsProps = {
   /** True while the system share button is showing its "copied" state. */
   shareCopied?: boolean;
 };
+
+/**
+ * When the AI quota comes back, in the reader's own clock and language:
+ * just the time if that is still today, the weekday too if it is tomorrow.
+ */
+export function formatResetTime(at: number, locale: string, now = Date.now()) {
+  const when = new Date(at);
+  const today = new Date(now);
+  const sameDay = when.toDateString() === today.toDateString();
+
+  try {
+    return new Intl.DateTimeFormat(
+      locale,
+      sameDay
+        ? { hour: "numeric", minute: "2-digit" }
+        : { weekday: "short", hour: "numeric", minute: "2-digit" },
+    ).format(when);
+  } catch {
+    return when.toLocaleTimeString();
+  }
+}
 
 function eyebrowClass(tone: LexiconTone) {
   return tone === "cosmic"
@@ -561,19 +583,34 @@ export default function LexiconResults({
               {/* ---- meaning ---- */}
               {entry.translationUnavailable ? (
                 <div className="mt-4 rounded-[18px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] p-4">
+                  {/*
+                    Out of quota is said differently from busy: a retry
+                    cannot help before the reset, so there is no retry key —
+                    only when it comes back, and what still works meanwhile.
+                  */}
                   <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
-                    {copy.noTranslation}
+                    {result?.quotaResetsAt ? copy.quotaTitle : copy.noTranslation}
                   </p>
                   <p className="mt-1 text-[0.8125rem] leading-5 text-[var(--accent-amber-deep)]/85">
-                    {copy.noTranslationDetail}
+                    {result?.quotaResetsAt
+                      ? copy.quotaDetail.replace(
+                          "{time}",
+                          formatResetTime(
+                            result.quotaResetsAt,
+                            INTERFACE_LANGUAGE_CODE[interfaceLanguage],
+                          ),
+                        )
+                      : copy.noTranslationDetail}
                   </p>
-                  <button
-                    type="button"
-                    onClick={search.retry}
-                    className="mt-2 text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
-                  >
-                    {copy.retry}
-                  </button>
+                  {result?.quotaResetsAt ? null : (
+                    <button
+                      type="button"
+                      onClick={search.retry}
+                      className="mt-2 text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)] underline underline-offset-2"
+                    >
+                      {copy.retry}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="mt-4">

@@ -93,6 +93,7 @@ function wait(ms: number) {
 type LookupResponse = LexiconEntry & {
   degraded?: boolean;
   retryAfterMs?: number | null;
+  quotaResetsAt?: number | null;
   error?: string;
 };
 
@@ -276,7 +277,11 @@ export default function useLexiconSearch({
 
       const settle = (
         raw: LexiconEntry | null,
-        flags: { degraded: boolean; offline: boolean },
+        flags: {
+          degraded: boolean;
+          offline: boolean;
+          quotaResetsAt?: number | null;
+        },
       ): LexiconResult => {
         const settled = settleLanguages(routing, raw);
 
@@ -299,6 +304,7 @@ export default function useLexiconSearch({
           entry: oriented?.entry ?? raw,
           degraded: flags.degraded,
           offline: flags.offline,
+          quotaResetsAt: flags.quotaResetsAt ?? null,
         };
       };
 
@@ -380,6 +386,7 @@ export default function useLexiconSearch({
           degraded,
           error: _unused,
           retryAfterMs: _hint,
+          quotaResetsAt,
           ...entry
         } = data;
         void _unused;
@@ -394,7 +401,13 @@ export default function useLexiconSearch({
         setRetrying(false);
         setPreview(null);
         if (!degraded) primeFromEntry(entry);
-        setResult(settle(entry, { degraded: Boolean(degraded), offline: false }));
+        setResult(
+          settle(entry, {
+            degraded: Boolean(degraded),
+            offline: false,
+            quotaResetsAt: degraded ? quotaResetsAt : null,
+          }),
+        );
         setStatus("ready");
 
         /*

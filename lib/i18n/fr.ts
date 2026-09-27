@@ -469,6 +469,9 @@ const french: TranslationDictionary = {
       "Yumi détermine la langue, le sens, et si vous l'avez déjà rencontré.",
     searching: "Recherche en cours…",
     retrying: "Yumi est occupée — nouvel essai dans un instant…",
+    quotaTitle: "Yumi a épuisé son quota d'IA du jour",
+    quotaDetail:
+      "Il revient vers {time}. D'ici là, tes mots enregistrés, les révisions et l'entraînement à la prononciation fonctionnent comme d'habitude.",
     listening: "Écoute…",
     offlineTitle: "Vous êtes hors ligne",
     offlineDescription:

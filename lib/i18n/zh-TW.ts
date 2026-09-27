@@ -473,6 +473,9 @@ const traditionalChinese: TranslationDictionary = {
       "Yumi 會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。",
     searching: "查詢中…",
     retrying: "Yumi 有點忙，馬上再試一次…",
+    quotaTitle: "Yumi 今天的 AI 用量已經滿了",
+    quotaDetail:
+      "大約 {time} 恢復。在那之前，已存的單字、複習和發音練習都照常可以用。",
     listening: "聆聽中…",
     offlineTitle: "目前離線",
     offlineDescription: "現在只能搜尋這台裝置上已經有的單字。",

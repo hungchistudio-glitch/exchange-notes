@@ -362,3 +362,52 @@ describe("the result view", () => {
     ).toBeInTheDocument();
   });
 });
+
+/* =========================================================
+   Out of quota is not the same as busy
+
+   On the free tier each model has twenty requests a day, shared by
+   everyone. When all of them are spent, "try again" is advice that cannot
+   work until the reset — so the card says when it comes back instead.
+   ========================================================= */
+
+describe("when the day's AI allowance is spent", () => {
+  function unavailable(overrides: Partial<LexiconResult> = {}) {
+    const base = result();
+    return result({
+      degraded: true,
+      entry: {
+        ...base.entry!,
+        translation: "",
+        translationUnavailable: true,
+      },
+      ...overrides,
+    });
+  }
+
+  it("says when it comes back, and offers no retry that cannot work", () => {
+    const resets = Date.now() + 2 * 60 * 60 * 1000;
+    const { search, save } = harness({
+      value: unavailable({ quotaResetsAt: resets }),
+    });
+
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    expect(
+      screen.getByText("Yumi has used up today's AI allowance"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/It comes back at about/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  });
+
+  it("still offers a retry when the models were only busy", () => {
+    const { search, save } = harness({ value: unavailable() });
+
+    render(<LexiconResults search={search as never} save={save as never} />);
+
+    expect(
+      screen.queryByText("Yumi has used up today's AI allowance"),
+    ).toBeNull();
+    expect(screen.getByText(/too busy to answer/)).toBeInTheDocument();
+  });
+});

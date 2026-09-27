@@ -18,7 +18,7 @@ const info: InfoCopy = {
       { title: "Trova le parole che ti servono", body: "Usa testo, riconoscimento vocale e traduzione per esercitarti a esprimerti ed esplorare possibili sfumature e contesti culturali." },
       { title: "Conserva la tua curiosità", body: "Esplora il mondo con le notizie di Discovery, estrai le parole da imparare, salvale e ripassale nel tuo quaderno di lingue." },
     ],
-    ai: { title: "Impara con l’IA, conserva il tuo giudizio", body: "L’IA aiuta a riconoscere, tradurre e organizzare, per iniziare prima a comprendere e a esercitarti. Yumi è la tua compagna di apprendimento con IA. Le sue interpretazioni culturali sono spunti: possono essere sbagliate e non determinano le vere intenzioni di nessuno. Se il significato non è chiaro, fare un’altra domanda è parte dell’apprendimento." },
+    ai: { title: "Impara con l’IA, conserva il tuo giudizio", body: "L’IA aiuta a riconoscere, tradurre e organizzare, per iniziare prima a comprendere e a esercitarti. Yumi è la tua compagna di apprendimento con IA. Le sue interpretazioni culturali sono spunti: possono essere sbagliate e non determinano le vere intenzioni di nessuno. Se il significato non è chiaro, fare un’altra domanda è parte dell’apprendimento. Exchange Notes è in beta e le sue funzioni IA condividono un limite giornaliero tra tutti. Se si esaurisce, la scheda della parola ti dice quando torna." },
     closing: "Trasforma il mondo che incontri in appunti da scambiare.",
     planet: "Pianeta di servizio principale: la Terra.",
   },

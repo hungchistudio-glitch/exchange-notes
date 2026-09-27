@@ -201,6 +201,12 @@ export type LexiconResult = {
 
   /** No network was reachable; only the device could answer. */
   offline: boolean;
+
+  /**
+   * Every AI model has used up today's quota, and this is when it comes
+   * back (epoch ms). Only ever set on a degraded answer.
+   */
+  quotaResetsAt?: number | null;
 };
 
 const CONFIDENCES = ["high", "medium", "low"];

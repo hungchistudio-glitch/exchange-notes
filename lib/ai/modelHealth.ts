@@ -43,7 +43,9 @@ const TIMEOUT_AWAY_MS = 5 * 60 * 1000;
 const READ_CACHE_MS = 15_000;
 const READ_TIMEOUT_MS = 600;
 
-let cached: { at: number; until: Map<string, number> } | null = null;
+type Away = { until: number; reason: HealthReason };
+
+let cached: { at: number; away: Map<string, Away> } | null = null;
 
 function enabled() {
   return (
@@ -102,15 +104,15 @@ export function awayFor(
   return null;
 }
 
-async function readAll(): Promise<Map<string, number>> {
-  const until = new Map<string, number>();
-  if (!enabled()) return until;
+async function readAll(): Promise<Map<string, Away>> {
+  const away = new Map<string, Away>();
+  if (!enabled()) return away;
 
   try {
     const supabase = createServiceClient();
     const query = supabase
       .from(TABLE)
-      .select("model, unavailable_until")
+      .select("model, unavailable_until, reason")
       .gt("unavailable_until", new Date().toISOString());
 
     const result = await Promise.race([
@@ -118,23 +120,30 @@ async function readAll(): Promise<Map<string, number>> {
       new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
     ]);
 
-    if (!result || result.error || !result.data) return until;
+    if (!result || result.error || !result.data) return away;
 
-    for (const row of result.data as Array<{ model: string; unavailable_until: string }>) {
-      until.set(row.model, Date.parse(row.unavailable_until));
+    for (const row of result.data as Array<{
+      model: string;
+      unavailable_until: string;
+      reason: HealthReason;
+    }>) {
+      away.set(row.model, {
+        until: Date.parse(row.unavailable_until),
+        reason: row.reason,
+      });
     }
   } catch {
     /* Nothing marked is the safe way to be wrong here. */
   }
 
-  return until;
+  return away;
 }
 
-async function current(): Promise<Map<string, number>> {
-  if (cached && Date.now() - cached.at < READ_CACHE_MS) return cached.until;
-  const until = await readAll();
-  cached = { at: Date.now(), until };
-  return until;
+async function current(): Promise<Map<string, Away>> {
+  if (cached && Date.now() - cached.at < READ_CACHE_MS) return cached.away;
+  const away = await readAll();
+  cached = { at: Date.now(), away };
+  return away;
 }
 
 /**
@@ -144,10 +153,40 @@ async function current(): Promise<Map<string, number>> {
 export async function healthyModels(
   candidates: readonly string[],
 ): Promise<string[]> {
-  const until = await current();
+  const away = await current();
   const now = Date.now();
-  const healthy = candidates.filter((model) => (until.get(model) ?? 0) <= now);
+  const healthy = candidates.filter(
+    (model) => (away.get(model)?.until ?? 0) <= now,
+  );
   return healthy.length > 0 ? healthy : [...candidates];
+}
+
+/**
+ * When the day's quota comes back — but only if it is the whole story.
+ *
+ * Every candidate has to be away for its daily quota; one model out for a
+ * five-minute hang, or not away at all, means the next lookup may well be
+ * answered, and telling the reader "come back at 3pm" would be wrong. When
+ * it is the whole story, the soonest reset is the honest time to give.
+ */
+export async function dailyQuotaResetAt(
+  candidates: readonly string[],
+): Promise<number | null> {
+  if (candidates.length === 0) return null;
+
+  const away = await current();
+  const now = Date.now();
+  let soonest: number | null = null;
+
+  for (const model of candidates) {
+    const entry = away.get(model);
+    if (!entry || entry.reason !== "daily_quota" || entry.until <= now) {
+      return null;
+    }
+    soonest = soonest === null ? entry.until : Math.min(soonest, entry.until);
+  }
+
+  return soonest;
 }
 
 /** Put a model away, for this instance at once and for every other soon. */
@@ -155,7 +194,12 @@ export async function markModelAway(
   model: string,
   verdict: { until: number; reason: HealthReason },
 ): Promise<void> {
-  if (cached) cached.until.set(model, Math.max(cached.until.get(model) ?? 0, verdict.until));
+  if (cached) {
+    const previous = cached.away.get(model);
+    if (!previous || previous.until < verdict.until) {
+      cached.away.set(model, { until: verdict.until, reason: verdict.reason });
+    }
+  }
   if (!enabled()) return;
 
   try {

@@ -13,7 +13,7 @@ import { after, NextResponse } from "next/server";
 
 import { recordAiFailure } from "@/lib/ai/callLog";
 import { firstAnswer } from "@/lib/ai/hedge";
-import { healthyModels } from "@/lib/ai/modelHealth";
+import { dailyQuotaResetAt, healthyModels } from "@/lib/ai/modelHealth";
 import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 
 import { createClient } from "@/lib/supabase/server";
@@ -268,6 +268,11 @@ type ResolvedLookup = {
    * See retryHint below.
    */
   retryAfterMs?: number | null;
+  /**
+   * On an offline answer only: when every model's daily quota comes back,
+   * if running out of it is the reason there was no answer. Epoch ms.
+   */
+  quotaResetsAt?: number | null;
 };
 
 /*
@@ -638,8 +643,16 @@ async function performLookup(
     detail: null,
   });
 
+  /*
+   * Out of quota everywhere is a different thing to say than "busy": a
+   * retry cannot help until the reset, so none is suggested, and the reader
+   * is told when instead.
+   */
+  const quotaResetsAt = await dailyQuotaResetAt(getTextModelCandidates());
+
   return {
-    retryAfterMs: modelResult.retryAfterMs,
+    retryAfterMs: quotaResetsAt ? null : modelResult.retryAfterMs,
+    quotaResetsAt,
     result: await lookupOffline(context.query, {
       source: context.detected,
       head: context.chosenHead,
@@ -742,7 +755,10 @@ export async function POST(request: Request) {
         degraded: !resolved.fromModel,
         ...(resolved.fromModel
           ? {}
-          : { retryAfterMs: resolved.retryAfterMs ?? null }),
+          : {
+              retryAfterMs: resolved.retryAfterMs ?? null,
+              quotaResetsAt: resolved.quotaResetsAt ?? null,
+            }),
       },
       {
         headers: {

@@ -481,6 +481,9 @@ const spanish: TranslationDictionary = {
       "Yumi averigua en qué idioma está, qué significa y si ya la habías guardado.",
     searching: "Buscando…",
     retrying: "Yumi está ocupada; lo intento de nuevo en un momento…",
+    quotaTitle: "Yumi ya usó la cuota de IA de hoy",
+    quotaDetail:
+      "Vuelve hacia las {time}. Mientras tanto, tus palabras guardadas, los repasos y la práctica de pronunciación funcionan como siempre.",
     listening: "Escuchando…",
     offlineTitle: "Estás sin conexión",
     offlineDescription:

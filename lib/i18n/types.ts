@@ -450,6 +450,12 @@ export type TranslationDictionary = {
     searching: string;
     /** Shown while a busy model is waited out before one more try. */
     retrying: string;
+    /**
+     * Every AI model has used today's quota. {time} is when it comes back,
+     * already formatted for the reader's locale and time zone.
+     */
+    quotaTitle: string;
+    quotaDetail: string;
     listening: string;
     offlineTitle: string;
     offlineDescription: string;

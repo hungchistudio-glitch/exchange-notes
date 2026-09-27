@@ -469,6 +469,9 @@ const italian: TranslationDictionary = {
       "Yumi capisce in che lingua è, cosa significa e se l'hai già incontrata.",
     searching: "Ricerca in corso…",
     retrying: "Yumi è occupata — riprovo tra un attimo…",
+    quotaTitle: "Yumi ha esaurito la quota IA di oggi",
+    quotaDetail:
+      "Torna verso le {time}. Fino ad allora, le parole salvate, i ripassi e la pratica di pronuncia funzionano come sempre.",
     listening: "In ascolto…",
     offlineTitle: "Sei offline",
     offlineDescription:

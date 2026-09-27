@@ -18,7 +18,7 @@ const info: InfoCopy = {
       { title: "Trouver les mots qu’il vous faut", body: "Utilisez la saisie de texte, la reconnaissance vocale et la traduction pour vous exercer à vous exprimer et explorer les nuances et contextes culturels possibles." },
       { title: "Garder une trace de votre curiosité", body: "Explorez le monde avec les actualités de Discovery, relevez les mots à apprendre, puis enregistrez-les et révisez-les dans votre carnet de langues." },
     ],
-    ai: { title: "Apprendre avec l’IA, garder son jugement", body: "L’IA aide à reconnaître, traduire et organiser pour commencer plus facilement à comprendre et à pratiquer. Yumi vous accompagne dans l’apprentissage grâce à l’IA. Ses interprétations culturelles sont des pistes : elles peuvent être erronées et ne révèlent pas les véritables intentions d’une personne. Si le sens reste incertain, poser une question fait aussi partie de l’apprentissage." },
+    ai: { title: "Apprendre avec l’IA, garder son jugement", body: "L’IA aide à reconnaître, traduire et organiser pour commencer plus facilement à comprendre et à pratiquer. Yumi vous accompagne dans l’apprentissage grâce à l’IA. Ses interprétations culturelles sont des pistes : elles peuvent être erronées et ne révèlent pas les véritables intentions d’une personne. Si le sens reste incertain, poser une question fait aussi partie de l’apprentissage. Exchange Notes est en bêta, et ses fonctions d'IA partagent une limite quotidienne entre tous. Si elle est atteinte, la fiche du mot t'indique quand elle revient." },
     closing: "Faites du monde que vous découvrez des notes à échanger.",
     planet: "Planète desservie en priorité : la Terre.",
   },
