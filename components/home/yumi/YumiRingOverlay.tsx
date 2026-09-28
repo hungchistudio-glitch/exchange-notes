@@ -14,7 +14,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { ReactNode } from "react";
 
-import LiquidRingKey from "@/components/home/yumi/LiquidRingKey";
+import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
@@ -340,6 +340,8 @@ export type YumiRingOverlayProps = {
   stageRef: React.RefObject<HTMLElement | null>;
   /** Fired when a reach lands, so the feeding sequence can take the bite. */
   onLungeArrive?: () => void;
+  /** Review surfaces can inspect a selection without leaving their fixture. */
+  onChooseDestination?: (destination: Pick<Spoke, "key" | "label" | "href" | "action">) => void;
   unreadCount?: number;
   /**
    * Her voice, from the stage underneath. Eleven moods, five languages, all
@@ -400,6 +402,7 @@ export type YumiRingOverlayProps = {
 export default function YumiRingOverlay({
   stageRef,
   onLungeArrive,
+  onChooseDestination,
   unreadCount = 0,
   lines = null,
   meta = null,
@@ -726,7 +729,10 @@ export default function YumiRingOverlay({
              * is free to keep breathing next to it. The spokes are the only
              * other thing in here and they are not on screen in this state.
              */
-            if (answeringRef.current) {
+            if (openRef.current) {
+              // Keep captured-pointer geometry stable while scrubbing the orbit.
+              ringRef.current.style.transform = `translate(${rect.width / 2}px, ${rect.height * 0.42}px)`;
+            } else if (answeringRef.current) {
               ringRef.current.style.transform =
                 `translate(${rect.width / 2}px, ${answerAnchorY(rect.height)}px)`;
             } else {
@@ -1010,6 +1016,10 @@ export default function YumiRingOverlay({
 
   function choose(spoke: Spoke) {
     close();
+    if (onChooseDestination) {
+      onChooseDestination(spoke);
+      return;
+    }
     if (spoke.action === "search") {
       openSearch();
       return;
@@ -1068,73 +1078,49 @@ export default function YumiRingOverlay({
           ref={ringRef}
           className={styles.ring}
         >
-          {spokes.map((spoke, index) => {
-            const angle =
-              -Math.PI / 2 +
-              RING_ROTATION +
-              (index * Math.PI * 2) / spokes.length;
-            const x = Math.cos(angle) * ringRadius;
-            const y = Math.sin(angle) * ringRadius;
+          <div className={styles.reticle} aria-hidden="true" />
+          <LiquidRingSurface enabled={open} onChoose={index => choose(spokes[index])}>
+            {spokes.map((spoke, index) => {
+              const angle =
+                -Math.PI / 2 +
+                RING_ROTATION +
+                (index * Math.PI * 2) / spokes.length;
+              const x = Math.cos(angle) * ringRadius;
+              const y = Math.sin(angle) * ringRadius;
 
-            return (
-              <div
-                key={spoke.key}
-                className={styles.spoke}
-                ref={element => { spokeRefs.current[index] = element; }}
-                style={{
-                  transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                }}
-              >
-                <LiquidRingKey
-                  label={spoke.label}
-                  enabled={open}
-                  onChoose={() => choose(spoke)}
+              return (
+                <div
+                  key={spoke.key}
+                  className={styles.spoke}
+                  ref={element => { spokeRefs.current[index] = element; }}
+                  style={{
+                    transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
+                  }}
                 >
-                  {/* The disc is the key; the label is a caption under it and
-                      may be wider. Keeping them as two boxes is what lets a
-                      long word finish without the circle growing. */}
-                  <span className={styles.disc}>
-                    {/* Its position on the dial, read the way an instrument
-                        numbers its own stops. Mono and wide-tracked because
-                        that is what a measured scale looks like, and because
-                        a proportional 01 is not a number on a dial. */}
-                    <i className={styles.index} aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </i>
-
-                    <svg
-                      width="20" height="20" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="1.9"
-                      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-                    >
-                      {spoke.icon}
-                    </svg>
-                    {spoke.badge ? (
-                      <i className={styles.badge}>{spoke.badge > 9 ? "9+" : spoke.badge}</i>
-                    ) : null}
-                  </span>
-                  <span className={styles.spokeLabel}>{spoke.label}</span>
-                </LiquidRingKey>
-              </div>
-            );
-          })}
-
-          {/*
-            The circle the keys are actually on.
-
-            The ground under this screen already draws an alignment ring at
-            132 — RING_RADIUS — so that the page says where the keys will land
-            before anything has been pressed. This is that same circle becoming
-            real when they do land: a hairline at the measured radius, with a
-            tick under each key. Drawn at the radius the layout computed rather
-            than at the constant, so on a screen that had to give way the ring
-            and its dial are still the same circle.
-          */}
-          <div
-            className={styles.dial}
-            aria-hidden="true"
-            style={{ width: ringRadius * 2, height: ringRadius * 2 }}
-          />
+                  <LiquidRingButton label={spoke.label} index={index}>
+                    {/* The disc is the key; the label is a caption under it and
+                        may be wider. Keeping them as two boxes is what lets a
+                        long word finish without the circle growing. */}
+                    <span className={styles.disc} data-liquid-disc>
+                      <span className={styles.glassBody} aria-hidden="true" />
+                      <span className={styles.keyIndex} aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                      <svg
+                        width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="1.9"
+                        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                      >
+                        {spoke.icon}
+                      </svg>
+                      {spoke.badge ? (
+                        <i className={styles.badge}>{spoke.badge > 9 ? "9+" : spoke.badge}</i>
+                      ) : null}
+                    </span>
+                    <span className={styles.spokeLabel}>{spoke.label}</span>
+                  </LiquidRingButton>
+                </div>
+              );
+            })}
+          </LiquidRingSurface>
 
           {/*
             Everything that is not her, placed from her.
@@ -1171,7 +1157,7 @@ export default function YumiRingOverlay({
             </div>
           ) : null}
 
-          <div className={styles.below}>
+          <div className={styles.below} inert={open || !live}>
             {lines?.primary ? (
               <p className={styles.voice}>{lines.primary}</p>
             ) : null}
@@ -1214,7 +1200,9 @@ export default function YumiRingOverlay({
 
           {/* She is the home key, and a character you have to guess at is
               not a key. So it is said out loud, only while the ring is out. */}
-          <p className={styles.homecap}>{t.navigation.home}</p>
+          <button type="button" className={styles.homecap} onClick={close} tabIndex={open ? 0 : -1}>
+            {t.navigation.home}<span aria-hidden="true"> ↵</span>
+          </button>
         </div>
       </div>
     </>

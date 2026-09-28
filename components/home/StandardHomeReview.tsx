@@ -1,0 +1,48 @@
+"use client";
+
+import { useRef, useState } from "react";
+import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
+import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
+import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
+import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
+
+/** Local geometry and selection only; the review does not load an account. */
+function Frame() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [selected, setSelected] = useState("");
+  return <InterfaceModeProvider initialMode="standard">
+    <LearningLanguageProvider initialLearningLanguage="es" initialNativeLanguage="zh-TW">
+      <LexiconSearchProvider>
+        <div ref={stageRef} style={{ position: "relative", minHeight: "100svh", background: "#f4f2ec" }}>
+          <YumiRingOverlay stageRef={stageRef}
+            onChooseDestination={destination => setSelected(destination.label)}
+            lines={{ primary: "點一下 Yumi，再沿圓環滑動選擇", secondary: "Preview" }}>
+            <div data-yumi-figure style={{ position: "absolute", width: 144, height: 144, left: "calc(50% - 72px)", top: "calc(42svh - 72px)" }}>
+              <ExchangeNotesMark />
+            </div>
+          </YumiRingOverlay>
+          {selected && <output aria-live="polite" style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 60, padding: "10px 18px", border: "1px solid #ffffffb8", borderRadius: 20, background: "#eef7f2eb", color: "#173e3b", whiteSpace: "nowrap", pointerEvents: "none" }}>
+            已選擇：{selected} · 手勢預覽
+          </output>}
+        </div>
+      </LexiconSearchProvider>
+    </LearningLanguageProvider>
+  </InterfaceModeProvider>;
+}
+
+export default function StandardHomeReview({ frame }: { frame: boolean }) {
+  const [size, setSize] = useState([390, 844]);
+  if (frame) return <Frame />;
+  return <main style={{ padding: 16, background: "#dededb", minHeight: "100vh" }}>
+    <h1>Liquid glass · 環形選單預覽</h1>
+    <p>沿著外圍圓環拖曳，放手選取。此預覽會顯示選取結果，方便反覆試用。</p>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBlock: 12 }}>
+      {[[375, 667], [390, 844], [430, 932], [1280, 900]].map(([w, h]) =>
+        <button type="button" key={w} onClick={() => setSize([w, h])} aria-pressed={size[0] === w}
+          style={{ padding: 10, background: size[0] === w ? "#b3ddcf" : "white" }}>{w} × {h}</button>)}
+    </div>
+    <iframe title="Liquid glass preview" src="/standard-home-review?frame=1"
+      style={{ display: "block", border: "1px solid #aaa", width: size[0], height: size[1], background: "#f4f1ea" }} />
+  </main>;
+}
