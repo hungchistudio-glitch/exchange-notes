@@ -701,6 +701,17 @@ export default function LexiconResults({
                 </p>
               )}
 
+              {result?.onDevice && (
+                <p
+                  role="status"
+                  className="mt-4 rounded-[16px] border border-line bg-surface px-4 py-3 text-[0.75rem] leading-5 text-ink-soft"
+                >
+                  {result.onDevice === "pending"
+                    ? copy.onDevicePending
+                    : copy.onDeviceFinal}
+                </p>
+              )}
+
               {entry.confidence === "low" && !result?.degraded && (
                 <p
                   role="status"

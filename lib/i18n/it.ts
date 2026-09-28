@@ -499,6 +499,11 @@ const italian: TranslationDictionary = {
     degradedNotice:
       "La parola e il suo significato sono giusti; l'esempio è generico.",
     lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Riconosciuto sul telefono. Sto chiedendo all’IA uno sguardo più preciso e frasi di esempio…",
+    onDeviceFinal:
+      "Riconosciuto sul telefono. L’IA è occupata in questo momento, quindi non ci sono ancora frasi di esempio.",
     example: "Esempio",
     share: "Condividi",
     copied: "Copiato",

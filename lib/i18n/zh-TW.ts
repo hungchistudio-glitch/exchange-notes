@@ -501,6 +501,11 @@ const traditionalChinese: TranslationDictionary = {
       "Yumi 的 AI 字典現在太忙，沒拿到這個字的意思。過一下再試一次通常就會好。",
     degradedNotice: "單字和意思是對的，例句是通用的範本。",
     lowConfidence: "這是最接近的猜測，儲存前請先確認。",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "手機先認出來了，正在請 AI 看得更仔細並補上例句…",
+    onDeviceFinal:
+      "這是手機辨識的結果。AI 目前忙碌，暫時沒有例句。",
     example: "例句",
     share: "分享",
     copied: "已複製",

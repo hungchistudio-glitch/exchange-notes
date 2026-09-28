@@ -23,7 +23,12 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          // The camera's on-device model (lib/vision/onDeviceClassifier.ts)
+          // lives in its own cache so a release does not throw 4.5MB away.
+          .filter(
+            (key) =>
+              key !== CACHE_NAME && !key.startsWith("exchange-notes-vision")
+          )
           .map((key) => caches.delete(key))
       )
     )

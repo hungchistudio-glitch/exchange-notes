@@ -207,6 +207,14 @@ export type LexiconResult = {
    * back (epoch ms). Only ever set on a degraded answer.
    */
   quotaResetsAt?: number | null;
+
+  /**
+   * The camera's first answer, from the classifier on the phone rather than
+   * from a model (lib/vision/onDeviceClassifier.ts). "pending" while the AI
+   * is still being asked to do better; "final" when it could not, and this
+   * is the answer the reader keeps.
+   */
+  onDevice?: "pending" | "final";
 };
 
 const CONFIDENCES = ["high", "medium", "low"];

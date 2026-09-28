@@ -89,7 +89,7 @@ export default function OmniLexiconConsole({
 
   const formRef = useRef<HTMLFormElement>(null);
   const imageLookup = useLexiconImageLookup({
-    onTerm: (term) => search.submit(term, "image"),
+    onTerm: (term, options) => search.submit(term, "image", options),
   });
 
   /*

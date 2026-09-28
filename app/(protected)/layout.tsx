@@ -15,6 +15,7 @@ import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import AppViewport from "@/components/foundation/layout/AppViewport";
 import SplashGate from "@/components/ui/SplashGate";
 import { AppTutorialCoach } from "@/components/tutorial/TutorialCoach";
+import OnDeviceVisionWarmup from "@/components/foundation/OnDeviceVisionWarmup";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
@@ -192,6 +193,7 @@ export default async function ProtectedLayout({
               it draws nothing at all unless a reader is mid-tour.
             */}
             <AppTutorialCoach />
+            <OnDeviceVisionWarmup />
           </LexiconSearchProvider>
         </VocabularyProvider>
 

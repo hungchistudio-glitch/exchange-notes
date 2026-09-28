@@ -511,6 +511,11 @@ const spanish: TranslationDictionary = {
     degradedNotice:
       "La palabra y su significado son correctos; el ejemplo es genérico.",
     lowConfidence: "Es la mejor suposición. Compruébala antes de guardarla.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Reconocido en tu teléfono. Pidiendo a la IA una mirada más precisa y frases de ejemplo…",
+    onDeviceFinal:
+      "Reconocido en tu teléfono. La IA está ocupada ahora mismo, así que aún no hay frases de ejemplo.",
     example: "Ejemplo",
     share: "Compartir",
     copied: "Copiado",

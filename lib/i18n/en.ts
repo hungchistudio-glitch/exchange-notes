@@ -510,6 +510,11 @@ const english: TranslationDictionary = {
     degradedNotice:
       "The word and its meaning are right; the example sentence is a generic one.",
     lowConfidence: "This is a best guess. Check it before you keep it.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Recognised on your phone. Asking the AI for a closer look and example sentences…",
+    onDeviceFinal:
+      "Recognised on your phone. The AI is busy right now, so there are no example sentences yet.",
     example: "Example",
     share: "Share",
     copied: "Copied",

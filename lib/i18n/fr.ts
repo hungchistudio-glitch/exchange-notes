@@ -499,6 +499,11 @@ const french: TranslationDictionary = {
     degradedNotice:
       "Le mot et son sens sont justes ; l'exemple est générique.",
     lowConfidence: "C'est une supposition. Vérifiez-la avant de l'enregistrer.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Reconnu sur votre téléphone. L’IA affine la réponse et ajoute des exemples…",
+    onDeviceFinal:
+      "Reconnu sur votre téléphone. L’IA est occupée pour le moment, il n’y a donc pas encore d’exemples.",
     example: "Exemple",
     share: "Partager",
     copied: "Copié",

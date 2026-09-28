@@ -3,6 +3,7 @@
 import {
   useCallback,
   useDeferredValue,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +24,7 @@ import { orientToLearner } from "@/lib/lexicon/orientation";
 import { normalizeQuery } from "@/lib/lexicon/normalize";
 import { searchPersonal } from "@/lib/lexicon/personal";
 import { classifyQueryKind } from "@/lib/lexicon/queryKind";
+import { objectWordEntry, type ObjectWord } from "@/lib/vision/objectLexicon";
 import type {
   LexiconEntry,
   LexiconInputMode,
@@ -108,6 +110,22 @@ type UseLexiconSearchOptions = {
   items: readonly VocabularyItem[];
 };
 
+/**
+ * How a camera answer enters the search.
+ *
+ * `onDeviceWord`: the phone's classifier named it (lib/vision). The card is
+ * built on the spot from the built-in vocabulary — no request — and marked
+ * as the phone's answer while the AI is asked.
+ *
+ * `upgrade`: the AI's answer for the same photograph, arriving after the
+ * phone's. Looked up quietly: the phone's card stays on screen while it
+ * loads, and stays for good if the lookup cannot do better.
+ */
+export type LexiconSubmitOptions = {
+  onDeviceWord?: ObjectWord;
+  upgrade?: boolean;
+};
+
 export type LexiconSearch = {
   query: string;
   setQuery: (value: string) => void;
@@ -127,7 +145,11 @@ export type LexiconSearch = {
   /** How much text is in the field right now. */
   kind: LexiconResult["kind"];
 
-  submit: (value?: string, mode?: LexiconInputMode) => void;
+  submit: (
+    value?: string,
+    mode?: LexiconInputMode,
+    options?: LexiconSubmitOptions,
+  ) => void;
   /**
    * Re-runs the current query with the card led in a language the reader
    * named. The gloss follows the language they read the app in.
@@ -162,6 +184,16 @@ export default function useLexiconSearch({
   const [query, setQueryState] = useState("");
   const [status, setStatus] = useState<LexiconStatus>("idle");
   const [result, setResult] = useState<LexiconResult | null>(null);
+
+  /*
+   * The card on screen, for the camera's quiet upgrade. Read through a ref
+   * because the upgrade is submitted from a closure made when the photo was
+   * taken — before the phone's card existed.
+   */
+  const resultRef = useRef<LexiconResult | null>(null);
+  useEffect(() => {
+    resultRef.current = result;
+  }, [result]);
   const [preview, setPreview] = useState<LexiconPreview | null>(null);
   const [error, setError] = useState("");
   const [retrying, setRetrying] = useState(false);
@@ -250,7 +282,11 @@ export default function useLexiconSearch({
   }, []);
 
   const run = useCallback(
-    async (rawQuery: string, chosenHead: LanguageCode | null) => {
+    async (
+      rawQuery: string,
+      chosenHead: LanguageCode | null,
+      options: LexiconSubmitOptions = {},
+    ) => {
       const text = normalizeQuery(rawQuery);
 
       if (!text) return;
@@ -260,11 +296,24 @@ export default function useLexiconSearch({
       setSubmittedQuery(text);
 
       const isCurrent = () => ticketRef.current === ticket;
+      const quiet = Boolean(options.upgrade);
 
-      setStatus("searching");
-      setError("");
-      setPreview(null);
-      setRetrying(false);
+      /*
+       * The phone's answer is kept when the AI's cannot do better: a quiet
+       * lookup that comes back degraded or not at all leaves the card as it
+       * is and only says that no better answer is coming.
+       */
+      const settleOnDevice = () =>
+        setResult((current) =>
+          current?.onDevice ? { ...current, onDevice: "final" } : current,
+        );
+
+      if (!quiet) {
+        setStatus("searching");
+        setError("");
+        setPreview(null);
+        setRetrying(false);
+      }
 
       const routing = routeQuery(text, roles, chosenHead);
       const queryKind = classifyQueryKind(text);
@@ -308,6 +357,18 @@ export default function useLexiconSearch({
         };
       };
 
+      if (options.onDeviceWord) {
+        const entry = objectWordEntry(options.onDeviceWord, pair[0], pair[1]);
+
+        setResult({
+          ...settle(entry, { degraded: false, offline: false }),
+          onDevice: "pending",
+        });
+        setStatus("ready");
+        announceHomeMoment("word-answered");
+        return;
+      }
+
       const cached = readCachedEntry(cacheParts);
 
       if (cached) {
@@ -331,7 +392,7 @@ export default function useLexiconSearch({
        * sitting there looking like the answer while the real one loads.
        * A skeleton says "coming" honestly; a stale card does not.
        */
-      if (!chosenHead) {
+      if (!chosenHead && !quiet) {
         void fetch("/api/classify-text/preview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -370,7 +431,7 @@ export default function useLexiconSearch({
           data.retryAfterMs <= AUTO_RETRY_MAX_WAIT_MS
         ) {
           if (!isCurrent()) return;
-          setRetrying(true);
+          if (!quiet) setRetrying(true);
 
           await wait(Math.max(AUTO_RETRY_MIN_WAIT_MS, data.retryAfterMs));
           if (!isCurrent()) return;
@@ -397,6 +458,23 @@ export default function useLexiconSearch({
         if (!degraded) writeCachedEntry(cacheParts, entry);
 
         if (!isCurrent()) return;
+
+        /*
+         * A degraded answer replaces the phone's only when it names
+         * something else and can translate it — the AI saw a "mug" where the
+         * phone saw a "cup". The same word without example sentences is not
+         * an upgrade.
+         */
+        if (
+          quiet &&
+          degraded &&
+          (entry.translationUnavailable ||
+            normalizeQuery(entry.term).toLocaleLowerCase() ===
+              normalizeQuery(resultRef.current?.entry?.term ?? "").toLocaleLowerCase())
+        ) {
+          settleOnDevice();
+          return;
+        }
 
         setRetrying(false);
         setPreview(null);
@@ -432,6 +510,11 @@ export default function useLexiconSearch({
 
         if (!isCurrent()) return;
 
+        if (quiet) {
+          settleOnDevice();
+          return;
+        }
+
         setRetrying(false);
         setPreview(null);
         announceHomeMoment("word-unavailable");
@@ -457,7 +540,11 @@ export default function useLexiconSearch({
   );
 
   const submit = useCallback(
-    (value?: string, mode: LexiconInputMode = "type") => {
+    (
+      value?: string,
+      mode: LexiconInputMode = "type",
+      options?: LexiconSubmitOptions,
+    ) => {
       const text = normalizeQuery(value ?? query);
 
       if (!text) return;
@@ -466,7 +553,7 @@ export default function useLexiconSearch({
       if (text !== query) setQueryState(text);
       setInputMode(mode);
 
-      void run(text, null);
+      void run(text, null, options);
     },
     [query, run],
   );

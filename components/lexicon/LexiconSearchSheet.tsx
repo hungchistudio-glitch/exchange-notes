@@ -98,7 +98,7 @@ export default function LexiconSearchSheet({
 
   /* Reading happens before the search engine has a term or status of its own. */
   const imageLookup = useLexiconImageLookup({
-    onTerm: (term) => search.submit(term, "image"),
+    onTerm: (term, options) => search.submit(term, "image", options),
   });
 
   /*
