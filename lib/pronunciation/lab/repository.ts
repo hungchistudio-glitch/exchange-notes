@@ -1,3 +1,4 @@
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { LanguageCode } from "@/lib/languages";
@@ -84,9 +85,7 @@ export async function fetchPronunciationProgress(
   supabase: SupabaseClient,
   language: LanguageCode,
 ): Promise<ProgressLoad> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   if (!user) return { ok: false, reason: "unauthenticated" };
 
@@ -156,9 +155,7 @@ export async function recordPronunciationAttempt(
     accuracyScore: attempt.accuracyScore,
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   if (!user) return { ok: false, reason: "unauthenticated", progress: next };
 
@@ -215,9 +212,7 @@ export async function saveTrainingSession(
   session: PronunciationTrainingSession,
 ): Promise<{ ok: boolean }> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
 
     if (!user) return { ok: false };
 

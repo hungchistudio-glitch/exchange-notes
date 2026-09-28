@@ -9,6 +9,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { readMedia } from "@/lib/media/record";
 import { publishCardImage } from "@/lib/media/sharing";
@@ -104,9 +105,7 @@ export default function useVocabularyFriendPicker() {
     setFriendsError("");
 
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
 
     if (!user) {
       setFriendsError(
@@ -163,9 +162,7 @@ export default function useVocabularyFriendPicker() {
       let imagePath = pendingCard.imagePath;
 
       if (pendingImageSource) {
-        const {
-          data: { user },
-        } = await createClient().auth.getUser();
+        const user = await getSessionUser();
 
         if (user) {
           imagePath =

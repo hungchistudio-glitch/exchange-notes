@@ -11,6 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import {
   DuplicateVocabularyError,
   createVocabularyEntry,
@@ -928,9 +929,7 @@ function CaptureContent() {
 
     if (built) {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (user) {
         imagePath =
@@ -971,12 +970,9 @@ function CaptureContent() {
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
-      if (userError || !user) {
+      if (!user) {
         throw new Error(capture.errors.loginBeforeSave);
       }
 
@@ -1066,9 +1062,7 @@ function CaptureContent() {
     setFriendsError("");
 
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
 
     if (!user) {
       setFriendsError(capture.errors.loginBeforeShare);

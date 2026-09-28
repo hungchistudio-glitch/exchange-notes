@@ -14,6 +14,7 @@ import {
   type NoteInput,
 } from "@/lib/notes/clientRepository";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { track } from "@/lib/analytics/track";
 
 import NoteCard from "./NoteCard";
@@ -83,7 +84,7 @@ export default function NotesHomeModule() {
 
   async function save(input: NoteInput) {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getSessionUser(supabase);
     if (!user) return null;
     const note = await createNote(supabase, user.id, input);
 

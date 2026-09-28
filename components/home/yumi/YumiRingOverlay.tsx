@@ -20,6 +20,13 @@ import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
 import { setYumiRingState } from "@/lib/home/yumiRing";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
+import {
+  hasParkedYumiScene,
+  parkYumiScene,
+  relayedOptions,
+  takeParkedYumiScene,
+  type YumiSceneRelay,
+} from "@/lib/yumi3d/sceneCache";
 
 import styles from "./YumiRingOverlay.module.css";
 
@@ -416,8 +423,15 @@ export default function YumiRingOverlay({
 
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  /* Where the canvas is put. The canvas itself is not React's: it is the
+     one element that has to survive this screen unmounting, so it is made
+     and moved by hand. See lib/yumi3d/sceneCache.ts. */
+  const canvasHostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
-  const [live, setLive] = useState(false);
+  /* Already live when she was parked a moment ago: no fade-in from nothing
+     for a scene that is already built. Client-only — a parked scene only
+     exists after a client-side navigation, never during hydration. */
+  const [live, setLive] = useState(() => hasParkedYumiScene());
   /* The cookie the current reach is for, so arriving can take that exact
      one rather than whichever is first in the tray a moment later. */
   const reachingFor = useRef<HTMLElement | null>(null);
@@ -578,8 +592,30 @@ export default function YumiRingOverlay({
 
   // ------------------------------------------------------------- the scene
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const host = canvasHostRef.current;
+    if (!host) return;
+
+    /*
+     * The scene from the last visit to this screen, if it is still parked
+     * and its context survived; otherwise a fresh canvas to build one on.
+     */
+    const parked = takeParkedYumiScene();
+    const canvas = parked?.canvas ?? document.createElement("canvas");
+    canvas.className = styles.canvas;
+    host.appendChild(canvas);
+    canvasRef.current = canvas;
+
+    const onCanvasDown = (event: PointerEvent) => {
+      sceneRef.current?.pointerDown(event.clientX, event.clientY);
+      canvas.setPointerCapture?.(event.pointerId);
+    };
+    const onCanvasMove = (event: PointerEvent) =>
+      sceneRef.current?.pointerMove(event.clientX, event.clientY);
+    const onCanvasUp = () => sceneRef.current?.pointerUp();
+    canvas.addEventListener("pointerdown", onCanvasDown);
+    canvas.addEventListener("pointermove", onCanvasMove);
+    canvas.addEventListener("pointerup", onCanvasUp);
+    canvas.addEventListener("pointercancel", onCanvasUp);
 
     let handle: YumiSceneHandle | null = null;
     let raf = 0;
@@ -606,12 +642,13 @@ export default function YumiRingOverlay({
 
     /* Dynamic, so three.js is a chunk this screen asks for after it has
        painted rather than weight on every route's first load. */
-    void import("@/lib/yumi3d/scene")
-      .then(({ createYumiScene }) => {
-        if (cancelled) return;
-
-        handle = createYumiScene(canvas, {
-          reducedMotion: reduced,
+    /*
+     * What the scene's callbacks do, for this mount of the screen. The scene
+     * was created with a relay rather than with these, so a parked scene
+     * taken back by a new mount calls the new mount's code.
+     */
+    const relay: YumiSceneRelay = parked?.relay ?? { current: {} };
+    relay.current = {
           onPullOpen: () => {
             openRef.current = true;
             setOpen(true);
@@ -637,7 +674,31 @@ export default function YumiRingOverlay({
             reachingFor.current = null;
             onLungeArrive?.();
           },
-        });
+    };
+
+    if (parked) {
+      /* She may have been parked mid-gesture, and the viewport may have
+         changed since. */
+      parked.handle.pointerUp?.();
+      parked.handle.setFocusLevel(0);
+      parked.handle.resize();
+    }
+
+    const ready: Promise<YumiSceneHandle | null> = parked
+      ? Promise.resolve(parked.handle)
+      : import("@/lib/yumi3d/scene").then(({ createYumiScene }) =>
+          cancelled ? null : createYumiScene(canvas, relayedOptions(relay, reduced)),
+        );
+
+    void ready
+      .then((created) => {
+        if (cancelled) {
+          /* Unmounted while three.js was still loading: nothing to park. */
+          if (created && !parked) created.dispose();
+          return;
+        }
+
+        handle = created;
 
         if (!handle) {
           window.clearTimeout(giveUp);
@@ -840,7 +901,15 @@ export default function YumiRingOverlay({
       window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
       sceneRef.current = null;
-      handle?.dispose();
+      canvas.removeEventListener("pointerdown", onCanvasDown);
+      canvas.removeEventListener("pointermove", onCanvasMove);
+      canvas.removeEventListener("pointerup", onCanvasUp);
+      canvas.removeEventListener("pointercancel", onCanvasUp);
+      /* Parked, not disposed: the next visit to this screen takes her back
+         rather than building her again. */
+      if (handle) parkYumiScene({ canvas, handle, relay });
+      canvas.remove();
+      canvasRef.current = null;
       /* Leaving the screen leaves no opinion behind: the next screen's dock
          is not this screen's business. */
       setYumiRingState("pending");
@@ -1076,19 +1145,10 @@ export default function YumiRingOverlay({
           tabIndex={open ? 0 : -1}
         />
 
-        <canvas
-          ref={canvasRef}
-          className={styles.canvas}
-          onPointerDown={event => {
-            sceneRef.current?.pointerDown(event.clientX, event.clientY);
-            (event.target as HTMLElement).setPointerCapture?.(event.pointerId);
-          }}
-          onPointerMove={event =>
-            sceneRef.current?.pointerMove(event.clientX, event.clientY)
-          }
-          onPointerUp={() => sceneRef.current?.pointerUp()}
-          onPointerCancel={() => sceneRef.current?.pointerUp()}
-        />
+        {/* The canvas goes here, by hand — see the scene effect. `contents`
+            so the host adds no box: the canvas lays out as this layer's
+            child, exactly as it did when React rendered it. */}
+        <div ref={canvasHostRef} style={{ display: "contents" }} />
 
         <div
           ref={ringRef}

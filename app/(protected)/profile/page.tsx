@@ -37,6 +37,7 @@ import usePwaInstall from "@/hooks/pwa/usePwaInstall";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import {
   getDeviceConnections,
   getServerDeviceConnections,
@@ -135,15 +136,12 @@ export default function ProfilePage() {
       try {
         const supabase = createClient();
 
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
+        const user = await getSessionUser(supabase);
 
         if (!isMounted) return;
 
-        if (userError || !user) {
-          setError(userError?.message ?? copy.loginRequired);
+        if (!user) {
+          setError(copy.loginRequired);
           setLoading(false);
           return;
         }

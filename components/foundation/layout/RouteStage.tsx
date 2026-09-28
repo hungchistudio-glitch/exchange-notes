@@ -11,8 +11,19 @@ import {
   subscribeToLaunching,
 } from "@/lib/launchState";
 
-/** Long enough to register, short enough that nobody waits on it. */
-const FADE_MS = 240;
+/**
+ * Long enough to register, short enough that nobody waits on it.
+ *
+ * It was 240ms from fully transparent, and measured on a phone that read as
+ * lag rather than as care: for the first hundred milliseconds the new screen
+ * was mostly not there, on top of whatever the network had already taken.
+ * Now it is 150ms, starting from 60% — the screen is there at once and
+ * settles, rather than appearing out of nothing.
+ */
+const FADE_MS = 150;
+
+/** Where the fade starts. High enough that nothing reads as missing. */
+const FADE_FROM = 0.6;
 
 /**
  * The stage every protected route is played on.
@@ -83,7 +94,13 @@ export default function RouteStage({ children }: { children: ReactNode }) {
     // No Web Animations API here: arrive without the fade rather than throw.
     if (typeof stage.animate !== "function") return;
 
-    stage.animate([{ opacity: 0 }, { opacity: 1 }], {
+    /*
+     * Once per destination. The pathname changes when the skeleton goes up,
+     * not when the page replaces it, so a page that arrives behind a loading
+     * boundary is faded exactly once — the swap from outline to content is
+     * the outline being filled in, not a second arrival.
+     */
+    stage.animate([{ opacity: FADE_FROM }, { opacity: 1 }], {
       duration: FADE_MS,
       easing: "cubic-bezier(0.4, 0, 0.2, 1)",
     });

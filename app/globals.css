@@ -580,3 +580,30 @@ html[data-launching="true"] :is([data-app-viewport], [data-app-ambience]) *::aft
 [data-in-view="false"] * {
   animation-play-state: paused !important;
 }
+
+/* =========================================================
+   The loading outline waits a beat (see RouteSkeleton)
+
+   Hidden for the first 180ms, then in over 160ms. A page that arrives inside
+   that window replaces an empty page-coloured frame, not a set of grey boxes.
+   With reduced motion the wait stays and the fade goes: the outline simply
+   appears when it is needed.
+   ========================================================= */
+@keyframes routeSkeletonAppear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.route-skeleton-outline {
+  animation: routeSkeletonAppear 160ms ease-out 180ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-skeleton-outline {
+    animation-duration: 1ms;
+  }
+}

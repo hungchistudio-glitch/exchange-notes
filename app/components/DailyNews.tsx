@@ -18,6 +18,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { createNote } from "@/lib/notes/clientRepository";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { getVoiceForLanguage , type SpeechLanguage } from "@/lib/speech";
@@ -655,9 +656,7 @@ export default function DailyNews() {
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setError(copy.saveError);
@@ -706,9 +705,7 @@ export default function DailyNews() {
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setFriendsError(copy.loginRequiredError);
@@ -750,9 +747,7 @@ export default function DailyNews() {
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setFriendsError(copy.loginRequiredError);

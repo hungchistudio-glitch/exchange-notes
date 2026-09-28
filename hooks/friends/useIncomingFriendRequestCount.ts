@@ -5,6 +5,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 
 import { getPendingIncomingRequestCount } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 
 type FriendRequestRow = {
   receiver_id: string;
@@ -35,9 +36,7 @@ export default function useIncomingFriendRequestCount(): IncomingFriendRequestCo
     let channel: RealtimeChannel | null = null;
 
     async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (cancelled || !user) return;
 

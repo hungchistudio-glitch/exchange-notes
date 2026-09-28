@@ -57,7 +57,18 @@ export function RouteSkeleton({ children }: { children: React.ReactNode }) {
       aria-busy="true"
     >
       <span className="sr-only">Loading</span>
-      <div className="mx-auto w-full max-w-xl">{children}</div>
+      {/*
+       * The outline waits a beat before it shows.
+       *
+       * Most arrivals take less than two hundred milliseconds, and for those
+       * the outline was on screen for a frame or two and then replaced — a
+       * flash of grey boxes between two real screens, which is most of what
+       * "choppy" looked like. So the frame (the page colour) is there at
+       * once, and the blocks only appear if the page is actually slow.
+       */}
+      <div className="route-skeleton-outline mx-auto w-full max-w-xl">
+        {children}
+      </div>
     </div>
   );
 }

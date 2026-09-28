@@ -24,9 +24,14 @@ import {
   daysSince,
   hasCrown,
 } from "@/lib/pet/moodEngine";
-import { getOrCreatePetState, touchOpened } from "@/lib/pet/repository";
+import {
+  getOrCreatePetState,
+  shouldTouchOpened,
+  touchOpened,
+} from "@/lib/pet/repository";
 import type { Cookie, YumiMood, PetState } from "@/lib/pet/types";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { VocabularyItem } from "@/lib/types/app";
 
 import CookieTray from "./CookieTray";
@@ -142,20 +147,30 @@ export default function YumiCompanion({
     async function init() {
       try {
         const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = await getSessionUser(supabase);
 
         if (cancelled || !user) return;
 
         const initial = await getOrCreatePetState(supabase, user.id);
         if (cancelled) return;
 
-        const { previousOpenedAt, state } = await touchOpened(supabase, initial);
-        if (cancelled) return;
-
+        /* The row already says when she was last opened — that is the
+           number "missed you" needs — so she is shown now and the new stamp
+           is written behind her, only when the old one has gone stale. */
+        const previousOpenedAt = initial.last_opened_at;
         setDaysSinceLastOpen(previousOpenedAt ? daysSince(previousOpenedAt) : 0);
-        setPetState(state);
+        setPetState(initial);
+
+        if (shouldTouchOpened(initial)) {
+          void touchOpened(supabase, initial).then(({ state }) => {
+            if (cancelled) return;
+            setPetState((current) =>
+              current
+                ? { ...current, last_opened_at: state.last_opened_at }
+                : state,
+            );
+          });
+        }
       } catch {
         // Not signed in yet, or yumi_pet_state hasn't been migrated on the
         // live database — Yumi still renders and reacts, it just won't

@@ -13,6 +13,7 @@ import {
   listCollections,
 } from "@/lib/vocabulary/collections";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { VocabularyCollection } from "@/lib/types/app";
 
 export default function VocabularyCollectionsPage() {
@@ -36,9 +37,7 @@ export default function VocabularyCollectionsPage() {
       setLoading(true);
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user || !active) {
         if (active) setLoading(false);

@@ -6,6 +6,7 @@ import {
   type VocabularyLanguageFields,
 } from "@/lib/offline/vocabulary";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type {
   LanguageMetadataSource,
   LanguagePairAtCreation,
@@ -51,9 +52,7 @@ function isUnreachable(error: unknown): boolean {
 export async function getCurrentUser() {
   const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   return { supabase, user };
 }

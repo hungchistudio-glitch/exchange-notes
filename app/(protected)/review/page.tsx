@@ -9,8 +9,7 @@ import MissionLaunchStage from "@/components/cosmic/MissionLaunchStage";
 import Screen from "@/components/foundation/layout/Screen";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import {
-  getAllReviewWords,
-  getTodaysReview,
+  getReviewWords,
   type ReviewWord,
 } from "@/lib/review/getTodaysReview";
 import { saveReviewResult } from "@/lib/review/saveReviewResult";
@@ -175,10 +174,8 @@ export default function ReviewPage() {
       setErrorMessage("");
 
       try {
-        const [due, all] = await Promise.all([
-          getTodaysReview(),
-          getAllReviewWords(),
-        ]);
+        // One request for both; see getReviewWords.
+        const { due, all } = await getReviewWords();
 
         if (active) {
           setDueWords(due);

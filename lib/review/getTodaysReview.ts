@@ -1,5 +1,6 @@
 import { DEFAULT_LEARNING_PAIR, isLanguageCode, type LanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 
 /* =========================================================
    Review words carry their own languages
@@ -123,9 +124,7 @@ function cleanReviewWords(
 async function getCurrentUserId() {
   const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   return {
     supabase,
@@ -192,3 +191,59 @@ export async function getAllReviewWords(): Promise<
     (data ?? []) as VocabularyRow[],
   );
 }
+
+/**
+ * Today's queue and the whole library, from one request.
+ *
+ * The review screen asked for both at once, as two queries over the same
+ * table — the second a `select *` of every word the reader owns, which the
+ * first is a subset of. On 2026-09-28 that was two round trips (after two
+ * auth checks) before the screen could show a card. The queue is now worked
+ * out here from the library, with the same rule the query used: no schedule
+ * yet, or due by now, soonest first and unscheduled words ahead of all.
+ */
+export async function getReviewWords(): Promise<{
+  due: ReviewWord[];
+  all: ReviewWord[];
+}> {
+  const { supabase, userId } = await getCurrentUserId();
+
+  if (!userId) {
+    return { due: [], all: [] };
+  }
+
+  const { data, error } = await supabase
+    .from("vocabulary_items")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = (data ?? []) as VocabularyRow[];
+  const now = Date.now();
+
+  const dueRows = rows
+    .filter((row) => {
+      const at = (row as { next_review_at?: string | null }).next_review_at;
+      return !at || Date.parse(at) <= now;
+    })
+    .sort((a, b) => {
+      const at = (row: VocabularyRow) =>
+        (row as { next_review_at?: string | null }).next_review_at;
+      const left = at(a);
+      const right = at(b);
+      if (!left && !right) return 0;
+      if (!left) return -1;
+      if (!right) return 1;
+      return Date.parse(left) - Date.parse(right);
+    });
+
+  return {
+    due: cleanReviewWords(dueRows),
+    all: cleanReviewWords(rows),
+  };
+}
+

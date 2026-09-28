@@ -26,6 +26,7 @@ import {
   type IncomingRequest,
 } from "@/lib/friends";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { insertValues, normalizeExchangeId } from "@/lib/utils";
 
 function FriendsPageContent() {
@@ -117,9 +118,7 @@ function FriendsPageContent() {
     let isMounted = true;
 
     async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!isMounted || !user) return;
 

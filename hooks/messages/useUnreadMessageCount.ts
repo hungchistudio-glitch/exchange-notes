@@ -6,6 +6,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { getTotalUnreadCount } from "@/lib/friends";
 import { subscribeToConversationRead } from "@/lib/messages/unreadSignal";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 
 type MessageRow = {
   sender_id: string;
@@ -73,9 +74,7 @@ export default function useUnreadMessageCount(): UnreadMessageCount {
     };
 
     async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (cancelled || !user) return;
 

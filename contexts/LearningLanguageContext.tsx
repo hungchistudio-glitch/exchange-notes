@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { LanguageCode } from "@/lib/languages";
 import { toLearningPair } from "@/lib/profile/languagePair";
 
@@ -93,9 +94,7 @@ export function LearningLanguageProvider({
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) return;
 

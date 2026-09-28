@@ -8,6 +8,7 @@ import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
 import { loadTranslations, prefetchTranslations } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import {
   changeProfileLanguagePair,
@@ -154,9 +155,7 @@ export default function TutorialLanguageSetup() {
     try {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setError(copy.saveError);

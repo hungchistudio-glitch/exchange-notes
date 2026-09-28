@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import type { YumiSceneOptions } from "@/lib/yumi3d/scene";
+import { disposeParkedYumiScene } from "@/lib/yumi3d/sceneCache";
 
 const scene = vi.hoisted(() => ({
   create: vi.fn(),
@@ -11,6 +12,7 @@ const scene = vi.hoisted(() => ({
   eye: { x: 180, y: 290 },
   navigate: vi.fn(),
   search: vi.fn(),
+  dispose: vi.fn(),
 }));
 
 vi.mock("@/lib/yumi3d/scene", () => ({ createYumiScene: scene.create }));
@@ -68,13 +70,15 @@ beforeEach(() => {
   scene.lungeAt.mockClear();
   scene.navigate.mockClear();
   scene.search.mockClear();
+  scene.dispose.mockClear();
+  scene.create.mockClear();
   scene.eye = { x: 180, y: 290 };
   scene.create.mockImplementation((_canvas, incoming: YumiSceneOptions) => {
     options = incoming;
     return {
       setFocusLevel: vi.fn(), setScreenAnchor: vi.fn(), frame: vi.fn(),
       eyeScreenPosition: () => scene.eye, lungeAt: scene.lungeAt,
-      resize: vi.fn(), dispose: vi.fn(),
+      resize: vi.fn(), dispose: scene.dispose,
     };
   });
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
@@ -82,6 +86,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  disposeParkedYumiScene();
   vi.useRealTimers();
 });
 
@@ -144,5 +149,43 @@ describe("the liquid ring destination integration", () => {
 
     act(() => options.onTap?.());
     expect(key).toHaveFocus();
+  });
+  /*
+   * Going home used to rebuild her from nothing — renderer, environment,
+   * shaders — which measured as a 150–200ms frozen frame on a fast Mac every
+   * time. Leaving now parks the scene and coming back takes it again.
+   */
+  it("keeps the same scene and canvas across a visit to another screen", async () => {
+    const first = fixture();
+    await ready();
+    const canvas = first.container.querySelector("canvas")!;
+    vi.spyOn(canvas, "getContext").mockReturnValue({ isContextLost: () => false } as never);
+    expect(scene.create).toHaveBeenCalledTimes(1);
+
+    first.unmount();
+    expect(scene.dispose).not.toHaveBeenCalled();
+
+    const second = fixture();
+    await ready();
+    expect(scene.create).toHaveBeenCalledTimes(1);
+    expect(second.container.querySelector("canvas")).toBe(canvas);
+
+    /* And the callbacks reach the screen that is mounted now. */
+    act(() => options.onTap?.());
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
+  });
+
+  it("builds her again when the parked context was lost", async () => {
+    const first = fixture();
+    await ready();
+    const canvas = first.container.querySelector("canvas")!;
+    vi.spyOn(canvas, "getContext").mockReturnValue({ isContextLost: () => true } as never);
+
+    first.unmount();
+    fixture();
+    await ready();
+
+    expect(scene.dispose).toHaveBeenCalledTimes(1);
+    expect(scene.create).toHaveBeenCalledTimes(2);
   });
 });

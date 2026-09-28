@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import {
   applyInterfaceMode,
   getInterfaceMode,
@@ -120,9 +121,7 @@ export function InterfaceModeProvider({
     void (async () => {
       const supabase = createClient();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) return;
 

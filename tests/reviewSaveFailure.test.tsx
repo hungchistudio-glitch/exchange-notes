@@ -54,6 +54,7 @@ vi.mock("@/lib/review/getTodaysReview", () => {
   return {
     getTodaysReview: vi.fn().mockResolvedValue(words),
     getAllReviewWords: vi.fn().mockResolvedValue(words),
+    getReviewWords: vi.fn().mockResolvedValue({ due: words, all: words }),
   };
 });
 

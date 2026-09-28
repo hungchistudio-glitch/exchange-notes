@@ -114,6 +114,28 @@ export async function saveFedProgress(
   return data as PetState;
 }
 
+/*
+ * How often a visit is worth writing down.
+ *
+ * "Last opened" feeds two things: the Vocabulary page's "Yumi missed you",
+ * which counts days, and the reminder cron, which counts days too. Stamping
+ * it on every single arrival at Home or Vocabulary was a second round trip
+ * (read, then write) on every screen change between them, for a value
+ * nobody reads at better than a day's resolution. Once every ten minutes
+ * loses nothing either of them can see.
+ */
+export const TOUCH_OPENED_EVERY_MS = 10 * 60 * 1000;
+
+export function shouldTouchOpened(
+  current: PetState,
+  now: number = Date.now(),
+): boolean {
+  if (!current.last_opened_at) return true;
+  const last = Date.parse(current.last_opened_at);
+  if (Number.isNaN(last)) return true;
+  return now - last >= TOUCH_OPENED_EVERY_MS;
+}
+
 // Stamps "last opened" for mood computation (e.g. "Yumi missed you"),
 // returning the PREVIOUS last_opened_at so the caller can diff against it
 // before it gets overwritten.

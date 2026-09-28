@@ -21,6 +21,7 @@ import {
 } from "@/lib/languages";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { createVocabularyEntry } from "@/lib/vocabulary/createEntry";
 import { commitCapture } from "@/lib/media/assets";
 import { publishCardBlob } from "@/lib/media/sharing";
@@ -65,9 +66,7 @@ async function captureDishImage(
   if (!pageImage) return null;
 
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   if (!user) return null;
 
@@ -103,9 +102,7 @@ async function publishDishImage(
   dish: MenuItem,
 ): Promise<string | null> {
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   if (!user) return null;
 
@@ -265,9 +262,7 @@ export default function MenuItemInsightSheet({
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setActionError(copy.shareLoginRequired);
@@ -326,9 +321,7 @@ export default function MenuItemInsightSheet({
 
     try {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
 
       if (!user) {
         setFriendsError(copy.shareLoginRequired);

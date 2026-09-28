@@ -68,6 +68,7 @@ import {
 } from "@/lib/messages/wordCard";
 import { notifyPushEvent } from "@/lib/push/eventsClient";
 import { createClient } from "@/lib/supabase/client";
+import { getSessionUser } from "@/lib/supabase/sessionUser";
 import {
   clearPendingSharedVocabulary,
   getPendingSharedVocabulary,
@@ -449,13 +450,10 @@ export default function ConversationRoom({
       setSavedPhraseIds(new Set());
       requestedAnalysisRef.current = new Set();
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      const user = await getSessionUser(supabase);
       if (cancelled) return;
 
-      if (userError || !user) {
+      if (!user) {
         setErrorMessage(copy.room.notLoggedIn);
         setLoading(false);
         return;
