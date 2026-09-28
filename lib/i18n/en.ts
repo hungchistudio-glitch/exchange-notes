@@ -797,6 +797,7 @@ const english: TranslationDictionary = {
       candidateTarget: "Possible target",
       focused: "Focused",
       analysing: "Analysing target",
+      retake: "Retake",
       retry: "Try again",
       confirmTarget: "Use this target",
       resetZoom: "Reset zoom",

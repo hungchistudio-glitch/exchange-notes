@@ -25,6 +25,12 @@
    one that arrives a frame later: the reader pressed the button while
    looking at a particular rectangle, and that is the one they meant.
 
+   And the picture freezes with it (Chi, 2026-09-28): a white flash, then
+   the frame that was taken, held, with the target breathing while it is
+   read; the word found shown on that frame for a moment before the card;
+   or, when nothing could be found, the reason and a Retake key — still on
+   the frozen frame, so the reader can see what was read.
+
    Nothing here reads a ref while rendering. Both measurements the geometry
    needs — the box on screen and the frame the sensor is delivering — are
    pushed in by observers and events, so the first painted frame has real
@@ -32,9 +38,10 @@
    ========================================================= */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FileText, Images, X, Zap, ZapOff } from "lucide-react";
+import { FileText, Images, RotateCcw, X, Zap, ZapOff } from "lucide-react";
 
 import AnalysingTargetIndicator from "@/components/camera/AnalysingTargetIndicator";
+import styles from "@/components/camera/TargetCamera.module.css";
 import FocusIndicator from "@/components/camera/FocusIndicator";
 import TargetOverlay from "@/components/camera/TargetOverlay";
 import ZoomControl from "@/components/camera/ZoomControl";
@@ -55,6 +62,7 @@ import {
 } from "@/lib/media/geometry";
 import { detectRegions } from "@/lib/media/regionDetection";
 import { rasterFromVideo, type Raster } from "@/lib/media/raster";
+import type { CaptureOutcome } from "@/hooks/lexicon/useLexiconImageLookup";
 
 /** Five times a second, the rate the menu detector settled on. */
 const DETECTION_INTERVAL_MS = 200;
@@ -64,6 +72,24 @@ const FOCUS_VISIBLE_MS = 900;
 
 /** How long the zoom readout lingers after a pinch ends. */
 const ZOOM_READOUT_MS = 1200;
+
+/*
+ * How long the word found stays on the frozen frame before the card
+ * (Chi, 2026-09-28: "about a second"). Long enough to read one word and its
+ * translation; the AI's fuller answer carries on in the card.
+ */
+export const ANSWER_HOLD_MS = 1_000;
+
+/* The held frame is a picture on screen, not the photograph: capped. */
+const HELD_FRAME_EDGE = 1280;
+
+type Phase =
+  | { kind: "live" }
+  | { kind: "reading" }
+  /** A caller that runs its own wait (the capture screen): held while busy. */
+  | { kind: "held" }
+  | { kind: "answer"; term: string; translation: string }
+  | { kind: "failed"; message: string };
 
 
 
@@ -89,18 +115,31 @@ export type TargetCameraCopy = {
   permissionDenied: string;
   unavailable: string;
   retry: string;
+  /** The key on a frozen frame nothing could be read from. */
+  retake: string;
 };
 
 type TargetCameraProps = {
   copy: TargetCameraCopy;
-  onCapture: (capture: CameraCapture) => void;
+  /**
+   * Reads the photograph. What it resolves with is what the frozen frame
+   * shows: a word (held for ANSWER_HOLD_MS, then the camera closes), or why
+   * there is none (held, with Retake). Resolving with nothing closes the
+   * camera at once.
+   */
+  onCapture: (
+    capture: CameraCapture,
+  ) => void | CaptureOutcome | Promise<void | CaptureOutcome>;
   onClose: () => void;
   onPickPhoto: (file: File) => void;
   /** Omitted where a screen has no file import. */
   onPickFile?: (file: File) => void;
   fileAccept?: string;
   ideal?: { width: number; height: number };
-  /** Shown over the preview while the caller works on a capture. */
+  /**
+   * Shown over the preview while the caller works on something that did not
+   * come off the shutter — a photo picked from the library.
+   */
   busy?: boolean;
 };
 
@@ -130,6 +169,29 @@ export default function TargetCamera({
     unfreeze,
     retry,
   } = useCameraStream({ ideal });
+
+  const [phase, setPhase] = useState<Phase>({ kind: "live" });
+  /* Bumped per shutter press, so the flash replays as a fresh element. */
+  const [flash, setFlash] = useState(0);
+  const [holdingFrame, setHoldingFrame] = useState(false);
+  const heldFrameRef = useRef<HTMLCanvasElement | null>(null);
+  const answerTimer = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (answerTimer.current) window.clearTimeout(answerTimer.current);
+    };
+  }, []);
+
+  /*
+   * Anything but the live preview: the frame is held and not selectable.
+   * A caller that runs its own wait holds it only while it says it is busy.
+   */
+  const holding = phase.kind === "held" ? busy : phase.kind !== "live";
+  const analysing = busy || phase.kind === "reading";
 
   const [natural, setNatural] = useState<Size | null>(null);
   const [candidates, setCandidates] = useState<NormalizedRect[]>([]);
@@ -176,7 +238,7 @@ export default function TargetCamera({
   /* ---------- live candidates ---------- */
 
   useEffect(() => {
-    if (status !== "live" || busy) return;
+    if (status !== "live" || busy || holding) return;
 
     const interval = window.setInterval(() => {
       const video = videoRef.current;
@@ -198,7 +260,7 @@ export default function TargetCamera({
     }, DETECTION_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [status, busy, videoRef]);
+  }, [status, busy, holding, videoRef]);
 
   /* ---------- geometry ---------- */
 
@@ -232,7 +294,7 @@ export default function TargetCamera({
 
   const handleTap = useCallback(
     async (event: React.PointerEvent<HTMLDivElement>) => {
-      if (busy || status !== "live" || !natural || !layout) return;
+      if (busy || holding || status !== "live" || !natural || !layout) return;
 
       const box = measure();
       if (!box) return;
@@ -280,7 +342,7 @@ export default function TargetCamera({
         FOCUS_VISIBLE_MS,
       );
     },
-    [busy, status, natural, layout, measure, candidates, stream, capabilities],
+    [busy, holding, status, natural, layout, measure, candidates, stream, capabilities],
   );
 
   /* ---------- pinch ---------- */
@@ -369,40 +431,101 @@ export default function TargetCamera({
 
   /* ---------- shutter ---------- */
 
-  const capture = useCallback(() => {
+  /**
+   * The frame that was taken, drawn where the preview is and held there.
+   *
+   * Pausing the video alone was not a hold one could rely on: the preview
+   * was let go again the moment the phone's own recogniser answered — half a
+   * second in — while the camera stayed open for the AI, so on an iPhone the
+   * shutter looked as if it had not fired (Chi, 2026-09-28). A still copy
+   * drawn over the video holds whatever the video element then does.
+   */
+  const holdFrame = useCallback((video: HTMLVideoElement) => {
+    const canvas = heldFrameRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (!canvas || !width || !height) return;
+
+    const scale = Math.min(1, HELD_FRAME_EDGE / Math.max(width, height));
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+
+    try {
+      canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      setHoldingFrame(true);
+    } catch {
+      /* The paused video still stands in for it. */
+    }
+  }, []);
+
+  const capture = useCallback(async () => {
     const video = videoRef.current;
 
-    if (!video || busy || status !== "live") return;
+    if (!video || busy || holding || status !== "live") return;
 
     const raster = rasterFromVideo(video);
 
     if (!raster) return;
 
     /*
-     * The preview stops here, on the frame that was just taken.
-     *
-     * It used to carry on running through the whole recognition — three to
-     * seven seconds of the room moving behind a progress message, which
-     * reads as the shutter not having fired. Holding the frame is what makes
-     * the wait obviously *about* the picture you just took.
+     * The preview stops here, on the frame that was just taken: a flash,
+     * the still copy on top, the video paused beneath it.
      */
+    holdFrame(video);
     freeze();
+    setFlash((count) => count + 1);
+    setPhase({ kind: "reading" });
 
-    onCapture({
-      raster,
-      targetRect: clampRect(targetRef.current ?? DEFAULT_TARGET_RECT),
-    });
-  }, [videoRef, busy, status, onCapture, freeze]);
+    let outcome: void | CaptureOutcome;
+    try {
+      outcome = await onCapture({
+        raster,
+        targetRect: clampRect(targetRef.current ?? DEFAULT_TARGET_RECT),
+      });
+    } catch {
+      outcome = undefined;
+    }
+
+    if (!mountedRef.current) return;
+
+    if (outcome?.kind === "answer") {
+      setPhase({
+        kind: "answer",
+        term: outcome.term,
+        translation: outcome.translation,
+      });
+      answerTimer.current = window.setTimeout(onClose, ANSWER_HOLD_MS);
+      return;
+    }
+
+    if (outcome?.kind === "error") {
+      setPhase({ kind: "failed", message: outcome.message });
+      return;
+    }
+
+    if (outcome === undefined) {
+      setPhase({ kind: "held" });
+      return;
+    }
+
+    onClose();
+  }, [videoRef, busy, holding, status, onCapture, onClose, freeze, holdFrame]);
+
+  /** Back to the live preview, from a frame nothing could be read from. */
+  const retake = useCallback(() => {
+    setPhase({ kind: "live" });
+    setHoldingFrame(false);
+    unfreeze();
+  }, [unfreeze]);
 
   /*
-   * Let it run again when the caller is done and has not navigated away.
-   * Most callers close the camera on an answer, so this usually matters
-   * only for a failure — where the reader is left looking at a live camera
-   * they can immediately use again rather than a frozen one they cannot.
+   * The capture screen reads the photograph itself and says so with `busy`;
+   * it closes the camera on success. On a failure the preview comes back
+   * live, as it always has there.
    */
   useEffect(() => {
-    if (!busy) unfreeze();
-  }, [busy, unfreeze]);
+    if (phase.kind === "held" && !busy) unfreeze();
+  }, [phase.kind, busy, unfreeze]);
 
   /* ---------- pickers ---------- */
 
@@ -486,18 +609,80 @@ export default function TargetCamera({
           className="absolute inset-0 h-full w-full object-cover"
         />
 
+        {/*
+          The frame the shutter took, held over the preview until the reader
+          is shown what was found in it (see holdFrame). Always mounted, so
+          the shutter can draw into it synchronously; hidden while live.
+        */}
+        <canvas
+          ref={heldFrameRef}
+          aria-hidden="true"
+          data-held-frame={holdingFrame && holding ? "true" : "false"}
+          className={`absolute inset-0 h-full w-full object-cover ${holdingFrame && holding ? "" : "hidden"}`}
+        />
+
         {!unavailable && (
           <TargetOverlay
-            candidates={overlayCandidates}
+            candidates={holding ? [] : overlayCandidates}
             selected={overlayTarget}
             selectedLabel={copy.selectedTarget}
             candidateLabel={copy.candidateTarget}
-            busy={busy}
+            busy={analysing}
           />
         )}
 
         <FocusIndicator point={focusPoint} label={copy.focused} />
+
+        {/* A shutter's flash: once per press, then gone. */}
+        {flash > 0 && (
+          <div key={flash} className={styles.flash} aria-hidden="true" />
+        )}
       </div>
+
+      {/*
+        What was found, on the frame it was found in — held for a moment,
+        then the card (ANSWER_HOLD_MS). Black on white, like the rest of the
+        camera's chrome.
+      */}
+      {phase.kind === "answer" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`pointer-events-none absolute inset-x-6 top-1/2 flex -translate-y-1/2 justify-center ${styles.answer}`}
+        >
+          <div className="max-w-full rounded-3xl bg-white px-7 py-5 text-center text-black shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
+            <p className="break-words text-[1.75rem] font-semibold leading-tight">
+              {phase.term}
+            </p>
+            {phase.translation ? (
+              <p className="mt-1 break-words text-base text-black/60">
+                {phase.translation}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {/*
+        Nothing found: the reason, on the frozen frame, and a way to take it
+        again (Chi, 2026-09-28). The live preview comes back only on Retake.
+      */}
+      {phase.kind === "failed" && (
+        <div
+          role="alert"
+          className="absolute inset-x-6 top-1/2 -translate-y-1/2 rounded-3xl bg-black/70 p-6 text-center text-white backdrop-blur-xl"
+        >
+          <p className="text-sm leading-relaxed">{phase.message}</p>
+          <button
+            type="button"
+            onClick={retake}
+            className="mx-auto mt-4 flex items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition-transform active:scale-95"
+          >
+            <RotateCcw size={16} strokeWidth={2} aria-hidden="true" />
+            {copy.retake}
+          </button>
+        </div>
+      )}
 
       {/* Top row: only what the moment needs. */}
       <div
@@ -580,9 +765,9 @@ export default function TargetCamera({
           Above the zoom control and the shutter, centred, and clear of the
           target frame — which is drawn over the preview, not down here.
         */}
-        <AnalysingTargetIndicator active={busy} label={copy.analysing} />
+        <AnalysingTargetIndicator active={analysing} label={copy.analysing} />
 
-        {!busy && !unavailable && (
+        {!analysing && !holding && !unavailable && (
           <p className="rounded-full bg-black/25 px-3 py-1.5 text-[0.6875rem] font-medium tracking-wide text-white/90 backdrop-blur-md">
             {copy.hint}
           </p>
@@ -614,7 +799,7 @@ export default function TargetCamera({
           <button
             type="button"
             onClick={capture}
-            disabled={busy || unavailable}
+            disabled={busy || holding || unavailable}
             aria-label={copy.shutter}
             className="flex h-[74px] w-[74px] items-center justify-center rounded-full border-[3px] border-white/90 transition-transform duration-150 active:scale-90 disabled:opacity-40"
           >

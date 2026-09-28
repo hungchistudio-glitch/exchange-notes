@@ -506,6 +506,94 @@ describe("with the phone's classifier", () => {
   });
 });
 
+/*
+ * What the camera shows on the frame it took (Chi, 2026-09-28): the shutter
+ * hears back at the first word found — the phone's, half a second in — not
+ * when the AI finishes, so it can show that word on the held frame and
+ * close. The AI's upgrade carries on in the card.
+ */
+describe("what the shutter hears back", () => {
+  const chair = { en: "chair", "zh-TW": "椅子", es: "silla", fr: "chaise", it: "sedia" };
+  const raster = () => ({ source: {}, width: 640, height: 480, close: vi.fn() });
+
+  it("is the phone's word, as soon as it is shown, while the AI reads on", async () => {
+    const onTerm = vi.fn();
+    onDeviceVision.recognizeOnDevice.mockResolvedValue({ word: chair, score: 0.8 });
+    let answer: (value: unknown) => void = () => {};
+    recognition.identifyImage.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.handleCapture(raster() as never, DEFAULT_TARGET_RECT);
+    });
+
+    expect(outcome).toEqual({ kind: "answer", term: "chaise", translation: "椅子" });
+
+    // The AI still answers into the card afterwards.
+    await act(async () => {
+      answer({ term: "fauteuil", translation: "扶手椅" });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(onTerm).toHaveBeenLastCalledWith("fauteuil", { upgrade: true });
+  });
+
+  it("is the AI's word when the phone had none", async () => {
+    recognition.identifyImage.mockResolvedValue({ term: "lampe", translation: "檯燈" });
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm: vi.fn() }));
+
+    let outcome: unknown;
+    await act(async () => {
+      outcome = await result.current.handleCapture(raster() as never, DEFAULT_TARGET_RECT);
+    });
+
+    expect(outcome).toEqual({ kind: "answer", term: "lampe", translation: "檯燈" });
+  });
+
+  it("is the reason, when neither found anything", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    recognition.identifyImage.mockRejectedValue(
+      new ImageRecognitionError("google-down", { retryAt: null }),
+    );
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm: vi.fn() }));
+
+    let outcome: { kind: string; message?: string } | undefined;
+    await act(async () => {
+      outcome = (await result.current.handleCapture(
+        raster() as never,
+        DEFAULT_TARGET_RECT,
+      )) as typeof outcome;
+    });
+
+    expect(outcome?.kind).toBe("error");
+    expect(outcome?.message).toContain("Google");
+  });
+
+  it("is a reason too when the model looked and named nothing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    recognition.identifyImage.mockResolvedValue({ term: "" });
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm: vi.fn() }));
+
+    let outcome: { kind: string } | undefined;
+    await act(async () => {
+      outcome = (await result.current.handleCapture(
+        raster() as never,
+        DEFAULT_TARGET_RECT,
+      )) as typeof outcome;
+    });
+
+    expect(outcome?.kind).toBe("error");
+  });
+});
+
 describe("one request per photograph", () => {
   it("files the recognition as the card for the word it found", async () => {
     window.localStorage.clear();

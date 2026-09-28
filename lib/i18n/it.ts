@@ -761,6 +761,7 @@ const italian: TranslationDictionary = {
       candidateTarget: "Bersaglio possibile",
       focused: "Messa a fuoco eseguita",
       analysing: "Analisi del bersaglio",
+      retake: "Scatta di nuovo",
       retry: "Riprova",
       confirmTarget: "Usa questo bersaglio",
       resetZoom: "Reimposta zoom",

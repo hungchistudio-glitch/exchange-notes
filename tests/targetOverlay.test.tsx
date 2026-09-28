@@ -48,80 +48,29 @@ describe("the target while nothing is happening", () => {
 });
 
 describe("the target while the model is reading it", () => {
-  it("sweeps a band down the inside of the target", () => {
-    /*
-     * The half that answers "is this working" from across a room. A light
-     * on the edge alone was reported as not obvious enough.
-     */
+  /*
+   * Chi, 2026-09-28: the target breathes ("目標框呼吸光") on the frozen
+   * frame — corners and a soft glow swelling and settling together. It
+   * replaced a sweeping band and a light running the edge.
+   */
+  it("breathes: the corners and a glow round the target", () => {
     const { container } = overlay({ busy: true });
 
-    const band = container.querySelector("[class*='band']");
-
-    expect(band).not.toBeNull();
+    expect(container.querySelectorAll("[class*='breathing']")).toHaveLength(4);
+    expect(container.querySelector("[class*='glow']")).not.toBeNull();
   });
 
-  it("clips the band to the target so it cannot spill onto the picture", () => {
+  it("opens each corner outward from the target, so they move together", () => {
     const { container } = overlay({ busy: true });
 
-    expect(container.querySelector("[class*='bandClip']")).not.toBeNull();
-  });
-
-  it("runs a light round the target's own edge", () => {
-    // The quieter half: it says precisely which rectangle is being read.
-    const { container } = overlay({ busy: true });
-
-    const edge = container.querySelector("svg rect");
-
-    expect(edge).not.toBeNull();
-    expect(edge?.getAttribute("class")).toMatch(/edgeStroke/);
-  });
-
-  it("stops everything travelling under reduced motion", () => {
-    /*
-     * Asserted against the stylesheet, because the rule lives in a media
-     * query rather than in a class name the markup carries. The band is
-     * removed outright — its whole purpose is movement, and left static it
-     * would be a stripe across the middle of the picture.
-     */
-    const css = readFileSync(
-      join(process.cwd(), "components/camera/TargetOverlay.module.css"),
-      "utf8",
+    const origins = [...container.querySelectorAll<HTMLElement>("[class*='breathing']")].map(
+      (corner) => corner.style.transformOrigin,
     );
 
-    const reduced = css.slice(css.indexOf("prefers-reduced-motion"));
-
-    expect(reduced).toContain("display: none");
-    expect(reduced).toContain("animation: none");
+    expect(new Set(origins).size).toBe(4);
   });
 
-  it("normalises the perimeter so the journey is the same at any shape", () => {
-    /*
-     * pathLength=100 is what lets one keyframe describe a wide target and a
-     * tall one identically. Without it the dash pattern is in user units and
-     * the light crawls on a big box and races on a small one.
-     */
-    const { container } = overlay({ busy: true });
-
-    expect(container.querySelector("svg rect")).toHaveAttribute(
-      "pathLength",
-      "100",
-    );
-  });
-
-  it("scans the target and not the whole viewfinder", () => {
-    /*
-     * The spec rules out a line sweeping the frame by name, and it would
-     * also be untrue — nothing is reading the rest of the picture. The scan
-     * lives inside the selected target's own element.
-     */
-    const { container } = overlay({ busy: true });
-
-    const selected = screen.getByRole("img", { name: copy.selectedLabel });
-
-    expect(selected.contains(container.querySelector("svg"))).toBe(true);
-  });
-
-  it("keeps both signals inside the target, never across the frame", () => {
+  it("keeps it inside the target, never across the frame", () => {
     /*
      * The brief rules out a line sweeping the viewfinder by name, and it
      * would also be untrue: nothing is reading the rest of the picture.
@@ -130,8 +79,27 @@ describe("the target while the model is reading it", () => {
 
     const selected = screen.getByRole("img", { name: copy.selectedLabel });
 
-    expect(selected.contains(container.querySelector("[class*='band']"))).toBe(true);
-    expect(selected.contains(container.querySelector("svg"))).toBe(true);
+    expect(selected.contains(container.querySelector("[class*='glow']"))).toBe(true);
+    expect(container.querySelector("[class*='band']")).toBeNull();
+  });
+
+  it("stops breathing under reduced motion, and holds bright instead", () => {
+    const css = readFileSync(
+      join(process.cwd(), "components/camera/TargetOverlay.module.css"),
+      "utf8",
+    );
+
+    const reduced = css.slice(css.indexOf("prefers-reduced-motion"));
+
+    expect(reduced).toContain("animation: none");
+    expect(reduced).toContain("opacity: 1");
+  });
+
+  it("does not breathe when nothing is being read", () => {
+    const { container } = overlay({ busy: false });
+
+    expect(container.querySelector("[class*='breathing']")).toBeNull();
+    expect(container.querySelector("[class*='glow']")).toBeNull();
   });
 
   it("takes the candidates down so one thing is being worked on", () => {
@@ -146,10 +114,10 @@ describe("the target while the model is reading it", () => {
     );
   });
 
-  it("shows nothing to scan when no target was chosen", () => {
+  it("shows nothing to read when no target was chosen", () => {
     // Recognition can run on the centre default with no explicit selection.
     const { container } = overlay({ busy: true, selected: null });
 
-    expect(container.querySelector("svg rect")).toBeNull();
+    expect(container.querySelector("[class*='glow']")).toBeNull();
   });
 });

@@ -759,6 +759,8 @@ export type TranslationDictionary = {
        * the pill jump as the animated ones cycled.
        */
       analysing: string;
+      /** On a frozen frame nothing could be read from. */
+      retake: string;
       retry: string;
       confirmTarget: string;
       resetZoom: string;

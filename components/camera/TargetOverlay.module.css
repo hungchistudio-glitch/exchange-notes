@@ -1,123 +1,106 @@
 /* =========================================================
    The target, and what it does while it is being read
 
-   Moved out of an inline <style> and into a module, which is the convention
-   MenuCamera.module.css set and the only place a reduced-motion block can
-   sensibly live.
+   Chi, 2026-09-28: the target breathes ("目標框呼吸光"). While the frame the
+   shutter took is held and read, the corners and a soft white glow round
+   the target swell and settle together, slowly — a calm signal on a still
+   picture rather than something racing across it. Black and white, like the
+   rest of the camera.
 
-   Two things run during a read, and they are doing different jobs. The band
-   sweeping down the inside of the target is the one that answers "is this
-   thing working" from across a room — it was reported that the previous
-   perimeter light alone was not obvious enough. The light travelling the
-   edge is the quieter half: it says precisely which rectangle is being read,
-   which the band alone does not.
+   This replaced two travelling signals — a band sweeping down the inside
+   and a light running round the edge — which were drawn for a live preview
+   and read as busy noise on a frozen one.
 
-   Both stay inside the target. A line crossing the whole viewfinder is ruled
-   out by the brief and would also be untrue — nothing is reading the rest of
-   the picture.
+   Everything stays inside the target. A line crossing the whole viewfinder
+   is ruled out by the brief and would also be untrue: nothing is reading
+   the rest of the picture.
 
-   Timings live here, together, at the top.
+   Only opacity, transform and filter move. Timings live here, together, at
+   the top.
    ========================================================= */
 
 .target {
-  --edge-duration: 1600ms;
-  --band-duration: 1400ms;
+  --breath-duration: 1800ms;
   --settle-duration: 200ms;
 
   position: absolute;
   transition: all var(--settle-duration) ease-out;
 }
 
-/* ---------- the sweeping band ---------- */
+/* ---------- the corners, breathing ---------- */
+
+.breathing {
+  animation: cornerBreath var(--breath-duration) ease-in-out infinite;
+  will-change: transform, opacity;
+}
 
 /*
- * Clipped to the target's own rounded rectangle, so the band cannot spill
- * onto the picture around it.
+ * Each corner grows slightly away from the target's centre and back. The
+ * transform origin is the corner's inner point (set per corner in
+ * TargetOverlay.tsx), so the four brackets open and close around the target
+ * together rather than drifting.
  */
-.bandClip {
+@keyframes cornerBreath {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+  }
+}
+
+/* ---------- the glow round the target ---------- */
+
+.glow {
   position: absolute;
   inset: 0;
   border-radius: 10px;
-  overflow: hidden;
   pointer-events: none;
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.85),
+    0 0 18px 4px rgba(255, 255, 255, 0.45);
+  animation: glowBreath var(--breath-duration) ease-in-out infinite;
+  will-change: opacity;
 }
 
-.band {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 34%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 35%,
-    rgba(255, 255, 255, 0.26) 50%,
-    rgba(255, 255, 255, 0.1) 65%,
-    transparent 100%
-  );
-  animation: targetBand var(--band-duration) ease-in-out infinite;
-  will-change: transform;
-}
-
-@keyframes targetBand {
-  from {
-    transform: translateY(-120%);
+@keyframes glowBreath {
+  0%,
+  100% {
+    opacity: 0.25;
   }
-  to {
-    transform: translateY(320%);
-  }
-}
-
-/* ---------- the light on the edge ---------- */
-
-.edge {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-/*
- * pathLength is normalised in the markup, so this one keyframe describes a
- * wide target and a tall one identically — without it the light crawls
- * around a big box and races around a small one.
- */
-.edgeStroke {
-  animation: targetEdge var(--edge-duration) linear infinite;
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55));
-}
-
-@keyframes targetEdge {
-  from {
-    stroke-dashoffset: 100;
-  }
-  to {
-    stroke-dashoffset: 0;
+  50% {
+    opacity: 1;
   }
 }
 
 /* ---------- reduced motion ---------- */
 
 /*
- * Nothing travels. The target still says it is being read — the edge goes
- * solid and bright, which is a state change rather than movement — and the
- * band, whose whole purpose is motion, is removed rather than left sitting
- * as a stripe across the middle of the picture.
+ * Nothing breathes. The target still says it is being read — the corners
+ * and the glow go solid and bright, which is a state change rather than
+ * movement.
  */
 @media (prefers-reduced-motion: reduce) {
   .target {
     transition: none;
   }
 
-  .band {
-    display: none;
+  .breathing,
+  .glow {
+    animation: none;
   }
 
-  .edgeStroke {
-    animation: none;
-    stroke-dasharray: none;
-    opacity: 0.9;
+  .breathing {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9));
+  }
+
+  .glow {
+    opacity: 0.8;
   }
 }

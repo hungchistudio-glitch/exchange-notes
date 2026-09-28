@@ -28,7 +28,7 @@ type TargetOverlayProps = {
   /** Announced beside the selected frame. Never the only signal. */
   selectedLabel: string;
   candidateLabel: string;
-  /** Dimmed while the shutter is working, so the frame reads as committed. */
+  /** While the frame is being read: the target breathes, the rest dims. */
   busy?: boolean;
 };
 
@@ -94,34 +94,28 @@ export default function TargetOverlay({
           aria-label={selectedLabel}
         >
           {/*
-            The band that makes it obvious from across a room. Clipped to the
-            target's own rounded rectangle, so it sweeps the thing being read
-            and nothing else.
-          */}
-          {busy && (
-            <span className={styles.bandClip} aria-hidden="true">
-              <span className={styles.band} />
-            </span>
-          )}
-          {/*
             Brackets rather than a full box: they mark the corners the crop
             will be taken at without drawing a line through the middle of
             the word being read.
           */}
           {(
             [
-              "left-0 top-0 border-l-2 border-t-2 rounded-tl-[10px]",
-              "right-0 top-0 border-r-2 border-t-2 rounded-tr-[10px]",
-              "left-0 bottom-0 border-b-2 border-l-2 rounded-bl-[10px]",
-              "right-0 bottom-0 border-b-2 border-r-2 rounded-br-[10px]",
+              ["left-0 top-0 border-l-2 border-t-2 rounded-tl-[10px]", "100% 100%"],
+              ["right-0 top-0 border-r-2 border-t-2 rounded-tr-[10px]", "0% 100%"],
+              ["left-0 bottom-0 border-b-2 border-l-2 rounded-bl-[10px]", "100% 0%"],
+              ["right-0 bottom-0 border-b-2 border-r-2 rounded-br-[10px]", "0% 0%"],
             ] as const
-          ).map((corner) => (
+          ).map(([corner, origin]) => (
             <span
               key={corner}
-              className={`absolute h-6 w-6 border-white ${corner}`}
-              style={{
-                filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.45))",
-              }}
+              className={`absolute h-6 w-6 border-white ${corner} ${busy ? styles.breathing : ""}`}
+              style={
+                busy
+                  ? /* Grows outward from the target's inside, so all four
+                       open and close around it together. */
+                    { transformOrigin: origin }
+                  : { filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.45))" }
+              }
             />
           ))}
 
@@ -133,46 +127,21 @@ export default function TargetOverlay({
                 eye is held on the thing being worked on rather than on the
                 room around it.
               */
-              boxShadow: `0 0 0 9999px rgba(0,0,0,${busy ? 0.42 : 0.18})`,
+              boxShadow: `0 0 0 9999px rgba(0,0,0,${busy ? 0.5 : 0.18})`,
             }}
           />
 
           {/*
-            The scan, drawn on the target and nowhere else.
-
-            The wait here is the model's, and it is three to seven seconds —
-            measured, and not reducible by any parameter this app controls.
-            So the job is to make it legible rather than shorter: a light
-            travelling the target's own perimeter says which rectangle is
-            being read, and that something is still happening.
-
-            Deliberately not a line sweeping the whole viewfinder. The spec
-            rules that out by name, and it would also be a lie — nothing is
-            scanning the rest of the frame.
-
-            SVG with an animated dash offset rather than a moving element:
-            it is one compositor-friendly property, it follows the rounded
-            rectangle exactly at any aspect ratio, and it costs nothing when
-            the reader has asked for less motion, where it simply holds
-            still as a brighter outline.
+            The target breathing while it is read (Chi, 2026-09-28: "目標框
+            呼吸光"). A soft white glow round the target's own rounded
+            rectangle swells and settles with the corners — on the target and
+            nowhere else, because nothing is reading the rest of the picture.
+            It replaced a band sweeping the inside and a light running the
+            edge: one slow, calm signal on a frozen frame rather than two
+            fast ones.
           */}
           {busy && (
-            <svg className={styles.edge} aria-hidden="true">
-              <rect
-                x="1"
-                y="1"
-                width="calc(100% - 2px)"
-                height="calc(100% - 2px)"
-                rx="10"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                pathLength={100}
-                strokeDasharray="22 78"
-                className={styles.edgeStroke}
-              />
-            </svg>
+            <span className={styles.glow} aria-hidden="true" />
           )}
         </div>
       )}

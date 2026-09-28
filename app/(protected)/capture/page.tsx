@@ -1217,6 +1217,7 @@ function CaptureContent() {
     permissionDenied: capture.errors.cameraPermissionDenied,
     unavailable: capture.errors.cameraUnavailable,
     retry: capture.camera.retry,
+    retake: capture.camera.retake,
   };
 
   const viewerCopy = {

@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from "react";
 
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import type { CameraCapture } from "@/components/camera/TargetCamera";
+import type { CaptureOutcome } from "@/hooks/lexicon/useLexiconImageLookup";
 import useTranslation from "@/hooks/i18n/useTranslation";
 
 /* =========================================================
@@ -62,7 +63,9 @@ const TargetCamera = dynamic(loadCamera, { loading: () => null });
  */
 type LexiconImageMenuProps = {
   onFile: (file: File) => void | Promise<void>;
-  onCapture: (capture: CameraCapture) => void | Promise<void>;
+  onCapture: (
+    capture: CameraCapture,
+  ) => void | CaptureOutcome | Promise<void | CaptureOutcome>;
   disabled?: boolean;
   buttonClassName?: string;
   /** True while a photo is being read, so the camera can say so. */
@@ -136,22 +139,21 @@ export default function LexiconImageMenu({
               permissionDenied: t.capture.errors.cameraPermissionDenied,
               unavailable: t.capture.errors.cameraUnavailable,
               retry: camera.retry,
+              retake: camera.retake,
             }}
             onClose={() => setOpen(false)}
             /*
-             * The camera stays up while the photograph is read, and closes
-             * when there is an answer.
+             * The camera stays up while the photograph is read, on the frame
+             * that was taken, and closes itself once it has shown the word
+             * found (TargetCamera, ANSWER_HOLD_MS) — or stays, with the
+             * reason and a Retake key, when nothing was.
              *
-             * Closing on the shutter instead made the screen vanish with no
-             * feedback for the two or three seconds recognition takes,
-             * which reads as the button having failed. `busy` is what draws
-             * "Analysing target…" over the frame, and it can only do that
-             * if the frame is still there.
+             * It used to close when the whole read had finished, AI and
+             * all: the phone's own answer arrived in half a second, the
+             * preview went live again, and the camera then sat open for up
+             * to twenty seconds with nothing on it (Chi, 2026-09-28).
              */
-            onCapture={async (capture) => {
-              await onCapture(capture);
-              setOpen(false);
-            }}
+            onCapture={onCapture}
             onPickPhoto={async (file) => {
               await onFile(file);
               setOpen(false);

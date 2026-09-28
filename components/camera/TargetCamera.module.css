@@ -1,0 +1,57 @@
+/* =========================================================
+   The shutter's flash, and the word found appearing on the held frame
+
+   Chi, 2026-09-28: a white flash when the shutter fires, then the frame
+   held. Only opacity and transform move.
+   ========================================================= */
+
+.flash {
+  --flash-duration: 150ms;
+
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  pointer-events: none;
+  opacity: 0;
+  animation: shutterFlash var(--flash-duration) ease-out both;
+}
+
+@keyframes shutterFlash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.answer {
+  --answer-enter: 200ms;
+
+  animation: answerEnter var(--answer-enter) ease-out both;
+}
+
+@keyframes answerEnter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-50% + 6px)) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/*
+ * No sudden brightness and nothing travelling for a reader who asked for
+ * less motion: the frame simply holds, and the word simply appears.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .flash {
+    display: none;
+  }
+
+  .answer {
+    animation: none;
+  }
+}

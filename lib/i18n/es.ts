@@ -797,6 +797,7 @@ const spanish: TranslationDictionary = {
       candidateTarget: "Objetivo posible",
       focused: "Enfocado",
       analysing: "Analizando el objetivo",
+      retake: "Repetir foto",
       retry: "Reintentar",
       confirmTarget: "Usar este objetivo",
       resetZoom: "Restablecer el zoom",

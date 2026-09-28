@@ -32,6 +32,21 @@ import { recognizeOnDevice } from "@/lib/vision/onDeviceClassifier";
  * phone's first answer carries its word, and the AI's later answer for the
  * same photo is an upgrade.
  */
+/**
+ * What the camera shows on the frozen frame once a photograph has been read
+ * (Chi, 2026-09-28): the first word found — the phone's, or the AI's if it
+ * came first — held on the picture for a moment before the card; or why
+ * nothing was found, with a way to take it again.
+ *
+ * Resolved at the *first* answer, not the last: the AI's upgrade of a phone
+ * answer carries on in the card after the camera has closed.
+ */
+export type CaptureOutcome =
+  | { kind: "answer"; term: string; translation: string }
+  | { kind: "error"; message: string }
+  /** Nothing to show: the photo was superseded or dropped. */
+  | { kind: "none" };
+
 export type ImageTermOptions = {
   onDeviceWord?: ObjectWord;
   upgrade?: boolean;
@@ -163,6 +178,8 @@ export default function useLexiconImageLookup({
       targetRect: NormalizedRect,
       sourceType: MediaSourceType,
       fileName?: string,
+      /** Hears the first answer, the moment a word is on screen. */
+      report: (outcome: CaptureOutcome) => void = () => {},
     ) => {
       /*
        * The whole frame goes to the model and the reader's target becomes
@@ -216,6 +233,7 @@ export default function useLexiconImageLookup({
 
             shownOnDevice = term;
             onTerm(term, { onDeviceWord: hit.word });
+            report({ kind: "answer", term, translation: hit.word[pair[1]] });
 
             // The card is up: the shutter is free for the next photograph.
             finishReading(generation);
@@ -246,8 +264,15 @@ export default function useLexiconImageLookup({
       if (!isCurrent()) return;
 
       if (!identified.term) {
-        if (shownOnDevice) onTerm(shownOnDevice, { finalOnDevice: true });
-        return;
+        if (shownOnDevice) {
+          onTerm(shownOnDevice, { finalOnDevice: true });
+          return;
+        }
+        /*
+         * The model looked and named nothing, and neither did the phone. This
+         * used to end silently — the camera closed on no word and no reason.
+         */
+        throw new ImageRecognitionError("failed");
       }
 
       /*
@@ -273,13 +298,27 @@ export default function useLexiconImageLookup({
 
       if (shownOnDevice) onTerm(identified.term, { upgrade: true });
       else onTerm(identified.term);
+
+      report({
+        kind: "answer",
+        term: identified.term,
+        translation: identified.translation,
+      });
     },
     [finishReading, nativeLanguage, onDevice, onTerm, pair],
   );
 
-  /** A frame off the shutter, with the target the reader tapped. */
+  /**
+   * A frame off the shutter, with the target the reader tapped.
+   *
+   * Resolves as soon as there is something to show on the frozen frame —
+   * the first word found, or why none was — so the camera can hold it for
+   * a moment and close (Chi, 2026-09-28). It used to resolve only once the
+   * AI had finished, up to twenty seconds after the phone had already
+   * answered, while the camera sat there live again with nothing on it.
+   */
   const handleCapture = useCallback(
-    async (raster: Raster, targetRect: NormalizedRect) => {
+    (raster: Raster, targetRect: NormalizedRect): Promise<CaptureOutcome> => {
       if (readingRef.current) {
         /*
          * A second shutter press while the first is still being read. The
@@ -287,7 +326,7 @@ export default function useLexiconImageLookup({
          * ever sees it, and it is a full-resolution copy of the sensor.
          */
         raster.close();
-        return;
+        return Promise.resolve({ kind: "none" });
       }
 
       readingRef.current = true;
@@ -295,23 +334,38 @@ export default function useLexiconImageLookup({
       setError("");
       setReading(true);
 
-      try {
-        await readRaster(generation, raster, targetRect, "camera");
-      } catch (recognitionError) {
-        console.error("Could not read that photo:", recognitionError);
-        if (generation === generationRef.current) {
-          setError(
-            recognitionError instanceof ImageRecognitionError
-              ? errorMessage(recognitionError.code, recognitionError)
-              : errorMessage("failed"),
-          );
-        }
-      } finally {
-        // startCapture owns the raster and closes it when its derivatives
-        // settle; closing it here would pull the pixels out from under an
-        // encode still running.
-        finishReading(generation);
-      }
+      return new Promise<CaptureOutcome>((resolve) => {
+        let settled = false;
+        const report = (outcome: CaptureOutcome) => {
+          if (settled) return;
+          settled = true;
+          resolve(outcome);
+        };
+
+        readRaster(generation, raster, targetRect, "camera", undefined, report)
+          .then(() => report({ kind: "none" }))
+          .catch((recognitionError: unknown) => {
+            console.error("Could not read that photo:", recognitionError);
+            if (generation !== generationRef.current) {
+              report({ kind: "none" });
+              return;
+            }
+
+            const message =
+              recognitionError instanceof ImageRecognitionError
+                ? errorMessage(recognitionError.code, recognitionError)
+                : errorMessage("failed");
+
+            setError(message);
+            report({ kind: "error", message });
+          })
+          .finally(() => {
+            // startCapture owns the raster and closes it when its derivatives
+            // settle; closing it here would pull the pixels out from under an
+            // encode still running.
+            finishReading(generation);
+          });
+      });
     },
     [errorMessage, finishReading, readRaster],
   );
