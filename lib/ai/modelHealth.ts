@@ -40,8 +40,10 @@ import { createServiceClient } from "@/lib/supabase/service";
    the caller goes straight to its fallback.
 
    Reading it never makes a lookup wait long. The table is cached for a few
-   seconds per instance, and a read that takes longer than 600ms is treated
-   as "nothing marked".
+   seconds per instance; a read that takes longer than 1.5s keeps the last
+   view this instance had (or none, on a cold start). Writing only ever
+   lengthens a mark, so a model out for the day stays out for the day
+   whatever a later, shorter refusal says.
    ========================================================= */
 
 export type HealthReason = "timeout" | "rate_limit" | "daily_quota" | "busy";
@@ -50,7 +52,16 @@ const TABLE = "ai_model_health";
 const TIMEOUT_AWAY_MS = 5 * 60 * 1000;
 const BUSY_AWAY_MS = 45 * 1000;
 const READ_CACHE_MS = 15_000;
-const READ_TIMEOUT_MS = 600;
+/*
+ * 600ms until 2026-09-28, when a cold instance whose first read took longer
+ * treated the table as empty, asked gemini-3.6-flash — out for the day —
+ * and its refusal, written back as a short "busy", erased the day-long mark
+ * for everyone. A lookup can afford a second and a half here far better than
+ * the whole app can afford forgetting which models are out.
+ */
+const READ_TIMEOUT_MS = 1_500;
+/* After a failed read, how soon to try again (the last good view is kept). */
+const READ_RETRY_MS = 3_000;
 
 type Away = { until: number; reason: HealthReason };
 
@@ -123,7 +134,8 @@ export function awayFor(
   return null;
 }
 
-async function readAll(): Promise<Map<string, Away>> {
+/** Every current mark, or null when the table could not be read in time. */
+async function readAll(): Promise<Map<string, Away> | null> {
   const away = new Map<string, Away>();
   if (!enabled()) return away;
 
@@ -139,7 +151,7 @@ async function readAll(): Promise<Map<string, Away>> {
       new Promise<null>((resolve) => setTimeout(() => resolve(null), READ_TIMEOUT_MS)),
     ]);
 
-    if (!result || result.error || !result.data) return away;
+    if (!result || result.error || !result.data) return null;
 
     for (const row of result.data as Array<{
       model: string;
@@ -152,7 +164,7 @@ async function readAll(): Promise<Map<string, Away>> {
       });
     }
   } catch {
-    /* Nothing marked is the safe way to be wrong here. */
+    return null;
   }
 
   return away;
@@ -160,7 +172,21 @@ async function readAll(): Promise<Map<string, Away>> {
 
 async function current(): Promise<Map<string, Away>> {
   if (cached && Date.now() - cached.at < READ_CACHE_MS) return cached.away;
+
   const away = await readAll();
+
+  if (!away) {
+    /*
+     * The table did not answer in time. Keep the last view this instance
+     * had, if any, and ask again shortly; with none, nothing marked is the
+     * only view there is — but markModelAway no longer lets what that leads
+     * to shorten anybody's mark.
+     */
+    const kept = cached?.away ?? new Map<string, Away>();
+    cached = { at: Date.now() - READ_CACHE_MS + READ_RETRY_MS, away: kept };
+    return kept;
+  }
+
   cached = { at: Date.now(), away };
   return away;
 }
@@ -300,15 +326,33 @@ export async function markModelAway(
 
   try {
     const supabase = createServiceClient();
-    await supabase.from(TABLE).upsert(
-      {
-        model,
-        unavailable_until: new Date(verdict.until).toISOString(),
-        reason: verdict.reason,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "model" },
-    );
+
+    /*
+     * Only ever lengthens a mark (migration 20260928212149_mark_model_away).
+     *
+     * This was a plain upsert, so the last writer won: a model out for the
+     * day until midnight Pacific, asked by an instance that had not read the
+     * table in time, answered 503 — and "busy for 45 seconds" replaced "out
+     * until tomorrow". Forty-five seconds later every feature asked it again
+     * (2026-09-28, gemini-3.6-flash, 21:00–21:18 UTC).
+     */
+    const { error } = await supabase.rpc("mark_model_away", {
+      p_model: model,
+      p_until: new Date(verdict.until).toISOString(),
+      p_reason: verdict.reason,
+    });
+
+    if (error) {
+      await supabase.from(TABLE).upsert(
+        {
+          model,
+          unavailable_until: new Date(verdict.until).toISOString(),
+          reason: verdict.reason,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "model" },
+      );
+    }
   } catch {
     /* The local mark still holds for this instance. */
   }
