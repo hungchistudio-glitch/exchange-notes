@@ -42,6 +42,7 @@ afterEach(() => {
 const {
   DEFAULT_ALIAS_LITE_MODEL,
   DEFAULT_FAST_MODEL,
+  DEFAULT_RESERVE_MODELS,
   DEFAULT_STRONG_MODEL,
   getMenuModelCandidates,
   getTextModelCandidates,
@@ -72,7 +73,7 @@ describe("who gets asked, and in what order", () => {
       getVisionModelCandidates(),
       getMenuModelCandidates(),
     ]) {
-      expect(candidates).toHaveLength(3);
+      expect(candidates).toHaveLength(3 + DEFAULT_RESERVE_MODELS.length);
       expect(candidates.indexOf(DEFAULT_ALIAS_LITE_MODEL)).toBeLessThan(
         candidates.indexOf(DEFAULT_FAST_MODEL),
       );
@@ -129,7 +130,7 @@ describe("who gets asked, and in what order", () => {
     process.env.GEMINI_MODEL = "   ";
 
     expect(getTextModelCandidates()[0]).toBe(DEFAULT_ALIAS_LITE_MODEL);
-    expect(getTextModelCandidates()).toHaveLength(3);
+    expect(getTextModelCandidates()).toHaveLength(3 + DEFAULT_RESERVE_MODELS.length);
   });
 
   it("never asks the same model twice", () => {
@@ -138,5 +139,26 @@ describe("who gets asked, and in what order", () => {
 
     const candidates = getTextModelCandidates();
     expect(new Set(candidates).size).toBe(candidates.length);
+  });
+});
+
+/*
+ * 2026-09-28 from 14:00 UTC: the three models above out at once, and every
+ * lookup in the app fell back to the offline dictionary. The reserve is
+ * asked only when everything before it has failed.
+ */
+describe("the reserve", () => {
+  it("comes last in every list, behind the usual three", () => {
+    clearOverrides();
+
+    for (const candidates of [
+      getTextModelCandidates(),
+      getVisionModelCandidates(),
+      getMenuModelCandidates(),
+    ]) {
+      expect(candidates.slice(-DEFAULT_RESERVE_MODELS.length)).toEqual([
+        ...DEFAULT_RESERVE_MODELS,
+      ]);
+    }
   });
 });

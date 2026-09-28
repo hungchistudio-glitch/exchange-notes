@@ -318,6 +318,44 @@ export async function generateJson(
   }
 }
 
+/*
+ * Gemma is asked differently.
+ *
+ * The Gemma models on this endpoint refuse `thinkingConfig` outright —
+ * "Thinking level is not supported for this model", a 400 in 150ms, which
+ * is how they looked unusable from here when they were the only models
+ * answering (2026-09-28, see DEFAULT_RESERVE_MODELS). They are also not
+ * promised the endpoint's JSON mode, so the shape is asked for in words and
+ * the object is lifted out of whatever surrounds it.
+ */
+export function isGemmaModel(model: string) {
+  return /^gemma-/i.test(model);
+}
+
+/** The first complete JSON object in a reply that may carry prose or fences. */
+export function extractJsonObject(text: string): string {
+  const unfenced = text.replace(/```(?:json)?/gi, "");
+  const start = unfenced.indexOf("{");
+  const end = unfenced.lastIndexOf("}");
+  if (start === -1 || end <= start) {
+    throw new Error("The model's reply held no JSON object.");
+  }
+  const candidate = unfenced.slice(start, end + 1);
+  JSON.parse(candidate); // Throws here, as a failed attempt, if it is not JSON.
+  return candidate;
+}
+
+function jsonInstruction(schema: unknown) {
+  return [
+    "Reply with a single JSON object and nothing else — no prose, no code fence.",
+    schema
+      ? `It must match this JSON Schema:\n${JSON.stringify(schema)}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 async function requestJson(
   client: GoogleGenAI,
   { model, input, schema }: Pick<GenerateJsonOptions, "model" | "input" | "schema">,
@@ -326,6 +364,29 @@ async function requestJson(
 ): Promise<string> {
   const ceiling = AbortSignal.timeout(timeout);
   const abortSignal = signal ? anySignal([ceiling, signal]) : ceiling;
+
+  if (isGemmaModel(model)) {
+    const response = await client.models.generateContent({
+      model,
+      contents: [
+        {
+          role: "user",
+          parts: [...toParts(input), { text: jsonInstruction(schema) }],
+        },
+      ],
+      config: {
+        abortSignal,
+        httpOptions: {
+          timeout: Math.max(MIN_MODEL_DEADLINE_MS, timeout),
+          retryOptions: { attempts: 1 },
+        },
+      },
+    });
+
+    const text = typeof response.text === "string" ? response.text : "";
+    if (!text.trim()) throw new Error("Gemini returned an empty response.");
+    return extractJsonObject(text);
+  }
 
   const response = await client.models.generateContent({
     model,

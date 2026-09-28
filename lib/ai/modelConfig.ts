@@ -65,6 +65,38 @@ export const DEFAULT_STRONG_MODEL = "gemini-3.6-flash";
 /** The alias, so at least one entry in every list cannot go stale. */
 export const DEFAULT_ALIAS_LITE_MODEL = "gemini-flash-lite-latest";
 
+/*
+ * ── The reserve, from 2026-09-28 ────────────────────────────────────────
+ *
+ * Every free-tier quota here is per model, and so is every capacity spike.
+ * From 14:00 UTC on the 28th the three models above were out at once —
+ * gemini-3.6-flash spent for the day, both lite models answering 503 "high
+ * demand" on every request — and every word lookup in the app fell back to
+ * the offline dictionary, which for anything but English and Chinese is no
+ * translation at all. Chi's report was "翻譯完全無法使用".
+ *
+ * Probed from production at 16:04 UTC, in the middle of it:
+ *
+ *   gemini-3.7-flash        answered, 4127 ms
+ *   gemma-4-26b-a4b-it      400 in 199 ms: "Thinking level is not supported"
+ *   gemma-4-31b-it          400 in 146 ms: same
+ *   gemini-3.1-flash-lite   503    gemini-3.8-flash   503
+ *   gemini-3-flash-preview  504 after 11 s
+ *
+ * The Gemma answers are not refusals of the request, only of the one
+ * option this app sends every model; they are served apart from Gemini, on
+ * their own free allowance. generateJson now asks Gemma the way Gemma is
+ * asked (no thinking level, JSON by instruction). All three go at the end
+ * of every list: they cost nothing on a good day, because nothing reaches
+ * them, and on a day like this one they are the difference between a
+ * translation and none.
+ */
+export const DEFAULT_RESERVE_MODELS = [
+  "gemini-3.7-flash",
+  "gemma-4-26b-a4b-it",
+  "gemma-4-31b-it",
+] as const;
+
 function uniqueModels(values: Array<string | undefined>) {
   return [
     ...new Set(
@@ -128,6 +160,7 @@ export function getTextModelCandidates() {
     DEFAULT_STRONG_MODEL,
     process.env.GEMINI_FALLBACK_MODEL,
     DEFAULT_FAST_MODEL,
+    ...DEFAULT_RESERVE_MODELS,
   ]);
 }
 
@@ -139,6 +172,7 @@ export function getVisionModelCandidates() {
     process.env.GEMINI_FALLBACK_MODEL,
     DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
+    ...DEFAULT_RESERVE_MODELS,
   ]);
 }
 
@@ -159,6 +193,7 @@ export function getMenuModelCandidates() {
     DEFAULT_STRONG_MODEL,
     DEFAULT_ALIAS_LITE_MODEL,
     DEFAULT_FAST_MODEL,
+    ...DEFAULT_RESERVE_MODELS,
   ]);
 }
 
