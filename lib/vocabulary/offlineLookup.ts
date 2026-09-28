@@ -9,23 +9,32 @@ import {
   type LanguageRoles,
 } from "@/lib/lexicon/languageRouting";
 import type { LexiconEntry } from "@/lib/lexicon/types";
-import type { LanguageCode } from "@/lib/languages";
+import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import type { VocabularyCategory } from "@/lib/types/app";
 import { findObjectWord, objectWordEntry } from "@/lib/vision/objectLexicon";
 import { translateWithMyMemory } from "@/lib/translation/myMemory";
+import { coreWordEntry, findCoreWordIn } from "@/lib/vocabulary/coreLexicon";
 
 /* =========================================================
-   The dictionary that is already on the disk
+   The dictionaries that are already on the disk
 
-   CC-CEDICT, bundled, and it maps English to Chinese and back. That is all
-   it does — it has never held a word of Spanish, French or Italian and it
-   is not going to.
+   Two, asked in this order (after the camera's object words):
 
-   Which is the whole reason this file now asks which languages it is being
+   - The built-in five-language dictionary (coreLexicon.ts, added
+     2026-09-28): about eighteen hundred everyday words and phrases in
+     English, Chinese, Spanish, French and Italian, answering any pairing.
+   - CC-CEDICT, bundled, which maps English to Chinese and back and nothing
+     else — it has never held a word of Spanish, French or Italian.
+
+   Then, in lookupOffline, the basic translation service for whatever both
+   of them miss.
+
+   Which is the whole reason this file asks which languages it is being
    asked about. Before the app taught five languages, "the offline
    dictionary" and "the pair" were the same two languages and the question
    could not come up. Now a reader studying French can reach this path with
-   the model unreachable, and the honest answer is "not this one" — stated,
+   the model unreachable, and when a word is in neither dictionary and the
+   basic service has nothing either, the honest answer is "not this one" — stated,
    with the word echoed back, and with `translationUnavailable` set so every
    surface says so rather than filling the gap with something invented.
    ========================================================= */
@@ -342,6 +351,14 @@ function resolveOfflineLanguages(query: string, context: OfflineLookupContext) {
       ? "zh-TW"
       : (detectLanguage(query).language ?? context.roles.learning));
 
+  return { queryLanguage, ...cardLanguagesFor(queryLanguage, context) };
+}
+
+/** The two languages the card rule asks for, for a query in this language. */
+function cardLanguagesFor(
+  queryLanguage: LanguageCode,
+  context: OfflineLookupContext,
+) {
   const resolved = resolveCardLanguages(queryLanguage, context.roles);
 
   const source = context.head ?? resolved.headLanguage;
@@ -350,7 +367,31 @@ function resolveOfflineLanguages(query: string, context: OfflineLookupContext) {
       ? resolved.headLanguage
       : resolved.glossLanguage;
 
-  return { queryLanguage, source, gloss };
+  return { source, gloss };
+}
+
+/*
+ * The languages to look a query up in, in order. Only the one the caller is
+ * sure of, when it is sure; otherwise the guess first, then the reader's
+ * own languages, then the rest — a short word is often two languages'
+ * word ("casa"), and the reader's own are the likelier meaning.
+ */
+function candidateLanguages(
+  query: string,
+  queryLanguage: LanguageCode,
+  context: OfflineLookupContext,
+): LanguageCode[] {
+  if (context.source) return [context.source];
+  if (HAN_PATTERN.test(query)) return ["zh-TW"];
+
+  const { learning, support, native } = context.roles;
+  return [
+    queryLanguage,
+    learning,
+    support,
+    ...(native ? [native] : []),
+    ...LANGUAGE_CODES,
+  ];
 }
 
 async function lookupDictionary(
@@ -403,6 +444,32 @@ async function lookupDictionary(
   }
 
   /*
+   * The built-in five-language dictionary (coreLexicon.ts, Chi's choice on
+   * 2026-09-28): about eighteen hundred everyday words and phrases written
+   * out in all five languages, so this path can answer any pairing the card
+   * rule asks for — a French headword for a word typed in Chinese included
+   * — where CC-CEDICT below can only ever do English and Chinese. Asked
+   * before CC-CEDICT for those two as well: its English side is a reversed
+   * Chinese→English index, and for everyday words the hand-written entry is
+   * the better card.
+   */
+  const core = findCoreWordIn(
+    query,
+    candidateLanguages(query, queryLanguage, context),
+  );
+
+  if (core) {
+    const card =
+      core.language === queryLanguage
+        ? { source, gloss }
+        : cardLanguagesFor(core.language, context);
+
+    if (card.source !== card.gloss) {
+      return coreWordEntry(core.word, card.source, card.gloss, core.language);
+    }
+  }
+
+  /*
    * With no model, the only text on hand is what the reader typed. When the
    * rule asks for a headword in a language this index cannot produce, saying
    * so is the answer — inventing one is what the whole translationUnavailable
@@ -429,7 +496,8 @@ async function lookupDictionary(
   }
 
   if (source !== "en") {
-    // Spanish, French, Italian: nothing on this disk knows them.
+    // Spanish, French, Italian past the built-in dictionary above: CC-CEDICT
+    // does not know them, and lookupOffline asks the basic service next.
     return unresolvedEntry(query, source, gloss);
   }
 

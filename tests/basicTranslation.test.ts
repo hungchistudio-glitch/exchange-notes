@@ -68,18 +68,23 @@ describe("translateWithMyMemory", () => {
   });
 });
 
+/*
+ * A word in neither dictionary on the server — CC-CEDICT, or the built-in
+ * five-language one (coreLexicon.ts) — so the basic translation service is
+ * what answers.
+ */
 describe("lookupOffline, with every model busy", () => {
   const french = { learning: "fr", support: "zh-TW", native: "zh-TW" } as const;
 
   it("answers a French word with a basic translation", async () => {
-    const translate = vi.fn().mockResolvedValue("幸福");
+    const translate = vi.fn().mockResolvedValue("機緣巧合");
 
-    const entry = await lookupOffline("bonheur", { source: "fr", roles: french }, translate);
+    const entry = await lookupOffline("sérendipité", { source: "fr", roles: french }, translate);
 
-    expect(translate).toHaveBeenCalledWith("bonheur", "fr", "zh-TW");
+    expect(translate).toHaveBeenCalledWith("sérendipité", "fr", "zh-TW");
     expect(entry).toMatchObject({
-      term: "bonheur",
-      translation: "幸福",
+      term: "sérendipité",
+      translation: "機緣巧合",
       termLanguage: "fr",
       translationLanguage: "zh-TW",
       basicTranslation: true,
@@ -89,7 +94,7 @@ describe("lookupOffline, with every model busy", () => {
 
   it("still admits it has nothing when the service has nothing either", async () => {
     const entry = await lookupOffline(
-      "bonheur",
+      "sérendipité",
       { source: "fr", roles: french },
       vi.fn().mockResolvedValue(null),
     );
