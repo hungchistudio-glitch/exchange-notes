@@ -2136,6 +2136,9 @@ const spanish: TranslationDictionary = {
         twenty: "20 palabras",
         thirtyThree: "33 palabras",
       },
+      /** Under the 20 and 33 choices: the lookups behind them are shared and limited. */
+      heavyNote:
+        "Muchas palabras nuevas: las búsquedas pueden llegar al límite de hoy antes que tú.",
     },
 
     appLanguage: {

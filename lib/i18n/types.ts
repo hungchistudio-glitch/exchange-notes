@@ -2108,6 +2108,7 @@ export type TranslationDictionary = {
         twenty: string;
         thirtyThree: string;
       };
+      heavyNote: string;
     };
 
     appLanguage: {

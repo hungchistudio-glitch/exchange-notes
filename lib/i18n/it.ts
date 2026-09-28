@@ -1980,6 +1980,9 @@ const italian: TranslationDictionary = {
         twenty: "20 parole",
         thirtyThree: "33 parole",
       },
+      /** Under the 20 and 33 choices: the lookups behind them are shared and limited. */
+      heavyNote:
+        "Molte parole nuove: le ricerche potrebbero raggiungere il limite di oggi prima di te.",
     },
     appLanguage: {
       rowTitle: "Lingua dell'app",

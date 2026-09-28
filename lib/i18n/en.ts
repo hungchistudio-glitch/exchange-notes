@@ -2139,6 +2139,9 @@ const english: TranslationDictionary = {
         twenty: "20 words",
         thirtyThree: "33 words",
       },
+      /** Under the 20 and 33 choices: the lookups behind them are shared and limited. */
+      heavyNote:
+        "Lots of new words — lookups may reach today's limit before you do.",
     },
 
     appLanguage: {

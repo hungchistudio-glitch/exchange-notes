@@ -2095,6 +2095,9 @@ const traditionalChinese: TranslationDictionary = {
         twenty: "20 個單字",
         thirtyThree: "33 個單字",
       },
+      /** Under the 20 and 33 choices: the lookups behind them are shared and limited. */
+      heavyNote:
+        "新字較多，查詢可能會先碰到當天的上限。",
     },
 
     appLanguage: {

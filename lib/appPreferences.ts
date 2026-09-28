@@ -238,7 +238,38 @@ const DAILY_GOAL_EVENT = "exchange-notes-daily-goal-change";
  */
 export const DAILY_GOAL_COOKIE = "exchange-notes-daily-word-goal";
 
-export const DEFAULT_DAILY_GOAL_WORDS: DailyGoalWords = 10;
+/*
+ * Five, from 2026-09-28 (was ten).
+ *
+ * Every new word is one Gemini request, and on the free tier those come from
+ * one allowance shared by the whole app — roughly forty lookups a day for
+ * everybody once the other features have been served. Five is a day's goal
+ * a reader can meet without spending another reader's lookups. Only readers
+ * who never chose are moved: a stored choice is theirs.
+ */
+export const DEFAULT_DAILY_GOAL_WORDS: DailyGoalWords = 5;
+
+/*
+ * One-time: a goal of 20 or 33 chosen before those two carried a warning is
+ * brought back to 10. Marked once done, so choosing 20 or 33 again
+ * afterwards — with the warning in view — sticks.
+ */
+const HEAVY_GOAL_RESET_KEY = "exchange-notes-daily-goal-free-tier-reset";
+const HEAVY_GOAL_RESET_TO: DailyGoalWords = 10;
+
+function resetHeavyGoalOnce(value: DailyGoalWords): DailyGoalWords {
+  if (value !== 20 && value !== 33) return value;
+
+  try {
+    if (window.localStorage.getItem(HEAVY_GOAL_RESET_KEY)) return value;
+    window.localStorage.setItem(HEAVY_GOAL_RESET_KEY, "1");
+    window.localStorage.setItem(DAILY_GOAL_STORAGE_KEY, String(HEAVY_GOAL_RESET_TO));
+    writePreferenceCookie(DAILY_GOAL_COOKIE, String(HEAVY_GOAL_RESET_TO));
+    return HEAVY_GOAL_RESET_TO;
+  } catch {
+    return value;
+  }
+}
 
 export function isDailyGoalWords(
   value: unknown,
@@ -256,7 +287,7 @@ export function getDailyGoalWords(): DailyGoalWords {
   const cookie = readPreferenceCookie(DAILY_GOAL_COOKIE);
   const fromCookie = cookie === null ? null : Number(cookie);
 
-  if (isDailyGoalWords(fromCookie)) return fromCookie;
+  if (isDailyGoalWords(fromCookie)) return resetHeavyGoalOnce(fromCookie);
 
   const saved = window.localStorage.getItem(DAILY_GOAL_STORAGE_KEY);
   const parsed = saved === null ? null : Number(saved);
@@ -265,11 +296,18 @@ export function getDailyGoalWords(): DailyGoalWords {
 
   writePreferenceCookie(DAILY_GOAL_COOKIE, String(parsed));
 
-  return parsed;
+  return resetHeavyGoalOnce(parsed);
 }
 
 export function setDailyGoalWords(words: DailyGoalWords) {
   if (typeof window === "undefined") return;
+
+  /* A choice made now is made with the warning in view; the reset is done. */
+  try {
+    window.localStorage.setItem(HEAVY_GOAL_RESET_KEY, "1");
+  } catch {
+    /* Storage unavailable: the choice itself still applies below. */
+  }
 
   writePreferenceCookie(DAILY_GOAL_COOKIE, String(words));
 

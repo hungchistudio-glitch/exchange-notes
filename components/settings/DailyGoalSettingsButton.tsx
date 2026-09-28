@@ -24,6 +24,18 @@ const DAILY_GOAL_OPTIONS: Array<{
   { value: 33, key: "thirtyThree" },
 ];
 
+/*
+ * The two goals the free AI quota cannot promise.
+ *
+ * Word lookups draw on one allowance shared by everybody on the app — about
+ * forty new words a day between all readers once news, phonetics and the
+ * camera have had theirs (measured 2026-09-28). A reader chasing twenty or
+ * thirty-three brand-new words would meet the limit before the goal. They
+ * stay choosable, with a line saying so, rather than disappearing: the
+ * number is the reader's to pick, and the limit is ours to be honest about.
+ */
+const HEAVY_GOALS: ReadonlySet<DailyGoalWords> = new Set([20, 33]);
+
 export default function DailyGoalSettingsButton() {
   const [open, setOpen] = useState(false);
 
@@ -60,6 +72,9 @@ export default function DailyGoalSettingsButton() {
               selected={goal === option.value}
               badge={<span className="text-sm">{option.value}</span>}
               title={copy.options[option.key]}
+              description={
+                HEAVY_GOALS.has(option.value) ? copy.heavyNote : undefined
+              }
               onClick={() => handleSelect(option.value)}
             />
           ))}

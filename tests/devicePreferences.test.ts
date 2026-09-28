@@ -119,10 +119,35 @@ describe("the stored daily goal", () => {
   });
 
   it("migrates a device that only has the old localStorage value", () => {
-    window.localStorage.setItem("exchange-notes-daily-word-goal", "20");
+    window.localStorage.setItem("exchange-notes-daily-word-goal", "5");
 
+    expect(getDailyGoalWords()).toBe(5);
+    expect(document.cookie).toContain(`${DAILY_GOAL_COOKIE}=5`);
+  });
+
+  /*
+   * 2026-09-28: word lookups share one free allowance across the whole app,
+   * so a 20 or 33 chosen before those carried a warning is brought back to
+   * 10 — once. Chosen again afterwards, it stays.
+   */
+  it("brings an earlier 20 or 33 back to 10, once", () => {
+    document.cookie = `${DAILY_GOAL_COOKIE}=33; path=/`;
+
+    expect(getDailyGoalWords()).toBe(10);
+    expect(document.cookie).toContain(`${DAILY_GOAL_COOKIE}=10`);
+  });
+
+  it("keeps a 20 or 33 chosen after the reset", () => {
+    document.cookie = `${DAILY_GOAL_COOKIE}=20; path=/`;
+    expect(getDailyGoalWords()).toBe(10);
+
+    setDailyGoalWords(20);
     expect(getDailyGoalWords()).toBe(20);
-    expect(document.cookie).toContain(`${DAILY_GOAL_COOKIE}=20`);
+  });
+
+  it("starts a reader who never chose at five", () => {
+    expect(DEFAULT_DAILY_GOAL_WORDS).toBe(5);
+    expect(getDailyGoalWords()).toBe(5);
   });
 
   it("refuses a number that is not on the ladder", () => {

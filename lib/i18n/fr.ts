@@ -1980,6 +1980,9 @@ const french: TranslationDictionary = {
         twenty: "20 mots",
         thirtyThree: "33 mots",
       },
+      /** Under the 20 and 33 choices: the lookups behind them are shared and limited. */
+      heavyNote:
+        "Beaucoup de mots nouveaux : les recherches peuvent atteindre la limite du jour avant vous.",
     },
     appLanguage: {
       rowTitle: "Langue de l'app",
