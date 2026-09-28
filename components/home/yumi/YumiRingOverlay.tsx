@@ -538,7 +538,12 @@ export default function YumiRingOverlay({
    */
   const ringKeyRef = useRef<HTMLButtonElement>(null);
 
+  /* Whether the ring was opened from the keyboard, which is the one case
+     where focus should follow it in. */
+  const openedByKey = useRef(false);
+
   const openFromKey = useCallback(() => {
+    openedByKey.current = true;
     openRef.current = true;
     setOpen(true);
     retireHint();
@@ -550,12 +555,23 @@ export default function YumiRingOverlay({
    * gives it back to the key it came from, rather than dropping it on <body>
    * and making the reader tab in from the top of the document again.
    */
+  /*
+   * Only for a keyboard, though. Opened by a pull or a tap, moving focus to
+   * the first key made the browser draw its focus ring there — and with the
+   * glass keys, the active-key highlight too — so 01 looked chosen before the
+   * finger had gone anywhere, and closing put the skip-link key on screen.
+   * A finger does not need focus handed to it.
+   */
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open && !wasOpen.current) {
-      spokeRefs.current[0]?.querySelector("button")?.focus();
+      if (openedByKey.current) {
+        spokeRefs.current[0]?.querySelector("button")?.focus();
+      }
     } else if (!open && wasOpen.current) {
-      ringKeyRef.current?.focus();
+      const focusInRing = rootRef.current?.contains(document.activeElement);
+      if (openedByKey.current || focusInRing) ringKeyRef.current?.focus();
+      openedByKey.current = false;
     }
     wasOpen.current = open;
   }, [open]);

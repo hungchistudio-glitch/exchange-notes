@@ -121,4 +121,28 @@ describe("the liquid ring destination integration", () => {
     }
   });
 
+  /*
+   * Opened by a finger, focus stays where it was: handing it to key 01 drew
+   * the browser's focus ring and the glass highlight there, so the first key
+   * looked chosen before the finger had moved. From the keyboard it still
+   * goes in, and comes back to the key it came from.
+   */
+  it("moves focus into the ring only when the keyboard opened it", async () => {
+    const view = fixture();
+    await ready();
+
+    act(() => options.onPullOpen?.());
+    const first = view.container.querySelector<HTMLButtonElement>("[data-liquid-option='0']")!;
+    expect(first).not.toHaveFocus();
+
+    act(() => options.onTap?.());
+    const key = screen.getByRole("button", { name: /主要導覽|Main navigation|Navigation/i });
+    expect(key).not.toHaveFocus();
+
+    fireEvent.click(key);
+    expect(first).toHaveFocus();
+
+    act(() => options.onTap?.());
+    expect(key).toHaveFocus();
+  });
 });
