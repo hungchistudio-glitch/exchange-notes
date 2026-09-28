@@ -19,3 +19,28 @@ export function fill(
     key in values ? String(values[key]) : whole,
   );
 }
+
+/**
+ * When something comes back, in the reader's own clock and language: a time
+ * today, or a weekday and time when it is not today.
+ *
+ * Lives beside `fill` (moved from components/lexicon/LexiconResults.tsx) so
+ * the camera can say when Google's AI is likely back without importing a
+ * screen — or adding a module to Home's graph (tests/routeImportWeight).
+ */
+export function formatResetTime(at: number, locale: string, now = Date.now()) {
+  const when = new Date(at);
+  const today = new Date(now);
+  const sameDay = when.toDateString() === today.toDateString();
+
+  try {
+    return new Intl.DateTimeFormat(
+      locale,
+      sameDay
+        ? { hour: "numeric", minute: "2-digit" }
+        : { weekday: "short", hour: "numeric", minute: "2-digit" },
+    ).format(when);
+  } catch {
+    return when.toLocaleTimeString();
+  }
+}

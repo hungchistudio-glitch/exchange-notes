@@ -480,7 +480,8 @@ const english: TranslationDictionary = {
       "Yumi works out what language it is, what it means, and whether you have met it before.",
     searching: "Looking it up…",
     retrying: "Yumi is busy — trying again in a moment…",
-    quotaTitle: "Yumi has used up today's AI allowance",
+    quotaTitle:
+      "Today's free Google AI allowance is used up",
     quotaDetail:
       "It comes back at about {time}. Until then, your saved words, reviews and pronunciation practice all work as usual.",
     listening: "Listening…",
@@ -506,18 +507,18 @@ const english: TranslationDictionary = {
     openSavedWord: "Open the saved word",
     noTranslation: "No meaning yet",
     noTranslationDetail:
-      "Yumi's AI dictionary was too busy to answer for this word. Trying again in a little while usually works.",
+      "Google's AI is unavailable right now (on the free plan this often happens at peak times), so this word has no meaning yet. Trying again in a little while usually works.",
     degradedNotice:
       "The word and its meaning are right; the example sentence is a generic one.",
     lowConfidence: "This is a best guess. Check it before you keep it.",
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
-      "The AI is busy, so this is a basic translation. Look it up again later for example sentences.",
+      "Google's AI is unavailable right now, so this is a basic translation. Look it up again later for example sentences.",
     /** The camera's first answer came from the phone, not the AI. */
     onDevicePending:
       "Recognised on your phone. Asking the AI for a closer look and example sentences…",
     onDeviceFinal:
-      "Recognised on your phone. The AI is busy right now, so there are no example sentences yet.",
+      "Recognised on your phone. Google's AI is unavailable right now, so there are no example sentences yet.",
     example: "Example",
     share: "Share",
     copied: "Copied",
@@ -853,7 +854,12 @@ const english: TranslationDictionary = {
       cameraNotReady: "The camera is not ready yet.",
       captureImage: "Could not capture the image.",
       identifyImage: "Could not identify this image.",
-      identifyBusy: "AI vision is busy right now. Please try again shortly.",
+      identifyBusy:
+        "Google's AI is busy right now. Please try again shortly.",
+      identifyGoogleDown:
+        "Google's AI is unavailable right now (on the free plan this often happens at peak times), so the camera can't name things. Try again in about {minutes} min, or type the word instead.",
+      identifyGoogleQuota:
+        "Today's free Google AI allowance is used up. It comes back at about {time}. You can still type a word for a basic translation.",
       identifyDailyLimit:
         "You have used today's free image recognitions. Please try again tomorrow.",
       identifyTimeout:

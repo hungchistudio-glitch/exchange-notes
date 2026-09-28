@@ -43,6 +43,8 @@ export type ImageRecognitionCode =
   | "daily-limit"
   | "busy"
   | "timeout"
+  /** Google's AI is unavailable: said in so many words (Chi, 2026-09-28). */
+  | "google-down"
   | "failed";
 
 /**
@@ -51,11 +53,20 @@ export type ImageRecognitionCode =
  */
 export class ImageRecognitionError extends Error {
   readonly code: ImageRecognitionCode;
+  /** For "google-down": when it is likely back, as epoch milliseconds. */
+  readonly retryAt: number | null;
+  /** For "google-down": the day's free allowance is spent, not a bad minute. */
+  readonly quotaOnly: boolean;
 
-  constructor(code: ImageRecognitionCode) {
+  constructor(
+    code: ImageRecognitionCode,
+    detail: { retryAt?: number | null; quotaOnly?: boolean } = {},
+  ) {
     super(`Image recognition failed: ${code}`);
     this.name = "ImageRecognitionError";
     this.code = code;
+    this.retryAt = detail.retryAt ?? null;
+    this.quotaOnly = detail.quotaOnly ?? false;
   }
 }
 
@@ -96,10 +107,17 @@ export async function identifyImage(
 
   const data = (await response.json()) as
     | ObjectIdentificationResult
-    | { error: string; code?: string };
+    | { error: string; code?: string; retryAt?: number | null; quotaOnly?: boolean };
 
   if (!response.ok || "error" in data) {
     const code = "error" in data ? data.code : undefined;
+
+    if (code === "google_down" && "error" in data) {
+      throw new ImageRecognitionError("google-down", {
+        retryAt: typeof data.retryAt === "number" ? data.retryAt : null,
+        quotaOnly: data.quotaOnly === true,
+      });
+    }
 
     throw new ImageRecognitionError(
       code === "daily_limit"

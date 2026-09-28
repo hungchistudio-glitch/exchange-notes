@@ -57,6 +57,46 @@ export const MIN_WORD_SCORE = 0.35;
 const MAX_RESULTS = 10;
 
 let classifierPromise: Promise<ImageClassifier | null> | null = null;
+let lastLoadError = "";
+
+function describe(error: unknown) {
+  return error instanceof Error
+    ? `${error.name}: ${error.message}`.slice(0, 160)
+    : String(error).slice(0, 160);
+}
+
+/*
+ * What happened, sent to the server's failure log (see
+ * app/api/diagnostics/on-device/route.ts). Chi's iPhone showed nothing at all
+ * for a photo on 2026-09-28, and nothing about this recogniser ever reached
+ * the server — so there was no telling a model that never loaded on that
+ * phone from one that was simply not sure. Fire and forget: a report that
+ * cannot be sent changes nothing for the reader.
+ */
+type OnDeviceReport = {
+  outcome: "answered" | "no_word" | "unavailable" | "not_ready" | "failed";
+  ms: number;
+  word?: string;
+  score?: number;
+  /** The classifier's own top class and score, e.g. "coffee mug@0.41". */
+  raw?: string;
+  error?: string;
+};
+
+function report(body: OnDeviceReport) {
+  if (process.env.NODE_ENV === "test") return;
+
+  try {
+    void fetch("/api/diagnostics/on-device", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    /* Nothing to do: the report is only ever a courtesy. */
+  }
+}
 
 function supported() {
   return (
@@ -111,6 +151,8 @@ async function createClassifier(): Promise<ImageClassifier | null> {
     });
   } catch (error) {
     console.warn("On-device recognition is unavailable:", error);
+    lastLoadError = describe(error);
+    report({ outcome: "unavailable", ms: 0, error: lastLoadError });
     return null;
   }
 }
@@ -139,6 +181,14 @@ export type OnDeviceObject = { word: ObjectWord; score: number };
 export function pickObjectWord(
   categories: ReadonlyArray<{ index: number; score: number }>,
 ): OnDeviceObject | null {
+  const best = bestObjectWord(categories);
+  return best && best.score >= MIN_WORD_SCORE ? best : null;
+}
+
+/** The best everyday word, however unsure — for the report, not the reader. */
+function bestObjectWord(
+  categories: ReadonlyArray<{ index: number; score: number }>,
+): OnDeviceObject | null {
   const totals = new Map<ObjectWord, number>();
 
   for (const { index, score } of categories) {
@@ -151,7 +201,7 @@ export function pickObjectWord(
     if (!best || score > best.score) best = { word, score };
   }
 
-  return best && best.score >= MIN_WORD_SCORE ? best : null;
+  return best;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -170,22 +220,54 @@ function loadImage(src: string): Promise<HTMLImageElement> {
  */
 export async function recognizeOnDevice(
   imageDataUrl: string,
-  waitMs = 2_500,
+  /*
+   * How long to wait for the recogniser to finish loading, when it has not.
+   * Was 2.5s, which on an iPhone that had not warmed it up yet was likely
+   * shorter than compiling the runtime — so the first photo of a session
+   * got no phone answer at all. The AI's answer still wins whenever it
+   * arrives first, so waiting longer costs nothing when Google is up, and is
+   * the whole answer when it is down.
+   */
+  waitMs = 12_000,
 ): Promise<OnDeviceObject | null> {
+  const startedAt = Date.now();
+
   try {
     const classifier = await Promise.race([
       preloadObjectClassifier(),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), waitMs)),
     ]);
-    if (!classifier) return null;
+
+    if (!classifier) {
+      report({
+        outcome: lastLoadError ? "unavailable" : "not_ready",
+        ms: Date.now() - startedAt,
+        error: lastLoadError || undefined,
+      });
+      return null;
+    }
 
     const image = await loadImage(imageDataUrl);
     const result = classifier.classify(image);
     const categories = result.classifications[0]?.categories ?? [];
 
-    return pickObjectWord(categories);
+    const best = bestObjectWord(categories);
+    const answered = best && best.score >= MIN_WORD_SCORE ? best : null;
+
+    report({
+      outcome: answered ? "answered" : "no_word",
+      ms: Date.now() - startedAt,
+      word: best?.word.en,
+      score: best?.score,
+      raw: categories[0]
+        ? `${categories[0].categoryName}@${categories[0].score.toFixed(2)}`
+        : undefined,
+    });
+
+    return answered;
   } catch (error) {
     console.warn("On-device recognition failed:", error);
+    report({ outcome: "failed", ms: Date.now() - startedAt, error: describe(error) });
     return null;
   }
 }

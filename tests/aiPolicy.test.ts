@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { firstAnswer } from "@/lib/ai/hedge";
 import {
+  allModelsAway,
   awayFor,
   backgroundAllowed,
   healthyModels,
@@ -94,5 +95,52 @@ describe("firstAnswer's cap", () => {
 
     expect(attempt).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+});
+
+/* Chi, 2026-09-28: "告訴免費使用者 Google 掛掉" — known at once, not after asking. */
+describe("whether Google is down for a feature", () => {
+  const models = ["a", "b"];
+
+  beforeEach(async () => {
+    resetModelHealthForTests();
+    await healthyModels(models);
+  });
+
+  it("is not while any model is up", async () => {
+    await markModelAway("a", { until: Date.now() + 60_000, reason: "busy" });
+    await expect(allModelsAway(models)).resolves.toBeNull();
+  });
+
+  it("is, with the soonest return, when every model is away", async () => {
+    const now = Date.now();
+    await markModelAway("a", { until: now + 60_000, reason: "busy" });
+    await markModelAway("b", { until: now + 3_600_000, reason: "daily_quota" });
+
+    await expect(allModelsAway(models)).resolves.toEqual({
+      until: now + 60_000,
+      quotaOnly: false,
+    });
+  });
+
+  it("says when it is only the day's free allowance", async () => {
+    const now = Date.now();
+    await markModelAway("a", { until: now + 3_600_000, reason: "daily_quota" });
+    await markModelAway("b", { until: now + 7_200_000, reason: "daily_quota" });
+
+    await expect(allModelsAway(models)).resolves.toEqual({
+      until: now + 3_600_000,
+      quotaOnly: true,
+    });
+  });
+
+  it("honours a feature's own outage mark over the list", async () => {
+    const now = Date.now();
+    await markModelAway("vision-outage", { until: now + 60_000, reason: "busy" });
+
+    await expect(allModelsAway(models, ["vision-outage"])).resolves.toEqual({
+      until: now + 60_000,
+      quotaOnly: false,
+    });
   });
 });

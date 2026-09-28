@@ -5,7 +5,13 @@ import { createHash } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
 
 import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
-import { healthyModels } from "@/lib/ai/modelHealth";
+import {
+  allModelsAway,
+  dailyQuotaResetAt,
+  healthyModels,
+  markModelAway,
+  type ModelOutage,
+} from "@/lib/ai/modelHealth";
 import {
   cooldownMsFor,
   generateJson,
@@ -172,11 +178,36 @@ const inFlightIdentifications = new Map<
 >();
 const modelCooldowns = new Map<string, number>();
 
+/**
+ * Google's vision models could not read the photo.
+ *
+ * `outage`, when known, is when they are likely back and whether it is the
+ * day's free allowance that is spent — which the camera tells the reader in
+ * so many words (Chi, 2026-09-28: "告訴免費使用者 Google 掛掉").
+ */
 export class ObjectIdentificationUnavailableError extends Error {
-  constructor() {
+  constructor(readonly outage: ModelOutage | null = null) {
     super("All object-identification models are temporarily unavailable.");
     this.name = "ObjectIdentificationUnavailableError";
   }
+}
+
+/*
+ * The camera's own "Google is down" mark, shared by every instance.
+ *
+ * A camera timeout is not written against the model (shareTimeouts: false —
+ * an image is slower than a word), so the per-model marks alone would never
+ * say the camera is out. When a photograph has just failed on nothing but
+ * capacity — every model 503 or timing out — this sentinel is set for a
+ * minute, and the next photograph is told at once instead of waiting twenty
+ * seconds to learn the same thing.
+ */
+export const VISION_OUTAGE_MARK = "vision-outage";
+const VISION_OUTAGE_MS = 60_000;
+
+/** Every vision model away right now, or the camera's own mark: say so first. */
+export function visionOutage(): Promise<ModelOutage | null> {
+  return allModelsAway(getVisionModelCandidates(), [VISION_OUTAGE_MARK]);
 }
 
 function stripJsonCodeFence(text: string) {
@@ -456,14 +487,30 @@ async function identifyWithFallback(
    * minute. A short pause and one more round is cheaper for the reader than
    * a "busy" they have to answer by pressing the shutter again.
    */
+  let allBusy = first.allBusy;
+
   if (first.allBusy && deadline - Date.now() >= MIN_RETRY_MS + RETRY_PAUSE_MS) {
     await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSE_MS));
     const second = await round(deadline);
     if (second.answered) return second.answered.value;
     if (lowConfidenceResult) return lowConfidenceResult;
+    allBusy = second.allBusy;
   }
 
-  throw new ObjectIdentificationUnavailableError();
+  /*
+   * Nothing but capacity: Google is down for the camera right now. Marked
+   * for every instance, so the next photograph hears it at once.
+   */
+  if (allBusy) {
+    const until = Date.now() + VISION_OUTAGE_MS;
+    await markModelAway(VISION_OUTAGE_MARK, { until, reason: "busy" });
+    throw new ObjectIdentificationUnavailableError({ until, quotaOnly: false });
+  }
+
+  const resetAt = await dailyQuotaResetAt(getVisionModelCandidates());
+  throw new ObjectIdentificationUnavailableError(
+    resetAt ? { until: resetAt, quotaOnly: true } : null,
+  );
 }
 
 export async function identifyObject(

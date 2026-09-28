@@ -394,7 +394,7 @@ describe("when the day's AI allowance is spent", () => {
     render(<LexiconResults search={search as never} save={save as never} />);
 
     expect(
-      screen.getByText("Yumi has used up today's AI allowance"),
+      screen.getByText("Today's free Google AI allowance is used up"),
     ).toBeInTheDocument();
     expect(screen.getByText(/It comes back at about/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
@@ -406,8 +406,8 @@ describe("when the day's AI allowance is spent", () => {
     render(<LexiconResults search={search as never} save={save as never} />);
 
     expect(
-      screen.queryByText("Yumi has used up today's AI allowance"),
+      screen.queryByText("Today's free Google AI allowance is used up"),
     ).toBeNull();
-    expect(screen.getByText(/too busy to answer/)).toBeInTheDocument();
+    expect(screen.getByText(/Google.s AI is unavailable right now/)).toBeInTheDocument();
   });
 });

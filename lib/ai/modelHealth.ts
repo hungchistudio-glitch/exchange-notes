@@ -241,6 +241,50 @@ export async function dailyQuotaResetAt(
   return soonest;
 }
 
+/*
+ * "Google 掛掉" — said plainly, and said at once (Chi, 2026-09-28).
+ *
+ * When every model a feature could ask is away, the honest answer is that
+ * Google's AI is unavailable right now, with when it is likely back — not a
+ * spinner that waits out every model before saying "busy". Callers ask this
+ * before spending anything, and tell the reader instead of asking.
+ *
+ * `quotaOnly` when every one is out for the day, so the reader can be told
+ * the day's free allowance is spent (and when it resets) rather than that
+ * Google is having a bad minute.
+ */
+export type ModelOutage = { until: number; quotaOnly: boolean };
+
+export async function allModelsAway(
+  candidates: readonly string[],
+  extraMarks: readonly string[] = [],
+): Promise<ModelOutage | null> {
+  if (candidates.length === 0) return null;
+
+  const away = await current();
+  const now = Date.now();
+
+  /* A sentinel mark (e.g. the camera's own outage) covers the whole list. */
+  for (const mark of extraMarks) {
+    const entry = away.get(mark);
+    if (entry && entry.until > now) {
+      return { until: entry.until, quotaOnly: false };
+    }
+  }
+
+  let soonest = Infinity;
+  let quotaOnly = true;
+
+  for (const model of candidates) {
+    const entry = away.get(model);
+    if (!entry || entry.until <= now) return null;
+    soonest = Math.min(soonest, entry.until);
+    if (entry.reason !== "daily_quota") quotaOnly = false;
+  }
+
+  return { until: soonest, quotaOnly };
+}
+
 /** Put a model away, for this instance at once and for every other soon. */
 export async function markModelAway(
   model: string,

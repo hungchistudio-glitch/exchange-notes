@@ -34,7 +34,11 @@ export type AiFailureReason =
   | "timeout"
   | "model_error"
   /** Every candidate failed and the reader was served the offline card. */
-  | "served_offline";
+  | "served_offline"
+  /** Every model was already known to be away: the reader was told at once. */
+  | "google_down"
+  /** A report from the phone's own recogniser (not a model call). */
+  | "on_device";
 
 export type AiFailure = {
   /** Which feature asked: "word-lookup", "identify-object", … */

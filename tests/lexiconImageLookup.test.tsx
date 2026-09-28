@@ -433,6 +433,42 @@ describe("with the phone's classifier", () => {
     expect(result.current.error).not.toBe("");
   });
 
+  /* Chi, 2026-09-28: "告訴免費使用者 Google 掛掉" — in so many words. */
+  it("says Google's AI is unavailable, and roughly for how long", async () => {
+    const onTerm = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    recognition.identifyImage.mockRejectedValue(
+      new ImageRecognitionError("google-down", {
+        retryAt: Date.now() + 90_000,
+        quotaOnly: false,
+      }),
+    );
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => result.current.handleFile(photo("lamp.jpg")));
+
+    expect(onTerm).not.toHaveBeenCalled();
+    expect(result.current.error).toContain("Google");
+    expect(result.current.error).toContain("2 min");
+  });
+
+  it("keeps the phone's word when Google is down", async () => {
+    const onTerm = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    onDeviceVision.recognizeOnDevice.mockResolvedValue({ word: chair, score: 0.8 });
+    recognition.identifyImage.mockRejectedValue(
+      new ImageRecognitionError("google-down", { retryAt: null }),
+    );
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => result.current.handleFile(photo("chair.jpg")));
+
+    expect(onTerm).toHaveBeenLastCalledWith("chaise", { finalOnDevice: true });
+    expect(result.current.error).toBe("");
+  });
+
   it("does not show the phone's word once the AI has already answered", async () => {
     const onTerm = vi.fn();
     let recognise: (value: unknown) => void = () => {};

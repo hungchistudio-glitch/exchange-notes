@@ -7,7 +7,10 @@ import {
   identifyObject,
   getCachedObjectIdentification,
   ObjectIdentificationUnavailableError,
+  visionOutage,
 } from "@/lib/ai/identifyObject";
+import { recordAiFailure } from "@/lib/ai/callLog";
+import type { ModelOutage } from "@/lib/ai/modelHealth";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
@@ -23,6 +26,24 @@ export const runtime = "nodejs";
  */
 export const maxDuration = 45;
 const OPERATION = "vision_identification" as const;
+
+/*
+ * "Google's AI is unavailable" — the camera's answer when it is (Chi,
+ * 2026-09-28: tell free users plainly that Google is down). `retryAt` is
+ * when it is likely back; `quotaOnly` means the day's free allowance is
+ * spent, which the reader is told differently from a bad minute.
+ */
+function googleDown(outage: ModelOutage | null) {
+  return NextResponse.json(
+    {
+      error: "Google's AI is unavailable right now.",
+      code: "google_down",
+      retryAt: outage?.until ?? null,
+      quotaOnly: outage?.quotaOnly ?? false,
+    },
+    { status: 503 },
+  );
+}
 
 const MAX_IMAGE_BYTES = readBoundedInteger(
   process.env.VISION_MAX_IMAGE_BYTES,
@@ -157,6 +178,25 @@ export async function POST(request: Request) {
       });
     }
 
+    /*
+     * Before anything is spent: when Google's vision models are all away, or
+     * the last photograph found them all down, the reader is told now —
+     * not after twenty seconds of asking models that just said no. The
+     * phone's own recogniser has usually answered by then anyway.
+     */
+    const outage = await visionOutage();
+    if (outage) {
+      recordAiFailure({
+        purpose: "identify-object",
+        model: "all",
+        reason: "google_down",
+        status: 503,
+        ms: 0,
+        detail: outage.quotaOnly ? "daily quota" : "capacity",
+      });
+      return googleDown(outage);
+    }
+
     if (!consumeMinuteRequest(user.id)) {
       return NextResponse.json(
         {
@@ -217,10 +257,7 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof ObjectIdentificationUnavailableError) {
-      return NextResponse.json(
-        { error: "AI vision is temporarily busy. Please try again shortly." },
-        { status: 503 },
-      );
+      return googleDown(error.outage);
     }
 
     console.error("Object identification route failed:", {

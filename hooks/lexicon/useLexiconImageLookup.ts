@@ -22,6 +22,8 @@ import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 import { startCapture } from "@/lib/media/pipeline";
 import { decodeBlob } from "@/lib/media/raster";
+import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
+import { fill, formatResetTime } from "@/lib/i18n/format";
 import type { ObjectWord } from "@/lib/vision/objectLexicon";
 import { recognizeOnDevice } from "@/lib/vision/onDeviceClassifier";
 
@@ -84,7 +86,7 @@ export default function useLexiconImageLookup({
    */
   onDevice?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, language: interfaceLanguage } = useTranslation();
   const { pair } = useDisplayLanguages();
   const { nativeLanguage } = useLearningLanguageContext();
   const [reading, setReading] = useState(false);
@@ -105,10 +107,29 @@ export default function useLexiconImageLookup({
   }, []);
 
   const errorMessage = useCallback(
-    (code: ImageRecognitionCode): string => {
+    (code: ImageRecognitionCode, failure?: ImageRecognitionError): string => {
       const errors = t.capture.errors;
 
       switch (code) {
+        /*
+         * Google's AI is unavailable, said as such (Chi, 2026-09-28): the
+         * free plan's peaks are Google's, and a reader told "busy" keeps
+         * pressing the shutter. With when it is likely back, when known.
+         */
+        case "google-down": {
+          if (failure?.quotaOnly && failure.retryAt) {
+            return fill(errors.identifyGoogleQuota, {
+              time: formatResetTime(
+                failure.retryAt,
+                INTERFACE_LANGUAGE_CODE[interfaceLanguage],
+              ),
+            });
+          }
+          const minutes = failure?.retryAt
+            ? Math.max(1, Math.ceil((failure.retryAt - Date.now()) / 60_000))
+            : 1;
+          return fill(errors.identifyGoogleDown, { minutes });
+        }
         case "not-an-image":
           return errors.selectImage;
         case "too-large":
@@ -125,7 +146,7 @@ export default function useLexiconImageLookup({
           return errors.identifyImage;
       }
     },
-    [t.capture.errors],
+    [interfaceLanguage, t.capture.errors],
   );
 
   /**
@@ -280,11 +301,9 @@ export default function useLexiconImageLookup({
         console.error("Could not read that photo:", recognitionError);
         if (generation === generationRef.current) {
           setError(
-            errorMessage(
-              recognitionError instanceof ImageRecognitionError
-                ? recognitionError.code
-                : "failed",
-            ),
+            recognitionError instanceof ImageRecognitionError
+              ? errorMessage(recognitionError.code, recognitionError)
+              : errorMessage("failed"),
           );
         }
       } finally {
@@ -370,11 +389,9 @@ export default function useLexiconImageLookup({
         console.error("Could not read that photo:", recognitionError);
         if (generation === generationRef.current) {
           setError(
-            errorMessage(
-              recognitionError instanceof ImageRecognitionError
-                ? recognitionError.code
-                : "failed",
-            ),
+            recognitionError instanceof ImageRecognitionError
+              ? errorMessage(recognitionError.code, recognitionError)
+              : errorMessage("failed"),
           );
         }
       } finally {

@@ -469,7 +469,8 @@ const italian: TranslationDictionary = {
       "Yumi capisce in che lingua è, cosa significa e se l'hai già incontrata.",
     searching: "Ricerca in corso…",
     retrying: "Yumi è occupata — riprovo tra un attimo…",
-    quotaTitle: "Yumi ha esaurito la quota IA di oggi",
+    quotaTitle:
+      "La quota gratuita dell'IA di Google per oggi è esaurita",
     quotaDetail:
       "Torna verso le {time}. Fino ad allora, le parole salvate, i ripassi e la pratica di pronuncia funzionano come sempre.",
     listening: "In ascolto…",
@@ -495,18 +496,18 @@ const italian: TranslationDictionary = {
     openSavedWord: "Apri la parola salvata",
     noTranslation: "Ancora senza significato",
     noTranslationDetail:
-      "Il dizionario IA di Yumi era troppo occupato per rispondere per questa parola. Riprovare tra poco di solito funziona.",
+      "L'IA di Google non è disponibile al momento (con il piano gratuito capita spesso nelle ore di punta), quindi questa parola non ha ancora un significato. Riprovare tra poco di solito funziona.",
     degradedNotice:
       "La parola e il suo significato sono giusti; l'esempio è generico.",
     lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
-      "L’IA è occupata, quindi questa è una traduzione semplice. Cercala di nuovo più tardi per le frasi di esempio.",
+      "L’IA di Google non è disponibile al momento, quindi questa è una traduzione semplice. Cercala di nuovo più tardi per le frasi di esempio.",
     /** The camera's first answer came from the phone, not the AI. */
     onDevicePending:
       "Riconosciuto sul telefono. Sto chiedendo all’IA uno sguardo più preciso e frasi di esempio…",
     onDeviceFinal:
-      "Riconosciuto sul telefono. L’IA è occupata in questo momento, quindi non ci sono ancora frasi di esempio.",
+      "Riconosciuto sul telefono. L’IA di Google non è disponibile al momento, quindi non ci sono ancora frasi di esempio.",
     example: "Esempio",
     share: "Condividi",
     copied: "Copiato",
@@ -809,7 +810,12 @@ const italian: TranslationDictionary = {
       cameraNotReady: "La fotocamera non è ancora pronta.",
       captureImage: "Impossibile catturare l'immagine.",
       identifyImage: "Impossibile identificare questa immagine.",
-      identifyBusy: "La visione IA è occupata. Riprova tra poco.",
+      identifyBusy:
+        "L'IA di Google è occupata. Riprova tra poco.",
+      identifyGoogleDown:
+        "L'IA di Google non è disponibile al momento (con il piano gratuito capita spesso nelle ore di punta), quindi la fotocamera non può riconoscere gli oggetti. Riprova tra circa {minutes} min, oppure scrivi la parola.",
+      identifyGoogleQuota:
+        "La quota gratuita dell'IA di Google per oggi è esaurita. Torna verso le {time}. Intanto puoi scrivere una parola per una traduzione semplice.",
       identifyDailyLimit: "Hai esaurito i riconoscimenti immagine gratuiti di oggi. Riprova domani.",
       identifyTimeout: "Il riconoscimento ha richiesto troppo tempo. Prova una foto nitida e più vicina all'oggetto.",
       loginBeforeSave: "Accedi prima di salvare una parola.",

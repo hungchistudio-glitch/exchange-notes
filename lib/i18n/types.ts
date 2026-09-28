@@ -816,6 +816,10 @@ export type TranslationDictionary = {
       captureImage: string;
       identifyImage: string;
       identifyBusy: string;
+      /** Google's AI is unavailable: {minutes} until it is likely back. */
+      identifyGoogleDown: string;
+      /** The day's free Google allowance is spent: back at {time}. */
+      identifyGoogleQuota: string;
       identifyDailyLimit: string;
       identifyTimeout: string;
       loginBeforeSave: string;

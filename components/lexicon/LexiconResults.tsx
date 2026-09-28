@@ -36,6 +36,7 @@ import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
+import { formatResetTime } from "@/lib/i18n/format";
 
 /* =========================================================
    What the app knows, in two layers
@@ -68,26 +69,6 @@ type LexiconResultsProps = {
   shareCopied?: boolean;
 };
 
-/**
- * When the AI quota comes back, in the reader's own clock and language:
- * just the time if that is still today, the weekday too if it is tomorrow.
- */
-export function formatResetTime(at: number, locale: string, now = Date.now()) {
-  const when = new Date(at);
-  const today = new Date(now);
-  const sameDay = when.toDateString() === today.toDateString();
-
-  try {
-    return new Intl.DateTimeFormat(
-      locale,
-      sameDay
-        ? { hour: "numeric", minute: "2-digit" }
-        : { weekday: "short", hour: "numeric", minute: "2-digit" },
-    ).format(when);
-  } catch {
-    return when.toLocaleTimeString();
-  }
-}
 
 function eyebrowClass(tone: LexiconTone) {
   return tone === "cosmic"

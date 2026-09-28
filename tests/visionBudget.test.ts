@@ -112,9 +112,8 @@ vi.mock("@google/genai", () => ({
   },
 }));
 
-const { identifyObject, ObjectIdentificationUnavailableError } = await import(
-  "@/lib/ai/identifyObject"
-);
+const { identifyObject, ObjectIdentificationUnavailableError, visionOutage } =
+  await import("@/lib/ai/identifyObject");
 
 const PAIR = ["en", "zh-TW"] as const;
 
@@ -306,5 +305,26 @@ describe("every model busy at once", () => {
       ObjectIdentificationUnavailableError,
     );
     expect(made).toHaveLength(CORE_MAX_ATTEMPTS * 2);
+  });
+
+  /*
+   * Chi, 2026-09-28: tell the reader Google is down, and tell the next one
+   * at once. The failure says when Google is likely back, and the camera's
+   * own mark makes the next photograph skip the twenty-second wait.
+   */
+  it("says Google is down, with when, and the next photograph hears it at once", async () => {
+    for (let index = 0; index < CORE_MAX_ATTEMPTS * 2; index += 1) {
+      script.push({ elapsed: 500, outcome: "busy" });
+    }
+
+    const failure = await identify().catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(ObjectIdentificationUnavailableError);
+    const outage = (failure as InstanceType<typeof ObjectIdentificationUnavailableError>)
+      .outage;
+    expect(outage?.quotaOnly).toBe(false);
+    expect(outage?.until).toBeGreaterThan(Date.now());
+
+    await expect(visionOutage()).resolves.toMatchObject({ quotaOnly: false });
   });
 });

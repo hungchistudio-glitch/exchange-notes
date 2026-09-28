@@ -86,4 +86,39 @@ describe("image lookup failures", () => {
       code: "daily-limit",
     });
   });
+
+  /* Chi, 2026-09-28: when Google is down, the reader is told that. */
+  it("names Google being down, with when it is likely back", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: "Google's AI is unavailable right now.",
+          code: "google_down",
+          retryAt: 1_790_000_000_000,
+          quotaOnly: false,
+        }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(identifyImage("data:image/jpeg;base64,AA==")).rejects.toMatchObject({
+      code: "google-down",
+      retryAt: 1_790_000_000_000,
+      quotaOnly: false,
+    });
+  });
+
+  it("tells a spent free allowance apart from a bad minute", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ error: "x", code: "google_down", retryAt: 5, quotaOnly: true }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(identifyImage("data:image/jpeg;base64,AA==")).rejects.toMatchObject({
+      code: "google-down",
+      quotaOnly: true,
+    });
+  });
 });

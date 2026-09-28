@@ -473,7 +473,8 @@ const traditionalChinese: TranslationDictionary = {
       "Yumi 會判斷它是哪一種語言、是什麼意思，以及你是不是已經學過。",
     searching: "查詢中…",
     retrying: "Yumi 有點忙，馬上再試一次…",
-    quotaTitle: "Yumi 今天的 AI 用量已經滿了",
+    quotaTitle:
+      "今天免費的 Google AI 額度已經用完了",
     quotaDetail:
       "大約 {time} 恢復。在那之前，已存的單字、複習和發音練習都照常可以用。",
     listening: "聆聽中…",
@@ -498,17 +499,17 @@ const traditionalChinese: TranslationDictionary = {
     openSavedWord: "開啟已儲存的單字",
     noTranslation: "還沒有意思",
     noTranslationDetail:
-      "Yumi 的 AI 字典現在太忙，沒拿到這個字的意思。過一下再試一次通常就會好。",
+      "Google 的 AI 暫時無法使用（免費方案在尖峰時段常會這樣），沒拿到這個字的意思。過一下再試一次通常就會好。",
     degradedNotice: "單字和意思是對的，例句是通用的範本。",
     lowConfidence: "這是最接近的猜測，儲存前請先確認。",
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
-      "AI 忙碌中，這是簡易翻譯，例句請稍後再查。",
+      "Google 的 AI 暫時無法使用，這是簡易翻譯，例句請稍後再查。",
     /** The camera's first answer came from the phone, not the AI. */
     onDevicePending:
       "手機先認出來了，正在請 AI 看得更仔細並補上例句…",
     onDeviceFinal:
-      "這是手機辨識的結果。AI 目前忙碌，暫時沒有例句。",
+      "這是手機辨識的結果。Google 的 AI 暫時無法使用，所以還沒有例句。",
     example: "例句",
     share: "分享",
     copied: "已複製",
@@ -838,7 +839,12 @@ const traditionalChinese: TranslationDictionary = {
       cameraNotReady: "相機尚未準備完成。",
       captureImage: "無法拍攝照片。",
       identifyImage: "無法辨識這張照片。",
-      identifyBusy: "AI 視覺目前較忙，請稍候再試。",
+      identifyBusy:
+        "Google 的 AI 目前很忙，請稍候再試。",
+      identifyGoogleDown:
+        "Google 的 AI 暫時無法使用（免費方案在尖峰時段常會這樣），相機現在認不出東西。請約 {minutes} 分鐘後再試，或直接打字查。",
+      identifyGoogleQuota:
+        "今天免費的 Google AI 額度已經用完，大約 {time} 恢復。現在可以直接打字查（簡易翻譯）。",
       identifyDailyLimit: "今天的免費圖片辨識次數已用完，請明天再試。",
       identifyTimeout: "辨識時間較久，請換一張清晰、靠近物品的照片再試。",
       loginBeforeSave: "請先登入再儲存單字。",
