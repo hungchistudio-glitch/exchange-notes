@@ -1,8 +1,12 @@
 import type { GoogleGenAI } from "@google/genai";
 
-import { firstAnswer } from "@/lib/ai/hedge";
+import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
 import { getTextModelCandidates } from "@/lib/ai/modelConfig";
-import { dailyQuotaResetAt, healthyModels } from "@/lib/ai/modelHealth";
+import {
+  backgroundAllowed,
+  dailyQuotaResetAt,
+  healthyModels,
+} from "@/lib/ai/modelHealth";
 import {
   generateJson,
   TEXT_REQUEST_TIMEOUT_MS,
@@ -46,6 +50,12 @@ export type AskTextOptions = {
   minAttemptMs?: number;
   /** Defaults to the text list in lib/ai/modelConfig.ts. */
   candidates?: readonly string[];
+  /**
+   * Nobody is waiting on this (the nightly news, a refill). It runs only
+   * when the allowance is comfortable, asks one model, and never hedges —
+   * so it cannot take a model away from the camera or a lookup.
+   */
+  background?: boolean;
 };
 
 export type AskTextResult =
@@ -84,8 +94,13 @@ export async function askText(
     maxAttemptMs = TEXT_REQUEST_TIMEOUT_MS,
     minAttemptMs = ASK_TEXT_MIN_ATTEMPT_MS,
     candidates = getTextModelCandidates(),
+    background = false,
   }: AskTextOptions,
 ): Promise<AskTextResult> {
+  if (background && !(await backgroundAllowed(candidates))) {
+    return { text: null, quotaResetsAt: await dailyQuotaResetAt(candidates) };
+  }
+
   const deadline = Date.now() + budgetMs;
   const models = await healthyModels(candidates);
 
@@ -97,7 +112,13 @@ export async function askText(
     models,
     (model, timeoutMs, signal) =>
       generateJson(client, { model, input, schema, timeoutMs, purpose, signal }),
-    { hedgeAfterMs, deadline, minAttemptMs, maxAttemptMs },
+    {
+      hedgeAfterMs: background ? Number.POSITIVE_INFINITY : hedgeAfterMs,
+      deadline,
+      minAttemptMs,
+      maxAttemptMs,
+      maxAttempts: background ? 1 : CORE_MAX_ATTEMPTS,
+    },
   );
 
   if (answered) return { text: answered.value, model: answered.model };

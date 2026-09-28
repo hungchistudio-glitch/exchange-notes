@@ -568,6 +568,8 @@ async function buildLearningBatch(
      */
     hedgeAfterMs: 12_000,
     maxAttemptMs: 20_000,
+    /* Nobody is waiting on the news; it yields to the camera and lookups. */
+    background: true,
   });
 
   /*

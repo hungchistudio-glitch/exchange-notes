@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const generateJson = vi.fn();
 const healthyModels = vi.fn();
 const dailyQuotaResetAt = vi.fn();
+const backgroundAllowed = vi.fn();
 
 vi.mock("@/lib/ai/modelRequest", () => ({
   generateJson: (...args: unknown[]) => generateJson(...args),
@@ -19,6 +20,7 @@ vi.mock("@/lib/ai/modelRequest", () => ({
 vi.mock("@/lib/ai/modelHealth", () => ({
   healthyModels: (...args: unknown[]) => healthyModels(...args),
   dailyQuotaResetAt: (...args: unknown[]) => dailyQuotaResetAt(...args),
+  backgroundAllowed: (...args: unknown[]) => backgroundAllowed(...args),
 }));
 
 import { askText } from "@/lib/ai/askText";
@@ -35,6 +37,7 @@ beforeEach(() => {
   dailyQuotaResetAt.mockReset();
   healthyModels.mockImplementation(async (models: string[]) => [...models]);
   dailyQuotaResetAt.mockResolvedValue(null);
+  backgroundAllowed.mockReset().mockResolvedValue(true);
   delete process.env.GEMINI_TEXT_MODEL;
   delete process.env.GEMINI_MODEL;
 });
@@ -84,5 +87,29 @@ describe("askText", () => {
     const result = await askText(client, { purpose: "message-analyze", input: "hi", budgetMs: 10_000 });
 
     expect(result).toEqual({ text: null, quotaResetsAt: 1_790_600_000_000 });
+  });
+});
+
+describe("askText in the background", () => {
+  it("does not ask at all when there is no room to spare", async () => {
+    backgroundAllowed.mockResolvedValue(false);
+
+    const result = await askText(client, {
+      purpose: "daily-news",
+      input: "hi",
+      budgetMs: 10_000,
+      background: true,
+    });
+
+    expect(result).toEqual({ text: null, quotaResetsAt: null });
+    expect(generateJson).not.toHaveBeenCalled();
+  });
+
+  it("asks one model and no more", async () => {
+    generateJson.mockRejectedValue(Object.assign(new Error("busy"), { status: 503 }));
+
+    await askText(client, { purpose: "daily-news", input: "hi", budgetMs: 10_000, background: true });
+
+    expect(generateJson).toHaveBeenCalledTimes(1);
   });
 });

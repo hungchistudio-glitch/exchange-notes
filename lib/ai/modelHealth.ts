@@ -25,21 +25,30 @@ import { createServiceClient } from "@/lib/supabase/service";
      each pay for the hang, short enough that a model which recovers is
      back within one coffee.
 
-   ── What it will not do ────────────────────────────────────────────────
+   - A 503 "high demand" (or a 500/502): forty-five seconds, as "busy".
+     Added 2026-09-28, when every model answered 503 for hours and every
+     feature asked every model on every request — a storm of refusals that
+     made each lookup take 20–30 seconds to fail. Marked, the next request
+     skips a model that just said it is full and goes to a fallback at once.
 
-   It never takes the last model away. If every candidate is marked, the
-   caller gets the full list back: a refusal that comes back in 150ms is
-   still better than not asking at all.
+   ── When everything is marked ──────────────────────────────────────────
+
+   It used to hand the whole list back, on the principle that a fast
+   refusal beats not asking. With six models that became six refusals per
+   request, on every request. Now: one model — the one whose mark ends
+   soonest — is asked; and if every model is out for the day, none is, and
+   the caller goes straight to its fallback.
 
    Reading it never makes a lookup wait long. The table is cached for a few
    seconds per instance, and a read that takes longer than 600ms is treated
    as "nothing marked".
    ========================================================= */
 
-export type HealthReason = "timeout" | "rate_limit" | "daily_quota";
+export type HealthReason = "timeout" | "rate_limit" | "daily_quota" | "busy";
 
 const TABLE = "ai_model_health";
 const TIMEOUT_AWAY_MS = 5 * 60 * 1000;
+const BUSY_AWAY_MS = 45 * 1000;
 const READ_CACHE_MS = 15_000;
 const READ_TIMEOUT_MS = 600;
 
@@ -86,7 +95,13 @@ export function nextPacificMidnight(now = Date.now()): number {
  * `retryMs` is the wait the refusal itself asked for, when it asked.
  */
 export function awayFor(
-  failure: { rateLimited: boolean; timedOut: boolean; message: string },
+  failure: {
+    rateLimited: boolean;
+    timedOut: boolean;
+    message: string;
+    /** The HTTP status, when there was one: 503 means "full right now". */
+    status?: number | null;
+  },
   retryMs: number,
   now = Date.now(),
 ): { until: number; reason: HealthReason } | null {
@@ -99,6 +114,10 @@ export function awayFor(
 
   if (failure.timedOut) {
     return { until: now + TIMEOUT_AWAY_MS, reason: "timeout" };
+  }
+
+  if (failure.status === 503 || failure.status === 500 || failure.status === 502) {
+    return { until: now + BUSY_AWAY_MS, reason: "busy" };
   }
 
   return null;
@@ -148,7 +167,11 @@ async function current(): Promise<Map<string, Away>> {
 
 /**
  * The candidates in order, minus any model another instance (or this one)
- * has put away. Never empty: if everything is marked, everything is asked.
+ * has put away.
+ *
+ * When every one is away: the single model whose mark ends soonest, so a
+ * core request still gets one real try; or none at all when every model
+ * is out for the day, so the caller goes straight to its fallback.
  */
 export async function healthyModels(
   candidates: readonly string[],
@@ -158,7 +181,36 @@ export async function healthyModels(
   const healthy = candidates.filter(
     (model) => (away.get(model)?.until ?? 0) <= now,
   );
-  return healthy.length > 0 ? healthy : [...candidates];
+  if (healthy.length > 0) return healthy;
+
+  const retryable = candidates
+    .map((model) => ({ model, entry: away.get(model) }))
+    .filter(({ entry }) => entry?.reason !== "daily_quota")
+    .sort((a, b) => (a.entry?.until ?? 0) - (b.entry?.until ?? 0));
+
+  return retryable.length > 0 ? [retryable[0].model] : [];
+}
+
+/*
+ * "額度充足" — enough to spare for work nobody is waiting on.
+ *
+ * Chi's rule (2026-09-28): automatic IPA, and anything else that runs in
+ * the background, only when the allowance is comfortable, so it never
+ * takes a model away from the camera or a lookup. The allowance itself is
+ * not reported by the API, so this reads what is: at least two models not
+ * out, not busy, not hanging, right now.
+ */
+export const BACKGROUND_MIN_HEALTHY = 2;
+
+export async function backgroundAllowed(
+  candidates: readonly string[],
+): Promise<boolean> {
+  const away = await current();
+  const now = Date.now();
+  const healthy = candidates.filter(
+    (model) => (away.get(model)?.until ?? 0) <= now,
+  );
+  return healthy.length >= BACKGROUND_MIN_HEALTHY;
 }
 
 /**

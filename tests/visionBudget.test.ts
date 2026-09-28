@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getVisionModelCandidates } from "@/lib/ai/modelConfig";
 import { MIN_MODEL_DEADLINE_MS } from "@/lib/ai/modelRequest";
+import { CORE_MAX_ATTEMPTS } from "@/lib/ai/hedge";
 
 /*
  * Asked of the configuration rather than written out.
@@ -285,26 +286,25 @@ describe("every model busy at once", () => {
    * 503 "high demand" or a timeout. That is capacity, and it comes and goes
    * by the minute, so the camera tries one more round before saying "busy".
    */
+  /* Each round asks at most CORE_MAX_ATTEMPTS models (2026-09-28). */
   it("tries one more round, and answers from it", async () => {
-    const candidates = getVisionModelCandidates().length;
-    for (let index = 0; index < candidates; index += 1) {
+    for (let index = 0; index < CORE_MAX_ATTEMPTS; index += 1) {
       script.push({ elapsed: 500, outcome: "busy" });
     }
     script.push({ elapsed: 3_000, outcome: { confidence: "high" } });
 
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
-    expect(made).toHaveLength(candidates + 1);
+    expect(made).toHaveLength(CORE_MAX_ATTEMPTS + 1);
   });
 
   it("says busy after the second round, not a third", async () => {
-    const candidates = getVisionModelCandidates().length;
-    for (let index = 0; index < candidates * 2; index += 1) {
+    for (let index = 0; index < CORE_MAX_ATTEMPTS * 2; index += 1) {
       script.push({ elapsed: 500, outcome: "busy" });
     }
 
     await expect(identify()).rejects.toBeInstanceOf(
       ObjectIdentificationUnavailableError,
     );
-    expect(made).toHaveLength(candidates * 2);
+    expect(made).toHaveLength(CORE_MAX_ATTEMPTS * 2);
   });
 });

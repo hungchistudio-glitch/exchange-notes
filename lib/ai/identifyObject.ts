@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
 
-import { firstAnswer } from "@/lib/ai/hedge";
+import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
 import { healthyModels } from "@/lib/ai/modelHealth";
 import {
   cooldownMsFor,
@@ -411,6 +411,7 @@ async function identifyWithFallback(
         deadline: roundDeadline,
         minAttemptMs: MIN_ATTEMPT_MS,
         maxAttemptMs: REQUEST_TIMEOUT_MS,
+        maxAttempts: CORE_MAX_ATTEMPTS,
       },
       (model, error) => {
         if (error instanceof LowConfidenceAnswer) return;

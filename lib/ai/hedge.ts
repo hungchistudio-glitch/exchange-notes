@@ -17,6 +17,14 @@
    than one — most answers arrive well inside it.
    ========================================================= */
 
+/*
+ * The most models one request a reader is waiting on may ask (2026-09-28).
+ * Three covers the usual first choice, its hedge and one fallback; past
+ * that, a Google-wide 503 is not going to be outrun by a fourth model, and
+ * the reader is better served by the fallback than by more waiting.
+ */
+export const CORE_MAX_ATTEMPTS = 3;
+
 export type HedgeOptions = {
   /** Ask the next candidate if nothing has answered by now. */
   hedgeAfterMs: number;
@@ -26,6 +34,12 @@ export type HedgeOptions = {
   minAttemptMs: number;
   /** No attempt may take longer than this. */
   maxAttemptMs: number;
+  /**
+   * How many models may be asked in all. Unbounded, a request during a
+   * Google-wide 503 asked every model on the list — six refusals per
+   * lookup, and 20–30 seconds before the reader saw a fallback.
+   */
+  maxAttempts?: number;
 };
 
 export type Attempt<T> = (
@@ -80,7 +94,13 @@ export function firstAnswer<T>(
 
       const remaining = options.deadline - Date.now();
 
-      if (next >= models.length || remaining < options.minAttemptMs) {
+      const attemptsLeft = (options.maxAttempts ?? Infinity) - next;
+
+      if (
+        next >= models.length ||
+        attemptsLeft <= 0 ||
+        remaining < options.minAttemptMs
+      ) {
         if (running === 0) finish(null);
         return;
       }
@@ -105,7 +125,12 @@ export function firstAnswer<T>(
         },
       );
 
-      if (next < models.length && running < 2) {
+      if (
+        Number.isFinite(options.hedgeAfterMs) &&
+        next < models.length &&
+        next < (options.maxAttempts ?? Infinity) &&
+        running < 2
+      ) {
         hedgeTimer = setTimeout(launch, options.hedgeAfterMs);
       }
     };

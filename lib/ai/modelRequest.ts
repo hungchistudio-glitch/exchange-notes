@@ -289,6 +289,7 @@ export async function generateJson(
         rateLimited: isRateLimitError(error),
         timedOut: isTimeoutError(error),
         message: error instanceof Error ? error.message : "",
+        status: getErrorStatus(error),
       },
       cooldownMsFor(error),
     );

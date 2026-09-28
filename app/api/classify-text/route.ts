@@ -12,7 +12,7 @@ import { GoogleGenAI } from "@google/genai";
 import { after, NextResponse } from "next/server";
 
 import { recordAiFailure } from "@/lib/ai/callLog";
-import { firstAnswer } from "@/lib/ai/hedge";
+import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
 import { dailyQuotaResetAt, healthyModels } from "@/lib/ai/modelHealth";
 import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 
@@ -532,6 +532,7 @@ async function lookupWithModelFallback(
       deadline,
       minAttemptMs: MIN_ATTEMPT_MS,
       maxAttemptMs: REQUEST_TIMEOUT_MS,
+      maxAttempts: CORE_MAX_ATTEMPTS,
     },
     (model, error, ms, timeoutMs) => {
       const status = getErrorStatus(error);

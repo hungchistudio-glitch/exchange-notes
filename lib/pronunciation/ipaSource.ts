@@ -8,7 +8,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 import { generateJson } from "@/lib/ai/modelRequest";
 import { firstAnswer } from "@/lib/ai/hedge";
-import { healthyModels } from "@/lib/ai/modelHealth";
+import { backgroundAllowed, healthyModels } from "@/lib/ai/modelHealth";
 /* =========================================================
    Where IPA comes from
 
@@ -44,7 +44,6 @@ const DICTIONARY_LANGUAGES: readonly LanguageCode[] = ["en"];
 const TOTAL_BUDGET_MS = 18_000;
 const ATTEMPT_MS = 10_000;
 const MIN_ATTEMPT_MS = 3_000;
-const HEDGE_AFTER_MS = 4_000;
 
 const RESULT_SCHEMA = {
   type: "object",
@@ -202,12 +201,28 @@ async function fromModel(
    * with no total at all, so a hang on the first and a slow second added up
    * past the route's 30s maxDuration: on 2026-09-27 a French word's
    * transcription ended in "Vercel Runtime Timeout Error". Now the whole
-   * thing has TOTAL_BUDGET_MS, no attempt starts with less than
-   * MIN_ATTEMPT_MS left, and a slow first model gets company after
-   * HEDGE_AFTER_MS — the same shape as the word lookup.
+   * thing has TOTAL_BUDGET_MS and no attempt starts with less than
+   * MIN_ATTEMPT_MS left. (It was hedged like the word lookup until
+   * 2026-09-28; as background work it now asks one model — see below.)
    */
+  /*
+   * In the background, and only when there is room (Chi, 2026-09-28).
+   *
+   * These transcriptions are asked for automatically — Home, the cookie
+   * tray, message and news cards — and on the 28th they were the largest
+   * single user of the free allowance: about 140 failed requests in a day,
+   * and the reserve model spent within the hour, while the camera and the
+   * lookups the reader was actually waiting on went without. A word looked
+   * up or photographed brings its IPA with it (termIpa); what is left here
+   * waits for a comfortable allowance, asks one model, and does not hedge.
+   * "failed" puts the words in the client's backoff, to be asked later.
+   */
+  if (!(await backgroundAllowed(getTextModelCandidates()))) {
+    return { found: out, failed: true };
+  }
+
   const answered = await firstAnswer(
-    await healthyModels(getTextModelCandidates()),
+    (await healthyModels(getTextModelCandidates())).slice(0, 1),
     async (model, timeoutMs, signal) => {
       const raw = await generateJson(client, {
         purpose: "phonetics",
@@ -234,7 +249,8 @@ async function fromModel(
       };
     },
     {
-      hedgeAfterMs: HEDGE_AFTER_MS,
+      hedgeAfterMs: Number.POSITIVE_INFINITY,
+      maxAttempts: 1,
       deadline: Date.now() + TOTAL_BUDGET_MS,
       minAttemptMs: MIN_ATTEMPT_MS,
       maxAttemptMs: ATTEMPT_MS,
