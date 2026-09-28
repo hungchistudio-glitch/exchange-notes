@@ -499,6 +499,9 @@ const french: TranslationDictionary = {
     degradedNotice:
       "Le mot et son sens sont justes ; l'exemple est générique.",
     lowConfidence: "C'est une supposition. Vérifiez-la avant de l'enregistrer.",
+    /** Every model busy; the translation came from a plain MT service. */
+    basicTranslation:
+      "L’IA est occupée : voici une traduction simple. Recherchez à nouveau plus tard pour avoir des exemples.",
     example: "Exemple",
     share: "Partager",
     copied: "Copié",

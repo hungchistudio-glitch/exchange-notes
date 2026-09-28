@@ -11,6 +11,7 @@ import {
 import type { LexiconEntry } from "@/lib/lexicon/types";
 import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyCategory } from "@/lib/types/app";
+import { translateWithMyMemory } from "@/lib/translation/myMemory";
 
 /* =========================================================
    The dictionary that is already on the disk
@@ -279,12 +280,79 @@ async function lookupEnglish(
 }
 
 /**
- * The best this device can do with no model.
+ * The best this server can do with no model.
  *
- * Always returns something — an entry that admits it has no translation is
- * still a usable answer, and the route needs a value to hand back.
+ * The on-disk dictionary first; then, for anything it cannot translate, a
+ * plain translation from a service that is not Gemini (MyMemory), marked as
+ * basic. Always returns something — an entry that admits it has no
+ * translation is still a usable answer, and the route needs a value.
  */
 export async function lookupOffline(
+  query: string,
+  context: OfflineLookupContext,
+  translate: typeof translateWithMyMemory = translateWithMyMemory,
+): Promise<LexiconEntry> {
+  const entry = await lookupDictionary(query, context);
+  if (!entry.translationUnavailable) return entry;
+
+  const { queryLanguage, source, gloss } = resolveOfflineLanguages(query, context);
+  if (source === gloss) return entry;
+
+  /*
+   * Both sides the card rule asked for. A French learner who typed "chair"
+   * needs a French headword as well as a gloss; a side that is the reader's
+   * own text needs no translating.
+   */
+  const [term, translation] = await Promise.all([
+    source === queryLanguage
+      ? Promise.resolve(query)
+      : translate(query, queryLanguage, source),
+    gloss === queryLanguage
+      ? Promise.resolve(query)
+      : translate(query, queryLanguage, gloss),
+  ]);
+
+  if (!term || !translation) return entry;
+
+  return {
+    term: term.slice(0, 240),
+    translation: translation.slice(0, 240),
+    partOfSpeech: "other",
+    termExample: "",
+    translationExample: "",
+    confidence: "medium",
+    category: "other",
+    termLanguage: source,
+    translationLanguage: gloss,
+    queryLanguage,
+    kind: "word",
+    highlight: null,
+    basicTranslation: true,
+  };
+}
+
+/** Which language the query is in, and which two the card should hold. */
+function resolveOfflineLanguages(query: string, context: OfflineLookupContext) {
+  const isChinese = HAN_PATTERN.test(query);
+
+  const queryLanguage =
+    context.source ??
+    (isChinese
+      ? "zh-TW"
+      : (detectLanguage(query).language ?? context.roles.learning));
+
+  const resolved = resolveCardLanguages(queryLanguage, context.roles);
+
+  const source = context.head ?? resolved.headLanguage;
+  const gloss =
+    context.head && context.head === resolved.glossLanguage
+      ? resolved.headLanguage
+      : resolved.glossLanguage;
+
+  return { queryLanguage, source, gloss };
+}
+
+async function lookupDictionary(
   query: string,
   context: OfflineLookupContext,
 ): Promise<LexiconEntry> {

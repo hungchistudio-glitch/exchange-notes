@@ -499,6 +499,9 @@ const italian: TranslationDictionary = {
     degradedNotice:
       "La parola e il suo significato sono giusti; l'esempio è generico.",
     lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",
+    /** Every model busy; the translation came from a plain MT service. */
+    basicTranslation:
+      "L’IA è occupata, quindi questa è una traduzione semplice. Cercala di nuovo più tardi per le frasi di esempio.",
     example: "Esempio",
     share: "Condividi",
     copied: "Copiato",

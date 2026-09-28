@@ -480,6 +480,7 @@ export type TranslationDictionary = {
     noTranslationDetail: string;
     degradedNotice: string;
     lowConfidence: string;
+    basicTranslation: string;
     example: string;
     share: string;
     /** Shown in place of `share` when the text went to the clipboard. */

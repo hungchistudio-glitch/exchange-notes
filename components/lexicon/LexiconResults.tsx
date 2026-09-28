@@ -692,7 +692,18 @@ export default function LexiconResults({
                 )}
 
               {/* ---- notices ---- */}
-              {result?.degraded && !entry.translationUnavailable && (
+              {entry.basicTranslation && (
+                <p
+                  role="status"
+                  className="mt-4 rounded-[16px] border border-line bg-surface px-4 py-3 text-[0.75rem] leading-5 text-ink-soft"
+                >
+                  {copy.basicTranslation}
+                </p>
+              )}
+
+              {result?.degraded &&
+                !entry.translationUnavailable &&
+                !entry.basicTranslation && (
                 <p
                   role="status"
                   className="mt-4 rounded-[16px] border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.07] px-4 py-3 text-[0.75rem] leading-5 text-[var(--accent-amber-deep)]"

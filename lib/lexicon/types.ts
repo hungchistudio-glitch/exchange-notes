@@ -102,6 +102,13 @@ export type LexiconEntry = {
    * quietly inventing one.
    */
   translationUnavailable?: boolean;
+
+  /**
+   * The translation came from a plain machine-translation service, not a
+   * model, because every model was busy (lib/translation/myMemory.ts). It
+   * has no examples and no IPA, and the card says so.
+   */
+  basicTranslation?: boolean;
 };
 
 /**

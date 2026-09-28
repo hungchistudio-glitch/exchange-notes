@@ -511,6 +511,9 @@ const spanish: TranslationDictionary = {
     degradedNotice:
       "La palabra y su significado son correctos; el ejemplo es genérico.",
     lowConfidence: "Es la mejor suposición. Compruébala antes de guardarla.",
+    /** Every model busy; the translation came from a plain MT service. */
+    basicTranslation:
+      "La IA está ocupada, así que esta es una traducción básica. Vuelve a buscarla más tarde para ver frases de ejemplo.",
     example: "Ejemplo",
     share: "Compartir",
     copied: "Copiado",

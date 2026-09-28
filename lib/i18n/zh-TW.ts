@@ -501,6 +501,9 @@ const traditionalChinese: TranslationDictionary = {
       "Yumi 的 AI 字典現在太忙，沒拿到這個字的意思。過一下再試一次通常就會好。",
     degradedNotice: "單字和意思是對的，例句是通用的範本。",
     lowConfidence: "這是最接近的猜測，儲存前請先確認。",
+    /** Every model busy; the translation came from a plain MT service. */
+    basicTranslation:
+      "AI 忙碌中，這是簡易翻譯，例句請稍後再查。",
     example: "例句",
     share: "分享",
     copied: "已複製",

@@ -510,6 +510,9 @@ const english: TranslationDictionary = {
     degradedNotice:
       "The word and its meaning are right; the example sentence is a generic one.",
     lowConfidence: "This is a best guess. Check it before you keep it.",
+    /** Every model busy; the translation came from a plain MT service. */
+    basicTranslation:
+      "The AI is busy, so this is a basic translation. Look it up again later for example sentences.",
     example: "Example",
     share: "Share",
     copied: "Copied",
