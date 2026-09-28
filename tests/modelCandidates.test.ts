@@ -107,6 +107,18 @@ describe("who gets asked, and in what order", () => {
   });
 
   /*
+   * GEMINI_MODEL means "the strong model" everywhere else that reads it, so
+   * for text it stands behind the alias rather than in front of it.
+   */
+  it("keeps the alias ahead of GEMINI_MODEL for text", () => {
+    clearOverrides();
+    process.env.GEMINI_MODEL = DEFAULT_STRONG_MODEL;
+
+    expect(getTextModelCandidates()[0]).toBe(DEFAULT_ALIAS_LITE_MODEL);
+    expect(getTextModelCandidates()[1]).toBe(DEFAULT_STRONG_MODEL);
+  });
+
+  /*
    * An empty variable is how the two that pinned a dead model were retired
    * on 2026-09-24 — Vercel has no delete in this tooling, so they were
    * cleared. An empty string must therefore mean "not set", not "".

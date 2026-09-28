@@ -6,15 +6,12 @@ import { toLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-import {
-  DEFAULT_STRONG_MODEL,
-  readBoundedInteger,
-} from "@/lib/ai/modelConfig";
+import { askText } from "@/lib/ai/askText";
+import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type { ReplyDirection, ReplySuggestion } from "@/lib/messages/decode";
 
-import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
 /*
@@ -194,9 +191,15 @@ export async function POST(request: Request) {
 
     const client = new GoogleGenAI({ apiKey });
 
-    const outputText = await generateJson(client, {
+    /*
+     * The lookup's policy: the lite alias first, a model another instance
+     * saw hang is skipped, and the strong one is asked alongside if the
+     * first is slow — see lib/ai/askText.ts. Inside the route's thirty
+     * seconds, with room left for the reply.
+     */
+    const answer = await askText(client, {
       purpose: "reply-coach",
-      model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
+      budgetMs: 20_000,
       input: `
 Someone is learning ${learningLanguage} and wants to reply to their language
 partner. Draft three different replies they could send.
@@ -222,9 +225,12 @@ ${scriptRule}
       schema: SUGGESTIONS_SCHEMA,
     });
 
-    if (!outputText.trim()) {
-      throw new Error("The model returned nothing.");
+    if (answer.text === null) {
+      /* Refunded and reported by the catch below, like any other failure. */
+      throw new Error("No model answered.");
     }
+
+    const outputText = answer.text;
 
     const parsed = JSON.parse(stripJsonCodeFence(outputText)) as {
       suggestions?: Array<{

@@ -135,17 +135,84 @@ export async function listAnalysisForMessages(
   return byMessageId;
 }
 
+/* =========================================================
+   Holding off, across the whole app
+
+   On 2026-09-25 the daily quota ran out while a conversation was open, and
+   the screen asked about the next message, and the next — eleven requests
+   in four seconds, every one refused. Every new message that arrived then
+   sent the whole backlog out again.
+
+   The route now answers "not until …" when asking is pointless, and this
+   remembers it: in memory for this page, and in localStorage so that
+   reopening the app does not start the backlog over. Until the time
+   passes, no conversation asks; after it, the next one opened fills in its
+   cards as it always did.
+   ========================================================= */
+
+const PAUSE_KEY = "exchange-notes:message-analysis-paused-until";
+
+/** Used when a request fails without saying how long to wait. */
+export const ANALYSIS_FALLBACK_PAUSE_MS = 2 * 60 * 1000;
+
+let pausedUntilMemory = 0;
+
+/** When asking may start again, or 0 when it may start now. */
+export function messageAnalysisPausedUntil(now: number = Date.now()): number {
+  let until = pausedUntilMemory;
+
+  if (!until) {
+    try {
+      until = Number(window.localStorage.getItem(PAUSE_KEY) ?? 0) || 0;
+      pausedUntilMemory = until;
+    } catch {
+      /* No storage (private mode, a test): memory alone is enough. */
+    }
+  }
+
+  return until > now ? until : 0;
+}
+
+export function pauseMessageAnalysis(until: number) {
+  if (!Number.isFinite(until) || until <= Date.now()) return;
+  pausedUntilMemory = Math.max(pausedUntilMemory, until);
+
+  try {
+    window.localStorage.setItem(PAUSE_KEY, String(pausedUntilMemory));
+  } catch {
+    /* As above. */
+  }
+}
+
+export function resetMessageAnalysisPauseForTests() {
+  pausedUntilMemory = 0;
+  try {
+    window.localStorage.removeItem(PAUSE_KEY);
+  } catch {
+    /* As above. */
+  }
+}
+
+export type MessageAnalysisOutcome =
+  | { kind: "analysis"; analysis: MessageAnalysis }
+  /** Stop asking about anything until `until`. */
+  | { kind: "paused"; until: number };
+
 /**
  * Ask the server to read a message.
  *
- * Returns null on any failure — a refusal, a timeout, an exhausted daily
- * quota. The caller's job is then to do nothing, which is the correct
- * behaviour: no card is the same as no card yet, and neither is an error the
- * user needs to be told about mid-conversation.
+ * Never throws. A card is enrichment: when it cannot be had, the caller
+ * shows nothing and — this is the part that changed — stops asking until
+ * the time this returns, instead of moving straight on to the next message.
  */
 export async function requestMessageAnalysis(
   messageId: number,
-): Promise<MessageAnalysis | null> {
+): Promise<MessageAnalysisOutcome> {
+  const fallback = (): MessageAnalysisOutcome => ({
+    kind: "paused",
+    until: Date.now() + ANALYSIS_FALLBACK_PAUSE_MS,
+  });
+
   try {
     const response = await fetch("/api/messages/analyze", {
       method: "POST",
@@ -153,13 +220,22 @@ export async function requestMessageAnalysis(
       body: JSON.stringify({ messageId }),
     });
 
-    if (!response.ok) return null;
+    const payload = (await response.json().catch(() => ({}))) as {
+      analysis?: MessageAnalysis;
+      pauseUntil?: unknown;
+    };
 
-    const payload = (await response.json()) as { analysis?: MessageAnalysis };
-    return payload.analysis ?? null;
+    if (response.ok && payload.analysis) {
+      return { kind: "analysis", analysis: payload.analysis };
+    }
+
+    const until = Number(payload.pauseUntil);
+    return Number.isFinite(until) && until > Date.now()
+      ? { kind: "paused", until }
+      : fallback();
   } catch (error) {
     console.warn("Could not analyse this message:", error);
-    return null;
+    return fallback();
   }
 }
 

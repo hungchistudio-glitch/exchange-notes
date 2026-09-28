@@ -1,5 +1,7 @@
 import { readDailyNewsCard } from "@/lib/types/dailyNews";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+
+import { refillPoolIfThin } from "@/lib/news/refillPool";
 
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
@@ -39,6 +41,15 @@ const NO_STORE = {
  * be storing something about a person who has not signed in.
  */
 export async function GET() {
+  /*
+   * After the answer has gone: if last night's run came up short, finish it
+   * now. Almost always a single count query that says the pool is fine; see
+   * lib/news/refillPool.ts for when it does more, and how rarely.
+   */
+  after(async () => {
+    await refillPoolIfThin();
+  });
+
   try {
     const supabase = await createClient();
 

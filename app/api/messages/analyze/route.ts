@@ -6,10 +6,8 @@ import { toLearningPair } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
-import {
-  DEFAULT_STRONG_MODEL,
-  readBoundedInteger,
-} from "@/lib/ai/modelConfig";
+import { askText, textQuotaResetAt } from "@/lib/ai/askText";
+import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import type {
@@ -18,7 +16,6 @@ import type {
   ToneConfidence,
 } from "@/lib/messages/decode";
 
-import { generateJson } from "@/lib/ai/modelRequest";
 export const runtime = "nodejs";
 
 /*
@@ -50,6 +47,35 @@ const MAX_ANALYSES_PER_DAY = readBoundedInteger(
 );
 
 const MAX_PHRASES = 4;
+
+/*
+ * Every candidate, hedged, inside this. A card that arrives after twenty
+ * seconds is still a card — nobody is waiting on it — but the route's own
+ * ceiling is sixty, and the budget leaves room for the writes afterwards.
+ */
+const MODEL_BUDGET_MS = 25_000;
+
+/** How long to hold off after a failure that is not the daily quota. */
+const TRANSIENT_PAUSE_MS = 2 * 60 * 1000;
+
+/** The next midnight UTC, when the app's own per-reader allowance renews. */
+function nextUtcMidnight(now = Date.now()) {
+  const day = new Date(now).toISOString().slice(0, 10);
+  return new Date(`${day}T00:00:00.000Z`).getTime() + 24 * 60 * 60 * 1000;
+}
+
+/*
+ * "Stop asking until then."
+ *
+ * The client used to hear the same 500 for a quota that is gone for the day
+ * and for a model that hiccupped, so it treated both as "try the next
+ * message" — which is how eleven requests went out in four seconds on
+ * 2026-09-25, every one of them refused. A pause carries the time it ends,
+ * and the conversation screen holds off until then.
+ */
+function pausedResponse(error: string, pauseUntil: number) {
+  return NextResponse.json({ error, pauseUntil }, { status: 503 });
+}
 
 const OPERATION = "message_decode" as const;
 
@@ -201,6 +227,16 @@ export async function POST(request: Request) {
       );
     }
 
+    /*
+     * Every model already out for the day: say so without asking one, and
+     * without spending the reader's own allowance on a request that cannot
+     * be answered.
+     */
+    const outUntil = await textQuotaResetAt();
+    if (outUntil) {
+      return pausedResponse("Language help is resting until the quota resets.", outUntil);
+    }
+
     if (
       !(await consumeDailyQuota(
         user.id,
@@ -208,10 +244,7 @@ export async function POST(request: Request) {
         MAX_ANALYSES_PER_DAY,
       ))
     ) {
-      return NextResponse.json(
-        { error: "Daily language-help limit reached." },
-        { status: 429 },
-      );
+      return pausedResponse("Daily language-help limit reached.", nextUtcMidnight());
     }
 
     // Spent; handed back below if the model never answers.
@@ -257,9 +290,9 @@ export async function POST(request: Request) {
 
     const client = new GoogleGenAI({ apiKey });
 
-    const outputText = await generateJson(client, {
+    const answer = await askText(client, {
       purpose: "message-analyze",
-      model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
+      budgetMs: MODEL_BUDGET_MS,
       input: `
 You help someone learning ${learningLanguage} understand a message a friend
 just sent them. Explain in ${nativeLanguage}.
@@ -295,9 +328,22 @@ ${scriptRule}
       schema: ANALYSIS_SCHEMA,
     });
 
-    if (!outputText.trim()) {
-      throw new Error("The model returned nothing.");
+    if (answer.text === null) {
+      await refundDailyQuota(user.id, OPERATION);
+      charged = null;
+
+      /*
+       * Out for the day: pause until the reset. Anything else — a busy
+       * model, a hang — pauses for a couple of minutes, so the next message
+       * to arrive does not send the whole backlog straight back out.
+       */
+      return pausedResponse(
+        "Couldn't read this message right now.",
+        answer.quotaResetsAt ?? Date.now() + TRANSIENT_PAUSE_MS,
+      );
     }
+
+    const outputText = answer.text;
 
     const result = JSON.parse(stripJsonCodeFence(outputText)) as ModelResult;
 
@@ -336,7 +382,7 @@ ${scriptRule}
           status,
           tone: status === "ready" ? tone : null,
           tone_confidence: status === "ready" ? toneConfidence : null,
-          model: process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL,
+          model: answer.model,
           updated_at: new Date().toISOString(),
         },
         {

@@ -1,5 +1,4 @@
 import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
-import { DEFAULT_STRONG_MODEL } from "@/lib/ai/modelConfig";
 import {
   DEFAULT_LEARNING_PAIR,
   type ByLanguage,
@@ -8,7 +7,7 @@ import {
 import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
-import { generateJson } from "@/lib/ai/modelRequest";
+import { askText } from "@/lib/ai/askText";
 /**
  * Daily News generation, redesigned to NOT depend on Gemini's Google Search
  * grounding tool. As of late 2025 / 2026, Google appears to require a
@@ -28,9 +27,10 @@ import { generateJson } from "@/lib/ai/modelRequest";
  * response instead of being regurgitated by the model, so they can never be
  * hallucinated or point to the wrong article.
  *
- * Still only ever called from the scheduled cron job — see
- * app/api/cron/daily-news/route.ts. Never call this from a route that runs
- * on a user page load.
+ * Called from the scheduled cron job (app/api/cron/daily-news/route.ts),
+ * and — only after a run came up short — from lib/news/refillPool.ts, which
+ * the news route starts *after* its response has gone. Never on the path a
+ * reader is waiting on.
  */
 
 export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
@@ -548,19 +548,39 @@ export async function selectTodaysArticles(
 
 async function buildLearningBatch(
   articles: GuardianArticle[],
-  model: string,
   client: GoogleGenAI,
   languages: readonly LanguageCode[],
+  budgetMs: number,
 ): Promise<DailyNewsPoolItem[]> {
   // Deliberately no `tools` field here — this call never touches Google
   // Search grounding, so it only ever draws on the normal (non-grounded)
   // Gemini free tier.
-  const outputText = await generateJson(client, {
+  const answer = await askText(client, {
     purpose: "daily-news",
-    model,
     input: buildDailyNewsPrompt(articles, languages),
     schema: buildLearningSchema(articles.length, [...languages]),
+    budgetMs,
+    /*
+     * A batch is a long answer — about ten seconds when all is well — so
+     * the second model is only asked alongside once the first is clearly
+     * stuck, not at the lookup's four seconds. Hedging early would spend
+     * two requests on nearly every batch of a free tier counted per day.
+     */
+    hedgeAfterMs: 12_000,
+    maxAttemptMs: 20_000,
   });
+
+  /*
+   * gemini-3.6-flash alone produced nothing on 23–26 September and two
+   * cards on the 27th: a 503, a 504 or a 429 on every batch. askText leads
+   * with the lite alias and falls back, and only a batch that no model
+   * answered is lost.
+   */
+  if (answer.text === null) {
+    throw new Error("No model answered this batch.");
+  }
+
+  const outputText = answer.text;
 
   const parsed = JSON.parse(
     stripJsonCodeFence(outputText)
@@ -638,6 +658,13 @@ const MAX_RETRY_WAIT_MS = 12_000;
  * happens only if buildLearningCards returns.
  */
 const BATCH_DEADLINE_MS = 45_000;
+
+/** One batch, every candidate included. */
+const MAX_BATCH_BUDGET_MS = 25_000;
+/** A batch is not started with less than this; it could not finish. */
+const MIN_BATCH_BUDGET_MS = 8_000;
+/** When the last batch must be done by, leaving time to write the pool. */
+const RUN_FINISH_BY_MS = 52_000;
 
 function isRateLimited(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
@@ -788,7 +815,6 @@ export async function buildLearningCards(
     throw new Error("GEMINI_API_KEY is not configured on the server.");
   }
 
-  const model = process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL;
   const client = new GoogleGenAI({ apiKey });
 
   const perBatch = articlesPerBatch(languages.length);
@@ -798,8 +824,26 @@ export async function buildLearningCards(
     batches.push(articles.slice(i, i + perBatch));
   }
 
-  const settled = await runBatches(batches, (batch) =>
-    buildLearningBatch(batch, model, client, languages),
+  /*
+   * Each batch gets what is left before the run must stop, capped so one
+   * slow batch cannot take the whole minute — the pool write afterwards is
+   * what makes any of it count.
+   */
+  const startedAt = Date.now();
+  const deadline = startedAt + BATCH_DEADLINE_MS;
+  const settled = await runBatches(
+    batches,
+    (batch) =>
+      buildLearningBatch(
+        batch,
+        client,
+        languages,
+        Math.max(
+          MIN_BATCH_BUDGET_MS,
+          Math.min(MAX_BATCH_BUDGET_MS, startedAt + RUN_FINISH_BY_MS - Date.now()),
+        ),
+      ),
+    deadline,
   );
 
   const items: DailyNewsPoolItem[] = [];

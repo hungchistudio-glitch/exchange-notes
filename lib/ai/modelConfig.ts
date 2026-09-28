@@ -109,11 +109,22 @@ function uniqueModels(values: Array<string | undefined>) {
  * is slow. Vision keeps the strong model first: reading a photograph is
  * where it earns its place.
  */
+/*
+ * ── GEMINI_MODEL is the strong slot, not the front of the line ──────────
+ *
+ * Production sets GEMINI_MODEL (a sensitive variable, so its value cannot
+ * be read back), and it used to lead this list, ahead of the alias. Whatever
+ * it names, that put it in front of the reorder above — and if it names the
+ * strong model, the reorder never reached production at all. Every route
+ * that reads GEMINI_MODEL directly uses it as "the strong model", so that is
+ * where it stands here too: second. GEMINI_TEXT_MODEL remains the override
+ * for the front of the text list.
+ */
 export function getTextModelCandidates() {
   return uniqueModels([
     process.env.GEMINI_TEXT_MODEL,
-    process.env.GEMINI_MODEL,
     DEFAULT_ALIAS_LITE_MODEL,
+    process.env.GEMINI_MODEL,
     DEFAULT_STRONG_MODEL,
     process.env.GEMINI_FALLBACK_MODEL,
     DEFAULT_FAST_MODEL,

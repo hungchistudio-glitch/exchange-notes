@@ -46,6 +46,8 @@ import {
 } from "@/lib/friends";
 import {
   isWorthAnalysing,
+  messageAnalysisPausedUntil,
+  pauseMessageAnalysis,
   listAnalysisForMessages,
   requestMessageAnalysis,
   type DetectedPhrase,
@@ -890,6 +892,9 @@ export default function ConversationRoom({
         for (const message of pending) {
           if (cancelled) return;
 
+          /* Held off app-wide — see lib/messages/decode.ts. */
+          if (messageAnalysisPausedUntil()) return;
+
           /*
            * Claimed before the call so two overlapping runs cannot both ask
            * about the same message, and released again on anything other than
@@ -902,14 +907,22 @@ export default function ConversationRoom({
            */
           requestedAnalysisRef.current.add(message.id);
 
-          const analysis = await requestMessageAnalysis(message.id);
+          const outcome = await requestMessageAnalysis(message.id);
 
-          if (cancelled || !analysis) {
+          if (cancelled || outcome.kind === "paused") {
             requestedAnalysisRef.current.delete(message.id);
-            if (cancelled) return;
-            continue;
+
+            /*
+             * A refusal stops the loop rather than moving on to the next
+             * message. It used to `continue`, which on an exhausted quota
+             * meant asking about every message on screen in turn, each one
+             * refused (2026-09-25: eleven in four seconds).
+             */
+            if (outcome.kind === "paused") pauseMessageAnalysis(outcome.until);
+            return;
           }
 
+          const { analysis } = outcome;
           setAnalysisByMessageId((current) =>
             new Map(current).set(message.id, analysis),
           );
