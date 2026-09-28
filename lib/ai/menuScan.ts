@@ -355,6 +355,8 @@ async function scanWithModel(
     ],
     schema: MENU_RESULT_SCHEMA,
     timeoutMs: MENU_REQUEST_TIMEOUT_MS,
+    /* A photograph's timeout stays with the camera; see generateJson. */
+    shareTimeouts: false,
   });
 
   if (!outputText.trim()) {

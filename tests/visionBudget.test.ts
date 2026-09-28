@@ -38,7 +38,7 @@ const [FIRST_CANDIDATE, SECOND_CANDIDATE] = getVisionModelCandidates();
 
 type Attempt = {
   elapsed: number;
-  outcome: "timeout" | { confidence: "high" | "low" };
+  outcome: "timeout" | "busy" | { confidence: "high" | "low" };
 };
 
 const script: Attempt[] = [];
@@ -95,6 +95,14 @@ vi.mock("@google/genai", () => ({
            * beforeEach is for.
            */
           throw Object.assign(new Error("Request timed out."), { status: 504 });
+        }
+
+        if (step.outcome === "busy") {
+          /* Google's "high demand", 2026-09-28: capacity, not quota. */
+          throw Object.assign(
+            new Error("This model is currently experiencing high demand."),
+            { status: 503 },
+          );
         }
 
         return { text: answer(step.outcome.confidence) };
@@ -268,5 +276,35 @@ describe("a model that timed out on the last photograph", () => {
 
     await expect(identify()).resolves.toMatchObject({ term: "lamp" });
     expect(made.map((attempt) => attempt.model)).toEqual([SECOND_CANDIDATE]);
+  });
+});
+
+describe("every model busy at once", () => {
+  /*
+   * 2026-09-28 12:39–12:41 UTC: four photographs, three models, every one a
+   * 503 "high demand" or a timeout. That is capacity, and it comes and goes
+   * by the minute, so the camera tries one more round before saying "busy".
+   */
+  it("tries one more round, and answers from it", async () => {
+    const candidates = getVisionModelCandidates().length;
+    for (let index = 0; index < candidates; index += 1) {
+      script.push({ elapsed: 500, outcome: "busy" });
+    }
+    script.push({ elapsed: 3_000, outcome: { confidence: "high" } });
+
+    await expect(identify()).resolves.toMatchObject({ term: "lamp" });
+    expect(made).toHaveLength(candidates + 1);
+  });
+
+  it("says busy after the second round, not a third", async () => {
+    const candidates = getVisionModelCandidates().length;
+    for (let index = 0; index < candidates * 2; index += 1) {
+      script.push({ elapsed: 500, outcome: "busy" });
+    }
+
+    await expect(identify()).rejects.toBeInstanceOf(
+      ObjectIdentificationUnavailableError,
+    );
+    expect(made).toHaveLength(candidates * 2);
   });
 });

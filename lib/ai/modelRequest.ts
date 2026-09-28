@@ -226,6 +226,18 @@ export type GenerateJsonOptions = {
    * logged nor held against the model.
    */
   signal?: AbortSignal;
+  /**
+   * Whether a timeout here should put the model away for every feature.
+   *
+   * True for text. False for photographs: an image is legitimately slower
+   * than a word, so a camera attempt running out of its own time says little
+   * about whether the same model can answer a lookup. On 2026-09-28 at 12:39
+   * UTC two camera timeouts put both lite models away app-wide, and the word
+   * lookups a minute later skipped them, met a busy gemini-3.6-flash, and all
+   * fell back to the offline dictionary. A quota refusal is still shared
+   * either way — that one is a fact about the model, whoever asked.
+   */
+  shareTimeouts?: boolean;
 };
 
 function toParts(input: string | ModelInputPart[]): Part[] {
@@ -255,6 +267,7 @@ export async function generateJson(
     timeoutMs = TEXT_REQUEST_TIMEOUT_MS,
     purpose = "unlabelled",
     signal,
+    shareTimeouts = true,
   }: GenerateJsonOptions,
 ): Promise<string> {
   const timeout = Math.max(1_000, Math.round(timeoutMs));
@@ -279,7 +292,9 @@ export async function generateJson(
       },
       cooldownMsFor(error),
     );
-    if (verdict) void markModelAway(model, verdict);
+    if (verdict && (shareTimeouts || verdict.reason !== "timeout")) {
+      void markModelAway(model, verdict);
+    }
 
     /*
      * Every route's failures, in one place, written somewhere that outlives

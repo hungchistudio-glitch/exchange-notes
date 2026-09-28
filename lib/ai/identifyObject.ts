@@ -4,11 +4,14 @@ import { createHash } from "node:crypto";
 
 import { GoogleGenAI } from "@google/genai";
 
+import { firstAnswer } from "@/lib/ai/hedge";
+import { healthyModels } from "@/lib/ai/modelHealth";
 import {
   cooldownMsFor,
   generateJson,
   getErrorStatus,
   isRateLimitError,
+  isTimeoutError,
   shouldCoolDown,
 } from "@/lib/ai/modelRequest";
 import {
@@ -69,13 +72,39 @@ const REQUEST_TIMEOUT_MS = readBoundedInteger(
   30_000,
 );
 
-/** What the whole route may take, fallbacks included. */
+/*
+ * What the whole route may take, fallbacks and the one retry included.
+ *
+ * The browser gives up at twenty-five seconds (IDENTIFY_TIMEOUT_MS in
+ * lib/lexicon/imageRecognition.ts and the capture page); twenty-two leaves
+ * the answer, or the honest "busy", time to get back before it does.
+ */
 const TOTAL_BUDGET_MS = readBoundedInteger(
   process.env.VISION_TOTAL_BUDGET_MS,
-  20_000,
+  22_000,
   5_000,
   45_000,
 );
+
+/*
+ * Ask the next model alongside, if the one in front has said nothing yet.
+ *
+ * The camera asked one model at a time and waited out each: on 2026-09-28
+ * flash-lite-latest spent 10–11 seconds before a 504, and only then was the
+ * next asked. Nothing has come back from a vision model in under three
+ * seconds, so five is late enough not to double every request and early
+ * enough to halve the wait when one hangs.
+ */
+const VISION_HEDGE_AFTER_MS = 5_000;
+
+/** The first round must leave room for a second one to be worth it. */
+const FIRST_ROUND_MS = 13_000;
+
+/** A pause before the retry, so a spike has a moment to pass. */
+const RETRY_PAUSE_MS = 1_500;
+
+/** A retry with less than this left is not started. */
+const MIN_RETRY_MS = 6_000;
 
 /**
  * Below this, a further attempt is not worth starting.
@@ -247,9 +276,13 @@ async function identifyWithModel(
   mediaType: string,
   languagePair: readonly [LanguageCode, LanguageCode],
   timeoutMs: number,
+  signal?: AbortSignal,
 ) {
   const outputText = await generateJson(client, {
     purpose: "identify-object",
+    signal,
+    /* A photograph's timeout stays with the camera; see generateJson. */
+    shareTimeouts: false,
     model,
     input: [
       { text: buildIdentifyObjectPrompt(languagePair) },
@@ -283,6 +316,27 @@ async function identifyWithModel(
   return result;
 }
 
+/** A low-confidence answer: kept, and the next model is asked for better. */
+class LowConfidenceAnswer extends Error {
+  constructor(readonly result: ObjectIdentificationResult) {
+    super("Low-confidence identification.");
+  }
+}
+
+/*
+ * "Busy", as opposed to "no".
+ *
+ * A 503 ("high demand") or a timeout is Google's capacity, and it changes
+ * minute to minute: worth one more try. A quota refusal or a rejected request
+ * is not going to change in two seconds, so it is not retried.
+ */
+function isBusyFailure(error: unknown) {
+  if (isRateLimitError(error)) return false;
+  if (isTimeoutError(error)) return true;
+  const status = getErrorStatus(error);
+  return status === 503 || status === 500 || status === 502;
+}
+
 async function identifyWithFallback(
   imageBase64: string,
   mediaType: string,
@@ -302,72 +356,104 @@ async function identifyWithFallback(
    */
   const client = new GoogleGenAI({ apiKey });
 
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const startedAt = Date.now();
+  const deadline = startedAt + TOTAL_BUDGET_MS;
   let lowConfidenceResult: ObjectIdentificationResult | null = null;
 
-  for (const model of getVisionModelCandidates()) {
-    const cooldownUntil = modelCooldowns.get(model) ?? 0;
-    if (cooldownUntil > Date.now()) continue;
+  /*
+   * One round: every healthy candidate, hedged — the next is asked alongside
+   * once the one in front has been quiet for VISION_HEDGE_AFTER_MS. Returns
+   * the answer, or whether every failure was the kind worth retrying.
+   */
+  async function round(roundDeadline: number) {
+    const shared = await healthyModels(getVisionModelCandidates());
+    const models = shared.filter(
+      (model) => (modelCooldowns.get(model) ?? 0) <= Date.now(),
+    );
+    const candidates = models.length > 0 ? models : shared;
 
-    /*
-     * The budget decides whether there is a next attempt at all. Without
-     * this the second model ran on borrowed time the browser had already
-     * stopped waiting for.
-     */
-    const remaining = deadline - Date.now();
-    if (remaining < MIN_ATTEMPT_MS) break;
+    let allBusy = true;
 
-    try {
-      const result = await identifyWithModel(
-        client,
-        model,
-        imageBase64,
-        mediaType,
-        languagePair,
-        Math.min(REQUEST_TIMEOUT_MS, remaining),
-      );
+    const answered = await firstAnswer(
+      candidates,
+      async (model, timeoutMs, signal) => {
+        const result = await identifyWithModel(
+          client,
+          model,
+          imageBase64,
+          mediaType,
+          languagePair,
+          timeoutMs,
+          signal,
+        );
 
-      if (result.confidence !== "low") return result;
+        /*
+         * Escalate only ambiguous photos to the next model. A clear photo
+         * stops at the first answer, for latency and for quota.
+         */
+        if (result.confidence === "low") {
+          lowConfidenceResult ??= result;
+          throw new LowConfidenceAnswer(result);
+        }
 
-      // Escalate only ambiguous photos to the stronger model. Clear photos
-      // stay on Flash-Lite for lower latency and much lower quota use.
-      lowConfidenceResult = result;
-    } catch (error) {
-      const status = getErrorStatus(error);
+        return result;
+      },
+      {
+        hedgeAfterMs: VISION_HEDGE_AFTER_MS,
+        deadline: roundDeadline,
+        minAttemptMs: MIN_ATTEMPT_MS,
+        maxAttemptMs: REQUEST_TIMEOUT_MS,
+      },
+      (model, error) => {
+        if (error instanceof LowConfidenceAnswer) return;
 
-      /*
-       * A timeout puts the model away too, not only a rate limit.
-       *
-       * This line read `isRateLimitError` and the camera paid for it on
-       * every photograph: the first candidate spent its whole twelve
-       * seconds answering nothing, was never put away for it, and was asked
-       * again on the next shot. The text route learned this on 2026-09-22
-       * and this one did not hear about it.
-       */
-      if (shouldCoolDown(error)) {
-        modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
-      }
+        if (!isBusyFailure(error)) allBusy = false;
 
-      /*
-       * The message, not only the status.
-       *
-       * A 400 here meant "this request is malformed" and the log said only
-       * `status: 400`, which is the same line a quota problem or a bad model
-       * name would print. The API says which field it objected to; there is
-       * no reason to make the next person guess from a number. Truncated
-       * because a rejected request can come back with the prompt attached.
-       */
-      console.warn("Vision model unavailable; trying fallback.", {
-        model,
-        status,
-        reason: isRateLimitError(error) ? "rate_limit" : "model_error",
-        detail:
-          error instanceof Error ? error.message.slice(0, 300) : String(error),
-      });
-    }
+        /*
+         * Put away here, for the camera. A timeout is deliberately not
+         * shared with the other features (shareTimeouts: false below); a
+         * quota refusal is, by generateJson.
+         */
+        if (shouldCoolDown(error)) {
+          modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
+        }
+
+        console.warn("Vision model unavailable; trying fallback.", {
+          model,
+          status: getErrorStatus(error),
+          reason: isRateLimitError(error)
+            ? "rate_limit"
+            : isTimeoutError(error)
+              ? "timeout"
+              : "model_error",
+          detail:
+            error instanceof Error ? error.message.slice(0, 300) : String(error),
+        });
+      },
+    );
+
+    return { answered, allBusy };
   }
 
+  const first = await round(Math.min(deadline, startedAt + FIRST_ROUND_MS));
+  if (first.answered) return first.answered.value;
   if (lowConfidenceResult) return lowConfidenceResult;
+
+  /*
+   * Once more, when Google was merely busy.
+   *
+   * 2026-09-28 12:39–12:41 UTC: four photographs, three models, every one a
+   * 503 "high demand" or a timeout — capacity, which comes and goes by the
+   * minute. A short pause and one more round is cheaper for the reader than
+   * a "busy" they have to answer by pressing the shutter again.
+   */
+  if (first.allBusy && deadline - Date.now() >= MIN_RETRY_MS + RETRY_PAUSE_MS) {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSE_MS));
+    const second = await round(deadline);
+    if (second.answered) return second.answered.value;
+    if (lowConfidenceResult) return lowConfidenceResult;
+  }
+
   throw new ObjectIdentificationUnavailableError();
 }
 
