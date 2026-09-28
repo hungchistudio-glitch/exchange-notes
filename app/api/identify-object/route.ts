@@ -1,5 +1,7 @@
 import { readLearningPair } from "@/lib/profile/languagePair";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+
+import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 
 import {
   identifyObject,
@@ -192,6 +194,16 @@ export async function POST(request: Request) {
 
     const result = await identifyObject(imageBase64, mediaType, languagePair);
     charged = null;
+
+    /*
+     * The pronunciation came with the answer; file it where the phonetics
+     * row looks, so the card never asks a model for it separately.
+     */
+    const ipa = typeof result.termIpa === "string" ? result.termIpa.trim() : "";
+    if (ipa && result.termLanguage) {
+      const language = result.termLanguage;
+      after(() => rememberIpa(language, result.term, ipa));
+    }
 
     return NextResponse.json(result, {
       headers: {

@@ -27,6 +27,13 @@ export type ObjectIdentificationResult = {
   translationExample: string;
   confidence: "high" | "medium" | "low";
   /**
+   * The headword's IPA, asked for in the same request (2026-09-28): a
+   * photograph used to cost a recognition, then a second lookup of the word
+   * it found, then a third request for its pronunciation — three chances
+   * to meet a busy model. The camera's card is now this answer alone.
+   */
+  termIpa?: string;
+  /**
    * Which language each side is in.
    *
    * These fields were called englishName and chineseName until the app
@@ -138,6 +145,7 @@ function buildObjectResultSchema(
       termExample: { type: "string", minLength: 4, maxLength: 160 },
       translationExample: { type: "string", minLength: 2, maxLength: 160 },
       confidence: { type: "string", enum: ["high", "medium", "low"] },
+      termIpa: { type: "string", maxLength: 120 },
     },
     required: [
       "term",

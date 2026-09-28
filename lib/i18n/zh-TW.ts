@@ -504,6 +504,11 @@ const traditionalChinese: TranslationDictionary = {
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
       "AI 忙碌中，這是簡易翻譯，例句請稍後再查。",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "手機先認出來了，正在請 AI 看得更仔細並補上例句…",
+    onDeviceFinal:
+      "這是手機辨識的結果。AI 目前忙碌，暫時沒有例句。",
     example: "例句",
     share: "分享",
     copied: "已複製",

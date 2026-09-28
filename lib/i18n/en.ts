@@ -513,6 +513,11 @@ const english: TranslationDictionary = {
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
       "The AI is busy, so this is a basic translation. Look it up again later for example sentences.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Recognised on your phone. Asking the AI for a closer look and example sentences…",
+    onDeviceFinal:
+      "Recognised on your phone. The AI is busy right now, so there are no example sentences yet.",
     example: "Example",
     share: "Share",
     copied: "Copied",

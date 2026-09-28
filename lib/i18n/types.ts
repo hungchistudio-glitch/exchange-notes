@@ -481,6 +481,8 @@ export type TranslationDictionary = {
     degradedNotice: string;
     lowConfidence: string;
     basicTranslation: string;
+    onDevicePending: string;
+    onDeviceFinal: string;
     example: string;
     share: string;
     /** Shown in place of `share` when the text went to the clipboard. */

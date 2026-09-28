@@ -28,8 +28,11 @@ export const config = {
    * - _next    build output and the image optimiser.
    * - sw.js and the file extensions: public/ assets, which never carry a
    *            session and are requested constantly.
+   * - mediapipe the camera's on-device runtime (public/mediapipe, copied at
+   *            build): an 11MB .wasm and its loader, which a session refresh
+   *            in front of would only slow down.
    */
   matcher: [
-    "/((?!api|auth|_next/static|_next/image|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|wav)$).*)",
+    "/((?!api|auth|mediapipe|_next/static|_next/image|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3|wav)$).*)",
   ],
 };

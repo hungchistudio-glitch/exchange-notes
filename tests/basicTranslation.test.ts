@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { translateWithMyMemory } from "@/lib/translation/myMemory";
+import { basicTranslationInBrowser, translateWithMyMemory } from "@/lib/translation/myMemory";
 import { lookupOffline } from "@/lib/vocabulary/offlineLookup";
 
 /*
@@ -72,14 +72,14 @@ describe("lookupOffline, with every model busy", () => {
   const french = { learning: "fr", support: "zh-TW", native: "zh-TW" } as const;
 
   it("answers a French word with a basic translation", async () => {
-    const translate = vi.fn().mockResolvedValue("蝴蝶");
+    const translate = vi.fn().mockResolvedValue("幸福");
 
-    const entry = await lookupOffline("papillon", { source: "fr", roles: french }, translate);
+    const entry = await lookupOffline("bonheur", { source: "fr", roles: french }, translate);
 
-    expect(translate).toHaveBeenCalledWith("papillon", "fr", "zh-TW");
+    expect(translate).toHaveBeenCalledWith("bonheur", "fr", "zh-TW");
     expect(entry).toMatchObject({
-      term: "papillon",
-      translation: "蝴蝶",
+      term: "bonheur",
+      translation: "幸福",
       termLanguage: "fr",
       translationLanguage: "zh-TW",
       basicTranslation: true,
@@ -89,11 +89,40 @@ describe("lookupOffline, with every model busy", () => {
 
   it("still admits it has nothing when the service has nothing either", async () => {
     const entry = await lookupOffline(
-      "papillon",
+      "bonheur",
       { source: "fr", roles: french },
       vi.fn().mockResolvedValue(null),
     );
     expect(entry.translationUnavailable).toBe(true);
     expect(entry.basicTranslation).toBeFalsy();
+  });
+});
+
+describe("basicTranslationInBrowser", () => {
+  it("tries the language being studied when the detected one gives nothing", async () => {
+    // "ventana" is easily taken for English; as English it comes back unchanged.
+    const fetchImpl = vi.fn(async (url: URL) => ({
+      ok: true,
+      json: async () => ({
+        responseStatus: 200,
+        responseData: {
+          translatedText: url.searchParams.get("langpair")?.startsWith("es") ? "窗" : "Ventana",
+        },
+      }),
+    })) as unknown as typeof fetch;
+
+    await expect(
+      basicTranslationInBrowser(
+        { term: "ventana", termLanguage: "en", translationLanguage: "zh-TW" },
+        "es",
+        fetchImpl,
+      ),
+    ).resolves.toEqual({ translation: "窗", termLanguage: "es" });
+  });
+
+  it("gives nothing when no target language is known", async () => {
+    await expect(
+      basicTranslationInBrowser({ term: "ventana" }, "es", vi.fn() as unknown as typeof fetch),
+    ).resolves.toBeNull();
   });
 });

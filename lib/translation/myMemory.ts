@@ -102,3 +102,46 @@ export async function translateWithMyMemory(
     return null;
   }
 }
+
+/**
+ * The same, from the reader's browser rather than the server.
+ *
+ * Measured on production 2026-09-28 17:1x UTC: the server's requests came
+ * back with nothing for four of five words that the same service answered
+ * from a browser a minute earlier. The anonymous allowance is counted per
+ * IP address, and a server shares its address with everything else on the
+ * platform; a reader's phone has one of its own. So when the server's
+ * answer still has no translation, the page asks directly.
+ *
+ * Tries the language the entry says the word is in, then the language
+ * being studied — a short word like "ventana" is easily mistaken for
+ * English — and keeps the first plausible answer.
+ */
+export async function basicTranslationInBrowser(
+  entry: {
+    term: string;
+    termLanguage?: LanguageCode;
+    queryLanguage?: LanguageCode;
+    translationLanguage?: LanguageCode;
+  },
+  learning: LanguageCode,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ translation: string; termLanguage: LanguageCode } | null> {
+  const target = entry.translationLanguage;
+  if (!target || !entry.term.trim()) return null;
+
+  const sources = [
+    ...new Set(
+      [entry.termLanguage ?? entry.queryLanguage, learning].filter(
+        (language): language is LanguageCode => Boolean(language) && language !== target,
+      ),
+    ),
+  ];
+
+  for (const source of sources) {
+    const translation = await translateWithMyMemory(entry.term, source, target, fetchImpl);
+    if (translation) return { translation, termLanguage: source };
+  }
+
+  return null;
+}

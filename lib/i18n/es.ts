@@ -514,6 +514,11 @@ const spanish: TranslationDictionary = {
     /** Every model busy; the translation came from a plain MT service. */
     basicTranslation:
       "La IA está ocupada, así que esta es una traducción básica. Vuelve a buscarla más tarde para ver frases de ejemplo.",
+    /** The camera's first answer came from the phone, not the AI. */
+    onDevicePending:
+      "Reconocido en tu teléfono. Pidiendo a la IA una mirada más precisa y frases de ejemplo…",
+    onDeviceFinal:
+      "Reconocido en tu teléfono. La IA está ocupada ahora mismo, así que aún no hay frases de ejemplo.",
     example: "Ejemplo",
     share: "Compartir",
     copied: "Copiado",

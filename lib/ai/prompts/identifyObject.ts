@@ -49,5 +49,8 @@ Rules:
 ${exampleSentenceRules()}
 - The two languages are recorded on the saved word, so it keeps them whatever
   the learner studies later.
+- "termIpa" is the IPA of "term" as a speaker of termLanguage says it: broad
+  phonemic, in forward slashes, with ˈ before the stressed syllable. Leave it
+  empty when termLanguage is Chinese, or when you are unsure.
   `.trim();
 }

@@ -18,6 +18,26 @@ const recognition = vi.hoisted(() => ({
   identifyImage: vi.fn(),
 }));
 
+const onDeviceVision = vi.hoisted(() => ({
+  recognizeOnDevice: vi.fn(),
+}));
+
+vi.mock("@/lib/vision/onDeviceClassifier", () => ({
+  recognizeOnDevice: onDeviceVision.recognizeOnDevice,
+}));
+
+vi.mock("@/contexts/LearningLanguageContext", () => ({
+  useLearningLanguageContext: () => ({ learningLanguage: "fr", nativeLanguage: "zh-TW" }),
+}));
+
+vi.mock("@/hooks/useDisplayLanguages", () => ({
+  default: () => ({
+    learningLanguage: "fr",
+    supportLanguage: "zh-TW",
+    pair: ["fr", "zh-TW"] as const,
+  }),
+}));
+
 const media = vi.hoisted(() => ({
   decodeBlob: vi.fn(),
   startCapture: vi.fn(),
@@ -78,6 +98,8 @@ const close = vi.fn();
 
 beforeEach(() => {
   recognition.identifyImage.mockReset();
+  /* The phone recognises nothing unless a case says otherwise. */
+  onDeviceVision.recognizeOnDevice.mockReset().mockResolvedValue(null);
   media.decodeBlob.mockReset();
   media.startCapture.mockReset();
   media.holdImageCapture.mockReset();
@@ -334,5 +356,154 @@ describe("the shared lexicon image lookup", () => {
        means "document", which is worth its own copy key one day. */
     expect(result.current.error).toBe("Could not process this image.");
     expect(onTerm).not.toHaveBeenCalled();
+  });
+});
+
+/* =========================================================
+   The phone answers first (2026-09-28)
+
+   At a free-tier peak every Gemini model refused the camera at once. The
+   classifier on the phone now names the object in a fraction of a second;
+   the AI's answer, when it comes, replaces it, and when it does not, the
+   phone's answer is what the reader keeps.
+   ========================================================= */
+
+describe("with the phone's classifier", () => {
+  const chair = { en: "chair", "zh-TW": "椅子", es: "silla", fr: "chaise", it: "sedia" };
+
+  it("shows the phone's word first, then hands on the AI's as an upgrade", async () => {
+    const onTerm = vi.fn();
+    onDeviceVision.recognizeOnDevice.mockResolvedValue({ word: chair, score: 0.8 });
+
+    let answer: (value: { term: string }) => void = () => {};
+    recognition.identifyImage.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    let reading: Promise<void> = Promise.resolve();
+    await act(async () => {
+      reading = result.current.handleFile(photo("chair.jpg"));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // In the learning language, with the word the card is built from.
+    expect(onTerm).toHaveBeenCalledWith("chaise", { onDeviceWord: chair });
+    // The shutter is free again while the AI is still reading.
+    expect(result.current.reading).toBe(false);
+
+    await act(async () => {
+      answer({ term: "fauteuil" });
+      await reading;
+    });
+
+    expect(onTerm).toHaveBeenLastCalledWith("fauteuil", { upgrade: true });
+    expect(result.current.error).toBe("");
+  });
+
+  it("keeps the phone's word, with no error, when the AI is busy", async () => {
+    const onTerm = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    onDeviceVision.recognizeOnDevice.mockResolvedValue({ word: chair, score: 0.8 });
+    recognition.identifyImage.mockRejectedValue(new ImageRecognitionError("busy"));
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => result.current.handleFile(photo("chair.jpg")));
+
+    expect(onTerm).toHaveBeenCalledWith("chaise", { onDeviceWord: chair });
+    // No second request: the phone's card is kept as the answer.
+    expect(onTerm).toHaveBeenLastCalledWith("chaise", { finalOnDevice: true });
+    expect(result.current.error).toBe("");
+  });
+
+  it("says busy as before when neither could name it", async () => {
+    const onTerm = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    recognition.identifyImage.mockRejectedValue(new ImageRecognitionError("busy"));
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => result.current.handleFile(photo("blur.jpg")));
+
+    expect(onTerm).not.toHaveBeenCalled();
+    expect(result.current.error).not.toBe("");
+  });
+
+  it("does not show the phone's word once the AI has already answered", async () => {
+    const onTerm = vi.fn();
+    let recognise: (value: unknown) => void = () => {};
+    onDeviceVision.recognizeOnDevice.mockReturnValue(
+      new Promise((resolve) => {
+        recognise = resolve;
+      }),
+    );
+    recognition.identifyImage.mockResolvedValue({ term: "tabouret" });
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+
+    await act(async () => result.current.handleFile(photo("stool.jpg")));
+    await act(async () => {
+      recognise({ word: chair, score: 0.8 });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onTerm).toHaveBeenCalledTimes(1);
+    expect(onTerm).toHaveBeenCalledWith("tabouret");
+  });
+
+  it("can be turned off for a surface that asks for the word itself", async () => {
+    const onTerm = vi.fn();
+    recognition.identifyImage.mockResolvedValue({ term: "chaise" });
+
+    const { result } = renderHook(() =>
+      useLexiconImageLookup({ onTerm, onDevice: false }),
+    );
+
+    await act(async () => result.current.handleFile(photo("chair.jpg")));
+
+    expect(onDeviceVision.recognizeOnDevice).not.toHaveBeenCalled();
+    expect(onTerm).toHaveBeenCalledWith("chaise");
+  });
+});
+
+describe("one request per photograph", () => {
+  it("files the recognition as the card for the word it found", async () => {
+    window.localStorage.clear();
+    const onTerm = vi.fn();
+    recognition.identifyImage.mockResolvedValue({
+      term: "chaise",
+      translation: "椅子",
+      partOfSpeech: "noun",
+      termExample: "La chaise est en bois.",
+      translationExample: "這張椅子是木頭做的。",
+      confidence: "high",
+      termLanguage: "fr",
+      translationLanguage: "zh-TW",
+      termIpa: "/ʃɛz/",
+    });
+
+    const { result } = renderHook(() => useLexiconImageLookup({ onTerm }));
+    await act(async () => result.current.handleFile(photo("chair.jpg")));
+
+    const { readCachedEntry } = await import("@/lib/lexicon/cache");
+    const cached = readCachedEntry({
+      query: "chaise",
+      pair: ["fr", "zh-TW"],
+      native: "zh-TW",
+      head: null,
+    });
+
+    // So the search that is handed "chaise" shows this, without asking again.
+    expect(cached).toMatchObject({
+      term: "chaise",
+      translation: "椅子",
+      termIpa: "/ʃɛz/",
+      termExample: "La chaise est en bois.",
+    });
+    expect(onTerm).toHaveBeenCalledWith("chaise");
   });
 });

@@ -11,6 +11,7 @@ import {
 import type { LexiconEntry } from "@/lib/lexicon/types";
 import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyCategory } from "@/lib/types/app";
+import { findObjectWord, objectWordEntry } from "@/lib/vision/objectLexicon";
 import { translateWithMyMemory } from "@/lib/translation/myMemory";
 
 /* =========================================================
@@ -377,6 +378,29 @@ async function lookupDictionary(
     context.head && context.head === resolved.glossLanguage
       ? resolved.headLanguage
       : resolved.glossLanguage;
+
+  /*
+   * The camera's everyday words, in all five languages.
+   *
+   * CC-CEDICT below speaks English and Chinese only, so a French learner
+   * whose camera named a "chaise" at a Gemini peak used to get the word back
+   * with no meaning. The same few hundred objects the phone can recognise
+   * are written out in every language (lib/vision/objectLexicon.ts), so for
+   * those this path can answer any pairing — including the one the card rule
+   * asks for, a French headword for a word typed in English. English and
+   * Chinese alone still go to the dictionary, which has more to say.
+   */
+  const objectWord = findObjectWord(query, queryLanguage);
+  const beyondDictionary = (language: LanguageCode) =>
+    language !== "en" && language !== "zh-TW";
+
+  if (
+    objectWord &&
+    source !== gloss &&
+    (beyondDictionary(source) || beyondDictionary(gloss))
+  ) {
+    return objectWordEntry(objectWord, source, gloss, queryLanguage);
+  }
 
   /*
    * With no model, the only text on hand is what the reader typed. When the

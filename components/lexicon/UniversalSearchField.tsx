@@ -71,7 +71,7 @@ export default function UniversalSearchField({
   const friendPicker = useVocabularyFriendPicker();
 
   const imageLookup = useLexiconImageLookup({
-    onTerm: (term) => search.submit(term, "image"),
+    onTerm: (term, options) => search.submit(term, "image", options),
   });
 
   const placeholder = insertValues(copy.fieldPlaceholderLanguage, {

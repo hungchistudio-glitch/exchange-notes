@@ -3,6 +3,12 @@
 import { useCallback, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
+import type { ObjectIdentificationResult } from "@/lib/ai/identifyObject";
+import { writeCachedEntry } from "@/lib/lexicon/cache";
+import { normalizeQuery } from "@/lib/lexicon/normalize";
+import type { LexiconEntry } from "@/lib/lexicon/types";
 import {
   ImageRecognitionError,
   identifyImage,
@@ -16,6 +22,46 @@ import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 import { startCapture } from "@/lib/media/pipeline";
 import { decodeBlob } from "@/lib/media/raster";
+import type { ObjectWord } from "@/lib/vision/objectLexicon";
+import { recognizeOnDevice } from "@/lib/vision/onDeviceClassifier";
+
+/**
+ * How a word from a photograph is handed on. See LexiconSubmitOptions: the
+ * phone's first answer carries its word, and the AI's later answer for the
+ * same photo is an upgrade.
+ */
+export type ImageTermOptions = {
+  onDeviceWord?: ObjectWord;
+  upgrade?: boolean;
+  /** The AI could not read the photo: the phone's card is the answer. */
+  finalOnDevice?: boolean;
+};
+
+/*
+ * The recognition, as the dictionary card it already is.
+ *
+ * It carries everything a lookup of the same word would — both sides, the
+ * part of speech, an example pair, and now the IPA — so the camera's card
+ * is this, not a second request for the word it found (see termIpa in
+ * lib/ai/identifyObject.ts).
+ */
+function recognitionEntry(result: ObjectIdentificationResult): LexiconEntry {
+  return {
+    term: result.term,
+    translation: result.translation,
+    partOfSpeech: result.partOfSpeech,
+    termIpa: result.termIpa?.trim() || undefined,
+    termExample: result.termExample,
+    translationExample: result.translationExample,
+    confidence: result.confidence,
+    category: "objects",
+    termLanguage: result.termLanguage,
+    translationLanguage: result.translationLanguage,
+    queryLanguage: result.termLanguage,
+    kind: "word",
+    highlight: null,
+  };
+}
 
 /**
  * The one image-recognition path used by every lexicon camera key.
@@ -28,13 +74,35 @@ import { decodeBlob } from "@/lib/media/raster";
  */
 export default function useLexiconImageLookup({
   onTerm,
+  onDevice = true,
 }: {
-  onTerm: (term: string) => void;
+  onTerm: (term: string, options?: ImageTermOptions) => void;
+  /**
+   * Whether the phone may answer first. Off for a surface whose search
+   * cannot show a card without a request (VocabularySearch hands the word
+   * to another screen), where two answers would be two lookups.
+   */
+  onDevice?: boolean;
 }) {
   const { t } = useTranslation();
+  const { pair } = useDisplayLanguages();
+  const { nativeLanguage } = useLearningLanguageContext();
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const readingRef = useRef(false);
+
+  /*
+   * Which photograph is current. Once the phone has answered, the reader may
+   * take the next one while the AI is still reading the last; an answer —
+   * or an error — for a photo that is no longer current is dropped.
+   */
+  const generationRef = useRef(0);
+
+  const finishReading = useCallback((generation: number) => {
+    if (generation !== generationRef.current) return;
+    readingRef.current = false;
+    setReading(false);
+  }, []);
 
   const errorMessage = useCallback(
     (code: ImageRecognitionCode): string => {
@@ -69,6 +137,7 @@ export default function useLexiconImageLookup({
    */
   const readRaster = useCallback(
     async (
+      generation: number,
       raster: Raster,
       targetRect: NormalizedRect,
       sourceType: MediaSourceType,
@@ -100,16 +169,91 @@ export default function useLexiconImageLookup({
         sourceFileName: fileName,
       });
 
-      const identified = await identifyImage(started.recognitionImage);
+      const isCurrent = () => generation === generationRef.current;
 
-      if (!identified.term) return;
+      /*
+       * Two readers of the same frame, at once.
+       *
+       * The AI, as before; and the classifier on the phone, which needs no
+       * network and answers in a fraction of a second. Whichever the reader
+       * sees first, the AI's answer has the last word — it knows a "mug"
+       * from a "cup" and writes the example sentences — and when the AI
+       * cannot answer (a free-tier peak: every model "high demand" at once,
+       * 2026-09-28) the phone's answer is what the reader keeps.
+       */
+      const fromAi = identifyImage(started.recognitionImage);
+      let aiAnswered = false;
+      let shownOnDevice: string | null = null;
+
+      const onDevicePromise: Promise<string | null> = onDevice
+        ? recognizeOnDevice(started.recognitionImage).then(async (hit) => {
+            if (!hit || aiAnswered || !isCurrent()) return null;
+
+            const term = hit.word[pair[0]];
+            holdImageCapture(term, await started.capture);
+            if (aiAnswered || !isCurrent()) return null;
+
+            shownOnDevice = term;
+            onTerm(term, { onDeviceWord: hit.word });
+
+            // The card is up: the shutter is free for the next photograph.
+            finishReading(generation);
+            return term;
+          })
+        : Promise.resolve(null);
+
+      let identified: Awaited<typeof fromAi>;
+
+      try {
+        identified = await fromAi;
+      } catch (aiError) {
+        if (!isCurrent()) return;
+
+        const onDeviceTerm = shownOnDevice ?? (await onDevicePromise);
+        if (!onDeviceTerm) throw aiError;
+
+        /*
+         * The AI could not read the photo, but the phone did, and its card
+         * already has both languages. No second request: the card stays,
+         * marked as the phone's answer.
+         */
+        if (isCurrent()) onTerm(onDeviceTerm, { finalOnDevice: true });
+        return;
+      }
+
+      aiAnswered = true;
+      if (!isCurrent()) return;
+
+      if (!identified.term) {
+        if (shownOnDevice) onTerm(shownOnDevice, { finalOnDevice: true });
+        return;
+      }
+
+      /*
+       * One request per photograph. The recognition goes into the lookup
+       * cache under the word it found, so every search surface that is handed
+       * that word — this one, the sheet, the Vocabulary page — shows this
+       * card straight from the cache instead of asking a model again.
+       */
+      writeCachedEntry(
+        {
+          query: normalizeQuery(identified.term),
+          pair,
+          native: nativeLanguage,
+          head: null,
+        },
+        recognitionEntry(identified),
+      );
 
       // Held rather than uploaded: nothing reaches storage until the reader
       // saves the word this photograph produced.
       holdImageCapture(identified.term, await started.capture);
-      onTerm(identified.term);
+      if (!isCurrent()) return;
+
+      if (shownOnDevice) onTerm(identified.term, { upgrade: true });
+      else onTerm(identified.term);
     },
-    [onTerm],
+    [finishReading, nativeLanguage, onDevice, onTerm, pair],
   );
 
   /** A frame off the shutter, with the target the reader tapped. */
@@ -126,29 +270,31 @@ export default function useLexiconImageLookup({
       }
 
       readingRef.current = true;
+      const generation = ++generationRef.current;
       setError("");
       setReading(true);
 
       try {
-        await readRaster(raster, targetRect, "camera");
+        await readRaster(generation, raster, targetRect, "camera");
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
-        setError(
-          errorMessage(
-            recognitionError instanceof ImageRecognitionError
-              ? recognitionError.code
-              : "failed",
-          ),
-        );
+        if (generation === generationRef.current) {
+          setError(
+            errorMessage(
+              recognitionError instanceof ImageRecognitionError
+                ? recognitionError.code
+                : "failed",
+            ),
+          );
+        }
       } finally {
         // startCapture owns the raster and closes it when its derivatives
         // settle; closing it here would pull the pixels out from under an
         // encode still running.
-        readingRef.current = false;
-        setReading(false);
+        finishReading(generation);
       }
     },
-    [errorMessage, readRaster],
+    [errorMessage, finishReading, readRaster],
   );
 
   /**
@@ -169,6 +315,7 @@ export default function useLexiconImageLookup({
       if (readingRef.current) return;
 
       readingRef.current = true;
+      const generation = ++generationRef.current;
       setError("");
       setReading(true);
 
@@ -213,6 +360,7 @@ export default function useLexiconImageLookup({
         raster = null;
 
         await readRaster(
+          generation,
           decoded,
           DEFAULT_TARGET_RECT,
           pdf ? "file" : "photo",
@@ -220,13 +368,15 @@ export default function useLexiconImageLookup({
         );
       } catch (recognitionError) {
         console.error("Could not read that photo:", recognitionError);
-        setError(
-          errorMessage(
-            recognitionError instanceof ImageRecognitionError
-              ? recognitionError.code
-              : "failed",
-          ),
-        );
+        if (generation === generationRef.current) {
+          setError(
+            errorMessage(
+              recognitionError instanceof ImageRecognitionError
+                ? recognitionError.code
+                : "failed",
+            ),
+          );
+        }
       } finally {
         /*
          * Only ever non-null on the paths that never reached the capture — a
@@ -241,11 +391,10 @@ export default function useLexiconImageLookup({
          */
         document_?.close();
 
-        readingRef.current = false;
-        setReading(false);
+        finishReading(generation);
       }
     },
-    [errorMessage, readRaster],
+    [errorMessage, finishReading, readRaster],
   );
 
   return { reading, error, handleFile, handleCapture };

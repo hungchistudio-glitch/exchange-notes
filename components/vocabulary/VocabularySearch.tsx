@@ -80,6 +80,8 @@ export default function VocabularySearch({
 
   const imageLookup = useLexiconImageLookup({
     onTerm: (term) => openSearch({ query: term, autoSubmit: true }),
+    /* This hands the word to the search sheet, which asks for it itself. */
+    onDevice: false,
   });
 
   // Dictate in the language being learned — that's what the user is
