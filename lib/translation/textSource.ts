@@ -7,6 +7,7 @@ import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
 
 import { generateJson } from "@/lib/ai/modelRequest";
+import { tryModels } from "@/lib/ai/tryModels";
 /* =========================================================
    Translating text nobody owns
 
@@ -168,55 +169,56 @@ export async function translateMissing(
   const fromName = getLanguage(from).name.english;
   const toName = getLanguage(to).name.english;
 
-  let lastError: unknown = null;
+  /*
+   * Healthy models only, three at most — see lib/ai/tryModels.ts. The
+   * models share an API key but not a quota, so the one that is busy is
+   * usually not the only one available; but walking all of them during a
+   * Google-wide 503 only made the card wait longer for the same silence.
+   */
+  try {
+    const { value: parsed } = await tryModels(
+      getTextModelCandidates(),
+      async (model, timeoutMs) => {
+        const raw = await generateJson(client, {
+          purpose: "text-translate",
+          model,
+          input: [
+            `Translate each ${fromName} phrase below into ${toName}.`,
+            ``,
+            `Rules:`,
+            `- Natural and idiomatic, the way a native speaker would write it.`,
+            `- These are short vocabulary entries and dish names; keep them short.`,
+            `- Copy "source" back exactly as given.`,
+            `- Return them in the same order.`,
+            ``,
+            ...missing.map((text, index) => `${index + 1}. ${text}`),
+          ].join("\n"),
+          schema: RESULT_SCHEMA,
+          timeoutMs,
+        });
 
-  // Every candidate: the models share an API key but not a quota, so the one
-  // that is busy is usually not the only one available.
-  for (const model of getTextModelCandidates()) {
-    try {
-      const raw = await generateJson(client, {
-        purpose: "text-translate",
-        model,
-        input: [
-          `Translate each ${fromName} phrase below into ${toName}.`,
-          ``,
-          `Rules:`,
-          `- Natural and idiomatic, the way a native speaker would write it.`,
-          `- These are short vocabulary entries and dish names; keep them short.`,
-          `- Copy "source" back exactly as given.`,
-          `- Return them in the same order.`,
-          ``,
-          ...missing.map((text, index) => `${index + 1}. ${text}`),
-        ].join("\n"),
-        schema: RESULT_SCHEMA,
-      });
+        return JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
+          items?: Array<{ source?: string; text?: string }>;
+        };
+      },
+    );
 
-      const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
-        items?: Array<{ source?: string; text?: string }>;
-      };
+    (parsed.items ?? []).forEach((answer, index) => {
+      // Positional, cross-checked against the echoed source: a model that
+      // reordered an entry must not have its answer filed under another
+      // phrase.
+      const asked = missing[index];
+      if (!asked) return;
 
-      (parsed.items ?? []).forEach((answer, index) => {
-        // Positional, cross-checked against the echoed source: a model that
-        // reordered an entry must not have its answer filed under another
-        // phrase.
-        const asked = missing[index];
-        if (!asked) return;
+      const echoed = answer.source?.trim();
+      if (echoed && echoed !== asked) return;
 
-        const echoed = answer.source?.trim();
-        if (echoed && echoed !== asked) return;
-
-        const text = answer.text?.trim();
-        if (text) fresh.set(asked, text);
-      });
-
-      lastError = null;
-      break;
-    } catch (error) {
-      lastError = error;
-    }
+      const text = answer.text?.trim();
+      if (text) fresh.set(asked, text);
+    });
+  } catch (error) {
+    console.error("Card translation failed:", error);
   }
-
-  if (lastError) console.error("Card translation failed:", lastError);
 
   await writeCache(from, to, fresh);
 

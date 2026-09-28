@@ -20,7 +20,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
+  consume: vi.fn(async () => true),
+  backgroundAllowed: vi.fn(async () => true),
   rows: [] as unknown[],
+}));
+
+vi.mock("@/lib/ai/modelHealth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/ai/modelHealth")>()),
+  backgroundAllowed: mocks.backgroundAllowed,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -45,7 +52,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/ai/dailyQuota", () => ({
-  consumeDailyQuota: async () => true,
+  consumeDailyQuota: mocks.consume,
   refundDailyQuota: async () => undefined,
 }));
 
@@ -70,6 +77,8 @@ beforeEach(() => {
   process.env.GEMINI_API_KEY = "test-key";
   mocks.create.mockReset();
   mocks.update.mockReset();
+  mocks.consume.mockReset().mockResolvedValue(true);
+  mocks.backgroundAllowed.mockReset().mockResolvedValue(true);
   mocks.rows = [
     { id: "row-a", part_of_speech: null, texts: { en: "apple" }, examples: {} },
     { id: "row-b", part_of_speech: null, texts: { en: "bridge" }, examples: {} },
@@ -145,5 +154,39 @@ describe("library fill pairing", () => {
 
     expect(body.filled).toBe(3);
     expect(mocks.update).toHaveBeenCalledTimes(3);
+  });
+});
+
+/*
+ * Chi's rule, 2026-09-28: background work only while the quota is
+ * comfortable. A library fill is background work — nobody is waiting on it,
+ * and a batch of twenty words is exactly the request that would take a model
+ * away from someone pointing the camera at something.
+ */
+describe("library fill when the quota is scarce", () => {
+  it("waits for another visit: nothing asked, nothing charged, and done for now", async () => {
+    mocks.backgroundAllowed.mockResolvedValue(false);
+
+    const response = await POST(request());
+    const body = (await response.json()) as {
+      filled: number;
+      done: boolean;
+      deferred?: boolean;
+      remaining: number;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ filled: 0, done: true, deferred: true, remaining: 3 });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.consume).not.toHaveBeenCalled();
+  });
+
+  it("asks one model once when it may run", async () => {
+    mocks.create.mockRejectedValue(Object.assign(new Error("high demand"), { status: 503 }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(500);
+    expect(mocks.create).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,8 +13,12 @@ import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
 import { generateJson } from "@/lib/ai/modelRequest";
+import { tryModels } from "@/lib/ai/tryModels";
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+/* Room inside maxDuration for auth, the upload and the quota refund. */
+const ROUTE_BUDGET_MS = 24_000;
 
 /*
  * What was said, and what language it was said in.
@@ -62,6 +66,7 @@ const MAX_REQUESTS_PER_DAY = readBoundedInteger(
 );
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   let chargedUserId: string | null = null;
 
   try {
@@ -110,10 +115,14 @@ export async function POST(request: Request) {
 
     const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
 
-    let lastError: unknown = null;
-
-    for (const model of getTextModelCandidates()) {
-      try {
+    /*
+     * Healthy models only, three at most, inside the route's thirty seconds
+     * — see lib/ai/tryModels.ts. A malformed answer counts as a failed
+     * attempt and moves on, as it always did.
+     */
+    const { value: parsed } = await tryModels(
+      getTextModelCandidates(),
+      async (model, timeoutMs) => {
         const raw = await generateJson(client, {
           purpose: "voice-lookup",
           model,
@@ -133,47 +142,41 @@ export async function POST(request: Request) {
             { media: { data: base64, mimeType } },
           ],
           schema: RESULT_SCHEMA,
+          timeoutMs,
+          /* A recording, like a photograph, is slower than a word; its
+             timeout says little about the model's text lookups. */
+          shareTimeouts: false,
         });
 
-        const parsed = JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
+        return JSON.parse(raw.replace(/^```json\s*|```$/g, "").trim()) as {
           text?: string;
           language?: string;
           confident?: boolean;
         };
+      },
+      { deadline: startedAt + ROUTE_BUDGET_MS },
+    );
 
-        const text = parsed.text?.trim() ?? "";
+    const text = parsed.text?.trim() ?? "";
 
-        // A clear "nothing heard" is still a completed model answer. Only
-        // transport/model failures below receive a refund.
-        chargedUserId = null;
+    // A clear "nothing heard" is still a completed model answer. Only
+    // transport/model failures below receive a refund.
+    chargedUserId = null;
 
-        /*
-         * An unconfident answer is no answer. A word invented from silence
-         * or from a language the app does not teach would be looked up,
-         * saved, and studied — and it would be nobody's word.
-         */
-        if (!text || parsed.confident === false || !isLanguageCode(parsed.language)) {
-          return NextResponse.json({ heard: false });
-        }
-
-        return NextResponse.json({
-          heard: true,
-          text,
-          language: parsed.language,
-        });
-      } catch (error) {
-        lastError = error;
-      }
+    /*
+     * An unconfident answer is no answer. A word invented from silence
+     * or from a language the app does not teach would be looked up,
+     * saved, and studied — and it would be nobody's word.
+     */
+    if (!text || parsed.confident === false || !isLanguageCode(parsed.language)) {
+      return NextResponse.json({ heard: false });
     }
 
-    console.error("Voice lookup failed:", lastError);
-
-    if (chargedUserId) {
-      await refundDailyQuota(chargedUserId, OPERATION);
-      chargedUserId = null;
-    }
-
-    return NextResponse.json({ heard: false });
+    return NextResponse.json({
+      heard: true,
+      text,
+      language: parsed.language,
+    });
   } catch (error) {
     if (chargedUserId) {
       await refundDailyQuota(chargedUserId, OPERATION);

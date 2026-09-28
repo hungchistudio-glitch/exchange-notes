@@ -10,6 +10,7 @@ import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createServiceClient } from "@/lib/supabase/service";
 
 import { generateJson } from "@/lib/ai/modelRequest";
+import { tryModels } from "@/lib/ai/tryModels";
 export const runtime = "nodejs";
 
 /*
@@ -20,6 +21,9 @@ export const runtime = "nodejs";
  * rather than the thing a reader waits out.
  */
 export const maxDuration = 30;
+
+/* Room inside maxDuration for the auth, cache read and write around the model. */
+const ROUTE_BUDGET_MS = 24_000;
 const MAX_INTERPRETATIONS_PER_DAY = readBoundedInteger(
   process.env.NOTE_INTERPRET_DAILY_USER_LIMIT,
   30,
@@ -79,6 +83,7 @@ function stripJsonCodeFence(value: string) {
 const OPERATION = "note_interpretation" as const;
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
   let charged: string | null = null;
 
@@ -142,35 +147,36 @@ export async function POST(request: Request) {
     charged = user.id;
 
     const client = new GoogleGenAI({ apiKey });
-    let outputText = "";
-    let usedModel = "";
-    let lastError: unknown = null;
 
-    for (const model of getTextModelCandidates()) {
-      try {
+    /*
+     * Healthy models only, three at most, inside the route's thirty seconds —
+     * see lib/ai/tryModels.ts. It used to walk every candidate, so a busy
+     * afternoon ran out the function's time before the reader saw an error.
+     */
+    // Narrowed above; a closure does not keep the narrowing, a const does.
+    const targetLanguage = body.targetLanguage;
+
+    const { value: outputText, model: usedModel } = await tryModels(
+      getTextModelCandidates(),
+      async (model, timeoutMs) => {
         const modelText = await generateJson(client, {
           purpose: "note-interpret",
           model,
           input: buildInterpretNotePrompt({
             text: note.originalText,
             sourceLanguage: note.originalLanguage,
-            targetLanguage: body.targetLanguage,
+            targetLanguage,
             personalMeaning: note.personalMeaning,
             context: note.context,
           }),
           schema: RESULT_SCHEMA,
+          timeoutMs,
         });
-
-        outputText = modelText;
-        usedModel = model;
-        lastError = null;
-        break;
-      } catch (error) {
-        lastError = error;
-      }
-    }
-
-    if (lastError || !outputText.trim()) throw lastError ?? new Error("Empty result");
+        if (!modelText.trim()) throw new Error("Empty result");
+        return modelText;
+      },
+      { deadline: startedAt + ROUTE_BUDGET_MS },
+    );
 
     // A model answered. What follows is the app's own storage, and a failure
     // there is not the reader's to pay for either — but the call was made, so

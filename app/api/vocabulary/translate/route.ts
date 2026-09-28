@@ -3,7 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { getTextModelCandidates, readBoundedInteger } from "@/lib/ai/modelConfig";
-import { generateJson, withModelCandidates } from "@/lib/ai/modelRequest";
+import { backgroundAllowed } from "@/lib/ai/modelHealth";
+import { generateJson } from "@/lib/ai/modelRequest";
+import { tryModels } from "@/lib/ai/tryModels";
 import { cleanExampleSentence } from "@/lib/ai/prompts/exampleSentence";
 import {
   buildTranslateVocabularyPrompt,
@@ -184,6 +186,27 @@ export async function POST(request: Request) {
     }
 
     /*
+     * Background work waits for spare quota (Chi, 2026-09-28: "只在額度充足時").
+     *
+     * Filling in a library is work nobody is waiting on, and a batch of
+     * twenty words is exactly the request that takes a model away from a
+     * reader pointing the camera at something. So it runs only while at
+     * least two models are up, and asks one of them once. When the quota is
+     * tight the answer is "not now": done for this session, nothing charged,
+     * and the next visit carries on where this one stopped.
+     */
+    if (!(await backgroundAllowed(getTextModelCandidates()))) {
+      return NextResponse.json({
+        filled: 0,
+        language: target,
+        updated: [],
+        remaining: outstanding.length,
+        done: true,
+        deferred: true,
+      });
+    }
+
+    /*
      * Charged here: past every early return that costs nothing, and before
      * the model runs. Anything else lets two tabs filling the same library
      * both be allowed.
@@ -220,20 +243,15 @@ export async function POST(request: Request) {
     const client = new GoogleGenAI({ apiKey });
 
     /*
-     * Every candidate, not just the first — and each one with a ceiling.
+     * One healthy model, once (lib/ai/tryModels.ts, background).
      *
-     * This route was the one production was actually failing on: twenty-four
-     * 429s in an hour, all from the same busy model, while a second one
-     * sharing the same key sat idle. A library fill is a long run of
-     * requests, the shape most likely to meet a rate limit.
-     *
-     * What the list could not fix on its own was the cost of using it. The
-     * SDK retries a 429 five times with backoff, so falling through to the
-     * second model took 34.8 seconds of waiting to learn something the first
-     * response already said. Every attempt is bounded now — one try, one
-     * ceiling — which measured 225ms for the same refusal.
+     * This route used to walk every candidate — it was the one production
+     * was failing on, twenty-four 429s in an hour from one busy model. The
+     * attempt is still bounded (one try, one ceiling: a refusal measured
+     * 225ms against 34.8s with the SDK's own retries), and a batch that
+     * could not be asked is simply left for the next one.
      */
-    const outputText = await withModelCandidates(
+    const { value: outputText } = await tryModels(
       getTextModelCandidates(),
       async (model, timeoutMs) =>
         generateJson(client, {
@@ -243,6 +261,7 @@ export async function POST(request: Request) {
           schema: RESULT_SCHEMA,
           timeoutMs,
         }),
+      { background: true },
     );
 
     const parsed = JSON.parse(

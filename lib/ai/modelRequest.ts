@@ -514,21 +514,15 @@ export function isRateLimitError(error: unknown) {
 }
 
 /*
- * Models known to be refusing, so the next request does not ask again.
+ * How long a refusal that does not say otherwise keeps a model away.
  *
- * A minute is longer than a per-minute window and shorter than a daily one,
- * which is the useful compromise: a model that is briefly busy comes back on
- * its own, and one that is out for the day is asked twelve times an hour
- * rather than on every request.
- *
- * Module state, so it is per warm instance and empty on a cold start. That
- * is a real limit rather than a bug — at this app's traffic most requests
- * land cold and skip nothing — but a cooldown that helps only sometimes
- * still costs nothing, and the 225ms failure above is what makes a miss
- * survivable.
+ * A minute is longer than a per-minute window and shorter than a daily one:
+ * a model that is briefly busy comes back on its own. Where it is kept is
+ * lib/ai/modelHealth.ts, shared by every instance — the per-instance Map
+ * that used to live here, and withModelCandidates with it, went on
+ * 2026-09-28 when every caller moved onto lib/ai/tryModels.ts.
  */
 export const MODEL_COOLDOWN_MS = 65 * 1000;
-const cooldowns = new Map<string, number>();
 
 /*
  * How long to stop asking, when the refusal says so itself.
@@ -558,62 +552,4 @@ export function cooldownMsFor(error: unknown) {
   if (!Number.isFinite(seconds) || seconds <= 0) return MODEL_COOLDOWN_MS;
 
   return Math.min(MODEL_COOLDOWN_MS, Math.ceil(seconds * 1_000) + 1_000);
-}
-
-export function isModelCoolingDown(model: string) {
-  const until = cooldowns.get(model) ?? 0;
-  if (until > Date.now()) return true;
-  if (until) cooldowns.delete(model);
-  return false;
-}
-
-export function startModelCooldown(
-  model: string,
-  cooldownMs: number = MODEL_COOLDOWN_MS,
-) {
-  cooldowns.set(model, Date.now() + cooldownMs);
-}
-
-/**
- * Runs `attempt` against each candidate until one answers.
- *
- * Skips models that are still cooling down, puts a model that reports a rate
- * limit into cooldown, and rethrows the last error when every candidate is
- * spent — so the caller's own error handling, refunds included, is unchanged.
- *
- * The attempt is handed the model to ask and the time it has to do it in;
- * what it does with both is generateJson's business.
- */
-export async function withModelCandidates<T>(
-  candidates: string[],
-  attempt: (model: string, timeoutMs: number) => Promise<T>,
-  timeoutMs: number = TEXT_REQUEST_TIMEOUT_MS,
-): Promise<T> {
-  let lastError: unknown = new Error("No model candidates are configured.");
-  let triedAny = false;
-
-  for (const model of candidates) {
-    if (isModelCoolingDown(model)) continue;
-
-    triedAny = true;
-
-    try {
-      return await attempt(model, timeoutMs);
-    } catch (error) {
-      lastError = error;
-      if (shouldCoolDown(error)) startModelCooldown(model, cooldownMsFor(error));
-    }
-  }
-
-  /*
-   * Every candidate was cooling down, so nothing was actually asked. Clearing
-   * them and trying once is better than reporting a failure the reader cannot
-   * act on — the cooldown is an optimisation, not a gate.
-   */
-  if (!triedAny && candidates.length > 0) {
-    cooldowns.clear();
-    return attempt(candidates[0], timeoutMs);
-  }
-
-  throw lastError;
 }

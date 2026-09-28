@@ -6,12 +6,14 @@ import { readLearningPair } from "@/lib/profile/languagePair";
 
 import {
   DEFAULT_STRONG_MODEL,
+  getTextModelCandidates,
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
 import { generateJson } from "@/lib/ai/modelRequest";
+import { tryModels } from "@/lib/ai/tryModels";
 export const runtime = "nodejs";
 
 /*
@@ -22,6 +24,9 @@ export const runtime = "nodejs";
  * rather than the thing a reader waits out.
  */
 export const maxDuration = 30;
+
+/* Room inside maxDuration for auth, the quota and the language pair. */
+const ROUTE_BUDGET_MS = 24_000;
 /**
  * This endpoint spends money on every call, so it is gated the same way the
  * other model-backed routes are. It previously had no sign-in check, no
@@ -71,6 +76,7 @@ function stripJsonCodeFence(text: string) {
 
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
   let charged: string | null = null;
 
@@ -135,22 +141,32 @@ export async function POST(request: Request) {
     // Spent; handed back below if the model never answers.
     charged = user.id;
 
-    const model = process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL;
+    const preferred = process.env.GEMINI_MODEL?.trim() || DEFAULT_STRONG_MODEL;
 
     const languagePair = await readLearningPair(supabase, user.id);
 
     const client = new GoogleGenAI({ apiKey });
 
-    const outputText = await generateJson(client, {
-      purpose: "translate-note",
-      model,
-      input: buildTranslateNotePrompt(text, languagePair),
-      schema: TRANSLATE_RESULT_SCHEMA,
-    });
+    /*
+     * The strong model first, as before — but no longer only the strong
+     * model. One busy minute on it used to be a failed translation; now the
+     * next healthy candidate answers, three at most (lib/ai/tryModels.ts).
+     */
+    const { value: result } = await tryModels(
+      [preferred, ...getTextModelCandidates()],
+      async (model, timeoutMs) => {
+        const outputText = await generateJson(client, {
+          purpose: "translate-note",
+          model,
+          input: buildTranslateNotePrompt(text, languagePair),
+          schema: TRANSLATE_RESULT_SCHEMA,
+          timeoutMs,
+        });
 
-    const result = JSON.parse(
-      stripJsonCodeFence(outputText)
-    ) as TranslateResult;
+        return JSON.parse(stripJsonCodeFence(outputText)) as TranslateResult;
+      },
+      { deadline: startedAt + ROUTE_BUDGET_MS },
+    );
 
     charged = null;
 

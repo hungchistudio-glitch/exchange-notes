@@ -1,11 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 
 import {
+  MIN_MODEL_DEADLINE_MS,
   cooldownMsFor,
   generateJson,
   isTimeoutError,
   shouldCoolDown,
 } from "@/lib/ai/modelRequest";
+import { healthyModels } from "@/lib/ai/modelHealth";
 
 import {
   getMenuModelCandidates,
@@ -150,7 +152,23 @@ const MENU_RESULT_SCHEMA = {
 const MAX_SECTIONS = 14;
 const MAX_ITEMS_PER_SECTION = 40;
 
+/*
+ * Put away here, for menus only: a menu's timeout is not shared with the
+ * other features (shareTimeouts: false below). Quota refusals are shared
+ * app-wide by generateJson, and read back through healthyModels.
+ */
 const modelCooldowns = new Map<string, number>();
+
+/*
+ * Two models at most, inside the route's sixty seconds (2026-09-28).
+ *
+ * A menu attempt may take forty-five seconds, so the old walk over every
+ * candidate could not finish inside maxDuration anyway: the function was
+ * killed mid-list and the reader got a generic failure instead of "busy,
+ * try again". Two covers a refusal followed by a real attempt.
+ */
+const MENU_MAX_ATTEMPTS = 2;
+const MENU_TOTAL_BUDGET_MS = 52_000;
 
 export class MenuScanUnavailableError extends Error {
   constructor() {
@@ -338,6 +356,7 @@ async function scanWithModel(
   mediaType: string,
   targetLanguage: LanguageCode,
   languagePair: readonly [LanguageCode, LanguageCode],
+  timeoutMs: number = MENU_REQUEST_TIMEOUT_MS,
 ) {
   const outputText = await generateJson(client, {
     purpose: "menu-scan",
@@ -354,7 +373,7 @@ async function scanWithModel(
       { media: { data: imageBase64, mimeType: mediaType } },
     ],
     schema: MENU_RESULT_SCHEMA,
-    timeoutMs: MENU_REQUEST_TIMEOUT_MS,
+    timeoutMs,
     /* A photograph's timeout stays with the camera; see generateJson. */
     shareTimeouts: false,
   });
@@ -389,9 +408,19 @@ export async function scanMenu(
 
   let lastTimedOut = false;
 
-  for (const model of getMenuModelCandidates()) {
-    const cooldownUntil = modelCooldowns.get(model) ?? 0;
-    if (cooldownUntil > Date.now()) continue;
+  const deadline = Date.now() + MENU_TOTAL_BUDGET_MS;
+  const shared = await healthyModels(getMenuModelCandidates());
+  const local = shared.filter(
+    (model) => (modelCooldowns.get(model) ?? 0) <= Date.now(),
+  );
+  const models = (local.length > 0 ? local : shared).slice(
+    0,
+    MENU_MAX_ATTEMPTS,
+  );
+
+  for (const model of models) {
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_MODEL_DEADLINE_MS) break;
 
     try {
       return await scanWithModel(
@@ -401,6 +430,7 @@ export async function scanMenu(
         mediaType,
         targetLanguage,
         languagePair,
+        Math.min(MENU_REQUEST_TIMEOUT_MS, remaining),
       );
     } catch (error) {
       // A timeout is a reason to stop asking too — see identifyObject.
