@@ -55,9 +55,21 @@ describe("the built-in object vocabulary", () => {
     expect(findObjectWord("椅子", "zh-TW")?.en).toBe("chair");
   });
 
-  it("refuses a spelling that belongs to two words", () => {
-    // Spanish "taza" is both the mug and the cup.
-    expect(findObjectWord("taza", "es")).toBeNull();
+  /*
+   * A spelling that belongs to two words gives the commoner one (2026-10-01).
+   * It used to give neither, so "bibliothèque" had no offline answer at all.
+   */
+  it("gives the commoner word for a spelling that belongs to two", () => {
+    expect(findObjectWord("taza", "es")?.en).toBe("cup");
+    expect(findObjectWord("bibliothèque", "fr")?.en).toBe("library");
+    expect(findObjectWord("libreria", "it")?.en).toBe("bookstore");
+  });
+
+  /* Confident classes that used to have no word (Chi's iPhone, 2026-10-01). */
+  it("names what the phone was sure of and used to leave unnamed", () => {
+    expect(objectWordForClass(598)?.en).toBe("television"); // home theater
+    expect(objectWordForClass(720)?.en).toBe("bottle"); // pill bottle
+    expect(objectWordForClass(926)?.["zh-TW"]).toBe("火鍋"); // hot pot
   });
 });
 

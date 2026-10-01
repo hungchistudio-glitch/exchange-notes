@@ -1984,6 +1984,14 @@ export type TranslationDictionary = {
       errorTitle: string;
       tryAgain: string;
       scanAnother: string;
+      /** Google's AI unavailable: {minutes} until it is likely back. */
+      googleDown: string;
+      /** The day's free Google allowance is spent: back at {time}. */
+      googleQuota: string;
+      timeoutBody: string;
+      busyBody: string;
+      dailyLimitBody: string;
+      offlineBody: string;
 
       zoomIn: string;
       zoomOut: string;

@@ -91,6 +91,18 @@ describe("matching what was typed", () => {
     expect(findCoreWord("rain", "en")?.forms["zh-TW"][0]).toBe("雨");
   });
 
+  /* Real lookups that came back empty on 2026-10-01: "shoes", "navi", "fuerzas". */
+  it("finds the dictionary form of a plural", () => {
+    expect(findCoreWord("ciudades", "es")?.forms.en[0]).toBe("city");
+    expect(findCoreWord("animaux", "fr")?.forms.en[0]).toBe("animal");
+    expect(findCoreWord("fiori", "it")?.forms.en[0]).toBe("flower");
+    expect(findCoreWord("cities", "en")?.forms.en[0]).toBe("city");
+  });
+
+  it("still prefers a word typed exactly as the dictionary has it", () => {
+    expect(findCoreWord("news", "en")?.forms.en[0]).toBe("news");
+  });
+
   it("knows which language a guessed word turned out to be", () => {
     expect(findCoreWordIn("grazie", ["en", "it"])?.language).toBe("it");
     expect(findCoreWordIn("qwertyuiop", ["en", "fr"])).toBeNull();
@@ -154,6 +166,13 @@ describe("the offline lookup, with every model busy", () => {
       termLanguage: "it",
       translationLanguage: "en",
     });
+  });
+
+  it("answers a plural of a camera word from the object dictionary", async () => {
+    const entry = await lookupOffline("navi", { source: "it", roles: italian }, vi.fn());
+
+    expect(entry).toMatchObject({ term: "nave", termLanguage: "it" });
+    expect(entry.translationUnavailable).toBeFalsy();
   });
 
   it("finds the word in the reader's own language when the guess was wrong", async () => {

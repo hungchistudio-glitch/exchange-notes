@@ -147,15 +147,16 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "towel|毛巾|toalla|serviette|asciugamano: 434",
   "bathtub|浴缸|bañera|baignoire|vasca da bagno: 435,876",
   "lighthouse|燈塔|faro|phare|faro: 437",
-  "bottle|瓶子|botella|bouteille|bottiglia: 440,737,898,907",
+  "bottle|瓶子|botella|bouteille|bottiglia: 440,720,737,898,907",
   "glass|玻璃杯|vaso|verre|bicchiere: 441",
   "bib|圍兜|babero|bavoir|bavaglino: 443",
   "bikini|比基尼|bikini|bikini|bikini: 445",
   "binder|資料夾|carpeta|classeur|raccoglitore: 446",
   "binoculars|望遠鏡|prismáticos|jumelles|binocolo: 447",
   "birdhouse|鳥屋|casita para pájaros|nichoir|casetta per uccelli: 448",
-  "bookcase|書櫃|estantería|bibliothèque|libreria: 453",
+  "library|圖書館|biblioteca|bibliothèque|biblioteca: 624",
   "bookstore|書店|librería|librairie|libreria: 454",
+  "bookcase|書櫃|estantería|bibliothèque|libreria: 453",
   "bottle cap|瓶蓋|tapón|capsule|tappo: 455",
   "bow tie|領結|pajarita|nœud papillon|papillon: 457",
   "bra|胸罩|sujetador|soutien-gorge|reggiseno: 459",
@@ -188,6 +189,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "movie theater|電影院|cine|cinéma|cinema: 498",
   "knife|刀子|cuchillo|couteau|coltello: 499,623",
   "shoe|鞋子|zapato|chaussure|scarpa: 502,630",
+  "cup|杯子|taza|tasse|tazza: 968",
   "mug|馬克杯|taza|mug|tazza: 504",
   "coffeepot|咖啡壺|cafetera|cafetière|caffettiera: 505",
   "lock|鎖|candado|cadenas|lucchetto: 507,695",
@@ -250,10 +252,9 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "joystick|搖桿|palanca de mando|manette|joystick: 613",
   "kimono|和服|kimono|kimono|kimono: 614",
   "ladle|湯杓|cucharón|louche|mestolo: 618",
-  "lamp|檯燈|lámpara|lampe|lampada: 619,846",
+  "lamp|檯燈|lámpara|lampe|lampada: 619,818,846",
   "laptop|筆記型電腦|portátil|ordinateur portable|portatile: 620,681",
   "lawn mower|割草機|cortacésped|tondeuse|tosaerba: 621",
-  "library|圖書館|biblioteca|bibliothèque|biblioteca: 624",
   "lighter|打火機|mechero|briquet|accendino: 626",
   "lipstick|口紅|pintalabios|rouge à lèvres|rossetto: 629",
   "lotion|乳液|loción|lotion|lozione: 631",
@@ -272,7 +273,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "glove|手套|guante|gant|guanto: 658",
   "bowl|碗|cuenco|bol|ciotola: 659,809",
   "modem|數據機|módem|modem|modem: 662",
-  "monitor|螢幕|monitor|écran|monitor: 664,782",
+  "monitor|螢幕|monitor|écran|monitor: 664,782,916",
   "scooter|機車|moto|scooter|motorino: 665,670",
   "bicycle|腳踏車|bicicleta|vélo|bicicletta: 444,671",
   "tent|帳篷|tienda de campaña|tente|tenda: 672",
@@ -336,7 +337,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "soap dispenser|給皂機|dispensador de jabón|distributeur de savon|dispenser di sapone: 804",
   "soccer ball|足球|balón de fútbol|ballon de foot|pallone da calcio: 805",
   "sock|襪子|calcetín|chaussette|calzino: 806",
-  "heater|暖氣機|calefactor|radiateur|stufetta: 811",
+  "heater|暖氣機|calefactor|radiateur|stufetta: 753,811",
   "spatula|鍋鏟|espátula|spatule|spatola: 813",
   "speedboat|快艇|lancha|hors-bord|motoscafo: 814",
   "spider web|蜘蛛網|telaraña|toile d'araignée|ragnatela: 815",
@@ -360,7 +361,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "tank|坦克|tanque|char d'assaut|carro armato: 847",
   "teapot|茶壺|tetera|théière|teiera: 849",
   "teddy bear|泰迪熊|osito de peluche|nounours|orsacchiotto: 850",
-  "television|電視|televisión|télévision|televisione: 851",
+  "television|電視|televisión|télévision|televisione: 548,598,851",
   "tennis ball|網球|pelota de tenis|balle de tennis|pallina da tennis: 852",
   "toaster|烤麵包機|tostadora|grille-pain|tostapane: 859",
   "toilet|馬桶|inodoro|toilettes|gabinetto: 861",
@@ -428,7 +429,6 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "burrito|墨西哥捲餅|burrito|burrito|burrito: 965",
   "red wine|紅酒|vino tinto|vin rouge|vino rosso: 966",
   "coffee|咖啡|café|café|caffè: 967",
-  "cup|杯子|taza|tasse|tazza: 968",
   "mountain|山|montaña|montagne|montagna: 970",
   "bubble|泡泡|burbuja|bulle|bolla: 971",
   "cliff|懸崖|acantilado|falaise|scogliera: 972",
@@ -440,7 +440,16 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "daisy|雛菊|margarita|marguerite|margherita: 985",
   "corn|玉米|maíz|maïs|mais: 987,998",
   "acorn|橡實|bellota|gland|ghianda: 988",
-  "toilet paper|衛生紙|papel higiénico|papier toilette|carta igienica: 999",];
+  "toilet paper|衛生紙|papel higiénico|papier toilette|carta igienica: 999",
+  /*
+   * Classes the phone was confident about and had no word for (2026-10-01,
+   * Chi's iPhone: "home theater" at 0.86 said nothing). Each goes to the
+   * everyday word a learner pointing at it means; the ranges above carry
+   * the rest — a pill bottle is a bottle, a spotlight a lamp, a radiator a
+   * heater, a web page on screen a monitor, an entertainment centre a TV.
+   */
+  "hot pot|火鍋|hot pot|fondue chinoise|hot pot: 926",
+];
 
 const LANGUAGE_ORDER: readonly LanguageCode[] = ["en", "zh-TW", "es", "fr", "it"];
 
@@ -483,17 +492,20 @@ function normalize(text: string) {
  * Written text back to a word, per language.
  *
  * A spelling that belongs to two words in the same language — Spanish
- * "taza" is both the mug and the cup — is left out of the index rather than
- * resolved by guessing: the server would otherwise answer "cup" for a reader
- * who meant "mug". Recognition does not use this; it goes by class.
+ * "taza" is both the mug and the cup, French "bibliothèque" both the library
+ * and the bookcase — goes to the first of them. It used to be left out of
+ * the index altogether, so no dictionary on the server had anything to say
+ * about four everyday words (2026-10-01); a card that gives the first sense
+ * is a better answer than none. Recognition does not use this; it goes by
+ * class.
  */
 const WORD_BY_TEXT = (() => {
-  const index = new Map<string, ObjectWord | null>();
+  const index = new Map<string, ObjectWord>();
 
   for (const word of OBJECT_WORDS) {
     for (const language of LANGUAGE_ORDER) {
       const key = `${language}:${normalize(word[language])}`;
-      index.set(key, index.has(key) && index.get(key) !== word ? null : word);
+      if (!index.has(key)) index.set(key, word);
     }
   }
 

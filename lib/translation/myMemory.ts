@@ -55,6 +55,39 @@ function plausible(text: string, query: string, target: LanguageCode) {
   return trimmed.length <= 240;
 }
 
+/*
+ * What the service hands back is not always plain text. Its memory holds
+ * segments from translated documents, markup and all: "mitochondria" came
+ * back as "<g>粒線體 (Mitochondria)</g>" (2026-10-01) — a tag, and the query
+ * echoed in brackets. Both go before the answer is judged or shown.
+ */
+const ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&apos;": "'",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&nbsp;": " ",
+};
+
+export function cleanTranslation(text: string, query: string): string {
+  let clean = text
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&(?:amp|quot|#39|apos|lt|gt|nbsp);/g, (entity) => ENTITIES[entity] ?? entity)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // "粒線體 (Mitochondria)": the query, echoed back in brackets.
+  const echoed = new RegExp(
+    `\\s*[(（]\\s*${query.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[)）]\\s*$`,
+    "i",
+  );
+  clean = clean.replace(echoed, "").trim();
+
+  return clean;
+}
+
 /** Keep the reader's own casing: "déjeuner", not "Dejeuner", for "早餐". */
 function matchCase(text: string, query: string) {
   const first = query.trim().charAt(0);
@@ -94,7 +127,7 @@ export async function translateWithMyMemory(
       ...[...(data.matches ?? [])]
         .sort((a, b) => Number(b.match ?? 0) - Number(a.match ?? 0))
         .map((match) => match.translation ?? ""),
-    ];
+    ].map((text) => cleanTranslation(text, query));
 
     const best = candidates.find((text) => plausible(text, query, to));
     return best ? matchCase(best.trim(), query) : null;

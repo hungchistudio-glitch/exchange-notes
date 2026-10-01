@@ -96,6 +96,10 @@ export type MenuAnalyzeResponse = {
   notMenu?: boolean;
   error?: string;
   code?: string;
+  /** For code "google_down": when Google is likely back (epoch ms). */
+  retryAt?: number | null;
+  /** For code "google_down": the day's free allowance is spent. */
+  quotaOnly?: boolean;
 };
 
 export function countMenuItems(document: MenuDocument | null): number {

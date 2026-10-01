@@ -1876,6 +1876,18 @@ const french: TranslationDictionary = {
       errorTitle: "Le menu n'a pas pu être lu",
       tryAgain: "Réessayer",
       scanAnother: "Scanner un autre menu",
+      googleDown:
+        "L'IA de Google est indisponible pour le moment (fréquent aux heures de pointe avec l'offre gratuite) : impossible de lire le menu. Réessayez dans environ {minutes} min.",
+      googleQuota:
+        "Le quota gratuit de l'IA de Google est épuisé pour aujourd'hui. Il revient vers {time}.",
+      timeoutBody:
+        "La lecture de ce menu a pris trop de temps. Essayez une seule page, un peu plus près.",
+      busyBody:
+        "Trop de scans à la fois. Patientez un instant puis réessayez.",
+      dailyLimitBody:
+        "Vous avez utilisé vos scans de menu gratuits du jour. Réessayez demain.",
+      offlineBody:
+        "Vous êtes hors ligne. Réessayez une fois connecté.",
       zoomIn: "Zoomer",
       zoomOut: "Dézoomer",
       zoomLevel: "Zoom {level}×",

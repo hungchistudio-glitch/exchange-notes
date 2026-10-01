@@ -1981,6 +1981,18 @@ const traditionalChinese: TranslationDictionary = {
       errorTitle: "無法讀取這份菜單",
       tryAgain: "再試一次",
       scanAnother: "掃描另一份菜單",
+      googleDown:
+        "Google 的 AI 暫時無法使用（免費方案在尖峰時段常會這樣），現在讀不了菜單。請約 {minutes} 分鐘後再試。",
+      googleQuota:
+        "今天免費的 Google AI 額度已經用完，大約 {time} 恢復。",
+      timeoutBody:
+        "這份菜單讀太久了。試著只拍一頁、靠近一點再試一次。",
+      busyBody:
+        "一次掃太多份了，請稍等一下再試。",
+      dailyLimitBody:
+        "今天的免費菜單掃描次數已經用完，請明天再試。",
+      offlineBody:
+        "目前沒有網路連線，連上之後再試一次。",
 
       zoomIn: "放大",
       zoomOut: "縮小",

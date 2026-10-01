@@ -11,6 +11,7 @@ import {
 import type { LexiconEntry } from "@/lib/lexicon/types";
 import { LANGUAGE_CODES, type LanguageCode } from "@/lib/languages";
 import type { VocabularyCategory } from "@/lib/types/app";
+import { lemmaCandidates } from "@/lib/lexicon/inflection";
 import { findObjectWord, objectWordEntry } from "@/lib/vision/objectLexicon";
 import { translateWithMyMemory } from "@/lib/translation/myMemory";
 import { coreWordEntry, findCoreWordIn } from "@/lib/vocabulary/coreLexicon";
@@ -431,7 +432,12 @@ async function lookupDictionary(
    * asks for, a French headword for a word typed in English. English and
    * Chinese alone still go to the dictionary, which has more to say.
    */
-  const objectWord = findObjectWord(query, queryLanguage);
+  const objectWord =
+    findObjectWord(query, queryLanguage) ??
+    lemmaCandidates(query, queryLanguage)
+      .map((lemma) => findObjectWord(lemma, queryLanguage))
+      .find(Boolean) ??
+    null;
   const beyondDictionary = (language: LanguageCode) =>
     language !== "en" && language !== "zh-TW";
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { LanguageCode } from "@/lib/languages";
+import { lemmaCandidates } from "@/lib/lexicon/inflection";
 import type { LexiconEntry } from "@/lib/lexicon/types";
 import type { VocabularyCategory } from "@/lib/types/app";
 import { CORE_LEXICON_SOURCE } from "@/lib/vocabulary/coreLexiconData";
@@ -134,14 +135,7 @@ const INDEXES: readonly Index[] = (() => {
 /** How many entries the dictionary holds. */
 export const CORE_LEXICON_SIZE = WORDS.length;
 
-/** The entry this text names in `language`, if the dictionary has it. */
-export function findCoreWord(
-  text: string,
-  language: LanguageCode,
-): CoreWord | null {
-  const typed = normalizeTyped(text);
-  if (!typed) return null;
-
+function lookUp(typed: string, language: LanguageCode): CoreWord | null {
   const stripped = withoutArticle(typed, language);
   const keys = [
     typed,
@@ -152,6 +146,30 @@ export function findCoreWord(
 
   for (const [position, index] of INDEXES.entries()) {
     const hit = index.get(`${language}:${keys[position]}`);
+    if (hit) return hit;
+  }
+
+  return null;
+}
+
+/**
+ * The entry this text names in `language`, if the dictionary has it — as
+ * typed first, then as the dictionary form it most likely is ("shoes" →
+ * "shoe", "navi" → "nave"; see lib/lexicon/inflection.ts).
+ */
+export function findCoreWord(
+  text: string,
+  language: LanguageCode,
+): CoreWord | null {
+  const typed = normalizeTyped(text);
+  if (!typed) return null;
+
+  const exact = lookUp(typed, language);
+  if (exact) return exact;
+
+  const bare = withoutArticle(typed, language);
+  for (const lemma of lemmaCandidates(bare, language)) {
+    const hit = lookUp(lemma, language);
     if (hit) return hit;
   }
 

@@ -38,6 +38,8 @@ export type ScanFailure =
   | "timeout"
   | "offline"
   | "unavailable"
+  /** Google's AI is unavailable; the message says when to try again. */
+  | "google_down"
   | "unknown";
 
 export type ScanSession = {

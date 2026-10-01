@@ -1876,6 +1876,18 @@ const italian: TranslationDictionary = {
       errorTitle: "Non è stato possibile leggere il menu",
       tryAgain: "Riprova",
       scanAnother: "Scansiona un altro menu",
+      googleDown:
+        "L'IA di Google non è disponibile al momento (con il piano gratuito capita spesso nelle ore di punta), quindi il menu non si può leggere. Riprova tra circa {minutes} min.",
+      googleQuota:
+        "La quota gratuita dell'IA di Google per oggi è esaurita. Torna verso le {time}.",
+      timeoutBody:
+        "La lettura di questo menu ha richiesto troppo tempo. Prova una pagina alla volta, un po' più vicino.",
+      busyBody:
+        "Troppe scansioni insieme. Attendi un momento e riprova.",
+      dailyLimitBody:
+        "Hai esaurito le scansioni di menu gratuite di oggi. Riprova domani.",
+      offlineBody:
+        "Sei offline. Riprova quando sei connesso.",
       zoomIn: "Ingrandisci",
       zoomOut: "Riduci",
       zoomLevel: "Zoom {level}×",

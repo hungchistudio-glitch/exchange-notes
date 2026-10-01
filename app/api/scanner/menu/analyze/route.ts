@@ -5,8 +5,10 @@ import { NextResponse } from "next/server";
 import {
   MenuScanTimeoutError,
   MenuScanUnavailableError,
+  menuOutage,
   scanMenu,
 } from "@/lib/ai/menuScan";
+import type { ModelOutage } from "@/lib/ai/modelHealth";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { createClient } from "@/lib/supabase/server";
@@ -83,6 +85,22 @@ function consumeMinuteRequest(userId: string) {
   }
 
   return true;
+}
+
+/** "Google's AI is unavailable", with when it is likely back. */
+function googleDown(outage: ModelOutage | null) {
+  const body: MenuAnalyzeResponse = {
+    id: "",
+    state: "failed",
+    progress: { ocr: "failed", translation: "pending", reconstruction: "pending" },
+    document: null,
+    error: "Google's AI is unavailable right now.",
+    code: "google_down",
+    retryAt: outage?.until ?? null,
+    quotaOnly: outage?.quotaOnly ?? false,
+  };
+
+  return NextResponse.json(body, { status: 503 });
 }
 
 function failed(
@@ -183,6 +201,10 @@ export async function POST(request: Request) {
       );
     }
 
+    /* Before anything is spent: every menu model already known to be away. */
+    const outage = await menuOutage();
+    if (outage) return googleDown(outage);
+
     if (
       !(await consumeDailyQuota(
         user.id,
@@ -273,11 +295,7 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof MenuScanUnavailableError) {
-      return failed(
-        "Menu scanning is temporarily busy. Please try again shortly.",
-        "unavailable",
-        503,
-      );
+      return googleDown(error.outage);
     }
 
     console.error("Menu scan route failed:", {

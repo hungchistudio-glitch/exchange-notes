@@ -4,10 +4,16 @@ import {
   MIN_MODEL_DEADLINE_MS,
   cooldownMsFor,
   generateJson,
+  getErrorStatus,
   isTimeoutError,
   shouldCoolDown,
 } from "@/lib/ai/modelRequest";
-import { healthyModels } from "@/lib/ai/modelHealth";
+import {
+  allModelsAway,
+  dailyQuotaResetAt,
+  healthyModels,
+  type ModelOutage,
+} from "@/lib/ai/modelHealth";
 
 import {
   getMenuModelCandidates,
@@ -170,11 +176,31 @@ const modelCooldowns = new Map<string, number>();
 const MENU_MAX_ATTEMPTS = 2;
 const MENU_TOTAL_BUDGET_MS = 52_000;
 
+/**
+ * Google's models could not read the menu. `outage`, when known, is when
+ * they are likely back and whether it is the day's free allowance — said to
+ * the reader in so many words, as the camera does (Chi, 2026-09-28).
+ */
 export class MenuScanUnavailableError extends Error {
-  constructor() {
+  constructor(readonly outage: ModelOutage | null = null) {
     super("All menu-scanning models are temporarily unavailable.");
     this.name = "MenuScanUnavailableError";
   }
+}
+
+/** How long to say "Google is down" after a scan failed on capacity alone. */
+const MENU_OUTAGE_MS = 60_000;
+
+/** Every menu model away right now: say so before spending anything. */
+export function menuOutage(): Promise<ModelOutage | null> {
+  return allModelsAway(getMenuModelCandidates());
+}
+
+/* "Busy", as opposed to "no": Google's capacity rather than a refusal. */
+function isCapacityFailure(error: unknown) {
+  if (isTimeoutError(error)) return true;
+  const status = getErrorStatus(error);
+  return status === 503 || status === 500 || status === 502;
 }
 
 export class MenuScanTimeoutError extends Error {
@@ -398,15 +424,20 @@ export async function scanMenu(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new MenuScanUnavailableError();
 
-  const client = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      timeout: MENU_REQUEST_TIMEOUT_MS,
-      retryOptions: { attempts: 1 },
-    },
-  });
+  /*
+   * No httpOptions on the client — the same as every other route (see
+   * identifyObject). With `retryOptions` set, the SDK sends each request
+   * through its own retry wrapper, which turns a 503 into a plain
+   * Error("Retryable HTTP Error: Service Unavailable") with no status: on
+   * 2026-09-30 two menu scans met Google's "high demand", and this app could
+   * not tell it was busy — nothing marked, nothing said. What bounds an
+   * attempt is generateJson, per call.
+   */
+  const client = new GoogleGenAI({ apiKey });
 
   let lastTimedOut = false;
+  let asked = 0;
+  let allCapacity = true;
 
   const deadline = Date.now() + MENU_TOTAL_BUDGET_MS;
   const shared = await healthyModels(getMenuModelCandidates());
@@ -433,6 +464,9 @@ export async function scanMenu(
         Math.min(MENU_REQUEST_TIMEOUT_MS, remaining),
       );
     } catch (error) {
+      asked += 1;
+      if (!isCapacityFailure(error)) allCapacity = false;
+
       // A timeout is a reason to stop asking too — see identifyObject.
       if (shouldCoolDown(error)) {
         modelCooldowns.set(model, Date.now() + cooldownMsFor(error));
@@ -451,9 +485,23 @@ export async function scanMenu(
     }
   }
 
+  /*
+   * Every model asked said "high demand": Google is down for menus right
+   * now, and the reader is told so, with when to try again.
+   */
+  if (asked > 0 && allCapacity && !lastTimedOut) {
+    throw new MenuScanUnavailableError({
+      until: Date.now() + MENU_OUTAGE_MS,
+      quotaOnly: false,
+    });
+  }
+
   // A timeout is worth telling apart from an outage: one is worth retrying
   // with a tighter crop, the other is worth waiting out.
   if (lastTimedOut) throw new MenuScanTimeoutError();
 
-  throw new MenuScanUnavailableError();
+  const resetAt = await dailyQuotaResetAt(getMenuModelCandidates());
+  throw new MenuScanUnavailableError(
+    resetAt ? { until: resetAt, quotaOnly: true } : null,
+  );
 }

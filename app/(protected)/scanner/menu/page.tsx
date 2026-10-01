@@ -16,6 +16,7 @@ import MenuResultViewer from "@/components/scanner/MenuResultViewer";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { useScanSession, type ScanFailure } from "@/lib/scanner/scanSession";
+import { fill, formatResetTime } from "@/lib/i18n/format";
 import type { MenuAnalyzeResponse } from "@/lib/scanner/menuTypes";
 
 function failureFromResponse(
@@ -29,6 +30,7 @@ function failureFromResponse(
   if (code === "rate_limit") return "rate_limit";
   if (code === "daily_limit") return "daily_limit";
   if (code === "timeout") return "timeout";
+  if (code === "google_down") return "google_down";
   if (status === 503) return "unavailable";
 
   return "unknown";
@@ -100,12 +102,50 @@ export default function MenuTranslatorPage() {
     if (session.state === "idle") dispatch({ type: "camera_ready" });
   }, [session.state, dispatch]);
 
+  /*
+   * What went wrong, in the reader's language. This used to show the
+   * server's own English sentence to everyone ("Menu scanning is
+   * temporarily busy…"); and when Google is down it now says so, with when
+   * to try again (Chi, 2026-09-28).
+   */
+  const failureMessage = useCallback(
+    (failure: ScanFailure, body: MenuAnalyzeResponse | null): string => {
+      switch (failure) {
+        case "google_down": {
+          if (body?.quotaOnly && body.retryAt) {
+            return fill(copy.googleQuota, {
+              time: formatResetTime(
+                body.retryAt,
+                INTERFACE_LANGUAGE_CODE[interfaceLanguage],
+              ),
+            });
+          }
+          const minutes = body?.retryAt
+            ? Math.max(1, Math.ceil((body.retryAt - Date.now()) / 60_000))
+            : 1;
+          return fill(copy.googleDown, { minutes });
+        }
+        case "timeout":
+          return copy.timeoutBody;
+        case "rate_limit":
+          return copy.busyBody;
+        case "daily_limit":
+          return copy.dailyLimitBody;
+        case "offline":
+          return copy.offlineBody;
+        default:
+          return "";
+      }
+    },
+    [copy, interfaceLanguage],
+  );
+
   const analyze = useCallback(
     async (image: string) => {
       dispatch({ type: "analyze_started" });
 
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
-        dispatch({ type: "failed", failure: "offline", message: "" });
+        dispatch({ type: "failed", failure: "offline", message: copy.offlineBody });
         return;
       }
 
@@ -127,16 +167,18 @@ export default function MenuTranslatorPage() {
           return;
         }
 
+        const failure = failureFromResponse(body, response.status);
+
         dispatch({
           type: "failed",
-          failure: failureFromResponse(body, response.status),
-          message: body?.error ?? "",
+          failure,
+          message: failureMessage(failure, body),
         });
       } catch {
         dispatch({ type: "failed", failure: "unknown", message: "" });
       }
     },
-    [dispatch, targetLanguage],
+    [copy.offlineBody, dispatch, failureMessage, targetLanguage],
   );
 
   // Analysis starts from the state machine rather than from the capture

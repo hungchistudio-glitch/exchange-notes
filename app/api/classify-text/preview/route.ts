@@ -62,7 +62,17 @@ export async function POST(request: Request) {
      * what an index consulted without knowing the pair would hand back.
      */
     const roles = await readLanguageRoles(supabase, user.id);
-    const offline = await lookupOffline(query, { roles });
+    /*
+     * The dictionaries on this server only — never the basic translation
+     * service. Since 2026-09-28 lookupOffline asks MyMemory for anything the
+     * dictionaries miss, and this preview runs beside every lookup: measured
+     * on 2026-10-01 it turned the instant half into a four-to-five-second
+     * one, spent the server's shared MyMemory allowance while Gemini was
+     * answering perfectly well, and once showed raw markup
+     * ("<g>粒線體 (Mitochondria)</g>"). A preview with nothing to say is a
+     * skeleton; that is what it was for.
+     */
+    const offline = await lookupOffline(query, { roles }, async () => null);
 
     const preview: LexiconPreview = {
       term: offline.term,

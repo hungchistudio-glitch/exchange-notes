@@ -2022,6 +2022,18 @@ const english: TranslationDictionary = {
       errorTitle: "The menu could not be read",
       tryAgain: "Try again",
       scanAnother: "Scan another menu",
+      googleDown:
+        "Google's AI is unavailable right now (on the free plan this often happens at peak times), so the menu can't be read. Try again in about {minutes} min.",
+      googleQuota:
+        "Today's free Google AI allowance is used up. It comes back at about {time}.",
+      timeoutBody:
+        "This menu took too long to read. Try one page at a time, a little closer.",
+      busyBody:
+        "Too many scans at once. Please wait a moment and try again.",
+      dailyLimitBody:
+        "You have used today's free menu scans. Please try again tomorrow.",
+      offlineBody:
+        "You're offline. Try again once you're connected.",
 
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",

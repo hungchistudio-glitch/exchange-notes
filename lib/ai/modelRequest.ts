@@ -446,12 +446,29 @@ function anySignal(signals: AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
+/*
+ * The SDK's retry wrapper reports a failure by its status *text* alone
+ * ("Retryable HTTP Error: Service Unavailable"). Read back, so a 503 that
+ * arrives that way is still a 503.
+ */
+const STATUS_TEXTS: Record<string, number> = {
+  "too many requests": 429,
+  "internal server error": 500,
+  "bad gateway": 502,
+  "service unavailable": 503,
+  "gateway timeout": 504,
+};
+
 export function getErrorStatus(error: unknown) {
   if (!error || typeof error !== "object") return null;
 
   const candidate = error as { status?: unknown; statusCode?: unknown };
   const status = candidate.status ?? candidate.statusCode;
-  return typeof status === "number" ? status : null;
+  if (typeof status === "number") return status;
+
+  const message = error instanceof Error ? error.message : "";
+  const text = /Retryable HTTP Error:\s*(.+)$/i.exec(message)?.[1]?.trim().toLowerCase();
+  return text ? (STATUS_TEXTS[text] ?? null) : null;
 }
 
 /*

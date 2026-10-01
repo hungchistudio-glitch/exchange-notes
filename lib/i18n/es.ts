@@ -2019,6 +2019,18 @@ const spanish: TranslationDictionary = {
       errorTitle: "No se ha podido leer el menú",
       tryAgain: "Reintentar",
       scanAnother: "Escanear otro menú",
+      googleDown:
+        "La IA de Google no está disponible ahora mismo (en el plan gratuito pasa a menudo en horas punta), así que no se puede leer el menú. Inténtalo de nuevo en unos {minutes} min.",
+      googleQuota:
+        "Se agotó la cuota gratuita de IA de Google de hoy. Vuelve hacia las {time}.",
+      timeoutBody:
+        "Este menú tardó demasiado en leerse. Prueba con una sola página y un poco más cerca.",
+      busyBody:
+        "Demasiados escaneos a la vez. Espera un momento y vuelve a intentarlo.",
+      dailyLimitBody:
+        "Has usado los escaneos de menú gratuitos de hoy. Inténtalo mañana.",
+      offlineBody:
+        "No tienes conexión. Inténtalo de nuevo cuando estés conectado.",
 
       zoomIn: "Acercar",
       zoomOut: "Alejar",
