@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 
 import {
   getRecognitionConstructor,
@@ -61,6 +62,7 @@ export default function useVoiceInput({
   );
 
   const [listening, setListening] = useState(false);
+  useReloadHold(listening);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);

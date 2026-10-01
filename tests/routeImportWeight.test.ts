@@ -109,10 +109,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * was added and why it belongs on a tab's first render. That is the whole
    * point of it: a ceiling nobody ever has to think about is a ceiling that
    * measures nothing.
+   *
+   * Raised: home 153 → 154 (2026-10-01) for lib/pwa/reloadHolds.ts, a
+   * dependency-free file the voice key needs so the app does not reload onto
+   * a new build while the microphone is live. It has to be on the path of
+   * anything that can listen, and home's search can.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 158],
-    ["home", TABS.home, 153],
+    ["home", TABS.home, 154],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

@@ -20,6 +20,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import {
   NO_CAPABILITIES,
   readCapabilities,
@@ -84,6 +85,9 @@ export function useCameraStream({
   facing = "environment",
   ideal = DEFAULT_IDEAL,
 }: UseCameraStreamOptions = {}): CameraStream {
+  // An open camera is never reloaded out from under the reader.
+  useReloadHold();
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const startingRef = useRef(false);

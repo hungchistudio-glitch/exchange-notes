@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/currentUser";
 import NativePushRegister from "@/app/components/NativePushRegister";
 import ServiceWorkerRegister from "@/app/components/ServiceWorkerRegister";
 import AccountPreferencesSync from "@/components/foundation/AccountPreferencesSync";
+import AppUpdateWatcher from "@/components/foundation/AppUpdateWatcher";
 import DeviceTimeZoneSync from "@/components/foundation/DeviceTimeZoneSync";
 import RouteStage from "@/components/foundation/layout/RouteStage";
 import InlineScript from "@/components/foundation/InlineScript";
@@ -145,6 +146,11 @@ export default async function ProtectedLayout({
         */}
         <ServiceWorkerRegister />
         <NativePushRegister />
+        {/*
+          Reloads onto a newer build when the app comes back from the
+          background and nothing on screen would be lost (Chi, 2026-10-01).
+        */}
+        <AppUpdateWatcher />
 
         <SplashGate />
 

@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /*
+   * Which build this is, in both bundles: the app compares its own copy with
+   * what /api/version answers when it comes back from the background, and
+   * reloads onto the newer one (lib/pwa/appUpdate.ts). Empty off Vercel,
+   * which turns that check off.
+   */
+  env: {
+    NEXT_PUBLIC_APP_VERSION: process.env.VERCEL_GIT_COMMIT_SHA ?? "",
+  },
+
   outputFileTracingIncludes: {
     "/api/classify-text": ["./data/cc-cedict-vocabulary-index.json.gz"],
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 
 import {
   INITIAL_RECORDER_STATE,
@@ -36,6 +37,12 @@ export type RecorderControls = {
 
 export default function useRecorder(): RecorderControls {
   const [state, dispatch] = useReducer(recorderReducer, INITIAL_RECORDER_STATE);
+  // A live microphone, or a take not yet scored, is not reloaded away.
+  useReloadHold(
+    state.status === "requesting" ||
+      state.status === "recording" ||
+      state.status === "recorded",
+  );
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);

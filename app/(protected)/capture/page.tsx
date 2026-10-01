@@ -43,6 +43,7 @@ import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import {
@@ -354,6 +355,9 @@ function SendIcon() {
 
 function CaptureContent() {
   const router = useRouter();
+  // A photo being read or a card not yet saved: no reload onto a newer
+  // build while this screen is open.
+  useReloadHold();
   const searchParams = useSearchParams();
   const { t, language: interfaceLanguage } = useTranslation();
   const { pair: languagePair } = useDisplayLanguages();

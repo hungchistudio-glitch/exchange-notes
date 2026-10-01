@@ -14,6 +14,7 @@ import MenuCamera from "@/components/scanner/MenuCamera";
 import MenuProcessing from "@/components/scanner/MenuProcessing";
 import MenuResultViewer from "@/components/scanner/MenuResultViewer";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { useScanSession, type ScanFailure } from "@/lib/scanner/scanSession";
 import { fill, formatResetTime } from "@/lib/i18n/format";
@@ -49,6 +50,9 @@ export default function MenuTranslatorPage() {
   const interfaceLanguage = useInterfaceLanguage();
   const router = useRouter();
   const copy = t.scanner.menu;
+  // A menu being read, or read already, costs a request to read again:
+  // the app does not reload itself while this screen is open.
+  useReloadHold();
 
   const { session, dispatch } = useScanSession();
 

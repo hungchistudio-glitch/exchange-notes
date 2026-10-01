@@ -5,6 +5,7 @@ import { Camera, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { exchangeIdFromInviteUrl } from "@/lib/friends";
 
 type FriendQrScannerProps = {
@@ -33,6 +34,8 @@ export default function FriendQrScanner({
   const { t } = useTranslation();
   const copy = t.friends.scanner;
   const errorCopy = t.friends.errors;
+  // An open camera is never reloaded out from under the reader.
+  useReloadHold();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
