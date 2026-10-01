@@ -119,6 +119,45 @@ describe("readCachedTranslations", () => {
   });
 });
 
+/*
+ * Chi, 2026-10-01: "聊天字卡翻譯先用字典". An everyday word on a card in a
+ * conversation is answered by the built-in dictionaries, so it is free and
+ * immediate, and only what they do not know is left for the model.
+ */
+describe("readCachedTranslations, with the built-in dictionaries", () => {
+  it("answers an everyday word the cache has not seen", async () => {
+    const { found, missing } = await readCachedTranslations(
+      ["謝謝", "牛肉麵"],
+      "zh-TW",
+      "fr",
+    );
+
+    expect(found.get("謝謝")).toBe("merci");
+    expect(missing).toEqual(["牛肉麵"]);
+    expect(model.calls).toBe(0);
+  });
+
+  it("knows the camera's object words too", async () => {
+    const { found } = await readCachedTranslations(["parapluie"], "fr", "it");
+
+    expect(found.get("parapluie")).toBe("ombrello");
+  });
+
+  it("leaves the cached answer the card has been showing", async () => {
+    cache.rows = [{ source_text: "謝謝", text: "merci beaucoup" }];
+
+    const { found } = await readCachedTranslations(["謝謝"], "zh-TW", "fr");
+
+    expect(found.get("謝謝")).toBe("merci beaucoup");
+  });
+
+  it("does not guess a plural's translation from the singular", async () => {
+    const { missing } = await readCachedTranslations(["chats"], "fr", "es");
+
+    expect(missing).toEqual(["chats"]);
+  });
+});
+
 describe("translateMissing", () => {
   it("does not reach the model when there is nothing to ask", async () => {
     const fresh = await translateMissing([], "zh-TW", "en");

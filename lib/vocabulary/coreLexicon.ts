@@ -160,12 +160,13 @@ function lookUp(typed: string, language: LanguageCode): CoreWord | null {
 export function findCoreWord(
   text: string,
   language: LanguageCode,
+  { inflected = true }: { inflected?: boolean } = {},
 ): CoreWord | null {
   const typed = normalizeTyped(text);
   if (!typed) return null;
 
   const exact = lookUp(typed, language);
-  if (exact) return exact;
+  if (exact || !inflected) return exact;
 
   const bare = withoutArticle(typed, language);
   for (const lemma of lemmaCandidates(bare, language)) {
@@ -174,6 +175,21 @@ export function findCoreWord(
   }
 
   return null;
+}
+
+/**
+ * Whether `typed` is one of `forms`, the way findCoreWord would match it:
+ * case, punctuation, a leading article and accents aside.
+ */
+export function matchesForm(
+  forms: readonly string[],
+  typed: string,
+  language: LanguageCode,
+): boolean {
+  const key = (text: string) =>
+    withoutAccents(withoutArticle(normalizeTyped(text), language));
+  const wanted = key(typed);
+  return Boolean(wanted) && forms.some((form) => key(form) === wanted);
 }
 
 /**

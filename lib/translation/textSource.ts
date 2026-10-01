@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { createServiceClient } from "@/lib/supabase/service";
+import { builtinTranslation } from "@/lib/vocabulary/builtinTranslation";
 
 import { generateJson } from "@/lib/ai/modelRequest";
 import { tryModels } from "@/lib/ai/tryModels";
@@ -127,6 +128,13 @@ export type CachedTranslations = {
  * Costs nothing but a query. `missing` is deduplicated and trimmed, and is
  * empty when `from` and `to` are the same language — a caller can treat a
  * non-empty `missing` as "asking the model is the only way to answer this".
+ *
+ * "Stored" includes the built-in dictionaries (Chi, 2026-10-01: "聊天字卡
+ * 翻譯先用字典"): a word card for an everyday word — 謝謝, "parapluie" — is
+ * answered from lib/vocabulary/builtinTranslation.ts when the cache has not
+ * seen it, so it neither waits for a model nor spends the reader's
+ * allowance. A model answer already cached still wins: it is the one the
+ * card has been showing.
  */
 export async function readCachedTranslations(
   texts: string[],
@@ -140,6 +148,12 @@ export async function readCachedTranslations(
   }
 
   const found = await readCache(from, to, wanted);
+
+  for (const text of wanted) {
+    if (found.has(text)) continue;
+    const known = builtinTranslation(text, from, to);
+    if (known) found.set(text, known);
+  }
 
   return {
     found,

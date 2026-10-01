@@ -20,6 +20,7 @@ import {
 } from "@/lib/languages";
 import { readLearningPair } from "@/lib/profile/languagePair";
 import { createClient } from "@/lib/supabase/server";
+import { builtinFill } from "@/lib/vocabulary/builtinTranslation";
 
 export const runtime = "nodejs";
 /*
@@ -92,6 +93,70 @@ type Row = {
   examples: ByLanguage;
 };
 
+/*
+ * How many words one call may fill from the built-in dictionaries. No model
+ * is asked for these, so the limit is only the database writes: a hundred
+ * small updates, ten at a time, is a second or two.
+ */
+const DICTIONARY_BATCH = 100;
+const WRITES_AT_ONCE = 10;
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+type FilledRow = {
+  id: string;
+  texts: Record<string, string>;
+  examples: Record<string, string>;
+};
+
+/**
+ * Words the built-in dictionaries already know, filled without a model
+ * (Chi, 2026-10-01: "單字庫補翻譯先用字典").
+ *
+ * The same rules as the model's answers below: only the missing key is
+ * written, and only into a row that still lacks it. No example sentence —
+ * the dictionary has none, and an invented one is what this app does not
+ * write — so the card shows the word and the reader's own examples.
+ */
+async function fillFromDictionary(
+  supabase: Supabase,
+  userId: string,
+  outstanding: Row[],
+  target: LanguageCode,
+): Promise<FilledRow[]> {
+  const answers: Array<{ row: Row; text: string }> = [];
+
+  for (const row of outstanding) {
+    const request = toRequest(row);
+    if (!request) continue;
+
+    const text = builtinFill(request.known, target, row.part_of_speech);
+    if (text) answers.push({ row, text });
+    if (answers.length >= DICTIONARY_BATCH) break;
+  }
+
+  const filled: FilledRow[] = [];
+
+  for (let start = 0; start < answers.length; start += WRITES_AT_ONCE) {
+    const written = await Promise.all(
+      answers.slice(start, start + WRITES_AT_ONCE).map(async ({ row, text }) => {
+        const texts = { ...row.texts, [target]: text };
+        const { error } = await supabase
+          .from("vocabulary_items")
+          .update({ texts })
+          .eq("id", row.id)
+          .eq("user_id", userId);
+
+        return error ? null : { id: row.id, texts, examples: row.examples ?? {} };
+      }),
+    );
+
+    for (const row of written) if (row) filled.push(row);
+  }
+
+  return filled;
+}
+
 function toRequest(row: Row): VocabularyToTranslate | null {
   const known = LANGUAGE_CODES.flatMap((language) => {
     const text = row.texts[language]?.trim();
@@ -162,6 +227,34 @@ export async function POST(request: Request) {
     const outstanding = ((data ?? []) as Row[]).filter(
       (row) => !row.texts?.[target]?.trim(),
     );
+
+    /*
+     * The dictionary first. What it knows costs no request and no allowance
+     * and is filled even while the models are too busy for background work;
+     * the model is asked only once it has nothing left to give. A call that
+     * filled words from it ends there, and the caller's next call carries on.
+     */
+    if (outstanding.length > 0) {
+      const fromDictionary = await fillFromDictionary(
+        supabase,
+        user.id,
+        outstanding,
+        target,
+      );
+
+      if (fromDictionary.length > 0) {
+        const remaining = Math.max(outstanding.length - fromDictionary.length, 0);
+
+        return NextResponse.json({
+          filled: fromDictionary.length,
+          language: target,
+          updated: fromDictionary,
+          remaining,
+          done: remaining === 0,
+          fromDictionary: fromDictionary.length,
+        });
+      }
+    }
 
     const missing = outstanding.slice(0, BATCH_SIZE);
 
@@ -311,11 +404,7 @@ export async function POST(request: Request) {
      * words translated, three hundred re-fetched, up to twenty-five times in
      * a session. The route already holds exactly what changed.
      */
-    const updated: Array<{
-      id: string;
-      texts: Record<string, string>;
-      examples: Record<string, string>;
-    }> = [];
+    const updated: FilledRow[] = [];
 
     for (const [index, item] of items.entries()) {
       const answer = byId.get(promptId(index));
