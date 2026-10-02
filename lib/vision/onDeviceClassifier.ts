@@ -51,7 +51,16 @@ const VISION_CACHE = `${VISION_CACHE_PREFIX}-efficientnet-lite0-int8-v1`;
  * the reader waits for Gemini, which is the right trade: a wrong word shown
  * at once is worse than the right one shown a few seconds later.
  */
-export const MIN_WORD_SCORE = 0.35;
+export const MIN_WORD_SCORE = 0.3;
+/*
+ * Was 0.35. Chi's iPhone reported fifteen photos between 2026-09-28 and
+ * 10-02 (ai_call_log, purpose on-device-camera). The two right answers were
+ * well clear of either line (bottle 0.54, menu 0.88); the two shown at 0.36
+ * and 0.40 were both "wheelbarrow", which Chi saw as wrong — that class is
+ * no longer mapped at all; and a supermarket twice at exactly 0.30 said
+ * nothing. Chi's choice (10-02): keep this model, tune the line and the
+ * table rather than download a bigger one.
+ */
 
 /** Classes considered per photo. Enough to gather a word's spread. */
 const MAX_RESULTS = 10;

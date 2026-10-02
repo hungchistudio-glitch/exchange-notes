@@ -210,3 +210,20 @@ describe("the search, told the AI could not do better", () => {
     vi.unstubAllGlobals();
   });
 });
+
+/* Chi's choice (2026-10-02): keep the model, tune the line and the table. */
+describe("the tuned line and table", () => {
+  it("names a supermarket the phone was 30% sure of", () => {
+    expect(pickObjectWord([{ index: 582, score: 0.3 }])?.word.en).toBe("supermarket");
+  });
+
+  it("no longer says wheelbarrow, which it only ever said wrongly", () => {
+    expect(pickObjectWord([{ index: 428, score: 0.4 }])).toBeNull();
+  });
+
+  it("knows a few more everyday places and things", () => {
+    expect(pickObjectWord([{ index: 788, score: 0.5 }])?.word["zh-TW"]).toBe("鞋店");
+    expect(pickObjectWord([{ index: 854, score: 0.5 }])?.word.en).toBe("stage");
+    expect(pickObjectWord([{ index: 581, score: 0.5 }])?.word.en).toBe("car");
+  });
+});

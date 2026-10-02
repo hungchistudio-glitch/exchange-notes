@@ -141,7 +141,6 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "dumbbell|啞鈴|mancuerna|haltère|manubrio: 422,543",
   "barn|穀倉|granero|grange|fienile: 425",
   "barrel|木桶|barril|tonneau|botte: 427",
-  "wheelbarrow|手推車|carretilla|brouette|carriola: 428",
   "baseball|棒球|pelota de béisbol|balle de baseball|palla da baseball: 429",
   "basketball|籃球|balón de baloncesto|ballon de basket|pallone da basket: 430",
   "towel|毛巾|toalla|serviette|asciugamano: 434",
@@ -194,7 +193,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "coffeepot|咖啡壺|cafetera|cafetière|caffettiera: 505",
   "lock|鎖|candado|cadenas|lucchetto: 507,695",
   "keyboard|鍵盤|teclado|clavier|tastiera: 508,810,878",
-  "car|汽車|coche|voiture|macchina: 436,511,609,627,656,661,751,817",
+  "car|汽車|coche|voiture|macchina: 436,475,511,581,609,627,656,661,751,817",
   "trumpet|小號|trompeta|trompette|tromba: 513",
   "boot|靴子|bota|botte|stivale: 514",
   "hat|帽子|sombrero|chapeau|cappello: 452,515,808",
@@ -341,7 +340,7 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
   "spatula|鍋鏟|espátula|spatule|spatola: 813",
   "speedboat|快艇|lancha|hors-bord|motoscafo: 814",
   "spider web|蜘蛛網|telaraña|toile d'araignée|ragnatela: 815",
-  "stage|舞台|escenario|scène|palcoscenico: 819",
+  "stage|舞台|escenario|scène|palcoscenico: 819,854",
   "bridge|橋|puente|pont|ponte: 821,839,888",
   "stethoscope|聽診器|estetoscopio|stéthoscope|stetoscopio: 823",
   "scarf|圍巾|bufanda|écharpe|sciarpa: 824",
@@ -449,6 +448,25 @@ const OBJECT_WORDS_SOURCE: readonly string[] = [
    * heater, a web page on screen a monitor, an entertainment centre a TV.
    */
   "hot pot|火鍋|hot pot|fondue chinoise|hot pot: 926",
+  /*
+   * Everyday places and things the classifier knows and nothing here named
+   * (2026-10-02, from the 235 classes still unmapped): shops a learner walks
+   * into, a cupboard in three of its ImageNet guises, the theatre's curtain
+   * (the stage), a car's mirror and grille (the car).
+   */
+  "candy store|糖果店|tienda de golosinas|confiserie|negozio di caramelle: 509",
+  "shoe store|鞋店|zapatería|magasin de chaussures|negozio di scarpe: 788",
+  "toy store|玩具店|juguetería|magasin de jouets|negozio di giocattoli: 865",
+  "cabinet|櫃子|armario|placard|armadietto: 495,553,648",
+  "terrace|露台|terraza|terrasse|terrazza: 706",
+  "mop|拖把|fregona|serpillière|mocio: 840",
+  "mosquito net|蚊帳|mosquitero|moustiquaire|zanzariera: 669",
+  "crossword|填字遊戲|crucigrama|mots croisés|cruciverba: 918",
+  "groom|新郎|novio|marié|sposo: 982",
+  "baseball player|棒球員|jugador de béisbol|joueur de baseball|giocatore di baseball: 981",
+  "diver|潛水員|buceador|plongeur|subacqueo: 983",
+  "waffle maker|鬆餅機|gofrera|gaufrier|piastra per waffle: 891",
+  "knot|結|nudo|nœud|nodo: 616",
 ];
 
 const LANGUAGE_ORDER: readonly LanguageCode[] = ["en", "zh-TW", "es", "fr", "it"];
