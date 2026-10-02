@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import dynamic from "next/dynamic";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
 import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -52,6 +53,8 @@ import { postYumiWidgetUpdate } from "@/lib/widget/yumiWidgetBridge";
 
 import styles from "./YumiHomeStage.module.css";
 
+const FloatingCookieField = dynamic(() => import("./FloatingCookieField"));
+
 type YumiCopy = TranslationDictionary["home"]["yumi"];
 
 export type YumiLines = {
@@ -62,6 +65,7 @@ export type YumiLines = {
 };
 
 type YumiHomeStageProps = {
+  floatingStageRef?: React.RefObject<HTMLElement | null>;
   items: VocabularyItem[];
   onMoodChange?: (mood: HomeMood) => void;
   /**
@@ -220,6 +224,7 @@ export default function YumiHomeStage({
   items,
   onMoodChange,
   onLinesChange,
+  floatingStageRef,
 }: YumiHomeStageProps) {
   /*
    * Whether the 3D scene has taken over this stage.
@@ -810,7 +815,10 @@ export default function YumiHomeStage({
           neutralised, it is simply not applied.
         */}
         <div className={ringLive ? undefined : styles.trayCorner}>
-          <CookieTray
+          {ringLive && floatingStageRef ? <FloatingCookieField
+            cookies={cookies} items={items} stageRef={floatingStageRef} disabled={!petState}
+            onFeed={cookie => { feeding.consume(cookie); announceHomeMoment("word-fed"); }}
+          /> : <CookieTray
             /*
              * Around her once the 3D scene has her, in the corner until then.
              *
@@ -849,7 +857,7 @@ export default function YumiHomeStage({
                it; opening the full inventory in place would push Yumi off
                its own home screen. "+N more" stays a label here. */
             expandable={false}
-          />
+          />}
         </div>
       </div>
 

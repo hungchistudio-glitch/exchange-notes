@@ -605,13 +605,35 @@ export default function YumiRingOverlay({
     host.appendChild(canvas);
     canvasRef.current = canvas;
 
+    let pointerId: number | null = null;
     const onCanvasDown = (event: PointerEvent) => {
+      if (event.isPrimary === false || event.button !== 0 || pointerId !== null) return;
+      const eye = sceneRef.current?.eyeScreenPosition();
+      // Blank space belongs to the floating-cookie gesture, not the menu.
+      if (!eye || Math.hypot(event.clientX - eye.x, event.clientY - eye.y) > 100) return;
+      pointerId = event.pointerId;
       sceneRef.current?.pointerDown(event.clientX, event.clientY);
       canvas.setPointerCapture?.(event.pointerId);
     };
-    const onCanvasMove = (event: PointerEvent) =>
-      sceneRef.current?.pointerMove(event.clientX, event.clientY);
-    const onCanvasUp = () => sceneRef.current?.pointerUp();
+    const onCanvasMove = (event: PointerEvent) => {
+      if (pointerId === event.pointerId) sceneRef.current?.pointerMove(event.clientX, event.clientY);
+    };
+    const onCanvasUp = (event: PointerEvent) => {
+      if (pointerId !== event.pointerId) return;
+      pointerId = null;
+      if (event.type === "pointercancel") sceneRef.current?.pointerCancel?.();
+      else sceneRef.current?.pointerUp();
+    };
+    const onBite = () => {
+      if (reachingFor.current) return;
+      const eye = sceneRef.current?.eyeScreenPosition();
+      if (eye) sceneRef.current?.lungeAt(eye.x + 42, eye.y);
+    };
+    let gazePoint: { x: number; y: number } | null = null;
+    const onGaze = (event: Event) => { gazePoint = (event as CustomEvent).detail; };
+    const stage = stageRef.current;
+    stage?.addEventListener("yumi-cookie-gaze", onGaze);
+    stage?.addEventListener("yumi-cookie-bite", onBite);
     canvas.addEventListener("pointerdown", onCanvasDown);
     canvas.addEventListener("pointermove", onCanvasMove);
     canvas.addEventListener("pointerup", onCanvasUp);
@@ -670,7 +692,11 @@ export default function YumiRingOverlay({
              * does when a reader hands her one, and there is one feeding
              * implementation rather than two that can drift.
              */
-            reachingFor.current?.click();
+            const target = reachingFor.current;
+            if (!openRef.current && !answeringRef.current && !somethingElseIsUp()) {
+              if (target?.hasAttribute("data-floating-cookie")) target.dispatchEvent(new CustomEvent("yumi-cookie-feed", { bubbles: true }));
+              else target?.click();
+            }
             reachingFor.current = null;
             onLungeArrive?.();
           },
@@ -715,6 +741,7 @@ export default function YumiRingOverlay({
 
           // --- where she should be this frame
           const rect = canvas.getBoundingClientRect();
+          let restPosition: { x: number; y: number } | null = null;
           if (openRef.current) {
             handle.setScreenAnchor(rect.width / 2, rect.height * 0.42, OPEN_RADIUS);
           } else if (answeringRef.current) {
@@ -728,6 +755,7 @@ export default function YumiRingOverlay({
             const figure = stageRef.current?.querySelector("[data-yumi-figure]");
             const anchor = figure?.getBoundingClientRect();
             if (anchor) {
+              restPosition = { x: anchor.left + anchor.width / 2 - rect.left, y: anchor.top + anchor.height / 2 - rect.top };
               handle.setScreenAnchor(
                 anchor.left + anchor.width / 2 - rect.left,
                 anchor.top + anchor.height / 2 - rect.top,
@@ -753,7 +781,7 @@ export default function YumiRingOverlay({
 
           if (!openRef.current && !answeringRef.current && !reduced && now > lungeAt) {
             const cookies = Array.from(
-              stageRef.current?.querySelectorAll<HTMLElement>("[data-yumi-cookie]") ?? [],
+              document.querySelectorAll<HTMLElement>("[data-yumi-cookie]"),
             );
             /* Only a cookie that is actually on screen and can still be
                taken. Reaching for one scrolled out of view, or for a
@@ -764,7 +792,7 @@ export default function YumiRingOverlay({
               return box.width > 0 && box.bottom > 0 && box.top < window.innerHeight;
             });
 
-            if (somethingElseIsUp() || getCoachStep() === FEED_STEP) {
+            if (somethingElseIsUp() || stageRef.current?.dataset.cookiesPaused === "true" || document.querySelector("[data-floating-field][data-dragging], [data-floating-field][data-gathering]") || getCoachStep() === FEED_STEP) {
               /* A sheet, a dialog, the app in the background, or the tour
                  asking the reader to do the feeding: not now. */
               lungeAt = now + SETTLE_MS;
@@ -782,6 +810,11 @@ export default function YumiRingOverlay({
             }
           }
 
+          const gazeEye = handle.eyeScreenPosition();
+          handle.setGaze?.(
+            gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
+            gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
+          );
           handle.frame(now);
 
           // --- the ring rides on the eye
@@ -813,7 +846,8 @@ export default function YumiRingOverlay({
               ringRef.current.style.transform =
                 `translate(${rect.width / 2}px, ${answerAnchorY(rect.height)}px)`;
             } else {
-              ringRef.current.style.transform = `translate(${eye.x}px, ${eye.y}px)`;
+              // A reach can cross the whole screen now; the search stays by her body.
+              ringRef.current.style.transform = `translate(${restPosition?.x ?? eye.x}px, ${restPosition?.y ?? eye.y}px)`;
             }
 
             /*
@@ -901,6 +935,8 @@ export default function YumiRingOverlay({
       window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
       sceneRef.current = null;
+      stage?.removeEventListener("yumi-cookie-gaze", onGaze);
+      stage?.removeEventListener("yumi-cookie-bite", onBite);
       canvas.removeEventListener("pointerdown", onCanvasDown);
       canvas.removeEventListener("pointermove", onCanvasMove);
       canvas.removeEventListener("pointerup", onCanvasUp);
@@ -1150,6 +1186,29 @@ export default function YumiRingOverlay({
             child, exactly as it did when React rendered it. */}
         <div ref={canvasHostRef} style={{ display: "contents" }} />
 
+          {meta ? (
+            <div className={styles.above} data-yumi-protected="">
+              <p className={styles.greeting}>
+                {meta.greeting}
+                {meta.place ? (
+                  <>
+                    <span className={styles.dot} aria-hidden="true">
+                      ·
+                    </span>
+                    {meta.place}
+                  </>
+                ) : null}
+              </p>
+              <p className={styles.when}>
+                {meta.date}
+                <span className={styles.dot} aria-hidden="true">
+                  ·
+                </span>
+                {meta.time}
+              </p>
+            </div>
+          ) : null}
+
         <div
           ref={ringRef}
           className={styles.ring}
@@ -1210,30 +1269,7 @@ export default function YumiRingOverlay({
             Neither is in the stage underneath, because the stage is hidden
             the moment the scene goes live.
           */}
-          {meta ? (
-            <div className={styles.above}>
-              <p className={styles.greeting}>
-                {meta.greeting}
-                {meta.place ? (
-                  <>
-                    <span className={styles.dot} aria-hidden="true">
-                      ·
-                    </span>
-                    {meta.place}
-                  </>
-                ) : null}
-              </p>
-              <p className={styles.when}>
-                {meta.date}
-                <span className={styles.dot} aria-hidden="true">
-                  ·
-                </span>
-                {meta.time}
-              </p>
-            </div>
-          ) : null}
-
-          <div className={styles.below} inert={open || !live}>
+          <div className={styles.below} data-yumi-protected="" inert={open || !live}>
             {lines?.primary ? (
               <p className={styles.voice}>{lines.primary}</p>
             ) : null}

@@ -150,3 +150,6 @@
     display: none;
   }
 }
+
+.surface { background-color:#f5f5ed; background-image:radial-gradient(ellipse at 15% 8%,#fffffff0,transparent 65%),radial-gradient(circle at 50% 45%,transparent 0 155px,#78846208 155px 156px,transparent 156px 220px,#78846205 220px 221px,transparent 221px),linear-gradient(90deg,#64734205 1px,transparent 1px),linear-gradient(#64734205 1px,transparent 1px); background-size:100% 100%,100% 100%,72px 72px,72px 72px; }
+@media(prefers-contrast:more) { .surface { background-image:none; } }
