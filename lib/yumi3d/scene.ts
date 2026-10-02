@@ -106,9 +106,14 @@ export type YumiSceneHandle = {
    */
   setScreenAnchor(xPx: number, yPx: number, radiusPx: number): void;
 
+  /** A gentle look toward a cookie, independent of the eye-pull gesture. */
+  setGaze?(x: number, y: number): void;
+
   pointerDown(clientX: number, clientY: number): void;
   pointerMove(clientX: number, clientY: number): void;
   pointerUp(): void;
+  /** Release a cancelled gesture without selecting or opening navigation. */
+  pointerCancel?(): void;
 
   /**
    * Shoot the eye out at a point on screen and snap it back — the whole
@@ -486,12 +491,15 @@ export function createYumiScene(
    * left it in, by solving the ellipsoid rather than approximating it. An
    * approximation here is a bezel that sinks into the eyeball at full pull.
    */
+  const gaze = new THREE.Vector2();
   function poseIris() {
     const semiSide = EYE_RADIUS * eyeBall.scale.x;
     const semiBand = EYE_RADIUS * eyeBall.scale.z;
 
     const view = new THREE.Vector3();
     camera.getWorldPosition(view);
+    view.x += gaze.x * 6;
+    view.y -= gaze.y * 6;
     eyeBall.worldToLocal(view);
     view.normalize();
 
@@ -704,6 +712,18 @@ export function createYumiScene(
         pitch = THREE.MathUtils.clamp(pitch + dy * 0.008, -0.55, 0.55);
         model.rotation.x = pitch;
       }
+    },
+
+    setGaze(x, y) {
+      gaze.x += (THREE.MathUtils.clamp(x, -1, 1) - gaze.x) * 0.09;
+      gaze.y += (THREE.MathUtils.clamp(y, -1, 1) - gaze.y) * 0.09;
+    },
+
+    pointerCancel() {
+      dragging = false;
+      orbiting = false;
+      eyeVelocity.set(0, 0, 0);
+      idleSince = performance.now();
     },
 
     pointerUp() {

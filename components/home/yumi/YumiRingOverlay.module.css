@@ -641,3 +641,13 @@
 .open .notices {
   pointer-events: none;
 }
+
+/* The greeting has a quiet, fixed place; the search still follows the
+   keyboard-aware answer anchor and retains its full result column. */
+.above { left:max(28px,calc(50vw - 370px)); top:clamp(72px,13svh,140px); transform:none; align-items:flex-start; width:calc(100vw - 56px); max-width:740px; text-align:left; gap:8px; }
+.greeting { font-family:Georgia,"Songti TC",serif; font-size:clamp(1.25rem,5.5vw,1.75rem); font-weight:400; letter-spacing:-.025em; color:#46513a; }
+.when { font-size:.7rem; letter-spacing:.015em; color:#7f8973; }
+.voice { color:#49573d; font-size:.9375rem; font-weight:500; }
+.below { gap:1rem; }
+.hint { color:#7d8872; font-size:.6875rem; }
+@media(max-height:600px) { .above { top:35px; } .greeting { font-size:1.15rem; } }

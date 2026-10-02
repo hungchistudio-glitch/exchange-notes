@@ -656,3 +656,9 @@ export function speak(
 export function speechSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
+
+/** Cancel both current audio and any replacement waiting for the cancel delay. */
+export function stopSpeech() {
+  speakSequence += 1;
+  if (speechSupported()) window.speechSynthesis.cancel();
+}

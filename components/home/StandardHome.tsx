@@ -179,7 +179,7 @@ export default function StandardHome() {
             <UniversalSearchField onAnswerChange={onAnswerChange} />
           )}
         >
-          <YumiHomeStage items={items} onLinesChange={handleLines} />
+          <YumiHomeStage floatingStageRef={stageRef} items={items} onLinesChange={handleLines} />
         </YumiRingOverlay>
 
         {/*
