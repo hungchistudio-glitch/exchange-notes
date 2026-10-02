@@ -123,13 +123,11 @@
   opacity: 0;
   transform-origin: 50% 50%;
   pointer-events: none;
-  transition: opacity 260ms ease, scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
-  scale: 0.55;
+  transition: opacity 240ms ease;
 }
 
 .open .spoke {
   opacity: 1;
-  scale: 1;
   pointer-events: auto;
 }
 
@@ -188,8 +186,13 @@
   color: #ffffff;
   border-radius: 999px;
   transform: translate3d(var(--liquid-x, 0px), var(--liquid-y, 0px), 0);
-  transition: transform 520ms cubic-bezier(0.18, 1.35, 0.32, 1);
+  translate: var(--spoke-return-x, 0px) var(--spoke-return-y, 0px);
+  scale: 0.55;
+  transition: transform 520ms cubic-bezier(0.18, 1.35, 0.32, 1), translate 360ms cubic-bezier(0.22, 1, 0.36, 1), scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.open .disc,
+.open .spokeLabel { translate: 0 0; scale: 1; }
 
 .glassBody {
   position: absolute;
@@ -296,6 +299,9 @@
   size up made it worse rather than better.
 */
 .spokeLabel {
+  translate: var(--spoke-return-x, 0px) var(--spoke-return-y, 0px);
+  scale: 0.55;
+  transition: translate 360ms cubic-bezier(0.22, 1, 0.36, 1), scale 320ms cubic-bezier(0.22, 1, 0.36, 1);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -329,47 +335,13 @@
   box-shadow: 0 0 0 2px var(--surface);
 }
 
-.homecap {
-  position: absolute;
-  left: 0;
-  top: 0;
-  margin: 0;
-  transform: translate(-50%, -50%) translateY(192px);
-  min-height: 44px;
-  padding: 8px 18px;
-  border-radius: 12px;
-  border: 1px solid rgb(255 255 255 / 0.6);
-  background: #0c0c0c;
-  color: #ffffff;
-  font-family: var(--font-geist-mono), "Noto Sans TC", monospace;
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 260ms ease;
-}
-
-.open .homecap {
-  opacity: 1;
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.homecap:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 4px;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .spoke,
   .scrim,
   .canvas,
-  .homecap,
   .reticle,
   .disc,
+  .spokeLabel,
   .glassBody {
     transition-duration: 1ms;
   }
