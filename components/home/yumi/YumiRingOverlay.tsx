@@ -428,6 +428,7 @@ export default function YumiRingOverlay({
      and moved by hand. See lib/yumi3d/sceneCache.ts. */
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
+  const cancelCanvasGestureRef = useRef<(() => void) | null>(null);
   /* Already live when she was parked a moment ago: no fade-in from nothing
      for a scene that is already built. Client-only — a parked scene only
      exists after a client-side navigation, never during hydration. */
@@ -532,6 +533,7 @@ export default function YumiRingOverlay({
   ];
 
   const close = useCallback(() => {
+    cancelCanvasGestureRef.current?.();
     openRef.current = false;
     setOpen(false);
   }, []);
@@ -615,6 +617,7 @@ export default function YumiRingOverlay({
       if (!current.blank) sceneRef.current?.pointerCancel?.();
       if (canvas.hasPointerCapture?.(current.id)) canvas.releasePointerCapture(current.id);
     };
+    cancelCanvasGestureRef.current = cancelCanvasGesture;
     const onCanvasDown = (event: PointerEvent) => {
       if (event.isPrimary === false || event.button !== 0 || pointer) return;
       // A second input must not dismiss a selection already being scrubbed.
@@ -634,7 +637,8 @@ export default function YumiRingOverlay({
     };
     const onCanvasUp = (event: PointerEvent) => {
       if (!pointer || pointer.id !== event.pointerId) return;
-      onCanvasMove(event);
+      // Cancellation events may report (0, 0); they must not turn Yumi.
+      if (event.type === "pointerup") onCanvasMove(event);
       const current = pointer;
       pointer = null;
       const tap = !current.moved && performance.now() - current.started <= 450;
@@ -963,6 +967,7 @@ export default function YumiRingOverlay({
       window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
       cancelCanvasGesture();
+      cancelCanvasGestureRef.current = null;
       sceneRef.current = null;
       stage?.removeEventListener("yumi-cookie-gaze", onGaze);
       stage?.removeEventListener("yumi-cookie-bite", onBite);

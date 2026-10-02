@@ -216,7 +216,21 @@ describe("the liquid ring destination integration", () => {
     const canvas = view.container.querySelector("canvas")!;
     const point = { clientX: 180, clientY: 290, pointerId: 1 };
     fireEvent.pointerDown(canvas, point);
-    fireEvent(canvas, new PointerEvent("lostpointercapture", { ...point, bubbles: true }));
+    fireEvent(canvas, new PointerEvent("lostpointercapture", { pointerId: 1, bubbles: true }));
+    expect(scene.pointerCancel).toHaveBeenCalledOnce();
+    expect(scene.pointerMove).not.toHaveBeenCalled();
+    expect(scene.pointerUp).not.toHaveBeenCalled();
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+  });
+
+  it("does not reopen on a late pointer release after Escape cancels a Yumi pull", async () => {
+    const view = fixture(); await ready();
+    act(() => options.onPullOpen?.());
+    const canvas = view.container.querySelector("canvas")!;
+    const point = { clientX: 180, clientY: 290, pointerId: 1 };
+    fireEvent.pointerDown(canvas, point);
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.pointerUp(canvas, point);
     expect(scene.pointerCancel).toHaveBeenCalledOnce();
     expect(scene.pointerUp).not.toHaveBeenCalled();
     expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
