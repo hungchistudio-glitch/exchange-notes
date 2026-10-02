@@ -71,6 +71,24 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     return () => observer.disconnect();
   }, [stageRef]);
 
+  /* Coming back from the search, the cookies float home from where they
+     were parked instead of reappearing there: the transform transition the
+     parked state uses is kept on for the return, then let go so the physics
+     owns every frame again. */
+  const previousMode = useRef(mode);
+  useEffect(() => {
+    const was = previousMode.current;
+    previousMode.current = mode;
+    const node = field.current;
+    if (!node || mode !== "rest" || was !== "answering") return;
+    node.setAttribute("data-settling", "true");
+    const timer = window.setTimeout(() => node.removeAttribute("data-settling"), 520);
+    return () => {
+      window.clearTimeout(timer);
+      node.removeAttribute("data-settling");
+    };
+  }, [mode]);
+
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -81,6 +99,8 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   useEffect(() => {
     let raf = 0, previous = performance.now(), measureAt = 0;
     let obstacles: Rect[] = [];
+    let parked: { cookies: Cookie[]; width: number; height: number } | null = null;
+    const painted = new Map<string, string>();
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const tick = (now: number) => {
       const dt = Math.min(.032, (now - previous) / 1000);
@@ -90,7 +110,14 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       const idle = state.mode === "rest";
       const blocked = document.hidden || state.activeId !== null || state.mode === "open" || !!document.querySelector("[aria-modal='true']");
       if (!blocked) {
-        if (now > measureAt) {
+        // Search parks the cookies once. Typing must not keep measuring the
+        // page and rewriting twelve motion layers on every animation frame.
+        if (!idle && parked?.cookies === state.cookies && parked.width === width && parked.height === height) {
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        parked = idle ? null : { cookies: state.cookies, width, height };
+        if (idle && now > measureAt) {
           obstacles = Array.from(document.querySelectorAll<HTMLElement>("[data-yumi-protected]"))
             .filter(el => getComputedStyle(el).opacity !== "0")
             .map(el => el.getBoundingClientRect());
@@ -100,7 +127,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
         }
         const rows = state.cookies.slice(0, 12);
         const ids = new Set(rows.map(row => row.id));
-        for (const id of bodies.current.keys()) if (!ids.has(id)) bodies.current.delete(id);
+        for (const id of bodies.current.keys()) if (!ids.has(id)) { bodies.current.delete(id); painted.delete(id); }
         for (const [id, at] of consumed.current) {
           if (!ids.has(id) || now - at > 2000) {
             consumed.current.delete(id);
@@ -145,8 +172,12 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
           const x = idle ? body.x : (body.index % 2 ? width - 18 : 18);
           const y = idle ? body.y : 75 + Math.floor(body.index / 2) * 90;
           const tilt = reduced.matches || state.paused ? 0 : clamp(body.vx * .08, -12, 12);
-          button.style.transform = `translate3d(${x - body.radius}px,${y - body.radius}px,0) rotate(${tilt}deg)`;
-          button.dataset.ready = "true";
+          const transform = `translate3d(${x - body.radius}px,${y - body.radius}px,0) rotate(${tilt}deg)`;
+          if (painted.get(id) !== transform) {
+            button.style.transform = transform;
+            painted.set(id, transform);
+          }
+          if (button.dataset.ready !== "true") button.dataset.ready = "true";
         }
       }
       raf = requestAnimationFrame(tick);

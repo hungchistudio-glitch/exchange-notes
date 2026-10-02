@@ -156,13 +156,48 @@ export function visibleBottom(layerHeight: number) {
   return Math.min(layerHeight, viewport.offsetTop + viewport.height);
 }
 
-export function answerAnchorY(layerHeight: number) {
-  const visible = visibleBottom(layerHeight);
+export function answerAnchorY(
+  layerHeight: number,
+  visible = visibleBottom(layerHeight),
+) {
   return Math.max(
     ANSWER_TOP_FLOOR,
     Math.min(layerHeight * ANSWER_HEIGHT, visible * 0.24),
   );
 }
+
+/*
+ * One motion from rest to the search (Chi, 2026-10-02: "一次滑到定位").
+ *
+ * Recorded on an iPhone home-screen app: tapping the field pushed the whole
+ * screen up — Yumi half off the top — and it then took nearly three seconds
+ * to come back. Two things did that together.
+ *
+ * At rest the field sits where the keyboard is about to be, so iOS, seeing a
+ * field it believes the keyboard will cover, scrolled the page to reveal it;
+ * and the correction that put the page back was animated by the document's
+ * `scroll-behavior: smooth` and restarted on every scroll event, so it
+ * crawled. The correction is instant now (see the keyboard lock below). The
+ * reveal is avoided rather than corrected: a tap on the field focuses a
+ * stand-in input that is already in view, so the keyboard rises with nothing
+ * to reveal; she and the column glide up together; and the real field takes
+ * the focus once it is above where the keyboard will be (HANDOFF_MS).
+ *
+ * Her flight is an exponential ease at GLIDE_RATE (lib/yumi3d/scene.ts); the
+ * column under her uses the same rate, so the field travels with her rather
+ * than jumping ahead of her.
+ */
+const GLIDE_RATE = 7;
+/** Where the field has cleared any keyboard: well inside her glide. */
+const HANDOFF_MS = 200;
+/*
+ * What a phone keyboard leaves of the screen, for placing her before it has
+ * arrived: about 56% on a 390x844 iPhone with the suggestion bar, a little
+ * more on larger ones. Replaced by the real figure once it has settled.
+ */
+const KEYBOARD_VISIBLE_SHARE = 0.56;
+/** How long the visible height must hold still before it counts. */
+const VIEWPORT_SETTLE_MS = 180;
 
 /** Her column's own offset below the eye, and the air under the page. */
 const BELOW_OFFSET = 94;
@@ -471,6 +506,14 @@ export default function YumiRingOverlay({
     answeringRef.current = answering;
   }, [answering]);
 
+  /* The field's own box, for keeping it continuous when the column's
+     contents change around it, and the stand-in the keyboard is opened on. */
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const proxyRef = useRef<HTMLInputElement>(null);
+  /* Set by a tap on the field from a touch screen: a keyboard is on its way
+     and has not arrived yet, so she is placed for it in advance. */
+  const expectKeyboardRef = useRef(false);
+
   /*
    * Review lives on her.
    *
@@ -768,21 +811,57 @@ export default function YumiRingOverlay({
         setYumiRingState("live");
         setLive(true);
 
+        let lastRingTransform = "";
+        let lastBelowRoom = "";
+        /* The column's own eased position, at rest and while answering; null
+           while the ring is out, which places it outright. */
+        let column: { x: number; y: number } | null = null;
+        let fieldOffset = Number.NaN;
+        let lastFrame = 0;
+        /* The visible height, and when it last changed: a keyboard on its
+           way up reports a new height every frame, and following each one
+           made the field drift for the length of the animation. */
+        const viewportWatch = { value: Number.NaN, since: 0, settled: Number.NaN };
         const loop = (now: number) => {
           if (cancelled || !handle) return;
+          const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 1 / 30) : 0;
+          lastFrame = now;
 
           // --- where she should be this frame
           const rect = canvas.getBoundingClientRect();
+
+          const liveVisible = visibleBottom(rect.height);
+          if (liveVisible !== viewportWatch.value) {
+            viewportWatch.value = liveVisible;
+            viewportWatch.since = now;
+          }
+          if (
+            Number.isNaN(viewportWatch.settled) ||
+            now - viewportWatch.since >= VIEWPORT_SETTLE_MS
+          ) {
+            viewportWatch.settled = liveVisible;
+          }
+          /* A keyboard that has arrived and settled ends the prediction —
+             not one still on its way up, whose half-height would put her
+             back where she started for a moment. One that never comes (a
+             hardware keyboard) ends it when the field is let go of. */
+          if (expectKeyboardRef.current && viewportWatch.settled < rect.height * 0.9) {
+            expectKeyboardRef.current = false;
+          }
+          const keyboardPending = expectKeyboardRef.current;
+          const answerY = answerAnchorY(
+            rect.height,
+            keyboardPending
+              ? rect.height * KEYBOARD_VISIBLE_SHARE
+              : viewportWatch.settled,
+          );
+
           let restPosition: { x: number; y: number } | null = null;
           if (openRef.current) {
             handle.setScreenAnchor(rect.width / 2, rect.height * 0.42, OPEN_RADIUS);
           } else if (answeringRef.current) {
             /* Up and smaller, so the answer has the page. */
-            handle.setScreenAnchor(
-              rect.width / 2,
-              answerAnchorY(rect.height),
-              ANSWER_RADIUS,
-            );
+            handle.setScreenAnchor(rect.width / 2, answerY, ANSWER_RADIUS);
           } else {
             const figure = stageRef.current?.querySelector("[data-yumi-figure]");
             const anchor = figure?.getBoundingClientRect();
@@ -871,15 +950,46 @@ export default function YumiRingOverlay({
              * is free to keep breathing next to it. The spokes are the only
              * other thing in here and they are not on screen in this state.
              */
+            /*
+             * The field keeps its place on screen when the column's contents
+             * change around it. Her mood line above it steps aside while she
+             * answers and comes back after; the column is moved by the same
+             * amount in the same frame, and the glide below takes it from
+             * there — one motion, not a jump and then a slide.
+             */
+            const offset = fieldRef.current?.offsetTop ?? 0;
+            if (column && !Number.isNaN(fieldOffset) && offset !== fieldOffset) {
+              column.y += fieldOffset - offset;
+            }
+            fieldOffset = offset;
+
+            let ringTransform: string;
             if (openRef.current) {
               // Keep captured-pointer geometry stable while scrubbing the orbit.
-              ringRef.current.style.transform = `translate(${rect.width / 2}px, ${rect.height * 0.42}px)`;
-            } else if (answeringRef.current) {
-              ringRef.current.style.transform =
-                `translate(${rect.width / 2}px, ${answerAnchorY(rect.height)}px)`;
+              column = null;
+              ringTransform = `translate(${rect.width / 2}px, ${rect.height * 0.42}px)`;
             } else {
-              // A reach can cross the whole screen now; the search stays by her body.
-              ringRef.current.style.transform = `translate(${restPosition?.x ?? eye.x}px, ${restPosition?.y ?? eye.y}px)`;
+              const target = answeringRef.current
+                ? { x: rect.width / 2, y: answerY }
+                : // A reach can cross the whole screen now; the search stays by her body.
+                  { x: restPosition?.x ?? eye.x, y: restPosition?.y ?? eye.y };
+
+              if (!column || reduced) {
+                column = { ...target };
+              } else {
+                const k = Math.min(1, dt * GLIDE_RATE);
+                column.x += (target.x - column.x) * k;
+                column.y += (target.y - column.y) * k;
+                /* Arrived: snap, so a settled screen stops writing. */
+                if (Math.abs(target.x - column.x) < 0.25) column.x = target.x;
+                if (Math.abs(target.y - column.y) < 0.25) column.y = target.y;
+              }
+
+              ringTransform = `translate(${column.x.toFixed(2)}px, ${column.y.toFixed(2)}px)`;
+            }
+            if (ringTransform !== lastRingTransform) {
+              ringRef.current.style.transform = ringTransform;
+              lastRingTransform = ringTransform;
             }
 
             /*
@@ -932,16 +1042,14 @@ export default function YumiRingOverlay({
             if (answeringRef.current) {
               /* From the anchor as well: a max-height recomputed off a
                  moving eye is the same jitter one property along. */
-              ringRef.current.style.setProperty(
-                "--below-room",
-                `${Math.max(
+              const belowRoom = `${Math.round(Math.max(
                   0,
-                  visibleBottom(rect.height) -
-                    answerAnchorY(rect.height) -
-                    BELOW_OFFSET -
-                    BELOW_AIR,
-                )}px`,
-              );
+                  liveVisible - answerY - BELOW_OFFSET - BELOW_AIR,
+                ))}px`;
+              if (belowRoom !== lastBelowRoom) {
+                ringRef.current.style.setProperty("--below-room", belowRoom);
+                lastBelowRoom = belowRoom;
+              }
             }
           }
 
@@ -1023,57 +1131,55 @@ export default function YumiRingOverlay({
           : "starting";
   }, [open, answering, live, stageRef]);
 
-  /*
-   * Hold the page still while the field has the keyboard.
-   *
-   * `Screen` sizes this page at `min-h-[100dvh]`, and `dvh` does not shrink
-   * when a phone keyboard opens — it tracks the browser's own chrome, not
-   * the keyboard. So the moment the keyboard appears the document is taller
-   * than the part of it anybody can see, by exactly the height of the
-   * keyboard, and a page that could not scroll a second ago can.
-   *
-   * Safari then scrolls it, on its own, to bring the focused input into
-   * view. But this input is inside a `position: fixed` layer, which document
-   * scrolling does not move — so the field stays where it is and the whole
-   * page slides underneath it. Every keystroke that changes the layout can
-   * trigger it again, which is why it reads as the screen running away as
-   * you type rather than as one jump.
-   *
-   * Locking the document is the fix rather than a workaround, because this
-   * screen has nothing to scroll: it is one viewport with Yumi in the middle
-   * of it, and the answer scrolls inside its own column. There is no scroll
-   * position to preserve and none to give back.
-   *
-   * The scroll listener is the part that is not optional. `overflow: hidden`
-   * on the document stops a reader dragging the page, and does not reliably
-   * stop Safari's own caret-into-view scroll on iOS; putting it back to zero
-   * does. It is guarded so it only ever acts on a scroll that already
-   * happened, and this screen never has a legitimate one.
-   */
+  /* Keep keyboard correction immediate. The document normally scrolls
+     smoothly; restarting that animation from a scroll listener made iOS
+     spend seconds chasing the focused field. The answer's own scroller
+     remains available, while its outer app scroller stays where it was. */
   useEffect(() => {
     const layer = rootRef.current;
     if (!layer) return;
 
-    let locked = false;
-
-    const holdStill = () => {
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
-    };
-
+    let releaseLock: (() => void) | null = null;
     const lock = () => {
-      if (locked) return;
-      locked = true;
-      document.documentElement.style.overflow = "hidden";
+      if (releaseLock) return;
+      const root = document.documentElement;
+      const scroller = layer.closest<HTMLElement>("[data-app-scroll-viewport]");
+      const overflow = root.style.overflow;
+      const scrollBehavior = root.style.scrollBehavior;
+      const outerOverflow = scroller?.style.overflowY ?? "";
+      const outerBehavior = scroller?.style.scrollBehavior ?? "";
+      const outerTop = scroller?.scrollTop ?? 0;
+      root.style.overflow = "hidden";
+      root.style.scrollBehavior = "auto";
+      if (scroller) {
+        scroller.style.overflowY = "hidden";
+        scroller.style.scrollBehavior = "auto";
+      }
+      const holdStill = () => {
+        if (window.scrollY !== 0) window.scrollTo({ left: window.scrollX, top: 0, behavior: "instant" });
+        if (scroller && scroller.scrollTop !== outerTop) scroller.scrollTop = outerTop;
+      };
       window.addEventListener("scroll", holdStill, { passive: true });
+      scroller?.addEventListener("scroll", holdStill, { passive: true });
+      const viewport = window.visualViewport;
+      viewport?.addEventListener("resize", holdStill);
+      viewport?.addEventListener("scroll", holdStill);
       holdStill();
+      releaseLock = () => {
+        window.removeEventListener("scroll", holdStill);
+        scroller?.removeEventListener("scroll", holdStill);
+        viewport?.removeEventListener("resize", holdStill);
+        viewport?.removeEventListener("scroll", holdStill);
+        root.style.overflow = overflow;
+        root.style.scrollBehavior = scrollBehavior;
+        if (scroller) {
+          scroller.style.overflowY = outerOverflow;
+          scroller.style.scrollBehavior = outerBehavior;
+        }
+        releaseLock = null;
+      };
     };
-
-    const unlock = () => {
-      if (!locked) return;
-      locked = false;
-      document.documentElement.style.overflow = "";
-      window.removeEventListener("scroll", holdStill);
-    };
+    const unlock = () => releaseLock?.();
 
     /* Only a real text field, and only one of ours: the ring's keys take
        focus too, and they do not summon a keyboard. */
@@ -1085,15 +1191,18 @@ export default function YumiRingOverlay({
     const onFocusIn = (event: FocusEvent) => {
       if (isOurField(event.target)) {
         lock();
+        answeringRef.current = true;
         setTyping(true);
       }
     };
 
     const onFocusOut = (event: FocusEvent) => {
       /* `relatedTarget` is where focus is going. Moving between two fields
-         inside the layer must not flicker the lock off and on. */
+         inside the layer must not flicker the lock off and on — the hand-off
+         from the stand-in below to the real field is exactly that move. */
       if (isOurField(event.target) && !isOurField(event.relatedTarget)) {
         unlock();
+        expectKeyboardRef.current = false;
         setTyping(false);
       }
     };
@@ -1105,6 +1214,165 @@ export default function YumiRingOverlay({
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       unlock();
+    };
+  }, []);
+
+  /*
+   * A tap on the field from a touch screen opens the keyboard on a stand-in.
+   *
+   * See GLIDE_RATE for what this is for. The tap's own focus is cancelled
+   * (preventDefault on touchend, which is where iOS would focus the field
+   * and decide to scroll it into view); the stand-in, which sits well above
+   * any keyboard and mirrors the field's keyboard settings, takes the focus
+   * inside the same tap — the only place iOS will raise a keyboard for it —
+   * and the real field takes it over HANDOFF_MS later, once the glide has
+   * lifted it clear. Anything typed in between moves across with it; a
+   * composition in progress (注音, pinyin) is waited out rather than cut.
+   *
+   * Mouse and keyboard focus are left alone: no software keyboard, nothing
+   * to avoid.
+   */
+  useEffect(() => {
+    const layer = rootRef.current;
+    const proxy = proxyRef.current;
+    if (!layer || !proxy) return;
+
+    let tap: { id: number; x: number; y: number; field: HTMLInputElement } | null = null;
+    let timer = 0;
+    let composing = false;
+    let pending: HTMLInputElement | null = null;
+
+    const fieldInput = (node: EventTarget | null) =>
+      node instanceof HTMLInputElement &&
+      !node.disabled &&
+      !node.readOnly &&
+      Boolean(fieldRef.current?.contains(node))
+        ? node
+        : null;
+
+    const handOff = () => {
+      window.clearTimeout(timer);
+      const field = pending;
+      if (!field) return;
+      /* Wait for the end of a composition rather than cutting it. */
+      if (composing) return;
+      pending = null;
+      if (document.activeElement !== proxy || !field.isConnected) return;
+
+      const typed = proxy.value;
+      proxy.value = "";
+      field.focus({ preventScroll: true });
+
+      if (typed) {
+        /* Through the native setter, so React's controlled input hears it
+           as typing rather than having its value changed under it. */
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )?.set;
+        setter?.call(field, field.value + typed);
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        const end = field.value.length;
+        try {
+          field.setSelectionRange(end, end);
+        } catch {
+          /* Not every input type has a caret to place. */
+        }
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      const field = fieldInput(event.target);
+      const touch = event.changedTouches[0];
+      tap =
+        field && touch && event.touches.length === 1 && document.activeElement !== field
+          ? { id: touch.identifier, x: touch.clientX, y: touch.clientY, field }
+          : null;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!tap) return;
+      const touch = Array.from(event.changedTouches).find(t => t.identifier === tap?.id);
+      if (touch && Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y) > 10) tap = null;
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      const current = tap;
+      tap = null;
+      if (!current || !event.cancelable) return;
+      if (!Array.from(event.changedTouches).some(t => t.identifier === current.id)) return;
+      if (document.activeElement === current.field) return;
+
+      event.preventDefault();
+
+      /* Same keyboard as the field's, so nothing changes under the reader's
+         thumbs when the field takes over. */
+      const field = current.field;
+      proxy.type = field.type === "search" ? "search" : "text";
+      for (const name of [
+        "inputmode",
+        "enterkeyhint",
+        "autocomplete",
+        "autocapitalize",
+        "autocorrect",
+        "spellcheck",
+        "lang",
+      ]) {
+        const value = field.getAttribute(name);
+        if (value === null) proxy.removeAttribute(name);
+        else proxy.setAttribute(name, value);
+      }
+      proxy.value = "";
+
+      expectKeyboardRef.current = true;
+      pending = field;
+      proxy.focus({ preventScroll: true });
+      timer = window.setTimeout(handOff, HANDOFF_MS);
+    };
+
+    const onCompositionStart = () => { composing = true; };
+    const onCompositionEnd = () => {
+      composing = false;
+      if (pending) window.setTimeout(handOff, 0);
+    };
+    /* Leaving the stand-in any other way — the app backgrounded, a tap
+       elsewhere — cancels the hand-off. */
+    const onProxyBlur = () => {
+      window.clearTimeout(timer);
+      pending = null;
+      composing = false;
+      proxy.value = "";
+    };
+    /* Search pressed before the hand-off: hand off, then submit the field's
+       own form as if it had been pressed there. */
+    const onProxyKey = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || composing || event.isComposing) return;
+      event.preventDefault();
+      const field = pending;
+      handOff();
+      field?.form?.requestSubmit();
+    };
+
+    layer.addEventListener("touchstart", onTouchStart, { passive: true });
+    layer.addEventListener("touchmove", onTouchMove, { passive: true });
+    layer.addEventListener("touchend", onTouchEnd, { passive: false });
+    const onTouchCancel = () => { tap = null; };
+    layer.addEventListener("touchcancel", onTouchCancel);
+    proxy.addEventListener("compositionstart", onCompositionStart);
+    proxy.addEventListener("compositionend", onCompositionEnd);
+    proxy.addEventListener("blur", onProxyBlur);
+    proxy.addEventListener("keydown", onProxyKey);
+
+    return () => {
+      window.clearTimeout(timer);
+      layer.removeEventListener("touchstart", onTouchStart);
+      layer.removeEventListener("touchmove", onTouchMove);
+      layer.removeEventListener("touchend", onTouchEnd);
+      layer.removeEventListener("touchcancel", onTouchCancel);
+      proxy.removeEventListener("compositionstart", onCompositionStart);
+      proxy.removeEventListener("compositionend", onCompositionEnd);
+      proxy.removeEventListener("blur", onProxyBlur);
+      proxy.removeEventListener("keydown", onProxyKey);
     };
   }, []);
 
@@ -1220,6 +1488,17 @@ export default function YumiRingOverlay({
           tabIndex={open ? 0 : -1}
         />
 
+        {/* The keyboard's stand-in for a tap on the field: see the hand-off
+            effect. Invisible, above any keyboard, and out of every order. */}
+        <input
+          ref={proxyRef}
+          className={styles.keyboardProxy}
+          data-keyboard-proxy=""
+          tabIndex={-1}
+          aria-hidden="true"
+          autoComplete="off"
+        />
+
         {/* The canvas goes here, by hand — see the scene effect. `contents`
             so the host adds no box: the canvas lays out as this layer's
             child, exactly as it did when React rendered it. */}
@@ -1251,6 +1530,7 @@ export default function YumiRingOverlay({
         <div
           ref={ringRef}
           className={styles.ring}
+          data-yumi-ring=""
         >
           <div className={styles.reticle} aria-hidden="true" />
           <LiquidRingSurface enabled={open} onChoose={index => choose(spokes[index])}>
@@ -1316,7 +1596,7 @@ export default function YumiRingOverlay({
             ) : null}
 
             {field ? (
-              <div className={styles.field}>
+              <div ref={fieldRef} className={styles.field}>
                 {field({ onAnswerChange: handleAnswerChange })}
               </div>
             ) : null}

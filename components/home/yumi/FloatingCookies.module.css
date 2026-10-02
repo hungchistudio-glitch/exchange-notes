@@ -16,6 +16,7 @@
 .cookie:disabled { pointer-events:none; }
 .field[data-mode="open"],.field[data-mode="starting"] { opacity:0; visibility:hidden; }
 .field[data-mode="answering"] .cookie { opacity:.15; pointer-events:none; transition:opacity .45s,transform .45s; }
+.field[data-settling] .cookie { transition:opacity .45s,transform .45s cubic-bezier(.22,1,.36,1); }
 .field[data-mode="answering"] .cookie:nth-child(n+5),.field[data-mode="answering"] .controls { opacity:0; }
 .controls { position:absolute; bottom:calc(25px + env(safe-area-inset-bottom)); right:20px; display:flex; pointer-events:auto; gap:3px; color:#7e8972; }
 .icon { display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:50%; color:inherit; background:transparent; cursor:pointer; }
@@ -44,5 +45,5 @@
 .cardFooter button:disabled { opacity:.4; cursor:default; }
 .spinner { animation:spin 1s linear infinite; }
 @keyframes spin { to { rotate:360deg; } }
-@media(prefers-reduced-motion:reduce) { .field { transition:none; } .cookie { will-change:auto; transition:none; } .spinner { animation:none; } }
+@media(prefers-reduced-motion:reduce) { .field { transition:none; } .cookie, .field[data-mode="answering"] .cookie, .field[data-settling] .cookie { will-change:auto; transition:none; } .spinner { animation:none; } }
 @media(prefers-contrast:more) { .cookie[data-depth="back"][data-ready="true"] { opacity:1; } .cookie::before { border-color:currentColor; } .readings,.language,.example { color:#394532; } }

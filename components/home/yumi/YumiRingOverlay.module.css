@@ -421,6 +421,32 @@
   pointer-events: none;
 }
 
+/*
+  The keyboard's stand-in (see the hand-off in YumiRingOverlay.tsx).
+
+  Fixed in the upper third, where no phone keyboard reaches, so focusing it
+  gives iOS nothing to scroll into view. Its type size comes from the app's
+  16px floor for fields on touch screens (globals.css), so iOS does not zoom
+  to it; one pixel of almost nothing so it can still take focus — a hidden or
+  zero-sized input cannot raise a keyboard.
+*/
+.keyboardProxy {
+  position: fixed;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 96px);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  opacity: 0.01;
+  color: transparent;
+  caret-color: transparent;
+  background: transparent;
+  pointer-events: none;
+  outline: none;
+}
+
 /* The field spans the column; everything else in it is centred to its own
    width. */
 .field {

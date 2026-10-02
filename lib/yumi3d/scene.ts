@@ -373,9 +373,11 @@ export function createYumiScene(
   const LUNGE_OUT_STIFFNESS = 520;
   const LUNGE_BACK_STIFFNESS = 300;
 
-  function canvasRect() {
-    return canvas.getBoundingClientRect();
-  }
+  // One layout read per rendered frame, shared by projection and pose math.
+  // Reading again after renderer/style writes forces layout on iOS.
+  let measuredRect = canvas.getBoundingClientRect();
+  const canvasRect = () => measuredRect;
+  const measureCanvas = () => { measuredRect = canvas.getBoundingClientRect(); };
 
   function toNdc(clientX: number, clientY: number) {
     const rect = canvasRect();
@@ -543,9 +545,15 @@ export function createYumiScene(
     return (anchorNow.r * upp) / SHELL_OUTER;
   }
 
+  let renderedWidth = 0;
+  let renderedHeight = 0;
   function resize() {
+    measureCanvas();
     const rect = canvasRect();
     if (rect.width === 0 || rect.height === 0) return;
+    if (rect.width === renderedWidth && rect.height === renderedHeight) return;
+    renderedWidth = rect.width;
+    renderedHeight = rect.height;
     renderer.setSize(rect.width, rect.height, false);
     camera.aspect = rect.width / rect.height;
     camera.position.z = rect.width < 360 ? 21 : 19.5;
@@ -556,6 +564,7 @@ export function createYumiScene(
 
   return {
     frame(nowMs: number) {
+      measureCanvas();
       const dt = Math.min((nowMs - previous) / 1000, 1 / 30);
       previous = nowMs;
 
@@ -665,6 +674,7 @@ export function createYumiScene(
 
     pointerDown(clientX, clientY) {
       if (film) return;
+      measureCanvas();
       idleSince = performance.now();
       moved = 0;
       lastPointer.x = clientX;
@@ -686,6 +696,7 @@ export function createYumiScene(
 
     pointerMove(clientX, clientY) {
       if (film) return;
+      measureCanvas();
       const dx = clientX - lastPointer.x;
       const dy = clientY - lastPointer.y;
       moved += Math.abs(dx) + Math.abs(dy);
