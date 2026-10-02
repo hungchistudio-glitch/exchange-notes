@@ -12,7 +12,7 @@ import {
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
@@ -605,25 +605,50 @@ export default function YumiRingOverlay({
     host.appendChild(canvas);
     canvasRef.current = canvas;
 
-    let pointerId: number | null = null;
+    let pointer: {
+      id: number; blank: boolean; x: number; y: number; started: number; moved: boolean;
+    } | null = null;
+    const cancelCanvasGesture = () => {
+      const current = pointer;
+      pointer = null;
+      if (!current) return;
+      if (!current.blank) sceneRef.current?.pointerCancel?.();
+      if (canvas.hasPointerCapture?.(current.id)) canvas.releasePointerCapture(current.id);
+    };
     const onCanvasDown = (event: PointerEvent) => {
-      if (event.isPrimary === false || event.button !== 0 || pointerId !== null) return;
+      if (event.isPrimary === false || event.button !== 0 || pointer) return;
+      // A second input must not dismiss a selection already being scrubbed.
+      if (rootRef.current?.querySelector("[data-liquid-option][data-dragging], [data-liquid-option][data-releasing]")) return;
       const eye = sceneRef.current?.eyeScreenPosition();
-      // Blank space belongs to the floating-cookie gesture, not the menu.
-      if (!eye || Math.hypot(event.clientX - eye.x, event.clientY - eye.y) > 100) return;
-      pointerId = event.pointerId;
-      sceneRef.current?.pointerDown(event.clientX, event.clientY);
+      if (!eye) return;
+      const blank = Math.hypot(event.clientX - eye.x, event.clientY - eye.y) > 100;
+      if (blank && !openRef.current) return;
+      pointer = { id: event.pointerId, blank, x: event.clientX, y: event.clientY, started: performance.now(), moved: false };
+      if (!blank) sceneRef.current?.pointerDown(event.clientX, event.clientY);
       canvas.setPointerCapture?.(event.pointerId);
     };
     const onCanvasMove = (event: PointerEvent) => {
-      if (pointerId === event.pointerId) sceneRef.current?.pointerMove(event.clientX, event.clientY);
+      if (!pointer || pointer.id !== event.pointerId) return;
+      pointer.moved ||= Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) > 8;
+      if (!pointer.blank) sceneRef.current?.pointerMove(event.clientX, event.clientY);
     };
     const onCanvasUp = (event: PointerEvent) => {
-      if (pointerId !== event.pointerId) return;
-      pointerId = null;
-      if (event.type === "pointercancel") sceneRef.current?.pointerCancel?.();
-      else sceneRef.current?.pointerUp();
+      if (!pointer || pointer.id !== event.pointerId) return;
+      onCanvasMove(event);
+      const current = pointer;
+      pointer = null;
+      const tap = !current.moved && performance.now() - current.started <= 450;
+      if (event.type !== "pointerup" || (!current.moved && !tap)) {
+        if (!current.blank) sceneRef.current?.pointerCancel?.();
+      } else if (current.blank) {
+        // The canvas covers the scrim, including the gaps between options.
+        if (tap && openRef.current) close();
+      } else {
+        sceneRef.current?.pointerUp();
+      }
+      if (canvas.hasPointerCapture?.(current.id)) canvas.releasePointerCapture(current.id);
     };
+    const onHidden = () => { if (document.hidden) cancelCanvasGesture(); };
     const onBite = () => {
       if (reachingFor.current) return;
       const eye = sceneRef.current?.eyeScreenPosition();
@@ -638,6 +663,9 @@ export default function YumiRingOverlay({
     canvas.addEventListener("pointermove", onCanvasMove);
     canvas.addEventListener("pointerup", onCanvasUp);
     canvas.addEventListener("pointercancel", onCanvasUp);
+    canvas.addEventListener("lostpointercapture", onCanvasUp);
+    window.addEventListener("blur", cancelCanvasGesture);
+    document.addEventListener("visibilitychange", onHidden);
 
     let handle: YumiSceneHandle | null = null;
     let raf = 0;
@@ -705,7 +733,7 @@ export default function YumiRingOverlay({
     if (parked) {
       /* She may have been parked mid-gesture, and the viewport may have
          changed since. */
-      parked.handle.pointerUp?.();
+      parked.handle.pointerCancel?.();
       parked.handle.setFocusLevel(0);
       parked.handle.resize();
     }
@@ -934,6 +962,7 @@ export default function YumiRingOverlay({
       cancelAnimationFrame(raf);
       window.clearTimeout(giveUp);
       window.removeEventListener("resize", onResize);
+      cancelCanvasGesture();
       sceneRef.current = null;
       stage?.removeEventListener("yumi-cookie-gaze", onGaze);
       stage?.removeEventListener("yumi-cookie-bite", onBite);
@@ -941,6 +970,9 @@ export default function YumiRingOverlay({
       canvas.removeEventListener("pointermove", onCanvasMove);
       canvas.removeEventListener("pointerup", onCanvasUp);
       canvas.removeEventListener("pointercancel", onCanvasUp);
+      canvas.removeEventListener("lostpointercapture", onCanvasUp);
+      window.removeEventListener("blur", cancelCanvasGesture);
+      document.removeEventListener("visibilitychange", onHidden);
       /* Parked, not disposed: the next visit to this screen takes her back
          rather than building her again. */
       if (handle) parkYumiScene({ canvas, handle, relay });
@@ -1166,6 +1198,7 @@ export default function YumiRingOverlay({
           ref={ringKeyRef}
           type="button"
           className={styles.ringKey}
+          aria-expanded={open}
           onClick={openFromKey}
           tabIndex={open ? -1 : 0}
         >
@@ -1178,6 +1211,7 @@ export default function YumiRingOverlay({
           className={styles.scrim}
           onClick={close}
           aria-label={t.common.close}
+          aria-hidden={!open}
           tabIndex={open ? 0 : -1}
         />
 
@@ -1230,7 +1264,9 @@ export default function YumiRingOverlay({
                   ref={element => { spokeRefs.current[index] = element; }}
                   style={{
                     transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                  }}
+                    "--spoke-return-x": `${-x * 0.65}px`,
+                    "--spoke-return-y": `${-y * 0.65}px`,
+                  } as CSSProperties}
                 >
                   <LiquidRingButton label={spoke.label} index={index}>
                     {/* The disc is the key; the label is a caption under it and
@@ -1309,12 +1345,6 @@ export default function YumiRingOverlay({
               <p className={styles.hint}>{t.home.yumiHint}</p>
             )}
           </div>
-
-          {/* She is the home key, and a character you have to guess at is
-              not a key. So it is said out loud, only while the ring is out. */}
-          <button type="button" className={styles.homecap} onClick={close} tabIndex={open ? 0 : -1}>
-            {t.navigation.home}<span aria-hidden="true"> ↵</span>
-          </button>
         </div>
       </div>
     </>

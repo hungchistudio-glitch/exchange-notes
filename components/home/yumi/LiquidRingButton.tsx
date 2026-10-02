@@ -203,7 +203,7 @@ export function LiquidRingSurface({ enabled, onChoose, children }: {
     if (!enabled || gesture.current || pending.current !== null) return;
     onChoose(index);
   } }}>
-    <div ref={root} className={styles.liquidSurface} onPointerMove={move} onPointerUp={release}
+    <div ref={root} className={styles.liquidSurface} inert={!enabled} aria-hidden={!enabled} onPointerMove={move} onPointerUp={release}
       onPointerCancel={cancel} onLostPointerCapture={cancel}
       onKeyDown={event => { if (event.key === "Escape") reset(); }}
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) reset(); }}>
