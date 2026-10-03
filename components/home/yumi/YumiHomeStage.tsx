@@ -245,7 +245,7 @@ export default function YumiHomeStage({
 
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
-  const { supportLanguage } = useDisplayLanguages();
+  const { learningLanguage: cardLanguage, supportLanguage } = useDisplayLanguages();
   const copy = t.home.yumi;
   const cookieCopy = t.vocabulary.mascot;
   const dailyGoal = useDailyGoalWords();
@@ -545,9 +545,14 @@ export default function YumiHomeStage({
    * one cookie had changed.
    */
   const fedWordIds = petState?.fed_word_ids;
+  /* With the languages the word card shows (FloatingWordCard), so a cookie
+     wears the start of a word its card has on it. */
   const cookies: Cookie[] = useMemo(
-    () => buildAvailableCookies(items, fedWordIds ?? []),
-    [items, fedWordIds],
+    () => buildAvailableCookies(items, fedWordIds ?? [], {
+      learningLanguage: cardLanguage,
+      supportLanguage,
+    }),
+    [items, fedWordIds, cardLanguage, supportLanguage],
   );
 
   const persistFeed = useFeedPersistence(petState, setPetState);

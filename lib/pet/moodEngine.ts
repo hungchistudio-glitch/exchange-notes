@@ -1,5 +1,6 @@
 import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
+import { getVocabularyCardSides } from "@/lib/vocabulary/cardSides";
 
 import type { Cookie, CookieType, YumiMood } from "./types";
 
@@ -14,36 +15,52 @@ export function cookieTypeForIndex(index: number): CookieType {
   return COOKIE_CYCLE[index % COOKIE_CYCLE.length];
 }
 
-/** The placeholder a zhuyin cookie wears until its reading is known. */
-export const ZHUYIN_GLYPH_FALLBACK = "ㄅ";
-
 /*
- * The first zhuyin symbol of a reading.
+ * What a cookie wears: the start of its word (Chi, 2026-10-03: "確定每個餅乾
+ * icon letter 跟單字是相關的開頭").
  *
- * Split out because the reading no longer arrives with the cookie. It used to
- * be computed here from pinyin-pro, which put 640KB of dictionary on the
- * critical path of the home and vocabulary screens to draw one character on a
- * biscuit; the tray looks the reading up now, through the same batched request
- * every word card already makes, and calls this with the answer.
+ * A letter cookie wears the first letter of its word — "Pomme" is P, "¿Qué?"
+ * is Q, not "¿". A zhuyin cookie wears the first zhuyin symbol of its Chinese
+ * word's reading — 蘋果 is ㄆ — and until that reading has arrived it wears
+ * the word's first character, 蘋, which is the start of the word too. It used
+ * to wear ㄅ, a placeholder that said nothing about the word; and the floating
+ * cookies on the home screen never asked for the reading at all, so every
+ * Chinese cookie there was ㄅ for good.
  */
-export function zhuyinGlyph(zhuyin: string | null | undefined): string {
-  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
-  const symbol = [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char));
 
-  return symbol ?? ZHUYIN_GLYPH_FALLBACK;
+/** Characters a reading can be asked for: CJK unified ideographs. */
+const HAN_PATTERN = /[\u3400-\u9fff\uf900-\ufaff]/;
+
+/** The first letter or digit of `text`, capitalised; "" if it has none. */
+function firstLetter(text: string): string {
+  const first = [...text.normalize("NFC").trim()].find((char) =>
+    /[\p{L}\p{N}]/u.test(char),
+  );
+  return first?.toLocaleUpperCase() ?? "";
 }
 
-// The cookie's actual glyph — the first grapheme of a Latin-script side, or
-// the first Zhuyin symbol from a Chinese reading. Zhuyin itself is filled in
-// lazily by CookieTray; this fallback is replaced as soon as that lookup is
-// available.
-function glyphForCookie(text: string, type: CookieType): string {
-  if (type === "letter") {
-    const letter = [...text.trim()][0]?.toLocaleUpperCase();
-    return letter || "?";
-  }
+/** The first zhuyin symbol of a reading, or null if it has none. */
+export function zhuyinGlyph(zhuyin: string | null | undefined): string | null {
+  const firstToken = zhuyin?.trim().split(/\s+/)[0] ?? "";
+  return [...firstToken].find((char) => ZHUYIN_SYMBOL_PATTERN.test(char)) ?? null;
+}
 
-  return ZHUYIN_GLYPH_FALLBACK;
+/*
+ * The face a cookie shows, given its word's zhuyin reading when there is one.
+ *
+ * Only a zhuyin cookie whose word starts with a Chinese character takes the
+ * reading: "T恤" starts with T, and T is what it wears. Without a reading —
+ * still on its way, or the device offline — the cookie keeps its own glyph,
+ * the first character of the word.
+ */
+export function cookieGlyph(cookie: Cookie, zhuyin?: string | null): string {
+  if (cookie.type !== "zhuyin" || !zhuyin) return cookie.glyph;
+  if (!HAN_PATTERN.test(cookie.glyph)) return cookie.glyph;
+  return zhuyinGlyph(zhuyin) ?? cookie.glyph;
+}
+
+function glyphForCookie(text: string): string {
+  return firstLetter(text) || "?";
 }
 
 export type GrowthStage = 0 | 1 | 2 | 3;
@@ -193,6 +210,13 @@ export function cookieReactionMood(type: CookieType): YumiMood {
 export function buildAvailableCookies(
   items: VocabularyItem[],
   fedWordIds: string[],
+  /**
+   * The reader's languages, as the word card resolves them. A cookie wears
+   * the start of a word its card shows: a card glossed in Spanish today
+   * must not open from a cookie wearing the zhuyin of a Chinese gloss it
+   * no longer shows. Without it, the row's own pair.
+   */
+  display?: { learningLanguage: LanguageCode; supportLanguage?: LanguageCode },
 ): Cookie[] {
   const fedSet = new Set(fedWordIds);
   const sorted = [...items].sort(
@@ -207,7 +231,7 @@ export function buildAvailableCookies(
   sorted.forEach((item, index) => {
     if (fedSet.has(item.id)) return;
 
-    cookies.push(buildCookie(item, cookieTypeForIndex(index), todayKey, now));
+    cookies.push(buildCookie(item, cookieTypeForIndex(index), todayKey, now, display));
   });
 
   return cookies;
@@ -233,21 +257,31 @@ function buildCookie(
   preferredType: CookieType,
   todayKey: string,
   now: number,
+  display?: { learningLanguage: LanguageCode; supportLanguage?: LanguageCode },
 ): Cookie {
   const primaryLanguage = item.word_language ?? "en";
   const secondaryLanguage = item.translation_language ?? "zh-TW";
-  const sides: Array<{ language: LanguageCode; text: string }> = [
-    {
-      language: primaryLanguage,
-      text: item.texts?.[primaryLanguage]?.trim() || item.word.trim(),
-    },
-    {
-      language: secondaryLanguage,
-      text:
-        item.texts?.[secondaryLanguage]?.trim()
-        || item.translation.trim(),
-    },
-  ].filter((side) => side.text);
+  const card = display
+    ? getVocabularyCardSides(item, display.learningLanguage, display.supportLanguage)
+    : null;
+  const sides: Array<{ language: LanguageCode; text: string }> = (card
+    ? [card.primary, card.secondary].map(({ language, text }) => ({
+        language,
+        text: text.trim(),
+      }))
+    : [
+        {
+          language: primaryLanguage,
+          text: item.texts?.[primaryLanguage]?.trim() || item.word.trim(),
+        },
+        {
+          language: secondaryLanguage,
+          text:
+            item.texts?.[secondaryLanguage]?.trim()
+            || item.translation.trim(),
+        },
+      ]
+  ).filter((side) => side.text);
 
   const preferredSide =
     preferredType === "zhuyin"
@@ -268,7 +302,7 @@ function buildCookie(
     language: source.language,
     type,
     get glyph() {
-      glyph ??= glyphForCookie(source.text, type);
+      glyph ??= glyphForCookie(source.text);
       return glyph;
     },
     status: item.status,

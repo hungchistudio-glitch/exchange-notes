@@ -111,15 +111,16 @@ describe("building the tray", () => {
   it("alternates real Latin and Zhuyin sources when the row has both", () => {
     const cookies = buildAvailableCookies(library(6), []);
 
-    // Earned order, oldest first, alternating letter/zhuyin — and a real
-    // first letter or a real zhuyin symbol, never a placeholder.
+    // Earned order, oldest first, alternating letter/zhuyin — and the start
+    // of the word, never a placeholder: a zhuyin cookie wears its word's
+    // first character until the reading arrives (cookieGlyph).
     expect(cookies.map((c) => c.type)).toEqual([
       "letter", "zhuyin", "letter", "zhuyin", "letter", "zhuyin",
     ]);
     expect(cookies[0].glyph).toBe("W");
     expect(cookies[2].glyph).toBe("W");
     for (const index of [1, 3, 5]) {
-      expect(cookies[index].glyph).toMatch(/[ㄅ-ㄯ]/);
+      expect(cookies[index].glyph).toBe([...CHINESE[index % CHINESE.length]][0]);
     }
   });
 

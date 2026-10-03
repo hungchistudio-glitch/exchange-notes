@@ -10,7 +10,7 @@ import {
 import { createPortal } from "react-dom";
 
 import usePhonetics from "@/hooks/usePhonetics";
-import { cosmicCoreTone, zhuyinGlyph } from "@/lib/pet/moodEngine";
+import { cookieGlyph, cosmicCoreTone } from "@/lib/pet/moodEngine";
 import type { Cookie, CookieType } from "@/lib/pet/types";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
@@ -707,14 +707,12 @@ export default function CookieTray({
   function glyphFor(cookie: Cookie) {
     if (cookie.type !== "zhuyin") return cookie.glyph;
 
-    const reading = phoneticsFor({
-      text: cookie.sourceText,
-      language: cookie.language,
-    });
-
-    // Undefined while the lookup is in the air — the cookie wears its
-    // placeholder until then rather than nothing.
-    return reading?.zhuyin ? zhuyinGlyph(reading.zhuyin) : cookie.glyph;
+    // Undefined while the lookup is in the air — the cookie wears its word's
+    // first character until then rather than nothing.
+    return cookieGlyph(
+      cookie,
+      phoneticsFor({ text: cookie.sourceText, language: cookie.language })?.zhuyin,
+    );
   }
 
   // The ghost and the tray slots draw the same object, so the face is one

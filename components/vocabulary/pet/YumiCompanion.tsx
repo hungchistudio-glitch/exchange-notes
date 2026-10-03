@@ -12,6 +12,7 @@ import {
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useInView from "@/hooks/useInView";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
 import useYumiOrbitMenu from "@/hooks/pet/useYumiOrbitMenu";
@@ -260,9 +261,15 @@ export default function YumiCompanion({
    * one cookie had changed.
    */
   const fedWordIds = petState?.fed_word_ids;
+  /* With the languages the word cards show, so a cookie wears the start of
+     a word its card has on it. */
+  const { learningLanguage: cardLanguage, supportLanguage } = useDisplayLanguages();
   const cookies: Cookie[] = useMemo(
-    () => buildAvailableCookies(items, fedWordIds ?? []),
-    [items, fedWordIds],
+    () => buildAvailableCookies(items, fedWordIds ?? [], {
+      learningLanguage: cardLanguage,
+      supportLanguage,
+    }),
+    [items, fedWordIds, cardLanguage, supportLanguage],
   );
   const growthStage = computeGrowthStage(petState?.total_cookies_fed ?? 0);
   const crownEarned = hasCrown(streak.currentStreak);

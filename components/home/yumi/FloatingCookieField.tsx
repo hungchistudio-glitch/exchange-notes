@@ -5,9 +5,11 @@ import { Pause, Play, Sparkles } from "lucide-react";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import usePhonetics from "@/hooks/usePhonetics";
 import { floatingCopy } from "@/lib/home/floatingCopy";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
+import { cookieGlyph } from "@/lib/pet/moodEngine";
 import type { Cookie } from "@/lib/pet/types";
 import type { VocabularyItem } from "@/lib/types/app";
 import FloatingWordCard from "./FloatingWordCard";
@@ -52,6 +54,13 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     stageRef.current?.dispatchEvent(new CustomEvent("yumi-cookie-gaze", { detail: null }));
   }, [mode, activeId, stageRef]);
   const visible = cookies.slice(0, 12);
+  /* A zhuyin cookie wears its word's first zhuyin symbol, from the same
+     batched reading every word card asks for (CookieTray does the same). */
+  const phoneticsFor = usePhonetics(
+    visible
+      .filter(cookie => cookie.type === "zhuyin")
+      .map(cookie => ({ text: cookie.sourceText, language: cookie.language })),
+  );
   /*
    * The tour's feed step shows which cookie to use (Chi, 2026-10-03:
    * "餅乾示範"): the first one glows and leans toward Yumi, so "drag a cookie
@@ -329,7 +338,9 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             if (event.detail !== 0 && suppressClick.current === cookie.id) { suppressClick.current = null; return; }
             setActiveId(cookie.id);
           }}>
-          <span aria-hidden="true">{cookie.glyph}</span>
+          <span aria-hidden="true">{cookieGlyph(cookie, cookie.type === "zhuyin"
+            ? phoneticsFor({ text: cookie.sourceText, language: cookie.language })?.zhuyin
+            : null)}</span>
         </button>)}
         <span className={styles.gatherRipple} aria-hidden="true" />
         {visible.length > 0 && <>

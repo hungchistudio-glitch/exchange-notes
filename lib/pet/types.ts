@@ -37,10 +37,11 @@ export type Cookie = {
   /** Language of sourceText. Zhuyin is valid only when this is zh-TW. */
   language: LanguageCode;
   type: CookieType;
-  // The actual symbol this cookie represents — a real first letter from a
-  // Latin-script side, or a real first Zhuyin symbol from a zh-TW side — so
-  // a cookie reads as a concrete learning outcome, not a decorative
-  // placeholder or an English/Chinese assumption.
+  // The start of the word — the first letter of a Latin-script side, or the
+  // first character of a zh-TW side — so a cookie reads as a concrete
+  // learning outcome, not a decorative placeholder. A zhuyin cookie shows
+  // its reading's first symbol instead once that is known: draw it with
+  // cookieGlyph (lib/pet/moodEngine.ts), not this field alone.
   glyph: string;
 
   /*
