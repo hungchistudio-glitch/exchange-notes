@@ -198,6 +198,8 @@ const HANDOFF_MS = 200;
 const KEYBOARD_VISIBLE_SHARE = 0.56;
 /** How long the visible height must hold still before it counts. */
 const VIEWPORT_SETTLE_MS = 180;
+/** Air between the tour's card and the top of her, while she answers. */
+const COACH_CLEARANCE = 10;
 
 /** Her column's own offset below the eye, and the air under the page. */
 const BELOW_OFFSET = 94;
@@ -849,12 +851,31 @@ export default function YumiRingOverlay({
             expectKeyboardRef.current = false;
           }
           const keyboardPending = expectKeyboardRef.current;
-          const answerY = answerAnchorY(
+          /*
+           * Clear of the tour's card, when one is up (it stands at the top of
+           * this screen, and her answer position is just under it): her top
+           * edge goes below its bottom. While the reader types the card is a
+           * slim strip (TutorialCoach.module.css), so this costs the keyboard
+           * a few pixels at most; with the answer up it is the card's full
+           * height, and there is room for that once the keyboard has gone.
+           */
+          let answerY = answerAnchorY(
             rect.height,
             keyboardPending
               ? rect.height * KEYBOARD_VISIBLE_SHARE
               : viewportWatch.settled,
           );
+          if (answeringRef.current) {
+            const coach = document
+              .querySelector("[data-coach-card]")
+              ?.getBoundingClientRect();
+            if (coach && coach.height > 0) {
+              answerY = Math.max(
+                answerY,
+                Math.round(coach.bottom - rect.top + ANSWER_RADIUS + COACH_CLEARANCE),
+              );
+            }
+          }
 
           let restPosition: { x: number; y: number } | null = null;
           if (openRef.current) {
@@ -1474,6 +1495,10 @@ export default function YumiRingOverlay({
           answering ? styles.answering : ""
         }`}
         data-yumi-ring-open={open ? "true" : "false"}
+        /* For the tour's card, which shrinks to a strip while the reader
+           types (TutorialCoach.module.css): it is mounted beside this screen,
+           not inside it, so it can only see this through the document. */
+        data-yumi-typing={typing ? "true" : undefined}
       >
         {/* The keyboard's way in. See openFromKey. */}
         <button

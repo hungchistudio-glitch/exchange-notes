@@ -1,31 +1,9 @@
 "use client";
 
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Keyboard,
-  Mic,
-  NotebookPen,
-} from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import CameraIcon from "@/components/foundation/icons/CameraIcon";
-import NavDiscoverIcon from "@/components/foundation/icons/NavDiscoverIcon";
-import NavHomeIcon from "@/components/foundation/icons/NavHomeIcon";
-import NavMessagesIcon from "@/components/foundation/icons/NavMessagesIcon";
-import NavSettingsIcon from "@/components/foundation/icons/NavSettingsIcon";
-import NavVocabularyIcon from "@/components/foundation/icons/NavVocabularyIcon";
 import { SketchUnderline } from "@/components/tutorial/HandDrawn";
-import CosmicPreview from "@/components/tutorial/CosmicPreview";
-import NavKeyMap from "@/components/tutorial/NavKeyMap";
-import OrbitIcon from "@/components/tutorial/OrbitIcon";
 import TutorialStage from "@/components/tutorial/TutorialStage";
 import stageStyles from "@/components/tutorial/TutorialStage.module.css";
 import TutorialLanguageSetup from "@/components/tutorial/TutorialLanguageSetup";
@@ -37,18 +15,7 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { setTutorialPending } from "@/lib/appPreferences";
 import { insertValues } from "@/lib/utils";
 
-type StepKey =
-  | "setup"
-  | "meet"
-  | "dock"
-  | "search"
-  | "notes"
-  | "vocabulary"
-  | "home"
-  | "messages"
-  | "settings"
-  | "cosmic"
-  | "done";
+type StepKey = "setup" | "meet";
 
 /*
  * Language selection comes before the introduction, not after it. Everything
@@ -81,103 +48,6 @@ const STEP_ORDER: StepKey[] = ["setup", "meet"];
 type TutorialOverlayProps = {
   onClose: () => void;
 };
-
-/** The first real action in the app: write it, say it, or show it. */
-function CaptureModesRow() {
-  const modes = [
-    <Keyboard key="write" size={23} strokeWidth={1.65} aria-hidden="true" />,
-    <Mic key="voice" size={23} strokeWidth={1.65} aria-hidden="true" />,
-    <CameraIcon key="camera" className="h-6 w-6" />,
-  ];
-
-  return (
-    <div className="flex items-center gap-3">
-      {modes.map((mode, index) => (
-        <span
-          key={index}
-          className="flex h-14 w-14 items-center justify-center rounded-full border border-black/10 bg-white text-ink-strong"
-          style={{ transform: `rotate(${(index - 1) * 3}deg)` }}
-        >
-          {mode}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/** The six permanent dock keys, shown with the app's real icon components. */
-
-/** Yumi is unchanged; Cosmic Mode adds the command-deck presentation. */
-
-function stepVisual(step: StepKey): ReactNode {
-  switch (step) {
-    // The two choice rows are this step's content; a mark above them would
-    // only push them off a small screen.
-    case "setup":
-      return null;
-
-    case "dock":
-      return <NavKeyMap />;
-
-    case "home":
-      return (
-        <div className="flex items-center gap-3">
-          <OrbitIcon
-            render={(active) => (
-              <NavHomeIcon className="h-7 w-7" active={active} />
-            )}
-          />
-          <OrbitIcon
-            render={(active) => (
-              <NavDiscoverIcon className="h-7 w-7" active={active} />
-            )}
-          />
-        </div>
-      );
-
-    case "search":
-      return <CaptureModesRow />;
-
-    case "notes":
-      return (
-        <OrbitIcon
-          render={() => (
-            <NotebookPen size={27} strokeWidth={1.65} aria-hidden="true" />
-          )}
-        />
-      );
-
-    case "vocabulary":
-      return (
-        <OrbitIcon
-          render={(active) => (
-            <NavVocabularyIcon className="h-7 w-7" active={active} />
-          )}
-        />
-      );
-
-    case "messages":
-      return (
-        <OrbitIcon
-          render={(active) => (
-            <NavMessagesIcon className="h-7 w-7" active={active} />
-          )}
-        />
-      );
-
-    case "settings":
-      return (
-        <OrbitIcon
-          render={(active) => (
-            <NavSettingsIcon className="h-7 w-7" active={active} />
-          )}
-        />
-      );
-
-    case "cosmic":
-      return <CosmicPreview />;
-  }
-}
 
 export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const router = useRouter();
@@ -257,8 +127,6 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   const isLast = index === STEP_ORDER.length - 1;
 
   const stepCopy = copy.steps[step];
-  const visual = stepVisual(step);
-  const isYumiStep = step === "meet" || step === "done";
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -267,7 +135,7 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
   /*
    * Every step starts at its own top.
    *
-   * The scrolling panel is one element reused across all eleven slides, so its
+   * The scrolling panel is one element reused across every slide, so its
    * offset survived the advance: a reader who scrolled to the end of a long
    * step and pressed next arrived on the following one already scrolled past
    * its title. On a short screen that reads as the tour having skipped
@@ -371,18 +239,11 @@ export default function TutorialOverlay({ onClose }: TutorialOverlayProps) {
         <div className="mx-auto my-auto flex w-full max-w-md flex-col py-8">
           {/* Keyed by step so the CSS restarts on every advance — that
               punctuation is most of what makes the tour feel alive. */}
-          {(isYumiStep || visual) && (
-            <div
-              key={step}
-              className="mb-8 flex min-h-[9.5rem] items-end"
-            >
-              {isYumiStep ? (
-                <TutorialStage
-                  performance={step === "done" ? "finale" : "enter"}
-                />
-              ) : (
-                <TutorialStage performance="prop">{visual}</TutorialStage>
-              )}
+          {/* The setup step's two choice rows are its content; a mark above
+              them would only push them off a small screen. */}
+          {step === "meet" && (
+            <div key={step} className="mb-8 flex min-h-[9.5rem] items-end">
+              <TutorialStage performance="enter" />
             </div>
           )}
 

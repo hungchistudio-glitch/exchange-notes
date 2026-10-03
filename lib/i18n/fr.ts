@@ -282,7 +282,7 @@ const french: TranslationDictionary = {
     finish: "Commencer à apprendre",
     close: "Fermer",
     stepLabel: "{current} sur {total}",
-    replay: "Vous pouvez rouvrir ceci à tout moment depuis l'accueil ou les réglages.",
+    replay: "Vous pouvez rouvrir ceci à tout moment depuis les réglages, dans Aide et à propos.",
 
     coach: {
       label: "Chapitre {chapter} · {name} · {current}/{total}",
@@ -309,7 +309,7 @@ const french: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Tire sur mon œil, puis lâche.",
+            "Je suis Yumi. Cet écran n'a pas de menu — le menu, c'est moi. Touche-moi pour l'ouvrir (ou tire sur mon œil, puis lâche).",
         },
         ask: {
           body:
@@ -321,12 +321,17 @@ const french: TranslationDictionary = {
         },
         feed: {
           body:
-            "Donne-m'en un. Un mot nouveau par jour et j'ai de quoi manger. Trop de jours sans, et j'ai faim — et je reste là, tu me manques.",
+            "Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Un mot nouveau par jour, et je n'ai jamais faim.",
         },
         library: {
           body:
             "Voici ton Vocabulaire. Chaque mot que tu gardes vit ici : réécoute-le, lis ses exemples et lance une révision d'ici.",
           action: "Ouvrir le Vocabulaire",
+        },
+        review: {
+          body:
+            "Voici Réviser. Chaque mot revient ici vers le jour où tu l'oublierais — quelques minutes, et il reste. L'accueil montre combien t'attendent.",
+          action: "Ouvrir Réviser",
         },
         share: {
           body:
@@ -380,14 +385,6 @@ const french: TranslationDictionary = {
         title: "Gardez l’essentiel avant qu’il ne disparaisse",
         body: "Je suis Yumi. Vous remarquez un mot, une idée, un son ou une scène ; je vous aide à en garder le premier sens et à le retrouver plus tard. Exchange Notes est un espace d’apprentissage privé, pas un fil où il faut se mettre en scène.",
       },
-      dock: {
-        title:
-          "Yumi à l'accueil, six touches partout ailleurs",
-        body:
-          "Sur l'accueil, Yumi est la navigation : tirez son œil et les sections s'ouvrent autour d'elle ; touchez-la pour revenir. Partout ailleurs, la barre du bas garde les mêmes six dans le même ordre — vocabulaire, messages, accueil, rechercher, découvrir et réglages. Seul le cercle bouge.",
-        homeLabel: "Sur l'accueil",
-        dockLabel: "Partout ailleurs",
-      },
       setup: {
         title: "Bienvenue. Faites-en votre espace",
         body: "Choisissez la langue dans laquelle je dois vous parler et celle que vous apprenez. La visite change immédiatement pour que chaque étape suivante soit facile à comprendre.",
@@ -395,40 +392,6 @@ const french: TranslationDictionary = {
         learningLabel: "Je viens apprendre",
         note: "Les deux peuvent être modifiées plus tard dans les réglages.",
         saveError: "Je n'ai pas pu enregistrer. Réessayez dans un instant.",
-      },
-      home: {
-        title: "Accueil et Découvrir créent un rythme quotidien",
-        body: "L’Accueil montre ce qui est prêt à réviser et comment votre mémoire progresse. Découvrir ajoute une histoire réelle adaptée à votre niveau. Ensemble, ils donnent une raison utile de revenir, sans devoir tout terminer.",
-      },
-      search: {
-        title: "Commencez par ce que vous remarquez",
-        body:
-          "Écrivez-le, dites-le ou montrez-le à l’appareil photo. Je détecte la langue, explique le sens et vous dis si vous l’aviez déjà rencontré. La même recherche reste proche partout dans l’application.",
-      },
-      notes: {
-        title: "Donnez au moment un endroit où rester",
-        body:
-          "Une Note garde un seul texte original, votre propre sens, son contexte et ses étiquettes. Passez entre cinq langues ou demandez-moi une interprétation seulement quand elle est utile. Elle reste privée sauf si vous décidez de la partager.",
-      },
-      vocabulary: {
-        title: "Transformez les mots utiles en mémoire",
-        body: "Enregistrez un mot utile : il rejoint votre vocabulaire avec sa prononciation, son sens et le contexte de votre rencontre. Je le fais revenir quand votre mémoire en a besoin, pas seulement parce qu’il est nouveau.",
-      },
-      messages: {
-        title: "Échangez sans fil public",
-        body: "Ajoutez une personne de confiance par Exchange ID ou QR code. Envoyez des fiches dans Messages ou partagez une Note en lecture seule. Il n’y a ni abonnés ni réactions publiques : seulement la personne choisie.",
-      },
-      settings: {
-        title: "Vous gardez le contrôle",
-        body: "Les réglages permettent de changer les langues, la taille du texte, les rappels, les appareils et votre profil. Les Notes sont privées par défaut, un partage peut être révoqué et cette visite reste toujours accessible.",
-      },
-      cosmic: {
-        title: "Même apprentissage, autre atmosphère",
-        body: "Le Mode Cosmique Yumi transforme l’Accueil en poste de commande et donne à la révision et à la navigation une présentation plus concentrée et animée. Ce n’est pas un second compte : Notes, mots, messages, amis et progrès restent identiques. Changez de mode dans les réglages à tout moment.",
-      },
-      done: {
-        title: "Commencez par une seule chose",
-        body: "Vous n’avez pas besoin de tout apprendre aujourd’hui. Gardez un mot, une phrase ou un moment qui mérite d’être retrouvé. Je vous aiderai à le faire revenir quand il comptera.",
       },
     },
   },

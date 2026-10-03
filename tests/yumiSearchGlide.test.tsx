@@ -292,3 +292,38 @@ describe("where she sits", () => {
     expect(answerAnchorY(932, 932 * 0.56)).toBeGreaterThanOrEqual(120);
   });
 });
+
+/* Chi, 2026-10-03: the tour's card stands at the top of the home screen,
+   where she goes to answer. She keeps below it, and it shrinks to a strip
+   while the reader types (the strip itself is CSS, keyed off this). */
+describe("with the tour's card up", () => {
+  it("says the reader is typing, for the card to shrink", async () => {
+    const view = fixture();
+    await ready();
+    const root = view.container.querySelector("[data-yumi-ring-open]")!;
+    expect(root).not.toHaveAttribute("data-yumi-typing");
+    act(() => screen.getByRole("textbox", { name: "Search" }).focus());
+    expect(root).toHaveAttribute("data-yumi-typing", "true");
+    act(() => screen.getByRole("textbox", { name: "Search" }).blur());
+    expect(root).not.toHaveAttribute("data-yumi-typing");
+  });
+
+  it("keeps her answer position below the card", async () => {
+    const card = document.createElement("div");
+    card.setAttribute("data-coach-card", "");
+    document.body.appendChild(card);
+    vi.spyOn(card, "getBoundingClientRect").mockReturnValue({
+      x: 16, y: 59, left: 16, top: 59, right: 374, bottom: 230, width: 358, height: 171,
+      toJSON: () => ({}),
+    });
+
+    const view = fixture();
+    await ready();
+    frame();
+    act(() => screen.getByRole("textbox", { name: "Search" }).focus());
+    for (let index = 0; index < 80; index += 1) frame();
+
+    expect(ringY(view)).toBeGreaterThanOrEqual(230 + 48 + 10);
+    card.remove();
+  });
+});

@@ -348,6 +348,7 @@ export type TranslationDictionary = {
          * once they are.
          */
         library: { body: string; action: string };
+        review: { body: string; action: string };
         share: { body: string; action: string };
         notes: { body: string; action: string };
         discover: { body: string; action: string };
@@ -377,23 +378,6 @@ export type TranslationDictionary = {
         note: string;
         saveError: string;
       };
-      /* The step teaches two things now, because the home screen navigates
-         differently from every other screen: Yumi is the navigation there,
-         and the six keys are everywhere else. */
-      dock: {
-        title: string;
-        body: string;
-        homeLabel: string;
-        dockLabel: string;
-      };
-      home: { title: string; body: string };
-      search: { title: string; body: string };
-      notes: { title: string; body: string };
-      vocabulary: { title: string; body: string };
-      messages: { title: string; body: string };
-      settings: { title: string; body: string };
-      cosmic: { title: string; body: string };
-      done: { title: string; body: string };
     };
   };
 

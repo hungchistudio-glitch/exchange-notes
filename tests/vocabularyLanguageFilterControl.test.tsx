@@ -107,7 +107,10 @@ describe("the vocabulary camera key", () => {
     const key = screen.getByRole("button", { name: "Scan" });
     fireEvent.pointerDown(key);
     fireEvent.click(key);
-    await screen.findByRole("button", { name: "Capture photo" });
+    /* findBy's default 1s is shorter than the first, cold import of that
+       chunk under a full parallel run (1.96s measured on 2026-10-03), which
+       failed the first case and passed the second, once it was warm. */
+    await screen.findByRole("button", { name: "Capture photo" }, { timeout: 5000 });
   }
 
   it("opens this app's camera rather than the system picker", async () => {

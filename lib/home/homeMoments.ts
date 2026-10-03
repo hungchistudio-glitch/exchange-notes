@@ -56,3 +56,33 @@ export function announceHomeMoment(moment: HomeMoment): void {
     }
   }
 }
+
+/* ---------------------------------------------------------
+   One request in the other direction
+
+   The tour's feed step needs the cookies, and they are faded and out of
+   reach while the search is showing an answer — which it always is right
+   after the keep step, because keeping a word is done on that answer. The
+   field owns its own state, so the tour asks rather than reaches in. Kept
+   here rather than in a module of its own because the home screen's first
+   render already loads this one (tests/routeImportWeight.test.ts).
+   --------------------------------------------------------- */
+
+const dismissListeners = new Set<() => void>();
+
+export function onHomeSearchDismiss(listener: () => void): () => void {
+  dismissListeners.add(listener);
+  return () => {
+    dismissListeners.delete(listener);
+  };
+}
+
+export function dismissHomeSearch(): void {
+  for (const listener of [...dismissListeners]) {
+    try {
+      listener();
+    } catch {
+      /* Nothing a dismissal does is worth stopping the others for. */
+    }
+  }
+}

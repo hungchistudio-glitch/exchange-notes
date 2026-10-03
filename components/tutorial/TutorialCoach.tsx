@@ -8,7 +8,11 @@ import { focusSetting } from "@/components/settings/SettingsAnchor";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
-import { subscribeToHomeMoments, type HomeMoment } from "@/lib/home/homeMoments";
+import {
+  dismissHomeSearch,
+  subscribeToHomeMoments,
+  type HomeMoment,
+} from "@/lib/home/homeMoments";
 import {
   COACH_FINISHED,
   getCoachStep,
@@ -40,7 +44,8 @@ import styles from "./TutorialCoach.module.css";
    So there is one tour, in one order, and it teaches both:
 
      1. Home            — Standard: pull her eye, look up, keep, feed.
-     2. Around the app  — Vocabulary, Messages, Notes, Discover, Settings.
+     2. Around the app  — Vocabulary, Review, Messages, Notes, Discover,
+                          Settings.
      3. The other look  — the reader switches to Cosmic themselves, in
                           Settings, and is shown what is different there:
                           the six systems, OmniLexicon, Menu Translator,
@@ -67,6 +72,7 @@ type StepKey =
   | "keep"
   | "feed"
   | "library"
+  | "review"
   | "share"
   | "notes"
   | "discover"
@@ -112,6 +118,7 @@ export const COACH_STEPS: readonly Step[] = [
   { key: "feed", chapter: "home", route: "/home", mode: STANDARD, awaits: ["word-fed"] },
 
   { key: "library", chapter: "pages", route: "/vocabulary", mode: STANDARD },
+  { key: "review", chapter: "pages", route: "/review", mode: STANDARD },
   { key: "share", chapter: "pages", route: "/messages", mode: STANDARD },
   { key: "notes", chapter: "pages", route: "/notes", mode: STANDARD },
   { key: "discover", chapter: "pages", route: "/discover", mode: STANDARD },
@@ -139,6 +146,9 @@ const MAIN_SCREENS = new Set(
 
 /** Long enough to read one word, short enough not to be a wait. */
 const DONE_BEAT_MS = 900;
+
+/** After the keep step's "good", before the answer is put away. */
+const FEED_CLEAR_MS = 1_200;
 
 /**
  * Every name the chapter-three copy may use, from the app's own dictionary,
@@ -288,6 +298,22 @@ export default function TutorialCoach({
     if (autoRoute) onNavigate(autoRoute);
   }, [autoRoute, onNavigate]);
 
+  /*
+   * The feed step needs the cookies within reach.
+   *
+   * It follows the keep step, which is done on a search answer — and while
+   * an answer is up the cookies are faded and cannot be touched. So the
+   * answer is put away for the reader, after a beat long enough to see the
+   * word they just kept go into the library (Chi, 2026-10-03).
+   */
+  const feeding = current?.key === "feed" && pathname === "/home" && !wrongMode;
+
+  useEffect(() => {
+    if (!feeding) return;
+    const timer = window.setTimeout(dismissHomeSearch, FEED_CLEAR_MS);
+    return () => window.clearTimeout(timer);
+  }, [feeding]);
+
   if (!current) return null;
 
   /* A conversation, a note, a drill: not a place to stand a card. */
@@ -427,7 +453,12 @@ export default function TutorialCoach({
       role="status"
       aria-live="polite"
     >
-      <div className={styles.card}>
+      {/*
+        Marked for the home screen's two other layers: the cookies float
+        around it rather than under it (data-yumi-protected), and Yumi's
+        answer position keeps clear of its bottom edge (data-coach-card).
+      */}
+      <div className={styles.card} data-coach-card="" data-yumi-protected="">
         <p className={styles.label}>{label}</p>
 
         <p className={styles.body}>{fill(body, t)}</p>

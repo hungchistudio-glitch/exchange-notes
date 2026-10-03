@@ -53,3 +53,16 @@
 .field[data-gathering] .gatherRipple { opacity:.65; transform:translate(-50%,-50%) scale(.72); }
 .field[data-gathering] .gatherControl .icon { background:#dce3d04d; }
 @media(prefers-reduced-motion:reduce) { .gatherRipple { transition:none; } }
+
+/* The tour's feed step: one cookie glows and leans toward Yumi. `translate`
+   composes with the transform the physics writes every frame, so the lean
+   rides on wherever the cookie has floated to. */
+.cookie[data-hint="feed"] { z-index:3; animation:feedNudge 1.8s cubic-bezier(.45,0,.25,1) infinite; }
+.cookie[data-hint="feed"][data-ready="true"] { opacity:1; }
+.cookie[data-hint="feed"]::before { animation:feedGlow 1.8s ease-in-out infinite; }
+@keyframes feedNudge { 0%,100% { translate:0 0; } 45%,60% { translate:var(--nudge-x,0px) var(--nudge-y,0px); } }
+@keyframes feedGlow { 0%,100% { outline:0 solid #b7c78a00; outline-offset:2px; } 50% { outline:6px solid #b7c78a55; outline-offset:4px; } }
+@media(prefers-reduced-motion:reduce) { .cookie[data-hint="feed"] { animation:none; } .cookie[data-hint="feed"]::before { animation:none; outline:4px solid #b7c78a66; outline-offset:3px; } }
+
+/* While the tour's card is up it stands where the star is. */
+:global(body:has([data-coach-card])) .gatherControl { opacity:0; pointer-events:none; }

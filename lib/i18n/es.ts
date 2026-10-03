@@ -284,7 +284,7 @@ const spanish: TranslationDictionary = {
     finish: "Empezar a aprender",
     close: "Cerrar",
     stepLabel: "{current} de {total}",
-    replay: "Puedes volver a abrirlo cuando quieras desde Inicio o Ajustes.",
+    replay: "Puedes volver a abrirlo cuando quieras desde Ajustes, en Ayuda e información.",
 
     coach: {
       label: "Capítulo {chapter} · {name} · {current}/{total}",
@@ -311,7 +311,7 @@ const spanish: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tira de mi ojo y suelta.",
+            "Soy Yumi. Esta pantalla no tiene menú: el menú soy yo. Tócame para abrirlo (o tira de mi ojo y suelta).",
         },
         ask: {
           body:
@@ -323,12 +323,17 @@ const spanish: TranslationDictionary = {
         },
         feed: {
           body:
-            "Dame una. Una palabra nueva al día y tengo qué comer. Si pasan demasiados días, me entra hambre, y entonces me quedo aquí echándote de menos.",
+            "Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». Con una palabra nueva al día, nunca paso hambre.",
         },
         library: {
           body:
             "Este es tu Vocabulario. Aquí vive cada palabra que guardas: vuelve a escucharla, lee sus ejemplos y empieza un repaso desde aquí.",
           action: "Abrir Vocabulario",
+        },
+        review: {
+          body:
+            "Esto es Repasar. Cada palabra vuelve aquí hacia el día en que la olvidarías: unos minutos y se queda. Inicio te muestra cuántas te esperan.",
+          action: "Abrir Repasar",
         },
         share: {
           body:
@@ -384,14 +389,6 @@ const spanish: TranslationDictionary = {
         body:
           "Soy Yumi. Tú notas una palabra, una idea, un sonido o una escena; yo te ayudo a conservar su primer significado y a encontrarlo después. Exchange Notes es un espacio privado para aprender, no un feed en el que tengas que actuar.",
       },
-      dock: {
-        title:
-          "Yumi en el inicio, seis teclas en todo lo demás",
-        body:
-          "En la pantalla de inicio Yumi es la navegación: tira de su ojo y las secciones se abren a su alrededor; tócala para volver. En todo lo demás, la barra inferior mantiene las mismas seis en el mismo orden: vocabulario, mensajes, inicio, buscar, descubrir y ajustes. Solo se mueve el círculo.",
-        homeLabel: "En el inicio",
-        dockLabel: "En todo lo demás",
-      },
       setup: {
         title: "Te damos la bienvenida. Hazlo tuyo",
         body:
@@ -400,46 +397,6 @@ const spanish: TranslationDictionary = {
         learningLabel: "He venido a aprender",
         note: "Los dos se pueden cambiar después en Ajustes.",
         saveError: "No he podido guardarlo. Inténtalo dentro de un momento.",
-      },
-      home: {
-        title: "Inicio y Descubrir crean un ritmo diario",
-        body:
-          "Inicio muestra qué toca repasar y cómo crece tu memoria. Descubrir añade una historia real a tu nivel. Juntos te dan un motivo útil para volver, sin obligarte a terminarlo todo.",
-      },
-      search: {
-        title: "Empieza por lo que te llame la atención",
-        body:
-          "Escríbelo, dilo o enséñamelo con la cámara. Detecto el idioma, explico el significado y te digo si ya lo habías encontrado. La misma búsqueda siempre está cerca, estés donde estés en la app.",
-      },
-      notes: {
-        title: "Dale al momento un lugar donde quedarse",
-        body:
-          "Una Nota guarda un único texto original, lo que significa para ti, su contexto y sus etiquetas. Cambia entre cinco idiomas o pídeme una interpretación solo cuando la necesites. Sigue siendo privada salvo que decidas compartirla.",
-      },
-      vocabulary: {
-        title: "Convierte palabras útiles en memoria",
-        body:
-          "Guarda una palabra útil y entrará en tu vocabulario con pronunciación, significado y el contexto donde la encontraste. Volverá cuando tu memoria la necesite, no solo porque sea nueva.",
-      },
-      messages: {
-        title: "Intercambia sin un feed público",
-        body:
-          "Añade a una persona de confianza por Exchange ID o código QR. Envía tarjetas en Mensajes o comparte una Nota en modo de solo lectura. No hay seguidores ni reacciones públicas: solo la persona que elegiste.",
-      },
-      settings: {
-        title: "Tú mantienes el control",
-        body:
-          "En Ajustes puedes cambiar idiomas, tamaño de texto, recordatorios, dispositivos y perfil. Las Notas son privadas por defecto, puedes revocar lo compartido y volver a abrir esta visita cuando quieras.",
-      },
-      cosmic: {
-        title: "El mismo aprendizaje, otra atmósfera",
-        body:
-          "El Modo Cósmico de Yumi convierte Inicio en un puente de mando y presenta el repaso y la navegación de forma más enfocada y animada. No es otra cuenta: tus Notas, palabras, mensajes, amigos y progreso siguen iguales. Cámbialo en Ajustes cuando quieras.",
-      },
-      done: {
-        title: "Empieza por una sola cosa",
-        body:
-          "No tienes que aprenderlo todo hoy. Guarda una palabra, una frase o un momento que merezca volver a encontrarse. Yo te ayudaré a recuperarlo cuando importe.",
       },
     },
   },

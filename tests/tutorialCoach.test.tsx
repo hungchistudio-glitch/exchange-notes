@@ -23,9 +23,12 @@ const { announceWordSaved } = await import("@/lib/pet/wordSaved");
 const { COACH_FINISHED, getCoachStep, setCoachStep } = await import(
   "@/lib/home/tutorialCoach"
 );
-const { default: TutorialCoach } = await import(
+const { default: TutorialCoach, COACH_STEPS } = await import(
   "@/components/tutorial/TutorialCoach"
 );
+
+/* By name, so a step added to the tour does not silently retarget these. */
+const stepOf = (key: string) => COACH_STEPS.findIndex((step) => step.key === key);
 
 type Mode = "standard" | "yumi-cosmic";
 
@@ -88,7 +91,7 @@ describe("chapter one: doing it on the home screen", () => {
   it("waits for the ring to actually open before moving on", async () => {
     coach();
 
-    expect(screen.getByText(/Pull my eye/)).toBeInTheDocument();
+    expect(screen.getByText(/Tap me to open it/)).toBeInTheDocument();
 
     /* The wrong event must do nothing: a reader who looked a word up without
        ever opening the ring has not done step one. */
@@ -96,7 +99,7 @@ describe("chapter one: doing it on the home screen", () => {
       announceHomeMoment("word-answered");
     });
 
-    expect(screen.getByText(/Pull my eye/)).toBeInTheDocument();
+    expect(screen.getByText(/Tap me to open it/)).toBeInTheDocument();
 
     await act(async () => {
       announceHomeMoment("ring-opened");
@@ -171,9 +174,30 @@ describe("chapter one: doing it on the home screen", () => {
   });
 });
 
+describe("the new home screen", () => {
+  it("tells the reader how to feed a floating cookie", () => {
+    setCoachStep(stepOf("feed"));
+
+    coach();
+
+    expect(screen.getByText(/drag a cookie onto me/)).toBeInTheDocument();
+    expect(screen.getByText(/Feed Yumi/)).toBeInTheDocument();
+  });
+
+  /* The floating cookies steer round [data-yumi-protected] and sit one layer
+     below the card; unmarked, they drifted under it out of reach. */
+  it("marks the card as something the cookies must keep out of", () => {
+    coach();
+
+    expect(
+      screen.getByRole("status").querySelector("[data-yumi-protected]"),
+    ).not.toBeNull();
+  });
+});
+
 describe("chapter two: around the app", () => {
   it("offers a door to a page step's screen, and does not advance for following it", () => {
-    setCoachStep(5); // share, which happens on Messages
+    setCoachStep(stepOf("share")); // happens on Messages
 
     coach("/home");
 
@@ -185,16 +209,17 @@ describe("chapter two: around the app", () => {
   });
 
   it("walks every main screen in order", async () => {
-    setCoachStep(4); // library
+    setCoachStep(stepOf("library"));
 
     const { again } = coach("/vocabulary");
 
     for (const [pathname, text, position] of [
-      ["/vocabulary", /This is your Vocabulary/, "1/5"],
-      ["/messages", /These are your Messages/, "2/5"],
-      ["/notes", /These are your Notes/, "3/5"],
-      ["/discover", /This is Discover/, "4/5"],
-      ["/profile", /This is Settings/, "5/5"],
+      ["/vocabulary", /This is your Vocabulary/, "1/6"],
+      ["/review", /This is Review/, "2/6"],
+      ["/messages", /These are your Messages/, "3/6"],
+      ["/notes", /These are your Notes/, "4/6"],
+      ["/discover", /This is Discover/, "5/6"],
+      ["/profile", /This is Settings/, "6/6"],
     ] as const) {
       again(pathname);
       expect(screen.getByText(text)).toBeInTheDocument();
@@ -208,7 +233,7 @@ describe("chapter two: around the app", () => {
   });
 
   it("steps aside on screens that are not one of the six", () => {
-    setCoachStep(5);
+    setCoachStep(stepOf("share"));
 
     const { container } = coach("/messages/some-conversation");
 
@@ -218,7 +243,7 @@ describe("chapter two: around the app", () => {
 
 describe("chapter three: the other look", () => {
   it("waits for the reader to switch, and for the deck to finish waking", async () => {
-    setCoachStep(9); // modeSwitch
+    setCoachStep(stepOf("modeSwitch"));
 
     const { again } = coach("/profile");
 
@@ -240,11 +265,11 @@ describe("chapter three: the other look", () => {
     });
     vi.useRealTimers();
 
-    expect(getCoachStep()).toBe(10); // deck
+    expect(getCoachStep()).toBe(stepOf("deck"));
   });
 
   it("takes the reader to the deck by itself after the switch", () => {
-    setCoachStep(10); // deck
+    setCoachStep(stepOf("deck"));
 
     const { onNavigate } = coach("/profile", "yumi-cosmic");
 
@@ -252,7 +277,7 @@ describe("chapter three: the other look", () => {
   });
 
   it("names the deck's systems exactly as the deck does", () => {
-    setCoachStep(10);
+    setCoachStep(stepOf("deck"));
 
     coach("/home", "yumi-cosmic");
 
@@ -262,7 +287,7 @@ describe("chapter three: the other look", () => {
   });
 
   it("ends by asking which look to keep, and goes there", () => {
-    setCoachStep(14); // choose
+    setCoachStep(stepOf("choose"));
 
     const { onSetMode } = coach("/home", "yumi-cosmic");
 

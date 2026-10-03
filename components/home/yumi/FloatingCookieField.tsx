@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
 import { Pause, Play, Sparkles } from "lucide-react";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
+import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { floatingCopy } from "@/lib/home/floatingCopy";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
+import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
 import type { Cookie } from "@/lib/pet/types";
 import type { VocabularyItem } from "@/lib/types/app";
 import FloatingWordCard from "./FloatingWordCard";
@@ -15,6 +17,9 @@ type Particle = Body & { index: number };
 type Drag = { id: number; cookie: Cookie; startX: number; startY: number; x: number; y: number; time: number; moved: boolean };
 const PLACES = [[.19,.315],[.82,.32],[.16,.53],[.82,.55],[.68,.23],[.14,.83],[.87,.85],[.45,.29],[.9,.66],[.08,.665],[.8,.435],[.33,.92]];
 const SIZES = [55,45,53,47,35,34,38,30,33,31,40,28];
+const FEED_STEP = COACH_STEPS.findIndex(step => step.key === "feed");
+/** How far the demonstrating cookie leans toward her, in px. */
+const NUDGE = 12;
 // Feeding another word must not recolour or resize the remaining cookies.
 const variantFor = (id: string) => Array.from(id).reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0) % SIZES.length;
 
@@ -47,6 +52,14 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     stageRef.current?.dispatchEvent(new CustomEvent("yumi-cookie-gaze", { detail: null }));
   }, [mode, activeId, stageRef]);
   const visible = cookies.slice(0, 12);
+  /*
+   * The tour's feed step shows which cookie to use (Chi, 2026-10-03:
+   * "餅乾示範"): the first one glows and leans toward Yumi, so "drag a cookie
+   * onto me" points at something. Only at rest — while the search is up the
+   * cookies are out of reach, and the tour puts the search away itself.
+   */
+  const coachStep = useSyncExternalStore(subscribeToCoach, getCoachStep, getServerCoachStep);
+  const hintId = coachStep === FEED_STEP && mode === "rest" && !disabled ? visible[0]?.id ?? null : null;
   const item = items.find(row => row.id === activeId);
   // A remotely deleted word must not leave an invisible modal locking the field.
   if (activeId !== null && !item) setActiveId(null);
@@ -125,6 +138,16 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             .map(el => el.getBoundingClientRect());
           const figure = stageRef.current?.querySelector("[data-yumi-figure]")?.getBoundingClientRect();
           if (figure && idle) obstacles.push(figure);
+          // The tour's demonstrating cookie leans toward her, wherever it is.
+          const hinted = field.current?.querySelector<HTMLElement>("[data-hint='feed']");
+          if (hinted && figure) {
+            const own = hinted.getBoundingClientRect();
+            const dx = figure.left + figure.width / 2 - (own.left + own.width / 2);
+            const dy = figure.top + figure.height / 2 - (own.top + own.height / 2);
+            const length = Math.hypot(dx, dy) || 1;
+            hinted.style.setProperty("--nudge-x", `${((dx / length) * NUDGE).toFixed(1)}px`);
+            hinted.style.setProperty("--nudge-y", `${((dy / length) * NUDGE).toFixed(1)}px`);
+          }
           measureAt = now + 160;
         }
         const rows = state.cookies.slice(0, 12);
@@ -285,6 +308,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
         {visible.map(cookie => <button type="button" key={cookie.id}
           ref={node => { if (node) buttons.current.set(cookie.id, node); else buttons.current.delete(cookie.id); }}
           className={styles.cookie} data-yumi-cookie="" data-floating-cookie={cookie.id}
+          data-hint={cookie.id === hintId ? "feed" : undefined}
           data-tone={variantFor(cookie.id) % 4} data-depth={variantFor(cookie.id) > 6 ? "back" : "front"}
           style={{ "--size": `${SIZES[variantFor(cookie.id)]}px` } as CSSProperties}
           aria-label={cookie.word} disabled={disabled}

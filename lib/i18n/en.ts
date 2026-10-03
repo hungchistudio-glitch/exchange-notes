@@ -283,7 +283,7 @@ const english: TranslationDictionary = {
     finish: "Start learning",
     close: "Close",
     stepLabel: "{current} of {total}",
-    replay: "You can reopen this any time from Home or Settings.",
+    replay: "You can reopen this any time from Settings, in Help & About.",
 
     coach: {
       label: "Chapter {chapter} · {name} · {current}/{total}",
@@ -310,7 +310,7 @@ const english: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "I'm Yumi. There is no menu on this screen — I am it. Pull my eye, then let go.",
+            "I'm Yumi. There is no menu on this screen — I am it. Tap me to open it (or pull my eye and let go).",
         },
         ask: {
           body:
@@ -322,12 +322,17 @@ const english: TranslationDictionary = {
         },
         feed: {
           body:
-            "Feed me one. One new word a day and I have something to eat. Too many days without, and I get hungry — and then I just sit here missing you.",
+            "Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. One new word a day and I never go hungry.",
         },
         library: {
           body:
             "This is your Vocabulary. Every word you keep lives here — play it again, read its examples, and start a review from here.",
           action: "Open Vocabulary",
+        },
+        review: {
+          body:
+            "This is Review. A word comes back here around the day you would forget it — a few minutes, and it stays. Home shows how many are waiting.",
+          action: "Open Review",
         },
         share: {
           body:
@@ -383,14 +388,6 @@ const english: TranslationDictionary = {
         body:
           "I'm Yumi. You notice a word, thought, sound, or scene; I help you keep its first meaning and find it again later. Exchange Notes is a private learning space, not a feed you have to perform for.",
       },
-      dock: {
-        title:
-          "Yumi at home, six keys everywhere else",
-        body:
-          "On the home screen Yumi is the navigation: pull her eye and the sections burst open around her, then tap her to come back. Everywhere else the bar along the bottom holds the same six in the same order — vocabulary, messages, home, search, discover and settings. Only the ring moves.",
-        homeLabel: "On the home screen",
-        dockLabel: "Everywhere else",
-      },
       setup: {
         title: "Welcome. Let's make this yours",
         body:
@@ -399,46 +396,6 @@ const english: TranslationDictionary = {
         learningLabel: "I'm here to learn",
         note: "Both can be changed later in Settings.",
         saveError: "I couldn't save that. Try again in a moment.",
-      },
-      home: {
-        title: "Home and Discover make a daily rhythm",
-        body:
-          "Home shows what is ready to review and how your memory is growing. Discover adds a real story at your level. Together they give you one useful reason to return — you never have to finish everything.",
-      },
-      search: {
-        title: "Begin with what you notice",
-        body:
-          "Type it, say it, or show it to the camera. I detect the language, explain what it means, and tell you whether you have met it before. The same search stays close from every part of the app.",
-      },
-      notes: {
-        title: "Give the moment somewhere to belong",
-        body:
-          "A Note keeps one original text, your own meaning, context, and tags. Switch among five language views or ask me for an interpretation only when you need one. It stays private unless you deliberately share it.",
-      },
-      vocabulary: {
-        title: "Turn useful words into memory",
-        body:
-          "Save a useful word and it joins your vocabulary, with pronunciation, meaning, and the context where you found it. I bring it back when your memory needs it, not just because it is new.",
-      },
-      messages: {
-        title: "Exchange without a public feed",
-        body:
-          "Add a trusted learning partner by Exchange ID or QR code. Send word cards in Messages, or share a Note as view-only. There are no followers or public reactions — only the person you chose.",
-      },
-      settings: {
-        title: "You stay in control",
-        body:
-          "Settings lets you change languages, text size, reminders, devices, and your profile. Notes are private by default, sharing can be revoked, and this tour is always available again when you need it.",
-      },
-      cosmic: {
-        title: "Same learning, a different atmosphere",
-        body:
-          "Yumi Cosmic Mode turns Home into a Command Deck and gives review and navigation a more focused, animated presentation. It is not a second account: your Notes, words, messages, friends, and progress stay exactly the same. Switch modes in Settings any time.",
-      },
-      done: {
-        title: "Start with one thing",
-        body:
-          "You do not need to learn everything today. Keep one word, one sentence, or one moment worth finding again. I'll help you return to it when it matters.",
       },
     },
   },

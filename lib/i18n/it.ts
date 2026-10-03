@@ -282,7 +282,7 @@ const italian: TranslationDictionary = {
     finish: "Inizia a imparare",
     close: "Chiudi",
     stepLabel: "{current} di {total}",
-    replay: "Puoi riaprirla quando vuoi dalla Home o dalle impostazioni.",
+    replay: "Puoi riaprirla quando vuoi dalle impostazioni, in Aiuto e informazioni.",
 
     coach: {
       label: "Capitolo {chapter} · {name} · {current}/{total}",
@@ -309,7 +309,7 @@ const italian: TranslationDictionary = {
       steps: {
         meet: {
           body:
-            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Tira il mio occhio e lascia.",
+            "Sono Yumi. Questa schermata non ha un menù — il menù sono io. Toccami per aprirlo (o tira il mio occhio e lascia).",
         },
         ask: {
           body:
@@ -321,12 +321,17 @@ const italian: TranslationDictionary = {
         },
         feed: {
           body:
-            "Dammene uno. Una parola nuova al giorno e ho qualcosa da mangiare. Troppi giorni senza, e mi viene fame — e resto qui a sentire la tua mancanza.",
+            "Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Una parola nuova al giorno e non ho mai fame.",
         },
         library: {
           body:
             "Questo è il tuo Vocabolario. Qui vive ogni parola che tieni: riascoltala, leggi i suoi esempi e inizia un ripasso da qui.",
           action: "Apri il Vocabolario",
+        },
+        review: {
+          body:
+            "Questo è Ripassa. Ogni parola torna qui verso il giorno in cui la dimenticheresti: pochi minuti e resta. La Home mostra quante ti aspettano.",
+          action: "Apri Ripassa",
         },
         share: {
           body:
@@ -380,14 +385,6 @@ const italian: TranslationDictionary = {
         title: "Conserva ciò che conta prima che scompaia",
         body: "Sono Yumi. Tu noti una parola, un pensiero, un suono o una scena; io ti aiuto a conservarne il primo significato e a ritrovarlo più avanti. Exchange Notes è uno spazio di studio privato, non un feed in cui esibirsi.",
       },
-      dock: {
-        title:
-          "Yumi nella home, sei tasti ovunque altrove",
-        body:
-          "Nella home Yumi è la navigazione: tira il suo occhio e le sezioni si aprono intorno a lei; toccala per tornare. Ovunque altrove la barra in basso tiene gli stessi sei nello stesso ordine — vocabolario, messaggi, home, cerca, scopri e impostazioni. Si muove solo il cerchio.",
-        homeLabel: "Nella home",
-        dockLabel: "Ovunque altrove",
-      },
       setup: {
         title: "Benvenuto. Rendilo tuo",
         body: "Scegli la lingua in cui devo parlarti e quella che stai imparando. La visita cambia subito, così ogni passaggio successivo sarà facile da capire.",
@@ -395,40 +392,6 @@ const italian: TranslationDictionary = {
         learningLabel: "Sono qui per imparare",
         note: "Entrambe si possono cambiare più tardi nelle impostazioni.",
         saveError: "Non sono riuscita a salvare. Riprova tra un momento.",
-      },
-      home: {
-        title: "Home e Scopri creano un ritmo quotidiano",
-        body: "La Home mostra cosa è pronto per il ripasso e come cresce la memoria. Scopri aggiunge una storia reale adatta al tuo livello. Insieme danno un motivo utile per tornare, senza dover completare tutto.",
-      },
-      search: {
-        title: "Inizia da ciò che noti",
-        body:
-          "Scrivilo, dillo o mostramelo con la fotocamera. Riconosco la lingua, spiego il significato e ti dico se l’avevi già incontrato. La stessa ricerca resta vicina ovunque ti trovi nell’app.",
-      },
-      notes: {
-        title: "Dai al momento un posto dove restare",
-        body:
-          "Una Nota conserva un solo testo originale, ciò che significa per te, il contesto e le etichette. Passa tra cinque lingue o chiedimi un’interpretazione solo quando serve. Resta privata, a meno che tu non decida di condividerla.",
-      },
-      vocabulary: {
-        title: "Trasforma le parole utili in memoria",
-        body: "Salva una parola utile: entrerà nel vocabolario con pronuncia, significato e contesto in cui l’hai trovata. La riporterò quando serve alla tua memoria, non solo perché è nuova.",
-      },
-      messages: {
-        title: "Scambia senza un feed pubblico",
-        body: "Aggiungi una persona fidata con Exchange ID o codice QR. Invia schede in Messaggi o condividi una Nota in sola lettura. Non ci sono follower né reazioni pubbliche: solo la persona che hai scelto.",
-      },
-      settings: {
-        title: "Il controllo resta a te",
-        body: "Nelle impostazioni puoi cambiare lingue, dimensione del testo, promemoria, dispositivi e profilo. Le Note sono private in partenza, puoi revocare una condivisione e riaprire questa visita in ogni momento.",
-      },
-      cosmic: {
-        title: "Stesso apprendimento, un’altra atmosfera",
-        body: "La Modalità Cosmica Yumi trasforma la Home in un ponte di comando e presenta ripasso e navigazione in modo più concentrato e animato. Non è un secondo account: Note, parole, messaggi, amici e progressi restano identici. Cambia modalità nelle impostazioni quando vuoi.",
-      },
-      done: {
-        title: "Inizia da una cosa sola",
-        body: "Non devi imparare tutto oggi. Conserva una parola, una frase o un momento che valga la pena ritrovare. Ti aiuterò a riportarlo indietro quando conta.",
       },
     },
   },

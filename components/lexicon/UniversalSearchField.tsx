@@ -18,6 +18,7 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput from "@/hooks/useVoiceInput";
+import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
@@ -154,6 +155,18 @@ export default function UniversalSearchField({
   useEffect(() => {
     onAnswerChange?.(hasAnswer);
   }, [hasAnswer, onAnswerChange]);
+
+  /* The tour's feed step asks for the answer to be put away, so the cookies
+     it is about are within reach (lib/home/homeMoments.ts). */
+  const { reset } = search;
+  useEffect(
+    () =>
+      onHomeSearchDismiss(() => {
+        reset();
+        inputRef.current?.blur();
+      }),
+    [reset],
+  );
 
   /*
    * "A word came back" is announced by useLexiconSearch itself now, for
