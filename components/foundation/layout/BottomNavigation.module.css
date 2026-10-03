@@ -24,7 +24,45 @@
   }
 }
 
+/*
+ * A slowly turning dashed ring around whichever tab is selected.
+ *
+ * The app's own icons are already built on this: NavHomeIcon is a core inside
+ * a half-open orbital ring, NavDiscoverIcon is a scanner sweep. The dock is
+ * where that language was missing, and it is the one component every protected
+ * screen renders — so this reaches the whole app without a per-page change.
+ *
+ * The dash is what makes the rotation legible; a turning solid ring is
+ * indistinguishable from a still one. One composited transform on one element,
+ * so the dock stays as cheap as it was.
+ */
+.indicatorOrbit {
+  position: absolute;
+  /*
+   * Inside the pill, not around it. Outside, a near-white dash sits on the
+   * cream dock and disappears; the contrast it needs is the dark fill it is
+   * drawn on, which is also where the ring belongs — a core inside an orbit is
+   * what NavHomeIcon already is.
+   */
+  inset: 5px;
+  border-radius: 9999px;
+  border: 1px dashed rgba(253, 251, 246, 0.45);
+  animation: indicatorOrbit 14s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes indicatorOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* The ring stays; only the turning stops. */
+  .indicatorOrbit {
+    animation: none;
+  }
+
   .pulseRing {
     animation: none;
     display: none;
