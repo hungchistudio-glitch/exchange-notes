@@ -21,6 +21,7 @@ import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
 import type { LexiconEntry, LexiconQueryKind } from "@/lib/lexicon/types";
 import { isLexiconEntry } from "@/lib/lexicon/types";
 import { lookupOffline } from "@/lib/vocabulary/offlineLookup";
+import { builtinIpa } from "@/lib/pronunciation/builtinIpa";
 import {
   readSharedLookupCache,
   writeSharedLookupCache,
@@ -747,9 +748,20 @@ export async function POST(request: Request) {
       kind: classifyQueryKind(query),
     });
 
+    /*
+     * The built-in dictionary's transcription over the model's: it was
+     * checked, it is the same one the pronunciation row shows, and an
+     * offline answer has none of its own (lib/pronunciation/builtinIpa.ts).
+     */
+    const builtinTermIpa = builtinIpa(
+      resolved.result.term,
+      resolved.result.termLanguage,
+    );
+
     return NextResponse.json(
       {
         ...resolved.result,
+        ...(builtinTermIpa ? { termIpa: builtinTermIpa } : {}),
         // Tells the client this is the offline dictionary's canned example
         // rather than a real one, so it can say so and offer a retry instead
         // of passing the degraded copy off as a normal result.

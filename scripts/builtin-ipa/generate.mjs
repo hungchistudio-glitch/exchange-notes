@@ -1,0 +1,145 @@
+/* =========================================================
+   Builds lib/pronunciation/builtinIpaData.ts
+
+   IPA for the first form of every entry in the built-in dictionaries —
+   lib/vocabulary/coreLexiconData.ts and the camera's object words in
+   lib/vision/objectLexicon.ts — in the four languages the app transcribes
+   (Chi, 2026-10-03: "混合來源"):
+
+   - English from the CMU Pronouncing Dictionary (english.mjs). It is not a
+     dependency of the app; install it to run this:
+       npm i --no-save cmu-pronouncing-dictionary
+   - Spanish by rule from the spelling (spanish.mjs).
+   - French and Italian were drafted by a model and then checked line by
+     line by a stronger one (239 corrections: liaisons, open and closed
+     vowels, intervocalic s). They are data, not rules, so they are kept
+     from the current builtinIpaData.ts; a TSV of "text<TAB>/ipa/" lines
+     given as --fr=… / --it=… adds to them or corrects them.
+
+   An entry neither source can transcribe is left out; the server asks its
+   cache, a dictionary or a model for it as before (ipaSource.ts).
+
+     node scripts/builtin-ipa/generate.mjs [--fr=path.tsv] [--it=path.tsv]
+   ========================================================= */
+
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { englishIpa, withSenses } from "./english.mjs";
+import { spanishIpa } from "./spanish.mjs";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const SOURCE = path.join(root, "lib/vocabulary/coreLexiconData.ts");
+const OBJECTS = path.join(root, "lib/vision/objectLexicon.ts");
+const TARGET = path.join(root, "lib/pronunciation/builtinIpaData.ts");
+/* Where each language is, in a core line and in an object line. */
+const COLUMNS = { en: 2, es: 4, fr: 5, it: 6 };
+const OBJECT_COLUMNS = { en: 0, es: 2, fr: 3, it: 4 };
+
+function firstForms(language) {
+  const seen = new Set();
+  const forms = [];
+  const add = (form) => {
+    if (form && !seen.has(form)) {
+      seen.add(form);
+      forms.push(form);
+    }
+  };
+  for (const line of fs.readFileSync(SOURCE, "utf8").split("\n")) {
+    if (!/^(noun|verb|adjective|phrase|other)\|/.test(line)) continue;
+    add(line.split("|")[COLUMNS[language]].split(";")[0].trim());
+  }
+  // "en|zh-TW|es|fr|it: ImageNet class indices"
+  for (const [, entry] of fs.readFileSync(OBJECTS, "utf8").matchAll(/^\s*"([^"]+): [\d,-]+",?$/gm)) {
+    add(entry.split("|")[OBJECT_COLUMNS[language]].trim());
+  }
+  return forms;
+}
+
+/** "text|/ipa/" lines for one language, from the current data file. */
+function currentLines(language) {
+  if (!fs.existsSync(TARGET)) return [];
+  const match = fs
+    .readFileSync(TARGET, "utf8")
+    .match(new RegExp(`\\n  ${language}: \`\\n([^\`]*)\``));
+  return match ? match[1].split("\n").filter(Boolean) : [];
+}
+
+function fromTsv(file) {
+  return fs
+    .readFileSync(file, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.split("\t"))
+    .filter(([, ipa]) => ipa?.trim())
+    .map(([text, ipa]) => `${text}|${ipa.trim()}`);
+}
+
+/** NFC, the IPA letter ɡ rather than the keyboard g, nothing a line can break on. */
+function clean(language, lines, forms) {
+  const known = new Set(forms);
+  return lines.flatMap((line) => {
+    const [text, ipa] = line.normalize("NFC").split("|");
+    if (!known.has(text)) return [];
+    if (!/^\/[^/|`\\$]+\/$/.test(ipa)) throw new Error(`${language}: bad IPA for "${text}": ${ipa}`);
+    return [`${text}|${ipa.replace(/g/g, "ɡ")}`];
+  });
+}
+
+const args = Object.fromEntries(
+  process.argv.slice(2).map((arg) => arg.replace(/^--/, "").split("=")),
+);
+
+let cmu;
+try {
+  ({ dictionary: cmu } = await import("cmu-pronouncing-dictionary"));
+} catch {
+  console.error("Install the CMU dictionary first: npm i --no-save cmu-pronouncing-dictionary");
+  process.exit(1);
+}
+const english = withSenses(cmu);
+
+const tables = {};
+for (const language of ["en", "es", "fr", "it"]) {
+  const forms = firstForms(language);
+  let lines;
+  if (language === "en") {
+    lines = forms.flatMap((form) => {
+      const ipa = englishIpa(form, english);
+      return ipa ? [`${form}|${ipa}`] : [];
+    });
+  } else if (language === "es") {
+    lines = forms.flatMap((form) => {
+      const ipa = spanishIpa(form);
+      return ipa ? [`${form}|${ipa}`] : [];
+    });
+  } else {
+    const merged = new Map(currentLines(language).map((line) => [line.split("|")[0], line]));
+    for (const line of args[language] ? fromTsv(args[language]) : []) {
+      merged.set(line.split("|")[0], line);
+    }
+    // In dictionary order, like the other two.
+    lines = forms.flatMap((form) => (merged.has(form) ? [merged.get(form)] : []));
+  }
+  tables[language] = clean(language, lines, forms);
+  console.log(`${language}: ${tables[language].length} of ${forms.length}`);
+}
+
+const header = `import "server-only";
+
+/* =========================================================
+   IPA for the built-in dictionary — the data
+
+   Generated by scripts/builtin-ipa/generate.mjs; see there for where each
+   language comes from. Read by builtinIpa.ts. One entry per line,
+   "text|/ipa/", where text is the first form of an entry in
+   coreLexiconData.ts or in the camera's objectLexicon.ts.
+   ========================================================= */
+
+export const BUILTIN_IPA_DATA = {
+`;
+const body = Object.entries(tables)
+  .map(([language, lines]) => `  ${language}: \`\n${lines.join("\n")}\n\`,\n`)
+  .join("");
+fs.writeFileSync(TARGET, `${header}${body}} as const;\n`);

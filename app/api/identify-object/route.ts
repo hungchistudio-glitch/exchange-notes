@@ -2,6 +2,7 @@ import { readLearningPair } from "@/lib/profile/languagePair";
 import { after, NextResponse } from "next/server";
 
 import { rememberIpa } from "@/lib/pronunciation/ipaSource";
+import { builtinIpa } from "@/lib/pronunciation/builtinIpa";
 
 import {
   identifyObject,
@@ -240,7 +241,12 @@ export async function POST(request: Request) {
      * row looks, so the card never asks a model for it separately.
      */
     const ipa = typeof result.termIpa === "string" ? result.termIpa.trim() : "";
-    if (ipa && result.termLanguage) {
+    // The built-in dictionary's transcription, where it has one, over the
+    // model's (lib/pronunciation/builtinIpa.ts).
+    const builtin = builtinIpa(result.term, result.termLanguage);
+    if (builtin) {
+      result.termIpa = builtin;
+    } else if (ipa && result.termLanguage) {
       const language = result.termLanguage;
       after(() => rememberIpa(language, result.term, ipa));
     }

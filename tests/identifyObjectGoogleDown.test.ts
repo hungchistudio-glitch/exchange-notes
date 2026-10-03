@@ -91,3 +91,24 @@ describe("the camera route when Google is down", () => {
     expect(mocks.refundDailyQuota).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("the camera's answer", () => {
+  it("carries the built-in dictionary's IPA over the model's, for a word it knows", async () => {
+    mocks.identifyObject.mockResolvedValue({
+      term: "chaise",
+      termLanguage: "fr",
+      termIpa: "/ʃɛːz/",
+      translation: "椅子",
+      translationLanguage: "zh-TW",
+      partOfSpeech: "noun",
+      termExample: "",
+      translationExample: "",
+      confidence: "high",
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ term: "chaise", termIpa: "/ʃɛz/" });
+  });
+});

@@ -4,6 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 
 import { getTextModelCandidates } from "@/lib/ai/modelConfig";
 import { getLanguage, hasPhonetics, type LanguageCode } from "@/lib/languages";
+import { builtinIpa } from "@/lib/pronunciation/builtinIpa";
 import { createServiceClient } from "@/lib/supabase/service";
 
 import { generateJson } from "@/lib/ai/modelRequest";
@@ -21,6 +22,9 @@ import { backgroundAllowed, healthyModels } from "@/lib/ai/modelHealth";
    transcription does not change, so it is looked up once — ever, across all
    readers — and after that the drawer is a database read. Quota is bounded
    by distinct new words, not by how often anyone opens anything.
+
+   Before any of it, the ~4,000 words of the app's own dictionary are
+   answered from builtinIpa.ts, which has them all.
 
    English still asks a real dictionary first. It is free, keyless and
    authoritative, and there is no reason to pay a model for an answer
@@ -307,7 +311,23 @@ export async function transcribe(
     return { found: new Map(), unavailable: [], limited: [] };
   }
 
-  const found = await readCache(language, wanted);
+  /*
+   * The built-in dictionary's own transcriptions first: no database, no
+   * network, no quota (builtinIpa.ts). Only what it does not know goes on
+   * to the cache, the dictionary and the model.
+   */
+  const found = new Map<string, string>();
+  for (const text of wanted) {
+    const ipa = builtinIpa(text, language);
+    if (ipa) found.set(text, ipa);
+  }
+
+  const unknown = wanted.filter((text) => !found.has(text));
+  if (unknown.length === 0) return { found, unavailable: [], limited: [] };
+
+  for (const [text, ipa] of await readCache(language, unknown)) {
+    found.set(text, ipa);
+  }
   const missing = wanted.filter((text) => !found.has(text));
 
   if (missing.length === 0) return { found, unavailable: [], limited: [] };
