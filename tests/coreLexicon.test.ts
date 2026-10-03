@@ -23,7 +23,7 @@ describe("the data", () => {
 
   it("holds every line it was written with", () => {
     expect(CORE_LEXICON_SIZE).toBe(lines.length);
-    expect(CORE_LEXICON_SIZE).toBeGreaterThan(1_800);
+    expect(CORE_LEXICON_SIZE).toBeGreaterThan(4_000);
   });
 
   it("has every entry in all five languages, with no empty form", () => {

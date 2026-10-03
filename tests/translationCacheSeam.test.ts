@@ -87,13 +87,13 @@ describe("readCachedTranslations", () => {
     cache.rows = [{ source_text: "海鮮燉飯", text: "seafood risotto" }];
 
     const { found, missing } = await readCachedTranslations(
-      ["海鮮燉飯", "牛肉麵"],
+      ["海鮮燉飯", "四神湯"],
       "zh-TW",
       "en",
     );
 
     expect([...found.keys()]).toEqual(["海鮮燉飯"]);
-    expect(missing).toEqual(["牛肉麵"]);
+    expect(missing).toEqual(["四神湯"]);
     expect(model.calls).toBe(0);
   });
 
@@ -110,12 +110,12 @@ describe("readCachedTranslations", () => {
 
   it("trims and deduplicates before deciding what is missing", async () => {
     const { missing } = await readCachedTranslations(
-      ["牛肉麵", " 牛肉麵 ", "", "   "],
+      ["四神湯", " 四神湯 ", "", "   "],
       "zh-TW",
       "en",
     );
 
-    expect(missing).toEqual(["牛肉麵"]);
+    expect(missing).toEqual(["四神湯"]);
   });
 });
 
@@ -127,13 +127,13 @@ describe("readCachedTranslations", () => {
 describe("readCachedTranslations, with the built-in dictionaries", () => {
   it("answers an everyday word the cache has not seen", async () => {
     const { found, missing } = await readCachedTranslations(
-      ["謝謝", "牛肉麵"],
+      ["謝謝", "四神湯"],
       "zh-TW",
       "fr",
     );
 
     expect(found.get("謝謝")).toBe("merci");
-    expect(missing).toEqual(["牛肉麵"]);
+    expect(missing).toEqual(["四神湯"]);
     expect(model.calls).toBe(0);
   });
 
@@ -180,9 +180,9 @@ describe("translateMissing", () => {
      * different answers, and the caller charges — and refunds — on that
      * difference.
      */
-    const fresh = await translateMissing(["海鮮燉飯", "牛肉麵"], "zh-TW", "en");
+    const fresh = await translateMissing(["海鮮燉飯", "四神湯"], "zh-TW", "en");
 
     expect(fresh.has("海鮮燉飯")).toBe(true);
-    expect(fresh.has("牛肉麵")).toBe(false);
+    expect(fresh.has("四神湯")).toBe(false);
   });
 });
