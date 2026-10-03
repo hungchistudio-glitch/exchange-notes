@@ -30,8 +30,8 @@ import {
 import { publishCardBlob } from "@/lib/media/sharing";
 import { MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
 import type { NormalizedRect } from "@/lib/media/geometry";
-import { buildCapture, type BuiltCapture } from "@/lib/media/pipeline";
-import { MediaDecodeError, decodeBlob, type Raster } from "@/lib/media/raster";
+import type { BuiltCapture } from "@/lib/media/pipeline";
+import { copyRaster, decodeBlob, type Raster } from "@/lib/media/raster";
 import type { MediaSourceType } from "@/lib/media/record";
 import {
   encodeWordCardMessage,
@@ -45,34 +45,19 @@ import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButto
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import useLexiconImageLookup, { type ImageCaptureResult } from "@/hooks/lexicon/useLexiconImageLookup";
+import type { ObjectIdentificationResult } from "@/lib/ai/identifyObject";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import {
   getLanguage,
   getLanguageName,
-  isLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
 import { speak as speakText } from "@/lib/speech";
 import { insertValues } from "@/lib/utils";
 import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
-type IdentificationResult = {
-  term: string;
-  translation: string;
-  partOfSpeech: string;
-  termExample: string;
-  translationExample: string;
-  confidence: "high" | "medium" | "low";
-  /**
-   * Which language each side is in, as the model reported it.
-   *
-   * Absent on results cached before the schema carried them — v2 keys did
-   * not include it — so every read falls back to the reader's pair rather
-   * than requiring it.
-   */
-  termLanguage?: LanguageCode;
-  translationLanguage?: LanguageCode;
-};
+type IdentificationResult = ObjectIdentificationResult;
 
 type CaptureSource = "camera" | "library" | null;
 
@@ -102,112 +87,6 @@ const assumeSupported = () => true;
  * camera to 1800, and all three were answering the same question.
  */
 const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
-
-const IDENTIFICATION_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-/*
- * Above the server's own budget, deliberately.
- *
- * At sixteen seconds this abort fired while the route was still working, and
- * the reader was told the recognition had timed out for a request that had
- * already spent a daily unit and was about to answer. The server now bounds
- * itself (VISION_TOTAL_BUDGET_MS, twenty seconds by default) and returns a
- * real error when it runs out; this is the backstop for a connection that
- * dies rather than the thing that decides how long a reader waits.
- */
-const IDENTIFICATION_TIMEOUT_MS = 25 * 1000;
-// v2: cache keys now hash the downscaled image actually sent to the model.
-const IDENTIFICATION_CACHE_VERSION = "v2";
-
-type CachedIdentification = {
-  expiresAt: number;
-  result: IdentificationResult;
-};
-
-function isIdentificationResult(value: unknown): value is IdentificationResult {
-  if (!value || typeof value !== "object") return false;
-
-  const candidate = value as Record<string, unknown>;
-  return (
-    [
-      "term",
-      "translation",
-      "partOfSpeech",
-      "termExample",
-      "translationExample",
-    ].every(
-      (field) =>
-        typeof candidate[field] === "string" &&
-        (candidate[field] as string).trim().length > 0,
-    ) &&
-    ["high", "medium", "low"].includes(String(candidate.confidence)) &&
-    // A cached result predating these fields has neither, and is still good.
-    [candidate.termLanguage, candidate.translationLanguage].every(
-      (value) => value === undefined || value === null || isLanguageCode(value),
-    )
-  );
-}
-
-async function getIdentificationCacheKey(imageData: string) {
-  if (!globalThis.crypto?.subtle) return null;
-
-  try {
-    const digest = await globalThis.crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(imageData),
-    );
-
-    return Array.from(new Uint8Array(digest), (byte) =>
-      byte.toString(16).padStart(2, "0"),
-    ).join("");
-  } catch {
-    return null;
-  }
-}
-
-function getCachedIdentification(key: string | null) {
-  if (!key) return null;
-
-  try {
-    const storageKey = `yumi:vision:${IDENTIFICATION_CACHE_VERSION}:${key}`;
-    const stored = window.localStorage.getItem(storageKey);
-    if (!stored) return null;
-
-    const cached = JSON.parse(stored) as CachedIdentification;
-    if (
-      !Number.isFinite(cached.expiresAt) ||
-      cached.expiresAt <= Date.now() ||
-      !isIdentificationResult(cached.result)
-    ) {
-      window.localStorage.removeItem(storageKey);
-      return null;
-    }
-
-    return cached.result;
-  } catch {
-    return null;
-  }
-}
-
-function cacheIdentification(
-  key: string | null,
-  result: IdentificationResult,
-) {
-  if (!key) return;
-
-  try {
-    const cached: CachedIdentification = {
-      expiresAt: Date.now() + IDENTIFICATION_CACHE_TTL_MS,
-      result,
-    };
-
-    window.localStorage.setItem(
-      `yumi:vision:${IDENTIFICATION_CACHE_VERSION}:${key}`,
-      JSON.stringify(cached),
-    );
-  } catch {
-    // Recognition still works when private browsing disables local storage.
-  }
-}
 
 function SpeakerIcon({ speaking }: { speaking: boolean }) {
   return (
@@ -415,7 +294,26 @@ function CaptureContent() {
   const [preparing, setPreparing] = useState(false);
   const [result, setResult] = useState<IdentificationResult | null>(null);
   const [error, setError] = useState("");
-  const [analyzing, setAnalyzing] = useState(false);
+  const receivedResultRef = useRef(false);
+  const previewRef = useRef<{ capture: BuiltCapture["capture"]; url: string } | null>(null);
+  const onRecognized = useCallback(({ result: answer, built: next }: ImageCaptureResult) => {
+    receivedResultRef.current = true;
+    setBuilt(next);
+    if (previewRef.current?.capture !== next.capture) {
+      if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+      const url = URL.createObjectURL(next.capture.card.blob);
+      previewRef.current = { capture: next.capture, url };
+      setImageData(url);
+    }
+    setResult(answer);
+  }, []);
+  const { handleCapture, cancel: cancelRecognition, reading: analyzing, error: recognitionError } =
+    useLexiconImageLookup({ onResult: onRecognized, onDevice: searchParams.get("from") !== "lexicon" });
+  const operationRef = useRef(0);
+  useEffect(() => () => {
+    operationRef.current += 1;
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+  }, []);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const cameraSupported = useSyncExternalStore(
@@ -490,6 +388,8 @@ function CaptureContent() {
   const returnHref = safeReturnHref(searchParams.get("returnTo"), cancelHref);
 
   const leaveCapture = useCallback(() => {
+    operationRef.current += 1;
+    cancelRecognition();
     setCameraOpen(false);
     window.speechSynthesis?.cancel();
 
@@ -499,7 +399,7 @@ function CaptureContent() {
     }
 
     router.replace(returnHref);
-  }, [returnHref, router]);
+  }, [cancelRecognition, returnHref, router]);
 
   /**
    * Whether the camera was opened from the Universal Search.
@@ -552,11 +452,11 @@ function CaptureContent() {
    * photo. There is no close to detect any more.
    */
   useEffect(() => {
-    if (!fromLexicon || !result?.term) return;
+    if (!fromLexicon || !result?.term || cameraOpen || pendingImage) return;
 
     openSearch({ query: result.term, autoSubmit: true });
     router.replace(returnHref);
-  }, [fromLexicon, openSearch, result, returnHref, router]);
+  }, [fromLexicon, openSearch, result, returnHref, router, cameraOpen, pendingImage]);
 
   /*
    * The two languages this result is actually in.
@@ -634,62 +534,28 @@ function CaptureContent() {
    * frame, and on a 12-megapixel phone camera holding one by accident is
    * tens of megabytes that never come back.
    */
+  // A shutter and an imported target use the same recognition hook as
+  // search. The camera owns its frozen-frame/word/retake presentation.
   const prepare = useCallback(
-    async (
-      raster: Raster,
-      targetRect: NormalizedRect,
-      sourceType: MediaSourceType,
-      name: string,
-      page?: number,
-    ) => {
-      setPreparing(true);
+    async (raster: Raster, targetRect: NormalizedRect, sourceType: MediaSourceType, name: string, page?: number) => {
+      const operation = ++operationRef.current;
       setError("");
       setResult(null);
+      receivedResultRef.current = false;
       setSaved(false);
-
-      try {
-        const next = await buildCapture({
-          raster,
-          targetRect,
-          sourceType,
-          recognitionKind: "object",
-          /*
-           * The model is sent the target, not the whole frame. The prompt
-           * asks for "the object at the exact centre", which was only ever
-           * approximately true — cropping to what the reader actually
-           * pointed at makes it true.
-           */
-          recognitionScope: "target",
-          sourceFileName: sourceType === "camera" ? undefined : name,
-          // Kept so a saved word can say which page of which document it
-          // came from, which is the source relationship the spec asks for.
-          sourcePage: page,
-        });
-
-        setBuilt(next);
-        setImageData(URL.createObjectURL(next.capture.card.blob));
-        setFileName(name);
-        setCameraOpen(false);
-        setPendingImage(null);
-      } catch (buildError) {
-        console.error(buildError);
-        setError(
-          buildError instanceof MediaDecodeError
-            ? capture.errors.processImage
-            : capture.errors.captureImage,
-        );
-      } finally {
-        raster.close();
-        setPreparing(false);
-      }
+      setFileName(name);
+      const outcome = await handleCapture(raster, targetRect, {
+        sourceType, fileName: sourceType === "camera" ? undefined : name,
+        page, recognitionScope: "target",
+      });
+      if (operation !== operationRef.current) return { kind: "none" as const };
+      return outcome;
     },
-    [capture.errors.captureImage, capture.errors.processImage],
+    [handleCapture],
   );
 
   const onCameraCapture = useCallback(
-    ({ raster, targetRect }: CameraCapture) => {
-      void prepare(raster, targetRect, "camera", "camera-photo.webp");
-    },
+    ({ raster, targetRect }: CameraCapture) => prepare(raster, targetRect, "camera", "camera-photo.webp"),
     [prepare],
   );
 
@@ -826,92 +692,6 @@ function CaptureContent() {
     ],
   );
 
-  async function identifyImage() {
-    if (!built || analyzing) return;
-
-    setAnalyzing(true);
-    setError("");
-    setResult(null);
-
-    try {
-      /*
-       * The pipeline already produced the copy the model gets, cropped to
-       * the target and sized for it. Keyed on that copy because that is
-       * what determines the model's answer — and it is a stronger key than
-       * before, since two photographs of the same shelf with different
-       * targets are now different requests rather than one cache hit.
-       */
-      const aiImage = built.recognitionImage;
-      const cacheKey = await getIdentificationCacheKey(aiImage);
-      const cachedResult = getCachedIdentification(cacheKey);
-
-      if (cachedResult) {
-        setResult(cachedResult);
-        return;
-      }
-
-      const controller = new AbortController();
-      const timeout = window.setTimeout(
-        () => controller.abort(),
-        IDENTIFICATION_TIMEOUT_MS,
-      );
-
-      let response: Response;
-
-      try {
-        response = await fetch("/api/identify-object", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            image: aiImage,
-          }),
-          signal: controller.signal,
-        });
-      } finally {
-        window.clearTimeout(timeout);
-      }
-
-      const data = (await response.json()) as
-        | IdentificationResult
-        | { error: string; code?: string };
-
-      if (!response.ok || "error" in data) {
-        if ("error" in data && data.code === "daily_limit") {
-          throw new Error("VISION_DAILY_LIMIT");
-        }
-
-        if (response.status === 429 || response.status === 503) {
-          throw new Error("VISION_BUSY");
-        }
-
-        throw new Error(
-          "error" in data
-            ? data.error
-            : "Could not identify this image."
-        );
-      }
-
-      cacheIdentification(cacheKey, data);
-      setResult(data);
-    } catch (requestError) {
-      console.error(requestError);
-      setError(
-        requestError instanceof DOMException && requestError.name === "AbortError"
-          ? capture.errors.identifyTimeout
-          : requestError instanceof Error &&
-              requestError.message === "VISION_DAILY_LIMIT"
-            ? capture.errors.identifyDailyLimit
-          : requestError instanceof Error && requestError.message === "VISION_BUSY"
-            ? capture.errors.identifyBusy
-            : capture.errors.identifyImage,
-      );
-    } finally {
-      setAnalyzing(false);
-    }
-  }
-
   /**
    * The card for a friend, with its picture published first.
    *
@@ -928,6 +708,7 @@ function CaptureContent() {
    */
   async function buildShareCard(): Promise<SharedWordCard | null> {
     if (!result) return null;
+    cancelRecognition();
 
     let imagePath: string | undefined;
 
@@ -968,6 +749,7 @@ function CaptureContent() {
   async function saveToVocabulary() {
     if (!result || !built || saving || saved) return;
 
+    cancelRecognition();
     setSaving(true);
     setError("");
 
@@ -1136,12 +918,6 @@ function CaptureContent() {
     router.push(`/messages/new?friend=${encodeURIComponent(friendId)}`);
   }
 
-  /** Back to the camera, which is where another photograph comes from. */
-  function chooseAnotherImage() {
-    reset();
-    setCameraOpen(true);
-  }
-
   /**
    * Whether something is covering the whole screen.
    *
@@ -1154,11 +930,15 @@ function CaptureContent() {
 
   const closeCamera = useCallback(() => {
     setCameraOpen(false);
-    leaveCapture();
+    // The one-second answer hold ends here; keep its card on this page.
+    if (!receivedResultRef.current) leaveCapture();
   }, [leaveCapture]);
 
   /** A picked photograph or document the reader backed out of. */
   const discardPendingImage = useCallback(() => {
+    operationRef.current += 1;
+    cancelRecognition();
+    setError("");
     documentRef.current?.close();
     documentRef.current = null;
 
@@ -1170,7 +950,7 @@ function CaptureContent() {
     }
 
     setPendingImage(null);
-  }, [pendingImage]);
+  }, [cancelRecognition, pendingImage]);
 
   /*
    * Released when the screen goes, not only when the reader resets.
@@ -1238,11 +1018,15 @@ function CaptureContent() {
   };
 
   function reset() {
+    operationRef.current += 1;
+    cancelRecognition();
+    receivedResultRef.current = false;
     window.speechSynthesis?.cancel();
 
     // The preview is an object URL over a blob that would otherwise be held
     // for the life of the tab.
-    if (imageData) URL.revokeObjectURL(imageData);
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current.url);
+    previewRef.current = null;
 
     setBuilt(null);
     setCameraOpen(false);
@@ -1252,7 +1036,6 @@ function CaptureContent() {
     setResult(null);
     setError("");
     setSaved(false);
-    setAnalyzing(false);
     setSaving(false);
     setSpeakingLang(null);
   }
@@ -1363,10 +1146,11 @@ function CaptureContent() {
           app going blank — and no view transition is involved, which is what
           once left the viewfinder visible with every control dead.
         */}
-        {cameraOpen && (
+        {cameraOpen && !pendingImage && (
           <TargetCamera
             copy={cameraCopy}
             busy={preparing}
+            error={error}
             onCapture={onCameraCapture}
             onClose={closeCamera}
             onPickPhoto={(file) => void onPickPhoto(file)}
@@ -1389,7 +1173,8 @@ function CaptureContent() {
             key={pendingImage.page ?? "photo"}
             src={pendingImage.src}
             copy={viewerCopy}
-            busy={preparing}
+            busy={preparing || analyzing}
+            error={error || recognitionError}
             pages={
               pendingImage.page && pendingImage.pageCount
                 ? {
@@ -1400,15 +1185,27 @@ function CaptureContent() {
                   }
                 : null
             }
-            onConfirm={(target) =>
-              void prepare(
-                pendingImage.raster,
-                target,
-                pendingImage.page ? "file" : "photo",
-                pendingImage.fileName,
-                pendingImage.page,
-              )
-            }
+            onConfirm={async (target) => {
+              const selected = pendingImage;
+              try {
+                // The viewer retains its original for a retry or re-crop.
+                // The pipeline owns this copy, including if the viewer closes.
+                const outcome = await prepare(
+                  copyRaster(selected.raster), target,
+                  selected.page ? "file" : "photo", selected.fileName, selected.page,
+                );
+                if (outcome.kind === "answer") {
+                  selected.raster.close();
+                  URL.revokeObjectURL(selected.src);
+                  documentRef.current?.close();
+                  documentRef.current = null;
+                  setPendingImage(null);
+                  setCameraOpen(false);
+                }
+              } catch {
+                setError(capture.errors.processImage);
+              }
+            }}
             onClose={discardPendingImage}
           />
         )}
@@ -1444,40 +1241,12 @@ function CaptureContent() {
               </p>
             )}
 
-            {!result && (
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={chooseAnotherImage}
-                  className="h-12 rounded-2xl border border-black/5 bg-white px-4 text-sm font-semibold transition-transform active:scale-[0.98]"
-                >
-                  {capture.camera.chooseAnother}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void identifyImage()}
-                  disabled={analyzing}
-                  className="flex h-12 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
-                >
-                  {analyzing ? (
-                    <span className="flex items-center gap-2">
-                      <SpinnerIcon />
-                      {capture.identifying}
-                    </span>
-                  ) : (
-                    capture.identify
-                  )}
-                </button>
-              </div>
-            )}
-
-            {error && (
+            {(error || recognitionError) && (
               <p
                 role="alert"
                 className="mt-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700"
               >
-                {error}
+                {error || recognitionError}
               </p>
             )}
 
@@ -1716,12 +1485,12 @@ function CaptureContent() {
           </section>
         )}
 
-        {!fullScreen && !imageData && error && (
+        {!fullScreen && !imageData && (error || recognitionError) && (
           <p
             role="alert"
             className="mb-5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-5 text-red-700"
           >
-            {error}
+            {error || recognitionError}
           </p>
         )}
 

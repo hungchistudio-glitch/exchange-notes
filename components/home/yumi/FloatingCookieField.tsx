@@ -33,11 +33,13 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   const consumed = useRef(new Map<string, number>());
   const drag = useRef<Drag | null>(null);
   const gather = useRef<{ x: number; y: number } | null>(null);
+  const gatherTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const suppressClick = useRef<string | null>(null);
   const latest = useRef({ cookies, onFeed, disabled, paused, activeId, mode });
   useEffect(() => { latest.current = { cookies, onFeed, disabled, paused, activeId, mode }; }, [cookies, onFeed, disabled, paused, activeId, mode]);
   useEffect(() => {
     if (mode === "rest" && activeId === null) return;
+    clearTimeout(gatherTimer.current);
     gather.current = null;
     drag.current = null;
     field.current?.removeAttribute("data-gathering");
@@ -191,6 +193,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     let press: { id: number; x: number; y: number } | null = null;
     const releaseGather = (scatterOut: boolean) => {
       clearTimeout(hold);
+      clearTimeout(gatherTimer.current);
       if (gather.current && scatterOut) bodies.current.forEach(body => scatter(body, gather.current!.x, gather.current!.y, body.index));
       gather.current = null; press = null;
       field.current?.removeAttribute("data-gathering");
@@ -212,6 +215,8 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
       hold = setTimeout(() => {
         if (!press) return;
         gather.current = { x: press.x, y: press.y };
+        field.current?.style.setProperty("--gather-x", `${press.x}px`);
+        field.current?.style.setProperty("--gather-y", `${press.y}px`);
         field.current?.setAttribute("data-gathering", "true");
       }, 430);
     };
@@ -302,21 +307,38 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
           }}>
           <span aria-hidden="true">{cookie.glyph}</span>
         </button>)}
-        {visible.length > 0 && <div className={styles.controls} data-yumi-protected="">
-          <button type="button" className={styles.icon} aria-label={paused ? copy.resume : copy.pause} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
-          <button type="button" className={styles.icon} aria-label={copy.gather} title={copy.hint} onClick={() => {
-            const point = gather.current;
-            if (point) {
-              bodies.current.forEach(body => scatter(body, point.x, point.y, body.index));
+        <span className={styles.gatherRipple} aria-hidden="true" />
+        {visible.length > 0 && <>
+          <div className={styles.controls} data-yumi-protected="">
+            <button type="button" className={styles.icon} aria-label={paused ? copy.resume : copy.pause} aria-pressed={paused} onClick={() => {
+              clearTimeout(gatherTimer.current);
               gather.current = null;
               field.current?.removeAttribute("data-gathering");
-            } else {
+              setPaused(value => !value);
+            }}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
+          </div>
+          <div className={styles.gatherControl} data-yumi-protected="">
+            <button type="button" className={styles.icon} aria-label={copy.gather} title={copy.gather} onClick={() => {
+              // One press gathers, then releases; repeated presses restart
+              // the same pulse instead of leaving a permanent attraction.
+              clearTimeout(gatherTimer.current);
               setPaused(false);
-              gather.current = { x: innerWidth / 2, y: innerHeight * .42 };
+              const point = { x: innerWidth / 2, y: innerHeight * .42 };
+              gather.current = point;
+              field.current?.style.setProperty("--gather-x", `${point.x}px`);
+              field.current?.style.setProperty("--gather-y", `${point.y}px`);
               field.current?.setAttribute("data-gathering", "true");
-            }
-          }}><Sparkles size={18} /></button>
-        </div>}
+              gatherTimer.current = setTimeout(() => {
+                if (gather.current !== point) return;
+                if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                  bodies.current.forEach(body => scatter(body, point.x, point.y, body.index));
+                }
+                gather.current = null;
+                field.current?.removeAttribute("data-gathering");
+              }, 1800);
+            }}><Sparkles size={20} aria-hidden="true" /></button>
+          </div>
+        </>}
       </div>
     </OverlayPortal>
     {item && <FloatingWordCard key={item.id} item={item} canFeed={!disabled && cookies.some(cookie => cookie.id === item.id)}

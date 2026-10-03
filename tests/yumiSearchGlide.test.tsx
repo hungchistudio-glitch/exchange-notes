@@ -32,11 +32,11 @@ vi.mock("@/contexts/LexiconSearchContext", () => ({
 let frames: FrameRequestCallback[];
 let clock = 0;
 
-function fixture() {
+function fixture(onSubmit: (value: string) => void = vi.fn(), initialValue = "") {
   function Field({ onAnswerChange }: { onAnswerChange: (value: boolean) => void }) {
-    const [value, setValue] = useState("");
+    const [value, setValue] = useState(initialValue);
     return (
-      <form onSubmit={event => event.preventDefault()}>
+      <form onSubmit={event => { event.preventDefault(); onSubmit(value); }}>
         <input
           aria-label="Search"
           type="text"
@@ -173,6 +173,33 @@ describe("a tap on the field from a touch screen", () => {
     act(() => vi.advanceTimersByTime(10));
     expect(document.activeElement).toBe(input);
     expect(input).toHaveValue("我");
+  });
+
+  it("submits the latest text when Search is pressed during the hand-off", async () => {
+    const submit = vi.fn();
+    const view = fixture(submit);
+    await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    touch(input, "touchstart");
+    touch(input, "touchend");
+    const proxy = view.container.querySelector<HTMLInputElement>("[data-keyboard-proxy]")!;
+    proxy.value = "bonjour";
+    act(() => { proxy.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
+    act(() => vi.runOnlyPendingTimers());
+    expect(submit).toHaveBeenCalledWith("bonjour");
+  });
+
+  it("preserves edits to an existing query during the hand-off", async () => {
+    const view = fixture(undefined, "cats");
+    await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    touch(input, "touchstart");
+    touch(input, "touchend");
+    const proxy = view.container.querySelector<HTMLInputElement>("[data-keyboard-proxy]")!;
+    expect(proxy.value).toBe("cats");
+    proxy.value = "cat";
+    act(() => vi.advanceTimersByTime(250));
+    expect(input).toHaveValue("cat");
   });
 
   it("leaves a drag across the field alone", async () => {

@@ -75,6 +75,7 @@ type TargetImageViewerProps = {
   onConfirm: (target: NormalizedRect) => void;
   onClose: () => void;
   busy?: boolean;
+  error?: string;
   pages?: PageNavigation | null;
 };
 
@@ -85,6 +86,7 @@ export default function TargetImageViewer({
   onConfirm,
   onClose,
   busy = false,
+  error = "",
   pages = null,
 }: TargetImageViewerProps) {
   const { ref: frameRef, size: boxSize, measure } =
@@ -407,7 +409,12 @@ export default function TargetImageViewer({
             the library waits the same way one read through the lens does. */}
         <AnalysingTargetIndicator active={busy} label={copy.busy} />
 
-        {!busy && (
+        {error && !busy && (
+          <p role="alert" className="mx-5 max-w-md rounded-2xl bg-black/70 px-4 py-3 text-center text-sm text-white">
+            {error}
+          </p>
+        )}
+        {!busy && !error && (
           <p className="rounded-full bg-black/35 px-3 py-1.5 text-[0.6875rem] font-medium tracking-wide text-white/90 backdrop-blur-md">
             {copy.hint}
           </p>

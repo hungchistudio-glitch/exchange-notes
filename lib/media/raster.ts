@@ -196,6 +196,16 @@ function context2d(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   return context;
 }
 
+/** Independent pixels for a retryable viewer; the pipeline owns the copy. */
+export function copyRaster(raster: Raster): Raster {
+  const canvas = makeCanvas(raster.width, raster.height);
+  context2d(canvas).drawImage(raster.source, 0, 0, canvas.width, canvas.height);
+  return {
+    source: canvas, width: canvas.width, height: canvas.height,
+    close: () => { canvas.width = 0; canvas.height = 0; },
+  };
+}
+
 /**
  * A canvas as a blob, at the best format the browser will actually give.
  *

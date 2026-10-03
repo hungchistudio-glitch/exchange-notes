@@ -1260,24 +1260,25 @@ export default function YumiRingOverlay({
       if (document.activeElement !== proxy || !field.isConnected) return;
 
       const typed = proxy.value;
+      const selectionStart = proxy.selectionStart;
+      const selectionEnd = proxy.selectionEnd;
       proxy.value = "";
       field.focus({ preventScroll: true });
 
-      if (typed) {
+      if (typed !== field.value) {
         /* Through the native setter, so React's controlled input hears it
            as typing rather than having its value changed under it. */
         const setter = Object.getOwnPropertyDescriptor(
           HTMLInputElement.prototype,
           "value",
         )?.set;
-        setter?.call(field, field.value + typed);
+        setter?.call(field, typed);
         field.dispatchEvent(new Event("input", { bubbles: true }));
-        const end = field.value.length;
-        try {
-          field.setSelectionRange(end, end);
-        } catch {
-          /* Not every input type has a caret to place. */
-        }
+      }
+      try {
+        field.setSelectionRange(selectionStart, selectionEnd);
+      } catch {
+        /* Not every input type has a caret to place. */
       }
     };
 
@@ -1322,11 +1323,16 @@ export default function YumiRingOverlay({
         if (value === null) proxy.removeAttribute(name);
         else proxy.setAttribute(name, value);
       }
-      proxy.value = "";
+      // Mirror the complete query: an early Backspace or clear must edit
+      // the existing text, rather than an empty temporary field.
+      proxy.value = field.value;
+      proxy.setAttribute("aria-label", field.getAttribute("aria-label") ?? field.placeholder);
+      proxy.removeAttribute("aria-hidden");
 
       expectKeyboardRef.current = true;
       pending = field;
       proxy.focus({ preventScroll: true });
+      proxy.setSelectionRange(proxy.value.length, proxy.value.length);
       timer = window.setTimeout(handOff, HANDOFF_MS);
     };
 
@@ -1342,6 +1348,7 @@ export default function YumiRingOverlay({
       pending = null;
       composing = false;
       proxy.value = "";
+      proxy.setAttribute("aria-hidden", "true");
     };
     /* Search pressed before the hand-off: hand off, then submit the field's
        own form as if it had been pressed there. */
@@ -1350,7 +1357,9 @@ export default function YumiRingOverlay({
       event.preventDefault();
       const field = pending;
       handOff();
-      field?.form?.requestSubmit();
+      /* After React has committed what was just handed over, so the form
+         submits the text on screen and not the render before it. */
+      window.setTimeout(() => field?.form?.requestSubmit(), 0);
     };
 
     layer.addEventListener("touchstart", onTouchStart, { passive: true });

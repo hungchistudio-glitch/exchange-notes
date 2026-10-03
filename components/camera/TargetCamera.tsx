@@ -141,6 +141,8 @@ type TargetCameraProps = {
    * come off the shutter — a photo picked from the library.
    */
   busy?: boolean;
+  /** Validation/decode failures from the library or PDF picker. */
+  error?: string;
 };
 
 export default function TargetCamera({
@@ -152,6 +154,7 @@ export default function TargetCamera({
   fileAccept = "application/pdf",
   ideal,
   busy = false,
+  error = "",
 }: TargetCameraProps) {
   const { ref: frameRef, size: boxSize, measure } =
     useElementSize<HTMLDivElement>();
@@ -767,7 +770,12 @@ export default function TargetCamera({
         */}
         <AnalysingTargetIndicator active={analysing} label={copy.analysing} />
 
-        {!analysing && !holding && !unavailable && (
+        {error && !analysing && !holding && (
+          <p role="alert" className="mx-5 max-w-md rounded-2xl bg-black/70 px-4 py-3 text-center text-sm text-white">
+            {error}
+          </p>
+        )}
+        {!error && !analysing && !holding && !unavailable && (
           <p className="rounded-full bg-black/25 px-3 py-1.5 text-[0.6875rem] font-medium tracking-wide text-white/90 backdrop-blur-md">
             {copy.hint}
           </p>

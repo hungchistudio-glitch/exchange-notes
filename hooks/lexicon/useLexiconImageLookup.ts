@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
@@ -20,7 +20,7 @@ import { PdfRenderError, isPdf, openPdf, type PdfDocument } from "@/lib/media/pd
 import type { Raster } from "@/lib/media/raster";
 import type { MediaSourceType } from "@/lib/media/record";
 import { DEFAULT_TARGET_RECT, MAX_IMAGE_FILE_SIZE } from "@/lib/media/config";
-import { startCapture } from "@/lib/media/pipeline";
+import { startCapture, type BuiltCapture } from "@/lib/media/pipeline";
 import { decodeBlob } from "@/lib/media/raster";
 import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
 import { fill, formatResetTime } from "@/lib/i18n/format";
@@ -46,6 +46,19 @@ export type CaptureOutcome =
   | { kind: "error"; message: string }
   /** Nothing to show: the photo was superseded or dropped. */
   | { kind: "none" };
+
+export type ImageCaptureDetails = {
+  sourceType?: MediaSourceType;
+  fileName?: string;
+  page?: number;
+  recognitionScope?: "frame" | "target";
+};
+
+export type ImageCaptureResult = {
+  result: ObjectIdentificationResult;
+  built: BuiltCapture;
+  onDevice: boolean;
+};
 
 export type ImageTermOptions = {
   onDeviceWord?: ObjectWord;
@@ -91,9 +104,12 @@ function recognitionEntry(result: ObjectIdentificationResult): LexiconEntry {
  */
 export default function useLexiconImageLookup({
   onTerm,
+  onResult,
   onDevice = true,
 }: {
-  onTerm: (term: string, options?: ImageTermOptions) => void;
+  onTerm?: (term: string, options?: ImageTermOptions) => void;
+  /** Capture-page cards receive the same answer and retained assets. */
+  onResult?: (answer: ImageCaptureResult) => void;
   /**
    * Whether the phone may answer first. Off for a surface whose search
    * cannot show a card without a request (VocabularySearch hands the word
@@ -114,6 +130,15 @@ export default function useLexiconImageLookup({
    * or an error — for a photo that is no longer current is dropped.
    */
   const generationRef = useRef(0);
+
+  // Late answers must not reopen a card after its camera/page was dismissed.
+  useEffect(() => () => { generationRef.current += 1; }, []);
+  const cancel = useCallback(() => {
+    generationRef.current += 1;
+    readingRef.current = false;
+    setReading(false);
+    setError("");
+  }, []);
 
   const finishReading = useCallback((generation: number) => {
     if (generation !== generationRef.current) return;
@@ -180,6 +205,7 @@ export default function useLexiconImageLookup({
       fileName?: string,
       /** Hears the first answer, the moment a word is on screen. */
       report: (outcome: CaptureOutcome) => void = () => {},
+      details: ImageCaptureDetails = {},
     ) => {
       /*
        * The whole frame goes to the model and the reader's target becomes
@@ -203,11 +229,13 @@ export default function useLexiconImageLookup({
         targetRect,
         sourceType,
         recognitionKind: "object",
-        recognitionScope: "frame",
+        recognitionScope: details.recognitionScope ?? "frame",
         sourceFileName: fileName,
+        sourcePage: details.page,
       });
 
       const isCurrent = () => generation === generationRef.current;
+      if (!isCurrent()) return;
 
       /*
        * Two readers of the same frame, at once.
@@ -228,17 +256,32 @@ export default function useLexiconImageLookup({
             if (!hit || aiAnswered || !isCurrent()) return null;
 
             const term = hit.word[pair[0]];
-            holdImageCapture(term, await started.capture);
+            const capture = await started.capture;
             if (aiAnswered || !isCurrent()) return null;
+            holdImageCapture(term, capture);
 
             shownOnDevice = term;
-            onTerm(term, { onDeviceWord: hit.word });
+            onResult?.({
+              result: {
+                term,
+                translation: hit.word[pair[1]],
+                termLanguage: pair[0],
+                translationLanguage: pair[1],
+                partOfSpeech: "noun",
+                termExample: "",
+                translationExample: "",
+                confidence: "low",
+              },
+              built: { ...started, capture },
+              onDevice: true,
+            });
+            onTerm?.(term, { onDeviceWord: hit.word });
             report({ kind: "answer", term, translation: hit.word[pair[1]] });
 
             // The card is up: the shutter is free for the next photograph.
             finishReading(generation);
             return term;
-          })
+          }).catch(() => null)
         : Promise.resolve(null);
 
       let identified: Awaited<typeof fromAi>;
@@ -256,16 +299,17 @@ export default function useLexiconImageLookup({
          * already has both languages. No second request: the card stays,
          * marked as the phone's answer.
          */
-        if (isCurrent()) onTerm(onDeviceTerm, { finalOnDevice: true });
+        if (isCurrent()) onTerm?.(onDeviceTerm, { finalOnDevice: true });
         return;
       }
 
-      aiAnswered = true;
       if (!isCurrent()) return;
 
       if (!identified.term) {
-        if (shownOnDevice) {
-          onTerm(shownOnDevice, { finalOnDevice: true });
+        const onDeviceTerm = shownOnDevice ?? (await onDevicePromise);
+        if (!isCurrent()) return;
+        if (onDeviceTerm) {
+          onTerm?.(onDeviceTerm, { finalOnDevice: true });
           return;
         }
         /*
@@ -274,6 +318,10 @@ export default function useLexiconImageLookup({
          */
         throw new ImageRecognitionError("failed");
       }
+
+      aiAnswered = true;
+      const capture = await started.capture;
+      if (!isCurrent()) return;
 
       /*
        * One request per photograph. The recognition goes into the lookup
@@ -293,11 +341,11 @@ export default function useLexiconImageLookup({
 
       // Held rather than uploaded: nothing reaches storage until the reader
       // saves the word this photograph produced.
-      holdImageCapture(identified.term, await started.capture);
-      if (!isCurrent()) return;
+      holdImageCapture(identified.term, capture);
+      onResult?.({ result: identified, built: { ...started, capture }, onDevice: false });
 
-      if (shownOnDevice) onTerm(identified.term, { upgrade: true });
-      else onTerm(identified.term);
+      if (shownOnDevice) onTerm?.(identified.term, { upgrade: true });
+      else onTerm?.(identified.term);
 
       report({
         kind: "answer",
@@ -305,7 +353,7 @@ export default function useLexiconImageLookup({
         translation: identified.translation,
       });
     },
-    [finishReading, nativeLanguage, onDevice, onTerm, pair],
+    [finishReading, nativeLanguage, onDevice, onResult, onTerm, pair],
   );
 
   /**
@@ -318,7 +366,7 @@ export default function useLexiconImageLookup({
    * answered, while the camera sat there live again with nothing on it.
    */
   const handleCapture = useCallback(
-    (raster: Raster, targetRect: NormalizedRect): Promise<CaptureOutcome> => {
+    (raster: Raster, targetRect: NormalizedRect, details: ImageCaptureDetails = {}): Promise<CaptureOutcome> => {
       if (readingRef.current) {
         /*
          * A second shutter press while the first is still being read. The
@@ -342,7 +390,7 @@ export default function useLexiconImageLookup({
           resolve(outcome);
         };
 
-        readRaster(generation, raster, targetRect, "camera", undefined, report)
+        readRaster(generation, raster, targetRect, details.sourceType ?? "camera", details.fileName, report, details)
           .then(() => report({ kind: "none" }))
           .catch((recognitionError: unknown) => {
             console.error("Could not read that photo:", recognitionError);
@@ -468,5 +516,5 @@ export default function useLexiconImageLookup({
     [errorMessage, finishReading, readRaster],
   );
 
-  return { reading, error, handleFile, handleCapture };
+  return { reading, error, handleFile, handleCapture, cancel };
 }

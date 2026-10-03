@@ -26,6 +26,35 @@ function field() {
 }
 
 describe("real home cookies", () => {
+  it("gathers with one star press, then scatters automatically without feeding", () => {
+    vi.useFakeTimers();
+    const { onFeed, unmount } = field();
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "Gather and scatter cookies" }));
+      expect(document.querySelector("[data-floating-field]")).toHaveAttribute("data-gathering");
+      act(() => vi.advanceTimersByTime(1800));
+      expect(document.querySelector("[data-floating-field]")).not.toHaveAttribute("data-gathering");
+      expect(onFeed).not.toHaveBeenCalled();
+    } finally { unmount(); vi.useRealTimers(); }
+  });
+
+  it("restarts a star pulse on another press and cancels it when search opens", async () => {
+    vi.useFakeTimers();
+    const { stageRef, unmount } = field();
+    try {
+      const star = screen.getByRole("button", { name: "Gather and scatter cookies" });
+      fireEvent.click(star);
+      act(() => vi.advanceTimersByTime(1000));
+      fireEvent.click(star);
+      act(() => vi.advanceTimersByTime(1000));
+      expect(document.querySelector("[data-floating-field]")).toHaveAttribute("data-gathering");
+      await act(async () => { stageRef.current!.dataset.yumiMode = "answering"; });
+      expect(document.querySelector("[data-floating-field]")).not.toHaveAttribute("data-gathering");
+      act(() => vi.advanceTimersByTime(2000));
+      expect(document.querySelector("[data-floating-field]")).not.toHaveAttribute("data-gathering");
+    } finally { unmount(); vi.useRealTimers(); }
+  });
+
   it("shows up to twelve real words and opens a bilingual card without feeding", () => {
     const { onFeed } = field();
     expect(document.querySelectorAll("[data-floating-cookie]")).toHaveLength(12);
