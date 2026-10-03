@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
@@ -11,6 +11,24 @@ import FloatingCookieField from "./yumi/FloatingCookieField";
 import { reviewWords } from "./yumi/reviewWords";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import homeStyles from "./StandardHome.module.css";
+import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
+
+function ReviewSearch({ onAnswerChange }: { onAnswerChange: (value: boolean) => void }) {
+  const [query, setQuery] = useState("");
+  useEffect(() => onHomeSearchDismiss(() => {
+    setQuery("");
+    onAnswerChange(false);
+  }), [onAnswerChange]);
+  return <>
+    <input aria-label="Search preview" value={query} placeholder="Search or add a word"
+      onChange={event => { setQuery(event.target.value); onAnswerChange(Boolean(event.target.value)); }}
+      style={{ width: "100%", height: 60, padding: "0 24px", border: "1px solid #dfe5d5", borderRadius: 35, background: "white", fontSize: 16 }} />
+    {query && <div data-home-search-results="" style={{ background: "white", borderRadius: 28, padding: 28, marginTop: 20, textAlign: "left" }}>
+      <small>搜尋過場預覽</small><p style={{ fontSize: 28, marginTop: 12 }}>{query}</p>
+      <p>輕點 Yumi 回到主頁；拖曳她仍可打開選單。</p>
+    </div>}
+  </>;
+}
 
 /** Local geometry and selection only; the review does not load an account. */
 function Frame() {
@@ -26,7 +44,7 @@ function Frame() {
             onChooseDestination={destination => setSelected(destination.label)}
             meta={{ greeting: "Good afternoon", place: "New York", date: "Thu, October 1", time: "4:05 PM" }}
             notices={{ unread: 0, friendRequests: 0, reviewDue: 12 }}
-            field={({ onAnswerChange }) => <input aria-label="Search preview" placeholder="Search or add a word" onChange={event => onAnswerChange(Boolean(event.target.value))} style={{ width: "100%", height: 60, padding: "0 24px", border: "1px solid #dfe5d5", borderRadius: 35, background: "white", fontSize: 16 }} />}
+            field={({ onAnswerChange }) => <ReviewSearch onAnswerChange={onAnswerChange} />}
             lines={{ primary: fed.length ? `Yumi · ${fed.length} cookies` : "Yumi is curious.", secondary: "Preview" }}>
             <div data-yumi-figure style={{ position: "absolute", width: 144, height: 144, left: "calc(50% - 72px)", top: "calc(42svh - 72px)" }}>
               <ExchangeNotesMark />

@@ -321,7 +321,7 @@ const italian: TranslationDictionary = {
         },
         feed: {
           body:
-            "Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Una parola nuova al giorno e non ho mai fame.",
+            "Di nuovo alla home: la prossima volta che hai finito con una parola, toccami e basta. Dammene uno: trascina un biscotto su di me, oppure toccalo per vedere la parola e premi «Nutri Yumi». Una parola nuova al giorno e non ho mai fame.",
         },
         library: {
           body:

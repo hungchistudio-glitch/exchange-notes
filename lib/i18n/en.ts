@@ -322,7 +322,7 @@ const english: TranslationDictionary = {
         },
         feed: {
           body:
-            "Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. One new word a day and I never go hungry.",
+            "I've brought you back home — next time you're done with a word, just tap me. Feed me one: drag a cookie onto me, or tap it to see its word and press “Feed Yumi”. One new word a day and I never go hungry.",
         },
         library: {
           body:

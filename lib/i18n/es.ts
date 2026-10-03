@@ -323,7 +323,7 @@ const spanish: TranslationDictionary = {
         },
         feed: {
           body:
-            "Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». Con una palabra nueva al día, nunca paso hambre.",
+            "Te he traído de vuelta al inicio: la próxima vez que termines con una palabra, solo tócame. Dame una: arrastra una galleta hasta mí, o tócala para ver su palabra y pulsa «Alimentar a Yumi». Con una palabra nueva al día, nunca paso hambre.",
         },
         library: {
           body:

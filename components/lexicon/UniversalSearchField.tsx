@@ -22,6 +22,7 @@ import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
+import { stopSpeech } from "@/lib/speech";
 
 /* =========================================================
    The home search is the search
@@ -58,6 +59,8 @@ export default function UniversalSearchField({
   const { items, addItem } = useVocabulary();
   const onboarding = useLexiconOnboarding();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const voiceEpoch = useRef(0);
+  const acceptsVoice = useRef(false);
 
   const search = useLexiconSearch({ items });
   const save = useLexiconSave({
@@ -81,6 +84,8 @@ export default function UniversalSearchField({
 
   const handleAudio = useCallback(
     async (audio: Blob) => {
+      if (!acceptsVoice.current) return;
+      const epoch = voiceEpoch.current;
       const body = new FormData();
       body.append("audio", audio, "speech.webm");
 
@@ -97,7 +102,9 @@ export default function UniversalSearchField({
           text?: string;
         };
 
-        if (heard.heard && heard.text) search.submit(heard.text, "voice");
+        if (acceptsVoice.current && epoch === voiceEpoch.current && heard.heard && heard.text) {
+          search.submit(heard.text, "voice");
+        }
       } catch {
         // The lexicon's offline path remains available when voice lookup is not.
       }
@@ -107,7 +114,9 @@ export default function UniversalSearchField({
 
   const voice = useVoiceInput({
     lang: getLanguage(pair[0]).speechTag,
-    onResult: (transcript) => search.submit(transcript, "voice"),
+    onResult: (transcript) => {
+      if (acceptsVoice.current) search.submit(transcript, "voice");
+    },
     onAudio: handleAudio,
   });
 
@@ -156,16 +165,23 @@ export default function UniversalSearchField({
     onAnswerChange?.(hasAnswer);
   }, [hasAnswer, onAnswerChange]);
 
-  /* The tour's feed step asks for the answer to be put away, so the cookies
-     it is about are within reach (lib/home/homeMoments.ts). */
+  /* Both the tour and Yumi's return gesture use the existing dismissal
+     channel. Late camera/voice answers must not reopen a dismissed search. */
   const { reset } = search;
+  const { cancel: cancelImage } = imageLookup;
+  const { stop: stopVoice } = voice;
   useEffect(
     () =>
       onHomeSearchDismiss(() => {
+        voiceEpoch.current += 1;
+        acceptsVoice.current = false;
+        cancelImage();
+        stopVoice();
+        stopSpeech();
         reset();
         inputRef.current?.blur();
       }),
-    [reset],
+    [reset, cancelImage, stopVoice],
   );
 
   /*
@@ -230,6 +246,7 @@ export default function UniversalSearchField({
               type="button"
               onClick={() => {
                 onboarding.dismiss();
+                acceptsVoice.current = true;
                 voice.toggle();
               }}
               aria-label={copy.modeVoice}
@@ -308,7 +325,7 @@ export default function UniversalSearchField({
       ) : null}
 
       {hasAnswer ? (
-        <div className="mt-4">
+        <div className="mt-4" data-home-search-results="">
           <LexiconResults
             tone="warm"
             search={search}

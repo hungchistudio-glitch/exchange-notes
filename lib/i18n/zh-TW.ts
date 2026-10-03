@@ -315,7 +315,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         feed: {
           body:
-            "餵我一塊：把餅乾拖到我身上，或點開它看字卡，再按「餵給 Yumi」。每天存一個新字，我就不會餓。",
+            "我先帶你回首頁了——之後查完字，點我一下就回來。餵我一塊：把餅乾拖到我身上，或點開它看字卡，再按「餵給 Yumi」。每天存一個新字，我就不會餓。",
         },
         library: {
           body:

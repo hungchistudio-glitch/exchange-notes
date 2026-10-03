@@ -321,7 +321,7 @@ const french: TranslationDictionary = {
         },
         feed: {
           body:
-            "Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Un mot nouveau par jour, et je n'ai jamais faim.",
+            "Retour à l'accueil — la prochaine fois que tu as fini avec un mot, touche-moi, tout simplement. Donne-m'en un : glisse un biscuit jusqu'à moi, ou touche-le pour voir son mot et appuie sur « Nourrir Yumi ». Un mot nouveau par jour, et je n'ai jamais faim.",
         },
         library: {
           body:

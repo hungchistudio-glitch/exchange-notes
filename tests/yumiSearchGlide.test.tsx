@@ -1,5 +1,5 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
-import { useRef, useState } from "react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useEffect, useRef, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /* =========================================================
@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
    ========================================================= */
 
 import YumiRingOverlay, { answerAnchorY } from "@/components/home/yumi/YumiRingOverlay";
+import { onHomeSearchDismiss, returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { disposeParkedYumiScene } from "@/lib/yumi3d/sceneCache";
 
 const scene = vi.hoisted(() => ({ create: vi.fn() }));
@@ -35,6 +36,10 @@ let clock = 0;
 function fixture(onSubmit: (value: string) => void = vi.fn(), initialValue = "") {
   function Field({ onAnswerChange }: { onAnswerChange: (value: boolean) => void }) {
     const [value, setValue] = useState(initialValue);
+    useEffect(() => onHomeSearchDismiss(() => {
+      setValue("");
+      onAnswerChange(false);
+    }), [onAnswerChange]);
     return (
       <form onSubmit={event => { event.preventDefault(); onSubmit(value); }}>
         <input
@@ -113,6 +118,7 @@ beforeEach(() => {
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   vi.stubGlobal("visualViewport", Object.assign(new EventTarget(), { height: 844, offsetTop: 0 }));
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  scene.create.mockClear();
   scene.create.mockImplementation((): Partial<Record<string, unknown>> => ({
     setFocusLevel: vi.fn(), setScreenAnchor: vi.fn(), frame: vi.fn(),
     eyeScreenPosition: () => ({ x: 195, y: 355 }), lungeAt: vi.fn(() => false),
@@ -325,5 +331,169 @@ describe("with the tour's card up", () => {
 
     expect(ringY(view)).toBeGreaterThanOrEqual(230 + 48 + 10);
     card.remove();
+  });
+});
+
+describe("tapping Yumi to return from search", () => {
+  function sceneOptions() {
+    return scene.create.mock.calls.at(-1)![1] as { onTap: () => void; onPullOpen: () => void };
+  }
+
+  it("fades the answer, clears the query, then brings cookies home without opening navigation", async () => {
+    const view = fixture();
+    await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.change(input, { target: { value: "apple" } });
+    for (let index = 0; index < 60; index += 1) frame();
+    const answerPosition = ringY(view);
+    act(() => sceneOptions().onTap());
+    expect(view.container.querySelector("[data-yumi-returning]")).toBeInTheDocument();
+    expect(view.container.querySelector("[data-yumi-ring-open]")).toHaveAttribute("data-yumi-ring-open", "false");
+    expect(input).toHaveValue("apple");
+    act(() => vi.advanceTimersByTime(150));
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "answering");
+    const path = [answerPosition];
+    for (let index = 0; index < 32; index += 1) { frame(); path.push(ringY(view)); }
+    expect(path.at(-1)).toBeGreaterThan(answerPosition);
+    expect(path.slice(1).every((y, index) => y >= path[index])).toBe(true);
+    act(() => vi.advanceTimersByTime(370));
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+    expect(view.container.querySelector("[data-yumi-returning]")).not.toBeInTheDocument();
+    expect(scene.create).toHaveBeenCalledOnce();
+  });
+
+  it("keeps pulling as navigation and preserves the query when that menu closes", async () => {
+    fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.change(input, { target: { value: "apple" } });
+    act(() => sceneOptions().onPullOpen());
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
+    act(() => sceneOptions().onTap());
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "answering");
+    expect(input).toHaveValue("apple");
+  });
+
+  it("ignores repeated taps or pulls during the return", async () => {
+    const view = fixture(); await ready();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: "apple" } });
+    act(() => { sceneOptions().onTap(); sceneOptions().onTap(); sceneOptions().onPullOpen(); });
+    act(() => vi.advanceTimersByTime(600));
+    expect(view.container.querySelector("[data-yumi-ring-open]")).toHaveAttribute("data-yumi-ring-open", "false");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+    act(() => sceneOptions().onTap());
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
+  });
+
+  it("dismisses the keyboard even before a word is typed", async () => {
+    fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    act(() => input.focus());
+    act(() => sceneOptions().onTap());
+    expect(document.activeElement).not.toBe(input);
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+  });
+
+  function press(view: ReturnType<typeof fixture>, type: string) {
+    const canvas = view.container.querySelector("canvas")!;
+    const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 195, clientY: 355 });
+    Object.defineProperties(event, { pointerId: { value: 1 }, isPrimary: { value: true } });
+    fireEvent(canvas, event);
+  }
+
+  it("remembers a search with an answer when the canvas press blurs the field before release", async () => {
+    const view = fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: "apple" } });
+    press(view, "pointerdown");
+    act(() => input.blur());
+    press(view, "pointerup");
+    expect(view.container.querySelector("[data-yumi-returning]")).toBeInTheDocument();
+    expect(view.container.querySelector("[data-yumi-ring-open]")).toHaveAttribute("data-yumi-ring-open", "false");
+    act(() => vi.advanceTimersByTime(600));
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+  });
+
+  it("does not park the cookies a second time when the press already sent her home", async () => {
+    // An empty focused field is the whole of her answering. A press that
+    // blurs it has already started her home and brought the cookies back;
+    // the release must neither open the ring nor hide them again.
+    const view = fixture(); await ready();
+    const stage = screen.getByTestId("stage");
+    const input = screen.getByRole("textbox", { name: "Search" });
+    act(() => input.focus());
+    expect(stage).toHaveAttribute("data-yumi-mode", "answering");
+    press(view, "pointerdown");
+    act(() => input.blur());
+    expect(stage).toHaveAttribute("data-yumi-mode", "rest");
+    press(view, "pointerup");
+    expect(stage).toHaveAttribute("data-yumi-mode", "rest");
+    expect(view.container.querySelector("[data-yumi-returning]")).not.toBeInTheDocument();
+    expect(view.container.querySelector("[data-yumi-ring-open]")).toHaveAttribute("data-yumi-ring-open", "false");
+  });
+
+  it("has a key for the keyboard, which leaves focus on the ring's key", async () => {
+    const view = fixture(); await ready();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: "apple" } });
+    const home = screen.getByRole("button", { name: "Home" });
+    act(() => home.focus());
+    fireEvent.click(home);
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.getByRole("textbox", { name: "Search" })).toHaveValue("");
+    expect(screen.queryByRole("button", { name: "Home" })).not.toBeInTheDocument();
+    expect(document.activeElement).toHaveAttribute("aria-expanded", "false");
+    expect(view.container.querySelector("[data-yumi-ring-open]")).toHaveAttribute("data-yumi-ring-open", "false");
+  });
+
+  it("is the way home the tour's feed step asks for", async () => {
+    const view = fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.change(input, { target: { value: "apple" } });
+    act(() => returnHomeFromSearch());
+    expect(view.container.querySelector("[data-yumi-returning]")).toBeInTheDocument();
+    expect(input).toHaveValue("apple");
+    act(() => vi.advanceTimersByTime(600));
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+  });
+
+  it("leaves the tour's request to a plain dismissal while the ring is out", async () => {
+    const view = fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.change(input, { target: { value: "apple" } });
+    act(() => sceneOptions().onPullOpen());
+    act(() => returnHomeFromSearch());
+    expect(view.container.querySelector("[data-yumi-returning]")).not.toBeInTheDocument();
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
+  });
+
+  it("returns immediately when reduced motion is requested", async () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)", media: query,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+    })));
+    const view = fixture(); await ready();
+    const input = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.change(input, { target: { value: "apple" } });
+    act(() => sceneOptions().onTap());
+    expect(input).toHaveValue("");
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
+    expect(view.container.querySelector("[data-yumi-returning]")).not.toBeInTheDocument();
+  });
+
+  it("does not dismiss a different screen if unmounted during the fade", async () => {
+    const view = fixture(); await ready();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: "apple" } });
+    const dismissed = vi.fn();
+    const unsubscribe = onHomeSearchDismiss(dismissed);
+    act(() => sceneOptions().onTap());
+    view.unmount();
+    act(() => vi.advanceTimersByTime(600));
+    expect(dismissed).not.toHaveBeenCalled();
+    unsubscribe();
   });
 });

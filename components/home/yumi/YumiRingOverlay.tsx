@@ -15,7 +15,11 @@ import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { CSSProperties, ReactNode } from "react";
 
 import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
-import { announceHomeMoment } from "@/lib/home/homeMoments";
+import {
+  announceHomeMoment,
+  dismissHomeSearch,
+  onHomeReturnRequest,
+} from "@/lib/home/homeMoments";
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 import { getCoachStep } from "@/lib/home/tutorialCoach";
 import { setYumiRingState } from "@/lib/home/yumiRing";
@@ -200,6 +204,9 @@ const KEYBOARD_VISIBLE_SHARE = 0.56;
 const VIEWPORT_SETTLE_MS = 180;
 /** Air between the tour's card and the top of her, while she answers. */
 const COACH_CLEARANCE = 10;
+/** Going home from a search: the card's fade, then the whole return. */
+const RETURN_FADE_MS = 140;
+const RETURN_SETTLE_MS = 520;
 
 /** Her column's own offset below the eye, and the air under the page. */
 const BELOW_OFFSET = 94;
@@ -517,6 +524,86 @@ export default function YumiRingOverlay({
   const expectKeyboardRef = useRef(false);
 
   /*
+   * Back home from a search (Chi, 2026-10-03: a tap on her, "柔順歸位").
+   *
+   * A tap on her used to open the ring whatever was on screen, so the only
+   * way from an answer back to the resting home was the ring and out again.
+   * Now a tap while she is answering is the way home, and a pull is still
+   * the ring. The return is one motion in three beats, about half a second:
+   * the card fades (RETURN_FADE_MS), then the field is emptied and she and
+   * the column glide back on the springs that already move them, and the
+   * cookies come back once she has arrived (RETURN_SETTLE_MS) — the stage
+   * keeps saying "answering" until then, which is what holds them parked.
+   *
+   * The tour's feed step asks for the same return (lib/home/homeMoments.ts),
+   * so the screen only ever goes home one way.
+   */
+  const [returningHome, setReturningHome] = useState(false);
+  const returningHomeRef = useRef(false);
+  const returnTimers = useRef<number[]>([]);
+  /* Set when the return was asked for from the keyboard, so focus lands on
+     the ring's key afterwards rather than on <body>. */
+  const returnFocusRef = useRef(false);
+  useEffect(() => {
+    const timers = returnTimers;
+    return () => timers.current.forEach(timer => window.clearTimeout(timer));
+  }, []);
+
+  const returnHome = useCallback((startedInSearch = false): boolean => {
+    if (returningHomeRef.current) return true;
+    if (openRef.current) return false;
+    if (!answeringRef.current) {
+      /*
+       * Already on her way. A press on the canvas can take the focus off an
+       * empty field before the finger lifts, and an empty focused field was
+       * all that made her answer — so she has started home by herself.
+       * Running the return now would hold the cookies back again a moment
+       * after they reappeared. Only make sure nothing still running (the
+       * microphone, a photograph) brings a card back.
+       */
+      if (startedInSearch) dismissHomeSearch();
+      return startedInSearch;
+    }
+
+    returningHomeRef.current = true;
+    setReturningHome(true);
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && rootRef.current?.contains(focused)) focused.blur();
+    expectKeyboardRef.current = false;
+
+    const clearAnswer = () => {
+      dismissHomeSearch();
+      setHasAnswer(false);
+      setTyping(false);
+      answeringRef.current = false;
+      const column = fieldRef.current?.parentElement;
+      if (column) column.scrollTop = 0;
+    };
+    const finish = () => {
+      returningHomeRef.current = false;
+      setReturningHome(false);
+      returnTimers.current = [];
+      if (returnFocusRef.current) {
+        returnFocusRef.current = false;
+        ringKeyRef.current?.focus();
+      }
+    };
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      clearAnswer();
+      finish();
+    } else {
+      returnTimers.current = [
+        window.setTimeout(clearAnswer, RETURN_FADE_MS),
+        window.setTimeout(finish, RETURN_SETTLE_MS),
+      ];
+    }
+    return true;
+  }, []);
+
+  useEffect(() => onHomeReturnRequest(() => returnHome()), [returnHome]);
+
+  /*
    * Review lives on her.
    *
    * It is the one destination this screen used to offer that the ring has no
@@ -604,6 +691,7 @@ export default function YumiRingOverlay({
   const openedByKey = useRef(false);
 
   const openFromKey = useCallback(() => {
+    if (returningHomeRef.current) return;
     openedByKey.current = true;
     openRef.current = true;
     setOpen(true);
@@ -653,7 +741,7 @@ export default function YumiRingOverlay({
     canvasRef.current = canvas;
 
     let pointer: {
-      id: number; blank: boolean; x: number; y: number; started: number; moved: boolean;
+      id: number; blank: boolean; x: number; y: number; started: number; moved: boolean; answering: boolean;
     } | null = null;
     const cancelCanvasGesture = () => {
       const current = pointer;
@@ -664,6 +752,7 @@ export default function YumiRingOverlay({
     };
     cancelCanvasGestureRef.current = cancelCanvasGesture;
     const onCanvasDown = (event: PointerEvent) => {
+      if (returningHomeRef.current) return;
       if (event.isPrimary === false || event.button !== 0 || pointer) return;
       // A second input must not dismiss a selection already being scrubbed.
       if (rootRef.current?.querySelector("[data-liquid-option][data-dragging], [data-liquid-option][data-releasing]")) return;
@@ -671,7 +760,7 @@ export default function YumiRingOverlay({
       if (!eye) return;
       const blank = Math.hypot(event.clientX - eye.x, event.clientY - eye.y) > 100;
       if (blank && !openRef.current) return;
-      pointer = { id: event.pointerId, blank, x: event.clientX, y: event.clientY, started: performance.now(), moved: false };
+      pointer = { id: event.pointerId, blank, x: event.clientX, y: event.clientY, started: performance.now(), moved: false, answering: answeringRef.current };
       if (!blank) sceneRef.current?.pointerDown(event.clientX, event.clientY);
       canvas.setPointerCapture?.(event.pointerId);
     };
@@ -692,6 +781,11 @@ export default function YumiRingOverlay({
       } else if (current.blank) {
         // The canvas covers the scrim, including the gaps between options.
         if (tap && openRef.current) close();
+      } else if (tap && current.answering && !openRef.current) {
+        // Home, not the ring. Judged by the state at the press, not at the
+        // release: the press itself can blur the field (see returnHome).
+        sceneRef.current?.pointerCancel?.();
+        returnHome(true);
       } else {
         sceneRef.current?.pointerUp();
       }
@@ -749,13 +843,19 @@ export default function YumiRingOverlay({
     const relay: YumiSceneRelay = parked?.relay ?? { current: {} };
     relay.current = {
           onPullOpen: () => {
+            if (returningHomeRef.current) return;
             openRef.current = true;
             setOpen(true);
             retireHint();
           },
           onTap: () => {
-            /* A tap is the same key either way: it opens the ring, and once
-               the ring is out it is the way home. */
+            if (returningHomeRef.current) return;
+            if (!openRef.current && answeringRef.current) {
+              returnHome();
+              return;
+            }
+            /* At rest a tap opens the ring, and once it is out it is the
+               way back. A pull is the ring even while she is answering. */
             openRef.current = !openRef.current;
             setOpen(openRef.current);
             if (openRef.current) retireHint();
@@ -1145,12 +1245,12 @@ export default function YumiRingOverlay({
     if (!stage) return;
     stage.dataset.yumiMode = open
       ? "open"
-      : answering
+      : answering || returningHome
         ? "answering"
         : live
           ? "rest"
           : "starting";
-  }, [open, answering, live, stageRef]);
+  }, [open, answering, returningHome, live, stageRef]);
 
   /* Keep keyboard correction immediate. The document normally scrolls
      smoothly; restarting that animation from a scroll listener made iOS
@@ -1493,13 +1593,29 @@ export default function YumiRingOverlay({
         ref={rootRef}
         className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""} ${
           answering ? styles.answering : ""
-        }`}
+        } ${returningHome ? styles.returningHome : ""}`}
         data-yumi-ring-open={open ? "true" : "false"}
+        data-yumi-returning={returningHome ? "true" : undefined}
         /* For the tour's card, which shrinks to a strip while the reader
            types (TutorialCoach.module.css): it is mounted beside this screen,
            not inside it, so it can only see this through the document. */
         data-yumi-typing={typing ? "true" : undefined}
       >
+        {/* The same way home for a reader without a pointer: a skip-link
+            like the ring's key below, there only while she is answering. */}
+        {answering && !open ? (
+          <button
+            type="button"
+            className={styles.ringKey}
+            disabled={returningHome}
+            onClick={() => {
+              returnFocusRef.current = true;
+              if (!returnHome()) returnFocusRef.current = false;
+            }}
+          >
+            {t.navigation.home}
+          </button>
+        ) : null}
         {/* The keyboard's way in. See openFromKey. */}
         <button
           ref={ringKeyRef}
@@ -1624,7 +1740,7 @@ export default function YumiRingOverlay({
             Neither is in the stage underneath, because the stage is hidden
             the moment the scene goes live.
           */}
-          <div className={styles.below} data-yumi-protected="" inert={open || !live}>
+          <div className={styles.below} data-yumi-protected="" inert={open || !live || returningHome}>
             {lines?.primary ? (
               <p className={styles.voice}>{lines.primary}</p>
             ) : null}

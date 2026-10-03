@@ -19,7 +19,7 @@ vi.mock("@/hooks/preferences/useInterfaceLanguage", () => ({ default: () => "eng
 import english from "@/lib/i18n/en";
 import zhTW from "@/lib/i18n/zh-TW";
 import { COACH_FINISHED, setCoachStep } from "@/lib/home/tutorialCoach";
-import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
+import { onHomeReturnRequest, onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import TutorialCoach, { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
 
 const FEED = COACH_STEPS.findIndex(step => step.key === "feed");
@@ -34,6 +34,11 @@ describe("the feed step", () => {
     expect(english.tutorial.coach.steps.feed.body).toMatch(/drag a cookie onto me/i);
     expect(english.tutorial.coach.steps.feed.body).toMatch(/Feed Yumi/);
     expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/拖到我身上/);
+  });
+
+  it("says that a tap on Yumi is the way home from a search (Chi, 2026-10-03)", () => {
+    expect(english.tutorial.coach.steps.feed.body).toMatch(/back home — next time .* just tap me/);
+    expect(zhTW.tutorial.coach.steps.feed.body).toMatch(/^我先帶你回首頁了——之後查完字，點我一下就回來。/);
   });
 
   it("puts the search answer away after a beat, so the cookies are within reach", () => {
@@ -51,6 +56,26 @@ describe("the feed step", () => {
     act(() => vi.advanceTimersByTime(300));
     expect(dismissed).toHaveBeenCalledOnce();
     stop();
+  });
+
+  it("asks the home screen to go home the way a tap on Yumi does, when it is there", () => {
+    vi.useFakeTimers();
+    setCoachStep(FEED);
+    const dismissed = vi.fn();
+    const returned = vi.fn(() => true);
+    const stopDismiss = onHomeSearchDismiss(dismissed);
+    const stopReturn = onHomeReturnRequest(returned);
+
+    render(
+      <TutorialCoach pathname="/home" interfaceMode="standard" onSetMode={vi.fn()} onNavigate={vi.fn()} />,
+    );
+    act(() => vi.advanceTimersByTime(1_300));
+
+    expect(returned).toHaveBeenCalledOnce();
+    // The return empties the field itself, on its own beat.
+    expect(dismissed).not.toHaveBeenCalled();
+    stopReturn();
+    stopDismiss();
   });
 
   it("leaves the search alone on any other step", () => {

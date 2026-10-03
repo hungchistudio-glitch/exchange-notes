@@ -9,7 +9,7 @@ import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
 import {
-  dismissHomeSearch,
+  returnHomeFromSearch,
   subscribeToHomeMoments,
   type HomeMoment,
 } from "@/lib/home/homeMoments";
@@ -304,13 +304,14 @@ export default function TutorialCoach({
    * It follows the keep step, which is done on a search answer — and while
    * an answer is up the cookies are faded and cannot be touched. So the
    * answer is put away for the reader, after a beat long enough to see the
-   * word they just kept go into the library (Chi, 2026-10-03).
+   * word they just kept go into the library (Chi, 2026-10-03) — the same
+   * way home a tap on Yumi takes, card fading and her gliding back.
    */
   const feeding = current?.key === "feed" && pathname === "/home" && !wrongMode;
 
   useEffect(() => {
     if (!feeding) return;
-    const timer = window.setTimeout(dismissHomeSearch, FEED_CLEAR_MS);
+    const timer = window.setTimeout(returnHomeFromSearch, FEED_CLEAR_MS);
     return () => window.clearTimeout(timer);
   }, [feeding]);
 

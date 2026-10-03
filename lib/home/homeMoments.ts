@@ -86,3 +86,35 @@ export function dismissHomeSearch(): void {
     }
   }
 }
+
+/* ---------------------------------------------------------
+   Going home from a search
+
+   Dismissing empties the field at once. Going home is the motion a tap on
+   Yumi makes (YumiRingOverlay.tsx, returnHome): the card fades, she glides
+   back, the cookies follow, and the field is emptied on the way. The tour's
+   feed step asks for this one, so the screen goes home the same way however
+   it is asked to. With nobody on screen to make the motion — the ring is
+   out, or this is not the home screen — it falls back to the dismissal.
+   --------------------------------------------------------- */
+
+const returnListeners = new Set<() => boolean>();
+
+/** `listener` returns whether it took the return on. */
+export function onHomeReturnRequest(listener: () => boolean): () => void {
+  returnListeners.add(listener);
+  return () => {
+    returnListeners.delete(listener);
+  };
+}
+
+export function returnHomeFromSearch(): void {
+  for (const listener of [...returnListeners]) {
+    try {
+      if (listener()) return;
+    } catch {
+      /* Fall through to the plain dismissal below. */
+    }
+  }
+  dismissHomeSearch();
+}
