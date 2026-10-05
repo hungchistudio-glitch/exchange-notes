@@ -108,9 +108,11 @@ Account password-policy changes are outside this bug-fix rollout.
   drag opens the ring; blank-space tap closes it; bilingual icon controls switch
   playback state; card dismissal works; star gathering releases; no console
   errors observed. Preview fixtures were used, not user account mutations.
-- Additional authenticated-home browser verification was blocked by the desktop
-  automatic approval review's usage limit. Physical iPhone PWA keyboard motion,
-  microphone/camera hardware, actual spoken audio quality and OS push delivery
-  were not measured by these desktop checks.
+- Additional browser verification initially hit the desktop approval service's
+  usage limit. After its stated reset time, the retry succeeded and the actual
+  app's signed-out landing page loaded correctly. The local origin had no
+  authenticated session, so account-specific UI was not exercised there.
+  Physical iPhone PWA keyboard motion, microphone/camera hardware, actual
+  spoken audio quality and OS push delivery were not measured by these checks.
 
 No native Apple files were changed, so a new native build was not applicable.
