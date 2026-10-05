@@ -79,11 +79,8 @@ function wait(ms: number, signal: { cancelled: boolean }): Promise<void> {
  * cancelled only by unmount or by the language actually changing.
  */
 /** What a batch changed, as the route now reports it. */
-export type FilledRow = {
-  id: string;
-  texts: Record<string, string>;
-  examples: Record<string, string>;
-};
+export type { LanguageFill as FilledRow } from "@/lib/vocabulary/applyLanguageFill";
+import type { LanguageFill as FilledRow } from "@/lib/vocabulary/applyLanguageFill";
 
 export function useVocabularyLanguageFill({
   items,

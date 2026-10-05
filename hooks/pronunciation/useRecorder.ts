@@ -29,7 +29,7 @@ import {
 export type RecorderControls = {
   state: RecorderState;
   supported: boolean;
-  start: () => Promise<void>;
+  start: () => Promise<boolean>;
   stop: () => void;
   /** Throws the clip away and returns to idle, releasing its object URL. */
   discard: () => void;
@@ -52,8 +52,10 @@ export default function useRecorder(): RecorderControls {
   const clipUrlRef = useRef<string | null>(null);
   /** False once the component is gone, so late callbacks stop touching state. */
   const mountedRef = useRef(true);
+  const generationRef = useRef(0);
 
   const releaseStream = useCallback(() => {
+    generationRef.current += 1;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -128,20 +130,21 @@ export default function useRecorder(): RecorderControls {
   const start = useCallback(async () => {
     if (!recordingSupported()) {
       dispatch({ type: "unsupported" });
-      return;
+      return false;
     }
 
     // A previous attempt's stream and clip go before a new one begins.
     releaseStream();
     revokeClip();
     dispatch({ type: "request" });
+    const generation = generationRef.current;
 
     let stream: MediaStream;
 
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (error) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || generation !== generationRef.current) return false;
 
       const name = error instanceof DOMException ? error.name : "";
       dispatch(
@@ -149,7 +152,7 @@ export default function useRecorder(): RecorderControls {
           ? { type: "denied" }
           : { type: "failed", error: "recorder-failed" },
       );
-      return;
+      return false;
     }
 
     /*
@@ -157,9 +160,9 @@ export default function useRecorder(): RecorderControls {
      * open. Landing here unmounted means the stream must be released
      * immediately rather than handed to a recorder nothing will ever stop.
      */
-    if (!mountedRef.current) {
+    if (!mountedRef.current || generation !== generationRef.current) {
       stream.getTracks().forEach((track) => track.stop());
-      return;
+      return false;
     }
 
     streamRef.current = stream;
@@ -175,17 +178,19 @@ export default function useRecorder(): RecorderControls {
       if (mountedRef.current) {
         dispatch({ type: "failed", error: "recorder-failed" });
       }
-      return;
+      return false;
     }
 
     recorderRef.current = recorder;
     startedAtRef.current = Date.now();
 
     recorder.ondataavailable = (event) => {
+      if (recorderRef.current !== recorder) return;
       if (event.data.size > 0) chunksRef.current.push(event.data);
     };
 
     recorder.onerror = () => {
+      if (recorderRef.current !== recorder) return;
       releaseStream();
       if (mountedRef.current) {
         dispatch({ type: "failed", error: "recorder-failed" });
@@ -193,6 +198,7 @@ export default function useRecorder(): RecorderControls {
     };
 
     recorder.onstop = () => {
+      if (recorderRef.current !== recorder) return;
       const durationMs = Date.now() - startedAtRef.current;
       const chunks = chunksRef.current;
       chunksRef.current = [];
@@ -203,7 +209,7 @@ export default function useRecorder(): RecorderControls {
 
       if (chunks.length === 0) {
         dispatch({ type: "failed", error: "no-audio" });
-        return;
+        return false;
       }
 
       const blob = new Blob(chunks, {
@@ -226,7 +232,7 @@ export default function useRecorder(): RecorderControls {
       if (mountedRef.current) {
         dispatch({ type: "failed", error: "recorder-failed" });
       }
-      return;
+      return false;
     }
 
     dispatch({ type: "started" });
@@ -237,6 +243,7 @@ export default function useRecorder(): RecorderControls {
       timeoutRef.current = null;
       stop();
     }, MAX_RECORDING_MS);
+    return true;
   }, [releaseStream, revokeClip, stop]);
 
   return {

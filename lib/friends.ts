@@ -45,6 +45,7 @@ export type ConversationSummary = {
 /** A conversation opened by its own id, rather than by who it is with. */
 export type ConversationContext = {
   conversationId: string;
+  canContact: boolean;
   friend: FriendProfile | null;
   mutedAt: string | null;
   archivedAt: string | null;
@@ -837,6 +838,7 @@ export async function getConversationContext(
   return {
     conversationId,
     friend,
+    canContact: otherUserId ? await areFriends(supabase, currentUserId, otherUserId) : false,
     mutedAt: membership.muted_at,
     archivedAt: membership.hidden_at,
     lastReadAt: membership.last_read_at,

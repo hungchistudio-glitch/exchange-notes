@@ -58,8 +58,12 @@ export default function useFeedPersistence(
         try {
           const supabase = createClient();
           const saved = await saveFedProgress(supabase, pending);
-          stateRef.current = saved;
-          setPetState(saved);
+          // A second cookie may already be in the optimistic state. An
+          // older acknowledgement must not put it back into the tray.
+          if (stateRef.current === pending) {
+            stateRef.current = saved;
+            setPetState(saved);
+          }
         } catch {
           // The optimistic state stands. Growth just won't be remembered
           // next visit, which is the same trade the write path already made.

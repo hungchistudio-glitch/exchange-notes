@@ -570,10 +570,10 @@ export default function LexiconResults({
                     only when it comes back, and what still works meanwhile.
                   */}
                   <p className="text-[0.8125rem] font-semibold text-[var(--accent-amber-deep)]">
-                    {result?.quotaResetsAt ? copy.quotaTitle : copy.noTranslation}
+                    {result?.dailyLimitReached ? copy.dailyLimitTitle : result?.quotaResetsAt ? copy.quotaTitle : copy.noTranslation}
                   </p>
                   <p className="mt-1 text-[0.8125rem] leading-5 text-[var(--accent-amber-deep)]/85">
-                    {result?.quotaResetsAt
+                    {result?.dailyLimitReached ? copy.dailyLimitDetail : result?.quotaResetsAt
                       ? copy.quotaDetail.replace(
                           "{time}",
                           formatResetTime(
@@ -583,7 +583,7 @@ export default function LexiconResults({
                         )
                       : copy.noTranslationDetail}
                   </p>
-                  {result?.quotaResetsAt ? null : (
+                  {result?.quotaResetsAt || result?.dailyLimitReached ? null : (
                     <button
                       type="button"
                       onClick={search.retry}
@@ -682,7 +682,11 @@ export default function LexiconResults({
                 </p>
               )}
 
-              {result?.degraded &&
+              {result?.dailyLimitReached && !entry.translationUnavailable && (
+                <p role="status" className="mt-4 rounded-[16px] border border-line bg-surface px-4 py-3 text-[0.75rem] leading-5 text-ink-soft">{copy.dailyLimitDetail}</p>
+              )}
+
+              {result?.degraded && !result.dailyLimitReached &&
                 !entry.translationUnavailable &&
                 !entry.basicTranslation && (
                 <p

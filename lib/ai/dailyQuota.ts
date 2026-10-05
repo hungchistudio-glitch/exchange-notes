@@ -78,6 +78,7 @@ export function setDailyQuotaClientForTests(client: QuotaClient | null) {
  * a full allowance rather than failing.
  */
 export type AiOperation =
+  | "word_lookup"
   | "vision_identification"
   | "menu_scan"
   | "note_translation"

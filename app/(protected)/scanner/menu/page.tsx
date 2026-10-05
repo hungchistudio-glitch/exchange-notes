@@ -56,14 +56,22 @@ export default function MenuTranslatorPage() {
 
   const { session, dispatch } = useScanSession();
 
+  const requestRef = useRef<AbortController | null>(null);
+  const cancelAnalysis = useCallback(() => {
+    requestRef.current?.abort();
+    requestRef.current = null;
+  }, []);
+  useEffect(() => cancelAnalysis, [cancelAnalysis]);
+
   const leaveScanner = useCallback(() => {
+    cancelAnalysis();
     if (window.history.length > 1) {
       router.back();
       return;
     }
 
     router.replace("/home");
-  }, [router]);
+  }, [router, cancelAnalysis]);
 
   /*
    * Which language the menu comes back in — a learning language, not the
@@ -146,6 +154,9 @@ export default function MenuTranslatorPage() {
 
   const analyze = useCallback(
     async (image: string) => {
+      cancelAnalysis();
+      const controller = new AbortController();
+      requestRef.current = controller;
       dispatch({ type: "analyze_started" });
 
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -156,6 +167,7 @@ export default function MenuTranslatorPage() {
       try {
         const response = await fetch("/api/scanner/menu/analyze", {
           method: "POST",
+          signal: controller.signal,
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           cache: "no-store",
@@ -165,6 +177,8 @@ export default function MenuTranslatorPage() {
         const body = (await response
           .json()
           .catch(() => null)) as MenuAnalyzeResponse | null;
+
+        if (controller.signal.aborted) return;
 
         if (body?.document || body?.notMenu || body?.code === "no_items_found") {
           dispatch({ type: "analyzed", response: body });
@@ -178,11 +192,13 @@ export default function MenuTranslatorPage() {
           failure,
           message: failureMessage(failure, body),
         });
-      } catch {
-        dispatch({ type: "failed", failure: "unknown", message: "" });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        const offline = error instanceof TypeError;
+        dispatch({ type: "failed", failure: offline ? "offline" : "unknown", message: offline ? copy.offlineBody : "" });
       }
     },
-    [copy.offlineBody, dispatch, failureMessage, targetLanguage],
+    [copy.offlineBody, dispatch, failureMessage, targetLanguage, cancelAnalysis],
   );
 
   // Analysis starts from the state machine rather than from the capture
@@ -278,7 +294,11 @@ export default function MenuTranslatorPage() {
     return (
       <MenuProcessing
         image={session.image}
-        onCancel={() => dispatch({ type: "camera_ready" })}
+        onCancel={() => {
+          cancelAnalysis();
+          analysedImageRef.current = null;
+          dispatch({ type: "camera_ready" });
+        }}
       />
     );
   }

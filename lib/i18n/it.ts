@@ -460,6 +460,8 @@ const italian: TranslationDictionary = {
     noTranslation: "Ancora senza significato",
     noTranslationDetail:
       "L'IA di Google non è disponibile al momento (con il piano gratuito capita spesso nelle ore di punta), quindi questa parola non ha ancora un significato. Riprovare tra poco di solito funziona.",
+    dailyLimitTitle: "Limite giornaliero di ricerche IA raggiunto",
+    dailyLimitDetail: "Hai usato le 150 ricerche IA di oggi. Il dizionario e le risposte memorizzate restano disponibili. Il limite si rinnova domani.",
     degradedNotice:
       "La parola e il suo significato sono giusti; l'esempio è generico.",
     lowConfidence: "È solo un'ipotesi. Controllala prima di salvarla.",
@@ -1359,6 +1361,8 @@ const italian: TranslationDictionary = {
       privateHint: "Protetto dal tuo account e dalle regole di accesso al database. La crittografia end-to-end non è ancora attiva.",
       privateNote: "I messaggi sono protetti dal tuo account e dalle regole di accesso al database. La crittografia end-to-end non è ancora attiva.",
       newMessages: "Nuovi messaggi",
+      loadOlder: "Carica messaggi precedenti",
+      historyOnly: "Puoi leggere la cronologia. Tornate amici per inviare nuovi messaggi.",
       jumpToLatest: "Vai all'ultimo",
       options: "Opzioni della conversazione",
       closeOptions: "Chiudi le opzioni",

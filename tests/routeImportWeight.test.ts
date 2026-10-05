@@ -114,10 +114,13 @@ describe("what the heaviest tabs drag in with them", () => {
    * dependency-free file the voice key needs so the app does not reload onto
    * a new build while the microphone is live. It has to be on the path of
    * anything that can listen, and home's search can.
+   * Raised home 154 → 156 (2026-10-04) for two dependency-free guards:
+   * shared scroll-style ownership and translation compare/merge. Both protect
+   * the first-render home/search state; push cleanup remains dynamically loaded.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 158],
-    ["home", TABS.home, 154],
+    ["home", TABS.home, 156],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

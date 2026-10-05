@@ -15,7 +15,7 @@ vi.mock("@/contexts/LearningLanguageContext", () => ({
 vi.mock("@/hooks/useDisplayLanguages", () => ({
   default: () => ({ learningLanguage: "fr", supportLanguage: "zh-TW", pair: ["fr", "zh-TW"] as const }),
 }));
-vi.mock("@/hooks/useOnline", () => ({ reportNetworkFailure: () => {} }));
+vi.mock("@/hooks/useOnline", () => ({ reportNetworkFailure: () => {}, reportNetworkSuccess: () => {} }));
 vi.mock("@/hooks/usePhonetics", () => ({ primePhonetics: () => {} }));
 vi.mock("@/lib/home/homeMoments", () => ({ announceHomeMoment: () => {} }));
 vi.mock("@/lib/lexicon/cache", () => ({ readCachedEntry: () => null, writeCachedEntry: () => {} }));
@@ -226,4 +226,14 @@ describe("the tuned line and table", () => {
     expect(pickObjectWord([{ index: 854, score: 0.5 }])?.word.en).toBe("stage");
     expect(pickObjectWord([{ index: 581, score: 0.5 }])?.word.en).toBe("car");
   });
+});
+
+it("a server error does not label the phone offline", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({ error: "server error" }) }));
+  try {
+    const { result } = renderHook(() => useLexiconSearch({ items: [] }));
+    act(() => result.current.submit("server test", "type"));
+    await waitFor(() => expect(result.current.error).toBe("server error"));
+    expect(result.current.result?.offline).toBe(false);
+  } finally { vi.unstubAllGlobals(); }
 });

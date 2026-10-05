@@ -11,7 +11,7 @@ import {
 
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import { reportNetworkFailure } from "@/hooks/useOnline";
+import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { primePhonetics } from "@/hooks/usePhonetics";
 import { readCachedEntry, writeCachedEntry } from "@/lib/lexicon/cache";
@@ -97,6 +97,7 @@ type LookupResponse = LexiconEntry & {
   degraded?: boolean;
   retryAfterMs?: number | null;
   quotaResetsAt?: number | null;
+  dailyLimitReached?: boolean;
   error?: string;
 };
 
@@ -333,6 +334,7 @@ export default function useLexiconSearch({
           degraded: boolean;
           offline: boolean;
           quotaResetsAt?: number | null;
+  dailyLimitReached?: boolean;
         },
       ): LexiconResult => {
         const settled = settleLanguages(routing, raw);
@@ -357,6 +359,7 @@ export default function useLexiconSearch({
           degraded: flags.degraded,
           offline: flags.offline,
           quotaResetsAt: flags.quotaResetsAt ?? null,
+          dailyLimitReached: flags.dailyLimitReached ?? false,
         };
       };
 
@@ -416,6 +419,7 @@ export default function useLexiconSearch({
           body: JSON.stringify({ text, headLanguage: chosenHead ?? undefined }),
         });
 
+        reportNetworkSuccess();
         const data = (await response.json()) as LookupResponse;
 
         if (!response.ok || data.error) {
@@ -471,6 +475,7 @@ export default function useLexiconSearch({
           error: _unused,
           retryAfterMs: _hint,
           quotaResetsAt,
+          dailyLimitReached,
           ...entry
         } = data;
         void _unused;
@@ -507,6 +512,7 @@ export default function useLexiconSearch({
             degraded: Boolean(degraded),
             offline: false,
             quotaResetsAt: degraded ? quotaResetsAt : null,
+            dailyLimitReached,
           }),
         );
         setStatus("ready");
@@ -529,9 +535,9 @@ export default function useLexiconSearch({
          * the whole difference between an app that stops at the border and
          * one that comes along.
          */
-        reportNetworkFailure();
-
         if (!isCurrent()) return;
+        const offline = lookupError instanceof TypeError;
+        if (offline) reportNetworkFailure();
 
         if (quiet) {
           settleOnDevice();
@@ -545,12 +551,12 @@ export default function useLexiconSearch({
         const [local] = searchPersonal(items, text, 1);
 
         if (local) {
-          setResult(settle(null, { degraded: true, offline: true }));
+          setResult(settle(null, { degraded: true, offline }));
           setStatus("ready");
           return;
         }
 
-        setResult(settle(null, { degraded: true, offline: true }));
+        setResult(settle(null, { degraded: true, offline }));
         setError(
           lookupError instanceof Error
             ? lookupError.message

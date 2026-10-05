@@ -1,5 +1,7 @@
 "use client";
 
+import { leaseInlineStyles } from "@/lib/ui/inlineStyleLease";
+
 import {
   useCallback,
   useEffect,
@@ -196,13 +198,8 @@ let previousBodyTop = "";
 let previousBodyLeft = "";
 let previousBodyRight = "";
 let previousBodyWidth = "";
-let previousRootOverflow = "";
-let previousRootOverscroll = "";
-let previousRootScrollBehavior = "";
 let lockedWindowScrollY = 0;
-let lockedAppScroller: HTMLElement | null = null;
-let previousAppScrollerOverflowY = "";
-let previousAppScrollerOverscroll = "";
+let releaseScrollStyles: (() => void) | null = null;
 
 function lockBodyScroll() {
   if (bodyLockCount === 0) {
@@ -222,9 +219,6 @@ function lockBodyScroll() {
     previousBodyLeft = body.style.left;
     previousBodyRight = body.style.right;
     previousBodyWidth = body.style.width;
-    previousRootOverflow = root.style.overflow;
-    previousRootOverscroll = root.style.overscrollBehavior;
-    previousRootScrollBehavior = root.style.scrollBehavior;
     lockedWindowScrollY = window.scrollY;
 
     /*
@@ -234,20 +228,10 @@ function lockBodyScroll() {
      * signed-in routes, and html/body for public overlays and iOS rubber-band
      * gestures at the root edge.
      */
-    lockedAppScroller = document.querySelector<HTMLElement>(
-      "[data-app-scroll-viewport]",
-    );
-
-    if (lockedAppScroller) {
-      previousAppScrollerOverflowY = lockedAppScroller.style.overflowY;
-      previousAppScrollerOverscroll =
-        lockedAppScroller.style.overscrollBehavior;
-      lockedAppScroller.style.overflowY = "hidden";
-      lockedAppScroller.style.overscrollBehavior = "none";
-    }
-
-    root.style.overflow = "hidden";
-    root.style.overscrollBehavior = "none";
+    const scroller = document.querySelector<HTMLElement>("[data-app-scroll-viewport]");
+    const releaseRoot = leaseInlineStyles(root, { overflow: "hidden", "overscroll-behavior": "none", "scroll-behavior": "auto" });
+    const releaseApp = scroller ? leaseInlineStyles(scroller, { "overflow-y": "hidden", "overscroll-behavior": "none" }) : null;
+    releaseScrollStyles = () => { releaseRoot(); releaseApp?.(); };
     body.style.overflow = "hidden";
     body.style.overscrollBehavior = "none";
     body.style.position = "fixed";
@@ -265,14 +249,6 @@ function unlockBodyScroll() {
 
   if (bodyLockCount === 0) {
     const body = document.body;
-    const root = document.documentElement;
-
-    if (lockedAppScroller) {
-      lockedAppScroller.style.overflowY = previousAppScrollerOverflowY;
-      lockedAppScroller.style.overscrollBehavior = previousAppScrollerOverscroll;
-      lockedAppScroller = null;
-    }
-
     body.style.overflow = previousBodyOverflow;
     body.style.overscrollBehavior = previousBodyOverscroll;
     body.style.position = previousBodyPosition;
@@ -280,15 +256,13 @@ function unlockBodyScroll() {
     body.style.left = previousBodyLeft;
     body.style.right = previousBodyRight;
     body.style.width = previousBodyWidth;
-    root.style.overflow = previousRootOverflow;
-    root.style.overscrollBehavior = previousRootOverscroll;
 
     /* Avoid the global smooth-scroll rule animating the page back into place. */
-    root.style.scrollBehavior = "auto";
     if (lockedWindowScrollY !== 0) {
       window.scrollTo(0, lockedWindowScrollY);
     }
-    root.style.scrollBehavior = previousRootScrollBehavior;
+    releaseScrollStyles?.();
+    releaseScrollStyles = null;
   }
 }
 

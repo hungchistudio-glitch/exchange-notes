@@ -63,168 +63,141 @@ export default function useVoiceInput({
 
   const [listening, setListening] = useState(false);
   useReloadHold(listening);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  /** Set the moment the browser produces a transcript worth using. */
-  const heardRef = useRef(false);
-
-  // Keep the latest callback in a ref so starting a session doesn't need
-  // to tear down and rebuild the recognizer every time the parent
-  // re-renders with a new closure.
+  type Session = {
+    recognition: SpeechRecognitionLike;
+    stream: MediaStream | null;
+    recorder: MediaRecorder | null;
+    chunks: Blob[];
+    heard: boolean;
+    stopped: boolean;
+    cancelled: boolean;
+    recognitionEnded: boolean;
+    recordingEnded: boolean;
+    submitted: boolean;
+    timer: ReturnType<typeof setTimeout> | null;
+  };
+  const sessionRef = useRef<Session | null>(null);
   const onResultRef = useRef(onResult);
   const onAudioRef = useRef(onAudio);
+  useEffect(() => { onResultRef.current = onResult; }, [onResult]);
+  useEffect(() => { onAudioRef.current = onAudio; }, [onAudio]);
 
-  useEffect(() => {
-    onResultRef.current = onResult;
-  }, [onResult]);
-
-  useEffect(() => {
-    onAudioRef.current = onAudio;
-  }, [onAudio]);
-
-  const releaseMicrophone = useCallback(() => {
-    // The recording indicator stays lit until every track is stopped, and
-    // a light that does not go out reads as an app still listening.
-    for (const track of streamRef.current?.getTracks() ?? []) track.stop();
-    streamRef.current = null;
+  const release = useCallback((session: Session) => {
+    session.stopped = true;
+    if (session.timer) { clearTimeout(session.timer); session.timer = null; }
+    try {
+      if (session.recorder?.state === "recording") session.recorder.stop();
+    } catch { /* Track release below is still required. */ }
+    for (const track of session.stream?.getTracks() ?? []) track.stop();
+    session.stream = null;
   }, []);
 
-  useEffect(() => {
-    return () => {
-      recognitionRef.current?.abort();
-      recognitionRef.current = null;
-      if (recorderRef.current?.state === "recording") {
-        recorderRef.current.stop();
-      }
-      releaseMicrophone();
-    };
-  }, [releaseMicrophone]);
+  const cancel = useCallback(() => {
+    const session = sessionRef.current;
+    if (!session) return;
+    session.cancelled = true;
+    sessionRef.current = null;
+    try { session.recognition.abort(); } catch { /* Already ended. */ }
+    release(session);
+    setListening(false);
+  }, [release]);
 
-  /**
-   * Records alongside the browser's own recognition, for the fallback.
-   *
-   * Failure here is silent and not fatal: a denied microphone or a browser
-   * without MediaRecorder simply means there is no second chance, and the
-   * fast path is unaffected.
-   */
-  const startRecording = useCallback(async () => {
-    if (!onAudioRef.current) return;
-    if (typeof MediaRecorder === "undefined") return;
-    if (!navigator.mediaDevices?.getUserMedia) return;
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      streamRef.current = stream;
-      chunksRef.current = [];
-
-      const recorder = new MediaRecorder(stream);
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
-      };
-
-      recorder.onstop = () => {
-        releaseMicrophone();
-
-        // Only when the browser came back empty. The recording exists for
-        // a fallback, and a fallback that fires anyway is just a bill.
-        if (heardRef.current) return;
-
-        const audio = new Blob(chunksRef.current, {
-          type: recorder.mimeType || "audio/webm",
-        });
-
-        if (audio.size > 0) onAudioRef.current?.(audio);
-      };
-
-      recorder.start();
-      recorderRef.current = recorder;
-    } catch {
-      releaseMicrophone();
-    }
-  }, [releaseMicrophone]);
+  useEffect(() => () => {
+    const session = sessionRef.current;
+    if (!session) return;
+    session.cancelled = true;
+    sessionRef.current = null;
+    try { session.recognition.abort(); } catch { /* Already ended. */ }
+    release(session);
+  }, [release]);
 
   const stop = useCallback(() => {
-    recognitionRef.current?.stop();
-
-    if (recorderRef.current?.state === "recording") {
-      recorderRef.current.stop();
-    }
-  }, []);
+    const session = sessionRef.current;
+    if (!session) return;
+    try { session.recognition.stop(); } catch { /* Already ended. */ }
+    release(session);
+    setListening(false);
+  }, [release]);
 
   const start = useCallback(() => {
     const Recognition = getRecognitionConstructor();
-
     if (!Recognition) return;
-
-    // Restarting while a session is live throws in Chrome, so always
-    // tear the previous one down first.
-    recognitionRef.current?.abort();
-
-    heardRef.current = false;
-    void startRecording();
-
+    cancel();
     const recognition = new Recognition();
-
+    const session: Session = { recognition, stream: null, recorder: null, chunks: [], heard: false, stopped: false, cancelled: false, recognitionEnded: false, recordingEnded: false, submitted: false, timer: null };
+    sessionRef.current = session;
+    const current = () => sessionRef.current === session && !session.cancelled;
+    const deliverAudio = () => {
+      if (!current() || session.heard || session.submitted || !session.recognitionEnded || !session.recordingEnded) return;
+      const audio = new Blob(session.chunks, { type: session.recorder?.mimeType || "audio/webm" });
+      session.chunks = [];
+      if (audio.size > 0) { session.submitted = true; onAudioRef.current?.(audio); }
+    };
     recognition.lang = lang;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
-
-    recognition.onresult = (event) => {
+    recognition.onresult = event => {
+      if (!current() || session.submitted) return;
       let transcript = "";
-
       for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        transcript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
       }
-
-      const trimmed = transcript.trim();
-
-      if (trimmed) {
-        heardRef.current = true;
-        onResultRef.current(trimmed);
+      if (transcript.trim()) {
+        session.heard = true;
+        session.submitted = true;
+        onResultRef.current(transcript.trim());
       }
     };
-
-    recognition.onerror = (event) => {
-      // "aborted" and "no-speech" are ordinary outcomes (user cancelled,
-      // or stayed silent) — not worth surfacing as failures.
-      if (event.error !== "aborted" && event.error !== "no-speech") {
-        console.error("Speech recognition failed:", event.error);
-      }
-
+    recognition.onerror = event => {
+      if (!current()) return;
+      if (event.error !== "aborted" && event.error !== "no-speech") console.error("Speech recognition failed:", event.error);
+      session.recognitionEnded = true;
+      release(session);
+      deliverAudio();
       setListening(false);
     };
-
     recognition.onend = () => {
-      setListening(false);
-
-      // Whatever the browser made of it, the recording stops here — and
-      // its own handler decides whether anyone needs to hear it.
-      if (recorderRef.current?.state === "recording") {
-        recorderRef.current.stop();
-      }
+      session.recognitionEnded = true;
+      release(session);
+      deliverAudio();
+      if (current()) setListening(false);
     };
 
-    recognitionRef.current = recognition;
-
+    if (onAudioRef.current && typeof MediaRecorder !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+      void navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        // Permission can arrive after Stop, navigation, or another recording.
+        if (!current() || session.stopped) { stream.getTracks().forEach(track => track.stop()); return; }
+        session.stream = stream;
+        const recorder = new MediaRecorder(stream);
+        session.recorder = recorder;
+        recorder.ondataavailable = event => { if (event.data.size > 0) session.chunks.push(event.data); };
+        recorder.onstop = () => {
+          release(session);
+          session.recordingEnded = true;
+          deliverAudio();
+        };
+        recorder.start();
+      }).catch(() => release(session));
+    }
     try {
       recognition.start();
       setListening(true);
-    } catch (startError) {
-      console.error("Could not start speech recognition:", startError);
+      session.timer = setTimeout(() => {
+        if (!current()) return;
+        try { recognition.abort(); } catch { /* Already ended. */ }
+        session.recognitionEnded = true;
+        release(session);
+        deliverAudio();
+        setListening(false);
+      }, 15_000);
+    } catch (error) {
+      session.cancelled = true;
+      release(session);
       setListening(false);
-
-      if (recorderRef.current?.state === "recording") {
-        recorderRef.current.stop();
-      }
+      console.error("Could not start speech recognition:", error);
     }
-  }, [lang, startRecording]);
+  }, [lang, cancel, release]);
 
   const toggle = useCallback(() => {
     if (listening) {
@@ -235,5 +208,5 @@ export default function useVoiceInput({
     start();
   }, [listening, start, stop]);
 
-  return { supported, listening, start, stop, toggle };
+  return { supported, listening, start, stop, cancel, toggle };
 }

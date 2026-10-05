@@ -216,3 +216,11 @@ describe("the mirror's owner", () => {
     expect(await readOutbox()).toEqual([]);
   });
 });
+
+ it("sign-out clears even a mirror write still in flight", async () => {
+  const write = writeMirror([word("01", { en: "private" })], "u");
+  const clear = forgetMirror();
+  await Promise.all([write, clear]);
+  expect(await readMirror("u")).toEqual([]);
+  expect(await readAll(STORES.vocabulary)).toEqual([]);
+});

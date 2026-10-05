@@ -1,3 +1,4 @@
+import { messagePreview } from "@/lib/messages/preview";
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -126,7 +127,7 @@ function getMessagePreview(body: string): string {
     return "Shared a vocabulary card.";
   }
 
-  const preview = compactText(body, 180);
+  const preview = compactText(messagePreview(body), 180);
 
   return preview || "Sent you a message.";
 }
@@ -453,7 +454,11 @@ async function handleMessageEvent(
   const summary = emptySummary();
 
   for (const recipient of recipientRows ?? []) {
-    if (recipient.muted_at) {
+    const { data: friendship, error: friendshipError } = await supabase
+      .from("friendships").select("id")
+      .or(`and(user_one_id.eq.${authenticatedUserId},user_two_id.eq.${recipient.user_id}),and(user_one_id.eq.${recipient.user_id},user_two_id.eq.${authenticatedUserId})`)
+      .maybeSingle();
+    if (friendshipError || !friendship || recipient.muted_at) {
       summary.recipients += 1;
       summary.skipped += 1;
       continue;
@@ -615,6 +620,16 @@ async function handleFriendAcceptedEvent(
     request.status !== "accepted"
   ) {
     throw new Error("FRIEND_ACCEPTED_FORBIDDEN");
+  }
+
+  // An accepted request remains in history after unfriend. Replaying its
+  // notification must still require a current friendship.
+  const { data: friendship, error: friendshipError } = await supabase
+    .from("friendships").select("id")
+    .or(`and(user_one_id.eq.${authenticatedUserId},user_two_id.eq.${request.sender_id}),and(user_one_id.eq.${request.sender_id},user_two_id.eq.${authenticatedUserId})`)
+    .maybeSingle();
+  if (friendshipError || !friendship) {
+    return { ...emptySummary(), recipients: 1, skipped: 1 };
   }
 
   const accepterName = await getProfileName(

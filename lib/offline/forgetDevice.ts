@@ -125,5 +125,5 @@ async function forgetIndexedDbCopies(): Promise<void> {
  */
 export async function forgetDeviceCopies(): Promise<void> {
   forgetAccountStorage();
-  await Promise.all([forgetIndexedDbCopies(), forgetCachedPages()]);
+  await Promise.all([forgetIndexedDbCopies(), forgetCachedPages(), import("@/lib/push/client").then(({ removeWebPushOnSignOut }) => removeWebPushOnSignOut()).catch(() => undefined)]);
 }

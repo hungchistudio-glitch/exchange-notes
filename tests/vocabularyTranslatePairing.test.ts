@@ -39,14 +39,19 @@ vi.mock("@/lib/supabase/server", () => ({
           order: async () => ({ data: mocks.rows, error: null }),
         }),
       }),
-      update: (patch: unknown) => ({
-        eq: (_column: string, id: string) => ({
-          eq: async () => {
-            mocks.update(id, patch);
-            return { error: null };
+      update: (patch: unknown) => {
+        const filters: Record<string, string> = {};
+        const chain = {
+          eq: (column: string, value: string) => { filters[column] = value; return chain; },
+          select: async () => {
+            const current = mocks.rows.find(row => (row as { id: string }).id === filters.id) as { texts: unknown; examples: unknown } | undefined;
+            if (!current || JSON.stringify(current.texts) !== filters.texts || JSON.stringify(current.examples) !== filters.examples) return { data: [], error: null };
+            mocks.update(filters.id, patch);
+            return { data: [{ id: filters.id }], error: null };
           },
-        }),
-      }),
+        };
+        return chain;
+      },
     }),
   }),
 }));
@@ -277,4 +282,14 @@ describe("library fill from the built-in dictionaries", () => {
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.create).toHaveBeenCalledTimes(1);
   });
+});
+
+it("does not write a model response over an edit made while it was answering", async () => {
+  mocks.create.mockImplementation(async () => {
+    mocks.rows = mocks.rows.map(row => (row as { id: string }).id === "row-a" ? { ...(row as object), texts: { en: "my correction" } } : row);
+    return { text: JSON.stringify({ words: [{ id: "w1", text: "old answer", example: "old example" }] }) };
+  });
+  const body = await (await POST(request())).json();
+  expect(body.updated).toEqual([]);
+  expect(mocks.update).not.toHaveBeenCalled();
 });

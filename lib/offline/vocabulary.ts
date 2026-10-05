@@ -64,20 +64,29 @@ export async function readMirror(userId: string): Promise<VocabularyItem[]> {
     .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
 }
 
-export async function writeMirror(
+let mirrorWrites: Promise<void> = Promise.resolve();
+function serializeMirror(action: () => Promise<void>): Promise<void> {
+  const pending = mirrorWrites.then(action, action);
+  mirrorWrites = pending.catch(() => undefined);
+  return pending;
+}
+
+export function writeMirror(
   items: VocabularyItem[],
   userId: string,
 ): Promise<void> {
-  await replaceAll(
-    STORES.vocabulary,
-    items.map((item) => ({ key: item.id, item })),
-  );
+  return serializeMirror(async () => {
+    await replaceAll(
+      STORES.vocabulary,
+      items.map((item) => ({ key: item.id, item })),
+    );
 
-  await writeRecord(STORES.kv, { key: OWNER_KEY, userId });
+    await writeRecord(STORES.kv, { key: OWNER_KEY, userId });
 
-  await writeRecord(STORES.kv, {
-    key: SYNCED_AT_KEY,
-    at: new Date().toISOString(),
+    await writeRecord(STORES.kv, {
+      key: SYNCED_AT_KEY,
+      at: new Date().toISOString(),
+    });
   });
 }
 
@@ -90,13 +99,15 @@ export async function writeMirror(
  * security — quietly, in the background, on a screen belonging to someone
  * who never made it.
  */
-export async function forgetMirror(): Promise<void> {
-  await clearStore(STORES.vocabulary);
-  await clearStore(STORES.outbox);
-  await deleteRecord(STORES.kv, OWNER_KEY);
-  await deleteRecord(STORES.kv, SYNCED_AT_KEY);
+export function forgetMirror(): Promise<void> {
+  return serializeMirror(async () => {
+    await clearStore(STORES.vocabulary);
+    await clearStore(STORES.outbox);
+    await deleteRecord(STORES.kv, OWNER_KEY);
+    await deleteRecord(STORES.kv, SYNCED_AT_KEY);
 
-  announceOutboxChange();
+    announceOutboxChange();
+  });
 }
 /* ---------- the outbox ---------- */
 

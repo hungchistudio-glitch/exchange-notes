@@ -169,7 +169,7 @@ export default function UniversalSearchField({
      channel. Late camera/voice answers must not reopen a dismissed search. */
   const { reset } = search;
   const { cancel: cancelImage } = imageLookup;
-  const { stop: stopVoice } = voice;
+  const stopVoice = voice.cancel ?? voice.stop;
   useEffect(
     () =>
       onHomeSearchDismiss(() => {

@@ -214,6 +214,7 @@ export type LexiconResult = {
    * back (epoch ms). Only ever set on a degraded answer.
    */
   quotaResetsAt?: number | null;
+  dailyLimitReached?: boolean;
 
   /**
    * The camera's first answer, from the classifier on the phone rather than

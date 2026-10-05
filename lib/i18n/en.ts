@@ -465,6 +465,8 @@ const english: TranslationDictionary = {
     noTranslation: "No meaning yet",
     noTranslationDetail:
       "Google's AI is unavailable right now (on the free plan this often happens at peak times), so this word has no meaning yet. Trying again in a little while usually works.",
+    dailyLimitTitle: "Daily AI lookup limit reached",
+    dailyLimitDetail: "You’ve used today’s 150 AI lookups. Dictionary and cached answers still work. Your AI allowance renews tomorrow.",
     degradedNotice:
       "The word and its meaning are right; the example sentence is a generic one.",
     lowConfidence: "This is a best guess. Check it before you keep it.",
@@ -1435,6 +1437,8 @@ const english: TranslationDictionary = {
       privateNote:
         "Messages are protected by your account and database access rules. End-to-end encryption is not yet enabled.",
       newMessages: "New messages",
+      loadOlder: "Load earlier messages",
+      historyOnly: "You can read your history. Add each other as friends to send new messages.",
       jumpToLatest: "Jump to latest",
       options: "Conversation options",
       closeOptions: "Close options",
