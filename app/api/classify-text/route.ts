@@ -11,6 +11,7 @@ import { readLanguageRoles } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { after, NextResponse } from "next/server";
 
+import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 import { recordAiFailure } from "@/lib/ai/callLog";
 import { CORE_MAX_ATTEMPTS, firstAnswer } from "@/lib/ai/hedge";
 import { dailyQuotaResetAt, healthyModels } from "@/lib/ai/modelHealth";
@@ -274,6 +275,7 @@ type ResolvedLookup = {
    * if running out of it is the reason there was no answer. Epoch ms.
    */
   quotaResetsAt?: number | null;
+  dailyLimitReached?: boolean;
 };
 
 /*
@@ -403,6 +405,7 @@ function toLexiconEntry(value: unknown): LexiconEntry | null {
 }
 
 type LookupContext = {
+  userId: string;
   query: string;
   roles: LanguageRoles;
   chosenHead: LanguageCode | null;
@@ -601,8 +604,26 @@ async function performLookup(
     return { result: shared, origin: "shared", fromModel: true };
   }
 
+  const allowed = await consumeDailyQuota(context.userId, "word_lookup", 150);
+  if (!allowed) {
+    return {
+      result: await lookupOffline(context.query, {
+        source: context.detected, head: context.chosenHead, roles: context.roles,
+      }),
+      origin: "daily-limit", fromModel: false, dailyLimitReached: true,
+    };
+  }
+
   const startedAt = Date.now();
-  const modelResult = await lookupWithModelFallback(context);
+  let modelResult: Awaited<ReturnType<typeof lookupWithModelFallback>>;
+  try {
+    modelResult = await lookupWithModelFallback(context);
+  } catch (error) {
+    await refundDailyQuota(context.userId, "word_lookup");
+    throw error;
+  }
+  // A dictionary answer or a failed model call never spends an allowance.
+  if (!modelResult.result) await refundDailyQuota(context.userId, "word_lookup");
   if (modelResult.result) {
     const { result, model } = modelResult;
 
@@ -673,7 +694,8 @@ async function lookupVocabulary(
   const cached = getCachedResult(key);
   if (cached) return { result: cached, origin: "memory", fromModel: true };
 
-  const existingRequest = inFlightLookups.get(key);
+  const inFlightKey = `${context.userId}:${key}`;
+  const existingRequest = inFlightLookups.get(inFlightKey);
   if (existingRequest) return existingRequest;
 
   const request = performLookup(context, key)
@@ -682,10 +704,10 @@ async function lookupVocabulary(
       return resolved;
     })
     .finally(() => {
-      inFlightLookups.delete(key);
+      inFlightLookups.delete(inFlightKey);
     });
 
-  inFlightLookups.set(key, request);
+  inFlightLookups.set(inFlightKey, request);
   return request;
 }
 
@@ -738,6 +760,7 @@ export async function POST(request: Request) {
       : null;
 
     const resolved = await lookupVocabulary({
+      userId: user.id,
       query,
       roles,
       chosenHead,
@@ -771,6 +794,7 @@ export async function POST(request: Request) {
           : {
               retryAfterMs: resolved.retryAfterMs ?? null,
               quotaResetsAt: resolved.quotaResetsAt ?? null,
+              dailyLimitReached: resolved.dailyLimitReached ?? false,
             }),
       },
       {

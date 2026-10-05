@@ -1,0 +1,24 @@
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ back: vi.fn(), replace: vi.fn() }) }));
+vi.mock("@/components/foundation/layout/AppHeader", () => ({ default: () => null }));
+vi.mock("@/components/scanner/MenuCamera", () => ({ default: ({ onCaptured }: { onCaptured: (image: string, quality: null) => void }) => <button onClick={() => onCaptured("same-frame", null)}>capture</button> }));
+vi.mock("@/components/scanner/MenuProcessing", () => ({ default: ({ onCancel }: { onCancel: () => void }) => <button onClick={onCancel}>cancel scan</button> }));
+vi.mock("@/components/scanner/MenuResultViewer", () => ({ default: () => <div>result</div> }));
+import MenuTranslatorPage from "@/app/(protected)/scanner/menu/page";
+afterEach(() => vi.unstubAllGlobals());
+it("cancel ignores a late answer and allows recapturing the same frame", async () => {
+  let finish!: (response: unknown) => void;
+  const fetchMock = vi.fn(() => new Promise(resolve => { finish = resolve; }));
+  vi.stubGlobal("fetch", fetchMock);
+  render(<MenuTranslatorPage />);
+  fireEvent.click(await screen.findByText("capture"));
+  await screen.findByText("cancel scan");
+  const options = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+  fireEvent.click(screen.getByText("cancel scan"));
+  expect(options[1].signal?.aborted).toBe(true);
+  await act(async () => finish({ status: 200, json: async () => ({ notMenu: true }) }));
+  expect(screen.getByText("capture")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("capture"));
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+});

@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Both loopback spellings are used by the local phone-size previews.
+  allowedDevOrigins: ["127.0.0.1"],
   /*
    * Which build this is, in both bundles: the app compares its own copy with
    * what /api/version answers when it comes back from the background, and

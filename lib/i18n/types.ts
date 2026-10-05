@@ -462,6 +462,8 @@ export type TranslationDictionary = {
     openSavedWord: string;
     noTranslation: string;
     noTranslationDetail: string;
+    dailyLimitTitle: string;
+    dailyLimitDetail: string;
     degradedNotice: string;
     lowConfidence: string;
     basicTranslation: string;
@@ -1429,6 +1431,8 @@ export type TranslationDictionary = {
       privateHint: string;
       privateNote: string;
       newMessages: string;
+      loadOlder: string;
+      historyOnly: string;
       jumpToLatest: string;
       options: string;
       closeOptions: string;

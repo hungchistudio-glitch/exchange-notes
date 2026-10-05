@@ -15,6 +15,7 @@ import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { CSSProperties, ReactNode } from "react";
 
 import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
+import { leaseInlineStyles } from "@/lib/ui/inlineStyleLease";
 import {
   announceHomeMoment,
   dismissHomeSearch,
@@ -1265,17 +1266,9 @@ export default function YumiRingOverlay({
       if (releaseLock) return;
       const root = document.documentElement;
       const scroller = layer.closest<HTMLElement>("[data-app-scroll-viewport]");
-      const overflow = root.style.overflow;
-      const scrollBehavior = root.style.scrollBehavior;
-      const outerOverflow = scroller?.style.overflowY ?? "";
-      const outerBehavior = scroller?.style.scrollBehavior ?? "";
       const outerTop = scroller?.scrollTop ?? 0;
-      root.style.overflow = "hidden";
-      root.style.scrollBehavior = "auto";
-      if (scroller) {
-        scroller.style.overflowY = "hidden";
-        scroller.style.scrollBehavior = "auto";
-      }
+      const releaseRoot = leaseInlineStyles(root, { overflow: "hidden", "scroll-behavior": "auto" });
+      const releaseOuter = scroller ? leaseInlineStyles(scroller, { "overflow-y": "hidden", "scroll-behavior": "auto" }) : null;
       const holdStill = () => {
         if (window.scrollY !== 0) window.scrollTo({ left: window.scrollX, top: 0, behavior: "instant" });
         if (scroller && scroller.scrollTop !== outerTop) scroller.scrollTop = outerTop;
@@ -1291,12 +1284,8 @@ export default function YumiRingOverlay({
         scroller?.removeEventListener("scroll", holdStill);
         viewport?.removeEventListener("resize", holdStill);
         viewport?.removeEventListener("scroll", holdStill);
-        root.style.overflow = overflow;
-        root.style.scrollBehavior = scrollBehavior;
-        if (scroller) {
-          scroller.style.overflowY = outerOverflow;
-          scroller.style.scrollBehavior = outerBehavior;
-        }
+        releaseRoot();
+        releaseOuter?.();
         releaseLock = null;
       };
     };

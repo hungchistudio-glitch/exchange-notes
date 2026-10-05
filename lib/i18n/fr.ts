@@ -460,6 +460,8 @@ const french: TranslationDictionary = {
     noTranslation: "Pas encore de sens",
     noTranslationDetail:
       "L'IA de Google est indisponible pour le moment (fréquent aux heures de pointe avec l'offre gratuite), ce mot n'a donc pas encore de sens. Réessayer un peu plus tard fonctionne en général.",
+    dailyLimitTitle: "Limite quotidienne de recherches IA atteinte",
+    dailyLimitDetail: "Vous avez utilisé les 150 recherches IA du jour. Le dictionnaire et les réponses en cache restent disponibles. Le quota se renouvelle demain.",
     degradedNotice:
       "Le mot et son sens sont justes ; l'exemple est générique.",
     lowConfidence: "C'est une supposition. Vérifiez-la avant de l'enregistrer.",
@@ -1359,6 +1361,8 @@ const french: TranslationDictionary = {
       privateHint: "Protégé par votre compte et les règles d'accès à la base de données. Le chiffrement de bout en bout n'est pas encore activé.",
       privateNote: "Les messages sont protégés par votre compte et les règles d'accès à la base de données. Le chiffrement de bout en bout n'est pas encore activé.",
       newMessages: "Nouveaux messages",
+      loadOlder: "Charger les messages précédents",
+      historyOnly: "Vous pouvez lire votre historique. Redevenez amis pour envoyer de nouveaux messages.",
       jumpToLatest: "Aller au plus récent",
       options: "Options de la conversation",
       closeOptions: "Fermer les options",

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
@@ -32,7 +33,7 @@ import {
   useVocabularyLanguageFill,
   type FilledRow,
 } from "@/hooks/useVocabularyLanguageFill";
-import { sweepOrphans } from "@/lib/media/orphanSweep";
+import { applyLanguageFill } from "@/lib/vocabulary/applyLanguageFill";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import { subscribeToSavedWords } from "@/lib/vocabulary/savedWords";
 
@@ -64,6 +65,8 @@ type VocabularyContextType = {
 const VocabularyContext = createContext<VocabularyContextType | null>(null);
 
 type VocabularySnapshot = {
+  userId: string | null;
+  serverItems: VocabularyItem[];
   items: VocabularyItem[];
   learningLanguage: LanguageCode | null;
 };
@@ -78,11 +81,14 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
   const { user } = await getCurrentUser();
 
   if (!user) {
-    return { items: [], learningLanguage: null };
+    return { userId: null, serverItems: [], items: [], learningLanguage: null };
   }
 
   const supabase = createClient();
 
+  // Replay durable edits before reading the server, then overlay anything
+  // still pending. A successful read must not undo offline work.
+  await flushOutbox();
   const [{ data: profile }, rows] = await Promise.all([
     supabase
       .from("profiles")
@@ -94,18 +100,12 @@ async function fetchVocabularySnapshot(): Promise<VocabularySnapshot> {
 
   reportNetworkSuccess();
 
-  const items = rows as VocabularyItem[];
-
-  /*
-   * Mirrored as it arrives. The write is not awaited by the caller: a
-   * reader who is looking at their words should not wait on a copy being
-   * made of them, and if the copy fails the only cost is that the next
-   * cold start with no signal is emptier than it could have been.
-   */
-  void writeMirror(items, user.id);
-
+  const serverItems = rows as VocabularyItem[];
+  const pending = await readOutbox();
   return {
-    items,
+    userId: user.id,
+    serverItems,
+    items: applyPending(serverItems, pending),
     learningLanguage: readLanguageCode(profile?.learning_language),
   };
 }
@@ -157,21 +157,20 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestEpoch = useRef(0);
+  const account = useRef<string | null>(null);
 
-  /*
-   * Reached from event handlers and from the auth subscription below, never
-   * from an effect body, so it is free to show the spinner eagerly. The mount
-   * path in the effect repeats the apply step rather than calling this —
-   * about eight lines of overlap, which is the cost of not suppressing the
-   * rule here.
-   */
+  // Background refresh keeps the current library visible while fetching.
   const refresh = useCallback(async () => {
-    setLoading(true);
+    const epoch = ++requestEpoch.current;
     setError("");
 
     try {
       const snapshot = await fetchVocabularySnapshot();
 
+      if (epoch !== requestEpoch.current) return;
+      account.current = snapshot.userId;
+      if (snapshot.userId) void writeMirror(snapshot.serverItems, snapshot.userId);
       setItems(snapshot.items);
       setLearningLanguage(snapshot.learningLanguage);
     } catch (refreshError) {
@@ -183,53 +182,29 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
        * that carries on. The error is only surfaced when there is nothing
        * local either — which, after a first successful load, there never is.
        */
-      reportNetworkFailure();
+      if (epoch !== requestEpoch.current) return;
+      if (refreshError instanceof TypeError) reportNetworkFailure();
 
       const local = await readLocalSnapshot();
+      if (epoch !== requestEpoch.current) return;
 
       if (local.length > 0) setItems(local);
       else setError(loadErrorMessage(refreshError));
     } finally {
-      setLoading(false);
+      if (epoch === requestEpoch.current) setLoading(false);
     }
   }, []);
 
-  /*
-   * Image files nothing points at, cleared away once a session.
-   *
-   * Here because this is the one place that holds the reader's whole
-   * library, which is what "nothing points at it" has to be measured
-   * against — a sweep run against a filtered list would delete the pictures
-   * of every word not currently on screen.
-   *
-   * Deliberately unawaited and unreported. It is housekeeping the reader did
-   * not ask for; it must never delay the list appearing and must never put
-   * an error on screen. Its own session guard keeps it to one run, so this
-   * effect firing again on a refresh costs nothing.
-   */
-  useEffect(() => {
-    if (loading || items.length === 0) return;
-
-    let cancelled = false;
-
-    void (async () => {
-      const { user } = await getCurrentUser();
-
-      if (!user || cancelled) return;
-
-      await sweepOrphans(createClient(), user.id, items);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loading, items]);
+  // A device mirror cannot prove that a remote image is unreferenced.
+  // Automatic storage deletion stays off; account refreshes only read data.
 
   useEffect(() => {
     let active = true;
+    const epochRef = requestEpoch;
     const supabase = createClient();
 
     async function loadOnMount() {
+      const epoch = ++requestEpoch.current;
       /*
        * The device's own copy first, always.
        *
@@ -240,7 +215,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
        */
       const local = await readLocalSnapshot();
 
-      if (active && local.length > 0) {
+      if (active && epoch === requestEpoch.current && local.length > 0) {
         setItems(local);
         setLoading(false);
       }
@@ -248,34 +223,25 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       try {
         const snapshot = await fetchVocabularySnapshot();
 
-        if (!active) return;
+        if (!active || epoch !== requestEpoch.current) return;
 
+        account.current = snapshot.userId;
+        if (snapshot.userId) void writeMirror(snapshot.serverItems, snapshot.userId);
         setItems(snapshot.items);
         setLearningLanguage(snapshot.learningLanguage);
       } catch (loadError) {
-        if (!active) return;
+        if (!active || epoch !== requestEpoch.current) return;
 
-        reportNetworkFailure();
+        if (loadError instanceof TypeError) reportNetworkFailure();
 
         // Only an error when there is nothing local either.
         if (local.length === 0) setError(loadErrorMessage(loadError));
       } finally {
-        if (active) setLoading(false);
+        if (active && epoch === requestEpoch.current) setLoading(false);
       }
     }
 
     void loadOnMount();
-
-    /*
-     * Anything saved with no connection goes now.
-     *
-     * On mount rather than only on an "online" event, because the common
-     * case is not a reader watching the app reconnect — it is a reader who
-     * closed it in a tunnel and opened it again at the hotel.
-     */
-    void flushOutbox().then((result) => {
-      if (active && result.sent > 0) void refresh();
-    });
 
     function handleOnline() {
       void flushOutbox().then((result) => {
@@ -287,15 +253,23 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
 
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        void refresh();
+      if (event === "SIGNED_IN" && session?.user.id !== account.current) {
+        account.current = session?.user.id ?? null;
+        ++requestEpoch.current;
+        setItems([]);
+        setLearningLanguage(null);
+        setLoading(true);
+        // Leave the auth callback before making another auth request.
+        setTimeout(() => { if (active) void refresh(); }, 0);
         return;
       }
 
       if (event === "SIGNED_OUT") {
+        ++requestEpoch.current;
+        account.current = null;
         setItems([]);
         setLearningLanguage(null);
         setError("");
@@ -321,12 +295,15 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      ++epochRef.current;
       window.removeEventListener("online", handleOnline);
       subscription.unsubscribe();
     };
   }, [refresh]);
 
   const addItem = useCallback((item: VocabularyItem) => {
+    ++requestEpoch.current;
+    setLoading(false);
     setItems((current) => {
       const alreadyExists = current.some((existing) => existing.id === item.id);
 
@@ -341,10 +318,14 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeItem = useCallback((id: string) => {
+    ++requestEpoch.current;
+    setLoading(false);
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
 
   const updateItem = useCallback((item: VocabularyItem) => {
+    ++requestEpoch.current;
+    setLoading(false);
     setItems((current) =>
       current.map((existing) => (existing.id === item.id ? item : existing)),
     );
@@ -368,7 +349,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         const patch = byId.get(item.id);
         if (!patch) return item;
 
-        return { ...item, texts: patch.texts, examples: patch.examples };
+        return applyLanguageFill(item, patch);
       }),
     );
   }, []);

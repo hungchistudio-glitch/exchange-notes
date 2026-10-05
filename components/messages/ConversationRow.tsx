@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BellOff } from "lucide-react";
 
 import { formatConversationTime } from "@/lib/messages/format";
-import { decodeWordCardMessage } from "@/lib/messages/wordCard";
+import { messagePreview } from "@/lib/messages/preview";
 import type { ConversationSummary } from "@/lib/friends";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { insertValues } from "@/lib/utils";
@@ -42,12 +42,7 @@ function previewText(
     return `${prefix}${copy.voiceLabel}`;
   }
 
-  const wordCard = decodeWordCardMessage(lastMessage.body);
-  if (wordCard) {
-    return `${prefix}${wordCard.word}`;
-  }
-
-  return `${prefix}${lastMessage.body}`;
+  return `${prefix}${messagePreview(lastMessage.body)}`;
 }
 
 type ConversationRowProps = {

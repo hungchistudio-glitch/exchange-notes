@@ -55,6 +55,7 @@ import {
 } from "@/lib/messages/decode";
 import { formatDateLabel, formatMessageTime } from "@/lib/messages/format";
 import { hideMessagesForUser, listHiddenMessageIds } from "@/lib/messages/hiddenMessages";
+import { readMessagePage, MESSAGE_PAGE_SIZE, type ConversationMessage as Message } from "@/lib/messages/history";
 import { decodeNewsCardMessage } from "@/lib/messages/newsCard";
 import {
   fetchReceiptsForMessages,
@@ -89,14 +90,6 @@ import { adoptSharedImage } from "@/lib/media/sharing";
  * squeezed against a sidebar, and margins on both sides that are deliberate
  * breathing room rather than a gap nobody got round to filling.
  */
-
-type Message = {
-  id: number;
-  conversation_id: string;
-  sender_id: string;
-  body: string;
-  created_at: string;
-};
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected";
 
@@ -218,7 +211,12 @@ export default function ConversationRoom({
   const copy = t.messages;
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const olderCursor = useRef<Message | null>(null);
+  const historyEpoch = useRef(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [canContact, setCanContact] = useState(false);
   const [friend, setFriend] = useState<FriendProfile | null>(null);
   const [mutedAt, setMutedAt] = useState<string | null>(null);
 
@@ -403,6 +401,43 @@ export default function ConversationRoom({
     [conversationId, currentUserId, supabase],
   );
 
+  useEffect(() => {
+    historyEpoch.current += 1;
+    return () => { historyEpoch.current += 1; };
+  }, [conversationId]);
+
+  async function loadOlderMessages() {
+    const cursor = olderCursor.current;
+    if (!cursor || loadingOlder || !currentUserId) return;
+    const epoch = historyEpoch.current;
+    setLoadingOlder(true);
+    try {
+      const [{ data, error }, hidden] = await Promise.all([
+        readMessagePage(supabase, conversationId, cursor),
+        listHiddenMessageIds(supabase, currentUserId),
+      ]);
+      if (epoch !== historyEpoch.current) return;
+      if (error) throw error;
+      olderCursor.current = data?.at(-1) ?? null;
+      setHasOlder(data?.length === MESSAGE_PAGE_SIZE);
+      const timeline = timelineRef.current;
+      const top = timeline?.scrollTop ?? 0;
+      const height = timeline?.scrollHeight ?? 0;
+      isNearBottomRef.current = false;
+      setMessages(current => {
+        const ids = new Set(current.map(message => message.id));
+        return [...(data ?? []).reverse().filter(message => !hidden.has(message.id) && !ids.has(message.id)), ...current];
+      });
+      window.requestAnimationFrame(() => {
+        if (timeline && epoch === historyEpoch.current) timeline.scrollTop = top + timeline.scrollHeight - height;
+      });
+    } catch {
+      if (epoch === historyEpoch.current) setErrorMessage(copy.errors.openConversation);
+    } finally {
+      if (epoch === historyEpoch.current) setLoadingOlder(false);
+    }
+  }
+
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     bottomRef.current?.scrollIntoView({
       behavior: prefersReducedMotion() ? "auto" : behavior,
@@ -446,6 +481,9 @@ export default function ConversationRoom({
       setLoading(true);
       setErrorMessage("");
       setMessages([]);
+      setHasOlder(false);
+      setLoadingOlder(false);
+      olderCursor.current = null;
       setConversationReady(false);
       setAnalysisByMessageId(new Map());
       setOpenDecodeId(null);
@@ -484,6 +522,7 @@ export default function ConversationRoom({
         }
 
         setFriend(context.friend);
+        setCanContact(context.canContact);
         setMutedAt(context.mutedAt);
 
         // Best-effort: resets this conversation's unread badge. Non-fatal if
@@ -496,12 +535,7 @@ export default function ConversationRoom({
 
         const [{ data: existingMessages, error: messagesError }, hiddenIds] =
           await Promise.all([
-            supabase
-              .from("messages")
-              .select("id, conversation_id, sender_id, body, created_at")
-              .eq("conversation_id", conversationId)
-              .order("created_at", { ascending: true })
-              .limit(500),
+            readMessagePage(supabase, conversationId),
             listHiddenMessageIds(supabase, user.id),
           ]);
 
@@ -514,9 +548,11 @@ export default function ConversationRoom({
           return;
         }
 
-        const visibleMessages = (existingMessages ?? []).filter(
+        const visibleMessages = [...(existingMessages ?? [])].reverse().filter(
           (message) => !hiddenIds.has(message.id),
         );
+        olderCursor.current = existingMessages?.at(-1) ?? null;
+        setHasOlder(existingMessages?.length === MESSAGE_PAGE_SIZE);
         setMessages(visibleMessages);
         setLoading(false);
         setConversationReady(true);
@@ -796,7 +832,7 @@ export default function ConversationRoom({
      * a conversation it could not read, and replaced the real "not available"
      * error with a misleading one. The card was gone either way.
      */
-    if (!currentUserId || !conversationReady) return;
+    if (!currentUserId || !conversationReady || !canContact) return;
 
     const pendingVocabulary = getPendingSharedVocabulary();
     if (!pendingVocabulary) return;
@@ -840,6 +876,7 @@ export default function ConversationRoom({
     conversationId,
     currentUserId,
     conversationReady,
+    canContact,
     supabase,
     copy.errors.shareWord,
   ]);
@@ -994,7 +1031,7 @@ export default function ConversationRoom({
     event.preventDefault();
 
     const messageBody = newMessage.trim();
-    if (!messageBody || !currentUserId || sending) return;
+    if (!messageBody || !currentUserId || sending || !canContact) return;
 
     setSending(true);
     setErrorMessage("");
@@ -1272,7 +1309,7 @@ export default function ConversationRoom({
     }
   }
 
-  const canSend = Boolean(newMessage.trim()) && Boolean(currentUserId) && !sending;
+  const canSend = canContact && Boolean(newMessage.trim()) && Boolean(currentUserId) && !sending;
   const showCharacterCount = newMessage.length > MAX_MESSAGE_LENGTH * 0.8;
 
   const friendName =
@@ -1501,6 +1538,9 @@ export default function ConversationRoom({
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
         <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-8 sm:py-8">
+          {!loading && hasOlder && (
+            <button type="button" onClick={() => void loadOlderMessages()} disabled={loadingOlder} className="mx-auto mb-5 flex min-h-11 items-center rounded-full border px-4 text-sm disabled:opacity-50">{loadingOlder ? copy.loadingMessages : copy.room.loadOlder}</button>
+          )}
           {loading && (
             <div className="flex h-full items-center justify-center py-20">
               <div
@@ -1842,6 +1882,8 @@ export default function ConversationRoom({
                     String(selectedIds.size),
                   )}
             </button>
+          ) : !canContact ? (
+            <p className="py-4 text-center text-sm text-ink-soft">{copy.room.historyOnly}</p>
           ) : (
             <form onSubmit={sendMessage} className="pb-3">
               <div

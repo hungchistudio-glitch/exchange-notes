@@ -32,7 +32,6 @@ import { learningLanguageList } from "@/lib/languages";
 
 export default function AppError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -76,7 +75,7 @@ export default function AppError({
 
         <button
           type="button"
-          onClick={reset}
+          onClick={() => window.location.reload()}
           className="mt-7 w-full rounded-2xl bg-black px-5 py-3.5 text-base font-semibold text-white transition-opacity active:opacity-80"
         >
           Try again · 再試一次

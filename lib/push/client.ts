@@ -675,3 +675,13 @@ export async function disableWebPush(): Promise<DisableWebPushResult> {
     );
   }
 }
+
+/** Release this browser's endpoint even if its server registration is unreachable. */
+export async function removeWebPushOnSignOut(): Promise<void> {
+  if (typeof navigator === "undefined" || !navigator.serviceWorker?.getRegistration) return;
+  const registration = await navigator.serviceWorker.getRegistration();
+  const subscription = await registration?.pushManager?.getSubscription();
+  if (!subscription) return;
+  try { await disableSubscriptionOnServer(subscription.endpoint); }
+  finally { await subscription.unsubscribe(); }
+}

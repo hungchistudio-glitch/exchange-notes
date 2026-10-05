@@ -63,12 +63,14 @@ export default function SpeakModule() {
 
   const unit =
     (selected?.language === pack.language
-      ? candidates.find((candidate) => candidate.id === selected.unitId)
+      ? pack.units.find((candidate) => candidate.id === selected.unitId)
       : undefined) ?? candidates[0];
 
   const onAttempt = useCallback(
     (outcome: TrainingItemOutcome, score?: number, analyzer?: string) => {
       if (!unit) return;
+      // Keep the practiced sound selected when its score reorders the suggestions.
+      setSelected({ language: pack.language, unitId: unit.id });
 
       void recordAttempt({
         unitId: unit.id,
@@ -79,7 +81,7 @@ export default function SpeakModule() {
         speakingScore: score,
       });
     },
-    [recordAttempt, unit],
+    [recordAttempt, unit, pack.language],
   );
 
   return (

@@ -1,5 +1,7 @@
 "use client";
 
+import { removeWebPushOnSignOut } from "@/lib/push/client";
+
 import { forgetDeviceCopies } from "@/lib/offline/forgetDevice";
 import { disableNativePushRegistration } from "@/lib/push/nativeClient";
 
@@ -326,7 +328,7 @@ export default function ProfilePage() {
      * matters.
      */
     try {
-      await disableNativePushRegistration();
+      await Promise.all([disableNativePushRegistration(), removeWebPushOnSignOut()]);
     } catch (error) {
       console.error("Could not unregister this device for push.", error);
     }

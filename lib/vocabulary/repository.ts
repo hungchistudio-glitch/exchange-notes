@@ -3,6 +3,8 @@ import type { ByLanguage, LanguageCode } from "@/lib/languages";
 import {
   draftVocabularyItem,
   queueMutation,
+  readOutbox,
+  type PendingMutation,
   type VocabularyLanguageFields,
 } from "@/lib/offline/vocabulary";
 import { createClient } from "@/lib/supabase/client";
@@ -46,6 +48,17 @@ function isUnreachable(error: unknown): boolean {
     return code === undefined || code === null || code === "";
   }
 
+  return true;
+}
+
+/** Keep edits to an offline word behind the insert/edits it already owes. */
+async function queueBehindPending(mutation: Parameters<typeof queueMutation>[0]): Promise<boolean> {
+  if (mutation.kind === "insert") return false;
+  const belongsToWord = (pending: PendingMutation) =>
+    (pending.kind === "insert" ? pending.item.id : pending.itemId) === mutation.itemId;
+  if (!(await readOutbox()).some(belongsToWord)) return false;
+  await queueMutation(mutation);
+  void import("@/lib/offline/sync").then(({ flushOutbox }) => flushOutbox()).catch(() => undefined);
   return true;
 }
 
@@ -163,17 +176,20 @@ export async function insertVocabulary(
 export async function fetchVocabulary(userId: string) {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from("vocabulary_items")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", {
-      ascending: false,
-    });
-
-  if (error) throw error;
-
-  return data;
+  const items: VocabularyItem[] = [];
+  const pageSize = 500;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("vocabulary_items")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    items.push(...(data ?? []));
+    if (!data || data.length < pageSize) return items;
+  }
 }
 
 
@@ -181,6 +197,7 @@ export async function updateVocabularyStatus(
   id: string,
   status: VocabularyItem["status"],
 ) {
+  if (await queueBehindPending({ kind: "status", itemId: id, status })) return;
   const supabase = createClient();
 
   try {
@@ -208,6 +225,7 @@ export async function updateVocabularyFields(
   fields: VocabularyEditFields,
   currentItem?: VocabularyItem,
 ) {
+  if (await queueBehindPending({ kind: "fields", itemId: id, fields })) return { ...currentItem, id, ...fields } as VocabularyItem;
   const supabase = createClient();
 
   try {
@@ -253,6 +271,7 @@ export async function updateVocabularyLanguage(
   id: string,
   fields: VocabularyLanguageFields,
 ) {
+  if (await queueBehindPending({ kind: "language", itemId: id, fields })) return;
   const supabase = createClient();
 
   try {
@@ -281,6 +300,7 @@ export async function updateVocabularyLanguage(
 export async function deleteVocabulary(
   id: string,
 ) {
+  if (await queueBehindPending({ kind: "delete", itemId: id })) return;
   const supabase = createClient();
 
   try {

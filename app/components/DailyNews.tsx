@@ -264,15 +264,16 @@ export default function DailyNews() {
    * The language is passed rather than closed over so this stays stable
    * and the mount effect is not torn down by a change it handles itself.
    */
-  const loadFromDevice = useCallback(async (language: LanguageCode) => {
+  const feedOwner = useRef<string | null>(null);
+  const loadFromDevice = useCallback(async (language: LanguageCode, signal: AbortSignal, freshOnly = false) => {
+    const { data: { session } } = await createClient().auth.getSession().catch(() => ({ data: { session: null } }));
+    if (signal.aborted || !session?.user.id) return false;
+    feedOwner.current = session.user.id;
     const stored = await readRecord<{
-      cards: DailyNewsCard[];
-      language: string;
-    }>(STORES.kv, NEWS_CACHE_KEY);
-
-    if (!stored?.cards?.length) return false;
-    if (stored.language !== language) return false;
-
+      cards: DailyNewsCard[]; language: string; day: string; generatedAt: string;
+    }>(STORES.kv, `${NEWS_CACHE_KEY}:${session.user.id}:${language}`);
+    if (signal.aborted || !stored?.cards?.length || stored.language !== language) return false;
+    if (freshOnly && stored.day !== new Date().toLocaleDateString("en-CA")) return false;
     setCards(stored.cards);
     setLoading(false);
     return true;
@@ -301,6 +302,11 @@ export default function DailyNews() {
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set());
 
   const [detailCardId, setDetailCardId] = useState<string | null>(null);
+  useEffect(() => {
+    const opened = cards.find(card => card.id === detailCardId);
+    if (opened) recordSeen([opened]);
+  }, [detailCardId, cards]);
+
   // Decoupled from detailCardId so the featured card's "Explore this
   // image" action can open the vocabulary drawer directly, without also
   // opening the full detail sheet.
@@ -328,7 +334,6 @@ export default function DailyNews() {
   const [playbackProgress, setPlaybackProgress] = useState(0);
 
   const requestControllerRef = useRef<AbortController | null>(null);
-  const lastGeneratedAtRef = useRef<string | null>(null);
 
   /*
    * Reached only from the refresh control, never from an effect body, so it
@@ -373,15 +378,16 @@ export default function DailyNews() {
           setNotice(copy.sameBatchNotice);
         }
 
-        lastGeneratedAtRef.current = payload.generatedAt;
+        if (controller.signal.aborted) return;
 
         setCards(payload.cards);
-        recordSeen(payload.cards);
 
         void writeRecord(STORES.kv, {
-          key: NEWS_CACHE_KEY,
+          key: `${NEWS_CACHE_KEY}:${feedOwner.current}:${learningLanguage}`,
           cards: payload.cards,
           language: learningLanguage,
+          day: new Date().toLocaleDateString("en-CA"),
+          generatedAt: payload.generatedAt,
         });
       } catch (requestError) {
         if (
@@ -393,7 +399,7 @@ export default function DailyNews() {
 
         // The device's own copy first: an error belongs on screen only
         // when there is genuinely nothing to read.
-        if (await loadFromDevice(learningLanguage)) return;
+        if (await loadFromDevice(learningLanguage, controller.signal)) return;
 
         setError(
           requestError instanceof Error
@@ -401,8 +407,7 @@ export default function DailyNews() {
             : copy.loadFallbackError
         );
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (!controller.signal.aborted) { setLoading(false); setRefreshing(false); }
       }
     },
     [copy, learningLanguage, loadFromDevice]
@@ -463,20 +468,23 @@ export default function DailyNews() {
 
     async function loadOnMount() {
       try {
+        if (await loadFromDevice(learningLanguage, controller.signal, true)) return;
+        if (controller.signal.aborted) return;
         const payload = await fetchDailyNews(
           controller.signal,
           copy.loadNewsError
         );
 
-        lastGeneratedAtRef.current = payload.generatedAt;
+        if (controller.signal.aborted) return;
 
         setCards(payload.cards);
-        recordSeen(payload.cards);
 
         void writeRecord(STORES.kv, {
-          key: NEWS_CACHE_KEY,
+          key: `${NEWS_CACHE_KEY}:${feedOwner.current}:${learningLanguage}`,
           cards: payload.cards,
           language: learningLanguage,
+          day: new Date().toLocaleDateString("en-CA"),
+          generatedAt: payload.generatedAt,
         });
       } catch (requestError) {
         if (
@@ -488,7 +496,7 @@ export default function DailyNews() {
 
         // The device's own copy first: an error belongs on screen only
         // when there is genuinely nothing to read.
-        if (await loadFromDevice(learningLanguage)) return;
+        if (await loadFromDevice(learningLanguage, controller.signal)) return;
 
         setError(
           requestError instanceof Error
@@ -496,7 +504,7 @@ export default function DailyNews() {
             : copy.loadFallbackError
         );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 

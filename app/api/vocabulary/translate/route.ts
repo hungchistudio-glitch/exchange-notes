@@ -107,6 +107,8 @@ type FilledRow = {
   id: string;
   texts: Record<string, string>;
   examples: Record<string, string>;
+  basedOnTexts: Record<string, string>;
+  basedOnExamples: Record<string, string>;
 };
 
 /**
@@ -141,13 +143,19 @@ async function fillFromDictionary(
     const written = await Promise.all(
       answers.slice(start, start + WRITES_AT_ONCE).map(async ({ row, text }) => {
         const texts = { ...row.texts, [target]: text };
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("vocabulary_items")
           .update({ texts })
           .eq("id", row.id)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .eq("texts", JSON.stringify(row.texts))
+          .eq("examples", JSON.stringify(row.examples ?? {}))
+          .select("id");
 
-        return error ? null : { id: row.id, texts, examples: row.examples ?? {} };
+        return error || !data?.length ? null : {
+          id: row.id, texts, examples: row.examples ?? {},
+          basedOnTexts: row.texts, basedOnExamples: row.examples ?? {},
+        };
       }),
     );
 
@@ -421,19 +429,24 @@ export async function POST(request: Request) {
         ? { ...row.examples, [target]: example }
         : row.examples;
 
-      const { error: updateError } = await supabase
+      const { data: written, error: updateError } = await supabase
         .from("vocabulary_items")
         .update({ texts: nextTexts, examples: nextExamples })
         .eq("id", row.id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("texts", JSON.stringify(row.texts))
+        .eq("examples", JSON.stringify(row.examples ?? {}))
+        .select("id");
 
-      if (updateError) continue;
+      if (updateError || !written?.length) continue;
 
       filled += 1;
       updated.push({
         id: row.id,
         texts: nextTexts,
         examples: nextExamples ?? {},
+        basedOnTexts: row.texts,
+        basedOnExamples: row.examples ?? {},
       });
     }
 

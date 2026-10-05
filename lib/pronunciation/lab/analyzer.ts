@@ -187,6 +187,7 @@ function unmeasured(
  */
 export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
   let active: SpeechRecognitionLike | null = null;
+  let cancelActive: (() => void) | null = null;
 
   function teardown() {
     if (!active) return;
@@ -211,6 +212,7 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
     },
 
     cancel() {
+      cancelActive?.();
       teardown();
     },
 
@@ -227,6 +229,7 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
         });
       }
 
+      cancelActive?.();
       teardown();
 
       return new Promise<PronunciationAnalysisResult>((resolve) => {
@@ -245,7 +248,10 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
           settled = true;
           clearTimeout(timer);
           input.signal?.removeEventListener("abort", handleAbort);
-          teardown();
+          if (active === recognition) {
+            cancelActive = null;
+            teardown();
+          }
           resolve(result);
         }
 
@@ -294,6 +300,8 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
           });
         }
 
+        cancelActive = handleAbort;
+        if (input.signal?.aborted) { handleAbort(); return; }
         input.signal?.addEventListener("abort", handleAbort, { once: true });
 
         recognition.lang = getLanguage(input.language).speechTag;
@@ -305,33 +313,13 @@ export function createSpeechRecognitionAnalyzer(): PronunciationAnalyzer {
           for (let i = event.resultIndex; i < event.results.length; i += 1) {
             const result = event.results[i];
 
-            /*
-             * Every alternative is considered, and the closest to the target
-             * wins rather than the recogniser's own first choice.
-             *
-             * Not generosity — the opposite. The recogniser ranks by what is
-             * a likely thing to say, so asked for "perro" it will happily
-             * return "pero" as its top guess because "pero" is a far more
-             * common word. Judging the learner on that would report a
-             * mispronunciation they did not make. If the correct word is
-             * anywhere in the alternatives, it was recognisable.
-             */
-            for (let j = 0; j < result.length; j += 1) {
-              const alternative = result[j];
-              if (!alternative?.transcript) continue;
-
-              const candidate = {
+            if (!result.isFinal) continue;
+            const alternative = result[0];
+            if (alternative?.transcript?.trim()) {
+              best = {
                 transcript: alternative.transcript.trim(),
                 confidence: alternative.confidence ?? 0,
               };
-
-              if (
-                !best ||
-                textSimilarity(candidate.transcript, input.targetText) >
-                  textSimilarity(best.transcript, input.targetText)
-              ) {
-                best = candidate;
-              }
             }
           }
         };

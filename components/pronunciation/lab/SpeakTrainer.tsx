@@ -178,7 +178,8 @@ export default function SpeakTrainer({
     abortRef.current?.abort();
     abortRef.current = controller;
 
-    await startCapture();
+    const captured = await startCapture();
+    if (!captured || !mountedRef.current || controller.signal.aborted) return;
 
     const analyzer = getAnalyzer();
     if (!analyzer.isAvailable()) return;
@@ -194,6 +195,7 @@ export default function SpeakTrainer({
 
     if (!mountedRef.current || controller.signal.aborted) return;
 
+    stopCapture();
     setAnalyzing(false);
     setResult(analysis);
 
@@ -208,6 +210,7 @@ export default function SpeakTrainer({
     onAttempt,
     getAnalyzer,
     startCapture,
+    stopCapture,
     stopPlayback,
   ]);
 

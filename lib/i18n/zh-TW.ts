@@ -457,6 +457,8 @@ const traditionalChinese: TranslationDictionary = {
     noTranslation: "還沒有意思",
     noTranslationDetail:
       "Google 的 AI 暫時無法使用（免費方案在尖峰時段常會這樣），沒拿到這個字的意思。過一下再試一次通常就會好。",
+    dailyLimitTitle: "今天的 AI 查字額度已用完",
+    dailyLimitDetail: "今天已使用 150 次 AI 查字。字典與快取仍可繼續使用，AI 額度明天恢復。",
     degradedNotice: "單字和意思是對的，例句是通用的範本。",
     lowConfidence: "這是最接近的猜測，儲存前請先確認。",
     /** Every model busy; the translation came from a plain MT service. */
@@ -1411,6 +1413,8 @@ const traditionalChinese: TranslationDictionary = {
       privateHint: "由你的帳號與資料庫存取規則保護，目前尚未啟用端對端加密。",
       privateNote: "訊息由你的帳號與資料庫存取規則保護，目前尚未啟用端對端加密。",
       newMessages: "新訊息",
+      loadOlder: "載入更早的訊息",
+      historyOnly: "可以繼續閱讀舊訊息；重新成為好友後才能傳送新訊息。",
       jumpToLatest: "跳到最新訊息",
       options: "對話選項",
       closeOptions: "關閉選項",

@@ -466,6 +466,8 @@ const spanish: TranslationDictionary = {
     noTranslation: "Todavía sin significado",
     noTranslationDetail:
       "La IA de Google no está disponible ahora mismo (en el plan gratuito pasa a menudo en horas punta), así que esta palabra aún no tiene significado. Volver a intentarlo en un rato suele funcionar.",
+    dailyLimitTitle: "Límite diario de consultas con IA alcanzado",
+    dailyLimitDetail: "Has usado las 150 consultas con IA de hoy. El diccionario y las respuestas guardadas siguen disponibles. Tu cupo se renueva mañana.",
     degradedNotice:
       "La palabra y su significado son correctos; el ejemplo es genérico.",
     lowConfidence: "Es la mejor suposición. Compruébala antes de guardarla.",
@@ -1435,6 +1437,8 @@ const spanish: TranslationDictionary = {
       privateNote:
         "Los mensajes están protegidos por tu cuenta y por las reglas de acceso a la base de datos. El cifrado de extremo a extremo todavía no está activado.",
       newMessages: "Mensajes nuevos",
+      loadOlder: "Cargar mensajes anteriores",
+      historyOnly: "Puedes leer el historial. Añádanse como amigos para enviar mensajes nuevos.",
       jumpToLatest: "Ir al último",
       options: "Opciones de la conversación",
       closeOptions: "Cerrar las opciones",

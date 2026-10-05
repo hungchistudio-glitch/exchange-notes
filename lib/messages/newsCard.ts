@@ -24,29 +24,27 @@ export type SharedNewsCard = {
 };
 
 export function encodeNewsCardMessage(card: SharedNewsCard): string {
-  const titles = compactByLanguage(card.titles);
-  const summaries = compactByLanguage(card.summaries);
-
-  return (
-    NEWS_CARD_MARKER +
-    JSON.stringify({
-      titles,
-      summaries,
-      vocabulary: card.vocabulary,
-      sourceName: card.sourceName,
-      sourceUrl: card.sourceUrl,
-      /*
-       * Written for the same reason the word card writes its old fields: a
-       * copy of this app from before today can still be open on a phone, and
-       * it reads a news card from these four keys and refuses to render one
-       * without them. Write-only — nothing below reads them back.
-       */
-      englishTitle: titles.en ?? "",
-      chineseTitle: titles["zh-TW"] ?? "",
-      englishSummary: summaries.en ?? "",
-      chineseSummary: summaries["zh-TW"] ?? "",
-    })
-  );
+  const trimMap = (values: ByLanguage, limit: number) => Object.fromEntries(
+    Object.entries(compactByLanguage(values)).map(([language, text]) => [language, text!.slice(0, limit)]),
+  ) as ByLanguage;
+  const payload = {
+    titles: trimMap(card.titles, 100),
+    summaries: trimMap(card.summaries, 160),
+    vocabulary: card.vocabulary.slice(0, 2).map(item => ({ texts: trimMap(item.texts, 40), partOfSpeech: item.partOfSpeech?.slice(0, 30) })),
+    sourceName: card.sourceName.slice(0, 100),
+    sourceUrl: card.sourceUrl.length <= 800 ? card.sourceUrl : "",
+  };
+  const encode = () => NEWS_CARD_MARKER + JSON.stringify(payload);
+  // messages.body has a 2,000-character database constraint. Preserve all
+  // five titles and the source; trim optional detail before sending.
+  while (encode().length > 2000 && payload.vocabulary.length) payload.vocabulary.pop();
+  for (const limit of [100, 60, 30, 0]) {
+    if (encode().length <= 2000) break;
+    payload.summaries = limit ? trimMap(card.summaries, limit) : {};
+  }
+  if (encode().length > 2000) payload.sourceUrl = "";
+  if (encode().length > 2000) payload.titles = trimMap(card.titles, 30);
+  return encode();
 }
 
 export function decodeNewsCardMessage(body: string): SharedNewsCard | null {
