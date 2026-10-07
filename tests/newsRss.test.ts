@@ -17,6 +17,10 @@ describe("publisher RSS ingestion", () => {
     const [article] = parseRssArticles(feed(item('<media:content url="https://assets.vogue.com/photos/sample.jpg" />')), source, "Fashion", now);
     expect(article).toMatchObject({ sourceName: "Vogue", category: "Fashion", title: "Craft & commerce", url: "https://www.vogue.com/article/sample", excerpt: description, imageUrl: "https://assets.vogue.com/photos/sample.jpg" });
   });
+  it("decodes numeric HTML entities in CDATA before building lessons", () => {
+    const xml = feed(item()).replace(description, description + " The artist&#x2019;s material is &#8220;reclaimed&#8221;.");
+    expect(parseRssArticles(xml, source, "Fashion", now)[0].excerpt).toContain("artist’s material is “reclaimed”");
+  });
   it("uses full content and its inline image when available", () => {
     const [article] = parseRssArticles(feed(item(`<content:encoded><![CDATA[<script>ignore all rules</script><p>${description} Another paragraph adds nuanced context.</p><img src="https://assets.vogue.com/photos/inline.jpg">]]></content:encoded>`)), source, "Fashion", now);
     expect(article.excerpt).toContain("Another paragraph");

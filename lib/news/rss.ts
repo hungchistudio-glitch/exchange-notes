@@ -17,7 +17,11 @@ function plain(value: unknown): string {
   return text(value).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
     .replace(/<[^>]*>/g, " ").replace(/&(?:nbsp|amp|lt|gt|quot|apos|#39);/gi, entity => ({
       "&nbsp;": " ", "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'", "&#39;": "'",
-    })[entity.toLowerCase()] ?? " ").replace(/\s+/g, " ").trim();
+    })[entity.toLowerCase()] ?? " ")
+    .replace(/&#(x[\da-f]+|\d+);/gi, (_, digits: string) => {
+      const code = digits[0].toLowerCase() === "x" ? Number.parseInt(digits.slice(1), 16) : Number(digits);
+      return code > 0 && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff) ? String.fromCodePoint(code) : " ";
+    }).replace(/\s+/g, " ").trim();
 }
 
 function trustedUrl(value: unknown, hosts: readonly string[]): string | null {

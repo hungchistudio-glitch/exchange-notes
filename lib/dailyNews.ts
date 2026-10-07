@@ -14,7 +14,7 @@ import { askText } from "@/lib/ai/askText";
 export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { NEWS_SLOTS, type NewsArticle, type NewsSlot } from "@/lib/news/sources";
 import { fetchRssArticles } from "@/lib/news/rss";
-import { hasAdvancedVocabularyDiversity } from "@/lib/news/vocabulary";
+import { hasAdvancedVocabularyDiversity, isNewsSourceAnchor } from "@/lib/news/vocabulary";
 import { toTraditional } from "@/lib/chinese/toTraditional";
 
 type LearningItem = {
@@ -248,6 +248,7 @@ async function fetchSlotCandidates(
 function validateVocabularyItem(
   value: unknown,
   languages: readonly LanguageCode[],
+  sourceText: string,
 ): VocabularyItem | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -258,12 +259,14 @@ function validateVocabularyItem(
   const texts = readLanguageMap(candidate.texts, 45, languages);
   const examples = readLanguageMap(candidate.examples, 180, languages);
   const partOfSpeech = normalizeText(candidate.partOfSpeech, 20);
+  const sourceAnchor = normalizeText(candidate.sourceAnchor, 121).toLowerCase();
 
   // Every language the pool covers, or the word is not usable: a card that
   // teaches three languages and can only name the word in two of them leaves
   // one reader looking at a blank.
   if (
     !ALLOWED_PARTS_OF_SPEECH.has(partOfSpeech) ||
+    !isNewsSourceAnchor(sourceAnchor, sourceText) ||
     languages.some((language) => !texts[language] || !examples[language])
   ) {
     return null;
@@ -300,6 +303,7 @@ function readLanguageMap(
 function validateLearningItem(
   value: unknown,
   languages: readonly LanguageCode[],
+  article: NewsArticle,
 ): LearningItem | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -321,7 +325,7 @@ function validateLearningItem(
     : [];
 
   const vocabulary = rawVocabulary
-    .map((item) => validateVocabularyItem(item, languages))
+    .map((item) => validateVocabularyItem(item, languages, normalizeText(`${article.title} ${article.excerpt}`, 5000).toLowerCase()))
     .filter((item): item is VocabularyItem => item !== null)
     .slice(0, 3);
 
@@ -385,13 +389,14 @@ function buildLearningSchema(count: number, languages: LanguageCode[]) {
                 additionalProperties: false,
                 properties: {
                   texts: byLanguage(1, 45),
+                  sourceAnchor: { type: "string", minLength: 8, maxLength: 120 },
                   partOfSpeech: {
                     type: "string",
                     enum: ["noun", "verb", "adjective", "adverb", "phrase"],
                   },
                   examples: byLanguage(5, 180),
                 },
-                required: ["texts", "partOfSpeech", "examples"],
+                required: ["texts", "partOfSpeech", "examples", "sourceAnchor"],
               },
             },
           },
@@ -507,7 +512,7 @@ async function buildLearningBatch(
   const items: DailyNewsPoolItem[] = [];
 
   articles.forEach((article, index) => {
-    const learning = validateLearningItem(rawLearningItems[index], languages);
+    const learning = validateLearningItem(rawLearningItems[index], languages, article);
 
     if (!learning) return;
 

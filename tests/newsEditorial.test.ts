@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LANGUAGE_CODES } from "@/lib/languages";
 import { buildDailyNewsPrompt } from "@/lib/ai/prompts/dailyNews";
 import { NEWS_SLOTS, type NewsArticle } from "@/lib/news/sources";
-import { hasAdvancedVocabularyDiversity } from "@/lib/news/vocabulary";
+import { hasAdvancedVocabularyDiversity, isNewsSourceAnchor } from "@/lib/news/vocabulary";
 
 const mocks = vi.hoisted(() => ({ ask: vi.fn(), rss: vi.fn() }));
 vi.mock("@/lib/ai/askText", () => ({ askText: mocks.ask }));
@@ -31,8 +31,15 @@ describe("C2 multilingual editorial generation", () => {
     expect(hasAdvancedVocabularyDiversity(["rebuttal", " REBUTTAL ", "microcosm"])).toBe(false);
     expect(hasAdvancedVocabularyDiversity(["commodification", "received wisdom", "ideological intransigence"])).toBe(true);
   });
+  it("accepts quotation typography changes but rejects invented source evidence", () => {
+    const source = "They obtained certificates for “several services” after a review.";
+    expect(isNewsSourceAnchor("certificates for several services", source)).toBe(true);
+    expect(isNewsSourceAnchor("certificates for other services", source)).toBe(false);
+    expect(isNewsSourceAnchor("services", "Unrelated source")).toBe(false);
+    expect(isNewsSourceAnchor("“”'\"“”'\"", source)).toBe(false);
+  });
   it("keeps publisher metadata outside model control and all bilingual speech fields intact", async () => {
-    mocks.ask.mockResolvedValue({ text: JSON.stringify({ cards: [{ titles: all("Review"), summaries: all("A concise contextual summary."), captions: all("Art exhibition"), sourceName: "Invented publisher", vocabulary: ["commodification", "received wisdom", "dissent"].map(word => ({ texts: all(word), examples: all(`A natural example of ${word}.`), partOfSpeech: "noun" })) }] }) });
+    mocks.ask.mockResolvedValue({ text: JSON.stringify({ cards: [{ titles: all("Review"), summaries: all("A concise contextual summary."), captions: all("Art exhibition"), sourceName: "Invented publisher", vocabulary: ["commodification", "received wisdom", "dissent"].map(word => ({ texts: all(word), examples: all(`A natural example of ${word}.`), partOfSpeech: "noun", sourceAnchor: "the commodification of dissent" })) }] }) });
     const [item] = await buildLearningCards([article], LANGUAGE_CODES);
     expect(item.card.sourceName).toBe("Hyperallergic");
     expect(item.card.sourceUrl).toBe(article.url);
@@ -42,10 +49,14 @@ describe("C2 multilingual editorial generation", () => {
     }
   });
   it("normalizes Traditional Chinese and drops lessons with missing examples or basic filler", async () => {
-    const lesson = { titles: all("Review"), summaries: all("A concise contextual summary."), captions: all("Art exhibition"), vocabulary: ["commodification", "received wisdom", "dissent"].map(word => ({ texts: { ...all(word), "zh-TW": "结构性不对称" }, examples: all(`A natural example of ${word}.`), partOfSpeech: "noun" })) };
+    const lesson = { titles: all("Review"), summaries: all("A concise contextual summary."), captions: all("Art exhibition"), vocabulary: ["commodification", "received wisdom", "dissent"].map(word => ({ texts: { ...all(word), "zh-TW": "结构性不对称" }, examples: all(`A natural example of ${word}.`), partOfSpeech: "noun", sourceAnchor: "the commodification of dissent" })) };
     const answer = () => mocks.ask.mockResolvedValue({ text: JSON.stringify({ cards: [lesson] }) });
     answer();
     expect((await buildLearningCards([article], LANGUAGE_CODES))[0].card.vocabulary[0].texts["zh-TW"]).toBe("結構性不對稱");
+    lesson.vocabulary[0].sourceAnchor = "An invented quotation about the artist";
+    answer();
+    expect(await buildLearningCards([article], LANGUAGE_CODES)).toEqual([]);
+    lesson.vocabulary[0].sourceAnchor = "the commodification of dissent";
     lesson.vocabulary[0].examples.fr = "";
     answer();
     expect(await buildLearningCards([article], LANGUAGE_CODES)).toEqual([]);

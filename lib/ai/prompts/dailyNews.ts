@@ -100,6 +100,9 @@ For EACH article above, in the same order, produce:
   anchors, NOT facts about the articles. Use one only when the same concept is
   supported; equally challenging established alternatives are welcome:
 ${C2_EDITORIAL_ANCHORS}
+  Do not turn these anchors into a stock list. Inflation figures alone do not
+  support "market consolidation"; access permissions alone do not establish
+  "algorithmic opacity". A word's conceptual fit matters as much as its difficulty.
   Preserve the precise contextual sense and a natural advanced register across
   languages; Chinese should be sophisticated Traditional Chinese, not archaic
   literary wording. Use three different concepts, not near-synonyms.
@@ -110,6 +113,10 @@ ${C2_EDITORIAL_ANCHORS}
   For each: "texts" is that word in every language listed, keyed the
   same way; "partOfSpeech" is one of the allowed values; "examples" is one
   sentence per language, each using that language's own form of the word.
+  "sourceAnchor" is an exact, short quotation (8-120 characters) from the supplied
+  headline or excerpt that supports this precise concept. Check the semantic
+  equivalence before choosing a C2 paraphrase; a merely related topic is insufficient.
+  The sourceAnchor is internal grounding evidence, not a vocabulary example.
 
   The examples are the one part of this card that is not about the article.
   The word is what the reader keeps; the story is only where they happened to

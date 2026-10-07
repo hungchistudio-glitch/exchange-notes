@@ -16,7 +16,7 @@ Contemporary art: iconoclasm, recontextualisation, curatorial conceit,
 Technology: circumvention, surreptitious access, unfettered discretion,
   interoperability, exfiltration, algorithmic opacity, tacit acquiescence.
 Fashion: sartorial subversion, artisanal provenance, ostentatious opulence,
-  aesthetic eclecticism, commodification, vestimentary codes, meticulous tailoring.
+  aesthetic eclecticism, commodification, vestimentary codes, sartorial reinterpretation.
 Economic / general analysis: inflationary headwinds, fiscal retrenchment,
   market consolidation, structural asymmetries, macroeconomic volatility,
   intransigence, institutional inertia, entrenched orthodoxy.`.trim();
@@ -26,4 +26,12 @@ export function hasAdvancedVocabularyDiversity(words: readonly string[]): boolea
   const normalized = words.map(word => word.normalize("NFKC").trim().toLowerCase().replace(/[.!?,;:]+$/g, ""));
   return normalized.length === 3 && new Set(normalized).size === 3 &&
     normalized.every(word => word.length > 0 && !BASIC_NEWS_TERMS.has(word));
+}
+
+/** Typography may differ, but the quoted words must still occur together. */
+export function isNewsSourceAnchor(anchor: string, source: string): boolean {
+  const normalize = (text: string) => text.normalize("NFKC").toLowerCase()
+    .replace(/["'“”‘’]/g, "").replace(/\s+/g, " ").trim();
+  const normalizedAnchor = normalize(anchor);
+  return normalizedAnchor.length >= 8 && anchor.length <= 120 && normalize(source).includes(normalizedAnchor);
 }
