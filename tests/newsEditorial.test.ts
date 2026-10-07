@@ -28,6 +28,8 @@ describe("C2 multilingual editorial generation", () => {
   });
   it("rejects observed basic filler and duplicate terms without banning advanced phrases", () => {
     expect(hasAdvancedVocabularyDiversity(["national", "index", "inflation"])).toBe(false);
+    expect(hasAdvancedVocabularyDiversity(["collaboration", "staples", "recognition"])).toBe(false);
+    expect(hasAdvancedVocabularyDiversity(["horizontal", "redevelopment", "inventory"])).toBe(false);
     expect(hasAdvancedVocabularyDiversity(["rebuttal", " REBUTTAL ", "microcosm"])).toBe(false);
     expect(hasAdvancedVocabularyDiversity(["commodification", "received wisdom", "ideological intransigence"])).toBe(true);
   });
