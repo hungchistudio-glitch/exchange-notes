@@ -49,21 +49,19 @@ import type { LanguageCode } from "@/lib/languages";
  * — "no named individuals" is exactly wrong for a news headline. Everywhere
  * else these are already top-level rules and the default is right.
  */
-export function exampleSentenceRules({ indent = "" } = {}): string {
+export function exampleSentenceRules({ indent = "", advanced = false } = {}): string {
   const rules = `
 - An example shows the word being used; it does not say what the word means.
   "The human skeleton consists of 206 bones" describes the object and teaches
   nothing about the word. "She broke her wrist — you can see it on the X-ray"
   puts it to work. Definitions, encyclopedia facts about the thing, and
   sentences whose only purpose is to contain the word are all wrong answers.
-- Write what one person would actually say or write to another: everyday
-  register, an ordinary situation, usually with somebody in it.
+- Write what one person would actually say or write to another: ${advanced ? "natural\n  professional or everyday language, in a concrete situation." : "everyday\n  register, an ordinary situation, usually with somebody in it."}
 - It must stand on its own. A reader who does not know where this word came
   from has to understand the sentence completely. No named individuals, no
   particular news event, no headline phrasing, nothing that only makes sense
   as part of a longer story.
-- Use the word in its most ordinary sense, not a specialised or technical one,
-  unless the word only has the specialised sense.
+${advanced ? "- Preserve the selected advanced or specialist sense in a new, self-contained\n  context; do not switch to an easier meaning of the same word." : "- Use the word in its most ordinary sense, not a specialised or technical one,\n  unless the word only has the specialised sense."}
 - Keep it short enough to remember and repeat.
 - The sentence only, in its own script. No pronunciation guide, no
   romanisation, no pinyin, no translation, and nothing in brackets after it.`.trim();

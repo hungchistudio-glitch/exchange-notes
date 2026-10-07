@@ -18,11 +18,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    // Discover's story images are Guardian thumbnails and nothing else — they
-    // come from one field, `fields.thumbnail` in lib/dailyNews.ts, which the
-    // Guardian API serves exclusively from this host. Pinning the pattern to
-    // that host and path keeps the image optimizer from being usable as an
-    // open proxy for arbitrary remote URLs.
+    // Only verified publisher image hosts; RSS adapters also validate URLs.
     remotePatterns: [
       {
         protocol: "https",
@@ -30,6 +26,11 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      { protocol: "https", hostname: "storage.ghost.io", port: "", pathname: "/c/51/f8/51f871d8-b6be-4a73-b958-0ca4fff0110a/content/images/**" },
+      { protocol: "https", hostname: "www.artnews.com", port: "", pathname: "/wp-content/uploads/**" },
+      { protocol: "https", hostname: "cdn.arstechnica.net", port: "", pathname: "/wp-content/uploads/**" },
+      { protocol: "https", hostname: "assets.vogue.com", port: "", pathname: "/photos/**" },
+      { protocol: "https", hostname: "r.fashionunited.com", port: "", pathname: "/**" },
     ],
   },
 };

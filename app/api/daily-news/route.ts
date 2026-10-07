@@ -2,6 +2,7 @@ import { readDailyNewsCard } from "@/lib/types/dailyNews";
 import { after, NextResponse } from "next/server";
 
 import { refillPoolIfThin } from "@/lib/news/refillPool";
+import { DISCOVER_CANDIDATE_LIMIT, selectDiscoverBatch } from "@/lib/news/selectBatch";
 
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LEARNING_PAIR, readLanguageCode } from "@/lib/languages";
@@ -17,9 +18,6 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-/** How many cards one Discover batch carries. */
-const BATCH_SIZE = 8;
 
 const NO_STORE = {
   "Cache-Control": "no-store, max-age=0, must-revalidate",
@@ -121,50 +119,34 @@ export async function GET() {
           ? "card->titles->>zh-TW.not.is.null,card->>chineseTitle.not.is.null"
           : `card->titles->>${learningLanguage}.not.is.null`;
 
-    let query = supabase
-      .from("daily_news_items")
-      .select("id, card, published_at")
-      .or(leadable)
-      .order("published_at", { ascending: false })
-      .limit(BATCH_SIZE);
-
-    if (seenIds.length > 0) {
-      query = query.not("id", "in", `(${seenIds.join(",")})`);
-    }
-
-    const { data: unseen, error } = await query;
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    let rows = unseen ?? [];
-    let exhausted = false;
-
-    /*
-     * The pool has run out of things this reader has not seen.
-     *
-     * Falling back to the newest cards regardless of history is deliberate:
-     * an empty feed is a broken screen, and a reader who has genuinely read
-     * everything is better served the most recent stories again with an
-     * honest flag than an apology and nothing to read. The flag is what lets
-     * the UI say something true rather than the old "same batch" notice.
-     */
-    if (rows.length === 0) {
-      exhausted = true;
-
-      const { data: newest, error: newestError } = await supabase
+    const poolQuery = (unseenOnly: boolean, c2Only: boolean) => {
+      let query = supabase
         .from("daily_news_items")
         .select("id, card, published_at")
         .or(leadable)
         .order("published_at", { ascending: false })
-        .limit(BATCH_SIZE);
-
-      if (newestError) {
-        throw new Error(newestError.message);
+        .limit(DISCOVER_CANDIDATE_LIMIT);
+      if (c2Only) query = query.eq("card->>vocabularyLevel", "C2");
+      if (unseenOnly && seenIds.length > 0) {
+        query = query.not("id", "in", `(${seenIds.join(",")})`);
       }
+      return query;
+    };
 
-      rows = newest ?? [];
+    // Prefer unseen C2 lessons; once read, repeat those with the exhausted
+    // flag instead of quietly dropping the level back to B1. The legacy pool
+    // remains a fallback only until this language has its first C2 batch.
+    const modes = [[true, true], [false, true], [true, false], [false, false]] as const;
+    let rows: Array<{ id: string; card: unknown; published_at: string }> = [];
+    let exhausted = false;
+    for (const [unseenOnly, c2Only] of modes) {
+      const { data, error } = await poolQuery(unseenOnly, c2Only);
+      if (error) throw new Error(error.message);
+      if (data?.length) {
+        rows = data;
+        exhausted = !unseenOnly;
+        break;
+      }
     }
 
     if (rows.length === 0) {
@@ -188,12 +170,12 @@ export async function GET() {
          * The card's own id is the article URL; the pool row id is what the
          * seen table keys on, so both travel together.
          */
-        cards: rows
+        cards: selectDiscoverBatch(rows
           .map((row) => {
             const card = readDailyNewsCard(row.card);
             return card ? { ...card, itemId: row.id as string } : null;
           })
-          .filter((card): card is NonNullable<typeof card> => card !== null),
+          .filter((card): card is NonNullable<typeof card> => card !== null)),
         generatedAt: rows[0].published_at,
         exhausted,
       },

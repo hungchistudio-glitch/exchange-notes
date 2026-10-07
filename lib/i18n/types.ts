@@ -636,6 +636,8 @@ export type TranslationDictionary = {
       science: string;
       health: string;
       culture: string;
+      art: string;
+      fashion: string;
       environment: string;
       politics: string;
       general: string;

@@ -43,6 +43,8 @@ export type DailyNewsCard = {
   publishedAt: string;
   imageUrl: string | null;
   vocabulary: VocabularyItem[];
+  /** Editorial target used by the generator, not a certified level per word. */
+  vocabularyLevel?: "C2";
 };
 
 /*
@@ -165,5 +167,6 @@ export function readDailyNewsCard(value: unknown): DailyNewsCard | null {
     publishedAt: typeof raw.publishedAt === "string" ? raw.publishedAt : "",
     imageUrl: typeof raw.imageUrl === "string" ? raw.imageUrl : null,
     vocabulary,
+    ...(raw.vocabularyLevel === "C2" ? { vocabularyLevel: "C2" as const } : {}),
   };
 }

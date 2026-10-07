@@ -7,7 +7,7 @@ export type {
 // discoveries read well as photos; abstract finance/market and technology
 // coverage tends to stay text-only rather than reaching for generic stock
 // imagery. Selective use is deliberate: not every row should have a photo.
-const IMAGE_FRIENDLY_CATEGORIES = new Set(["world", "science", "culture"]);
+const IMAGE_FRIENDLY_CATEGORIES = new Set(["world", "science", "culture", "art", "fashion"]);
 
 export function isImageFriendlyCategory(category: string): boolean {
   return IMAGE_FRIENDLY_CATEGORIES.has(category.trim().toLowerCase());
@@ -52,6 +52,8 @@ const CATEGORY_ACCENTS: Record<string, string> = {
   technology: "var(--discover-category-technology)",
   science: "var(--discover-category-science)",
   culture: "var(--discover-category-culture)",
+  art: "var(--discover-category-culture)",
+  fashion: "var(--discover-category-business)",
   health: "var(--discover-category-health)",
   environment: "var(--discover-category-environment)",
   politics: "var(--discover-category-politics)",

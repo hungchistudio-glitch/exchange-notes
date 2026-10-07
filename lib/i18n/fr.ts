@@ -639,6 +639,8 @@ const french: TranslationDictionary = {
       science: "Science",
       health: "Santé",
       culture: "Culture",
+      art: "Art contemporain",
+      fashion: "Mode",
       environment: "Environnement",
       politics: "Politique",
       general: "Actualités",

@@ -658,6 +658,8 @@ const english: TranslationDictionary = {
       science: "Science",
       health: "Health",
       culture: "Culture",
+      art: "Contemporary art",
+      fashion: "Fashion",
       environment: "Environment",
       politics: "Politics",
       general: "News",

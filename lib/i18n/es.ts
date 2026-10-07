@@ -658,6 +658,8 @@ const spanish: TranslationDictionary = {
       science: "Ciencia",
       health: "Salud",
       culture: "Cultura",
+      art: "Arte contemporáneo",
+      fashion: "Moda",
       environment: "Medioambiente",
       politics: "Política",
       general: "Actualidad",
