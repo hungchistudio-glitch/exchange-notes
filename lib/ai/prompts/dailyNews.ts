@@ -4,7 +4,7 @@ import {
 } from "@/lib/ai/languagePrompt";
 import { exampleSentenceRules } from "@/lib/ai/prompts/exampleSentence";
 import { DEFAULT_LEARNING_PAIR, type LanguageCode } from "@/lib/languages";
-import { BASIC_NEWS_TERMS, C2_EDITORIAL_ANCHORS } from "@/lib/news/vocabulary";
+import { BASIC_NEWS_TERMS } from "@/lib/news/vocabulary";
 
 /** Just the fields the prompt reads, so this module does not pull in the feed. */
 export type PromptArticle = {
@@ -92,17 +92,18 @@ For EACH article above, in the same order, produce:
   Do not mistake a long word, brand, person's name or place name for an advanced
   vocabulary item. Start with advanced terms used in the headline or excerpt.
   When its wording is basic, use an established C2-level equivalent or precise
-  advanced collocation for a concept explicitly present in the text. For example,
-  an explicitly stubborn refusal can be taught as "intransigence"; do not infer
-  a stubborn refusal merely to use that word. These are learning terms, not quotes.
+  advanced collocation for a concept explicitly present in the text. Choose
+  lexical precision, not a basic word with an arbitrary extra adjective.
+  These are learning terms, not quotes.
   Never invent terminology or introduce a concept the source does not support.
-  Calibrate the level against these advanced examples. They are difficulty
-  anchors, NOT facts about the articles. Use one only when the same concept is
-  supported; equally challenging established alternatives are welcome:
-${C2_EDITORIAL_ANCHORS}
-  Do not turn these anchors into a stock list. Inflation figures alone do not
-  support "market consolidation"; access permissions alone do not establish
-  "algorithmic opacity". A word's conceptual fit matters as much as its difficulty.
+  Derive each choice independently from THIS article. Do not reuse a stock list
+  of advanced words or carry terminology from another article in the batch.
+  Before selecting a paraphrase, check that substituting it into the source
+  preserves the original claim. Do not add a social critique, motivation, cause
+  or metaphor that the journalist did not state. A tree surviving bad weather
+  is not political refusal or bureaucratic delay; an event in an arts district
+  is not necessarily about aesthetics. A designer brand alone establishes
+  neither craftsmanship nor the origin of its materials.
   Preserve the precise contextual sense and a natural advanced register across
   languages; Chinese should be sophisticated Traditional Chinese, not archaic
   literary wording. Use three different concepts, not near-synonyms.

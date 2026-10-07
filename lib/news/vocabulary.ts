@@ -7,19 +7,13 @@ export const BASIC_NEWS_TERMS = new Set([
   "style", "brand", "product", "price", "growth", "change", "new", "important",
   "beautiful", "popular", "modern", "digital", "consumer", "retail", "economic",
   "headline", "statistics", "misuse", "misusing", "year-on-year",
+  "collaboration", "collaborate", "staple", "staples", "recognition",
+  "horizontal", "vertical", "redevelopment", "inventory", "partnership",
+  "innovation", "influence", "inspiration", "opportunity", "sustainable",
+  "sustainability", "traditional", "contemporary", "authentic", "original",
+  "wardrobe", "revolve", "appreciation", "compelling", "silhouette", "silhouettes",
+  "subsequent", "endure", "bizarre", "resilience", "detain", "condemn",
 ]);
-
-/** Difficulty anchors, used only when the article supports the same concept. */
-export const C2_EDITORIAL_ANCHORS = `
-Contemporary art: iconoclasm, recontextualisation, curatorial conceit,
-  aesthetic austerity, formal rigour, intertextuality, subversive undercurrents.
-Technology: circumvention, surreptitious access, unfettered discretion,
-  interoperability, exfiltration, algorithmic opacity, tacit acquiescence.
-Fashion: sartorial subversion, artisanal provenance, ostentatious opulence,
-  aesthetic eclecticism, commodification, vestimentary codes, sartorial reinterpretation.
-Economic / general analysis: inflationary headwinds, fiscal retrenchment,
-  market consolidation, structural asymmetries, macroeconomic volatility,
-  intransigence, institutional inertia, entrenched orthodoxy.`.trim();
 
 /** Reject filler and repeated English terms without spending another AI call. */
 export function hasAdvancedVocabularyDiversity(words: readonly string[]): boolean {
