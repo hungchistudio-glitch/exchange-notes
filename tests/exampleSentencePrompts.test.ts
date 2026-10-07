@@ -70,7 +70,7 @@ const prompts: Array<[string, () => string, string]> = [
         [{ category: "world", title: "A headline", excerpt: "An excerpt." }],
         PAIR,
       ),
-    NESTED_RULES,
+    exampleSentenceRules({ indent: "  ", advanced: true }),
   ],
 ];
 

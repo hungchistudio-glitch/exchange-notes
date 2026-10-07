@@ -646,6 +646,8 @@ const traditionalChinese: TranslationDictionary = {
       science: "科學",
       health: "健康",
       culture: "文化",
+      art: "現當代藝術",
+      fashion: "時尚",
       environment: "環境",
       politics: "政治",
       general: "新聞",

@@ -639,6 +639,8 @@ const italian: TranslationDictionary = {
       science: "Scienza",
       health: "Salute",
       culture: "Cultura",
+      art: "Arte contemporanea",
+      fashion: "Moda",
       environment: "Ambiente",
       politics: "Politica",
       general: "Notizie",

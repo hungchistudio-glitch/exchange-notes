@@ -8,41 +8,14 @@ import type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
 import { GoogleGenAI } from "@google/genai";
 
 import { askText } from "@/lib/ai/askText";
-/**
- * Daily News generation, redesigned to NOT depend on Gemini's Google Search
- * grounding tool. As of late 2025 / 2026, Google appears to require a
- * billing account linked to the Google Cloud project before grounding will
- * work at all — even brand-new, unused projects get an immediate 429
- * RESOURCE_EXHAUSTED the moment the `google_search` tool is attached, while
- * plain (non-grounded) generation on the same key works fine. Rather than
- * ask the user to link a credit card just to keep this feature, we get real,
- * dated news articles from The Guardian's free Open Platform API (no
- * billing required, explicitly permits non-commercial production use) and
- * use Gemini ONLY for the bilingual rewriting/translation/vocabulary work —
- * a plain text-in/text-out call with no tools attached, which stays on the
- * normal free-tier budget we've already confirmed works.
- *
- * This also improves trustworthiness versus the old design: the source URL,
- * source name, and publish date now come directly from The Guardian's API
- * response instead of being regurgitated by the model, so they can never be
- * hallucinated or point to the wrong article.
- *
- * Called from the scheduled cron job (app/api/cron/daily-news/route.ts),
- * and — only after a run came up short — from lib/news/refillPool.ts, which
- * the news route starts *after* its response has gone. Never on the path a
- * reader is waiting on.
+/** Real publisher metadata and excerpts, followed by multilingual lessons.
+ * Generated only by cron/background refill, never while a reader waits.
  */
-
 export type { DailyNewsCard, VocabularyItem } from "@/lib/types/dailyNews";
-
-type GuardianArticle = {
-  category: string;
-  title: string;
-  url: string;
-  publishedAt: string;
-  excerpt: string;
-  imageUrl: string | null;
-};
+import { NEWS_SLOTS, type NewsArticle, type NewsSlot } from "@/lib/news/sources";
+import { fetchRssArticles } from "@/lib/news/rss";
+import { hasAdvancedVocabularyDiversity, isNewsSourceAnchor } from "@/lib/news/vocabulary";
+import { toTraditional } from "@/lib/chinese/toTraditional";
 
 type LearningItem = {
   titles: ByLanguage;
@@ -62,74 +35,6 @@ const ALLOWED_PARTS_OF_SPEECH = new Set([
   "adverb",
   "phrase",
 ]);
-
-/*
- * The daily slate.
- *
- * Twelve slots rather than five, because the feed is now a pool the reader
- * draws from over days instead of a batch replaced every morning — see the
- * daily_news_pool migration. Twelve a day against a fourteen-day retention
- * settles at roughly a hundred and seventy cards, which is more than any
- * reader gets through, so "show me something I have not read" always has an
- * answer.
- *
- * All of them are Guardian sections, which is the only free source measured
- * to give full body text under terms that permit this use. Twelve sections
- * cost twelve API calls a day against a five-hundred-a-day free allowance.
- *
- * A slot may also be a query rather than a section. Taiwan is the reason:
- * the Guardian has no Taiwan section, and the tag carries roughly two
- * articles a week — measured, not assumed. Asking for more Taiwan slots than
- * that would not produce more Taiwan news, it would produce the same two
- * articles again, and the pool's unique constraint on source_url would
- * reject them anyway. So Taiwan takes one slot and the pool takes whatever
- * genuinely new Taiwan coverage exists on the day; on days with none the
- * slot simply yields nothing and the other eleven still land.
- *
- * Raising Taiwan's share needs a Taiwan source, not a bigger number here.
- * Taipei Times publishes fifty headlines a day with no body text in its feed
- * and disallows AI crawlers outright in robots.txt; NewsAPI's free tier is
- * licensed for development only. Neither is usable, which is why this list
- * looks the way it does.
- */
-type NewsSlot = {
-  category: string;
-  /** A Guardian section, for the general-interest slots. */
-  section?: string;
-  /** A free-text query, for subjects the Guardian files under no section. */
-  query?: string;
-  /*
-   * Words the headline must contain for a query slot's result to count.
-   *
-   * A free-text search matches the body, so `q=Taiwan` returns anything that
-   * mentions Taiwan once in passing — the first run of this pulled an
-   * Australian daily briefing about GST reform into the Taiwan category
-   * because the digest happened to name Taiwan somewhere in the middle. A
-   * card filed under Taiwan that is about Australian tax policy is worse
-   * than no Taiwan card at all, so the headline has to be about the subject
-   * too, not merely the article.
-   */
-  headlineMustMention?: string[];
-};
-
-const NEWS_SLOTS: NewsSlot[] = [
-  { section: "world", category: "World" },
-  { section: "business", category: "Business" },
-  { section: "technology", category: "Technology" },
-  { section: "science", category: "Science" },
-  { section: "culture", category: "Culture" },
-  { section: "environment", category: "Environment" },
-  { section: "society", category: "Society" },
-  { section: "global-development", category: "Development" },
-  { section: "education", category: "Education" },
-  { section: "film", category: "Film" },
-  { section: "books", category: "Books" },
-  {
-    query: "Taiwan",
-    category: "Taiwan",
-    headlineMustMention: ["taiwan", "taipei", "taiwanese"],
-  },
-];
 
 /*
  * How many candidates to pull per slot.
@@ -262,7 +167,7 @@ type GuardianApiResult = {
 async function fetchSlotCandidates(
   slot: NewsSlot,
   apiKey: string
-): Promise<GuardianArticle[]> {
+): Promise<NewsArticle[]> {
   const url = new URL("https://content.guardianapis.com/search");
 
   if (slot.section) {
@@ -282,6 +187,7 @@ async function fetchSlotCandidates(
     // The cron job already runs on a schedule; no need for Next.js's own
     // data cache on top of that.
     cache: "no-store",
+    signal: AbortSignal.timeout(6_000),
   });
 
   if (!response.ok) {
@@ -296,7 +202,7 @@ async function fetchSlotCandidates(
   };
 
   const results = data.response?.results ?? [];
-  const articles: GuardianArticle[] = [];
+  const articles: NewsArticle[] = [];
 
   for (const result of results) {
     if (result.type !== "article") {
@@ -321,6 +227,7 @@ async function fetchSlotCandidates(
 
     articles.push({
       category: slot.category,
+      sourceName: "The Guardian",
       title: normalizeText(result.webTitle, 200),
       url: result.webUrl,
       publishedAt: result.webPublicationDate,
@@ -341,6 +248,7 @@ async function fetchSlotCandidates(
 function validateVocabularyItem(
   value: unknown,
   languages: readonly LanguageCode[],
+  sourceText: string,
 ): VocabularyItem | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -351,13 +259,15 @@ function validateVocabularyItem(
   const texts = readLanguageMap(candidate.texts, 45, languages);
   const examples = readLanguageMap(candidate.examples, 180, languages);
   const partOfSpeech = normalizeText(candidate.partOfSpeech, 20);
+  const sourceAnchor = normalizeText(candidate.sourceAnchor, 121).toLowerCase();
 
   // Every language the pool covers, or the word is not usable: a card that
   // teaches three languages and can only name the word in two of them leaves
   // one reader looking at a blank.
   if (
     !ALLOWED_PARTS_OF_SPEECH.has(partOfSpeech) ||
-    languages.some((language) => !texts[language])
+    !isNewsSourceAnchor(sourceAnchor, sourceText) ||
+    languages.some((language) => !texts[language] || !examples[language])
   ) {
     return null;
   }
@@ -384,7 +294,7 @@ function readLanguageMap(
 
   for (const language of languages) {
     const text = normalizeMultilineText(record[language], maxLength);
-    if (text) out[language] = text;
+    if (text) out[language] = language === "zh-TW" ? toTraditional(text) : text;
   }
 
   return out;
@@ -393,6 +303,7 @@ function readLanguageMap(
 function validateLearningItem(
   value: unknown,
   languages: readonly LanguageCode[],
+  article: NewsArticle,
 ): LearningItem | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -414,7 +325,7 @@ function validateLearningItem(
     : [];
 
   const vocabulary = rawVocabulary
-    .map((item) => validateVocabularyItem(item, languages))
+    .map((item) => validateVocabularyItem(item, languages, normalizeText(`${article.title} ${article.excerpt}`, 5000).toLowerCase()))
     .filter((item): item is VocabularyItem => item !== null)
     .slice(0, 3);
 
@@ -424,7 +335,8 @@ function validateLearningItem(
     languages.some(
       (language) => !titles[language] || !summaries[language],
     ) ||
-    vocabulary.length !== 3
+    vocabulary.length !== 3 ||
+    (languages.includes("en") && !hasAdvancedVocabularyDiversity(vocabulary.map(word => word.texts.en ?? "")))
   ) {
     return null;
   }
@@ -477,13 +389,14 @@ function buildLearningSchema(count: number, languages: LanguageCode[]) {
                 additionalProperties: false,
                 properties: {
                   texts: byLanguage(1, 45),
+                  sourceAnchor: { type: "string", minLength: 8, maxLength: 120 },
                   partOfSpeech: {
                     type: "string",
                     enum: ["noun", "verb", "adjective", "adverb", "phrase"],
                   },
                   examples: byLanguage(5, 180),
                 },
-                required: ["texts", "partOfSpeech", "examples"],
+                required: ["texts", "partOfSpeech", "examples", "sourceAnchor"],
               },
             },
           },
@@ -515,18 +428,24 @@ export type DailyNewsPoolItem = {
  */
 export async function selectTodaysArticles(
   isIngested: (url: string) => boolean
-): Promise<GuardianArticle[]> {
+): Promise<NewsArticle[]> {
   const guardianApiKey = process.env.GUARDIAN_API_KEY;
 
-  if (!guardianApiKey) {
-    throw new Error("GUARDIAN_API_KEY is not configured on the server.");
-  }
-
   const candidateLists = await Promise.all(
-    NEWS_SLOTS.map((slot) => fetchSlotCandidates(slot, guardianApiKey))
+    NEWS_SLOTS.map(async slot => {
+      try {
+        return slot.rss
+          ? await fetchRssArticles(slot.rss, slot.category)
+          : guardianApiKey ? await fetchSlotCandidates(slot, guardianApiKey) : [];
+      } catch (error) {
+        // A publisher timeout or malformed feed must not lose the whole day.
+        console.warn(`News source unavailable: ${slot.rss?.name ?? slot.section ?? slot.query}`, error instanceof Error ? error.message : "Fetch failed");
+        return [];
+      }
+    }),
   );
 
-  const chosen: GuardianArticle[] = [];
+  const chosen: NewsArticle[] = [];
   const takenThisRun = new Set<string>();
 
   for (const candidates of candidateLists) {
@@ -547,7 +466,7 @@ export async function selectTodaysArticles(
 }
 
 async function buildLearningBatch(
-  articles: GuardianArticle[],
+  articles: NewsArticle[],
   client: GoogleGenAI,
   languages: readonly LanguageCode[],
   budgetMs: number,
@@ -593,7 +512,7 @@ async function buildLearningBatch(
   const items: DailyNewsPoolItem[] = [];
 
   articles.forEach((article, index) => {
-    const learning = validateLearningItem(rawLearningItems[index], languages);
+    const learning = validateLearningItem(rawLearningItems[index], languages, article);
 
     if (!learning) return;
 
@@ -608,8 +527,9 @@ async function buildLearningBatch(
         summaries: learning.summaries,
         captions: learning.captions,
         vocabulary: learning.vocabulary,
+        vocabularyLevel: "C2",
         imageUrl: article.imageUrl,
-        sourceName: "The Guardian",
+        sourceName: article.sourceName,
         sourceUrl: article.url,
         publishedAt: article.publishedAt,
       },
@@ -801,7 +721,7 @@ export const __testing = {
  * request failed is a day with no news at all.
  */
 export async function buildLearningCards(
-  articles: GuardianArticle[],
+  articles: NewsArticle[],
   /*
    * The languages the pool should be written in, read from the accounts by
    * the caller. Defaulted so a caller with no opinion still produces the pool
@@ -821,7 +741,7 @@ export async function buildLearningCards(
 
   const perBatch = articlesPerBatch(languages.length);
 
-  const batches: GuardianArticle[][] = [];
+  const batches: NewsArticle[][] = [];
   for (let i = 0; i < articles.length; i += perBatch) {
     batches.push(articles.slice(i, i + perBatch));
   }
