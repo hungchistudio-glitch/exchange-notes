@@ -1065,6 +1065,10 @@ export default function YumiRingOverlay({
             gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
             gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
           );
+          handle.setRotationPaused?.(
+            openRef.current || answeringRef.current || returningHomeRef.current ||
+            somethingElseIsUp() || getCoachStep() < COACH_STEPS.length,
+          );
           handle.frame(now);
 
           // --- the ring rides on the eye

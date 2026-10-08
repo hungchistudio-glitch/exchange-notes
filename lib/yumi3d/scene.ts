@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createYumiRotation } from "./rotation";
 
 /* =========================================================
    Yumi, in three dimensions
@@ -74,6 +75,8 @@ export type YumiSceneOptions = {
   onLungeEnd?: () => void;
   /** Skips the idle blink and damps the spring hard. */
   reducedMotion?: boolean;
+  /** Home: free 360-degree turns that settle into a continuous slow orbit. */
+  continuousRotation?: boolean;
 };
 
 export type YumiSceneHandle = {
@@ -90,6 +93,9 @@ export type YumiSceneHandle = {
 
   /** 0 .. 1. Lifts and shrinks her so a panel can have the lower half. */
   setFocusLevel(level: number): void;
+
+  /** Ease automatic rotation to rest during search, navigation or a sheet. */
+  setRotationPaused?(paused: boolean): void;
 
   /**
    * Put her at a point on screen, at a given on-screen radius.
@@ -330,6 +336,10 @@ export function createYumiScene(
 
   let film: YumiFilmFrame | null = null;
   let focusLevel = 0;
+  let rotationPaused = false;
+  const rotation = options.continuousRotation
+    ? createYumiRotation(model.quaternion, options.reducedMotion)
+    : null;
 
   /* Where she is asked to be, and where she actually is. The gap between
      them is the flight out to the middle and back. */
@@ -613,7 +623,9 @@ export function createYumiScene(
         ambient.intensity = LIGHT_REST.ambient;
         eyeMaterial.emissiveIntensity = 0;
 
-        if (!dragging && !orbiting && nowMs - idleSince > 3200) {
+        if (rotation) {
+          rotation.step(dt, rotationPaused || !!lungePhase || focusLevel > 0);
+        } else if (!dragging && !orbiting && nowMs - idleSince > 3200) {
           /* Drifts back to facing you, so a reader who spun her and left
              does not come back to the inside of the shell. */
           model.rotation.y += (0 - model.rotation.y) * Math.min(1, dt * 1.6);
@@ -662,6 +674,10 @@ export function createYumiScene(
       film = next;
     },
 
+    setRotationPaused(paused) {
+      rotationPaused = paused;
+    },
+
     setFocusLevel(level) {
       focusLevel = level;
     },
@@ -677,6 +693,7 @@ export function createYumiScene(
       measureCanvas();
       idleSince = performance.now();
       moved = 0;
+      rotation?.begin(performance.now());
       lastPointer.x = clientX;
       lastPointer.y = clientY;
 
@@ -716,7 +733,9 @@ export function createYumiScene(
         return;
       }
 
-      if (orbiting) {
+      if (orbiting && rotation) {
+        rotation.drag(dx, dy, performance.now());
+      } else if (orbiting) {
         model.rotation.y += dx * 0.012;
         /* Clamped, because past a right angle there is nothing to look at:
            the shell's gap faces away and the eye is behind it. */
@@ -731,6 +750,7 @@ export function createYumiScene(
     },
 
     pointerCancel() {
+      if (dragging || orbiting) rotation?.cancel();
       dragging = false;
       orbiting = false;
       eyeVelocity.set(0, 0, 0);
@@ -739,6 +759,7 @@ export function createYumiScene(
 
     pointerUp() {
       if (film) return;
+      rotation?.release(performance.now(), orbiting && moved >= 6);
       if (dragging) {
         const progress = pullProgress();
         dragging = false;
@@ -753,7 +774,7 @@ export function createYumiScene(
     },
 
     lungeAt(clientX, clientY) {
-      if (film || dragging || lungePhase) return false;
+      if (film || dragging || orbiting || lungePhase) return false;
 
       /* The cookie is a DOM element on the page, so its point is unprojected
          onto the same camera-facing plane through the eye that a finger drags
