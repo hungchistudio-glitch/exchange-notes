@@ -451,6 +451,23 @@ export type YumiRingOverlayProps = {
   children: React.ReactNode;
 };
 
+/** Stable text nodes: the minute clock can update without restarting the reveal. */
+function greetingGlyphs(text: string) {
+  return typeof Intl.Segmenter === "function"
+    ? Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text), part => part.segment)
+    : Array.from(text.normalize("NFC"));
+}
+
+function GreetingInk({ text, offset = 0 }: { text: string; offset?: number }) {
+  return greetingGlyphs(text).map((glyph, index) => (
+    <span
+      key={index}
+      className={styles.inkGlyph}
+      style={{ "--ink-delay": `${220 + Math.min((offset + index) * 19, 520)}ms` } as CSSProperties}
+    >{glyph}</span>
+  ));
+}
+
 export default function YumiRingOverlay({
   stageRef,
   onLungeArrive,
@@ -1646,15 +1663,21 @@ export default function YumiRingOverlay({
           {meta ? (
             <div className={styles.above} data-yumi-protected="">
               <p className={styles.greeting}>
-                {meta.greeting}
-                {meta.place ? (
-                  <>
-                    <span className={styles.dot} aria-hidden="true">
-                      ·
-                    </span>
-                    {meta.place}
-                  </>
-                ) : null}
+                <span className={styles.inkReadable}>
+                  {meta.greeting}{meta.place ? `, ${meta.place}` : ""}
+                </span>
+                <span aria-hidden="true">
+                  <GreetingInk text={meta.greeting} />
+                  {meta.place ? (
+                    <>
+                      <span className={`${styles.dot} ${styles.inkGlyph}`}
+                        style={{ "--ink-delay": `${220 + Math.min(greetingGlyphs(meta.greeting).length * 19, 520)}ms` } as CSSProperties}>
+                        ·
+                      </span>
+                      <GreetingInk text={meta.place} offset={greetingGlyphs(meta.greeting).length + 2} />
+                    </>
+                  ) : null}
+                </span>
               </p>
               <p className={styles.when}>
                 {meta.date}
