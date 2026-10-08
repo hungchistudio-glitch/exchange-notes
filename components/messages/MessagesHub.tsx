@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -78,14 +79,11 @@ export default function MessagesHub() {
   const { t } = useTranslation();
   const { isCosmic } = useInterfaceMode();
   const copy = t.messages;
+  const instanceId = useId();
+  const subscriptionGeneration = useRef(0);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  /*
-   * Mirrors currentUserId for the subscriptions below, which are set up once
-   * and must not be torn down and rebuilt every time the id resolves.
-   */
-  const currentUserIdRef = useRef<string | null>(null);
   const [summaries, setSummaries] = useState<ConversationSummary[]>([]);
   const [requests, setRequests] = useState<IncomingRequest[]>([]);
   const [archivedCount, setArchivedCount] = useState(0);
@@ -155,96 +153,115 @@ export default function MessagesHub() {
 
   useEffect(() => {
     let isMounted = true;
+    let userId: string | null = null;
+    let starting = false;
+    let running = false;
+    let dirty = false;
+    let loaded = false;
+    let channel: RealtimeChannel | null = null;
     const supabase = createClient();
+    const topic = `conversation-list:${instanceId}:${++subscriptionGeneration.current}`;
 
-    async function refreshQuietly(userId: string) {
-      try {
-        const [rows, archived] = await Promise.all([
-          listConversationSummaries(supabase, userId),
-          getArchivedConversationCount(supabase, userId),
-        ]);
-        if (!isMounted) return;
-        setSummaries(rows);
-        setArchivedCount(archived);
-      } catch (error) {
-        // A background refresh failing should not replace what is on screen.
-        console.error(error);
-      }
+    // Coalesce events and discard a response if another change arrived while
+    // it was loading. Reconnects must refresh requests as well as messages.
+    function refresh() {
+      if (!isMounted) return;
+      if (!userId) { void start(); return; }
+      const readerId = userId;
+      dirty = true;
+      if (running) return;
+      running = true;
+      void (async () => {
+        try {
+          while (isMounted && dirty) {
+            dirty = false;
+            try {
+              const [rows, incoming, archived] = await Promise.all([
+                listConversationSummaries(supabase, readerId),
+                listIncomingRequests(supabase, readerId),
+                getArchivedConversationCount(supabase, readerId),
+              ]);
+              if (!isMounted || dirty) continue;
+              setSummaries(rows);
+              setRequests(incoming);
+              setArchivedCount(archived);
+              setErrorMessage("");
+              loaded = true;
+            } catch (error) {
+              if (isMounted && !dirty && !loaded) {
+                console.error(error);
+                setErrorMessage(copy.errors.loadConversations);
+              }
+            }
+          }
+        } finally {
+          running = false;
+          if (isMounted) {
+            setLoading(false);
+            setHasLoadedOnce(true);
+          }
+        }
+      })();
     }
 
-    async function loadForUser(userId: string) {
-      setLoading(true);
-      setErrorMessage("");
-      setCurrentUserId(userId);
-      currentUserIdRef.current = userId;
-
+    async function start() {
+      if (!isMounted || starting || userId) return;
+      starting = true;
       try {
-        const [rows, incoming, archived] = await Promise.all([
-          listConversationSummaries(supabase, userId),
-          listIncomingRequests(supabase, userId),
-          getArchivedConversationCount(supabase, userId),
-        ]);
-
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
         if (!isMounted) return;
-        setSummaries(rows);
-        setRequests(incoming);
-        setArchivedCount(archived);
+        if (!session?.user) {
+          setLoading(false);
+          return;
+        }
+        userId = session.user.id;
+        setCurrentUserId(userId);
+        channel = supabase.channel(topic)
+          .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, refresh)
+          .on("postgres_changes", {
+            event: "*", schema: "public", table: "friend_requests", filter: `receiver_id=eq.${userId}`,
+          }, refresh)
+          .on("postgres_changes", {
+            event: "*", schema: "public", table: "friend_requests", filter: `sender_id=eq.${userId}`,
+          }, refresh)
+          .on("postgres_changes", {
+            event: "UPDATE", schema: "public", table: "conversation_members", filter: `user_id=eq.${userId}`,
+          }, refresh)
+          .subscribe((status) => {
+            if (!isMounted) return;
+            setRealtimeLive(status === "SUBSCRIBED");
+            if (status === "SUBSCRIBED") refresh();
+          });
+        refresh();
       } catch (error) {
         if (isMounted) {
           console.error(error);
+          setLoading(false);
           setErrorMessage(copy.errors.loadConversations);
+          if (userId) refresh();
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-          setHasLoadedOnce(true);
-        }
+        starting = false;
       }
     }
 
-    let channel: RealtimeChannel | null = null;
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted || !session?.user) return;
-
-      const userId = session.user.id;
-      void loadForUser(userId);
-
-      /*
-       * Re-derives the list when a message lands anywhere. The whole list is
-       * refetched rather than patched in place: ordering, the preview line,
-       * the phrase count and the unread badge all depend on the message, and
-       * listConversationSummaries already resolves them together.
-       */
-      channel = supabase
-        .channel(`conversation-list:${userId}`)
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "messages" },
-          () => {
-            void refreshQuietly(userId);
-          },
-        )
-        .subscribe((status) => {
-          if (!isMounted) return;
-          setRealtimeLive(status === "SUBSCRIBED");
-        });
-    });
-
-    // Reading a thread changes its unread count; the list should not still be
-    // showing a badge when the user comes back to it.
-    const unsubscribeRead = subscribeToConversationRead(() => {
-      if (currentUserIdRef.current) {
-        void refreshQuietly(currentUserIdRef.current);
-      }
-    });
+    void start();
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", refresh);
+    window.addEventListener("pageshow", refresh);
+    const unsubscribeRead = subscribeToConversationRead(refresh);
 
     return () => {
       isMounted = false;
       unsubscribeRead();
-      if (channel) void supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("pageshow", refresh);
+      if (channel) void supabase.removeChannel(channel).catch(() => {});
     };
-  }, [copy.errors.loadConversations]);
+  }, [copy.errors.loadConversations, instanceId]);
 
   /*
    * Scroll restoration, deliberately gated on the first load finishing.
