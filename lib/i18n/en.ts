@@ -2170,6 +2170,8 @@ const english: TranslationDictionary = {
     },
 
     interfaceMode: {
+      enterCosmic: "Enter Yumi Cosmic",
+      returnStandard: "Return to Standard Mode",
       rowTitle: "Interface mode",
       rowDescription: "Standard, or Yumi's Command Deck",
       standardTitle: "Standard Mode",

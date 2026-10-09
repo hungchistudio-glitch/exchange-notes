@@ -1,0 +1,44 @@
+.portal {
+  position: fixed;
+  z-index: 65;
+  top: calc(18px + env(safe-area-inset-top));
+  right: 72px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+.planet, .corona { position: absolute; inset: 11px; border-radius: 50%; pointer-events: none; }
+.planet {
+  background: radial-gradient(circle at 30% 24%, #57564f 0%, #222421 35%, #101412 72%);
+  box-shadow: inset -1px -1px 2px #000, inset 1px 1px 1px #ffffff40;
+}
+.corona {
+  inset: 9px;
+  border: 1px solid #bbab7c99;
+  box-shadow: 1px 1px 6px #d6c79f66;
+  transform: rotate(-30deg) scaleX(1.22);
+}
+.satellite { position: absolute; top: 7px; right: 8px; width: 3px; height: 3px; border-radius: 50%; background: #999779; }
+.portal[data-cosmic="true"] .planet {
+  background: radial-gradient(circle at 30% 24%, #fffdf4 0%, #dce5df 50%, #a3b8b3 100%);
+  box-shadow: inset -2px -2px 4px #81929b, 0 0 12px #c5e6db44;
+}
+.portal[data-cosmic="true"] .corona { border-color: #dae9e36b; box-shadow: 0 0 9px #c5e6db30; }
+.portal:focus-visible { outline: 2px solid var(--foreground, #48533d); outline-offset: 3px; }
+.portal:active { transform: scale(.9); }
+.portal[aria-disabled="true"] { cursor: progress; }
+@media (hover: hover) { .portal:hover { transform: rotate(-12deg) scale(1.08); } }
+/* A mode change must not dismiss an unfinished search, recording, or tour. */
+:global(body:has([data-coach-card])) .portal,
+:global(body:has([aria-modal="true"])) .portal,
+:global(body:has([data-yumi-ring-open="true"])) .portal,
+:global(body:has([data-yumi-answering="true"])) .portal,
+:global(body:has([data-yumi-typing="true"])) .portal,
+:global(body:has([data-omni="typing"], [data-omni="listening"], [data-omni="scanning"])) .portal { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) { .portal { transition: none; } }

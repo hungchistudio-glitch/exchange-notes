@@ -13,6 +13,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
+import { eclipseRadius, ECLIPSE_COMMIT_FRACTION, ECLIPSE_FIRST_MS, ECLIPSE_REPEAT_MS, type EclipseOrigin, type EclipseTransition } from "@/lib/home/eclipse";
 import {
   applyInterfaceMode,
   getInterfaceMode,
@@ -26,8 +27,9 @@ export type ModeTransitionPhase = "entering-cosmic" | "leaving-cosmic";
 type InterfaceModeContextType = {
   interfaceMode: InterfaceMode;
   isCosmic: boolean;
-  setInterfaceMode: (mode: InterfaceMode) => void;
+  setInterfaceMode: (mode: InterfaceMode, origin?: EclipseOrigin) => void;
   modeTransition: ModeTransitionPhase | null;
+  eclipseTransition: EclipseTransition | null;
 };
 
 /*
@@ -77,13 +79,19 @@ const InterfaceModeContext = createContext<InterfaceModeContextType | null>(
 export function InterfaceModeProvider({
   children,
   initialMode,
+  preview = false,
 }: {
   children: ReactNode;
   initialMode: InterfaceMode;
+  /** Review pages can exercise both shells without changing the account. */
+  preview?: boolean;
 }) {
   const [interfaceMode, setMode] = useState<InterfaceMode>(initialMode);
   const [modeTransition, setModeTransition] =
     useState<ModeTransitionPhase | null>(null);
+  const [eclipseTransition, setEclipseTransition] = useState<EclipseTransition | null>(null);
+  const seenEclipse = useRef(false);
+  const profileWrite = useRef(Promise.resolve());
 
   // Every timer the running sequence owns, so an interruption can drop all of
   // them at once rather than letting a half-finished scene land later.
@@ -99,7 +107,7 @@ export function InterfaceModeProvider({
   /*
    * Deliberately not subscribed to the stored value.
    *
-   * Settings is the only place the mode may change, and it changes it through
+   * Settings and the home portal change the mode through
    * setInterfaceMode below — which owns the sequence, the commit and the
    * profile write as one operation. Listening to the store as well gave the
    * mode a second, uncoordinated way in: a write from anywhere would flip the
@@ -115,10 +123,12 @@ export function InterfaceModeProvider({
     // trip. The profile write below is what carries the choice to the user's
     // other devices; if it fails, this device is still correct and the next
     // successful write reconciles the rest.
-    persistInterfaceMode(mode);
+    if (!preview) persistInterfaceMode(mode);
     setMode(mode);
+    if (preview) return;
 
-    void (async () => {
+    // Serialize quick reversals so a slower old request cannot win remotely.
+    profileWrite.current = profileWrite.current.then(async () => {
       const supabase = createClient();
 
       const user = await getSessionUser(supabase);
@@ -133,11 +143,11 @@ export function InterfaceModeProvider({
       if (error) {
         console.error("Unable to save interface mode:", error);
       }
-    })();
-  }, []);
+    }).catch(error => console.error("Unable to save interface mode:", error));
+  }, [preview]);
 
   const setInterfaceMode = useCallback(
-    (mode: InterfaceMode) => {
+    (mode: InterfaceMode, origin?: EclipseOrigin) => {
       /*
        * Any second call cancels whatever was playing.
        *
@@ -150,6 +160,7 @@ export function InterfaceModeProvider({
        */
       const wasRunning = timersRef.current.length > 0;
       clearSequence();
+      setEclipseTransition(null);
 
       if (mode === interfaceMode) {
         setModeTransition(null);
@@ -164,22 +175,42 @@ export function InterfaceModeProvider({
 
       const entering = mode === "yumi-cosmic";
       setModeTransition(entering ? "entering-cosmic" : "leaving-cosmic");
+      let duration = entering ? ENTER_TOTAL_MS : LEAVE_TOTAL_MS;
+      let commitAt = entering ? ENTER_COMMIT_MS : LEAVE_COMMIT_MS;
+      if (origin) {
+        let seen = seenEclipse.current;
+        try { if (!preview) seen ||= sessionStorage.getItem("yumi-eclipse-seen") === "1"; } catch { /* Storage may be disabled. */ }
+        duration = seen ? ECLIPSE_REPEAT_MS : ECLIPSE_FIRST_MS;
+        commitAt = duration * ECLIPSE_COMMIT_FRACTION;
+        seenEclipse.current = true;
+        try { if (!preview) sessionStorage.setItem("yumi-eclipse-seen", "1"); } catch { /* Cosmetic preference only. */ }
+        setEclipseTransition({ ...origin, duration, radius: eclipseRadius(origin, window.innerWidth, window.innerHeight) });
+      }
 
       timersRef.current = [
         window.setTimeout(
           () => commitMode(mode),
-          entering ? ENTER_COMMIT_MS : LEAVE_COMMIT_MS,
+          commitAt,
         ),
         window.setTimeout(() => {
           timersRef.current = [];
           setModeTransition(null);
-        }, entering ? ENTER_TOTAL_MS : LEAVE_TOTAL_MS),
+          setEclipseTransition(null);
+        }, duration),
       ];
     },
-    [clearSequence, commitMode, interfaceMode],
+    [clearSequence, commitMode, interfaceMode, preview],
   );
 
   const reconciledRef = useRef(false);
+  useEffect(() => {
+    if (!preview) return;
+    const previous = document.documentElement.getAttribute("data-interface-mode");
+    return () => {
+      if (previous === null) document.documentElement.removeAttribute("data-interface-mode");
+      else document.documentElement.setAttribute("data-interface-mode", previous);
+    };
+  }, [preview]);
 
   /*
    * Two jobs, and the order matters.
@@ -199,14 +230,14 @@ export function InterfaceModeProvider({
     if (!reconciledRef.current) {
       reconciledRef.current = true;
 
-      if (getInterfaceMode() !== interfaceMode) {
+      if (!preview && getInterfaceMode() !== interfaceMode) {
         persistInterfaceMode(interfaceMode);
         return;
       }
     }
 
     applyInterfaceMode(interfaceMode);
-  }, [interfaceMode]);
+  }, [interfaceMode, preview]);
 
   const value = useMemo<InterfaceModeContextType>(
     () => ({
@@ -214,8 +245,9 @@ export function InterfaceModeProvider({
       isCosmic: interfaceMode === "yumi-cosmic",
       setInterfaceMode,
       modeTransition,
+      eclipseTransition,
     }),
-    [interfaceMode, modeTransition, setInterfaceMode],
+    [interfaceMode, modeTransition, eclipseTransition, setInterfaceMode],
   );
 
   return (

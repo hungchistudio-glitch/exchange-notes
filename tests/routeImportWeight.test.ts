@@ -117,16 +117,27 @@ describe("what the heaviest tabs drag in with them", () => {
    * Raised home 154 → 156 (2026-10-04) for two dependency-free guards:
    * shared scroll-style ownership and translation compare/merge. Both protect
    * the first-render home/search state; push cleanup remains dynamically loaded.
+   * Raised home 156 → 161 and vocabulary 158 → 159 (2026-10-09): the
+   * home eclipse adds its visible control and CSS, the Cosmic canvas host and
+   * CSS, and a dependency-free timing/geometry helper used by the shared mode
+   * provider. These belong on the initial shell; the WebGL engine must still
+   * stay behind import(), which is asserted separately below.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 158],
-    ["home", TABS.home, 156],
+    ["vocabulary", TABS.vocabulary, 159],
+    ["home", TABS.home, 161],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
       expect(graphFrom(entry).size).toBeLessThan(ceiling);
     },
   );
+
+  it("keeps the 3D engine behind a chunk boundary in both shells", () => {
+    for (const entry of Object.values(TABS)) {
+      expect(graphFrom(entry)).not.toContain("lib/yumi3d/scene.ts");
+    }
+  });
 
   /*
    * The key itself still has to be there. Loading the camera lazily is only

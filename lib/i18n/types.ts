@@ -2167,6 +2167,8 @@ export type TranslationDictionary = {
     };
 
     interfaceMode: {
+      enterCosmic: string;
+      returnStandard: string;
       rowTitle: string;
       rowDescription: string;
       // The full names are the accessible names of the two segments; the

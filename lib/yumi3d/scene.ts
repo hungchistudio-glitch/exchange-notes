@@ -96,6 +96,10 @@ export type YumiSceneHandle = {
 
   /** Ease automatic rotation to rest during search, navigation or a sheet. */
   setRotationPaused?(paused: boolean): void;
+  /** Change the lighting without rebuilding the model or its orientation. */
+  setCosmicLevel?(level: number): void;
+  /** A cached scene has moved between viewport and deck coordinates. */
+  resetScreenAnchor?(): void;
 
   /**
    * Put her at a point on screen, at a given on-screen radius.
@@ -337,6 +341,13 @@ export function createYumiScene(
   let film: YumiFilmFrame | null = null;
   let focusLevel = 0;
   let rotationPaused = false;
+  let cosmicWanted = 0;
+  let cosmicNow = 0;
+  const neutralLight = new THREE.Color(0xffffff);
+  const cosmicKey = new THREE.Color(0xd8ece8);
+  const cosmicRim = new THREE.Color(0xc7a8dc);
+  const neutralShell = new THREE.Color(0x040507);
+  const cosmicShell = new THREE.Color(0x18272b);
   const rotation = options.continuousRotation
     ? createYumiRotation(model.quaternion, options.reducedMotion)
     : null;
@@ -619,7 +630,12 @@ export function createYumiScene(
         for (const material of fadeMaterials) material.opacity = 1;
         keyLight.intensity = LIGHT_REST.key;
         fillLight.intensity = LIGHT_REST.fill;
-        rimLight.intensity = LIGHT_REST.rim;
+        cosmicNow += (cosmicWanted - cosmicNow) * (options.reducedMotion ? 1 : Math.min(1, dt * 8));
+        keyLight.color.copy(neutralLight).lerp(cosmicKey, cosmicNow);
+        rimLight.color.copy(neutralLight).lerp(cosmicRim, cosmicNow);
+        shellMaterial.color.copy(neutralShell).lerp(cosmicShell, cosmicNow);
+        shellMaterial.envMapIntensity = 0.38 + cosmicNow * 0.42;
+        rimLight.intensity = LIGHT_REST.rim + cosmicNow * 1.1;
         ambient.intensity = LIGHT_REST.ambient;
         eyeMaterial.emissiveIntensity = 0;
 
@@ -676,6 +692,16 @@ export function createYumiScene(
 
     setRotationPaused(paused) {
       rotationPaused = paused;
+    },
+    setCosmicLevel(level) {
+      cosmicWanted = Math.max(0, Math.min(1, level));
+    },
+    resetScreenAnchor() {
+      anchorNow.started = false;
+      // A cookie reach belongs to the old screen, unlike the shell's spin.
+      lungePhase = null;
+      eyePosition.copy(EYE_REST);
+      eyeVelocity.set(0, 0, 0);
     },
 
     setFocusLevel(level) {

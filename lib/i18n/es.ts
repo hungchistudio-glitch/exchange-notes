@@ -2167,6 +2167,8 @@ const spanish: TranslationDictionary = {
     },
 
     interfaceMode: {
+      enterCosmic: "Entrar en Yumi Cósmico",
+      returnStandard: "Volver al modo estándar",
       rowTitle: "Modo de interfaz",
       rowDescription: "Estándar, o el puente de mando de Yumi",
       standardTitle: "Modo estándar",

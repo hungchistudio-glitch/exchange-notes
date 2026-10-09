@@ -2011,6 +2011,8 @@ const french: TranslationDictionary = {
         "Aucun biscuit-mot aujourd'hui. Venez lui en donner un.",
     },
     interfaceMode: {
+      enterCosmic: "Entrer dans Yumi Cosmique",
+      returnStandard: "Revenir au mode standard",
       rowTitle: "Mode d'interface",
       rowDescription: "Standard, ou le poste de commande de Yumi",
       standardTitle: "Mode standard",
