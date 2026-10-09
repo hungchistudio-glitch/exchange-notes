@@ -13,6 +13,7 @@ import Screen from "@/components/foundation/layout/Screen";
 import OmniLexiconConsole, {
   type OmniLexiconState,
 } from "@/components/cosmic/OmniLexiconConsole";
+import CosmicHomeYumi from "./CosmicHomeYumi";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
@@ -354,6 +355,7 @@ export default function CommandDeck() {
               tilt, and the breath on the mark itself. Nesting is what lets
               them layer instead of overwrite. See the module CSS.
             */}
+            <CosmicHomeYumi paused={omniState !== "idle"}>
             <div className={styles.coreBody}>
               <div className={styles.coreDrift}>
                 <div className={styles.coreTilt}>
@@ -406,6 +408,7 @@ export default function CommandDeck() {
                 </div>
               </div>
             </div>
+            </CosmicHomeYumi>
             <span className="sr-only">{copy.deck.coreLabel}</span>
           </div>
 

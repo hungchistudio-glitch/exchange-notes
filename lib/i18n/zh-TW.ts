@@ -2124,6 +2124,8 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     interfaceMode: {
+      enterCosmic: "進入 Yumi 星航",
+      returnStandard: "返回標準首頁",
       rowTitle: "介面模式",
       rowDescription: "標準模式，或 Yumi 星際指揮艙",
       standardTitle: "標準模式",

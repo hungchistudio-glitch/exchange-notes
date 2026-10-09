@@ -2011,6 +2011,8 @@ const italian: TranslationDictionary = {
         "Oggi ancora nessun biscotto-parola. Vieni a dargliene uno.",
     },
     interfaceMode: {
+      enterCosmic: "Entra in Yumi Cosmica",
+      returnStandard: "Torna alla modalità standard",
       rowTitle: "Modalità interfaccia",
       rowDescription: "Standard, o la plancia di comando di Yumi",
       standardTitle: "Modalità standard",

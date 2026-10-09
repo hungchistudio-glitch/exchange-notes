@@ -12,6 +12,7 @@ import {
 
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
+import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import type { CSSProperties, ReactNode } from "react";
 
 import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
@@ -480,6 +481,9 @@ export default function YumiRingOverlay({
   children,
 }: YumiRingOverlayProps) {
   const router = useRouter();
+  const mode = useOptionalInterfaceMode();
+  const modeRef = useRef(mode);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
   const { t } = useTranslation();
   const { openSearch } = useLexiconSearchSheet();
 
@@ -828,7 +832,7 @@ export default function YumiRingOverlay({
     window.addEventListener("blur", cancelCanvasGesture);
     document.addEventListener("visibilitychange", onHidden);
 
-    let handle: YumiSceneHandle | null = null;
+    let handle: YumiSceneHandle | null = parked?.handle ?? null;
     let raf = 0;
     let cancelled = false;
 
@@ -902,6 +906,7 @@ export default function YumiRingOverlay({
          changed since. */
       parked.handle.pointerCancel?.();
       parked.handle.setFocusLevel(0);
+      parked.handle.resetScreenAnchor?.();
       parked.handle.resize();
     }
 
@@ -1061,9 +1066,12 @@ export default function YumiRingOverlay({
           }
 
           const gazeEye = handle.eyeScreenPosition();
+          const eclipse = modeRef.current?.eclipseTransition;
+          const portalGaze = eclipse && !reduced ? { x: eclipse.x, y: eclipse.y } : gazePoint;
+          handle.setCosmicLevel?.(modeRef.current?.modeTransition === "entering-cosmic" ? 1 : 0);
           handle.setGaze?.(
-            gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
-            gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
+            portalGaze && !reduced ? (portalGaze.x - gazeEye.x) / 180 : 0,
+            portalGaze && !reduced ? (portalGaze.y - gazeEye.y) / 180 : 0,
           );
           handle.setRotationPaused?.(
             openRef.current || answeringRef.current || returningHomeRef.current ||
@@ -1605,6 +1613,7 @@ export default function YumiRingOverlay({
           answering ? styles.answering : ""
         } ${returningHome ? styles.returningHome : ""}`}
         data-yumi-ring-open={open ? "true" : "false"}
+        data-yumi-answering={answering ? "true" : undefined}
         data-yumi-returning={returningHome ? "true" : undefined}
         /* For the tour's card, which shrinks to a strip while the reader
            types (TutorialCoach.module.css): it is mounted beside this screen,

@@ -17,6 +17,8 @@
 
 .header { padding-bottom: 0.25rem; }
 .eyebrow {
+  padding-right: 104px;
+  min-height: 2rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;

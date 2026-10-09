@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
-import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
+import { VocabularyProvider } from "@/contexts/VocabularyContext";
+import CommandDeck from "@/components/cosmic/CommandDeck";
+import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
+import HomeModePortal from "./HomeModePortal";
+import { InterfaceModeProvider, useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 
@@ -31,14 +35,12 @@ function ReviewSearch({ onAnswerChange }: { onAnswerChange: (value: boolean) => 
 }
 
 /** Local geometry and selection only; the review does not load an account. */
-function Frame() {
+function StandardPreview() {
   const stageRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState("");
   const [fed, setFed] = useState<string[]>([]);
   const cookies = useMemo(() => buildAvailableCookies(reviewWords, fed), [fed]);
-  return <InterfaceModeProvider initialMode="standard">
-    <LearningLanguageProvider initialLearningLanguage="es" initialNativeLanguage="zh-TW">
-      <LexiconSearchProvider>
+  return <>
         <div ref={stageRef} className={homeStyles.surface} style={{ position: "relative", minHeight: "100svh" }}>
           <YumiRingOverlay stageRef={stageRef}
             onChooseDestination={destination => setSelected(destination.label)}
@@ -55,7 +57,18 @@ function Frame() {
             已選擇：{selected} · 手勢預覽
           </output>}
         </div>
-      </LexiconSearchProvider>
+  </>;
+}
+
+function PreviewShell() {
+  const { isCosmic } = useInterfaceMode();
+  return <><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage /></>;
+}
+
+function Frame() {
+  return <InterfaceModeProvider initialMode="standard" preview>
+    <LearningLanguageProvider initialLearningLanguage="es" initialNativeLanguage="zh-TW">
+      <VocabularyProvider><LexiconSearchProvider><PreviewShell /></LexiconSearchProvider></VocabularyProvider>
     </LearningLanguageProvider>
   </InterfaceModeProvider>;
 }
