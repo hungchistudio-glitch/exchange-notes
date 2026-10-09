@@ -60,6 +60,7 @@ function fixture() {
 
 async function ready() {
   await act(async () => { await vi.dynamicImportSettled(); });
+  act(() => { const initial = pendingFrames.splice(0); initial.forEach(frame => frame(performance.now())); });
 }
 
 beforeEach(() => {

@@ -693,3 +693,12 @@
   .live .when { animation: none; }
   .above { transition: none; }
 }
+
+/* A mode crossing owns its one fade (HomeModeTransitionScene): while the
+   veil is up nothing here eases in behind it, and the cold-start ink is not
+   replayed once it lifts. */
+.crossing .canvas,
+.crossing .above,
+.crossing .below { transition: none; }
+.modeArrival.live .inkGlyph,
+.modeArrival.live .when { animation: none; }

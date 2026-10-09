@@ -96,8 +96,12 @@ export type YumiSceneHandle = {
 
   /** Ease automatic rotation to rest during search, navigation or a sheet. */
   setRotationPaused?(paused: boolean): void;
-  /** Change the lighting without rebuilding the model or its orientation. */
-  setCosmicLevel?(level: number): void;
+  /**
+   * Change the lighting without rebuilding the model or its orientation.
+   * `immediate` lands it on this frame: a home taking her over behind the
+   * mode veil must not be seen re-lighting her once the veil lifts.
+   */
+  setCosmicLevel?(level: number, immediate?: boolean): void;
   /** A cached scene has moved between viewport and deck coordinates. */
   resetScreenAnchor?(): void;
 
@@ -693,8 +697,9 @@ export function createYumiScene(
     setRotationPaused(paused) {
       rotationPaused = paused;
     },
-    setCosmicLevel(level) {
+    setCosmicLevel(level, immediate = false) {
       cosmicWanted = Math.max(0, Math.min(1, level));
+      if (immediate) cosmicNow = cosmicWanted;
     },
     resetScreenAnchor() {
       anchorNow.started = false;

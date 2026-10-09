@@ -13,7 +13,13 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
-import { eclipseRadius, ECLIPSE_COMMIT_FRACTION, ECLIPSE_FIRST_MS, ECLIPSE_REPEAT_MS, type EclipseOrigin, type EclipseTransition } from "@/lib/home/eclipse";
+import {
+  HOME_COVER_MS,
+  HOME_READY_TIMEOUT_MS,
+  HOME_REVEAL_MS,
+  type HomeModeTransition,
+  type HomeReadyPart,
+} from "@/lib/home/modeTransition";
 import {
   applyInterfaceMode,
   getInterfaceMode,
@@ -27,10 +33,22 @@ export type ModeTransitionPhase = "entering-cosmic" | "leaving-cosmic";
 type InterfaceModeContextType = {
   interfaceMode: InterfaceMode;
   isCosmic: boolean;
-  setInterfaceMode: (mode: InterfaceMode, origin?: EclipseOrigin) => void;
+  setInterfaceMode: (mode: InterfaceMode, options?: HomeCrossing) => void;
   modeTransition: ModeTransitionPhase | null;
-  eclipseTransition: EclipseTransition | null;
+  /** The crossing between the two homes, while one is on screen. */
+  homeModeTransition: HomeModeTransition | null;
+  /** The veil is opaque: commit the mode underneath it. */
+  coverHomeMode: () => void;
+  /** A part of the home being entered is on screen (lib/home/modeTransition). */
+  markHomeModeReady: (mode: InterfaceMode, part: HomeReadyPart) => void;
+  /** Everything is drawn: begin lifting the veil. */
+  revealHomeMode: () => void;
+  /** End the crossing now, wherever it is, with the target committed. */
+  finishHomeMode: () => void;
 };
+
+/** Asked for by the home screen's switch rather than by Settings. */
+export type HomeCrossing = { home: true; scrollTop: number };
 
 /*
  * The two sequences, in milliseconds.
@@ -89,8 +107,14 @@ export function InterfaceModeProvider({
   const [interfaceMode, setMode] = useState<InterfaceMode>(initialMode);
   const [modeTransition, setModeTransition] =
     useState<ModeTransitionPhase | null>(null);
-  const [eclipseTransition, setEclipseTransition] = useState<EclipseTransition | null>(null);
-  const seenEclipse = useRef(false);
+  const [homeModeTransition, setHomeModeTransition] = useState<HomeModeTransition | null>(null);
+  const homeTransitionRef = useRef<HomeModeTransition | null>(null);
+  const committedMode = useRef(initialMode);
+  const homeScroll = useRef<Record<InterfaceMode, number>>({ standard: 0, "yumi-cosmic": 0 });
+  const updateHomeTransition = useCallback((next: HomeModeTransition | null) => {
+    homeTransitionRef.current = next;
+    setHomeModeTransition(next);
+  }, []);
   const profileWrite = useRef(Promise.resolve());
 
   // Every timer the running sequence owns, so an interruption can drop all of
@@ -124,6 +148,7 @@ export function InterfaceModeProvider({
     // other devices; if it fails, this device is still correct and the next
     // successful write reconciles the rest.
     if (!preview) persistInterfaceMode(mode);
+    committedMode.current = mode;
     setMode(mode);
     if (preview) return;
 
@@ -146,60 +171,84 @@ export function InterfaceModeProvider({
     }).catch(error => console.error("Unable to save interface mode:", error));
   }, [preview]);
 
+  const finishHomeMode = useCallback(() => {
+    const current = homeTransitionRef.current;
+    if (!current) return;
+    clearSequence();
+    if (committedMode.current !== current.target) commitMode(current.target);
+    updateHomeTransition(null);
+    setModeTransition(null);
+  }, [clearSequence, commitMode, updateHomeTransition]);
+
+  const revealHomeMode = useCallback(() => {
+    const current = homeTransitionRef.current;
+    if (!current || current.step !== "waiting") return;
+    clearSequence();
+    updateHomeTransition({ ...current, step: "revealing" });
+    timersRef.current = [window.setTimeout(finishHomeMode, HOME_REVEAL_MS + 200)];
+  }, [clearSequence, finishHomeMode, updateHomeTransition]);
+
+  const coverHomeMode = useCallback(() => {
+    const current = homeTransitionRef.current;
+    if (!current || current.step !== "covering") return;
+    clearSequence();
+    // The covering animation has actually finished, so layout work is hidden.
+    updateHomeTransition({ ...current, step: "waiting" });
+    commitMode(current.target);
+    timersRef.current = [window.setTimeout(revealHomeMode, HOME_READY_TIMEOUT_MS)];
+  }, [clearSequence, commitMode, revealHomeMode, updateHomeTransition]);
+
+  const markHomeModeReady = useCallback((mode: InterfaceMode, part: HomeReadyPart) => {
+    const current = homeTransitionRef.current;
+    // Only the home being entered, only once it is mounted under the veil:
+    // the outgoing home's last frame says nothing about the new one.
+    if (!current || current.step !== "waiting" || current.target !== mode || current.ready.includes(part)) return;
+    updateHomeTransition({ ...current, ready: [...current.ready, part] });
+  }, [updateHomeTransition]);
+
   const setInterfaceMode = useCallback(
-    (mode: InterfaceMode, origin?: EclipseOrigin) => {
+    (mode: InterfaceMode, options?: HomeCrossing) => {
       /*
-       * Any second call cancels whatever was playing.
+       * Any second call cancels whatever was playing, and lands at once.
        *
-       * This is the whole interruption story, and it is deliberately one
-       * rule rather than a state machine: whatever the screen was in the
-       * middle of, the newest instruction wins and lands immediately. Tapping
-       * the other option halfway through the deck waking up puts you straight
-       * back in Standard Mode — no waiting for a scene to finish, and no way
-       * to end up with the overlay showing and no sequence behind it.
+       * One rule rather than a state machine of interruptions: the newest
+       * instruction wins, and there is no way to end up with a veil showing
+       * and no sequence behind it. (The home switch itself ignores presses
+       * while a crossing is running; this is Settings, or an unmount.)
        */
       const wasRunning = timersRef.current.length > 0;
       clearSequence();
-      setEclipseTransition(null);
-
-      if (mode === interfaceMode) {
+      updateHomeTransition(null);
+      if (mode === committedMode.current) {
         setModeTransition(null);
         return;
       }
-
       if (wasRunning || prefersReducedMotion()) {
         setModeTransition(null);
         commitMode(mode);
         return;
       }
-
       const entering = mode === "yumi-cosmic";
       setModeTransition(entering ? "entering-cosmic" : "leaving-cosmic");
-      let duration = entering ? ENTER_TOTAL_MS : LEAVE_TOTAL_MS;
-      let commitAt = entering ? ENTER_COMMIT_MS : LEAVE_COMMIT_MS;
-      if (origin) {
-        let seen = seenEclipse.current;
-        try { if (!preview) seen ||= sessionStorage.getItem("yumi-eclipse-seen") === "1"; } catch { /* Storage may be disabled. */ }
-        duration = seen ? ECLIPSE_REPEAT_MS : ECLIPSE_FIRST_MS;
-        commitAt = duration * ECLIPSE_COMMIT_FRACTION;
-        seenEclipse.current = true;
-        try { if (!preview) sessionStorage.setItem("yumi-eclipse-seen", "1"); } catch { /* Cosmetic preference only. */ }
-        setEclipseTransition({ ...origin, duration, radius: eclipseRadius(origin, window.innerWidth, window.innerHeight) });
+      if (options?.home) {
+        // Each home keeps its own place, so flipping back and forth returns
+        // the reader to where they were rather than to the top every time.
+        homeScroll.current[committedMode.current] = options.scrollTop;
+        updateHomeTransition({ target: mode, step: "covering", ready: [], scrollTop: homeScroll.current[mode] });
+        // The veil's animationend commits; this only covers a missed event.
+        timersRef.current = [window.setTimeout(coverHomeMode, HOME_COVER_MS + 200)];
+        return;
       }
-
+      // Settings retains its existing sequence.
       timersRef.current = [
-        window.setTimeout(
-          () => commitMode(mode),
-          commitAt,
-        ),
+        window.setTimeout(() => commitMode(mode), entering ? ENTER_COMMIT_MS : LEAVE_COMMIT_MS),
         window.setTimeout(() => {
           timersRef.current = [];
           setModeTransition(null);
-          setEclipseTransition(null);
-        }, duration),
+        }, entering ? ENTER_TOTAL_MS : LEAVE_TOTAL_MS),
       ];
     },
-    [clearSequence, commitMode, interfaceMode, preview],
+    [clearSequence, commitMode, coverHomeMode, updateHomeTransition],
   );
 
   const reconciledRef = useRef(false);
@@ -245,9 +294,9 @@ export function InterfaceModeProvider({
       isCosmic: interfaceMode === "yumi-cosmic",
       setInterfaceMode,
       modeTransition,
-      eclipseTransition,
+      homeModeTransition, coverHomeMode, markHomeModeReady, revealHomeMode, finishHomeMode,
     }),
-    [interfaceMode, modeTransition, eclipseTransition, setInterfaceMode],
+    [interfaceMode, modeTransition, homeModeTransition, setInterfaceMode, coverHomeMode, markHomeModeReady, revealHomeMode, finishHomeMode],
   );
 
   return (

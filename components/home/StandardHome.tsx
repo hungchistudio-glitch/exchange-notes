@@ -13,6 +13,7 @@ import YumiHomeStage, {
   type YumiLines,
 } from "@/components/home/yumi/YumiHomeStage";
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
+import HomeGatherStar from "@/components/home/yumi/HomeGatherStar";
 import UniversalSearchField from "@/components/lexicon/UniversalSearchField";
 import HomeInstallPrompt from "@/components/pwa/HomeInstallPrompt";
 import TutorialLauncher from "@/components/tutorial/TutorialLauncher";
@@ -205,6 +206,10 @@ export default function StandardHome() {
       */}
       <TutorialLauncher showButton={false} />
       <HomeInstallPrompt />
+
+      {/* The corner star, from the first frame and in every state of this
+          screen — not only once the cookie field has arrived. */}
+      <HomeGatherStar />
     </Screen>
   );
 }

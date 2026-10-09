@@ -76,27 +76,35 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
     void ready.then(created => {
       if (cancelled) { if (created && !parked) created.dispose(); return; }
       handle = created;
-      if (!handle) return;
+      if (!handle) {
+        // No WebGL: the SVG deck is already drawn, so the crossing may lift.
+        stateRef.current.mode?.markHomeModeReady?.("yumi-cosmic", "scene");
+        return;
+      }
       handle.pointerCancel?.();
       handle.setFocusLevel(0);
       handle.resetScreenAnchor?.();
       resize();
+      let first = true;
       const frame = (now: number) => {
         if (cancelled || !handle) return;
         frameId = requestAnimationFrame(frame);
         if (!visible || document.visibilityState !== "visible") return;
-        const { mode: currentMode } = stateRef.current;
-        handle.setCosmicLevel?.(currentMode?.modeTransition === "leaving-cosmic" ? 0 : 1);
+        // Lit for the deck from her first frame here, not eased into it.
+        handle.setCosmicLevel?.(1, first);
+        first = false;
         handle.setRotationPaused?.(stateRef.current.paused || !!document.querySelector('[aria-modal="true"]'));
-        const origin = currentMode?.eclipseTransition;
-        const eye = handle.eyeScreenPosition();
-        const rect = origin ? canvas.getBoundingClientRect() : null;
-        handle.setGaze?.(origin && rect && !reduced ? (origin.x - rect.left - eye.x) / 180 : 0, origin && rect && !reduced ? (origin.y - rect.top - eye.y) / 180 : 0);
+        handle.setGaze?.(0, 0);
         handle.frame(now);
       };
       frame(performance.now());
+      // Reported once the canvas is shown (the effect below), not here: the
+      // frame is drawn, but the class that makes it visible is not committed.
       setLive(true);
-    }).catch(() => { /* Retain the existing, fully usable SVG deck. */ });
+    }).catch(() => {
+      // Retain the SVG deck and release the transition even without WebGL.
+      stateRef.current.mode?.markHomeModeReady?.("yumi-cosmic", "scene");
+    });
     return () => {
       cancelled = true;
       cancelAnimationFrame(frameId);
@@ -115,6 +123,12 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
       canvas.remove();
     };
   }, []);
+
+  const markHomeModeReady = mode?.markHomeModeReady;
+  const waiting = mode?.homeModeTransition?.step === "waiting";
+  useEffect(() => {
+    if (live && waiting) markHomeModeReady?.("yumi-cosmic", "scene");
+  }, [live, waiting, markHomeModeReady]);
 
   return <div className={styles.figure} data-cosmic-yumi-live={live ? "true" : "false"}>
     <div className={styles.fallback} aria-hidden={live}>{children}</div>
