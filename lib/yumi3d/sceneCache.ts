@@ -46,6 +46,7 @@ export function relayedOptions(
 ): YumiSceneOptions {
   return {
     reducedMotion,
+    continuousRotation: true,
     onPullOpen: () => relay.current.onPullOpen?.(),
     onTap: () => relay.current.onTap?.(),
     onLungeArrive: () => relay.current.onLungeArrive?.(),

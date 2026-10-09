@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import YumiRingOverlay from "@/components/home/yumi/YumiRingOverlay";
 import type { YumiSceneOptions } from "@/lib/yumi3d/scene";
+import { setCoachStep, COACH_FINISHED } from "@/lib/home/tutorialCoach";
 import { disposeParkedYumiScene } from "@/lib/yumi3d/sceneCache";
 
 const scene = vi.hoisted(() => ({
@@ -13,6 +14,7 @@ const scene = vi.hoisted(() => ({
   navigate: vi.fn(),
   search: vi.fn(),
   dispose: vi.fn(),
+  rotationPaused: vi.fn(),
   pointerDown: vi.fn(), pointerMove: vi.fn(), pointerUp: vi.fn(), pointerCancel: vi.fn(),
 }));
 
@@ -72,6 +74,8 @@ beforeEach(() => {
   scene.navigate.mockClear();
   scene.search.mockClear();
   scene.dispose.mockClear();
+  scene.rotationPaused.mockClear();
+  setCoachStep(COACH_FINISHED);
   scene.create.mockClear();
   scene.pointerDown.mockClear(); scene.pointerMove.mockClear(); scene.pointerCancel.mockClear();
   scene.pointerUp.mockReset().mockImplementation(() => options.onTap?.());
@@ -88,6 +92,7 @@ beforeEach(() => {
   scene.create.mockImplementation((_canvas, incoming: YumiSceneOptions) => {
     options = incoming;
     return {
+      setRotationPaused: scene.rotationPaused,
       setFocusLevel: vi.fn(), setScreenAnchor: vi.fn(), frame: vi.fn(),
       eyeScreenPosition: () => scene.eye, lungeAt: scene.lungeAt,
       resize: vi.fn(), dispose: scene.dispose,
@@ -104,6 +109,24 @@ afterEach(() => {
 });
 
 describe("the liquid ring destination integration", () => {
+  it("enables home rotation and pauses it for navigation, search and the tour", async () => {
+    fixture(); await ready();
+    expect(options.continuousRotation).toBe(true);
+    const frame = () => act(() => { const callbacks = pendingFrames.splice(0); callbacks.forEach(callback => callback(performance.now())); });
+    frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(false);
+    act(() => options.onPullOpen?.()); frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(true);
+    act(() => options.onTap?.()); frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(false);
+    act(() => setCoachStep(0)); frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(true);
+    act(() => setCoachStep(COACH_FINISHED)); frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(false);
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" })); frame();
+    expect(scene.rotationPaused).toHaveBeenLastCalledWith(true);
+  });
+
   it.each([
     [2, "/notes"],
     [4, "search"],
