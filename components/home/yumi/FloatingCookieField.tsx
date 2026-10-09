@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from "react";
-import { Pause, Play, Sparkles } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import { COACH_STEPS } from "@/components/tutorial/TutorialCoach";
+import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import usePhonetics from "@/hooks/usePhonetics";
+import { onCookieGatherRequest } from "@/lib/home/cookieGather";
 import { floatingCopy } from "@/lib/home/floatingCopy";
+import { returnHomeFromSearch } from "@/lib/home/homeMoments";
 import { avoid, bound, clamp, collide, scatter, type Body, type Rect } from "@/lib/home/floatingPhysics";
 import { getCoachStep, getServerCoachStep, subscribeToCoach } from "@/lib/home/tutorialCoach";
 import { cookieGlyph } from "@/lib/pet/moodEngine";
@@ -20,6 +23,10 @@ type Drag = { id: number; cookie: Cookie; startX: number; startY: number; x: num
 const PLACES = [[.19,.315],[.82,.32],[.16,.53],[.82,.55],[.68,.23],[.14,.83],[.87,.85],[.45,.29],[.9,.66],[.08,.665],[.8,.435],[.33,.92]];
 const SIZES = [55,45,53,47,35,34,38,30,33,31,40,28];
 const FEED_STEP = COACH_STEPS.findIndex(step => step.key === "feed");
+/** One star press: gather for this long, then scatter. */
+const GATHER_MS = 1800;
+/** Back from a search, the cookies glide home first (data-settling below). */
+const SETTLE_MS = 520;
 /** How far the demonstrating cookie leans toward her, in px. */
 const NUDGE = 12;
 // Feeding another word must not recolour or resize the remaining cookies.
@@ -31,6 +38,13 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
 }) {
   const { language } = useTranslation();
   const copy = floatingCopy[language];
+  const interfaceMode = useOptionalInterfaceMode();
+  /* Under the mode veil (HomeModeTransitionScene) the field and its cookies
+     appear outright; their own fades would still be running when it lifts. */
+  const crossing = interfaceMode?.homeModeTransition?.target === "standard";
+  const markHomeModeReady = interfaceMode?.markHomeModeReady;
+  const markReadyRef = useRef(markHomeModeReady);
+  useEffect(() => { markReadyRef.current = markHomeModeReady; }, [markHomeModeReady]);
   const [paused, setPaused] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mode, setMode] = useState("rest");
@@ -41,6 +55,9 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   const drag = useRef<Drag | null>(null);
   const gather = useRef<{ x: number; y: number } | null>(null);
   const gatherTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /* The star was pressed while a search answer was up: go home first, then
+     gather once the cookies are back around her. */
+  const gatherAfterReturn = useRef(false);
   const suppressClick = useRef<string | null>(null);
   const latest = useRef({ cookies, onFeed, disabled, paused, activeId, mode });
   useEffect(() => { latest.current = { cookies, onFeed, disabled, paused, activeId, mode }; }, [cookies, onFeed, disabled, paused, activeId, mode]);
@@ -95,23 +112,69 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
     return () => observer.disconnect();
   }, [stageRef]);
 
+  /*
+   * One press gathers, then releases; another press restarts the same pulse
+   * instead of leaving a permanent attraction. Toward where she rests, not
+   * toward the press: the star is a corner key, the cookies go to Yumi.
+   */
+  function startGather() {
+    clearTimeout(gatherTimer.current);
+    setPaused(false);
+    const point = { x: innerWidth / 2, y: innerHeight * .42 };
+    gather.current = point;
+    field.current?.style.setProperty("--gather-x", `${point.x}px`);
+    field.current?.style.setProperty("--gather-y", `${point.y}px`);
+    field.current?.setAttribute("data-gathering", "true");
+    gatherTimer.current = setTimeout(() => {
+      if (gather.current !== point) return;
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        bodies.current.forEach(body => scatter(body, point.x, point.y, body.index));
+      }
+      gather.current = null;
+      field.current?.removeAttribute("data-gathering");
+    }, GATHER_MS);
+  }
+  const startGatherRef = useRef(startGather);
+  useEffect(() => { startGatherRef.current = startGather; });
+
   /* Coming back from the search, the cookies float home from where they
      were parked instead of reappearing there: the transform transition the
      parked state uses is kept on for the return, then let go so the physics
-     owns every frame again. */
+     owns every frame again. A star press made during the search is kept
+     for this moment, so the cookies gather once they are home. */
   const previousMode = useRef(mode);
   useEffect(() => {
     const was = previousMode.current;
     previousMode.current = mode;
     const node = field.current;
+    if (mode === "open") gatherAfterReturn.current = false;
     if (!node || mode !== "rest" || was !== "answering") return;
     node.setAttribute("data-settling", "true");
-    const timer = window.setTimeout(() => node.removeAttribute("data-settling"), 520);
+    const timer = window.setTimeout(() => {
+      node.removeAttribute("data-settling");
+      if (gatherAfterReturn.current) {
+        gatherAfterReturn.current = false;
+        startGatherRef.current();
+      }
+    }, SETTLE_MS);
     return () => {
       window.clearTimeout(timer);
       node.removeAttribute("data-settling");
     };
   }, [mode]);
+
+  /* The star (HomeGatherStar) asks; what it means depends on the screen. */
+  useEffect(() => onCookieGatherRequest(() => {
+    const { mode: current, activeId: card } = latest.current;
+    if (card !== null) return;
+    if (current === "rest") {
+      gatherAfterReturn.current = false;
+      startGatherRef.current();
+    } else if (current === "answering") {
+      gatherAfterReturn.current = true;
+      returnHomeFromSearch();
+    }
+  }), []);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -122,6 +185,9 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
 
   useEffect(() => {
     let raf = 0, previous = performance.now(), measureAt = 0;
+    /* Reported to a mode crossing once the cookies stand where she will be
+       revealed among them — the last thing on this home to arrive. */
+    let placedAtRest = false;
     let obstacles: Rect[] = [];
     let parked: { cookies: Cookie[]; width: number; height: number } | null = null;
     const painted = new Map<string, string>();
@@ -212,6 +278,12 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             painted.set(id, transform);
           }
           if (button.dataset.ready !== "true") button.dataset.ready = "true";
+        }
+        // The stage's own word, not this field's copy of it: that copy
+        // starts at "rest" and only learns otherwise a render later.
+        if (idle && !placedAtRest && (stageRef.current?.dataset.yumiMode ?? "rest") === "rest") {
+          placedAtRest = true;
+          markReadyRef.current?.("standard", "field");
         }
       }
       raf = requestAnimationFrame(tick);
@@ -313,6 +385,7 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
   return <>
     <OverlayPortal>
       <div ref={field} className={styles.field} data-floating-field="" data-mode={mode} data-paused={paused}
+        data-crossing={crossing ? "true" : undefined}
         inert={mode !== "rest" || activeId !== null} aria-hidden={mode !== "rest" || undefined}>
         {visible.map(cookie => <button type="button" key={cookie.id}
           ref={node => { if (node) buttons.current.set(cookie.id, node); else buttons.current.delete(cookie.id); }}
@@ -343,37 +416,14 @@ export default function FloatingCookieField({ cookies, items, stageRef, onFeed, 
             : null)}</span>
         </button>)}
         <span className={styles.gatherRipple} aria-hidden="true" />
-        {visible.length > 0 && <>
-          <div className={styles.controls} data-yumi-protected="">
-            <button type="button" className={styles.icon} aria-label={paused ? copy.resume : copy.pause} aria-pressed={paused} onClick={() => {
-              clearTimeout(gatherTimer.current);
-              gather.current = null;
-              field.current?.removeAttribute("data-gathering");
-              setPaused(value => !value);
-            }}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
-          </div>
-          <div className={styles.gatherControl} data-yumi-protected="">
-            <button type="button" className={styles.icon} aria-label={copy.gather} title={copy.gather} onClick={() => {
-              // One press gathers, then releases; repeated presses restart
-              // the same pulse instead of leaving a permanent attraction.
-              clearTimeout(gatherTimer.current);
-              setPaused(false);
-              const point = { x: innerWidth / 2, y: innerHeight * .42 };
-              gather.current = point;
-              field.current?.style.setProperty("--gather-x", `${point.x}px`);
-              field.current?.style.setProperty("--gather-y", `${point.y}px`);
-              field.current?.setAttribute("data-gathering", "true");
-              gatherTimer.current = setTimeout(() => {
-                if (gather.current !== point) return;
-                if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                  bodies.current.forEach(body => scatter(body, point.x, point.y, body.index));
-                }
-                gather.current = null;
-                field.current?.removeAttribute("data-gathering");
-              }, 1800);
-            }}><Sparkles size={20} aria-hidden="true" /></button>
-          </div>
-        </>}
+        {visible.length > 0 && <div className={styles.controls} data-yumi-protected="">
+          <button type="button" className={styles.icon} aria-label={paused ? copy.resume : copy.pause} aria-pressed={paused} onClick={() => {
+            clearTimeout(gatherTimer.current);
+            gather.current = null;
+            field.current?.removeAttribute("data-gathering");
+            setPaused(value => !value);
+          }}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>
+        </div>}
       </div>
     </OverlayPortal>
     {item && <FloatingWordCard key={item.id} item={item} canFeed={!disabled && cookies.some(cookie => cookie.id === item.id)}

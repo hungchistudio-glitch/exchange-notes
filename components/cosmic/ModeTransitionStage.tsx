@@ -9,7 +9,7 @@ import {
 import useTranslation from "@/hooks/i18n/useTranslation";
 
 import styles from "./ModeTransitionStage.module.css";
-import EclipseTransitionScene from "./EclipseTransitionScene";
+import HomeModeTransitionScene from "./HomeModeTransitionScene";
 
 /*
  * Six systems, matching the six controls on the deck, brought online one at a
@@ -59,9 +59,9 @@ export function lastNodeEndsAt(phase: ModeTransitionPhase) {
  * reader user is entitled to know the mode change is under way.
  */
 export default function ModeTransitionStage() {
-  const { modeTransition, eclipseTransition } = useInterfaceMode();
+  const { modeTransition, homeModeTransition } = useInterfaceMode();
 
-  if (modeTransition && eclipseTransition) return <EclipseTransitionScene phase={modeTransition} eclipse={eclipseTransition} />;
+  if (modeTransition && homeModeTransition) return <HomeModeTransitionScene phase={modeTransition} transition={homeModeTransition} />;
 
   return <ModeTransitionScene phase={modeTransition} />;
 }

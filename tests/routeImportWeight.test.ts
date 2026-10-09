@@ -118,14 +118,22 @@ describe("what the heaviest tabs drag in with them", () => {
    * shared scroll-style ownership and translation compare/merge. Both protect
    * the first-render home/search state; push cleanup remains dynamically loaded.
    * Raised home 156 → 161 and vocabulary 158 → 159 (2026-10-09): the
-   * home eclipse adds its visible control and CSS, the Cosmic canvas host and
-   * CSS, and a dependency-free timing/geometry helper used by the shared mode
-   * provider. These belong on the initial shell; the WebGL engine must still
-   * stay behind import(), which is asserted separately below.
+   * home mode switch adds its visible control and CSS, the Cosmic canvas host
+   * and CSS, and a dependency-free timing helper used by the shared mode
+   * provider (the eclipse that first carried these is now the veil in
+   * HomeModeTransitionScene, the same count). These belong on the initial
+   * shell; the WebGL engine must still stay behind import(), which is
+   * asserted separately below.
+   * Raised home 161 → 165 (2026-10-09): the corner star is part of the
+   * Standard home's first frame now rather than of the lazily loaded cookie
+   * field, so it is never missing (Chi: "星星icon按鈕應該一直都存在"). Its
+   * component and CSS, the request channel to the field, and the field's
+   * five-language copy file it takes its label from — none with imports of
+   * their own beyond what home already loads.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 159],
-    ["home", TABS.home, 161],
+    ["home", TABS.home, 165],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

@@ -483,6 +483,18 @@ export default function YumiRingOverlay({
   const router = useRouter();
   const mode = useOptionalInterfaceMode();
   const modeRef = useRef(mode);
+  /* Arrived by switching modes rather than by opening the app: the greeting
+     is already written when the veil lifts, instead of inking itself in
+     again behind it. For this mount's whole life, because the ink is a
+     one-time arrival and putting the animation back would replay it. */
+  const [modeArrival] = useState(() => Boolean(mode?.homeModeTransition));
+  /* While the veil is up over this home, nothing here eases into place: the
+     veil's own fade is the only motion, and anything still settling when it
+     lifts is the "jump" a reader sees. Dropped once it has lifted, which
+     changes no value, so it starts no transition either. */
+  const crossing = mode?.homeModeTransition?.target === "standard";
+  const homeModeWaiting = crossing && mode?.homeModeTransition?.step === "waiting";
+  const markHomeModeReady = mode?.markHomeModeReady;
   useEffect(() => { modeRef.current = mode; }, [mode]);
   const { t } = useTranslation();
   const { openSearch } = useLexiconSearchSheet();
@@ -928,13 +940,17 @@ export default function YumiRingOverlay({
 
         if (!handle) {
           window.clearTimeout(giveUp);
+          setLive(false);
           setYumiRingState("failed");
+          // The 2D stage and the corner tray are already drawn; no floating
+          // field will follow a scene that does not exist.
+          modeRef.current?.markHomeModeReady?.("standard", "scene");
+          modeRef.current?.markHomeModeReady?.("standard", "field");
           return;
         }
         sceneRef.current = handle;
         window.clearTimeout(giveUp);
-        setYumiRingState("live");
-        setLive(true);
+        let firstPaint = true;
 
         let lastRingTransform = "";
         let lastBelowRoom = "";
@@ -1066,12 +1082,11 @@ export default function YumiRingOverlay({
           }
 
           const gazeEye = handle.eyeScreenPosition();
-          const eclipse = modeRef.current?.eclipseTransition;
-          const portalGaze = eclipse && !reduced ? { x: eclipse.x, y: eclipse.y } : gazePoint;
-          handle.setCosmicLevel?.(modeRef.current?.modeTransition === "entering-cosmic" ? 1 : 0);
+          // Lit for Standard from her first frame here, not eased into it.
+          handle.setCosmicLevel?.(0, firstPaint);
           handle.setGaze?.(
-            portalGaze && !reduced ? (portalGaze.x - gazeEye.x) / 180 : 0,
-            portalGaze && !reduced ? (portalGaze.y - gazeEye.y) / 180 : 0,
+            gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
+            gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
           );
           handle.setRotationPaused?.(
             openRef.current || answeringRef.current || returningHomeRef.current ||
@@ -1204,6 +1219,14 @@ export default function YumiRingOverlay({
             }
           }
 
+          /* Shown only once there is a frame to show: the canvas, the ring
+             state that mounts the floating cookies, and (via the effect that
+             watches `live`) the crossing's report all follow this draw. */
+          if (firstPaint) {
+            firstPaint = false;
+            setYumiRingState("live");
+            setLive(true);
+          }
           raf = requestAnimationFrame(loop);
         };
 
@@ -1214,7 +1237,10 @@ export default function YumiRingOverlay({
            and stays visible — but the dock has to come back, because the
            ring was what it stepped aside for. */
         window.clearTimeout(giveUp);
+        setLive(false);
         setYumiRingState("failed");
+        modeRef.current?.markHomeModeReady?.("standard", "scene");
+        modeRef.current?.markHomeModeReady?.("standard", "field");
       });
 
     const onResize = () => handle?.resize();
@@ -1253,6 +1279,11 @@ export default function YumiRingOverlay({
   useEffect(() => {
     sceneRef.current?.setFocusLevel(0);
   }, [open]);
+
+  /* Her first frame is drawn and the class that shows it is committed. */
+  useEffect(() => {
+    if (live && homeModeWaiting) markHomeModeReady?.("standard", "scene");
+  }, [live, homeModeWaiting, markHomeModeReady]);
 
   /* Announced here rather than at each of the three ways to open it — a
      pull, a tap and the keyboard key — so there is one place that is right
@@ -1609,7 +1640,7 @@ export default function YumiRingOverlay({
 
       <div
         ref={rootRef}
-        className={`${styles.root} ${open ? styles.open : ""} ${live ? styles.live : ""} ${
+        className={`${styles.root} ${modeArrival ? styles.modeArrival : ""} ${crossing ? styles.crossing : ""} ${open ? styles.open : ""} ${live ? styles.live : ""} ${
           answering ? styles.answering : ""
         } ${returningHome ? styles.returningHome : ""}`}
         data-yumi-ring-open={open ? "true" : "false"}

@@ -1,0 +1,51 @@
+/*
+  The veil is the ground of the home being entered: the page colour and the
+  same soft light that home paints at its top corner. Lifting it then reads
+  as that home's contents settling into place, not as a curtain going up.
+*/
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  opacity: 1;
+  pointer-events: auto;
+  touch-action: none;
+  contain: strict;
+  will-change: opacity;
+}
+
+.stage[data-target="standard"] {
+  background-color: #f4f1ea;
+  background-image: radial-gradient(120% 70% at 12% -8%, rgb(255 255 255 / 0.75) 0%, rgb(255 255 255 / 0) 62%);
+}
+
+.stage[data-target="yumi-cosmic"] {
+  background-color: #08090b;
+  background-image:
+    radial-gradient(ellipse 75% 38% at 90% 0%, rgb(125 77 116 / 0.11), transparent 75%),
+    radial-gradient(ellipse 65% 35% at 0% 90%, rgb(105 143 134 / 0.055), transparent 75%);
+}
+
+/* Out of the old home quickly, into the new one unhurried. The swap happens
+   at the one moment the veil is opaque and nothing on screen is moving. */
+.stage[data-home-mode-transition="covering"] {
+  animation: cover var(--cover-ms) cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.stage[data-home-mode-transition="revealing"] {
+  animation: reveal var(--reveal-ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes cover {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes reveal {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { animation-duration: 1ms; }
+}

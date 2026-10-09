@@ -82,6 +82,9 @@ function fixture(onSubmit: (value: string) => void = vi.fn(), initialValue = "")
 
 async function ready() {
   await act(async () => { await vi.dynamicImportSettled(); });
+  // The screen is live once her first frame is drawn, not when the scene
+  // arrives (a canvas shown before it has a frame is an empty box).
+  frame();
 }
 
 /** Runs one animation frame, 16ms after the last. */

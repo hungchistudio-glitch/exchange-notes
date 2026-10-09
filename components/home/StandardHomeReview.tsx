@@ -12,6 +12,7 @@ import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
 
 import FloatingCookieField from "./yumi/FloatingCookieField";
+import HomeGatherStar from "./yumi/HomeGatherStar";
 import { reviewWords } from "./yumi/reviewWords";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import homeStyles from "./StandardHome.module.css";
@@ -53,6 +54,7 @@ function StandardPreview() {
             </div>
             <FloatingCookieField cookies={cookies} items={reviewWords} stageRef={stageRef} onFeed={cookie => setFed(previous => [...previous, cookie.id])} />
           </YumiRingOverlay>
+          <HomeGatherStar />
           {selected && <output aria-live="polite" style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 60, padding: "10px 18px", border: "1px solid #ffffffb8", borderRadius: 20, background: "#eef7f2eb", color: "#173e3b", whiteSpace: "nowrap", pointerEvents: "none" }}>
             已選擇：{selected} · 手勢預覽
           </output>}

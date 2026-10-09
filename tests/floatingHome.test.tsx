@@ -3,6 +3,7 @@ import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import FloatingCookieField from "@/components/home/yumi/FloatingCookieField";
 import FloatingWordCard from "@/components/home/yumi/FloatingWordCard";
+import HomeGatherStar from "@/components/home/yumi/HomeGatherStar";
 import { reviewWords } from "@/components/home/yumi/reviewWords";
 import { buildAvailableCookies } from "@/lib/pet/moodEngine";
 import { speak, stopSpeech, type SpeechCallbacks } from "@/lib/speech";
@@ -21,6 +22,7 @@ function field() {
   const cookies = buildAvailableCookies(reviewWords, []);
   const view = render(<div ref={stageRef} data-yumi-mode="rest">
     <FloatingCookieField stageRef={stageRef} cookies={cookies} items={reviewWords} onFeed={onFeed} />
+    <HomeGatherStar />
   </div>);
   return { ...view, stageRef, onFeed, cookies };
 }
