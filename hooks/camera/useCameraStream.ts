@@ -99,6 +99,9 @@ export function useCameraStream({
    * the page becomes visible again.
    */
   const suspendedRef = useRef(false);
+  // Each open attempt owns a generation. Suspending/reconfiguring invalidates
+  // pending permission requests as well as stopping an already-live stream.
+  const generationRef = useRef(0);
   /*
    * Set while the preview is deliberately held on one frame. The visibility
    * handler below plays a paused video on the way back, which is right for a
@@ -112,6 +115,8 @@ export function useCameraStream({
     useState<CameraCapabilities>(NO_CAPABILITIES);
 
   const stop = useCallback(() => {
+    generationRef.current += 1;
+    startingRef.current = false;
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
 
@@ -127,13 +132,14 @@ export function useCameraStream({
   }, []);
 
   const start = useCallback(async () => {
-    if (streamRef.current || startingRef.current) return;
+    if (releasedRef.current || suspendedRef.current || streamRef.current || startingRef.current) return;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus("unavailable");
       return;
     }
 
+    const generation = ++generationRef.current;
     startingRef.current = true;
     setStatus("starting");
 
@@ -153,7 +159,7 @@ export function useCameraStream({
        * the tab closes — the light on the phone stays on, which readers
        * notice and rightly dislike.
        */
-      if (releasedRef.current) {
+      if (releasedRef.current || suspendedRef.current || generation !== generationRef.current) {
         opened.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -168,7 +174,7 @@ export function useCameraStream({
         await videoRef.current.play()?.catch(() => {});
       }
     } catch (error) {
-      if (releasedRef.current) return;
+      if (releasedRef.current || generation !== generationRef.current) return;
 
       const denied =
         error instanceof DOMException &&
@@ -177,7 +183,7 @@ export function useCameraStream({
 
       setStatus(denied ? "denied" : "unavailable");
     } finally {
-      startingRef.current = false;
+      if (generation === generationRef.current) startingRef.current = false;
     }
   }, [facing, ideal.height, ideal.width]);
 
@@ -195,6 +201,8 @@ export function useCameraStream({
 
     return () => {
       releasedRef.current = true;
+      generationRef.current += 1;
+      startingRef.current = false;
       // Read off the ref rather than through stop(), because this runs after
       // the component is gone and setState would warn.
       streamRef.current?.getTracks().forEach((track) => track.stop());
