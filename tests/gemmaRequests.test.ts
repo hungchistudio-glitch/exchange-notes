@@ -31,7 +31,7 @@ function clientReplying(text: string, sent: Sent[]) {
 describe("asking Gemma", () => {
   it("recognises the family", () => {
     expect(isGemmaModel("gemma-4-31b-it")).toBe(true);
-    expect(isGemmaModel("gemini-3.7-flash")).toBe(false);
+    expect(isGemmaModel("gemini-3.8-flash")).toBe(false);
   });
 
   it("sends no thinking level and no JSON mode, and asks for JSON in words", async () => {
@@ -70,7 +70,7 @@ describe("asking Gemma", () => {
     const sent: Sent[] = [];
 
     await generateJson(clientReplying('{"ok":true}', sent), {
-      model: "gemini-3.7-flash",
+      model: "gemini-3.8-flash",
       input: "x",
     });
 

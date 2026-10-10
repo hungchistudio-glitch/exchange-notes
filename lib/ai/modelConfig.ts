@@ -90,9 +90,18 @@ export const DEFAULT_ALIAS_LITE_MODEL = "gemini-flash-lite-latest";
  * of every list: they cost nothing on a good day, because nothing reaches
  * them, and on a day like this one they are the difference between a
  * translation and none.
+ *
+ * ── gemini-3.8-flash, from 2026-10-10 ───────────────────────────────────
+ *
+ * Google deprecated gemini-3.7-flash on 2026-10-09 and redirects every
+ * request for it to gemini-3.8-flash, so the reserve has been 3.8 since
+ * then in all but name. Naming it directly changes nothing that is served
+ * today, and keeps the reserve the day the redirect is withdrawn, when the
+ * old name would only 404. Same catalogue entry shape (generateContent,
+ * countTokens, cached content, batch); asked the same way as 3.7 was.
  */
 export const DEFAULT_RESERVE_MODELS = [
-  "gemini-3.7-flash",
+  "gemini-3.8-flash",
   "gemma-4-26b-a4b-it",
   "gemma-4-31b-it",
 ] as const;
