@@ -355,8 +355,7 @@ const french: TranslationDictionary = {
         },
         modeSwitch: {
           body:
-            "Exchange Notes a deux visages. Trouve Mode d'interface plus bas et choisis {cosmic}. Tes mots et ta progression ne bougent pas, et tu peux revenir quand tu veux.",
-          action: "Montre-moi Mode d'interface",
+            "Exchange Notes a deux visages. Touche l'interrupteur en haut à droite, à côté de l'étoile, pour passer à {cosmic}. Tes mots et ta progression ne bougent pas — touche-le à nouveau quand tu veux revenir.",
         },
         deck: {
           body:
@@ -376,7 +375,7 @@ const french: TranslationDictionary = {
         },
         choose: {
           body:
-            "Tu as vu les deux visages. Choisis-en un pour commencer — tu pourras changer dans les Réglages quand tu veux.",
+            "Tu as vu les deux visages. Choisis-en un pour commencer — tu pourras changer quand tu veux avec l'interrupteur en haut de l'Accueil, ou dans les Réglages.",
         },
       },
     },

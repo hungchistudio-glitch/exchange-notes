@@ -102,25 +102,37 @@ describe("the home mode transition", () => {
     portal().focus(); expect(portal()).toHaveFocus();
   });
 
-  it("restores each mode's own scroll position only under cover and releases its scroll lock", () => {
-    fixture(); scroller().scrollTop = 80;
-    fireEvent.click(portal()); expect(scroller().scrollTop).toBe(80);
+  it("lands every crossing at the top, only under cover, and releases its scroll lock", () => {
+    fixture(); scroller().scrollTop = 30;
+    fireEvent.click(portal()); expect(scroller().scrollTop).toBe(30);
     expect(scroller().style.overflowY).toBe("hidden");
     animationEnd(); expect(scroller().scrollTop).toBe(0);
     drawn(); animationEnd(); expect(scroller().style.overflowY).toBe("auto");
     expect(scroller().style.scrollBehavior).toBe("smooth");
-    scroller().scrollTop = 410; cover(); expect(scroller().scrollTop).toBe(80);
-    drawn(); animationEnd(); cover(); expect(scroller().scrollTop).toBe(410);
+    // No memory of where either home was left: the switch is at the top.
+    scroller().scrollTop = 410; cover(); expect(scroller().scrollTop).toBe(0);
+    drawn(); animationEnd(); cover(); expect(scroller().scrollTop).toBe(0);
   });
 
-  it("places the scroll again just before lifting, after content that arrived while covered", () => {
-    fixture(); scroller().scrollTop = 300; cross(); // Standard's place is 300
-    cover(); // back to Standard
-    expect(scroller().scrollTop).toBe(300);
-    scroller().scrollTop = 120; // the page changed height under the veil
+  it("makes sure of the top just before lifting, after content that arrived while covered", () => {
+    fixture(); cover();
+    expect(scroller().scrollTop).toBe(0);
+    scroller().scrollTop = 120; // content arriving under the veil anchored the scroll
     drawn();
     expect(veil()).toHaveAttribute("data-home-mode-transition", "revealing");
-    expect(scroller().scrollTop).toBe(300);
+    expect(scroller().scrollTop).toBe(0);
+  });
+
+  it("steps the switch away as the page leaves the top, and brings it back there", () => {
+    fixture();
+    const scroll = (top: number) => { scroller().scrollTop = top; fireEvent.scroll(scroller()); advance(20); };
+    expect(portal().style.getPropertyValue("--tuck")).toBe("0.000");
+    scroll(10); expect(portal().style.getPropertyValue("--tuck")).toBe("0.250");
+    expect(portal()).not.toHaveAttribute("data-tucked");
+    scroll(30); expect(portal()).toHaveAttribute("data-tucked", "true");
+    scroll(400); expect(portal().style.getPropertyValue("--tuck")).toBe("1.000");
+    scroll(0); expect(portal().style.getPropertyValue("--tuck")).toBe("0.000");
+    expect(portal()).not.toHaveAttribute("data-tucked");
   });
 
   it("does not overwrite account or device preferences in a preview", async () => {

@@ -23,8 +23,6 @@ export type HomeModeTransition = {
   step: "covering" | "waiting" | "revealing";
   /** The parts of the target home that have reported themselves drawn. */
   ready: readonly HomeReadyPart[];
-  /** Where the target home was last left, restored while it is covered. */
-  scrollTop: number;
 };
 
 /* Out of the old home quickly, into the new one unhurried. */

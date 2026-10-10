@@ -357,8 +357,7 @@ const spanish: TranslationDictionary = {
         },
         modeSwitch: {
           body:
-            "Exchange Notes tiene dos aspectos. Busca Modo de interfaz más abajo y elige {cosmic}. Tus palabras y tu progreso no cambian, y puedes volver cuando quieras.",
-          action: "Llévame a Modo de interfaz",
+            "Exchange Notes tiene dos aspectos. Toca el interruptor de arriba a la derecha, junto a la estrella, para pasar a {cosmic}. Tus palabras y tu progreso no cambian; tócalo otra vez cuando quieras volver.",
         },
         deck: {
           body:
@@ -378,7 +377,7 @@ const spanish: TranslationDictionary = {
         },
         choose: {
           body:
-            "Ya has visto los dos aspectos. Elige uno para empezar; puedes cambiarlo en Ajustes cuando quieras.",
+            "Ya has visto los dos aspectos. Elige uno para empezar; puedes cambiarlo cuando quieras con el interruptor de arriba en Inicio, o en Ajustes.",
         },
       },
     },

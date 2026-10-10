@@ -41,6 +41,22 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  /* Steps away as the page leaves the top (HomeModePortal.tsx writes
+     --tuck, 0 at the top to 1 forty pixels down). */
+  opacity: calc(1 - var(--tuck, 0));
+  translate: 0 calc(var(--tuck, 0) * -6px);
+}
+
+/* Not a target while it is mostly gone: the key under it is the one meant. */
+.portal[data-tucked="true"] {
+  pointer-events: none;
+}
+
+/* Reachable by keyboard wherever the page is, and whole once it is pressed. */
+.portal:focus-visible,
+.portal[data-crossing="true"] {
+  opacity: 1;
+  translate: none;
 }
 
 .portal[data-cosmic="true"] {
@@ -177,13 +193,34 @@
   cursor: progress;
 }
 
-/* A mode change must not dismiss an unfinished search, recording, or tour. */
-:global(body:has([data-coach-card])) .portal,
+/* A mode change must not dismiss an unfinished search, recording, or tour —
+   except the one step of the tour that is about this switch. */
+:global(body:has([data-coach-card]:not([data-coach-step="modeSwitch"]))) .portal,
 :global(body:has([aria-modal="true"])) .portal,
 :global(body:has([data-yumi-ring-open="true"])) .portal,
 :global(body:has([data-yumi-answering="true"])) .portal,
 :global(body:has([data-yumi-typing="true"])) .portal,
 :global(body:has([data-omni="typing"], [data-omni="listening"], [data-omni="scanning"])) .portal { visibility: hidden; }
+
+/*
+  The tour's switch step (TutorialCoach, chapter three) points here: a ring
+  breathes out from the slot, the way the feed step's cookie glows. Gone
+  with the card, which steps aside while the crossing plays.
+*/
+:global(body:has([data-coach-step="modeSwitch"])) .track::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1.5px solid var(--focus);
+  border-radius: 999px;
+  opacity: 0;
+  animation: switchHint 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes switchHint {
+  0% { opacity: 0.55; scale: 0.92; }
+  70%, 100% { opacity: 0; scale: 1.18; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .track,
@@ -192,5 +229,10 @@
   .thumb::before,
   .lamp {
     transition: none;
+  }
+
+  :global(body:has([data-coach-step="modeSwitch"])) .track::after {
+    animation: none;
+    opacity: 0.5;
   }
 }

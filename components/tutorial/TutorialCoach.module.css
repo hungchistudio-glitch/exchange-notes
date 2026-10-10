@@ -87,6 +87,20 @@
   bottom: calc(env(safe-area-inset-bottom) + var(--dock-clearance));
 }
 
+/*
+  The switch step, on Home: at the foot of the screen.
+
+  The strip's usual place covers the top corner on a phone, and that corner
+  is where the switch is (HomeModePortal). Just under the switch it covered
+  the top of Yumi instead. Down here it covers only the search and the
+  review key, which this step does not use, and leaves the switch it points
+  at — breathing its ring — the one thing up top.
+*/
+.switchStep {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 1.25rem);
+}
+
 .card {
   width: min(24rem, 100%);
   padding: 0.875rem 1rem 0.75rem;

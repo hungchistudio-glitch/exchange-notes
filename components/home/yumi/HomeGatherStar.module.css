@@ -57,9 +57,11 @@
 /*
   The tour's card stands here on a phone and takes no touches itself (its
   keys do), so a press on the card would land on the star hidden under it.
-  Still drawn; just not pressed through someone else's surface.
+  Still drawn; just not pressed through someone else's surface. The switch
+  step stands its card at the foot of the screen instead (TutorialCoach),
+  so there is nothing over the star to press through.
 */
-:global(body:has([data-coach-card])) .star {
+:global(body:has([data-coach-card]:not([data-coach-step="modeSwitch"]))) .star {
   pointer-events: none;
 }
 

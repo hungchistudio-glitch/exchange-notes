@@ -7,10 +7,11 @@ import { leaseInlineStyles } from "@/lib/ui/inlineStyleLease";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import styles from "./HomeModeTransitionScene.module.css";
 
-function restoreScroll(top: number) {
+/** The home being entered starts at its top, where the switch is. */
+function scrollToTop() {
   const scroller = document.querySelector<HTMLElement>("[data-app-scroll-viewport]");
-  if (scroller) scroller.scrollTop = top;
-  else window.scrollTo({ top, behavior: "instant" });
+  if (scroller) scroller.scrollTop = 0;
+  else window.scrollTo({ top: 0, behavior: "instant" });
 }
 
 /**
@@ -47,24 +48,24 @@ export default function HomeModeTransitionScene({ phase, transition }: {
 
   // The new home is mounted in the same commit that enters "waiting".
   useLayoutEffect(() => {
-    if (transition.step === "waiting") restoreScroll(transition.scrollTop);
-  }, [transition.step, transition.scrollTop]);
+    if (transition.step === "waiting") scrollToTop();
+  }, [transition.step]);
 
   useEffect(() => {
     if (transition.step !== "waiting" || !ready) return;
     /* Everything has reported. Give React's follow-up commit and the browser
-       one whole painted frame, then place the scroll once more — content that
-       arrived while waiting can have changed how far down the page goes — and
+       one whole painted frame, then make sure of the top once more — content
+       that arrived while waiting can have anchored the scroll elsewhere — and
        lift. */
     let second = 0;
     const first = requestAnimationFrame(() => {
       second = requestAnimationFrame(() => {
-        restoreScroll(transition.scrollTop);
+        scrollToTop();
         revealHomeMode();
       });
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
-  }, [transition.step, transition.scrollTop, ready, revealHomeMode]);
+  }, [transition.step, ready, revealHomeMode]);
 
   useEffect(() => {
     /* A page in the background runs no animations, so their end events would

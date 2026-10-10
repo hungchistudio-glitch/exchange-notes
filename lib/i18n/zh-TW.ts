@@ -349,8 +349,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         modeSwitch: {
           body:
-            "Exchange Notes 有兩種樣子。往下找到「介面模式」，選「{cosmic}」。你的單字和進度都不會變，隨時可以切回來。",
-          action: "帶我到介面模式",
+            "Exchange Notes 有兩種樣子。點右上角星星旁邊的切換鍵，就會換到「{cosmic}」。你的單字和進度都不會變，之後隨時再點一下就能切回來。",
         },
         deck: {
           body:
@@ -370,7 +369,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         choose: {
           body:
-            "兩種樣子你都看過了。選一個開始吧，之後隨時可以在設定裡換。",
+            "兩種樣子你都看過了。選一個開始吧，之後隨時可以用首頁右上角的切換鍵，或在設定裡換。",
         },
       },
     },

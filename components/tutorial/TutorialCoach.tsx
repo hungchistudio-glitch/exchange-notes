@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
-import { focusSetting } from "@/components/settings/SettingsAnchor";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { InterfaceMode } from "@/lib/appPreferences";
@@ -46,8 +45,9 @@ import styles from "./TutorialCoach.module.css";
      1. Home            — Standard: pull her eye, look up, keep, feed.
      2. Around the app  — Vocabulary, Review, Messages, Notes, Discover,
                           Settings.
-     3. The other look  — the reader switches to Cosmic themselves, in
-                          Settings, and is shown what is different there:
+     3. The other look  — the reader switches to Cosmic themselves, with
+                          the switch at the top of Home (the one they will
+                          use from then on), and is shown what is different:
                           the six systems, OmniLexicon, Menu Translator,
                           the dock. Nothing both looks share is taught twice.
 
@@ -128,8 +128,14 @@ export const COACH_STEPS: readonly Step[] = [
    * The reader makes the switch, with the real control, and the step waits
    * for the mode to actually change. It is the one thing in chapter three
    * worth remembering: where the switch is, for the next time they want it.
+   *
+   * On Home, with the switch beside the star (Chi, 2026-10-09: "在首頁教").
+   * It was Interface mode in Settings, written before Home had a switch —
+   * so the switch every reader would actually use was never taught, and was
+   * hidden for the whole tour besides. Settings still has the choice; the
+   * last step says so.
    */
-  { key: "modeSwitch", chapter: "cosmic", route: "/profile" },
+  { key: "modeSwitch", chapter: "cosmic", route: "/home" },
   { key: "deck", chapter: "cosmic", route: "/home", mode: COSMIC, autoGo: true },
   { key: "omni", chapter: "cosmic", route: "/home", mode: COSMIC },
   { key: "scanner", chapter: "cosmic", route: "/home", mode: COSMIC },
@@ -360,10 +366,7 @@ export default function TutorialCoach({
   const door =
     !wrongMode && !onRoute && current.route
       ? {
-          href:
-            current.key === "modeSwitch"
-              ? "/profile#setting-interface-mode"
-              : current.route,
+          href: current.route,
           label:
             "action" in stepCopy && current.route !== "/home"
               ? stepCopy.action
@@ -372,8 +375,15 @@ export default function TutorialCoach({
       : null;
 
   /* Home keeps the strip at the top, above Yumi; everywhere else it sits
-     above the dock, clear of each screen's own header and back button. */
-  const placement = pathname === "/home" ? "" : ` ${styles.docked}`;
+     above the dock, clear of each screen's own header and back button. The
+     switch step goes to the foot of Home, because the top corner it would
+     cover on a phone is the switch it points at. */
+  const placement =
+    pathname !== "/home"
+      ? ` ${styles.docked}`
+      : current.key === "modeSwitch"
+        ? ` ${styles.switchStep}`
+        : "";
 
   const finish = (mode: InterfaceMode) => {
     setCoachStep(COACH_FINISHED);
@@ -400,16 +410,6 @@ export default function TutorialCoach({
         {door.label}
       </Link>
     );
-  } else if (current.key === "modeSwitch") {
-    keys = (
-      <button
-        type="button"
-        className={styles.next}
-        onClick={() => focusSetting("setting-interface-mode")}
-      >
-        {"action" in stepCopy ? stepCopy.action : ""}
-      </button>
-    );
   } else if (current.key === "choose") {
     keys = (
       <>
@@ -421,7 +421,7 @@ export default function TutorialCoach({
         </button>
       </>
     );
-  } else if (awaiting && !keepBlocked) {
+  } else if ((awaiting && !keepBlocked) || current.key === "modeSwitch") {
     /*
      * A waiting step has no "next".
      *
@@ -459,7 +459,14 @@ export default function TutorialCoach({
         around it rather than under it (data-yumi-protected), and Yumi's
         answer position keeps clear of its bottom edge (data-coach-card).
       */}
-      <div className={styles.card} data-coach-card="" data-yumi-protected="">
+      <div
+        className={styles.card}
+        data-coach-card=""
+        /* The home switch reads this: it stays hidden under every other
+           step, and is the thing pointed at under this one. */
+        data-coach-step={current.key}
+        data-yumi-protected=""
+      >
         <p className={styles.label}>{label}</p>
 
         <p className={styles.body}>{fill(body, t)}</p>
@@ -495,12 +502,20 @@ export function AppTutorialCoach() {
 
   const navigate = useCallback((href: string) => router.push(href), [router]);
 
+  /* On Home, a switch the tour makes is the same crossing the switch makes
+     (Chi, 2026-10-09: "統一新過場"); elsewhere it is Settings' sequence. */
+  const setMode = useCallback(
+    (mode: InterfaceMode) =>
+      setInterfaceMode(mode, pathname === "/home" ? { home: true } : undefined),
+    [pathname, setInterfaceMode],
+  );
+
   return (
     <TutorialCoach
       pathname={pathname}
       interfaceMode={interfaceMode}
       switching={modeTransition !== null}
-      onSetMode={setInterfaceMode}
+      onSetMode={setMode}
       onNavigate={navigate}
     />
   );

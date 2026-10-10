@@ -355,8 +355,7 @@ const italian: TranslationDictionary = {
         },
         modeSwitch: {
           body:
-            "Exchange Notes ha due aspetti. Trova Modalità interfaccia qui sotto e scegli {cosmic}. Le tue parole e i tuoi progressi restano uguali, e puoi tornare indietro quando vuoi.",
-          action: "Mostrami Modalità interfaccia",
+            "Exchange Notes ha due aspetti. Tocca l'interruttore in alto a destra, accanto alla stella, per passare a {cosmic}. Le tue parole e i tuoi progressi restano uguali: toccalo di nuovo quando vuoi tornare.",
         },
         deck: {
           body:
@@ -376,7 +375,7 @@ const italian: TranslationDictionary = {
         },
         choose: {
           body:
-            "Hai visto entrambi gli aspetti. Scegline uno per iniziare — puoi cambiarlo nelle Impostazioni quando vuoi.",
+            "Hai visto entrambi gli aspetti. Scegline uno per iniziare — puoi cambiarlo quando vuoi con l'interruttore in alto nella Home, o nelle Impostazioni.",
         },
       },
     },

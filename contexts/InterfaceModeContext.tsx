@@ -47,8 +47,8 @@ type InterfaceModeContextType = {
   finishHomeMode: () => void;
 };
 
-/** Asked for by the home screen's switch rather than by Settings. */
-export type HomeCrossing = { home: true; scrollTop: number };
+/** Asked for on Home (its switch, or the tour there) rather than by Settings. */
+export type HomeCrossing = { home: true };
 
 /*
  * The two sequences, in milliseconds.
@@ -110,7 +110,6 @@ export function InterfaceModeProvider({
   const [homeModeTransition, setHomeModeTransition] = useState<HomeModeTransition | null>(null);
   const homeTransitionRef = useRef<HomeModeTransition | null>(null);
   const committedMode = useRef(initialMode);
-  const homeScroll = useRef<Record<InterfaceMode, number>>({ standard: 0, "yumi-cosmic": 0 });
   const updateHomeTransition = useCallback((next: HomeModeTransition | null) => {
     homeTransitionRef.current = next;
     setHomeModeTransition(next);
@@ -231,10 +230,12 @@ export function InterfaceModeProvider({
       const entering = mode === "yumi-cosmic";
       setModeTransition(entering ? "entering-cosmic" : "leaving-cosmic");
       if (options?.home) {
-        // Each home keeps its own place, so flipping back and forth returns
-        // the reader to where they were rather than to the top every time.
-        homeScroll.current[committedMode.current] = options.scrollTop;
-        updateHomeTransition({ target: mode, step: "covering", ready: [], scrollTop: homeScroll.current[mode] });
+        /* Every crossing lands at the top of the home it enters, where the
+           switch is (Chi, 2026-10-09: "切換回頁首"). Remembering each home's
+           scroll meant arriving partway down the deck, where the switch has
+           already tucked itself away (HomeModePortal) — the control just
+           pressed vanishing as the veil lifted. */
+        updateHomeTransition({ target: mode, step: "covering", ready: [] });
         // The veil's animationend commits; this only covers a missed event.
         timersRef.current = [window.setTimeout(coverHomeMode, HOME_COVER_MS + 200)];
         return;

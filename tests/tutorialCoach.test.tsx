@@ -242,27 +242,51 @@ describe("chapter two: around the app", () => {
 });
 
 describe("chapter three: the other look", () => {
-  it("waits for the reader to switch, and for the deck to finish waking", async () => {
+  it("teaches the switch on Home, and waits for it and for the crossing to finish", async () => {
     setCoachStep(stepOf("modeSwitch"));
 
-    const { again } = coach("/profile");
+    const { again, container } = coach("/home");
 
     expect(screen.getByText("Chapter 3 · The other look · 1/6")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Show me Interface mode" }),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Tap the switch at the top right, beside the star/)).toBeInTheDocument();
+    /* The card names the step, which is what lets the switch show itself
+       (HomeModePortal.module.css) while every other step keeps it hidden. */
+    expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "modeSwitch");
+    /* The only way on is the switch itself. */
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+    expect(screen.queryByRole("link")).toBeNull();
 
-    /* Mid-animation: nothing drawn over the deck waking up. */
-    again("/profile", "yumi-cosmic", { switching: true });
+    /* Mid-crossing: nothing drawn over it. */
+    again("/home", "yumi-cosmic", { switching: true });
     expect(screen.queryByRole("status")).toBeNull();
 
     vi.useFakeTimers();
-    again("/profile", "yumi-cosmic");
+    again("/home", "yumi-cosmic");
     expect(screen.getByText("Good.")).toBeInTheDocument();
 
     await act(async () => {
       vi.advanceTimersByTime(1_000);
     });
+    vi.useRealTimers();
+
+    expect(getCoachStep()).toBe(stepOf("deck"));
+  });
+
+  it("sends a reader who is elsewhere back to Home for the switch, not to Settings", () => {
+    setCoachStep(stepOf("modeSwitch"));
+
+    coach("/profile");
+
+    expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/home");
+  });
+
+  it("counts a switch made some other way, such as in Settings", () => {
+    vi.useFakeTimers();
+    setCoachStep(stepOf("modeSwitch"));
+
+    coach("/profile", "yumi-cosmic");
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(1_000); });
     vi.useRealTimers();
 
     expect(getCoachStep()).toBe(stepOf("deck"));

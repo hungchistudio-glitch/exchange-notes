@@ -359,7 +359,7 @@ export type TranslationDictionary = {
          * {memory}, filled from the app's own dictionary so the tour always
          * calls a thing what the screen calls it.
          */
-        modeSwitch: { body: string; action: string };
+        modeSwitch: { body: string };
         deck: { body: string };
         omni: { body: string };
         scanner: { body: string };

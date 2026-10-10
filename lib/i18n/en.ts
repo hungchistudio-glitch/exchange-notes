@@ -356,8 +356,7 @@ const english: TranslationDictionary = {
         },
         modeSwitch: {
           body:
-            "Exchange Notes has two looks. Find Interface mode below and choose {cosmic}. Your words and progress stay exactly the same, and you can switch back any time.",
-          action: "Show me Interface mode",
+            "Exchange Notes has two looks. Tap the switch at the top right, beside the star, to go to {cosmic}. Your words and progress stay exactly the same — tap it again any time to come back.",
         },
         deck: {
           body:
@@ -377,7 +376,7 @@ const english: TranslationDictionary = {
         },
         choose: {
           body:
-            "You've seen both looks. Pick one to start with — you can change it in Settings whenever you like.",
+            "You've seen both looks. Pick one to start with — you can change it any time with the switch at the top of Home, or in Settings.",
         },
       },
     },
