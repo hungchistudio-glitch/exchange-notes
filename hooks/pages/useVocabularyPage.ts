@@ -129,7 +129,7 @@ export default function useVocabularyPage({
     loading,
     error,
 
-    uniqueItems,
+    items,
     updateItem,
 
     filterSearch,
@@ -145,9 +145,9 @@ export default function useVocabularyPage({
   const detailItem = useMemo(
     () =>
       detailItemId
-        ? (uniqueItems.find((item) => item.id === detailItemId) ?? null)
+        ? (items.find((item) => item.id === detailItemId) ?? null)
         : null,
-    [detailItemId, uniqueItems],
+    [detailItemId, items],
   );
 
   const {
@@ -193,7 +193,7 @@ export default function useVocabularyPage({
 
     if (handledWidgetWordRequestRef.current === requestKey) return;
 
-    const matchingItem = uniqueItems.find(
+    const matchingItem = items.find(
       (item) => item.id === openWidgetWordId,
     );
 
@@ -245,13 +245,13 @@ export default function useVocabularyPage({
     openWidgetWordRequestId,
     setQuickFilter,
     setQuery,
-    uniqueItems,
+    items,
   ]);
 
-  useVocabularySearchTracking(uniqueItems, query);
+  useVocabularySearchTracking(items, query);
 
   const visibleItems = useVisibleVocabularyItems({
-    items: uniqueItems,
+    items,
     query,
     quickFilter,
     languages: languageFilter,
@@ -348,7 +348,7 @@ export default function useVocabularyPage({
   const openCollections = () => router.push("/vocabulary/collections");
 
   const yumiProps = {
-    items: uniqueItems,
+    items,
     dailyGoal,
     dailyProgress,
     searchHasNoResults,

@@ -48,7 +48,7 @@ vi.mock("@/hooks/controllers/useVocabularyController", () => {
       learningLanguage: "en",
       loading: false,
       error: "",
-      uniqueItems: [WORD],
+      items: [WORD],
       updateItem: vi.fn(),
       filterSearch: "",
       setFilterSearch: noop,

@@ -21,3 +21,12 @@ it("reads a library beyond the API's default row limit", async () => {
   expect(result).toHaveLength(501);
   expect(range.mock.calls).toEqual([[0, 499], [500, 999]]);
 });
+it("keeps one copy of a row that two offset pages both returned", async () => {
+  // A word saved elsewhere between the two reads shifts the second page by one.
+  const page = Array.from({ length: 500 }, (_, i) => ({ id: String(i) }));
+  const range = vi.fn().mockResolvedValueOnce({ data: page, error: null }).mockResolvedValueOnce({ data: [{ id: "499" }, { id: "500" }], error: null });
+  const q = { select: () => q, eq: () => q, order: () => q, range };
+  m.from.mockReturnValue(q);
+  const result = await fetchVocabulary("reader");
+  expect(result.map((row) => row.id)).toEqual([...page.map((row) => row.id), "500"]);
+});

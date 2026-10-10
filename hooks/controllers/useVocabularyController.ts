@@ -6,7 +6,6 @@ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVocabularyLibrary from "@/hooks/useVocabularyLibrary";
 import useVocabularyMutations from "@/hooks/useVocabularyMutations";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
-import useUniqueVocabulary from "@/hooks/useUniqueVocabulary";
 
 /*
  * The lookup used to live here too — its own hook, its own save path, its own
@@ -27,9 +26,16 @@ export default function useVocabularyController() {
     setError: vocabulary.setError,
   });
 
-  const uniqueItems = useUniqueVocabulary(vocabulary.items);
-  const library = useVocabularyLibrary(uniqueItems);
-  const stats = useVocabularyStats(uniqueItems);
+  /*
+   * Every saved card, the same rows Home and Review count. The library used
+   * to fold cards with the same word and translation into one, so it read
+   * 496 words while Home read 510 for the same account. Two cards with the
+   * same text are still two cards the reader saved — each has its own
+   * status, notes and review history — and hiding one also hid it from
+   * search, the status filters and the language counts.
+   */
+  const library = useVocabularyLibrary(vocabulary.items);
+  const stats = useVocabularyStats(vocabulary.items);
 
   return {
     /*
@@ -45,7 +51,6 @@ export default function useVocabularyController() {
     mutations,
     stats,
     library,
-    uniqueItems,
 
     /*
      * Temporary compatibility API
