@@ -263,6 +263,8 @@ describe("chapter three: the other look", () => {
     vi.useFakeTimers();
     again("/home", "yumi-cosmic");
     expect(screen.getByText("Good.")).toBeInTheDocument();
+    /* Used: the switch stops being pointed at for the beat before "deck". */
+    expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-done", "");
 
     await act(async () => {
       vi.advanceTimersByTime(1_000);

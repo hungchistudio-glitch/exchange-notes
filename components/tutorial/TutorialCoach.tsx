@@ -463,8 +463,10 @@ export default function TutorialCoach({
         className={styles.card}
         data-coach-card=""
         /* The home switch reads this: it stays hidden under every other
-           step, and is the thing pointed at under this one. */
+           step, and is the thing pointed at under this one — until it has
+           been used, when the "Good." beat should not still be pointing. */
         data-coach-step={current.key}
+        data-coach-done={done ? "" : undefined}
         data-yumi-protected=""
       >
         <p className={styles.label}>{label}</p>

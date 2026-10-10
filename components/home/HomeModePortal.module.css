@@ -207,7 +207,7 @@
   breathes out from the slot, the way the feed step's cookie glows. Gone
   with the card, which steps aside while the crossing plays.
 */
-:global(body:has([data-coach-step="modeSwitch"])) .track::after {
+:global(body:has([data-coach-step="modeSwitch"]:not([data-coach-done]))) .track::after {
   content: "";
   position: absolute;
   inset: -6px;
@@ -231,7 +231,7 @@
     transition: none;
   }
 
-  :global(body:has([data-coach-step="modeSwitch"])) .track::after {
+  :global(body:has([data-coach-step="modeSwitch"]:not([data-coach-done]))) .track::after {
     animation: none;
     opacity: 0.5;
   }
