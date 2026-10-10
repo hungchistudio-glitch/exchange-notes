@@ -176,7 +176,15 @@ export async function insertVocabulary(
 export async function fetchVocabulary(userId: string) {
   const supabase = createClient();
 
-  const items: VocabularyItem[] = [];
+  /*
+   * Keyed by id because offset pages can overlap. A word saved on another
+   * device while this read is between pages lands at the top of the
+   * newest-first order and pushes every later row down one, so the next page
+   * starts with the row the previous page ended on. Read as a list, that row
+   * came back twice: two cards with one id, an inflated count, and a React
+   * key collision in the library. The same row is still one card.
+   */
+  const items = new Map<string, VocabularyItem>();
   const pageSize = 500;
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await supabase
@@ -187,8 +195,10 @@ export async function fetchVocabulary(userId: string) {
       .order("id", { ascending: false })
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
-    items.push(...(data ?? []));
-    if (!data || data.length < pageSize) return items;
+    for (const row of (data ?? []) as VocabularyItem[]) {
+      if (!items.has(row.id)) items.set(row.id, row);
+    }
+    if (!data || data.length < pageSize) return [...items.values()];
   }
 }
 
