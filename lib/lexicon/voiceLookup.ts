@@ -24,6 +24,25 @@ function fileNameFor(audio: Blob) {
   return "speech.webm";
 }
 
+/*
+ * Wake both routes a recording will need, while the reader is still talking.
+ *
+ * A function that has gone cold boots in a second or more, and the
+ * recording and the lookup after it would each pay that after the reader
+ * stopped. Asked at most once a minute: a warm function stays warm longer.
+ */
+const WARM_EVERY_MS = 60_000;
+let warmedAt = 0;
+
+export function warmVoiceLookup() {
+  const now = Date.now();
+  if (now - warmedAt < WARM_EVERY_MS) return;
+  warmedAt = now;
+  for (const route of ["/api/voice-lookup", "/api/classify-text"]) {
+    void fetch(route, { method: "GET", cache: "no-store" }).catch(() => undefined);
+  }
+}
+
 /* The route's own ceiling is 45 seconds; past that nothing is coming. */
 const CLIENT_TIMEOUT_MS = 46_000;
 

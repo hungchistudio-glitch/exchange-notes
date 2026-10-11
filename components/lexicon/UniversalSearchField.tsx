@@ -24,7 +24,7 @@ import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
-import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
+import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { stopSpeech } from "@/lib/speech";
@@ -115,6 +115,7 @@ export default function UniversalSearchField({
       if (acceptsVoice.current) search.submit(transcript, "voice");
     },
     onAudio: handleAudio,
+    onStart: warmVoiceLookup,
   });
 
   function handleSubmit(event: FormEvent) {

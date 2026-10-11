@@ -9,6 +9,7 @@ import {
   consumeDailyQuota,
   refundDailyQuota,
 } from "@/lib/ai/dailyQuota";
+import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { LANGUAGE_CODES, isLanguageCode } from "@/lib/languages";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,6 +78,17 @@ const MAX_REQUESTS_PER_DAY = readBoundedInteger(
   200,
 );
 
+/*
+ * A knock on the door while the reader is still speaking.
+ *
+ * The microphone sends this the moment it opens (lib/lexicon/voiceLookup.ts),
+ * so a function that has gone cold since the last question is booted
+ * during the sentence instead of after it. Nothing is read or charged.
+ */
+export function GET() {
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
 export async function POST(request: Request) {
   const startedAt = Date.now();
   let chargedUserId: string | null = null;
@@ -132,7 +144,8 @@ export async function POST(request: Request) {
      * — see lib/ai/tryModels.ts. A malformed answer counts as a failed
      * attempt and moves on, as it always did.
      */
-    const { value: parsed } = await tryModels(
+    const modelStartedAt = Date.now();
+    const { value: parsed, model: answeredBy } = await tryModels(
       getTextModelCandidates(),
       async (model, timeoutMs) => {
         const raw = await generateJson(client, {
@@ -148,7 +161,7 @@ export async function POST(request: Request) {
                 "Rules:",
                 `- Identify which language it is in. Answer with one of: ${LANGUAGE_CODES.join(", ")}. If more than one is spoken, answer with the one most of it is in.`,
                 "- Write the text in that language's own spelling and script.",
-                "- For zh-TW write Traditional characters, never Simplified, with full-width Chinese punctuation.",
+                "- For zh-TW write Traditional characters as used in Taiwan, never Simplified, with no spaces between characters and full-width Chinese punctuation.",
                 "- A lone word or a short name for something: just the word, no punctuation.",
                 "- Anything said as a sentence: write it as a sentence, with the capitalisation and punctuation a careful transcriber would use, including the question mark on a question.",
                 "- Write what was said, not a summary, a correction or a translation. Leave out fillers such as um and uh, and false starts the speaker corrected.",
@@ -173,8 +186,25 @@ export async function POST(request: Request) {
       { deadline: startedAt + ROUTE_BUDGET_MS },
     );
 
-    /* The lookup takes at most MAX_TRANSCRIPT_LENGTH; a minute of fast speech can run past it. */
-    const text = (parsed.text?.trim() ?? "").slice(0, MAX_TRANSCRIPT_LENGTH).trim();
+    /*
+     * Timed, like the text lookup, so "voice is slow" can be read off the
+     * logs: the model's share against the whole request's.
+     */
+    console.info("Voice lookup answered.", {
+      model: answeredBy,
+      modelMs: Date.now() - modelStartedAt,
+      ms: Date.now() - startedAt,
+      bytes: audio.size,
+    });
+
+    /*
+     * The lookup takes at most MAX_TRANSCRIPT_LENGTH; a minute of fast
+     * speech can run past it. Chinese comes back Traditional and unspaced
+     * whatever the transcriber wrote (lib/chinese/tidyChinese.ts).
+     */
+    const text = tidyChinese(
+      (parsed.text?.trim() ?? "").slice(0, MAX_TRANSCRIPT_LENGTH).trim(),
+    );
 
     // A clear "nothing heard" is still a completed model answer. Only
     // transport/model failures below receive a refund.

@@ -21,6 +21,7 @@ import {
 import { readLearningPair } from "@/lib/profile/languagePair";
 import { createClient } from "@/lib/supabase/server";
 import { builtinFill } from "@/lib/vocabulary/builtinTranslation";
+import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
 
 export const runtime = "nodejs";
 /*
@@ -365,9 +366,10 @@ export async function POST(request: Request) {
       { background: true },
     );
 
-    const parsed = JSON.parse(
+    // Traditional before it is saved to anyone's library (lib/chinese/tidyChinese.ts).
+    const parsed = tidyChineseDeep(JSON.parse(
       outputText.replace(/^```json\s*|```$/g, "").trim(),
-    ) as {
+    )) as {
       words?: Array<{ id?: string; text?: string; example?: string }>;
     };
 

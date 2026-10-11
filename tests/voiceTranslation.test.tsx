@@ -138,6 +138,31 @@ describe("recording the whole sentence", () => {
   });
 });
 
+describe("getting ready while the reader speaks", () => {
+  it("asks the page to warm up as a recording opens, and only then", async () => {
+    const onStart = vi.fn();
+    const { result } = renderHook(() =>
+      useVoiceInput({ lang: "zh-TW", onResult: vi.fn(), onAudio: vi.fn(async () => "handled" as const), onStart }),
+    );
+    await act(async () => { result.current.start(); });
+    expect(onStart).toHaveBeenCalledOnce();
+
+    const dictation = vi.fn();
+    const { result: filter } = renderHook(() => useVoiceInput({ lang: "zh-TW", onResult: vi.fn(), onStart: dictation }));
+    act(() => filter.current.start());
+    expect(dictation).not.toHaveBeenCalled();
+  });
+
+  it("captions Chinese in Traditional whatever the recogniser writes", async () => {
+    const { result } = renderHook(() =>
+      useVoiceInput({ lang: "zh-TW", onResult: vi.fn(), onAudio: vi.fn(async () => "handled" as const) }),
+    );
+    await act(async () => { result.current.start(); });
+    act(() => recognizers[0].onresult?.(heard("以后 怎么 办", false)));
+    expect(result.current.caption).toBe("以後怎麼辦");
+  });
+});
+
 describe("never left spinning", () => {
   it("sends what it caught when a recorder never reports that it stopped", async () => {
     vi.useFakeTimers();

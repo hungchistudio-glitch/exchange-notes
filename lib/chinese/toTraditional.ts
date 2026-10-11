@@ -1,3 +1,5 @@
+import { CHARACTERS_IN_PRACTICE, WORDS } from "@/lib/chinese/simplifiedWords";
+
 /**
  * Simplified to Traditional character mapping.
  *
@@ -12,10 +14,11 @@
  * would turn 只有一面 into 隻有一麵. Leaving a character that is already
  * valid traditional is the safe failure; changing a correct one is not.
  *
- * The cost is that simplified text using those characters in their other
- * sense — 后 where 後 is meant — passes through unchanged. Disambiguating
- * that needs word-level context, which the server-side dictionary already
- * provides on lookup.
+ * The cost was that simplified text using those characters in their other
+ * sense — 后 where 後 is meant — passed through unchanged, and spoken
+ * Chinese is full of them (怎么, 以后, 这里). The word list and the
+ * characters-in-practice list in lib/chinese/simplifiedWords.ts now settle
+ * the common ones; anything they miss still passes through unchanged.
  *
  * Held as two aligned strings rather than an object literal: identical
  * information at roughly half the source size, parsed into a Map once on
@@ -32,29 +35,65 @@ const SIMPLIFIED_TO_TRADITIONAL = new Map(
   ]),
 );
 
+const HAN = /\p{Script=Han}/u;
+
+/*
+ * Longest first, so 不准确 is read as one word before 不准 can be.
+ */
+const WORD_PATTERN = new RegExp(
+  Object.keys(WORDS)
+    .sort((left, right) => right.length - left.length)
+    .join("|"),
+  "gu",
+);
+
+/*
+ * 只 as a measure word after a number is 隻 (一只猫 → 一隻貓); as "only" it
+ * stays 只 (一只是, 只有). Decided by what follows, which is as far as a
+ * character table can see.
+ */
+const MEASURE_ZHI = /([一二两兩三四五六七八九十几幾每])只(?![是有要能会會好在不限得怕想顾顧管])/gu;
+
+function convertCharacters(text: string): string {
+  let converted = "";
+
+  for (const character of text) {
+    converted +=
+      CHARACTERS_IN_PRACTICE[character] ??
+      SIMPLIFIED_TO_TRADITIONAL.get(character) ??
+      character;
+  }
+
+  return converted;
+}
+
 /**
- * Rewrites unambiguously simplified characters as traditional, leaving
- * everything else — Latin text, punctuation, characters valid in both
- * scripts — untouched.
+ * Rewrites Simplified Chinese as Traditional, leaving everything else —
+ * Latin text, punctuation, Traditional text — untouched.
+ *
+ * Words first (lib/chinese/simplifiedWords.ts), then characters: the table
+ * above, and the handful of characters that are Traditional on paper but
+ * Simplified in practice. A word's output is final and is not converted
+ * again, which is what keeps 皇后 a queen while 以后 becomes 以後.
  *
  * Browser speech recognition returns simplified Chinese even when asked for
  * zh-TW, which put simplified text into the search box and stopped it
  * matching the user's saved words.
  */
 export function toTraditional(text: string): string {
+  if (!HAN.test(text)) return text;
+
+  const measured = text.replace(MEASURE_ZHI, "$1隻");
   let converted = "";
-  let changed = false;
+  let index = 0;
 
-  for (const character of text) {
-    const traditional = SIMPLIFIED_TO_TRADITIONAL.get(character);
-
-    if (traditional) {
-      converted += traditional;
-      changed = true;
-    } else {
-      converted += character;
-    }
+  for (const match of measured.matchAll(WORD_PATTERN)) {
+    converted += convertCharacters(measured.slice(index, match.index));
+    converted += WORDS[match[0]];
+    index = match.index + match[0].length;
   }
 
-  return changed ? converted : text;
+  converted += convertCharacters(measured.slice(index));
+
+  return converted === text ? text : converted;
 }

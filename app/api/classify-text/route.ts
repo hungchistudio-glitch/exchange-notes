@@ -9,6 +9,7 @@ import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences"
 import { DETECTION_CONFIDENCE_FLOOR, detectLanguage } from "@/lib/languageDetection";
 import { classifyQueryKind } from "@/lib/lexicon/queryKind";
 import { normalizeQuery } from "@/lib/lexicon/normalize";
+import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
 import { readLanguageRoles } from "@/lib/profile/languagePair";
 import { GoogleGenAI } from "@google/genai";
 import { after, NextResponse } from "next/server";
@@ -798,7 +799,18 @@ async function lookupVocabulary(
   return request;
 }
 
-async function readExplainLanguage(roles: LanguageRoles): Promise<LanguageCode> {
+async function readExplainLanguage(
+  roles: LanguageRoles,
+  requested: unknown,
+): Promise<LanguageCode> {
+  /*
+   * The language the app is showing, as the app itself says it. The cookie
+   * is only the fallback, because a missing one reads as English, the
+   * server's default, whatever the screen is in: Chi's readings on
+   * 2026-10-11 all came back in English, under a cache key the client never
+   * asked for.
+   */
+  if (isLanguageCode(requested)) return requested;
   try {
     return INTERFACE_LANGUAGE_CODE[await getServerInterfaceLanguage()];
   } catch {
@@ -806,6 +818,17 @@ async function readExplainLanguage(roles: LanguageRoles): Promise<LanguageCode> 
     // language is the next best thing the reader can read.
     return roles.support;
   }
+}
+
+/*
+ * A knock on the door while the reader is still speaking.
+ *
+ * The microphone sends this the moment it opens (lib/lexicon/voiceLookup.ts),
+ * so a function that has gone cold since the last question is booted
+ * during the sentence instead of after it. Nothing is read or charged.
+ */
+export function GET() {
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {
@@ -825,6 +848,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       text?: string;
       headLanguage?: unknown;
+      explainLanguage?: unknown;
     };
     const query = normalizeQuery(body.text ?? "");
 
@@ -864,7 +888,9 @@ export async function POST(request: Request) {
      * column (lib/preferences/serverPreferences.ts).
      */
     const explainLanguage =
-      kind === "sentence" ? await readExplainLanguage(roles) : null;
+      kind === "sentence"
+        ? await readExplainLanguage(roles, body.explainLanguage)
+        : null;
 
     const resolved = await lookupVocabulary({
       userId: user.id,
@@ -891,7 +917,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        ...resolved.result,
+        /*
+         * Traditional, whatever the model or an older cache entry holds. The
+         * prompt asks for it; this is where it becomes true for every field,
+         * Yumi's reading included (lib/chinese/tidyChinese.ts).
+         */
+        ...tidyChineseDeep(resolved.result),
         ...(builtinTermIpa ? { termIpa: builtinTermIpa } : {}),
         // Tells the client this is the offline dictionary's canned example
         // rather than a real one, so it can say so and offer a retry instead

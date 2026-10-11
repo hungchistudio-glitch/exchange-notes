@@ -420,7 +420,14 @@ export default function useLexiconSearch({
         const response = await fetch("/api/classify-text", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, headLanguage: chosenHead ?? undefined }),
+          body: JSON.stringify({
+            text,
+            headLanguage: chosenHead ?? undefined,
+            // Yumi reads a sentence in the language this screen is in; the
+            // server cannot always tell (app/api/classify-text/route.ts).
+            explainLanguage:
+              queryKind === "sentence" ? explainLanguage : undefined,
+          }),
         });
 
         reportNetworkSuccess();
