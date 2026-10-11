@@ -1,0 +1,174 @@
+/*
+  The microphone while it listens (Chi, 2026-10-11: "增加收音時的介面動畫").
+
+  A ring that breathes with the reader's own voice, in the Tactile Worlds
+  material: warm light from above on a paper-coloured bead, so it reads as
+  an object glowing on the ground rather than a flat pulse.
+
+  The level arrives as --voice-level (0–1), written onto .mic every frame by
+  useVoiceInput's bindLevel — outside React, so nothing re-renders at 60fps.
+  Only transform and opacity read it: each frame is a composite, not a
+  layout or a paint.
+*/
+
+.mic {
+  --voice-level: 0;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Above the light, so the button's own face is never washed by it. */
+.micButton {
+  position: relative;
+  z-index: 1;
+}
+
+.halo,
+.ring,
+.breath,
+.orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* The glow straight around the button, swelling with loudness. */
+.halo {
+  background: radial-gradient(
+    circle at 50% 35%,
+    #fff6dc 0%,
+    color-mix(in oklab, var(--accent-amber-soft) 85%, transparent) 45%,
+    color-mix(in oklab, var(--accent-amber) 0%, transparent) 72%
+  );
+  opacity: calc(0.35 + var(--voice-level) * 0.65);
+  transform: scale(calc(1.18 + var(--voice-level) * 0.62));
+  will-change: transform, opacity;
+}
+
+/* A thin outer ring that travels further on louder syllables. */
+.ring {
+  border: 1.5px solid color-mix(in oklab, var(--accent-amber) 70%, transparent);
+  opacity: calc(0.12 + var(--voice-level) * 0.7);
+  transform: scale(calc(1.22 + var(--voice-level) * 0.7));
+  will-change: transform, opacity;
+}
+
+/*
+  A slow breath underneath, so the ring is alive in a quiet room — and on a
+  device with no level meter, where it is all there is.
+*/
+.breath {
+  border: 1px solid color-mix(in oklab, var(--accent-amber) 45%, transparent);
+  animation: voiceBreath 1.8s ease-out infinite;
+}
+
+@keyframes voiceBreath {
+  0% {
+    transform: scale(1.05);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* Understanding: the recording has gone, the light circles while Yumi works. */
+.orbit {
+  inset: -4px;
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in oklab, var(--accent-amber) 0%, transparent) 0deg,
+    var(--accent-amber) 300deg,
+    color-mix(in oklab, var(--accent-amber) 0%, transparent) 360deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+  mask: radial-gradient(circle, transparent 62%, #000 64%);
+  animation: voiceOrbit 1s linear infinite;
+}
+
+@keyframes voiceOrbit {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* ---------- The caption under the field ---------- */
+
+.caption {
+  animation: captionIn 220ms ease-out both;
+}
+
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* The newest words arrive brighter, then settle into the line. */
+.captionText {
+  overflow-wrap: anywhere;
+}
+
+/* Five bars under "listening", driven by the same level. */
+.bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+
+.bars span {
+  width: 3px;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--accent-amber);
+  transform-origin: center;
+  transform: scaleY(calc(0.22 + var(--voice-level) * var(--bar-gain, 1)));
+  will-change: transform;
+}
+
+.bars span:nth-child(1),
+.bars span:nth-child(5) {
+  --bar-gain: 0.45;
+}
+
+.bars span:nth-child(2),
+.bars span:nth-child(4) {
+  --bar-gain: 0.8;
+}
+
+.bars span:nth-child(3) {
+  --bar-gain: 1;
+}
+
+/* Cosmic keeps its own look: the same behaviour, in the deck's cyan. */
+.cosmic .bars span {
+  background: var(--cosmic-cyan);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo,
+  .ring {
+    transform: scale(1.25);
+  }
+
+  .breath,
+  .orbit,
+  .caption {
+    animation: none;
+  }
+
+  .breath {
+    opacity: 0;
+  }
+
+  .bars span {
+    transform: scaleY(calc(0.4 + var(--voice-level) * 0.3));
+  }
+}

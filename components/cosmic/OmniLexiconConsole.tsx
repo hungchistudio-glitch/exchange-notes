@@ -13,6 +13,7 @@ import { Keyboard, Mic, Radar } from "lucide-react";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
+import { VoiceCaptureStatus } from "@/components/lexicon/VoiceCapture";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -22,7 +23,8 @@ import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
-import useVoiceInput from "@/hooks/useVoiceInput";
+import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
+import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
 import {
   getLanguage,
   getLanguageName,
@@ -93,56 +95,41 @@ export default function OmniLexiconConsole({
   });
 
   /*
-   * The recording, when the browser heard nothing it could use.
-   *
-   * The browser has to be told a language before it listens and returns
-   * whatever its expected words sound closest to — right for dictating the
-   * language being studied, useless for holding the phone up to someone
-   * speaking something else. The model is told nothing and can hear any of
-   * them, so it gets the second turn rather than the first.
+   * The whole recording goes to the model, which hears a sentence to its end
+   * in whatever language it was said. The browser's recogniser only captions
+   * it while the reader speaks (hooks/useVoiceInput.ts).
    */
   const handleAudio = useCallback(
-    async (audio: Blob) => {
-      const body = new FormData();
-      body.append("audio", audio, "speech.webm");
+    async (audio: Blob): Promise<VoiceAudioOutcome> => {
+      const heard = await transcribeSpeech(audio);
+      if (heard.outcome !== "handled") return heard.outcome;
 
-      try {
-        const response = await fetch("/api/voice-lookup", {
-          method: "POST",
-          body,
-        });
-
-        if (!response.ok) return;
-
-        const heard = (await response.json()) as {
-          heard?: boolean;
-          text?: string;
-        };
-
-        // An unconfident answer comes back as heard: false, and nothing is
-        // put in the field. A word invented from silence would be looked
-        // up, saved and studied, and it would be nobody's word.
-        if (heard.heard && heard.text) search.submit(heard.text, "voice");
-      } catch {
-        // No connection. The engine's offline path answers here.
-      }
+      search.submit(heard.text, "voice");
+      return "handled";
     },
     [search],
   );
 
-  const { supported: voiceSupported, listening, toggle: toggleVoice } =
-    useVoiceInput({
-      // The browser listens in the language being learned, which is the one
-      // the reader most often cannot spell. Anything else it mishears goes
-      // to the model, which was told nothing.
-      lang: getLanguage(languagePair[0]).speechTag,
-      onResult: (transcript) => search.submit(transcript, "voice"),
-      onAudio: handleAudio,
-    });
+  const {
+    supported: voiceSupported,
+    listening,
+    toggle: toggleVoice,
+    phase: voicePhase,
+    caption: voiceCaption,
+    notice: voiceNotice,
+    bindLevel: voiceLevelRef,
+  } = useVoiceInput({
+    // The caption listens in the language being learned; what was actually
+    // said, in any language, comes back from the model.
+    lang: getLanguage(languagePair[0]).speechTag,
+    onResult: (transcript) => search.submit(transcript, "voice"),
+    onAudio: handleAudio,
+  });
+  const understanding = voicePhase === "understanding";
 
   const state: OmniLexiconState = listening
     ? "listening"
-    : imageLookup.reading || search.status === "searching"
+    : understanding || imageLookup.reading || search.status === "searching"
       ? "scanning"
       : search.query.length > 0
         ? "typing"
@@ -232,7 +219,7 @@ export default function OmniLexiconConsole({
          * competing for the same line is what makes voice search feel bolted
          * on, so the console commits to one sense at a time.
          */
-        <div className={styles.waveform} aria-hidden="true">
+        <div ref={voiceLevelRef} className={styles.waveform} aria-hidden="true">
           {Array.from({ length: WAVE_BARS }, (_, index) => (
             <span
               key={index}
@@ -314,6 +301,16 @@ export default function OmniLexiconConsole({
           buttonClassName={styles.mode}
         />
       </div>
+
+      <VoiceCaptureStatus
+        phase={voicePhase}
+        listening={listening}
+        caption={voiceCaption}
+        notice={voiceNotice}
+        tone="cosmic"
+        compact
+        className="mt-2.5"
+      />
 
       {imageLookup.error ? (
         <p role="alert" className="mt-2.5 text-[0.75rem] text-red-300">

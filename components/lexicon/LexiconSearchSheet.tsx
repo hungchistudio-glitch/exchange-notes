@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Keyboard,
   LoaderCircle,
-  Mic,
   Search,
   X,
 } from "lucide-react";
@@ -20,6 +19,10 @@ import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
+import {
+  VoiceCaptureStatus,
+  VoiceMicButton,
+} from "@/components/lexicon/VoiceCapture";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -30,8 +33,9 @@ import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
-import useVoiceInput from "@/hooks/useVoiceInput";
+import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { getLanguage, getLanguageName } from "@/lib/languages";
+import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 
@@ -150,33 +154,16 @@ export default function LexiconSearchSheet({
   }, [autoSubmit, motion.settled, open]);
 
   /*
-   * The browser has to be told a language before it listens and returns
-   * whatever its expected words sound closest to — right for dictating the
-   * language being studied, useless for holding the phone up to someone
-   * speaking something else. The model is told nothing and can hear any of
-   * them, so it gets the second turn rather than the first.
+   * The whole recording goes to the model, which was told nothing about the
+   * language and hears a sentence to its end; the browser's recogniser only
+   * captions it while the reader speaks (hooks/useVoiceInput.ts).
    */
-  const handleAudio = async (audio: Blob) => {
-    const body = new FormData();
-    body.append("audio", audio, "speech.webm");
+  const handleAudio = async (audio: Blob): Promise<VoiceAudioOutcome> => {
+    const heard = await transcribeSpeech(audio);
+    if (heard.outcome !== "handled") return heard.outcome;
 
-    try {
-      const response = await fetch("/api/voice-lookup", { method: "POST", body });
-
-      if (!response.ok) return;
-
-      const heard = (await response.json()) as {
-        heard?: boolean;
-        text?: string;
-      };
-
-      // An unconfident answer comes back as heard: false, and nothing is put
-      // in the field. A word invented from silence would be looked up, saved
-      // and studied, and it would be nobody's word.
-      if (heard.heard && heard.text) search.submit(heard.text, "voice");
-    } catch {
-      // No connection. The offline path inside the engine answers here.
-    }
+    search.submit(heard.text, "voice");
+    return "handled";
   };
 
   const voice = useVoiceInput({
@@ -371,29 +358,29 @@ export default function LexiconSearchSheet({
             <button
               type="button"
               onClick={() => inputRef.current?.focus()}
-              aria-pressed={!voice.listening}
+              aria-pressed={!voice.listening && voice.phase !== "understanding"}
               aria-label={copy.modeType}
               title={copy.modeType}
               className={`${modeButtonClass} ${
-                voice.listening ? "bg-surface text-ink-soft" : "bg-black text-white"
+                voice.listening || voice.phase === "understanding"
+                  ? "bg-surface text-ink-soft"
+                  : "bg-black text-white"
               }`}
             >
               <Keyboard size={16} strokeWidth={1.7} aria-hidden="true" />
             </button>
 
             {voice.supported && (
-              <button
-                type="button"
-                onClick={voice.toggle}
-                aria-pressed={voice.listening}
-                aria-label={voice.listening ? copy.searching : copy.modeVoice}
-                title={voice.listening ? copy.searching : copy.modeVoice}
-                className={`${modeButtonClass} ${
-                  voice.listening ? "bg-black text-white" : "bg-surface text-ink-soft"
-                }`}
-              >
-                <Mic size={16} strokeWidth={1.7} aria-hidden="true" />
-              </button>
+              <VoiceMicButton
+                phase={voice.phase}
+                listening={voice.listening}
+                levelRef={voice.bindLevel}
+                onPress={voice.toggle}
+                iconSize={16}
+                className={modeButtonClass}
+                idleClassName="bg-surface text-ink-soft"
+                activeClassName="bg-black text-white"
+              />
             )}
 
             <LexiconImageMenu
@@ -406,6 +393,13 @@ export default function LexiconSearchSheet({
               buttonClassName={`${modeButtonClass} bg-surface text-ink-soft disabled:opacity-50`}
             />
           </div>
+
+          <VoiceCaptureStatus
+            phase={voice.phase}
+            listening={voice.listening}
+            levelRef={voice.bindLevel}
+            caption={voice.caption}
+            notice={voice.notice} tone={tone} className="mt-3 px-1" />
 
           {/* Reading the photo, which happens before there is a word for the
               engine to have a status about. */}

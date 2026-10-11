@@ -1,9 +1,11 @@
 import { buildClassifyTextPrompt } from "@/lib/ai/prompts/classifyText";
 import {
+  INTERFACE_LANGUAGE_CODE,
   LANGUAGE_CODES,
   isLanguageCode,
   type LanguageCode,
 } from "@/lib/languages";
+import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences";
 import { DETECTION_CONFIDENCE_FLOOR, detectLanguage } from "@/lib/languageDetection";
 import { classifyQueryKind } from "@/lib/lexicon/queryKind";
 import { normalizeQuery } from "@/lib/lexicon/normalize";
@@ -20,7 +22,7 @@ import { rememberIpa } from "@/lib/pronunciation/ipaSource";
 import { createClient } from "@/lib/supabase/server";
 import type { LanguageRoles } from "@/lib/lexicon/languageRouting";
 import type { LexiconEntry, LexiconQueryKind } from "@/lib/lexicon/types";
-import { isLexiconEntry } from "@/lib/lexicon/types";
+import { isLexiconEntry, readInsight } from "@/lib/lexicon/types";
 import { lookupOffline } from "@/lib/vocabulary/offlineLookup";
 import { builtinIpa } from "@/lib/pronunciation/builtinIpa";
 import {
@@ -69,13 +71,15 @@ export const runtime = "nodejs";
  */
 export const maxDuration = 45;
 /*
- * Long enough for a sentence, because the app now accepts one.
+ * Long enough for a minute of speech, because the microphone now hands over
+ * whole sentences (app/api/voice-lookup/route.ts) — 240 was one long
+ * sentence, and a reader holding the phone up to a conversation says more.
  *
  * The shared cache's key column stops at 80 characters, so anything past
  * that skips it — a miss, not a wrong answer, and sentences are the queries
  * least likely to be asked twice by two different people anyway.
  */
-const MAX_QUERY_LENGTH = 240;
+const MAX_QUERY_LENGTH = 1_000;
 const MEMORY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MEMORY_CACHE_MAX_ITEMS = 500;
 /*
@@ -178,13 +182,41 @@ const HEDGE_AFTER_MS = readBoundedInteger(
  */
 const LANGUAGE_ENUM = [...LANGUAGE_CODES];
 
-function buildTextResultSchema() {
+/*
+ * Yumi's reading of a sentence, asked for only when there is a sentence.
+ * Six more fields on every word lookup would be output tokens and seconds
+ * spent on "apple" having no hidden meaning.
+ */
+const INSIGHT_PROPERTIES = {
+  insightGist: { type: "string", maxLength: 400 },
+  insightLiteral: { type: "string", maxLength: 1200 },
+  insightTone: { type: "string", maxLength: 400 },
+  insightImplied: { type: "string", maxLength: 600 },
+  insightContext: { type: "string", maxLength: 600 },
+  insightPhrases: {
+    type: "array",
+    maxItems: 3,
+    items: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        phrase: { type: "string", maxLength: 120 },
+        note: { type: "string", maxLength: 300 },
+      },
+      required: ["phrase", "note"],
+    },
+  },
+} as const;
+
+function buildTextResultSchema(kind: LexiconQueryKind) {
+  const sentence = kind === "sentence";
+
   return {
     type: "object",
     additionalProperties: false,
     properties: {
-      term: { type: "string", minLength: 1, maxLength: 240 },
-      translation: { type: "string", minLength: 1, maxLength: 240 },
+      term: { type: "string", minLength: 1, maxLength: 1200 },
+      translation: { type: "string", minLength: 1, maxLength: 1600 },
       termLanguage: { type: "string", enum: LANGUAGE_ENUM },
       translationLanguage: { type: "string", enum: LANGUAGE_ENUM },
       /*
@@ -229,6 +261,7 @@ function buildTextResultSchema() {
         type: "string",
         enum: ["people", "objects", "actions", "other"],
       },
+      ...(sentence ? INSIGHT_PROPERTIES : {}),
     },
     required: [
       "term",
@@ -246,6 +279,7 @@ function buildTextResultSchema() {
       "termIpa",
       "confidence",
       "category",
+      ...(sentence ? Object.keys(INSIGHT_PROPERTIES) : []),
     ],
   };
 }
@@ -311,11 +345,15 @@ function getCacheKey(
   query: string,
   { learning, support, native }: LanguageRoles,
   chosenHead: LanguageCode | null,
+  explainLanguage: LanguageCode | null,
 ) {
   const first = native && native !== support ? `~${native}` : "";
   const pin = chosenHead ? `@${chosenHead}` : "";
+  /* A sentence carries Yumi's reading, written in the reader's interface
+     language — another reader's card would explain it in theirs. */
+  const explain = explainLanguage ? `#${explainLanguage}` : "";
 
-  return `${learning}+${support}${first}${pin}:${query.toLocaleLowerCase("en-US")}`;
+  return `${learning}+${support}${first}${pin}${explain}:${query.toLocaleLowerCase("en-US")}`;
 }
 
 function getCachedResult(key: string) {
@@ -362,13 +400,22 @@ function stripJsonCodeFence(text: string) {
  * all possibly empty become one object or nothing at all, decided here rather
  * than at each of the places that render it.
  */
-function toLexiconEntry(value: unknown): LexiconEntry | null {
+function toLexiconEntry(
+  value: unknown,
+  explainLanguage: LanguageCode | null = null,
+): LexiconEntry | null {
   if (!isLexiconEntry(value)) return null;
 
   const raw = value as LexiconEntry & {
     highlightTerm?: unknown;
     highlightTranslation?: unknown;
     highlightPartOfSpeech?: unknown;
+    insightGist?: unknown;
+    insightLiteral?: unknown;
+    insightTone?: unknown;
+    insightImplied?: unknown;
+    insightContext?: unknown;
+    insightPhrases?: unknown;
   };
 
   const highlightTerm =
@@ -387,9 +434,29 @@ function toLexiconEntry(value: unknown): LexiconEntry | null {
   delete entry.highlightTerm;
   delete entry.highlightTranslation;
   delete entry.highlightPartOfSpeech;
+  delete entry.insightGist;
+  delete entry.insightLiteral;
+  delete entry.insightTone;
+  delete entry.insightImplied;
+  delete entry.insightContext;
+  delete entry.insightPhrases;
+
+  /* Folded the same way: flat model fields in, one object or nothing out. */
+  const insight = explainLanguage
+    ? readInsight({
+        language: explainLanguage,
+        gist: raw.insightGist,
+        literal: raw.insightLiteral,
+        tone: raw.insightTone,
+        implied: raw.insightImplied,
+        context: raw.insightContext,
+        phrases: raw.insightPhrases,
+      })
+    : null;
 
   return {
     ...entry,
+    ...(explainLanguage ? { insight } : {}),
     highlight:
       highlightTerm && highlightTranslation
         ? {
@@ -411,6 +478,8 @@ type LookupContext = {
   chosenHead: LanguageCode | null;
   detected: LanguageCode | null;
   kind: LexiconQueryKind;
+  /** Sentences only: the language Yumi's reading is written in. */
+  explainLanguage: LanguageCode | null;
 };
 
 async function lookupWithModel(
@@ -430,13 +499,14 @@ async function lookupWithModel(
         detected: context.detected,
         chosenHead: context.chosenHead,
         kind: context.kind,
+        explainLanguage: context.explainLanguage,
       }),
-    schema: buildTextResultSchema(),
+    schema: buildTextResultSchema(context.kind),
     timeoutMs: timeoutMs,
   });
 
   const parsed = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
-  const result = toLexiconEntry(parsed);
+  const result = toLexiconEntry(parsed, context.explainLanguage);
 
   if (!result) {
     throw new LookupRejected("Gemini returned an invalid vocabulary result.");
@@ -689,7 +759,12 @@ async function performLookup(
 async function lookupVocabulary(
   context: LookupContext,
 ): Promise<ResolvedLookup> {
-  const key = getCacheKey(context.query, context.roles, context.chosenHead);
+  const key = getCacheKey(
+    context.query,
+    context.roles,
+    context.chosenHead,
+    context.explainLanguage,
+  );
 
   const cached = getCachedResult(key);
   if (cached) return { result: cached, origin: "memory", fromModel: true };
@@ -709,6 +784,16 @@ async function lookupVocabulary(
 
   inFlightLookups.set(inFlightKey, request);
   return request;
+}
+
+async function readExplainLanguage(roles: LanguageRoles): Promise<LanguageCode> {
+  try {
+    return INTERFACE_LANGUAGE_CODE[await getServerInterfaceLanguage()];
+  } catch {
+    // No request cookies to read (a test, a background call): the gloss
+    // language is the next best thing the reader can read.
+    return roles.support;
+  }
 }
 
 export async function POST(request: Request) {
@@ -759,6 +844,16 @@ export async function POST(request: Request) {
       ? body.headLanguage
       : null;
 
+    const kind = classifyQueryKind(query);
+
+    /*
+     * Yumi explains a sentence in the language the reader reads the app in —
+     * the "display language" setting — which is a cookie, not a profile
+     * column (lib/preferences/serverPreferences.ts).
+     */
+    const explainLanguage =
+      kind === "sentence" ? await readExplainLanguage(roles) : null;
+
     const resolved = await lookupVocabulary({
       userId: user.id,
       query,
@@ -768,7 +863,8 @@ export async function POST(request: Request) {
         detection.language && detection.confidence >= DETECTION_CONFIDENCE_FLOOR
           ? detection.language
           : null,
-      kind: classifyQueryKind(query),
+      kind,
+      explainLanguage,
     });
 
     /*

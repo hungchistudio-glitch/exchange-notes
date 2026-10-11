@@ -16,6 +16,7 @@ import { useState } from "react";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButton";
+import YumiInsight from "@/components/lexicon/YumiInsight";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import type { LexiconSearch } from "@/hooks/lexicon/useLexiconSearch";
@@ -624,6 +625,15 @@ export default function LexiconResults({
                     />
                   </div>
                 </div>
+              )}
+
+              {/* ---- what it means beyond what it says ---- */}
+              {isSentence && !entry.translationUnavailable && (
+                <YumiInsight
+                  insight={entry.insight}
+                  phraseLanguage={languages.queryLanguage}
+                  tone={tone}
+                />
               )}
 
               {/* ---- examples ---- */}

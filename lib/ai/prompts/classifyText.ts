@@ -44,6 +44,11 @@ export type ClassifyTextPromptOptions = {
   chosenHead?: LanguageCode | null;
   /** How much text this is, as the app measured it. */
   kind: LexiconQueryKind;
+  /**
+   * The language the reader reads the app in — what Yumi's reading of a
+   * sentence is written in. Sentences only; defaults to the support language.
+   */
+  explainLanguage?: LanguageCode | null;
 };
 
 function languageList(displayIn: (code: LanguageCode) => string) {
@@ -56,6 +61,7 @@ export function buildClassifyTextPrompt({
   detected,
   chosenHead,
   kind,
+  explainLanguage,
 }: ClassifyTextPromptOptions) {
   const { learning, support, native } = roles;
   const learningName = promptLanguageName(learning);
@@ -133,15 +139,43 @@ itself should hold. There are three cases and they are not the same question:
    "termLanguage", and gloss it in ${supportName}
    (translationLanguage ${JSON.stringify(support)}).`;
 
+  const explainName = promptLanguageName(explainLanguage ?? support);
+
   const kindInstruction =
     kind === "sentence"
-      ? `This is a full sentence. The languages are already decided above; what
-changes here is what goes in the two sides — the sentence in one language and
-the same sentence in the other. Then pick the single most useful thing in it for
-a learner to keep — usually a verb phrase or a collocation, not a bare article
-or pronoun — and put it in "highlightTerm" with its meaning in
-"highlightTranslation" and its part of speech in "highlightPartOfSpeech". If
-nothing in the sentence is worth keeping on its own, leave all three empty.`
+      ? `This is a full sentence, or several — something the reader heard or read
+and wants to understand properly. The languages are already decided above;
+what changes here is what goes in the two sides.
+
+- "term" and "translation" hold the whole text, one in each language. The
+  translation is the one a professional interpreter would give: natural in its
+  own language, faithful to the meaning, tone and register, never word for word.
+- Then pick the single most useful thing in it for a learner to keep — usually
+  a verb phrase or a collocation, not a bare article or pronoun — and put it in
+  "highlightTerm" with its meaning in "highlightTranslation" and its part of
+  speech in "highlightPartOfSpeech". If nothing is worth keeping on its own,
+  leave all three empty.
+- "termExample" and "translationExample" are one short example sentence each
+  that uses that phrase, not a copy of the text.
+
+Then explain it, as Yumi, a friend who speaks both languages natively. Write
+every "insight" field in ${explainName}, whatever language the text is in:
+
+- "insightGist": one short line — what the speaker actually means or wants.
+  Not a repeat of the translation: the point of it, as you would whisper it to
+  a friend standing next to you.
+- "insightLiteral": the word-for-word sense, only when it differs from the
+  natural translation in a way that teaches something. Otherwise empty.
+- "insightTone": register and attitude — formal, casual, curt, warm,
+  teasing, apologetic — and how it would come across. Empty if neutral.
+- "insightImplied": what is meant without being said — a polite refusal, a
+  hint, an indirect request, sarcasm. Empty when it means exactly what it says.
+- "insightContext": culture or situation a learner would not know. Empty if none.
+- "insightPhrases": up to three expressions from the text (quoted exactly as
+  they appear in it) whose meaning is not obvious from their words — idioms,
+  slang, set phrases — each with a short note. Empty array if none.
+
+Leave a field empty rather than inventing something for it.`
       : `Put the ${
           kind === "phrase" ? "phrase" : "word"
         } in "term", spelled the way the

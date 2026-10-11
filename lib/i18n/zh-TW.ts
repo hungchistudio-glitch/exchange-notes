@@ -486,6 +486,29 @@ const traditionalChinese: TranslationDictionary = {
     sentenceNotSavable:
       "整句話沒辦法變成複習卡片，留下你真正想記住的那一段就好。",
 
+    voice: {
+      listening: "正在聽…",
+      listeningHint: "說完會自動停止，也可以點一下立即停止。",
+      understanding: "Yumi 正在理解整句話…",
+      stop: "停止收音",
+      noSpeech: "沒有聽到聲音，靠近一點再試一次。",
+      notUnderstood: "聽不太清楚，要再說一次嗎？",
+      unavailable: "語音服務暫時無法使用，可以先用打字。",
+      limit: "今天的語音翻譯次數用完了，打字查詢還是可以用。",
+      micDenied: "麥克風權限已關閉，請到設定開啟後再說話。",
+    },
+
+    insight: {
+      title: "Yumi 解讀",
+      more: "看完整解讀",
+      less: "收起",
+      literal: "直譯",
+      tone: "語氣",
+      implied: "言下之意",
+      context: "背景",
+      phrases: "值得注意的說法",
+    },
+
     onboardingTitle: "看到不會的字？",
     onboardingDescription: "在這裡查。Yumi 會幫你判斷是哪一種語言。",
     onboardingDismiss: "知道了",

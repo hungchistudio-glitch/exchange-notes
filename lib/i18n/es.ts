@@ -496,6 +496,29 @@ const spanish: TranslationDictionary = {
     sentenceNotSavable:
       "Una frase entera no funciona como tarjeta de repaso. Guarda solo la parte que quieres recordar.",
 
+    voice: {
+      listening: "Escuchando…",
+      listeningHint: "Se detiene sola cuando terminas. Toca para parar ya.",
+      understanding: "Yumi está entendiendo la frase completa…",
+      stop: "Dejar de escuchar",
+      noSpeech: "No oí nada. Prueba otra vez un poco más cerca.",
+      notUnderstood: "No pude entenderlo. ¿Lo intentas otra vez?",
+      unavailable: "La voz no está disponible ahora. Prueba a escribirlo.",
+      limit: "Ya usaste las traducciones por voz de hoy. Escribir sigue funcionando.",
+      micDenied: "El micrófono está desactivado. Actívalo en los ajustes para hablar.",
+    },
+
+    insight: {
+      title: "Lo que dice Yumi",
+      more: "Ver más",
+      less: "Ver menos",
+      literal: "Palabra por palabra",
+      tone: "Tono",
+      implied: "Entre líneas",
+      context: "Contexto",
+      phrases: "Para saber",
+    },
+
     onboardingTitle: "¿Ves una palabra que no conoces?",
     onboardingDescription: "Búscala aquí. Yumi averigua el idioma por ti.",
     onboardingDismiss: "Entendido",

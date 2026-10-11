@@ -490,6 +490,29 @@ const italian: TranslationDictionary = {
     sentenceNotSavable:
       "Una frase intera non funziona come carta di ripasso. Tieni solo la parte che vuoi ricordare.",
 
+    voice: {
+      listening: "Ti ascolto…",
+      listeningHint: "Si ferma da solo quando hai finito. Tocca per fermarlo ora.",
+      understanding: "Yumi sta capendo la frase intera…",
+      stop: "Smetti di ascoltare",
+      noSpeech: "Non ho sentito niente. Riprova un po' più vicino.",
+      notUnderstood: "Non sono riuscita a capire. Riprovi?",
+      unavailable: "La voce non è disponibile ora. Prova a scriverlo.",
+      limit: "Le traduzioni vocali di oggi sono finite. Scrivere funziona ancora.",
+      micDenied: "Il microfono è disattivato. Attivalo nelle impostazioni per parlare.",
+    },
+
+    insight: {
+      title: "Secondo Yumi",
+      more: "Leggi tutto",
+      less: "Riduci",
+      literal: "Parola per parola",
+      tone: "Tono",
+      implied: "Tra le righe",
+      context: "Contesto",
+      phrases: "Da sapere",
+    },
+
     onboardingTitle: "Una parola che non conosci?",
     onboardingDescription: "Cercala qui. Yumi capisce da sola che lingua è.",
     onboardingDismiss: "Ho capito",

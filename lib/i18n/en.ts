@@ -495,6 +495,29 @@ const english: TranslationDictionary = {
     sentenceNotSavable:
       "A whole sentence does not make a review card. Keep the part you want to remember.",
 
+    voice: {
+      listening: "Listening…",
+      listeningHint: "Stops by itself when you finish. Tap to stop now.",
+      understanding: "Yumi is working out the whole sentence…",
+      stop: "Stop listening",
+      noSpeech: "I didn't hear anything. Try again a little closer.",
+      notUnderstood: "I couldn't make that out. Try once more?",
+      unavailable: "Voice isn't reachable right now. Try typing it instead.",
+      limit: "That's today's voice translations. Typing still works.",
+      micDenied: "Microphone access is off. Turn it on in your settings to speak.",
+    },
+
+    insight: {
+      title: "Yumi's take",
+      more: "Read more",
+      less: "Show less",
+      literal: "Word for word",
+      tone: "Tone",
+      implied: "Between the lines",
+      context: "Context",
+      phrases: "Worth knowing",
+    },
+
     onboardingTitle: "See a word you don't know?",
     onboardingDescription:
       "Search it here. Yumi works out the language for you.",
