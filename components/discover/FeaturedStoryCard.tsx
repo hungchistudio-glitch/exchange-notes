@@ -65,9 +65,10 @@ export default function FeaturedStoryCard({
   const [primaryLanguage, secondaryLanguage] = pair;
 
   const accent = categoryAccent(card.category);
-  const caption = [(card.captions[primaryLanguage] ?? ""), (card.captions[secondaryLanguage] ?? "")]
-    .filter(Boolean)
-    .join(" · ");
+  // Stored captions were generated from article text without seeing the photo.
+  // Keep them out of both the UI and alt text, including older cached cards.
+  // The adjacent headline is the accessible story entry; restore photo
+  // descriptions only when the feed carries verified image-specific metadata.
 
   function handleExploreImage(event: MouseEvent) {
     event.stopPropagation();
@@ -98,7 +99,7 @@ export default function FeaturedStoryCard({
         >
           <Image
             src={card.imageUrl}
-            alt={(card.captions[primaryLanguage] ?? "") ?? (card.titles[primaryLanguage] ?? "")}
+            alt=""
             fill
             // Full-bleed inside the card, which is itself capped at the
             // reading column, so one breakpoint is enough.
@@ -116,15 +117,6 @@ export default function FeaturedStoryCard({
       ) : (
         <EditorialMark />
       )}
-
-      {card.imageUrl && caption ? (
-        <p
-          className="px-7 pt-3 text-[0.71875rem] leading-[1.5]"
-          style={{ color: DISCOVER_COLORS.textSecondary }}
-        >
-          {caption}
-        </p>
-      ) : null}
 
       {card.imageUrl && card.vocabulary.length > 0 ? (
         <button
