@@ -42,7 +42,7 @@ function StandardPreview() {
   const [fed, setFed] = useState<string[]>([]);
   const cookies = useMemo(() => buildAvailableCookies(reviewWords, fed), [fed]);
   return <>
-        <div ref={stageRef} className={homeStyles.surface} style={{ position: "relative", minHeight: "100svh" }}>
+        <div ref={stageRef} className={`${homeStyles.surface} ${homeStyles.centre}`} style={{ position: "relative", minHeight: "100svh" }}>
           <YumiRingOverlay stageRef={stageRef}
             onChooseDestination={destination => setSelected(destination.label)}
             meta={{ greeting: "Good afternoon", place: "New York", date: "Thu, October 1", time: "4:05 PM" }}

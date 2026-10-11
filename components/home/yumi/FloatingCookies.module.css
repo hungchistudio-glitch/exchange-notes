@@ -1,16 +1,48 @@
 .field { position:fixed; inset:0; z-index:46; pointer-events:none; visibility:visible; overflow:hidden; transition:opacity 280ms ease; }
 .cookie { position:absolute; top:0; left:0; width:max(44px,var(--size)); height:max(44px,var(--size)); padding:0; border:0; border-radius:50%; background:transparent; color:#6e794e; cursor:grab; pointer-events:auto; touch-action:none; user-select:none; -webkit-user-select:none; opacity:0; will-change:transform; transition:opacity .45s; }
-.cookie::before { content:""; position:absolute; inset:max(0px,calc((44px - var(--size))/2)); border-radius:50%; background:radial-gradient(ellipse at 30% 20%,#ffffffed,transparent 65%),linear-gradient(145deg,#f9f9e9e8,#dce5cddd); border:1px solid #d1dcc1; box-shadow:inset 0 0 0 2px #ffffffa6,inset -3px -4px 8px #91a57313,0 12px 21px -8px #626e5b46; }
-.cookie::after { content:""; position:absolute; inset:12% 20% 68%; border-radius:50%; background:#fff9; filter:blur(2px); }
-.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.25rem/1 Georgia,"Songti TC",serif; }
-.cookie[data-tone="1"] { color:#5b7890; }
-.cookie[data-tone="1"]::before { background:radial-gradient(ellipse at 30% 20%,#fff,transparent 65%),linear-gradient(145deg,#e9f2f9,#cddde8); border-color:#c1d8e7; }
-.cookie[data-tone="2"] { color:#967943; }
-.cookie[data-tone="2"]::before { background:radial-gradient(ellipse at 30% 20%,#fff,transparent 65%),linear-gradient(145deg,#fff8e6,#ebddb8); border-color:#e4d6b0; }
-.cookie[data-tone="3"] { color:#99766f; }
-.cookie[data-tone="3"]::before { background:radial-gradient(ellipse at 30% 20%,#fff,transparent 65%),linear-gradient(145deg,#fff2eb,#ead8d1); border-color:#e2cec3; }
+/*
+  Tactile beads (Chi, 2026-10-11, "Yumi — Tactile Worlds"). Four materials
+  keyed off the same stable variant the size comes from, so feeding a word
+  never re-dresses the others: jade pebble, clear glass, pearl, smoke glass.
+  All of it is painted once into the button's own layer; the physics only
+  ever moves that layer, so none of this is redrawn per frame.
+*/
+.cookie::before { content:""; position:absolute; inset:max(0px,calc((44px - var(--size))/2)); border-radius:50%;
+  background:
+    radial-gradient(circle at 32% 26%,#fffffff2 0 7%,#ffffff00 24%),
+    radial-gradient(circle at 70% 82%,#ffffff8c 0,#ffffff00 32%),
+    radial-gradient(circle at 40% 35%,#c9d4b6 0%,#9fb08a 62%,#7d8f69 100%);
+  box-shadow:inset -4px -6px 10px #4f5f3c45,inset 3px 4px 6px #ffffff8c,0 14px 18px -10px #4a3f2a66,0 3px 5px -2px #4a3f2a40; }
+.cookie::after { content:""; position:absolute; left:22%; top:14%; width:30%; height:18%; border-radius:50%; background:#ffffffd9; filter:blur(1.5px); rotate:-24deg; }
+.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,"Songti TC",serif; color:#4b5a3a;
+  text-shadow:0 1px 0 #ffffff80,0 -1px 0 #2f3a2340; }
+/* jade: a pebble, wider than tall */
+.cookie[data-tone="0"]::before { inset:max(0px,calc((44px - var(--size))/2 + 4px)) max(-3px,calc((44px - var(--size))/2 - 3px)); }
+/* clear glass: the ground shows through, the rim catches the light */
+.cookie[data-tone="1"] span { color:#56606a; }
+.cookie[data-tone="1"]::before { background:
+    radial-gradient(circle at 32% 24%,#fffffff7 0 7%,#ffffff00 22%),
+    radial-gradient(ellipse 55% 30% at 55% 84%,#ffffffd9 0,#ffffff00 100%),
+    radial-gradient(circle at 50% 46%,#eef3f633 0 45%,#c9d6e0a6 74%,#8ea2b3d9 100%);
+  box-shadow:inset 0 0 0 1px #ffffffcc,inset 0 6px 8px -4px #5f738540,0 14px 18px -10px #4a3f2a4d,0 3px 5px -2px #4a3f2a33; }
+/* pearl: warm, nearly opaque */
+.cookie[data-tone="2"] span { color:#6f5a35; }
+.cookie[data-tone="2"]::before { background:
+    radial-gradient(circle at 32% 26%,#fffffff7 0 8%,#ffffff00 26%),
+    radial-gradient(circle at 42% 38%,#fbf5e7 0%,#eadcbc 60%,#cdb88d 100%);
+  box-shadow:inset -4px -6px 10px #8a6d3a40,inset 3px 4px 6px #ffffffa6,0 14px 18px -10px #4a3f2a66,0 3px 5px -2px #4a3f2a40; }
+/* smoke glass */
+.cookie[data-tone="3"] span { color:#5d5a55; }
+.cookie[data-tone="3"]::before { background:
+    radial-gradient(circle at 32% 24%,#fffffff2 0 7%,#ffffff00 22%),
+    radial-gradient(ellipse 55% 30% at 55% 84%,#ffffffc7 0,#ffffff00 100%),
+    radial-gradient(circle at 50% 46%,#efe9df33 0 42%,#cbc1b1a6 74%,#978b79d9 100%);
+  box-shadow:inset 0 0 0 1px #ffffffb3,inset 0 6px 8px -4px #5a4f4040,0 14px 18px -10px #4a3f2a4d,0 3px 5px -2px #4a3f2a33; }
+/* Depth of field: the far beads sit softly behind her. A blur on a layer
+   that only ever translates is rasterised once. */
+.cookie[data-depth="back"] span,.cookie[data-depth="back"]::before { filter:blur(.6px); }
 .cookie[data-ready="true"] { opacity:.95; }
-.cookie[data-depth="back"][data-ready="true"] { opacity:.67; }
+.cookie[data-depth="back"][data-ready="true"] { opacity:.82; }
 .cookie:active { cursor:grabbing; z-index:2; }
 .cookie:focus-visible { outline:2px solid #52644a; outline-offset:4px; opacity:1; }
 .cookie:disabled { pointer-events:none; }
@@ -66,3 +98,40 @@
    their own would still be running when the veil lifts (Chi, 2026-10-09). */
 .field[data-crossing],
 .field[data-crossing] .cookie { transition:none; }
+
+/*
+  Words with weight (Tactile Worlds, Chi 2026-10-11). The word card is a
+  piece of heavy paper lifted off a small stack: two card edges peek out
+  above it as offset shadows rather than extra boxes, so the sheet's own
+  drag motion still moves one element. The word is set large in the serif,
+  its readings in the serif's italic, and the speakers are raised buttons
+  you press into the card.
+*/
+.card { border:1px solid #fffdf7; border-radius:26px;
+  background:
+    radial-gradient(120% 80% at 20% 0%,#fffdf7 0%,#fffdf700 60%),
+    linear-gradient(170deg,#faf6ec,#f1ebdd);
+  box-shadow:
+    0 -10px 0 -6px #cdd6bb,
+    0 -20px 0 -12px #e2d6bb,
+    inset 0 1px 0 #ffffff,
+    0 26px 50px -22px #4a3f2a80,
+    0 6px 14px -6px #4a3f2a40;
+  color:#24211b; }
+.cardHeader { color:#8b8170; }
+.wordRow h2 { font:500 2.6rem/1.1 Georgia,"Songti TC",serif; letter-spacing:-.01em; margin:8px 0 6px; }
+.translation { font:1.5rem/1.45 "Songti TC","PingFang TC",Georgia,serif; color:#2b2720; }
+.language { color:#8b8170; letter-spacing:.04em; }
+.readings { font:italic 1rem/1.5 Georgia,"Songti TC",serif; color:#6f6658; }
+.speaker { width:48px; height:48px; border:1px solid #ffffff; background:linear-gradient(160deg,#fffdf8,#ece5d6); color:#3a352c;
+  box-shadow:0 6px 12px -6px #4a3f2a66,0 1px 2px #4a3f2a26,inset 0 1px 0 #fff; transition:box-shadow .15s,transform .15s; }
+.speaker:active { transform:translateY(1px); box-shadow:0 2px 4px -2px #4a3f2a55,inset 0 2px 4px #4a3f2a26; }
+.speaker[aria-pressed="true"] { background:#2b2720; color:#fffdf8; border-color:#2b2720; }
+.example { border-left:0; padding-left:0; font:1.0625rem/1.65 Georgia,"Songti TC",serif; font-style:normal; color:#3d382f; }
+.side + .side { border-top:1px solid #e6dfcf; }
+.cardFooter { border-top:1px solid #e6dfcf; }
+.cardFooter a { color:#6f6658; }
+.cardFooter button { background:linear-gradient(160deg,#fffdf8,#ece5d6); border:1px solid #fff; color:#2b2720;
+  box-shadow:0 6px 12px -6px #4a3f2a55,inset 0 1px 0 #fff; }
+.backdrop { background:#2a241a2e; }
+@media(prefers-contrast:more) { .card { box-shadow:0 0 0 1px #24211b; } .readings,.cardHeader,.language { color:#3d382f; } }
