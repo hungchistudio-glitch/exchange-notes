@@ -246,6 +246,14 @@ const english: TranslationDictionary = {
     clearField: "Clear",
   },
 
+  friendPicker: {
+    title: "Send to a partner",
+    retry: "Try again",
+    empty: "No friends yet. Add one to start sharing.",
+    loginRequired: "You're not logged in. Log in to share with a partner.",
+    loadFailed: "Couldn't load your friends. Try again.",
+  },
+
   auth: {
     language: {
       eyebrow: "Exchange Notes",
@@ -666,6 +674,7 @@ const english: TranslationDictionary = {
     sendToFriendAriaLabel: "Send to a friend",
     loginRequiredError: "You're not logged in. Log in to share with a partner.",
     loadFriendsError: "Couldn't load your friends. Try again.",
+    sendToPartnerError: "Couldn't send this story. Try again.",
     loadNewsError: "Unable to load daily news.",
 
     loading: "Loading today’s lessons…",
@@ -1357,6 +1366,17 @@ const english: TranslationDictionary = {
 
     youPrefix: "You: ",
     attachmentLabel: "Photo",
+    newsCardEyebrow: "News",
+    newsCardVocabulary: "Vocabulary",
+    sharedWordCardPreview: "Shared a vocabulary card.",
+    sharedNewsCardPreview: "Shared a news card.",
+    push: {
+      newMessage: "Sent you a new message.",
+      friendRequest: "Sent you a friend request.",
+      friendRequestGeneric: "You have a new friend request.",
+      friendAccepted: "Accepted your friend request.",
+      friendAcceptedGeneric: "A friend request was accepted.",
+    },
     voiceLabel: "Voice message",
     muted: "Muted",
     muteConversation: "Mute",

@@ -243,6 +243,14 @@ const traditionalChinese: TranslationDictionary = {
     clearField: "清除",
   },
 
+  friendPicker: {
+    title: "傳送給夥伴",
+    retry: "重試",
+    empty: "還沒有朋友，先加一位才能分享。",
+    loginRequired: "你尚未登入。請先登入再分享給朋友。",
+    loadFailed: "無法載入朋友名單，請再試一次。",
+  },
+
   auth: {
     language: {
       eyebrow: "Exchange Notes",
@@ -654,6 +662,7 @@ const traditionalChinese: TranslationDictionary = {
     sendToFriendAriaLabel: "傳送給朋友",
     loginRequiredError: "你尚未登入。請先登入再分享給朋友。",
     loadFriendsError: "無法載入朋友名單，請再試一次。",
+    sendToPartnerError: "無法傳送這則新聞，請再試一次。",
     loadNewsError: "無法載入每日新聞。",
 
     loading: "正在載入今日課程…",
@@ -1335,6 +1344,17 @@ const traditionalChinese: TranslationDictionary = {
 
     youPrefix: "你：",
     attachmentLabel: "照片",
+    newsCardEyebrow: "新聞",
+    newsCardVocabulary: "學習單字",
+    sharedWordCardPreview: "分享了一張單字卡。",
+    sharedNewsCardPreview: "分享了一則新聞。",
+    push: {
+      newMessage: "傳了一則新訊息給你。",
+      friendRequest: "想加你為朋友。",
+      friendRequestGeneric: "你有一則新的好友邀請。",
+      friendAccepted: "接受了你的好友邀請。",
+      friendAcceptedGeneric: "有人接受了你的好友邀請。",
+    },
     voiceLabel: "語音訊息",
     muted: "已靜音",
     muteConversation: "靜音",

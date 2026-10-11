@@ -724,11 +724,13 @@ export default function DailyNews() {
       setFriends(list);
       friendsLoadedRef.current = true;
     } catch (loadError) {
-      setFriendsError(
-        loadError instanceof Error
-          ? loadError.message
-          : copy.loadFriendsError
-      );
+      /*
+       * The reader's own words, not the error's. A Supabase or network
+       * message is English whatever the app is set to, and says nothing a
+       * reader can act on beyond "try again".
+       */
+      console.error("Failed to load friends:", loadError);
+      setFriendsError(copy.loadFriendsError);
     } finally {
       setFriendsLoading(false);
     }
@@ -797,11 +799,11 @@ export default function DailyNews() {
       setSendModalCardId(null);
       setNotice(copy.sentToPartner);
     } catch (sendError) {
-      setFriendsError(
-        sendError instanceof Error
-          ? sendError.message
-          : copy.loadFriendsError
-      );
+      // Said as a send that failed, in the reader's language: this used to
+      // show the raw error, or "couldn't load your friends" when there was
+      // none, under a list of friends that had loaded fine.
+      console.error("Failed to send the story:", sendError);
+      setFriendsError(copy.sendToPartnerError);
     } finally {
       setSendingFriendId(null);
     }

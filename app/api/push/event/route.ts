@@ -2,6 +2,11 @@ import { messagePreview } from "@/lib/messages/preview";
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { DEFAULT_INTERFACE_LANGUAGE } from "@/lib/appPreferences";
+import { loadTranslations } from "@/lib/i18n";
+import type { TranslationDictionary } from "@/lib/i18n/types";
+import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
+import { readerLanguages } from "@/lib/push/readerLanguages";
 import {
   type WebPushNotificationPayload,
 } from "@/lib/push/sendWebPush";
@@ -122,14 +127,62 @@ function compactText(
   )}…`;
 }
 
-function getMessagePreview(body: string): string {
-  if (body.startsWith(SHARED_VOCABULARY_PREFIX)) {
-    return "Shared a vocabulary card.";
+/*
+ * A notification in the language of the person receiving it.
+ *
+ * These were English sentences for everybody, so a friend reading the app in
+ * Traditional Chinese was told in English that a word had been shared with
+ * them, and shown the English headline of a story sent to them. The
+ * recipient's interface language is on their profile, as it is for Yumi's
+ * reminders (lib/push/readerLanguages.ts).
+ */
+type RecipientCopy = {
+  /** The recipient's language, for picking a headline they can read. */
+  languageCode: string;
+  push: TranslationDictionary["messages"]["push"];
+  sharedWordCard: string;
+  sharedNewsCard: string;
+};
+
+async function getRecipientCopy(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<RecipientCopy> {
+  let language = DEFAULT_INTERFACE_LANGUAGE;
+
+  try {
+    const [reader] = await readerLanguages(supabase, [userId]);
+    language = reader?.interfaceLanguage ?? language;
+  } catch (error) {
+    // The notification still goes, in the default language.
+    console.warn("Push recipient language lookup failed:", error);
   }
 
-  const preview = compactText(messagePreview(body), 180);
+  const { messages } = await loadTranslations(language);
 
-  return preview || "Sent you a message.";
+  return {
+    languageCode: INTERFACE_LANGUAGE_CODE[language],
+    push: messages.push,
+    sharedWordCard: messages.sharedWordCardPreview,
+    sharedNewsCard: messages.sharedNewsCardPreview,
+  };
+}
+
+function getMessagePreview(body: string, copy: RecipientCopy): string {
+  if (body.startsWith(SHARED_VOCABULARY_PREFIX)) {
+    return copy.sharedWordCard;
+  }
+
+  const preview = compactText(
+    messagePreview(body, {
+      languages: [copy.languageCode],
+      sharedWordCard: copy.sharedWordCard,
+      sharedNewsCard: copy.sharedNewsCard,
+    }),
+    180,
+  );
+
+  return preview || copy.push.newMessage;
 }
 
 async function getProfileName(
@@ -475,14 +528,17 @@ async function handleMessageEvent(
       continue;
     }
 
+    const copy = await getRecipientCopy(supabase, recipient.user_id);
+
     const visible = applyPrivacy(
       senderName,
       getMessagePreview(
         typeof message.body === "string"
           ? message.body
           : "",
+        copy,
       ),
-      "Sent you a new message.",
+      copy.push.newMessage,
       preferences,
     );
 
@@ -562,10 +618,12 @@ async function handleFriendRequestEvent(
     return summary;
   }
 
+  const { push } = await getRecipientCopy(supabase, request.receiver_id);
+
   const visible = applyPrivacy(
     senderName,
-    "Sent you a friend request.",
-    "You have a new friend request.",
+    push.friendRequest,
+    push.friendRequestGeneric,
     preferences,
   );
 
@@ -650,10 +708,12 @@ async function handleFriendAcceptedEvent(
     return summary;
   }
 
+  const { push } = await getRecipientCopy(supabase, request.sender_id);
+
   const visible = applyPrivacy(
     accepterName,
-    "Accepted your friend request.",
-    "A friend request was accepted.",
+    push.friendAccepted,
+    push.friendAcceptedGeneric,
     preferences,
   );
 

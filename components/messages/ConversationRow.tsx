@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { BellOff } from "lucide-react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { formatConversationTime } from "@/lib/messages/format";
 import { messagePreview } from "@/lib/messages/preview";
 import type { ConversationSummary } from "@/lib/friends";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 
 type MessagesCopy = TranslationDictionary["messages"];
@@ -25,6 +27,7 @@ function previewText(
   summary: ConversationSummary,
   currentUserId: string | null,
   copy: MessagesCopy,
+  readerLanguage: string,
 ): string {
   const { lastMessage } = summary;
   if (!lastMessage) return copy.hub.neverMessaged;
@@ -42,7 +45,11 @@ function previewText(
     return `${prefix}${copy.voiceLabel}`;
   }
 
-  return `${prefix}${messagePreview(lastMessage.body)}`;
+  return `${prefix}${messagePreview(lastMessage.body, {
+    languages: [readerLanguage],
+    sharedWordCard: copy.sharedWordCardPreview,
+    sharedNewsCard: copy.sharedNewsCardPreview,
+  })}`;
 }
 
 type ConversationRowProps = {
@@ -66,6 +73,7 @@ export default function ConversationRow({
   onOpen,
   previewOverride,
 }: ConversationRowProps) {
+  const { language } = useTranslation();
   const name = summary.friend.displayName ?? summary.friend.exchangeId;
   const initial = name.charAt(0).toUpperCase();
   const hasUnread = summary.unreadCount > 0;
@@ -159,7 +167,13 @@ export default function ConversationRow({
               color: hasUnread ? "var(--msg-ink)" : "var(--msg-ink-soft)",
             }}
           >
-            {previewOverride ?? previewText(summary, currentUserId, copy)}
+            {previewOverride ??
+              previewText(
+                summary,
+                currentUserId,
+                copy,
+                INTERFACE_LANGUAGE_CODE[language],
+              )}
           </span>
 
           <span className="flex shrink-0 items-center gap-1.5">

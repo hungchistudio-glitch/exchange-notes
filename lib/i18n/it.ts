@@ -249,6 +249,14 @@ const italian: TranslationDictionary = {
     error: "Qualcosa è andato storto",
     clearField: "Cancella",
   },
+
+  friendPicker: {
+    title: "Invia a un partner",
+    retry: "Riprova",
+    empty: "Non hai ancora amici. Aggiungine uno per iniziare a condividere.",
+    loginRequired: "Non hai effettuato l'accesso. Accedi per condividere con un partner.",
+    loadFailed: "Impossibile caricare i tuoi amici. Riprova.",
+  },
   auth: {
     language: {
       eyebrow: "Exchange Notes",
@@ -650,6 +658,7 @@ const italian: TranslationDictionary = {
     sendToFriendAriaLabel: "Invia a un amico",
     loginRequiredError: "Non hai effettuato l'accesso. Accedi per condividere con un partner.",
     loadFriendsError: "Impossibile caricare i tuoi amici. Riprova.",
+    sendToPartnerError: "Impossibile inviare questa notizia. Riprova.",
     loadNewsError: "Impossibile caricare le notizie del giorno.",
     loading: "Caricamento delle lezioni di oggi…",
     emptyTitle: "Al momento non ci sono notizie disponibili",
@@ -1294,6 +1303,17 @@ const italian: TranslationDictionary = {
     traditionalChinese: "Cinese tradizionale",
     youPrefix: "Tu: ",
     attachmentLabel: "Foto",
+    newsCardEyebrow: "Notizie",
+    newsCardVocabulary: "Vocabolario",
+    sharedWordCardPreview: "Ha condiviso una scheda di vocabolario.",
+    sharedNewsCardPreview: "Ha condiviso una notizia.",
+    push: {
+      newMessage: "Ti ha inviato un nuovo messaggio.",
+      friendRequest: "Ti ha inviato una richiesta di amicizia.",
+      friendRequestGeneric: "Hai una nuova richiesta di amicizia.",
+      friendAccepted: "Ha accettato la tua richiesta di amicizia.",
+      friendAcceptedGeneric: "Una richiesta di amicizia è stata accettata.",
+    },
     voiceLabel: "Messaggio vocale",
     muted: "Silenziata",
     muteConversation: "Silenzia",
