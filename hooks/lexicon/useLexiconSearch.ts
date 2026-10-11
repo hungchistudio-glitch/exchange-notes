@@ -11,6 +11,7 @@ import {
 
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
 import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { primePhonetics } from "@/hooks/usePhonetics";
@@ -33,7 +34,7 @@ import type {
   LexiconResult,
   LexiconStatus,
 } from "@/lib/lexicon/types";
-import type { LanguageCode } from "@/lib/languages";
+import { INTERFACE_LANGUAGE_CODE, type LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 
 /* =========================================================
@@ -171,6 +172,7 @@ export default function useLexiconSearch({
 }: UseLexiconSearchOptions): LexiconSearch {
   const { pair } = useDisplayLanguages();
   const { nativeLanguage } = useLearningLanguageContext();
+  const explainLanguage = INTERFACE_LANGUAGE_CODE[useInterfaceLanguage()];
 
   /*
    * All three roles, not just the pair.
@@ -326,6 +328,8 @@ export default function useLexiconSearch({
         pair,
         native: roles.native,
         head: chosenHead,
+        // A sentence's card carries Yumi's reading, in the display language.
+        explain: queryKind === "sentence" ? explainLanguage : null,
       };
 
       const settle = (
@@ -565,7 +569,7 @@ export default function useLexiconSearch({
         setStatus("error");
       }
     },
-    [items, pair, roles],
+    [explainLanguage, items, pair, roles],
   );
 
   const submit = useCallback(

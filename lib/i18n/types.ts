@@ -488,6 +488,32 @@ export type TranslationDictionary = {
     savePhrase: string;
     sentenceNotSavable: string;
 
+    /** The microphone, while it listens and while Yumi works out what was said. */
+    voice: {
+      listening: string;
+      /** Under the caption: how to finish. */
+      listeningHint: string;
+      understanding: string;
+      stop: string;
+      noSpeech: string;
+      notUnderstood: string;
+      unavailable: string;
+      limit: string;
+      micDenied: string;
+    };
+
+    /** Yumi's reading of a sentence. */
+    insight: {
+      title: string;
+      more: string;
+      less: string;
+      literal: string;
+      tone: string;
+      implied: string;
+      context: string;
+      phrases: string;
+    };
+
     onboardingTitle: string;
     onboardingDescription: string;
     onboardingDismiss: string;

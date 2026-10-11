@@ -490,6 +490,29 @@ const french: TranslationDictionary = {
     sentenceNotSavable:
       "Une phrase entière ne fait pas une carte de révision. Gardez seulement ce que vous voulez retenir.",
 
+    voice: {
+      listening: "J'écoute…",
+      listeningHint: "S'arrête tout seul quand vous avez fini. Touchez pour arrêter.",
+      understanding: "Yumi comprend la phrase entière…",
+      stop: "Arrêter l'écoute",
+      noSpeech: "Je n'ai rien entendu. Réessayez un peu plus près.",
+      notUnderstood: "Je n'ai pas compris. Encore une fois ?",
+      unavailable: "La voix n'est pas disponible pour l'instant. Essayez de l'écrire.",
+      limit: "Les traductions vocales du jour sont épuisées. La saisie fonctionne toujours.",
+      micDenied: "Le micro est désactivé. Activez-le dans les réglages pour parler.",
+    },
+
+    insight: {
+      title: "L'avis de Yumi",
+      more: "Lire la suite",
+      less: "Réduire",
+      literal: "Mot à mot",
+      tone: "Ton",
+      implied: "Entre les lignes",
+      context: "Contexte",
+      phrases: "À savoir",
+    },
+
     onboardingTitle: "Un mot que vous ne connaissez pas ?",
     onboardingDescription: "Cherchez-le ici. Yumi trouve la langue pour vous.",
     onboardingDismiss: "Compris",

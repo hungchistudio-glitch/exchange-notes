@@ -130,10 +130,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * component and CSS, the request channel to the field, and the field's
    * five-language copy file it takes its label from — none with imports of
    * their own beyond what home already loads.
+   * Raised home 165 → 168 (2026-10-11): voice translation. The microphone's
+   * level ring and caption (component and CSS), the one fetch that turns a
+   * recording into text, and Yumi's reading of a sentence under its
+   * translation. All four render from home's own search field, none imports
+   * anything home does not already load.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 159],
-    ["home", TABS.home, 165],
+    ["home", TABS.home, 168],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

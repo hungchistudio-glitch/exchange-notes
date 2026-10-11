@@ -15,10 +15,14 @@ import { createClient } from "@/lib/supabase/server";
 import { generateJson } from "@/lib/ai/modelRequest";
 import { tryModels } from "@/lib/ai/tryModels";
 export const runtime = "nodejs";
-export const maxDuration = 30;
+/*
+ * 45, like the word lookup: a recording can now be a minute of speech
+ * rather than one word, and a minute takes the model longer to hear.
+ */
+export const maxDuration = 45;
 
 /* Room inside maxDuration for auth, the upload and the quota refund. */
-const ROUTE_BUDGET_MS = 24_000;
+const ROUTE_BUDGET_MS = 36_000;
 
 /*
  * What was said, and what language it was said in.
@@ -30,9 +34,14 @@ const ROUTE_BUDGET_MS = 24_000;
  * they hold the phone up to someone speaking something else, which is the
  * case this exists for.
  *
- * A model hears the audio without being told what to expect. It is slower
- * and it costs a request, which is why the browser goes first and this is
- * only reached when the browser came back with nothing usable.
+ * A model hears the audio without being told what to expect, and it hears
+ * the whole of it: a sentence with its pauses, its punctuation and its
+ * language, where the browser stopped at the first breath. So every
+ * recording comes here now, and the browser's own transcript is only the
+ * caption shown while the reader speaks (hooks/useVoiceInput.ts).
+ *
+ * This route only writes down what was said. What it means is the lookup's
+ * job (/api/classify-text), the same one a typed sentence gets.
  */
 
 const RESULT_SCHEMA = {
@@ -46,7 +55,8 @@ const RESULT_SCHEMA = {
   required: ["text", "language", "confident"],
 } as const;
 
-/** Audio the browsers involved actually produce, and a ceiling. */
+/** Audio the browsers involved actually produce, and a ceiling. A minute of
+ *  speech is well under a megabyte in every format below. */
 const ACCEPTED_TYPES = [
   "audio/webm",
   "audio/ogg",
@@ -57,6 +67,8 @@ const ACCEPTED_TYPES = [
 ];
 
 const MAX_BYTES = 4 * 1024 * 1024;
+/* The same ceiling /api/classify-text accepts, since that is where it goes next. */
+const MAX_TRANSCRIPT_LENGTH = 1_000;
 const OPERATION = "voice_lookup" as const;
 const MAX_REQUESTS_PER_DAY = readBoundedInteger(
   process.env.VOICE_LOOKUP_DAILY_USER_LIMIT,
@@ -116,7 +128,7 @@ export async function POST(request: Request) {
     const base64 = Buffer.from(await audio.arrayBuffer()).toString("base64");
 
     /*
-     * Healthy models only, three at most, inside the route's thirty seconds
+     * Healthy models only, three at most, inside the route's budget
      * — see lib/ai/tryModels.ts. A malformed answer counts as a failed
      * attempt and moves on, as it always did.
      */
@@ -129,14 +141,18 @@ export async function POST(request: Request) {
           input: [
             {
               text: [
-                "Listen to this audio and write down the single word or short phrase that was said.",
+                "Listen to this recording and write down exactly what was said.",
+                "",
+                "It may be a single word, a short phrase, or one or more full sentences — someone looking a word up, or someone the reader is listening to in conversation.",
                 "",
                 "Rules:",
-                `- Identify which language it is in. Answer with one of: ${LANGUAGE_CODES.join(", ")}.`,
+                `- Identify which language it is in. Answer with one of: ${LANGUAGE_CODES.join(", ")}. If more than one is spoken, answer with the one most of it is in.`,
                 "- Write the text in that language's own spelling and script.",
-                "- For zh-TW write Traditional characters, never Simplified.",
-                "- Just the word or phrase — no punctuation, no sentence around it.",
-                "- Set confident to false if the audio is unclear, silent, or in none of those languages. Do not guess.",
+                "- For zh-TW write Traditional characters, never Simplified, with full-width Chinese punctuation.",
+                "- A lone word or a short name for something: just the word, no punctuation.",
+                "- Anything said as a sentence: write it as a sentence, with the capitalisation and punctuation a careful transcriber would use, including the question mark on a question.",
+                "- Write what was said, not a summary, a correction or a translation. Leave out fillers such as um and uh, and false starts the speaker corrected.",
+                "- Set confident to false if you could not make out what was said: silence, noise, or a language not in the list. Do not guess. A clear recording with one unclear word is still confident; write your best reading of that word.",
               ].join("\n"),
             },
             { media: { data: base64, mimeType } },
@@ -157,7 +173,8 @@ export async function POST(request: Request) {
       { deadline: startedAt + ROUTE_BUDGET_MS },
     );
 
-    const text = parsed.text?.trim() ?? "";
+    /* The lookup takes at most MAX_TRANSCRIPT_LENGTH; a minute of fast speech can run past it. */
+    const text = (parsed.text?.trim() ?? "").slice(0, MAX_TRANSCRIPT_LENGTH).trim();
 
     // A clear "nothing heard" is still a completed model answer. Only
     // transport/model failures below receive a refund.
@@ -184,6 +201,8 @@ export async function POST(request: Request) {
 
     console.error("Voice lookup failed:", error);
 
-    return NextResponse.json({ heard: false });
+    // `failed` tells the client this was not "nothing was said", so it can
+    // say the service is unavailable rather than that it did not hear.
+    return NextResponse.json({ heard: false, failed: true });
   }
 }

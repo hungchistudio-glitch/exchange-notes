@@ -93,7 +93,8 @@ describe("voice lookup", () => {
       formData: async () => form,
     } as Request);
 
-    await expect(response.json()).resolves.toEqual({ heard: false });
+    // `failed` says the service broke, so the reader is not told "I didn't hear you".
+    await expect(response.json()).resolves.toEqual({ heard: false, failed: true });
     expect(mocks.generateContent).toHaveBeenCalledTimes(CORE_MAX_ATTEMPTS);
     expect(mocks.refund).toHaveBeenCalledTimes(1);
   });

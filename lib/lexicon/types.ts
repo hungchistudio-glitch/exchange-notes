@@ -40,6 +40,71 @@ export type LexiconHighlight = {
 };
 
 /**
+ * Yumi's reading of a sentence: what it means beyond what it says.
+ *
+ * A translation answers "what are the words"; a learner listening to someone
+ * also needs "what did they mean by it" — the politeness that is really a
+ * refusal, the question that is really a complaint. Written in the language
+ * the reader reads the app in (`language`), which is not always the language
+ * the sentence was translated into.
+ *
+ * Every field but `gist` may be empty: a sentence that means exactly what it
+ * says has nothing between its lines, and inventing something there would be
+ * worse than leaving it blank.
+ */
+export type LexiconInsight = {
+  language: LanguageCode;
+  /** One line, always shown: the point of the sentence. */
+  gist: string;
+  /** Word for word, when that differs enough from the natural translation to teach something. */
+  literal: string;
+  /** Register and attitude: formal, curt, teasing, apologetic. */
+  tone: string;
+  /** What is meant without being said. */
+  implied: string;
+  /** Culture or situation a learner would not know. */
+  context: string;
+  /** Expressions in the sentence worth understanding on their own. */
+  phrases: { phrase: string; note: string }[];
+};
+
+/** A stored or received insight, re-validated rather than trusted. */
+export function readInsight(value: unknown): LexiconInsight | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  const text = (key: string) =>
+    typeof candidate[key] === "string" ? (candidate[key] as string).trim() : "";
+
+  if (!isLanguageCode(candidate.language) || !text("gist")) return null;
+
+  const phrases = Array.isArray(candidate.phrases)
+    ? candidate.phrases
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const { phrase, note } = item as Record<string, unknown>;
+          return typeof phrase === "string" &&
+            typeof note === "string" &&
+            phrase.trim() &&
+            note.trim()
+            ? { phrase: phrase.trim(), note: note.trim() }
+            : null;
+        })
+        .filter((item): item is { phrase: string; note: string } => item !== null)
+        .slice(0, 3)
+    : [];
+
+  return {
+    language: candidate.language,
+    gist: text("gist"),
+    literal: text("literal"),
+    tone: text("tone"),
+    implied: text("implied"),
+    context: text("context"),
+    phrases,
+  };
+}
+
+/**
  * What the dictionary — the model, the offline index, or the shared cache —
  * says about a query.
  *
@@ -88,6 +153,9 @@ export type LexiconEntry = {
 
   /** Present only for sentences, and only when one span stands out. */
   highlight?: LexiconHighlight | null;
+
+  /** Sentences only: Yumi's reading of it. See LexiconInsight. */
+  insight?: LexiconInsight | null;
 
   /**
    * The lookup reached the offline dictionary and the word was not in it, so

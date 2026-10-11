@@ -1,12 +1,16 @@
 "use client";
 
-import { ArrowRight, LoaderCircle, Mic, Search } from "lucide-react";
+import { ArrowRight, LoaderCircle, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import LexiconImageMenu from "@/components/lexicon/LexiconImageMenu";
 import LexiconResults from "@/components/lexicon/LexiconResults";
+import {
+  VoiceCaptureStatus,
+  VoiceMicButton,
+} from "@/components/lexicon/VoiceCapture";
 import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -17,9 +21,10 @@ import useLexiconSearch from "@/hooks/lexicon/useLexiconSearch";
 import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
-import useVoiceInput from "@/hooks/useVoiceInput";
+import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { onHomeSearchDismiss } from "@/lib/home/homeMoments";
 import { getLanguage, getLanguageName } from "@/lib/languages";
+import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 import { stopSpeech } from "@/lib/speech";
@@ -82,32 +87,24 @@ export default function UniversalSearchField({
     language: getLanguageName(pair[0], interfaceLanguage),
   });
 
+  /*
+   * Every recording goes to the model now, which hears the whole sentence
+   * in whatever language it was said (hooks/useVoiceInput.ts). A recording
+   * that comes back after the reader went home is dropped, and so is the
+   * browser's fallback for it — "handled" is the honest answer to a
+   * question nobody is waiting on any more.
+   */
   const handleAudio = useCallback(
-    async (audio: Blob) => {
-      if (!acceptsVoice.current) return;
+    async (audio: Blob): Promise<VoiceAudioOutcome> => {
+      if (!acceptsVoice.current) return "handled";
       const epoch = voiceEpoch.current;
-      const body = new FormData();
-      body.append("audio", audio, "speech.webm");
+      const heard = await transcribeSpeech(audio);
 
-      try {
-        const response = await fetch("/api/voice-lookup", {
-          method: "POST",
-          body,
-        });
+      if (!acceptsVoice.current || epoch !== voiceEpoch.current) return "handled";
+      if (heard.outcome !== "handled") return heard.outcome;
 
-        if (!response.ok) return;
-
-        const heard = (await response.json()) as {
-          heard?: boolean;
-          text?: string;
-        };
-
-        if (acceptsVoice.current && epoch === voiceEpoch.current && heard.heard && heard.text) {
-          search.submit(heard.text, "voice");
-        }
-      } catch {
-        // The lexicon's offline path remains available when voice lookup is not.
-      }
+      search.submit(heard.text, "voice");
+      return "handled";
     },
     [search],
   );
@@ -242,29 +239,19 @@ export default function UniversalSearchField({
           ) : null}
 
           {voice.supported ? (
-            <button
-              type="button"
-              onClick={() => {
+            <VoiceMicButton
+              phase={voice.phase}
+              listening={voice.listening}
+              levelRef={voice.bindLevel}
+              onPress={() => {
                 onboarding.dismiss();
                 acceptsVoice.current = true;
                 voice.toggle();
               }}
-              aria-label={copy.modeVoice}
-              title={copy.modeVoice}
-              aria-pressed={voice.listening}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 ${
-                voice.listening
-                  ? "bg-black text-white"
-                  : "bg-surface text-ink-strong"
-              }`}
-            >
-              <Mic
-                size={17}
-                strokeWidth={1.8}
-                className={voice.listening ? "animate-pulse" : undefined}
-                aria-hidden="true"
-              />
-            </button>
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95"
+              idleClassName="bg-surface text-ink-strong"
+              activeClassName="bg-black text-white"
+            />
           ) : null}
 
           <LexiconImageMenu
@@ -283,11 +270,12 @@ export default function UniversalSearchField({
         </div>
       </form>
 
-      {voice.listening ? (
-        <p role="status" className="mt-2.5 px-1 text-[0.75rem] text-ink-soft">
-          {copy.listening}
-        </p>
-      ) : null}
+      <VoiceCaptureStatus
+            phase={voice.phase}
+            listening={voice.listening}
+            levelRef={voice.bindLevel}
+            caption={voice.caption}
+            notice={voice.notice} className="mt-3 px-1" />
 
       {imageLookup.reading ? (
         <p

@@ -48,6 +48,8 @@ export type LexiconCacheKeyParts = {
   native?: LanguageCode | null;
   /** Set only when the reader asked the card to lead in a language. */
   head?: LanguageCode | null;
+  /** Sentences only: the language Yumi's reading of it is written in. */
+  explain?: LanguageCode | null;
 };
 
 /**
@@ -70,11 +72,12 @@ export function lexiconCacheKey({
   pair,
   native,
   head,
+  explain,
 }: LexiconCacheKeyParts): string {
   const first = native && native !== pair[1] ? `~${native}` : "";
 
-  return `${pair[0]}>${pair[1]}${first}${
-    head ? `@${head}` : ""
+  return `${pair[0]}>${pair[1]}${first}${head ? `@${head}` : ""}${
+    explain ? `#${explain}` : ""
   }:${matchKey(query)}`;
 }
 
