@@ -51,6 +51,20 @@ html:not([data-interface-mode="yumi-cosmic"]) {
   --color-neutral-900: #24211b;
   --color-neutral-950: #171510;
 
+  /* The text tiers (app/globals.css), re-tuned for the warm ink. They were
+     set as alphas of pure black; at the same alphas #24211b falls under AA
+     on the paper (--ink-faint 3.5:1 on the ground). These clear 4.5:1 on
+     every paper surface here, wells and keys included: faint 4.7:1, soft
+     6.2:1, strong 9.2:1 at the darkest. */
+  --ink-faint: color-mix(in oklab, var(--color-black) 66%, transparent);
+  --ink-soft: color-mix(in oklab, var(--color-black) 75%, transparent);
+  --ink-strong: color-mix(in oklab, var(--color-black) 88%, transparent);
+
+  /* The same on the ink panels, whose lit corner (#4a4234) is lighter than
+     the black they replaced: 4.8:1 and 6.2:1 there. */
+  --ink-invert-faint: color-mix(in oklab, var(--color-white) 62%, transparent);
+  --ink-invert-soft: color-mix(in oklab, var(--color-white) 75%, transparent);
+
   /* The ground the home stands on, and the rule between things on it. */
   --surface: #f3efe6;
   --line: #e6dfcf;
@@ -91,6 +105,10 @@ html:not([data-interface-mode="yumi-cosmic"]) {
   --accent-amber-deep: #6b4e1f;
   --accent-amber-soft: #ead9b4;
   --accent-amber-wash: #faf5ea;
+
+  /* Brass as text: small labels need more than the key's brass (3.8:1 on
+     the ground); this is 5.3:1. */
+  --brass-ink: #7a5e2e;
 
   --font-display: Georgia, "Noto Serif TC", "Songti TC", serif;
 
@@ -153,6 +171,16 @@ html:not([data-interface-mode="yumi-cosmic"]) {
    ===================================================================== */
 
 /*
+  Behind the page. The stage fades each screen in from 40% (RouteStage), and
+  what shows through it is <body>, which is white, so every arrival opened
+  with a white veil and the ink panels flashed grey. Inside the app it is
+  the ground instead.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) {
+  background: var(--surface);
+}
+
+/*
   The light from above, on whatever is the page. It scrolls with the page
   (no fixed attachment: that repaints the whole surface every frame), so
   the top of a screen is where its light is, as on the home.
@@ -179,9 +207,10 @@ html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header {
 /*
   Titles and words in the serif the word card set: Georgia for Latin,
   Noto Serif TC (app/layout.tsx) for Chinese. Body copy stays in the sans,
-  which is what reads best small.
+  which is what reads best small, and so do the headings that are labels
+  (small capitals, tracked out) or that name their own face.
 */
-html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) :is(h1, h2, h3),
+html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) :is(h1, h2, h3):not(.uppercase, .font-cjk, .font-phonetic, .font-zhuyin, .font-mono),
 html:not([data-interface-mode="yumi-cosmic"]) .tactile-serif {
   font-family: var(--font-display);
   font-weight: 600;
@@ -214,17 +243,24 @@ html:not([data-interface-mode="yumi-cosmic"]) :is(
   box-shadow: var(--paper-shadow);
 }
 
-/* A card that is itself the thing to tap sinks a little under the finger. */
-html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
+/*
+  A card that is itself the thing to tap sinks a little under the finger.
+  The same cards as above: a row that never had the card's shadow does not
+  grow one on press. Its own transition, where it wrote one, is left alone
+  (an `active:scale-*` animates through it).
+*/
+html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):not([class*="transition"]):is(
   .cosmic-card,
-  .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+  .bg-\[var\(--en-surface\)\],
+  .bg-white:is(.rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\], .rounded-\[32px\])
 ) {
   transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease;
 }
 
 html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
   .cosmic-card,
-  .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+  .bg-\[var\(--en-surface\)\],
+  .bg-white:is(.rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\], .rounded-\[32px\])
 ):active {
   box-shadow: var(--paper-shadow-pressed);
 }
@@ -232,7 +268,8 @@ html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
     .cosmic-card,
-    .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+    .bg-\[var\(--en-surface\)\],
+    .bg-white:is(.rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\], .rounded-\[32px\])
   ):active {
     transform: translateY(1px) scale(0.992);
   }
@@ -262,6 +299,15 @@ html:not([data-interface-mode="yumi-cosmic"]) :is(section, article, div, a, butt
 html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-black:is(.rounded-full, .rounded-2xl, .rounded-xl, .rounded-\[18px\], .rounded-\[20px\]) {
   background-image: linear-gradient(170deg, #3d372d, #24211b 70%);
   box-shadow: inset 0 1px 0 #ffffff24, 0 8px 16px -8px #24211b99, 0 1px 2px #24211b40;
+}
+
+/* Keys that wrote no transition of their own get the press's; the rest keep
+   theirs, colour changes and `active:scale-*` included. */
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a):not([class*="transition"]):is(
+  .bg-black:is(.rounded-full, .rounded-2xl, .rounded-xl, .rounded-\[18px\], .rounded-\[20px\]),
+  .bg-white.rounded-full,
+  .rounded-full:is(.bg-black\/\[0\.04\], .bg-black\/\[0\.05\], .bg-neutral-100)
+) {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -281,7 +327,6 @@ html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).rounded-full:is(.bg
   background-image: var(--key-face);
   border-color: #ffffff;
   box-shadow: var(--key-shadow);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-white.rounded-full:active,
@@ -296,9 +341,10 @@ html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).rounded-full:is(.bg
   }
 }
 
-/* The brass key: the one warm call to action a screen may have. */
+/* The brass key: the one warm call to action a screen may have. Dark enough
+   at its lightest (4.7:1) for the paper-white label on it. */
 html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-\[var\(--accent-amber\)\] {
-  background-image: linear-gradient(165deg, #b08b48, #8a6a33);
+  background-image: linear-gradient(165deg, #8c6c36, #6f5429);
   box-shadow: inset 0 1px 0 #ffffff40, 0 8px 16px -8px #6b4e1f99;
 }
 
@@ -313,6 +359,14 @@ html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] div.bg-
   background-image: var(--well-face);
   border-color: transparent;
   box-shadow: var(--well-shadow);
+}
+
+/* The border that showed focus is gone with the rest of the border, so the
+   well shows it: a brass ring round the edge. */
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select).bg-white:focus-visible,
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] label.bg-white.rounded-full:focus-within,
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] div.bg-white.rounded-full:has(> input, > svg + input):focus-within {
+  box-shadow: var(--well-shadow), 0 0 0 2px #94733a8c;
 }
 
 /* =====================================================================
@@ -442,8 +496,8 @@ html:not([data-interface-mode="yumi-cosmic"]) .settings-progress > a {
 /* The small label over a screen's title, in brass on every screen, rather
    than grey on some, gold on one and capitals on another. */
 html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header p:has(+ h1),
-html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] :is(p, span):has(+ h1) {
-  color: var(--accent-amber);
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] p:has(+ h1) {
+  color: var(--brass-ink);
   font-weight: 600;
   letter-spacing: 0.16em;
 }

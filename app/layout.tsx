@@ -215,8 +215,9 @@ export default async function RootLayout({
         {/* The serif Standard Mode sets titles and words in (app/tactile.css),
             for the Chinese that Georgia has no glyphs for. Same CDN and the
             same per-character slicing as the sans above, so a screen only
-            downloads the slices its headings use, and Cosmic, which never
-            asks for the family, downloads none. One weight. */}
+            downloads the font slices its headings use, and Cosmic, which
+            never asks for the family, downloads no font files (only this
+            small stylesheet, alongside the others). One weight. */}
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600&display=swap"
           rel="stylesheet"

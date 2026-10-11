@@ -251,8 +251,10 @@ export default function YumiFace({
 
         {/* The home's material on the arms (Tactile Worlds), shown by
             app/tactile.css in Standard Mode. The tongue stays flat ink: it is
-            the part being taught, and a highlight on it would read as shape. */}
-        <g mask={`url(#${bodyMaskId})`}>
+            the part being taught, and a highlight on it would read as shape.
+            The masked group is itself hidden until then, so Cosmic never
+            composites the mask while the mouth moves. */}
+        <g data-mark-part="gloss" display="none" mask={`url(#${bodyMaskId})`}>
           <YumiBodyGloss />
         </g>
 
