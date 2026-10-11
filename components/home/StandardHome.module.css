@@ -1,21 +1,6 @@
 /*
-  A quiet technical ground for the home screen.
-
-  Three layers, all of them nearly invisible on their own: a fine grid, a
-  wider one over it, and a single soft light from the upper left. Together
-  they give the page the feel of something engineered rather than a blank
-  sheet — the same read the shell's machined highlight gives Yumi.
-
-  Everything here is black on the page's own pearl at between 1.5% and 3.5%
-  opacity. That is the whole budget.
-
-  It was written to make white cards read as raised, and the cards are gone —
-  the screen is only Yumi now. It stays because the read it gives the page
-  outlived its reason: something engineered rather than a blank sheet, which
-  is the right ground for her whether or not anything is sitting on it. A
-  version of this screen with the palette's three planes as the ground was
-  tried and taken back out; saturated colour behind her competes with her
-  instead of carrying her, and colour belongs on elements, not on the page.
+  The home screen's ground and layout. The ground itself is the Tactile
+  Worlds block at the end of this file.
 
   `background-attachment` is deliberately left at its default: a fixed
   ground on a scrolling page costs a full-surface repaint on every frame of
@@ -34,101 +19,6 @@
     unlayered, so this takes it back without !important.
   */
   padding-bottom: 0;
-
-  background-color: var(--bg, #f4f1ea);
-  background-image:
-    /* the light, so the top of the page is where the page begins */
-    radial-gradient(
-      120% 70% at 12% -8%,
-      rgb(255 255 255 / 0.75) 0%,
-      rgb(255 255 255 / 0) 62%
-    ),
-    /*
-      Three alignment rings around her.
-
-      The innermost is 132px because that is RING_RADIUS — where her keys
-      land when the ring opens. So the ground quietly says, before anything
-      has been pressed, where the thing that is about to appear will appear.
-      That is why this layer exists and why it is not simply a decoration
-      that could be any radius.
-
-      It is drawn at 2–5% rather than as a hard line for a reason: she is
-      centred by the flex box after the safe areas, not at exactly 50% of the
-      viewport, so on a phone with a notch she sits a few pixels below this
-      circle's centre. At this weight that is invisible; at a hairline it
-      would read as a miss.
-    */
-    radial-gradient(
-      circle at 50% 50%,
-      transparent 0 131px,
-      rgb(0 0 0 / 0.05) 131px 132px,
-      transparent 132px 173px,
-      rgb(0 0 0 / 0.028) 173px 174px,
-      transparent 174px 250px,
-      rgb(0 0 0 / 0.018) 250px 251px,
-      transparent 251px
-    ),
-    /* A registration point at every major intersection — the mark a
-       technical drawing puts where two rules cross, so the grid reads as
-       something set out rather than something tiled. */
-    radial-gradient(
-      circle at 0 0,
-      rgb(0 0 0 / 0.11) 0 1.6px,
-      transparent 1.7px
-    ),
-    /* 96px rules: the structure you notice only once you look for it */
-    linear-gradient(to right, rgb(0 0 0 / 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(0 0 0 / 0.035) 1px, transparent 1px),
-    /* 24px grid: texture, not structure */
-    linear-gradient(to right, rgb(0 0 0 / 0.016) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(0 0 0 / 0.016) 1px, transparent 1px);
-  background-size:
-    100% 100%,
-    100% 100%,
-    96px 96px,
-    96px 96px,
-    96px 96px,
-    24px 24px,
-    24px 24px;
-  background-repeat:
-    no-repeat,
-    no-repeat,
-    repeat,
-    repeat,
-    repeat,
-    repeat,
-    repeat;
-}
-
-/*
-  Crop marks, the way a plate is trimmed.
-
-  Inset from the safe area rather than the viewport edge, so they sit where
-  the page actually begins on a phone with a notch or a home indicator. One
-  element draws all four with a border and two clip paths would be neater
-  than four boxes, so it is two pseudo-elements carrying two corners each.
-*/
-.surface::before,
-.surface::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  pointer-events: none;
-}
-
-.surface::before {
-  left: calc(env(safe-area-inset-left) + 20px);
-  top: calc(env(safe-area-inset-top) + 20px);
-  border-left: 1px solid rgb(0 0 0 / 0.16);
-  border-top: 1px solid rgb(0 0 0 / 0.16);
-}
-
-.surface::after {
-  right: calc(env(safe-area-inset-right) + 20px);
-  bottom: calc(env(safe-area-inset-bottom) + 20px);
-  border-right: 1px solid rgb(0 0 0 / 0.16);
-  border-bottom: 1px solid rgb(0 0 0 / 0.16);
 }
 
 /* She takes the middle of what is left after the safe areas. */
@@ -137,19 +27,91 @@
 }
 
 /*
-  Contrast settings are a request, not a preference to average with ours.
-  The grid is decoration by definition, so it goes entirely.
+  Tactile Worlds (Chi, 2026-10-11): the drafting grid gives way to a warm
+  paper ground with one light from above and a darker edge where the room ends, so the
+  beads around her read as objects sitting in a room rather than marks on a
+  plan. The crop marks went with the grid; they were the plan's, not the room's.
+
+  Still nothing but gradients on the one surface, and no fixed background:
+  the same repaint budget the grid had.
 */
+.surface {
+  background-color: #f3efe6;
+  background-image:
+    radial-gradient(90% 55% at 50% -6%, #fffdf8f2 0%, #fffdf800 70%),
+    radial-gradient(140% 90% at 50% 40%, #f3efe600 55%, #e6dfd1 100%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/*
+  The orbits. Two tilted ellipses around her eye, drawn by the stage itself
+  so they follow her wherever the ring overlay carries her (it writes
+  --yumi-x/--yumi-y in whole pixels). Only `transform` reads the variables,
+  so a frame where she drifts is a composite, not a layout.
+*/
+.centre::before,
+.centre::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 360px;
+  height: 140px;
+  margin: -70px 0 0 -180px;
+  border-radius: 50%;
+  border: 1px solid #8a7a5a30;
+  /* Two small brass pellets riding each orbit, painted on its own box so
+     they turn with it: a point on an ellipse is (50 + 50·cos θ, 50 + 50·sin θ). */
+  background:
+    radial-gradient(circle at 4% 31%, #b9a57a 0 3px, #b9a57a00 4px),
+    radial-gradient(circle at 85% 85%, #8f9a86 0 2.5px, #8f9a8600 3.5px);
+  pointer-events: none;
+  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(-14deg);
+  /* Hidden until she is live and at rest: before the first frame there is
+     no eye to centre on, and with no WebGL the stage stays "starting". */
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  z-index: 0;
+}
+
+.centre::after {
+  width: 300px;
+  height: 104px;
+  margin: -52px 0 0 -150px;
+  border-color: #8a7a5a24;
+  background:
+    radial-gradient(circle at 93% 25%, #c8b78e 0 3.5px, #c8b78e00 4.5px),
+    radial-gradient(circle at 21% 91%, #7f7466 0 2.5px, #7f746600 3.5px);
+  transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(22deg);
+}
+
+.centre[data-yumi-mode="rest"]::before,
+.centre[data-yumi-mode="rest"]::after {
+  opacity: 1;
+}
+
+/* Under the mode veil the orbits are simply there, like the cookies: a fade
+   of their own would still be running when it lifts. */
+:global(body:has([data-home-mode-transition])) .centre::before,
+:global(body:has([data-home-mode-transition])) .centre::after {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .centre::before,
+  .centre::after {
+    transition: none;
+  }
+}
+
 @media (prefers-contrast: more) {
   .surface {
     background-image: none;
   }
 
-  .surface::before,
-  .surface::after {
+  .centre::before,
+  .centre::after {
     display: none;
   }
 }
-
-.surface { background-color:#f5f5ed; background-image:radial-gradient(ellipse at 15% 8%,#fffffff0,transparent 65%),radial-gradient(circle at 50% 45%,transparent 0 155px,#78846208 155px 156px,transparent 156px 220px,#78846205 220px 221px,transparent 221px),linear-gradient(90deg,#64734205 1px,transparent 1px),linear-gradient(#64734205 1px,transparent 1px); background-size:100% 100%,100% 100%,72px 72px,72px 72px; }
-@media(prefers-contrast:more) { .surface { background-image:none; } }
