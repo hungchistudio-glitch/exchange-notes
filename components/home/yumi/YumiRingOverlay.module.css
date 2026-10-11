@@ -648,7 +648,11 @@
 .voice { color:#49573d; font-size:.9375rem; font-weight:500; }
 .below { gap:1rem; }
 .hint { color:#7d8872; font-size:.6875rem; }
-@media(max-height:600px) { .above { top:35px; } .greeting { font-size:1.15rem; } }
+@media(max-height:600px) { .above { top:calc(35px + env(safe-area-inset-top)); } .greeting { font-size:1.15rem; } }
+/* On a phone that is short AND narrow (SE-sized) that band is also where the
+   mode switch sits, and a greeting with a city in it ran under the switch.
+   There it starts just below the switch instead (18px + 44px), one line. */
+@media(max-height:600px) and (max-width:480px) { .above { top:calc(66px + env(safe-area-inset-top)); } }
 
 /* Going home from a search (YumiRingOverlay.tsx, returnHome): only the card
    fades — in RETURN_FADE_MS, the 140ms below. The field and Yumi glide on the
