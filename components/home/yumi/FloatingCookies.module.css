@@ -13,7 +13,10 @@
     radial-gradient(circle at 70% 82%,#ffffff8c 0,#ffffff00 32%),
     radial-gradient(circle at 40% 35%,#c9d4b6 0%,#9fb08a 62%,#7d8f69 100%);
   box-shadow:inset -4px -6px 10px #4f5f3c45,inset 3px 4px 6px #ffffff8c,0 14px 18px -10px #4a3f2a66,0 3px 5px -2px #4a3f2a40; }
-.cookie::after { content:""; position:absolute; left:22%; top:14%; width:30%; height:18%; border-radius:50%; background:#ffffffd9; filter:blur(1.5px); rotate:-24deg; }
+/* The specular highlight, placed on the bead rather than on the button: a
+   small bead sits inside a 44px hit area, so percentages of the button would
+   put the highlight on its rim. */
+.cookie::after { content:""; position:absolute; left:calc(max(0px,(44px - var(--size))/2) + var(--size)*.2); top:calc(max(0px,(44px - var(--size))/2) + var(--size)*.12); width:calc(var(--size)*.32); height:calc(var(--size)*.18); border-radius:50%; background:#ffffffd9; filter:blur(1.5px); rotate:-24deg; }
 .cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,"Songti TC",serif; color:#4b5a3a;
   text-shadow:0 1px 0 #ffffff80,0 -1px 0 #2f3a2340; }
 /* jade: a pebble, wider than tall */
@@ -41,6 +44,7 @@
 /* Depth of field: the far beads sit softly behind her. A blur on a layer
    that only ever translates is rasterised once. */
 .cookie[data-depth="back"] span,.cookie[data-depth="back"]::before { filter:blur(.6px); }
+.cookie:focus-visible span,.cookie:focus-visible::before { filter:none; }
 .cookie[data-ready="true"] { opacity:.95; }
 .cookie[data-depth="back"][data-ready="true"] { opacity:.82; }
 .cookie:active { cursor:grabbing; z-index:2; }
@@ -78,7 +82,7 @@
 .spinner { animation:spin 1s linear infinite; }
 @keyframes spin { to { rotate:360deg; } }
 @media(prefers-reduced-motion:reduce) { .field { transition:none; } .cookie, .field[data-mode="answering"] .cookie, .field[data-settling] .cookie { will-change:auto; transition:none; } .spinner { animation:none; } }
-@media(prefers-contrast:more) { .cookie[data-depth="back"][data-ready="true"] { opacity:1; } .cookie::before { border-color:currentColor; } .readings,.language,.example { color:#394532; } }
+@media(prefers-contrast:more) { .cookie[data-depth="back"][data-ready="true"] { opacity:1; } .cookie::before { border:1px solid currentColor; } .readings,.language,.example { color:#394532; } }
 
 .gatherRipple { position:absolute; left:var(--gather-x,50%); top:var(--gather-y,42%); width:250px; height:250px; border:1px solid #9baa7a55; border-radius:50%; opacity:0; transform:translate(-50%,-50%) scale(1.12); pointer-events:none; transition:opacity .3s,transform .65s cubic-bezier(.2,.7,.3,1); }
 .field[data-gathering] .gatherRipple { opacity:.65; transform:translate(-50%,-50%) scale(.72); }
@@ -134,4 +138,4 @@
 .cardFooter button { background:linear-gradient(160deg,#fffdf8,#ece5d6); border:1px solid #fff; color:#2b2720;
   box-shadow:0 6px 12px -6px #4a3f2a55,inset 0 1px 0 #fff; }
 .backdrop { background:#2a241a2e; }
-@media(prefers-contrast:more) { .card { box-shadow:0 0 0 1px #24211b; } .readings,.cardHeader,.language { color:#3d382f; } }
+@media(prefers-contrast:more) { .card { box-shadow:0 0 0 1px #24211b; } .readings,.cardHeader,.language,.example { color:#24211b; } }

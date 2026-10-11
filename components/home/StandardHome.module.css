@@ -32,8 +32,8 @@
   beads around her read as objects sitting in a room rather than marks on a
   plan. The crop marks went with the grid; they were the plan's, not the room's.
 
-  Still nothing but gradients on the one surface, and nothing fixed: the
-  same repaint budget the grid had.
+  Still nothing but gradients on the one surface, and no fixed background:
+  the same repaint budget the grid had.
 */
 .surface {
   background-color: #f3efe6;
@@ -68,6 +68,9 @@
     radial-gradient(circle at 85% 85%, #8f9a86 0 2.5px, #8f9a8600 3.5px);
   pointer-events: none;
   transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(-14deg);
+  /* Hidden until she is live and at rest: before the first frame there is
+     no eye to centre on, and with no WebGL the stage stays "starting". */
+  opacity: 0;
   transition: opacity 0.45s ease;
   z-index: 0;
 }
@@ -83,13 +86,23 @@
   transform: translate(var(--yumi-x, 50vw), var(--yumi-y, 42svh)) rotate(22deg);
 }
 
-.centre[data-yumi-mode="open"]::before,
-.centre[data-yumi-mode="open"]::after,
-.centre[data-yumi-mode="starting"]::before,
-.centre[data-yumi-mode="starting"]::after,
-.centre[data-yumi-mode="answering"]::before,
-.centre[data-yumi-mode="answering"]::after {
-  opacity: 0;
+.centre[data-yumi-mode="rest"]::before,
+.centre[data-yumi-mode="rest"]::after {
+  opacity: 1;
+}
+
+/* Under the mode veil the orbits are simply there, like the cookies: a fade
+   of their own would still be running when it lifts. */
+:global(body:has([data-home-mode-transition])) .centre::before,
+:global(body:has([data-home-mode-transition])) .centre::after {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .centre::before,
+  .centre::after {
+    transition: none;
+  }
 }
 
 @media (prefers-contrast: more) {
