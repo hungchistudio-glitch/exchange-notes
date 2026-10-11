@@ -1,0 +1,470 @@
+/*
+  Tactile Worlds, everywhere in Standard Mode.
+
+  ── What this is for ───────────────────────────────────────────────────
+
+  The home and the word card became a warm paper room in #151: one light
+  from above, heavy paper, beads you could pick up. Every other screen was
+  still flat white cards on a flat ground, with pure-black panels for the
+  important things, so walking from the home into the vocabulary list felt
+  like changing apps. Chi (2026-10-11) asked for the whole of Standard to be
+  the same world: paper cards, soft light, raised keys, warm ink with brass
+  for the panels that were black, and a serif for titles and words.
+
+  ── How ────────────────────────────────────────────────────────────────
+
+  The same way Cosmic repaints the app (app/cosmic.css): by redefining the
+  colours every component already asks for, not by editing the components.
+  `bg-white` and `bg-black` are `var(--color-white)` and `var(--color-black)`
+  in Tailwind 4, so paper and ink here reach the ~460 call sites at once.
+  On top of that, a handful of shapes get their depth: a card is a white
+  surface with a card's radius, a key is a button, a well is a field.
+
+  Every selector is guarded by `:not([data-interface-mode="yumi-cosmic"])`
+  on `html`, like app/standard-settings.css, so Cosmic stays exactly as it
+  is (Chi, 2026-10-11).
+
+  ── The budget ─────────────────────────────────────────────────────────
+
+  Painted once, never per frame. No backdrop-filter, no fixed backgrounds,
+  no filters; shadows sit on elements that do not move while scrolling, and
+  the only things that animate are `transform` and `opacity` on press.
+*/
+
+html:not([data-interface-mode="yumi-cosmic"]) {
+  /* Paper and ink. The pair every `bg-white`, `text-black` and
+     `border-black/…` in the app resolves through. */
+  --color-white: #fdfaf3;
+  --color-black: #24211b;
+
+  /* Tailwind's neutral ramp, warmed to the paper's hue at the same
+     lightness, so a `text-neutral-500` caption keeps its contrast. */
+  --color-neutral-50: #faf8f3;
+  --color-neutral-100: #f3efe6;
+  --color-neutral-200: #e6e0d3;
+  --color-neutral-300: #d4ccbc;
+  --color-neutral-400: #a49b8a;
+  --color-neutral-500: #766e60;
+  --color-neutral-600: #5c5549;
+  --color-neutral-700: #49433a;
+  --color-neutral-800: #332f28;
+  --color-neutral-900: #24211b;
+  --color-neutral-950: #171510;
+
+  /* The ground the home stands on, and the rule between things on it. */
+  --surface: #f3efe6;
+  --line: #e6dfcf;
+
+  /* The materials. */
+  --paper-light: #fffdf8;
+  --paper-edge: #e6dfd1;
+  --paper-face:
+    radial-gradient(120% 90% at 18% 0%, #fffdf8 0%, #fffdf800 62%),
+    linear-gradient(172deg, #fcf9f2, #f6f1e6);
+  --paper-shadow:
+    inset 0 1px 0 #ffffff,
+    0 18px 34px -24px #4a3f2a73,
+    0 3px 8px -4px #4a3f2a2e;
+  --paper-shadow-pressed:
+    inset 0 1px 0 #ffffff,
+    0 8px 16px -14px #4a3f2a73,
+    0 1px 3px -2px #4a3f2a2e;
+  --key-face: linear-gradient(160deg, #fffdf8, #ece5d6);
+  --key-shadow: 0 6px 12px -6px #4a3f2a66, 0 1px 2px #4a3f2a26, inset 0 1px 0 #ffffff;
+  --key-shadow-pressed: 0 2px 4px -2px #4a3f2a55, inset 0 2px 4px #4a3f2a26;
+  --ink-face:
+    radial-gradient(130% 90% at 15% 0%, #4a4234 0%, #4a423400 58%),
+    linear-gradient(168deg, #2e2a22, #1d1a15);
+  --ink-shadow:
+    inset 0 1px 0 #ffffff1a,
+    inset 0 0 0 1px #c8b78e2e,
+    0 22px 40px -26px #24211bcc,
+    0 4px 10px -6px #24211b66;
+  --well-face: linear-gradient(180deg, #ece6d9, #f6f2e9 70%);
+  --well-shadow: inset 0 2px 4px #4a3f2a1f, inset 0 0 0 1px #4a3f2a14, 0 1px 0 #ffffff;
+
+  /* Brass: the pellets on the home's orbits. Deep enough that white text
+     on it reads (4.6:1), which the old gold (#c9962e, 2.6:1) did not. */
+  --brass: #b9a57a;
+  --brass-light: #c8b78e;
+  --accent-amber: #94733a;
+  --accent-amber-deep: #6b4e1f;
+  --accent-amber-soft: #ead9b4;
+  --accent-amber-wash: #faf5ea;
+
+  --font-display: Georgia, "Noto Serif TC", "Songti TC", serif;
+
+  /* The dock: a strip of paper with one inked key. */
+  --dock-surface: #fbf7ee;
+  --dock-line: #ffffff;
+  --dock-shadow:
+    inset 0 1px 0 #ffffff,
+    0 18px 36px -18px #4a3f2a66,
+    0 3px 8px -4px #4a3f2a33;
+  --dock-indicator: #24211b;
+  --dock-indicator-halo: #24211b0f;
+
+  /* Screens that name their own surfaces. */
+  --discover-page: #f3efe6;
+  --discover-card: #fdfaf3;
+  --discover-text: #24211b;
+  --discover-divider: #e6dfcf;
+  --discover-divider-soft: #e6dfcf47;
+
+  --msg-surface: #fdfaf3;
+  --msg-surface-soft: #f8f4ea;
+  --msg-line: #4a3f2a14;
+  --msg-ink: #24211b;
+  --msg-bubble-in: linear-gradient(180deg, #fffdf8, #f6f1e6);
+  --msg-bubble-in-ink: #24211b;
+  --msg-bubble-in-line: #4a3f2a14;
+  --msg-bubble-out: linear-gradient(168deg, #3a342b, #1f1c17);
+  --msg-header: #f3efe6;
+  --msg-mark-surface: #f3efe6;
+  --msg-mark-highlight: #fffdf8;
+
+  --modal-scrim: #2a241a;
+  --modal-surface: #fbf8f1;
+  --modal-ink: #24211b;
+  --modal-accent: #3a342b;
+  --modal-muted: #6f6658;
+  --modal-line: #e6dfcf;
+  --control-surface: #f1ece1;
+  --control-ink: #3a342b;
+
+  --yumi-wash-top: #fffdf8;
+  --yumi-wash-bottom: #f3efe6;
+
+  /* The vocabulary list's legacy card contract (foundation-legacy/Card).
+     Cosmic has always defined these; Standard never did, so its word cards
+     were transparent with a border in the text colour: the black outlines
+     around every saved word. */
+  --en-surface: var(--color-white);
+  --en-surface-secondary: #f8f4ea;
+  --en-page-elevated: var(--color-white);
+  --en-surface-hover: #fffdf8;
+  --en-border: #fffdf7;
+  --en-border-strong: #fffdf7;
+  --en-text-primary: #24211b;
+}
+
+/* =====================================================================
+   The ground
+   ===================================================================== */
+
+/*
+  The light from above, on whatever is the page. It scrolls with the page
+  (no fixed attachment: that repaints the whole surface every frame), so
+  the top of a screen is where its light is, as on the home.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] > div > :is(main, div).bg-surface,
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] main.bg-surface {
+  background-image:
+    radial-gradient(90% 420px at 50% -60px, #fffdf8e6 0%, #fffdf800 100%);
+  background-repeat: no-repeat;
+}
+
+/* The sticky header is the top of the room: the lit paper, and a soft edge
+   where the page passes under it instead of a ruled line. */
+html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header {
+  background-color: #f8f5ee;
+  border-bottom-color: transparent;
+  box-shadow: 0 1px 0 #4a3f2a12, 0 10px 18px -16px #4a3f2a59;
+}
+
+/* =====================================================================
+   Type
+   ===================================================================== */
+
+/*
+  Titles and words in the serif the word card set: Georgia for Latin,
+  Noto Serif TC (app/layout.tsx) for Chinese. Body copy stays in the sans,
+  which is what reads best small.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) :is(h1, h2, h3),
+html:not([data-interface-mode="yumi-cosmic"]) .tactile-serif {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* The sticky header's title a step larger: the serif sets smaller than the
+   sans it replaces at the same size. */
+html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header h1 {
+  font-size: 1.375rem;
+}
+
+/* =====================================================================
+   Paper cards
+   ===================================================================== */
+
+/*
+  A card is a paper surface with a card's corners: the shared Card, and the
+  hand-made ones that wrote the same thing out in utilities. Fields and
+  chips are rounded-full and are not cards; the smaller radii are rows and
+  thumbnails inside cards.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) :is(
+  .cosmic-card,
+  .bg-\[var\(--en-surface\)\],
+  .bg-white:is(.rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\], .rounded-\[32px\])
+) {
+  background-image: var(--paper-face);
+  border-color: #fffdf7;
+  box-shadow: var(--paper-shadow);
+}
+
+/* A card that is itself the thing to tap sinks a little under the finger. */
+html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
+  .cosmic-card,
+  .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+) {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
+  .cosmic-card,
+  .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+):active {
+  box-shadow: var(--paper-shadow-pressed);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-interface-mode="yumi-cosmic"]) :is(a, button):is(
+    .cosmic-card,
+    .bg-white:is(.rounded-2xl, .rounded-3xl, .rounded-\[18px\], .rounded-\[20px\], .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\])
+  ):active {
+    transform: translateY(1px) scale(0.992);
+  }
+}
+
+/* =====================================================================
+   Ink panels
+   ===================================================================== */
+
+/*
+  The panels that were pure black: today's review, the daily focus, the
+  pronunciation session. Warm ink with a brass hairline inside the edge,
+  so they read as the heaviest card in the stack rather than as a hole.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) :is(section, article, div, a, button).bg-black:is(
+  .rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\]
+) {
+  background-image: var(--ink-face);
+  box-shadow: var(--ink-shadow);
+}
+
+/* =====================================================================
+   Keys
+   ===================================================================== */
+
+/* An inked key: the primary action. */
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-black:is(.rounded-full, .rounded-2xl, .rounded-xl, .rounded-\[18px\], .rounded-\[20px\]) {
+  background-image: linear-gradient(170deg, #3d372d, #24211b 70%);
+  box-shadow: inset 0 1px 0 #ffffff24, 0 8px 16px -8px #24211b99, 0 1px 2px #24211b40;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-black:is(.rounded-full, .rounded-2xl, .rounded-xl, .rounded-\[18px\], .rounded-\[20px\]):active {
+  box-shadow: inset 0 2px 4px #00000059, 0 1px 2px #24211b40;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-black:is(.rounded-full, .rounded-2xl, .rounded-xl, .rounded-\[18px\], .rounded-\[20px\]):active {
+    transform: translateY(1px);
+  }
+}
+
+/* A paper key: chips, secondary actions, round icon buttons. */
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-white.rounded-full,
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).rounded-full:is(.bg-black\/\[0\.04\], .bg-black\/\[0\.05\], .bg-neutral-100) {
+  background-image: var(--key-face);
+  border-color: #ffffff;
+  box-shadow: var(--key-shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-white.rounded-full:active,
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).rounded-full:is(.bg-black\/\[0\.04\], .bg-black\/\[0\.05\], .bg-neutral-100):active {
+  box-shadow: var(--key-shadow-pressed);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-white.rounded-full:active,
+  html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).rounded-full:is(.bg-black\/\[0\.04\], .bg-black\/\[0\.05\], .bg-neutral-100):active {
+    transform: translateY(1px);
+  }
+}
+
+/* The brass key: the one warm call to action a screen may have. */
+html:not([data-interface-mode="yumi-cosmic"]) :is(button, a).bg-\[var\(--accent-amber\)\] {
+  background-image: linear-gradient(165deg, #b08b48, #8a6a33);
+  box-shadow: inset 0 1px 0 #ffffff40, 0 8px 16px -8px #6b4e1f99;
+}
+
+/* =====================================================================
+   Wells
+   ===================================================================== */
+
+/* A field is pressed into the paper rather than laid on it. */
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select).bg-white,
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] label.bg-white.rounded-full,
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] div.bg-white.rounded-full:has(> input, > svg + input) {
+  background-image: var(--well-face);
+  border-color: transparent;
+  box-shadow: var(--well-shadow);
+}
+
+/* =====================================================================
+   Motion
+   ===================================================================== */
+
+/*
+  The press itself (the 1px sink under a finger) is written inside
+  `prefers-reduced-motion: no-preference` next to each surface above, so a
+  reader who asked for less motion still sees the shadow close up and
+  nothing move.
+*/
+
+/* =====================================================================
+   More contrast
+   ===================================================================== */
+
+@media (prefers-contrast: more) {
+  html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] :is(main, div).bg-surface {
+    background-image: none;
+  }
+
+  html:not([data-interface-mode="yumi-cosmic"]) :is(
+    .cosmic-card,
+    .bg-white:is(.rounded-3xl, .rounded-\[22px\], .rounded-\[24px\], .rounded-\[26px\], .rounded-\[28px\], .rounded-\[30px\], .rounded-\[32px\])
+  ) {
+    box-shadow: 0 0 0 1px #24211b;
+  }
+}
+
+/* =====================================================================
+   Settings
+   ===================================================================== */
+
+/*
+  Settings was drawn as a technical drawing, after the home's old ground: a
+  ruled grid, registration marks, serials in mono (app/standard-settings.css,
+  LearningProgressPanel.module.css). The home left the drawing for the room
+  in #151, "the crop marks went with the grid"; these follow it. Same order
+  and same groups, now paper, with the group numbers set as a book sets them.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen {
+  background-image: radial-gradient(90% 420px at 50% -60px, #fffdf8e6 0%, #fffdf800 100%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-section-label::before {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-style: italic;
+  letter-spacing: 0;
+  color: var(--accent-amber);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-section-label::after {
+  background: #4a3f2a1f;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen :is(.settings-panel, .settings-profile-card) {
+  border-color: #fffdf7;
+  border-radius: 22px;
+  background-image: var(--paper-face);
+  box-shadow: var(--paper-shadow);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-profile-card::after {
+  content: none;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-profile-handle {
+  font-family: inherit;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-search-trigger {
+  border-radius: 9999px;
+  background-image: var(--key-face);
+  border-color: #ffffff;
+  box-shadow: var(--key-shadow);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-screen .settings-row-icon {
+  background-image: var(--key-face);
+  border-color: #ffffff;
+  box-shadow: var(--key-shadow);
+}
+
+/* The four readings: paper tiles, the figure in the serif's lining digits. */
+html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div {
+  border-color: #fffdf7;
+  border-radius: 18px;
+  background-color: var(--color-white);
+  background-image: var(--paper-face);
+  background-size: 100% 100%;
+  box-shadow: var(--paper-shadow);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div::after {
+  content: none;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div dt > span[aria-hidden="true"] {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.6875rem;
+  letter-spacing: 0;
+  color: var(--accent-amber);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-progress dl > div dd:first-of-type {
+  font-family: "Noto Serif TC", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-black);
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) .settings-progress > a {
+  background-image: var(--paper-face);
+  border-color: #fffdf7;
+  box-shadow: var(--paper-shadow);
+}
+
+/* =====================================================================
+   Kickers
+   ===================================================================== */
+
+/* The small label over a screen's title, in brass on every screen, rather
+   than grey on some, gold on one and capitals on another. */
+html:not([data-interface-mode="yumi-cosmic"]) .cosmic-header p:has(+ h1),
+html:not([data-interface-mode="yumi-cosmic"]) [data-app-scroll-viewport] :is(p, span):has(+ h1) {
+  color: var(--accent-amber);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+/* =====================================================================
+   Yumi
+   ===================================================================== */
+
+/*
+  One Yumi (Chi, 2026-10-11). Inside the app every mark is drawn with the
+  home's material: the constellation and nebula of the flat brand mark give
+  way to a glossy tube and a lens for an eye (ExchangeNotesMark's gloss
+  finish). Same paths, so blinking, glancing, feeding and the pronunciation
+  mouth all keep working; no image, no 3D engine. "Inside the app" is any
+  page with the app's viewport on it, sheets portalled to <body> included;
+  the splash and the landing page keep the brand mark as drawn.
+*/
+html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) svg [data-mark-part="gloss"] {
+  display: inline;
+}
+
+html:not([data-interface-mode="yumi-cosmic"]) body:has([data-app-viewport]) svg :is([data-mark-part="nebula"], [data-mark-part="constellation"]) {
+  display: none;
+}

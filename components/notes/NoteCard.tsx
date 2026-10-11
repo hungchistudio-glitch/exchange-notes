@@ -42,7 +42,7 @@ export default function NoteCard({ note }: { note: Note }) {
         </span>
       </div>
 
-      <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-[0.9375rem] font-semibold leading-6 text-ink-strong">
+      <p className="tactile-serif mt-3 line-clamp-3 whitespace-pre-wrap break-words text-[0.9375rem] font-semibold leading-6 text-ink-strong">
         {note.originalText}
       </p>
 

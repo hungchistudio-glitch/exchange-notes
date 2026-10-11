@@ -25,6 +25,20 @@ const FADE_MS = 150;
 /** Where the fade starts. High enough that nothing reads as missing. */
 const FADE_FROM = 0.6;
 
+/*
+ * Standard Mode's arrival since Tactile Worlds (Chi, 2026-10-11: "換頁淡入"):
+ * the same fade, deep enough to be seen as a page arriving. Cosmic keeps the
+ * one above.
+ *
+ * Opacity only, still. A rise of a few pixels was tried and is the obvious
+ * next step, but any transform on this element makes it the containing block
+ * for every `position: fixed` inside the page for as long as it runs, so the
+ * message composer, the sheets and the floating buttons would be laid out
+ * against the page instead of the screen, and jump when it ended.
+ */
+const SETTLE_MS = 220;
+const SETTLE_FROM = 0.4;
+
 /**
  * The stage every protected route is played on.
  *
@@ -60,7 +74,7 @@ const FADE_FROM = 0.6;
  * navigation. `animate()` restarts by being called.
  */
 export default function RouteStage({ children }: { children: ReactNode }) {
-  const { modeTransition } = useInterfaceMode();
+  const { modeTransition, isCosmic } = useInterfaceMode();
   const launching = useSyncExternalStore(
     subscribeToLaunching,
     isLaunching,
@@ -100,11 +114,19 @@ export default function RouteStage({ children }: { children: ReactNode }) {
      * boundary is faded exactly once — the swap from outline to content is
      * the outline being filled in, not a second arrival.
      */
-    stage.animate([{ opacity: FADE_FROM }, { opacity: 1 }], {
-      duration: FADE_MS,
-      easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+    if (isCosmic) {
+      stage.animate([{ opacity: FADE_FROM }, { opacity: 1 }], {
+        duration: FADE_MS,
+        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+      });
+      return;
+    }
+
+    stage.animate([{ opacity: SETTLE_FROM }, { opacity: 1 }], {
+      duration: SETTLE_MS,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     });
-  }, [launching, modeTransition, pathname]);
+  }, [isCosmic, launching, modeTransition, pathname]);
 
   /*
    * One element, always. The mode change is handled by not animating during

@@ -36,37 +36,40 @@
   color: color-mix(in oklab, var(--color-black) 40%, transparent);
 }
 
-/* "Language energy chip" look: a frosted glass capsule with a soft glow
-   ring (color-coded by cookie type) and a glassy top-left highlight —
-   deliberately not a cartoon cookie, more like a small knowledge module. */
 .cookie {
   position: relative;
   width: 46px;
   height: 46px;
   border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--color-white) 65%, transparent);
+  border: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
   touch-action: none;
-  backdrop-filter: blur(6px) saturate(140%);
-  -webkit-backdrop-filter: blur(6px) saturate(140%);
   transition:
     transform 0.15s ease,
     box-shadow 0.2s ease;
 }
 
+/*
+  Tactile Worlds (Chi, 2026-10-11): the tray's cookies are the home's beads,
+  so a word looks like the same object on both screens. Letters are clear
+  glass, Zhuyin is pearl, both lit from the upper left with a contact shadow
+  on the paper. Painted once; nothing here is redrawn while a bead is
+  dragged, and the frosted backdrop-filter they had is gone with the
+  frosting (it re-blurred the ground on every frame of a drag).
+*/
 .cookie::before {
   content: "";
   position: absolute;
-  inset: 2px;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle at 30% 24%,
-    color-mix(in oklab, var(--color-white) 65%, transparent),
-    color-mix(in oklab, var(--color-white) 0%, transparent) 55%
-  );
+  left: 20%;
+  top: 11%;
+  width: 34%;
+  height: 20%;
+  border-radius: 50%;
+  background: #ffffffd9;
+  rotate: -24deg;
   pointer-events: none;
 }
 
@@ -84,46 +87,49 @@
   visibility: hidden;
 }
 
+/* Clear glass: the ground shows through, the rim catches the light. */
 .cookie--letter {
-  background: linear-gradient(
-    150deg,
-    rgba(235, 244, 251, 0.92),
-    rgba(206, 224, 240, 0.78)
-  );
-  color: var(--accent-cool);
+  background:
+    radial-gradient(circle at 32% 24%, #fffffff7 0 7%, #ffffff00 22%),
+    radial-gradient(ellipse 55% 30% at 55% 84%, #ffffffd9 0, #ffffff00 100%),
+    radial-gradient(circle at 50% 46%, #eef3f6 0 45%, #c9d6e0 74%, #8ea2b3 100%);
+  color: #4c5864;
   box-shadow:
-    0 0 0 1px rgba(143, 180, 217, 0.35) inset,
-    0 0 10px rgba(143, 180, 217, 0.4),
-    0 8px 14px color-mix(in oklab, var(--color-black) 10%, transparent);
+    inset 0 0 0 1px #ffffffcc,
+    inset 0 6px 8px -4px #5f738540,
+    0 14px 18px -10px #4a3f2a4d,
+    0 3px 5px -2px #4a3f2a33;
 }
 
+/* Pearl: warm, nearly opaque. */
 .cookie--zhuyin {
-  background: linear-gradient(
-    150deg,
-    rgba(251, 244, 227, 0.92),
-    rgba(240, 221, 184, 0.78)
-  );
-  color: var(--accent-amber-deep);
+  background:
+    radial-gradient(circle at 32% 26%, #fffffff7 0 8%, #ffffff00 26%),
+    radial-gradient(circle at 42% 38%, #fbf5e7 0%, #eadcbc 60%, #cdb88d 100%);
+  color: #6f5a35;
   box-shadow:
-    0 0 0 1px rgba(217, 183, 104, 0.35) inset,
-    0 0 10px rgba(217, 183, 104, 0.4),
-    0 8px 14px color-mix(in oklab, var(--color-black) 10%, transparent);
+    inset -4px -6px 10px #8a6d3a40,
+    inset 3px 4px 6px #ffffffa6,
+    0 14px 18px -10px #4a3f2a66,
+    0 3px 5px -2px #4a3f2a40;
 }
 
+/* Embossed: a highlight under the glyph and a shade over it. */
 .glyphText {
   position: relative;
-  font-family: ui-monospace, "SF Mono", "Menlo", monospace;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: Georgia, "Noto Sans TC", "PingFang TC", serif;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-shadow:
+    0 1px 0 #ffffff80,
+    0 -1px 0 #2f3a2333;
 }
 
-.cookie--letter .glyphText {
-  text-shadow: 0 0 7px rgba(143, 180, 217, 0.6);
-}
-
-.cookie--zhuyin .glyphText {
-  text-shadow: 0 0 7px rgba(217, 183, 104, 0.6);
+@media (prefers-contrast: more) {
+  .cookie {
+    box-shadow: inset 0 0 0 1.5px #24211b;
+  }
 }
 
 /*

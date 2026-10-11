@@ -268,7 +268,7 @@ export default function LexiconResults({
                     <LanguageOriginBadge language={sides.primary.language} size="sm" />
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.9375rem] font-semibold">
+                      <p className="tactile-serif truncate text-[0.9375rem] font-semibold">
                         {sides.primary.text}
                       </p>
                       <p className="truncate text-[0.8125rem] text-ink-soft">

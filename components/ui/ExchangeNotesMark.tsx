@@ -1,5 +1,59 @@
 import { useId } from "react";
 
+/*
+  The gloss finish's sheen: the body's path, stroked narrower and lighter
+  toward the upper left, layer over layer, so the light falls off across the
+  tube the way it does on the home's 3D Yumi instead of sitting on it as a
+  painted stripe. [width, opacity, dx, dy]
+*/
+const GLOSS_PATH = "M 300,70 Q 110,70 100,180 Q 110,320 300,320";
+const GLOSS_SHEEN = [
+  [36, 0.035, -2, -3],
+  [28, 0.04, -3, -5],
+  [21, 0.05, -4, -6.5],
+  [15, 0.06, -5, -8],
+  [10, 0.08, -6, -9.5],
+  [6, 0.11, -6.5, -10.5],
+  [2.5, 0.2, -7, -11.5],
+] as const;
+
+/**
+ * The gloss finish on Yumi's body, for any drawing of her that uses the
+ * brand geometry (here, and the pronunciation coach's face). Render it inside
+ * a mask of the body's own strokes; it is hidden until app/tactile.css shows
+ * it.
+ */
+export function YumiBodyGloss() {
+  return (
+    <g data-mark-part="gloss" display="none" fill="none" strokeLinecap="round">
+      <path
+        d={GLOSS_PATH}
+        stroke="#000000"
+        strokeOpacity="0.4"
+        strokeWidth="22"
+        transform="translate(9 13)"
+      />
+      <path
+        d={GLOSS_PATH}
+        stroke="#b8b2a6"
+        strokeOpacity="0.16"
+        strokeWidth="4"
+        transform="translate(12 19)"
+      />
+      {GLOSS_SHEEN.map(([width, opacity, dx, dy]) => (
+        <path
+          key={width}
+          d={GLOSS_PATH}
+          stroke="#ffffff"
+          strokeOpacity={opacity}
+          strokeWidth={width}
+          transform={`translate(${dx} ${dy})`}
+        />
+      ))}
+    </g>
+  );
+}
+
 type ExchangeNotesMarkProps = {
   className?: string;
   pupilClassName?: string;
@@ -65,6 +119,7 @@ export default function ExchangeNotesMark({
   const seamGradientId = `exchange-notes-seam-${idBase}`;
   const sweepGradientId = `exchange-notes-sweep-${idBase}`;
   const gleamGradientId = `exchange-notes-gleam-${idBase}`;
+  const scleraGradientId = `exchange-notes-sclera-${idBase}`;
 
   /*
    * Clamped, then mapped onto the brief's two bands: 10–18% at rest and up to
@@ -222,6 +277,15 @@ export default function ExchangeNotesMark({
           </>
         )}
 
+        {/* The gloss finish's eye: a shallow cup, so the sclera reads as a
+            lens set into the body rather than a disc painted on it. */}
+        {!cosmic && (
+          <radialGradient id={scleraGradientId} cx="0.42" cy="0.38" r="0.62">
+            <stop offset="0.55" stopColor="#000000" stopOpacity="0" />
+            <stop offset="1" stopColor="#3a342b" stopOpacity="0.32" />
+          </radialGradient>
+        )}
+
         <clipPath id={eyeClipId}>
           <circle cx="285" cy="180" r="39" />
         </clipPath>
@@ -279,6 +343,7 @@ export default function ExchangeNotesMark({
 
       <g mask={`url(#${bodyMaskId})`}>
         <ellipse
+          data-mark-part="nebula"
           cx="174"
           cy="198"
           rx="174"
@@ -356,6 +421,7 @@ export default function ExchangeNotesMark({
         )}
 
         <g
+          data-mark-part="constellation"
           fill="none"
           stroke="white"
           strokeOpacity="0.30"
@@ -369,6 +435,7 @@ export default function ExchangeNotesMark({
           <path d="M 205,91 L 216,73 M 143,132 L 126,121 M 124,246 L 105,252 M 239,314 L 252,299" />
         </g>
 
+        <g data-mark-part="constellation">
         {[
           [274, 75, 2.8],
           [238, 80, 1.7],
@@ -411,6 +478,21 @@ export default function ExchangeNotesMark({
             }
           />
         ))}
+        </g>
+
+        {/*
+          The gloss finish: the home's 3D Yumi, as paint (Tactile Worlds, Chi
+          2026-10-11). A tube lit from the upper left: the shaded side, a
+          broad sheen and a narrow specular line on the lit side, and a rim
+          of reflected light along the bottom edge. Each is the body's own
+          path, offset and held inside the body mask, so the silhouette and
+          every animation hook stay exactly where they were.
+
+          Hidden unless app/tactile.css shows it (Standard Mode, inside the
+          app), so the brand mark on the splash, the landing page and in
+          Cosmic is untouched.
+        */}
+        {!cosmic && <YumiBodyGloss />}
 
         {/*
           The scan pass, last inside the mask so it crosses everything on the
@@ -487,6 +569,17 @@ export default function ExchangeNotesMark({
           </g>
         )}
 
+        {!cosmic && (
+          <circle
+            data-mark-part="gloss"
+            display="none"
+            cx="285"
+            cy="180"
+            r="40"
+            fill={`url(#${scleraGradientId})`}
+          />
+        )}
+
         <g className={pupilClassName}>
           <circle cx="294" cy="172" r="14" fill={inkColor} />
           <circle cx="300" cy="166" r="5" fill={highlightColor} />
@@ -539,6 +632,15 @@ export default function ExchangeNotesMark({
         stroke={inkColor}
         strokeWidth="12"
       />
+
+      {/* The gloss finish on the rod and the eye's bezel: one line of light
+          each, where the upper-left light would catch a polished edge. */}
+      {!cosmic && (
+        <g data-mark-part="gloss" display="none" fill="none" strokeLinecap="round">
+          <path d="M 112,170 L 236,170" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="4" />
+          <path d="M 252,158 A 40 40 0 0 1 300,141" stroke="#ffffff" strokeOpacity="0.38" strokeWidth="3" />
+        </g>
+      )}
 
       {/*
         The illuminated ring, outside the housing.
