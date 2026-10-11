@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import type { FriendProfile } from "@/lib/friends";
 
@@ -66,6 +67,8 @@ export default function FriendPickerModal({
   onPick,
   onRetry,
 }: FriendPickerModalProps) {
+  const { t } = useTranslation();
+  const copy = t.friendPicker;
   const listRef = useRef<HTMLDivElement>(null);
   const motion = useSheetMotion({ onClose });
   const reducedMotion = useReducedMotion();
@@ -110,7 +113,7 @@ export default function FriendPickerModal({
       <div className="fixed inset-0 z-[300] flex items-end justify-center overflow-hidden overscroll-none sm:items-center">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t.common.close}
         onClick={motion.requestClose}
         className={`absolute inset-0 bg-black/30 backdrop-blur-sm ${motion.backdropClassName}`}
         {...motion.backdropProps}
@@ -146,13 +149,13 @@ export default function FriendPickerModal({
             id="send-to-partner-title"
             className="text-base font-semibold tracking-tight text-black"
           >
-            傳送給夥伴
+            {copy.title}
           </h2>
 
           <button
             type="button"
             onClick={motion.requestClose}
-            aria-label="Close"
+            aria-label={t.common.close}
             className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-black/5 hover:text-black"
           >
             <X size={15} />
@@ -202,14 +205,14 @@ export default function FriendPickerModal({
                 onClick={onRetry}
                 className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold transition-colors hover:bg-black/5"
               >
-                重試
+                {copy.retry}
               </button>
             </div>
           )}
 
           {!loading && !errorMessage && friends.length === 0 && (
             <p className="px-2 py-8 text-center text-sm text-ink-faint">
-              還沒有朋友——先加一位才能分享單字。
+              {copy.empty}
             </p>
           )}
 

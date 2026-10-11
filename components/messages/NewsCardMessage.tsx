@@ -1,5 +1,6 @@
 "use client";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 import { Volume2 } from "lucide-react";
@@ -57,6 +58,8 @@ function SpeakerButton({
 
 export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProps) {
   const { pair } = useDisplayLanguages();
+  /* The card's own labels follow the app, like every other label in it. */
+  const { t } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -109,7 +112,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
         className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
         style={{ color: "var(--msg-ink-faint)" }}
       >
-        📰 News
+        📰 {t.messages.newsCardEyebrow}
       </span>
 
       <div className="mt-1.5 flex items-start justify-between gap-2">
@@ -200,7 +203,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
             className="text-[0.625rem] font-semibold uppercase tracking-[0.14em]"
             style={{ color: "var(--msg-ink-faint)" }}
           >
-            Vocabulary / 學習單字
+            {t.messages.newsCardVocabulary}
           </span>
 
           {/*

@@ -249,6 +249,14 @@ const french: TranslationDictionary = {
     error: "Une erreur est survenue",
     clearField: "Effacer",
   },
+
+  friendPicker: {
+    title: "Envoyer à un partenaire",
+    retry: "Réessayer",
+    empty: "Pas encore d'amis. Ajoutez-en un pour commencer à partager.",
+    loginRequired: "Vous n'êtes pas connecté. Connectez-vous pour partager avec un partenaire.",
+    loadFailed: "Impossible de charger vos amis. Réessayez.",
+  },
   auth: {
     language: {
       eyebrow: "Exchange Notes",
@@ -650,6 +658,7 @@ const french: TranslationDictionary = {
     sendToFriendAriaLabel: "Envoyer à un ami",
     loginRequiredError: "Vous n'êtes pas connecté. Connectez-vous pour partager avec un partenaire.",
     loadFriendsError: "Impossible de charger vos amis. Réessayez.",
+    sendToPartnerError: "Impossible d'envoyer cet article. Réessayez.",
     loadNewsError: "Impossible de charger les actualités du jour.",
     loading: "Chargement des leçons du jour…",
     emptyTitle: "Aucune actualité disponible pour le moment",
@@ -1294,6 +1303,17 @@ const french: TranslationDictionary = {
     traditionalChinese: "Chinois traditionnel",
     youPrefix: "Vous : ",
     attachmentLabel: "Photo",
+    newsCardEyebrow: "Actualités",
+    newsCardVocabulary: "Vocabulaire",
+    sharedWordCardPreview: "A partagé une carte de vocabulaire.",
+    sharedNewsCardPreview: "A partagé un article.",
+    push: {
+      newMessage: "Vous a envoyé un nouveau message.",
+      friendRequest: "Vous a envoyé une demande d'ami.",
+      friendRequestGeneric: "Vous avez une nouvelle demande d'ami.",
+      friendAccepted: "A accepté votre demande d'ami.",
+      friendAcceptedGeneric: "Une demande d'ami a été acceptée.",
+    },
     voiceLabel: "Message vocal",
     muted: "En sourdine",
     muteConversation: "Mettre en sourdine",

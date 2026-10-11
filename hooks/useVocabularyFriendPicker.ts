@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 import { getSessionUser } from "@/lib/supabase/sessionUser";
 import { listFriends, type FriendProfile } from "@/lib/friends";
@@ -20,6 +21,8 @@ import type { VocabularyItem } from "@/lib/types/app";
 
 export default function useVocabularyFriendPicker() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { loginRequired, loadFailed } = t.friendPicker;
 
   /*
    * What is waiting to be sent, held as the card rather than as a saved
@@ -108,9 +111,7 @@ export default function useVocabularyFriendPicker() {
     const user = await getSessionUser(supabase);
 
     if (!user) {
-      setFriendsError(
-        "You're not logged in. Log in to share with a partner.",
-      );
+      setFriendsError(loginRequired);
       setFriendsLoading(false);
       friendsRequestedRef.current = false;
       return;
@@ -121,12 +122,12 @@ export default function useVocabularyFriendPicker() {
       setFriends(friendsData);
     } catch (loadError) {
       console.error("Failed to load friends:", loadError);
-      setFriendsError("Couldn't load your friends. Try again.");
+      setFriendsError(loadFailed);
       friendsRequestedRef.current = false;
     } finally {
       setFriendsLoading(false);
     }
-  }, []);
+  }, [loadFailed, loginRequired]);
 
   const retryFriends = useCallback(() => {
     friendsRequestedRef.current = false;

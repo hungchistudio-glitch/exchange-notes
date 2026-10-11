@@ -261,6 +261,15 @@ export type TranslationDictionary = {
     clearField: string;
   };
 
+  /** The sheet every "send to a partner" flow opens to pick a friend. */
+  friendPicker: {
+    title: string;
+    retry: string;
+    empty: string;
+    loginRequired: string;
+    loadFailed: string;
+  };
+
   auth: {
     language: {
       eyebrow: string;
@@ -648,6 +657,7 @@ export type TranslationDictionary = {
     sendToFriendAriaLabel: string;
     loginRequiredError: string;
     loadFriendsError: string;
+    sendToPartnerError: string;
     loadNewsError: string;
 
     loading: string;
@@ -1349,6 +1359,20 @@ export type TranslationDictionary = {
 
     youPrefix: string;
     attachmentLabel: string;
+    /** A shared news card's labels, in the reader's own language. */
+    newsCardEyebrow: string;
+    newsCardVocabulary: string;
+    /** The inbox and push preview for a card that could not be read. */
+    sharedWordCardPreview: string;
+    sharedNewsCardPreview: string;
+    /** Notifications, written in the recipient's language, not the sender's. */
+    push: {
+      newMessage: string;
+      friendRequest: string;
+      friendRequestGeneric: string;
+      friendAccepted: string;
+      friendAcceptedGeneric: string;
+    };
     voiceLabel: string;
     muted: string;
     muteConversation: string;

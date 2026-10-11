@@ -247,6 +247,14 @@ const spanish: TranslationDictionary = {
     clearField: "Borrar",
   },
 
+  friendPicker: {
+    title: "Enviar a un compañero",
+    retry: "Reintentar",
+    empty: "Aún no tienes contactos. Añade uno para empezar a compartir.",
+    loginRequired: "No has iniciado sesión. Entra para compartir con un compañero.",
+    loadFailed: "No se han podido cargar tus contactos. Inténtalo de nuevo.",
+  },
+
   auth: {
     language: {
       eyebrow: "Exchange Notes",
@@ -666,6 +674,7 @@ const spanish: TranslationDictionary = {
     sendToFriendAriaLabel: "Enviar a alguien",
     loginRequiredError: "No has iniciado sesión. Entra para compartir con tu pareja.",
     loadFriendsError: "No se han podido cargar tus contactos. Inténtalo de nuevo.",
+    sendToPartnerError: "No se ha podido enviar esta noticia. Inténtalo de nuevo.",
     loadNewsError: "No se han podido cargar las noticias del día.",
 
     loading: "Cargando las lecciones de hoy…",
@@ -1357,6 +1366,17 @@ const spanish: TranslationDictionary = {
 
     youPrefix: "Tú: ",
     attachmentLabel: "Foto",
+    newsCardEyebrow: "Noticias",
+    newsCardVocabulary: "Vocabulario",
+    sharedWordCardPreview: "Ha compartido una tarjeta de vocabulario.",
+    sharedNewsCardPreview: "Ha compartido una noticia.",
+    push: {
+      newMessage: "Te ha enviado un mensaje nuevo.",
+      friendRequest: "Te ha enviado una solicitud de amistad.",
+      friendRequestGeneric: "Tienes una nueva solicitud de amistad.",
+      friendAccepted: "Ha aceptado tu solicitud de amistad.",
+      friendAcceptedGeneric: "Han aceptado una solicitud de amistad.",
+    },
     voiceLabel: "Mensaje de voz",
     muted: "Silenciada",
     muteConversation: "Silenciar",
