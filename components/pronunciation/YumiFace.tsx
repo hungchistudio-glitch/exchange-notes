@@ -2,6 +2,7 @@
 
 import { useId, type CSSProperties } from "react";
 
+import { YumiBodyGloss } from "@/components/ui/ExchangeNotesMark";
 import useInView from "@/hooks/useInView";
 import useReducedMotion from "@/hooks/useReducedMotion";
 import {
@@ -175,6 +176,8 @@ export default function YumiFace({
   const activePose = isActive ? pose : YUMI_IDLE_POSE;
   const rawId = useId();
   const eyeClipId = `yumi-face-eye-${rawId.replace(/:/g, "")}`;
+  const bodyMaskId = `yumi-face-body-${rawId.replace(/:/g, "")}`;
+  const scleraId = `yumi-face-sclera-${rawId.replace(/:/g, "")}`;
 
   const mouth = mouthGeometry(activePose.mouth, isActive, emphasisScale);
   const tip = tongueTip(activePose);
@@ -215,6 +218,15 @@ export default function YumiFace({
           <clipPath id={eyeClipId}>
             <circle cx="285" cy="180" r="39" />
           </clipPath>
+          {/* The two arms, for the gloss finish to stay inside. */}
+          <mask id={bodyMaskId} maskUnits="userSpaceOnUse" x="40" y="25" width="310" height="340">
+            <rect x="40" y="25" width="310" height="340" fill="black" />
+            <path d="M 300,70 Q 110,70 100,180 Q 110,320 300,320" fill="none" stroke="white" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+          </mask>
+          <radialGradient id={scleraId} cx="0.42" cy="0.38" r="0.62">
+            <stop offset="0.55" stopColor="#000000" stopOpacity="0" />
+            <stop offset="1" stopColor="#3a342b" stopOpacity="0.32" />
+          </radialGradient>
         </defs>
 
         {/* Top arm — static brand geometry, unchanged from ExchangeNotesMark */}
@@ -236,6 +248,15 @@ export default function YumiFace({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+
+        {/* The home's material on the arms (Tactile Worlds), shown by
+            app/tactile.css in Standard Mode. The tongue stays flat ink: it is
+            the part being taught, and a highlight on it would read as shape.
+            The masked group is itself hidden until then, so Cosmic never
+            composites the mask while the mouth moves. */}
+        <g data-mark-part="gloss" display="none" mask={`url(#${bodyMaskId})`}>
+          <YumiBodyGloss />
+        </g>
 
         {/* Middle bar — Yumi's tongue, see the scope note above. Drawn a
             touch thicker than the static top/bottom arms (58 vs 52) so it
@@ -282,6 +303,7 @@ export default function YumiFace({
         {/* Eye — same shape/colors as ExchangeNotesMark */}
         <circle cx="285" cy="180" r="40" fill="#faf7f0" />
         <g clipPath={`url(#${eyeClipId})`}>
+          <circle data-mark-part="gloss" display="none" cx="285" cy="180" r="40" fill={`url(#${scleraId})`} />
           <g className={styles.pupil}>
             <circle cx="294" cy="172" r="14" fill="#1c1a16" />
             <circle cx="300" cy="166" r="5" fill="#ffffff" />

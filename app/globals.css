@@ -2,6 +2,7 @@
 @import "./cosmic.css";
 @import "./cosmic-settings.css";
 @import "./standard-settings.css";
+@import "./tactile.css";
 @import "./yumi-motion.css";
 
 :root {
