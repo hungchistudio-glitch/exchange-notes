@@ -168,6 +168,73 @@ describe("never left spinning", () => {
   });
 });
 
+describe("on Apple's engine", () => {
+  /*
+   * WebKit mutes a getUserMedia track once a SpeechRecognition starts beside
+   * it (bug 321436). The first quick word got through and the next sentence
+   * was recorded as silence, so on iPhone the recording runs alone.
+   */
+  beforeEach(() => {
+    vi.stubGlobal("navigator", {
+      vendor: "Apple Computer, Inc.",
+      mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [track], getAudioTracks: () => [track] })) },
+    });
+  });
+
+  it("records without starting the recogniser, every time", async () => {
+    const onAudio = vi.fn(async () => "handled" as const);
+    const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult: vi.fn(), onAudio }));
+
+    for (let round = 1; round <= 3; round += 1) {
+      await act(async () => { result.current.start(); });
+      expect(result.current.phase).toBe("listening");
+      await act(async () => { result.current.stop(); });
+      expect(result.current.phase).toBe("idle");
+    }
+
+    expect(recognizers).toHaveLength(0);
+    expect(recorders).toHaveLength(3);
+    expect(onAudio).toHaveBeenCalledTimes(3);
+  });
+
+  it("still dictates with the recogniser where nothing is being recorded", () => {
+    const onResult = vi.fn();
+    const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult }));
+    act(() => result.current.start());
+    expect(recognizers).toHaveLength(1);
+  });
+});
+
+describe("a microphone that records nothing", () => {
+  it("says it heard nothing after the quiet window instead of running for a minute", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "requestAnimationFrame", "cancelAnimationFrame", "performance"] });
+    const muted = { stop: vi.fn(), muted: true };
+    vi.stubGlobal("navigator", {
+      mediaDevices: { getUserMedia: vi.fn(async () => ({ getTracks: () => [muted], getAudioTracks: () => [muted] })) },
+    });
+    vi.stubGlobal("AudioContext", class {
+      resume = vi.fn(async () => undefined);
+      close = vi.fn(async () => undefined);
+      createMediaStreamSource() { return { connect: vi.fn() }; }
+      createAnalyser() { return { fftSize: 1024, getFloatTimeDomainData: (samples: Float32Array) => samples.fill(0) }; }
+    });
+    try {
+      const onAudio = vi.fn(async () => "handled" as const);
+      const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult: vi.fn(), onAudio }));
+      await act(async () => { result.current.start(); });
+      expect(result.current.phase).toBe("listening");
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(9_000); });
+
+      expect(result.current.phase).toBe("idle");
+      expect(result.current.notice).toBe("no-speech");
+      expect(onAudio).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("a spoken sentence is a sentence", () => {
   it("counts a short punctuated utterance as a sentence", () => {
     expect(classifyQueryKind("沒關係啦。")).toBe("sentence");

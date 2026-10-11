@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
+import { stopSpeech } from "@/lib/speech";
 
 import {
   getRecognitionConstructor,
@@ -24,6 +25,23 @@ function canRecord() {
     typeof navigator !== "undefined" &&
     Boolean(navigator.mediaDevices?.getUserMedia)
   );
+}
+
+/*
+ * Whether the browser's recogniser can caption a recording without
+ * spoiling it.
+ *
+ * Apple's engine cannot give one page's microphone to two listeners. On
+ * iOS 26 and 27 a SpeechRecognition started beside getUserMedia mutes the
+ * recording's track within a second or two and keeps it muted (WebKit bug
+ * 321436), and a recogniser left dead by a played pronunciation still holds
+ * the microphone. The first quick word got through; the next sentence was
+ * recorded as silence (Chi, 2026-10-11: "無法重複使用語音辨識"). Every
+ * browser on iOS is Apple's engine, whatever its name, so the vendor is the
+ * test. There the recording runs alone: no live caption, every word heard.
+ */
+function recognizerSharesMicrophone() {
+  return typeof navigator === "undefined" || navigator.vendor !== "Apple Computer, Inc.";
 }
 
 function endRecognition(session: { recognition: SpeechRecognitionLike | null }) {
@@ -375,7 +393,10 @@ export default function useVoiceInput({
 
       if (session.heardSpeech && now - lastSpeechAt > SILENCE_END_MS) { stopRef.current(); return; }
       if (!session.heardSpeech && now - startedAt > NO_SPEECH_MS) {
-        if (!sawSignal) { session.heardSpeech = null; writeLevel(0); return; }
+        // A muted track really is recording nothing: say so now rather
+        // than after a minute of silence.
+        const muted = stream.getAudioTracks().some(track => track.muted);
+        if (!sawSignal && !muted) { session.heardSpeech = null; writeLevel(0); return; }
         stopRef.current();
         return;
       }
@@ -385,11 +406,16 @@ export default function useVoiceInput({
   }, [writeLevel]);
 
   const start = useCallback(() => {
-    const Recognition = getRecognitionConstructor();
     const recording = records && canRecord();
+    const Recognition = recording && !recognizerSharesMicrophone()
+      ? null
+      : getRecognitionConstructor();
     if (!Recognition && !recording) return;
     cancel();
     showNotice(null);
+    // A pronunciation still playing would be recorded as the reader's words,
+    // and on iOS it holds the audio session the microphone is about to need.
+    stopSpeech();
 
     const session: Session = {
       recognition: Recognition ? new Recognition() : null,
@@ -486,6 +512,10 @@ export default function useVoiceInput({
           void finish(session);
         };
         recorder.start();
+        // Opening the microphone switches iOS's audio session, which can
+        // interrupt a context started a moment earlier; the meter would
+        // read zeros and never hear the speaker finish.
+        void session.audioContext?.resume?.().catch(() => undefined);
         meter(session, stream);
       }).catch(() => {
         if (!current()) return;
