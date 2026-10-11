@@ -24,12 +24,21 @@ function fileNameFor(audio: Blob) {
   return "speech.webm";
 }
 
+/* The route's own ceiling is 45 seconds; past that nothing is coming. */
+const CLIENT_TIMEOUT_MS = 46_000;
+
 export async function transcribeSpeech(audio: Blob): Promise<TranscribedSpeech> {
   const body = new FormData();
   body.append("audio", audio, fileNameFor(audio));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
 
   try {
-    const response = await fetch("/api/voice-lookup", { method: "POST", body });
+    const response = await fetch("/api/voice-lookup", {
+      method: "POST",
+      body,
+      signal: controller.signal,
+    });
 
     if (response.status === 429) return { outcome: "limit" };
     if (!response.ok) return { outcome: "unavailable" };
@@ -49,7 +58,10 @@ export async function transcribeSpeech(audio: Blob): Promise<TranscribedSpeech> 
 
     return { outcome: heard.failed ? "unavailable" : "unheard" };
   } catch {
-    // No connection. The caller falls back to whatever the browser heard.
+    // No connection, or no answer in time. The caller falls back to
+    // whatever the browser heard.
     return { outcome: "unavailable" };
+  } finally {
+    clearTimeout(timer);
   }
 }

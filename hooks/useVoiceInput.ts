@@ -57,6 +57,8 @@ const DICTATION_MAX_MS = 15_000;
 /* About a tenth of a second of sound above the floor before it counts as speech. */
 const SPEECH_ONSET_FRAMES = 6;
 const NOTICE_MS = 4_000;
+/* How long Stop waits for the recorder's last chunk before finishing anyway. */
+const RECORDER_STOP_GRACE_MS = 2_500;
 
 export type VoicePhase = "idle" | "listening" | "understanding";
 
@@ -268,31 +270,42 @@ export default function useVoiceInput({
     else if (!transcript) showNotice(outcome === "unheard" ? "not-understood" : "unavailable");
   }, [showNotice]);
 
+  const finishRef = useRef(finish);
+  useEffect(() => { finishRef.current = finish; }, [finish]);
+
   const stop = useCallback(() => {
     const session = sessionRef.current;
     if (!session) return;
     endRecognition(session);
 
     if (session.recorder && session.recorder.state === "recording") {
-      // onstop delivers the last chunk, then finishes.
+      // onstop delivers the last chunk, then finishes. If a recorder never
+      // says it stopped, the mic must not be left spinning for good: what
+      // was captured is sent anyway. finish() runs once either way.
       release(session);
       setPhase("understanding");
+      setTimeout(() => { void finishRef.current(session); }, RECORDER_STOP_GRACE_MS);
       return;
     }
 
     release(session);
-    if (records && !session.recorder) {
-      // Stopped before the microphone opened: there is nothing to send.
-      sessionRef.current = null;
+    if (records && session.recorder) {
+      // The recorder ended on its own (an interruption, an error) without
+      // finishing: send what it caught. A no-op if it already finished.
+      void finishRef.current(session);
+      return;
+    }
+    // Dictation keeps its session: the recogniser's final words arrive
+    // after stop() and are still the reader's. onend lets it go.
+    if (!records) {
       setPhase("idle");
       setCaption("");
       return;
     }
-    if (!records) {
-      sessionRef.current = null;
-      setPhase("idle");
-      setCaption("");
-    }
+    // Stopped before the microphone opened: there is nothing to send.
+    sessionRef.current = null;
+    setPhase("idle");
+    setCaption("");
   }, [records, release]);
 
   const stopRef = useRef(stop);
@@ -315,6 +328,14 @@ export default function useVoiceInput({
     session.heardSpeech = false;
     const samples = new Float32Array(analyser.fftSize);
     const startedAt = performance.now();
+    /*
+     * A meter that never reads anything is a broken meter, not a silent
+     * room: an AudioContext the browser left suspended hands back zeros.
+     * Trusting it would throw away a real recording as "nothing heard", so
+     * after the no-speech window it steps aside and the recording runs on
+     * until the reader taps or the minute is up.
+     */
+    let sawSignal = false;
     let floor = -1;
     let level = 0;
     let onsetFrames = 0;
@@ -326,6 +347,7 @@ export default function useVoiceInput({
       let sum = 0;
       for (let i = 0; i < samples.length; i += 1) sum += samples[i] * samples[i];
       const rms = Math.sqrt(sum / samples.length);
+      if (rms > 1e-6) sawSignal = true;
 
       /* The room's own noise, learned quickly downwards and slowly upwards,
          so a fan or a café sets the bar rather than tripping it. */
@@ -352,7 +374,11 @@ export default function useVoiceInput({
       writeLevel(level);
 
       if (session.heardSpeech && now - lastSpeechAt > SILENCE_END_MS) { stopRef.current(); return; }
-      if (!session.heardSpeech && now - startedAt > NO_SPEECH_MS) { stopRef.current(); return; }
+      if (!session.heardSpeech && now - startedAt > NO_SPEECH_MS) {
+        if (!sawSignal) { session.heardSpeech = null; writeLevel(0); return; }
+        stopRef.current();
+        return;
+      }
       session.frame = requestAnimationFrame(tick);
     };
     session.frame = requestAnimationFrame(tick);

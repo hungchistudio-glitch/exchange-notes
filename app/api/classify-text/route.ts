@@ -145,6 +145,11 @@ const TOTAL_BUDGET_MS = readBoundedInteger(
   30_000,
 );
 
+/* Sentences: see lookupWithModelFallback. 32s total leaves 13s of the 45. */
+const SENTENCE_REQUEST_TIMEOUT_MS = 24_000;
+const SENTENCE_TOTAL_BUDGET_MS = 32_000;
+const SENTENCE_HEDGE_AFTER_MS = 9_000;
+
 /*
  * Below this an attempt is a way of spending the rest of the budget on a
  * certain timeout. Four seconds is lib/ai/identifyObject.ts's floor and the
@@ -580,7 +585,14 @@ async function lookupWithModelFallback(
   const client = new GoogleGenAI({ apiKey });
 
   const startedAt = Date.now();
-  const deadline = startedAt + TOTAL_BUDGET_MS;
+  /*
+   * A sentence is a longer answer than a word — the whole text translated
+   * plus Yumi's reading of it — and a minute of speech is a lot of sentence.
+   * Measured budgets for words would cut those off and hand the reader the
+   * offline fallback, so sentences get their own, still inside maxDuration.
+   */
+  const sentence = context.kind === "sentence";
+  const deadline = startedAt + (sentence ? SENTENCE_TOTAL_BUDGET_MS : TOTAL_BUDGET_MS);
   let transientRefusal = false;
 
   /*
@@ -602,10 +614,10 @@ async function lookupWithModelFallback(
     (model, timeoutMs, signal) =>
       lookupWithModel(client, model, context, timeoutMs, signal),
     {
-      hedgeAfterMs: HEDGE_AFTER_MS,
+      hedgeAfterMs: sentence ? SENTENCE_HEDGE_AFTER_MS : HEDGE_AFTER_MS,
       deadline,
       minAttemptMs: MIN_ATTEMPT_MS,
-      maxAttemptMs: REQUEST_TIMEOUT_MS,
+      maxAttemptMs: sentence ? SENTENCE_REQUEST_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
       maxAttempts: CORE_MAX_ATTEMPTS,
     },
     (model, error, ms, timeoutMs) => {

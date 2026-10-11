@@ -152,7 +152,7 @@ export async function POST(request: Request) {
                 "- A lone word or a short name for something: just the word, no punctuation.",
                 "- Anything said as a sentence: write it as a sentence, with the capitalisation and punctuation a careful transcriber would use, including the question mark on a question.",
                 "- Write what was said, not a summary, a correction or a translation. Leave out fillers such as um and uh, and false starts the speaker corrected.",
-                "- Set confident to false if the audio is unclear, silent, or in none of those languages. Do not guess.",
+                "- Set confident to false if you could not make out what was said: silence, noise, or a language not in the list. Do not guess. A clear recording with one unclear word is still confident; write your best reading of that word.",
               ].join("\n"),
             },
             { media: { data: base64, mimeType } },

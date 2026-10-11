@@ -138,6 +138,36 @@ describe("recording the whole sentence", () => {
   });
 });
 
+describe("never left spinning", () => {
+  it("sends what it caught when a recorder never reports that it stopped", async () => {
+    vi.useFakeTimers();
+    try {
+      const onAudio = vi.fn(async () => "handled" as const);
+      const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult: vi.fn(), onAudio }));
+      await act(async () => { result.current.start(); });
+      // A recorder whose stop() hands over its data but never fires onstop.
+      recorders[0].onstop = null;
+      await act(async () => { result.current.stop(); });
+      expect(result.current.phase).toBe("understanding");
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(3_000); });
+      expect(onAudio).toHaveBeenCalledOnce();
+      expect(result.current.phase).toBe("idle");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("still takes dictation's final words when they arrive after Stop", () => {
+    const onResult = vi.fn();
+    const { result } = renderHook(() => useVoiceInput({ lang: "en-US", onResult }));
+    act(() => result.current.start());
+    act(() => result.current.stop());
+    act(() => recognizers[0].onresult?.(heard("pear", true)));
+    expect(onResult).toHaveBeenCalledExactlyOnceWith("pear");
+  });
+});
+
 describe("a spoken sentence is a sentence", () => {
   it("counts a short punctuated utterance as a sentence", () => {
     expect(classifyQueryKind("沒關係啦。")).toBe("sentence");

@@ -11,6 +11,9 @@ import { commitCapture } from "@/lib/media/assets";
 import { announceWordSaved } from "@/lib/pet/wordSaved";
 import { createClient } from "@/lib/supabase/client";
 import type { VocabularyItem } from "@/lib/types/app";
+
+/* Longer than this, a sentence is too long to be a saved phrase's example. */
+const MAX_SENTENCE_AS_EXAMPLE = 160;
 import {
   DuplicateVocabularyError,
   createVocabularyEntry,
@@ -92,10 +95,18 @@ export default function useLexiconSave({
             /*
              * The sentence the phrase was met in, which is the best example
              * sentence there could be — it is the one the reader actually
-             * read.
+             * read. Unless it was a minute of speech: then the short example
+             * the lookup wrote around this phrase, because a paragraph on
+             * the back of a review card is not an example of anything.
              */
-            termExample: entry.term,
-            translationExample: entry.translation,
+            termExample:
+              entry.term.length <= MAX_SENTENCE_AS_EXAMPLE
+                ? entry.term
+                : entry.termExample,
+            translationExample:
+              entry.term.length <= MAX_SENTENCE_AS_EXAMPLE
+                ? entry.translation
+                : entry.translationExample,
           }
         : null,
       languages,

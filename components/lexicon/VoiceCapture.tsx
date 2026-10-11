@@ -21,6 +21,8 @@ import styles from "./VoiceCapture.module.css";
 
 type Voice = ReturnType<typeof useVoiceInput>;
 
+const CAPTION_TAIL = 120;
+
 /*
  * The parts of the voice session these draw from, passed one by one: handing
  * over the whole object along with its level ref callback makes the compiler
@@ -135,6 +137,12 @@ export function VoiceCaptureStatus({
   const copy = t.lexicon.voice;
   const phase = givenPhase ?? (listening ? "listening" : "idle");
   const cosmic = tone === "cosmic";
+  /*
+   * The newest words, not the whole minute: on home the caption sits above
+   * Yumi, and a paragraph growing down the screen would run into her.
+   */
+  const shownCaption =
+    caption.length > CAPTION_TAIL ? `…${caption.slice(-CAPTION_TAIL).trimStart()}` : caption;
 
   if (phase === "idle") {
     if (!notice) return null;
@@ -183,7 +191,7 @@ export function VoiceCaptureStatus({
             phase === "understanding" ? "opacity-60" : ""
           } ${cosmic ? "text-[var(--cosmic-cyan)]" : "text-ink-strong"}`}
         >
-          {caption}
+          {shownCaption}
         </p>
       ) : null}
 
