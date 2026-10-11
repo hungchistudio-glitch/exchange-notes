@@ -24,7 +24,7 @@ import useLexiconShare from "@/hooks/lexicon/useLexiconShare";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
-import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
+import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import {
   getLanguage,
   getLanguageName,
@@ -124,6 +124,7 @@ export default function OmniLexiconConsole({
     lang: getLanguage(languagePair[0]).speechTag,
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
+    onStart: warmVoiceLookup,
   });
   const understanding = voicePhase === "understanding";
 

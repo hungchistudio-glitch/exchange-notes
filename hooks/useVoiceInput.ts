@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { useReloadHold } from "@/lib/pwa/reloadHolds";
 import { stopSpeech } from "@/lib/speech";
 
@@ -60,14 +61,16 @@ function audioContextConstructor(): typeof AudioContext | null {
 /*
  * How a recording ends without the reader having to say so.
  *
- * Two seconds of quiet after speech is the pause between one thought and
- * the next, not the breath inside a sentence, which is what the browser's
- * own end-of-speech used to cut on. A minute is longer than anyone holds a
+ * A little over a second of quiet after speech is the pause between one
+ * thought and the next, not the breath inside a sentence, which is what the
+ * browser's own end-of-speech used to cut on. It was 1.8 seconds, and every
+ * one of those milliseconds is spent before anything is sent: Chi found the
+ * whole round slow (2026-10-11). A minute is longer than anyone holds a
  * phone up to a stranger. Eight seconds with no speech at all is a
  * microphone pointed at nothing, and uploading that would spend a request
  * on silence.
  */
-const SILENCE_END_MS = 1_800;
+const SILENCE_END_MS = 1_200;
 const NO_SPEECH_MS = 8_000;
 const MAX_RECORDING_MS = 60_000;
 /* Browser-only dictation keeps the old ceiling: it ends itself on a pause. */
@@ -77,6 +80,21 @@ const SPEECH_ONSET_FRAMES = 6;
 const NOTICE_MS = 4_000;
 /* How long Stop waits for the recorder's last chunk before finishing anyway. */
 const RECORDER_STOP_GRACE_MS = 2_500;
+/*
+ * Speech, not music: 32 kb/s is plenty for a transcriber, and a quarter of
+ * what a phone records by default, so a sentence uploads in a fraction of
+ * the time on a mobile connection. The model hears the same thing either
+ * way; it bills audio by the second, not the byte.
+ */
+const SPEECH_BITS_PER_SECOND = 32_000;
+
+function createRecorder(stream: MediaStream) {
+  try {
+    return new MediaRecorder(stream, { audioBitsPerSecond: SPEECH_BITS_PER_SECOND });
+  } catch {
+    return new MediaRecorder(stream);
+  }
+}
 
 export type VoicePhase = "idle" | "listening" | "understanding";
 
@@ -138,9 +156,12 @@ export default function useVoiceInput({
   lang,
   onResult,
   onAudio,
+  onStart,
 }: {
   lang: string;
   onResult: (transcript: string) => void;
+  /** Called as a recording opens: a moment to get ready for what it will need. */
+  onStart?: () => void;
   onAudio?: (
     audio: Blob,
     context: { transcript: string },
@@ -177,8 +198,10 @@ export default function useVoiceInput({
   const sessionRef = useRef<Session | null>(null);
   const onResultRef = useRef(onResult);
   const onAudioRef = useRef(onAudio);
+  const onStartRef = useRef(onStart);
   useEffect(() => { onResultRef.current = onResult; }, [onResult]);
   useEffect(() => { onAudioRef.current = onAudio; }, [onAudio]);
+  useEffect(() => { onStartRef.current = onStart; }, [onStart]);
 
   const levelTargets = useRef(new Set<HTMLElement>());
   const writeLevel = useCallback((level: number) => {
@@ -416,6 +439,7 @@ export default function useVoiceInput({
     // A pronunciation still playing would be recorded as the reader's words,
     // and on iOS it holds the audio session the microphone is about to need.
     stopSpeech();
+    if (recording) onStartRef.current?.();
 
     const session: Session = {
       recognition: Recognition ? new Recognition() : null,
@@ -451,19 +475,20 @@ export default function useVoiceInput({
           if (result.isFinal) finals += result[0].transcript;
           else interim += result[0].transcript;
         }
+        // A recogniser asked for zh-TW still writes Simplified.
         if (recording) {
-          session.transcript = finals;
-          setCaption(`${finals}${interim}`.trim());
+          session.transcript = tidyChinese(finals);
+          setCaption(tidyChinese(`${finals}${interim}`.trim()));
           return;
         }
         let transcript = "";
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
           if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
         }
-        setCaption(`${finals}${interim}`.trim());
+        setCaption(tidyChinese(`${finals}${interim}`.trim()));
         if (transcript.trim()) {
           session.submitted = true;
-          onResultRef.current(transcript.trim());
+          onResultRef.current(tidyChinese(transcript.trim()));
         }
       };
       recognition.onerror = event => {
@@ -503,7 +528,7 @@ export default function useVoiceInput({
         // Permission can arrive after Stop, navigation, or another recording.
         if (!current() || session.stopped) { stream.getTracks().forEach(track => track.stop()); return; }
         session.stream = stream;
-        const recorder = new MediaRecorder(stream);
+        const recorder = createRecorder(stream);
         session.recorder = recorder;
         recorder.ondataavailable = event => { if (event.data.size > 0) session.chunks.push(event.data); };
         recorder.onstop = () => {

@@ -35,7 +35,7 @@ import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import useVoiceInput, { type VoiceAudioOutcome } from "@/hooks/useVoiceInput";
 import { getLanguage, getLanguageName } from "@/lib/languages";
-import { transcribeSpeech } from "@/lib/lexicon/voiceLookup";
+import { transcribeSpeech, warmVoiceLookup } from "@/lib/lexicon/voiceLookup";
 import type { VocabularyItem } from "@/lib/types/app";
 import { insertValues } from "@/lib/utils";
 
@@ -170,6 +170,7 @@ export default function LexiconSearchSheet({
     lang: getLanguage(pair[0]).speechTag,
     onResult: (transcript) => search.submit(transcript, "voice"),
     onAudio: handleAudio,
+    onStart: warmVoiceLookup,
   });
 
   if (!motion.rendered) return null;

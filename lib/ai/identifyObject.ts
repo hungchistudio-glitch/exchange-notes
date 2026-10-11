@@ -24,6 +24,7 @@ import {
   getVisionModelCandidates,
   readBoundedInteger,
 } from "@/lib/ai/modelConfig";
+import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
 
 export type ObjectIdentificationResult = {
   term: string;
@@ -347,7 +348,10 @@ async function identifyWithModel(
     timeoutMs: timeoutMs,
   });
 
-  const result = JSON.parse(stripJsonCodeFence(outputText)) as unknown;
+  // Traditional whatever the model wrote (lib/chinese/tidyChinese.ts).
+  const result = tidyChineseDeep(
+    JSON.parse(stripJsonCodeFence(outputText)) as unknown,
+  );
   if (!isObjectIdentificationResult(result)) {
     throw new Error("Gemini returned an invalid object result.");
   }

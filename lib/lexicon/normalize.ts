@@ -1,3 +1,4 @@
+import { tidyChinese } from "@/lib/chinese/tidyChinese";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 
 /* =========================================================
@@ -28,9 +29,14 @@ import { getLanguage, type LanguageCode } from "@/lib/languages";
  * phone keyboard in a CJK locale, where a full-width Latin letter is an
  * ordinary thing to type by accident. NFKC folds those to their normal
  * forms; NFC leaves "ｍｏｗ" as a word the dictionary has never heard of.
+ *
+ * Chinese then comes out Traditional, unspaced and with Chinese punctuation
+ * (lib/chinese/tidyChinese.ts), whoever wrote it: a keyboard, a browser's
+ * recogniser, or the model that transcribed a recording.
  */
 export function normalizeQuery(value: string): string {
-  return value.normalize("NFKC").trim().replace(/\s+/g, " ");
+  // Chinese last, because NFKC is what turns its ，？ into ,? in the first place.
+  return tidyChinese(value.normalize("NFKC").trim().replace(/\s+/g, " "));
 }
 
 /**

@@ -135,10 +135,16 @@ describe("what the heaviest tabs drag in with them", () => {
    * recording into text, and Yumi's reading of a sentence under its
    * translation. All four render from home's own search field, none imports
    * anything home does not already load.
+   * Raised home 168 → 171 and vocabulary 159 → 160 (2026-10-11): only
+   * Traditional Chinese (Chi: "只能有繁體中文"). Every query is tidied to
+   * Traditional where it is normalised (lib/lexicon/normalize.ts), which
+   * brings the character table, its word list and the tidy step into home;
+   * vocabulary already had the table. Data and pure functions, no imports
+   * beyond each other.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 159],
-    ["home", TABS.home, 168],
+    ["vocabulary", TABS.vocabulary, 160],
+    ["home", TABS.home, 171],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

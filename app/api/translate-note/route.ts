@@ -14,6 +14,7 @@ import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
 
 import { generateJson } from "@/lib/ai/modelRequest";
 import { tryModels } from "@/lib/ai/tryModels";
+import { tidyChineseDeep } from "@/lib/chinese/tidyChinese";
 export const runtime = "nodejs";
 
 /*
@@ -163,7 +164,10 @@ export async function POST(request: Request) {
           timeoutMs,
         });
 
-        return JSON.parse(stripJsonCodeFence(outputText)) as TranslateResult;
+        // Traditional whatever the model wrote (lib/chinese/tidyChinese.ts).
+        return tidyChineseDeep(
+          JSON.parse(stripJsonCodeFence(outputText)),
+        ) as TranslateResult;
       },
       { deadline: startedAt + ROUTE_BUDGET_MS },
     );
