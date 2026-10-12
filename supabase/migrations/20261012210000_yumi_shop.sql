@@ -2,10 +2,10 @@
 -- and the only three ways to change either.
 --
 -- Energy cookies are counted, never stored. A reader has earned one for
--- every word in yumi_pet_state.fed_word_ids that is still in their library,
--- so the number cannot be raised by writing to a column, and feeding Yumi is
--- unchanged. Spending is its own ledger here: buying a piece never touches a
--- word, a review or Yumi's feeding history.
+-- every word saved in their library (Chi, 2026-10-12: saved words, not the
+-- ones fed to Yumi), so the number cannot be raised by writing to a column.
+-- Spending is its own ledger here: buying a piece never touches a word, a
+-- review or Yumi's feeding.
 --
 -- The browser is never trusted with a price. Every write goes through a
 -- function that locks the reader's wardrobe row first, so two taps, two tabs
@@ -155,12 +155,9 @@ stable
 security definer
 set search_path = ''
 as $$
-  select count(distinct item.id)::integer
-  from public.yumi_pet_state as pet
-  join public.vocabulary_items as item
-    on item.user_id = pet.user_id
-   and item.id = any(pet.fed_word_ids)
-  where pet.user_id = p_user_id;
+  select count(*)::integer
+  from public.vocabulary_items as item
+  where item.user_id = p_user_id;
 $$;
 
 create or replace function private.yumi_wardrobe_state(p_user_id uuid)
@@ -394,6 +391,6 @@ grant execute on function public.buy_yumi_item(text) to authenticated;
 grant execute on function public.wear_yumi_outfit(jsonb) to authenticated;
 
 comment on function public.buy_yumi_item(text) is
-  'Buys one Yumi shop piece with energy cookies (fed words still in the library, minus cookies already spent). Locks the caller''s wardrobe row; never charges twice or below zero.';
+  'Buys one Yumi shop piece with energy cookies (words saved in the library, minus cookies already spent). Locks the caller''s wardrobe row; never charges twice or below zero.';
 comment on function public.wear_yumi_outfit(jsonb) is
   'Saves what Yumi wears. Accepts only pieces the caller owns, each in its own slot.';

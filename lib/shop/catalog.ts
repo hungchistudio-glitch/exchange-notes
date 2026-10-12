@@ -45,7 +45,7 @@ export type ShopItem = {
   id: string;
   country: ShopCountry;
   slot: ShopSlot;
-  /** In energy cookies. One word Yumi has eaten is one cookie. */
+  /** In energy cookies. One saved word is one cookie. */
   price: number;
   /** Swatch colour while a rendered thumbnail is not available. */
   tone: string;

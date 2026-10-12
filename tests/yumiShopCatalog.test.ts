@@ -61,6 +61,11 @@ describe("the catalogue", () => {
     const rows = [...sql.matchAll(/\('([a-z-]+)', '([a-z]+)', (\d+)\)/g)]
       .map(([, id, slot, price]) => ({ id, slot, price: Number(price) }));
     expect(rows).toEqual(SHOP_ITEMS.map(({ id, slot, price }) => ({ id, slot, price })));
+
+    // One saved word, one cookie (Chi, 2026-10-12) — not the words fed to Yumi.
+    const earned = sql.slice(sql.indexOf("function private.yumi_cookies_earned"), sql.indexOf("function private.yumi_wardrobe_state"));
+    expect(earned).toContain("from public.vocabulary_items");
+    expect(earned).not.toContain("fed_word_ids");
   });
 });
 

@@ -2481,7 +2481,7 @@ export type TranslationDictionary = {
     wearingNow: string;
     shortOne: string;
     shortOther: string;
-    feedYumi: string;
+    saveWords: string;
     confirmTitle: string;
     confirmBody: string;
     confirmBuy: string;

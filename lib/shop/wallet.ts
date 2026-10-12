@@ -5,11 +5,10 @@ import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
 /* =========================================================
    Energy cookies, and what they have bought
 
-   One word Yumi has eaten is one cookie: the earned side is counted by the
-   database from the words in yumi_pet_state.fed_word_ids that are still in
-   the reader's library, so it cannot be raised by writing a number, and
-   feeding is unchanged. Spending is a separate ledger (yumi_wardrobe), so a
-   purchase never touches a word, a review or Yumi's feeding history.
+   One saved word is one cookie (Chi, 2026-10-12): the earned side is
+   counted by the database from the reader's library, so it cannot be raised
+   by writing a number. Spending is a separate ledger (yumi_wardrobe), so a
+   purchase never touches a word, a review or Yumi's feeding.
 
    Every write goes through a database function that locks the reader's row
    (supabase/migrations/*_yumi_shop.sql): two taps, two tabs or two devices

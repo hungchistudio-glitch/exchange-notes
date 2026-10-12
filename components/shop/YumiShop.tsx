@@ -396,7 +396,8 @@ export default function YumiShop({
             {copy.resetOutfit}
           </button>
           {shortBy > 0 && !preview ? (
-            <Link href="/home" className={styles.primary}>{copy.feedYumi}</Link>
+            // Words are saved from the home screen's search and camera.
+            <Link href="/home" className={styles.primary}>{copy.saveWords}</Link>
           ) : (
             <button
               type="button"
