@@ -34,6 +34,8 @@ vi.mock("@/lib/yumi3d/thumbnails", () => ({
   cachedThumbnail: () => undefined,
   requestThumbnails: () => {},
   subscribeToThumbnails: () => () => {},
+  shippedThumbnail: (id: string) => `/shop-thumbs/${id}.webp`,
+  pauseThumbnails: () => {},
 }));
 
 const { default: YumiShop } = await import("@/components/shop/YumiShop");

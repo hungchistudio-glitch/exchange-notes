@@ -7,6 +7,7 @@ import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import type { Scene } from "@/lib/shop/atmosphere";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
+import { pauseThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import ShopAtmosphere from "./ShopAtmosphere";
 import styles from "./YumiShop.module.css";
@@ -37,6 +38,11 @@ export type ShopStageLabels = {
   zoomOut: string;
   unavailable: string;
 };
+
+/** Full frame rate for a while: she is being handled, or easing after it. */
+function wake(until: { current: number }, ms = 1600) {
+  until.current = performance.now() + ms;
+}
 
 const ZOOM_MIN = 0.7;
 const ZOOM_MAX = 1.8;
@@ -69,6 +75,9 @@ export default function ShopStage({
   const pinch = useRef(0);
   /* A drag's horizontal speed, handed to the sky as wind. */
   const gust = useRef(0);
+  /* Until when she is being handled (or easing after it): full frame rate.
+     At rest she only blinks, and every other frame is plenty. */
+  const activeUntil = useRef(0);
   const [live, setLive] = useState(false);
   const [failed, setFailed] = useState(false);
   const [turned, setTurned] = useState(false);
@@ -80,6 +89,7 @@ export default function ShopStage({
   useEffect(() => {
     outfitRef.current = outfit;
     handleRef.current?.setOutfit?.(outfit);
+    wake(activeUntil);
   }, [outfit]);
 
   useEffect(() => {
@@ -113,16 +123,19 @@ export default function ShopStage({
       handle.frame(now);
     };
 
+    let frame = 0;
     const loop = (now: number) => {
       if (cancelled || !handle) return;
-      if (onScreen && !document.hidden) loopOnce(now);
+      frame += 1;
+      const busy = now < activeUntil.current;
+      if (onScreen && !document.hidden && (busy || frame % 2 === 0)) loopOnce(now);
       raf = requestAnimationFrame(loop);
     };
 
     void import("@/lib/yumi3d/scene")
       .then(({ createYumiScene }) => {
         if (cancelled) return;
-        handle = createYumiScene(canvas, { inspect: true, reducedMotion: reduced });
+        handle = createYumiScene(canvas, { inspect: true, reducedMotion: reduced, maxPixelRatio: 1.5 });
         if (!handle) {
           setFailed(true);
           return;
@@ -159,14 +172,17 @@ export default function ShopStage({
       window.removeEventListener("resize", onResize);
       handleRef.current = null;
       handle?.dispose();
+      pauseThumbnails(false);
     };
   }, []);
 
   function zoomBy(factor: number) {
+    wake(activeUntil, 600);
     zoomRef.current = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoomRef.current * factor));
   }
 
   function turnTo(next: YumiView) {
+    wake(activeUntil);
     setView(next);
     handleRef.current?.setView?.(next);
   }
@@ -184,6 +200,9 @@ export default function ShopStage({
   function onPointerDown(event: PointerEvent<HTMLCanvasElement>) {
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    // Her frames first while she is in hand; the catalogue's pictures wait.
+    activeUntil.current = Number.POSITIVE_INFINITY;
+    pauseThumbnails(true);
     if (pointers.current.size === 1) {
       handleRef.current?.pointerDown(event.clientX, event.clientY);
     } else {
@@ -213,6 +232,10 @@ export default function ShopStage({
     const wasSingle = pointers.current.size === 1;
     pointers.current.delete(event.pointerId);
     if (wasSingle) handleRef.current?.pointerUp();
+    if (pointers.current.size === 0) {
+      wake(activeUntil, 1800); // the flick's inertia
+      pauseThumbnails(false);
+    }
     if (pointers.current.size < 2) pinch.current = 0;
   }
 
@@ -229,6 +252,7 @@ export default function ShopStage({
     };
     if (turns[event.key]) {
       event.preventDefault();
+      wake(activeUntil);
       handleRef.current?.rotateBy?.(...turns[event.key]);
       setView(null);
     } else if (event.key === "+" || event.key === "=") {

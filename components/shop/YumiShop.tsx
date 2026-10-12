@@ -14,7 +14,6 @@ import { fill, plural } from "@/lib/i18n/format";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
   SHOP_COUNTRIES,
-  SHOP_ITEMS,
   itemsFor,
   ownedOnly,
   sameOutfit,
@@ -40,11 +39,11 @@ import {
 } from "@/lib/shop/useShopWeather";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
-import { cachedThumbnail, requestThumbnails, subscribeToThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import EnergyCookie from "./EnergyCookie";
 import ShopScenePicker from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
+import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -125,7 +124,6 @@ export default function YumiShop({
         : dayPartAt(new Date(quarter)) === "night"
           ? sky.night
           : sky.seasons[seasonAt(new Date(quarter))];
-  const [, setThumbVersion] = useState(0);
   const pageRef = useRef<HTMLDivElement>(null);
 
   // ----------------------------------------------------------- loading
@@ -146,18 +144,12 @@ export default function YumiShop({
     return () => { cancelled = true; };
   }, [wallet, preview, attempt]);
 
-  // -------------------------------------------------------- thumbnails
+  // --------------------------------------------------------- catalogue
   const shown = useMemo(
     () => itemsFor(category, country, new Set(state.owned)),
     [category, country, state.owned],
   );
 
-  useEffect(() => subscribeToThumbnails(() => setThumbVersion(v => v + 1)), []);
-  useEffect(() => {
-    // What is on screen first, then the rest of the catalogue behind it.
-    requestThumbnails(shown.map(item => item.id));
-    requestThumbnails(SHOP_ITEMS.map(item => item.id));
-  }, [shown]);
 
   // ------------------------------------------------- the stand shrinking
   useEffect(() => {
@@ -388,16 +380,10 @@ export default function YumiShop({
             {shown.map(item => {
               const trying = draft[item.slot] === item.id;
               const wearing = worn[item.slot] === item.id;
-              const thumb = cachedThumbnail(item.id);
               return (
                 <li key={item.id}>
                   <button type="button" className={styles.card} aria-pressed={trying} onClick={() => tryOn(item)}>
-                    <span className={styles.thumb} aria-hidden="true">
-                      {thumb
-                        // eslint-disable-next-line @next/next/no-img-element -- a blob URL rendered on this device
-                        ? <img src={thumb} alt="" draggable={false} />
-                        : <span className={styles.swatch} style={{ background: item.tone }} />}
-                    </span>
+                    <ShopThumb item={item} className={styles.thumb} />
                     {(trying || wearing) && (
                       <span className={styles.tag} data-wearing={wearing && trying ? "true" : "false"}>
                         {wearing && trying ? copy.wearing : copy.tryingOn}
@@ -423,12 +409,7 @@ export default function YumiShop({
         <div className={styles.barItem}>
           {selected ? (
             <>
-              <span className={styles.barThumb} aria-hidden="true">
-                {cachedThumbnail(selected.id)
-                  // eslint-disable-next-line @next/next/no-img-element -- a blob URL rendered on this device
-                  ? <img src={cachedThumbnail(selected.id)} alt="" />
-                  : <span className={styles.swatch} style={{ background: selected.tone }} />}
-              </span>
+              <ShopThumb item={selected} className={styles.barThumb} />
               <span className={styles.barText}>
                 <span className={styles.barName}>{name(selected)}</span>
                 <span className={styles.barPrice}>

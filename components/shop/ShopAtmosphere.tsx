@@ -154,7 +154,8 @@ export default function ShopAtmosphere({
 
     function resize() {
       const rect = box!.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      // Soft shapes on a soft sky: 1.25 device pixels is indistinguishable and cheaper.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const w = Math.max(1, Math.round(rect.width));
       const h = Math.max(1, Math.round(rect.height));
       if (w === width && h === height) return;
@@ -238,12 +239,23 @@ export default function ShopAtmosphere({
       ctx!.restore();
     }
 
-    function glow(x: number, y: number, r: number, colour: string, alpha: number) {
-      const g = ctx!.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, colour.replace("A", String(alpha)));
-      g.addColorStop(1, colour.replace("A", "0"));
-      ctx!.fillStyle = g;
-      ctx!.fillRect(x - r, y - r, r * 2, r * 2);
+    /* A firefly's glow, painted once and stamped, rather than a new radial
+       gradient for every firefly on every frame. */
+    const glowSprite = document.createElement("canvas");
+    glowSprite.width = glowSprite.height = 64;
+    const sprite = glowSprite.getContext("2d");
+    if (sprite) {
+      const g = sprite.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, "rgba(255,226,120,1)");
+      g.addColorStop(1, "rgba(255,226,120,0)");
+      sprite.fillStyle = g;
+      sprite.fillRect(0, 0, 64, 64);
+    }
+    function glow(x: number, y: number, r: number, alpha: number) {
+      if (alpha <= 0.01) return;
+      ctx!.globalAlpha = alpha;
+      ctx!.drawImage(glowSprite, x - r, y - r, r * 2, r * 2);
+      ctx!.globalAlpha = 1;
     }
 
     function draw(dt: number) {
@@ -320,7 +332,7 @@ export default function ShopAtmosphere({
           if (p.x < 0) p.x = width;
           if (p.x > width) p.x = 0;
           const a = Math.max(0, Math.sin(t * 1.6 + p.phase));
-          glow(p.x, p.y, 10 * p.size, "rgba(255,226,120,A)", 0.55 * a);
+          glow(p.x, p.y, 10 * p.size, 0.55 * a);
           ctx!.fillStyle = `rgba(255,244,190,${0.9 * a})`;
           ctx!.beginPath();
           ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);

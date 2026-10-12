@@ -53,9 +53,10 @@
   height: 120%;
   background: repeating-conic-gradient(from 200deg at 78% 50%, #fff6d800 0deg 8deg, #fff6d866 10deg 13deg, #fff6d800 15deg 26deg);
   mask-image: radial-gradient(circle at 78% 50%, #000 0 12%, #0000 62%);
+  /* Still, and breathing in opacity only: a masked layer this size turning
+     every frame was a repaint a phone could feel (Chi: "動畫很卡"). */
   opacity: 0.7;
-  animation: turn 60s linear infinite;
-  transform-origin: 78% 50%;
+  animation: glow 9s ease-in-out infinite;
 }
 
 .atmosphere[data-cosmic="true"] .rays {
@@ -83,6 +84,7 @@
 .cloud {
   position: absolute;
   left: 0;
+  will-change: transform;
   width: 34%;
   max-width: 190px;
   fill: var(--cloud);
@@ -168,8 +170,9 @@
   to { transform: translateX(8%); }
 }
 
-@keyframes turn {
-  to { transform: rotate(360deg); }
+@keyframes glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
 }
 
 @keyframes breathe {
