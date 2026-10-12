@@ -95,7 +95,9 @@ describe("profile settings persistence", () => {
     expect(nativeRow()).toHaveTextContent("English");
     expect(learningRow()).toHaveTextContent("繁體中文");
     expect(learningRow()).toBeEnabled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Save unavailable");
+    // The reader's language, not the database's message.
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not update profile. Please try again.");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Save unavailable");
   });
 
   it("shows sign-out failure without deleting offline data and permits retry", async () => {

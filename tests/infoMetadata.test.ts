@@ -67,6 +67,7 @@ describe("metadata for the pages a signed-out reader can open", () => {
     expect(openGraph.title).toBe(
       `${getTranslations("english")!.info.nav.about} · Exchange Notes`,
     );
-    expect(openGraph.locale).toBe("en");
+    // Open Graph's own form, language_TERRITORY, not the document's "en".
+    expect(openGraph.locale).toBe("en_US");
   });
 });
