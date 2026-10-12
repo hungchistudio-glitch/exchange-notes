@@ -45,7 +45,9 @@ import styles from "./TutorialCoach.module.css";
      1. Home            — Standard: pull her eye, look up, keep, feed.
      2. Around the app  — Vocabulary, Review, Messages, Notes, Discover,
                           Settings.
-     3. The other look  — the reader switches to Cosmic themselves, with
+     3. Yumi's shop     — where cookies come from, trying a piece on, and
+                          how buying works.
+     4. The other look  — the reader switches to Cosmic themselves, with
                           the switch at the top of Home (the one they will
                           use from then on), and is shown what is different:
                           the six systems, OmniLexicon, Menu Translator,
@@ -53,7 +55,7 @@ import styles from "./TutorialCoach.module.css";
 
    and ends by asking which look to start in, and taking them there.
 
-   Chapters rather than one count, because fifteen steps in a row is a tour
+   Chapters rather than one count, because nineteen steps in a row is a tour
    people skip at step four. "Chapter 2 · 3/5" is a short thing to finish;
    "9 of 15" is not.
 
@@ -64,7 +66,7 @@ import styles from "./TutorialCoach.module.css";
    waking up, is in the way of the very thing it wants the reader to see.
    ========================================================= */
 
-type Chapter = "home" | "pages" | "cosmic";
+type Chapter = "home" | "pages" | "shop" | "cosmic";
 
 type StepKey =
   | "meet"
@@ -77,6 +79,9 @@ type StepKey =
   | "notes"
   | "discover"
   | "settings"
+  | "cookies"
+  | "tryOn"
+  | "buy"
   | "modeSwitch"
   | "deck"
   | "omni"
@@ -125,6 +130,17 @@ export const COACH_STEPS: readonly Step[] = [
   { key: "settings", chapter: "pages", route: "/profile", mode: STANDARD },
 
   /*
+   * The shop, before the other look (Chi, 2026-10-12: "在最後的模式切換教學前
+   * 教商店及如何賺取 cookie 及購買"). Where cookies come from is said on
+   * Home, pointing at the shop key in the corner; then, in the shop, the
+   * reader tries something on themselves, and is told how buying works
+   * rather than made to spend.
+   */
+  { key: "cookies", chapter: "shop", route: "/home", mode: STANDARD },
+  { key: "tryOn", chapter: "shop", route: "/shop", mode: STANDARD, awaits: ["shop-tried"] },
+  { key: "buy", chapter: "shop", route: "/shop", mode: STANDARD },
+
+  /*
    * The reader makes the switch, with the real control, and the step waits
    * for the mode to actually change. It is the one thing in chapter three
    * worth remembering: where the switch is, for the next time they want it.
@@ -143,7 +159,7 @@ export const COACH_STEPS: readonly Step[] = [
   { key: "choose", chapter: "cosmic" },
 ];
 
-const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, cosmic: 3 };
+const CHAPTER_NUMBER: Record<Chapter, number> = { home: 1, pages: 2, shop: 3, cosmic: 4 };
 
 /** The screens the coach speaks on. Everything else, it steps aside. */
 const MAIN_SCREENS = new Set(
@@ -376,14 +392,18 @@ export default function TutorialCoach({
 
   /* Home keeps the strip at the top, above Yumi; everywhere else it sits
      above the dock, clear of each screen's own header and back button. The
-     switch step goes to the foot of Home, because the top corner it would
-     cover on a phone is the switch it points at. */
+     switch and cookie steps go to the foot of Home, because the top corner
+     they would cover on a phone holds the switch and the shop key they point
+     at. The shop keeps it at the top too: its own bar stands where the dock
+     would. */
   const placement =
-    pathname !== "/home"
-      ? ` ${styles.docked}`
-      : current.key === "modeSwitch"
-        ? ` ${styles.switchStep}`
-        : "";
+    pathname === "/shop"
+      ? ""
+      : pathname !== "/home"
+        ? ` ${styles.docked}`
+        : current.key === "modeSwitch" || current.key === "cookies"
+          ? ` ${styles.switchStep}`
+          : "";
 
   const finish = (mode: InterfaceMode) => {
     setCoachStep(COACH_FINISHED);

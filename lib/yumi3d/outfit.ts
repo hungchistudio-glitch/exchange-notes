@@ -427,9 +427,12 @@ const SHELL_FINISHES: Record<string, ShellFinish> = {
   },
   trencadis: {
     color: 0xffffff, metalness: 0, roughness: 0.18, clearcoat: 0.9, clearcoatRoughness: 0.06,
-    map: () => paint(512, 256, 97, (ctx, rand, w, h) => {
+    /* Half size: a nearest-cell pass over every pixel is the one costly
+       texture here, and on a phone it ran once per wear and once per
+       thumbnail. The tiles are large enough not to need the detail. */
+    map: () => paint(256, 128, 97, (ctx, rand, w, h) => {
       // Broken tile: nearest-point cells, with grout where two cells meet.
-      const points = Array.from({ length: 90 }, () => [rand() * w, rand() * h]);
+      const points = Array.from({ length: 60 }, () => [rand() * w, rand() * h]);
       const palette = [[44, 88, 160], [243, 241, 234], [127, 168, 216], [36, 70, 132], [233, 194, 74]];
       const colours = points.map(() => palette[rand() > 0.93 ? 4 : Math.floor(rand() * 4)]);
       const image = ctx.createImageData(w, h);
@@ -446,7 +449,7 @@ const SHELL_FINISHES: Record<string, ShellFinish> = {
             const d = dx * dx + dy * dy;
             if (d < best) { second = best; best = d; index = i; } else if (d < second) second = d;
           }
-          const grout = Math.sqrt(second) - Math.sqrt(best) < 2.2;
+          const grout = Math.sqrt(second) - Math.sqrt(best) < 1.4;
           const c = grout ? [214, 210, 200] : colours[index];
           const o = (y * w + x) * 4;
           image.data[o] = c[0]; image.data[o + 1] = c[1]; image.data[o + 2] = c[2]; image.data[o + 3] = 255;

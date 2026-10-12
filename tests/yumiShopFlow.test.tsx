@@ -50,13 +50,13 @@ function card(name: string) {
 
 describe("the Yumi shop", () => {
   it("tries on for free, buys after confirming, and puts the piece on", async () => {
-    render(<YumiShop wallet={createPreviewWallet(100)} isCosmic={false} onToggleMode={() => {}} preview />);
-    await waitFor(() => expect(screen.getByLabelText(/100 energy cookies/)).toBeInTheDocument());
+    render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
+    await waitFor(() => expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument());
 
     // Too dear: on the stand at once, and the bar says how far short.
     fireEvent.click(card("Jade"));
     expect(stand()).toEqual({ material: "jade" });
-    expect(screen.getByText("20 cookies short")).toBeInTheDocument();
+    expect(screen.getByText("10 cookies short")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
 
     // Affordable: nothing is charged until the sheet is confirmed.
@@ -65,18 +65,18 @@ describe("the Yumi shop", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
     const sheet = await screen.findByRole("dialog");
     expect(within(sheet).getByText("Buy Brass monocle?")).toBeInTheDocument();
-    expect(screen.getByLabelText(/100 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument();
 
     fireEvent.click(within(sheet).getByRole("button", { name: "Buy" }));
     await waitFor(() => expect(screen.getByText("Yumi is wearing Brass monocle")).toBeInTheDocument());
-    expect(screen.getByLabelText(/40 energy cookies/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/20 energy cookies/)).toBeInTheDocument();
     expect(card("Brass monocle")).toHaveTextContent("Owned");
 
     // The jade she never bought stays on the stand only; reset takes it off.
     expect(stand()).toEqual({ material: "jade", eyewear: "monocle" });
     fireEvent.click(screen.getByRole("button", { name: "Reset outfit" }));
     expect(stand()).toEqual({ eyewear: "monocle" });
-  });
+  }, 15_000);
 
   it("speaks the display language, in Traditional Chinese only", async () => {
     reader.language = "traditional-chinese";

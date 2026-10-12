@@ -55,13 +55,19 @@ describe("the catalogue", () => {
 
   it("charges in the database exactly what the shop shows", () => {
     const dir = join(process.cwd(), "supabase/migrations");
-    const file = readdirSync(dir).find(name => name.endsWith("_yumi_shop.sql"));
-    expect(file).toBeDefined();
-    const sql = readFileSync(join(dir, file!), "utf8");
-    const rows = [...sql.matchAll(/\('([a-z-]+)', '([a-z]+)', (\d+)\)/g)]
-      .map(([, id, slot, price]) => ({ id, slot, price: Number(price) }));
-    expect(rows).toEqual(SHOP_ITEMS.map(({ id, slot, price }) => ({ id, slot, price })));
+    // The shop's migrations in order, the later price of a piece replacing the earlier.
+    const files = readdirSync(dir).filter(name => /_yumi_shop(_\w+)?\.sql$/.test(name)).sort();
+    expect(files.length).toBeGreaterThan(0);
+    const prices = new Map<string, { id: string; slot: string; price: number }>();
+    for (const name of files) {
+      for (const [, id, slot, price] of readFileSync(join(dir, name), "utf8").matchAll(/\('([a-z-]+)', '([a-z]+)', (\d+)\)/g)) {
+        prices.set(id, { id, slot, price: Number(price) });
+      }
+    }
+    expect([...prices.values()].sort((a, b) => a.id.localeCompare(b.id)))
+      .toEqual(SHOP_ITEMS.map(({ id, slot, price }) => ({ id, slot, price })).sort((a, b) => a.id.localeCompare(b.id)));
 
+    const sql = readFileSync(join(dir, files.find(name => name.endsWith("_yumi_shop.sql"))!), "utf8");
     // One saved word, one cookie (Chi, 2026-10-12) — not the words fed to Yumi.
     const earned = sql.slice(sql.indexOf("function private.yumi_cookies_earned"), sql.indexOf("function private.yumi_wardrobe_state"));
     expect(earned).toContain("from public.vocabulary_items");

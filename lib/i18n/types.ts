@@ -349,7 +349,7 @@ export type TranslationDictionary = {
        * then The other look in Cosmic. `label` takes {chapter}, {name},
        * {current} and {total}.
        */
-      chapters: { home: string; pages: string; cosmic: string };
+      chapters: { home: string; pages: string; shop: string; cosmic: string };
       /** A step that needs the other interface mode, and the key that switches. */
       needsStandard: string;
       toStandard: string;
@@ -374,8 +374,13 @@ export type TranslationDictionary = {
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
+        /* The shop: where cookies come from (on Home, pointing at the shop
+           key), trying a piece on, and buying one. */
+        cookies: { body: string };
+        tryOn: { body: string; action: string };
+        buy: { body: string; action: string };
         /*
-         * Chapter three. Bodies may name things with {standard}, {cosmic},
+         * Chapter four. Bodies may name things with {standard}, {cosmic},
          * {omni}, {lexicon}, {mission}, {scanner}, {comms}, {earth} and
          * {memory}, filled from the app's own dictionary so the tour always
          * calls a thing what the screen calls it.
@@ -2492,6 +2497,7 @@ export type TranslationDictionary = {
     closed: string;
     offline: string;
     failed: string;
+    retry: string;
     loading: string;
     toCosmic: string;
     toStandard: string;

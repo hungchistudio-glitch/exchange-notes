@@ -14,18 +14,18 @@ import { ShopClosedError, createPreviewWallet, createSupabaseWallet } from "@/li
 
 describe("the preview wallet", () => {
   it("charges once, refuses what it cannot afford, and wears only what is owned", async () => {
-    const wallet = createPreviewWallet(100);
-    expect((await wallet.load()).balance).toBe(100);
+    const wallet = createPreviewWallet(50);
+    expect((await wallet.load()).balance).toBe(50);
 
     expect((await wallet.buy("jade")).status).toBe("insufficient");
 
     const bought = await wallet.buy("monocle");
     expect(bought.status).toBe("bought");
-    expect(bought.state.balance).toBe(40);
+    expect(bought.state.balance).toBe(20);
 
     const again = await wallet.buy("monocle");
     expect(again.status).toBe("owned");
-    expect(again.state.balance).toBe(40);
+    expect(again.state.balance).toBe(20);
 
     const worn = await wallet.wear({ eyewear: "monocle", material: "jade" });
     expect(worn.outfit).toEqual({ eyewear: "monocle" });

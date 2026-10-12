@@ -314,6 +314,7 @@ const french: TranslationDictionary = {
       chapters: {
         home: "Accueil",
         pages: "Dans l'app",
+        shop: "La boutique de Yumi",
         cosmic: "L'autre visage",
       },
       needsStandard:
@@ -370,6 +371,20 @@ const french: TranslationDictionary = {
           body:
             "Voici les Réglages. La langue de l'app et les langues que tu apprends se changent ici. Pour revoir ce tour, regarde dans Aide et à propos.",
           action: "Ouvrir les Réglages",
+        },
+        cookies: {
+          body:
+            "Chaque mot que tu enregistres devient un cookie d'énergie. Le sac en haut à droite, c'est ma boutique : dépense-y tes cookies pour me trouver un nouveau look.",
+        },
+        tryOn: {
+          body:
+            "Voici ma boutique : moi sur le présentoir, les pièces en dessous. Touche une pièce et je l'essaie gratuitement — touche-la encore pour l'enlever.",
+          action: "Ouvrir la boutique",
+        },
+        buy: {
+          body:
+            "Elle te plaît ? Touche Acheter. Les cookies ne sont dépensés qu'après confirmation, et je la porte aussitôt — tu la verras aussi sur l'accueil. Ce que tu n'achètes pas reste en cabine.",
+          action: "Ouvrir la boutique",
         },
         modeSwitch: {
           body:
@@ -2316,6 +2331,7 @@ const french: TranslationDictionary = {
     closed: "Les achats ouvrent bientôt. L’essayage est déjà gratuit.",
     offline: "L’achat nécessite une connexion. L’essayage fonctionne toujours.",
     failed: "Cela n’a pas abouti. Veuillez réessayer.",
+    retry: "Réessayer",
     loading: "On compte les cookies…",
     toCosmic: "Passer en mode Cosmic",
     toStandard: "Passer en mode Standard",

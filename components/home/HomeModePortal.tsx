@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
+import useTuckOnScroll from "@/hooks/home/useTuckOnScroll";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import styles from "./HomeModePortal.module.css";
-
-/** How far the page scrolls before the switch has fully stepped away, in px. */
-const TUCK_DISTANCE = 40;
 
 /**
  * The switch between the two homes, beside the star (which gathers cookies).
@@ -29,33 +27,7 @@ export default function HomeModePortal() {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  /* Written straight onto the element, once a frame at most: a scroll is
-     sixty updates a second, and none of them is React's business. */
-  useEffect(() => {
-    const button = buttonRef.current;
-    const scroller = document.querySelector<HTMLElement>("[data-app-scroll-viewport]");
-    if (!button) return;
-    let frame = 0;
-    let shown = Number.NaN;
-    const read = () => {
-      frame = 0;
-      const top = scroller ? scroller.scrollTop : window.scrollY;
-      const tuck = Math.min(1, Math.max(0, top / TUCK_DISTANCE));
-      if (tuck === shown) return;
-      shown = tuck;
-      button.style.setProperty("--tuck", tuck.toFixed(3));
-      if (tuck > 0.5) button.setAttribute("data-tucked", "true");
-      else button.removeAttribute("data-tucked");
-    };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
-    read();
-    const target: HTMLElement | Window = scroller ?? window;
-    target.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      target.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
+  useTuckOnScroll(buttonRef);
 
   /* Where the switch has been put, which during a crossing is ahead of the
      mode itself: that only commits once the veil is opaque. */

@@ -33,7 +33,9 @@ export type HomeMoment =
       know that rather than wait forever. */
   | "word-unavailable"
   /** A cookie reached her. */
-  | "word-fed";
+  | "word-fed"
+  /** A piece was put on her in the shop. */
+  | "shop-tried";
 
 type Listener = (moment: HomeMoment) => void;
 

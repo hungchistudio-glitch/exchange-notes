@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
+import { announceHomeMoment } from "@/lib/home/homeMoments";
 import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
 import { loadTranslations } from "@/lib/i18n";
 import { fill, plural } from "@/lib/i18n/format";
@@ -90,6 +91,7 @@ export default function YumiShop({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [, setThumbVersion] = useState(0);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -109,7 +111,7 @@ export default function YumiShop({
         setAvailability(error instanceof ShopClosedError ? "closed" : "failed");
       });
     return () => { cancelled = true; };
-  }, [wallet, preview]);
+  }, [wallet, preview, attempt]);
 
   // -------------------------------------------------------- thumbnails
   const shown = useMemo(
@@ -126,11 +128,9 @@ export default function YumiShop({
 
   // ------------------------------------------------- the stand shrinking
   useEffect(() => {
-    let scroller: HTMLElement | Window = window;
-    for (let node = pageRef.current?.parentElement; node; node = node.parentElement) {
-      const overflow = getComputedStyle(node).overflowY;
-      if (overflow === "auto" || overflow === "scroll") { scroller = node; break; }
-    }
+    // The app's one scrolling viewport (AppViewport), or the window on a review screen.
+    const scroller: HTMLElement | Window =
+      document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
     const read = () => (scroller instanceof Window ? scroller.scrollY : scroller.scrollTop);
     /* Hysteresis, so the stand shrinking (which moves the catalogue up) can
        never bounce it back open. */
@@ -163,6 +163,8 @@ export default function YumiShop({
   // ------------------------------------------------------------ actions
   function tryOn(item: ShopItem) {
     setSelectedId(item.id);
+    // The tour's try-on step waits for a piece going on, not coming off.
+    if (draft[item.slot] !== item.id) announceHomeMoment("shop-tried");
     setDraft(current => toggleInOutfit(current, item));
   }
 
@@ -326,7 +328,20 @@ export default function YumiShop({
           ))}
         </div>
 
-        {status && <p className={styles.status} role="status">{status}</p>}
+        {status && (
+          <p className={styles.status} role="status">
+            {status}
+            {availability === "failed" && (
+              <button
+                type="button"
+                className={styles.retry}
+                onClick={() => { setAvailability("loading"); setAttempt(n => n + 1); }}
+              >
+                {copy.retry}
+              </button>
+            )}
+          </p>
+        )}
 
         {shown.length === 0 ? (
           <p className={styles.empty}>{category === "owned" ? copy.emptyOwned : copy.empty}</p>

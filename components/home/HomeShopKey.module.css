@@ -1,0 +1,110 @@
+/*
+  Beside the mode switch (HomeModePortal, right 72px) and the star (right
+  20px): the third key in Home's top corner, the same 44px target, drawn in
+  the corner's own ink — sage on Standard's paper, pale on Cosmic's deck.
+*/
+.key {
+  position: fixed;
+  z-index: 46;
+  top: calc(18px + env(safe-area-inset-top));
+  right: 124px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: #6f7b63;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color 180ms ease, scale 180ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  /* Steps away with the switch (hooks/home/useTuckOnScroll). */
+  opacity: calc(1 - var(--tuck, 0));
+  translate: 0 calc(var(--tuck, 0) * -6px);
+}
+
+.key[data-cosmic="true"] {
+  color: rgb(245 242 240 / 0.78);
+}
+
+.key:hover,
+.key:focus-visible {
+  background: #dce3d04d;
+}
+
+.key[data-cosmic="true"]:hover,
+.key[data-cosmic="true"]:focus-visible {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.key:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  opacity: 1;
+  translate: none;
+}
+
+.key:active {
+  scale: 0.92;
+}
+
+.key[data-tucked="true"] {
+  pointer-events: none;
+}
+
+.bag {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.clasp {
+  stroke: #c79a45;
+  stroke-width: 1.8;
+}
+
+.key[data-cosmic="true"] .clasp {
+  stroke: var(--cosmic-amber, #e8ce8c);
+}
+
+/* Hidden whenever the switch is: something else has the screen. The tour's
+   cookie step points here, so under that card it stays. */
+:global(body:has([data-coach-card]:not([data-coach-step="modeSwitch"]):not([data-coach-step="cookies"]))) .key,
+:global(body:has([aria-modal="true"])) .key,
+:global(body:has([data-yumi-ring-open="true"])) .key,
+:global(body:has([data-yumi-answering="true"])) .key,
+:global(body:has([data-yumi-typing="true"])) .key,
+:global(body:has([data-omni="typing"], [data-omni="listening"], [data-omni="scanning"])) .key {
+  visibility: hidden;
+}
+
+/* The tour's cookie step (TutorialCoach) points here, the way the switch
+   step breathes a ring out of the switch. */
+:global(body:has([data-coach-step="cookies"]:not([data-coach-done]))) .key::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  animation: shopHint 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes shopHint {
+  0% { opacity: 0.55; scale: 0.92; }
+  70%, 100% { opacity: 0; scale: 1.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    transition: none;
+  }
+
+  :global(body:has([data-coach-step="cookies"]:not([data-coach-done]))) .key::after {
+    animation: none;
+    opacity: 0.5;
+  }
+}

@@ -314,6 +314,7 @@ const italian: TranslationDictionary = {
       chapters: {
         home: "Home",
         pages: "Nell'app",
+        shop: "Il negozio di Yumi",
         cosmic: "L'altro aspetto",
       },
       needsStandard:
@@ -370,6 +371,20 @@ const italian: TranslationDictionary = {
           body:
             "Queste sono le Impostazioni. Qui cambi la lingua dell'app e le lingue che stai imparando. Per rivedere questo tour, cercalo in Aiuto e informazioni.",
           action: "Apri le Impostazioni",
+        },
+        cookies: {
+          body:
+            "Ogni parola che salvi diventa un biscotto energia. La borsa in alto a destra è il mio negozio: lì puoi spendere i biscotti per darmi un nuovo look.",
+        },
+        tryOn: {
+          body:
+            "Questo è il mio negozio: io sul piedistallo, i pezzi qui sotto. Tocca un pezzo e lo provo gratis; toccalo di nuovo per toglierlo.",
+          action: "Apri il negozio",
+        },
+        buy: {
+          body:
+            "Ti piace? Tocca Acquista. I biscotti si spendono solo dopo la conferma, e lo indosso subito: lo vedrai anche nella home. Quello che non compri resta nel camerino.",
+          action: "Apri il negozio",
         },
         modeSwitch: {
           body:
@@ -2316,6 +2331,7 @@ const italian: TranslationDictionary = {
     closed: "Gli acquisti apriranno presto. La prova è già gratuita.",
     offline: "Per acquistare serve la connessione. La prova funziona comunque.",
     failed: "Non è andato a buon fine. Riprova.",
+    retry: "Riprova",
     loading: "Contiamo i biscotti…",
     toCosmic: "Passa alla modalità Cosmic",
     toStandard: "Passa alla modalità Standard",

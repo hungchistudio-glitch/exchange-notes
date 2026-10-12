@@ -151,10 +151,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * she never changes clothes in front of the reader. The file imports React
    * and a type; the catalogue, the 3D pieces and the database client all
    * stay behind import().
+   * Raised home 173 → 176 (2026-10-12): the shop's key in Home's top corner
+   * (Chi: "在主頁的右上角加入一個商城icon") — its component and CSS, and the
+   * scroll tuck it shares with the mode switch, moved out of the switch into
+   * hooks/home/useTuckOnScroll.ts. None imports anything home does not load.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 161],
-    ["home", TABS.home, 173],
+    ["home", TABS.home, 176],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

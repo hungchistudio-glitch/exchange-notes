@@ -315,6 +315,7 @@ const english: TranslationDictionary = {
       chapters: {
         home: "Home",
         pages: "Around the app",
+        shop: "Yumi’s shop",
         cosmic: "The other look",
       },
       needsStandard:
@@ -371,6 +372,20 @@ const english: TranslationDictionary = {
           body:
             "This is Settings. App language and the languages you are learning change here. To see this tour again, look in Help & About.",
           action: "Open Settings",
+        },
+        cookies: {
+          body:
+            "Every word you save becomes an energy cookie. The bag at the top right is my shop — spend your cookies there on new looks for me.",
+        },
+        tryOn: {
+          body:
+            "This is my shop: me on the stand, the pieces below. Tap any piece and I’ll try it on for free — tap it again to take it off.",
+          action: "Open the shop",
+        },
+        buy: {
+          body:
+            "Like it? Tap Buy. Cookies are only spent once you confirm, and I’ll put it on straight away — you’ll see it at home too. Anything you don’t buy stays in the fitting room.",
+          action: "Open the shop",
         },
         modeSwitch: {
           body:
@@ -2514,6 +2529,7 @@ const english: TranslationDictionary = {
     closed: "Buying opens soon. Trying things on is free now.",
     offline: "Buying needs a connection. Try-on still works.",
     failed: "That didn’t go through. Please try again.",
+    retry: "Try again",
     loading: "Counting cookies…",
     toCosmic: "Switch to Cosmic mode",
     toStandard: "Switch to Standard mode",

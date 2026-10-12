@@ -316,6 +316,7 @@ const spanish: TranslationDictionary = {
       chapters: {
         home: "Inicio",
         pages: "Por la app",
+        shop: "La tienda de Yumi",
         cosmic: "El otro aspecto",
       },
       needsStandard:
@@ -372,6 +373,20 @@ const spanish: TranslationDictionary = {
           body:
             "Estos son los Ajustes. Aquí cambias el idioma de la app y los idiomas que estudias. Para ver este recorrido otra vez, búscalo en Ayuda e información.",
           action: "Abrir Ajustes",
+        },
+        cookies: {
+          body:
+            "Cada palabra que guardas se convierte en una galleta de energía. La bolsa de arriba a la derecha es mi tienda: gasta allí tus galletas en un estilo nuevo para mí.",
+        },
+        tryOn: {
+          body:
+            "Esta es mi tienda: yo en el expositor y las piezas debajo. Toca cualquier pieza y me la pruebo gratis; tócala otra vez para quitármela.",
+          action: "Abrir la tienda",
+        },
+        buy: {
+          body:
+            "¿Te gusta? Toca Comprar. Las galletas solo se gastan cuando confirmas, y me la pongo enseguida: también la verás en el inicio. Lo que no compres se queda en el probador.",
+          action: "Abrir la tienda",
         },
         modeSwitch: {
           body:
@@ -2511,6 +2526,7 @@ const spanish: TranslationDictionary = {
     closed: "Las compras abren pronto. Probar ya es gratis.",
     offline: "Para comprar necesitas conexión. La prueba sigue funcionando.",
     failed: "No se completó. Inténtalo de nuevo.",
+    retry: "Reintentar",
     loading: "Contando galletas…",
     toCosmic: "Cambiar al modo Cosmic",
     toStandard: "Cambiar al modo Standard",

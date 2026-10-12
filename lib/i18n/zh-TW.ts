@@ -310,6 +310,7 @@ const traditionalChinese: TranslationDictionary = {
       chapters: {
         home: "首頁",
         pages: "各個頁面",
+        shop: "Yumi 的商店",
         cosmic: "另一種樣子",
       },
       needsStandard:
@@ -364,6 +365,20 @@ const traditionalChinese: TranslationDictionary = {
           body:
             "這是設定。App 語言和學習語言都在這裡改。想重看這個教學，到「說明與關於」裡找。",
           action: "去看看設定",
+        },
+        cookies: {
+          body:
+            "每存一個單字，就會得到一塊能量餅乾。右上角的購物袋是我的商店，可以用餅乾幫我買新裝扮。",
+        },
+        tryOn: {
+          body:
+            "這是我的商店：上面是我，下面是商品。點任何一件，我就免費試戴給你看，再點一次就拿掉。",
+          action: "打開商店",
+        },
+        buy: {
+          body:
+            "喜歡就按「購買」。確認後才會用掉餅乾，我會馬上穿上，回首頁也看得到。沒買的只會留在試衣間。",
+          action: "打開商店",
         },
         modeSwitch: {
           body:
@@ -2466,6 +2481,7 @@ const traditionalChinese: TranslationDictionary = {
     closed: "購買功能即將開放，現在可以免費試戴。",
     offline: "購買需要網路連線，試戴照常可用。",
     failed: "沒有完成，請再試一次。",
+    retry: "再試一次",
     loading: "正在數餅乾…",
     toCosmic: "切換到 Cosmic 模式",
     toStandard: "切換到 Standard 模式",
