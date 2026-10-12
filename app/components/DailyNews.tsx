@@ -26,6 +26,7 @@ import { encodeNewsCardMessage } from "@/lib/messages/newsCard";
 import { listFriends, getOrCreateConversationWithFriend, type FriendProfile } from "@/lib/friends";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { createNoteContent, noteLabelsFor } from "@/lib/news/noteContent";
 
 import CompactStoryRow from "@/components/discover/CompactStoryRow";
 import FeaturedStoryCard from "@/components/discover/FeaturedStoryCard";
@@ -170,50 +171,6 @@ function categoryLabel(
     .toLowerCase() as keyof TranslationDictionary["discover"]["categories"];
 
   return copy.categories[key] ?? category;
-}
-
-/*
- * A note keeps both sides of the card, in the reader's own pair. The two
- * halves were called "english" and "chinese" and now are not: whichever
- * language leads is the first, and the language they already have is the
- * second.
- */
-function createNoteContent(
-  card: DailyNewsCard,
-  [primaryLanguage, secondaryLanguage]: readonly [LanguageCode, LanguageCode],
-) {
-  const englishVocabulary = card.vocabulary
-    .map(
-      (item) =>
-        `• ${item.texts[primaryLanguage] ?? ""} (${item.partOfSpeech}) — ${item.examples[primaryLanguage] ?? ""}`,
-    )
-    .join("\n");
-
-  const chineseVocabulary = card.vocabulary
-    .map(
-      (item) =>
-        `• ${item.texts[primaryLanguage] ?? ""}：${item.texts[secondaryLanguage] ?? ""}\n  ${item.examples[secondaryLanguage] ?? ""}`,
-    )
-    .join("\n");
-
-  const english = `📰 ${(card.titles[primaryLanguage] ?? "")}
-
-${(card.summaries[primaryLanguage] ?? "")}
-
-Vocabulary
-${englishVocabulary}
-
-Source: ${card.sourceName}
-${card.sourceUrl}`;
-
-  const chinese = `${(card.titles[secondaryLanguage] ?? "")}
-
-${(card.summaries[secondaryLanguage] ?? "")}
-
-學習單字
-${chineseVocabulary}`;
-
-  return { english, chinese };
 }
 
 function createPartnerMessage(card: DailyNewsCard) {
@@ -659,9 +616,16 @@ export default function DailyNews() {
     setSavingCardId(card.id);
     setError("");
 
-    const noteContent = createNoteContent(card, pair);
-
     try {
+      const noteContent = createNoteContent(
+        card,
+        pair,
+        await Promise.all([
+          noteLabelsFor(pair[0], t),
+          noteLabelsFor(pair[1], t),
+        ]),
+      );
+
       const supabase = createClient();
 
       const user = await getSessionUser(supabase);
@@ -672,9 +636,9 @@ export default function DailyNews() {
       }
 
       const saved = await createNote(supabase, user.id, {
-        originalText: noteContent.english,
+        originalText: noteContent.primary,
         originalLanguage: pair[0],
-        personalMeaning: noteContent.chinese,
+        personalMeaning: noteContent.secondary,
         sourceKind: "news",
         sourceName: card.sourceName,
         sourceUrl: card.sourceUrl,

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import { DISCOVER_COLORS, type DailyNewsCard } from "./types";
@@ -68,6 +69,7 @@ export default function StoryDetailSheet({
 
   // Above the early return: a hook cannot be called conditionally.
   const { pair } = useDisplayLanguages();
+  const { t } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -157,7 +159,7 @@ export default function StoryDetailSheet({
             <>
               <button
                 type="button"
-                aria-label="Close menu"
+                aria-label={t.common.close}
                 onClick={() => setMenuOpen(false)}
                 className="fixed inset-0 z-10 cursor-default"
               />

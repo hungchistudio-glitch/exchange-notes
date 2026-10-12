@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import english from "@/lib/i18n/en";
+
 import {
   RouteSkeleton,
   SkeletonBlock,
@@ -64,7 +66,7 @@ describe("what a destination shows while it loads", () => {
     const status = screen.getByRole("status");
 
     expect(status).toHaveAttribute("aria-busy", "true");
-    expect(screen.getByText("Loading")).toBeInTheDocument();
+    expect(screen.getByText(english.common.loading)).toBeInTheDocument();
   });
 
   it("hides its placeholder blocks from assistive technology", () => {

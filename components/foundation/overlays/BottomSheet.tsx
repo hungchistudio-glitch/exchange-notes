@@ -3,6 +3,8 @@
 import { ReactNode, useId } from "react";
 import { X } from "lucide-react";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
+
 import OverlayPortal from "./OverlayPortal";
 import useSheetMotion from "./useSheetMotion";
 
@@ -42,6 +44,7 @@ export default function BottomSheet({
   closeDisabled = false,
 }: BottomSheetProps) {
   const titleId = useId();
+  const { t } = useTranslation();
   const motion = useSheetMotion({ open, onClose, closeDisabled });
 
   if (!motion.rendered) return null;
@@ -54,7 +57,7 @@ export default function BottomSheet({
       >
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t.common.close}
         onClick={motion.requestClose}
         disabled={closeDisabled}
         className={`cosmic-sheet-scrim absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
@@ -112,8 +115,8 @@ export default function BottomSheet({
 
             <button
               type="button"
-              aria-label="Close"
-              title="Close"
+              aria-label={t.common.close}
+              title={t.common.close}
               onClick={motion.requestClose}
               disabled={closeDisabled}
               className={[

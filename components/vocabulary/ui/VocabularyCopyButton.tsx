@@ -4,32 +4,13 @@ import { Check, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { copyText } from "@/lib/vocabulary/share";
 import { insertValues } from "@/lib/utils";
 
 type VocabularyCopyButtonProps = {
   text: string;
   className?: string;
 };
-
-async function copyText(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-
-  const input = document.createElement("textarea");
-  input.value = text;
-  input.setAttribute("readonly", "");
-  input.style.position = "fixed";
-  input.style.opacity = "0";
-  document.body.appendChild(input);
-  input.select();
-
-  const copied = document.execCommand("copy");
-  input.remove();
-
-  if (!copied) throw new Error("Clipboard is unavailable.");
-}
 
 /** Icon-only shortcut placed beside the primary learning-language word. */
 export default function VocabularyCopyButton({

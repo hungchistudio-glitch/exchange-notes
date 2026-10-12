@@ -88,6 +88,7 @@ export default function VocabularyDetailSheet({
   onClose,
   onChangeStatus,
   onSendToPartner,
+  shareCopied = false,
   onShare,
   onDelete,
   onOpenCollections,
@@ -100,6 +101,8 @@ export default function VocabularyDetailSheet({
   onClose: () => void;
   onChangeStatus: (status: VocabularyStatus) => void;
   onSendToPartner: () => void;
+  /** The word was copied because there was no share sheet to hand it to. */
+  shareCopied?: boolean;
   onShare: () => void;
   onDelete: () => void;
   onOpenCollections: () => void;
@@ -374,9 +377,11 @@ export default function VocabularyDetailSheet({
                 size="icon"
                 className="h-12 w-full"
                 onClick={onShare}
-                aria-label={detail.shareWordAriaLabel}
+                aria-label={
+                  shareCopied ? detail.copiedAriaLabel : detail.shareWordAriaLabel
+                }
               >
-                <Share2 size={18} />
+                {shareCopied ? <Check size={18} /> : <Share2 size={18} />}
               </AppButton>
 
               <AppButton

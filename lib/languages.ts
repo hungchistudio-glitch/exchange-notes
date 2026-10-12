@@ -657,6 +657,22 @@ export const INTERFACE_LANGUAGE_CODE: Record<InterfaceLanguage, LanguageCode> =
   };
 
 /**
+ * The interface language written in a language code, when the app ships one.
+ *
+ * The same lookup read the other way, for text that has to be written in a
+ * learning language using the interface's words for it (the headings inside
+ * a saved story). Undefined, not a guess, for a code the interface does not
+ * speak — the two axes are allowed to diverge.
+ */
+export function interfaceLanguageForCode(
+  code: LanguageCode,
+): InterfaceLanguage | undefined {
+  return (Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[]).find(
+    (language) => INTERFACE_LANGUAGE_CODE[language] === code,
+  );
+}
+
+/**
  * Everything about an interface language, via its code.
  *
  * The interface axis keeps its own spelled-out values ("english", "spanish")
