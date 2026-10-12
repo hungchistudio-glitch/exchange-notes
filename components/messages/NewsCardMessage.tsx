@@ -59,7 +59,7 @@ function SpeakerButton({
 export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProps) {
   const { pair } = useDisplayLanguages();
   /* The card's own labels follow the app, like every other label in it. */
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -323,7 +323,7 @@ export default function NewsCardMessage({ card, createdAt }: NewsCardMessageProp
           className="shrink-0 text-[0.625rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
-          {formatMessageTime(createdAt)}
+          {formatMessageTime(createdAt, locale)}
         </time>
       </div>
     </article>

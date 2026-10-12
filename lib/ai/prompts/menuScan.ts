@@ -5,6 +5,7 @@ import {
   whenScriptRuleApplies,
 } from "@/lib/ai/languagePrompt";
 import type { LanguageCode } from "@/lib/languages";
+import { CUISINE_KEYS } from "@/lib/scanner/menuTypes";
 
 /*
  * One prompt, no target language in it.
@@ -95,6 +96,9 @@ Naming rules:
   slashes. Give the pronunciation a native ${firstName} speaker would use,
   including for borrowed names like Okonomiyaki.
 - Never state or imply that an item is safe for an allergy or a diet.
+- detectedCuisine is one key from this list, naming the list as a whole:
+  ${CUISINE_KEYS.join(", ")}. Use "other" when none fits, or when the list
+  is not food at all.
 
 Confidence rules:
 - Use low ocrConfidence for text that is blurred, cut off, glared over,

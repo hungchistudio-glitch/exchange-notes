@@ -36,6 +36,7 @@ import FriendPickerModal from "@/components/vocabulary/FriendPickerModal";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import { getLanguage } from "@/lib/languages";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import useVocabularyFriendPicker from "@/hooks/useVocabularyFriendPicker";
 import {
   getConversationContext,
@@ -206,7 +207,7 @@ export default function ConversationRoom({
 }: ConversationRoomProps) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { pair: languagePair } = useDisplayLanguages();
   const copy = t.messages;
 
@@ -1625,6 +1626,7 @@ export default function ConversationRoom({
                           message.created_at,
                           copy.today,
                           copy.yesterday,
+                          locale,
                         )}
                       </span>
                     </div>
@@ -1720,7 +1722,7 @@ export default function ConversationRoom({
                           }}
                         >
                           <time dateTime={message.created_at}>
-                            {formatMessageTime(message.created_at)}
+                            {formatMessageTime(message.created_at, locale)}
                           </time>
                           {isMine &&
                             (() => {
@@ -1875,12 +1877,12 @@ export default function ConversationRoom({
               className="mb-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-red-500 text-sm font-semibold text-white transition disabled:opacity-40"
             >
               <Trash2 size={16} strokeWidth={1.8} />
-              {selectedIds.size === 1
-                ? copy.deleteSelectedMessage.replace("{count}", "1")
-                : copy.deleteSelectedMessages.replace(
-                    "{count}",
-                    String(selectedIds.size),
-                  )}
+              {plural(
+                selectedIds.size,
+                locale,
+                copy.deleteSelectedMessage,
+                copy.deleteSelectedMessages,
+              )}
             </button>
           ) : !canContact ? (
             <p className="py-4 text-center text-sm text-ink-soft">{copy.room.historyOnly}</p>
@@ -2002,12 +2004,12 @@ export default function ConversationRoom({
 
             <div className="flex items-start justify-between gap-3">
               <h2 className="text-lg font-bold">
-                {selectedIds.size === 1
-                  ? copy.deleteDialogMessage.replace("{count}", "1")
-                  : copy.deleteDialogMessages.replace(
-                      "{count}",
-                      String(selectedIds.size),
-                    )}
+                {plural(
+                  selectedIds.size,
+                  locale,
+                  copy.deleteDialogMessage,
+                  copy.deleteDialogMessages,
+                )}
               </h2>
               <button
                 type="button"

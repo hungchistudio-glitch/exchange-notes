@@ -213,7 +213,7 @@ export default function CommandDeck() {
         <p className={styles.eyebrow}>
           <span aria-hidden="true" className={styles.statusDot} />
           {copy.deck.eyebrow}
-          <span className={styles.edition}>COSMIC</span>
+          <span className={styles.edition}>{copy.deck.edition}</span>
         </p>
         <h1 className={styles.title}>
           {copy.deck.title}

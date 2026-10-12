@@ -157,11 +157,7 @@ export default function VocabularyEditModal({
     } catch (saveError) {
       console.error(saveError);
 
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : edit.saveFailed,
-      );
+      setError(edit.saveFailed);
       setSaving(false);
     }
   }

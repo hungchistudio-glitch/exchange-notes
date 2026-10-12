@@ -12,15 +12,15 @@ const subscribeNever = () => () => {};
 const serverDate = () => "";
 
 export default function NoteCard({ note }: { note: Note }) {
-  const { t, language: interfaceLanguage } = useTranslation();
-  // Dates follow the reader's locale and time zone. The server cannot know
-  // either; defer this small label until hydration instead of rebuilding the
-  // entire card when “Sep 15” and “15 Sept” disagree.
+  const { t, language: interfaceLanguage, locale } = useTranslation();
+  // Dates follow the display language and the reader's time zone. The server
+  // cannot know the time zone; defer this small label until hydration instead
+  // of rebuilding the entire card when the two disagree about the day.
   const date = useSyncExternalStore(subscribeNever, () => {
     const parsedDate = new Date(note.createdAt);
     return Number.isNaN(parsedDate.getTime())
       ? ""
-      : new Intl.DateTimeFormat(undefined, {
+      : new Intl.DateTimeFormat(locale, {
           month: "short",
           day: "numeric",
         }).format(parsedDate);

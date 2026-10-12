@@ -206,7 +206,12 @@ export default function EditProfileSheet({
         .eq("id", userId);
 
       if (updateError) {
-        setError(updateError.message);
+        // Taken between the availability check and the save: the same
+        // answer onboarding gives, not the database's own sentence.
+        console.error("Could not update the profile:", updateError);
+        setError(
+          updateError.code === "23505" ? copy.idTaken : copy.profileUpdateError,
+        );
         return;
       }
 
@@ -298,11 +303,8 @@ export default function EditProfileSheet({
       setMessage(copy.photoUpdated);
       closeCropper();
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : copy.photoUploadError,
-      );
+      console.error("Could not upload the photo:", uploadError);
+      setError(copy.photoUploadError);
     } finally {
       setUploadingPhoto(false);
     }
@@ -328,11 +330,8 @@ export default function EditProfileSheet({
       onAvatarChange(null);
       setMessage(copy.photoRemoved);
     } catch (removeError) {
-      setError(
-        removeError instanceof Error
-          ? removeError.message
-          : copy.photoRemoveError,
-      );
+      console.error("Could not remove the photo:", removeError);
+      setError(copy.photoRemoveError);
     } finally {
       setUploadingPhoto(false);
     }

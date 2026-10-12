@@ -1,4 +1,6 @@
-const CACHE_NAME = "exchange-notes-v4";
+// Bumped whenever offline.html changes: the page is cached once, at install,
+// so an installed app keeps the old one until the worker itself changes.
+const CACHE_NAME = "exchange-notes-v5";
 const OFFLINE_URL = "/offline.html";
 const CORE_ASSETS = [OFFLINE_URL];
 const SAFE_ASSET_PREFIXES = ["/_next/static/", "/brand/", "/audio/"];

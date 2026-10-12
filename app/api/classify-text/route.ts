@@ -840,7 +840,7 @@ export async function POST(request: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Please sign in before looking up a word." },
+        { error: "Please sign in before looking up a word.", code: "sign-in" },
         { status: 401 },
       );
     }
@@ -854,14 +854,17 @@ export async function POST(request: Request) {
 
     if (!query) {
       return NextResponse.json(
-        { error: "Please provide a word or phrase to look up." },
+        { error: "Please provide a word or phrase to look up.", code: "empty" },
         { status: 400 },
       );
     }
 
     if (query.length > MAX_QUERY_LENGTH) {
       return NextResponse.json(
-        { error: `Please keep it under ${MAX_QUERY_LENGTH} characters.` },
+        {
+          error: `Please keep it under ${MAX_QUERY_LENGTH} characters.`,
+          code: "too-long",
+        },
         { status: 400 },
       );
     }
@@ -951,7 +954,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { error: "Couldn't look up that word. Please try again." },
+      { error: "Couldn't look up that word. Please try again.", code: "failed" },
       { status: 500 },
     );
   }

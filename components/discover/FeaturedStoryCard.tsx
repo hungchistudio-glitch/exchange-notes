@@ -1,6 +1,8 @@
 "use client";
 
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
+import { plural } from "@/lib/i18n/format";
 import type { MouseEvent } from "react";
 import Image from "next/image";
 import { ZoomIn } from "lucide-react";
@@ -56,6 +58,7 @@ export default function FeaturedStoryCard({
   onToggleAudio,
   onExploreImage,
 }: FeaturedStoryCardProps) {
+  const { locale } = useTranslation();
   const { pair } = useDisplayLanguages();
   /*
    * The two languages the reader chose, and only those. A card that cannot
@@ -126,9 +129,11 @@ export default function FeaturedStoryCard({
           style={{ color: accent }}
         >
           <ZoomIn size={13} strokeWidth={1.8} />
-          {copy.exploreImageLabel.replace(
-            "{count}",
-            String(card.vocabulary.length)
+          {plural(
+            card.vocabulary.length,
+            locale,
+            copy.exploreImageLabelOne,
+            copy.exploreImageLabel
           )}
         </button>
       ) : null}

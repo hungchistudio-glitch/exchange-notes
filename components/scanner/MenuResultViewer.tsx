@@ -8,6 +8,7 @@ import MenuListView from "@/components/scanner/MenuListView";
 import MenuOverlayView from "@/components/scanner/MenuOverlayView";
 import MenuRebuiltView from "@/components/scanner/MenuRebuiltView";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import { countMenuItems, type MenuDocument, type MenuItem } from "@/lib/scanner/menuTypes";
 
 type ViewMode = "rebuilt" | "translated" | "original" | "list";
@@ -44,7 +45,7 @@ export default function MenuResultViewer({
   partial,
   onScanAnother,
 }: MenuResultViewerProps) {
-  const { t, language } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.scanner.menu;
 
   const [mode, setMode] = useState<ViewMode>("rebuilt");
@@ -62,14 +63,13 @@ export default function MenuResultViewer({
   }, []);
 
   const itemCount = countMenuItems(menu);
-  const locale = language === "traditional-chinese" ? "zh-TW" : "en";
   const sourceName = languageName(menu.sourceLanguage, locale);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1.5">
         <p className="text-[0.9375rem] font-semibold tracking-[-0.02em] text-black">
-          {copy.itemCount.replace("{count}", String(itemCount))}
+          {plural(itemCount, locale, copy.itemCountOne, copy.itemCount)}
         </p>
 
         <p className="text-[0.8125rem] text-ink-soft">

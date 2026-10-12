@@ -13,7 +13,12 @@ import useTranslation from "@/hooks/i18n/useTranslation";
 import { listFriends, type FriendProfile } from "@/lib/friends";
 import { getPhoneticsFor } from "@/lib/pronunciation/getPronunciation";
 import { setPendingSharedVocabulary } from "@/lib/vocabularyDraft";
-import { hasLowConfidence, itemNames, type MenuItem } from "@/lib/scanner/menuTypes";
+import {
+  hasLowConfidence,
+  itemNames,
+  readCuisineKey,
+  type MenuItem,
+} from "@/lib/scanner/menuTypes";
 import {
   LANGUAGE_CODES,
   getLanguage,
@@ -141,6 +146,7 @@ export default function MenuItemInsightSheet({
 }: MenuItemInsightSheetProps) {
   const { t } = useTranslation();
   const copy = t.scanner.menu;
+  const cuisineKey = readCuisineKey(cuisine);
   const router = useRouter();
 
   const { pair: languagePair } = useDisplayLanguages();
@@ -540,13 +546,13 @@ export default function MenuItemInsightSheet({
               </dd>
             </div>
 
-            {cuisine ? (
+            {cuisineKey ? (
               <div className="flex items-start justify-between gap-4 px-4 py-3">
                 <dt className="shrink-0 text-[0.8125rem] text-ink-soft">
                   {copy.cuisineLabel}
                 </dt>
                 <dd className="min-w-0 text-right text-[0.9375rem] font-semibold text-black">
-                  {cuisine}
+                  {copy.cuisines[cuisineKey]}
                 </dd>
               </div>
             ) : null}

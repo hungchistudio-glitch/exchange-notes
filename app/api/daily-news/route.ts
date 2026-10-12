@@ -154,6 +154,7 @@ export async function GET() {
         {
           error:
             "Today's stories haven't been generated yet. Please check back shortly.",
+          code: "not-generated",
         },
         { status: 503, headers: NO_STORE }
       );
@@ -184,13 +185,10 @@ export async function GET() {
   } catch (error) {
     console.error("Daily news read error:", error);
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Daily news is temporarily unavailable.";
-
+    // The cause stays in the log above. The reader gets a sentence in
+    // their own language from the screen, not a database message.
     return NextResponse.json(
-      { error: message },
+      { error: "Daily news is temporarily unavailable.", code: "failed" },
       { status: 500, headers: NO_STORE }
     );
   }

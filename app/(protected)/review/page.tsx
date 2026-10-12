@@ -20,6 +20,7 @@ import PronunciationBlock from "@/components/pronunciation/PronunciationBlock";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
 import { insertValues } from "@/lib/utils";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 
 type Phase = "landing" | "session" | "complete";
 type Mode = "due" | "all";
@@ -116,7 +117,7 @@ const GRADE_OPTIONS: {
 ];
 
 export default function ReviewPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.review;
   const { isCosmic } = useInterfaceMode();
   const searchParams = useSearchParams();
@@ -525,7 +526,12 @@ export default function ReviewPage() {
         </p>
         <h1 className="mt-1 text-2xl font-bold">{copy.completeTitle}</h1>
         <p className="mt-2 max-w-xs text-ink-soft">
-          {copy.completedReviews.replace("{count}", String(queue.length))}
+          {plural(
+            queue.length,
+            locale,
+            copy.completedReviewsOne,
+            copy.completedReviews,
+          )}
           {" "}
           {copy.completeDescription}
         </p>

@@ -6,9 +6,15 @@ import {
   type TranslationDictionary,
   type TranslationLanguage,
 } from "@/lib/i18n";
+import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
 
 type TranslationResult = {
   language: TranslationLanguage;
+  /**
+   * The display language as a locale for Intl: dates, numbers, plurals and
+   * language names follow the app's setting, not the phone's.
+   */
+  locale: string;
   isTraditionalChinese: boolean;
   t: TranslationDictionary;
 };
@@ -33,6 +39,7 @@ export default function useTranslation(): TranslationResult {
 
   return {
     language,
+    locale: INTERFACE_LANGUAGE_CODE[language],
     isTraditionalChinese: language === "traditional-chinese",
     t,
   };

@@ -100,7 +100,27 @@ type LookupResponse = LexiconEntry & {
   quotaResetsAt?: number | null;
   dailyLimitReached?: boolean;
   error?: string;
+  code?: string;
 };
+
+/**
+ * Why a lookup failed, as a kind rather than a sentence.
+ *
+ * The server's own `error` text is English and meant for logs; the reader
+ * sees the sentence for this kind in their display language
+ * (components/lexicon/LexiconResults.tsx).
+ */
+export type LexiconLookupError = "" | "failed" | "sign-in" | "too-long";
+
+class LookupFailure extends Error {
+  constructor(readonly kind: Exclude<LexiconLookupError, "">) {
+    super(`Lookup failed: ${kind}`);
+  }
+}
+
+function lookupFailureKind(code: unknown): Exclude<LexiconLookupError, ""> {
+  return code === "sign-in" || code === "too-long" ? code : "failed";
+}
 
 type UseLexiconSearchOptions = {
   /**
@@ -140,7 +160,7 @@ export type LexiconSearch = {
   result: LexiconResult | null;
   /** The offline dictionary's early answer, while the real one is in flight. */
   preview: LexiconPreview | null;
-  error: string;
+  error: LexiconLookupError;
   /** Waiting out a busy model before asking once more. See AUTO_RETRY. */
   retrying: boolean;
 
@@ -201,7 +221,7 @@ export default function useLexiconSearch({
     resultRef.current = result;
   }, [result]);
   const [preview, setPreview] = useState<LexiconPreview | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<LexiconLookupError>("");
   const [retrying, setRetrying] = useState(false);
   const [inputMode, setInputMode] = useState<LexiconInputMode>("type");
 
@@ -434,7 +454,7 @@ export default function useLexiconSearch({
         const data = (await response.json()) as LookupResponse;
 
         if (!response.ok || data.error) {
-          throw new Error(data.error || "Couldn't look up that word.");
+          throw new LookupFailure(lookupFailureKind(data.code));
         }
 
         return data;
@@ -569,9 +589,7 @@ export default function useLexiconSearch({
 
         setResult(settle(null, { degraded: true, offline }));
         setError(
-          lookupError instanceof Error
-            ? lookupError.message
-            : "Couldn't look up that word.",
+          lookupError instanceof LookupFailure ? lookupError.kind : "failed",
         );
         setStatus("error");
       }

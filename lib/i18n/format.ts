@@ -21,6 +21,36 @@ export function fill(
 }
 
 /**
+ * The form of a counted phrase that this language uses for this number.
+ *
+ * English picks the singular for 1 and nothing else; French picks it for 0
+ * and 1, and Chinese has no plural at all. Asking `count === 1` writes
+ * "0 mots" in French, so the choice goes through the language's own rule.
+ * Only "one" takes the singular template; every other category ("many" for a
+ * French million included) takes the plural one.
+ *
+ * Takes the locale rather than the interface language so this file stays
+ * free of imports (tests/routeImportWeight).
+ */
+export function plural(
+  count: number,
+  locale: string,
+  one: string,
+  other: string,
+  values: Record<string, string | number> = {},
+): string {
+  let category: string;
+
+  try {
+    category = new Intl.PluralRules(locale).select(count);
+  } catch {
+    category = count === 1 ? "one" : "other";
+  }
+
+  return fill(category === "one" ? one : other, { count, ...values });
+}
+
+/**
  * When something comes back, in the reader's own clock and language: a time
  * today, or a weekday and time when it is not today.
  *

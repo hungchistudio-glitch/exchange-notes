@@ -108,7 +108,7 @@ export default function SpeakPageClient({
 
         <div className="flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[#ffffff]/10 px-3 py-2 text-xs font-semibold tracking-wide text-cyan-50 backdrop-blur">
           <Sparkles size={14} aria-hidden="true" />
-          Yumi Voice
+          {copy.badge}
         </div>
       </header>
 

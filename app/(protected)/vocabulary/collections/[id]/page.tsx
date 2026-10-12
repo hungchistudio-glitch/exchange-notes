@@ -9,6 +9,7 @@ import Screen from "@/components/foundation/layout/Screen";
 import SwipeActionRow from "@/components/foundation/interaction/SwipeActionRow";
 import VocabularyCard from "@/components/vocabulary/VocabularyCard";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import {
   listCollections,
   listCollectionWords,
@@ -22,7 +23,7 @@ export default function CollectionDetailPage() {
   const params = useParams<{ id: string }>();
   const collectionId = params.id;
 
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.vocabulary.collections.detail;
 
   const [collection, setCollection] = useState<VocabularyCollection | null>(
@@ -123,7 +124,7 @@ export default function CollectionDetailPage() {
 
         {!loading && items.length > 0 && (
           <p className="mt-2 text-sm text-ink-faint">
-            {items.length} {items.length === 1 ? copy.word : copy.words}{" "}
+            {items.length} {plural(items.length, locale, copy.word, copy.words)}{" "}
             {copy.inCollection}
           </p>
         )}

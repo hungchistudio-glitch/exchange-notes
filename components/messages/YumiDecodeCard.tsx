@@ -6,7 +6,11 @@ import { Check, HelpCircle, MessageSquare, Plus, Volume2, X } from "lucide-react
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import ReplyCoachPanel from "@/components/messages/ReplyCoachPanel";
 import useTranslation from "@/hooks/i18n/useTranslation";
-import type { DetectedPhrase, MessageAnalysis } from "@/lib/messages/decode";
+import {
+  readToneKeys,
+  type DetectedPhrase,
+  type MessageAnalysis,
+} from "@/lib/messages/decode";
 import { speak, type SpeechLanguage } from "@/lib/speech";
 
 /*
@@ -45,6 +49,7 @@ export default function YumiDecodeCard({
 }: YumiDecodeCardProps) {
   const { t } = useTranslation();
   const copy = t.messages.decode;
+  const tones = readToneKeys(analysis.tone);
 
   const [showWhy, setShowWhy] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
@@ -218,7 +223,7 @@ export default function YumiDecodeCard({
         certainty, so a low-confidence read says so in words rather than being
         presented at the same weight as a confident one.
       */}
-      {analysis.tone && (
+      {tones.length > 0 && (
         <div
           className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3"
           style={{ borderColor: "var(--msg-line)" }}
@@ -229,7 +234,9 @@ export default function YumiDecodeCard({
           >
             {copy.tone}
           </span>
-          <span className="text-[0.8125rem] font-medium">{analysis.tone}</span>
+          <span className="text-[0.8125rem] font-medium">
+            {tones.map((key) => copy.tones[key]).join(" · ")}
+          </span>
           {analysis.toneConfidence === "low" && (
             <span
               className="text-[0.6875rem]"

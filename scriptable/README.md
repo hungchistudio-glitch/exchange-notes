@@ -18,7 +18,7 @@ The complete private token is shown only once. Exchange Notes stores only its SH
 2. Create a new Scriptable script named `Exchange Notes Yumi Widget`.
 3. Copy the complete contents of `ExchangeNotesYumiWidget.js` into the script.
 4. Run the script inside Scriptable.
-5. Choose **設定或更新連線**.
+5. Choose **Set up or update connection** (the menu follows the app's display language; in Traditional Chinese it reads **設定或更新連線**).
 6. Enter the deployed Exchange Notes HTTPS URL.
 7. Paste the private token created in Exchange Notes.
 8. Choose a Widget preview to verify the layout.

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 
 type Props = {
   todayProgress: number;
@@ -46,7 +47,7 @@ export default function VocabularyHero({
   retention,
   weakWords,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const hero = t.vocabulary.hero;
 
   const percent =
@@ -61,11 +62,12 @@ export default function VocabularyHero({
   const goalCompleted =
     todayGoal > 0 && todayProgress >= todayGoal;
 
-  const remainingMessage = (
-    remaining === 1
-      ? hero.wordRemaining
-      : hero.wordsRemaining
-  ).replace("{count}", String(remaining));
+  const remainingMessage = plural(
+    remaining,
+    locale,
+    hero.wordRemaining,
+    hero.wordsRemaining,
+  );
 
   return (
     <section className="overflow-hidden rounded-[22px] bg-black px-5 py-5 text-white sm:px-6 sm:py-6">

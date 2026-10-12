@@ -12,6 +12,7 @@ import {
 import { useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import useInView from "@/hooks/useInView";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
 import useFeedPersistence from "@/hooks/pet/useFeedPersistence";
 import useYumiFeedingSequence from "@/hooks/pet/useYumiFeedingSequence";
@@ -113,7 +114,7 @@ export default function YumiCompanion({
   onOpenPronunciation,
   onOpenCollections,
 }: YumiCompanionProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { isCosmic } = useInterfaceMode();
   const copy = t.vocabulary.mascot;
 
@@ -375,15 +376,23 @@ export default function YumiCompanion({
   );
 
   const totalCookiesFed = petState?.total_cookies_fed ?? 0;
-  const wordsText = (
-    dailyProgress === 1 ? copy.summaryWordSingular : copy.summaryWordPlural
-  ).replace("{count}", String(dailyProgress));
-  const cookiesText = (
-    totalCookiesFed === 1 ? copy.summaryCookieSingular : copy.summaryCookiePlural
-  ).replace("{count}", String(totalCookiesFed));
-  const streakText = copy.summaryStreak.replace(
-    "{count}",
-    String(streak.currentStreak),
+  const wordsText = plural(
+    dailyProgress,
+    locale,
+    copy.summaryWordSingular,
+    copy.summaryWordPlural,
+  );
+  const cookiesText = plural(
+    totalCookiesFed,
+    locale,
+    copy.summaryCookieSingular,
+    copy.summaryCookiePlural,
+  );
+  const streakText = plural(
+    streak.currentStreak,
+    locale,
+    copy.summaryStreakOne,
+    copy.summaryStreak,
   );
   /*
    * The daily line, as parts rather than one string.

@@ -3,6 +3,7 @@
 import { Bookmark, Check, Send, Volume2 } from "lucide-react";
 
 import OrbitIconButton from "@/components/foundation/buttons/OrbitIconButton";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import { formatMessageTime } from "@/lib/messages/format";
 import { signedImageHref } from "@/lib/media/imageUrl";
 import type { SharedWordCard } from "@/lib/messages/wordCard";
@@ -53,6 +54,7 @@ export default function WordCardMessage({
   onSave,
   onShare,
 }: WordCardMessageProps) {
+  const { locale } = useTranslation();
   /*
    * Read by the same rule the vocabulary screens use, so a word in your
    * history is laid out like a word in your library: it leads in its own
@@ -354,7 +356,7 @@ export default function WordCardMessage({
           className="text-[0.625rem]"
           style={{ color: "var(--msg-ink-faint)" }}
         >
-          {formatMessageTime(createdAt)}
+          {formatMessageTime(createdAt, locale)}
         </time>
 
         <div className="flex items-center gap-1.5">

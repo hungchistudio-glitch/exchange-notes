@@ -46,3 +46,19 @@ it("yesterday's batch is refreshed on opening", async () => {
   await screen.findByText("story fresh");
   expect(fetch).toHaveBeenCalledTimes(1);
 });
+it("says the stories are not ready yet in the reader's words, not the route's", async () => {
+  m.read.mockResolvedValue(null);
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+    ok: false,
+    json: async () => ({ error: "Today's stories haven't been generated yet. Please check back shortly.", code: "not-generated" }),
+  }));
+  render(<DailyNews />);
+  expect(await screen.findByText(english.discover.notGeneratedError)).toBeTruthy();
+});
+it("never shows a database or network message when the feed cannot load", async () => {
+  m.read.mockResolvedValue(null);
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+  render(<DailyNews />);
+  expect(await screen.findByText(english.discover.loadFallbackError)).toBeTruthy();
+  expect(screen.queryByText("Failed to fetch")).toBeNull();
+});

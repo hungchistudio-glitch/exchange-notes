@@ -233,7 +233,9 @@ it("a server error does not label the phone offline", async () => {
   try {
     const { result } = renderHook(() => useLexiconSearch({ items: [] }));
     act(() => result.current.submit("server test", "type"));
-    await waitFor(() => expect(result.current.error).toBe("server error"));
+    // A kind, worded by the screen in the display language — never the
+    // route's own sentence.
+    await waitFor(() => expect(result.current.error).toBe("failed"));
     expect(result.current.result?.offline).toBe(false);
   } finally { vi.unstubAllGlobals(); }
 });

@@ -7,6 +7,7 @@ import { ArrowLeft, FolderPlus, Plus } from "lucide-react";
 import Screen from "@/components/foundation/layout/Screen";
 import ClearFieldButton from "@/components/foundation/forms/ClearFieldButton";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import {
   COLLECTION_EMOJI_PRESETS,
   createCollection,
@@ -17,7 +18,7 @@ import { getSessionUser } from "@/lib/supabase/sessionUser";
 import type { VocabularyCollection } from "@/lib/types/app";
 
 export default function VocabularyCollectionsPage() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.vocabulary.collections;
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -190,7 +191,7 @@ export default function VocabularyCollectionsPage() {
         )}
 
         {loading && (
-          <p className="mt-10 text-center text-sm text-ink-faint">Loading…</p>
+          <p className="mt-10 text-center text-sm text-ink-faint">{t.common.loading}</p>
         )}
 
         {!loading && collections.length === 0 && (
@@ -222,7 +223,7 @@ export default function VocabularyCollectionsPage() {
                 <p className="mt-3 truncate font-bold">{collection.name}</p>
                 <p className="mt-0.5 text-xs text-ink-faint">
                   {collection.word_count ?? 0}{" "}
-                  {(collection.word_count ?? 0) === 1 ? copy.word : copy.words}
+                  {plural(collection.word_count ?? 0, locale, copy.word, copy.words)}
                 </p>
               </Link>
             ))}

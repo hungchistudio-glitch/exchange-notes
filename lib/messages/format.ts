@@ -5,19 +5,21 @@
  * conversation became separate routes: they render the same instants at
  * different granularities, and the two copies had already started to drift.
  *
- * Everything here goes through Intl with the browser's own locale, so a
- * Traditional Chinese interface gets Traditional Chinese weekday and month
- * names without a second dictionary to keep in sync.
+ * Everything here goes through Intl with the app's display language (the
+ * `locale` from useTranslation), so a Traditional Chinese interface gets
+ * Traditional Chinese weekday and month names without a second dictionary to
+ * keep in sync. Not the browser's own locale: a reader who set the app to
+ * French on an English phone reads French everywhere else in the app.
  */
 
 /** Row timestamps: a time today, a weekday this week, a date before that. */
-export function formatConversationTime(value: string): string {
+export function formatConversationTime(value: string, locale: string): string {
   const date = new Date(value);
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
 
   if (isToday) {
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(locale, {
       hour: "numeric",
       minute: "2-digit",
     }).format(date);
@@ -30,18 +32,18 @@ export function formatConversationTime(value: string): string {
   );
 
   if (daysAgo < 7) {
-    return new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(date);
+    return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(date);
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
   }).format(date);
 }
 
 /** Bubble timestamps, which are always within a day the divider named. */
-export function formatMessageTime(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+export function formatMessageTime(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
@@ -52,6 +54,7 @@ export function formatDateLabel(
   value: string,
   todayLabel: string,
   yesterdayLabel: string,
+  locale: string,
 ): string {
   const date = new Date(value);
   const today = new Date();
@@ -67,7 +70,7 @@ export function formatDateLabel(
   if (isSameDay(date, today)) return todayLabel;
   if (isSameDay(date, yesterday)) return yesterdayLabel;
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: date.getFullYear() === today.getFullYear() ? undefined : "numeric",

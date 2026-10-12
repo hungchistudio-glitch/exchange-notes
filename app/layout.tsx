@@ -25,22 +25,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Exchange Notes",
-  /*
-   * Five languages, not two. This still said "English and Traditional
-   * Chinese" long after the app learned Spanish, French and Italian — the
-   * kind of copy that goes stale silently because nothing renders it inside
-   * the product.
-   */
-  description:
-    "Look up any word in five languages, and keep the ones worth remembering.",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
+/*
+ * In the reader's display language: the description is what a pasted link
+ * previews, and the manifest is the one an install prompt reads (see
+ * lib/pwa/webManifest.ts for why each language has its own).
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getServerInterfaceLanguage();
+
+  return {
     title: "Exchange Notes",
-  },
-};
+    description: (await loadTranslations(language)).meta.appDescription,
+    manifest: `/manifest/${language}`,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Exchange Notes",
+    },
+  };
+}
 
 /*
  * Per-mode rather than a constant, because this is the colour iOS paints

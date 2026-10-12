@@ -7,6 +7,9 @@ import {
   useState,
 } from "react";
 
+import type { VocabularyError } from "@/contexts/VocabularyContext";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import { insertValues } from "@/lib/utils";
 import {
   changeVocabularyStatus,
   removeVocabularyItem,
@@ -19,7 +22,7 @@ import type {
 type UseVocabularyMutationsOptions = {
   items: VocabularyItem[];
   setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
-  setError: Dispatch<SetStateAction<string>>;
+  setError: Dispatch<SetStateAction<VocabularyError>>;
 };
 
 export default function useVocabularyMutations({
@@ -27,6 +30,8 @@ export default function useVocabularyMutations({
   setItems,
   setError,
 }: UseVocabularyMutationsOptions) {
+  const { t } = useTranslation();
+  const { deleteConfirm } = t.vocabulary.detail;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const changeStatus = useCallback(
@@ -53,11 +58,8 @@ export default function useVocabularyMutations({
         // Restore the previous state if the request fails.
         setItems(previousItems);
 
-        setError(
-          updateError instanceof Error
-            ? updateError.message
-            : "Could not update this word.",
-        );
+        console.error("Could not update the word:", updateError);
+        setError("update-failed");
       } finally {
         setUpdatingId(null);
       }
@@ -68,7 +70,7 @@ export default function useVocabularyMutations({
   const deleteVocabularyItem = useCallback(
     async (item: VocabularyItem) => {
       const confirmed = window.confirm(
-        `Delete "${item.word}" from your vocabulary?`,
+        insertValues(deleteConfirm, { word: item.word }),
       );
 
       if (!confirmed || updatingId) return;
@@ -89,16 +91,13 @@ export default function useVocabularyMutations({
         // Restore the item if deletion fails.
         setItems(previousItems);
 
-        setError(
-          deleteError instanceof Error
-            ? deleteError.message
-            : "Could not delete this word.",
-        );
+        console.error("Could not delete the word:", deleteError);
+        setError("delete-failed");
       } finally {
         setUpdatingId(null);
       }
     },
-    [items, setError, setItems, updatingId],
+    [deleteConfirm, items, setError, setItems, updatingId],
   );
 
   return {

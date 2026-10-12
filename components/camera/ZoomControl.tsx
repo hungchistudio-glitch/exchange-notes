@@ -17,6 +17,7 @@
    ========================================================= */
 
 import type { CameraCapabilities } from "@/lib/media/cameraCapabilities";
+import useTranslation from "@/hooks/i18n/useTranslation";
 
 type ZoomControlProps = {
   capabilities: CameraCapabilities;
@@ -35,11 +36,14 @@ type ZoomControlProps = {
   formatLevel: (level: string) => string;
 };
 
-/** One decimal, and no trailing ".0" — 1× and 1.4×, never 1.0×. */
-function formatFactor(value: number) {
-  return value >= 10 || Number.isInteger(value)
-    ? String(Math.round(value))
-    : value.toFixed(1);
+/**
+ * One decimal, and no trailing ".0" — 1× and 1.4×, never 1.0×. The decimal
+ * mark is the display language's: 1,4× in French, Spanish and Italian.
+ */
+function formatFactor(value: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits: value >= 10 ? 0 : 1,
+  }).format(value);
 }
 
 export default function ZoomControl({
@@ -50,6 +54,7 @@ export default function ZoomControl({
   label,
   formatLevel,
 }: ZoomControlProps) {
+  const { locale } = useTranslation();
   /*
    * The whole control is absent on hardware with no zoom range, which on
    * iPhone is every camera. See the note at the top of this file: a zoom
@@ -67,7 +72,7 @@ export default function ZoomControl({
         style={{ opacity: readoutVisible ? 1 : 0 }}
         aria-hidden={!readoutVisible}
       >
-        {formatLevel(formatFactor(zoom))}
+        {formatLevel(formatFactor(zoom, locale))}
       </div>
 
       <div
@@ -84,7 +89,7 @@ export default function ZoomControl({
               type="button"
               onClick={() => onZoom(stop)}
               aria-pressed={current}
-              aria-label={formatLevel(formatFactor(stop))}
+              aria-label={formatLevel(formatFactor(stop, locale))}
               /*
                * 44px of touch area inside a 34px visual pill: the spec asks
                * for real targets under compact icons, and a zoom stop that
@@ -96,7 +101,7 @@ export default function ZoomControl({
                   : "text-white/85 active:bg-white/15"
               }`}
             >
-              {formatFactor(stop)}
+              {formatFactor(stop, locale)}
               {/*
                 The active stop is not distinguished by fill alone: it also
                 carries the multiplication sign, so the state survives a

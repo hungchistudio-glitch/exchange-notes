@@ -26,9 +26,8 @@ export default function VocabularyCardDetails({ item }: Props) {
   const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
 
-  const { t, isTraditionalChinese } = useTranslation();
+  const { t, locale } = useTranslation();
   const detail = t.vocabulary.detail;
-  const locale = isTraditionalChinese ? "zh-TW" : "en-US";
   const added = formatDate(item.created_at, locale);
   const reviewed = formatDate(item.last_reviewed_at, locale);
 

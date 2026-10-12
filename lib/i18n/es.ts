@@ -11,6 +11,16 @@ const spanish: TranslationDictionary = {
     pendingMany: "{count} cambios pendientes de sincronizar",
     savedLocally: "Guardado en este dispositivo",
   },
+  meta: {
+    landingTitle: "Exchange Notes: guarda las palabras que vale la pena recordar",
+    landingDescription: "Busca, practica, guarda y comparte las palabras que vale la pena recordar, con Yumi a tu lado.",
+    appDescription: "Busca cualquier palabra en cinco idiomas y guarda las que vale la pena recordar.",
+  },
+  notFound: {
+    title: "No se encontró la página",
+    description: "Puede que el enlace no sea correcto o que la página se haya movido.",
+    home: "Ir a Exchange Notes",
+  },
   pwa: {
     title: "Exchange Notes está listo",
     subtitle:
@@ -142,7 +152,7 @@ const spanish: TranslationDictionary = {
         "Una carta que no puedes pedir, o un solo objeto en un plano lleno: la cámara resuelve ambos, de formas distintas.",
       pickerAriaLabel: "Elige una función de la cámara",
       previewAriaLabel: "Vista previa de la función de cámara",
-      cosmicBadge: "Yumi Cosmic Mode",
+      cosmicBadge: "Modo Cósmico de Yumi",
       menu: {
         label: "Traducir una carta",
         blurb: "Cada plato, en su orden y en su sitio.",
@@ -455,6 +465,9 @@ const spanish: TranslationDictionary = {
       "Solo se pueden buscar las palabras que ya están en este dispositivo.",
     errorTitle: "No se encontró un resultado exacto.",
     errorDescription: "Revisa la ortografía o prueba con una foto.",
+    lookupFailedError: "No se ha podido buscar esa palabra. Inténtalo de nuevo.",
+    signInError: "Inicia sesión para buscar palabras.",
+    tooLongError: "Es demasiado largo para buscarlo. Usa menos de 1000 caracteres.",
     retry: "Reintentar",
 
     yourVocabulary: "Tu vocabulario",
@@ -538,6 +551,7 @@ const spanish: TranslationDictionary = {
       eyebrow: "Puente de mando",
       title: "Puente de mando de Yumi",
       subtitle: "Todos los sistemas en línea. Elige adónde ir.",
+      edition: "CÓSMICO",
       coreLabel: "Núcleo de Yumi",
       dockLabel: "Navegación cósmica",
       roomsLabel: "Controles de mando",
@@ -659,6 +673,7 @@ const spanish: TranslationDictionary = {
       "Ya estás viendo las historias de hoy: se publica una tanda nueva una vez al día.",
     tryAgain: "Reintentar",
     loadFallbackError: "Las noticias del día no están disponibles ahora mismo.",
+    notGeneratedError: "Las noticias de hoy aún no están listas. Vuelve dentro de un rato.",
 
     justNow: "Justo ahora",
     minutesAgo: "hace {count} min",
@@ -675,7 +690,6 @@ const spanish: TranslationDictionary = {
     loginRequiredError: "No has iniciado sesión. Entra para compartir con tu pareja.",
     loadFriendsError: "No se han podido cargar tus contactos. Inténtalo de nuevo.",
     sendToPartnerError: "No se ha podido enviar esta noticia. Inténtalo de nuevo.",
-    loadNewsError: "No se han podido cargar las noticias del día.",
 
     loading: "Cargando las lecciones de hoy…",
 
@@ -694,10 +708,12 @@ const spanish: TranslationDictionary = {
       environment: "Medioambiente",
       politics: "Política",
       general: "Actualidad",
+      taiwan: "Taiwán",
     },
 
     latestStoriesLabel: "Últimas historias",
     keyWordsLabel: "{count} palabras clave",
+    keyWordsLabelOne: "{count} palabra clave",
     moreActionsAriaLabel: "Más acciones",
     openSource: "Abrir la fuente",
     shareStory: "Compartir",
@@ -742,6 +758,7 @@ const spanish: TranslationDictionary = {
     saveWordLoginError: "Inicia sesión para guardar palabras.",
 
     exploreImageLabel: "Explorar esta imagen · {count} palabras",
+    exploreImageLabelOne: "Explorar esta imagen · {count} palabra",
   },
 
   capture: {
@@ -953,6 +970,7 @@ const spanish: TranslationDictionary = {
       zhuyin: "Zhuyin",
       example: "Ejemplo",
       untitledWord: "Palabra sin título",
+      carouselRole: "carrusel",
       emptyHeading: "Empieza tu primera lección",
       emptyDescription: "Añade una palabra y aparecerá aquí.",
       previousWord: "Palabra anterior",
@@ -991,6 +1009,7 @@ const spanish: TranslationDictionary = {
       mastered: "Dominadas",
       practice: "Practicar",
       totalReviews: "{count} repasos en total",
+      totalReviewsOne: "{count} repaso en total",
       memoryStrength: "Fuerza de la memoria",
       wordsCompleted: "Palabras completadas",
       wordsToRevisit: "Palabras que repasar",
@@ -1082,6 +1101,7 @@ const spanish: TranslationDictionary = {
     playAgain: "Reproducir otra vez",
     openLab: "Abrir el laboratorio de pronunciación",
     backToVocabulary: "Volver al vocabulario",
+    badge: "Voz de Yumi",
   },
 
   pronunciation: {
@@ -1439,6 +1459,23 @@ const spanish: TranslationDictionary = {
       reading: "Yumi lo está leyendo…",
       tone: "Tono",
       toneUncertain: "Yumi no tiene claro el tono aquí.",
+      tones: {
+        casual: "Informal",
+        friendly: "Amistoso",
+        warm: "Cálido",
+        playful: "Juguetón",
+        teasing: "Burlón",
+        excited: "Entusiasmado",
+        grateful: "Agradecido",
+        apologetic: "Arrepentido",
+        polite: "Educado",
+        formal: "Formal",
+        serious: "Serio",
+        annoyed: "Molesto",
+        worried: "Preocupado",
+        sad: "Triste",
+        sarcastic: "Sarcástico",
+      },
       types: {
         expression: "Expresión",
         abbreviation: "Abreviatura",
@@ -1651,6 +1688,7 @@ const spanish: TranslationDictionary = {
       summaryCookieSingular: "{count} galleta",
       summaryCookiePlural: "{count} galletas",
       summaryStreak: "racha de {count} días",
+      summaryStreakOne: "racha de {count} día",
       cookieTrayEmpty: "Añade una palabra para ganarle una galleta a Yumi.",
       cookieTrayHint: "Arrastra una galleta hasta Yumi",
       cookieTrayMore: "+{count} más",
@@ -1798,6 +1836,11 @@ const spanish: TranslationDictionary = {
       listenAriaLabel: "Escuchar: {text}",
       copyWordAriaLabel: "Copiar {text}",
       copiedAriaLabel: "Copiado",
+      dialogLabel: "Detalles de {word}",
+      deleteConfirm: "¿Eliminar «{word}» de tu vocabulario?",
+      updateError: "No se ha podido actualizar esta palabra. Inténtalo de nuevo.",
+      deleteError: "No se ha podido eliminar esta palabra. Inténtalo de nuevo.",
+      libraryLoadError: "No se ha podido cargar tu vocabulario. Inténtalo de nuevo.",
       markAsMastered: "Marcar como dominada",
       markAsLearning: "Pasar a aprendiendo",
 
@@ -1940,6 +1983,7 @@ const spanish: TranslationDictionary = {
     completeTitle: "Buen trabajo.",
     completeDescription: "Se ha actualizado tu calendario de repasos.",
     completedReviews: "Has completado {count} repasos.",
+    completedReviewsOne: "Has completado {count} repaso.",
     backToVocabulary: "Volver a tus palabras",
     backToHome: "Volver al inicio",
     grades: {
@@ -2004,7 +2048,8 @@ const spanish: TranslationDictionary = {
       viewMode: "Vista",
 
       itemCount: "{count} platos",
-      sourceLanguage: "De {language}",
+      itemCountOne: "{count} plato",
+      sourceLanguage: "Idioma original: {language}",
       unknownLanguage: "un idioma desconocido",
       partialTitle: "Leído con poca confianza",
       partialBody:
@@ -2046,6 +2091,27 @@ const spanish: TranslationDictionary = {
       priceLabel: "Precio",
       aboutLabel: "Qué es",
       cuisineLabel: "Cocina",
+      cuisines: {
+        japanese: "Japonesa",
+        chinese: "China",
+        taiwanese: "Taiwanesa",
+        korean: "Coreana",
+        thai: "Tailandesa",
+        vietnamese: "Vietnamita",
+        indian: "India",
+        italian: "Italiana",
+        french: "Francesa",
+        spanish: "Española",
+        mexican: "Mexicana",
+        american: "Estadounidense",
+        mediterranean: "Mediterránea",
+        middleEastern: "De Oriente Medio",
+        cafe: "Cafetería",
+        bakery: "Panadería y postres",
+        seafood: "Pescados y mariscos",
+        vegetarian: "Vegetariana",
+        fusion: "Fusión",
+      },
       listen: "Escuchar",
       listening: "Reproduciendo…",
       saveWord: "Guardar en mis palabras",
@@ -2151,6 +2217,7 @@ const spanish: TranslationDictionary = {
       idAvailable: "Este Exchange ID está libre.",
       idTaken: "Este Exchange ID ya está en uso.",
       idCheckError: "No se ha podido comprobar la disponibilidad.",
+      loadError: "No se ha podido cargar tu perfil. Inténtalo de nuevo.",
     },
 
     dailyGoal: {
@@ -2351,6 +2418,7 @@ const spanish: TranslationDictionary = {
       statusError:
         "No se ha podido comprobar el estado de las notificaciones. Inténtalo de nuevo.",
       sendTest: "Enviar una notificación de prueba",
+      testBody: "Las notificaciones funcionan en este dispositivo.",
       testing: "Enviando la prueba…",
       testDescription:
         "La prueba se envía a todos los dispositivos activos de Exchange Notes de tu cuenta.",

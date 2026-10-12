@@ -37,6 +37,16 @@ import { applyLanguageFill } from "@/lib/vocabulary/applyLanguageFill";
 import { fetchVocabulary, getCurrentUser } from "@/lib/vocabulary/repository";
 import { subscribeToSavedWords } from "@/lib/vocabulary/savedWords";
 
+/**
+ * What went wrong with the library, as a kind rather than a sentence.
+ *
+ * This held the error's own message, which was the network's or the
+ * database's English ("Load failed") or a fixed English fallback, shown in
+ * the banner whatever language the app was in. The screen that shows it
+ * says it in the reader's language (VocabularyMainContent).
+ */
+export type VocabularyError = "" | "load-failed" | "update-failed" | "delete-failed";
+
 type VocabularyContextType = {
   items: VocabularyItem[];
   setItems: Dispatch<SetStateAction<VocabularyItem[]>>;
@@ -44,8 +54,8 @@ type VocabularyContextType = {
   learningLanguage: LanguageCode | null;
 
   loading: boolean;
-  error: string;
-  setError: Dispatch<SetStateAction<string>>;
+  error: VocabularyError;
+  setError: Dispatch<SetStateAction<VocabularyError>>;
 
   /**
    * Whether the missing side of some words is being filled in right now.
@@ -144,19 +154,13 @@ async function readLocalSnapshot(): Promise<VocabularyItem[]> {
   return applyPending(mirror, pending);
 }
 
-function loadErrorMessage(error: unknown) {
-  return error instanceof Error
-    ? error.message
-    : "Could not load your vocabulary.";
-}
-
 export function VocabularyProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [learningLanguage, setLearningLanguage] = useState<LanguageCode | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<VocabularyError>("");
   const requestEpoch = useRef(0);
   const account = useRef<string | null>(null);
 
@@ -189,7 +193,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
       if (epoch !== requestEpoch.current) return;
 
       if (local.length > 0) setItems(local);
-      else setError(loadErrorMessage(refreshError));
+      else setError("load-failed");
     } finally {
       if (epoch === requestEpoch.current) setLoading(false);
     }
@@ -235,7 +239,7 @@ export function VocabularyProvider({ children }: { children: ReactNode }) {
         if (loadError instanceof TypeError) reportNetworkFailure();
 
         // Only an error when there is nothing local either.
-        if (local.length === 0) setError(loadErrorMessage(loadError));
+        if (local.length === 0) setError("load-failed");
       } finally {
         if (active && epoch === requestEpoch.current) setLoading(false);
       }

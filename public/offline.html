@@ -74,13 +74,85 @@
   <body>
     <main>
       <p>Exchange Notes</p>
-      <h1>You’re offline.</h1>
-      <p>
-        沒有網路連線 · Sin conexión · Hors connexion · Sei offline<br />
+      <h1 data-text="heading">You’re offline.</h1>
+      <p data-text="body">
         Your private pages were not stored in the browser cache. Reconnect to
         continue safely.
       </p>
-      <button type="button" onclick="location.reload()">Try again</button>
+      <button type="button" data-text="retry" onclick="location.reload()">
+        Try again
+      </button>
     </main>
+    <script>
+      /*
+       * In the reader's display language. This page is a static file served
+       * by the service worker with no app around it, so it reads the same
+       * cookie and storage key the app writes (lib/appPreferences.ts) and
+       * carries its own five lines. English, like the app, when nothing has
+       * been chosen yet.
+       */
+      (function () {
+        var TEXT = {
+          english: {
+            lang: "en",
+            title: "Exchange Notes · Offline",
+            heading: "You’re offline.",
+            body: "Your private pages were not stored in the browser cache. Reconnect to continue safely.",
+            retry: "Try again",
+          },
+          "traditional-chinese": {
+            lang: "zh-Hant",
+            title: "Exchange Notes · 目前離線",
+            heading: "目前離線。",
+            body: "為了保護隱私，你的個人頁面沒有存在瀏覽器快取裡。重新連上網路後就能安全地繼續使用。",
+            retry: "再試一次",
+          },
+          spanish: {
+            lang: "es",
+            title: "Exchange Notes · Sin conexión",
+            heading: "Estás sin conexión.",
+            body: "Tus páginas privadas no se guardaron en la caché del navegador. Vuelve a conectarte para continuar de forma segura.",
+            retry: "Reintentar",
+          },
+          french: {
+            lang: "fr",
+            title: "Exchange Notes · Hors ligne",
+            heading: "Vous êtes hors ligne.",
+            body: "Vos pages privées n’ont pas été enregistrées dans le cache du navigateur. Reconnectez-vous pour continuer en toute sécurité.",
+            retry: "Réessayer",
+          },
+          italian: {
+            lang: "it",
+            title: "Exchange Notes · Offline",
+            heading: "Sei offline.",
+            body: "Le tue pagine private non sono state salvate nella cache del browser. Riconnettiti per continuare in sicurezza.",
+            retry: "Riprova",
+          },
+        };
+        var KEY = "exchange-notes-interface-language";
+
+        function chosen() {
+          var match = document.cookie.match(
+            new RegExp("(?:^|; )" + KEY + "=([^;]*)")
+          );
+          if (match && TEXT[decodeURIComponent(match[1])]) {
+            return decodeURIComponent(match[1]);
+          }
+          try {
+            var saved = window.localStorage.getItem(KEY);
+            if (saved && TEXT[saved]) return saved;
+          } catch (error) {}
+          return "english";
+        }
+
+        var text = TEXT[chosen()];
+        document.documentElement.lang = text.lang;
+        document.title = text.title;
+        var nodes = document.querySelectorAll("[data-text]");
+        for (var i = 0; i < nodes.length; i += 1) {
+          nodes[i].textContent = text[nodes[i].getAttribute("data-text")];
+        }
+      })();
+    </script>
   </body>
 </html>
