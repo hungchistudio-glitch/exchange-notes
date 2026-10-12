@@ -119,6 +119,10 @@ export default function YumiCompanion({
   const copy = t.vocabulary.mascot;
 
   const [petState, setPetState] = useState<PetState | null>(null);
+  /* Which words she has already eaten is only known once her row is read.
+     Until then there are no cookies: "nothing fed" would put a cookie on
+     every saved word for a moment, then take them all away again. */
+  const [petLoaded, setPetLoaded] = useState(false);
   // A Core is inside Yumi's attraction zone. Held here rather than inside the
   // tray because it is Yumi that has to answer it, and the tray has no way to
   // reach across.
@@ -177,6 +181,8 @@ export default function YumiCompanion({
         // Not signed in yet, or yumi_pet_state hasn't been migrated on the
         // live database — Yumi still renders and reacts, it just won't
         // remember growth across visits until that resolves.
+      } finally {
+        if (!cancelled) setPetLoaded(true);
       }
     }
 
@@ -266,11 +272,13 @@ export default function YumiCompanion({
      a word its card has on it. */
   const { learningLanguage: cardLanguage, supportLanguage } = useDisplayLanguages();
   const cookies: Cookie[] = useMemo(
-    () => buildAvailableCookies(items, fedWordIds ?? [], {
-      learningLanguage: cardLanguage,
-      supportLanguage,
-    }),
-    [items, fedWordIds, cardLanguage, supportLanguage],
+    () => petLoaded
+      ? buildAvailableCookies(items, fedWordIds ?? [], {
+        learningLanguage: cardLanguage,
+        supportLanguage,
+      })
+      : [],
+    [petLoaded, items, fedWordIds, cardLanguage, supportLanguage],
   );
   const growthStage = computeGrowthStage(petState?.total_cookies_fed ?? 0);
   const crownEarned = hasCrown(streak.currentStreak);
