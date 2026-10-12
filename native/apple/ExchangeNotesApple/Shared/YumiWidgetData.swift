@@ -6,19 +6,19 @@ struct YumiWidgetLocalizedText: Codable {
     let emptyWord: String
     let cookieUnit: String
 
-    static let preview = YumiWidgetLocalizedText(
-        headline: "Yumi 對今天的單字很好奇",
-        hint: "再學一個試試？",
-        emptyWord: "還沒有今日單字",
-        cookieUnit: "餅乾"
-    )
+    /// Before the first sync the app's setting is unknown, so these follow
+    /// the device language.
+    static var preview: YumiWidgetLocalizedText {
+        YumiWidgetInterfaceText.preview(
+            YumiWidgetInterfaceText.deviceInterfaceLanguage
+        )
+    }
 
-    static let empty = YumiWidgetLocalizedText(
-        headline: "Open Exchange Notes",
-        hint: "打開 App 同步 Yumi",
-        emptyWord: "Yumi 正在等待同步",
-        cookieUnit: ""
-    )
+    static var empty: YumiWidgetLocalizedText {
+        YumiWidgetInterfaceText.empty(
+            YumiWidgetInterfaceText.deviceInterfaceLanguage
+        )
+    }
 }
 
 struct YumiWidgetWord: Codable, Hashable {
@@ -148,7 +148,7 @@ struct YumiWidgetData: Codable {
         return []
     }
 
-    static let preview = YumiWidgetData(
+    static var preview: YumiWidgetData { YumiWidgetData(
         cookieCount: 2,
         cookieGoal: 3,
         primaryText: "curious",
@@ -202,14 +202,15 @@ struct YumiWidgetData: Codable {
                 zhuyin: "ㄍㄨㄢ ㄔㄚˊ"
             ),
         ],
-        interfaceLanguage: "traditional-chinese",
+        interfaceLanguage:
+            YumiWidgetInterfaceText.deviceInterfaceLanguage,
         learningLanguage: "english",
         moodKey: YumiMood.curious.rawValue,
         localizedText: .preview,
         updatedAt: Date()
-    )
+    ) }
 
-    static let empty = YumiWidgetData(
+    static var empty: YumiWidgetData { YumiWidgetData(
         cookieCount: 0,
         cookieGoal: 3,
         primaryText: nil,
@@ -223,12 +224,13 @@ struct YumiWidgetData: Codable {
         pinyin: "",
         zhuyin: "",
         words: [],
-        interfaceLanguage: "english",
+        interfaceLanguage:
+            YumiWidgetInterfaceText.deviceInterfaceLanguage,
         learningLanguage: "english",
         moodKey: YumiMood.waiting.rawValue,
         localizedText: .empty,
         updatedAt: Date()
-    )
+    ) }
 }
 
 enum YumiWidgetStore {

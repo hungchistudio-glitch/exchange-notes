@@ -2,16 +2,26 @@ import AppIntents
 import WidgetKit
 
 struct NavigateYumiWordIntent: AppIntent {
-    static let title: LocalizedStringResource =
-        "Browse saved words"
+    static let title = LocalizedStringResource(
+        "intent.browseWords.title",
+        defaultValue: "Browse saved words"
+    )
 
     static let description = IntentDescription(
-        "Shows the previous or next saved vocabulary card."
+        LocalizedStringResource(
+            "intent.browseWords.description",
+            defaultValue: "Shows the previous or next saved vocabulary card."
+        )
     )
 
     static let openAppWhenRun: Bool = false
 
-    @Parameter(title: "Direction")
+    @Parameter(
+        title: LocalizedStringResource(
+            "intent.parameter.direction",
+            defaultValue: "Direction"
+        )
+    )
     var offset: Int
 
     init() {

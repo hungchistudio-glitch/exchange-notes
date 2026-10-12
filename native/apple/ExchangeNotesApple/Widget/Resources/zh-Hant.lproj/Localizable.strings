@@ -1,5 +1,19 @@
+/* Widget gallery and legacy labels */
 "widget.gallery.name" = "Yumi 每日陪伴";
 "widget.gallery.description" = "讓 Yumi 在桌面陪你查看每天的學習狀態。";
 "widget.action.addWord" = "新增單字";
 "widget.action.camera" = "相機辨識";
 "widget.progress.today" = "今日學習";
+
+/* App Intents (Shortcuts and widget buttons) */
+"intent.speakCard.title" = "播放 Yumi 發音";
+"intent.speakCard.description" = "不必打開 Exchange Notes，就能用單字本身的語言播放已存單字。";
+"intent.speakEnglish.title" = "播放 Yumi 英文發音";
+"intent.speakEnglish.description" = "不必打開 Exchange Notes，就能播放已存的英文單字。";
+"intent.speakChinese.title" = "播放 Yumi 繁體中文發音";
+"intent.speakChinese.description" = "不必打開 Exchange Notes，就能播放已存的繁體中文單字。";
+"intent.browseWords.title" = "瀏覽已存單字";
+"intent.browseWords.description" = "顯示上一張或下一張已存的單字卡。";
+"intent.parameter.text" = "文字";
+"intent.parameter.language" = "語言";
+"intent.parameter.direction" = "方向";

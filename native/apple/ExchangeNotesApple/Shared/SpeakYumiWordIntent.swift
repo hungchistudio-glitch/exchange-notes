@@ -17,21 +17,36 @@ import Foundation
  * outcome than a redundant pair of intents.
  */
 struct SpeakYumiCardWordIntent: AudioPlaybackIntent {
-    static let title: LocalizedStringResource =
-        "Play Yumi pronunciation"
+    static let title = LocalizedStringResource(
+        "intent.speakCard.title",
+        defaultValue: "Play Yumi pronunciation"
+    )
 
     static let description = IntentDescription(
-        "Plays a saved word in its own language without opening Exchange Notes."
+        LocalizedStringResource(
+            "intent.speakCard.description",
+            defaultValue: "Plays a saved word in its own language without opening Exchange Notes."
+        )
     )
 
     static let openAppWhenRun = false
 
-    @Parameter(title: "Text")
+    @Parameter(
+        title: LocalizedStringResource(
+            "intent.parameter.text",
+            defaultValue: "Text"
+        )
+    )
     var text: String
 
     /// A BCP-47 content code — `en`, `zh-TW`, `es`, `fr`, `it`. Unknown
     /// values fall back to a voice rather than to silence.
-    @Parameter(title: "Language")
+    @Parameter(
+        title: LocalizedStringResource(
+            "intent.parameter.language",
+            defaultValue: "Language"
+        )
+    )
     var language: String
 
     init() {
@@ -77,16 +92,26 @@ private func speakYumiWord(
 }
 
 struct SpeakYumiEnglishWordIntent: AudioPlaybackIntent {
-    static let title: LocalizedStringResource =
-        "Play Yumi English pronunciation"
+    static let title = LocalizedStringResource(
+        "intent.speakEnglish.title",
+        defaultValue: "Play Yumi English pronunciation"
+    )
 
     static let description = IntentDescription(
-        "Plays a saved English word without opening Exchange Notes."
+        LocalizedStringResource(
+            "intent.speakEnglish.description",
+            defaultValue: "Plays a saved English word without opening Exchange Notes."
+        )
     )
 
     static let openAppWhenRun = false
 
-    @Parameter(title: "Text")
+    @Parameter(
+        title: LocalizedStringResource(
+            "intent.parameter.text",
+            defaultValue: "Text"
+        )
+    )
     var text: String
 
     init() {
@@ -107,16 +132,26 @@ struct SpeakYumiEnglishWordIntent: AudioPlaybackIntent {
 struct SpeakYumiTraditionalChineseWordIntent:
     AudioPlaybackIntent
 {
-    static let title: LocalizedStringResource =
-        "Play Yumi Traditional Chinese pronunciation"
+    static let title = LocalizedStringResource(
+        "intent.speakChinese.title",
+        defaultValue: "Play Yumi Traditional Chinese pronunciation"
+    )
 
     static let description = IntentDescription(
-        "Plays a saved Traditional Chinese word without opening Exchange Notes."
+        LocalizedStringResource(
+            "intent.speakChinese.description",
+            defaultValue: "Plays a saved Traditional Chinese word without opening Exchange Notes."
+        )
     )
 
     static let openAppWhenRun = false
 
-    @Parameter(title: "Text")
+    @Parameter(
+        title: LocalizedStringResource(
+            "intent.parameter.text",
+            defaultValue: "Text"
+        )
+    )
     var text: String
 
     init() {
