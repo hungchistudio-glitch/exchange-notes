@@ -28,6 +28,18 @@ export type TranslationDictionary = {
     pendingMany: string;
     savedLocally: string;
   };
+  /** What a link to the app or its introduction says when it leaves the app: page titles, link previews and the install description. */
+  meta: {
+    landingTitle: string;
+    landingDescription: string;
+    appDescription: string;
+  };
+  /** The page shown for an address that does not exist. */
+  notFound: {
+    title: string;
+    description: string;
+    home: string;
+  };
   pwa: {
     title: string;
     subtitle: string;
@@ -454,6 +466,9 @@ export type TranslationDictionary = {
     offlineDescription: string;
     errorTitle: string;
     errorDescription: string;
+    lookupFailedError: string;
+    signInError: string;
+    tooLongError: string;
     retry: string;
 
     yourVocabulary: string;
@@ -540,6 +555,7 @@ export type TranslationDictionary = {
       eyebrow: string;
       title: string;
       subtitle: string;
+      edition: string;
       coreLabel: string;
       dockLabel: string;
       roomsLabel: string;
@@ -642,6 +658,7 @@ export type TranslationDictionary = {
     sameBatchNotice: string;
     tryAgain: string;
     loadFallbackError: string;
+    notGeneratedError: string;
 
     justNow: string;
     minutesAgo: string;
@@ -658,7 +675,6 @@ export type TranslationDictionary = {
     loginRequiredError: string;
     loadFriendsError: string;
     sendToPartnerError: string;
-    loadNewsError: string;
 
     loading: string;
 
@@ -677,10 +693,12 @@ export type TranslationDictionary = {
       environment: string;
       politics: string;
       general: string;
+      taiwan: string;
     };
 
     latestStoriesLabel: string;
     keyWordsLabel: string;
+    keyWordsLabelOne: string;
     moreActionsAriaLabel: string;
     openSource: string;
     shareStory: string;
@@ -725,6 +743,7 @@ export type TranslationDictionary = {
     saveWordLoginError: string;
 
     exploreImageLabel: string;
+    exploreImageLabelOne: string;
   };
 
   capture: {
@@ -936,6 +955,7 @@ export type TranslationDictionary = {
       zhuyin: string;
       example: string;
       untitledWord: string;
+      carouselRole: string;
       emptyHeading: string;
       emptyDescription: string;
       previousWord: string;
@@ -974,6 +994,7 @@ export type TranslationDictionary = {
       mastered: string;
       practice: string;
       totalReviews: string;
+      totalReviewsOne: string;
       memoryStrength: string;
       wordsCompleted: string;
       wordsToRevisit: string;
@@ -1071,6 +1092,7 @@ export type TranslationDictionary = {
     playAgain: string;
     openLab: string;
     backToVocabulary: string;
+    badge: string;
   };
 
   pronunciation: {
@@ -1443,6 +1465,24 @@ export type TranslationDictionary = {
       reading: string;
       tone: string;
       toneUncertain: string;
+      tones: {
+        /** One per key in TONE_KEYS (lib/messages/decode.ts). */
+        casual: string;
+        friendly: string;
+        warm: string;
+        playful: string;
+        teasing: string;
+        excited: string;
+        grateful: string;
+        apologetic: string;
+        polite: string;
+        formal: string;
+        serious: string;
+        annoyed: string;
+        worried: string;
+        sad: string;
+        sarcastic: string;
+      };
       types: {
         expression: string;
         abbreviation: string;
@@ -1646,6 +1686,7 @@ export type TranslationDictionary = {
       summaryCookieSingular: string;
       summaryCookiePlural: string;
       summaryStreak: string;
+      summaryStreakOne: string;
       cookieTrayEmpty: string;
       cookieTrayHint: string;
       cookieTrayMore: string;
@@ -1796,6 +1837,11 @@ export type TranslationDictionary = {
       listenAriaLabel: string;
       copyWordAriaLabel: string;
       copiedAriaLabel: string;
+      dialogLabel: string;
+      deleteConfirm: string;
+      updateError: string;
+      deleteError: string;
+      libraryLoadError: string;
       markAsMastered: string;
       markAsLearning: string;
 
@@ -1943,6 +1989,7 @@ export type TranslationDictionary = {
     completeTitle: string;
     completeDescription: string;
     completedReviews: string;
+    completedReviewsOne: string;
     backToVocabulary: string;
     backToHome: string;
     grades: {
@@ -2008,6 +2055,7 @@ export type TranslationDictionary = {
       viewMode: string;
 
       itemCount: string;
+      itemCountOne: string;
       sourceLanguage: string;
       unknownLanguage: string;
       partialTitle: string;
@@ -2042,6 +2090,28 @@ export type TranslationDictionary = {
       priceLabel: string;
       aboutLabel: string;
       cuisineLabel: string;
+      cuisines: {
+        /** One per key in CUISINE_KEYS (lib/scanner/menuTypes.ts). */
+        japanese: string;
+        chinese: string;
+        taiwanese: string;
+        korean: string;
+        thai: string;
+        vietnamese: string;
+        indian: string;
+        italian: string;
+        french: string;
+        spanish: string;
+        mexican: string;
+        american: string;
+        mediterranean: string;
+        middleEastern: string;
+        cafe: string;
+        bakery: string;
+        seafood: string;
+        vegetarian: string;
+        fusion: string;
+      };
       listen: string;
       listening: string;
       saveWord: string;
@@ -2149,6 +2219,7 @@ export type TranslationDictionary = {
       idAvailable: string;
       idTaken: string;
       idCheckError: string;
+      loadError: string;
     };
 
     dailyGoal: {
@@ -2333,6 +2404,7 @@ export type TranslationDictionary = {
       unsubscribeError: string;
       statusError: string;
       sendTest: string;
+      testBody: string;
       testing: string;
       testDescription: string;
       testSuccess: string;

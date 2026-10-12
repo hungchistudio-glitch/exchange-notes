@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 
 import { useVocabulary } from "@/contexts/VocabularyContext";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 import type { ReviewAnalytics } from "@/lib/review/analytics";
 
@@ -106,7 +107,7 @@ export function LearningProgressPanelDisplay({
   loading?: boolean;
   loadError?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.home.progress;
 
   const unavailable = loading || loadError;
@@ -127,7 +128,12 @@ export function LearningProgressPanelDisplay({
       unit: noRates ? undefined : "%",
       sublabel: unavailable
         ? dash
-        : copy.totalReviews.replace("{count}", String(readings.reviewed)),
+        : plural(
+            readings.reviewed,
+            locale,
+            copy.totalReviewsOne,
+            copy.totalReviews,
+          ),
       reading: noRates ? undefined : readings.accuracy,
     },
     {

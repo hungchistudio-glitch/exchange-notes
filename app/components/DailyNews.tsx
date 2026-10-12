@@ -75,14 +75,25 @@ function recordSeen(cards: DailyNewsCard[]) {
 }
 
 /*
+ * What went wrong, as a kind. The screen turns it into a sentence in the
+ * reader's display language when it renders, so switching language while
+ * the message is up switches the message too. The route's own `error` text
+ * is English and stays in the logs.
+ */
+type DailyNewsError = "" | "not-generated" | "load-failed" | "save-failed";
+
+class DailyNewsLoadFailure extends Error {
+  constructor(readonly kind: "not-generated" | "load-failed") {
+    super(`Daily news failed: ${kind}`);
+  }
+}
+
+/*
  * Deliberately touches no state, so both the mount effect and the refresh
- * control can await it and apply the result on their own terms. It takes the
- * fallback message rather than reading the dictionary itself, which keeps it
- * outside the component without pulling translation in with it.
+ * control can await it and apply the result on their own terms.
  */
 async function fetchDailyNews(
-  signal: AbortSignal,
-  loadNewsError: string
+  signal: AbortSignal
 ): Promise<DailyNewsResponse> {
   const response = await fetch("/api/daily-news", {
     method: "GET",
@@ -93,11 +104,13 @@ async function fetchDailyNews(
 
   const payload = (await response.json()) as
     | DailyNewsResponse
-    | { error: string };
+    | { error: string; code?: string };
 
   if (!response.ok || "error" in payload) {
-    throw new Error(
-      "error" in payload ? payload.error : loadNewsError
+    throw new DailyNewsLoadFailure(
+      "error" in payload && payload.code === "not-generated"
+        ? "not-generated"
+        : "load-failed"
     );
   }
 
@@ -131,7 +144,8 @@ function LoadingHero() {
 
 function formatPublishedTime(
   value: string,
-  copy: TranslationDictionary["discover"]
+  copy: TranslationDictionary["discover"],
+  locale: string
 ) {
   const publishedDate = new Date(value);
 
@@ -156,7 +170,7 @@ function formatPublishedTime(
     return copy.hoursAgo.replace("{count}", String(hours));
   }
 
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
   }).format(publishedDate);
@@ -191,7 +205,7 @@ function createPartnerMessage(card: DailyNewsCard) {
 const NEWS_CACHE_KEY = "news:lastBatch";
 
 export default function DailyNews() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.discover;
 
   const { learningLanguage, pair } = useDisplayLanguages();
@@ -205,7 +219,7 @@ export default function DailyNews() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<DailyNewsError>("");
 
   /*
    * The last batch that arrived, kept on the device.
@@ -318,10 +332,7 @@ export default function DailyNews() {
       setNotice("");
 
       try {
-        const payload = await fetchDailyNews(
-          controller.signal,
-          copy.loadNewsError
-        );
+        const payload = await fetchDailyNews(controller.signal);
 
         /*
          * The feed used to compare generatedAt against the last batch to
@@ -359,9 +370,9 @@ export default function DailyNews() {
         if (await loadFromDevice(learningLanguage, controller.signal)) return;
 
         setError(
-          requestError instanceof Error
-            ? requestError.message
-            : copy.loadFallbackError
+          requestError instanceof DailyNewsLoadFailure
+            ? requestError.kind
+            : "load-failed"
         );
       } finally {
         if (!controller.signal.aborted) { setLoading(false); setRefreshing(false); }
@@ -427,10 +438,7 @@ export default function DailyNews() {
       try {
         if (await loadFromDevice(learningLanguage, controller.signal, true)) return;
         if (controller.signal.aborted) return;
-        const payload = await fetchDailyNews(
-          controller.signal,
-          copy.loadNewsError
-        );
+        const payload = await fetchDailyNews(controller.signal);
 
         if (controller.signal.aborted) return;
 
@@ -456,9 +464,9 @@ export default function DailyNews() {
         if (await loadFromDevice(learningLanguage, controller.signal)) return;
 
         setError(
-          requestError instanceof Error
-            ? requestError.message
-            : copy.loadFallbackError
+          requestError instanceof DailyNewsLoadFailure
+            ? requestError.kind
+            : "load-failed"
         );
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -631,7 +639,7 @@ export default function DailyNews() {
       const user = await getSessionUser(supabase);
 
       if (!user) {
-        setError(copy.saveError);
+        setError("save-failed");
         return;
       }
 
@@ -649,7 +657,7 @@ export default function DailyNews() {
       // so notes silently lived on one device. Surfacing the failure is the
       // point.
       if (!saved) {
-        setError(copy.saveError);
+        setError("save-failed");
         return;
       }
 
@@ -664,7 +672,7 @@ export default function DailyNews() {
       );
     } catch (saveError) {
       console.error("Save note error:", saveError);
-      setError(copy.saveError);
+      setError("save-failed");
     } finally {
       setSavingCardId(null);
     }
@@ -978,7 +986,13 @@ export default function DailyNews() {
           role="alert"
           className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700"
         >
-          <p>{error}</p>
+          <p>
+            {error === "save-failed"
+              ? copy.saveError
+              : error === "not-generated"
+                ? copy.notGeneratedError
+                : copy.loadFallbackError}
+          </p>
 
           <button
             type="button"
@@ -1007,7 +1021,8 @@ export default function DailyNews() {
           categoryText={categoryLabel(featuredCard.category, copy)}
           formattedTime={formatPublishedTime(
             featuredCard.publishedAt,
-            copy
+            copy,
+            locale
           )}
           onOpen={() => setDetailCardId(featuredCard.id)}
           isAudioPlaying={playingStoryId === featuredCard.id}
@@ -1039,7 +1054,7 @@ export default function DailyNews() {
                 key={card.id}
                 card={card}
                 categoryText={categoryLabel(card.category, copy)}
-                formattedTime={formatPublishedTime(card.publishedAt, copy)}
+                formattedTime={formatPublishedTime(card.publishedAt, copy, locale)}
                 isLast={index === latestCardsWithThumbnail.length - 1}
                 showThumbnail={showThumbnail}
                 onOpen={() => setDetailCardId(card.id)}
@@ -1061,7 +1076,7 @@ export default function DailyNews() {
           detailCard ? categoryLabel(detailCard.category, copy) : ""
         }
         formattedTime={
-          detailCard ? formatPublishedTime(detailCard.publishedAt, copy) : ""
+          detailCard ? formatPublishedTime(detailCard.publishedAt, copy, locale) : ""
         }
         onSpeak={speak}
         onSave={() => detailCard && void saveToNotes(detailCard)}

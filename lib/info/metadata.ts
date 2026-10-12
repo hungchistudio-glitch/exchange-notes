@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
 
 import { loadTranslations } from "@/lib/i18n";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences";
 
 export type InfoPageKind = "about" | "community" | "privacy";
+
+/*
+ * Open Graph wants language_TERRITORY with an underscore ("zh_TW", "fr_FR"),
+ * not the BCP-47 tag the document uses ("zh-Hant", "fr"). The speech tag
+ * already carries a region for every interface language.
+ */
+export function openGraphLocale(language: InterfaceLanguage): string {
+  return getInterfaceLanguageMeta(language).speechTag.replace("-", "_");
+}
 
 /* =========================================================
    What a link to one of these pages looks like when it leaves the app
@@ -35,7 +45,7 @@ export async function buildInfoMetadata(page: InfoPageKind): Promise<Metadata> {
     openGraph: {
       title: `${title} · Exchange Notes`,
       description,
-      locale: getInterfaceLanguageMeta(language).htmlLang,
+      locale: openGraphLocale(language),
       type: "website",
     },
   };

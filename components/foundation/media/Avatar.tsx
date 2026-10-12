@@ -27,7 +27,9 @@ const textClasses: Record<AvatarSize, string> = {
 
 export default function Avatar({
   src,
-  alt = "Profile",
+  // Empty by default: every caller shows the person's name beside the
+  // photo, and a fixed English "Profile" was read out in every language.
+  alt = "",
   fallback,
   size = "md",
   loading = false,

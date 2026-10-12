@@ -11,6 +11,16 @@ const english: TranslationDictionary = {
     pendingMany: "{count} changes waiting to sync",
     savedLocally: "Saved on this device",
   },
+  meta: {
+    landingTitle: "Exchange Notes — Keep the words worth remembering",
+    landingDescription: "Look up, practise, save, and share the words worth remembering — with Yumi beside you.",
+    appDescription: "Look up any word in five languages, and keep the ones worth remembering.",
+  },
+  notFound: {
+    title: "Page not found",
+    description: "The link may be wrong, or the page may have moved.",
+    home: "Go to Exchange Notes",
+  },
   pwa: {
     title: "Exchange Notes is ready",
     subtitle:
@@ -454,6 +464,9 @@ const english: TranslationDictionary = {
       "Only the words already on this device can be searched.",
     errorTitle: "No exact result found.",
     errorDescription: "Check the spelling, or try a photo instead.",
+    lookupFailedError: "Couldn't look up that word. Try again.",
+    signInError: "Sign in to look up words.",
+    tooLongError: "That's too long to look up. Keep it under 1,000 characters.",
     retry: "Try again",
 
     yourVocabulary: "Your vocabulary",
@@ -538,6 +551,7 @@ const english: TranslationDictionary = {
       eyebrow: "Command Deck",
       title: "Yumi Command Deck",
       subtitle: "Every system online. Pick where to go.",
+      edition: "COSMIC",
       coreLabel: "Yumi core",
       dockLabel: "Cosmic navigation",
       roomsLabel: "Command controls",
@@ -659,6 +673,7 @@ const english: TranslationDictionary = {
       "You're already seeing today's stories — a new batch is published once a day.",
     tryAgain: "Try again",
     loadFallbackError: "Daily news is temporarily unavailable.",
+    notGeneratedError: "Today's stories aren't ready yet. Check back shortly.",
 
     justNow: "Just now",
     minutesAgo: "{count}m ago",
@@ -675,7 +690,6 @@ const english: TranslationDictionary = {
     loginRequiredError: "You're not logged in. Log in to share with a partner.",
     loadFriendsError: "Couldn't load your friends. Try again.",
     sendToPartnerError: "Couldn't send this story. Try again.",
-    loadNewsError: "Unable to load daily news.",
 
     loading: "Loading today’s lessons…",
 
@@ -694,10 +708,12 @@ const english: TranslationDictionary = {
       environment: "Environment",
       politics: "Politics",
       general: "News",
+      taiwan: "Taiwan",
     },
 
     latestStoriesLabel: "Latest stories",
     keyWordsLabel: "{count} key words",
+    keyWordsLabelOne: "{count} key word",
     moreActionsAriaLabel: "More actions",
     openSource: "Open source",
     shareStory: "Share",
@@ -742,6 +758,7 @@ const english: TranslationDictionary = {
     saveWordLoginError: "Sign in to save words.",
 
     exploreImageLabel: "Explore this image · {count} words",
+    exploreImageLabelOne: "Explore this image · {count} word",
   },
 
   capture: {
@@ -953,6 +970,7 @@ const english: TranslationDictionary = {
       zhuyin: "Zhuyin",
       example: "Example",
       untitledWord: "Untitled word",
+      carouselRole: "carousel",
       emptyHeading: "Start your first lesson",
       emptyDescription: "Add a vocabulary word and it will show up here.",
       previousWord: "Previous word",
@@ -991,6 +1009,7 @@ const english: TranslationDictionary = {
       mastered: "Mastered",
       practice: "Practice",
       totalReviews: "{count} total reviews",
+      totalReviewsOne: "{count} total review",
       memoryStrength: "Memory strength",
       wordsCompleted: "Words completed",
       wordsToRevisit: "Words to revisit",
@@ -1082,6 +1101,7 @@ const english: TranslationDictionary = {
     playAgain: "Play again",
     openLab: "Open the Pronunciation Lab",
     backToVocabulary: "Back to vocabulary",
+    badge: "Yumi Voice",
   },
 
   pronunciation: {
@@ -1439,6 +1459,23 @@ const english: TranslationDictionary = {
       reading: "Yumi is reading this…",
       tone: "Tone",
       toneUncertain: "Yumi isn't sure of the tone here.",
+      tones: {
+        casual: "Casual",
+        friendly: "Friendly",
+        warm: "Warm",
+        playful: "Playful",
+        teasing: "Teasing",
+        excited: "Excited",
+        grateful: "Grateful",
+        apologetic: "Apologetic",
+        polite: "Polite",
+        formal: "Formal",
+        serious: "Serious",
+        annoyed: "Annoyed",
+        worried: "Worried",
+        sad: "Sad",
+        sarcastic: "Sarcastic",
+      },
       types: {
         expression: "Expression",
         abbreviation: "Abbreviation",
@@ -1651,6 +1688,7 @@ const english: TranslationDictionary = {
       summaryCookieSingular: "{count} cookie",
       summaryCookiePlural: "{count} cookies",
       summaryStreak: "{count} day streak",
+      summaryStreakOne: "{count} day streak",
       cookieTrayEmpty: "Add a word to earn Yumi a cookie.",
       cookieTrayHint: "Drag a cookie onto Yumi",
       cookieTrayMore: "+{count} more",
@@ -1798,6 +1836,11 @@ const english: TranslationDictionary = {
       listenAriaLabel: "Listen: {text}",
       copyWordAriaLabel: "Copy {text}",
       copiedAriaLabel: "Copied",
+      dialogLabel: "{word} details",
+      deleteConfirm: "Delete “{word}” from your vocabulary?",
+      updateError: "Could not update this word. Try again.",
+      deleteError: "Could not delete this word. Try again.",
+      libraryLoadError: "Could not load your vocabulary. Try again.",
       markAsMastered: "Mark as mastered",
       markAsLearning: "Move to learning",
 
@@ -1943,6 +1986,7 @@ const english: TranslationDictionary = {
     completeTitle: "Nice work.",
     completeDescription: "Your review schedule has been updated.",
     completedReviews: "You completed {count} reviews.",
+    completedReviewsOne: "You completed {count} review.",
     backToVocabulary: "Back to your words",
     backToHome: "Back to Home",
     grades: {
@@ -2007,6 +2051,7 @@ const english: TranslationDictionary = {
       viewMode: "View",
 
       itemCount: "{count} items",
+      itemCountOne: "{count} item",
       sourceLanguage: "From {language}",
       unknownLanguage: "an unknown language",
       partialTitle: "Read with low confidence",
@@ -2049,6 +2094,27 @@ const english: TranslationDictionary = {
       priceLabel: "Price",
       aboutLabel: "What it is",
       cuisineLabel: "Cuisine",
+      cuisines: {
+        japanese: "Japanese",
+        chinese: "Chinese",
+        taiwanese: "Taiwanese",
+        korean: "Korean",
+        thai: "Thai",
+        vietnamese: "Vietnamese",
+        indian: "Indian",
+        italian: "Italian",
+        french: "French",
+        spanish: "Spanish",
+        mexican: "Mexican",
+        american: "American",
+        mediterranean: "Mediterranean",
+        middleEastern: "Middle Eastern",
+        cafe: "Café",
+        bakery: "Bakery & desserts",
+        seafood: "Seafood",
+        vegetarian: "Vegetarian",
+        fusion: "Fusion",
+      },
       listen: "Listen",
       listening: "Playing…",
       saveWord: "Save to my words",
@@ -2154,6 +2220,7 @@ const english: TranslationDictionary = {
       idAvailable: "This Exchange ID is available.",
       idTaken: "This Exchange ID is already taken.",
       idCheckError: "Could not check availability.",
+      loadError: "Could not load your profile. Try again.",
     },
 
     dailyGoal: {
@@ -2354,6 +2421,7 @@ const english: TranslationDictionary = {
       statusError:
         "Notification status could not be checked. Please try again.",
       sendTest: "Send test notification",
+      testBody: "Notifications are working on this device.",
       testing: "Sending test…",
       testDescription:
         "The test is sent to every active Exchange Notes device on your account.",

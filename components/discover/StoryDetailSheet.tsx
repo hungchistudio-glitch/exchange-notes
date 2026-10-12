@@ -20,6 +20,7 @@ import {
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 
 import { DISCOVER_COLORS, type DailyNewsCard } from "./types";
@@ -69,7 +70,7 @@ export default function StoryDetailSheet({
 
   // Above the early return: a hook cannot be called conditionally.
   const { pair } = useDisplayLanguages();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   /*
    * The two languages the reader chose, and only those. A card that cannot
    * lead in the language being learned is filtered out upstream rather than
@@ -315,9 +316,11 @@ export default function StoryDetailSheet({
           className="flex w-full items-center justify-between rounded-2xl bg-black/[0.035] px-4 py-3.5 text-left transition active:scale-[0.99]"
         >
           <span className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-strong">
-            {copy.keyWordsLabel.replace(
-              "{count}",
-              String(card.vocabulary.length)
+            {plural(
+              card.vocabulary.length,
+              locale,
+              copy.keyWordsLabelOne,
+              copy.keyWordsLabel
             )}
             {card.vocabulary.length > 0 ? (
               <span className="text-ink-faint">

@@ -553,7 +553,7 @@ export function TodayWordDeck({
       <section
         className={styles.deckSurface}
         style={{ "--deck-accent": accent } as CSSProperties}
-        aria-roledescription="carousel"
+        aria-roledescription={copy.carouselRole}
         aria-label={copy.title}
       >
         <div ref={scrollerRef} className={styles.scroller}>

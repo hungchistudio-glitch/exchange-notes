@@ -110,8 +110,7 @@ export default function VocabularyDetailSheet({
   onChangeLanguage: () => void;
 }) {
   const cardImage = vocabularyImageUrl(item);
-  const { t, isTraditionalChinese, language: interfaceLanguage } =
-    useTranslation();
+  const { t, locale, language: interfaceLanguage } = useTranslation();
   const { learningLanguage, supportLanguage } = useDisplayLanguages();
   const sides = getVocabularyCardSides(item, learningLanguage, supportLanguage);
   const detail = t.vocabulary.detail;
@@ -133,7 +132,7 @@ export default function VocabularyDetailSheet({
       <section
         role="dialog"
         aria-modal="true"
-        aria-label={`${item.word} details`}
+        aria-label={insertValues(detail.dialogLabel, { word: item.word })}
         {...motion.panelProps}
         className={`${motion.panelClassName} relative z-10 max-h-[90dvh] w-full max-w-[640px] touch-pan-y overflow-y-auto overscroll-contain rounded-t-[32px] bg-surface px-4 pb-[calc(24px+env(safe-area-inset-bottom))] shadow-[0_-18px_60px_rgba(0,0,0,0.18)]`}
       >
@@ -290,10 +289,7 @@ export default function VocabularyDetailSheet({
                 <Clock3 size={15} />
                 <span>
                   {insertValues(detail.addedLabel, {
-                    date: formatDate(
-                      item.created_at,
-                      isTraditionalChinese ? "zh-TW" : "en-US",
-                    ),
+                    date: formatDate(item.created_at, locale),
                   })}
                 </span>
               </div>

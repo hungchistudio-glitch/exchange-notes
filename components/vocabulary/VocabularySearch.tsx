@@ -23,6 +23,7 @@ import { DEFAULT_SORT_MODE } from "@/components/vocabulary/SortBottomSheet";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import type { VocabularyStatus } from "@/lib/types/app";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import useLexiconImageLookup from "@/hooks/lexicon/useLexiconImageLookup";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, type LanguageCode } from "@/lib/languages";
@@ -72,7 +73,7 @@ export default function VocabularySearch({
   languageFilter,
   languageCount,
 }: VocabularySearchProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
   const { openSearch } = useLexiconSearchSheet();
   const search = t.vocabulary.search;
@@ -395,7 +396,7 @@ export default function VocabularySearch({
           44pt controls and a language pill leave no room to read a sentence
           beside them on a narrow phone. */}
       <p className="mt-2 min-w-0 truncate font-sans text-[0.6875rem] font-medium tracking-[-0.01em] text-ink-faint">
-        {visibleCount} {visibleCount === 1 ? search.word : search.words}
+        {visibleCount} {plural(visibleCount, locale, search.word, search.words)}
         <span aria-hidden="true"> · </span>
         <span className="text-ink-soft">{sortLabels[sortMode]}</span>
       </p>

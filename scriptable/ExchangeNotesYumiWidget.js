@@ -27,6 +27,532 @@ const REFRESH_INTERVAL_MINUTES = 30;
 const MAX_WORDS = 12;
 
 /*
+ * Every line of text the script writes itself: the configuration menu, its
+ * alerts, the setup and offline widgets, and the fallbacks behind the
+ * payload's own localized text. Each language must hold every key.
+ * "Yumi", "Exchange Notes", "Scriptable" and "Token" stay as names.
+ */
+const WIDGET_TEXT = {
+  english: {
+    menuTitle:
+      "Exchange Notes · Yumi Widget",
+    menuMessage:
+      "Set up the connection, preview the widget, or clear the settings saved on this iPhone.",
+    menuConfigure:
+      "Set up or update connection",
+    menuPreviewSmall:
+      "Preview small widget",
+    menuPreviewMedium:
+      "Preview medium widget",
+    menuPreviewLarge:
+      "Preview large widget",
+    menuReset:
+      "Reset connection",
+    cancel:
+      "Cancel",
+    ok:
+      "OK",
+
+    connectTitle:
+      "Connect to Exchange Notes",
+    connectMessage:
+      "Enter the URL of your live Exchange Notes site and the private token you created in Exchange Notes Settings.",
+    connectMessageKeepToken:
+      "Enter the URL of your live Exchange Notes site. Leave the token field empty to keep the current token.",
+    urlPlaceholder:
+      "https://your-domain.com",
+    tokenPlaceholderKeep:
+      "Leave empty to keep the current token",
+    saveAndTest:
+      "Save and test",
+    invalidUrlTitle:
+      "Invalid URL",
+    invalidUrlMessage:
+      "Enter the URL of your live Exchange Notes site, starting with https://.",
+    invalidTokenTitle:
+      "Invalid token",
+    invalidTokenMessage:
+      "Paste the complete private token, starting with ensw_.",
+    connectedTitle:
+      "Connected",
+    connectedMessage:
+      "Yumi Widget loaded the latest data. You can now add a Scriptable widget to your iPhone Home Screen.",
+    testFailedTitle:
+      "Settings saved, but the test failed",
+
+    resetTitle:
+      "Reset Yumi Widget?",
+    resetMessage:
+      "This removes the site URL, private token, and offline cache saved in Scriptable on this iPhone. Your Exchange Notes account data is not deleted.",
+    resetConfirm:
+      "Reset",
+    resetDoneTitle:
+      "Reset complete",
+    resetDoneMessage:
+      "The Scriptable widget connection data on this iPhone has been cleared.",
+
+    setupTitle:
+      "Set up Yumi Widget",
+    setupMessage:
+      "Run this script in Scriptable, then enter your site URL and private token.",
+    offlineTitle:
+      "Yumi is offline",
+    offlineMessage:
+      "Widget data isn't available right now.",
+    emptyWord:
+      "Add a word",
+
+    errorTokenRevoked:
+      "Your private token is no longer valid. Create a new one in Exchange Notes, then update it in Scriptable.",
+    errorNoSnapshot:
+      "There's no Yumi Widget snapshot yet. Sign in to Exchange Notes and open Home first.",
+    errorServer:
+      "The server can't provide widget data right now.",
+    errorUnreachable:
+      "Couldn't reach Exchange Notes. Check your connection and try again.",
+    errorInvalidData:
+      "The widget received data in an invalid format.",
+    errorGeneric:
+      "This couldn't be completed right now. Check your network and settings, then try again.",
+  },
+
+  "traditional-chinese": {
+    menuTitle:
+      "Exchange Notes · Yumi 小工具",
+    menuMessage:
+      "設定連線、預覽小工具，或清除儲存在此 iPhone 的設定。",
+    menuConfigure:
+      "設定或更新連線",
+    menuPreviewSmall:
+      "預覽小型小工具",
+    menuPreviewMedium:
+      "預覽中型小工具",
+    menuPreviewLarge:
+      "預覽大型小工具",
+    menuReset:
+      "重設連線",
+    cancel:
+      "取消",
+    ok:
+      "好",
+
+    connectTitle:
+      "連接 Exchange Notes",
+    connectMessage:
+      "輸入正式網站網址，以及從 Exchange Notes 設定頁建立的私人權杖。",
+    connectMessageKeepToken:
+      "輸入正式網站網址。權杖欄位留白會保留目前的權杖。",
+    urlPlaceholder:
+      "https://your-domain.com",
+    tokenPlaceholderKeep:
+      "留白以保留目前權杖",
+    saveAndTest:
+      "儲存並測試",
+    invalidUrlTitle:
+      "網址無效",
+    invalidUrlMessage:
+      "請輸入以 https:// 開頭的 Exchange Notes 正式網站網址。",
+    invalidTokenTitle:
+      "權杖無效",
+    invalidTokenMessage:
+      "請貼上以 ensw_ 開頭的完整私人權杖。",
+    connectedTitle:
+      "連線成功",
+    connectedMessage:
+      "Yumi 小工具已成功取得最新資料。現在可以將 Scriptable 小工具加到 iPhone 主畫面。",
+    testFailedTitle:
+      "設定已儲存，但測試失敗",
+
+    resetTitle:
+      "重設 Yumi 小工具？",
+    resetMessage:
+      "這會移除此 iPhone Scriptable 中儲存的網站網址、私人權杖與離線快取，不會刪除 Exchange Notes 帳號資料。",
+    resetConfirm:
+      "重設",
+    resetDoneTitle:
+      "已重設",
+    resetDoneMessage:
+      "此 iPhone 上的 Scriptable 小工具連線資料已清除。",
+
+    setupTitle:
+      "設定 Yumi 小工具",
+    setupMessage:
+      "在 Scriptable 中執行這個腳本，輸入網站網址與私人權杖。",
+    offlineTitle:
+      "Yumi 目前離線",
+    offlineMessage:
+      "目前無法取得小工具資料。",
+    emptyWord:
+      "新增單字",
+
+    errorTokenRevoked:
+      "私人權杖已失效，請回到 Exchange Notes 重新建立並更新權杖。",
+    errorNoSnapshot:
+      "目前還沒有 Yumi 小工具快照。請先登入 Exchange Notes 並開啟首頁。",
+    errorServer:
+      "伺服器暫時無法提供小工具資料。",
+    errorUnreachable:
+      "無法連線至 Exchange Notes，請檢查網路後再試一次。",
+    errorInvalidData:
+      "小工具回傳的資料格式無效。",
+    errorGeneric:
+      "目前無法完成操作，請檢查網路與設定後再試一次。",
+  },
+
+  spanish: {
+    menuTitle:
+      "Exchange Notes · Widget de Yumi",
+    menuMessage:
+      "Configura la conexión, consulta una vista previa del widget o borra los ajustes guardados en este iPhone.",
+    menuConfigure:
+      "Configurar o actualizar la conexión",
+    menuPreviewSmall:
+      "Vista previa del widget pequeño",
+    menuPreviewMedium:
+      "Vista previa del widget mediano",
+    menuPreviewLarge:
+      "Vista previa del widget grande",
+    menuReset:
+      "Restablecer el widget",
+    cancel:
+      "Cancelar",
+    ok:
+      "OK",
+
+    connectTitle:
+      "Conectar con Exchange Notes",
+    connectMessage:
+      "Introduce la URL de tu sitio de Exchange Notes y el token privado que creaste en Ajustes de Exchange Notes.",
+    connectMessageKeepToken:
+      "Introduce la URL de tu sitio de Exchange Notes. Deja vacío el campo del token para conservar el actual.",
+    urlPlaceholder:
+      "https://tu-dominio.com",
+    tokenPlaceholderKeep:
+      "Déjalo vacío para conservar el token actual",
+    saveAndTest:
+      "Guardar y probar",
+    invalidUrlTitle:
+      "URL no válida",
+    invalidUrlMessage:
+      "Introduce la URL de tu sitio de Exchange Notes; debe empezar por https://.",
+    invalidTokenTitle:
+      "Token no válido",
+    invalidTokenMessage:
+      "Pega el token privado completo, que empieza por ensw_.",
+    connectedTitle:
+      "Conexión correcta",
+    connectedMessage:
+      "El widget de Yumi ya tiene los datos más recientes. Ahora puedes añadir un widget de Scriptable a la pantalla de inicio de tu iPhone.",
+    testFailedTitle:
+      "Ajustes guardados, pero la prueba ha fallado",
+
+    resetTitle:
+      "¿Restablecer el widget de Yumi?",
+    resetMessage:
+      "Se eliminarán la URL del sitio, el token privado y la caché sin conexión guardados en Scriptable en este iPhone. Los datos de tu cuenta de Exchange Notes no se borran.",
+    resetConfirm:
+      "Restablecer",
+    resetDoneTitle:
+      "Widget restablecido",
+    resetDoneMessage:
+      "Se han borrado de este iPhone los datos de conexión del widget de Scriptable.",
+
+    setupTitle:
+      "Configura el widget de Yumi",
+    setupMessage:
+      "Ejecuta este script en Scriptable e introduce la URL de tu sitio y tu token privado.",
+    offlineTitle:
+      "Yumi está sin conexión",
+    offlineMessage:
+      "Ahora mismo no se pueden cargar los datos del widget.",
+    emptyWord:
+      "Añade una palabra",
+
+    errorTokenRevoked:
+      "Tu token privado ya no es válido. Crea uno nuevo en Exchange Notes y actualízalo en Scriptable.",
+    errorNoSnapshot:
+      "Aún no hay ninguna instantánea del widget de Yumi. Inicia sesión en Exchange Notes y abre Inicio.",
+    errorServer:
+      "El servidor no puede enviar los datos del widget en este momento.",
+    errorUnreachable:
+      "No se ha podido conectar con Exchange Notes. Comprueba tu conexión e inténtalo de nuevo.",
+    errorInvalidData:
+      "Los datos que ha recibido el widget no tienen un formato válido.",
+    errorGeneric:
+      "No se ha podido completar la acción. Comprueba la red y los ajustes, e inténtalo de nuevo.",
+  },
+
+  french: {
+    menuTitle:
+      "Exchange Notes · Widget Yumi",
+    menuMessage:
+      "Configurez la connexion, prévisualisez le widget ou effacez les réglages enregistrés sur cet iPhone.",
+    menuConfigure:
+      "Configurer ou mettre à jour la connexion",
+    menuPreviewSmall:
+      "Aperçu du petit widget",
+    menuPreviewMedium:
+      "Aperçu du widget moyen",
+    menuPreviewLarge:
+      "Aperçu du grand widget",
+    menuReset:
+      "Réinitialiser la connexion",
+    cancel:
+      "Annuler",
+    ok:
+      "OK",
+
+    connectTitle:
+      "Connexion à Exchange Notes",
+    connectMessage:
+      "Saisissez l'URL de votre site Exchange Notes et le jeton privé créé dans les Réglages d'Exchange Notes.",
+    connectMessageKeepToken:
+      "Saisissez l'URL de votre site Exchange Notes. Laissez le champ du jeton vide pour conserver le jeton actuel.",
+    urlPlaceholder:
+      "https://votre-domaine.com",
+    tokenPlaceholderKeep:
+      "Laissez vide pour conserver le jeton actuel",
+    saveAndTest:
+      "Enregistrer et tester",
+    invalidUrlTitle:
+      "URL non valide",
+    invalidUrlMessage:
+      "Saisissez l'URL de votre site Exchange Notes, qui commence par https://.",
+    invalidTokenTitle:
+      "Jeton non valide",
+    invalidTokenMessage:
+      "Collez le jeton privé complet, qui commence par ensw_.",
+    connectedTitle:
+      "Connexion réussie",
+    connectedMessage:
+      "Le widget Yumi a récupéré les dernières données. Vous pouvez maintenant ajouter un widget Scriptable à l'écran d'accueil de votre iPhone.",
+    testFailedTitle:
+      "Réglages enregistrés, mais le test a échoué",
+
+    resetTitle:
+      "Réinitialiser le widget Yumi ?",
+    resetMessage:
+      "Cette action supprime l'URL du site, le jeton privé et le cache hors ligne enregistrés dans Scriptable sur cet iPhone. Les données de votre compte Exchange Notes ne sont pas supprimées.",
+    resetConfirm:
+      "Réinitialiser",
+    resetDoneTitle:
+      "Réinitialisation effectuée",
+    resetDoneMessage:
+      "Les données de connexion du widget Scriptable ont été effacées de cet iPhone.",
+
+    setupTitle:
+      "Configurer le widget Yumi",
+    setupMessage:
+      "Exécutez ce script dans Scriptable, puis saisissez l'URL de votre site et votre jeton privé.",
+    offlineTitle:
+      "Yumi est hors ligne",
+    offlineMessage:
+      "Les données du widget sont indisponibles pour le moment.",
+    emptyWord:
+      "Ajoutez un mot",
+
+    errorTokenRevoked:
+      "Votre jeton privé n'est plus valide. Créez-en un nouveau dans Exchange Notes, puis mettez-le à jour dans Scriptable.",
+    errorNoSnapshot:
+      "Aucun instantané du widget Yumi pour l'instant. Connectez-vous à Exchange Notes et ouvrez d'abord la page Accueil.",
+    errorServer:
+      "Le serveur ne peut pas fournir les données du widget pour le moment.",
+    errorUnreachable:
+      "Impossible de joindre Exchange Notes. Vérifiez votre connexion et réessayez.",
+    errorInvalidData:
+      "Les données reçues par le widget ont un format non valide.",
+    errorGeneric:
+      "Impossible de terminer l'opération. Vérifiez votre réseau et vos réglages, puis réessayez.",
+  },
+
+  italian: {
+    menuTitle:
+      "Exchange Notes · Widget di Yumi",
+    menuMessage:
+      "Configura la connessione, visualizza l'anteprima del widget o cancella le impostazioni salvate su questo iPhone.",
+    menuConfigure:
+      "Configura o aggiorna la connessione",
+    menuPreviewSmall:
+      "Anteprima del widget piccolo",
+    menuPreviewMedium:
+      "Anteprima del widget medio",
+    menuPreviewLarge:
+      "Anteprima del widget grande",
+    menuReset:
+      "Reimposta la connessione",
+    cancel:
+      "Annulla",
+    ok:
+      "OK",
+
+    connectTitle:
+      "Collega Exchange Notes",
+    connectMessage:
+      "Inserisci l'URL del tuo sito Exchange Notes e il token privato creato nelle Impostazioni di Exchange Notes.",
+    connectMessageKeepToken:
+      "Inserisci l'URL del tuo sito Exchange Notes. Lascia vuoto il campo del token per mantenere quello attuale.",
+    urlPlaceholder:
+      "https://tuo-dominio.com",
+    tokenPlaceholderKeep:
+      "Lascia vuoto per mantenere il token attuale",
+    saveAndTest:
+      "Salva e verifica",
+    invalidUrlTitle:
+      "URL non valido",
+    invalidUrlMessage:
+      "Inserisci l'URL del tuo sito Exchange Notes, che inizia con https://.",
+    invalidTokenTitle:
+      "Token non valido",
+    invalidTokenMessage:
+      "Incolla il token privato completo, che inizia con ensw_.",
+    connectedTitle:
+      "Connessione riuscita",
+    connectedMessage:
+      "Il widget di Yumi ha caricato i dati più recenti. Ora puoi aggiungere un widget di Scriptable alla schermata Home dell'iPhone.",
+    testFailedTitle:
+      "Impostazioni salvate, ma la verifica non è riuscita",
+
+    resetTitle:
+      "Reimpostare il widget di Yumi?",
+    resetMessage:
+      "Verranno rimossi l'URL del sito, il token privato e la cache offline salvati in Scriptable su questo iPhone. I dati del tuo account Exchange Notes non verranno eliminati.",
+    resetConfirm:
+      "Reimposta",
+    resetDoneTitle:
+      "Reimpostazione completata",
+    resetDoneMessage:
+      "I dati di connessione del widget di Scriptable sono stati cancellati da questo iPhone.",
+
+    setupTitle:
+      "Configura il widget di Yumi",
+    setupMessage:
+      "Esegui questo script in Scriptable e inserisci l'URL del sito e il token privato.",
+    offlineTitle:
+      "Yumi è offline",
+    offlineMessage:
+      "Al momento non è possibile caricare i dati del widget.",
+    emptyWord:
+      "Aggiungi una parola",
+
+    errorTokenRevoked:
+      "Il tuo token privato non è più valido. Creane uno nuovo in Exchange Notes e aggiornalo in Scriptable.",
+    errorNoSnapshot:
+      "Non c'è ancora un'istantanea del widget di Yumi. Accedi a Exchange Notes e apri prima la pagina Home.",
+    errorServer:
+      "Al momento il server non riesce a fornire i dati del widget.",
+    errorUnreachable:
+      "Impossibile raggiungere Exchange Notes. Controlla la connessione e riprova.",
+    errorInvalidData:
+      "I dati ricevuti dal widget non hanno un formato valido.",
+    errorGeneric:
+      "Impossibile completare l'operazione. Controlla la rete e le impostazioni, poi riprova.",
+  },
+};
+
+/*
+ * The text for the reader's interface language. A synced payload carries
+ * the language the app uses; pass it when one is at hand, otherwise the
+ * cached one is read. Before the first sync there is no payload at all, so
+ * the device language stands in, narrowed to the five the app speaks.
+ */
+function widgetText(payload) {
+  const source =
+    payload
+    || readCachedPayload();
+
+  const language =
+    (
+      source
+      && normalizeInterfaceLanguage(
+        source.interfaceLanguage,
+      )
+    )
+    || deviceInterfaceLanguage();
+
+  return WIDGET_TEXT[language]
+    || WIDGET_TEXT.english;
+}
+
+function readCachedPayload() {
+  const snapshot =
+    readCachedSnapshot();
+
+  return snapshot
+    ? snapshot.payload
+    : null;
+}
+
+function deviceInterfaceLanguage() {
+  const code =
+    deviceLanguageTag()
+      .toLowerCase()
+      .split(/[-_]/)[0];
+
+  if (code === "zh") {
+    return "traditional-chinese";
+  }
+
+  if (code === "es") {
+    return "spanish";
+  }
+
+  if (code === "fr") {
+    return "french";
+  }
+
+  if (code === "it") {
+    return "italian";
+  }
+
+  return "english";
+}
+
+/*
+ * preferredLanguages() is the system setting itself; language() and
+ * locale() can follow Scriptable's own localization instead, so they only
+ * fill in when the list is unavailable. Outside Scriptable (the Node
+ * verification stubs) there is no Device at all.
+ */
+function deviceLanguageTag() {
+  if (typeof Device === "undefined" || !Device) {
+    return "";
+  }
+
+  const readers = [
+    "preferredLanguages",
+    "language",
+    "locale",
+  ];
+
+  for (const name of readers) {
+    try {
+      if (typeof Device[name] !== "function") {
+        continue;
+      }
+
+      const value =
+        Device[name]();
+
+      const tag =
+        Array.isArray(value)
+          ? value[0]
+          : value;
+
+      if (
+        typeof tag === "string"
+        && tag.trim()
+      ) {
+        return tag.trim();
+      }
+    } catch {
+      // Try the next source.
+    }
+  }
+
+  return "";
+}
+
+/*
  * Exchange Notes is currently a web app, so every app destination must use
  * the configured HTTPS origin. Scriptable actions are reserved for controls
  * that update the widget itself, such as the previous/next word buttons.
@@ -105,21 +631,24 @@ async function main() {
 }
 
 async function runConfigurationMenu() {
+  const text =
+    widgetText();
+
   const menu =
     new Alert();
 
   menu.title =
-    "Exchange Notes · Yumi Widget";
+    text.menuTitle;
 
   menu.message =
-    "設定連線、預覽 Widget，或清除儲存在此 iPhone 的設定。";
+    text.menuMessage;
 
-  menu.addAction("設定或更新連線");
-  menu.addAction("預覽小型 Widget");
-  menu.addAction("預覽中型 Widget");
-  menu.addAction("預覽大型 Widget");
-  menu.addDestructiveAction("重設連線");
-  menu.addCancelAction("取消");
+  menu.addAction(text.menuConfigure);
+  menu.addAction(text.menuPreviewSmall);
+  menu.addAction(text.menuPreviewMedium);
+  menu.addAction(text.menuPreviewLarge);
+  menu.addDestructiveAction(text.menuReset);
+  menu.addCancelAction(text.cancel);
 
   const choice =
     await menu.presentSheet();
@@ -161,20 +690,23 @@ async function configureConnection() {
       KEYCHAIN_TOKEN,
     );
 
+  const text =
+    widgetText();
+
   const alert =
     new Alert();
 
   alert.title =
-    "連接 Exchange Notes";
+    text.connectTitle;
 
   alert.message =
     existingToken
-      ? "輸入正式網站網址。Token 欄位留白會保留目前的 Token。"
-      : "輸入正式網站網址，以及從 Exchange Notes 設定頁建立的私人 Token。";
+      ? text.connectMessageKeepToken
+      : text.connectMessage;
 
   const urlField =
     alert.addTextField(
-      "https://your-domain.com",
+      text.urlPlaceholder,
       currentBaseUrl,
     );
 
@@ -182,13 +714,13 @@ async function configureConnection() {
 
   alert.addSecureTextField(
     existingToken
-      ? "留白以保留目前 Token"
+      ? text.tokenPlaceholderKeep
       : "ensw_...",
     "",
   );
 
-  alert.addAction("儲存並測試");
-  alert.addCancelAction("取消");
+  alert.addAction(text.saveAndTest);
+  alert.addCancelAction(text.cancel);
 
   const result =
     await alert.presentAlert();
@@ -215,16 +747,18 @@ async function configureConnection() {
 
   if (!enteredBaseUrl) {
     await showMessage(
-      "網址無效",
-      "請輸入以 https:// 開頭的 Exchange Notes 正式網站網址。",
+      text.invalidUrlTitle,
+      text.invalidUrlMessage,
+      text.ok,
     );
     return;
   }
 
   if (!isValidToken(resolvedToken)) {
     await showMessage(
-      "Token 無效",
-      "請貼上以 ensw_ 開頭的完整私人 Token。",
+      text.invalidTokenTitle,
+      text.invalidTokenMessage,
+      text.ok,
     );
     return;
   }
@@ -248,34 +782,47 @@ async function configureConnection() {
 
     writeCachedSnapshot(snapshot);
 
+    // The first sync is what reveals the app's language; answer in it.
+    const syncedText =
+      widgetText(snapshot.payload);
+
     await showMessage(
-      "連線成功",
-      "Yumi Widget 已成功取得最新資料。現在可以將 Scriptable Widget 加到 iPhone 主畫面。",
+      syncedText.connectedTitle,
+      syncedText.connectedMessage,
+      syncedText.ok,
     );
   } catch (error) {
     await showMessage(
-      "設定已儲存，但測試失敗",
+      text.testFailedTitle,
       readableError(error),
+      text.ok,
     );
   }
 }
 
 async function resetConnection() {
+  /*
+   * Resolved before the cache is removed, so the closing message stays in
+   * the language the confirmation was asked in.
+   */
+  const text =
+    widgetText();
+
   const confirmation =
     new Alert();
 
   confirmation.title =
-    "重設 Yumi Widget？";
+    text.resetTitle;
 
   confirmation.message =
-    "這會移除此 iPhone Scriptable 中儲存的網站網址、私人 Token 與離線快取，不會刪除 Exchange Notes 帳號資料。";
+    text.resetMessage;
 
   confirmation.addDestructiveAction(
-    "重設",
+    text.resetConfirm,
   );
 
   confirmation.addCancelAction(
-    "取消",
+    text.cancel,
   );
 
   const result =
@@ -304,8 +851,9 @@ async function resetConnection() {
   }
 
   await showMessage(
-    "已重設",
-    "此 iPhone 上的 Scriptable Widget 連線資料已清除。",
+    text.resetDoneTitle,
+    text.resetDoneMessage,
+    text.ok,
   );
 }
 
@@ -428,8 +976,20 @@ async function fetchSnapshot(settings) {
     "Cache-Control": "no-cache",
   };
 
-  const responseBody =
-    await request.loadJSON();
+  /*
+   * A failed transfer rejects with an iOS message worded in the device
+   * language, and a body that is not JSON rejects with a parser message.
+   * Both fall through to the status checks below, which speak the reader's
+   * interface language instead.
+   */
+  let responseBody = null;
+
+  try {
+    responseBody =
+      await request.loadJSON();
+  } catch {
+    responseBody = null;
+  }
 
   const response =
     request.response;
@@ -444,20 +1004,29 @@ async function fetchSnapshot(settings) {
     || !isRecord(responseBody)
     || responseBody.ok !== true
   ) {
+    const text =
+      widgetText();
+
+    if (!statusCode) {
+      throw new Error(
+        text.errorUnreachable,
+      );
+    }
+
     if (statusCode === 401) {
       throw new Error(
-        "私人 Token 已失效，請回到 Exchange Notes 重新建立並更新 Token。",
+        text.errorTokenRevoked,
       );
     }
 
     if (statusCode === 404) {
       throw new Error(
-        "目前還沒有 Yumi Widget 快照。請先登入 Exchange Notes 並開啟首頁。",
+        text.errorNoSnapshot,
       );
     }
 
     throw new Error(
-      "伺服器暫時無法提供 Widget 資料。",
+      text.errorServer,
     );
   }
 
@@ -468,7 +1037,7 @@ async function fetchSnapshot(settings) {
 
   if (!snapshot) {
     throw new Error(
-      "Widget 回傳的資料格式無效。",
+      widgetText().errorInvalidData,
     );
   }
 
@@ -1259,6 +1828,9 @@ function createBaseWidget(
 }
 
 function buildSetupWidget(family) {
+  const text =
+    widgetText();
+
   const widget =
     createStandaloneWidget(
       family,
@@ -1275,7 +1847,7 @@ function buildSetupWidget(family) {
 
   const title =
     widget.addText(
-      "Set up Yumi Widget",
+      text.setupTitle,
     );
 
   title.font =
@@ -1294,7 +1866,7 @@ function buildSetupWidget(family) {
 
   const description =
     widget.addText(
-      "在 Scriptable 中執行這個腳本，輸入網站網址與私人 Token。",
+      text.setupMessage,
     );
 
   description.font =
@@ -1322,6 +1894,9 @@ function buildErrorWidget(
   model,
   family,
 ) {
+  const text =
+    widgetText();
+
   const widget =
     createStandaloneWidget(
       family,
@@ -1338,7 +1913,7 @@ function buildErrorWidget(
 
   const title =
     widget.addText(
-      "Yumi is offline",
+      text.offlineTitle,
     );
 
   title.font =
@@ -1356,7 +1931,7 @@ function buildErrorWidget(
   const message =
     widget.addText(
       model.error
-      || "目前無法取得 Widget 資料。",
+      || text.offlineMessage,
     );
 
   message.font =
@@ -1782,7 +2357,7 @@ function addWordContent(
         160,
       )
       || payload.localizedText.emptyWord
-      || "Add a word",
+      || widgetText(payload).emptyWord,
     );
 
   primary.font =
@@ -4151,19 +4726,20 @@ function readableError(error) {
     return error.message.trim();
   }
 
-  return "目前無法完成操作，請檢查網路與設定後再試一次。";
+  return widgetText().errorGeneric;
 }
 
 async function showMessage(
   title,
   message,
+  dismissLabel,
 ) {
   const alert =
     new Alert();
 
   alert.title = title;
   alert.message = message;
-  alert.addAction("好");
+  alert.addAction(dismissLabel);
 
   await alert.presentAlert();
 }

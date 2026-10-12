@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { loadTranslations } from "@/lib/i18n";
+import { readerLanguages } from "@/lib/push/readerLanguages";
 import {
   sendWebPushNotification,
   type WebPushSendResult,
@@ -47,6 +49,7 @@ function isAllowedOrigin(request: NextRequest): boolean {
 
 async function sendTestNotification(
   subscription: SubscriptionRow,
+  body: string,
 ): Promise<Delivery> {
   try {
     const result = await sendWebPushNotification(
@@ -58,7 +61,7 @@ async function sendTestNotification(
       },
       {
         title: "Exchange Notes",
-        body: "Web Push is working on this device.",
+        body,
         url: "/profile",
         tag: "exchange-notes-web-push-test",
         renotify: true,
@@ -165,8 +168,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Written in the reader's display language, like every other
+    // notification they get (lib/push/readerLanguages.ts).
+    const [languages] = await readerLanguages(supabase, [user.id]);
+    const { testBody } = (
+      await loadTranslations(languages.interfaceLanguage)
+    ).settings.webPush;
+
     const deliveries = await Promise.all(
-      subscriptions.map(sendTestNotification),
+      subscriptions.map((subscription) =>
+        sendTestNotification(subscription, testBody),
+      ),
     );
 
     const deliveredIds: string[] = [];

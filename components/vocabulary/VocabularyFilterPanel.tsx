@@ -8,6 +8,7 @@ import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { plural } from "@/lib/i18n/format";
 import type { VocabularyItem, VocabularyStatus } from "@/lib/types/app";
 
 type VocabularyFilterPanelProps = {
@@ -25,7 +26,7 @@ export default function VocabularyFilterPanel({
   onClose,
   onSelect,
 }: VocabularyFilterPanelProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const translations = t.vocabulary.search;
   const motion = useSheetMotion({ onClose });
 
@@ -119,9 +120,12 @@ export default function VocabularyFilterPanel({
         <aside className="text-xs uppercase leading-5 text-ink-soft">
           <p>{String(items.length).padStart(2, "0")}</p>
           <p>
-            {items.length === 1
-              ? translations.word
-              : translations.words}
+            {plural(
+              items.length,
+              locale,
+              translations.word,
+              translations.words,
+            )}
           </p>
         </aside>
 

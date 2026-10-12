@@ -10,10 +10,12 @@ import { askText, textQuotaResetAt } from "@/lib/ai/askText";
 import { readBoundedInteger } from "@/lib/ai/modelConfig";
 import { createClient } from "@/lib/supabase/server";
 import { consumeDailyQuota, refundDailyQuota } from "@/lib/ai/dailyQuota";
-import type {
-  MessageAnalysis,
-  PhraseType,
-  ToneConfidence,
+import {
+  readToneKeys,
+  TONE_KEYS,
+  type MessageAnalysis,
+  type PhraseType,
+  type ToneConfidence,
 } from "@/lib/messages/decode";
 
 export const runtime = "nodejs";
@@ -84,7 +86,11 @@ const ANALYSIS_SCHEMA = {
   additionalProperties: false,
   properties: {
     worthExplaining: { type: "boolean" },
-    tone: { type: "string", maxLength: 60 },
+    tone: {
+      type: "array",
+      maxItems: 2,
+      items: { type: "string", enum: [...TONE_KEYS] },
+    },
     toneConfidence: {
       type: "string",
       enum: ["high", "medium", "low", "unknown"],
@@ -120,7 +126,7 @@ type ModelPhrase = {
 
 type ModelResult = {
   worthExplaining: boolean;
-  tone: string;
+  tone: string[];
   toneConfidence: ToneConfidence | "unknown";
   phrases: ModelPhrase[];
 };
@@ -320,9 +326,10 @@ Return at most ${MAX_PHRASES} items, and usually fewer. Rules:
 - If the message is plain and has nothing worth explaining, set
   worthExplaining to false and return an empty phrases array. Most ordinary
   messages are like this. Do not invent a lesson.
-- "tone" is a short human label read from the whole conversation, not the one
-  sentence — for example "Casual · Friendly". If you cannot tell, use an empty
-  string and set toneConfidence to "unknown". Do not guess at feelings.
+- "tone" is one or two words from this list, read from the whole
+  conversation, not the one sentence: ${TONE_KEYS.join(", ")}. For example
+  ["casual", "friendly"]. If you cannot tell, return an empty array and set
+  toneConfidence to "unknown". Do not guess at feelings.
 ${scriptRule}
       `.trim(),
       schema: ANALYSIS_SCHEMA,
@@ -368,7 +375,11 @@ ${scriptRule}
 
     const toneConfidence =
       result.toneConfidence === "unknown" ? null : result.toneConfidence ?? null;
-    const tone = result.tone?.trim() ? result.tone.trim().slice(0, 60) : null;
+    // Keys only (see TONE_KEYS); the card writes them in the display language.
+    const toneKeys = readToneKeys(
+      Array.isArray(result.tone) ? result.tone.join(",") : result.tone,
+    );
+    const tone = toneKeys.length > 0 ? toneKeys.join(",") : null;
 
     const { error: upsertError } = await supabase
       .from("message_language_analysis")

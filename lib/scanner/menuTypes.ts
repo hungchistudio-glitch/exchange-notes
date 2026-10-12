@@ -16,6 +16,64 @@ import {
 
 export type MenuConfidence = "high" | "medium" | "low";
 
+/*
+ * The kinds of food a menu can be read as.
+ *
+ * A fixed list rather than the model's own words, because the label is shown
+ * to the reader as interface text and the model wrote it in whatever language
+ * it liked (usually English). The key is stored; the insight sheet shows it in
+ * the display language (scanner.menu.cuisines in lib/i18n).
+ */
+export const CUISINE_KEYS = [
+  "japanese",
+  "chinese",
+  "taiwanese",
+  "korean",
+  "thai",
+  "vietnamese",
+  "indian",
+  "italian",
+  "french",
+  "spanish",
+  "mexican",
+  "american",
+  "mediterranean",
+  "middleEastern",
+  "cafe",
+  "bakery",
+  "seafood",
+  "vegetarian",
+  "fusion",
+] as const;
+
+export type CuisineKey = (typeof CUISINE_KEYS)[number];
+
+/*
+ * Words in labels written before the list existed ("Japanese izakaya",
+ * "Middle Eastern"), so a scan kept on the device still gets its label.
+ */
+const CUISINE_WORDS: ReadonlyArray<readonly [CuisineKey, RegExp]> =
+  CUISINE_KEYS.map((key) => [
+    key,
+    key === "middleEastern"
+      ? /\bmiddle[\s-]?eastern\b/i
+      : key === "cafe"
+        ? /\bcaf(?:e\b|é)|\bcoffee\b/i
+        : key === "bakery"
+          ? /\bbakery\b|\bdesserts?\b|\bpastry\b/i
+          : new RegExp(`\\b${key}\\b`, "i"),
+  ]);
+
+/** The cuisine a stored label names, or null when it names none of them. */
+export function readCuisineKey(label: string | null | undefined): CuisineKey | null {
+  const text = label?.trim();
+  if (!text) return null;
+  if ((CUISINE_KEYS as readonly string[]).includes(text)) {
+    return text as CuisineKey;
+  }
+  return CUISINE_WORDS.find(([, pattern]) => pattern.test(text))?.[0] ?? null;
+}
+
 export type MenuRegion = {
   x: number;
   y: number;

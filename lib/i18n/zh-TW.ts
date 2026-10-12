@@ -11,6 +11,16 @@ const traditionalChinese: TranslationDictionary = {
     pendingMany: "{count} 筆更動等待同步",
     savedLocally: "已存在這台裝置",
   },
+  meta: {
+    landingTitle: "Exchange Notes：留住值得記住的字詞",
+    landingDescription: "和 Yumi 一起查字、練習、收藏，並分享值得記住的字詞。",
+    appDescription: "用五種語言查任何字詞，留下值得記住的那些。",
+  },
+  notFound: {
+    title: "找不到這個頁面",
+    description: "連結可能有誤，或頁面已經移動了。",
+    home: "回到 Exchange Notes",
+  },
   pwa: {
     title: "Exchange Notes 已經準備好了",
     subtitle: "把 Exchange Notes 加入主畫面，開啟更快、能收到通知，還有全螢幕體驗。",
@@ -138,7 +148,7 @@ const traditionalChinese: TranslationDictionary = {
         "一份點不下去的菜單，或是雜亂畫面裡的某一樣東西 —— 相機兩種都處理，而且方式不同。",
       pickerAriaLabel: "選擇相機功能",
       previewAriaLabel: "相機功能預覽",
-      cosmicBadge: "Yumi Cosmic Mode",
+      cosmicBadge: "Yumi 星航模式",
       menu: {
         label: "翻譯整份菜單",
         blurb: "每一道菜，順序與位置都留著。",
@@ -186,8 +196,8 @@ const traditionalChinese: TranslationDictionary = {
       displayNameLabel: "顯示名稱",
       displayNamePlaceholder: "你的名字",
       usernameLabel: "帳號",
-      usernamePlaceholder: "yourname",
-      usernameHint: "用於朋友搜尋你、你的 QR code 以及 Messages。",
+      usernamePlaceholder: "xiaoming",
+      usernameHint: "用於朋友搜尋你、你的 QR code 以及訊息。",
       checkingAvailability: "檢查中…",
       idAvailable: "這個帳號可以使用",
       idTaken: "這個帳號已經被使用",
@@ -446,6 +456,9 @@ const traditionalChinese: TranslationDictionary = {
     offlineDescription: "現在只能搜尋這台裝置上已經有的單字。",
     errorTitle: "找不到完全符合的結果。",
     errorDescription: "確認一下拼字，或改用拍照試試看。",
+    lookupFailedError: "查不到這個單字，請再試一次。",
+    signInError: "請先登入再查詢單字。",
+    tooLongError: "內容太長了，請控制在 1,000 字以內。",
     retry: "再試一次",
 
     yourVocabulary: "你的單字",
@@ -528,6 +541,7 @@ const traditionalChinese: TranslationDictionary = {
       eyebrow: "星際指揮艙",
       title: "Yumi 星際指揮艙",
       subtitle: "所有系統已上線，選一個地方出發。",
+      edition: "星航",
       coreLabel: "Yumi 核心",
       dockLabel: "星航導覽列",
       roomsLabel: "主控制",
@@ -647,6 +661,7 @@ const traditionalChinese: TranslationDictionary = {
     sameBatchNotice: "目前顯示的已經是今天的新聞——每天會更新一次新的內容。",
     tryAgain: "重試",
     loadFallbackError: "每日新聞暫時無法使用。",
+    notGeneratedError: "今天的新聞還在準備中，請稍後再回來看看。",
 
     justNow: "剛剛",
     minutesAgo: "{count} 分鐘前",
@@ -663,7 +678,6 @@ const traditionalChinese: TranslationDictionary = {
     loginRequiredError: "你尚未登入。請先登入再分享給朋友。",
     loadFriendsError: "無法載入朋友名單，請再試一次。",
     sendToPartnerError: "無法傳送這則新聞，請再試一次。",
-    loadNewsError: "無法載入每日新聞。",
 
     loading: "正在載入今日課程…",
 
@@ -682,10 +696,12 @@ const traditionalChinese: TranslationDictionary = {
       environment: "環境",
       politics: "政治",
       general: "新聞",
+      taiwan: "台灣",
     },
 
     latestStoriesLabel: "最新新聞",
     keyWordsLabel: "{count} 個重點單字",
+    keyWordsLabelOne: "{count} 個重點單字",
     moreActionsAriaLabel: "更多操作",
     openSource: "開啟來源",
     shareStory: "分享",
@@ -730,6 +746,7 @@ const traditionalChinese: TranslationDictionary = {
     saveWordLoginError: "請先登入才能存單字。",
 
     exploreImageLabel: "探索這張圖片 · {count} 個單字",
+    exploreImageLabelOne: "探索這張圖片 · {count} 個單字",
   },
 
   capture: {
@@ -934,6 +951,7 @@ const traditionalChinese: TranslationDictionary = {
       zhuyin: "注音",
       example: "例句",
       untitledWord: "未命名單字",
+      carouselRole: "輪播",
       emptyHeading: "開始你的第一堂課",
       emptyDescription: "新增一個單字，就會出現在這裡。",
       previousWord: "上一個單字",
@@ -972,6 +990,7 @@ const traditionalChinese: TranslationDictionary = {
       mastered: "已掌握",
       practice: "待練習",
       totalReviews: "共完成 {count} 次複習",
+      totalReviewsOne: "共完成 {count} 次複習",
       memoryStrength: "記憶強度",
       wordsCompleted: "已完成單字",
       wordsToRevisit: "需要再次練習",
@@ -1063,6 +1082,7 @@ const traditionalChinese: TranslationDictionary = {
     playAgain: "再播放一次",
     openLab: "前往發音實驗室",
     backToVocabulary: "返回單字本",
+    badge: "Yumi 語音",
   },
 
   pronunciation: {
@@ -1417,6 +1437,23 @@ const traditionalChinese: TranslationDictionary = {
       reading: "Yumi 正在讀這句…",
       tone: "語氣",
       toneUncertain: "Yumi 不太確定這裡的語氣。",
+      tones: {
+        casual: "輕鬆",
+        friendly: "友善",
+        warm: "溫暖",
+        playful: "俏皮",
+        teasing: "打趣",
+        excited: "興奮",
+        grateful: "感謝",
+        apologetic: "帶歉意",
+        polite: "有禮貌",
+        formal: "正式",
+        serious: "認真",
+        annoyed: "不耐煩",
+        worried: "擔心",
+        sad: "難過",
+        sarcastic: "諷刺",
+      },
       types: {
         expression: "表達方式",
         abbreviation: "縮寫",
@@ -1624,6 +1661,7 @@ const traditionalChinese: TranslationDictionary = {
       summaryCookieSingular: "{count} 個餅乾",
       summaryCookiePlural: "{count} 個餅乾",
       summaryStreak: "連續 {count} 天",
+      summaryStreakOne: "連續 {count} 天",
       cookieTrayEmpty: "新增一個單字，讓 Yumi 獲得餅乾。",
       cookieTrayHint: "把餅乾拖到 Yumi 身上",
       cookieTrayMore: "還有 {count} 個",
@@ -1768,6 +1806,11 @@ const traditionalChinese: TranslationDictionary = {
       listenAriaLabel: "播放：{text}",
       copyWordAriaLabel: "複製{text}",
       copiedAriaLabel: "已複製",
+      dialogLabel: "{word} 的詳細資料",
+      deleteConfirm: "要從單字庫刪除「{word}」嗎？",
+      updateError: "無法更新這個單字，請再試一次。",
+      deleteError: "無法刪除這個單字，請再試一次。",
+      libraryLoadError: "無法載入你的單字庫，請再試一次。",
       markAsMastered: "標記為已掌握",
       markAsLearning: "移回學習中",
 
@@ -1909,6 +1952,7 @@ const traditionalChinese: TranslationDictionary = {
     completeTitle: "做得很好",
     completeDescription: "系統已根據你的回答更新下次複習時間。",
     completedReviews: "你已完成 {count} 個單字複習。",
+    completedReviewsOne: "你已完成 {count} 個單字複習。",
     backToVocabulary: "回到單字頁",
     backToHome: "返回首頁",
     grades: {
@@ -1970,6 +2014,7 @@ const traditionalChinese: TranslationDictionary = {
       viewMode: "檢視方式",
 
       itemCount: "{count} 個項目",
+      itemCountOne: "{count} 個項目",
       sourceLanguage: "來自{language}",
       unknownLanguage: "未知語言",
       partialTitle: "辨識信心偏低",
@@ -2008,6 +2053,27 @@ const traditionalChinese: TranslationDictionary = {
       priceLabel: "價格",
       aboutLabel: "這是什麼",
       cuisineLabel: "料理類型",
+      cuisines: {
+        japanese: "日式料理",
+        chinese: "中式料理",
+        taiwanese: "台灣料理",
+        korean: "韓式料理",
+        thai: "泰式料理",
+        vietnamese: "越南料理",
+        indian: "印度料理",
+        italian: "義式料理",
+        french: "法式料理",
+        spanish: "西班牙料理",
+        mexican: "墨西哥料理",
+        american: "美式料理",
+        mediterranean: "地中海料理",
+        middleEastern: "中東料理",
+        cafe: "咖啡廳",
+        bakery: "烘焙甜點",
+        seafood: "海鮮料理",
+        vegetarian: "素食",
+        fusion: "創意料理",
+      },
       listen: "聆聽",
       listening: "播放中…",
       saveWord: "存入單字庫",
@@ -2075,7 +2141,7 @@ const traditionalChinese: TranslationDictionary = {
       namePlaceholder: "你的名字",
       exchangeId: "Exchange ID",
       exchangeIdDescription: "使用 3–24 個小寫英文字母、數字或底線。",
-      exchangeIdPlaceholder: "yourname",
+      exchangeIdPlaceholder: "xiaoming",
       nativeLanguage: "母語",
       learningLanguage: "學習語言",
       nativeLanguageDescription: "你原本就會說的語言",
@@ -2111,6 +2177,7 @@ const traditionalChinese: TranslationDictionary = {
       idAvailable: "這個 Exchange ID 可以使用。",
       idTaken: "這個 Exchange ID 已經被使用了。",
       idCheckError: "無法確認 Exchange ID 是否可用。",
+      loadError: "無法載入個人資料，請再試一次。",
     },
 
     dailyGoal: {
@@ -2179,28 +2246,28 @@ const traditionalChinese: TranslationDictionary = {
     },
 
     scriptableWidget: {
-      rowTitle: "iPhone Widget",
+      rowTitle: "iPhone 小工具",
       rowDescription: "將 Yumi 連接至 Scriptable",
       statusReady: "已連接",
       statusNotConfigured: "尚未設定",
       statusRevoked: "已中斷",
       statusLoading: "檢查中…",
       statusUnavailable: "無法使用",
-      sheetTitle: "Scriptable iPhone Widget",
+      sheetTitle: "Scriptable iPhone 小工具",
       sheetDescription:
         "建立私人權杖，讓 iPhone 上的 Scriptable App 安全讀取最新的 Yumi 學習進度。",
-      activeTitle: "Widget 連線已啟用",
+      activeTitle: "小工具連線已啟用",
       activeDescription:
         "Scriptable 可以安全讀取最新的 Yumi 心情、餅乾進度與單字。",
-      emptyTitle: "Widget 尚未連接",
+      emptyTitle: "小工具尚未連接",
       emptyDescription:
         "建立私人權杖、立即複製一次，再將它儲存在 iPhone 的 Scriptable App 中。",
-      revokedTitle: "Widget 連線已撤銷",
+      revokedTitle: "小工具連線已撤銷",
       revokedDescription:
-        "先前的權杖已無法再存取你的 Yumi Widget 資料。",
-      unavailableTitle: "Widget 設定目前無法使用",
+        "先前的權杖已無法再存取你的 Yumi 小工具資料。",
+      unavailableTitle: "小工具設定目前無法使用",
       unavailableDescription:
-        "目前無法連線至 Scriptable Widget 服務，請檢查網路後再試一次。",
+        "目前無法連線至 Scriptable 小工具服務，請檢查網路後再試一次。",
       tokenPrefixLabel: "權杖",
       createdLabel: "建立時間",
       lastUsedLabel: "最後使用",
@@ -2218,12 +2285,12 @@ const traditionalChinese: TranslationDictionary = {
       rotateConfirmDescription:
         "目前的權杖會立即失效，你必須同步更新 Scriptable 中儲存的權杖。",
       confirmRotate: "更換權杖",
-      revoke: "中斷 Widget 連線",
+      revoke: "中斷小工具連線",
       revoking: "正在中斷…",
-      revokeSuccess: "Scriptable Widget 連線已撤銷。",
-      revokeConfirmTitle: "確定要中斷 Widget 連線嗎？",
+      revokeSuccess: "Scriptable 小工具連線已撤銷。",
+      revokeConfirmTitle: "確定要中斷小工具連線嗎？",
       revokeConfirmDescription:
-        "目前的權杖將無法再讓 Scriptable 讀取你的 Yumi Widget 資料。",
+        "目前的權杖將無法再讓 Scriptable 讀取你的 Yumi 小工具資料。",
       confirmRevoke: "中斷連線",
       refresh: "重新整理狀態",
       close: "完成",
@@ -2231,28 +2298,28 @@ const traditionalChinese: TranslationDictionary = {
       copied: "已複製",
       cancel: "取消",
       authenticationError:
-        "登入狀態已失效，請重新登入後再管理 Widget。",
+        "登入狀態已失效，請重新登入後再管理小工具。",
       loadError:
-        "無法載入 Widget 狀態，請再試一次。",
+        "無法載入小工具狀態，請再試一次。",
       actionError:
-        "無法更新 Widget 連線，請再試一次。",
+        "無法更新小工具連線，請再試一次。",
       copyError:
         "無法自動複製權杖，請手動選取並複製。",
     },
 
     iphoneWidget: {
-      rowTitle: "Yumi iPhone Widget",
+      rowTitle: "Yumi iPhone 小工具",
       rowDescription: "Exchange Notes 原生支援並自動同步",
       statusNative: "原生",
-      sheetTitle: "Yumi iPhone Widget",
+      sheetTitle: "Yumi iPhone 小工具",
       sheetDescription:
-        "這個 Widget 內建在原生 App 版本裡。如果你沒有安裝該版本，請改用上方的 Scriptable Widget。",
-      nativeTitle: "已改用原生 Widget",
+        "這個小工具內建在原生 App 版本裡。如果你沒有安裝該版本，請改用上方的 Scriptable 小工具。",
+      nativeTitle: "已改用原生小工具",
       nativeDescription:
         "開啟 Exchange Notes 後，Yumi 與最新單字會安全同步到 iPhone 主畫面。",
       addTitle: "加入主畫面",
       stepOne: "長按 iPhone 主畫面的空白處。",
-      stepTwo: "點一下「編輯」，再選擇「加入 Widget」。",
+      stepTwo: "點一下「編輯」，再選擇「加入小工具」。",
       stepThree: "搜尋 Exchange Notes 或 Yumi。",
       stepFour: "選擇小型、中型或大型尺寸並加入。",
       behaviorTitle: "按鈕行為",
@@ -2308,6 +2375,7 @@ const traditionalChinese: TranslationDictionary = {
       statusError:
         "無法檢查通知狀態，請再試一次。",
       sendTest: "傳送測試通知",
+      testBody: "這台裝置的通知運作正常。",
       testing: "正在傳送測試…",
       testDescription:
         "測試通知會傳送至此帳號所有已開啟通知的 Exchange Notes 裝置。",

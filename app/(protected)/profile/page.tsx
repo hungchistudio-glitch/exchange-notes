@@ -159,7 +159,8 @@ export default function ProfilePage() {
         if (!isMounted) return;
 
         if (fetchError) {
-          setError(fetchError.message);
+          console.error("Could not load the profile:", fetchError);
+          setError(copy.loadError);
           setLoading(false);
           return;
         }
@@ -276,7 +277,7 @@ export default function ProfilePage() {
         setError(
           updateError.code === "23514"
             ? copy.languagesMustDifferError
-            : updateError.message,
+            : copy.profileUpdateError,
         );
         return;
       }

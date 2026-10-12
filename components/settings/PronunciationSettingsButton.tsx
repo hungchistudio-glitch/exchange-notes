@@ -118,7 +118,11 @@ export default function PronunciationSettingsButton() {
     [voicesVersion],
   );
 
-  const { t, language: interfaceLanguage } = useTranslation();
+  const { t, language: interfaceLanguage, locale } = useTranslation();
+  const rateText = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(rate);
   const copy = t.settings.pronunciation;
 
   /** The language's own name, in the language the reader is reading. */
@@ -153,7 +157,7 @@ export default function PronunciationSettingsButton() {
       <SettingsRow
         title={copy.rowTitle}
         description={copy.rowDescription}
-        value={`${voiceLabel} · ${rate.toFixed(2)}×`}
+        value={`${voiceLabel} · ${rateText}×`}
         icon={<Volume2 size={17} strokeWidth={1.8} />}
         onClick={() => setOpen(true)}
       />
@@ -187,7 +191,7 @@ export default function PronunciationSettingsButton() {
               </div>
 
               <span className="shrink-0 rounded-full bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700">
-                {rate.toFixed(2)}×
+                {rateText}×
               </span>
             </div>
 

@@ -3,26 +3,39 @@ import { redirect } from "next/navigation";
 
 import LandingPage from "@/components/landing/LandingPage";
 import { readCurrentUser } from "@/lib/auth/currentUser";
+import { loadTranslations } from "@/lib/i18n";
+import { openGraphLocale } from "@/lib/info/metadata";
+import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences";
 import { createClient } from "@/lib/supabase/server";
 
-const description =
-  "Look up, practise, save, and share the words worth remembering — with Yumi beside you.";
+/*
+ * In the reader's display language, read from the same cookie the page
+ * itself renders from, so the tab title and a pasted link's preview match
+ * the introduction underneath them.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getServerInterfaceLanguage();
+  const { landingTitle: title, landingDescription: description } = (
+    await loadTranslations(language)
+  ).meta;
 
-export const metadata: Metadata = {
-  title: "Exchange Notes — Keep the words worth remembering",
-  description,
-  openGraph: {
-    title: "Exchange Notes — Keep the words worth remembering",
+  return {
+    title,
     description,
-    type: "website",
-    siteName: "Exchange Notes",
-  },
-  twitter: {
-    card: "summary",
-    title: "Exchange Notes — Keep the words worth remembering",
-    description,
-  },
-};
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "Exchange Notes",
+      locale: openGraphLocale(language),
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
+}
 
 export default async function LandingRoute() {
   /*

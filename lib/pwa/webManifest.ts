@@ -1,11 +1,27 @@
 import type { MetadataRoute } from "next";
 
-export default function manifest(): MetadataRoute.Manifest {
+/*
+ * The web app manifest, in one display language.
+ *
+ * Served per language (app/manifest/[language]/route.ts) rather than from
+ * app/manifest.ts, because the description is what an install prompt shows
+ * and a browser fetches the manifest without the cookie that carries the
+ * reader's language: one file could only ever say it in English. The root
+ * layout links the reader's own copy. `id` stays "/" in every one, so the
+ * installed app is the same app whichever language it was installed in.
+ */
+export function webManifest({
+  description,
+  lang,
+}: {
+  description: string;
+  lang: string;
+}): MetadataRoute.Manifest {
   return {
     name: "Exchange Notes",
     short_name: "Exchange Notes",
-    description:
-      "Look up any word in five languages, and keep the ones worth remembering.",
+    description,
+    lang,
     id: "/",
     start_url: "/home",
     display: "standalone",

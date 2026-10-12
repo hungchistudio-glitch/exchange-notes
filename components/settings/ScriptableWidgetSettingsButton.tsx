@@ -17,6 +17,7 @@ import SettingsRow, {
   type SettingsRowTone,
 } from "@/components/foundation/rows/SettingsRow";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { INTERFACE_LANGUAGE_CODE } from "@/lib/languages";
 import { setDeviceConnection } from "@/lib/settings/deviceConnections";
 
 /*
@@ -297,10 +298,11 @@ export default function ScriptableWidgetSettingsButton() {
       return copy.notAvailable;
     }
 
-    return parsed.toLocaleDateString(
-      language === "traditional-chinese" ? "zh-TW" : "en-US",
-      { year: "numeric", month: "short", day: "numeric" },
-    );
+    return parsed.toLocaleDateString(INTERFACE_LANGUAGE_CODE[language], {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   }
 
   const token =

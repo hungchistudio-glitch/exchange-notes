@@ -19,7 +19,10 @@ import VocabularyCopyButton from "@/components/vocabulary/ui/VocabularyCopyButto
 import YumiInsight from "@/components/lexicon/YumiInsight";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useDisplayLanguages from "@/hooks/useDisplayLanguages";
-import type { LexiconSearch } from "@/hooks/lexicon/useLexiconSearch";
+import type {
+  LexiconLookupError,
+  LexiconSearch,
+} from "@/hooks/lexicon/useLexiconSearch";
 import { peekImageCapture } from "@/lib/lexicon/pendingImageCapture";
 import type useLexiconSave from "@/hooks/lexicon/useLexiconSave";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
@@ -364,7 +367,7 @@ export default function LexiconResults({
           <p className="mt-1.5 text-[0.8125rem] leading-6 text-ink-soft">
             {result?.offline
               ? copy.offlineDescription
-              : error || copy.errorDescription}
+              : lookupErrorText(error, copy)}
           </p>
 
           <button
@@ -800,6 +803,12 @@ export default function LexiconResults({
 /* ---------- pieces ---------- */
 
 type Copy = ReturnType<typeof useTranslation>["t"]["lexicon"];
+
+function lookupErrorText(error: LexiconLookupError, copy: Copy) {
+  if (error === "sign-in") return copy.signInError;
+  if (error === "too-long") return copy.tooLongError;
+  return copy.lookupFailedError;
+}
 
 /**
  * The save control, in whichever of its four states applies.

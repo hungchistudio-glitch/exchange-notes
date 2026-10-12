@@ -28,6 +28,8 @@ import {
 } from "@/lib/languages";
 import {
   normaliseRegion,
+  readCuisineKey,
+  CUISINE_KEYS,
   type MenuConfidence,
   type MenuDocument,
   type MenuItem,
@@ -86,7 +88,7 @@ const MENU_RESULT_SCHEMA = {
   properties: {
     isMenu: { type: "boolean" },
     sourceLanguage: { type: "string", maxLength: 32 },
-    detectedCuisine: { type: "string", maxLength: 60 },
+    detectedCuisine: { type: "string", enum: [...CUISINE_KEYS, "other"] },
     overallConfidence: CONFIDENCE_SCHEMA,
     sections: {
       type: "array",
@@ -368,7 +370,8 @@ function readMenuDocument(
     document: {
       sourceLanguage,
       targetLanguage,
-      detectedCuisine: readString(candidate.detectedCuisine, 60),
+      // A key from CUISINE_KEYS, or empty; the sheet words it for the reader.
+      detectedCuisine: readCuisineKey(readString(candidate.detectedCuisine, 60)) ?? "",
       overallConfidence: readConfidence(candidate.overallConfidence),
       sections,
     },

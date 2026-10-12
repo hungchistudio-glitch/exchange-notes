@@ -22,6 +22,57 @@ export type AnalysisStatus = "pending" | "ready" | "failed" | "skipped";
 
 export type ToneConfidence = "high" | "medium" | "low";
 
+/*
+ * The words Yumi may use for a conversation's tone.
+ *
+ * A fixed list rather than the model's own label, because the label is
+ * interface text: the model wrote it in whatever language it liked (usually
+ * English), and a stored sentence cannot follow the reader's display language
+ * when they change it. Keys are stored; the card shows each in the display
+ * language (messages.decode.tones in lib/i18n).
+ */
+export const TONE_KEYS = [
+  "casual",
+  "friendly",
+  "warm",
+  "playful",
+  "teasing",
+  "excited",
+  "grateful",
+  "apologetic",
+  "polite",
+  "formal",
+  "serious",
+  "annoyed",
+  "worried",
+  "sad",
+  "sarcastic",
+] as const;
+
+export type ToneKey = (typeof TONE_KEYS)[number];
+
+const TONE_KEY_SET = new Set<string>(TONE_KEYS);
+
+/**
+ * The tone words in a stored label, in order, without repeats.
+ *
+ * Stored as "casual,friendly". Rows written before the list existed hold the
+ * model's free text ("Casual · Friendly"); the English words in those are
+ * recognised the same way, and anything else is dropped rather than shown in
+ * a language the reader may not have chosen.
+ */
+export function readToneKeys(label: string | null | undefined): ToneKey[] {
+  if (!label) return [];
+  const found: ToneKey[] = [];
+  for (const part of label.split(/[,·|/]/)) {
+    const key = part.trim().toLowerCase();
+    if (TONE_KEY_SET.has(key) && !found.includes(key as ToneKey)) {
+      found.push(key as ToneKey);
+    }
+  }
+  return found;
+}
+
 export type DetectedPhrase = {
   id: string;
   /** The literal substring, so the bubble can underline the real words. */

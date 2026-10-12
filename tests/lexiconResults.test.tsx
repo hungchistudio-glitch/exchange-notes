@@ -411,3 +411,30 @@ describe("when the day's AI allowance is spent", () => {
     expect(screen.getByText(/Google.s AI is unavailable right now/)).toBeInTheDocument();
   });
 });
+
+describe("a lookup that failed", () => {
+  /*
+   * The route's own sentence is English and for the logs. The reader gets
+   * the one for the reason in their display language — and never a parser's
+   * "Unexpected token" from a timed-out response.
+   */
+  it.each([
+    ["sign-in", "Sign in to look up words."],
+    ["too-long", "That's too long to look up. Keep it under 1,000 characters."],
+    ["failed", "Couldn't look up that word. Try again."],
+  ])("says why in the reader's language (%s)", (kind, sentence) => {
+    const { search, save } = harness({
+      status: "error",
+      value: result({ entry: null }),
+    });
+
+    render(
+      <LexiconResults
+        search={{ ...search, error: kind } as never}
+        save={save as never}
+      />,
+    );
+
+    expect(screen.getByText(sentence)).toBeInTheDocument();
+  });
+});

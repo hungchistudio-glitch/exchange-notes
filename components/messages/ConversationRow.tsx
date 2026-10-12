@@ -73,7 +73,7 @@ export default function ConversationRow({
   onOpen,
   previewOverride,
 }: ConversationRowProps) {
-  const { language } = useTranslation();
+  const { language, locale } = useTranslation();
   const name = summary.friend.displayName ?? summary.friend.exchangeId;
   const initial = name.charAt(0).toUpperCase();
   const hasUnread = summary.unreadCount > 0;
@@ -148,7 +148,7 @@ export default function ConversationRow({
               className="shrink-0 text-[0.6875rem]"
               style={{ color: "var(--msg-ink-faint)" }}
             >
-              {formatConversationTime(summary.lastMessage.createdAt)}
+              {formatConversationTime(summary.lastMessage.createdAt, locale)}
             </time>
           )}
         </span>

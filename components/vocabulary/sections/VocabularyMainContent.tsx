@@ -6,11 +6,15 @@ import DailyFocusCard from "@/components/dashboard/DailyFocusCard";
 import TodayWordCard from "@/components/pronunciation/TodayWordCard";
 import VocabularyList from "@/components/vocabulary/VocabularyList";
 import VocabularySearchSection from "@/components/vocabulary/sections/VocabularySearchSection";
-import { useVocabulary } from "@/contexts/VocabularyContext";
+import {
+  useVocabulary,
+  type VocabularyError,
+} from "@/contexts/VocabularyContext";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useVocabularyStats from "@/hooks/useVocabularyStats";
 
 type VocabularyMainContentProps = {
-  error: string;
+  error: VocabularyError;
   searchProps: ComponentProps<typeof VocabularySearchSection>;
   listProps: ComponentProps<typeof VocabularyList>;
 };
@@ -24,6 +28,14 @@ export default function VocabularyMainContent({
      from the search sheet has to change these counts without a reload. */
   const { items, loading: itemsLoading } = useVocabulary();
   const { reviewStats } = useVocabularyStats(items);
+  const { t } = useTranslation();
+  const detail = t.vocabulary.detail;
+  const errorMessage = {
+    "": "",
+    "load-failed": detail.libraryLoadError,
+    "update-failed": detail.updateError,
+    "delete-failed": detail.deleteError,
+  }[error];
 
   return (
     // AppPage itself has no horizontal padding by design (each page manages
@@ -61,12 +73,12 @@ export default function VocabularyMainContent({
         <VocabularySearchSection {...searchProps} />
       </div>
 
-      {error && !listProps.loading && (
+      {errorMessage && !listProps.loading && (
         <p
           role="alert"
           className="mt-5 rounded-[20px] bg-red-50 p-4 text-sm font-bold text-red-700"
         >
-          {error}
+          {errorMessage}
         </p>
       )}
 
