@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
+import { useWornOutfit } from "@/lib/shop/wornOutfit";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import { parkYumiScene, relayedOptions, takeParkedYumiScene, type YumiSceneRelay } from "@/lib/yumi3d/sceneCache";
 import styles from "./CosmicHomeYumi.module.css";
@@ -10,9 +11,10 @@ import styles from "./CosmicHomeYumi.module.css";
 export default function CosmicHomeYumi({ paused, children }: { paused: boolean; children: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mode = useOptionalInterfaceMode();
-  const stateRef = useRef({ paused, mode });
+  const outfit = useWornOutfit();
+  const stateRef = useRef({ paused, mode, outfit });
   const [live, setLive] = useState(false);
-  useEffect(() => { stateRef.current = { paused, mode }; }, [paused, mode]);
+  useEffect(() => { stateRef.current = { paused, mode, outfit }; }, [paused, mode, outfit]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -86,10 +88,16 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
       handle.resetScreenAnchor?.();
       resize();
       let first = true;
+      let dressed: unknown = null;
       const frame = (now: number) => {
         if (cancelled || !handle) return;
         frameId = requestAnimationFrame(frame);
         if (!visible || document.visibilityState !== "visible") return;
+        // What she bought in the shop, put on before the frame that shows her.
+        if (dressed !== stateRef.current.outfit) {
+          dressed = stateRef.current.outfit;
+          handle.setOutfit?.(stateRef.current.outfit);
+        }
         // Lit for the deck from her first frame here, not eased into it.
         handle.setCosmicLevel?.(1, first);
         first = false;

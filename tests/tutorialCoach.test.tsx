@@ -229,7 +229,8 @@ describe("chapter two: around the app", () => {
       });
     }
 
-    expect(screen.getByText(/Exchange Notes has two looks/)).toBeInTheDocument();
+    // Then the shop, on Home, before the other look.
+    expect(screen.getByText(/Every word you save becomes an energy cookie/)).toBeInTheDocument();
   });
 
   it("steps aside on screens that are not one of the six", () => {
@@ -241,13 +242,51 @@ describe("chapter two: around the app", () => {
   });
 });
 
-describe("chapter three: the other look", () => {
+describe("chapter three: Yumi's shop", () => {
+  it("shows where cookies come from at the shop key, then waits for a try-on in the shop", async () => {
+    setCoachStep(stepOf("cookies"));
+
+    const { again, container } = coach("/home");
+    expect(screen.getByText("Chapter 3 · Yumi’s shop · 1/3")).toBeInTheDocument();
+    /* The card names the step, which is what makes the shop key show itself
+       and breathe (HomeShopKey.module.css) while the card is up. */
+    expect(container.querySelector("[data-coach-card]")).toHaveAttribute("data-coach-step", "cookies");
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+
+    /* Not in the shop yet: a door, and nothing else to press. */
+    again("/home");
+    expect(screen.getByRole("link", { name: "Open the shop" })).toHaveAttribute("href", "/shop");
+
+    again("/shop");
+    expect(screen.getByText(/Tap any piece and I’ll try it on for free/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
+
+    vi.useFakeTimers();
+    act(() => announceHomeMoment("shop-tried"));
+    expect(screen.getByText("Good.")).toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    vi.useRealTimers();
+
+    expect(getCoachStep()).toBe(stepOf("buy"));
+    expect(screen.getByText(/Cookies are only spent once you confirm/)).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Next" }).click();
+    });
+    expect(getCoachStep()).toBe(stepOf("modeSwitch"));
+  });
+});
+
+describe("chapter four: the other look", () => {
   it("teaches the switch on Home, and waits for it and for the crossing to finish", async () => {
     setCoachStep(stepOf("modeSwitch"));
 
     const { again, container } = coach("/home");
 
-    expect(screen.getByText("Chapter 3 · The other look · 1/6")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 4 · The other look · 1/6")).toBeInTheDocument();
     expect(screen.getByText(/Tap the switch at the top right, beside the star/)).toBeInTheDocument();
     /* The card names the step, which is what lets the switch show itself
        (HomeModePortal.module.css) while every other step keeps it hidden. */

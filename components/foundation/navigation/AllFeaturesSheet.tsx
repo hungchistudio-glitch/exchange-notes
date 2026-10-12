@@ -7,6 +7,7 @@ import {
   FileText,
   GraduationCap,
   Mic,
+  ShoppingBag,
   Smartphone,
   UsersRound,
   UtensilsCrossed,
@@ -144,6 +145,12 @@ export default function AllFeaturesSheet({
       key: "mine",
       label: t.home.panelMine,
       rows: [
+        {
+          key: "shop",
+          href: "/shop",
+          label: t.shop.title,
+          Icon: ShoppingBag,
+        },
         {
           key: "help",
           href: "/profile/help",

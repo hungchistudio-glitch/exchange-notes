@@ -349,7 +349,7 @@ export type TranslationDictionary = {
        * then The other look in Cosmic. `label` takes {chapter}, {name},
        * {current} and {total}.
        */
-      chapters: { home: string; pages: string; cosmic: string };
+      chapters: { home: string; pages: string; shop: string; cosmic: string };
       /** A step that needs the other interface mode, and the key that switches. */
       needsStandard: string;
       toStandard: string;
@@ -374,8 +374,13 @@ export type TranslationDictionary = {
         notes: { body: string; action: string };
         discover: { body: string; action: string };
         settings: { body: string; action: string };
+        /* The shop: where cookies come from (on Home, pointing at the shop
+           key), trying a piece on, and buying one. */
+        cookies: { body: string };
+        tryOn: { body: string; action: string };
+        buy: { body: string; action: string };
         /*
-         * Chapter three. Bodies may name things with {standard}, {cosmic},
+         * Chapter four. Bodies may name things with {standard}, {cosmic},
          * {omni}, {lexicon}, {mission}, {scanner}, {comms}, {earth} and
          * {memory}, filled from the app's own dictionary so the tour always
          * calls a thing what the screen calls it.
@@ -2452,5 +2457,55 @@ export type TranslationDictionary = {
       noVoicesInstalled: string;
       testVoice: string;
     };
+  };
+  /** The Yumi shop (/shop): energy cookies, try-on and the wardrobe. */
+  shop: {
+    title: string;
+    goBack: string;
+    cookiesOne: string;
+    cookiesOther: string;
+    howEarned: string;
+    stage: string;
+    hint: string;
+    views: string;
+    front: string;
+    side: string;
+    backView: string;
+    resetView: string;
+    zoomIn: string;
+    zoomOut: string;
+    stageUnavailable: string;
+    tryingOn: string;
+    wearing: string;
+    ownedBadge: string;
+    emptyOwned: string;
+    empty: string;
+    resetOutfit: string;
+    buy: string;
+    putOn: string;
+    wearingNow: string;
+    shortOne: string;
+    shortOther: string;
+    saveWords: string;
+    confirmTitle: string;
+    confirmBody: string;
+    confirmBuy: string;
+    cancel: string;
+    bought: string;
+    saved: string;
+    unownedNote: string;
+    closed: string;
+    offline: string;
+    failed: string;
+    retry: string;
+    loading: string;
+    toCosmic: string;
+    toStandard: string;
+    language: string;
+    freeTryOn: string;
+    preview: string;
+    selectPrompt: string;
+    categories: { featured: string; eyes: string; materials: string; wear: string; small: string; owned: string };
+    countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
   };
 };

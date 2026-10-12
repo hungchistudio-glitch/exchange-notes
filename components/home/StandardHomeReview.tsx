@@ -7,6 +7,7 @@ import { VocabularyProvider } from "@/contexts/VocabularyContext";
 import CommandDeck from "@/components/cosmic/CommandDeck";
 import ModeTransitionStage from "@/components/cosmic/ModeTransitionStage";
 import HomeModePortal from "./HomeModePortal";
+import HomeShopKey from "./HomeShopKey";
 import { InterfaceModeProvider, useInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { LexiconSearchProvider } from "@/contexts/LexiconSearchContext";
 import { LearningLanguageProvider } from "@/contexts/LearningLanguageContext";
@@ -64,7 +65,7 @@ function StandardPreview() {
 
 function PreviewShell() {
   const { isCosmic } = useInterfaceMode();
-  return <><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage /></>;
+  return <><HomeShopKey /><HomeModePortal />{isCosmic ? <CommandDeck /> : <StandardPreview />}<ModeTransitionStage /></>;
 }
 
 function Frame() {

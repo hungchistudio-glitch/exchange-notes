@@ -1,4 +1,11 @@
 import * as THREE from "three";
+
+import type { YumiOutfit } from "@/lib/shop/catalog";
+
+import {
+  ARM_RADIUS, EYE_RADIUS, GAP_HALF, SHELL_DEPTH, SHELL_RADIUS, TUBE_RADIUS,
+} from "./anatomy";
+import { createOutfitRig } from "./outfit";
 import { createYumiRotation } from "./rotation";
 
 /* =========================================================
@@ -15,14 +22,6 @@ import { createYumiRotation } from "./rotation";
    and this module is only ever reached through a dynamic import, so the
    engine stays in its own chunk and off the first load.
    ========================================================= */
-
-/** Construction, read from the reference. Shared with the 2D brand mark. */
-const SHELL_RADIUS = 1.6;
-const TUBE_RADIUS = 0.4;
-const SHELL_DEPTH = 1.22;
-const GAP_HALF = THREE.MathUtils.degToRad(37.5);
-const EYE_RADIUS = 0.6;
-const ARM_RADIUS = 0.145;
 
 const ARM_ROOT = new THREE.Vector3(-SHELL_RADIUS, 0, 0);
 const EYE_REST = new THREE.Vector3(0.1, 0, 0.05);
@@ -77,7 +76,16 @@ export type YumiSceneOptions = {
   reducedMotion?: boolean;
   /** Home: free 360-degree turns that settle into a continuous slow orbit. */
   continuousRotation?: boolean;
+  /**
+   * The shop's stand: every drag turns her, nothing pulls her eye, and a
+   * flick comes to rest instead of settling into an orbit — she is being
+   * looked at, not played with.
+   */
+  inspect?: boolean;
 };
+
+/** The stand's set views. */
+export type YumiView = "front" | "three-quarter" | "side" | "back";
 
 export type YumiSceneHandle = {
   /** Advance the simulation and draw. Call from one rAF loop. */
@@ -123,6 +131,13 @@ export type YumiSceneHandle = {
   /** A gentle look toward a cookie, independent of the eye-pull gesture. */
   setGaze?(x: number, y: number): void;
 
+  /** What she has on (lib/shop/catalog.ts). An empty outfit is Yumi as she ships. */
+  setOutfit?(outfit: YumiOutfit): void;
+  /** Turn to a set view: eased, or at once. */
+  setView?(view: YumiView, immediate?: boolean): void;
+  /** Turn her as a drag of that many pixels would, for the arrow keys. */
+  rotateBy?(dxPx: number, dyPx: number): void;
+
   pointerDown(clientX: number, clientY: number): void;
   pointerMove(clientX: number, clientY: number): void;
   pointerUp(): void;
@@ -154,7 +169,7 @@ export type YumiSceneHandle = {
   };
 };
 
-function makeStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
+export function makeStudioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   /*
    * A painted environment rather than an HDR file: it is four gradients,
    * it costs no request, and the shell only ever shows a soft vertical
@@ -227,7 +242,9 @@ export function createYumiScene(
   const LIGHT_REST = { key: 1.5, fill: 0.45, rim: 0.9, ambient: 0.5 };
 
   // ----------------------------------------------------------- materials
-  const shellMaterial = new THREE.MeshStandardMaterial({
+  /* Physical rather than standard so a shop finish can add a clear coat
+     (enamel, lacquer, porcelain). With none, it renders as it always has. */
+  const shellMaterial = new THREE.MeshPhysicalMaterial({
     color: 0x040507, metalness: 0.5, roughness: 0.4, envMapIntensity: 0.38,
     transparent: true, opacity: 1,
   });
@@ -336,6 +353,8 @@ export function createYumiScene(
     model.add(seam);
   }
 
+  const outfit = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
+
   // ----------------------------------------------------------- behaviour
   const eyePosition = EYE_REST.clone();
   const eyeVelocity = new THREE.Vector3();
@@ -352,9 +371,13 @@ export function createYumiScene(
   const cosmicRim = new THREE.Color(0xc7a8dc);
   const neutralShell = new THREE.Color(0x040507);
   const cosmicShell = new THREE.Color(0x18272b);
-  const rotation = options.continuousRotation
-    ? createYumiRotation(model.quaternion, options.reducedMotion)
-    : null;
+  const rotation = options.inspect
+    ? createYumiRotation(model.quaternion, options.reducedMotion, { cruise: 0, damping: 6 })
+    : options.continuousRotation
+      ? createYumiRotation(model.quaternion, options.reducedMotion)
+      : null;
+  /* A set view the stand is easing toward; any touch lets go of it. */
+  let viewTarget: THREE.Quaternion | null = null;
 
   /* Where she is asked to be, and where she actually is. The gap between
      them is the flight out to the middle and back. */
@@ -611,8 +634,14 @@ export function createYumiScene(
       }
       const anchorScale = applyAnchor();
 
+      /* A glass finish is see-through on its own account; the film's fade
+         multiplies it rather than replacing it. */
+      const finishOpacity = (shellMaterial.userData.finishOpacity as number | undefined) ?? 1;
+      outfit.setVisible(!film || film.actor > 0.98);
+
       if (film) {
         for (const material of fadeMaterials) material.opacity = film.actor;
+        shellMaterial.opacity = film.actor * finishOpacity;
         keyLight.intensity = LIGHT_REST.key * film.light;
         fillLight.intensity = LIGHT_REST.fill * film.light;
         rimLight.intensity = LIGHT_REST.rim * film.light;
@@ -632,18 +661,31 @@ export function createYumiScene(
         eyeVelocity.set(0, 0, 0);
       } else {
         for (const material of fadeMaterials) material.opacity = 1;
+        shellMaterial.opacity = finishOpacity;
         keyLight.intensity = LIGHT_REST.key;
         fillLight.intensity = LIGHT_REST.fill;
         cosmicNow += (cosmicWanted - cosmicNow) * (options.reducedMotion ? 1 : Math.min(1, dt * 8));
         keyLight.color.copy(neutralLight).lerp(cosmicKey, cosmicNow);
         rimLight.color.copy(neutralLight).lerp(cosmicRim, cosmicNow);
-        shellMaterial.color.copy(neutralShell).lerp(cosmicShell, cosmicNow);
-        shellMaterial.envMapIntensity = 0.38 + cosmicNow * 0.42;
+        /* Cosmic lifts her own obsidian to a deep teal. A finish from the shop
+           is left alone — jade is jade in either mode — and only the light on
+           it changes. */
+        if (!outfit.hasShellFinish()) {
+          shellMaterial.color.copy(neutralShell).lerp(cosmicShell, cosmicNow);
+          shellMaterial.envMapIntensity = 0.38 + cosmicNow * 0.42;
+        }
         rimLight.intensity = LIGHT_REST.rim + cosmicNow * 1.1;
         ambient.intensity = LIGHT_REST.ambient;
         eyeMaterial.emissiveIntensity = 0;
 
-        if (rotation) {
+        if (viewTarget) {
+          const k = options.reducedMotion ? 1 : Math.min(1, dt * 9);
+          model.quaternion.slerp(viewTarget, k);
+          if (model.quaternion.angleTo(viewTarget) < 0.002) {
+            model.quaternion.copy(viewTarget);
+            viewTarget = null;
+          }
+        } else if (rotation) {
           rotation.step(dt, rotationPaused || !!lungePhase || focusLevel > 0);
         } else if (!dragging && !orbiting && nowMs - idleSince > 3200) {
           /* Drifts back to facing you, so a reader who spun her and left
@@ -667,6 +709,7 @@ export function createYumiScene(
       integrateSpring(dt);
       poseRig();
       poseIris();
+      outfit.sync();
 
       /* Along the screen's vertical, after the look rotation, so a blink is
          a blink from every angle rather than only from the front. */
@@ -678,6 +721,7 @@ export function createYumiScene(
     resize,
 
     dispose() {
+      outfit.dispose();
       scene.traverse(object => {
         const mesh = object as THREE.Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
@@ -696,6 +740,30 @@ export function createYumiScene(
 
     setRotationPaused(paused) {
       rotationPaused = paused;
+    },
+    setOutfit(next) {
+      outfit.apply(next);
+    },
+    setView(view, immediate = false) {
+      const euler = {
+        front: new THREE.Euler(0, 0, 0),
+        "three-quarter": new THREE.Euler(0.12, -0.42, 0, "YXZ"),
+        side: new THREE.Euler(0, -Math.PI / 2, 0),
+        back: new THREE.Euler(0, Math.PI, 0),
+      }[view];
+      rotation?.stop();
+      const target = new THREE.Quaternion().setFromEuler(euler);
+      if (immediate || options.reducedMotion) {
+        model.quaternion.copy(target);
+        viewTarget = null;
+      } else {
+        viewTarget = target;
+      }
+    },
+    rotateBy(dxPx, dyPx) {
+      viewTarget = null;
+      if (rotation) rotation.nudge(dxPx, dyPx);
+      else model.rotation.y += dxPx * 0.012;
     },
     setCosmicLevel(level, immediate = false) {
       cosmicWanted = Math.max(0, Math.min(1, level));
@@ -724,12 +792,13 @@ export function createYumiScene(
       measureCanvas();
       idleSince = performance.now();
       moved = 0;
+      viewTarget = null;
       rotation?.begin(performance.now());
       lastPointer.x = clientX;
       lastPointer.y = clientY;
 
       raycaster.setFromCamera(toNdc(clientX, clientY), camera);
-      const hit = raycaster.intersectObject(eyeHit, false);
+      const hit = options.inspect ? [] : raycaster.intersectObject(eyeHit, false);
       if (hit.length > 0) {
         dragging = true;
         /* Drag in the plane facing the camera that passes through the eye,

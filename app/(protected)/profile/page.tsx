@@ -11,6 +11,7 @@ import {
   Globe,
   LoaderCircle,
   LogOut,
+  ShoppingBag,
   Smartphone,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -494,6 +495,16 @@ export default function ProfilePage() {
             label={sections.yumi}
             footnote={t.settings.interfaceMode.sharedDataNote}
           >
+            <SettingsAnchor id="setting-yumi-shop">
+              <SettingsRow
+                href="/shop"
+                title={t.shop.title}
+                description={t.shop.howEarned}
+                icon={<ShoppingBag size={16} strokeWidth={1.8} />}
+                tone="amber"
+              />
+            </SettingsAnchor>
+
             <SettingsAnchor id="setting-interface-mode">
               <InterfaceModeSettingsButton />
             </SettingsAnchor>
