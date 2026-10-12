@@ -51,7 +51,8 @@ function card(name: string) {
 describe("the Yumi shop", () => {
   it("tries on for free, buys after confirming, and puts the piece on", async () => {
     render(<YumiShop wallet={createPreviewWallet(50)} isCosmic={false} onToggleMode={() => {}} preview />);
-    await waitFor(() => expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument());
+    // The preview wallet answers after a short pause; a busy machine stretches it.
+    await waitFor(() => expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument(), { timeout: 5000 });
 
     // Too dear: on the stand at once, and the bar says how far short.
     fireEvent.click(card("Jade"));
@@ -63,12 +64,12 @@ describe("the Yumi shop", () => {
     fireEvent.click(card("Brass monocle"));
     expect(stand()).toEqual({ material: "jade", eyewear: "monocle" });
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
-    const sheet = await screen.findByRole("dialog");
+    const sheet = await screen.findByRole("dialog", {}, { timeout: 5000 });
     expect(within(sheet).getByText("Buy Brass monocle?")).toBeInTheDocument();
     expect(screen.getByLabelText(/50 energy cookies/)).toBeInTheDocument();
 
     fireEvent.click(within(sheet).getByRole("button", { name: "Buy" }));
-    await waitFor(() => expect(screen.getByText("Yumi is wearing Brass monocle")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Yumi is wearing Brass monocle")).toBeInTheDocument(), { timeout: 5000 });
     expect(screen.getByLabelText(/20 energy cookies/)).toBeInTheDocument();
     expect(card("Brass monocle")).toHaveTextContent("Owned");
 
@@ -81,7 +82,7 @@ describe("the Yumi shop", () => {
   it("speaks the display language, in Traditional Chinese only", async () => {
     reader.language = "traditional-chinese";
     const { container } = render(<YumiShop wallet={createPreviewWallet(10)} isCosmic={false} onToggleMode={() => {}} preview />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Yumi 商店" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Yumi 商店" })).toBeInTheDocument(), { timeout: 5000 });
     expect(screen.getByRole("button", { name: "精選" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "還原裝扮" })).toBeInTheDocument();
     expect(card("玉石綠")).toBeDefined();

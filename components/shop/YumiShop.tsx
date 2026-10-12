@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
-import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
-import { loadTranslations } from "@/lib/i18n";
 import { fill, plural } from "@/lib/i18n/format";
-import { INTERFACE_LANGUAGE_CODE, getInterfaceLanguageMeta } from "@/lib/languages";
+import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
   SHOP_COUNTRIES,
   SHOP_ITEMS,
@@ -73,8 +72,6 @@ const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "sm
 
 const EMPTY_STATE: WardrobeState = { earned: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
-const LANGUAGES = (Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[])
-  .filter(value => getInterfaceLanguageMeta(value).availableAsInterface);
 
 type Availability = "loading" | "open" | "closed" | "failed";
 
@@ -106,6 +103,7 @@ export default function YumiShop({
   const [compact, setCompact] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [celebrateKey, setCelebrateKey] = useState(0);
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   // ------------------------------------------------------------ the sky
   const { weather } = useShopWeather();
@@ -250,14 +248,11 @@ export default function YumiShop({
     }
   }
 
-  async function chooseLanguage(value: InterfaceLanguage) {
-    if (value === language) return;
-    try {
-      await loadTranslations(value);
-      setInterfaceLanguage(value);
-    } catch {
-      setNotice(copy.failed);
-    }
+  /* The display language is one setting with Settings' (Chi, 2026-10-12):
+     this key opens the very sheet Settings opens. */
+  function openLanguages() {
+    prefetchAppLanguages(language);
+    setLanguageOpen(true);
   }
 
   function goBack() {
@@ -296,20 +291,15 @@ export default function YumiShop({
           </button>
           <h1 className={styles.title}>{copy.title}</h1>
           <div className={styles.tools}>
-            <label className={styles.language}>
+            <button
+              type="button"
+              className={styles.language}
+              aria-label={`${copy.language}: ${getInterfaceLanguageMeta(language).endonym}`}
+              onClick={openLanguages}
+            >
               <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
               <span aria-hidden="true">{getInterfaceLanguageMeta(language).badge}</span>
-              <select
-                className={styles.languageSelect}
-                aria-label={copy.language}
-                value={language}
-                onChange={event => void chooseLanguage(event.target.value as InterfaceLanguage)}
-              >
-                {LANGUAGES.map(value => (
-                  <option key={value} value={value}>{getInterfaceLanguageMeta(value).endonym}</option>
-                ))}
-              </select>
-            </label>
+            </button>
             <span className={styles.balance} title={copy.howEarned} aria-label={`${cookies(state.balance)}. ${copy.howEarned}`}>
               <EnergyCookie className={styles.balanceCookie} />
               <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
@@ -479,6 +469,8 @@ export default function YumiShop({
           <p className={styles.barNote}>{copy.unownedNote}</p>
         )}
       </footer>
+
+      <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <BottomSheet
         open={confirming !== null}
