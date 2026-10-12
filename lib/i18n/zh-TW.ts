@@ -2483,6 +2483,7 @@ const traditionalChinese: TranslationDictionary = {
     },
     countries: {
       all: "全部",
+      basic: "基本款",
       tw: "臺灣",
       us: "美國",
       fr: "法國",

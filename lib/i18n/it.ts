@@ -2333,6 +2333,7 @@ const italian: TranslationDictionary = {
     },
     countries: {
       all: "Tutti",
+      basic: "Essenziali",
       tw: "Taiwan",
       us: "Stati Uniti",
       fr: "Francia",

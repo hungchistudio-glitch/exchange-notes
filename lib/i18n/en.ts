@@ -2531,6 +2531,7 @@ const english: TranslationDictionary = {
     },
     countries: {
       all: "All",
+      basic: "Basics",
       tw: "Taiwan",
       us: "USA",
       fr: "France",

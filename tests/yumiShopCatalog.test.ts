@@ -19,21 +19,25 @@ import { buildableIds } from "@/lib/yumi3d/outfit";
 /* =========================================================
    The shop's catalogue, its price list and its pieces agree
 
-   Sixty pieces, twelve per country (Chi's collection boards, 2026-10-12),
-   every one built in code, named in all five interface languages with only
+   Twelve pieces per country from Chi's collection boards (2026-10-12),
+   one more eye each and twelve eye basics, every one built in code, named in all five interface languages with only
    Traditional Chinese, and charged by the database at the price the shop
    shows. A piece added in one place and not the others fails here.
    ========================================================= */
 
 describe("the catalogue", () => {
-  it("has twelve pieces per country, three of them shell materials", () => {
-    expect(SHOP_ITEMS).toHaveLength(60);
-    for (const country of SHOP_COUNTRIES) {
+  it("has twelve pieces per country plus its own extra eye, and a set of basics", () => {
+    expect(SHOP_ITEMS).toHaveLength(77);
+    for (const country of SHOP_COUNTRIES.filter(c => c !== "basic")) {
       const pieces = SHOP_ITEMS.filter(item => item.country === country);
-      expect(pieces).toHaveLength(12);
+      expect(pieces).toHaveLength(13);
       expect(pieces.filter(item => item.slot === "material")).toHaveLength(3);
     }
-    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(60);
+    const basics = SHOP_ITEMS.filter(item => item.country === "basic");
+    expect(basics).toHaveLength(12);
+    // Chi asked for more eyes: every basic is one.
+    expect(basics.every(item => ["pupil", "iris", "eyewear"].includes(item.slot))).toBe(true);
+    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(77);
   });
 
   it("can build every piece it sells", () => {

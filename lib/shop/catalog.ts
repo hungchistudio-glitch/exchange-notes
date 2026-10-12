@@ -5,7 +5,8 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 
    Sixty things Yumi can wear, twelve from each of five places (Chi's
    2026-10-12 collection boards): three shell materials and nine pieces per
-   country. A country is a way to browse, not a rule — any piece goes with any
+   country. Then more eyes, at Chi's asking: one more for each country and
+   a set of basics that belong to none. A country is a way to browse, not a rule — any piece goes with any
    other, and the reader's interface language never hides a collection.
 
    Every piece is built in code from primitives (lib/yumi3d/outfit.ts), the
@@ -19,7 +20,8 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
    as keys.
    ========================================================= */
 
-export type ShopCountry = "tw" | "us" | "fr" | "it" | "es";
+/** Five countries, and the basics that belong to none of them. */
+export type ShopCountry = "basic" | "tw" | "us" | "fr" | "it" | "es";
 
 /**
  * Where on Yumi a piece goes. One piece per slot: a second hat replaces the
@@ -28,6 +30,7 @@ export type ShopCountry = "tw" | "us" | "fr" | "it" | "es";
 export type ShopSlot =
   | "material"
   | "pupil"
+  | "iris"
   | "eyewear"
   | "head"
   | "neck"
@@ -52,14 +55,14 @@ export type ShopItem = {
 /** What Yumi has on. A missing slot is Yumi as she comes. */
 export type YumiOutfit = Partial<Record<ShopSlot, string>>;
 
-export const SHOP_COUNTRIES: readonly ShopCountry[] = ["tw", "us", "fr", "it", "es"];
+export const SHOP_COUNTRIES: readonly ShopCountry[] = ["basic", "tw", "us", "fr", "it", "es"];
 
 export const SHOP_SLOTS: readonly ShopSlot[] = [
-  "material", "pupil", "eyewear", "head", "neck", "pin", "mouth", "charm",
+  "material", "pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm",
 ];
 
 export const CATEGORY_SLOTS: Record<Exclude<ShopCategory, "featured" | "owned">, readonly ShopSlot[]> = {
-  eyes: ["pupil", "eyewear"],
+  eyes: ["pupil", "iris", "eyewear"],
   materials: ["material"],
   wear: ["head", "neck", "pin"],
   small: ["mouth", "charm"],
@@ -69,6 +72,22 @@ type Row = [id: string, slot: ShopSlot, price: number, tone: string,
   zh: string, en: string, fr: string, it: string, es: string];
 
 const ROWS: Record<ShopCountry, Row[]> = {
+  /* Chi asked for more eyes (2026-10-12). The ones that belong to no
+     country live here, and each country gained one of its own. */
+  basic: [
+    ["moon-pupil", "pupil", 30, "#25262c", "月牙瞳孔", "Crescent moon pupil", "Pupille croissant de lune", "Pupilla a mezzaluna", "Pupila de luna creciente"],
+    ["cat-pupil", "pupil", 35, "#9bb53a", "貓眼瞳孔", "Cat’s-eye pupil", "Pupille de chat", "Pupilla di gatto", "Pupila de gato"],
+    ["spiral-pupil", "pupil", 35, "#1d1d22", "漩渦瞳孔", "Spiral pupil", "Pupille spirale", "Pupilla a spirale", "Pupila en espiral"],
+    ["diamond-pupil", "pupil", 50, "#cfe9f7", "鑽石瞳孔", "Diamond pupil", "Pupille diamant", "Pupilla di diamante", "Pupila de diamante"],
+    ["clover-pupil", "pupil", 30, "#2f6b3a", "四葉草瞳孔", "Four-leaf clover pupil", "Pupille trèfle", "Pupilla quadrifoglio", "Pupila de trébol"],
+    ["sparkle-pupil", "pupil", 40, "#1b2340", "星光瞳孔", "Sparkle pupil", "Pupille étincelante", "Pupilla scintillante", "Pupila brillante"],
+    ["lake-iris", "iris", 40, "#3a8fb7", "湖水藍虹膜", "Lake blue iris", "Iris bleu lac", "Iride blu lago", "Iris azul lago"],
+    ["amber-iris", "iris", 40, "#c98a2a", "琥珀虹膜", "Amber iris", "Iris ambré", "Iride ambra", "Iris ámbar"],
+    ["violet-iris", "iris", 40, "#8a5cc4", "紫羅蘭虹膜", "Violet iris", "Iris violet", "Iride viola", "Iris violeta"],
+    ["round-glasses", "eyewear", 60, "#2a2522", "圓框眼鏡", "Round glasses", "Lunettes rondes", "Occhiali tondi", "Gafas redondas"],
+    ["pirate-patch", "eyewear", 50, "#151515", "海盜眼罩", "Pirate eye patch", "Bandeau de pirate", "Benda da pirata", "Parche de pirata"],
+    ["long-lashes", "eyewear", 45, "#151515", "長睫毛", "Long lashes", "Longs cils", "Ciglia lunghe", "Pestañas largas"],
+  ],
   tw: [
     ["jade", "material", 120, "#6f9a78", "玉石綠", "Jade", "Jade", "Giada", "Jade"],
     ["celadon", "material", 110, "#a9c7bb", "青瓷", "Celadon", "Céladon", "Celadon", "Celadón"],
@@ -82,6 +101,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
     ["teapot-charm", "charm", 70, "#9fc2b3", "茶壺吊飾", "Teapot charm", "Breloque théière", "Ciondolo teiera", "Colgante tetera"],
     ["sky-lantern", "charm", 80, "#e0583e", "天燈", "Sky lantern", "Lanterne céleste", "Lanterna volante", "Farolillo volador"],
     ["orchid-clip", "pin", 50, "#c99ad6", "蘭花夾", "Orchid clip", "Pince orchidée", "Fermaglio orchidea", "Pinza orquídea"],
+    ["jade-iris", "iris", 45, "#3f8f5f", "翡翠虹膜", "Jade iris", "Iris de jade", "Iride di giada", "Iris de jade"],
   ],
   us: [
     ["denim", "material", 100, "#2f4a72", "丹寧布", "Denim", "Denim", "Denim", "Mezclilla"],
@@ -96,6 +116,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
     ["jazz-mic", "charm", 70, "#9aa1a8", "爵士麥克風", "Jazz mic", "Micro jazz", "Microfono jazz", "Micrófono de jazz"],
     ["skateboard", "charm", 70, "#c97b3f", "滑板吊飾", "Skateboard charm", "Breloque skateboard", "Ciondolo skateboard", "Colgante monopatín"],
     ["road-sign", "charm", 50, "#f1f0ea", "公路盾牌", "Highway shield", "Écusson d’autoroute", "Scudo autostradale", "Escudo de carretera"],
+    ["aviator-shades", "eyewear", 70, "#5d6a5f", "飛行員墨鏡", "Aviator shades", "Lunettes d’aviateur", "Occhiali da aviatore", "Gafas de aviador"],
   ],
   fr: [
     ["porcelain", "material", 110, "#f1ece2", "陶瓷白", "Porcelain", "Porcelaine", "Porcellana", "Porcelana"],
@@ -110,6 +131,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
     ["cafe-cup", "mouth", 60, "#f4f0e8", "金邊咖啡杯", "Café cup", "Tasse de café", "Tazza da caffè", "Taza de café"],
     ["lavender-brooch", "pin", 50, "#8f7bc0", "薰衣草胸針", "Lavender brooch", "Broche lavande", "Spilla lavanda", "Broche de lavanda"],
     ["perfume", "charm", 70, "#e9b9c4", "香水瓶", "Perfume bottle", "Flacon de parfum", "Boccetta di profumo", "Frasco de perfume"],
+    ["cat-eye-glasses", "eyewear", 70, "#1c1a1b", "復古貓眼鏡框", "Cat-eye frames", "Lunettes œil-de-chat", "Occhiali a gatto", "Gafas de ojo de gato"],
   ],
   it: [
     ["amber-glass", "material", 150, "#c99442", "琥珀琉璃", "Amber glass", "Verre ambré", "Vetro ambrato", "Vidrio ámbar"],
@@ -124,6 +146,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
     ["moka-charm", "charm", 60, "#a7acb1", "摩卡壺吊飾", "Moka pot charm", "Breloque cafetière moka", "Ciondolo moka", "Colgante cafetera moka"],
     ["art-book", "charm", 60, "#2f5d7c", "藝術書", "Art book", "Livre d’art", "Libro d’arte", "Libro de arte"],
     ["lemon-brooch", "pin", 45, "#ecd04a", "檸檬胸針", "Lemon brooch", "Broche citron", "Spilla limone", "Broche de limón"],
+    ["murano-iris", "iris", 50, "#c2483a", "琉璃花虹膜", "Murano flower iris", "Iris millefiori", "Iride millefiori", "Iris millefiori"],
   ],
   es: [
     ["trencadis", "material", 130, "#3a63a8", "藍白碎瓷", "Trencadís mosaic", "Mosaïque trencadís", "Mosaico trencadís", "Mosaico trencadís"],
@@ -138,6 +161,7 @@ const ROWS: Record<ShopCountry, Row[]> = {
     ["guitar-charm", "charm", 70, "#b5753b", "吉他吊飾", "Guitar charm", "Breloque guitare", "Ciondolo chitarra", "Colgante guitarra"],
     ["espadrille", "charm", 50, "#d9c79f", "草編鞋吊飾", "Espadrille charm", "Breloque espadrille", "Ciondolo espadrillas", "Colgante alpargata"],
     ["sun-brooch", "pin", 50, "#e7b43c", "太陽胸針", "Sun brooch", "Broche soleil", "Spilla sole", "Broche de sol"],
+    ["heart-shades", "eyewear", 60, "#c1272d", "愛心墨鏡", "Heart sunglasses", "Lunettes cœur", "Occhiali a cuore", "Gafas de corazón"],
   ],
 };
 
@@ -158,6 +182,7 @@ export function shopItem(id: string | null | undefined): ShopItem | undefined {
 export const FEATURED_IDS: readonly string[] = [
   "jade", "monocle", "heart-pupil", "bubble-tea", "beret", "croissant",
   "headphones", "star-pupil", "espresso", "flamenco-fan", "amber-glass", "sky-lantern",
+  "lake-iris", "round-glasses", "cat-pupil", "heart-shades",
 ];
 
 export function itemsFor(

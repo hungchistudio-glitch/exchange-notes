@@ -2528,6 +2528,7 @@ const spanish: TranslationDictionary = {
     },
     countries: {
       all: "Todo",
+      basic: "Básicos",
       tw: "Taiwán",
       us: "EE. UU.",
       fr: "Francia",

@@ -38,7 +38,7 @@ export function subscribeToThumbnails(listener: (id: string, url: string) => voi
 /** Pose: three quarters for things, nearly square-on for flat ones, from above for hats. */
 function pose(id: string, pivot: THREE.Object3D) {
   const item = shopItem(id);
-  const flat = item?.slot === "pin" || item?.slot === "pupil" || item?.slot === "eyewear" || id === "road-sign";
+  const flat = item?.slot === "pin" || item?.slot === "pupil" || item?.slot === "iris" || item?.slot === "eyewear" || id === "road-sign";
   const hat = item?.slot === "head";
   pivot.rotation.set(hat ? 0.5 : flat ? 0.06 : 0.2, flat ? -0.22 : -0.48, 0);
 }

@@ -2333,6 +2333,7 @@ const french: TranslationDictionary = {
     },
     countries: {
       all: "Tout",
+      basic: "Essentiels",
       tw: "Taïwan",
       us: "États-Unis",
       fr: "France",

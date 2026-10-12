@@ -18,7 +18,7 @@
 
 create table if not exists public.yumi_shop_items (
   id text primary key,
-  slot text not null check (slot in ('material', 'pupil', 'eyewear', 'head', 'neck', 'pin', 'mouth', 'charm')),
+  slot text not null check (slot in ('material', 'pupil', 'iris', 'eyewear', 'head', 'neck', 'pin', 'mouth', 'charm')),
   price integer not null check (price > 0),
   available boolean not null default true
 );
@@ -37,6 +37,18 @@ grant select on table public.yumi_shop_items to authenticated;
 
 -- Kept equal to lib/shop/catalog.ts by tests/yumiShopCatalog.test.ts.
 insert into public.yumi_shop_items (id, slot, price) values
+  ('moon-pupil', 'pupil', 30),
+  ('cat-pupil', 'pupil', 35),
+  ('spiral-pupil', 'pupil', 35),
+  ('diamond-pupil', 'pupil', 50),
+  ('clover-pupil', 'pupil', 30),
+  ('sparkle-pupil', 'pupil', 40),
+  ('lake-iris', 'iris', 40),
+  ('amber-iris', 'iris', 40),
+  ('violet-iris', 'iris', 40),
+  ('round-glasses', 'eyewear', 60),
+  ('pirate-patch', 'eyewear', 50),
+  ('long-lashes', 'eyewear', 45),
   ('jade', 'material', 120),
   ('celadon', 'material', 110),
   ('terrazzo', 'material', 100),
@@ -49,6 +61,7 @@ insert into public.yumi_shop_items (id, slot, price) values
   ('teapot-charm', 'charm', 70),
   ('sky-lantern', 'charm', 80),
   ('orchid-clip', 'pin', 50),
+  ('jade-iris', 'iris', 45),
   ('denim', 'material', 100),
   ('brushed-silver', 'material', 120),
   ('cherry-enamel', 'material', 110),
@@ -61,6 +74,7 @@ insert into public.yumi_shop_items (id, slot, price) values
   ('jazz-mic', 'charm', 70),
   ('skateboard', 'charm', 70),
   ('road-sign', 'charm', 50),
+  ('aviator-shades', 'eyewear', 70),
   ('porcelain', 'material', 110),
   ('champagne-brass', 'material', 130),
   ('burgundy-lacquer', 'material', 120),
@@ -73,6 +87,7 @@ insert into public.yumi_shop_items (id, slot, price) values
   ('cafe-cup', 'mouth', 60),
   ('lavender-brooch', 'pin', 50),
   ('perfume', 'charm', 70),
+  ('cat-eye-glasses', 'eyewear', 70),
   ('amber-glass', 'material', 150),
   ('carrara-marble', 'material', 140),
   ('terracotta', 'material', 100),
@@ -85,6 +100,7 @@ insert into public.yumi_shop_items (id, slot, price) values
   ('moka-charm', 'charm', 60),
   ('art-book', 'charm', 60),
   ('lemon-brooch', 'pin', 45),
+  ('murano-iris', 'iris', 50),
   ('trencadis', 'material', 130),
   ('azulejo', 'material', 120),
   ('sun-brass', 'material', 130),
@@ -96,7 +112,8 @@ insert into public.yumi_shop_items (id, slot, price) values
   ('paella-pan', 'mouth', 80),
   ('guitar-charm', 'charm', 70),
   ('espadrille', 'charm', 50),
-  ('sun-brooch', 'pin', 50)
+  ('sun-brooch', 'pin', 50),
+  ('heart-shades', 'eyewear', 60)
 on conflict (id) do update
   set slot = excluded.slot, price = excluded.price, available = true;
 

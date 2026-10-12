@@ -544,38 +544,232 @@ export function applyShellFinish(material: THREE.MeshPhysicalMaterial, id: strin
 
 // ------------------------------------------------------------------ pupils
 
-function pupilShape(id: string): THREE.Shape {
+/* Pupils and irises live in the eye's look frame: they turn with her gaze
+   and close with her blink. +Z is out through the middle of the eye, and
+   the eyeball's surface there is at EYE_RADIUS. */
+
+function heartPath(s: THREE.Shape | THREE.Path, k = 1, ox = 0, oy = 0) {
+  const p = (x: number, y: number): [number, number] => [ox + x * k, oy + y * k];
+  s.moveTo(...p(0, -0.27));
+  s.bezierCurveTo(...p(-0.16, -0.14), ...p(-0.33, -0.02), ...p(-0.29, 0.13));
+  s.bezierCurveTo(...p(-0.25, 0.28), ...p(-0.06, 0.29), ...p(0, 0.15));
+  s.bezierCurveTo(...p(0.06, 0.29), ...p(0.25, 0.28), ...p(0.29, 0.13));
+  s.bezierCurveTo(...p(0.33, -0.02), ...p(0.16, -0.14), ...p(0, -0.27));
+  return s;
+}
+
+function radialShape(points: number, radius: (i: number, a: number) => number) {
   const s = new THREE.Shape();
-  if (id === "heart-pupil") {
-    s.moveTo(0, -0.27);
-    s.bezierCurveTo(-0.16, -0.14, -0.33, -0.02, -0.29, 0.13);
-    s.bezierCurveTo(-0.25, 0.28, -0.06, 0.29, 0, 0.15);
-    s.bezierCurveTo(0.06, 0.29, 0.25, 0.28, 0.29, 0.13);
-    s.bezierCurveTo(0.33, -0.02, 0.16, -0.14, 0, -0.27);
-    return s;
-  }
-  const points = id === "star-pupil" ? 10 : 160;
   for (let i = 0; i <= points; i += 1) {
     const a = (i / points) * Math.PI * 2 + Math.PI / 2;
-    const r = id === "star-pupil"
-      ? (i % 2 ? 0.13 : 0.31)
-      // Five round petals: a plum blossom, not a star with soft corners.
-      : 0.17 + 0.12 * Math.pow(Math.abs(Math.cos((a - Math.PI / 2) * 2.5)), 0.7);
-    const x = Math.cos(a) * r;
-    const y = Math.sin(a) * r;
-    if (i) s.lineTo(x, y); else s.moveTo(x, y);
+    const r = radius(i, a);
+    if (i) s.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    else s.moveTo(Math.cos(a) * r, Math.sin(a) * r);
   }
   return s;
 }
 
+function pupilShape(id: string): THREE.Shape {
+  if (id === "heart-pupil") return heartPath(new THREE.Shape()) as THREE.Shape;
+  if (id === "star-pupil") return radialShape(10, i => (i % 2 ? 0.13 : 0.31));
+  if (id === "moon-pupil") {
+    /* A crescent: the outer circle's arc, then back along the inside of a
+       second circle set off to the right. */
+    const s = new THREE.Shape();
+    const R = 0.29;
+    const d = 0.15;
+    const r = 0.25;
+    const alpha = Math.acos((d * d + R * R - r * r) / (2 * d * R));
+    const beta = Math.atan2(R * Math.sin(alpha), R * Math.cos(alpha) - d);
+    s.moveTo(Math.cos(alpha) * R, Math.sin(alpha) * R);
+    s.absarc(0, 0, R, alpha, Math.PI * 2 - alpha, false);
+    s.absarc(d, 0, r, -beta, beta, true);
+    return s;
+  }
+  if (id === "cat-pupil") {
+    const s = new THREE.Shape();
+    s.absellipse(0, 0, 0.075, 0.31, 0, Math.PI * 2, false, 0);
+    return s;
+  }
+  // Five round petals: a plum blossom, not a star with soft corners.
+  return radialShape(160, (_i, a) => 0.17 + 0.12 * Math.pow(Math.abs(Math.cos((a - Math.PI / 2) * 2.5)), 0.7));
+}
+
+const IRIS_RADIUS = 0.39;
+
+/** A cap of colour on the eyeball inside the bezel, painted flat. */
+function irisCap(texture: THREE.Texture, lift = 1.006) {
+  const theta = Math.asin(IRIS_RADIUS / EYE_RADIUS);
+  const geometry = new THREE.SphereGeometry(EYE_RADIUS * lift, 56, 12, 0, Math.PI * 2, 0, theta);
+  geometry.rotateX(Math.PI / 2);
+  const p = geometry.attributes.position;
+  const uv = geometry.attributes.uv;
+  for (let i = 0; i < p.count; i += 1) {
+    uv.setXY(i, 0.5 + p.getX(i) / (2 * IRIS_RADIUS), 0.5 + p.getY(i) / (2 * IRIS_RADIUS));
+  }
+  return mesh(geometry, std(0xffffff, 0.05, 0.22, { map: texture, envMapIntensity: 0.8 }));
+}
+
+function irisTexture(seed: number, base: string, deep: string, light: string) {
+  return paint(256, 256, seed, (ctx, rand, w, h) => {
+    const cx = w / 2;
+    const cy = h / 2;
+    const R = w / 2;
+    const g = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R);
+    g.addColorStop(0, deep);
+    g.addColorStop(0.42, base);
+    g.addColorStop(0.84, base);
+    g.addColorStop(1, deep);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Fibres from the pupil out to the rim, light and dark.
+    ctx.lineCap = "round";
+    for (let i = 0; i < 180; i += 1) {
+      const a = rand() * Math.PI * 2;
+      const r0 = R * (0.34 + rand() * 0.12);
+      const r1 = R * (0.68 + rand() * 0.26);
+      const bend = (rand() - 0.5) * 0.12;
+      ctx.strokeStyle = rand() > 0.5 ? light : deep;
+      ctx.globalAlpha = 0.2 + rand() * 0.35;
+      ctx.lineWidth = 1 + rand() * 2.2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      ctx.lineTo(cx + Math.cos(a + bend) * r1, cy + Math.sin(a + bend) * r1);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = light;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.52, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+}
+
+function muranoTexture() {
+  return paint(256, 256, 131, (ctx, _rand, w, h) => {
+    const cx = w / 2;
+    const cy = h / 2;
+    const R = w / 2;
+    const g = ctx.createRadialGradient(cx, cy, R * 0.3, cx, cy, R);
+    g.addColorStop(0, "#0f2c66");
+    g.addColorStop(1, "#1d4fa8");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // Millefiori: two rings of glass flowers, the way a Murano cane is cut.
+    const rings: Array<[number, number, string[]]> = [
+      [0.62, 9, ["#c2483a", "#f4f1ea", "#e9c24a"]],
+      [0.86, 13, ["#f4f1ea", "#3fa37a", "#e98aa8"]],
+    ];
+    for (const [rr, count, colours] of rings) {
+      for (let i = 0; i < count; i += 1) {
+        const a = (i / count) * Math.PI * 2;
+        const x = cx + Math.cos(a) * R * rr;
+        const y = cy + Math.sin(a) * R * rr;
+        const size = R * (rr > 0.7 ? 0.1 : 0.12);
+        ctx.fillStyle = colours[i % colours.length];
+        for (let k = 0; k < 6; k += 1) {
+          const b = (k / 6) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(x + Math.cos(b) * size * 0.55, y + Math.sin(b) * size * 0.55, size * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = "#fff8e0";
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+const IRISES: Record<string, () => THREE.Texture> = {
+  "lake-iris": () => irisTexture(137, "#3a8fb7", "#123f58", "#bfe6f5"),
+  "amber-iris": () => irisTexture(139, "#c98a2a", "#5e3408", "#f5d58a"),
+  "violet-iris": () => irisTexture(149, "#8a5cc4", "#36205e", "#dcc6f4"),
+  "jade-iris": () => irisTexture(151, "#3f8f5f", "#143f25", "#bfe6c9"),
+  "murano-iris": muranoTexture,
+};
+
+function buildIris(id: string): THREE.Object3D {
+  return group(irisCap(IRISES[id]()));
+}
+
+function star4Shape(outer: number, inner: number) {
+  return radialShape(8, i => (i % 2 ? inner : outer));
+}
+
 function buildPupil(id: string): THREE.Object3D {
   const ink = std(id === "plum-pupil" ? 0x1e0f17 : 0x050505, 0.15, 0.08, { envMapIntensity: 0.6 });
+  const g = group();
+
+  if (id === "spiral-pupil") {
+    // A spiral of ink laid on the curve of the eye: hypnotic, not flat.
+    const points: THREE.Vector3[] = [];
+    for (let t = 0; t <= Math.PI * 6; t += 0.08) {
+      const r = 0.015 + 0.0145 * t;
+      const x = Math.cos(t) * r;
+      const y = Math.sin(t) * r;
+      points.push(new THREE.Vector3(x, y, Math.sqrt(EYE_RADIUS * EYE_RADIUS - r * r) + 0.012));
+    }
+    g.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 360, 0.024, 8), ink));
+    return g;
+  }
+
+  if (id === "diamond-pupil") {
+    // A sapphire-blue brilliant on a dark setting: a clear stone on a white eye disappears.
+    const backing = mesh(new THREE.CircleGeometry(0.3, 48), std(0x0b1630, 0.2, 0.3), 0, 0, EYE_RADIUS * 0.985);
+    const gem = phys(0x5fb4ea, {
+      metalness: 0.2, roughness: 0.02, clearcoat: 1, flatShading: true, envMapIntensity: 2.6,
+      emissive: 0x15406b, emissiveIntensity: 0.45,
+    });
+    const crown = new THREE.CylinderGeometry(0.13, 0.25, 0.08, 8);
+    crown.rotateX(Math.PI / 2);
+    const pavilion = new THREE.ConeGeometry(0.25, 0.14, 8);
+    pavilion.rotateX(-Math.PI / 2);
+    const top = mesh(crown, gem, 0, 0, EYE_RADIUS * 1.06);
+    const bottom = mesh(pavilion, gem, 0, 0, EYE_RADIUS * 0.98);
+    top.rotation.z = bottom.rotation.z = Math.PI / 8;
+    g.add(backing, top, bottom);
+    return g;
+  }
+
+  if (id === "clover-pupil") {
+    const leaf = glaze(0x1f5a2c, 0.12);
+    for (let k = 0; k < 4; k += 1) {
+      // Each leaf a heart, tip at the centre.
+      const heart = heartPath(new THREE.Shape(), 0.52, 0, 0.27 * 0.52) as THREE.Shape;
+      const m = mesh(extrude(heart, 0.05, 0.012, 24), leaf, 0, 0, EYE_RADIUS * 0.98);
+      m.rotation.z = (k / 4) * Math.PI * 2 + Math.PI / 4;
+      g.add(m);
+    }
+    g.add(mesh(new THREE.SphereGeometry(0.035, 12, 10), leaf, 0, 0, EYE_RADIUS * 1.04));
+    return g;
+  }
+
+  if (id === "sparkle-pupil") {
+    const disc = new THREE.Shape();
+    disc.absarc(0, 0, 0.3, 0, Math.PI * 2, false);
+    g.add(mesh(extrude(disc, 0.05, 0.015, 48), std(0x0c1430, 0.2, 0.08, { envMapIntensity: 0.7 }), 0, 0, EYE_RADIUS * 0.97));
+    const shine = std(0xffffff, 0, 0.2, { emissive: 0xffffff, emissiveIntensity: 0.8 });
+    for (const [x, y, size] of [[-0.11, 0.1, 0.13], [0.12, -0.12, 0.07]] as const) {
+      g.add(mesh(extrude(star4Shape(size, size * 0.28), 0.01, 0.004, 8), shine, x, y, EYE_RADIUS * 1.04));
+    }
+    const dot = mesh(new THREE.CircleGeometry(0.03, 16), shine, 0.1, 0.13, EYE_RADIUS * 1.04);
+    g.add(dot);
+    return g;
+  }
+
   const geometry = extrude(pupilShape(id), 0.07, 0.018, 32);
-  const shape = mesh(geometry, ink, 0, 0, EYE_RADIUS * 0.97);
-  const g = group(shape);
+  g.add(mesh(geometry, ink, 0, 0, EYE_RADIUS * 0.97));
   if (id === "plum-pupil") {
     // The stamen: a bead of brass in the middle of the blossom.
     g.add(mesh(new THREE.SphereGeometry(0.05, 16, 12), brass(), 0, 0, EYE_RADIUS * 1.04));
+  }
+  if (id === "cat-pupil") {
+    // A cat's eye brings its own yellow-green iris, laid just above any other.
+    g.add(irisCap(irisTexture(157, "#b6c43a", "#4d5a10", "#eef3a0"), 1.009));
   }
   return g;
 }
@@ -645,6 +839,124 @@ function buildVenetianMask(): THREE.Object3D {
     feathers.add(m);
   }
   return group(face, trim, jewel, feathers);
+}
+
+/** A flat shape bent round the eye, so frames sit on it rather than float. */
+function bendToEye(geometry: THREE.BufferGeometry, k = 0.32, ky = 0.12) {
+  const position = geometry.attributes.position;
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    position.setZ(i, position.getZ(i) - k * x * x - ky * y * y);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function tintedLens(colour: THREE.ColorRepresentation, opacity: number) {
+  return phys(colour, { roughness: 0.03, clearcoat: 1, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+}
+
+function buildRoundGlasses(): THREE.Object3D {
+  const acetate = glaze(0x2a2522, 0.18);
+  const rim = mesh(new THREE.TorusGeometry(0.5, 0.055, 16, 72), acetate, 0, 0, 0.74);
+  const lens = mesh(new THREE.CircleGeometry(0.48, 48), tintedLens(0xffffff, 0.1), 0, 0, 0.76);
+  const hinge = mesh(new THREE.BoxGeometry(0.1, 0.07, 0.06), acetate, -0.53, 0.06, 0.72);
+  const temple = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.56, 0.06, 0.7), new THREE.Vector3(-0.8, 0.08, 0.45), new THREE.Vector3(-0.92, 0.04, 0.1),
+  ]), 24, 0.025, 8), acetate);
+  const pins = [-0.38, 0.38].map(x => mesh(new THREE.SphereGeometry(0.022, 10, 8), brass(), x, 0.3, 0.77));
+  return group(rim, lens, hinge, temple, ...pins);
+}
+
+function buildCatEyeGlasses(): THREE.Object3D {
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.62, 0.02);
+  outline.bezierCurveTo(-0.62, -0.38, -0.2, -0.56, 0.12, -0.5);
+  outline.bezierCurveTo(0.5, -0.44, 0.66, -0.2, 0.68, 0.06);
+  outline.bezierCurveTo(0.74, 0.22, 0.86, 0.38, 0.92, 0.52);
+  outline.bezierCurveTo(0.6, 0.5, 0.3, 0.5, 0, 0.47);
+  outline.bezierCurveTo(-0.36, 0.45, -0.62, 0.36, -0.62, 0.02);
+  const hole = new THREE.Path();
+  hole.absellipse(0.02, 0, 0.45, 0.42, 0, Math.PI * 2, false, 0);
+  outline.holes.push(hole);
+  const frame = mesh(bendToEye(extrude(outline, 0.05, 0.014, 48), 0.22, 0.08), glaze(0x1c1a1b, 0.12), 0, 0, 0.75);
+  const lens = mesh(new THREE.CircleGeometry(0.44, 48), tintedLens(0xf3d6dc, 0.14), 0.02, 0, 0.76);
+  const stones = group();
+  for (const [x, y] of [[0.84, 0.44], [0.74, 0.36], [0.64, 0.3]] as const) {
+    stones.add(mesh(new THREE.SphereGeometry(0.03, 12, 8), brass(), x, y, 0.75 - 0.22 * x * x + 0.04));
+  }
+  return group(frame, lens, stones);
+}
+
+function buildAviatorShades(): THREE.Object3D {
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.5, 0.3);
+  outline.bezierCurveTo(-0.2, 0.36, 0.25, 0.36, 0.52, 0.28);
+  outline.bezierCurveTo(0.62, 0.05, 0.5, -0.36, 0.18, -0.5);
+  outline.bezierCurveTo(-0.08, -0.6, -0.48, -0.42, -0.56, -0.08);
+  outline.bezierCurveTo(-0.6, 0.1, -0.56, 0.24, -0.5, 0.3);
+  const lens = mesh(new THREE.ShapeGeometry(outline, 32), tintedLens(0x1f2a24, 0.74), 0, 0, 0.78);
+  const gold = brass();
+  const wire = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+    outline.getSpacedPoints(80).map(p => new THREE.Vector3(p.x, p.y, 0.78)), true), 160, 0.018, 6, true), gold);
+  const bar = mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.7, 8), gold, -0.12, 0.42, 0.77);
+  bar.rotation.z = Math.PI / 2;
+  const temple = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.56, 0.28, 0.76), new THREE.Vector3(-0.82, 0.3, 0.5), new THREE.Vector3(-0.92, 0.22, 0.12),
+  ]), 24, 0.016, 6), gold);
+  return group(lens, wire, bar, temple);
+}
+
+function buildHeartShades(): THREE.Object3D {
+  const outline = heartPath(new THREE.Shape(), 2.35, 0, 0.05) as THREE.Shape;
+  const hole = heartPath(new THREE.Path(), 1.85, 0, 0.06);
+  outline.holes.push(hole as THREE.Path);
+  const frame = mesh(bendToEye(extrude(outline, 0.05, 0.014, 48), 0.2, 0.08), glaze(0xc1272d, 0.15), 0, 0, 0.76);
+  const lensShape = heartPath(new THREE.Shape(), 1.9, 0, 0.06) as THREE.Shape;
+  const lens = mesh(new THREE.ShapeGeometry(lensShape, 32), tintedLens(0xe2627a, 0.42), 0, 0, 0.78);
+  return group(frame, lens);
+}
+
+function buildPiratePatch(): THREE.Object3D {
+  const outline = new THREE.Shape();
+  outline.absellipse(0, -0.02, 0.5, 0.43, 0, Math.PI * 2, false, 0.15);
+  const leather = std(0x151515, 0.1, 0.62);
+  const patch = mesh(bendToEye(extrude(outline, 0.04, 0.014, 48), 0.5, 0.4), leather, 0, 0, 0.78);
+  const stitch = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+    outline.getSpacedPoints(64).map(p => new THREE.Vector3(p.x * 0.88, p.y * 0.88 - 0.002, 0.81 - 0.5 * (p.x * 0.88) ** 2 - 0.4 * (p.y * 0.88) ** 2)), true),
+    128, 0.008, 4, true), std(0x5a5550, 0, 0.7));
+  const straps = group();
+  for (const [x0, y0, x1, y1] of [[-0.36, 0.28, -0.98, 0.72], [0.4, 0.26, 0.98, 0.62]] as const) {
+    const a = new THREE.Vector3(x0, y0, 0.72);
+    const b = new THREE.Vector3(x1, y1, 0.28);
+    const strap = mesh(new THREE.BoxGeometry(0.06, a.distanceTo(b), 0.015), leather);
+    strap.position.copy(a).add(b).multiplyScalar(0.5);
+    strap.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    straps.add(strap);
+  }
+  return group(patch, stitch, straps);
+}
+
+function buildLongLashes(): THREE.Object3D {
+  const ink = std(0x111111, 0.1, 0.4);
+  const g = group();
+  const count = 7;
+  for (let i = 0; i < count; i += 1) {
+    const t = i / (count - 1);
+    const a = THREE.MathUtils.degToRad(35 + 110 * t);
+    const length = 0.2 + 0.08 * Math.sin(Math.PI * t);
+    const root = new THREE.Vector3(Math.cos(a) * 0.43, Math.sin(a) * 0.43, 0);
+    root.z = Math.sqrt(EYE_RADIUS * EYE_RADIUS - root.x * root.x - root.y * root.y);
+    const out = new THREE.Vector3(Math.cos(a), Math.sin(a), 0);
+    const curve = new THREE.QuadraticBezierCurve3(
+      root,
+      root.clone().addScaledVector(out, length * 0.6).add(new THREE.Vector3(0, 0, 0.12)),
+      root.clone().addScaledVector(out, length).add(new THREE.Vector3(0, length * 0.45, 0.08)),
+    );
+    g.add(mesh(taperedTube(curve, u => 0.02 * (1 - u * 0.75), 16, 8), ink));
+  }
+  return g;
 }
 
 // -------------------------------------------------------------------- head
@@ -1751,12 +2063,25 @@ function buildEspadrille(): THREE.Object3D {
 
 type Builder = () => THREE.Object3D;
 
-const PUPILS = new Set(["plum-pupil", "star-pupil", "heart-pupil"]);
+const PUPILS = new Set([
+  "plum-pupil", "star-pupil", "heart-pupil", "moon-pupil", "cat-pupil", "spiral-pupil",
+  "diamond-pupil", "clover-pupil", "sparkle-pupil",
+]);
 
 const EYEWEAR: Record<string, Builder> = {
   monocle: buildMonocle,
   "venetian-mask": buildVenetianMask,
+  "round-glasses": buildRoundGlasses,
+  "cat-eye-glasses": buildCatEyeGlasses,
+  "aviator-shades": buildAviatorShades,
+  "heart-shades": buildHeartShades,
+  "pirate-patch": buildPiratePatch,
+  "long-lashes": buildLongLashes,
 };
+
+/* Lashes are part of the eye: they close with the blink, so they go in the
+   look frame rather than the eyewear frame that skips it. */
+const BLINKS_WITH_EYE = new Set(["long-lashes"]);
 
 const HEAD: Record<string, Builder> = {
   beret: buildBeret,
@@ -1816,7 +2141,7 @@ const CHARM: Record<string, Builder> = {
 /** Ids this module can build, for the catalogue test. */
 export function buildableIds(): string[] {
   return [
-    ...Object.keys(SHELL_FINISHES), ...PUPILS, ...Object.keys(EYEWEAR), ...Object.keys(HEAD),
+    ...Object.keys(SHELL_FINISHES), ...PUPILS, ...Object.keys(IRISES), ...Object.keys(EYEWEAR), ...Object.keys(HEAD),
     ...Object.keys(NECK), ...Object.keys(PIN), ...Object.keys(MOUTH), ...Object.keys(CHARM),
   ];
 }
@@ -1908,7 +2233,10 @@ function disposeObject(object: THREE.Object3D) {
 /** Builds the piece for one slot, already placed in the model's frame. */
 function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null {
   if (slot === "pupil" && PUPILS.has(id)) return { look: buildPupil(id) };
-  if (slot === "eyewear" && EYEWEAR[id]) return { eye: EYEWEAR[id]() };
+  if (slot === "iris" && IRISES[id]) return { look: buildIris(id) };
+  if (slot === "eyewear" && EYEWEAR[id]) {
+    return BLINKS_WITH_EYE.has(id) ? { look: EYEWEAR[id]() } : { eye: EYEWEAR[id]() };
+  }
   if (slot === "head" && HEAD[id]) {
     const anchor = headAnchor();
     anchor.add(HEAD[id]());
@@ -1978,7 +2306,7 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
         applyShellFinish(shellMaterial, finish);
       }
 
-      for (const slot of ["pupil", "eyewear", "head", "neck", "pin", "mouth", "charm"] as const) {
+      for (const slot of ["pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm"] as const) {
         const id = outfit[slot];
         if (worn.get(slot)?.id === id) continue;
         remove(slot);
@@ -1992,6 +2320,10 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
         if (slot === "pupil") pupil.visible = false;
         worn.set(slot, { id, objects });
       }
+
+      /* A coloured iris needs room to be seen: her own round pupil narrows
+         while one is on, the way a pupil does in light. */
+      pupil.scale.setScalar(worn.has("iris") && !worn.has("pupil") ? 0.72 : 1);
     },
 
     hasShellFinish() {
@@ -2047,7 +2379,7 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
     return g;
   }
 
-  if (item.slot === "pupil" || item.slot === "eyewear") {
+  if (item.slot === "pupil" || item.slot === "iris" || item.slot === "eyewear") {
     const eye = group(
       mesh(new THREE.SphereGeometry(EYE_RADIUS, 40, 28), std(0xf2f0e8, 0.03, 0.2)),
       mesh(new THREE.TorusGeometry(0.4, 0.05, 16, 64), std(0x030405, 0.5, 0.26), 0, 0, EYE_RADIUS * 0.7),
@@ -2057,8 +2389,14 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
     eye.add(arm);
     if (item.slot === "pupil") eye.add(buildPupil(id));
     else {
-      eye.add(mesh(new THREE.SphereGeometry(0.3, 28, 18), std(0x000000, 0.15, 0.07), 0, 0, EYE_RADIUS * 0.74));
-      eye.add(EYEWEAR[id]());
+      const round = mesh(new THREE.SphereGeometry(0.3, 28, 18), std(0x000000, 0.15, 0.07), 0, 0, EYE_RADIUS * 0.74);
+      if (item.slot === "iris") {
+        round.scale.setScalar(0.72);
+        eye.add(buildIris(id));
+      } else {
+        eye.add(EYEWEAR[id]());
+      }
+      eye.add(round);
     }
     return eye;
   }

@@ -24,7 +24,7 @@ import type { ShopSlot, YumiOutfit } from "./catalog";
 
 const STORAGE_KEY = "exchange-notes:yumi-outfit";
 
-const SLOTS: readonly ShopSlot[] = ["material", "pupil", "eyewear", "head", "neck", "pin", "mouth", "charm"];
+const SLOTS: readonly ShopSlot[] = ["material", "pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm"];
 
 let outfit: YumiOutfit = {};
 let hydrated = false;

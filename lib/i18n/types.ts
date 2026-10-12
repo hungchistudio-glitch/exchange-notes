@@ -2500,6 +2500,6 @@ export type TranslationDictionary = {
     preview: string;
     selectPrompt: string;
     categories: { featured: string; eyes: string; materials: string; wear: string; small: string; owned: string };
-    countries: { all: string; tw: string; us: string; fr: string; it: string; es: string };
+    countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
   };
 };
