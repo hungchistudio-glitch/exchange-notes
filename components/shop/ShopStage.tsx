@@ -4,9 +4,11 @@ import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 
 import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import type { Scene } from "@/lib/shop/atmosphere";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
 
+import ShopAtmosphere from "./ShopAtmosphere";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -45,11 +47,17 @@ export default function ShopStage({
   compact,
   labels,
   corner,
+  scene,
+  celebrateKey,
 }: {
   outfit: YumiOutfit;
   isCosmic: boolean;
   compact: boolean;
   labels: ShopStageLabels;
+  /** The sky behind her (lib/shop/atmosphere). */
+  scene: Scene;
+  /** Changes once per purchase, for the sky's celebration. */
+  celebrateKey: number;
   /** A control for the stand's top right: the mode switch, which is its lighting. */
   corner?: ReactNode;
 }) {
@@ -59,6 +67,8 @@ export default function ShopStage({
   const zoomRef = useRef(1);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef(0);
+  /* A drag's horizontal speed, handed to the sky as wind. */
+  const gust = useRef(0);
   const [live, setLive] = useState(false);
   const [failed, setFailed] = useState(false);
   const [turned, setTurned] = useState(false);
@@ -184,7 +194,8 @@ export default function ShopStage({
   }
 
   function onPointerMove(event: PointerEvent<HTMLCanvasElement>) {
-    if (!pointers.current.has(event.pointerId)) return;
+    const previous = pointers.current.get(event.pointerId);
+    if (!previous) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.current.size >= 2) {
       const next = spread();
@@ -193,6 +204,7 @@ export default function ShopStage({
       return;
     }
     handleRef.current?.pointerMove(event.clientX, event.clientY);
+    gust.current += (event.clientX - previous.x) * 4;
     if (!turned) setTurned(true);
     if (view) setView(null);
   }
@@ -230,6 +242,7 @@ export default function ShopStage({
 
   return (
     <div ref={boxRef} className={styles.stage} data-compact={compact ? "true" : "false"}>
+      <ShopAtmosphere scene={scene} cosmic={isCosmic} gustRef={gust} celebrateKey={celebrateKey} />
       <div className={styles.pedestal} aria-hidden="true" />
 
       {!live && (

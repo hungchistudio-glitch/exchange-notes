@@ -3,7 +3,7 @@
 import { ArrowLeft, Check, Globe, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -27,11 +27,24 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
+import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
+import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
+import {
+  getQuarterHour,
+  getSceneChoice,
+  getServerQuarterHour,
+  getServerSceneChoice,
+  setSceneChoice,
+  subscribeToQuarterHour,
+  subscribeToSceneChoice,
+  useShopWeather,
+} from "@/lib/shop/useShopWeather";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 import { cachedThumbnail, requestThumbnails, subscribeToThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import EnergyCookie from "./EnergyCookie";
+import ShopScenePicker from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
 import styles from "./YumiShop.module.css";
 
@@ -92,6 +105,28 @@ export default function YumiShop({
   const [notice, setNotice] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [celebrateKey, setCelebrateKey] = useState(0);
+
+  // ------------------------------------------------------------ the sky
+  const { weather } = useShopWeather();
+  const sceneChoice = useSyncExternalStore(subscribeToSceneChoice, getSceneChoice, getServerSceneChoice);
+  /* The hour moves the sky (morning, day, dusk, night). Null on the server,
+     which does not know the reader's clock: a quiet sky until it does. */
+  const quarter = useSyncExternalStore(subscribeToQuarterHour, getQuarterHour, getServerQuarterHour);
+  const scene = useMemo(
+    () => (quarter === null ? QUIET_SCENE : sceneFor(sceneChoice, weather, new Date(quarter))),
+    [sceneChoice, weather, quarter],
+  );
+  const sky = t.shop.sky;
+  const skyNow = sceneChoice !== "auto"
+    ? sky.choices[sceneChoice]
+    : weather
+      ? `${sky.conditions[weather.condition]}${weather.temperature === null ? "" : ` ${formatTemperature(weather.temperature, getDeviceTimeZone())}`}`
+      : quarter === null
+        ? sky.label
+        : dayPartAt(new Date(quarter)) === "night"
+          ? sky.night
+          : sky.seasons[seasonAt(new Date(quarter))];
   const [, setThumbVersion] = useState(0);
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -206,6 +241,7 @@ export default function YumiShop({
       }
       const withItem = { ...draft, [item.slot]: item.id };
       setDraft(withItem);
+      setCelebrateKey(key => key + 1);
       await save(withItem, result.state, fill(copy.bought, { item: name(item) }));
     } catch {
       setNotice(copy.failed);
@@ -285,15 +321,27 @@ export default function YumiShop({
           outfit={draft}
           isCosmic={isCosmic}
           compact={compact}
+          scene={scene}
+          celebrateKey={celebrateKey}
           corner={
-            <button
-              type="button"
-              className={styles.roundKey}
-              aria-label={isCosmic ? copy.toStandard : copy.toCosmic}
-              onClick={onToggleMode}
-            >
-              {isCosmic ? <Sun size={18} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={18} strokeWidth={1.8} aria-hidden="true" />}
-            </button>
+            <>
+              <ShopScenePicker
+                scene={scene}
+                choice={sceneChoice}
+                current={skyNow}
+                names={sky.choices}
+                label={sky.label}
+                onChoose={setSceneChoice}
+              />
+              <button
+                type="button"
+                className={styles.roundKey}
+                aria-label={isCosmic ? copy.toStandard : copy.toCosmic}
+                onClick={onToggleMode}
+              >
+                {isCosmic ? <Sun size={18} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={18} strokeWidth={1.8} aria-hidden="true" />}
+              </button>
+            </>
           }
           labels={{
             stage: copy.stage,
