@@ -54,6 +54,15 @@ function isActive(pathname: string, href: string) {
  * The list, the archive and the new-conversation bridge all keep the dock —
  * they are places you pass through, not places you settle into.
  */
+/*
+ * The shop is the same case: its bar for the piece in hand sits where the
+ * dock would, and on a phone the two would be stacked over the catalogue.
+ * Its own back key leaves it.
+ */
+function isInShop(pathname: string) {
+  return pathname === "/shop";
+}
+
 function isInsideConversation(pathname: string) {
   if (!pathname.startsWith("/messages/")) return false;
 
@@ -264,7 +273,7 @@ export default function ProtectedNav() {
    * focusing it brings it back to full strength, so "quieter" never means
    * "harder to use".
    */
-  if (isInsideConversation(pathname)) {
+  if (isInsideConversation(pathname) || isInShop(pathname)) {
     return (
       <>
         <div className="hidden opacity-40 transition-opacity duration-200 hover:opacity-100 focus-within:opacity-100 sm:block">

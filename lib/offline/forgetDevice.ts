@@ -52,6 +52,8 @@ const ACCOUNT_STORAGE_KEYS = [
   "exchange-notes-pronunciation-session",
   /** lib/settings/deviceConnections — the devices this account had paired. */
   "exchange-notes-device-connections",
+  /** lib/shop/wornOutfit — what this account's Yumi is wearing. */
+  "exchange-notes:yumi-outfit",
 ] as const;
 
 function forgetAccountStorage(): void {

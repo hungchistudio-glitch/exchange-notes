@@ -5,8 +5,22 @@ export const ROTATION_CRUISE_SPEED = 0.18;
 const MAX_RELEASE_SPEED = 2.8;
 const RADIANS_PER_PIXEL = 0.012;
 
+export type YumiRotationOptions = {
+  /**
+   * The speed a release settles into. Home keeps her turning slowly; the
+   * shop's stand passes 0 so she comes to rest where the reader left her.
+   */
+  cruise?: number;
+  /** How quickly a flick decays toward the cruise speed, per second. */
+  damping?: number;
+};
+
 /** Screen-space rotation, without Euler limits or a second animation loop. */
-export function createYumiRotation(orientation: Quaternion, reducedMotion = false) {
+export function createYumiRotation(
+  orientation: Quaternion,
+  reducedMotion = false,
+  { cruise = ROTATION_CRUISE_SPEED, damping: releaseDamping = 2.4 }: YumiRotationOptions = {},
+) {
   const axis = new Vector3(0, 1, 0);
   const previousAxis = axis.clone();
   const velocity = new Vector3();
@@ -58,7 +72,23 @@ export function createYumiRotation(orientation: Quaternion, reducedMotion = fals
       // Holding still before release drops the flick, but keeps a slow orbit.
       const recent = now - lastMove < 100;
       if (recent && velocity.lengthSq() > 0.000001) axis.copy(velocity).normalize();
-      speed = active ? Math.max(ROTATION_CRUISE_SPEED, recent ? velocity.length() : 0) : 0;
+      speed = active ? Math.max(cruise, recent ? velocity.length() : 0) : 0;
+    },
+    /** Drop any flick or cruise, as when the stand is turned to a set view. */
+    stop() {
+      held = false;
+      active = false;
+      previouslyActive = false;
+      speed = 0;
+      velocity.set(0, 0, 0);
+    },
+    /** One keyboard step, as if dragged by that many pixels. */
+    nudge(dx: number, dy: number) {
+      sample.set(dy, dx, 0).multiplyScalar(RADIANS_PER_PIXEL);
+      const angle = sample.length();
+      if (!angle) return;
+      axis.copy(sample).normalize();
+      turn(angle);
     },
     cancel() {
       held = false;
@@ -70,8 +100,8 @@ export function createYumiRotation(orientation: Quaternion, reducedMotion = fals
       if (held || !active || reducedMotion) return;
       // Background time is never replayed as a large catch-up rotation.
       const dt = Math.max(0, Math.min(seconds, 1 / 30));
-      const target = paused ? 0 : ROTATION_CRUISE_SPEED;
-      const damping = paused ? 12 : 2.4;
+      const target = paused ? 0 : cruise;
+      const damping = paused ? 12 : releaseDamping;
       const decay = Math.exp(-damping * dt);
       const angle = target * dt + (speed - target) * (1 - decay) / damping;
       speed = target + (speed - target) * decay;

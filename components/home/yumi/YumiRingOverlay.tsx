@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { useWornOutfit } from "@/lib/shop/wornOutfit";
 import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import type { CSSProperties, ReactNode } from "react";
@@ -506,6 +507,9 @@ export default function YumiRingOverlay({
      and moved by hand. See lib/yumi3d/sceneCache.ts. */
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
+  const outfit = useWornOutfit();
+  const outfitRef = useRef(outfit);
+  useEffect(() => { outfitRef.current = outfit; }, [outfit]);
   const cancelCanvasGestureRef = useRef<(() => void) | null>(null);
   /* Already live when she was parked a moment ago: no fade-in from nothing
      for a scene that is already built. Client-only — a parked scene only
@@ -951,6 +955,7 @@ export default function YumiRingOverlay({
         sceneRef.current = handle;
         window.clearTimeout(giveUp);
         let firstPaint = true;
+        let dressed: unknown = null;
 
         let lastRingTransform = "";
         let lastBelowRoom = "";
@@ -1081,6 +1086,11 @@ export default function YumiRingOverlay({
             }
           }
 
+          // What she bought in the shop, put on before the frame that shows her.
+          if (dressed !== outfitRef.current) {
+            dressed = outfitRef.current;
+            handle.setOutfit?.(outfitRef.current);
+          }
           const gazeEye = handle.eyeScreenPosition();
           // Lit for Standard from her first frame here, not eased into it.
           handle.setCosmicLevel?.(0, firstPaint);

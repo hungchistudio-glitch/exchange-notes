@@ -146,10 +146,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * (lib/vocabulary/share.ts), so the share key can say it copied and stop
    * overwriting the clipboard when the share sheet is closed. Both tabs
    * already rendered the copy key; the file imports nothing but a type.
+   * Raised home 172 → 173 (2026-10-12): the Yumi shop. Both homes put on
+   * what Yumi was bought (lib/shop/wornOutfit.ts) before her first frame, so
+   * she never changes clothes in front of the reader. The file imports React
+   * and a type; the catalogue, the 3D pieces and the database client all
+   * stay behind import().
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 161],
-    ["home", TABS.home, 172],
+    ["home", TABS.home, 173],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
