@@ -251,6 +251,10 @@ export default function YumiHomeStage({
   const dailyGoal = useDailyGoalWords();
 
   const [petState, setPetState] = useState<PetState | null>(null);
+  /* Which words she has already eaten is only known once her row is read.
+     Until then there are no cookies: "nothing fed" would put a cookie on
+     every saved word for a moment, then take them all away again. */
+  const [petLoaded, setPetLoaded] = useState(false);
   const [isWaking, setIsWaking] = useState(true);
   const [introMood, setIntroMood] = useState<HomeMood | null>(null);
   const [reaction, setReaction] = useState<HomeReactionMood | null>(null);
@@ -418,6 +422,8 @@ export default function YumiHomeStage({
       } catch {
         // Not signed in yet, or yumi_pet_state hasn't been migrated on
         // the live database — Yumi still renders and reacts.
+      } finally {
+        if (!cancelled) setPetLoaded(true);
       }
     }
 
@@ -548,11 +554,13 @@ export default function YumiHomeStage({
   /* With the languages the word card shows (FloatingWordCard), so a cookie
      wears the start of a word its card has on it. */
   const cookies: Cookie[] = useMemo(
-    () => buildAvailableCookies(items, fedWordIds ?? [], {
-      learningLanguage: cardLanguage,
-      supportLanguage,
-    }),
-    [items, fedWordIds, cardLanguage, supportLanguage],
+    () => petLoaded
+      ? buildAvailableCookies(items, fedWordIds ?? [], {
+        learningLanguage: cardLanguage,
+        supportLanguage,
+      })
+      : [],
+    [petLoaded, items, fedWordIds, cardLanguage, supportLanguage],
   );
 
   const persistFeed = useFeedPersistence(petState, setPetState);
