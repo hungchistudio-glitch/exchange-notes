@@ -23,7 +23,10 @@ targets:
     sources:
       - path: App
         excludes:
+          - Resources
           - ExchangeNotes.entitlements
+      - path: App/Resources
+        buildPhase: resources
       - path: Shared
 
     settings:
@@ -49,6 +52,7 @@ targets:
       properties:
         CFBundleDisplayName: Exchange Notes
         NSCameraUsageDescription: "Exchange Notes uses the camera to identify objects and create vocabulary cards."
+        NSMicrophoneUsageDescription: "Exchange Notes uses the microphone so you can say a word aloud and practice pronunciation."
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         LSApplicationCategoryType: public.app-category.education

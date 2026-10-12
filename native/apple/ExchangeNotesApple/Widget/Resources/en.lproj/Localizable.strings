@@ -1,5 +1,19 @@
+/* Widget gallery and legacy labels */
 "widget.gallery.name" = "Yumi Daily";
 "widget.gallery.description" = "A gentle daily check-in with your learning companion.";
 "widget.action.addWord" = "Add word";
 "widget.action.camera" = "Identify with camera";
 "widget.progress.today" = "Today’s learning";
+
+/* App Intents (Shortcuts and widget buttons) */
+"intent.speakCard.title" = "Play Yumi pronunciation";
+"intent.speakCard.description" = "Plays a saved word in its own language without opening Exchange Notes.";
+"intent.speakEnglish.title" = "Play Yumi English pronunciation";
+"intent.speakEnglish.description" = "Plays a saved English word without opening Exchange Notes.";
+"intent.speakChinese.title" = "Play Yumi Traditional Chinese pronunciation";
+"intent.speakChinese.description" = "Plays a saved Traditional Chinese word without opening Exchange Notes.";
+"intent.browseWords.title" = "Browse saved words";
+"intent.browseWords.description" = "Shows the previous or next saved vocabulary card.";
+"intent.parameter.text" = "Text";
+"intent.parameter.language" = "Language";
+"intent.parameter.direction" = "Direction";

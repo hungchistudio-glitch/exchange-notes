@@ -1,0 +1,19 @@
+/* Widget gallery and legacy labels */
+"widget.gallery.name" = "Yumi ogni giorno";
+"widget.gallery.description" = "Un appuntamento quotidiano e tranquillo con Yumi per seguire il tuo apprendimento.";
+"widget.action.addWord" = "Aggiungi parola";
+"widget.action.camera" = "Riconosci con la fotocamera";
+"widget.progress.today" = "Apprendimento di oggi";
+
+/* App Intents (Shortcuts and widget buttons) */
+"intent.speakCard.title" = "Ascolta la pronuncia di Yumi";
+"intent.speakCard.description" = "Riproduce una parola salvata nella sua lingua senza aprire Exchange Notes.";
+"intent.speakEnglish.title" = "Ascolta la pronuncia inglese di Yumi";
+"intent.speakEnglish.description" = "Riproduce una parola inglese salvata senza aprire Exchange Notes.";
+"intent.speakChinese.title" = "Ascolta la pronuncia in cinese tradizionale di Yumi";
+"intent.speakChinese.description" = "Riproduce una parola in cinese tradizionale salvata senza aprire Exchange Notes.";
+"intent.browseWords.title" = "Sfoglia le parole salvate";
+"intent.browseWords.description" = "Mostra la scheda di vocabolario salvata precedente o successiva.";
+"intent.parameter.text" = "Testo";
+"intent.parameter.language" = "Lingua";
+"intent.parameter.direction" = "Direzione";

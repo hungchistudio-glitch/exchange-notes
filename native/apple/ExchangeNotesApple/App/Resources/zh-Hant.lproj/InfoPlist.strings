@@ -1,0 +1,3 @@
+/* Permission prompts */
+"NSCameraUsageDescription" = "Exchange Notes 會使用相機辨識物品並建立單字卡。";
+"NSMicrophoneUsageDescription" = "Exchange Notes 會使用麥克風，讓你用說的輸入單字並練習發音。";

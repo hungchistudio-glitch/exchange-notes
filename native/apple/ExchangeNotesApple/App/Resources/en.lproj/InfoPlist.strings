@@ -1,0 +1,3 @@
+/* Permission prompts */
+"NSCameraUsageDescription" = "Exchange Notes uses the camera to identify objects and create vocabulary cards.";
+"NSMicrophoneUsageDescription" = "Exchange Notes uses the microphone so you can say a word aloud and practice pronunciation.";

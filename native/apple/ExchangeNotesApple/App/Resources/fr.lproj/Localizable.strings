@@ -1,0 +1,12 @@
+/* App Intents (Shortcuts) */
+"intent.speakCard.title" = "Écouter la prononciation de Yumi";
+"intent.speakCard.description" = "Lit un mot enregistré dans sa propre langue sans ouvrir Exchange Notes.";
+"intent.speakEnglish.title" = "Écouter la prononciation anglaise de Yumi";
+"intent.speakEnglish.description" = "Lit un mot anglais enregistré sans ouvrir Exchange Notes.";
+"intent.speakChinese.title" = "Écouter la prononciation en chinois traditionnel de Yumi";
+"intent.speakChinese.description" = "Lit un mot en chinois traditionnel enregistré sans ouvrir Exchange Notes.";
+"intent.browseWords.title" = "Parcourir les mots enregistrés";
+"intent.browseWords.description" = "Affiche la fiche de vocabulaire enregistrée précédente ou suivante.";
+"intent.parameter.text" = "Texte";
+"intent.parameter.language" = "Langue";
+"intent.parameter.direction" = "Direction";

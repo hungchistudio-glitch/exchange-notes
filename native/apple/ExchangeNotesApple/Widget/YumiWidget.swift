@@ -962,7 +962,7 @@ private struct SmallLayout: View {
 
             Spacer(minLength: 0)
 
-            QuickActions(style: .small)
+            QuickActions(data: data, style: .small)
         }
         .padding(1)
     }
@@ -986,7 +986,7 @@ private struct MediumLayout: View {
                 )
                 .frame(width: 92, height: 92)
 
-                QuickActions(style: .compact)
+                QuickActions(data: data, style: .compact)
             }
             .frame(width: 110)
 
@@ -1080,7 +1080,7 @@ private struct LargeLayout: View {
                     HStack {
                         Spacer(minLength: 0)
 
-                        QuickActions(style: .compact)
+                        QuickActions(data: data, style: .compact)
                     }
                 }
             }
@@ -1157,7 +1157,7 @@ private struct ExtraLargeLayout: View {
                     size: 300
                 )
 
-                QuickActions(style: .compact)
+                QuickActions(data: data, style: .compact)
             }
             .frame(maxWidth: 282)
 
@@ -1614,13 +1614,14 @@ private enum QuickActionStyle {
 }
 
 private struct QuickActions: View {
+    let data: YumiWidgetData
     let style: QuickActionStyle
 
     var body: some View {
         HStack(spacing: 10) {
             QuickActionButton(
-                title: LocalizedStringKey(
-                    "widget.action.addWord"
+                title: YumiWidgetInterfaceText.addWord(
+                    data.interfaceLanguage
                 ),
                 symbol: "plus",
                 destination: WidgetLinks.addWord,
@@ -1629,8 +1630,8 @@ private struct QuickActions: View {
             )
 
             QuickActionButton(
-                title: LocalizedStringKey(
-                    "widget.action.camera"
+                title: YumiWidgetInterfaceText.identifyWithCamera(
+                    data.interfaceLanguage
                 ),
                 symbol: "camera.viewfinder",
                 destination: WidgetLinks.capture,
@@ -1642,7 +1643,7 @@ private struct QuickActions: View {
 }
 
 private struct QuickActionButton: View {
-    let title: LocalizedStringKey
+    let title: String
     let symbol: String
     let destination: URL
     let isPrimary: Bool
@@ -2130,15 +2131,15 @@ private struct WordNavigationControls: View {
     }
 
     private var previousAccessibilityText: String {
-        data.interfaceLanguage == "traditional-chinese"
-            ? "上一個單字"
-            : "Previous word"
+        YumiWidgetInterfaceText.previousWord(
+            data.interfaceLanguage
+        )
     }
 
     private var nextAccessibilityText: String {
-        data.interfaceLanguage == "traditional-chinese"
-            ? "下一個單字"
-            : "Next word"
+        YumiWidgetInterfaceText.nextWord(
+            data.interfaceLanguage
+        )
     }
 }
 
