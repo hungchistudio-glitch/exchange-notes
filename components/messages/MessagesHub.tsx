@@ -691,12 +691,11 @@ export default function MessagesHub() {
           </header>
         </div>
 
+        {/* The border lights while the field has focus: the input itself
+            draws no outline, so nothing showed which field was taking text. */}
         <div
-          className="mt-7 flex items-center gap-2.5 rounded-full border px-4 py-3"
-          style={{
-            background: "var(--msg-surface)",
-            borderColor: "var(--msg-line)",
-          }}
+          className="mt-7 flex items-center gap-2.5 rounded-full border border-[var(--msg-line)] px-4 py-3 transition-colors focus-within:border-[var(--msg-accent)]"
+          style={{ background: "var(--msg-surface)" }}
         >
           <Search
             size={17}

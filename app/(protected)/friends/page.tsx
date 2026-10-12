@@ -323,13 +323,17 @@ function FriendsPageContent() {
 
           {addMode === "id" ? (
             <div className="mt-5">
-              <label className="block text-sm font-semibold text-black">
+              <label
+                htmlFor="friend-exchange-id"
+                className="block text-sm font-semibold text-black"
+              >
                 {copy.add.fieldLabel}
               </label>
 
-              <div className="mt-2 flex items-center rounded-2xl border border-line bg-white px-4 py-3">
+              <div className="mt-2 flex items-center rounded-2xl border border-line bg-white px-4 py-3 transition-colors focus-within:border-black">
                 <span className="mr-1 text-ink-faint">@</span>
                 <input
+                  id="friend-exchange-id"
                   value={exchangeId}
                   onChange={(event) => setExchangeId(event.target.value)}
                   placeholder={copy.add.placeholder}

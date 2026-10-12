@@ -23,6 +23,7 @@ import useVisibleVocabularyItems from "@/hooks/useVisibleVocabularyItems";
 import useVocabularyViewMode from "@/hooks/useVocabularyViewMode";
 
 import { recordInteraction } from "@/lib/vocabulary/helpers";
+import { shareVocabularyItem } from "@/lib/vocabulary/share";
 import {
   updateVocabularyFields,
   updateVocabularyLanguage,
@@ -34,24 +35,6 @@ import {
 import type { LanguageCode } from "@/lib/languages";
 import type { VocabularyItem } from "@/lib/types/app";
 import type { VocabularyEditValues } from "@/components/vocabulary/detail/VocabularyEditModal";
-
-async function shareVocabularyItem(item: VocabularyItem) {
-  const text = `${item.word} — ${item.translation}`;
-
-  if (typeof navigator !== "undefined" && navigator.share) {
-    try {
-      await navigator.share({ text });
-      return;
-    } catch {
-      // User cancelled the share sheet, or it's unsupported — fall through
-      // to the clipboard fallback below.
-    }
-  }
-
-  if (typeof navigator !== "undefined" && navigator.clipboard) {
-    await navigator.clipboard.writeText(text);
-  }
-}
 
 type UseVocabularyPageOptions = {
   openAddWord?: boolean;
@@ -104,6 +87,11 @@ export default function useVocabularyPage({
   // (no need to track *which* card, just "something happened").
   const [cardGlancePulse, setCardGlancePulse] = useState(0);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  // The word whose share just landed on the clipboard, for a moment. An
+  // object rather than the id, so copying the same word again restarts it.
+  const [shareCopied, setShareCopied] = useState<{ itemId: string } | null>(
+    null,
+  );
   const handledWidgetWordRequestRef = useRef<string | null>(null);
   const { viewMode, toggleViewMode } = useVocabularyViewMode();
 
@@ -185,6 +173,13 @@ export default function useVocabularyPage({
 
     openSearch();
   }, [addWordRequestId, openAddWord, openSearch]);
+
+  useEffect(() => {
+    if (!shareCopied) return;
+
+    const timer = window.setTimeout(() => setShareCopied(null), 1600);
+    return () => window.clearTimeout(timer);
+  }, [shareCopied]);
 
   useEffect(() => {
     if (!openWidgetWordId || loading) return;
@@ -513,8 +508,15 @@ export default function useVocabularyPage({
       onSendToPartner: () => {
         if (detailItem) void handleSendToPartner(detailItem);
       },
+      shareCopied: detailItem ? shareCopied?.itemId === detailItem.id : false,
       onShare: () => {
-        if (detailItem) void shareVocabularyItem(detailItem);
+        if (!detailItem) return;
+
+        const itemId = detailItem.id;
+
+        void shareVocabularyItem(detailItem).then((result) => {
+          if (result === "copied") setShareCopied({ itemId });
+        });
       },
       onDelete: () => {
         if (detailItem) {

@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import useInterfaceLanguage from "@/hooks/preferences/useInterfaceLanguage";
+import type { InterfaceLanguage } from "@/lib/appPreferences";
 import { learningLanguageList } from "@/lib/languages";
 
 /* =========================================================
@@ -23,12 +25,45 @@ import { learningLanguageList } from "@/lib/languages";
    that matters happens. See node_modules/next/dist/docs/01-app/
    03-api-reference/03-file-conventions/error.md.
 
-   Fixed bilingual copy rather than the dictionaries. useTranslation throws
-   when the active dictionary has not loaded, and a boundary that can throw
-   while rendering a thrown error escalates to global-error — which is the
-   blank white page this exists to avoid. The login screen already sets the
-   precedent for fixed bilingual text.
+   Its own copy rather than the dictionaries. useTranslation throws when the
+   active dictionary has not loaded, and a boundary that can throw while
+   rendering a thrown error escalates to global-error — which is the blank
+   white page this exists to avoid. So the five languages are written out
+   here and picked by the interface setting, which is a stored preference
+   and cannot fail to load. It was fixed English-and-Chinese text, which a
+   reader who had chosen Spanish, French or Italian could read neither of.
    ========================================================= */
+
+const COPY: Record<
+  InterfaceLanguage,
+  { title: string; body: string; retry: string }
+> = {
+  english: {
+    title: "Something went wrong",
+    body: "This is usually temporary, and you are still signed in. Try again.",
+    retry: "Try again",
+  },
+  "traditional-chinese": {
+    title: "出了一點問題",
+    body: "這通常是暫時的，你仍然是登入狀態。請再試一次。",
+    retry: "再試一次",
+  },
+  spanish: {
+    title: "Algo salió mal",
+    body: "Suele ser temporal y tu sesión sigue iniciada. Vuelve a intentarlo.",
+    retry: "Reintentar",
+  },
+  french: {
+    title: "Un problème est survenu",
+    body: "C’est généralement temporaire et votre session est toujours ouverte. Réessayez.",
+    retry: "Réessayer",
+  },
+  italian: {
+    title: "Qualcosa è andato storto",
+    body: "Di solito è temporaneo e la tua sessione è ancora attiva. Riprova.",
+    retry: "Riprova",
+  },
+};
 
 export default function AppError({
   error,
@@ -36,6 +71,8 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const copy = COPY[useInterfaceLanguage()] ?? COPY.english;
+
   useEffect(() => {
     /*
      * The digest is what ties this screen to a line in the server logs. The
@@ -54,11 +91,8 @@ export default function AppError({
         </p>
 
         <h1 className="mt-3 text-2xl font-bold tracking-tight text-black">
-          Something went wrong
+          {copy.title}
         </h1>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-black">
-          出了一點問題
-        </p>
 
         {/*
           Says what to do, and says the thing a reader most needs to hear
@@ -66,19 +100,14 @@ export default function AppError({
           rather than redirecting to /login was to stop this looking like a
           sign-out, and the screen has to carry that or the change is invisible.
         */}
-        <p className="mt-5 leading-7 text-neutral-700">
-          This is usually temporary, and you are still signed in. Try again.
-        </p>
-        <p className="mt-2 leading-7 text-neutral-700">
-          這通常是暫時的，你仍然是登入狀態。請再試一次。
-        </p>
+        <p className="mt-5 leading-7 text-neutral-700">{copy.body}</p>
 
         <button
           type="button"
           onClick={() => window.location.reload()}
           className="mt-7 w-full rounded-2xl bg-black px-5 py-3.5 text-base font-semibold text-white transition-opacity active:opacity-80"
         >
-          Try again · 再試一次
+          {copy.retry}
         </button>
 
         {error.digest && (

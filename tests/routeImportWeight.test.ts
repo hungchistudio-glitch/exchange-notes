@@ -141,10 +141,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * brings the character table, its word list and the tidy step into home;
    * vocabulary already had the table. Data and pure functions, no imports
    * beyond each other.
+   * Raised home 171 → 172 and vocabulary 160 → 161 (2026-10-12): the copy
+   * and share of a saved word moved out of the copy key into one file
+   * (lib/vocabulary/share.ts), so the share key can say it copied and stop
+   * overwriting the clipboard when the share sheet is closed. Both tabs
+   * already rendered the copy key; the file imports nothing but a type.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 160],
-    ["home", TABS.home, 171],
+    ["vocabulary", TABS.vocabulary, 161],
+    ["home", TABS.home, 172],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import OverlayPortal from "@/components/foundation/overlays/OverlayPortal";
+import useTranslation from "@/hooks/i18n/useTranslation";
 import useSheetMotion from "@/components/foundation/overlays/useSheetMotion";
 
 type PwaInstallOverlayProps = {
@@ -16,6 +17,7 @@ type PwaInstallOverlayProps = {
 // InstallPromptCard supplies its own icon/title layout rather than a
 // generic header + body split.
 export default function PwaInstallOverlay({ open, onClose, children }: PwaInstallOverlayProps) {
+  const { t } = useTranslation();
   const motion = useSheetMotion({ open, onClose });
 
   if (!motion.rendered) return null;
@@ -25,7 +27,7 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
       <div className="fixed inset-0 z-[100] flex items-end justify-center overflow-hidden overscroll-none sm:items-center sm:px-4" role="presentation">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t.common.close}
         onClick={motion.requestClose}
         className={`absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px] ${motion.backdropClassName}`}
         {...motion.backdropProps}
@@ -51,7 +53,7 @@ export default function PwaInstallOverlay({ open, onClose, children }: PwaInstal
 
         <button
           type="button"
-          aria-label="Close"
+          aria-label={t.common.close}
           onClick={motion.requestClose}
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.05] text-ink-soft transition-colors hover:bg-black/[0.08]"
         >

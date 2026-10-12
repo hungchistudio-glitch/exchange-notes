@@ -22,6 +22,9 @@
    something whose entire job is to appear before anything else can.
    ========================================================= */
 
+import LoadingLabel from "./LoadingLabel";
+
+
 /** One placeholder block. `pulse` is the only motion any of these have. */
 export function SkeletonBlock({
   className = "",
@@ -56,7 +59,7 @@ export function RouteSkeleton({ children }: { children: React.ReactNode }) {
       role="status"
       aria-busy="true"
     >
-      <span className="sr-only">Loading</span>
+      <LoadingLabel />
       {/*
        * The outline waits a beat before it shows.
        *

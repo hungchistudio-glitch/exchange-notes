@@ -2,8 +2,14 @@
 
 import { useCallback, useState } from "react";
 
-import { hasPhonetics, type LanguageCode } from "@/lib/languages";
+import useTranslation from "@/hooks/i18n/useTranslation";
+import {
+  hasPhonetics,
+  INTERFACE_LANGUAGE_CODE,
+  type LanguageCode,
+} from "@/lib/languages";
 import type { LexiconEntry, LexiconLanguages } from "@/lib/lexicon/types";
+import { normalizePartOfSpeech } from "@/lib/vocabulary/partOfSpeech";
 
 /* =========================================================
    Handing a word to something outside the app
@@ -57,6 +63,9 @@ export default function useLexiconShare(
   entry: LexiconEntry | null,
   languages: LexiconLanguages | null,
 ) {
+  const { t, language } = useTranslation();
+  const partOfSpeechLabels = t.vocabulary.detail.partOfSpeech;
+  const locale = INTERFACE_LANGUAGE_CODE[language];
   const [copied, setCopied] = useState(false);
 
   const showCopiedFeedback = useCallback(() => {
@@ -71,9 +80,16 @@ export default function useLexiconShare(
       (await romanise(entry.term, languages.sourceLanguage)) ||
       (await romanise(entry.translation, languages.glossLanguage));
 
-    const meta = [reading, entry.partOfSpeech?.toLowerCase()]
-      .filter(Boolean)
-      .join(" · ");
+    // The part of speech as the result card names it, in the reader's
+    // language: it went out as the model's own English ("noun") whatever
+    // the app was set to.
+    const partOfSpeech = entry.partOfSpeech?.trim()
+      ? partOfSpeechLabels[
+          normalizePartOfSpeech(entry.partOfSpeech)
+        ].toLocaleLowerCase(locale)
+      : "";
+
+    const meta = [reading, partOfSpeech].filter(Boolean).join(" · ");
 
     return [
       entry.term,
@@ -88,7 +104,7 @@ export default function useLexiconShare(
         return index > 0 && index < array.length - 1;
       })
       .join("\n");
-  }, [entry, languages]);
+  }, [entry, languages, locale, partOfSpeechLabels]);
 
   const share = useCallback(async () => {
     if (!entry) return;
