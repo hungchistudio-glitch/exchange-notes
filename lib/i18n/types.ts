@@ -2506,6 +2506,30 @@ export type TranslationDictionary = {
       conditions: { clear: string; partly: string; cloudy: string; fog: string; drizzle: string; rain: string; snow: string; storm: string };
       seasons: { spring: string; summer: string; autumn: string; winter: string };
     };
+    /** The orbital station the shop is (Chi, 2026-10-13). */
+    station: { orbit: string };
+    /** The shop's own currency: how it is earned, and the supply that may one day be bought. */
+    energy: {
+      wallet: string;
+      open: string;
+      balance: string;
+      fromLearning: string;
+      fromSupply: string;
+      howTitle: string;
+      ruleSave: string;
+      ruleReview: string;
+      packsTitle: string;
+      rate: string;
+      story: string;
+      soon: string;
+      future: string;
+      separate: string;
+      rewardSave: string;
+      rewardReview: string;
+      rewardPaid: string;
+      rewardMixed: string;
+      previewReward: string;
+    };
     loading: string;
     toCosmic: string;
     toStandard: string;

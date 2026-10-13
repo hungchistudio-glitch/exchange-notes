@@ -368,7 +368,7 @@ const traditionalChinese: TranslationDictionary = {
         },
         cookies: {
           body:
-            "每存一個單字，就會得到一塊能量餅乾。右上角的購物袋是我的商店，可以用餅乾幫我買新裝扮。",
+            "第一次收藏一個單字，就會得到 1 塊能量餅乾；整輪複習每張都通過，再得 3 塊。右上角的購物袋通往我在地球軌道上的太空商店，可以用餅乾幫我買新裝扮。",
         },
         tryOn: {
           body:
@@ -2448,7 +2448,7 @@ const traditionalChinese: TranslationDictionary = {
     goBack: "返回",
     cookiesOne: "{count} 塊能量餅乾",
     cookiesOther: "{count} 塊能量餅乾",
-    howEarned: "每存一個單字，就得到一塊能量餅乾。",
+    howEarned: "第一次收藏一個單字得 1 塊能量餅乾，整輪複習全部通過再得 3 塊。",
     stage: "Yumi 3D 試戴台。拖曳可以旋轉，也可以用方向鍵。",
     hint: "拖曳 360° 試戴 · 雙指縮放",
     views: "視角",
@@ -2483,7 +2483,7 @@ const traditionalChinese: TranslationDictionary = {
     failed: "沒有完成，請再試一次。",
     retry: "再試一次",
     sky: {
-      label: "背景天氣",
+      label: "地面天氣",
       night: "夜晚",
       choices: {
         auto: "跟著天氣",
@@ -2510,6 +2510,30 @@ const traditionalChinese: TranslationDictionary = {
         autumn: "秋天",
         winter: "冬天",
       },
+    },
+    station: {
+      orbit: "33 號軌道站",
+    },
+    energy: {
+      wallet: "能量補給",
+      open: "查看能量補給",
+      balance: "可用能量餅乾",
+      fromLearning: "收藏與複習",
+      fromSupply: "付費補給",
+      howTitle: "怎麼獲得",
+      ruleSave: "第一次收藏一個單字",
+      ruleReview: "整輪複習每張都通過",
+      packsTitle: "補給包",
+      rate: "US$1 ＝ 33 塊",
+      story: "Yumi 一隻手有三根手指，兩隻手一起比，最多比到 33。所以在 Yumi 的算法裡，33 就是 1。",
+      soon: "即將開放",
+      future: "付費補給還沒開放，現在靠收藏和複習就能獲得餅乾。",
+      separate: "能量餅乾只用在商店。付費補給不會增加單字數、複習紀錄或任何學習成就。",
+      rewardSave: "收藏獎勵",
+      rewardReview: "整輪複習獎勵",
+      rewardPaid: "付費補給",
+      rewardMixed: "能量餅乾入帳",
+      previewReward: "試播入帳動畫",
     },
     loading: "正在數餅乾…",
     toCosmic: "切換到 Cosmic 模式",

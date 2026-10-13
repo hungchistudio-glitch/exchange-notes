@@ -15,6 +15,7 @@ import OfflineBanner from "@/components/foundation/OfflineBanner";
 import ProtectedNav from "@/components/foundation/layout/ProtectedNav";
 import AppViewport from "@/components/foundation/layout/AppViewport";
 import SplashGate from "@/components/ui/SplashGate";
+import EnergyRewardObserver from "@/components/shop/EnergyRewardObserver";
 import { AppTutorialCoach } from "@/components/tutorial/TutorialCoach";
 import OnDeviceVisionWarmup from "@/components/foundation/OnDeviceVisionWarmup";
 import { InterfaceModeProvider } from "@/contexts/InterfaceModeContext";
@@ -170,6 +171,8 @@ export default async function ProtectedLayout({
           the offline mirror to every route rather than two of them.
         */}
         <VocabularyProvider>
+          {/* Cookies landing, wherever the reader earned them (components/shop). */}
+          <EnergyRewardObserver key={user.id} userId={user.id} />
           <LexiconSearchProvider>
             {/*
               One physical viewport, with one deliberately scrollable layer.

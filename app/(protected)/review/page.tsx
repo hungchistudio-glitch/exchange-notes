@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -12,7 +12,7 @@ import {
   getReviewWords,
   type ReviewWord,
 } from "@/lib/review/getTodaysReview";
-import { saveReviewResult } from "@/lib/review/saveReviewResult";
+import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { speak } from "@/lib/speech";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
@@ -165,6 +165,9 @@ export default function ReviewPage() {
   const [queue, setQueue] = useState<ReviewWord[]>([]);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const roundRef = useRef<string | undefined>(undefined);
+  const startingRef = useRef(false);
+  const [starting, setStarting] = useState(false);
   const [grading, setGrading] = useState(false);
 
   useEffect(() => {
@@ -220,7 +223,8 @@ export default function ReviewPage() {
   const allInLanguage = allWords.filter(inReviewLanguage);
 
   const startSession = useCallback(
-    (selectedMode: Mode) => {
+    async (selectedMode: Mode) => {
+      if (startingRef.current) return;
       const source = (
         selectedMode === "due" ? dueWords : allWords
       ).filter(
@@ -231,6 +235,23 @@ export default function ReviewPage() {
         return;
       }
 
+      /* The round is opened on the server before the first card, so a
+         round that passes every card can pay its cookies. If it cannot be
+         opened, the review still goes ahead, just without the round. */
+      startingRef.current = true;
+      setStarting(true);
+      setErrorMessage("");
+      const roundId = crypto.randomUUID();
+      try {
+        await beginReviewRound(source.map(word => word.id), roundId);
+        roundRef.current = roundId;
+      } catch (error) {
+        console.error(error);
+        roundRef.current = undefined;
+      } finally {
+        startingRef.current = false;
+        setStarting(false);
+      }
       setMode(selectedMode);
       setQueue(source);
       setIndex(0);
@@ -252,7 +273,7 @@ export default function ReviewPage() {
     setErrorMessage("");
 
     try {
-      await saveReviewResult(currentWord.id, grade);
+      await saveReviewResult(currentWord.id, grade, roundRef.current);
     } catch (error) {
       console.error(error);
       setErrorMessage(copy.saveError);
@@ -655,8 +676,9 @@ export default function ReviewPage() {
 
         <button
           type="button"
-          onClick={() => startSession("due")}
-          disabled={loading || dueInLanguage.length === 0}
+          aria-busy={starting}
+          onClick={() => void startSession("due")}
+          disabled={loading || starting || dueInLanguage.length === 0}
           className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
@@ -693,8 +715,9 @@ export default function ReviewPage() {
 
           <button
             type="button"
-            onClick={() => startSession("all")}
-            disabled={loading || allInLanguage.length === 0}
+            aria-busy={starting}
+            onClick={() => void startSession("all")}
+            disabled={loading || starting || allInLanguage.length === 0}
             className="mt-4 flex h-14 w-full items-center justify-between rounded-2xl bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
           >
             {copy.practiceAllWords}

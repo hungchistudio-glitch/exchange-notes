@@ -10,8 +10,9 @@
      - otherwise by the season and the time of day on this device;
      - or by the reader, who can pick a scene and keep it.
 
-   Nothing here draws. components/shop/ShopAtmosphere.tsx paints a Scene, in
-   either mode's palette.
+   Nothing here draws. Since the shop became a station in orbit (Chi,
+   2026-10-13), components/shop/OrbitalBackdrop.tsx paints a Scene as the
+   weather on Earth below its window.
    ========================================================= */
 
 export type WeatherCondition =

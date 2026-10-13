@@ -4,9 +4,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { ShopClosedError, createPreviewWallet, createSupabaseWallet } from "@/lib/shop/wallet";
 
 /* =========================================================
-   Energy cookies: earned by feeding, spent once, never below zero
+   Energy cookies: earned from words, spent once, never below zero
 
-   The database enforces this (supabase/migrations/*_yumi_shop.sql); the
+   The database enforces this (supabase/migrations/*_yumi_shop.sql and
+   *_yumi_energy_ledger.sql); the
    preview wallet follows the same rules in memory so the review screen
    behaves like the real shop, and the client reads the database's answers
    without trusting anything the browser could invent.
@@ -53,6 +54,20 @@ describe("the database wallet", () => {
     const result = await createSupabaseWallet(client(rpc)).buy("beret");
     expect(rpc).toHaveBeenCalledWith("buy_yumi_item", { p_item_id: "beret" });
     expect(result.status).toBe("bought");
-    expect(result.state).toEqual({ earned: 12, spent: 3, balance: 0, owned: ["beret"], outfit: { head: "beret" } });
+    expect(result.state).toEqual({ earned: 12, paid: 0, spent: 3, balance: 0, owned: ["beret"], outfit: { head: "beret" } });
+  });
+
+  it("keeps paid supply apart from what was earned by learning", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: { earned: 40, paid: 33, spent: 10, balance: 63, owned: [], outfit: {} },
+      error: null,
+    });
+    const state = await createSupabaseWallet(client(rpc)).load();
+    expect(state).toMatchObject({ earned: 40, paid: 33, balance: 63 });
+  });
+
+  it("refuses a purchase answer it does not understand", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { status: "maybe", state: {} }, error: null });
+    await expect(createSupabaseWallet(client(rpc)).buy("beret")).rejects.toThrow();
   });
 });

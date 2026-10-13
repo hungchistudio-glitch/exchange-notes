@@ -5,10 +5,12 @@ import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
 /* =========================================================
    Energy cookies, and what they have bought
 
-   One saved word is one cookie (Chi, 2026-10-12): the earned side is
-   counted by the database from the reader's library, so it cannot be raised
-   by writing a number. Spending is a separate ledger (yumi_wardrobe), so a
-   purchase never touches a word, a review or Yumi's feeding.
+   Cookies come from one ledger on the server (lib/shop/energy.ts for the
+   rules, supabase/migrations/*_yumi_energy_ledger.sql for the ledger): the
+   first save of a word, a review round passed in full, and one day paid
+   supply. Nothing in the browser can write to it, so a balance cannot be
+   raised by writing a number, and nothing earned is taken back when a word
+   is deleted. A purchase never touches a word, a review or Yumi's feeding.
 
    Every write goes through a database function that locks the reader's row
    (supabase/migrations/*_yumi_shop.sql): two taps, two tabs or two devices
@@ -17,7 +19,10 @@ import { cleanOutfit, shopItem, type YumiOutfit } from "./catalog";
    ========================================================= */
 
 export type WardrobeState = {
+  /** From saving and reviewing words, including what was there before the ledger. */
   earned: number;
+  /** From paid energy supply; kept apart so it can never pass for learning. */
+  paid: number;
   spent: number;
   balance: number;
   owned: string[];
@@ -53,6 +58,7 @@ function readState(value: unknown): WardrobeState {
     : [];
   return {
     earned: number("earned"),
+    paid: number("paid"),
     spent: number("spent"),
     balance: number("balance"),
     owned,
@@ -80,6 +86,9 @@ export function createSupabaseWallet(supabase: SupabaseClient): ShopWallet {
     async buy(itemId) {
       const data = (await call("buy_yumi_item", { p_item_id: itemId })) as Record<string, unknown> | null;
       const status = data?.status;
+      if (status !== "bought" && status !== "owned" && status !== "insufficient") {
+        throw new Error("Invalid shop purchase result.");
+      }
       return {
         status: status === "owned" || status === "insufficient" ? status : "bought",
         state: readState(data?.state),
@@ -97,7 +106,7 @@ export function createSupabaseWallet(supabase: SupabaseClient): ShopWallet {
  */
 export function createPreviewWallet(startingBalance = 240): ShopWallet {
   let state: WardrobeState = {
-    earned: startingBalance, spent: 0, balance: startingBalance, owned: [], outfit: {},
+    earned: startingBalance, paid: 0, spent: 0, balance: startingBalance, owned: [], outfit: {},
   };
   const settle = () => new Promise(resolve => setTimeout(resolve, 260));
 

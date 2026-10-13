@@ -54,6 +54,9 @@ export function sceneIcon(scene: Scene): keyof typeof SKY_ICONS {
   return "sun";
 }
 
+/** From a station in orbit, the scenes that are the weather on Earth below. */
+export const ORBIT_CHOICES: readonly SceneChoice[] = ["auto", "clear", "rain", "snow", "stars"];
+
 const CHOICE_ICONS: Record<SceneChoice, LucideIcon> = {
   auto: Sparkles,
   clear: Sun,
@@ -74,6 +77,7 @@ export default function ShopScenePicker({
   scene,
   choice,
   current,
+  choices = SCENE_CHOICES,
   names,
   label,
   onChoose,
@@ -82,6 +86,8 @@ export default function ShopScenePicker({
   choice: SceneChoice;
   /** What the key says: "Light rain 18°C", "Autumn", "Falling leaves". */
   current: string;
+  /** Which scenes the list offers; all of them unless told. */
+  choices?: readonly SceneChoice[];
   names: Record<SceneChoice, string>;
   label: string;
   onChoose: (choice: SceneChoice) => void;
@@ -119,7 +125,7 @@ export default function ShopScenePicker({
       </button>
       {open && (
         <div className={styles.sceneMenu} role="group" aria-label={label}>
-          {SCENE_CHOICES.map(option => {
+          {choices.map(option => {
             const OptionIcon = CHOICE_ICONS[option];
             return (
               <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Check, Globe, Moon, Sun } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, Check, Globe, Layers, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -37,12 +37,14 @@ import {
   subscribeToSceneChoice,
   useShopWeather,
 } from "@/lib/shop/useShopWeather";
+import { ENERGY_LANDED_EVENT, ENERGY_PER_USD, SUPPLY_PACKS_USD } from "@/lib/shop/energy";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
 import EnergyCookie from "./EnergyCookie";
-import ShopScenePicker from "./ShopScenePicker";
+import EnergyReward from "./EnergyReward";
+import ShopScenePicker, { ORBIT_CHOICES } from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
@@ -73,7 +75,7 @@ const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "sm
 /** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
 const STAND_SMALLEST = 0.6;
 
-const EMPTY_STATE: WardrobeState = { earned: 0, spent: 0, balance: 0, owned: [], outfit: {} };
+const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
 
 type Availability = "loading" | "open" | "closed" | "failed";
@@ -106,6 +108,11 @@ export default function YumiShop({
   const [attempt, setAttempt] = useState(0);
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [supplyOpen, setSupplyOpen] = useState(false);
+  /** Bumped when cookies land, to make the balance answer. */
+  const [landedKey, setLandedKey] = useState(0);
+  /** The review screen's look at the cookie-landing card. */
+  const [demoReward, setDemoReward] = useState(0);
 
   // ------------------------------------------------------------ the sky
   const { weather } = useShopWeather();
@@ -188,6 +195,25 @@ export default function YumiShop({
       });
     return () => { cancelled = true; };
   }, [wallet, preview, attempt]);
+
+  /* Cookies earned elsewhere (a word saved in another tab, a review round
+     passed) land while the shop is open: read the balance again and let it
+     answer the card that announced them. */
+  useEffect(() => {
+    const landed = () => {
+      setLandedKey(key => key + 1);
+      if (preview) return;
+      void wallet.load().then(setState).catch(() => {});
+    };
+    window.addEventListener(ENERGY_LANDED_EVENT, landed);
+    return () => window.removeEventListener(ENERGY_LANDED_EVENT, landed);
+  }, [wallet, preview]);
+
+  useEffect(() => {
+    if (!demoReward) return;
+    const timer = window.setTimeout(() => setDemoReward(0), 2600);
+    return () => window.clearTimeout(timer);
+  }, [demoReward]);
 
   // --------------------------------------------------------- catalogue
   const shown = useMemo(
@@ -345,12 +371,18 @@ export default function YumiShop({
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
           </button>
-          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"): an
-              enamel plaque hung from two brass rods, the name in gilt. */}
+          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"), since
+              the same day the nameplate of a station in orbit: a dark
+              lacquered plate on two rods, the name lit in gilt, and where
+              the station is under it. */}
           <div className={styles.signArea}>
             <h1 ref={signRef} className={styles.sign}>
               <span className={styles.signHooks} aria-hidden="true" />
               <span className={styles.signName}>{copy.title}</span>
+              <span className={styles.signOrbit} aria-hidden="true">
+                <span className={styles.signLights}><i /><i /><i /></span>
+                {copy.station.orbit}
+              </span>
             </h1>
           </div>
           <div className={styles.tools}>
@@ -363,10 +395,17 @@ export default function YumiShop({
               <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
               <span aria-hidden="true">{getInterfaceLanguageMeta(language).badge}</span>
             </button>
-            <span className={styles.balance} title={copy.howEarned} aria-label={`${cookies(state.balance)}. ${copy.howEarned}`}>
+            <button
+              type="button"
+              className={styles.balance}
+              aria-haspopup="dialog"
+              aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
+              onClick={() => setSupplyOpen(true)}
+            >
+              {landedKey > 0 && <span key={landedKey} className={styles.balancePulse} aria-hidden="true" />}
               <EnergyCookie className={styles.balanceCookie} />
               <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
-            </span>
+            </button>
           </div>
         </header>
 
@@ -381,6 +420,7 @@ export default function YumiShop({
                 scene={scene}
                 choice={sceneChoice}
                 current={skyNow}
+                choices={ORBIT_CHOICES}
                 names={sky.choices}
                 label={sky.label}
                 onChoose={setSceneChoice}
@@ -520,6 +560,79 @@ export default function YumiShop({
           <p className={styles.barNote}>{copy.unownedNote}</p>
         )}
       </footer>
+
+      {/* Energy supply: where cookies come from, and the packs paid supply
+          will sell (Chi, 2026-10-13: US$1 = 33). Nothing can be bought here
+          yet; the packs say so. */}
+      <BottomSheet open={supplyOpen} onClose={() => setSupplyOpen(false)} title={copy.energy.wallet}>
+        <div className={styles.supply}>
+          <div className={styles.supplyBalance}>
+            <EnergyCookie className={styles.supplyCookie} />
+            <span className={styles.supplyCount}>{state.balance.toLocaleString(locale)}</span>
+            <span className={styles.supplyCaption}>{copy.energy.balance}</span>
+          </div>
+          <dl className={styles.supplySplit}>
+            <div>
+              <dt>{copy.energy.fromLearning}</dt>
+              <dd>{state.earned.toLocaleString(locale)}</dd>
+            </div>
+            <div>
+              <dt>{copy.energy.fromSupply}</dt>
+              <dd>{state.paid.toLocaleString(locale)}</dd>
+            </div>
+          </dl>
+
+          <section className={styles.supplySection} aria-labelledby="supply-how">
+            <h3 id="supply-how" className={styles.supplyHeading}>{copy.energy.howTitle}</h3>
+            <ul className={styles.supplyRules}>
+              <li>
+                <BookmarkPlus size={18} strokeWidth={1.8} aria-hidden="true" />
+                <span>{copy.energy.ruleSave}</span>
+                <strong><EnergyCookie className={styles.priceCookie} />+1</strong>
+              </li>
+              <li>
+                <Layers size={18} strokeWidth={1.8} aria-hidden="true" />
+                <span>{copy.energy.ruleReview}</span>
+                <strong><EnergyCookie className={styles.priceCookie} />+3</strong>
+              </li>
+            </ul>
+          </section>
+
+          <section className={styles.supplySection} aria-labelledby="supply-packs">
+            <div className={styles.supplyHeadingRow}>
+              <h3 id="supply-packs" className={styles.supplyHeading}>{copy.energy.packsTitle}</h3>
+              <span className={styles.supplyRate}>{copy.energy.rate}</span>
+            </div>
+            <ul className={styles.supplyPacks}>
+              {SUPPLY_PACKS_USD.map(usd => (
+                <li key={usd} className={styles.supplyPack}>
+                  <span className={styles.packCookies} aria-hidden="true">
+                    {Array.from({ length: usd }, (_, i) => <EnergyCookie key={i} className={styles.packCookie} />)}
+                  </span>
+                  <span className={styles.packAmount}>{(usd * ENERGY_PER_USD).toLocaleString(locale)}</span>
+                  <span className={styles.packPrice}>US${usd}</span>
+                  <span className={styles.packSoon}>{copy.energy.soon}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={styles.supplyStory}>{copy.energy.story}</p>
+            <p className={styles.supplyNote}>{copy.energy.future}</p>
+          </section>
+
+          <p className={styles.supplyBoundary}>{copy.energy.separate}</p>
+
+          {preview && (
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => { setSupplyOpen(false); setDemoReward(key => key + 1); setLandedKey(key => key + 1); }}
+            >
+              {copy.energy.previewReward}
+            </button>
+          )}
+        </div>
+      </BottomSheet>
+      {demoReward > 0 && <EnergyReward key={demoReward} amount={ENERGY_PER_USD} label={copy.energy.rewardPaid} />}
 
       <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 

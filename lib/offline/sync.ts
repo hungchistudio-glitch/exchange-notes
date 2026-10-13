@@ -6,6 +6,7 @@ import {
   type PendingMutation,
 } from "@/lib/offline/vocabulary";
 import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
+import { refreshEnergyRewards } from "@/lib/shop/energy";
 import { createClient } from "@/lib/supabase/client";
 
 /* =========================================================
@@ -181,9 +182,15 @@ export type FlushResult = {
 let inFlight: Promise<FlushResult> | null = null;
 
 export function flushOutbox(): Promise<FlushResult> {
-  inFlight ??= drainOutbox().finally(() => {
-    inFlight = null;
-  });
+  inFlight ??= drainOutbox()
+    .then(result => {
+      // Words saved offline earn their cookies as they reach the server.
+      if (result.sent > 0) refreshEnergyRewards();
+      return result;
+    })
+    .finally(() => {
+      inFlight = null;
+    });
 
   return inFlight;
 }

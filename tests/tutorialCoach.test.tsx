@@ -230,7 +230,7 @@ describe("chapter two: around the app", () => {
     }
 
     // Then the shop, on Home, before the other look.
-    expect(screen.getByText(/Every word you save becomes an energy cookie/)).toBeInTheDocument();
+    expect(screen.getByText(/Saving a word for the first time earns an energy cookie/)).toBeInTheDocument();
   });
 
   it("steps aside on screens that are not one of the six", () => {
