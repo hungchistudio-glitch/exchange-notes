@@ -13,7 +13,11 @@
   the keys, hint and toast, all of it work for the compositor.
 */
 
-.page {
+/* The sheets (confirm, supply) are drawn outside the page, in a portal,
+   so they carry the same tokens. */
+.page,
+.confirm,
+.supply {
   --shop-ground: var(--surface, #f3efe6);
   --shop-card: var(--paper-face, #fdfaf3);
   --shop-card-shadow: var(--paper-shadow, 0 10px 24px -18px #4a3f2a73);
@@ -32,18 +36,21 @@
   --shop-stage: radial-gradient(90% 70% at 50% 18%, #fffdf8, #fffdf800 70%),
     radial-gradient(120% 90% at 15% 100%, #e9e1d0, #e9e1d000 60%),
     linear-gradient(180deg, #f8f4ec, #efe8db);
-  /* Travertine under a warm spotlight. */
+  /* The station's docking pad: warm brushed alloy, its rim lit for docking. */
   --shop-plinth-top:
-    repeating-linear-gradient(172deg, #0000 0 9px, #a8987a0f 9px 10px),
-    radial-gradient(ellipse 70% 80% at 50% 30%, #fffdf7, #efe8da 55%, #d9cfbd);
-  --shop-plinth-side: linear-gradient(90deg, #b9ae98, #e7dfcf 48%, #f1ebdf 55%, #bcb19b);
-  --shop-plinth-rim: #c9bea8;
-  --shop-plinth-ink: #6d6150;
-  --shop-spot: #fff8e6b3;
+    repeating-radial-gradient(ellipse 50% 50% at 50% 50%, #0000 0 3px, #8a7f6a0d 3px 4px),
+    radial-gradient(ellipse 70% 80% at 50% 30%, #fbf8f1, #e2dccf 55%, #b9b1a1);
+  --shop-plinth-side: linear-gradient(90deg, #7d766a, #d3cdc0 46%, #e8e3d8 54%, #807868);
+  --shop-plinth-rim: #9fdcff;
+  --shop-plinth-ink: #5a5346;
+  --shop-plinth-lights: #ffc96b;
+  --shop-spot: #e6f6ff40;
   --shop-title-font: var(--font-display, Georgia, serif);
   --shop-toast: #24211b;
   --shop-on-toast: #fbf8f0;
+}
 
+.page {
   position: relative;
   min-height: 100dvh;
   background: var(--shop-ground);
@@ -51,7 +58,9 @@
   padding-bottom: calc(150px + env(safe-area-inset-bottom));
 }
 
-:global(html[data-interface-mode="yumi-cosmic"]) .page {
+:global(html[data-interface-mode="yumi-cosmic"]) .page,
+:global(html[data-interface-mode="yumi-cosmic"]) .confirm,
+:global(html[data-interface-mode="yumi-cosmic"]) .supply {
   --shop-ground: #08090b;
   --shop-card: var(--cosmic-surface-card, #1c1a21);
   --shop-card-shadow: var(--cosmic-sheen, none), 0 18px 34px -24px #000;
@@ -70,14 +79,15 @@
   --shop-stage: radial-gradient(70% 60% at 78% 8%, #37314366, #0000 65%),
     radial-gradient(70% 70% at 20% 85%, #25413d55, #0000 68%),
     var(--cosmic-surface-card, #1c1a21);
-  /* Black marble with a brass edge, lit from above in the deck's gold. */
+  /* Gunmetal with a brass edge, lit from above in the deck's gold. */
   --shop-plinth-top:
-    repeating-linear-gradient(168deg, #0000 0 11px, #ffffff08 11px 12px),
-    radial-gradient(ellipse 70% 80% at 50% 30%, #3a3840, #1f1e24 58%, #141318);
-  --shop-plinth-side: linear-gradient(90deg, #0d0c10, #26242c 50%, #0d0c10);
-  --shop-plinth-rim: #e8ce8c66;
+    repeating-radial-gradient(ellipse 50% 50% at 50% 50%, #0000 0 3px, #ffffff06 3px 4px),
+    radial-gradient(ellipse 70% 80% at 50% 30%, #4a4852, #26252c 58%, #141318);
+  --shop-plinth-side: linear-gradient(90deg, #0d0c10, #2c2a33 50%, #0d0c10);
+  --shop-plinth-rim: #e8ce8c;
   --shop-plinth-ink: #e8ce8cd9;
-  --shop-spot: #e8ce8c33;
+  --shop-plinth-lights: #e8ce8c;
+  --shop-spot: #e8ce8c2e;
   --shop-title-font: var(--font-sans, Arial, sans-serif);
   --shop-toast: #f5f2f0;
   --shop-on-toast: #17171c;
@@ -126,19 +136,21 @@
   display: flex;
 }
 
-/* Deep sage enamel with a brass double rule and gilt letters in Standard;
-   black lacquer with a warm gold glow in Cosmic. */
+/* The station's nameplate: deep navy lacquer with a brass double rule and
+   gilt letters in Standard; black lacquer with a warm gold glow in Cosmic.
+   Under the name, where the station is, after three running lights. */
 .sign {
-  --sign-face: linear-gradient(180deg, #5b6e52, #44553d);
+  --sign-face: linear-gradient(180deg, #24324a, #141d2c);
   --sign-rule: #c9a55a;
   --sign-ink: linear-gradient(180deg, #fbe7b0, #d6ad5c 55%, #b98a3a);
-  --sign-glow: #0000;
-  --sign-shadow: 0 6px 12px -6px #2d3a2873, 0 1px 0 #ffffff80 inset;
+  --sign-glow: #f3d38a40;
+  --sign-orbit: #a9cfe6;
+  --sign-shadow: 0 6px 12px -6px #1a233373, 0 1px 0 #ffffff26 inset;
 
   position: relative;
   margin: 8px 0 0;
   max-width: 100%;
-  padding: 5px 14px 6px;
+  padding: 4px 14px 5px;
   border-radius: 8px;
   background: var(--sign-face);
   box-shadow: var(--sign-shadow), inset 0 0 0 1.5px var(--sign-rule), inset 0 0 0 3.5px #0000, inset 0 0 0 4.5px #c9a55a73;
@@ -146,7 +158,7 @@
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  line-height: 1.3;
+  line-height: 1.25;
   white-space: nowrap;
   transform: rotate(-1.2deg);
   transform-origin: 50% -10px;
@@ -158,6 +170,7 @@
   --sign-rule: #e8ce8c;
   --sign-ink: linear-gradient(180deg, #fff3cf, #e8ce8c 60%, #c9a55a);
   --sign-glow: #e8ce8c66;
+  --sign-orbit: #e8ce8cb3;
   --sign-shadow: 0 8px 18px -8px #000c, 0 1px 0 #ffffff14 inset;
 }
 
@@ -170,6 +183,45 @@
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 6px var(--sign-glow));
+}
+
+.signOrbit {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 1px;
+  overflow: hidden;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--sign-orbit);
+}
+
+/* Three running lights, lit one after another: Yumi's 3, the station's 33. */
+.signLights {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.signLights i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ffc96b;
+  box-shadow: 0 0 4px #ffc96b;
+  animation: running-light 2.4s ease-in-out infinite;
+}
+
+.signLights i:nth-child(2) { animation-delay: 0.3s; }
+.signLights i:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes running-light {
+  0%, 60%, 100% { opacity: 0.35; }
+  20% { opacity: 1; }
 }
 
 /* Two brass rods it hangs from. */
@@ -189,6 +241,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sign { transform: none; }
+  .signLights i { animation: none; opacity: 0.8; }
 }
 
 .tools {
@@ -240,6 +293,7 @@
 }
 
 .balance {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -249,8 +303,35 @@
   border: 1px solid var(--shop-line);
   background: var(--shop-card);
   box-shadow: var(--shop-card-shadow);
+  color: inherit;
+  font: inherit;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.balance:active {
+  transform: translateY(1px);
+}
+
+.balance:focus-visible {
+  outline: 3px solid var(--shop-accent);
+  outline-offset: 2px;
+}
+
+/* Cookies landing: the balance answers with a ring of light. */
+.balancePulse {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 #ffc96b99, 0 0 0 0 #7fd3e666;
+  animation: balance-pulse 1s 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes balance-pulse {
+  0% { box-shadow: 0 0 0 0 #ffc96bcc, 0 0 0 0 #7fd3e699; }
+  100% { box-shadow: 0 0 0 10px #ffc96b00, 0 0 0 18px #7fd3e600; }
 }
 
 .balanceCookie {
@@ -351,7 +432,7 @@
 
 /* ------------------------------------------------------- the plinth */
 
-/* A pool of light from above, over the sky and under Yumi. */
+/* The dock's beam from above, over the window and under Yumi. */
 .spotlight {
   position: absolute;
   z-index: 0;
@@ -362,7 +443,8 @@
     radial-gradient(ellipse 30% 9% at 50% 84%, var(--shop-spot) 0%, #0000 100%);
 }
 
-/* Stone on a cylinder: a top face, a front band below it, at Yumi's feet. */
+/* A docking pad on a cylinder: a top face, a front band below it with
+   three running lights (Yumi's three fingers), at Yumi's feet. */
 .pedestal {
   position: absolute;
   z-index: 0;
@@ -379,7 +461,11 @@
   position: absolute;
   inset: 34.5% 0 0;
   border-radius: 0 0 50% 50% / 0 0 52.7% 52.7%;
-  background: var(--shop-plinth-side);
+  background:
+    radial-gradient(circle at 18% 22%, var(--shop-plinth-lights) 0 1.5px, #0000 2.6px),
+    radial-gradient(circle at 50% 30%, var(--shop-plinth-lights) 0 1.5px, #0000 2.6px),
+    radial-gradient(circle at 82% 22%, var(--shop-plinth-lights) 0 1.5px, #0000 2.6px),
+    var(--shop-plinth-side);
 }
 
 .plinthTop {
@@ -388,7 +474,11 @@
   height: 69%;
   border-radius: 50%;
   background: var(--shop-plinth-top);
-  box-shadow: inset 0 -2px 0 var(--shop-plinth-rim), inset 0 1px 0 #ffffff40;
+  box-shadow:
+    inset 0 -2px 0 var(--shop-plinth-rim),
+    inset 0 -6px 10px -6px var(--shop-plinth-rim),
+    inset 0 1px 0 #ffffff40,
+    0 0 14px -4px var(--shop-plinth-rim);
 }
 
 .contactShadow {
@@ -995,6 +1085,233 @@
   }
 }
 
+/* ---------------------------------------------------- energy supply */
+
+.supply {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 8px;
+  color: var(--shop-ink);
+}
+
+
+/* The balance, on a small piece of the station's window. */
+.supplyBalance {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 14px;
+  padding: 18px 20px;
+  overflow: hidden;
+  border-radius: 22px;
+  color: #f3f6fa;
+  background:
+    radial-gradient(circle at 12% 30%, #fff 0 0.7px, #0000 1.2px),
+    radial-gradient(circle at 78% 18%, #fff 0 0.6px, #0000 1.1px),
+    radial-gradient(circle at 92% 64%, #dfeeff 0 0.7px, #0000 1.2px),
+    radial-gradient(circle at 46% 12%, #fff 0 0.5px, #0000 1px),
+    radial-gradient(160% 90% at 80% 190%, #2a6fa6 0%, #164a7a 32%, #0b2a4b 46%, #0000 47%),
+    radial-gradient(160% 90% at 80% 190%, #9fdcff00 46%, #9fdcff66 47%, #0000 49%),
+    linear-gradient(180deg, #0d1a2b, #070d17);
+  box-shadow: inset 0 0 0 1px #ffffff14, 0 14px 28px -20px #0b1a2b;
+}
+
+.supplyCookie {
+  grid-row: 1 / 3;
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 0 12px #ffc96b66);
+}
+
+.supplyCount {
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.supplyCaption {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #bcd3e4;
+}
+
+.supplySplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.supplySplit > div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--shop-line);
+  background: var(--shop-card);
+}
+
+.supplySplit dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--shop-muted);
+}
+
+.supplySplit dd {
+  margin: 2px 0 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.supplySection {
+  display: grid;
+  gap: 10px;
+}
+
+.supplyHeadingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.supplyHeading {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--shop-muted);
+}
+
+.supplyRate {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--shop-ink);
+}
+
+.supplyRules {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.supplyRules li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--shop-line);
+  background: var(--shop-card);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.supplyRules li > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.supplyRules strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.supplyPacks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.supplyPack {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 14px 6px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--shop-line);
+  background: var(--shop-card);
+  box-shadow: 0 10px 24px -20px #00000066;
+  text-align: center;
+}
+
+.packCookies {
+  display: flex;
+  justify-content: center;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.packCookie {
+  width: 24px;
+  height: 24px;
+}
+
+.packCookie + .packCookie {
+  margin-left: -9px;
+}
+
+.packAmount {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.packPrice {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--shop-muted);
+}
+
+.packSoon {
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--shop-tag);
+  color: var(--shop-tag-ink);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.supplyStory,
+.supplyNote,
+.supplyBoundary {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--shop-muted);
+}
+
+.supplyStory {
+  padding-left: 12px;
+  border-left: 2px solid #ffc96b;
+}
+
+/* The line that matters most: what bought cookies are not. */
+.supplyBoundary {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border-left: 3px solid var(--shop-accent);
+  background: var(--shop-card);
+  color: var(--shop-ink);
+  font-weight: 600;
+}
+
 /* ------------------------------------------------------- confirm, toast */
 
 .confirm {
@@ -1140,26 +1457,3 @@
     transition: none;
   }
 }
-
-/* Station 33: one stable nameplate, an orbital display bay and a quiet wallet. */
-.sign { background:transparent; border:0; box-shadow:none; transform:none; padding:0; min-width:0; border-radius:0; }
-.sign::before,.sign::after { display:none; }
-.signName { color:var(--shop-ink); text-shadow:none; filter:none; font-size:clamp(15px,2vw,21px); }
-.stationLabel { display:block; font:8px/1.6 ui-monospace,monospace; letter-spacing:.12em; color:var(--shop-muted); white-space:nowrap; margin-top:3px; }
-.balance { min-height:44px; cursor:pointer; color:var(--shop-ink); font-variant-numeric:tabular-nums; }
-.balance:focus-visible { outline:2px solid var(--shop-accent);outline-offset:3px; }
-.balanceCookie { color:var(--shop-accent); }
-.priceCookie { color:currentColor; }
-.stage { background:#0b1019; }
-.plinthTop { background:radial-gradient(ellipse,#bbcbd014,#1a222b 65%); }
-.plinthSide { background:linear-gradient(90deg,#0b111a,#25323c 50%,#0d141d); }
-.energyPanel { display:grid; gap:16px; padding:8px 4px 22px; color:var(--color-black); }
-.energyPanel p { margin:0; font-size:14px; line-height:1.7; }
-.energyTotal { display:flex; align-items:center; gap:14px; font-size:48px; font-variant-numeric:tabular-nums; }
-.energyTotal svg { width:38px; height:38px; }
-.energyRate { display:grid; gap:8px; padding:20px; border:1px solid var(--line); border-radius:20px; }
-.energyRate span { font-size:13px; color:var(--ink-soft); }
-.energySeparation { border-left:2px solid currentColor; padding-left:14px; }
-@media(max-width:400px){.stationLabel{font-size:6px;letter-spacing:.06em}.signName{font-size:15px}}
-
-.energyPacks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.energyPacks>span{display:grid;gap:4px;text-align:center;padding:12px 8px;border:1px solid var(--line);border-radius:12px}.energyPacks b{font-size:24px;color:var(--color-black)}

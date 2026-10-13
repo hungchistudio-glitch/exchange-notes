@@ -376,7 +376,7 @@ const spanish: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Cada palabra que guardas se convierte en una galleta de energía. La bolsa de arriba a la derecha es mi tienda: gasta allí tus galletas en un estilo nuevo para mí.",
+            "Guardar una palabra por primera vez te da una galleta de energía, y superar todas las tarjetas de un repaso te da tres más. La bolsa de arriba a la derecha lleva a mi tienda en órbita alrededor de la Tierra: gasta allí tus galletas en un estilo nuevo para mí.",
         },
         tryOn: {
           body:
@@ -2493,7 +2493,7 @@ const spanish: TranslationDictionary = {
     goBack: "Volver",
     cookiesOne: "{count} galleta de energía",
     cookiesOther: "{count} galletas de energía",
-    howEarned: "Cada palabra que guardas vale una galleta de energía.",
+    howEarned: "Guardar una palabra por primera vez da 1 galleta de energía; superar todas las tarjetas de un repaso da 3 más.",
     stage: "Probador 3D de Yumi. Arrastra para girarla o usa las flechas.",
     hint: "Arrastra para 360° · Pellizca para ampliar",
     views: "Vistas",
@@ -2528,7 +2528,7 @@ const spanish: TranslationDictionary = {
     failed: "No se completó. Inténtalo de nuevo.",
     retry: "Reintentar",
     sky: {
-      label: "Cielo",
+      label: "Tiempo en la Tierra",
       night: "Noche",
       choices: {
         auto: "Seguir el tiempo",
@@ -2555,6 +2555,30 @@ const spanish: TranslationDictionary = {
         autumn: "Otoño",
         winter: "Invierno",
       },
+    },
+    station: {
+      orbit: "Estación 33 · Órbita",
+    },
+    energy: {
+      wallet: "Reserva de energía",
+      open: "Abrir la reserva de energía",
+      balance: "Galletas de energía disponibles",
+      fromLearning: "Guardar y repasar",
+      fromSupply: "Compradas",
+      howTitle: "Cómo conseguirlas",
+      ruleSave: "Guarda una palabra por primera vez",
+      ruleReview: "Supera todas las tarjetas de un repaso",
+      packsTitle: "Paquetes",
+      rate: "1 USD = 33 galletas",
+      story: "Yumi tiene tres dedos en cada mano: con las dos cuenta hasta 33. En su forma de contar, 33 vale uno.",
+      soon: "Próximamente",
+      future: "Las compras aún no están abiertas. Por ahora, las galletas llegan guardando y repasando palabras.",
+      separate: "Las galletas de energía son solo para la tienda. Las compradas nunca añaden palabras, repasos ni logros de aprendizaje.",
+      rewardSave: "Recompensa por guardar",
+      rewardReview: "Recompensa de repaso",
+      rewardPaid: "Recarga de energía",
+      rewardMixed: "Galletas de energía recibidas",
+      previewReward: "Ver la recompensa",
     },
     loading: "Contando galletas…",
     toCosmic: "Cambiar al modo Cosmic",

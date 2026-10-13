@@ -155,10 +155,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * (Chi: "在主頁的右上角加入一個商城icon") — its component and CSS, and the
    * scroll tuck it shares with the mode switch, moved out of the switch into
    * hooks/home/useTuckOnScroll.ts. None imports anything home does not load.
+   * Raised home 176 → 177 and vocabulary 161 → 162 (2026-10-13): energy
+   * cookies from saving and reviewing (Chi). Saving a word now tells the
+   * cookie-landing card to look (lib/shop/energy.ts: two event names and a
+   * constant, no imports). The card itself and the ledger query load with
+   * the app's layout, not with either tab.
    */
   it.each([
-    ["vocabulary", TABS.vocabulary, 161],
-    ["home", TABS.home, 176],
+    ["vocabulary", TABS.vocabulary, 162],
+    ["home", TABS.home, 177],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

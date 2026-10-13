@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   saveReviewResult: vi.fn(),
+  beginReviewRound: vi.fn(),
 }));
 
 vi.mock("next/link", () => ({
@@ -60,7 +61,7 @@ vi.mock("@/lib/review/getTodaysReview", () => {
 
 vi.mock("@/lib/review/saveReviewResult", () => ({
   saveReviewResult: mocks.saveReviewResult,
-  beginReviewRound: vi.fn().mockResolvedValue(undefined),
+  beginReviewRound: mocks.beginReviewRound,
 }));
 
 import ReviewPage from "@/app/(protected)/review/page";
@@ -68,6 +69,7 @@ import ReviewPage from "@/app/(protected)/review/page";
 describe("review persistence failures", () => {
   beforeEach(() => {
     mocks.saveReviewResult.mockReset();
+    mocks.beginReviewRound.mockReset().mockResolvedValue(undefined);
   });
 
   it("keeps the current card until its grade is actually saved", async () => {
@@ -90,5 +92,37 @@ describe("review persistence failures", () => {
     await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
     expect(screen.queryByText("Unable to save this review.")).not.toBeInTheDocument();
     expect(screen.getByText("hi")).toBeInTheDocument();
+  });
+
+  it("grades every card against the review round it opened, for the round's cookies", async () => {
+    mocks.saveReviewResult.mockResolvedValue(undefined);
+
+    render(<ReviewPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
+
+    expect(mocks.beginReviewRound).toHaveBeenCalledTimes(1);
+    const [ids, roundId] = mocks.beginReviewRound.mock.calls[0];
+    expect(ids).toEqual(["first", "second"]);
+    expect(roundId).toMatch(/^[0-9a-f-]{36}$/);
+
+    fireEvent.click(screen.getByRole("button", { name: /Good Remembered/i }));
+    await waitFor(() => expect(mocks.saveReviewResult).toHaveBeenCalledWith("first", "good", roundId));
+  });
+
+  it("still reviews when the round cannot be opened, just without its cookies", async () => {
+    mocks.beginReviewRound.mockRejectedValueOnce(new Error("offline"));
+    mocks.saveReviewResult.mockResolvedValue(undefined);
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(<ReviewPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Good Remembered/i }));
+
+    await waitFor(() => expect(mocks.saveReviewResult).toHaveBeenCalledWith("first", "good", undefined));
+    quiet.mockRestore();
   });
 });

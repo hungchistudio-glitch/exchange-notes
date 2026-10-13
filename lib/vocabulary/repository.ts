@@ -1,6 +1,6 @@
-import { refreshEnergyRewards } from "@/lib/shop/energyEvents";
 import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
 import type { ByLanguage, LanguageCode } from "@/lib/languages";
+import { refreshEnergyRewards } from "@/lib/shop/energy";
 import {
   draftVocabularyItem,
   queueMutation,

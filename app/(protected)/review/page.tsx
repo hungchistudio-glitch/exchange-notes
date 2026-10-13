@@ -12,7 +12,7 @@ import {
   getReviewWords,
   type ReviewWord,
 } from "@/lib/review/getTodaysReview";
-import { saveReviewResult, beginReviewRound } from "@/lib/review/saveReviewResult";
+import { beginReviewRound, saveReviewResult } from "@/lib/review/saveReviewResult";
 import type { ReviewGrade } from "@/types/vocabulary";
 import { speak } from "@/lib/speech";
 import LanguageOriginBadge from "@/components/language/LanguageOriginBadge";
@@ -235,6 +235,9 @@ export default function ReviewPage() {
         return;
       }
 
+      /* The round is opened on the server before the first card, so a
+         round that passes every card can pay its cookies. If it cannot be
+         opened, the review still goes ahead, just without the round. */
       startingRef.current = true;
       setStarting(true);
       setErrorMessage("");
@@ -242,9 +245,9 @@ export default function ReviewPage() {
       try {
         await beginReviewRound(source.map(word => word.id), roundId);
         roundRef.current = roundId;
-      } catch {
-        setErrorMessage(copy.saveError);
-        return;
+      } catch (error) {
+        console.error(error);
+        roundRef.current = undefined;
       } finally {
         startingRef.current = false;
         setStarting(false);
@@ -256,7 +259,7 @@ export default function ReviewPage() {
       setPhase("session");
       setLaunchToken((token) => token + 1);
     },
-    [dueWords, allWords, reviewLanguage, copy.saveError],
+    [dueWords, allWords, reviewLanguage],
   );
 
   async function handleGrade(grade: ReviewGrade) {
@@ -675,7 +678,7 @@ export default function ReviewPage() {
           type="button"
           aria-busy={starting}
           onClick={() => void startSession("due")}
-          disabled={loading || dueInLanguage.length === 0}
+          disabled={loading || starting || dueInLanguage.length === 0}
           className="mt-6 block w-full rounded-[28px] bg-black p-6 text-left text-white transition active:scale-[0.99] disabled:opacity-50"
         >
           <div className="flex items-start justify-between gap-3">
@@ -714,7 +717,7 @@ export default function ReviewPage() {
             type="button"
             aria-busy={starting}
             onClick={() => void startSession("all")}
-            disabled={loading || allInLanguage.length === 0}
+            disabled={loading || starting || allInLanguage.length === 0}
             className="mt-4 flex h-14 w-full items-center justify-between rounded-2xl bg-black px-5 text-sm font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
           >
             {copy.practiceAllWords}

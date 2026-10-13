@@ -1,6 +1,6 @@
-import { refreshEnergyRewards } from "@/lib/shop/energyEvents";
 import { createClient } from "@/lib/supabase/client";
 import type { ReviewGrade, ReviewUpdate } from "@/lib/review/sm2";
+import { refreshEnergyRewards } from "@/lib/shop/energy";
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -53,7 +53,18 @@ export async function saveReviewResult(
    * first, so concurrent tabs calculate in sequence instead of overwriting
    * each other, and an event failure rolls the schedule update back too.
    */
-  const { data, error } = await supabase.rpc(roundId ? "grade_yumi_review_round" : "save_review_result_atomic", roundId ? {p_round_id: roundId, p_item_id: id, p_grade: grade} : {p_vocabulary_item_id: id, p_grade: grade});
+  const { data, error } = roundId
+    // Inside a review round, the same save, recorded against the round: the
+    // round pays its cookies once every card in it has passed.
+    ? await supabase.rpc("grade_yumi_review_round", {
+      p_round_id: roundId,
+      p_item_id: id,
+      p_grade: grade,
+    })
+    : await supabase.rpc("save_review_result_atomic", {
+      p_vocabulary_item_id: id,
+      p_grade: grade,
+    });
 
   if (error) throw error;
 
@@ -65,7 +76,16 @@ export async function saveReviewResult(
   return data;
 }
 
+/**
+ * Opens a review round on the server: the cards it holds are fixed here,
+ * and only when every one of them has been graded without "again" does the
+ * round earn its three energy cookies (Chi, 2026-10-13). Retrying with the
+ * same id is harmless.
+ */
 export async function beginReviewRound(ids: string[], roundId: string): Promise<void> {
- const {error}=await createClient().rpc('begin_yumi_review_round',{p_round_id:roundId,p_item_ids:ids});
- if(error)throw error;
+  const { error } = await createClient().rpc("begin_yumi_review_round", {
+    p_round_id: roundId,
+    p_item_ids: ids,
+  });
+  if (error) throw error;
 }

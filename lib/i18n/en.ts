@@ -375,7 +375,7 @@ const english: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Every word you save becomes an energy cookie. The bag at the top right is my shop — spend your cookies there on new looks for me.",
+            "Saving a word for the first time earns an energy cookie, and passing every card in a review round earns three more. The bag at the top right leads to my shop in orbit above Earth — spend your cookies there on new looks for me.",
         },
         tryOn: {
           body:
@@ -2496,7 +2496,7 @@ const english: TranslationDictionary = {
     goBack: "Back",
     cookiesOne: "{count} energy cookie",
     cookiesOther: "{count} energy cookies",
-    howEarned: "Every word you save is one energy cookie.",
+    howEarned: "Saving a word for the first time earns 1 energy cookie; passing every card in a review round earns 3 more.",
     stage: "Yumi’s 3D try-on stand. Drag to turn her; the arrow keys turn her too.",
     hint: "Drag for 360° · Pinch to zoom",
     views: "Views",
@@ -2531,7 +2531,7 @@ const english: TranslationDictionary = {
     failed: "That didn’t go through. Please try again.",
     retry: "Try again",
     sky: {
-      label: "Sky",
+      label: "Weather below",
       night: "Night",
       choices: {
         auto: "Follow the weather",
@@ -2558,6 +2558,30 @@ const english: TranslationDictionary = {
         autumn: "Autumn",
         winter: "Winter",
       },
+    },
+    station: {
+      orbit: "Station 33 · Orbit",
+    },
+    energy: {
+      wallet: "Energy supply",
+      open: "Open energy supply",
+      balance: "Energy cookies available",
+      fromLearning: "Saving and review",
+      fromSupply: "Purchased",
+      howTitle: "How to earn",
+      ruleSave: "Save a word for the first time",
+      ruleReview: "Pass every card in a review round",
+      packsTitle: "Supply packs",
+      rate: "US$1 = 33 cookies",
+      story: "Yumi has three fingers on each hand, so with both hands she counts up to 33. In Yumi's counting, 33 is one.",
+      soon: "Coming soon",
+      future: "Paid supply isn't open yet. For now, cookies come from saving and reviewing words.",
+      separate: "Energy cookies are only for the shop. Purchased cookies never add words, review records or learning achievements.",
+      rewardSave: "Saved-word reward",
+      rewardReview: "Review round reward",
+      rewardPaid: "Energy supply",
+      rewardMixed: "Energy cookies received",
+      previewReward: "Preview the reward",
     },
     loading: "Counting cookies…",
     toCosmic: "Switch to Cosmic mode",

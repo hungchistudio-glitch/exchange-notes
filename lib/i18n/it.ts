@@ -374,7 +374,7 @@ const italian: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Ogni parola che salvi diventa un biscotto energia. La borsa in alto a destra è il mio negozio: lì puoi spendere i biscotti per darmi un nuovo look.",
+            "Salvare una parola per la prima volta ti dà un biscotto energia, e superare tutte le carte di un ripasso te ne dà altri tre. La borsa in alto a destra porta al mio negozio in orbita attorno alla Terra: lì puoi spendere i biscotti per darmi un nuovo look.",
         },
         tryOn: {
           body:
@@ -2298,7 +2298,7 @@ const italian: TranslationDictionary = {
     goBack: "Indietro",
     cookiesOne: "{count} biscotto energia",
     cookiesOther: "{count} biscotti energia",
-    howEarned: "Ogni parola salvata vale un biscotto energia.",
+    howEarned: "Salvare una parola per la prima volta dà 1 biscotto energia; superare tutte le carte di un ripasso ne dà altri 3.",
     stage: "Camerino 3D di Yumi. Trascina per farla girare, oppure usa le frecce.",
     hint: "Trascina per 360° · Pizzica per lo zoom",
     views: "Viste",
@@ -2333,7 +2333,7 @@ const italian: TranslationDictionary = {
     failed: "Non è andato a buon fine. Riprova.",
     retry: "Riprova",
     sky: {
-      label: "Cielo",
+      label: "Meteo sulla Terra",
       night: "Notte",
       choices: {
         auto: "Segui il meteo",
@@ -2360,6 +2360,30 @@ const italian: TranslationDictionary = {
         autumn: "Autunno",
         winter: "Inverno",
       },
+    },
+    station: {
+      orbit: "Stazione 33 · Orbita",
+    },
+    energy: {
+      wallet: "Riserva di energia",
+      open: "Apri la riserva di energia",
+      balance: "Biscotti energia disponibili",
+      fromLearning: "Salvataggi e ripassi",
+      fromSupply: "Acquistati",
+      howTitle: "Come guadagnarli",
+      ruleSave: "Salva una parola per la prima volta",
+      ruleReview: "Supera tutte le carte di un ripasso",
+      packsTitle: "Pacchetti",
+      rate: "1 USD = 33 biscotti",
+      story: "Yumi ha tre dita per mano: con tutte e due conta fino a 33. Nel suo modo di contare, 33 vale uno.",
+      soon: "In arrivo",
+      future: "Gli acquisti non sono ancora aperti. Per ora i biscotti arrivano salvando e ripassando parole.",
+      separate: "I biscotti energia servono solo nel negozio. Quelli acquistati non aggiungono mai parole, ripassi o progressi di apprendimento.",
+      rewardSave: "Premio salvataggio",
+      rewardReview: "Premio ripasso",
+      rewardPaid: "Rifornimento di energia",
+      rewardMixed: "Biscotti energia ricevuti",
+      previewReward: "Anteprima del premio",
     },
     loading: "Contiamo i biscotti…",
     toCosmic: "Passa alla modalità Cosmic",

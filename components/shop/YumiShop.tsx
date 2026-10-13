@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, Check, Globe, Moon, Sun } from "lucide-react";
+import { ArrowLeft, BookmarkPlus, Check, Globe, Layers, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
@@ -25,15 +25,26 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
-import { QUIET_SCENE } from "@/lib/shop/atmosphere";
+import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
+import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
+import {
+  getQuarterHour,
+  getSceneChoice,
+  getServerQuarterHour,
+  getServerSceneChoice,
+  setSceneChoice,
+  subscribeToQuarterHour,
+  subscribeToSceneChoice,
+  useShopWeather,
+} from "@/lib/shop/useShopWeather";
+import { ENERGY_LANDED_EVENT, ENERGY_PER_USD, SUPPLY_PACKS_USD } from "@/lib/shop/energy";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
 import EnergyCookie from "./EnergyCookie";
-import energyCopy, { ENERGY_PER_USD } from "@/lib/shop/energyCopy";
 import EnergyReward from "./EnergyReward";
-import { ENERGY_REFRESH_EVENT } from "@/lib/shop/energyEvents";
+import ShopScenePicker, { ORBIT_CHOICES } from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
@@ -64,7 +75,7 @@ const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "sm
 /** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
 const STAND_SMALLEST = 0.6;
 
-const EMPTY_STATE: WardrobeState = { earned: 0, spent: 0, balance: 0, owned: [], outfit: {} };
+const EMPTY_STATE: WardrobeState = { earned: 0, paid: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
 
 type Availability = "loading" | "open" | "closed" | "failed";
@@ -82,9 +93,6 @@ export default function YumiShop({
 }) {
   const { t, language, locale } = useTranslation();
   const copy = t.shop;
-  const energy = energyCopy[language];
-  const [energyOpen, setEnergyOpen] = useState(false);
-  const [demoReward, setDemoReward] = useState(false);
   const router = useRouter();
   const online = useOnline();
 
@@ -100,21 +108,75 @@ export default function YumiShop({
   const [attempt, setAttempt] = useState(0);
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [supplyOpen, setSupplyOpen] = useState(false);
+  /** Bumped when cookies land, to make the balance answer. */
+  const [landedKey, setLandedKey] = useState(0);
+  /** The review screen's look at the cookie-landing card. */
+  const [demoReward, setDemoReward] = useState(0);
 
-  const scene = QUIET_SCENE;
+  // ------------------------------------------------------------ the sky
+  const { weather } = useShopWeather();
+  const sceneChoice = useSyncExternalStore(subscribeToSceneChoice, getSceneChoice, getServerSceneChoice);
+  /* The hour moves the sky (morning, day, dusk, night). Null on the server,
+     which does not know the reader's clock: a quiet sky until it does. */
+  const quarter = useSyncExternalStore(subscribeToQuarterHour, getQuarterHour, getServerQuarterHour);
+  const scene = useMemo(
+    () => (quarter === null ? QUIET_SCENE : sceneFor(sceneChoice, weather, new Date(quarter))),
+    [sceneChoice, weather, quarter],
+  );
+  const sky = t.shop.sky;
+  const skyNow = sceneChoice !== "auto"
+    ? sky.choices[sceneChoice]
+    : weather
+      ? `${sky.conditions[weather.condition]}${weather.temperature === null ? "" : ` ${formatTemperature(weather.temperature, getDeviceTimeZone())}`}`
+      : quarter === null
+        ? sky.label
+        : dayPartAt(new Date(quarter)) === "night"
+          ? sky.night
+          : sky.seasons[seasonAt(new Date(quarter))];
+  const pageRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const signRef = useRef<HTMLHeadingElement>(null);
+
+  /* The signboard swings in a breath of wind (Chi, 2026-10-13): once on
+     arrival, when the page is scrolled, and now and then on its own. A
+     transform on its own layer, a damped swing about the rods — nothing the
+     stand or the scroll has to wait for. */
   useEffect(() => {
-    if (!demoReward) return;
-    const timer = setTimeout(() => setDemoReward(false), 2400);
-    return () => clearTimeout(timer);
-  }, [demoReward]);
-  useEffect(() => {
-    if (preview) return;
-    let cancelled = false;
-    const refresh = () => { void wallet.load().then(next => { if (!cancelled) setState(next); }).catch(() => {}); };
-    window.addEventListener(ENERGY_REFRESH_EVENT, refresh);
-    return () => { cancelled = true; window.removeEventListener(ENERGY_REFRESH_EVENT, refresh); };
-  }, [wallet, preview]);
+    const sign = signRef.current;
+    if (!sign || typeof sign.animate !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let current: Animation | null = null;
+    let lastSwing = 0;
+    const swing = (strength: number) => {
+      const now = performance.now();
+      if (now - lastSwing < 1400) return;
+      lastSwing = now;
+      current?.cancel();
+      const a = 3.2 * strength;
+      current = sign.animate(
+        [-1.2, -1.2 + a, -1.2 - a * 0.6, -1.2 + a * 0.32, -1.2 - a * 0.14, -1.2]
+          .map(deg => ({ transform: `rotate(${deg}deg)` })),
+        { duration: 1900, easing: "ease-in-out" },
+      );
+    };
+    const arrive = window.setTimeout(() => swing(1), 350);
+    let breeze = 0;
+    const nextBreeze = () => {
+      breeze = window.setTimeout(() => { swing(0.45 + Math.random() * 0.35); nextBreeze(); }, 9000 + Math.random() * 12000);
+    };
+    nextBreeze();
+    const scroller: HTMLElement | Window =
+      document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
+    const onScroll = () => swing(0.55);
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(arrive);
+      window.clearTimeout(breeze);
+      scroller.removeEventListener("scroll", onScroll);
+      current?.cancel();
+    };
+  }, []);
 
   // ----------------------------------------------------------- loading
   useEffect(() => {
@@ -133,6 +195,25 @@ export default function YumiShop({
       });
     return () => { cancelled = true; };
   }, [wallet, preview, attempt]);
+
+  /* Cookies earned elsewhere (a word saved in another tab, a review round
+     passed) land while the shop is open: read the balance again and let it
+     answer the card that announced them. */
+  useEffect(() => {
+    const landed = () => {
+      setLandedKey(key => key + 1);
+      if (preview) return;
+      void wallet.load().then(setState).catch(() => {});
+    };
+    window.addEventListener(ENERGY_LANDED_EVENT, landed);
+    return () => window.removeEventListener(ENERGY_LANDED_EVENT, landed);
+  }, [wallet, preview]);
+
+  useEffect(() => {
+    if (!demoReward) return;
+    const timer = window.setTimeout(() => setDemoReward(0), 2600);
+    return () => window.clearTimeout(timer);
+  }, [demoReward]);
 
   // --------------------------------------------------------- catalogue
   const shown = useMemo(
@@ -284,18 +365,24 @@ export default function YumiShop({
           : null;
 
   return (
-    <div className={styles.page}>
+    <div ref={pageRef} className={styles.page}>
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
           </button>
-          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"): an
-              enamel plaque hung from two brass rods, the name in gilt. */}
+          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"), since
+              the same day the nameplate of a station in orbit: a dark
+              lacquered plate on two rods, the name lit in gilt, and where
+              the station is under it. */}
           <div className={styles.signArea}>
-            <h1 className={styles.sign} aria-label={copy.title}>
+            <h1 ref={signRef} className={styles.sign}>
+              <span className={styles.signHooks} aria-hidden="true" />
               <span className={styles.signName}>{copy.title}</span>
-              <span className={styles.stationLabel}>{energy.orbit}</span>
+              <span className={styles.signOrbit} aria-hidden="true">
+                <span className={styles.signLights}><i /><i /><i /></span>
+                {copy.station.orbit}
+              </span>
             </h1>
           </div>
           <div className={styles.tools}>
@@ -308,7 +395,14 @@ export default function YumiShop({
               <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
               <span aria-hidden="true">{getInterfaceLanguageMeta(language).badge}</span>
             </button>
-            <button type="button" className={styles.balance} onClick={() => setEnergyOpen(true)} aria-label={`${energy.wallet}: ${cookies(state.balance)}`}>
+            <button
+              type="button"
+              className={styles.balance}
+              aria-haspopup="dialog"
+              aria-label={`${cookies(state.balance)}. ${copy.energy.open}`}
+              onClick={() => setSupplyOpen(true)}
+            >
+              {landedKey > 0 && <span key={landedKey} className={styles.balancePulse} aria-hidden="true" />}
               <EnergyCookie className={styles.balanceCookie} />
               <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
             </button>
@@ -322,6 +416,15 @@ export default function YumiShop({
           celebrateKey={celebrateKey}
           corner={
             <>
+              <ShopScenePicker
+                scene={scene}
+                choice={sceneChoice}
+                current={skyNow}
+                choices={ORBIT_CHOICES}
+                names={sky.choices}
+                label={sky.label}
+                onChoose={setSceneChoice}
+              />
               <button
                 type="button"
                 className={styles.roundKey}
@@ -409,7 +512,7 @@ export default function YumiShop({
           </ul>
         )}
 
-        <p className={styles.footnote}>{energy.rule}</p>
+        <p className={styles.footnote}>{copy.howEarned}</p>
       </section>
 
       <footer className={styles.bar}>
@@ -458,18 +561,79 @@ export default function YumiShop({
         )}
       </footer>
 
-      <BottomSheet open={energyOpen} onClose={() => setEnergyOpen(false)} title={energy.wallet}>
-        <div className={styles.energyPanel}>
-          <p>{energy.balance}</p>
-          <div className={styles.energyTotal}><EnergyCookie />{state.balance.toLocaleString(locale)}</div>
-          <p>{energy.rule}</p>
-          <div className={styles.energyRate}><strong>{energy.rate}</strong><span>{energy.story}</span><div className={styles.energyPacks}>{[1,2,3].map(usd => <span key={usd}><b>{usd * ENERGY_PER_USD}</b><small>US${usd}</small></span>)}</div></div>
-          <p className={styles.energySeparation}>{energy.separate}</p>
-          <p>{energy.future}</p>
-          {preview && <button type="button" className={styles.primary} onClick={() => {setEnergyOpen(false);setDemoReward(true);}}>{energy.preview} +33</button>}
+      {/* Energy supply: where cookies come from, and the packs paid supply
+          will sell (Chi, 2026-10-13: US$1 = 33). Nothing can be bought here
+          yet; the packs say so. */}
+      <BottomSheet open={supplyOpen} onClose={() => setSupplyOpen(false)} title={copy.energy.wallet}>
+        <div className={styles.supply}>
+          <div className={styles.supplyBalance}>
+            <EnergyCookie className={styles.supplyCookie} />
+            <span className={styles.supplyCount}>{state.balance.toLocaleString(locale)}</span>
+            <span className={styles.supplyCaption}>{copy.energy.balance}</span>
+          </div>
+          <dl className={styles.supplySplit}>
+            <div>
+              <dt>{copy.energy.fromLearning}</dt>
+              <dd>{state.earned.toLocaleString(locale)}</dd>
+            </div>
+            <div>
+              <dt>{copy.energy.fromSupply}</dt>
+              <dd>{state.paid.toLocaleString(locale)}</dd>
+            </div>
+          </dl>
+
+          <section className={styles.supplySection} aria-labelledby="supply-how">
+            <h3 id="supply-how" className={styles.supplyHeading}>{copy.energy.howTitle}</h3>
+            <ul className={styles.supplyRules}>
+              <li>
+                <BookmarkPlus size={18} strokeWidth={1.8} aria-hidden="true" />
+                <span>{copy.energy.ruleSave}</span>
+                <strong><EnergyCookie className={styles.priceCookie} />+1</strong>
+              </li>
+              <li>
+                <Layers size={18} strokeWidth={1.8} aria-hidden="true" />
+                <span>{copy.energy.ruleReview}</span>
+                <strong><EnergyCookie className={styles.priceCookie} />+3</strong>
+              </li>
+            </ul>
+          </section>
+
+          <section className={styles.supplySection} aria-labelledby="supply-packs">
+            <div className={styles.supplyHeadingRow}>
+              <h3 id="supply-packs" className={styles.supplyHeading}>{copy.energy.packsTitle}</h3>
+              <span className={styles.supplyRate}>{copy.energy.rate}</span>
+            </div>
+            <ul className={styles.supplyPacks}>
+              {SUPPLY_PACKS_USD.map(usd => (
+                <li key={usd} className={styles.supplyPack}>
+                  <span className={styles.packCookies} aria-hidden="true">
+                    {Array.from({ length: usd }, (_, i) => <EnergyCookie key={i} className={styles.packCookie} />)}
+                  </span>
+                  <span className={styles.packAmount}>{(usd * ENERGY_PER_USD).toLocaleString(locale)}</span>
+                  <span className={styles.packPrice}>US${usd}</span>
+                  <span className={styles.packSoon}>{copy.energy.soon}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={styles.supplyStory}>{copy.energy.story}</p>
+            <p className={styles.supplyNote}>{copy.energy.future}</p>
+          </section>
+
+          <p className={styles.supplyBoundary}>{copy.energy.separate}</p>
+
+          {preview && (
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => { setSupplyOpen(false); setDemoReward(key => key + 1); setLandedKey(key => key + 1); }}
+            >
+              {copy.energy.previewReward}
+            </button>
+          )}
         </div>
       </BottomSheet>
-      {demoReward && <EnergyReward amount={33} label={`${copy.preview} · ${energy.paid}`} />}
+      {demoReward > 0 && <EnergyReward key={demoReward} amount={ENERGY_PER_USD} label={copy.energy.rewardPaid} />}
+
       <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <BottomSheet

@@ -374,7 +374,7 @@ const french: TranslationDictionary = {
         },
         cookies: {
           body:
-            "Chaque mot que tu enregistres devient un cookie d'énergie. Le sac en haut à droite, c'est ma boutique : dépense-y tes cookies pour me trouver un nouveau look.",
+            "Enregistrer un mot pour la première fois te rapporte un cookie d'énergie, et réussir toutes les cartes d'une révision t'en rapporte trois de plus. Le sac en haut à droite mène à ma boutique en orbite autour de la Terre : dépense-y tes cookies pour me trouver un nouveau look.",
         },
         tryOn: {
           body:
@@ -2298,7 +2298,7 @@ const french: TranslationDictionary = {
     goBack: "Retour",
     cookiesOne: "{count} cookie d’énergie",
     cookiesOther: "{count} cookies d’énergie",
-    howEarned: "Chaque mot enregistré vaut un cookie d’énergie.",
+    howEarned: "Enregistrer un mot pour la première fois rapporte 1 cookie d'énergie ; réussir toutes les cartes d'une révision en rapporte 3 de plus.",
     stage: "Cabine d’essayage 3D de Yumi. Faites-la tourner en glissant ou avec les flèches.",
     hint: "Glissez pour 360° · Pincez pour zoomer",
     views: "Vues",
@@ -2333,7 +2333,7 @@ const french: TranslationDictionary = {
     failed: "Cela n’a pas abouti. Veuillez réessayer.",
     retry: "Réessayer",
     sky: {
-      label: "Ciel",
+      label: "Météo sur Terre",
       night: "Nuit",
       choices: {
         auto: "Suivre la météo",
@@ -2360,6 +2360,30 @@ const french: TranslationDictionary = {
         autumn: "Automne",
         winter: "Hiver",
       },
+    },
+    station: {
+      orbit: "Station 33 · Orbite",
+    },
+    energy: {
+      wallet: "Réserve d'énergie",
+      open: "Ouvrir la réserve d'énergie",
+      balance: "Cookies d'énergie disponibles",
+      fromLearning: "Mots et révisions",
+      fromSupply: "Achetés",
+      howTitle: "Comment en gagner",
+      ruleSave: "Enregistrer un mot pour la première fois",
+      ruleReview: "Réussir toutes les cartes d'une révision",
+      packsTitle: "Recharges",
+      rate: "1 $US = 33 cookies",
+      story: "Yumi a trois doigts à chaque main : avec les deux, elle compte jusqu'à 33. Dans sa façon de compter, 33 vaut un.",
+      soon: "Bientôt",
+      future: "Les recharges payantes ne sont pas encore ouvertes. Pour l'instant, les cookies viennent des mots enregistrés et révisés.",
+      separate: "Les cookies d'énergie servent uniquement à la boutique. Les cookies achetés n'ajoutent jamais de mots, de révisions ni de progrès d'apprentissage.",
+      rewardSave: "Récompense d'enregistrement",
+      rewardReview: "Récompense de révision",
+      rewardPaid: "Recharge d'énergie",
+      rewardMixed: "Cookies d'énergie reçus",
+      previewReward: "Aperçu de la récompense",
     },
     loading: "On compte les cookies…",
     toCosmic: "Passer en mode Cosmic",

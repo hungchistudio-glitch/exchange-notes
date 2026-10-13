@@ -53,12 +53,13 @@ export default function ShopStage({
   isCosmic,
   labels,
   corner,
-
+  scene,
+  celebrateKey,
 }: {
   outfit: YumiOutfit;
   isCosmic: boolean;
   labels: ShopStageLabels;
-  /** The sky behind her (lib/shop/atmosphere). */
+  /** The weather on Earth below her window (lib/shop/atmosphere). */
   scene: Scene;
   /** Changes once per purchase, for the sky's celebration. */
   celebrateKey: number;
@@ -72,7 +73,6 @@ export default function ShopStage({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef(0);
   /* A drag's horizontal speed, handed to the sky as wind. */
-  const gust = useRef(0);
   /* Until when she is being handled (or easing after it): full frame rate.
      At rest she only blinks, and every other frame is plenty. */
   const activeUntil = useRef(0);
@@ -230,7 +230,6 @@ export default function ShopStage({
       return;
     }
     handleRef.current?.pointerMove(event.clientX, event.clientY);
-    gust.current += (event.clientX - previous.x) * 4;
     if (!turned) setTurned(true);
     if (view) setView(null);
   }
@@ -273,7 +272,7 @@ export default function ShopStage({
 
   return (
     <div ref={boxRef} className={styles.stage}>
-      <OrbitalBackdrop />
+      <OrbitalBackdrop scene={scene} celebrateKey={celebrateKey} />
       {/* A boutique plinth: a spotlight from above, polished stone and a
           contact shadow under her (Chi, 2026-10-13). Her live reflection
           was dropped: copying each 3D frame back for it was the costliest

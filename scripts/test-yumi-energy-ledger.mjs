@@ -1,3 +1,8 @@
+// The energy ledger against a real Postgres (PGlite, in memory): opening
+// balances, +1 per first save, +3 per review round passed in full, spending,
+// and that nobody can mint cookies. Run with
+//   PGLITE_MODULE=<path to @electric-sql/pglite> node scripts/test-yumi-energy-ledger.mjs
+// (PGlite is not a dependency of the app; any local install will do.)
 const {PGlite}=await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
