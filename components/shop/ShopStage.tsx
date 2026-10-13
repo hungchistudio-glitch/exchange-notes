@@ -7,6 +7,7 @@ import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import type { Scene } from "@/lib/shop/atmosphere";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
+import { isScrolling } from "@/lib/shop/scrollQuiet";
 import { pauseThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import ShopAtmosphere from "./ShopAtmosphere";
@@ -69,8 +70,6 @@ export default function ShopStage({
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mirrorRef = useRef<HTMLCanvasElement>(null);
-  const plinthRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<YumiSceneHandle | null>(null);
   const zoomRef = useRef(1);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -115,57 +114,26 @@ export default function ShopStage({
       : new IntersectionObserver(entries => { onScreen = entries.some(e => e.isIntersecting); });
     observer?.observe(box);
 
+    /* The canvas's size, read when it changes rather than on every frame:
+       a layout read per frame during a scroll forces layout per frame. */
+    let size = { width: canvas.clientWidth, height: canvas.clientHeight };
     const loopOnce = (now: number) => {
       if (!handle) return;
-      const rect = canvas.getBoundingClientRect();
+      const rect = size;
       /* Sized by the shorter side, a little high of centre: a hat adds
          more above her than a charm hangs below. */
       const radius = Math.min(rect.width * 0.27, rect.height * 0.25) * zoomRef.current;
       handle.setScreenAnchor(rect.width * 0.5, rect.height * 0.47, radius);
       handle.frame(now);
-      reflect(rect);
     };
 
-    /* Her reflection in the plinth's polished top: the frame just drawn,
-       flipped about the stone's surface and faded into it. Drawn in the same
-       task as the render, while the WebGL buffer still holds the frame, at
-       half resolution — it is a soft thing. */
-    const mirror = mirrorRef.current;
-    const mirrorContext = mirror?.getContext("2d") ?? null;
-    const reflect = (rect: DOMRect) => {
-      const plinth = plinthRef.current;
-      if (!mirror || !mirrorContext || !plinth) return;
-      const scale = 0.5;
-      const w = Math.round(rect.width * scale);
-      const h = Math.round(rect.height * scale);
-      if (mirror.width !== w || mirror.height !== h) { mirror.width = w; mirror.height = h; }
-      const top = plinth.getBoundingClientRect();
-      const floor = (top.top - rect.top) + top.width / 8; // the top face's centre line
-      const rx = top.width * 0.42;
-      const ry = top.width / 8;
-      const cx = rect.width / 2;
-      const ctx = mirrorContext;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalCompositeOperation = "source-over";
-      ctx.clearRect(0, 0, w, h);
-      ctx.setTransform(scale, 0, 0, -scale, 0, 2 * floor * scale);
-      ctx.drawImage(canvas, 0, 0, rect.width, rect.height);
-      ctx.setTransform(scale, 0, 0, scale * (ry / rx), cx * scale, floor * scale);
-      ctx.globalCompositeOperation = "destination-in";
-      const fade = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
-      fade.addColorStop(0, "rgba(0,0,0,0.42)");
-      fade.addColorStop(0.7, "rgba(0,0,0,0.12)");
-      fade.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = fade;
-      ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
-    };
 
     let frame = 0;
     const loop = (now: number) => {
       if (cancelled || !handle) return;
       frame += 1;
       const busy = now < activeUntil.current;
-      if (onScreen && !document.hidden && (busy || frame % 2 === 0)) loopOnce(now);
+      if (onScreen && !document.hidden && !isScrolling(now) && (busy || frame % 2 === 0)) loopOnce(now);
       raf = requestAnimationFrame(loop);
     };
 
@@ -198,7 +166,10 @@ export default function ShopStage({
       })
       .catch(() => setFailed(true));
 
-    const onResize = () => handle?.resize();
+    const onResize = () => {
+      size = { width: canvas.clientWidth, height: canvas.clientHeight };
+      handle?.resize();
+    };
     window.addEventListener("resize", onResize);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onResize);
     resizeObserver?.observe(canvas);
@@ -306,15 +277,16 @@ export default function ShopStage({
   return (
     <div ref={boxRef} className={styles.stage} data-compact={compact ? "true" : "false"}>
       <ShopAtmosphere scene={scene} cosmic={isCosmic} gustRef={gust} celebrateKey={celebrateKey} />
-      {/* A boutique plinth: a spotlight from above, polished stone with her
-          reflection in it, and a contact shadow under her (Chi, 2026-10-13). */}
+      {/* A boutique plinth: a spotlight from above, polished stone and a
+          contact shadow under her (Chi, 2026-10-13). Her live reflection
+          was dropped: copying each 3D frame back for it was the costliest
+          thing an iPhone did here. */}
       <div className={styles.spotlight} aria-hidden="true" />
-      <div ref={plinthRef} className={styles.pedestal} aria-hidden="true">
+      <div className={styles.pedestal} aria-hidden="true">
         <span className={styles.plinthSide} />
         <span className={styles.plinthTop} />
         <span className={styles.contactShadow} />
       </div>
-      <canvas ref={mirrorRef} className={styles.reflection} aria-hidden="true" />
 
       {!live && (
         <div className={styles.stageFallback} aria-hidden={!failed}>

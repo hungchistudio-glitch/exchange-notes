@@ -37,6 +37,7 @@ import {
   subscribeToSceneChoice,
   useShopWeather,
 } from "@/lib/shop/useShopWeather";
+import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
@@ -160,6 +161,7 @@ export default function YumiShop({
     /* Hysteresis, so the stand shrinking (which moves the catalogue up) can
        never bounce it back open. */
     const onScroll = () => {
+      markScrolling();
       // Side by side, the stand has its own column and never needs to shrink.
       if (window.innerWidth >= 900) { setCompact(false); return; }
       const top = read();

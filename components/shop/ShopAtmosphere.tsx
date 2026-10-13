@@ -3,6 +3,7 @@
 import { useEffect, useRef, type CSSProperties, type MutableRefObject } from "react";
 
 import type { Scene, Sky } from "@/lib/shop/atmosphere";
+import { isScrolling } from "@/lib/shop/scrollQuiet";
 
 import styles from "./ShopAtmosphere.module.css";
 
@@ -472,7 +473,14 @@ export default function ShopAtmosphere({
         idle = window.setTimeout(() => { if (!raf) raf = requestAnimationFrame(loop); }, 500);
         return;
       }
-      const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
+      /* Thirty frames a second: falling leaves and rain read the same, and
+         on a phone it halves what the sky costs beside the 3D stand. Held
+         entirely while the catalogue scrolls. */
+      if (isScrolling(now) || (last && now - last < 30)) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
+      const dt = last ? Math.min((now - last) / 1000, 1 / 15) : 1 / 30;
       last = now;
       draw(dt);
       raf = requestAnimationFrame(loop);
