@@ -37,6 +37,7 @@ import {
   subscribeToSceneChoice,
   useShopWeather,
 } from "@/lib/shop/useShopWeather";
+import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
@@ -125,6 +126,47 @@ export default function YumiShop({
           ? sky.night
           : sky.seasons[seasonAt(new Date(quarter))];
   const pageRef = useRef<HTMLDivElement>(null);
+  const signRef = useRef<HTMLHeadingElement>(null);
+
+  /* The signboard swings in a breath of wind (Chi, 2026-10-13): once on
+     arrival, when the page is scrolled, and now and then on its own. A
+     transform on its own layer, a damped swing about the rods — nothing the
+     stand or the scroll has to wait for. */
+  useEffect(() => {
+    const sign = signRef.current;
+    if (!sign || typeof sign.animate !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let current: Animation | null = null;
+    let lastSwing = 0;
+    const swing = (strength: number) => {
+      const now = performance.now();
+      if (now - lastSwing < 1400) return;
+      lastSwing = now;
+      current?.cancel();
+      const a = 3.2 * strength;
+      current = sign.animate(
+        [-1.2, -1.2 + a, -1.2 - a * 0.6, -1.2 + a * 0.32, -1.2 - a * 0.14, -1.2]
+          .map(deg => ({ transform: `rotate(${deg}deg)` })),
+        { duration: 1900, easing: "ease-in-out" },
+      );
+    };
+    const arrive = window.setTimeout(() => swing(1), 350);
+    let breeze = 0;
+    const nextBreeze = () => {
+      breeze = window.setTimeout(() => { swing(0.45 + Math.random() * 0.35); nextBreeze(); }, 9000 + Math.random() * 12000);
+    };
+    nextBreeze();
+    const scroller: HTMLElement | Window =
+      document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
+    const onScroll = () => swing(0.55);
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(arrive);
+      window.clearTimeout(breeze);
+      scroller.removeEventListener("scroll", onScroll);
+      current?.cancel();
+    };
+  }, []);
 
   // ----------------------------------------------------------- loading
   useEffect(() => {
@@ -160,6 +202,7 @@ export default function YumiShop({
     /* Hysteresis, so the stand shrinking (which moves the catalogue up) can
        never bounce it back open. */
     const onScroll = () => {
+      markScrolling();
       // Side by side, the stand has its own column and never needs to shrink.
       if (window.innerWidth >= 900) { setCompact(false); return; }
       const top = read();
@@ -281,7 +324,14 @@ export default function YumiShop({
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
           </button>
-          <h1 className={styles.title}>{copy.title}</h1>
+          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"): an
+              enamel plaque hung from two brass rods, the name in gilt. */}
+          <div className={styles.signArea}>
+            <h1 ref={signRef} className={styles.sign}>
+              <span className={styles.signHooks} aria-hidden="true" />
+              <span className={styles.signName}>{copy.title}</span>
+            </h1>
+          </div>
           <div className={styles.tools}>
             <button
               type="button"

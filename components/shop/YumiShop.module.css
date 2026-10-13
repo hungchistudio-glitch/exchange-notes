@@ -109,17 +109,77 @@
   padding: 0 10px;
 }
 
-.title {
+/* ------------------------------------------------------ the signboard */
+
+.signArea {
   flex: 1;
   min-width: 0;
-  margin: 0;
+  display: flex;
+}
+
+/* Deep sage enamel with a brass double rule and gilt letters in Standard;
+   black lacquer with a warm gold glow in Cosmic. */
+.sign {
+  --sign-face: linear-gradient(180deg, #5b6e52, #44553d);
+  --sign-rule: #c9a55a;
+  --sign-ink: linear-gradient(180deg, #fbe7b0, #d6ad5c 55%, #b98a3a);
+  --sign-glow: #0000;
+  --sign-shadow: 0 6px 12px -6px #2d3a2873, 0 1px 0 #ffffff80 inset;
+
+  position: relative;
+  margin: 8px 0 0;
+  max-width: 100%;
+  padding: 5px 14px 6px;
+  border-radius: 8px;
+  background: var(--sign-face);
+  box-shadow: var(--sign-shadow), inset 0 0 0 1.5px var(--sign-rule), inset 0 0 0 3.5px #0000, inset 0 0 0 4.5px #c9a55a73;
   font-family: var(--shop-title-font);
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
   white-space: nowrap;
+  transform: rotate(-1.2deg);
+  transform-origin: 50% -10px;
+  will-change: transform;
+}
+
+:global(html[data-interface-mode="yumi-cosmic"]) .sign {
+  --sign-face: linear-gradient(180deg, #1f1d24, #111015);
+  --sign-rule: #e8ce8c;
+  --sign-ink: linear-gradient(180deg, #fff3cf, #e8ce8c 60%, #c9a55a);
+  --sign-glow: #e8ce8c66;
+  --sign-shadow: 0 8px 18px -8px #000c, 0 1px 0 #ffffff14 inset;
+}
+
+.signName {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: var(--sign-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px var(--sign-glow));
+}
+
+/* Two brass rods it hangs from. */
+.signHooks::before,
+.signHooks::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #e3c27c, #9c7a3c);
+}
+
+.signHooks::before { left: 18%; }
+.signHooks::after { right: 18%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sign { transform: none; }
 }
 
 .tools {
@@ -208,7 +268,8 @@
   background: var(--shop-stage);
   box-shadow: var(--shop-card-shadow);
   overflow: hidden;
-  transition: height 220ms ease;
+  /* No height transition: animating it resized the 3D canvas, and so
+     reallocated its buffers, on every frame of the change. */
 }
 
 .stage[data-compact="true"] {
@@ -267,17 +328,7 @@
   background: radial-gradient(closest-side, #0000004d, #00000000);
 }
 
-.reflection {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
 .stage[data-compact="true"] .pedestal,
-.stage[data-compact="true"] .reflection,
 .stage[data-compact="true"] .spotlight {
   opacity: 0;
 }
