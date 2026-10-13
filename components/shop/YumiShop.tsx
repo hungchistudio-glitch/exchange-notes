@@ -283,7 +283,14 @@ export default function YumiShop({
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
           </button>
-          <h1 className={styles.title}>{copy.title}</h1>
+          {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"): an
+              enamel plaque hung from two brass rods, the name in gilt. */}
+          <div className={styles.signArea}>
+            <h1 className={styles.sign}>
+              <span className={styles.signHooks} aria-hidden="true" />
+              <span className={styles.signName}>{copy.title}</span>
+            </h1>
+          </div>
           <div className={styles.tools}>
             <button
               type="button"
