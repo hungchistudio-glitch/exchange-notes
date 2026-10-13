@@ -154,11 +154,11 @@ export default function ShopAtmosphere({
     }
 
     function resize() {
-      const rect = box!.getBoundingClientRect();
+      // Its size in layout, not on screen: the stand scales as one picture as the catalogue scrolls.
       // Soft shapes on a soft sky: 1.25 device pixels is indistinguishable and cheaper.
       const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
-      const w = Math.max(1, Math.round(rect.width));
-      const h = Math.max(1, Math.round(rect.height));
+      const w = Math.max(1, box!.offsetWidth);
+      const h = Math.max(1, box!.offsetHeight);
       if (w === width && h === height) return;
       const first = width === 0;
       width = w;

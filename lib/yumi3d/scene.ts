@@ -430,8 +430,27 @@ export function createYumiScene(
   // One layout read per rendered frame, shared by projection and pose math.
   // Reading again after renderer/style writes forces layout on iOS.
   let measuredRect = canvas.getBoundingClientRect();
+  /* The canvas's own size, before any transform on its ancestors. The shop
+     scales its whole stand as the catalogue scrolls (Chi, 2026-10-13); the
+     on-screen rect shrinks with it, but the drawing buffer and Yumi's place
+     in it must not, or every frame of the scale would resize the renderer.
+     Only the stand: everywhere else anchors arrive in on-screen pixels.
+     Untransformed, the two agree and the rect's fractions are kept. */
+  let layoutSize: { width: number; height: number } = measuredRect;
+  const settleLayout = () => {
+    if (!options.inspect) { layoutSize = measuredRect; return; }
+    const width = canvas.offsetWidth;
+    const height = canvas.offsetHeight;
+    layoutSize = Math.abs(measuredRect.width - width) < 1 && Math.abs(measuredRect.height - height) < 1
+      ? measuredRect
+      : { width, height };
+  };
+  settleLayout();
+  /** On screen: for mapping a pointer. */
   const canvasRect = () => measuredRect;
-  const measureCanvas = () => { measuredRect = canvas.getBoundingClientRect(); };
+  /** In layout: for sizes, anchors and the renderer. */
+  const canvasSize = () => layoutSize;
+  const measureCanvas = () => { measuredRect = canvas.getBoundingClientRect(); settleLayout(); };
 
   function toNdc(clientX: number, clientY: number) {
     const rect = canvasRect();
@@ -569,7 +588,7 @@ export function createYumiScene(
   }
 
   function project(point: THREE.Vector3) {
-    const rect = canvasRect();
+    const rect = canvasSize();
     worldScratch.copy(point);
     model.localToWorld(worldScratch);
     worldScratch.project(camera);
@@ -581,7 +600,7 @@ export function createYumiScene(
 
   /** World units per CSS pixel on the z = 0 plane the model sits in. */
   function unitsPerPixel() {
-    const rect = canvasRect();
+    const rect = canvasSize();
     if (rect.height === 0) return 0.01;
     const visibleHeight = 2 * Math.tan((camera.fov * Math.PI) / 360) * camera.position.z;
     return visibleHeight / rect.height;
@@ -592,7 +611,7 @@ export function createYumiScene(
   const SHELL_OUTER = SHELL_RADIUS + TUBE_RADIUS;
 
   function applyAnchor() {
-    const rect = canvasRect();
+    const rect = canvasSize();
     const upp = unitsPerPixel();
     model.position.x = (anchorNow.x - rect.width / 2) * upp;
     model.position.y = -(anchorNow.y - rect.height / 2) * upp;
@@ -603,7 +622,7 @@ export function createYumiScene(
   let renderedHeight = 0;
   function resize() {
     measureCanvas();
-    const rect = canvasRect();
+    const rect = canvasSize();
     if (rect.width === 0 || rect.height === 0) return;
     if (rect.width === renderedWidth && rect.height === renderedHeight) return;
     renderedWidth = rect.width;

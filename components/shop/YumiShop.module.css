@@ -8,8 +8,9 @@
   board did. Everything reads through the --shop-* tokens below, so the two
   modes differ in one place.
 
-  Painted once: no backdrop-filter, nothing fixed behind the scroll, and the
-  only motion is the stand's height and opacity on the hint and toast.
+  Painted once: no backdrop-filter, nothing fixed behind the scroll. The
+  only motion is the stand's scale as the catalogue scrolls and opacity on
+  the keys, hint and toast, all of it work for the compositor.
 */
 
 .page {
@@ -47,9 +48,6 @@
   min-height: 100dvh;
   background: var(--shop-ground);
   color: var(--shop-ink);
-  /* The stand shrinks as the catalogue scrolls; anchoring would answer by
-     scrolling back and open it again. */
-  overflow-anchor: none;
   padding-bottom: calc(150px + env(safe-area-inset-bottom));
 }
 
@@ -94,11 +92,22 @@
 /* ------------------------------------------------------------- the top */
 
 .top {
+  --shrink: 0;
+  --stage-height: clamp(230px, 40svh, 400px);
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--shop-ground);
+  /* Paper behind the header and the shrunk stand, softening at its foot;
+     below that the catalogue shows, and taps there reach it. The cards
+     only pass under the band once the stand has finished shrinking. */
+  background: linear-gradient(var(--shop-ground) calc(100% - 14px), #0000) top /
+    100% calc(env(safe-area-inset-top) + 58px + var(--stage-height) * 0.6 + 24px) no-repeat;
   padding-top: env(safe-area-inset-top);
+  pointer-events: none;
+}
+
+.top > * {
+  pointer-events: auto;
 }
 
 .header {
@@ -262,18 +271,82 @@
   position: relative;
   isolation: isolate;
   margin: 2px 12px 8px;
-  height: clamp(230px, 40svh, 400px);
+  height: var(--stage-height);
   border-radius: 28px;
   border: 1px solid var(--shop-line);
   background: var(--shop-stage);
   box-shadow: var(--shop-card-shadow);
-  overflow: hidden;
-  /* No height transition: animating it resized the 3D canvas, and so
-     reallocated its buffers, on every frame of the change. */
+  /* Clip, not hidden: hidden would make the stand its keys' nearest
+     scroller, and their fade below would follow a scroll that never moves. */
+  overflow: clip;
+  /* As the catalogue scrolls the whole stand shrinks as one picture, from
+     its top, to 60% (Chi, 2026-10-13: "原比例縮放"). A scale, never a new
+     height: a new height resized the 3D canvas, and so reallocated its
+     buffers, and put Yumi somewhere new in it. Here the canvas keeps its
+     size and the compositor does the rest. Its bottom edge keeps pace with
+     the cards under it. Without scroll-driven animations, --shrink is set
+     from the scroll (YumiShop.tsx). */
+  transform-origin: 50% 0;
+  transform: scale(calc(1 - 0.4 * var(--shrink)));
+  will-change: transform;
 }
 
-.stage[data-compact="true"] {
-  height: 172px;
+/* What the shrunk stand keeps is Yumi: its keys and the engraved hint fade
+   over the first half of the way and stop taking taps. */
+.corner,
+.zoomKeys,
+.views,
+.resetKey {
+  opacity: calc(1 - 2 * var(--shrink));
+}
+
+.hint {
+  filter: opacity(calc(1 - 2 * var(--shrink)));
+}
+
+.top[data-shrunk="true"] .corner,
+.top[data-shrunk="true"] .zoomKeys,
+.top[data-shrunk="true"] .views,
+.top[data-shrunk="true"] .resetKey {
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .stage {
+    animation: stand-shrink linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 calc(var(--stage-height) * 0.4);
+  }
+
+  .corner,
+  .zoomKeys,
+  .views,
+  .resetKey {
+    animation: stand-keys-fade linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 calc(var(--stage-height) * 0.2);
+  }
+
+  .hint {
+    animation: stand-hint-fade linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 calc(var(--stage-height) * 0.2);
+  }
+}
+
+@keyframes stand-shrink {
+  from { transform: scale(1); }
+  to { transform: scale(0.6); }
+}
+
+@keyframes stand-keys-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes stand-hint-fade {
+  from { filter: opacity(1); }
+  to { filter: opacity(0); }
 }
 
 /* ------------------------------------------------------- the plinth */
@@ -326,11 +399,6 @@
   height: 26%;
   border-radius: 50%;
   background: radial-gradient(closest-side, #0000004d, #00000000);
-}
-
-.stage[data-compact="true"] .pedestal,
-.stage[data-compact="true"] .spotlight {
-  opacity: 0;
 }
 
 .stageCanvas {
@@ -552,16 +620,6 @@
 
 .hint[data-hidden="true"] {
   opacity: 0;
-}
-
-.stage[data-compact="true"] .views,
-.stage[data-compact="true"] .hint,
-.stage[data-compact="true"] .resetKey {
-  display: none;
-}
-
-.stage[data-compact="true"] .zoomKeys {
-  flex-direction: row;
 }
 
 /* --------------------------------------------------------- the catalogue */
@@ -1041,6 +1099,19 @@
     margin: 8px 0 0;
     height: min(640px, calc(100dvh - 68px - 220px));
     min-height: 360px;
+    transform: none;
+    animation: none;
+  }
+
+  .corner,
+  .zoomKeys,
+  .views,
+  .resetKey,
+  .hint {
+    opacity: 1;
+    filter: none;
+    animation: none;
+    pointer-events: auto;
   }
 
   .catalog {
