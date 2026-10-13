@@ -60,6 +60,7 @@ vi.mock("@/lib/review/getTodaysReview", () => {
 
 vi.mock("@/lib/review/saveReviewResult", () => ({
   saveReviewResult: mocks.saveReviewResult,
+  beginReviewRound: vi.fn().mockResolvedValue(undefined),
 }));
 
 import ReviewPage from "@/app/(protected)/review/page";
@@ -77,7 +78,7 @@ describe("review persistence failures", () => {
     render(<ReviewPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: /Start review/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Reveal answer/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Reveal answer/i }));
     fireEvent.click(screen.getByRole("button", { name: /Good Remembered/i }));
 
     expect(await screen.findByText("Unable to save this review.")).toBeInTheDocument();

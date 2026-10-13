@@ -10,7 +10,7 @@ import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
 import { isScrolling } from "@/lib/shop/scrollQuiet";
 import { pauseThumbnails } from "@/lib/yumi3d/thumbnails";
 
-import ShopAtmosphere from "./ShopAtmosphere";
+import OrbitalBackdrop from "./OrbitalBackdrop";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -53,8 +53,7 @@ export default function ShopStage({
   isCosmic,
   labels,
   corner,
-  scene,
-  celebrateKey,
+
 }: {
   outfit: YumiOutfit;
   isCosmic: boolean;
@@ -274,7 +273,7 @@ export default function ShopStage({
 
   return (
     <div ref={boxRef} className={styles.stage}>
-      <ShopAtmosphere scene={scene} cosmic={isCosmic} gustRef={gust} celebrateKey={celebrateKey} />
+      <OrbitalBackdrop />
       {/* A boutique plinth: a spotlight from above, polished stone and a
           contact shadow under her (Chi, 2026-10-13). Her live reflection
           was dropped: copying each 3D frame back for it was the costliest

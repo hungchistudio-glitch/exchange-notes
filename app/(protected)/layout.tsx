@@ -1,3 +1,4 @@
+import EnergyRewardObserver from "@/components/shop/EnergyRewardObserver";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
@@ -170,6 +171,7 @@ export default async function ProtectedLayout({
           the offline mirror to every route rather than two of them.
         */}
         <VocabularyProvider>
+          <EnergyRewardObserver key={user.id} userId={user.id} />
           <LexiconSearchProvider>
             {/*
               One physical viewport, with one deliberately scrollable layer.

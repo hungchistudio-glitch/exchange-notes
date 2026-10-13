@@ -80,6 +80,9 @@ export function createSupabaseWallet(supabase: SupabaseClient): ShopWallet {
     async buy(itemId) {
       const data = (await call("buy_yumi_item", { p_item_id: itemId })) as Record<string, unknown> | null;
       const status = data?.status;
+      if (status !== "bought" && status !== "owned" && status !== "insufficient") {
+        throw new Error("Invalid shop purchase result.");
+      }
       return {
         status: status === "owned" || status === "insufficient" ? status : "bought",
         state: readState(data?.state),

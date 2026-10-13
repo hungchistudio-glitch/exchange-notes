@@ -3,7 +3,7 @@
 import { ArrowLeft, Check, Globe, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
 import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
@@ -25,24 +25,15 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
-import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
-import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
-import {
-  getQuarterHour,
-  getSceneChoice,
-  getServerQuarterHour,
-  getServerSceneChoice,
-  setSceneChoice,
-  subscribeToQuarterHour,
-  subscribeToSceneChoice,
-  useShopWeather,
-} from "@/lib/shop/useShopWeather";
+import { QUIET_SCENE } from "@/lib/shop/atmosphere";
 import { markScrolling } from "@/lib/shop/scrollQuiet";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
 
 import EnergyCookie from "./EnergyCookie";
-import ShopScenePicker from "./ShopScenePicker";
+import energyCopy, { ENERGY_PER_USD } from "@/lib/shop/energyCopy";
+import EnergyReward from "./EnergyReward";
+import { ENERGY_REFRESH_EVENT } from "@/lib/shop/energyEvents";
 import ShopStage from "./ShopStage";
 import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
@@ -91,6 +82,9 @@ export default function YumiShop({
 }) {
   const { t, language, locale } = useTranslation();
   const copy = t.shop;
+  const energy = energyCopy[language];
+  const [energyOpen, setEnergyOpen] = useState(false);
+  const [demoReward, setDemoReward] = useState(false);
   const router = useRouter();
   const online = useOnline();
 
@@ -107,69 +101,20 @@ export default function YumiShop({
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [languageOpen, setLanguageOpen] = useState(false);
 
-  // ------------------------------------------------------------ the sky
-  const { weather } = useShopWeather();
-  const sceneChoice = useSyncExternalStore(subscribeToSceneChoice, getSceneChoice, getServerSceneChoice);
-  /* The hour moves the sky (morning, day, dusk, night). Null on the server,
-     which does not know the reader's clock: a quiet sky until it does. */
-  const quarter = useSyncExternalStore(subscribeToQuarterHour, getQuarterHour, getServerQuarterHour);
-  const scene = useMemo(
-    () => (quarter === null ? QUIET_SCENE : sceneFor(sceneChoice, weather, new Date(quarter))),
-    [sceneChoice, weather, quarter],
-  );
-  const sky = t.shop.sky;
-  const skyNow = sceneChoice !== "auto"
-    ? sky.choices[sceneChoice]
-    : weather
-      ? `${sky.conditions[weather.condition]}${weather.temperature === null ? "" : ` ${formatTemperature(weather.temperature, getDeviceTimeZone())}`}`
-      : quarter === null
-        ? sky.label
-        : dayPartAt(new Date(quarter)) === "night"
-          ? sky.night
-          : sky.seasons[seasonAt(new Date(quarter))];
-  const pageRef = useRef<HTMLDivElement>(null);
+  const scene = QUIET_SCENE;
   const topRef = useRef<HTMLDivElement>(null);
-  const signRef = useRef<HTMLHeadingElement>(null);
-
-  /* The signboard swings in a breath of wind (Chi, 2026-10-13): once on
-     arrival, when the page is scrolled, and now and then on its own. A
-     transform on its own layer, a damped swing about the rods — nothing the
-     stand or the scroll has to wait for. */
   useEffect(() => {
-    const sign = signRef.current;
-    if (!sign || typeof sign.animate !== "function") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let current: Animation | null = null;
-    let lastSwing = 0;
-    const swing = (strength: number) => {
-      const now = performance.now();
-      if (now - lastSwing < 1400) return;
-      lastSwing = now;
-      current?.cancel();
-      const a = 3.2 * strength;
-      current = sign.animate(
-        [-1.2, -1.2 + a, -1.2 - a * 0.6, -1.2 + a * 0.32, -1.2 - a * 0.14, -1.2]
-          .map(deg => ({ transform: `rotate(${deg}deg)` })),
-        { duration: 1900, easing: "ease-in-out" },
-      );
-    };
-    const arrive = window.setTimeout(() => swing(1), 350);
-    let breeze = 0;
-    const nextBreeze = () => {
-      breeze = window.setTimeout(() => { swing(0.45 + Math.random() * 0.35); nextBreeze(); }, 9000 + Math.random() * 12000);
-    };
-    nextBreeze();
-    const scroller: HTMLElement | Window =
-      document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
-    const onScroll = () => swing(0.55);
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.clearTimeout(arrive);
-      window.clearTimeout(breeze);
-      scroller.removeEventListener("scroll", onScroll);
-      current?.cancel();
-    };
-  }, []);
+    if (!demoReward) return;
+    const timer = setTimeout(() => setDemoReward(false), 2400);
+    return () => clearTimeout(timer);
+  }, [demoReward]);
+  useEffect(() => {
+    if (preview) return;
+    let cancelled = false;
+    const refresh = () => { void wallet.load().then(next => { if (!cancelled) setState(next); }).catch(() => {}); };
+    window.addEventListener(ENERGY_REFRESH_EVENT, refresh);
+    return () => { cancelled = true; window.removeEventListener(ENERGY_REFRESH_EVENT, refresh); };
+  }, [wallet, preview]);
 
   // ----------------------------------------------------------- loading
   useEffect(() => {
@@ -339,7 +284,7 @@ export default function YumiShop({
           : null;
 
   return (
-    <div ref={pageRef} className={styles.page}>
+    <div className={styles.page}>
       <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
@@ -348,9 +293,9 @@ export default function YumiShop({
           {/* The shop's signboard (Chi, 2026-10-13: "商店招牌的設計感"): an
               enamel plaque hung from two brass rods, the name in gilt. */}
           <div className={styles.signArea}>
-            <h1 ref={signRef} className={styles.sign}>
-              <span className={styles.signHooks} aria-hidden="true" />
+            <h1 className={styles.sign} aria-label={copy.title}>
               <span className={styles.signName}>{copy.title}</span>
+              <span className={styles.stationLabel}>{energy.orbit}</span>
             </h1>
           </div>
           <div className={styles.tools}>
@@ -363,10 +308,10 @@ export default function YumiShop({
               <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
               <span aria-hidden="true">{getInterfaceLanguageMeta(language).badge}</span>
             </button>
-            <span className={styles.balance} title={copy.howEarned} aria-label={`${cookies(state.balance)}. ${copy.howEarned}`}>
+            <button type="button" className={styles.balance} onClick={() => setEnergyOpen(true)} aria-label={`${energy.wallet}: ${cookies(state.balance)}`}>
               <EnergyCookie className={styles.balanceCookie} />
               <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
-            </span>
+            </button>
           </div>
         </header>
 
@@ -377,14 +322,6 @@ export default function YumiShop({
           celebrateKey={celebrateKey}
           corner={
             <>
-              <ShopScenePicker
-                scene={scene}
-                choice={sceneChoice}
-                current={skyNow}
-                names={sky.choices}
-                label={sky.label}
-                onChoose={setSceneChoice}
-              />
               <button
                 type="button"
                 className={styles.roundKey}
@@ -472,7 +409,7 @@ export default function YumiShop({
           </ul>
         )}
 
-        <p className={styles.footnote}>{copy.howEarned}</p>
+        <p className={styles.footnote}>{energy.rule}</p>
       </section>
 
       <footer className={styles.bar}>
@@ -521,6 +458,18 @@ export default function YumiShop({
         )}
       </footer>
 
+      <BottomSheet open={energyOpen} onClose={() => setEnergyOpen(false)} title={energy.wallet}>
+        <div className={styles.energyPanel}>
+          <p>{energy.balance}</p>
+          <div className={styles.energyTotal}><EnergyCookie />{state.balance.toLocaleString(locale)}</div>
+          <p>{energy.rule}</p>
+          <div className={styles.energyRate}><strong>{energy.rate}</strong><span>{energy.story}</span><div className={styles.energyPacks}>{[1,2,3].map(usd => <span key={usd}><b>{usd * ENERGY_PER_USD}</b><small>US${usd}</small></span>)}</div></div>
+          <p className={styles.energySeparation}>{energy.separate}</p>
+          <p>{energy.future}</p>
+          {preview && <button type="button" className={styles.primary} onClick={() => {setEnergyOpen(false);setDemoReward(true);}}>{energy.preview} +33</button>}
+        </div>
+      </BottomSheet>
+      {demoReward && <EnergyReward amount={33} label={`${copy.preview} · ${energy.paid}`} />}
       <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <BottomSheet

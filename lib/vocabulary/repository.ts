@@ -1,3 +1,4 @@
+import { refreshEnergyRewards } from "@/lib/shop/energyEvents";
 import { reportNetworkFailure, reportNetworkSuccess } from "@/hooks/useOnline";
 import type { ByLanguage, LanguageCode } from "@/lib/languages";
 import {
@@ -158,6 +159,7 @@ export async function insertVocabulary(
 
     reportNetworkSuccess();
 
+    refreshEnergyRewards();
     return data;
   } catch (error) {
     if (!isUnreachable(error)) throw error;
