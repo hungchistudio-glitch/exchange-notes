@@ -141,6 +141,7 @@
   white-space: nowrap;
   transform: rotate(-1.2deg);
   transform-origin: 50% -10px;
+  will-change: transform;
 }
 
 :global(html[data-interface-mode="yumi-cosmic"]) .sign {
