@@ -17,7 +17,7 @@ await db.exec(`insert into vocabulary_items(user_id,word,word_language) select a
 select public.buy_yumi_item('monocle');`);
 const state=async()=> (await db.query('select public.get_yumi_wardrobe() as s')).rows[0].s;
 assert.equal((await state()).balance,20);
-await db.exec(await fs.readFile(`${root}/supabase/migrations/20261013151005_yumi_energy_ledger.sql`,'utf8'));
+await db.exec(await fs.readFile(`${root}/supabase/migrations/20261013160810_yumi_energy_ledger.sql`,'utf8'));
 assert.equal((await state()).balance,20);assert.deepEqual((await state()).owned,['monocle']);
 await db.exec(`delete from vocabulary_items where word='old1'`);assert.equal((await state()).balance,20);
 await db.exec(`insert into vocabulary_items(user_id,word,word_language) values(auth.uid(),' old1 ','en')`);assert.equal((await state()).balance,20);

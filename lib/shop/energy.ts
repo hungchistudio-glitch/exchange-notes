@@ -2,7 +2,7 @@
    Energy cookies: the shop's own currency
 
    Chi (2026-10-13) set the rules, and they are kept on the server in one
-   ledger (supabase/migrations/20261013151005_yumi_energy_ledger.sql):
+   ledger (supabase/migrations/20261013160810_yumi_energy_ledger.sql):
 
      +1   the first time a word is saved (deleting it and saving it again
           does not pay twice);
