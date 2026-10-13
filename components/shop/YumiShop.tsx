@@ -70,6 +70,9 @@ import styles from "./YumiShop.module.css";
 
 const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "small", "owned"];
 
+/** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
+const STAND_SMALLEST = 0.6;
+
 const EMPTY_STATE: WardrobeState = { earned: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
 
@@ -100,7 +103,6 @@ export default function YumiShop({
   const [confirming, setConfirming] = useState<ShopItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [compact, setCompact] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [languageOpen, setLanguageOpen] = useState(false);
@@ -126,6 +128,7 @@ export default function YumiShop({
           ? sky.night
           : sky.seasons[seasonAt(new Date(quarter))];
   const pageRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
   const signRef = useRef<HTMLHeadingElement>(null);
 
   /* The signboard swings in a breath of wind (Chi, 2026-10-13): once on
@@ -194,22 +197,40 @@ export default function YumiShop({
 
 
   // ------------------------------------------------- the stand shrinking
+  /* The stand shrinks as one picture (Chi, 2026-10-13: "原比例縮放"): a
+     scale from its top, following the finger down to 60%, while its 3D
+     canvas keeps its size. Where the browser can tie that to the scroll
+     itself (CSS scroll-driven animations, YumiShop.module.css) this only
+     says when the faded keys stop taking taps; elsewhere it also sets the
+     scale, once a frame. Nothing here re-renders. */
   useEffect(() => {
+    const top = topRef.current;
+    if (!top) return;
     // The app's one scrolling viewport (AppViewport), or the window on a review screen.
     const scroller: HTMLElement | Window =
       document.querySelector<HTMLElement>("[data-app-scroll-viewport]") ?? window;
     const read = () => (scroller instanceof Window ? scroller.scrollY : scroller.scrollTop);
-    /* Hysteresis, so the stand shrinking (which moves the catalogue up) can
-       never bounce it back open. */
+    const tied = typeof CSS !== "undefined" && CSS.supports("animation-timeline: scroll()");
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      const stage = top.querySelector<HTMLElement>(`.${styles.stage}`);
+      // Side by side, the stand has its own column and never shrinks.
+      const span = window.innerWidth >= 900 || !stage ? 0 : stage.offsetHeight * (1 - STAND_SMALLEST);
+      const shrink = span > 0 ? Math.min(1, Math.max(0, read() / span)) : 0;
+      if (!tied) top.style.setProperty("--shrink", shrink.toFixed(3));
+      top.dataset.shrunk = shrink > 0.5 ? "true" : "false";
+    };
     const onScroll = () => {
       markScrolling();
-      // Side by side, the stand has its own column and never needs to shrink.
-      if (window.innerWidth >= 900) { setCompact(false); return; }
-      const top = read();
-      setCompact(previous => (previous ? top > 8 : top > 120));
+      if (!frame) frame = requestAnimationFrame(apply);
     };
+    apply();
     scroller.addEventListener("scroll", onScroll, { passive: true });
-    return () => scroller.removeEventListener("scroll", onScroll);
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -318,8 +339,8 @@ export default function YumiShop({
           : null;
 
   return (
-    <div ref={pageRef} className={styles.page} data-compact={compact ? "true" : "false"}>
-      <div className={styles.top}>
+    <div ref={pageRef} className={styles.page}>
+      <div ref={topRef} className={styles.top} data-shrunk="false">
         <header className={styles.header}>
           <button type="button" className={styles.iconKey} aria-label={copy.goBack} onClick={goBack}>
             <ArrowLeft size={20} strokeWidth={1.9} aria-hidden="true" />
@@ -352,7 +373,6 @@ export default function YumiShop({
         <ShopStage
           outfit={draft}
           isCosmic={isCosmic}
-          compact={compact}
           scene={scene}
           celebrateKey={celebrateKey}
           corner={

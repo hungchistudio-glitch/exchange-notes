@@ -51,7 +51,6 @@ const ZOOM_MAX = 1.8;
 export default function ShopStage({
   outfit,
   isCosmic,
-  compact,
   labels,
   corner,
   scene,
@@ -59,7 +58,6 @@ export default function ShopStage({
 }: {
   outfit: YumiOutfit;
   isCosmic: boolean;
-  compact: boolean;
   labels: ShopStageLabels;
   /** The sky behind her (lib/shop/atmosphere). */
   scene: Scene;
@@ -275,7 +273,7 @@ export default function ShopStage({
   }
 
   return (
-    <div ref={boxRef} className={styles.stage} data-compact={compact ? "true" : "false"}>
+    <div ref={boxRef} className={styles.stage}>
       <ShopAtmosphere scene={scene} cosmic={isCosmic} gustRef={gust} celebrateKey={celebrateKey} />
       {/* A boutique plinth: a spotlight from above, polished stone and a
           contact shadow under her (Chi, 2026-10-13). Her live reflection
