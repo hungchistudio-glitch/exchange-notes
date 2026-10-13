@@ -8,31 +8,64 @@ import { makeStudioEnvironment } from "./scene";
 /* =========================================================
    The catalogue's pictures, rendered here rather than shipped
 
-   A card per piece cannot each have its own WebGL scene — sixty contexts is
-   more than a phone will give a page — and a static image per piece would be
-   sixty files to keep in step with the code that builds the piece. So each
-   picture is rendered once, from the same builder the stand uses, on one
-   small borrowed canvas that is released as soon as the batch is done, and
-   kept as an object URL for the rest of the session.
+   A card per piece cannot each have its own WebGL scene — seventy contexts
+   is more than a phone will give a page — and a static image per piece would
+   be seventy files to keep in step with the code that builds the piece. So
+   each picture is rendered from the same builder the stand uses, on one small
+   borrowed canvas released as soon as the batch is done.
 
-   Rendered one per frame, so opening the shop never stalls on sixty.
+   Rendering is the expensive part, so normally it is not done here at all:
+   every piece ships as a picture in public/shop-thumbs, made by this same
+   code ahead of time (scripts/render-shop-thumbnails.mjs). What follows is
+   the fallback for a piece without one, done as little and as quietly as
+   possible (Chi, 2026-10-12: "動畫很卡"):
+
+     - only for cards that are on screen or about to be;
+     - in idle time, one picture at a time, and not at all while the reader
+       is turning Yumi on the stand;
+     - once per device: each picture is kept in Cache Storage under a version
+       that changes when the pieces do, and the next visit just reads it.
    ========================================================= */
 
-const SIZE = 192;
+const SIZE = 160;
+
+/** Bump when any piece's builder or the thumbnail pose changes. */
+export const THUMBNAIL_VERSION = 4;
+/* Prefixed so the service worker's clean-up on a new release keeps it. */
+const CACHE_NAME = "exchange-notes-shop-thumbnails";
+
+/** The shipped picture of a piece. */
+export function shippedThumbnail(id: string): string {
+  return `/shop-thumbs/${id}.webp?v=${THUMBNAIL_VERSION}`;
+}
+const cacheKey = (id: string) => `/__yumi-shop-thumbnail/v${THUMBNAIL_VERSION}/${id}.png`;
 
 const urls = new Map<string, string>();
+const wanted = new Set<string>();
+const listeners = new Set<() => void>();
+let running = false;
+let paused = false;
+let prunedOldVersions = false;
 
 export function cachedThumbnail(id: string): string | undefined {
   return urls.get(id);
 }
 
-let running: Promise<void> | null = null;
-const wanted = new Set<string>();
-const listeners = new Set<(id: string, url: string) => void>();
-
-export function subscribeToThumbnails(listener: (id: string, url: string) => void) {
+/** For useSyncExternalStore: any picture landing notifies; each card reads its own. */
+export function subscribeToThumbnails(listener: () => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
+}
+
+/** Held while the reader is turning Yumi: her frames come first. */
+export function pauseThumbnails(pause: boolean) {
+  paused = pause;
+  if (!pause) kick();
+}
+
+function publish(id: string, blob: Blob) {
+  urls.set(id, URL.createObjectURL(blob));
+  for (const listener of listeners) listener();
 }
 
 /** Pose: three quarters for things, nearly square-on for flat ones, from above for hats. */
@@ -43,27 +76,52 @@ function pose(id: string, pivot: THREE.Object3D) {
   pivot.rotation.set(hat ? 0.5 : flat ? 0.06 : 0.2, flat ? -0.22 : -0.48, 0);
 }
 
-function nextFrame() {
+/** A quiet moment: idle time where the browser offers it, else a short wait. */
+function quietMoment() {
   return new Promise<void>(resolve => {
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => resolve());
-    else setTimeout(resolve, 0);
+    const wait = () => {
+      if (paused) { setTimeout(wait, 200); return; }
+      const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+      if (idle) idle(() => resolve(), { timeout: 700 });
+      else setTimeout(resolve, 80);
+    };
+    wait();
   });
 }
 
-async function drain() {
-  const canvas = document.createElement("canvas");
-  canvas.width = SIZE;
-  canvas.height = SIZE;
+async function openCache(): Promise<Cache | null> {
+  if (typeof caches === "undefined") return null;
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    if (!prunedOldVersions) {
+      prunedOldVersions = true;
+      const current = `/__yumi-shop-thumbnail/v${THUMBNAIL_VERSION}/`;
+      void cache.keys().then(keys => {
+        for (const request of keys) {
+          if (!new URL(request.url).pathname.startsWith(current)) void cache.delete(request);
+        }
+      });
+    }
+    return cache;
+  } catch {
+    return null;
+  }
+}
 
+type Studio = { renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera; canvas: HTMLCanvasElement };
+
+function openStudio(size = SIZE): Studio | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true });
   } catch {
-    wanted.clear();
-    return;
+    return null;
   }
   renderer.setPixelRatio(1);
-  renderer.setSize(SIZE, SIZE, false);
+  renderer.setSize(size, size, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
@@ -78,66 +136,119 @@ async function drain() {
   const rim = new THREE.DirectionalLight(0xffffff, 0.9);
   rim.position.set(-2.4, 2, -4.5);
   scene.add(key, fill, rim, new THREE.HemisphereLight(0xffffff, 0x6b6a64, 0.55));
+  return { renderer, scene, camera: new THREE.PerspectiveCamera(28, 1, 0.05, 100), canvas };
+}
 
-  const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 100);
-  const box = new THREE.Box3();
-  const centre = new THREE.Vector3();
-  const size = new THREE.Vector3();
+function closeStudio(studio: Studio) {
+  studio.scene.environment?.dispose();
+  studio.renderer.dispose();
+  studio.renderer.forceContextLoss();
+}
 
+async function render(studio: Studio, id: string, type = "image/png", quality?: number): Promise<Blob | null> {
+  const object = buildThumbnailObject(id);
+  if (!object) return null;
+  const { renderer, scene, camera, canvas } = studio;
+
+  const pivot = new THREE.Group();
+  pivot.add(object);
+  pose(id, pivot);
+  scene.add(pivot);
+  pivot.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(pivot);
+  const centre = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  pivot.position.sub(centre);
+
+  // Fit the larger of width and height, with a little air, from in front of its nearest face.
+  const half = Math.max(size.x, size.y) / 2 * 1.12;
+  const distance = half / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) + size.z / 2;
+  camera.position.set(0, 0, distance);
+  camera.near = distance / 50;
+  camera.far = distance * 4;
+  camera.updateProjectionMatrix();
+  camera.lookAt(0, 0, 0);
+
+  renderer.render(scene, camera);
+  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
+  scene.remove(pivot);
+  disposeObject(pivot);
+  return blob;
+}
+
+async function drain() {
+  const cache = await openCache();
+  let studio: Studio | null = null;
   try {
     while (wanted.size) {
       const [id] = wanted;
       wanted.delete(id);
       if (urls.has(id)) continue;
 
-      await nextFrame();
-      const object = buildThumbnailObject(id);
-      if (!object) continue;
+      // Kept from an earlier visit: no rendering at all.
+      const kept = await cache?.match(cacheKey(id)).catch(() => undefined);
+      if (kept) {
+        publish(id, await kept.blob());
+        continue;
+      }
 
-      const pivot = new THREE.Group();
-      pivot.add(object);
-      pose(id, pivot);
-      scene.add(pivot);
-      pivot.updateMatrixWorld(true);
-      box.setFromObject(pivot);
-      box.getCenter(centre);
-      box.getSize(size);
-      pivot.position.sub(centre);
-
-      // Fit the larger of width and height, with a little air, from in front of its nearest face.
-      const half = Math.max(size.x, size.y) / 2 * 1.12;
-      const distance = half / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) + size.z / 2;
-      camera.position.set(0, 0, distance);
-      camera.near = distance / 50;
-      camera.far = distance * 4;
-      camera.updateProjectionMatrix();
-      camera.lookAt(0, 0, 0);
-
-      renderer.render(scene, camera);
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/png"));
-      scene.remove(pivot);
-      disposeObject(pivot);
+      await quietMoment();
+      studio ??= openStudio();
+      if (!studio) { wanted.clear(); return; }
+      const blob = await render(studio, id);
       if (!blob) continue;
-
-      const url = URL.createObjectURL(blob);
-      urls.set(id, url);
-      for (const listener of listeners) listener(id, url);
+      publish(id, blob);
+      void cache?.put(cacheKey(id), new Response(blob, { headers: { "Content-Type": "image/png" } })).catch(() => {});
     }
   } finally {
-    scene.environment?.dispose();
-    renderer.dispose();
-    renderer.forceContextLoss();
+    if (studio) closeStudio(studio);
   }
 }
 
-/** Ask for pictures of these pieces; listeners hear about each as it lands. */
-export function requestThumbnails(ids: readonly string[]) {
-  for (const id of ids) if (!urls.has(id)) wanted.add(id);
-  if (!wanted.size || running) return;
-  running = drain()
+function kick() {
+  if (running || !wanted.size || paused) return;
+  running = true;
+  void drain()
     .catch(() => { wanted.clear(); })
     .finally(() => {
-      running = null;
-      if (wanted.size) requestThumbnails([]);
+      running = false;
+      if (wanted.size) kick();
     });
+}
+
+/** Ask for a picture of each of these pieces; subscribers hear as each lands. */
+export function requestThumbnails(ids: readonly string[]) {
+  for (const id of ids) if (!urls.has(id)) wanted.add(id);
+  kick();
+}
+
+/**
+ * Every listed piece rendered at once, as data URLs, for the script that
+ * writes public/shop-thumbs (through app/yumi-shop-thumbnails-review). Not
+ * used by the shop itself.
+ */
+export async function renderThumbnailSet(
+  ids: readonly string[],
+  size = 256,
+  type = "image/webp",
+  quality = 0.9,
+): Promise<Record<string, string>> {
+  const studio = openStudio(size);
+  if (!studio) return {};
+  const out: Record<string, string> = {};
+  try {
+    for (const id of ids) {
+      const blob = await render(studio, id, type, quality);
+      if (!blob) continue;
+      out[id] = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+  } finally {
+    closeStudio(studio);
+  }
+  return out;
 }

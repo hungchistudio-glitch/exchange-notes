@@ -3,7 +3,7 @@
 const CACHE_NAME = "exchange-notes-v5";
 const OFFLINE_URL = "/offline.html";
 const CORE_ASSETS = [OFFLINE_URL];
-const SAFE_ASSET_PREFIXES = ["/_next/static/", "/brand/", "/audio/"];
+const SAFE_ASSET_PREFIXES = ["/_next/static/", "/brand/", "/audio/", "/shop-thumbs/"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,10 +26,14 @@ self.addEventListener("activate", (event) => {
       Promise.all(
         keys
           // The camera's on-device model (lib/vision/onDeviceClassifier.ts)
-          // lives in its own cache so a release does not throw 4.5MB away.
+          // lives in its own cache so a release does not throw 4.5MB away;
+          // the shop's device-rendered pictures (lib/yumi3d/thumbnails.ts)
+          // likewise, and are versioned by their own key.
           .filter(
             (key) =>
-              key !== CACHE_NAME && !key.startsWith("exchange-notes-vision")
+              key !== CACHE_NAME &&
+              !key.startsWith("exchange-notes-vision") &&
+              !key.startsWith("exchange-notes-shop")
           )
           .map((key) => caches.delete(key))
       )

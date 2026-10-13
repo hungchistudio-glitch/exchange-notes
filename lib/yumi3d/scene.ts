@@ -82,6 +82,8 @@ export type YumiSceneOptions = {
    * looked at, not played with.
    */
   inspect?: boolean;
+  /** Cap on device pixels per CSS pixel. The shop's large stand draws at 1.5. */
+  maxPixelRatio?: number;
 };
 
 /** The stand's set views. */
@@ -219,7 +221,7 @@ export function createYumiScene(
     return null;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, options.maxPixelRatio ?? 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -354,6 +356,10 @@ export function createYumiScene(
   }
 
   const outfit = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
+  /* Pieces just put on, hidden until their shaders are compiled, so trying
+     one on never stalls a frame compiling it (where the browser can compile
+     in parallel; elsewhere it costs the same, just not mid-frame). */
+  const compiling = new Set<THREE.Object3D>();
 
   // ----------------------------------------------------------- behaviour
   const eyePosition = EYE_REST.clone();
@@ -638,6 +644,7 @@ export function createYumiScene(
          multiplies it rather than replacing it. */
       const finishOpacity = (shellMaterial.userData.finishOpacity as number | undefined) ?? 1;
       outfit.setVisible(!film || film.actor > 0.98);
+      for (const piece of compiling) piece.visible = false;
 
       if (film) {
         for (const material of fadeMaterials) material.opacity = film.actor;
@@ -742,7 +749,17 @@ export function createYumiScene(
       rotationPaused = paused;
     },
     setOutfit(next) {
-      outfit.apply(next);
+      const added = outfit.apply(next);
+      if (!added.length) return;
+      for (const piece of added) {
+        piece.visible = true;
+        compiling.add(piece);
+        // compileAsync gathers what it needs now, while the piece is visible.
+        void renderer.compileAsync(piece, camera, scene)
+          .catch(() => {})
+          .finally(() => { compiling.delete(piece); });
+        piece.visible = false;
+      }
     },
     setView(view, immediate = false) {
       const euler = {

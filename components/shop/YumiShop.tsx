@@ -3,19 +3,17 @@
 import { ArrowLeft, Check, Globe, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import AppLanguageSheet, { prefetchAppLanguages } from "@/components/settings/AppLanguageSheet";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import useOnline from "@/hooks/useOnline";
 import { announceHomeMoment } from "@/lib/home/homeMoments";
-import { setInterfaceLanguage, type InterfaceLanguage } from "@/lib/appPreferences";
-import { loadTranslations } from "@/lib/i18n";
 import { fill, plural } from "@/lib/i18n/format";
-import { INTERFACE_LANGUAGE_CODE, getInterfaceLanguageMeta } from "@/lib/languages";
+import { getInterfaceLanguageMeta } from "@/lib/languages";
 import {
   SHOP_COUNTRIES,
-  SHOP_ITEMS,
   itemsFor,
   ownedOnly,
   sameOutfit,
@@ -27,12 +25,25 @@ import {
   type ShopItem,
   type YumiOutfit,
 } from "@/lib/shop/catalog";
+import { getDeviceTimeZone } from "@/lib/push/deviceTimeZone";
+import { QUIET_SCENE, dayPartAt, formatTemperature, sceneFor, seasonAt } from "@/lib/shop/atmosphere";
+import {
+  getQuarterHour,
+  getSceneChoice,
+  getServerQuarterHour,
+  getServerSceneChoice,
+  setSceneChoice,
+  subscribeToQuarterHour,
+  subscribeToSceneChoice,
+  useShopWeather,
+} from "@/lib/shop/useShopWeather";
 import { ShopClosedError, type ShopWallet, type WardrobeState } from "@/lib/shop/wallet";
 import { setWornOutfit } from "@/lib/shop/wornOutfit";
-import { cachedThumbnail, requestThumbnails, subscribeToThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import EnergyCookie from "./EnergyCookie";
+import ShopScenePicker from "./ShopScenePicker";
 import ShopStage from "./ShopStage";
+import ShopThumb from "./ShopThumb";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -60,8 +71,6 @@ const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "sm
 
 const EMPTY_STATE: WardrobeState = { earned: 0, spent: 0, balance: 0, owned: [], outfit: {} };
 
-const LANGUAGES = (Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[])
-  .filter(value => getInterfaceLanguageMeta(value).availableAsInterface);
 
 type Availability = "loading" | "open" | "closed" | "failed";
 
@@ -92,7 +101,29 @@ export default function YumiShop({
   const [notice, setNotice] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [, setThumbVersion] = useState(0);
+  const [celebrateKey, setCelebrateKey] = useState(0);
+  const [languageOpen, setLanguageOpen] = useState(false);
+
+  // ------------------------------------------------------------ the sky
+  const { weather } = useShopWeather();
+  const sceneChoice = useSyncExternalStore(subscribeToSceneChoice, getSceneChoice, getServerSceneChoice);
+  /* The hour moves the sky (morning, day, dusk, night). Null on the server,
+     which does not know the reader's clock: a quiet sky until it does. */
+  const quarter = useSyncExternalStore(subscribeToQuarterHour, getQuarterHour, getServerQuarterHour);
+  const scene = useMemo(
+    () => (quarter === null ? QUIET_SCENE : sceneFor(sceneChoice, weather, new Date(quarter))),
+    [sceneChoice, weather, quarter],
+  );
+  const sky = t.shop.sky;
+  const skyNow = sceneChoice !== "auto"
+    ? sky.choices[sceneChoice]
+    : weather
+      ? `${sky.conditions[weather.condition]}${weather.temperature === null ? "" : ` ${formatTemperature(weather.temperature, getDeviceTimeZone())}`}`
+      : quarter === null
+        ? sky.label
+        : dayPartAt(new Date(quarter)) === "night"
+          ? sky.night
+          : sky.seasons[seasonAt(new Date(quarter))];
   const pageRef = useRef<HTMLDivElement>(null);
 
   // ----------------------------------------------------------- loading
@@ -113,18 +144,12 @@ export default function YumiShop({
     return () => { cancelled = true; };
   }, [wallet, preview, attempt]);
 
-  // -------------------------------------------------------- thumbnails
+  // --------------------------------------------------------- catalogue
   const shown = useMemo(
     () => itemsFor(category, country, new Set(state.owned)),
     [category, country, state.owned],
   );
 
-  useEffect(() => subscribeToThumbnails(() => setThumbVersion(v => v + 1)), []);
-  useEffect(() => {
-    // What is on screen first, then the rest of the catalogue behind it.
-    requestThumbnails(shown.map(item => item.id));
-    requestThumbnails(SHOP_ITEMS.map(item => item.id));
-  }, [shown]);
 
   // ------------------------------------------------- the stand shrinking
   useEffect(() => {
@@ -206,6 +231,7 @@ export default function YumiShop({
       }
       const withItem = { ...draft, [item.slot]: item.id };
       setDraft(withItem);
+      setCelebrateKey(key => key + 1);
       await save(withItem, result.state, fill(copy.bought, { item: name(item) }));
     } catch {
       setNotice(copy.failed);
@@ -214,14 +240,11 @@ export default function YumiShop({
     }
   }
 
-  async function chooseLanguage(value: InterfaceLanguage) {
-    if (value === language) return;
-    try {
-      await loadTranslations(value);
-      setInterfaceLanguage(value);
-    } catch {
-      setNotice(copy.failed);
-    }
+  /* The display language is one setting with Settings' (Chi, 2026-10-12):
+     this key opens the very sheet Settings opens. */
+  function openLanguages() {
+    prefetchAppLanguages(language);
+    setLanguageOpen(true);
   }
 
   function goBack() {
@@ -260,20 +283,15 @@ export default function YumiShop({
           </button>
           <h1 className={styles.title}>{copy.title}</h1>
           <div className={styles.tools}>
-            <label className={styles.language}>
+            <button
+              type="button"
+              className={styles.language}
+              aria-label={`${copy.language}: ${getInterfaceLanguageMeta(language).endonym}`}
+              onClick={openLanguages}
+            >
               <Globe size={16} strokeWidth={1.8} aria-hidden="true" />
               <span aria-hidden="true">{getInterfaceLanguageMeta(language).badge}</span>
-              <select
-                className={styles.languageSelect}
-                aria-label={copy.language}
-                value={language}
-                onChange={event => void chooseLanguage(event.target.value as InterfaceLanguage)}
-              >
-                {LANGUAGES.map(value => (
-                  <option key={value} value={value}>{getInterfaceLanguageMeta(value).endonym}</option>
-                ))}
-              </select>
-            </label>
+            </button>
             <span className={styles.balance} title={copy.howEarned} aria-label={`${cookies(state.balance)}. ${copy.howEarned}`}>
               <EnergyCookie className={styles.balanceCookie} />
               <span aria-hidden="true">{availability === "loading" ? "…" : state.balance.toLocaleString(locale)}</span>
@@ -285,15 +303,27 @@ export default function YumiShop({
           outfit={draft}
           isCosmic={isCosmic}
           compact={compact}
+          scene={scene}
+          celebrateKey={celebrateKey}
           corner={
-            <button
-              type="button"
-              className={styles.roundKey}
-              aria-label={isCosmic ? copy.toStandard : copy.toCosmic}
-              onClick={onToggleMode}
-            >
-              {isCosmic ? <Sun size={18} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={18} strokeWidth={1.8} aria-hidden="true" />}
-            </button>
+            <>
+              <ShopScenePicker
+                scene={scene}
+                choice={sceneChoice}
+                current={skyNow}
+                names={sky.choices}
+                label={sky.label}
+                onChoose={setSceneChoice}
+              />
+              <button
+                type="button"
+                className={styles.roundKey}
+                aria-label={isCosmic ? copy.toStandard : copy.toCosmic}
+                onClick={onToggleMode}
+              >
+                {isCosmic ? <Sun size={18} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={18} strokeWidth={1.8} aria-hidden="true" />}
+              </button>
+            </>
           }
           labels={{
             stage: copy.stage,
@@ -350,16 +380,10 @@ export default function YumiShop({
             {shown.map(item => {
               const trying = draft[item.slot] === item.id;
               const wearing = worn[item.slot] === item.id;
-              const thumb = cachedThumbnail(item.id);
               return (
                 <li key={item.id}>
                   <button type="button" className={styles.card} aria-pressed={trying} onClick={() => tryOn(item)}>
-                    <span className={styles.thumb} aria-hidden="true">
-                      {thumb
-                        // eslint-disable-next-line @next/next/no-img-element -- a blob URL rendered on this device
-                        ? <img src={thumb} alt="" draggable={false} />
-                        : <span className={styles.swatch} style={{ background: item.tone }} />}
-                    </span>
+                    <ShopThumb item={item} className={styles.thumb} />
                     {(trying || wearing) && (
                       <span className={styles.tag} data-wearing={wearing && trying ? "true" : "false"}>
                         {wearing && trying ? copy.wearing : copy.tryingOn}
@@ -385,12 +409,7 @@ export default function YumiShop({
         <div className={styles.barItem}>
           {selected ? (
             <>
-              <span className={styles.barThumb} aria-hidden="true">
-                {cachedThumbnail(selected.id)
-                  // eslint-disable-next-line @next/next/no-img-element -- a blob URL rendered on this device
-                  ? <img src={cachedThumbnail(selected.id)} alt="" />
-                  : <span className={styles.swatch} style={{ background: selected.tone }} />}
-              </span>
+              <ShopThumb item={selected} className={styles.barThumb} />
               <span className={styles.barText}>
                 <span className={styles.barName}>{name(selected)}</span>
                 <span className={styles.barPrice}>
@@ -431,6 +450,8 @@ export default function YumiShop({
           <p className={styles.barNote}>{copy.unownedNote}</p>
         )}
       </footer>
+
+      <AppLanguageSheet open={languageOpen} onClose={() => setLanguageOpen(false)} />
 
       <BottomSheet
         open={confirming !== null}

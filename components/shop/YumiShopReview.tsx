@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import type { SceneChoice } from "@/lib/shop/atmosphere";
+import { setSceneChoice } from "@/lib/shop/useShopWeather";
 import { createPreviewWallet } from "@/lib/shop/wallet";
 
 import YumiShop from "./YumiShop";
@@ -14,7 +16,7 @@ import YumiShop from "./YumiShop";
  * CosmicYumiReview for why a review page must not write the reader's real
  * mode).
  */
-export default function YumiShopReview({ startCosmic }: { startCosmic: boolean }) {
+export default function YumiShopReview({ startCosmic, sky = null }: { startCosmic: boolean; sky?: SceneChoice | null }) {
   const wallet = useMemo(() => createPreviewWallet(240), []);
   const [isCosmic, setCosmic] = useState(startCosmic);
 
@@ -30,6 +32,11 @@ export default function YumiShopReview({ startCosmic }: { startCosmic: boolean }
   useEffect(() => {
     document.documentElement.setAttribute("data-interface-mode", isCosmic ? "yumi-cosmic" : "standard");
   }, [isCosmic]);
+
+  // A sky asked for by link.
+  useEffect(() => {
+    if (sky) setSceneChoice(sky);
+  }, [sky]);
 
   return (
     <YumiShop

@@ -2205,7 +2205,8 @@ export type OutfitRigParts = {
 };
 
 export type OutfitRig = {
-  apply(outfit: YumiOutfit): void;
+  /** Puts the outfit on; returns the pieces it had to build. */
+  apply(outfit: YumiOutfit): THREE.Object3D[];
   /** True while a shop material is on the shell. */
   hasShellFinish(): boolean;
   /** Per frame: keep eyewear in front of the eye, minus the blink. */
@@ -2303,6 +2304,7 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
   return {
     apply(next) {
       const outfit = cleanOutfit(next);
+      const added: THREE.Object3D[] = [];
 
       if (outfit.material !== finish) {
         finish = outfit.material && isShellMaterial(outfit.material) ? outfit.material : undefined;
@@ -2322,11 +2324,13 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
         if (built.look) { lookGroup.add(built.look); objects.push(built.look); }
         if (slot === "pupil") pupil.visible = false;
         worn.set(slot, { id, objects });
+        added.push(...objects);
       }
 
       /* A coloured iris needs room to be seen: her own round pupil narrows
          while one is on, the way a pupil does in light. */
       pupil.scale.setScalar(worn.has("iris") && !worn.has("pupil") ? 0.72 : 1);
+      return added;
     },
 
     hasShellFinish() {

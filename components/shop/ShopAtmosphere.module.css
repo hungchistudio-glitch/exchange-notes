@@ -1,0 +1,203 @@
+/*
+  The sky behind the stand (ShopAtmosphere.tsx). Painted from four
+  variables the component sets per scene and mode; everything that moves
+  here moves by transform or opacity.
+*/
+
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 52%, var(--sky-low) 100%);
+  transition: background 600ms ease;
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------ the sun */
+
+/* Below the stand's top row of keys, to the right of Yumi. */
+.sun {
+  position: absolute;
+  top: 24%;
+  right: 9%;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffaf0 0 34%, #ffe3a3 46%, #ffd98466 60%, #ffd98400 72%);
+  animation: breathe 7s ease-in-out infinite;
+}
+
+.atmosphere[data-sky="dusk"] .sun,
+.atmosphere[data-sky="morning"] .sun {
+  top: 36%;
+  background: radial-gradient(circle, #fff1dc 0 32%, #ffbf8a 46%, #ffa57055 62%, #ffa57000 74%);
+}
+
+.atmosphere[data-cosmic="true"] .sun {
+  background: radial-gradient(circle, #f6e7bf 0 28%, #e8ce8c 40%, #e8ce8c33 58%, #e8ce8c00 72%);
+}
+
+.rays {
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 120%;
+  height: 120%;
+  background: repeating-conic-gradient(from 200deg at 78% 50%, #fff6d800 0deg 8deg, #fff6d866 10deg 13deg, #fff6d800 15deg 26deg);
+  mask-image: radial-gradient(circle at 78% 50%, #000 0 12%, #0000 62%);
+  /* Still, and breathing in opacity only: a masked layer this size turning
+     every frame was a repaint a phone could feel (Chi: "動畫很卡"). */
+  opacity: 0.7;
+  animation: glow 9s ease-in-out infinite;
+}
+
+.atmosphere[data-cosmic="true"] .rays {
+  opacity: 0.25;
+}
+
+/* ----------------------------------------------------------- the moon */
+
+.moon {
+  position: absolute;
+  top: 24%;
+  right: 12%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 40%, #d9d4c6 0 5px, #0000 6px),
+    radial-gradient(circle at 62% 64%, #ddd8ca 0 4px, #0000 5px),
+    radial-gradient(circle at 38% 34%, #fffdf4, #ece6d4);
+  box-shadow: 0 0 22px 6px #f4ecd544, 0 0 60px 18px #f4ecd522;
+}
+
+/* --------------------------------------------------------- the clouds */
+
+.cloud {
+  position: absolute;
+  left: 0;
+  will-change: transform;
+  width: 34%;
+  max-width: 190px;
+  fill: var(--cloud);
+  opacity: var(--cloud-opacity);
+  animation: drift 90s linear infinite;
+}
+
+.cloud[data-cloud="0"] { top: 8%; animation-duration: 95s; animation-delay: -30s; }
+.cloud[data-cloud="1"] { top: 22%; width: 26%; animation-duration: 120s; animation-delay: -80s; }
+.cloud[data-cloud="2"] { top: 4%; width: 42%; animation-duration: 140s; animation-delay: -10s; }
+
+.atmosphere[data-sky="overcast"] .cloud,
+.atmosphere[data-sky="storm"] .cloud {
+  width: 52%;
+  max-width: 300px;
+}
+
+/* ------------------------------------------------------------ the fog */
+
+.fog {
+  position: absolute;
+  left: -50%;
+  width: 200%;
+  height: 46%;
+  top: 38%;
+  background: radial-gradient(50% 50% at 50% 50%, #ffffff8c, #ffffff00 70%);
+  animation: drift-fog 40s ease-in-out infinite alternate;
+}
+
+.fog[data-second] {
+  top: 54%;
+  opacity: 0.8;
+  animation-duration: 55s;
+  animation-direction: alternate-reverse;
+}
+
+.atmosphere[data-cosmic="true"] .fog {
+  background: radial-gradient(50% 50% at 50% 50%, #a9b8c855, #a9b8c800 70%);
+}
+
+/* ---------------------------------------------------------- the hills */
+
+.hills {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 34%;
+}
+
+.hillBack {
+  fill: var(--hill-back);
+}
+
+.hillFront {
+  fill: var(--hill-front);
+}
+
+/* ------------------------------------------------------ the lightning */
+
+.lightning {
+  position: absolute;
+  inset: 0;
+  background: #fffef6;
+  opacity: 0;
+  animation: flash 11s linear infinite;
+}
+
+.atmosphere[data-cosmic="true"] .lightning {
+  background: #d8c8ff;
+}
+
+/* --------------------------------------------------------- the motion */
+
+@keyframes drift {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(330%); }
+}
+
+@keyframes drift-fog {
+  from { transform: translateX(-8%); }
+  to { transform: translateX(8%); }
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes flash {
+  0%, 88%, 90.5%, 92%, 100% { opacity: 0; }
+  89% { opacity: 0.55; }
+  91.2% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere,
+  .sun,
+  .rays,
+  .cloud,
+  .fog,
+  .lightning {
+    animation: none;
+    transition: none;
+  }
+
+  .cloud[data-cloud="0"] { transform: translateX(10%); }
+  .cloud[data-cloud="1"] { transform: translateX(180%); }
+  .cloud[data-cloud="2"] { transform: translateX(90%); }
+}

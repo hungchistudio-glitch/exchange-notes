@@ -147,20 +147,13 @@
   box-shadow: var(--shop-key-shadow);
 }
 
-/* The native picker, invisible over the pill: the pill shows the short
-   badge, the menu that opens shows every language in its own name. */
-.languageSelect {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  opacity: 0;
-  appearance: none;
-  border: 0;
-  font-size: 1rem;
+.language {
+  color: inherit;
+  font-family: inherit;
   cursor: pointer;
 }
 
-.language:focus-within {
+.language:focus-visible {
   outline: 3px solid var(--shop-accent);
   outline-offset: 2px;
 }
@@ -195,6 +188,7 @@
 
 .stage {
   position: relative;
+  isolation: isolate;
   margin: 2px 12px 8px;
   height: clamp(230px, 40svh, 400px);
   border-radius: 28px;
@@ -211,6 +205,7 @@
 
 .pedestal {
   position: absolute;
+  z-index: 0;
   left: 50%;
   bottom: 7%;
   width: min(62%, 340px);
@@ -229,6 +224,7 @@
 
 .stageCanvas {
   position: absolute;
+  z-index: 1;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -280,6 +276,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
+  z-index: 2;
   display: flex;
   gap: 4px;
 }
@@ -306,11 +303,87 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 1;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* The sky's key: what the weather is doing, and a list of skies to keep. */
+.scenePicker {
+  position: relative;
+}
+
+.sceneKey {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 11rem;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--shop-line);
+  background: var(--shop-key);
+  box-shadow: var(--shop-key-shadow);
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sceneKey span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sceneMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  min-width: 11.5rem;
+  padding: 6px;
+  border-radius: 18px;
+  border: 1px solid var(--shop-line);
+  background: var(--shop-card);
+  box-shadow: 0 18px 40px -18px #00000066;
+}
+
+.sceneOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.sceneOption[aria-pressed="true"] {
+  background: var(--shop-tag);
+  color: var(--shop-tag-ink);
+}
+
+.sceneCheck {
+  margin-left: auto;
+}
+
+.sceneKey:focus-visible,
+.sceneOption:focus-visible {
+  outline: 3px solid var(--shop-accent);
+  outline-offset: 2px;
 }
 
 .zoomKeys {
   position: absolute;
+  z-index: 2;
   right: 10px;
   bottom: 10px;
   display: flex;
@@ -337,6 +410,7 @@
 
 .resetKey {
   position: absolute;
+  z-index: 2;
   left: 10px;
   bottom: 10px;
 }

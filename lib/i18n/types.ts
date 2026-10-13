@@ -2498,6 +2498,14 @@ export type TranslationDictionary = {
     offline: string;
     failed: string;
     retry: string;
+    /** The sky behind the stand: its key, its scenes, and the weather it can follow. */
+    sky: {
+      label: string;
+      night: string;
+      choices: { auto: string; clear: string; rain: string; snow: string; leaves: string; butterflies: string; stars: string };
+      conditions: { clear: string; partly: string; cloudy: string; fog: string; drizzle: string; rain: string; snow: string; storm: string };
+      seasons: { spring: string; summer: string; autumn: string; winter: string };
+    };
     loading: string;
     toCosmic: string;
     toStandard: string;

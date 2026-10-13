@@ -40,6 +40,11 @@ describe("the catalogue", () => {
     expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(77);
   });
 
+  it("ships a picture of every piece, so phones do not render them", () => {
+    const shipped = new Set(readdirSync(join(process.cwd(), "public/shop-thumbs")));
+    expect(SHOP_ITEMS.filter(item => !shipped.has(`${item.id}.webp`)).map(item => item.id)).toEqual([]);
+  });
+
   it("can build every piece it sells", () => {
     const buildable = new Set(buildableIds());
     expect(SHOP_ITEMS.filter(item => !buildable.has(item.id)).map(item => item.id)).toEqual([]);
