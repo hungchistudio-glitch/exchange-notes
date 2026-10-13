@@ -3,50 +3,83 @@
 /*
   Tactile beads (Chi, 2026-10-11, "Yumi — Tactile Worlds"). Four materials
   keyed off the same stable variant the size comes from, so feeding a word
-  never re-dresses the others: jade pebble, clear glass, pearl, smoke glass.
-  All of it is painted once into the button's own layer; the physics only
-  ever moves that layer, so none of this is redrawn per frame.
+  never re-dresses the others: jade, clear glass, pearl, smoke glass.
+
+  Every bead is a true sphere and every edge is sharp (Chi, 2026-10-13:
+  "質感更升級，並拿掉模糊或扁圓形的形狀"): no squashed pebble, no blur for
+  depth. The volume is in the light instead: a crisp hotspot, the material
+  glowing through where light passes, a bounce of light at the foot, the
+  edge falling away, and a hairline rim. Each material only sets the
+  tokens below. All of it is painted once into the button's own layer; the
+  physics only ever moves that layer, so none of this is redrawn per frame.
 */
+.cookie {
+  --body: radial-gradient(circle at 36% 32%,#eef5e0 0%,#b5cd96 28%,#7b9d5f 64%,#4f6f3c 100%);
+  --glow: radial-gradient(55% 45% at 64% 70%,#eafbc98c 0,#eafbc900 100%);
+  --edge: #34492633;
+  --bounce: #f4ffdc80;
+  --rim: #ffffff8c;
+  --core: #3f552d59;
+  --ink: #3a4b2c;
+}
 .cookie::before { content:""; position:absolute; inset:max(0px,calc((44px - var(--size))/2)); border-radius:50%;
   background:
-    radial-gradient(circle at 32% 26%,#fffffff2 0 7%,#ffffff00 24%),
-    radial-gradient(circle at 70% 82%,#ffffff8c 0,#ffffff00 32%),
-    radial-gradient(circle at 40% 35%,#c9d4b6 0%,#9fb08a 62%,#7d8f69 100%);
-  box-shadow:inset -4px -6px 10px #4f5f3c45,inset 3px 4px 6px #ffffff8c,0 14px 18px -10px #4a3f2a66,0 3px 5px -2px #4a3f2a40; }
-/* The specular highlight, placed on the bead rather than on the button: a
-   small bead sits inside a 44px hit area, so percentages of the button would
-   put the highlight on its rim. */
-.cookie::after { content:""; position:absolute; left:calc(max(0px,(44px - var(--size))/2) + var(--size)*.2); top:calc(max(0px,(44px - var(--size))/2) + var(--size)*.12); width:calc(var(--size)*.32); height:calc(var(--size)*.18); border-radius:50%; background:#ffffffd9; filter:blur(1.5px); rotate:-24deg; }
-.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,"Songti TC",serif; color:#4b5a3a;
-  text-shadow:0 1px 0 #ffffff80,0 -1px 0 #2f3a2340; }
-/* jade: a pebble, wider than tall */
-.cookie[data-tone="0"]::before { inset:max(0px,calc((44px - var(--size))/2 + 4px)) max(-3px,calc((44px - var(--size))/2 - 3px)); }
-/* clear glass: the ground shows through, the rim catches the light */
-.cookie[data-tone="1"] span { color:#56606a; }
-.cookie[data-tone="1"]::before { background:
-    radial-gradient(circle at 32% 24%,#fffffff7 0 7%,#ffffff00 22%),
-    radial-gradient(ellipse 55% 30% at 55% 84%,#ffffffd9 0,#ffffff00 100%),
-    radial-gradient(circle at 50% 46%,#eef3f633 0 45%,#c9d6e0a6 74%,#8ea2b3d9 100%);
-  box-shadow:inset 0 0 0 1px #ffffffcc,inset 0 6px 8px -4px #5f738540,0 14px 18px -10px #4a3f2a4d,0 3px 5px -2px #4a3f2a33; }
-/* pearl: warm, nearly opaque */
-.cookie[data-tone="2"] span { color:#6f5a35; }
-.cookie[data-tone="2"]::before { background:
-    radial-gradient(circle at 32% 26%,#fffffff7 0 8%,#ffffff00 26%),
-    radial-gradient(circle at 42% 38%,#fbf5e7 0%,#eadcbc 60%,#cdb88d 100%);
-  box-shadow:inset -4px -6px 10px #8a6d3a40,inset 3px 4px 6px #ffffffa6,0 14px 18px -10px #4a3f2a66,0 3px 5px -2px #4a3f2a40; }
+    radial-gradient(60% 30% at 54% 90%,var(--bounce) 0,#fff0 100%),
+    var(--glow),
+    radial-gradient(circle at 42% 38%,#0000 0 56%,var(--edge) 100%),
+    var(--body);
+  box-shadow:
+    inset 0 0 0 .75px var(--rim),
+    inset -3px -5px 9px var(--core),
+    inset 2px 3px 5px #ffffffa6,
+    0 12px 16px -9px #4a3f2a66,
+    0 2px 4px -1px #4a3f2a38; }
+/* The hotspot: a sharp-edged highlight on the bead rather than on the
+   button (a small bead sits inside a 44px hit area), with a pin of light
+   inside it. Gradients, not a blur filter. */
+.cookie::after { content:""; position:absolute; left:calc(max(0px,(44px - var(--size))/2) + var(--size)*.19); top:calc(max(0px,(44px - var(--size))/2) + var(--size)*.12); width:calc(var(--size)*.36); height:calc(var(--size)*.21); border-radius:50%;
+  background:
+    radial-gradient(circle at 34% 50%,#fff 0 18%,#fff0 30%),
+    radial-gradient(closest-side,#fffffff0 0 38%,#ffffff00 100%);
+  rotate:-26deg; }
+.cookie span { position:relative; display:grid; place-items:center; height:100%; font:500 1.3rem/1 Georgia,"Songti TC",serif; color:var(--ink);
+  text-shadow:0 1px 0 #ffffff8c,0 -1px 0 #1f281826; }
+/* clear glass: the ground shows through, light gathers at its foot */
+.cookie[data-tone="1"] {
+  --body: radial-gradient(circle at 50% 44%,#f7fafc38 0 40%,#d3dee7b8 72%,#8fa4b5eb 100%);
+  --glow:
+    radial-gradient(58% 28% at 52% 84%,#ffffffe8 0,#ffffff00 100%),
+    radial-gradient(circle at 50% 50%,#fff0 0 74%,#ffffff8c 80%,#fff0 86%);
+  --edge: #4f637580;
+  --bounce: #ffffff00;
+  --rim: #ffffffeb;
+  --core: #5f738538;
+  --ink: #4a5662;
+}
+/* pearl: warm, nearly opaque, with a faint play of colour across it */
+.cookie[data-tone="2"] {
+  --body: radial-gradient(circle at 38% 34%,#fffdf7 0%,#f4e9d1 42%,#dfcba1 82%,#c9ae7c 100%);
+  --glow: conic-gradient(from 210deg at 50% 50%,#f6d3df4d,#d3e3f64d,#f2e5bd4d,#e0d3f64d,#f6d3df4d);
+  --edge: #8a6d3a3d;
+  --bounce: #fff7e399;
+  --rim: #ffffffa6;
+  --core: #8a6d3a47;
+  --ink: #66502e;
+}
 /* smoke glass */
-.cookie[data-tone="3"] span { color:#5d5a55; }
-.cookie[data-tone="3"]::before { background:
-    radial-gradient(circle at 32% 24%,#fffffff2 0 7%,#ffffff00 22%),
-    radial-gradient(ellipse 55% 30% at 55% 84%,#ffffffc7 0,#ffffff00 100%),
-    radial-gradient(circle at 50% 46%,#efe9df33 0 42%,#cbc1b1a6 74%,#978b79d9 100%);
-  box-shadow:inset 0 0 0 1px #ffffffb3,inset 0 6px 8px -4px #5a4f4040,0 14px 18px -10px #4a3f2a4d,0 3px 5px -2px #4a3f2a33; }
-/* Depth of field: the far beads sit softly behind her. A blur on a layer
-   that only ever translates is rasterised once. */
-.cookie[data-depth="back"] span,.cookie[data-depth="back"]::before { filter:blur(.6px); }
-.cookie:focus-visible span,.cookie:focus-visible::before { filter:none; }
+.cookie[data-tone="3"] {
+  --body: radial-gradient(circle at 50% 44%,#f5f0e838 0 38%,#cdc3b3b8 72%,#8c8070eb 100%);
+  --glow:
+    radial-gradient(58% 28% at 52% 84%,#fffaf0d9 0,#fffaf000 100%),
+    radial-gradient(circle at 50% 50%,#fff0 0 74%,#ffffff73 80%,#fff0 86%);
+  --edge: #4a404080;
+  --bounce: #ffffff00;
+  --rim: #ffffffd9;
+  --core: #5a4f4038;
+  --ink: #534e47;
+}
 .cookie[data-ready="true"] { opacity:.95; }
-.cookie[data-depth="back"][data-ready="true"] { opacity:.82; }
+.cookie[data-depth="back"][data-ready="true"] { opacity:.9; }
 .cookie:active { cursor:grabbing; z-index:2; }
 .cookie:focus-visible { outline:2px solid #52644a; outline-offset:4px; opacity:1; }
 .cookie:disabled { pointer-events:none; }
