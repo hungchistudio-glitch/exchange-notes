@@ -31,8 +31,14 @@
   --shop-stage: radial-gradient(90% 70% at 50% 18%, #fffdf8, #fffdf800 70%),
     radial-gradient(120% 90% at 15% 100%, #e9e1d0, #e9e1d000 60%),
     linear-gradient(180deg, #f8f4ec, #efe8db);
-  --shop-pedestal: radial-gradient(60% 70% at 50% 35%, #fffdf8, #ebe4d6 70%, #dcd3c1);
-  --shop-pedestal-line: #d4cbb8;
+  /* Travertine under a warm spotlight. */
+  --shop-plinth-top:
+    repeating-linear-gradient(172deg, #0000 0 9px, #a8987a0f 9px 10px),
+    radial-gradient(ellipse 70% 80% at 50% 30%, #fffdf7, #efe8da 55%, #d9cfbd);
+  --shop-plinth-side: linear-gradient(90deg, #b9ae98, #e7dfcf 48%, #f1ebdf 55%, #bcb19b);
+  --shop-plinth-rim: #c9bea8;
+  --shop-plinth-ink: #6d6150;
+  --shop-spot: #fff8e6b3;
   --shop-title-font: var(--font-display, Georgia, serif);
   --shop-toast: #24211b;
   --shop-on-toast: #fbf8f0;
@@ -66,8 +72,14 @@
   --shop-stage: radial-gradient(70% 60% at 78% 8%, #37314366, #0000 65%),
     radial-gradient(70% 70% at 20% 85%, #25413d55, #0000 68%),
     var(--cosmic-surface-card, #1c1a21);
-  --shop-pedestal: radial-gradient(60% 70% at 50% 35%, #2c2a31, #18171c 75%);
-  --shop-pedestal-line: #e8ce8c55;
+  /* Black marble with a brass edge, lit from above in the deck's gold. */
+  --shop-plinth-top:
+    repeating-linear-gradient(168deg, #0000 0 11px, #ffffff08 11px 12px),
+    radial-gradient(ellipse 70% 80% at 50% 30%, #3a3840, #1f1e24 58%, #141318);
+  --shop-plinth-side: linear-gradient(90deg, #0d0c10, #26242c 50%, #0d0c10);
+  --shop-plinth-rim: #e8ce8c66;
+  --shop-plinth-ink: #e8ce8cd9;
+  --shop-spot: #e8ce8c33;
   --shop-title-font: var(--font-sans, Arial, sans-serif);
   --shop-toast: #f5f2f0;
   --shop-on-toast: #17171c;
@@ -203,22 +215,70 @@
   height: 172px;
 }
 
+/* ------------------------------------------------------- the plinth */
+
+/* A pool of light from above, over the sky and under Yumi. */
+.spotlight {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 78% at 50% -6%, var(--shop-spot) 0%, #0000 70%),
+    radial-gradient(ellipse 30% 9% at 50% 84%, var(--shop-spot) 0%, #0000 100%);
+}
+
+/* Stone on a cylinder: a top face, a front band below it, at Yumi's feet. */
 .pedestal {
   position: absolute;
   z-index: 0;
   left: 50%;
-  bottom: 7%;
+  bottom: 6%;
   width: min(62%, 340px);
-  aspect-ratio: 4 / 1;
+  aspect-ratio: 4 / 1.45;
   transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 16px 18px #0000003d);
+}
+
+.plinthSide {
+  position: absolute;
+  inset: 34.5% 0 0;
+  border-radius: 0 0 50% 50% / 0 0 52.7% 52.7%;
+  background: var(--shop-plinth-side);
+}
+
+.plinthTop {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 69%;
   border-radius: 50%;
-  background: var(--shop-pedestal);
-  border: 1px solid var(--shop-pedestal-line);
-  box-shadow: 0 14px 22px -16px #0000005c;
+  background: var(--shop-plinth-top);
+  box-shadow: inset 0 -2px 0 var(--shop-plinth-rim), inset 0 1px 0 #ffffff40;
+}
+
+.contactShadow {
+  position: absolute;
+  left: 32%;
+  width: 36%;
+  top: 22%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #0000004d, #00000000);
+}
+
+.reflection {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
-.stage[data-compact="true"] .pedestal {
+.stage[data-compact="true"] .pedestal,
+.stage[data-compact="true"] .reflection,
+.stage[data-compact="true"] .spotlight {
   opacity: 0;
 }
 
@@ -415,19 +475,28 @@
   bottom: 10px;
 }
 
+/* Engraved on the plinth's front, at Yumi's feet, where the eye already is
+   (Chi, 2026-10-13: under the stand it was hidden). Fades after the first turn. */
 .hint {
   position: absolute;
+  z-index: 2;
   left: 50%;
-  bottom: 18px;
+  bottom: calc(6% + 6px);
   transform: translateX(-50%);
   margin: 0;
-  padding: 0 64px;
-  width: 100%;
+  width: min(62%, 340px);
+  padding: 0 8px;
   text-align: center;
   font-size: 0.75rem;
-  color: var(--shop-muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--shop-plinth-ink);
+  text-shadow: 0 1px 0 #ffffff40;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   pointer-events: none;
-  transition: opacity 300ms ease;
+  transition: opacity 400ms ease;
 }
 
 .hint[data-hidden="true"] {

@@ -562,6 +562,7 @@ export default function ShopAtmosphere({
         <path className={styles.hillFront} d="M0 92c50-18 100-26 150-14s80 18 130 6 90-16 120-8V120H0Z" />
       </svg>
       <canvas ref={canvasRef} className={styles.particles} />
+      <div className={styles.veil} />
       {scene.lightning && <div className={styles.lightning} />}
     </div>
   );
