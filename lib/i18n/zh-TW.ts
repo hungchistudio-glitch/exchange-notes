@@ -2543,6 +2543,7 @@ const traditionalChinese: TranslationDictionary = {
     preview: "預覽 · 不會用掉真的餅乾",
     selectPrompt: "點商品就能試戴",
     categories: {
+      jewelry: "珠寶",
       featured: "精選",
       eyes: "眼睛",
       materials: "材質",

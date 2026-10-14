@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { buildCulturalPiece, buildCulturalScarf, CULTURAL_FINISHES } from "./culturalOutfit";
+import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 
 import { cleanOutfit, shopItem, type ShopSlot, type YumiOutfit } from "@/lib/shop/catalog";
 
@@ -235,6 +237,7 @@ type ShellFinish = {
 const SHELL_REPEAT: [number, number] = [1.5, 1];
 
 const SHELL_FINISHES: Record<string, ShellFinish> = {
+  ...CULTURAL_FINISHES,
   jade: {
     color: 0xffffff, metalness: 0.02, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.08,
     map: () => paint(512, 256, 11, (ctx, rand, w, h) => {
@@ -2144,6 +2147,7 @@ const CHARM: Record<string, Builder> = {
 /** Ids this module can build, for the catalogue test. */
 export function buildableIds(): string[] {
   return [
+    ...CULTURAL_ITEMS.map(item => item.id),
     ...Object.keys(SHELL_FINISHES), ...PUPILS, ...Object.keys(IRISES), ...Object.keys(EYEWEAR), ...Object.keys(HEAD),
     ...Object.keys(NECK), ...Object.keys(PIN), ...Object.keys(MOUTH), ...Object.keys(CHARM),
   ];
@@ -2194,6 +2198,8 @@ function hangingAnchor(angle: number, along: number, collarRadius: number, drop:
   return { parts, anchor };
 }
 
+const buildCulturalScarfId = (id: string) => CULTURAL_ITEMS.some(item => item.id === id && item.slot === "neck");
+
 // -------------------------------------------------------------------- rig
 
 export type OutfitRigParts = {
@@ -2236,6 +2242,59 @@ function disposeObject(object: THREE.Object3D) {
 
 /** Builds the piece for one slot, already placed in the model's frame. */
 function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye?: THREE.Object3D; look?: THREE.Object3D } | null {
+  const culturalItem = CULTURAL_ITEMS.find(item => item.id === id);
+  if (culturalItem?.slot === "earrings") {
+    const wornEarring = group();
+    // Yumi has no ears: her single earring has a cuff around her shell,
+    // with a real chain running from the cuff to the earring's top loop.
+    {
+      const angle = THREE.MathUtils.degToRad(164);
+      const cuff = ringFrame(angle);
+      const metal = brass();
+      cuff.add(ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .024, metal));
+      // The clasp emerges from the front of the cuff. A centre-plane
+      // hanger would bury the upper drop inside the curved shell.
+      const top = tubeCentre(angle);
+      top.z = TUBE_FRONT + .035;
+      const hang = top.clone().add(new THREE.Vector3(-.16, -.12, .075));
+      const links = chain([top, top.clone().lerp(hang,.5), hang], metal,.022);
+      const drop = buildCulturalPiece(id)!;
+      drop.scale.setScalar(1.3);
+      drop.position.copy(hang).add(new THREE.Vector3(0, -.319, 0));
+      wornEarring.add(cuff, links, drop);
+    }
+    return { model: wornEarring };
+  }
+  if (culturalItem?.slot === "brow") {
+    // A piercing-sized ornament on a structural cuff, following the upper
+    // shell instead of floating in front of the eyeball or blinking flat.
+    const angle = THREE.MathUtils.degToRad(68);
+    const frame = ringFrame(angle);
+    frame.add(ellipseRing(TUBE_RADIUS + .018, TUBE_FRONT + .018, .025, chrome()));
+    const ornament = buildCulturalPiece(id)!;
+    ornament.position.copy(tubeCentre(angle));
+    ornament.position.z = TUBE_FRONT;
+    ornament.rotation.z = -.45;
+    return { model: group(frame, ornament) };
+  }
+  const cultural = buildCulturalPiece(id);
+  if (cultural) {
+    if (slot === "head") { const a = headAnchor(); a.add(cultural); return { model: a }; }
+    if (slot === "pin") { const a = pinAnchor(); a.add(cultural); return { model: a }; }
+    if (slot === "charm") { const {parts, anchor} = hangingAnchor(CHARM_ANGLE, 0, TUBE_RADIUS, .16); anchor.add(cultural); return {model: group(parts,anchor)}; }
+    if (slot === "necklace") {
+      cultural.position.set(0, -SHELL_RADIUS + .05, TUBE_FRONT + .035);
+      // Two fastening studs land on the shell's front surface.
+      const fasteners = group();
+      for (const side of [-1, 1]) {
+        const stud = mesh(new THREE.CylinderGeometry(.048,.048,.15,12), brass(),side*.65,-SHELL_RADIUS+.30,TUBE_FRONT-.015);
+        stud.rotation.x = Math.PI/2;
+        fasteners.add(stud);
+      }
+      return { model: group(cultural,fasteners) };
+    }
+    return { model: cultural };
+  }
   if (slot === "pupil" && PUPILS.has(id)) return { look: buildPupil(id) };
   if (slot === "iris" && IRISES[id]) return { look: buildIris(id) };
   if (slot === "eyewear" && EYEWEAR[id]) {
@@ -2247,8 +2306,8 @@ function buildForSlot(slot: ShopSlot, id: string): { model?: THREE.Object3D; eye
     anchor.scale.setScalar(1.1);
     return { model: anchor };
   }
-  if (slot === "neck" && NECK[id]) {
-    const piece = NECK[id]();
+  if (slot === "neck" && (NECK[id] || buildCulturalScarfId(id))) {
+    const piece = NECK[id] ? NECK[id]() : buildCulturalScarf(id)!;
     const frame = ringFrame(NECK_ANGLE);
     frame.add(piece.band);
     const front = piece.front;
@@ -2311,7 +2370,7 @@ export function createOutfitRig(parts: OutfitRigParts): OutfitRig {
         applyShellFinish(shellMaterial, finish);
       }
 
-      for (const slot of ["pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm"] as const) {
+      for (const slot of ["pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm", "earrings", "brow", "necklace"] as const) {
         const id = outfit[slot];
         if (worn.get(slot)?.id === id) continue;
         remove(slot);
@@ -2409,7 +2468,7 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
   }
 
   if (item.slot === "neck") {
-    const piece = NECK[id]();
+    const piece = NECK[id] ? NECK[id]() : buildCulturalScarf(id)!;
     const tube = mesh(new THREE.CapsuleGeometry(TUBE_RADIUS, 0.7, 10, 32), std(0x17181b, 0.5, 0.4));
     tube.scale.z = SHELL_DEPTH;
     const band = piece.band;
@@ -2421,6 +2480,8 @@ export function buildThumbnailObject(id: string): THREE.Object3D | null {
     return g;
   }
 
+  const cultural = buildCulturalPiece(id);
+  if (cultural) return cultural;
   const builder = HEAD[id] ?? PIN[id] ?? MOUTH[id] ?? CHARM[id];
   return builder ? builder() : null;
 }

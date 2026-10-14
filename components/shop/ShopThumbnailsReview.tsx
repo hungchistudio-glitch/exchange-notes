@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CULTURAL_ITEMS } from "@/lib/shop/culturalCollection";
 import { SHOP_ITEMS } from "@/lib/shop/catalog";
 
 /**
@@ -12,15 +13,22 @@ import { SHOP_ITEMS } from "@/lib/shop/catalog";
 export default function ShopThumbnailsReview() {
   const [pictures, setPictures] = useState<Record<string, string> | null>(null);
 
+  const [progress, setProgress] = useState("Preparing…");
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     void import("@/lib/yumi3d/thumbnails")
-      .then(({ renderThumbnailSet }) => renderThumbnailSet(SHOP_ITEMS.map(item => item.id)))
+      .then(({ renderThumbnailSet }) => {
+        const collection = new URLSearchParams(window.location.search).get("collection");
+        const items = collection === "earrings" ? CULTURAL_ITEMS.filter(item => item.slot === "earrings") : collection === "cultural" ? CULTURAL_ITEMS : SHOP_ITEMS;
+        return renderThumbnailSet(items.map(item => item.id), 256, "image/webp", .9, () => cancelled, (done, total) => { if (!cancelled) setProgress(`${done} / ${total}`); });
+      })
       .then(rendered => {
         if (cancelled) return;
         (window as unknown as { __shopThumbs?: Record<string, string> }).__shopThumbs = rendered;
         setPictures(rendered);
-      });
+      }).catch(reason => { if (!cancelled) setError(String(reason)); });
     return () => { cancelled = true; };
   }, []);
 
@@ -34,7 +42,7 @@ export default function ShopThumbnailsReview() {
               <figcaption>{id}</figcaption>
             </figure>
           ))
-        : <p>Rendering…</p>}
+        : <p>{error ?? `Rendering ${progress}`}</p>}
     </main>
   );
 }

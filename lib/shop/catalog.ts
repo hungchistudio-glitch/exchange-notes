@@ -1,13 +1,18 @@
+import { CULTURAL_ITEMS } from "./culturalCollection";
+
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 
 /* =========================================================
    The Yumi shop's catalogue
 
-   Sixty things Yumi can wear, twelve from each of five places (Chi's
+   The original collection, twelve things from each of five places (Chi's
    2026-10-12 collection boards): three shell materials and nine pieces per
    country. Then more eyes, at Chi's asking: one more for each country and
    a set of basics that belong to none. A country is a way to browse, not a rule — any piece goes with any
    other, and the reader's interface language never hides a collection.
+
+   The October 13 expansion adds ten pieces per country, including single
+   earrings, structural brow cuffs and necklaces in independent slots.
 
    Every piece is built in code from primitives (lib/yumi3d/outfit.ts), the
    same way Yumi is, so the shop needs no model files and a piece looks the
@@ -36,10 +41,13 @@ export type ShopSlot =
   | "neck"
   | "pin"
   | "mouth"
-  | "charm";
+  | "charm"
+  | "earrings"
+  | "brow"
+  | "necklace";
 
 /** The shop's tabs, which group slots the way the concept boards did. */
-export type ShopCategory = "featured" | "eyes" | "materials" | "wear" | "small" | "owned";
+export type ShopCategory = "featured" | "eyes" | "materials" | "wear" | "jewelry" | "small" | "owned";
 
 export type ShopItem = {
   id: string;
@@ -58,10 +66,11 @@ export type YumiOutfit = Partial<Record<ShopSlot, string>>;
 export const SHOP_COUNTRIES: readonly ShopCountry[] = ["basic", "tw", "us", "fr", "it", "es"];
 
 export const SHOP_SLOTS: readonly ShopSlot[] = [
-  "material", "pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm",
+  "material", "pupil", "iris", "eyewear", "head", "neck", "pin", "mouth", "charm", "earrings", "brow", "necklace",
 ];
 
 export const CATEGORY_SLOTS: Record<Exclude<ShopCategory, "featured" | "owned">, readonly ShopSlot[]> = {
+  jewelry: ["earrings", "brow", "necklace"],
   eyes: ["pupil", "iris", "eyewear"],
   materials: ["material"],
   wear: ["head", "neck", "pin"],
@@ -165,12 +174,12 @@ const ROWS: Record<ShopCountry, Row[]> = {
   ],
 };
 
-export const SHOP_ITEMS: readonly ShopItem[] = SHOP_COUNTRIES.flatMap(country =>
+export const SHOP_ITEMS: readonly ShopItem[] = [...SHOP_COUNTRIES.flatMap(country =>
   ROWS[country].map(([id, slot, price, tone, zh, en, fr, it, es]) => ({
     id, country, slot, price, tone,
     names: { "traditional-chinese": zh, english: en, french: fr, italian: it, spanish: es },
   })),
-);
+), ...CULTURAL_ITEMS];
 
 const BY_ID = new Map(SHOP_ITEMS.map(item => [item.id, item]));
 
@@ -180,6 +189,8 @@ export function shopItem(id: string | null | undefined): ShopItem | undefined {
 
 /** The concept board's front window, in the order it was drawn. */
 export const FEATURED_IDS: readonly string[] = [
+  "tea-pearl-earrings", "silver-star-earrings", "macaron-drop-earrings", "millefiori-earrings", "solar-fan-earrings",
+  "tw-orbit-stamp", "orbital-beanie", "fr-signal-module", "lagoon-glass", "es-signal-brow",
   "jade", "monocle", "heart-pupil", "bubble-tea", "beret", "croissant",
   "headphones", "star-pupil", "espresso", "flamenco-fan", "amber-glass", "sky-lantern",
   "lake-iris", "round-glasses", "cat-pupil", "heart-shades",

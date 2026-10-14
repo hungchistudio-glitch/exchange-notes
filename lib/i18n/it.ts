@@ -2393,6 +2393,7 @@ const italian: TranslationDictionary = {
     preview: "Anteprima · nessun biscotto vero viene speso",
     selectPrompt: "Tocca un pezzo per provarlo",
     categories: {
+      jewelry: "Gioielli",
       featured: "In vetrina",
       eyes: "Occhi",
       materials: "Materiali",

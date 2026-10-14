@@ -26,18 +26,18 @@ import { buildableIds } from "@/lib/yumi3d/outfit";
    ========================================================= */
 
 describe("the catalogue", () => {
-  it("has twelve pieces per country plus its own extra eye, and a set of basics", () => {
-    expect(SHOP_ITEMS).toHaveLength(77);
+  it("has 23 pieces per country, including 10 new cultural pieces, and 12 basics", () => {
+    expect(SHOP_ITEMS).toHaveLength(127);
     for (const country of SHOP_COUNTRIES.filter(c => c !== "basic")) {
       const pieces = SHOP_ITEMS.filter(item => item.country === country);
-      expect(pieces).toHaveLength(13);
-      expect(pieces.filter(item => item.slot === "material")).toHaveLength(3);
+      expect(pieces).toHaveLength(23);
+      expect(pieces.filter(item => item.slot === "material")).toHaveLength(5);
     }
     const basics = SHOP_ITEMS.filter(item => item.country === "basic");
     expect(basics).toHaveLength(12);
     // Chi asked for more eyes: every basic is one.
     expect(basics.every(item => ["pupil", "iris", "eyewear"].includes(item.slot))).toBe(true);
-    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(77);
+    expect(new Set(SHOP_ITEMS.map(item => item.id)).size).toBe(127);
   });
 
   it("ships a picture of every piece, so phones do not render them", () => {
