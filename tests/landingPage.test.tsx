@@ -281,7 +281,7 @@ describe("the pre-login product tour", () => {
     const ctas = screen.getAllByText(
       "Start journaling — Continue with Google",
     );
-    const navigation = screen.getByRole("link", { name: "Start", exact: true });
+    const navigation = screen.getByRole("link", { name: "Start" });
     const entries = [navigation, ...ctas];
     for (const entry of entries) {
       expect(entry).toHaveAttribute("href", "/login");
