@@ -25,12 +25,9 @@ import { createClient } from "@/lib/supabase/client";
  * token, which reaches the same user, session and RLS by a route nobody has
  * to read a project ref on the way through.
  *
- * Google draws its own button — that is the deal, and it is why this is a
- * component rather than a change inside GoogleLoginButton. The three landing
- * page calls pass their own labels and styles ("Start now", the hero CTA,
- * the closing CTA) and none of them can be a Google-branded button, so they
- * keep the flow they have. This is for the one screen whose whole job is
- * signing in.
+ * Google draws its own button. All landing-page calls lead here so ordinary
+ * sign-in consistently uses the app's origin. The Supabase redirect remains
+ * available only as recovery when this branded flow cannot load.
  *
  * Every way this can fail ends at that same button:
  *
