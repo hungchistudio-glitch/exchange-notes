@@ -1,16 +1,22 @@
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
+import { canonicalPageUrl } from "@/lib/auth/canonicalOrigin";
 import { updateSession } from "@/lib/supabase/proxy";
 
 /*
  * Next 16 renamed the middleware convention to proxy; the file has to sit at
  * the project root beside app/ to be picked up.
  *
- * Its only job is rotating the Supabase session cookies so a server-rendered
+ * Known legacy page URLs first converge on the public app origin. Otherwise
+ * rotate the Supabase session cookies so a server-rendered
  * navigation does not read an expired token. Authorization stays where it
  * already lives, in app/(protected)/layout.tsx.
  */
 export async function proxy(request: NextRequest) {
+  const canonical = canonicalPageUrl(request.nextUrl, request.method);
+  if (canonical) return NextResponse.redirect(canonical, 307);
+
   return updateSession(request);
 }
 

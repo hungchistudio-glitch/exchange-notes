@@ -49,6 +49,7 @@ describe("the pre-login product tour", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Write it. · Say it. · Show it.")).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith("landing_view");
+    expect(screen.getByRole("link", { name: "Privacy information" })).toHaveAttribute("href", "/privacy");
   });
 
   it("offers every interface language before sign-in and changes the whole introduction", async () => {

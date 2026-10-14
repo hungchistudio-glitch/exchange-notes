@@ -984,6 +984,7 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <span>Exchange Notes</span>
+        <Link href="/privacy">{t.info.nav.privacy}</Link>
         <span>{learningLanguageList()}</span>
       </footer>
     </main>
