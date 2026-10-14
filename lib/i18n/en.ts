@@ -2591,6 +2591,7 @@ const english: TranslationDictionary = {
     preview: "Preview · no real cookies are spent",
     selectPrompt: "Tap a piece to try it on",
     categories: {
+      jewelry: "Jewelry",
       featured: "Featured",
       eyes: "Eyes",
       materials: "Materials",

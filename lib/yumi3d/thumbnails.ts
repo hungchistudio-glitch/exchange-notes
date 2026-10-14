@@ -30,7 +30,7 @@ import { makeStudioEnvironment } from "./scene";
 const SIZE = 160;
 
 /** Bump when any piece's builder or the thumbnail pose changes. */
-export const THUMBNAIL_VERSION = 4;
+export const THUMBNAIL_VERSION = 6;
 /* Prefixed so the service worker's clean-up on a new release keeps it. */
 const CACHE_NAME = "exchange-notes-shop-thumbnails";
 
@@ -145,10 +145,10 @@ function closeStudio(studio: Studio) {
   studio.renderer.forceContextLoss();
 }
 
-async function render(studio: Studio, id: string, type = "image/png", quality?: number): Promise<Blob | null> {
+function drawThumbnail(studio: Studio, id: string): THREE.Group | null {
   const object = buildThumbnailObject(id);
   if (!object) return null;
-  const { renderer, scene, camera, canvas } = studio;
+  const { renderer, scene, camera } = studio;
 
   const pivot = new THREE.Group();
   pivot.add(object);
@@ -170,10 +170,18 @@ async function render(studio: Studio, id: string, type = "image/png", quality?: 
   camera.lookAt(0, 0, 0);
 
   renderer.render(scene, camera);
-  const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
-  scene.remove(pivot);
-  disposeObject(pivot);
-  return blob;
+  return pivot;
+}
+
+async function render(studio: Studio, id: string, type = "image/png", quality?: number): Promise<Blob | null> {
+  const pivot = drawThumbnail(studio, id);
+  if (!pivot) return null;
+  try {
+    return await new Promise<Blob | null>(resolve => studio.canvas.toBlob(resolve, type, quality));
+  } finally {
+    studio.scene.remove(pivot);
+    disposeObject(pivot);
+  }
 }
 
 async function drain() {
@@ -232,20 +240,28 @@ export async function renderThumbnailSet(
   size = 256,
   type = "image/webp",
   quality = 0.9,
+  cancelled: () => boolean = () => false,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<Record<string, string>> {
+  if (cancelled()) return {};
   const studio = openStudio(size);
   if (!studio) return {};
   const out: Record<string, string> = {};
   try {
     for (const id of ids) {
-      const blob = await render(studio, id, type, quality);
-      if (!blob) continue;
-      out[id] = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-      });
+      if (cancelled()) break;
+      const pivot = drawThumbnail(studio, id);
+      if (!pivot) continue;
+      try {
+        // Offline export only. Avoid background-tab Blob/FileReader throttling;
+        // the live shop continues to encode asynchronously in idle time.
+        out[id] = studio.canvas.toDataURL(type, quality);
+        onProgress?.(Object.keys(out).length, ids.length);
+      } finally {
+        studio.scene.remove(pivot);
+        disposeObject(pivot);
+      }
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
     }
   } finally {
     closeStudio(studio);

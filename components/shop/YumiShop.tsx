@@ -70,7 +70,7 @@ import styles from "./YumiShop.module.css";
    bought stays in the fitting room and is said to.
    ========================================================= */
 
-const CATEGORIES: ShopCategory[] = ["featured", "eyes", "materials", "wear", "small", "owned"];
+const CATEGORIES: ShopCategory[] = ["featured", "jewelry", "eyes", "materials", "wear", "small", "owned"];
 
 /** How small the stand gets as the catalogue scrolls; YumiShop.module.css agrees. */
 const STAND_SMALLEST = 0.6;

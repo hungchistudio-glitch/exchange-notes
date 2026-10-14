@@ -2393,6 +2393,7 @@ const french: TranslationDictionary = {
     preview: "Aperçu · aucun vrai cookie dépensé",
     selectPrompt: "Touchez une pièce pour l’essayer",
     categories: {
+      jewelry: "Bijoux",
       featured: "Sélection",
       eyes: "Yeux",
       materials: "Matières",

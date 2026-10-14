@@ -2588,6 +2588,7 @@ const spanish: TranslationDictionary = {
     preview: "Vista previa · no se gastan galletas reales",
     selectPrompt: "Toca una pieza para probarla",
     categories: {
+      jewelry: "Joyería",
       featured: "Destacados",
       eyes: "Ojos",
       materials: "Materiales",

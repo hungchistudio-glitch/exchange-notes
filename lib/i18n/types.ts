@@ -2537,7 +2537,7 @@ export type TranslationDictionary = {
     freeTryOn: string;
     preview: string;
     selectPrompt: string;
-    categories: { featured: string; eyes: string; materials: string; wear: string; small: string; owned: string };
+    categories: { featured: string; jewelry: string; eyes: string; materials: string; wear: string; small: string; owned: string };
     countries: { all: string; basic: string; tw: string; us: string; fr: string; it: string; es: string };
   };
 };
