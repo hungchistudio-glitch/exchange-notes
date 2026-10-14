@@ -51,7 +51,7 @@ await assert.rejects(db.exec(`insert into yumi_energy_ledger(user_id,kind,amount
 assert.equal((await state()).balance,42);
 // Catalogue expansion preserves ledger state and supports simultaneous jewelry.
 const beforeExpansion=await state();
-await db.exec(await fs.readFile(`${root}/supabase/migrations/20261013201113_yumi_shop_cultural_accessories.sql`,'utf8'));
+await db.exec(await fs.readFile(`${root}/supabase/migrations/20261014110247_yumi_shop_cultural_accessories.sql`,'utf8'));
 assert.deepEqual(await state(),beforeExpansion);
 assert.equal((await db.query('select count(*)::int as n from yumi_shop_items')).rows[0].n,127);
 await db.exec(`insert into yumi_energy_ledger(user_id,kind,amount,source_key) values(auth.uid(),'paid',330,'TEST-ONLY-jewelry')`);
