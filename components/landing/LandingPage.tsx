@@ -20,7 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
+import Link from "next/link";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import YumiMark from "@/components/vocabulary/pet/YumiMark";
@@ -43,6 +43,30 @@ import styles from "./LandingPage.module.css";
 
 type LandingCopy = TranslationDictionary["landing"];
 type CaptureMode = "write" | "voice" | "camera";
+
+// Every ordinary entry uses the branded Google button on the login page.
+// The Supabase redirect button is reserved for that page's recovery flow.
+function LandingLoginLink({
+  label,
+  analyticsEvent,
+  analyticsSource,
+  className,
+}: {
+  label: string;
+  analyticsEvent: "landing_primary_cta_click" | "landing_final_cta_click";
+  analyticsSource: "navigation" | "hero" | "final";
+  className: string;
+}) {
+  return (
+    <Link
+      href="/login"
+      onClick={() => track(analyticsEvent, { source: analyticsSource })}
+      className={`flex min-h-12 w-full items-center justify-center rounded-full bg-black px-5 text-sm font-medium text-white transition-opacity hover:opacity-85 ${className}`}
+    >
+      {label}
+    </Link>
+  );
+}
 
 const LANGUAGE_OPTIONS = (
   Object.keys(INTERFACE_LANGUAGE_CODE) as InterfaceLanguage[]
@@ -824,9 +848,8 @@ export default function LandingPage() {
           <span>Exchange Notes</span>
         </a>
         <div className={styles.navCta}>
-          <GoogleLoginButton
+          <LandingLoginLink
             label={copy.navigation.start}
-            submittingLabel={copy.navigation.opening}
             analyticsEvent="landing_primary_cta_click"
             analyticsSource="navigation"
             className={styles.navButton}
@@ -871,9 +894,8 @@ export default function LandingPage() {
             ))}
           </div>
           <div className={styles.heroCta}>
-            <GoogleLoginButton
+            <LandingLoginLink
               label={copy.hero.cta}
-              submittingLabel={copy.hero.ctaLoading}
               analyticsEvent="landing_primary_cta_click"
               analyticsSource="hero"
               className={styles.primaryButton}
@@ -951,9 +973,8 @@ export default function LandingPage() {
         </h2>
         <p>{copy.closing.description}</p>
         <div className={styles.finalCta}>
-          <GoogleLoginButton
+          <LandingLoginLink
             label={copy.closing.cta}
-            submittingLabel={copy.closing.ctaLoading}
             analyticsEvent="landing_final_cta_click"
             analyticsSource="final"
             className={styles.primaryButton}

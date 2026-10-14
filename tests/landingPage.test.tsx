@@ -1,16 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("@/components/auth/GoogleLoginButton", () => ({
-  default: ({
-    label,
-    analyticsEvent,
-  }: {
-    label: ReactNode;
-    analyticsEvent?: string;
-  }) => <button data-event={analyticsEvent}>{label}</button>,
-}));
 
 vi.mock("@/components/vocabulary/pet/YumiMark", () => ({
   default: ({ mood }: { mood: string }) => (
@@ -292,7 +281,17 @@ describe("the pre-login product tour", () => {
     const ctas = screen.getAllByText(
       "Start journaling — Continue with Google",
     );
-    expect(ctas[0]).toHaveAttribute("data-event", "landing_primary_cta_click");
-    expect(ctas[1]).toHaveAttribute("data-event", "landing_final_cta_click");
+    const navigation = screen.getByRole("link", { name: "Start", exact: true });
+    const entries = [navigation, ...ctas];
+    for (const entry of entries) {
+      expect(entry).toHaveAttribute("href", "/login");
+      // Keep the test in place while exercising the real click analytics.
+      entry.addEventListener("click", (event) => event.preventDefault());
+      fireEvent.click(entry);
+    }
+    expect(track).toHaveBeenCalledWith("landing_primary_cta_click", { source: "navigation" });
+    expect(track).toHaveBeenCalledWith("landing_primary_cta_click", { source: "hero" });
+    expect(track).toHaveBeenCalledWith("landing_final_cta_click", { source: "final" });
+    expect(track).not.toHaveBeenCalledWith("google_auth_start", expect.anything());
   });
 });
