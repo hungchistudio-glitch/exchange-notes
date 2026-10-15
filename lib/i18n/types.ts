@@ -88,9 +88,8 @@ export type TranslationDictionary = {
       eyebrow: string;
       title: string;
       intro: string;
-      description: string;
-      mantra: string;
-      modeAriaLabel: string;
+      /** The line under the button: what it costs and what it is not. */
+      promise: string;
       tour: {
         ariaLabel: string;
         stepLabel: string;
@@ -99,34 +98,55 @@ export type TranslationDictionary = {
         pause: string;
         play: string;
         goToStep: string;
-        captureTitle: string;
-        captureDescription: string;
-        languagesTitle: string;
-        languagesDescription: string;
-        rememberTitle: string;
-        rememberDescription: string;
+        keepTitle: string;
+        keepDescription: string;
+        understandTitle: string;
+        understandDescription: string;
+        exchangeTitle: string;
+        exchangeDescription: string;
       };
-      write: string;
-      voice: string;
-      camera: string;
       cta: string;
       ctaLoading: string;
-      preview: {
-        ariaLabel: string;
-        writeEyebrow: string;
-        writeSample: string;
-        writeStatus: string;
-        voiceEyebrow: string;
-        voiceSample: string;
-        voiceStatus: string;
-        cameraEyebrow: string;
-        cameraSubject: string;
-        cameraDescription: string;
-        cameraStatus: string;
-        memoryLinks: string;
-        thought: string;
-        feeling: string;
-        image: string;
+      /**
+       * One phrase's journey, the hero's example. The phrase is in a
+       * language other than the reader's, so every reader meets a foreign
+       * word; each language picks its own.
+       */
+      journey: {
+        phrase: string;
+        /** BCP-47, for the phrase and its reading. */
+        phraseLang: string;
+        reading: string;
+        keep: {
+          label: string;
+          source: string;
+          whyLabel: string;
+          why: string;
+          write: string;
+          voice: string;
+          camera: string;
+        };
+        understand: {
+          label: string;
+          meaningLabel: string;
+          meaning: string;
+          toneLabel: string;
+          tone: string;
+          cultureLabel: string;
+          culture: string;
+          equivalentLabel: string;
+          equivalent: string;
+        };
+        exchange: {
+          label: string;
+          sentTo: string;
+          friend: string;
+          reply: string;
+          replyWord: string;
+          /** BCP-47 for replyWord. */
+          replyLang: string;
+          insight: string;
+        };
       };
     };
     notes: {

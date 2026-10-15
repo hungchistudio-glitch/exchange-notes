@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Bookmark,
   Camera,
-  Check,
-  Heart,
-  Image as ImageIcon,
   Languages,
-  Leaf,
-  Link2,
   Mic,
   Pause,
   PenLine,
@@ -41,7 +36,6 @@ import { markChosenBeforeSignIn } from "@/lib/preferences/pendingChoices";
 import styles from "./LandingPage.module.css";
 
 type LandingCopy = TranslationDictionary["landing"];
-type CaptureMode = "write" | "voice" | "camera";
 
 // Every ordinary entry uses the branded Google button on the login page.
 // The Supabase redirect button is reserved for that page's recovery flow.
@@ -177,101 +171,153 @@ function SectionHeading({
   );
 }
 
-function MomentPreview({
-  copy,
-  mode,
-  labels,
-}: {
-  copy: LandingCopy["hero"]["preview"];
-  mode: CaptureMode;
-  labels: Record<CaptureMode, string>;
-}) {
+type JourneyCopy = LandingCopy["hero"]["journey"];
+
+/** The friend's reply, with the word they offered set apart in its language. */
+function ReplyWithWord({ journey }: { journey: JourneyCopy }) {
+  const { reply, replyWord, replyLang } = journey.exchange;
+  const at = reply.indexOf(replyWord);
+  if (at < 0) return <>{reply}</>;
+
   return (
-    <div
-      className={styles.momentPreview}
-      aria-label={copy.ariaLabel}
-      aria-live="polite"
-    >
-      <div className={styles.momentPreviewHeader}>
+    <>
+      {reply.slice(0, at)}
+      <mark lang={replyLang}>{replyWord}</mark>
+      {reply.slice(at + replyWord.length)}
+    </>
+  );
+}
+
+/*
+ * One phrase's journey, in three cards.
+ *
+ * The hero used to show a journal: a sentence about the light on the walk
+ * home, a voice wave, a ginkgo leaf. None of it was about language, and none
+ * of it was the thing this app exists for, which its About page says in one
+ * line — exchange a phrase, discover another way of seeing (Chi, 2026-10-15:
+ * make the hero mean something). So the hero shows exactly that, with one
+ * real phrase: kept with the moment it was met, read with Yumi for meaning,
+ * tone and culture, then sent to a friend from somewhere else who reads it
+ * their own way. Every reader meets a phrase from a language that is not
+ * their own; each language's copy chooses it (see journey in lib/i18n).
+ */
+function KeepCard({ journey }: { journey: JourneyCopy }) {
+  const { keep } = journey;
+
+  return (
+    <article className={styles.journeyCard}>
+      <header className={styles.journeyHeader}>
+        <span className={styles.journeyBadge}>
+          <Bookmark size={13} aria-hidden="true" /> {keep.label}
+        </span>
+        <span className={styles.journeySource}>
+          <Camera size={13} aria-hidden="true" /> {keep.source}
+        </span>
+      </header>
+
+      <div
+        className={styles.journeyPhrase}
+        data-long={journey.phrase.length > 8 ? "true" : undefined}
+      >
+        <strong lang={journey.phraseLang}>{journey.phrase}</strong>
+        <span lang={journey.phraseLang}>{journey.reading}</span>
+      </div>
+
+      <figure className={styles.journeyWhy}>
+        <figcaption>{keep.whyLabel}</figcaption>
+        <p>{keep.why}</p>
+      </figure>
+
+      {/* How a phrase can be kept; this one was photographed. */}
+      <div className={styles.journeyModes} aria-hidden="true">
         <span>
-          <Sparkles size={14} aria-hidden="true" /> Yumi
+          <PenLine size={12} /> {keep.write}
         </span>
-        <span>{labels[mode]}</span>
-      </div>
-
-      <div className={styles.momentPreviewBody}>
-        {mode === "write" ? (
-          <article className={styles.writePreview}>
-            <div className={styles.previewEyebrow}>
-              <PenLine size={14} aria-hidden="true" /> {copy.writeEyebrow}
-            </div>
-            <p>{copy.writeSample}</p>
-            <span className={styles.recognitionStatus}>
-              <Check size={13} aria-hidden="true" /> {copy.writeStatus}
-            </span>
-          </article>
-        ) : null}
-
-        {mode === "voice" ? (
-          <article className={styles.voicePreview}>
-            <div className={styles.previewEyebrow}>
-              <Mic size={14} aria-hidden="true" /> {copy.voiceEyebrow}
-            </div>
-            <div className={styles.voiceWave} aria-hidden="true">
-              {Array.from({ length: 18 }, (_, index) => (
-                <span key={index} />
-              ))}
-            </div>
-            <p>{copy.voiceSample}</p>
-            <span className={styles.recognitionStatus}>
-              <Sparkles size={13} aria-hidden="true" /> {copy.voiceStatus}
-            </span>
-          </article>
-        ) : null}
-
-        {mode === "camera" ? (
-          <article className={styles.cameraPreview}>
-            <div className={styles.previewEyebrow}>
-              <Camera size={14} aria-hidden="true" /> {copy.cameraEyebrow}
-            </div>
-            <div className={styles.cameraScene} aria-hidden="true">
-              <div className={styles.cameraGlow} />
-              <div className={styles.cameraFocus}>
-                <Leaf size={48} strokeWidth={1.4} />
-              </div>
-              <span className={styles.cameraCornerOne} />
-              <span className={styles.cameraCornerTwo} />
-              <span className={styles.cameraCornerThree} />
-              <span className={styles.cameraCornerFour} />
-            </div>
-            <div className={styles.cameraResult}>
-              <span className={styles.recognitionStatus}>
-                <Sparkles size={13} aria-hidden="true" /> {copy.cameraStatus}
-              </span>
-              <strong>{copy.cameraSubject}</strong>
-              <p>{copy.cameraDescription}</p>
-            </div>
-          </article>
-        ) : null}
-      </div>
-
-      <div className={styles.memoryLinks}>
-        <span className={styles.memoryLinksLabel}>
-          <Link2 size={13} aria-hidden="true" /> {copy.memoryLinks}
+        <span>
+          <Mic size={12} /> {keep.voice}
         </span>
+        <span data-active="true">
+          <Camera size={12} /> {keep.camera}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function UnderstandCard({ journey }: { journey: JourneyCopy }) {
+  const { understand } = journey;
+
+  return (
+    <article className={styles.journeyCard}>
+      <header className={styles.journeyHeader}>
+        <span className={styles.journeyBadge}>
+          <Sparkles size={13} aria-hidden="true" /> {understand.label}
+        </span>
+      </header>
+
+      <p className={styles.journeyPhraseSmall}>
+        <strong lang={journey.phraseLang}>{journey.phrase}</strong>
+        <span lang={journey.phraseLang}>{journey.reading}</span>
+      </p>
+
+      <dl className={styles.journeyReading}>
         <div>
-          <span>
-            <PenLine size={12} aria-hidden="true" /> {copy.thought}
-          </span>
-          <span>
-            <Heart size={12} aria-hidden="true" /> {copy.feeling}
-          </span>
-          <span>
-            <ImageIcon size={12} aria-hidden="true" /> {copy.image}
-          </span>
+          <dt>{understand.meaningLabel}</dt>
+          <dd>{understand.meaning}</dd>
         </div>
+        <div>
+          <dt>{understand.toneLabel}</dt>
+          <dd>{understand.tone}</dd>
+        </div>
+        <div>
+          <dt>{understand.cultureLabel}</dt>
+          <dd>{understand.culture}</dd>
+        </div>
+      </dl>
+
+      <p className={styles.journeyEquivalent}>
+        <span>{understand.equivalentLabel}</span>
+        <strong>{understand.equivalent}</strong>
+      </p>
+    </article>
+  );
+}
+
+function ExchangeCard({ journey }: { journey: JourneyCopy }) {
+  const { exchange } = journey;
+
+  return (
+    <article className={styles.journeyCard}>
+      <header className={styles.journeyHeader}>
+        <span className={styles.journeyBadge}>
+          <Send size={13} aria-hidden="true" /> {exchange.label}
+        </span>
+      </header>
+
+      <div className={styles.journeyRoute}>
+        <span className={styles.journeyChip} lang={journey.phraseLang}>
+          {journey.phrase}
+        </span>
+        <span className={styles.journeyArrow} aria-hidden="true" />
+        <span className={styles.journeyFriend}>
+          <span className={styles.journeyAvatar} aria-hidden="true">
+            {exchange.friend.charAt(0)}
+          </span>
+          <span>
+            {exchange.sentTo}
+            <strong>{exchange.friend}</strong>
+          </span>
+        </span>
       </div>
-    </div>
+
+      <blockquote className={styles.journeyReply}>
+        <ReplyWithWord journey={journey} />
+      </blockquote>
+
+      <p className={styles.journeyInsight}>
+        <Sparkles size={13} aria-hidden="true" /> {exchange.insight}
+      </p>
+    </article>
   );
 }
 
@@ -293,80 +339,12 @@ function useReducedMotion() {
   return reducedMotion;
 }
 
-function LanguageOrbitPreview({ ariaLabel }: { ariaLabel: string }) {
-  return (
-    <div className={styles.languageOrbitPreview} aria-label={ariaLabel}>
-      <div className={styles.languageOrbitCore} aria-hidden="true">
-        <Languages size={28} strokeWidth={1.45} />
-        <strong>5</strong>
-      </div>
-      <ul className={styles.languageOrbitList}>
-        {LANGUAGE_OPTIONS.map(({ value, meta }, index) => {
-          const angle = index * (360 / LANGUAGE_OPTIONS.length);
-
-          return (
-            <li
-              key={value}
-              lang={meta.htmlLang}
-              dir={meta.direction}
-              style={{
-                "--orbit-angle": `${angle}deg`,
-                "--orbit-angle-inverse": `${-angle}deg`,
-              } as CSSProperties}
-            >
-              <span aria-hidden="true">{meta.badge}</span>
-              {meta.endonym}
-            </li>
-          );
-        })}
-      </ul>
-      <span className={styles.languageOrbitOne} aria-hidden="true" />
-      <span className={styles.languageOrbitTwo} aria-hidden="true" />
-    </div>
-  );
-}
-
-function MemoryJourneyPreview({ copy }: { copy: LandingCopy }) {
-  return (
-    <div className={styles.memoryJourneyPreview} aria-hidden="true">
-      <article className={styles.memoryJourneyCard}>
-        <PenLine size={18} strokeWidth={1.7} />
-        <span>{copy.notes.eyebrow}</span>
-        <strong>{copy.notes.title}</strong>
-      </article>
-
-      <div className={styles.memoryJourneyPath}>
-        <span />
-        <Sparkles size={17} />
-        <span />
-      </div>
-
-      <article className={styles.memoryJourneyCard}>
-        <Send size={18} strokeWidth={1.7} />
-        <span>{copy.exchange.eyebrow}</span>
-        <strong>{copy.exchange.title}</strong>
-      </article>
-
-      <div className={styles.memoryJourneyYumi}>
-        {/* Illustration inside a diagram rather than the subject of it, so
-            she turns on her own and does not invite a drag that would pull
-            focus from the three cards she sits among. */}
-        <Yumi3DFigure interactive={false} fill={0.4} />
-      </div>
-    </div>
-  );
-}
-
-function HeroTutorial3D({
+function HeroJourney({
   copy,
-  captureMode,
-  captureLabels,
   step,
   onStepChange,
 }: {
   copy: LandingCopy;
-  captureMode: CaptureMode;
-  captureLabels: Record<CaptureMode, string>;
   step: number;
   onStepChange: (step: number) => void;
 }) {
@@ -378,18 +356,19 @@ function HeroTutorial3D({
     y: number;
   } | null>(null);
   const tour = copy.hero.tour;
+  const journey = copy.hero.journey;
   const steps = [
     {
-      title: tour.captureTitle,
-      description: tour.captureDescription,
+      title: tour.keepTitle,
+      description: tour.keepDescription,
     },
     {
-      title: tour.languagesTitle,
-      description: tour.languagesDescription,
+      title: tour.understandTitle,
+      description: tour.understandDescription,
     },
     {
-      title: tour.rememberTitle,
-      description: tour.rememberDescription,
+      title: tour.exchangeTitle,
+      description: tour.exchangeDescription,
     },
   ] as const;
 
@@ -439,73 +418,77 @@ function HeroTutorial3D({
         <span>{steps[step].description}</span>
       </div>
 
-      <div
-        className={styles.heroTourViewport}
-        data-testid="hero-tour-viewport"
-        onPointerDown={(event) => {
-          if (
-            (event.pointerType !== "touch" && event.pointerType !== "pen") ||
-            !event.isPrimary
-          ) {
-            return;
-          }
+      <div className={styles.journeyStage}>
+        <div
+          className={styles.heroTourViewport}
+          data-testid="hero-tour-viewport"
+          onPointerDown={(event) => {
+            if (
+              (event.pointerType !== "touch" && event.pointerType !== "pen") ||
+              !event.isPrimary
+            ) {
+              return;
+            }
 
-          swipeStart.current = {
-            pointerId: event.pointerId,
-            x: event.clientX,
-            y: event.clientY,
-          };
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-        }}
-        onPointerUp={(event) => {
-          const start = swipeStart.current;
-          swipeStart.current = null;
+            swipeStart.current = {
+              pointerId: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+            };
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+          }}
+          onPointerUp={(event) => {
+            const start = swipeStart.current;
+            swipeStart.current = null;
 
-          if (!start || start.pointerId !== event.pointerId) return;
+            if (!start || start.pointerId !== event.pointerId) return;
 
-          event.currentTarget.releasePointerCapture?.(event.pointerId);
+            event.currentTarget.releasePointerCapture?.(event.pointerId);
 
-          const deltaX = event.clientX - start.x;
-          const deltaY = event.clientY - start.y;
-          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) {
-            return;
-          }
+            const deltaX = event.clientX - start.x;
+            const deltaY = event.clientY - start.y;
+            if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) {
+              return;
+            }
 
-          chooseStep(step + (deltaX < 0 ? 1 : -1));
-        }}
-        onPointerCancel={() => {
-          swipeStart.current = null;
-        }}
-      >
-        {steps.map((item, itemIndex) => {
-          const relative = (itemIndex - step + steps.length) % steps.length;
-          const positionClass =
-            relative === 0
-              ? styles.heroTourCardActive
-              : relative === 1
-                ? styles.heroTourCardNext
-                : styles.heroTourCardPrevious;
+            chooseStep(step + (deltaX < 0 ? 1 : -1));
+          }}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+        >
+          {steps.map((item, itemIndex) => {
+            const relative = (itemIndex - step + steps.length) % steps.length;
+            const positionClass =
+              relative === 0
+                ? styles.heroTourCardActive
+                : relative === 1
+                  ? styles.heroTourCardNext
+                  : styles.heroTourCardPrevious;
 
-          return (
-            <div
-              key={item.title}
-              className={`${styles.heroTourCard} ${positionClass}`}
-              aria-hidden={itemIndex !== step}
-            >
-              {itemIndex === 0 ? (
-                <MomentPreview
-                  copy={copy.hero.preview}
-                  mode={captureMode}
-                  labels={captureLabels}
-                />
-              ) : null}
-              {itemIndex === 1 ? (
-                <LanguageOrbitPreview ariaLabel={tour.languagesDescription} />
-              ) : null}
-              {itemIndex === 2 ? <MemoryJourneyPreview copy={copy} /> : null}
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={item.title}
+                className={`${styles.heroTourCard} ${positionClass}`}
+                aria-hidden={itemIndex !== step}
+              >
+                {itemIndex === 0 ? <KeepCard journey={journey} /> : null}
+                {itemIndex === 1 ? <UnderstandCard journey={journey} /> : null}
+                {itemIndex === 2 ? <ExchangeCard journey={journey} /> : null}
+              </div>
+            );
+          })}
+        </div>
+
+        {/*
+          The 3D Yumi stands over the cards for all three steps — the first
+          thing a stranger meets — turnable, her eye pullable. A sibling of the
+          viewport rather than inside it, so a drag on her turns her and never
+          also swipes the step.
+        */}
+        <div className={styles.journeyYumi} aria-hidden="true">
+          <Yumi3DFigure fill={0.42} />
+        </div>
       </div>
 
       <div className={styles.heroTourControls}>
@@ -802,16 +785,10 @@ function TargetFocusPreview({
 
 export default function LandingPage() {
   const viewTrackedRef = useRef(false);
-  const [captureMode, setCaptureMode] = useState<CaptureMode>("write");
   const [tutorialStep, setTutorialStep] = useState(0);
   const { t, language } = useTranslation();
   const copy = t.landing;
   const interfaceLang = getInterfaceLanguageMeta(language).htmlLang;
-  const captureLabels: Record<CaptureMode, string> = {
-    write: copy.hero.write,
-    voice: copy.hero.voice,
-    camera: copy.hero.camera,
-  };
 
   useEffect(() => {
     if (viewTrackedRef.current) return;
@@ -847,35 +824,9 @@ export default function LandingPage() {
             language={language}
           />
           <p className={styles.eyebrow}>{copy.hero.eyebrow}</p>
+          {/* The About page's own first line, which is what this app is for. */}
           <h1 id="landing-hero-title">{copy.hero.title}</h1>
           <p className={styles.heroIntro}>{copy.hero.intro}</p>
-          <p className={styles.heroDescription}>{copy.hero.description}</p>
-          <p className={styles.heroMantra}>{copy.hero.mantra}</p>
-          <div
-            className={styles.captureModes}
-            aria-label={copy.hero.modeAriaLabel}
-          >
-            {(
-              [
-                ["write", PenLine],
-                ["voice", Mic],
-                ["camera", Camera],
-              ] as const
-            ).map(([mode, Icon]) => (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={captureMode === mode}
-                onClick={() => {
-                  setCaptureMode(mode);
-                  setTutorialStep(0);
-                }}
-              >
-                <Icon size={15} strokeWidth={1.8} aria-hidden="true" />
-                {captureLabels[mode]}
-              </button>
-            ))}
-          </div>
           <div className={styles.heroCta}>
             <LandingLoginLink
               label={copy.hero.cta}
@@ -884,11 +835,10 @@ export default function LandingPage() {
               className={styles.primaryButton}
             />
           </div>
+          <p className={styles.heroPromise}>{copy.hero.promise}</p>
         </div>
-        <HeroTutorial3D
+        <HeroJourney
           copy={copy}
-          captureMode={captureMode}
-          captureLabels={captureLabels}
           step={tutorialStep}
           onStepChange={setTutorialStep}
         />
