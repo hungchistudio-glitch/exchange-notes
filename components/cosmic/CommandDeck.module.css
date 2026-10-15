@@ -350,26 +350,6 @@
      top of Yumi. */
   --deck-radius: calc(var(--deck-size) * 0.38);
 
-  /*
-   * Yumi's optical correction.
-   *
-   * The stage, the field rings and the six nodes are all concentric on the
-   * geometric centre and stay there. Yumi is the one thing that does not,
-   * because Yumi is not optically centred inside its own artwork: the body is
-   * a dark C, and every bright element on it — the chrome connector and the
-   * eye — sits in the right-hand third. Measured against the mark's 400-unit
-   * box the luminous mass lands roughly 35 units right of the geometric
-   * centre, which is why a mathematically centred Yumi reads as sitting
-   * slightly to the right of where it should.
-   *
-   * 4% of the stage is what puts the bright mass back over the middle. It is
-   * the smallest move that fixes it and the largest that nobody notices — past
-   * about 6% Yumi stops looking corrected and starts looking off-centre in the
-   * other direction, which is a worse failure because it draws attention to
-   * itself.
-   */
-  --core-shift: calc(var(--deck-size) * -0.04);
-
   position: relative;
   width: var(--deck-size);
   aspect-ratio: 1;
@@ -500,9 +480,9 @@
 /* Yumi at the centre, with a soft energy core behind rather than around, so
    Yumi's own silhouette stays the thing you read first. */
 /* Yumi is the centre of the deck and has to read as it. Wide enough to hold
-   the middle, still clear of the labels hanging below the top node — the
-   mark's artwork fills its viewBox almost edge to edge, so this percentage is
-   very nearly the diameter it actually occupies. */
+   the middle, still clear of the labels hanging below the top node — the 3D
+   Yumi draws into a square canvas as wide as this box, so this percentage is
+   the size of the space the figure stands in. */
 .core {
   position: relative;
   z-index: 2;
@@ -523,9 +503,8 @@
  * scripted, and no third layer needed to hide the loop — two periods that do
  * not divide is enough.
  *
- * Both are centred on the stage rather than on Yumi's shifted body, which is
- * the correct read once the correction above is applied: after the shift,
- * Yumi's luminous mass IS the centre, so the light it throws belongs there.
+ * Both are centred on the core, which is the same square the 3D Yumi is drawn
+ * in, so the light sits directly behind the figure that throws it.
  */
 .coreGlow {
   position: absolute;
@@ -577,18 +556,6 @@
   50% {
     opacity: 0.85;
     transform: scale(1.06);
-  }
-}
-
-/* Opacity only. See the reduced-motion block below for why this one survives
-   when everything else on the core stops. */
-@keyframes coreGlowCalm {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 0.95;
   }
 }
 
@@ -768,29 +735,16 @@
  * is everything that travels, turns or changes size, so nothing a finger is
  * aiming at is ever in a different place than it looks.
  *
- * What survives is one slow change in brightness on the core, and it is the
- * only thing in the file that does. The reasoning is under .coreGlow below; the
- * short version is that a calmer deck is the goal and a dead one is not.
+ * The core glow stops with them, since its breath changes size as well as
+ * brightness. It holds still at full strength rather than going dark.
  */
 @media (prefers-reduced-motion: reduce) {
   .field,
   .fieldInner,
   .coreAura,
+  .coreGlow,
   .star,
   .signal {
-    animation: none;
-  }
-
-  /*
-   * One exception, and it is deliberate: the core glow keeps breathing.
-   *
-   * Reduced motion is a request to stop things moving, not a request for a
-   * dead screen, and this is the layer that carries Yumi's presence. What it
-   * loses is the part that is actually motion — the scale — leaving a slow
-   * change in brightness at less than half the speed. Nothing travels, nothing
-   * changes size, and Yumi is still visibly alive.
-   */
-  .coreGlow {
     animation: none;
   }
 
