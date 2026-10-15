@@ -104,25 +104,6 @@ const SIGNALS: Array<{
   { orbit: "19s", cycle: "21s", radius: 0.4, angle: "262deg", delay: "-15.6s" },
 ];
 
-/*
- * Where Yumi looks when a system is locked.
- *
- * The six nodes sit at 60° intervals with the first one straight up, so the
- * direction to the one being pressed is just its angle — and the eye can be
- * pointed at it with the same two numbers the ring was built from. The travel
- * is in the mark's own 400-unit space, and it is wider than it is tall because
- * that is the shape of the room the pupil has to move in.
- */
-function lookAt(index: number) {
-  const radians = ((360 / ROOMS.length) * index * Math.PI) / 180;
-
-  return {
-    "--look-x": `${(Math.sin(radians) * 8).toFixed(2)}px`,
-    "--compact-look-x": index % 2 === 0 ? "-6px" : "6px",
-    "--look-y": `${(-Math.cos(radians) * 5).toFixed(2)}px`,
-  } as CSSProperties;
-}
-
 /**
  * The Yumi Command Deck — the home of Yumi Cosmic Mode.
  *
@@ -331,14 +312,8 @@ export default function CommandDeck() {
             data-omni={omniState}
             // The acknowledgement in §9 of the brief. It has a real trigger
             // already: the same press that locks a system — so Yumi answers
-            // the press with a ripple and by turning to look at whichever of
-            // its six systems the finger is on.
+            // the press with a ripple.
             data-lock={lockedRoom ? "true" : "false"}
-            style={
-              lockedRoom
-                ? lookAt(ROOMS.findIndex((room) => room.key === lockedRoom))
-                : undefined
-            }
           >
             <span className={styles.coreAura} aria-hidden="true" />
             <span className={styles.coreGlow} aria-hidden="true" />

@@ -17,10 +17,11 @@
  * screen. So every duration below reads from a custom property, and a consumer
  * sets those in its own module on any ancestor.
  *
- * Consumers apply these by name, the way `hud-label` is applied — usually
- * alongside a module class that carries the custom properties:
+ * Consumers apply these by name, the way `hud-label` is applied, and keep the
+ * custom properties on an ancestor — the Messages mark sets its pace on .shell
+ * and passes the class straight through:
  *
- *   sweepClassName={`yumi-sweep ${styles.coreSweep}`}
+ *   sweepClassName={cosmic ? "yumi-sweep" : undefined}
  *
  * The defaults are the Messages mark's, which is where these rhythms were
  * first tuned and got them right.
