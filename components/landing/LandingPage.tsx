@@ -23,7 +23,6 @@ import {
 import Link from "next/link";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
-import YumiMark from "@/components/vocabulary/pet/YumiMark";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
 import {
@@ -352,15 +351,7 @@ function MemoryJourneyPreview({ copy }: { copy: LandingCopy }) {
         {/* Illustration inside a diagram rather than the subject of it, so
             she turns on her own and does not invite a drag that would pull
             focus from the three cards she sits among. */}
-        <Yumi3DFigure interactive={false} fill={0.4}>
-          <YumiMark
-            mood="curious"
-            isWaking={false}
-            isEating={false}
-            growthStage={0}
-            crownEarned={false}
-          />
-        </Yumi3DFigure>
+        <Yumi3DFigure interactive={false} fill={0.4} />
       </div>
     </div>
   );
@@ -635,20 +626,12 @@ function YumiPreview({
     <div className={styles.yumiPreview} aria-label={copy.previewAriaLabel}>
       {/*
         The one place on this page a stranger can touch her before signing
-        up: turn her, pull her eye, let it snap back. The flat mark is what
-        shows until the engine chunk lands and what stays without WebGL, so
-        the page that has to paint for a stranger never paints a blank box.
+        up: turn her, pull her eye, let it snap back. Only the 3D Yumi is
+        ever drawn here; until her chunk lands the box holds the shared
+        loader, so a stranger never meets the old flat Yumi first.
       */}
       <div className={styles.yumiStage}>
-        <Yumi3DFigure>
-          <YumiMark
-            mood="curious"
-            isWaking={false}
-            isEating={false}
-            growthStage={0}
-            crownEarned={false}
-          />
-        </Yumi3DFigure>
+        <Yumi3DFigure />
       </div>
       <div className={styles.yumiMessage}>
         <p lang={interfaceLang}>{copy.message}</p>
@@ -984,7 +967,12 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <span>Exchange Notes</span>
-        <Link href="/privacy">{t.info.nav.privacy}</Link>
+        {/* Google's consent screen links this footer's two pages, and its
+            brand review checks the home page links them back. */}
+        <div className={styles.footerLinks}>
+          <Link href="/privacy">{t.info.nav.privacy}</Link>
+          <Link href="/terms">{t.info.nav.terms}</Link>
+        </div>
         <span>{learningLanguageList()}</span>
       </footer>
     </main>

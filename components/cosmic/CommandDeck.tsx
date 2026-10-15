@@ -14,7 +14,6 @@ import OmniLexiconConsole, {
   type OmniLexiconState,
 } from "@/components/cosmic/OmniLexiconConsole";
 import CosmicHomeYumi from "./CosmicHomeYumi";
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
 import NotesHomeModule from "@/components/notes/NotesHomeModule";
 import { useLearningLanguageContext } from "@/contexts/LearningLanguageContext";
 import { getLanguage, getLanguageName } from "@/lib/languages";
@@ -349,66 +348,12 @@ export default function CommandDeck() {
             <span className={styles.coreRipple} aria-hidden="true" />
 
             {/*
-              Three wrappers, one transform each, because an element can only
-              run one transform animation at a time and this needs four on
-              different clocks: the optical correction (static), the drift, the
-              tilt, and the breath on the mark itself. Nesting is what lets
-              them layer instead of overwrite. See the module CSS.
+              Only the 3D Yumi is drawn on the deck. The flat mark that used
+              to be its stand-in, while the scene loaded and on a device
+              without WebGL, was the old Yumi; the shared loader holds her
+              place now (Chi, 2026-10-15).
             */}
-            <CosmicHomeYumi paused={omniState !== "idle"}>
-            <div className={styles.coreBody}>
-              <div className={styles.coreDrift}>
-                <div className={styles.coreTilt}>
-                  <ExchangeNotesMark
-                    cosmic
-                    /*
-                     * Energy follows what Yumi is actually doing, and the four
-                     * working states are unchanged — a seam that is always
-                     * bright says nothing when the moment it was meant to mark
-                     * arrives, and that logic still governs the range.
-                     *
-                     * What moved is the floor. At 0.12 the seam was effectively
-                     * unlit, so a resting Yumi on the deck was a dark shape
-                     * with rings around it; the light that makes this a powered
-                     * machine only existed while the console was busy. 0.34 is
-                     * lit enough to read as a system running and still less
-                     * than half of listening, so every state above it keeps a
-                     * clear step up to arrive on.
-                     */
-                    energy={
-                      omniState === "scanning"
-                        ? 1
-                        : omniState === "listening"
-                          ? 0.65
-                          : omniState === "typing"
-                            ? 0.4
-                            : 0.34
-                    }
-                    className={`${styles.coreMark} ${styles.coreTiming}`}
-                    pupilClassName={styles.pupil}
-                    irisClassName={styles.iris}
-                    /*
-                     * The blink, the pass and the gleam are the app's shared
-                     * ones (app/yumi-motion.css); the module class beside each
-                     * carries only this screen's timing. They have to be
-                     * applied as global class names — a CSS module scopes any
-                     * animation-name it sees, so a module referring to a
-                     * shared keyframe compiles to a name that matches nothing
-                     * and silently stops animating.
-                     */
-                    upperLidClassName="yumi-blink-upper"
-                    lowerLidClassName="yumi-blink-lower"
-                    sweepClassName={
-                      omniState === "scanning"
-                        ? `yumi-sweep-active ${styles.coreSweepActive}`
-                        : `yumi-sweep ${styles.coreSweep}`
-                    }
-                    gleamClassName={`yumi-gleam ${styles.coreGleam}`}
-                  />
-                </div>
-              </div>
-            </div>
-            </CosmicHomeYumi>
+            <CosmicHomeYumi paused={omniState !== "idle"} />
             <span className="sr-only">{copy.deck.coreLabel}</span>
           </div>
 

@@ -1,8 +1,8 @@
 export type InfoSection = { title: string; body: string };
 
 export type InfoCopy = {
-  nav: { about: string; community: string; privacy: string; contact: string; home: string; back: string; related: string };
-  help: { description: string; about: string; community: string; privacy: string };
+  nav: { about: string; community: string; privacy: string; terms: string; contact: string; home: string; back: string; related: string };
+  help: { description: string; about: string; community: string; privacy: string; terms: string };
   about: {
     tagline: string;
     greeting: string;
@@ -15,5 +15,6 @@ export type InfoCopy = {
     planet: string;
   };
   community: { intro: string; rules: [InfoSection, InfoSection, InfoSection, InfoSection, InfoSection, InfoSection]; contact: string };
-  privacy: { intro: string; status: string; notice: string; sections: [InfoSection, InfoSection, InfoSection, InfoSection, InfoSection, InfoSection, InfoSection, InfoSection]; contact: string };
+  /* The privacy policy and terms themselves live in lib/legal, loaded only
+     by the two pages that show them; see lib/legal/types.ts. */
 };

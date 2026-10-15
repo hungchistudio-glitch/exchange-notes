@@ -10,6 +10,8 @@
   --landing-blue: #8aa6c4;
   --landing-green: #82977c;
   --landing-rose: #b8898e;
+  /* Yumi's loader follows the page's own ink, so it turns with dark mode. */
+  --yumi-loading-ink: var(--landing-ink);
   --landing-on-ink: #ffffff;
   --landing-logo: #000000;
   --landing-elevated: #ffffff;
@@ -1587,6 +1589,27 @@
   padding: 20px max(24px, calc((100vw - 1180px) / 2));
   color: var(--landing-faint);
   font-size: 0.6875rem;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+/* A 44px row to tap, though the type stays footer-sized. */
+.footerLinks a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+  text-underline-offset: 3px;
+}
+
+.footerLinks a:hover {
+  color: var(--landing-ink);
 }
 
 /*

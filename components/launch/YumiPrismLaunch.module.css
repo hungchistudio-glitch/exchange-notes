@@ -58,12 +58,6 @@
     radial-gradient(ellipse at 52% 38%, #e7f4fb8c 0%, #f4f9fb4d 28%, transparent 57%),
     radial-gradient(ellipse at 32% 56%, #edf0fb50, transparent 40%),
     linear-gradient(160deg, #fff 12%, #f8fafc60 62%, #e7f1f845);
-  /* The mark itself, so the SVG follows the ground like everything else. */
-  --mark-a: #142d46;
-  --mark-b: #233a51;
-  --mark-c: #4e799a;
-  --eye-field: #f8fcff;
-  --eye-spark: #ffffff;
   --brand-dot: #7fa9c9;
   --handoff-ground: #fafcfd;
   --focus: #4886b2;
@@ -120,11 +114,6 @@
     radial-gradient(ellipse at 52% 38%, #12354d70 0%, #0c1c2840 28%, transparent 57%),
     radial-gradient(ellipse at 32% 56%, #10202e55, transparent 40%),
     linear-gradient(160deg, #08090b 12%, #0a1219 62%, #0b1620);
-  --mark-a: #cfe4f5;
-  --mark-b: #b7d2e8;
-  --mark-c: #74a6cc;
-  --eye-field: #0d1720;
-  --eye-spark: #eaf6ff;
   --brand-dot: #5fa3d2;
   --handoff-ground: #0a0f14;
   --focus: #6fb6e4;
@@ -257,18 +246,6 @@
   opacity: var(--sweep-opacity);
   transform: translate3d(var(--sweep-x), 0, 0) rotate(-24deg);
 }
-
-.yumi { position: relative; width: 65%; height: 65%; overflow: visible; }
-/* The mark's own colours, so it inverts with the ground rather than being
- * drawn twice. SVG paint properties take custom properties like any other. */
-.inkFrom { stop-color: var(--mark-a); }
-.inkVia { stop-color: var(--mark-b); }
-.inkTo { stop-color: var(--mark-c); }
-.markStroke { stroke: var(--mark-b); }
-.eyeField { fill: var(--eye-field); }
-.eyeSpark { fill: var(--eye-spark); }
-.pupil { transform-box: fill-box; transform-origin: center; transform: scaleY(calc(1 - var(--blink))); }
-.closedEye { opacity: var(--blink); }
 
 /* Clear of the halo, which reaches 36% past the symbol box this is measured
  * from — at the smaller margin the outer ring cut through the wordmark's

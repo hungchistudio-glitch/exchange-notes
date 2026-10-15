@@ -116,55 +116,6 @@
   transition: transform 1.3s cubic-bezier(0.45, 0, 0.2, 1);
 }
 
-.shadow {
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  width: 56px;
-  height: 12px;
-  margin-left: -28px;
-  border-radius: 9999px;
-  background: rgba(28, 26, 22, 0.14);
-  filter: blur(1.5px);
-  animation: homeShadowBreath 3.6s ease-in-out infinite;
-}
-
-.shadow[data-mood="dancing"],
-.shadow[data-mood="excited"] {
-  animation: homeShadowHop 0.7s ease-in-out infinite;
-}
-
-.shadow[data-mood="sleeping"] {
-  width: 46px;
-  margin-left: -23px;
-  opacity: 0.7;
-}
-
-@keyframes homeShadowBreath {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(0.92);
-    opacity: 0.85;
-  }
-}
-
-@keyframes homeShadowHop {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(0.6);
-  }
-  55% {
-    transform: scale(1.08);
-  }
-}
-
 .figure {
   /* This screen's blink pace; the shape is app/yumi-motion.css's. */
   --yumi-blink: 5s;
@@ -176,11 +127,17 @@
   animation: homeIdleFloat 3.4s ease-in-out infinite;
 }
 
-.logo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 10px 16px rgba(28, 26, 22, 0.12));
+/* Her place while the scene starts, over the figure's box but outside it,
+   so the moods' bounces and stretches never move it. */
+.loading {
+  --yumi-loading-size: 64%;
+}
+
+/* The flat mouth is not drawn; its cookie target still has to be measured. */
+.feedingAnchor {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
 }
 
 .pupil,
@@ -448,37 +405,6 @@
   }
 }
 
-.tear {
-  position: absolute;
-  top: 44%;
-  left: 62%;
-  width: 5px;
-  height: 7px;
-  border-radius: 50% 50% 50% 0;
-  background: #a9c9e8;
-  opacity: 0;
-  transform: rotate(45deg);
-  animation: homeTearFall 2.4s ease-in 1;
-}
-
-@keyframes homeTearFall {
-  0%,
-  25% {
-    opacity: 0;
-    transform: rotate(45deg) translateY(0);
-  }
-  40% {
-    opacity: 0.9;
-  }
-  85% {
-    opacity: 0.7;
-    transform: rotate(45deg) translateY(16px);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(45deg) translateY(20px);
-  }
-}
 
 /* ---------- sleeping: small, slow, low-energy ---------- */
 
@@ -703,65 +629,6 @@
   30%, 66% { transform: translateY(-2px); opacity: 1; }
 }
 
-/* ---------- celebration sparkles (dance / welcome back) ---------- */
-
-.sparkles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.sparkles span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  border-radius: 9999px;
-  background: radial-gradient(circle, #fff 0%, #e8c978 70%, transparent 100%);
-  opacity: 0;
-  animation: homeSparkle 2.4s ease-out infinite;
-}
-
-.sparkles span:nth-child(1) {
-  animation-delay: 0s;
-  --tx: -30px;
-  --ty: -34px;
-}
-
-.sparkles span:nth-child(2) {
-  animation-delay: 0.4s;
-  --tx: 28px;
-  --ty: -30px;
-}
-
-.sparkles span:nth-child(3) {
-  animation-delay: 0.8s;
-  --tx: -22px;
-  --ty: 8px;
-}
-
-.sparkles span:nth-child(4) {
-  animation-delay: 1.2s;
-  --tx: 26px;
-  --ty: 4px;
-}
-
-@keyframes homeSparkle {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0) scale(0.3);
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--tx), var(--ty)) scale(1);
-  }
-}
-
 .trayCorner {
   position: absolute;
   right: 6px;
@@ -822,12 +689,7 @@
   .figure[data-feeding="chewing"],
   .figure[data-feeding="swallowing"],
   .figure[data-feeding="satisfied"],
-  .shadow,
-  .shadow[data-mood="dancing"],
-  .shadow[data-mood="excited"],
-  .sparkles span,
-  .ambientLight span,
-  .tear {
+  .ambientLight span {
     animation: none !important;
   }
 

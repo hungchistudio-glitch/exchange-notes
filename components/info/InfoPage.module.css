@@ -22,6 +22,7 @@
   --info-muted: var(--ink-soft);
   --info-faint: var(--ink-faint);
   --info-line: var(--line);
+  --yumi-loading-ink: var(--info-ink);
   /*
    * A card lifted off the page, in whichever direction "lifted" means here.
    * Standard Mode mixes toward white and the panel comes forward; Cosmic
@@ -186,15 +187,10 @@
 }
 
 .yumi {
-  width: 7rem;
+  width: 8.5rem;
+  height: 8.5rem;
   max-width: 100%;
-  margin-bottom: 1.25rem;
-}
-
-.yumi svg {
-  display: block;
-  width: 100%;
-  height: auto;
+  margin: -0.75rem 0 0.5rem -0.75rem;
 }
 
 .tagline {
@@ -316,6 +312,57 @@
   grid-column: 1 / -1;
   font-size: 0.9375rem;
   line-height: 1.85;
+}
+
+.notice ul {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.6rem;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.notice li,
+.points li {
+  position: relative;
+  padding-left: 1.1rem;
+}
+
+/* A short rule rather than a bullet: the page's only ornament is weight
+   and line, and a dot would be the one round thing on it. */
+.notice li::before,
+.points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.85em;
+  width: 0.5rem;
+  border-top: 1.5px solid var(--info-faint);
+}
+
+.points {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 65ch;
+  margin-top: 1.1rem;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.points + p {
+  margin-top: 1.25rem;
+}
+
+/* The date sits above the intro, small and plain, the way a reader expects
+   to find it on a policy. */
+.effective {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--info-faint);
+}
+
+.effective + .intro {
+  margin-top: 1rem;
 }
 
 .sections {

@@ -114,11 +114,17 @@ export function buildSettingsSearchIndex(
       keywords: ["tour", "tutorial", "help", "how to", "guide"],
       href: "/profile/help",
     },
-    ...(["about", "community", "privacy"] as const).map((page) => ({
+    ...(["about", "community", "privacy", "terms"] as const).map((page) => ({
       id: `setting-${page}`,
       title: t.info.nav[page],
       section: sections.help,
-      keywords: [page, t.info.help[page].toLowerCase(), ...(page === "about" ? ["yumi", "exchange notes"] : [])],
+      keywords: [
+        page,
+        t.info.help[page].toLowerCase(),
+        ...(page === "about" ? ["yumi", "exchange notes"] : []),
+        ...(page === "privacy" ? ["privacy policy", "data", "gdpr"] : []),
+        ...(page === "terms" ? ["terms of service", "terms of use", "agreement", "legal"] : []),
+      ],
       href: "/profile/help",
     })),
     {
@@ -126,6 +132,12 @@ export function buildSettingsSearchIndex(
       title: settings.profile.logout,
       section: sections.account,
       keywords: ["log out", "logout", "sign out", "account"],
+    },
+    {
+      id: "setting-delete-account",
+      title: settings.profile.deleteAccount,
+      section: sections.account,
+      keywords: ["delete account", "remove account", "erase", "delete my data", "account"],
     },
   ];
 }

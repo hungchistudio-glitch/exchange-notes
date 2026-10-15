@@ -14,45 +14,58 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import useTranslation from "@/hooks/i18n/useTranslation";
+import { formatEffective } from "@/lib/legal";
+import { useLegalCopy, type InitialLegalCopy } from "@/lib/legal/useLegalCopy";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 
 import InfoLanguagePicker from "./InfoLanguagePicker";
 import styles from "./InfoPage.module.css";
 
 /* =========================================================
-   About, Community & Safety, and Privacy — one component, two homes
+   About, Community & Safety, the Privacy Policy and the Terms of Service —
+   one component, two homes
 
    Each of these pages exists twice: once at /about for anyone who has not
    signed in, and once at /profile/about inside Settings. Same words, same
    layout; what differs is where "back" goes and whether a language chosen
    here has to be remembered across the sign-in boundary.
 
-   Signed in, the parent of all three is Help & About, because that is the
+   Signed in, the parent of all four is Help & About, because that is the
    row a reader tapped to get here. Signed out there is no Help screen, so
-   About's parent is the landing page and the other two belong to About.
+   About's parent is the landing page and the other three belong to About.
+
+   The policy and the terms are not in the interface dictionaries: they come
+   from lib/legal, rendered on the server in the reader's language and loaded
+   per language after that. See lib/legal/useLegalCopy.
    This used to send a reader who arrived from Help back to About instead,
    which is a different screen from the one they came from.
    ========================================================= */
 
-export type InfoPageKind = "about" | "community" | "privacy";
+export type InfoPageKind = "about" | "community" | "privacy" | "terms";
 
 export const INFO_CONTACT_EMAIL = "hungchistudio@gmail.com";
 
-const PAGES: InfoPageKind[] = ["about", "community", "privacy"];
+const PAGES: InfoPageKind[] = ["about", "community", "privacy", "terms"];
 const FEATURE_ICONS = [Camera, MessagesSquare, BookOpen] as const;
 
 type InfoPageProps = {
   page: InfoPageKind;
   /** Rendered outside the signed-in app, at /about rather than /profile/about. */
   publicView?: boolean;
+  /** The policy and terms as the server rendered them; see useLegalCopy. */
+  legal?: InitialLegalCopy;
 };
 
-export default function InfoPage({ page, publicView = false }: InfoPageProps) {
+export default function InfoPage({ page, publicView = false, legal }: InfoPageProps) {
   const { t, language } = useTranslation();
   const copy = t.info;
   const noticeId = useId();
+  const htmlLang = getInterfaceLanguageMeta(language).htmlLang;
+  const isLegal = page === "privacy" || page === "terms";
+  const legalCopy = useLegalCopy(isLegal ? language : null, legal);
+  const legalDoc = isLegal && legalCopy ? legalCopy[page] : null;
   const root = publicView ? "" : "/profile";
 
   const back = publicView
@@ -61,12 +74,10 @@ export default function InfoPage({ page, publicView = false }: InfoPageProps) {
       : { href: "/about", label: copy.nav.about }
     : { href: "/profile/help", label: copy.nav.back };
 
-  const sections = page === "privacy" ? copy.privacy.sections : copy.community.rules;
-
   return (
     <main
       className={styles.page}
-      lang={getInterfaceLanguageMeta(language).htmlLang}
+      lang={htmlLang}
     >
       <div className={styles.shell}>
         <header className={styles.toolbar}>
@@ -91,18 +102,15 @@ export default function InfoPage({ page, publicView = false }: InfoPageProps) {
                 heading inside it, so the whole hero was announced twice.
               */}
               <section className={styles.hero}>
+                {/*
+                  The 3D Yumi, the one the reader will meet in the app, and
+                  not the old flat mark that used to blink here: there is
+                  one Yumi (Chi, 2026-10-15). She turns on her own and does
+                  not take a drag, because on a reading page a drag that
+                  starts on her should still be a scroll.
+                */}
                 <div className={styles.yumi} aria-hidden="true">
-                  {/*
-                    The lid classes are the reason Yumi has a pupil on this
-                    page. They are what holds both lids *open* between blinks
-                    — see app/yumi-motion.css — so a mark rendered without
-                    them sits with its eye shut over a pupil that was there
-                    the whole time.
-                  */}
-                  <ExchangeNotesMark
-                    upperLidClassName="yumi-blink-upper"
-                    lowerLidClassName="yumi-blink-lower"
-                  />
+                  <Yumi3DFigure interactive={false} fill={0.4} />
                 </div>
                 <h2 className={styles.tagline}>{copy.about.tagline}</h2>
                 <p className={styles.greeting}>{copy.about.greeting}</p>
@@ -140,20 +148,12 @@ export default function InfoPage({ page, publicView = false }: InfoPageProps) {
 
               <p className={styles.closing}>{copy.about.closing}</p>
             </>
-          ) : (
+          ) : page === "community" ? (
             <>
-              <p className={styles.intro}>{copy[page].intro}</p>
-
-              {page === "privacy" && (
-                <aside className={styles.notice} aria-labelledby={noticeId}>
-                  <ShieldCheck size={22} aria-hidden="true" />
-                  <strong id={noticeId}>{copy.privacy.status}</strong>
-                  <p>{copy.privacy.notice}</p>
-                </aside>
-              )}
+              <p className={styles.intro}>{copy.community.intro}</p>
 
               <div className={styles.sections}>
-                {sections.map((section, index) => (
+                {copy.community.rules.map((section, index) => (
                   <section key={section.title} className={styles.prose}>
                     <span className={styles.sectionNumber} aria-hidden="true">
                       {String(index + 1).padStart(2, "0")}
@@ -164,15 +164,65 @@ export default function InfoPage({ page, publicView = false }: InfoPageProps) {
                 ))}
               </div>
 
-              {/*
-                Ends in a colon on the privacy page, so the address has to be
-                the next thing read. It was not: the footer opened with the
-                planet line, and a reader met "contact:" followed by a joke
-                about Earth.
-              */}
-              <p className={styles.contactIntro}>{copy[page].contact}</p>
+              <p className={styles.contactIntro}>{copy.community.contact}</p>
             </>
-          )}
+          ) : legalCopy && legalDoc ? (
+            <>
+              {/* Intl on the server and in the browser are different ICU
+                  builds; a date they spell slightly differently is not a
+                  reason to throw the page's hydration away. */}
+              <p className={styles.effective} suppressHydrationWarning>
+                {formatEffective(legalCopy, htmlLang)}
+              </p>
+              <p className={styles.intro}>{legalDoc.intro}</p>
+
+              <aside className={styles.notice} aria-labelledby={noticeId}>
+                <ShieldCheck size={22} aria-hidden="true" />
+                <strong id={noticeId}>{legalDoc.summaryTitle}</strong>
+                <ul>
+                  {legalDoc.summary.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </aside>
+
+              <div className={styles.sections}>
+                {legalDoc.sections.map((section, index) => (
+                  <section
+                    key={section.title}
+                    id={`section-${index + 1}`}
+                    className={styles.prose}
+                  >
+                    <span className={styles.sectionNumber} aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <h2>{section.title}</h2>
+                    {section.body?.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                    {section.points ? (
+                      <ul className={styles.points}>
+                        {section.points.map((point) => (
+                          <li key={point}>{point}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {section.after?.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
+                  </section>
+                ))}
+              </div>
+
+              {/*
+                Ends in a colon, so the address has to be the next thing
+                read. It was not, once: the footer opened with the planet
+                line, and a reader met "contact:" followed by a joke about
+                Earth.
+              */}
+              <p className={styles.contactIntro}>{legalDoc.contact}</p>
+            </>
+          ) : null}
 
           <footer className={styles.footer}>
             <a className={styles.email} href={`mailto:${INFO_CONTACT_EMAIL}`}>

@@ -297,7 +297,8 @@ export type TranslationDictionary = {
       title: string;
       subtitle: string;
       googleSubtitle: string;
-      consentNotice: string;
+      /** {terms} and {privacy} become links to those pages. */
+      legalNotice: string;
       googleSubmit: string;
       googleSubmitting: string;
       email: string;
@@ -2198,6 +2199,14 @@ export type TranslationDictionary = {
       logout: string;
       logoutDescription: string;
       logoutConfirm: string;
+      deleteAccount: string;
+      deleteAccountDescription: string;
+      deleteAccountWarning: string;
+      deleteAccountKept: string;
+      deleteAccountUnderstood: string;
+      deleteAccountAction: string;
+      deleteAccountDone: string;
+      deleteAccountError: string;
       photoImageError: string;
       photoSizeError: string;
       photoUpdated: string;

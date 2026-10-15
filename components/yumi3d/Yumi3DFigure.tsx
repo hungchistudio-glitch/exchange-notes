@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
+import YumiLoading from "./YumiLoading";
 import styles from "./Yumi3DFigure.module.css";
 
 /* =========================================================
@@ -14,17 +15,22 @@ import styles from "./Yumi3DFigure.module.css";
    where she is simply present: she can be turned, her eye can be pulled and
    let go, and she blinks on her own.
 
-   It renders `children` underneath and only paints over them once the scene
-   reports itself live, so the flat mark is what a device without WebGL keeps
-   showing, and what everyone sees until the engine chunk has arrived. On the
-   landing page that matters twice over: it is the page that has to paint
-   before anyone has signed in, and the one where a blank square would be the
-   first thing a stranger ever saw.
+   Until the scene reports itself live the box holds YumiLoading, never the
+   old flat mark: there is one Yumi, and a stranger on the landing page should
+   not meet a different one first and watch her be swapped. The box keeps its
+   size the whole time, so nothing around it moves when she arrives. A device
+   that cannot start WebGL keeps the still ring rather than a substitute.
    ========================================================= */
 
+/*
+ * How long a scene that has neither started nor failed is given before the
+ * loader stops running. The chunk is a few hundred kilobytes; a network that
+ * has not delivered it by now is one where a spinning band would only be
+ * saying "still nothing" forever. A late arrival still takes over.
+ */
+const FIGURE_GIVE_UP_MS = 15_000;
+
 export type Yumi3DFigureProps = {
-  /** The flat mark to show underneath, and to keep if 3D never starts. */
-  children: React.ReactNode;
   /** Turn her and pull her eye. Off where she is illustration, not subject. */
   interactive?: boolean;
   /** Fired on a pull past the threshold, for a tutorial step to advance on. */
@@ -35,7 +41,6 @@ export type Yumi3DFigureProps = {
 };
 
 export default function Yumi3DFigure({
-  children,
   interactive = true,
   onPullOpen,
   fill = 0.42,
@@ -44,7 +49,10 @@ export default function Yumi3DFigure({
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<YumiSceneHandle | null>(null);
-  const [live, setLive] = useState(false);
+  const [status, setStatus] = useState<"loading" | "live" | "unavailable">(
+    "loading",
+  );
+  const live = status === "live";
 
   const onPullOpenRef = useRef(onPullOpen);
   const fillRef = useRef(fill);
@@ -84,6 +92,11 @@ export default function Yumi3DFigure({
           );
     observer?.observe(box);
 
+    const giveUp = window.setTimeout(
+      () => setStatus(current => (current === "loading" ? "unavailable" : current)),
+      FIGURE_GIVE_UP_MS,
+    );
+
     void import("@/lib/yumi3d/scene")
       .then(({ createYumiScene }) => {
         if (cancelled) return;
@@ -91,10 +104,14 @@ export default function Yumi3DFigure({
           reducedMotion: reduced,
           onPullOpen: () => onPullOpenRef.current?.(),
         });
-        if (!handle) return;
+        window.clearTimeout(giveUp);
+        if (!handle) {
+          setStatus("unavailable");
+          return;
+        }
 
         sceneRef.current = handle;
-        setLive(true);
+        setStatus("live");
 
         const loop = (now: number) => {
           if (cancelled || !handle) return;
@@ -112,7 +129,8 @@ export default function Yumi3DFigure({
         raf = requestAnimationFrame(loop);
       })
       .catch(() => {
-        /* The flat mark underneath is already right. */
+        window.clearTimeout(giveUp);
+        if (!cancelled) setStatus("unavailable");
       });
 
     const onResize = () => handle?.resize();
@@ -120,6 +138,7 @@ export default function Yumi3DFigure({
 
     return () => {
       cancelled = true;
+      window.clearTimeout(giveUp);
       cancelAnimationFrame(raf);
       observer?.disconnect();
       window.removeEventListener("resize", onResize);
@@ -130,7 +149,7 @@ export default function Yumi3DFigure({
 
   return (
     <div ref={boxRef} className={`${styles.box} ${className ?? ""}`}>
-      <div className={live ? styles.replaced : undefined}>{children}</div>
+      <YumiLoading state={live ? "done" : status} />
 
       <canvas
         ref={canvasRef}

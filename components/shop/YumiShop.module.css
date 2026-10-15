@@ -351,6 +351,8 @@
 .stage {
   position: relative;
   isolation: isolate;
+  /* The stand looks out on space in both modes, so her loader is starlight. */
+  --yumi-loading-ink: #e8edf6;
   margin: 2px 12px 8px;
   height: var(--stage-height);
   border-radius: 28px;
@@ -518,27 +520,26 @@
   border-radius: 28px;
 }
 
-.stageFallback {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  padding: 16px;
-  text-align: center;
-}
-
-.stageMark {
-  width: min(38%, 150px);
-  height: auto;
-}
-
+/* Just under the loader's ring, which is centred and min(42%, 136px) wide:
+   a margin percentage is of the width, so this follows the ring's radius.
+   On a pill of the night sky, because that is where it lands — across the
+   plinth's pale stone, which white text alone does not read on. */
 .stageNote {
-  margin: 0;
-  max-width: 28rem;
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  right: 16px;
+  width: fit-content;
+  max-width: min(20rem, calc(100% - 32px));
+  margin: calc(min(21%, 68px) + 12px) auto 0;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #070d17c7;
   font-size: 0.8125rem;
-  color: var(--shop-muted);
+  line-height: 1.45;
+  text-align: center;
+  /* Over space in both modes; the page's muted ink is dark in Standard. */
+  color: #d5dce7;
 }
 
 .views {

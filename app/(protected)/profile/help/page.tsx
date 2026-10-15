@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, HeartHandshake, ShieldCheck } from "lucide-react";
+import { BookOpen, FileText, HeartHandshake, ShieldCheck } from "lucide-react";
 
 import AppHeader from "@/components/foundation/layout/AppHeader";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
@@ -14,8 +14,8 @@ import useTranslation from "@/hooks/i18n/useTranslation";
  *
  * This held one row — the tour — and a comment saying the rest would arrive
  * when there was anything to put here. There is now: who made the app and
- * why, what is expected of people sharing in it, and what happens to what
- * they write. Each opens the same page the signed-out site publishes, so
+ * why, what is expected of people sharing in it, what happens to what
+ * they write, and the terms they use it under. Each opens the same page the signed-out site publishes, so
  * there is one copy of those words rather than two that drift.
  */
 export default function HelpSettingsPage() {
@@ -62,6 +62,15 @@ export default function HelpSettingsPage() {
                 title={info.nav.privacy}
                 description={info.help.privacy}
                 icon={<ShieldCheck size={18} aria-hidden="true" />}
+              />
+            </SettingsAnchor>
+
+            <SettingsAnchor id="setting-terms">
+              <SettingsRow
+                href="/profile/terms"
+                title={info.nav.terms}
+                description={info.help.terms}
+                icon={<FileText size={18} aria-hidden="true" />}
               />
             </SettingsAnchor>
 

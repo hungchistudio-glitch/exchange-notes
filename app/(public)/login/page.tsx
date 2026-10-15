@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { Fragment } from "react";
+
 import GoogleIdentityButton from "@/components/auth/GoogleIdentityButton";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import useTranslation from "@/hooks/i18n/useTranslation";
@@ -47,8 +50,25 @@ export default function LoginPage() {
           <GoogleIdentityButton />
         </div>
 
+        {/*
+          Where a new reader agrees to the terms, so it names them and links
+          them, and states the age the AI provider's terms require. It
+          replaces a line that only said signing in with Google is secure.
+        */}
         <p className="mt-6 text-center text-xs leading-5 text-ink-soft">
-          {copy.consentNotice}
+          {copy.legalNotice.split(/(\{terms\}|\{privacy\})/).map((part, index) =>
+            part === "{terms}" ? (
+              <Link key={index} href="/terms" className="underline underline-offset-2">
+                {t.info.nav.terms}
+              </Link>
+            ) : part === "{privacy}" ? (
+              <Link key={index} href="/privacy" className="underline underline-offset-2">
+                {t.info.nav.privacy}
+              </Link>
+            ) : (
+              <Fragment key={index}>{part}</Fragment>
+            ),
+          )}
         </p>
       </section>
     </main>

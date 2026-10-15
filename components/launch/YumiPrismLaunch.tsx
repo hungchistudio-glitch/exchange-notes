@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import { LOGO_TIERS, exchangeNotesLogoGeometry } from "@/lib/brand/exchangeNotesLogo";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import type { LaunchRendererProps } from "./types";
 import { YUMI_PRISM_CHECKPOINTS, YUMI_PRISM_DURATION_MS, YUMI_PRISM_HOLD_MS, YUMI_PRISM_REDUCED_DURATION_MS, buildYumiPrismTracks, computeYumiPrismFrame } from "./yumiPrismTimeline";
 import YumiPrismActor3D from "./YumiPrismActor3D";
 import styles from "./YumiPrismLaunch.module.css";
 
-const geometry = exchangeNotesLogoGeometry({ canvas: 512, ...LOGO_TIERS.inApp });
 const motionQuery = "(prefers-reduced-motion: reduce)";
 function subscribeMotion(onChange: () => void) {
   const media = window.matchMedia(motionQuery);
@@ -41,16 +39,12 @@ export default function YumiPrismLaunch({
   const currentTime = useRef(0);
   const onCompleteRef = useRef(onComplete);
   const completed = useRef(false);
-  const id = useId();
   const systemReduced = useSyncExternalStore(subscribeMotion, readMotion, serverMotion);
   const [override, setOverride] = useState<boolean | null>(null);
   const reduced = override ?? forceReducedMotion ?? systemReduced;
   const [playing, setPlaying] = useState(true);
   const [run, setRun] = useState(0);
   const [phone, setPhone] = useState(false);
-  /* The flat lens steps aside only once the model is actually drawing, so a
-     device that cannot start WebGL never sees an empty actor. */
-  const [actorIs3D, setActorIs3D] = useState(false);
   const duration = reduced ? YUMI_PRISM_REDUCED_DURATION_MS : YUMI_PRISM_DURATION_MS;
 
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
@@ -214,42 +208,19 @@ export default function YumiPrismLaunch({
                 <div className={styles.glass}>
                   <div data-track="sweep" className={styles.sweep} />
                   {/*
-                    The lens is Yumi herself now, so the film resolves into
-                    the thing you then touch rather than dissolving to make
-                    way for it. Everything around it — the aura, the halo,
-                    the orbit light, this sweep, the lockup, the hold and the
-                    handoff — is the same film on the same clock.
+                    Only the 3D Yumi is ever drawn in this lens. The flat
+                    mark that used to stand here until the model arrived —
+                    and for good on a device without WebGL — was the old
+                    Yumi, and the first thing a reader saw was her being
+                    swapped for the real one (Chi, 2026-10-15). Until the
+                    model's first frame the lens is empty pearl glass with
+                    the light passing over it, which is a finished picture
+                    on its own; the wordmark below carries the brand.
                   */}
                   <YumiPrismActor3D
                     timeRef={reviewMode ? currentTime : null}
                     reduced={reduced}
-                    onLive={() => setActorIs3D(true)}
                   />
-                  <svg
-                    className={styles.yumi}
-                    viewBox="0 0 512 512"
-                    fill="none"
-                    style={actorIs3D ? { visibility: "hidden" } : undefined}
-                  >
-                    <defs>
-                      <linearGradient id={`${id}-ink`} x1="70" y1="110" x2="440" y2="420" gradientUnits="userSpaceOnUse">
-                        <stop className={styles.inkFrom} /><stop offset="0.52" className={styles.inkVia} /><stop offset="1" className={styles.inkTo} />
-                      </linearGradient>
-                      <clipPath id={`${id}-eye`}><circle cx={geometry.eye.cx} cy={geometry.eye.cy} r={geometry.eye.fieldRadius} /></clipPath>
-                    </defs>
-                    <g stroke={`url(#${id}-ink)`} strokeLinecap="round" strokeLinejoin="round">
-                      <path d={geometry.arc.d} strokeWidth={geometry.strokes.main} />
-                      <path d={geometry.bridge.d} strokeWidth={geometry.strokes.main} strokeLinecap="butt" />
-                      <circle className={styles.eyeField} cx={geometry.eye.cx} cy={geometry.eye.cy} r={geometry.eye.ringRadius} strokeWidth={geometry.strokes.ring} />
-                    </g>
-                    <g clipPath={`url(#${id}-eye)`}>
-                      <g data-track="pupil" className={styles.pupil}>
-                        <circle cx={geometry.pupil.cx} cy={geometry.pupil.cy} r={geometry.pupil.r} fill={`url(#${id}-ink)`} />
-                        {geometry.highlight && <circle className={styles.eyeSpark} cx={geometry.highlight.cx} cy={geometry.highlight.cy} r={geometry.highlight.r} />}
-                      </g>
-                      <path data-track="closedEye" className={`${styles.closedEye} ${styles.markStroke}`} d={`M ${geometry.eye.cx - geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy} Q ${geometry.eye.cx} ${geometry.eye.cy + 8} ${geometry.eye.cx + geometry.eye.fieldRadius * 0.58} ${geometry.eye.cy}`} strokeWidth="8" strokeLinecap="round" />
-                    </g>
-                  </svg>
                 </div>
               </div>
             </div>

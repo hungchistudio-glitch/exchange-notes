@@ -50,7 +50,7 @@ function Standard() {
 
 function Shell() {
   const { isCosmic } = useInterfaceMode();
-  return <><HomeModePortal />{isCosmic ? <CosmicHomeYumi paused={false}><svg /></CosmicHomeYumi> : <Standard />}<ModeTransitionStage /></>;
+  return <><HomeModePortal />{isCosmic ? <CosmicHomeYumi paused={false} /> : <Standard />}<ModeTransitionStage /></>;
 }
 
 const veil = () => document.querySelector<HTMLElement>("[data-home-mode-transition]");
