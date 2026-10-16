@@ -80,14 +80,14 @@ export default function StandardHomeReview({ frame }: { frame: boolean }) {
   const [size, setSize] = useState([390, 844]);
   if (frame) return <Frame />;
   return <main style={{ padding: 16, background: "#dededb", minHeight: "100vh" }}>
-    <h1>Liquid glass · 環形選單預覽</h1>
-    <p>沿著外圍圓環拖曳，放手選取。此預覽會顯示選取結果，方便反覆試用。</p>
+    <h1>Precision dial · 刻度環選單預覽</h1>
+    <p>拖曳功能旋轉刻度環，放手吸附，再點功能進入。點空白收起。此預覽會顯示選取結果，方便反覆試用。</p>
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBlock: 12 }}>
       {[[375, 667], [390, 844], [430, 932], [1280, 900]].map(([w, h]) =>
         <button type="button" key={w} onClick={() => setSize([w, h])} aria-pressed={size[0] === w}
           style={{ padding: 10, background: size[0] === w ? "#b3ddcf" : "white" }}>{w} × {h}</button>)}
     </div>
-    <iframe title="Liquid glass preview" src="/standard-home-review?frame=1"
+    <iframe title="Precision dial preview" src="/standard-home-review?frame=1"
       style={{ display: "block", border: "1px solid #aaa", width: size[0], height: size[1], background: "#f4f1ea" }} />
   </main>;
 }

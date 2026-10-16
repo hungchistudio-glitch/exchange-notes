@@ -175,6 +175,7 @@ export type YumiSceneHandle = {
 
   /** A gentle look toward a cookie, independent of the eye-pull gesture. */
   setGaze?(x: number, y: number): void;
+  setNavigationLean?(radians: number): void;
 
   /** What she has on (lib/shop/catalog.ts). An empty outfit is Yumi as she ships. */
   setOutfit?(outfit: YumiOutfit): void;
@@ -635,6 +636,8 @@ export function createYumiScene(
    * approximation here is a bezel that sinks into the eyeball at full pull.
    */
   const gaze = new THREE.Vector2();
+  let navigationLean = 0;
+  let navigationLeanTarget = 0;
   function poseIris() {
     const semiSide = EYE_RADIUS * eyeBall.scale.x;
     const semiBand = EYE_RADIUS * eyeBall.scale.z;
@@ -807,10 +810,11 @@ export function createYumiScene(
       poseIris();
       outfit.sync();
 
+      navigationLean += (navigationLeanTarget - navigationLean) * Math.min(1, dt * 10);
       yuGroup.position.set(parts?.yu.x ?? 0, parts?.yu.y ?? 0, 0);
-      yuGroup.rotation.z = parts?.yu.rotation ?? 0;
+      yuGroup.rotation.z = (parts?.yu.rotation ?? 0) + navigationLean;
       miGroup.position.set(parts?.mi.x ?? 0, parts?.mi.y ?? 0, 0);
-      miGroup.rotation.z = parts?.mi.rotation ?? 0;
+      miGroup.rotation.z = (parts?.mi.rotation ?? 0) + navigationLean;
 
       /* Along the screen's vertical, after the look rotation, so a blink is
          a blink from every angle rather than only from the front. */
@@ -985,6 +989,10 @@ export function createYumiScene(
         pitch = THREE.MathUtils.clamp(pitch + dy * 0.008, -0.55, 0.55);
         model.rotation.x = pitch;
       }
+    },
+
+    setNavigationLean(radians) {
+      navigationLeanTarget = options.reducedMotion ? 0 : THREE.MathUtils.clamp(radians, -0.04, 0.04);
     },
 
     setGaze(x, y) {

@@ -2,7 +2,7 @@ import StandardHomeReview from "@/components/home/StandardHomeReview";
 import { reviewRouteOnly } from "@/lib/reviewRoutes";
 
 export const metadata = {
-  title: "Liquid glass orbit review",
+  title: "Precision dial review",
   robots: { index: false, follow: false },
 };
 

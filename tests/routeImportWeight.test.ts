@@ -165,10 +165,14 @@ describe("what the heaviest tabs drag in with them", () => {
    * stylesheet, importing nothing else — instead of the old flat mark. The
    * mark is still loaded by home's other Yumi drawings, so the two files
    * are net.
+   * Raised home 179 → 180 (2026-10-16): the precision dial (Chi: "可以，
+   * debug，合併上線"). components/home/yumi/PrecisionDial and its own
+   * stylesheet replace LiquidRingButton, which styled itself from the
+   * overlay's CSS — two files for one. It imports React and nothing else.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 162],
-    ["home", TABS.home, 179],
+    ["home", TABS.home, 180],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {
