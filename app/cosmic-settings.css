@@ -9,18 +9,20 @@
  * Two scopes, and the difference matters:
  *
  *   .cosmic-settings-page …   the page's own subtree.
- *   html:has(.cosmic-settings-page) …   the page plus what it opens. Sheets
+ *   html[data-cosmic-settings] …   the page plus what it opens. Sheets
  *       and the search overlay are portalled to <body> and the dock is
  *       shared, so none of them are inside the page — but all of them are on
  *       screen because of it, and a chrome sheet rising out of a graphite
  *       page should not arrive in obsidian.
  *
- * The finish comes off the moment the route does, because :has() stops
- * matching when the page unmounts. That is the whole mechanism; there is no
- * class to add to <html> and none to remember to take off again.
+ * The page renders <HtmlMarker name="cosmicSettings" />, which puts the flag
+ * on <html> before the first paint and takes it off when the page unmounts,
+ * so the finish still comes off the moment the route does. This used to be
+ * html:has(.cosmic-settings-page), which said the same thing but made every
+ * DOM change on every page, in either mode, restyle the whole page.
  */
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] {
   /*
    * One scale of metal, dark to light. Before this block the file carried
    * forty-eight separate hex values, nine of which were near-blacks within a
@@ -319,7 +321,7 @@ html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [data-settings-swi
 /* ------------------------------------------------------ segmented controls */
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radiogroup"],
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radiogroup"] {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet [role="radiogroup"] {
   max-width: 100%;
   border: 1px solid var(--m-seam);
   border-radius: 0.7rem;
@@ -329,7 +331,7 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet
 }
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radio"],
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radio"] {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet [role="radio"] {
   min-width: 44px;
   min-height: 44px;
   padding-inline: 0.65rem;
@@ -341,7 +343,7 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet
 }
 
 html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page [role="radio"][aria-checked="true"],
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet [role="radio"][aria-checked="true"] {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet [role="radio"][aria-checked="true"] {
   color: var(--m-chrome-ink);
   border-color: var(--m-chrome-edge);
   background: var(--m-chrome);
@@ -404,23 +406,23 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet
 
 /* --------------------------------------------- sheets, choices, the search */
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet {
   background: linear-gradient(145deg, #2b3234, var(--m-panel-low));
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 20px 70px rgb(0 0 0 / 65%);
 }
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet > footer {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet > footer {
   background: #242a2c;
 }
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-choice {
   color: #e4e9e9;
   border: 1px solid var(--m-seam);
   background: linear-gradient(145deg, #303739, #242a2c);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 2px 4px rgb(0 0 0 / 25%);
 }
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-choice[aria-pressed="true"] {
   color: var(--m-chrome-ink);
   border-color: var(--m-chrome-edge);
   background: var(--m-chrome);
@@ -428,11 +430,11 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-cho
 }
 
 /* The chosen card's own second line keeps its hierarchy against the chrome. */
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] > span {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-choice[aria-pressed="true"] > span {
   color: inherit;
 }
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice[aria-pressed="true"] .text-ink-invert-soft {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-choice[aria-pressed="true"] .text-ink-invert-soft {
   color: var(--m-chrome-ink-soft);
 }
 
@@ -440,7 +442,7 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-cho
  * The search is a full-screen surface of its own, so it is repointed at the
  * two tokens it is built from rather than restyled rule by rule.
  */
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-search-overlay {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-search-overlay {
   --surface: var(--m-face);
   --color-white: #2c3335;
   --line: var(--m-edge);
@@ -454,11 +456,11 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-sea
  * dock's own utility sets that colour, and a shorthand here would throw it
  * away and leave nothing behind a gradient that fails to paint.
  */
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) [data-app-bottom-navigation] > div {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] [data-app-bottom-navigation] > div {
   background-image: linear-gradient(165deg, var(--m-raise), #212729 70%);
 }
 
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) [data-app-bottom-navigation] > div > [aria-hidden="true"] {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] [data-app-bottom-navigation] > div > [aria-hidden="true"] {
   background-image: var(--m-chrome);
 }
 
@@ -470,8 +472,8 @@ html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) [data-app-bot
  * the panel's own overflow and lost exactly where it is needed.
  */
 html[data-interface-mode="yumi-cosmic"] .cosmic-settings-page :is(button, a):focus-visible,
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .settings-choice:focus-visible,
-html[data-interface-mode="yumi-cosmic"]:has(.cosmic-settings-page) .cosmic-sheet :is(button, a):focus-visible {
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .settings-choice:focus-visible,
+html[data-interface-mode="yumi-cosmic"][data-cosmic-settings] .cosmic-sheet :is(button, a):focus-visible {
   outline: 2px solid #f0f7f8;
   outline-offset: -3px;
 }

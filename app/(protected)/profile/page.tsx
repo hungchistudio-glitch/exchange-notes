@@ -18,6 +18,7 @@ import {
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import ProgressHud from "@/components/cosmic/ProgressHud";
+import HtmlMarker from "@/components/foundation/HtmlMarker";
 import LearningProgressPanel from "@/components/settings/LearningProgressPanel";
 import AppHeader from "@/components/foundation/layout/AppHeader";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
@@ -651,6 +652,8 @@ export default function ProfilePage() {
           ) : null}
         </div>
       </BottomSheet>
+      {/* The graphite finish, for app/cosmic-settings.css: see HtmlMarker. */}
+      <HtmlMarker name="cosmicSettings" />
     </main>
   );
 }
