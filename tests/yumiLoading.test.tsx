@@ -25,6 +25,10 @@ afterEach(() => {
 async function settle() {
   await act(async () => {
     await vi.dynamicImportSettled();
+    // The scene is made in an idle moment (a timeout where there is no
+    // requestIdleCallback, as in jsdom), and shown once it reports ready.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await Promise.resolve();
   });
 }
 

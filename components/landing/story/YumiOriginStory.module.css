@@ -145,9 +145,22 @@
 .starsFar,
 .starsNear {
   position: absolute;
-  inset: -12%;
   background-repeat: repeat;
   transform: translate3d(0, 0, 0) scale(1);
+}
+
+/*
+ * Only as much larger than the camera as their drift needs (3% and 9% to
+ * the left, 1% and 3% down, over the whole film), on the sides it uncovers.
+ * They were 24% larger all round: two of the biggest textures on the page,
+ * most of them never on screen.
+ */
+.starsFar {
+  inset: -2% -4% 0 0;
+}
+
+.starsNear {
+  inset: -4% -10% 0 0;
 }
 
 .starsFar {
@@ -578,6 +591,17 @@
   transform-origin: 50% 100%;
 }
 
+/* The black a chapter change cuts through: over the whole picture, the end
+   card included, and under the words and the controls, which sit outside it. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ------------------------------------------------------------ the words */
 
 .caption {
@@ -950,9 +974,21 @@
   animation-play-state: paused;
 }
 
+/* Pause means everything holds still: the drifting matter, the turning
+   planet and the clouds stop with the clock, rather than going on moving
+   behind a film that says it is paused. */
+.film:not([data-playing]) .matter span,
+.film:not([data-playing]) .planetLand,
+.film:not([data-playing]) .planetClouds,
+.film:not([data-playing]) .orbit *,
+.film:not([data-playing]) .cloudOne,
+.film:not([data-playing]) .cloudTwo {
+  animation-play-state: paused;
+}
+
 .film[data-act="land"][data-playing] .streaks span,
-.film[data-act="land"] .cloudOne,
-.film[data-act="land"] .cloudTwo {
+.film[data-act="land"][data-playing] .cloudOne,
+.film[data-act="land"][data-playing] .cloudTwo {
   animation-play-state: running;
 }
 

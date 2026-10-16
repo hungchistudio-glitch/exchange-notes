@@ -191,6 +191,10 @@ export default function YumiOriginStory({
   const actRef = useRef(0);
   const endRef = useRef(false);
   const mergedRef = useRef(false);
+  const veilRef = useRef<HTMLDivElement>(null);
+  const veilAnimationRef = useRef<Animation | null>(null);
+  /** The reader has pressed play, pause or a scene: autoplay stands down. */
+  const tookOverRef = useRef(false);
 
   const [act, setAct] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -228,15 +232,52 @@ export default function YumiOriginStory({
     }
   }, []);
 
+  /*
+   * A dip to black and back, with the change made in the dark: how a film
+   * cuts between scenes, instead of the picture jumping in place (Chi,
+   * 2026-10-16). 0.16s down, 0.26s up. Under reduced motion it is a plain cut.
+   */
+  const cut = useCallback((change: () => void) => {
+    const veil = veilRef.current;
+    if (reducedRef.current || !veil || typeof veil.animate !== "function") {
+      change();
+      return;
+    }
+    // A second press mid-dip starts from wherever the first one had got to.
+    const from = Number(getComputedStyle(veil).opacity) || 0;
+    veilAnimationRef.current?.cancel();
+    const down = veil.animate([{ opacity: from }, { opacity: 1 }], {
+      duration: 160 * (1 - from),
+      easing: "cubic-bezier(0.55, 0, 1, 0.45)",
+      fill: "forwards",
+    });
+    veilAnimationRef.current = down;
+    down.onfinish = () => {
+      change();
+      veilAnimationRef.current = veil.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 260,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        fill: "forwards",
+      });
+    };
+  }, []);
+
   const play = useCallback(() => {
     const clock = clockRef.current;
     if (!clock) return;
-    clock.play();
-    setPlaying(true);
-    setEnded(false);
-  }, []);
+    tookOverRef.current = true;
+    const start = () => {
+      clock.play();
+      setPlaying(true);
+      setEnded(false);
+    };
+    // From the end card back to the first frame is a cut, not a jump.
+    if (clock.time() >= STORY_DURATION_MS - 1) cut(start);
+    else start();
+  }, [cut]);
 
   const pause = useCallback(() => {
+    tookOverRef.current = true;
     clockRef.current?.pause();
     setPlaying(false);
   }, []);
@@ -244,16 +285,19 @@ export default function YumiOriginStory({
   const goTo = useCallback((index: number) => {
     const clock = clockRef.current;
     if (!clock) return;
+    tookOverRef.current = true;
     const reduced = reducedRef.current;
     const time = reduced ? ACT_STILLS_MS[index] : STORY_ACTS[index].start;
-    clock.seek(time);
-    showTime(time);
-    setEnded(false);
-    if (!reduced) {
-      clock.play();
-      setPlaying(true);
-    }
-  }, [showTime]);
+    cut(() => {
+      clock.seek(time);
+      showTime(time);
+      setEnded(false);
+      if (!reduced) {
+        clock.play();
+        setPlaying(true);
+      }
+    });
+  }, [cut, showTime]);
 
   // --------------------------------------------------------- the projector
   useEffect(() => {
@@ -277,9 +321,15 @@ export default function YumiOriginStory({
     let disposed = false;
     let raf = 0;
     let onScreen = false;
+    let ratio = 0;
     let started = false;
     let autoPaused = false;
     let sceneRequested = false;
+    /** Yumi is drawn, or is not coming: either way the film may begin. */
+    let sceneSettled = false;
+    let settleTimer = 0;
+    let pending: YumiSceneHandle | null = null;
+    let lastDraw = -Infinity;
     const size = { width: screen.clientWidth, height: screen.clientHeight };
 
     const finish = () => {
@@ -289,9 +339,23 @@ export default function YumiOriginStory({
       setEnded(true);
     };
 
+    /*
+     * One frame of the film. The painted layers run on the compositor by
+     * themselves; this draws Yumi where the same clock says she is.
+     *
+     * At most 60 draws a second while playing — a 120Hz screen would
+     * otherwise draw her twice as often for nothing it can show — and 30
+     * while paused, when only her blink and idle turn are moving.
+     */
     const loop = (now: number) => {
       raf = 0;
       if (disposed || !onScreen) return;
+      raf = requestAnimationFrame(loop);
+
+      const interval = clock.playing() ? 1000 / 60 : 1000 / 30;
+      if (now - lastDraw < interval - 2) return;
+      lastDraw = now;
+
       const time = clock.time();
       if (clock.playing() && time >= STORY_DURATION_MS) finish();
       showTime(time);
@@ -308,16 +372,47 @@ export default function YumiOriginStory({
         handle.setGaze?.(pose.gaze?.x ?? 0, pose.gaze?.y ?? 0);
         handle.frame(now);
       }
-      raf = requestAnimationFrame(loop);
     };
     const run = () => {
       if (!raf && onScreen && !disposed) raf = requestAnimationFrame(loop);
+    };
+
+    /*
+     * The film starts once it is mostly on screen and Yumi is ready to be in
+     * it. Starting without her had YU and MI pop in mid-drift a moment
+     * later. A reader who has pressed anything has taken over and is never
+     * overruled.
+     */
+    const tryStart = () => {
+      if (started || reduced || !sceneSettled || ratio < 0.55 || document.hidden) return;
+      if (tookOverRef.current) return;
+      started = true;
+      clock.play();
+      setPlaying(true);
+    };
+    const settle = () => {
+      if (sceneSettled) return;
+      sceneSettled = true;
+      window.clearTimeout(settleTimer);
+      tryStart();
+    };
+
+    /* When the browser has a moment, rather than in the middle of a scroll. */
+    const whenIdle = (task: () => void) => {
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(task, { timeout: 1200 });
+      } else {
+        window.setTimeout(task, 0);
+      }
     };
 
     // Only near the screen: the engine chunk, the catalogue, and a context.
     const requestScene = () => {
       if (sceneRequested) return;
       sceneRequested = true;
+      /* A slow network must not hold the film forever: after this long it
+         starts without her, and she joins when she arrives. */
+      settleTimer = window.setTimeout(settle, 8000);
       void Promise.all([import("@/lib/yumi3d/scene"), import("@/lib/shop/catalog")])
         .then(([{ createYumiScene }, shop]) => {
           if (disposed) return;
@@ -325,17 +420,40 @@ export default function YumiOriginStory({
             items: TRY_ON_IDS.map(id => shop.shopItem(id)).filter((item): item is ShopItem => !!item),
             toggle: shop.toggleInOutfit,
           });
-          const handle = createYumiScene(canvas, { reducedMotion: reduced, maxPixelRatio: 1.75 });
-          if (!handle) {
-            setYumi("unavailable");
-            return;
-          }
-          handleRef.current = handle;
-          setYumi("live");
-          run();
+          whenIdle(() => {
+            if (disposed) return;
+            const handle = createYumiScene(canvas, {
+              reducedMotion: reduced,
+              maxPixelRatio: 1.5,
+              embedded: true,
+              exactAnchor: true,
+            });
+            if (!handle) {
+              setYumi("unavailable");
+              settle();
+              return;
+            }
+            pending = handle;
+            /* Her shaders compile before her first frame, off the main
+               thread where the browser can: the first frame used to compile
+               them all at once, mid-scroll. */
+            void (handle.ready?.() ?? Promise.resolve()).then(() => {
+              pending = null;
+              if (disposed) {
+                handle.dispose();
+                return;
+              }
+              handleRef.current = handle;
+              setYumi("live");
+              settle();
+              run();
+            });
+          });
         })
         .catch(() => {
-          if (!disposed) setYumi("unavailable");
+          if (disposed) return;
+          setYumi("unavailable");
+          settle();
         });
     };
 
@@ -351,15 +469,13 @@ export default function YumiOriginStory({
 
     /* Plays when it is mostly on screen, once; pauses when scrolled away and
        picks up where it was on the way back. */
-    const watch = (ratio: number) => {
+    const watch = (next: number) => {
+      ratio = next;
       onScreen = ratio > 0;
       if (onScreen) run();
       if (ratio >= 0.55) {
-        if (!started && !reduced) {
-          started = true;
-          clock.play();
-          setPlaying(true);
-        } else if (autoPaused) {
+        if (!started) tryStart();
+        else if (autoPaused) {
           autoPaused = false;
           clock.play();
           setPlaying(true);
@@ -378,20 +494,21 @@ export default function YumiOriginStory({
             { threshold: [0, 0.15, 0.55] },
           );
     visible?.observe(film);
-    if (!visible) {
-      onScreen = true;
-      run();
-    }
+    if (!visible) watch(1);
 
     const onHidden = () => {
       if (document.visibilityState === "hidden" && clock.playing()) {
         autoPaused = true;
         clock.pause();
         setPlaying(false);
-      } else if (document.visibilityState === "visible" && autoPaused && onScreen) {
-        autoPaused = false;
-        clock.play();
-        setPlaying(true);
+      } else if (document.visibilityState === "visible") {
+        if (autoPaused && onScreen) {
+          autoPaused = false;
+          clock.play();
+          setPlaying(true);
+        } else {
+          tryStart();
+        }
       }
     };
     document.addEventListener("visibilitychange", onHidden);
@@ -414,12 +531,14 @@ export default function YumiOriginStory({
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      window.clearTimeout(settleTimer);
       near?.disconnect();
       visible?.disconnect();
       resize?.disconnect();
       document.removeEventListener("visibilitychange", onHidden);
       clock.dispose();
       clockRef.current = null;
+      pending?.dispose();
       handleRef.current?.dispose();
       handleRef.current = null;
     };
@@ -534,6 +653,7 @@ export default function YumiOriginStory({
             />
 
             <div className={styles.vignette} aria-hidden="true" />
+            <div ref={veilRef} className={styles.veil} aria-hidden="true" />
             <div data-track="letterbox" className={`${styles.letterbox} ${styles.letterboxTop}`} aria-hidden="true" />
             <div data-track="letterbox" className={`${styles.letterbox} ${styles.letterboxBottom}`} aria-hidden="true" />
 

@@ -92,6 +92,8 @@ export default function Yumi3DFigure({
     let visible = true;
     let requested = false;
     let giveUp = 0;
+    let pending: YumiSceneHandle | null = null;
+    let lastDraw = -Infinity;
 
     const reduced =
       typeof window !== "undefined" &&
@@ -110,6 +112,11 @@ export default function Yumi3DFigure({
     const loop = (now: number) => {
       raf = 0;
       if (cancelled || !handle || !visible) return;
+      raf = requestAnimationFrame(loop);
+      // 60 a second at most: a 120Hz screen gains nothing from twice the
+      // draws of a figure that blinks and turns slowly.
+      if (now - lastDraw < 1000 / 60 - 2) return;
+      lastDraw = now;
       handle.setScreenAnchor(
         size.width / 2,
         size.height / 2,
@@ -118,7 +125,6 @@ export default function Yumi3DFigure({
       // Eased inside the scene, so it is set every frame; null eases home.
       handle.setGaze?.(gazeRef.current?.x ?? 0, gazeRef.current?.y ?? 0);
       handle.frame(now);
-      raf = requestAnimationFrame(loop);
     };
     const run = () => {
       if (!raf && handle && visible && !cancelled) raf = requestAnimationFrame(loop);
@@ -130,6 +136,14 @@ export default function Yumi3DFigure({
      * screen or so, so a page that has her far down does not pay for her
      * on arrival.
      */
+    const whenIdle = (task: () => void) => {
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(task, { timeout: 1200 });
+      } else {
+        window.setTimeout(task, 0);
+      }
+    };
+
     const request = () => {
       if (requested || cancelled) return;
       requested = true;
@@ -141,19 +155,36 @@ export default function Yumi3DFigure({
       void import("@/lib/yumi3d/scene")
         .then(({ createYumiScene }) => {
           if (cancelled) return;
-          handle = createYumiScene(canvas, {
-            reducedMotion: reduced,
-            onPullOpen: () => onPullOpenRef.current?.(),
+          /* Made when the browser has a moment rather than mid-scroll, and
+             shown only once her shaders are compiled: her first frame used
+             to compile them all on the main thread, a visible hitch in the
+             middle of scrolling past her. */
+          whenIdle(() => {
+            if (cancelled) return;
+            const made = createYumiScene(canvas, {
+              reducedMotion: reduced,
+              embedded: true,
+              onPullOpen: () => onPullOpenRef.current?.(),
+            });
+            if (!made) {
+              window.clearTimeout(giveUp);
+              setStatus("unavailable");
+              return;
+            }
+            pending = made;
+            void (made.ready?.() ?? Promise.resolve()).then(() => {
+              pending = null;
+              window.clearTimeout(giveUp);
+              if (cancelled) {
+                made.dispose();
+                return;
+              }
+              handle = made;
+              sceneRef.current = made;
+              setStatus("live");
+              run();
+            });
           });
-          window.clearTimeout(giveUp);
-          if (!handle) {
-            setStatus("unavailable");
-            return;
-          }
-
-          sceneRef.current = handle;
-          setStatus("live");
-          run();
         })
         .catch(() => {
           window.clearTimeout(giveUp);
@@ -205,6 +236,7 @@ export default function Yumi3DFigure({
       resizer?.disconnect();
       if (!resizer) window.removeEventListener("resize", onResize);
       sceneRef.current = null;
+      pending?.dispose();
       handle?.dispose();
     };
   }, []);

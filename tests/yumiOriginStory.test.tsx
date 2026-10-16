@@ -18,12 +18,21 @@ import { getTranslations } from "@/lib/i18n";
 
 const scene = vi.hoisted(() => ({
   handle: null as null | Record<string, ReturnType<typeof vi.fn>>,
+  options: null as null | Record<string, unknown>,
+  /** Resolves the scene's ready(); null means it is ready at once. */
+  release: null as null | (() => void),
+  hold: false,
 }));
 
 /* jsdom has no WebGL: a scene that records what the film asks of her. */
 vi.mock("@/lib/yumi3d/scene", () => ({
-  createYumiScene: () => {
+  createYumiScene: (_canvas: unknown, options: Record<string, unknown>) => {
+    scene.options = options;
+    const ready = scene.hold
+      ? new Promise<void>(resolve => { scene.release = resolve; })
+      : Promise.resolve();
     scene.handle = {
+      ready: vi.fn(() => ready),
       frame: vi.fn(),
       resize: vi.fn(),
       dispose: vi.fn(),
@@ -133,6 +142,9 @@ describe("YU and MI", () => {
 describe("the film on the page", () => {
   beforeEach(() => {
     scene.handle = null;
+    scene.options = null;
+    scene.release = null;
+    scene.hold = false;
   });
 
   function renderStory(language: "english" | "traditional-chinese" = "english") {
@@ -146,6 +158,31 @@ describe("the film on the page", () => {
     );
     return copy;
   }
+
+  it("waits for Yumi to be ready before it starts on its own", async () => {
+    scene.hold = true;
+    renderStory();
+    await waitFor(() => expect(scene.release).not.toBeNull());
+    // On screen (jsdom has no observer, so it counts as fully visible), but
+    // her shaders are still compiling: no start yet, so YU and MI never pop
+    // in mid-drift.
+    expect(screen.getByRole("button", { name: story.play })).toBeInTheDocument();
+    expect(scene.options).toMatchObject({ embedded: true, exactAnchor: true, maxPixelRatio: 1.5 });
+
+    await act(async () => { scene.release!(); });
+    await waitFor(() => expect(screen.getByRole("button", { name: story.pause })).toBeInTheDocument());
+  });
+
+  it("never starts over a reader who has already pressed something", async () => {
+    scene.hold = true;
+    renderStory();
+    await waitFor(() => expect(scene.release).not.toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: story.play }));
+    fireEvent.click(screen.getByRole("button", { name: story.pause }));
+
+    await act(async () => { scene.release!(); });
+    expect(screen.getByRole("button", { name: story.play })).toBeInTheDocument();
+  });
 
   it("names all five scenes for a screen reader, without the clock", () => {
     renderStory();
