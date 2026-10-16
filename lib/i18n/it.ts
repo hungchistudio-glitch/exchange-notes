@@ -119,6 +119,52 @@ const italian: TranslationDictionary = {
         },
       },
     },
+    story: {
+      eyebrow: "Ecco Yumi",
+      title: "YU + MI = Yumi",
+      intro: "Da dove viene Yumi e perché è arrivata sulla Terra: un film di 35 secondi in cinque scene.",
+      ariaLabel: "La storia di Yumi, un cortometraggio",
+      play: "Riproduci",
+      pause: "Pausa",
+      replay: "Guarda di nuovo",
+      chaptersLabel: "Scene",
+      sceneLabel: "Scena {n} di {total}",
+      acts: [
+        {
+          name: "Deriva",
+          title: "Due pezzettini di quasi niente",
+          text: "Lontano nello spazio, innumerevoli pezzettini fluttuano e ruotano. Due di loro si chiamano YU, a forma di U, e MI, a forma di i.",
+        },
+        {
+          name: "Incontro",
+          title: "L’angolo perfetto",
+          text: "Si urtano, girano e si allontanano, ancora e ancora — finché un giorno si incontrano all’angolo esatto. MI attraversa il centro di YU, e i due diventano uno: Yumi.",
+        },
+        {
+          name: "Terra",
+          title: "Un pianeta che brilla",
+          text: "Alla deriva, Yumi vede brillare davanti a sé un pianeta blu, pieno di voci e di parole mai sentite. Decide di andare a imparare lì: la Terra.",
+        },
+        {
+          name: "Stazione 33",
+          title: "Stazione 33, l’ultima fermata",
+          text: "Prima di scendere, ogni viaggiatore attracca alla Stazione 33, un piccolo negozio in orbita. Yumi sceglie cosa indossare e un ricordo della Terra, pagando con i biscotti di energia che guadagna imparando.",
+        },
+        {
+          name: "Atterraggio",
+          title: "Sulla Terra, per imparare",
+          text: "Tra le nuvole e fino a terra. Ora Yumi impara ogni lingua che incontra — con te. Ogni parola che conservi, la conserva anche lei.",
+        },
+      ],
+      tryOn: {
+        title: "Prova qualcosa",
+        hint: "Pezzi veri del negozio dell’app. Lì si pagano con i biscotti di energia, guadagnati salvando e ripassando parole.",
+        takeOff: "Togli tutto",
+        cookies: "{n} biscotti",
+      },
+      endTitle: "YU + MI = Yumi",
+      endText: "Ora sulla Terra, a imparare le lingue — con te.",
+    },
     notes: {
       eyebrow: "Conserva",
       title: "Salva la frase, non solo la definizione.",

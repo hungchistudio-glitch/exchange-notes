@@ -10,6 +10,9 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
  */
 export type TranslationLanguage = InterfaceLanguage;
 
+/** One scene of the landing page's YU + MI = Yumi film. */
+export type StoryAct = { name: string; title: string; text: string };
+
 export type TranslationDictionary = {
   info: InfoCopy;
   /**
@@ -148,6 +151,29 @@ export type TranslationDictionary = {
           insight: string;
         };
       };
+    };
+    /** YU + MI = Yumi: the origin film under the hero. */
+    story: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      ariaLabel: string;
+      play: string;
+      pause: string;
+      replay: string;
+      chaptersLabel: string;
+      /** {n} and {total}. */
+      sceneLabel: string;
+      acts: [StoryAct, StoryAct, StoryAct, StoryAct, StoryAct];
+      tryOn: {
+        title: string;
+        hint: string;
+        takeOff: string;
+        /** {n}. */
+        cookies: string;
+      };
+      endTitle: string;
+      endText: string;
     };
     notes: {
       eyebrow: string;

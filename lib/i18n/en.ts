@@ -116,6 +116,52 @@ const english: TranslationDictionary = {
         },
       },
     },
+    story: {
+      eyebrow: "Meet Yumi",
+      title: "YU + MI = Yumi",
+      intro: "Where Yumi comes from, and why she came to Earth: a 35-second film in five scenes.",
+      ariaLabel: "Yumi’s story, a short film",
+      play: "Play",
+      pause: "Pause",
+      replay: "Watch again",
+      chaptersLabel: "Scenes",
+      sceneLabel: "Scene {n} of {total}",
+      acts: [
+        {
+          name: "Drift",
+          title: "Two little pieces of nothing",
+          text: "Far out in space, countless little pieces drift and tumble. Two of them are YU, shaped like a U, and MI, shaped like an i.",
+        },
+        {
+          name: "Meet",
+          title: "A perfect angle",
+          text: "They bump, spin and drift apart, again and again — until one day they meet at exactly the right angle. MI slides through YU’s middle, and the two become one: Yumi.",
+        },
+        {
+          name: "Earth",
+          title: "A planet that shines",
+          text: "Drifting on, Yumi sees a blue planet glowing ahead, full of voices and words she has never heard. She decides to go and learn there: Earth.",
+        },
+        {
+          name: "Station 33",
+          title: "Station 33, the last stop",
+          text: "Every traveller docks at Station 33, a little shop in orbit, before going down. Yumi picks something to wear and a keepsake from Earth, paid for in the energy cookies she earns by learning.",
+        },
+        {
+          name: "Land",
+          title: "Down to Earth, to learn",
+          text: "Through the clouds and down to the ground. Now Yumi learns every language she meets — with you. Each word you keep, she keeps too.",
+        },
+      ],
+      tryOn: {
+        title: "Try something on",
+        hint: "Real pieces from the in-app shop. In the app you pay in energy cookies, earned by saving and reviewing words.",
+        takeOff: "Take everything off",
+        cookies: "{n} cookies",
+      },
+      endTitle: "YU + MI = Yumi",
+      endText: "Now on Earth, learning languages — with you.",
+    },
     notes: {
       eyebrow: "Keep",
       title: "Save the sentence, not just the definition.",

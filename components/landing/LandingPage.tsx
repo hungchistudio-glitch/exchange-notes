@@ -17,6 +17,7 @@ import {
 
 import Link from "next/link";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
+import YumiOriginStory from "@/components/landing/story/YumiOriginStory";
 import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
@@ -47,7 +48,7 @@ function LandingLoginLink({
 }: {
   label: string;
   analyticsEvent: "landing_primary_cta_click" | "landing_final_cta_click";
-  analyticsSource: "navigation" | "hero" | "final";
+  analyticsSource: "navigation" | "hero" | "story" | "final";
   className: string;
 }) {
   return (
@@ -843,6 +844,19 @@ export default function LandingPage() {
           onStepChange={setTutorialStep}
         />
       </section>
+
+      <YumiOriginStory
+        copy={copy.story}
+        language={language}
+        cta={
+          <LandingLoginLink
+            label={copy.hero.cta}
+            analyticsEvent="landing_primary_cta_click"
+            analyticsSource="story"
+            className={styles.primaryButton}
+          />
+        }
+      />
 
       <section
         className={`${styles.storySection} ${styles.storySectionFirst}`}

@@ -59,6 +59,10 @@
 
 .loader[data-yumi-loading="done"] {
   opacity: 0;
+  /* The appear animation fills forwards at full opacity, and a running or
+     filling animation outranks this rule: without ending it, "done" left the
+     ring drawn behind her for good. Ended, the fade below plays. */
+  animation: none;
 }
 
 .loader[data-yumi-loading="done"] .band {

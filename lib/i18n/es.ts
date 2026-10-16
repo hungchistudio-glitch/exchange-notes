@@ -116,6 +116,52 @@ const spanish: TranslationDictionary = {
         },
       },
     },
+    story: {
+      eyebrow: "Conoce a Yumi",
+      title: "YU + MI = Yumi",
+      intro: "De dónde viene Yumi y por qué vino a la Tierra: una película de 35 segundos en cinco escenas.",
+      ariaLabel: "La historia de Yumi, un cortometraje",
+      play: "Reproducir",
+      pause: "Pausar",
+      replay: "Ver de nuevo",
+      chaptersLabel: "Escenas",
+      sceneLabel: "Escena {n} de {total}",
+      acts: [
+        {
+          name: "Deriva",
+          title: "Dos pedacitos de casi nada",
+          text: "Muy lejos, en el espacio, innumerables pedacitos flotan y dan vueltas. Dos de ellos son YU, con forma de U, y MI, con forma de i.",
+        },
+        {
+          name: "Encuentro",
+          title: "El ángulo perfecto",
+          text: "Chocan, giran y se separan una y otra vez, hasta que un día se encuentran en el ángulo exacto. MI atraviesa el centro de YU, y los dos se vuelven uno: Yumi.",
+        },
+        {
+          name: "Tierra",
+          title: "Un planeta que brilla",
+          text: "A la deriva, Yumi ve brillar un planeta azul, lleno de voces y palabras que nunca ha oído. Decide ir a aprender allí: la Tierra.",
+        },
+        {
+          name: "Estación 33",
+          title: "Estación 33, la última parada",
+          text: "Antes de bajar, todo viajero se detiene en la Estación 33, una pequeña tienda en órbita. Yumi elige qué ponerse y un recuerdo de la Tierra, y paga con las galletas de energía que gana aprendiendo.",
+        },
+        {
+          name: "Aterrizaje",
+          title: "A la Tierra, a aprender",
+          text: "Entre las nubes y hasta el suelo. Ahora Yumi aprende cada idioma que encuentra, contigo. Cada palabra que guardas, ella también la guarda.",
+        },
+      ],
+      tryOn: {
+        title: "Pruébate algo",
+        hint: "Son piezas reales de la tienda de la app. Allí se pagan con galletas de energía, que se ganan guardando y repasando palabras.",
+        takeOff: "Quitárselo todo",
+        cookies: "{n} galletas",
+      },
+      endTitle: "YU + MI = Yumi",
+      endText: "Ya en la Tierra, aprendiendo idiomas contigo.",
+    },
     notes: {
       eyebrow: "Guarda",
       title: "Guarda la frase, no solo la definición.",

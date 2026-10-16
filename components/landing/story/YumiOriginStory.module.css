@@ -1,0 +1,1182 @@
+/* =========================================================
+   YU + MI = Yumi — the film (YumiOriginStory.tsx)
+
+   Every layer's resting style below is the film's first frame, so the page
+   as the server sends it already shows the opening shot; the Web
+   Animations built from storyTimeline.ts take over from exactly there.
+
+   Only transform and opacity are ever animated, by the film or by the few
+   ambient loops here (the matter drifting, the planet turning, the rush of
+   cloud on the way down), and each loop runs only in the act it is seen in.
+
+   Sizes inside the screen are in container units of the screen itself, so
+   the composition is the same picture at every width; the screen is wide
+   on a desk (about 2.1 : 1) and 4 : 5 on a phone.
+   ========================================================= */
+
+.story {
+  --story-space: #04060c;
+  --story-starlight: #e8edf6;
+  --story-starlight-soft: rgba(232, 237, 246, 0.72);
+  --story-amber: #ffc96b;
+  --story-line: rgba(232, 237, 246, 0.14);
+  position: relative;
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: clamp(72px, 10vw, 128px) 0 clamp(64px, 9vw, 112px);
+  scroll-margin-top: 72px;
+}
+
+/* ------------------------------------------------------------ heading */
+
+.heading {
+  display: grid;
+  max-width: 40rem;
+  margin: 0 auto clamp(28px, 4vw, 44px);
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--landing-faint, #79756d);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before,
+.eyebrow::after {
+  width: 28px;
+  height: 1px;
+  background: var(--landing-amber, #c9962e);
+  content: "";
+}
+
+.heading h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.heading > p:last-child {
+  max-width: 34rem;
+  color: var(--landing-soft, #5f5c55);
+  font-size: 1rem;
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------ the film */
+
+.film {
+  position: relative;
+  display: grid;
+  gap: 16px;
+}
+
+/* A container, so the words laid over the picture can line up with its
+   letterbox, which is a share of the picture's height. */
+.frame {
+  position: relative;
+  container-type: inline-size;
+}
+
+.screen {
+  /* Her loader is starlight: it is drawn on space. */
+  --yumi-loading-ink: var(--story-starlight);
+  position: relative;
+  container-type: size;
+  width: 100%;
+  aspect-ratio: 2.1 / 1;
+  max-height: min(78vh, 620px);
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--landing-ink, #171717) 12%, transparent);
+  border-radius: clamp(18px, 2.4vw, 30px);
+  background: var(--story-space);
+  box-shadow:
+    0 40px 80px -36px rgba(4, 6, 12, 0.55),
+    0 14px 30px -18px rgba(4, 6, 12, 0.35);
+  color: var(--story-starlight);
+  isolation: isolate;
+  /* The rounded clip stays a clip for the compositor: no layer escapes
+     the corners while it moves. */
+  transform: translateZ(0);
+}
+
+/* Every picture layer fills the screen unless it says otherwise. */
+.camera,
+.orbit,
+.streaks,
+.sky,
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ space */
+
+/* Larger than the screen, so its pushes and pans never show an edge. */
+.camera {
+  inset: -8%;
+  transform: translate3d(0, 0, 0) scale(1.06);
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.nebula {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(38% 34% at 22% 30%, rgba(107, 79, 165, 0.26), transparent 70%),
+    radial-gradient(34% 30% at 80% 22%, rgba(47, 127, 166, 0.22), transparent 70%),
+    radial-gradient(42% 30% at 62% 78%, rgba(201, 135, 90, 0.12), transparent 72%),
+    radial-gradient(120% 90% at 50% 50%, #0a1020 0%, var(--story-space) 70%);
+}
+
+.starsFar,
+.starsNear {
+  position: absolute;
+  inset: -12%;
+  background-repeat: repeat;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.starsFar {
+  opacity: 0.75;
+  background-size: 210px 190px;
+  background-image:
+    radial-gradient(circle at 12% 18%, #fff 0 0.6px, transparent 1.1px),
+    radial-gradient(circle at 38% 72%, #dfeeff 0 0.5px, transparent 1px),
+    radial-gradient(circle at 66% 27%, #fff 0 0.7px, transparent 1.2px),
+    radial-gradient(circle at 84% 58%, #ffe9c9 0 0.5px, transparent 1px),
+    radial-gradient(circle at 52% 92%, #fff 0 0.5px, transparent 1px),
+    radial-gradient(circle at 24% 46%, #cfe3ff 0 0.4px, transparent 0.9px);
+}
+
+.starsNear {
+  background-size: 360px 320px;
+  background-image:
+    radial-gradient(circle at 18% 28%, #fff 0 1px, transparent 1.8px),
+    radial-gradient(circle at 72% 14%, #ffe2b8 0 1.1px, transparent 2px),
+    radial-gradient(circle at 58% 66%, #dbeaff 0 0.9px, transparent 1.7px),
+    radial-gradient(circle at 88% 82%, #fff 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 34% 88%, #fff 0 0.8px, transparent 1.5px);
+}
+
+/* The other matter adrift with YU and MI: small worlds, specks, a ringed
+   pebble or two, each on its own slow drift. */
+.matter {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+}
+
+.matter span {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.85) 0 12%, transparent 46%),
+    radial-gradient(circle at 50% 50%, var(--tone) 0 58%, color-mix(in oklab, var(--tone) 40%, #04060c) 100%);
+  box-shadow: 0 0 calc(var(--size) * 1.4) color-mix(in oklab, var(--tone) 38%, transparent);
+  animation: matterDrift var(--duration) ease-in-out var(--delay) infinite alternate;
+}
+
+.matter span[data-ring]::after {
+  position: absolute;
+  inset: 34% -55%;
+  border: 1px solid color-mix(in oklab, var(--tone) 70%, transparent);
+  border-radius: 50%;
+  transform: rotate(-18deg);
+  content: "";
+}
+
+@keyframes matterDrift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(var(--dx), var(--dy), 0) rotate(40deg);
+  }
+}
+
+/* The light of the meeting. Centred where YU and MI join. */
+.flash,
+.ring {
+  position: absolute;
+  left: calc(50% - var(--light) / 2);
+  top: calc(47.5% - var(--light) / 2);
+  width: var(--light);
+  height: var(--light);
+  border-radius: 50%;
+}
+
+.flash {
+  --light: 92cqmin;
+  opacity: 0;
+  transform: scale(0.2);
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(236, 246, 255, 0.78) 14%,
+    rgba(186, 226, 255, 0.36) 34%,
+    rgba(255, 214, 150, 0.12) 58%,
+    transparent 100%
+  );
+}
+
+.ring {
+  --light: 64cqmin;
+  opacity: 0;
+  transform: scale(0.3);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 236, 205, 0.9),
+    0 0 18px rgba(255, 201, 107, 0.45),
+    inset 0 0 22px rgba(159, 220, 255, 0.35);
+}
+
+/* ------------------------------------------------------------ the planet */
+
+.planet,
+.flare {
+  position: absolute;
+  right: 14%;
+  top: 19%;
+  width: min(44cqh, 52cqw);
+  aspect-ratio: 1;
+}
+
+.planet {
+  opacity: 0;
+  transform: translate3d(22%, 26%, 0) scale(0.55);
+}
+
+.planetSurface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #8fd0f2 0%, #3b8fcc 26%, #1c5d98 52%, #0f3a66 76%, #0a2747 100%);
+}
+
+/* A strip twice the planet's width, tiled once and sliding by half: an
+   endless turn, as on Station 33's window. */
+.planetLand,
+.planetClouds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background-repeat: repeat-x;
+  background-size: 50% 100%;
+}
+
+.planetLand {
+  opacity: 0.62;
+  /* Continents as clusters of soft shapes, so no one of them reads as a
+     spot: a long one, a broad one with a desert, and an island chain. */
+  background-image:
+    radial-gradient(7% 15% at 9% 34%, #6e9a5c, transparent 70%),
+    radial-gradient(6% 9% at 13% 52%, #7fa463, transparent 70%),
+    radial-gradient(5% 8% at 16% 66%, #8a9d5f, transparent 70%),
+    radial-gradient(13% 9% at 38% 30%, #6f9a5e, transparent 72%),
+    radial-gradient(9% 8% at 44% 40%, #b5a26f, transparent 70%),
+    radial-gradient(7% 11% at 36% 46%, #7aa365, transparent 70%),
+    radial-gradient(3% 3% at 62% 62%, #7aa365, transparent 70%),
+    radial-gradient(2.4% 2.4% at 66% 66%, #8eaa6c, transparent 70%),
+    radial-gradient(2% 2% at 69% 71%, #7aa365, transparent 70%),
+    radial-gradient(10% 7% at 82% 22%, #86a768, transparent 72%),
+    radial-gradient(6% 10% at 86% 34%, #6e9a5c, transparent 70%),
+    radial-gradient(18% 5% at 50% 94%, #e9f1f4, transparent 72%),
+    radial-gradient(18% 5% at 50% 4%, #e9f1f4, transparent 72%);
+  animation: planetTurn 90s linear infinite;
+}
+
+.planetClouds {
+  opacity: 0.75;
+  background-image:
+    radial-gradient(18% 4% at 16% 22%, rgba(255, 255, 255, 0.85), transparent 70%),
+    radial-gradient(22% 5% at 46% 48%, rgba(255, 255, 255, 0.7), transparent 72%),
+    radial-gradient(14% 3.5% at 70% 30%, rgba(255, 255, 255, 0.8), transparent 70%),
+    radial-gradient(20% 4.5% at 84% 68%, rgba(255, 255, 255, 0.65), transparent 72%),
+    radial-gradient(12% 3% at 30% 80%, rgba(255, 255, 255, 0.7), transparent 70%);
+  animation: planetTurn 54s linear infinite;
+}
+
+@keyframes planetTurn {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Lit from the upper left, where the sun is coming up over its rim. */
+.planetShade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 28% 24%,
+    transparent 0 34%,
+    rgba(3, 8, 20, 0.42) 58%,
+    rgba(2, 5, 12, 0.9) 82%,
+    rgba(2, 5, 12, 0.96) 100%
+  );
+}
+
+.planetAtmosphere {
+  position: absolute;
+  inset: -5%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    transparent 89%,
+    rgba(140, 210, 255, 0.55) 93%,
+    rgba(140, 210, 255, 0.14) 97%,
+    transparent 100%
+  );
+  box-shadow: 0 0 9cqmin rgba(79, 176, 255, 0.22);
+}
+
+/* The sunrise on its rim: a glint, and the long horizontal streak a cinema
+   lens draws across the frame from it. */
+.flare {
+  opacity: 0;
+}
+
+.flare::before,
+.flare::after {
+  position: absolute;
+  content: "";
+}
+
+.flare::before {
+  left: -6%;
+  top: -4%;
+  width: 46%;
+  height: 46%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.95) 0 6%,
+    rgba(255, 228, 180, 0.6) 18%,
+    rgba(255, 201, 107, 0.18) 48%,
+    transparent 100%
+  );
+}
+
+.flare::after {
+  left: calc(17% - 160%);
+  top: calc(19% - 0.6%);
+  width: 320%;
+  height: 1.2%;
+  min-height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(159, 220, 255, 0.12) 28%,
+    rgba(214, 238, 255, 0.75) 50%,
+    rgba(159, 220, 255, 0.12) 72%,
+    transparent 100%
+  );
+}
+
+/* ------------------------------------------------------------ Station 33 */
+
+.orbit {
+  opacity: 0;
+  transform: translate3d(0, 0, 0) scale(1.08);
+  /* The dive zooms toward Earth's rim, low in the window. */
+  transform-origin: 50% 70%;
+}
+
+/*
+ * The docking pad, sized from Yumi rather than from the screen: she is
+ * drawn at (50%, 50%) with a radius of 20% of the screen's shorter side,
+ * and the pad's top face meets the bottom of her shell.
+ */
+.dock {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 40cqmin);
+  width: 80cqmin;
+  height: calc((50cqh + 31.8cqmin) / 0.94);
+  opacity: 0;
+  transform: translate3d(0, 40%, 0);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ the dive */
+
+.streaks {
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Cloud tops rushing up past her. */
+.streaks span {
+  position: absolute;
+  inset: 0 -10% -100%;
+  background-size: 100% 50%;
+  background-image:
+    radial-gradient(26% 7% at 18% 12%, rgba(255, 255, 255, 0.85), transparent 72%),
+    radial-gradient(34% 8% at 74% 26%, rgba(255, 255, 255, 0.7), transparent 72%),
+    radial-gradient(22% 6% at 40% 44%, rgba(255, 255, 255, 0.8), transparent 72%),
+    radial-gradient(30% 7% at 86% 62%, rgba(255, 255, 255, 0.75), transparent 72%),
+    radial-gradient(24% 6% at 12% 80%, rgba(255, 255, 255, 0.7), transparent 72%),
+    linear-gradient(180deg, rgba(120, 178, 228, 0.12), rgba(150, 200, 240, 0.42));
+  animation: rush 1.1s linear infinite;
+  animation-play-state: paused;
+}
+
+@keyframes rush {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+/* Below the clouds, a morning sky that ends in the colour of the page. */
+.sky {
+  opacity: 0;
+  background:
+    linear-gradient(
+      180deg,
+      #6faad8 0%,
+      #a9d0ec 34%,
+      #e5ecf0 64%,
+      #f3eadb 84%,
+      var(--landing-paper, #f5f3ed) 100%
+    );
+}
+
+.sun {
+  position: absolute;
+  right: 12%;
+  top: 8%;
+  width: 34cqmin;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 252, 240, 1) 0 18%,
+    rgba(255, 236, 196, 0.7) 34%,
+    rgba(255, 220, 160, 0.2) 62%,
+    transparent 100%
+  );
+}
+
+.cloudOne,
+.cloudTwo {
+  position: absolute;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 100%);
+  animation: cloudPass 40s linear infinite alternate;
+  animation-play-state: paused;
+}
+
+.cloudOne {
+  left: 6%;
+  top: 30%;
+  width: 46cqmin;
+  height: 12cqmin;
+}
+
+.cloudTwo {
+  right: 2%;
+  top: 56%;
+  width: 60cqmin;
+  height: 14cqmin;
+  opacity: 0.8;
+  animation-duration: 56s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes cloudPass {
+  from {
+    transform: translate3d(-4cqmin, 0, 0);
+  }
+  to {
+    transform: translate3d(6cqmin, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------ Yumi */
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 700ms ease;
+  /* The page still scrolls under a thumb laid on her. */
+  touch-action: pan-y;
+}
+
+.canvas[data-live] {
+  opacity: 1;
+}
+
+.canvas[data-turnable] {
+  cursor: grab;
+}
+
+.canvas[data-turnable]:active {
+  cursor: grabbing;
+}
+
+.loader {
+  --yumi-loading-size: min(24cqmin, 120px);
+}
+
+/* ------------------------------------------------------------ the lens */
+
+.vignette {
+  background: radial-gradient(
+    ellipse 75% 70% at 50% 48%,
+    transparent 58%,
+    rgba(2, 3, 8, 0.38) 88%,
+    rgba(2, 3, 8, 0.62) 100%
+  );
+  transition: opacity 1.4s ease;
+}
+
+.letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6.5cqh;
+  background: #000;
+  transform: scaleY(1.9);
+  pointer-events: none;
+}
+
+.letterboxTop {
+  top: 0;
+  transform-origin: 50% 0;
+}
+
+.letterboxBottom {
+  bottom: 0;
+  transform-origin: 50% 100%;
+}
+
+/* ------------------------------------------------------------ the words */
+
+.caption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  width: min(32rem, 56%);
+  /* Above the bottom letterbox bar: 6.5% of a 2.1 : 1 picture's height. */
+  padding: 24px clamp(20px, 4cqw, 44px) calc(3.1cqw + 22px);
+  color: var(--story-starlight);
+  pointer-events: none;
+  text-shadow: 0 1px 14px rgba(2, 3, 8, 0.7);
+}
+
+.caption::before {
+  position: absolute;
+  inset: -40% -30% 0 0;
+  z-index: -1;
+  border-bottom-left-radius: clamp(18px, 2.4vw, 30px);
+  background: radial-gradient(
+    ellipse 90% 80% at 0% 100%,
+    rgba(2, 3, 8, 0.66) 0%,
+    rgba(2, 3, 8, 0.34) 50%,
+    transparent 78%
+  );
+  content: "";
+}
+
+.captionEyebrow {
+  color: var(--story-amber);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  animation: captionIn 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.captionTitle {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.5rem, 2.8vw, 2.25rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  animation: captionIn 1100ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
+}
+
+.captionText {
+  max-width: 36ch;
+  color: var(--story-starlight-soft);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+  animation: captionIn 1100ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
+}
+
+.caption[data-ended] {
+  visibility: hidden;
+}
+
+.captionGhost,
+.captionLive {
+  display: grid;
+  grid-area: 1 / 1;
+  align-content: end;
+  gap: 6px;
+}
+
+.captionGhost {
+  visibility: hidden;
+}
+
+.captionGhost p {
+  animation: none;
+}
+
+@keyframes captionIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------ the end */
+
+.endCard {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 14px;
+  width: min(30rem, 50%);
+  padding: 6% clamp(24px, 7%, 72px);
+  color: #16202c;
+  animation: endIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.endTitle {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.75rem, 3.6vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.endText {
+  max-width: 32ch;
+  color: #3c4a58;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.endCta {
+  width: min(100%, 340px);
+  margin-top: 6px;
+}
+
+@keyframes endIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------ try it on */
+
+/* Station 33's rail, in the shop's own dark glass. */
+.tryOn {
+  position: absolute;
+  top: calc(3.1cqw + 14px);
+  right: clamp(14px, 2.4cqw, 28px);
+  z-index: 2;
+  display: grid;
+  width: min(17rem, 30%);
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--story-line);
+  border-radius: 20px;
+  background: rgba(8, 13, 23, 0.84);
+  color: var(--story-starlight);
+  animation: captionIn 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tryOnTitle {
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.tryOn ul {
+  display: grid;
+  gap: 6px;
+}
+
+.tryOn li button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: rgba(232, 237, 246, 0.05);
+  color: inherit;
+  text-align: start;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.tryOn li button:hover:not(:disabled) {
+  background: rgba(232, 237, 246, 0.1);
+}
+
+.tryOn li button[aria-pressed="true"] {
+  border-color: rgba(159, 220, 255, 0.7);
+  background: rgba(159, 220, 255, 0.14);
+}
+
+.tryOn li button:disabled {
+  opacity: 0.5;
+}
+
+.tryOn img {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(232, 237, 246, 0.08);
+  object-fit: contain;
+}
+
+.tryOn li span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.tryOn strong {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tryOn small {
+  color: var(--story-amber);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tryOnHint {
+  color: var(--story-starlight-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.takeOff {
+  justify-self: start;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--story-line);
+  border-radius: 999px;
+  color: var(--story-starlight);
+  font-size: 0.75rem;
+}
+
+.takeOff:hover {
+  background: rgba(232, 237, 246, 0.08);
+}
+
+/* ------------------------------------------------------------ controls */
+
+.controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.playButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 0 14px;
+  border: 1px solid var(--landing-ink, #171717);
+  border-radius: 999px;
+  background: var(--landing-ink, #171717);
+  color: var(--landing-on-ink, #fff);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  transition: opacity 160ms ease;
+}
+
+.playButton:hover {
+  opacity: 0.86;
+}
+
+.chapters {
+  display: flex;
+  min-width: 0;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+.chapters::-webkit-scrollbar {
+  display: none;
+}
+
+.chapters li {
+  flex: 1 0 auto;
+  scroll-snap-align: start;
+}
+
+.chapters button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--landing-faint, #79756d);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease;
+}
+
+.chapters button span[aria-hidden] {
+  color: var(--landing-amber, #c9962e);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.chapters button:hover {
+  color: var(--landing-ink, #171717);
+}
+
+.chapters button[aria-current="step"] {
+  border-color: var(--landing-line, #e3e3dc);
+  background: var(--landing-card, #fffefa);
+  color: var(--landing-ink, #171717);
+}
+
+/* The film's progress, with a notch where each act begins (7, 13.5,
+   20.5 and 28 seconds of 35). */
+.progressTrack {
+  position: relative;
+  grid-column: 1 / -1;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--landing-ink, #171717) 12%, transparent);
+}
+
+.progress {
+  position: absolute;
+  inset: 0;
+  background: var(--landing-ink, #171717);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.progressTrack::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent calc(20% - 1px), var(--notch) 0 calc(20% + 1px), transparent 0),
+    linear-gradient(90deg, transparent calc(38.57% - 1px), var(--notch) 0 calc(38.57% + 1px), transparent 0),
+    linear-gradient(90deg, transparent calc(58.57% - 1px), var(--notch) 0 calc(58.57% + 1px), transparent 0),
+    linear-gradient(90deg, transparent calc(80% - 1px), var(--notch) 0 calc(80% + 1px), transparent 0);
+  content: "";
+  --notch: var(--landing-paper, #f5f3ed);
+}
+
+.playButton:focus-visible,
+.chapters button:focus-visible,
+.tryOn button:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--landing-amber, #c9962e) 60%, white);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ by act */
+
+/* Each ambient loop runs only in the act it is seen in. */
+.film:is([data-act="station"], [data-act="land"]) .matter span,
+.film:not(:is([data-act="earth"], [data-act="station"])) .planetLand,
+.film:not(:is([data-act="earth"], [data-act="station"])) .planetClouds,
+.film:not(:is([data-act="station"], [data-act="land"])) .orbit * {
+  animation-play-state: paused;
+}
+
+.film[data-act="land"][data-playing] .streaks span,
+.film[data-act="land"] .cloudOne,
+.film[data-act="land"] .cloudTwo {
+  animation-play-state: running;
+}
+
+/* The lens opens up as she comes down into daylight. */
+.film[data-act="land"] .vignette {
+  opacity: 0.4;
+}
+
+/* ------------------------------------------------------------ dark */
+
+@media (prefers-color-scheme: dark) {
+  /* She lands at dusk on a dark page: the sky ends in the page's own night. */
+  .sky {
+    background:
+      linear-gradient(
+        180deg,
+        #1b2a4a 0%,
+        #3a4a72 30%,
+        #7a6a86 56%,
+        #c08f7a 74%,
+        #3b2f3a 90%,
+        var(--landing-paper, #070b12) 100%
+      );
+  }
+
+  .sun {
+    top: 52%;
+    right: 18%;
+    background: radial-gradient(
+      closest-side,
+      rgba(255, 214, 160, 0.95) 0 14%,
+      rgba(255, 170, 110, 0.5) 32%,
+      rgba(255, 140, 90, 0.14) 62%,
+      transparent 100%
+    );
+  }
+
+  .cloudOne,
+  .cloudTwo {
+    background: radial-gradient(closest-side, rgba(255, 214, 196, 0.5), rgba(255, 214, 196, 0) 100%);
+  }
+
+  .endCard {
+    color: #fbf3e6;
+    text-shadow: 0 1px 18px rgba(10, 12, 24, 0.55);
+  }
+
+  .endText {
+    color: rgba(251, 243, 230, 0.82);
+  }
+
+  .screen {
+    box-shadow:
+      0 40px 80px -36px rgba(0, 0, 0, 0.9),
+      0 0 0 1px rgba(232, 237, 246, 0.04);
+  }
+}
+
+/* ------------------------------------------------------------ phones */
+
+@media (max-width: 720px) {
+  .story {
+    width: min(560px, calc(100% - 32px));
+  }
+
+  .screen {
+    aspect-ratio: 4 / 5;
+    max-height: none;
+  }
+
+  /* On a phone the words sit under the picture, in a box sized for the
+     longest act, so nothing moves when the scene changes. */
+  .caption {
+    position: relative;
+    width: 100%;
+    padding: 16px 4px 0;
+    color: var(--landing-ink, #171717);
+    text-shadow: none;
+  }
+
+  .caption::before {
+    display: none;
+  }
+
+  .captionGhost,
+  .captionLive {
+    align-content: start;
+  }
+
+  .captionText {
+    color: var(--landing-soft, #5f5c55);
+  }
+
+  .captionEyebrow {
+    color: var(--landing-amber, #c9962e);
+  }
+
+  .endCard {
+    align-content: start;
+    justify-items: center;
+    width: 100%;
+    padding: calc(6.5cqh + 20px) 22px 0;
+    text-align: center;
+  }
+
+  .endText {
+    max-width: 30ch;
+  }
+
+  /* The rail runs across the top of the picture, above her head. */
+  .tryOn {
+    /* The bar is 6.5% of a 4 : 5 picture's height. */
+    top: calc(8.125cqw + 8px);
+    left: 10px;
+    right: 10px;
+    width: auto;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .tryOnTitle,
+  .tryOnHint {
+    display: none;
+  }
+
+  .tryOn ul {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .tryOn ul::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tryOn li {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .tryOn li button {
+    width: auto;
+    min-height: 48px;
+    padding-right: 12px;
+  }
+
+  .tryOn img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .takeOff {
+    min-height: 32px;
+  }
+
+  .controls {
+    gap: 10px;
+  }
+
+  /* An icon is enough for play on a phone: the chapters need the room. */
+  .playButton {
+    width: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .playButton span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Five chapters fit across a phone when only the current one is named;
+     the others keep their names for a screen reader. */
+  .chapters {
+    justify-content: space-between;
+  }
+
+  .chapters li {
+    flex: none;
+  }
+
+  .chapters button {
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  .chapters button:not([aria-current]) .chapterName {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------------ less motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .matter span,
+  .planetLand,
+  .planetClouds,
+  .streaks span,
+  .cloudOne,
+  .cloudTwo,
+  .captionEyebrow,
+  .captionTitle,
+  .captionText,
+  .endCard,
+  .tryOn {
+    animation: none;
+  }
+
+  .canvas,
+  .vignette,
+  .chapters button,
+  .tryOn li button {
+    transition: none;
+  }
+}

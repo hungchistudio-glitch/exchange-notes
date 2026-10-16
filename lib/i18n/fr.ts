@@ -119,6 +119,52 @@ const french: TranslationDictionary = {
         },
       },
     },
+    story: {
+      eyebrow: "Voici Yumi",
+      title: "YU + MI = Yumi",
+      intro: "D’où vient Yumi, et pourquoi elle est venue sur Terre : un film de 35 secondes en cinq scènes.",
+      ariaLabel: "L’histoire de Yumi, un court-métrage",
+      play: "Lire",
+      pause: "Pause",
+      replay: "Revoir",
+      chaptersLabel: "Scènes",
+      sceneLabel: "Scène {n} sur {total}",
+      acts: [
+        {
+          name: "Dérive",
+          title: "Deux petits riens",
+          text: "Loin dans l’espace, d’innombrables petits morceaux dérivent et tournoient. Deux d’entre eux s’appellent YU, en forme de U, et MI, en forme de i.",
+        },
+        {
+          name: "Rencontre",
+          title: "L’angle parfait",
+          text: "Ils se cognent, tournent et s’éloignent, encore et encore — jusqu’au jour où ils se rencontrent sous l’angle exact. MI traverse le milieu de YU, et les deux n’en font plus qu’un : Yumi.",
+        },
+        {
+          name: "Terre",
+          title: "Une planète qui brille",
+          text: "En dérivant, Yumi voit briller devant elle une planète bleue, pleine de voix et de mots qu’elle n’a jamais entendus. Elle décide d’aller y apprendre : la Terre.",
+        },
+        {
+          name: "Station 33",
+          title: "Station 33, dernier arrêt",
+          text: "Avant de descendre, chaque voyageur s’arrête à la Station 33, une petite boutique en orbite. Yumi y choisit une tenue et un souvenir de la Terre, payés avec les biscuits d’énergie qu’elle gagne en apprenant.",
+        },
+        {
+          name: "Atterrissage",
+          title: "Sur Terre, pour apprendre",
+          text: "À travers les nuages, jusqu’au sol. Désormais, Yumi apprend chaque langue qu’elle rencontre — avec vous. Chaque mot que vous gardez, elle le garde aussi.",
+        },
+      ],
+      tryOn: {
+        title: "Essayer quelque chose",
+        hint: "De vraies pièces de la boutique de l’app. Là-bas, on paie en biscuits d’énergie, gagnés en enregistrant et en révisant des mots.",
+        takeOff: "Tout enlever",
+        cookies: "{n} biscuits",
+      },
+      endTitle: "YU + MI = Yumi",
+      endText: "Désormais sur Terre, à apprendre les langues — avec vous.",
+    },
     notes: {
       eyebrow: "Gardez",
       title: "Gardez la phrase, pas seulement la définition.",

@@ -114,6 +114,52 @@ const traditionalChinese: TranslationDictionary = {
         },
       },
     },
+    story: {
+      eyebrow: "認識 Yumi",
+      title: "YU + MI = Yumi",
+      intro: "Yumi 從哪裡來、為什麼來到地球：一部五幕、35 秒的小電影。",
+      ariaLabel: "Yumi 的故事小電影",
+      play: "播放",
+      pause: "暫停",
+      replay: "再看一次",
+      chaptersLabel: "場景",
+      sceneLabel: "第 {n} 幕，共 {total} 幕",
+      acts: [
+        {
+          name: "漂流",
+          title: "兩顆小小的物質",
+          text: "在遙遠的太空裡，無數小物質漂來漂去。其中兩顆，一顆像 U，叫 YU；一顆像 i，叫 MI。",
+        },
+        {
+          name: "相遇",
+          title: "剛剛好的角度",
+          text: "它們撞來撞去、轉著圈又分開——直到有一天，剛好在完美的角度相遇。MI 穿過 YU 的正中間，兩個變成一個：Yumi。",
+        },
+        {
+          name: "地球",
+          title: "一顆閃耀的星球",
+          text: "Yumi 繼續漂著，看見前方一顆藍色星球閃閃發亮，充滿她從沒聽過的聲音和字句。她決定去那裡學習：地球。",
+        },
+        {
+          name: "33 號軌道站",
+          title: "33 號軌道站，最後一站",
+          text: "降落前，每位旅人都會停靠軌道上的 33 號軌道站。Yumi 在站上的小商店挑選穿搭和地球紀念品，用學習換來的能量餅乾付款。",
+        },
+        {
+          name: "登陸",
+          title: "降落地球，開始學習",
+          text: "穿過雲層，降落地面。現在 Yumi 和你一起學習遇見的每一種語言——你留下的每個字，她也一起收藏。",
+        },
+      ],
+      tryOn: {
+        title: "試穿看看",
+        hint: "都是 App 商店裡的真實商品。在 App 裡，用存單字、複習換來的能量餅乾購買。",
+        takeOff: "全部脫下",
+        cookies: "{n} 塊餅乾",
+      },
+      endTitle: "YU + MI = Yumi",
+      endText: "現在在地球，和你一起學語言。",
+    },
     notes: {
       eyebrow: "留下",
       title: "不只記住意思，也留下當時想說的話。",
