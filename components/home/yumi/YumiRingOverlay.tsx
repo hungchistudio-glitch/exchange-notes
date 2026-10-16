@@ -16,7 +16,7 @@ import { useLexiconSearchSheet } from "@/contexts/LexiconSearchContext";
 import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import type { CSSProperties, ReactNode } from "react";
 
-import LiquidRingButton, { LiquidRingSurface } from "./LiquidRingButton";
+import PrecisionDial from "./PrecisionDial";
 import { leaseInlineStyles } from "@/lib/ui/inlineStyleLease";
 import {
   announceHomeMoment,
@@ -481,6 +481,7 @@ export default function YumiRingOverlay({
   field,
   children,
 }: YumiRingOverlayProps) {
+  const dialAim = useRef({ x: 0, y: 0 });
   const router = useRouter();
   const mode = useOptionalInterfaceMode();
   const modeRef = useRef(mode);
@@ -685,7 +686,6 @@ export default function YumiRingOverlay({
    * middle and while the band is stretched.
    */
   const ringRef = useRef<HTMLDivElement>(null);
-  const spokeRefs = useRef<Array<HTMLElement | null>>([]);
 
   const spokes: Spoke[] = [
     { key: "words", label: t.navigation.vocabulary, href: "/vocabulary", icon: ICON.words },
@@ -753,7 +753,7 @@ export default function YumiRingOverlay({
   useEffect(() => {
     if (open && !wasOpen.current) {
       if (openedByKey.current) {
-        spokeRefs.current[0]?.querySelector("button")?.focus();
+        ringRef.current?.querySelector<HTMLButtonElement>('[data-dial-item][aria-current="true"]')?.focus();
       }
     } else if (!open && wasOpen.current) {
       const focusInRing = rootRef.current?.contains(document.activeElement);
@@ -793,7 +793,7 @@ export default function YumiRingOverlay({
       if (returningHomeRef.current) return;
       if (event.isPrimary === false || event.button !== 0 || pointer) return;
       // A second input must not dismiss a selection already being scrubbed.
-      if (rootRef.current?.querySelector("[data-liquid-option][data-dragging], [data-liquid-option][data-releasing]")) return;
+      if (rootRef.current?.querySelector("[data-dial][data-dragging]")) return;
       const eye = sceneRef.current?.eyeScreenPosition();
       if (!eye) return;
       const blank = Math.hypot(event.clientX - eye.x, event.clientY - eye.y) > 100;
@@ -1095,9 +1095,11 @@ export default function YumiRingOverlay({
           // Lit for Standard from her first frame here, not eased into it.
           handle.setCosmicLevel?.(0, firstPaint);
           handle.setGaze?.(
-            gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
-            gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
+            openRef.current && !reduced ? dialAim.current.x : gazePoint && !reduced ? (gazePoint.x - gazeEye.x) / 180 : 0,
+            openRef.current && !reduced ? dialAim.current.y : gazePoint && !reduced ? (gazePoint.y - gazeEye.y) / 180 : 0,
           );
+          // While the dial is out she looks at the key at the top and leans a little toward it.
+          handle.setNavigationLean?.(openRef.current && !reduced ? dialAim.current.x * 0.045 : 0);
           handle.setRotationPaused?.(
             openRef.current || answeringRef.current || returningHomeRef.current ||
             somethingElseIsUp() || getCoachStep() < COACH_STEPS.length,
@@ -1569,10 +1571,9 @@ export default function YumiRingOverlay({
    * The keyboard, while the ring is out.
    *
    * Escape closes, the way it closes every other overlay in the app. The
-   * arrow keys step around the circle and wrap, because eight things
-   * arranged in a ring are a ring to a keyboard too: Down and Right go
-   * clockwise, Up and Left go back, and the last key's neighbour is the
-   * first. Home and End jump to the ends of the order.
+   * arrow keys turn the dial one detent at a time and wrap (PrecisionDial
+   * handles them while focus is on a key): Down and Right go clockwise, Up
+   * and Left go back, Home and End jump to the ends of the order.
    *
    * Tab is left alone deliberately — it steps through the keys in document
    * order, which is the same order, and taking it over would be replacing a
@@ -1581,47 +1582,19 @@ export default function YumiRingOverlay({
   useEffect(() => {
     if (!open) return;
 
-    const focusSpoke = (index: number) => {
-      const count = spokeRefs.current.length;
-      if (count === 0) return;
-      const wrapped = ((index % count) + count) % count;
-      spokeRefs.current[wrapped]?.querySelector("button")?.focus();
-    };
-
-    const currentIndex = () =>
-      spokeRefs.current.findIndex(spoke =>
-        spoke?.contains(document.activeElement),
-      );
-
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         close();
         return;
       }
-
-      const step =
-        event.key === "ArrowDown" || event.key === "ArrowRight"
-          ? 1
-          : event.key === "ArrowUp" || event.key === "ArrowLeft"
-            ? -1
-            : 0;
-
-      if (step !== 0) {
+      /* Inside the dial its own handler steps the keys and stops the event,
+         so this only sees a key pressed from outside it: the first one brings
+         focus to the key at the top rather than doing nothing. */
+      if (["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft", "Home", "End"].includes(event.key)) {
+        const current = ringRef.current?.querySelector<HTMLButtonElement>('[data-dial-item][aria-current="true"]');
+        if (!current) return;
         event.preventDefault();
-        const from = currentIndex();
-        /* Arriving from outside the ring starts at the first key going
-           forward and the last one going back, rather than jumping to
-           whichever end happens to be index 0. */
-        focusSpoke(from < 0 ? (step > 0 ? 0 : -1) : from + step);
-        return;
-      }
-
-      if (event.key === "Home") {
-        event.preventDefault();
-        focusSpoke(0);
-      } else if (event.key === "End") {
-        event.preventDefault();
-        focusSpoke(-1);
+        current.focus();
       }
     };
 
@@ -1748,51 +1721,13 @@ export default function YumiRingOverlay({
           className={styles.ring}
           data-yumi-ring=""
         >
-          <div className={styles.reticle} aria-hidden="true" />
-          <LiquidRingSurface enabled={open} onChoose={index => choose(spokes[index])}>
-            {spokes.map((spoke, index) => {
-              const angle =
-                -Math.PI / 2 +
-                RING_ROTATION +
-                (index * Math.PI * 2) / spokes.length;
-              const x = Math.cos(angle) * ringRadius;
-              const y = Math.sin(angle) * ringRadius;
-
-              return (
-                <div
-                  key={spoke.key}
-                  className={styles.spoke}
-                  ref={element => { spokeRefs.current[index] = element; }}
-                  style={{
-                    transform: `translate(-50%, -50%) translate(${x}px, ${y}px)`,
-                    "--spoke-return-x": `${-x * 0.65}px`,
-                    "--spoke-return-y": `${-y * 0.65}px`,
-                  } as CSSProperties}
-                >
-                  <LiquidRingButton label={spoke.label} index={index}>
-                    {/* The disc is the key; the label is a caption under it and
-                        may be wider. Keeping them as two boxes is what lets a
-                        long word finish without the circle growing. */}
-                    <span className={styles.disc} data-liquid-disc>
-                      <span className={styles.glassBody} aria-hidden="true" />
-                      <span className={styles.keyIndex} aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                      <svg
-                        width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" strokeWidth="1.9"
-                        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-                      >
-                        {spoke.icon}
-                      </svg>
-                      {spoke.badge ? (
-                        <i className={styles.badge}>{spoke.badge > 9 ? "9+" : spoke.badge}</i>
-                      ) : null}
-                    </span>
-                    <span className={styles.spokeLabel}>{spoke.label}</span>
-                  </LiquidRingButton>
-                </div>
-              );
-            })}
-          </LiquidRingSurface>
+          <PrecisionDial
+            enabled={open}
+            radius={ringRadius}
+            items={spokes}
+            onChoose={index => choose(spokes[index])}
+            onAim={(x, y) => { dialAim.current = { x, y }; }}
+          />
 
           {/*
             Everything that is not her, placed from her.

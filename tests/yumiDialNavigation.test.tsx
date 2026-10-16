@@ -109,7 +109,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("the liquid ring destination integration", () => {
+describe("the Yumi dial destination integration", () => {
   it("enables home rotation and pauses it for navigation, search and the tour", async () => {
     fixture(); await ready();
     expect(options.continuousRotation).toBe(true);
@@ -128,30 +128,40 @@ describe("the liquid ring destination integration", () => {
     expect(scene.rotationPaused).toHaveBeenLastCalledWith(true);
   });
 
+  /*
+   * Turning the dial only chooses; it never enters. The key brought to the
+   * top is entered by a second, ordinary tap on it.
+   */
   it.each([
     [2, "/notes"],
     [4, "search"],
-  ] as const)("routes a released orbit gesture to destination %s", async (target, destination) => {
+  ] as const)("turns destination %s to the top on a drag, then enters it on a tap", async (target, destination) => {
     const view = fixture();
     await ready();
     act(() => options.onPullOpen?.());
-    const buttons = Array.from(view.container.querySelectorAll<HTMLButtonElement>("[data-liquid-option]"));
-    const point = (index: number) => {
-      const angle = -Math.PI / 2 + Math.PI / 8 + index * Math.PI / 4;
-      return { clientX: 195 + Math.cos(angle) * 132, clientY: 340 + Math.sin(angle) * 132 };
-    };
-    buttons.forEach((button, index) => {
-      const { clientX: x, clientY: y } = point(index);
-      const box = { left: x - 31, top: y - 31, right: x + 31, bottom: y + 31, width: 62, height: 62 } as DOMRect;
-      vi.spyOn(button, "getBoundingClientRect").mockReturnValue(box);
-      vi.spyOn(button.querySelector("[data-liquid-disc]")!, "getBoundingClientRect").mockReturnValue(box);
-    });
-    fireEvent.pointerDown(buttons[0], { ...point(0), button: 0 });
-    fireEvent.pointerMove(buttons[0], point(target));
-    fireEvent.pointerUp(buttons[0], point(target));
+    const dial = view.container.querySelector<HTMLElement>("[data-dial]")!;
+    vi.spyOn(dial, "getBoundingClientRect").mockReturnValue({ left: 45, top: 190, width: 300, height: 300, right: 345, bottom: 490 } as DOMRect);
+    const at = (angle: number) => ({ clientX: 195 + Math.cos(angle) * 132, clientY: 340 + Math.sin(angle) * 132 });
+    const top = view.container.querySelector<HTMLButtonElement>("[data-dial-item='0']")!;
+    const flushFrames = () => act(() => { for (let i = 0; i < 40 && pendingFrames.length; i++) pendingFrames.splice(0).forEach(frame => frame(performance.now() + 1000)); });
+    fireEvent.pointerDown(top, { ...at(-Math.PI / 2), button: 0 });
+    // Counter-clockwise, a detent at a time, brings later keys up to the index.
+    for (let step = 1; step <= target; step++) {
+      fireEvent.pointerMove(top, at(-Math.PI / 2 - step * Math.PI / 4));
+      flushFrames();
+    }
+    fireEvent.pointerUp(top, at(-Math.PI / 2 - target * Math.PI / 4));
+    flushFrames();
+    fireEvent.click(top, { detail: 1 });
     expect(scene.navigate).not.toHaveBeenCalled();
     expect(scene.search).not.toHaveBeenCalled();
-    act(() => vi.advanceTimersByTime(300));
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
+
+    const chosen = view.container.querySelector<HTMLButtonElement>(`[data-dial-item='${target}']`)!;
+    expect(chosen).toHaveAttribute("aria-current", "true");
+    fireEvent.pointerDown(chosen, { ...at(-Math.PI / 2), button: 0 });
+    fireEvent.pointerUp(chosen, at(-Math.PI / 2));
+    fireEvent.click(chosen, { detail: 1 });
     expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "rest");
     if (destination === "search") {
       expect(scene.search).toHaveBeenCalledOnce();
@@ -160,6 +170,17 @@ describe("the liquid ring destination integration", () => {
       expect(scene.navigate).toHaveBeenCalledExactlyOnceWith(destination);
       expect(scene.search).not.toHaveBeenCalled();
     }
+  });
+
+  it("does not let a second finger on the background close a dial mid-turn", async () => {
+    const view = fixture(); await ready();
+    act(() => options.onPullOpen?.());
+    const top = view.container.querySelector<HTMLButtonElement>("[data-dial-item='0']")!;
+    fireEvent.pointerDown(top, { clientX: 195, clientY: 208, button: 0 });
+    const canvas = view.container.querySelector("canvas")!;
+    fireEvent.pointerDown(canvas, { clientX: 30, clientY: 50, pointerId: 2, button: 0 });
+    fireEvent.pointerUp(canvas, { clientX: 30, clientY: 50, pointerId: 2 });
+    expect(screen.getByTestId("stage")).toHaveAttribute("data-yumi-mode", "open");
   });
 
   it.each([
@@ -271,7 +292,7 @@ describe("the liquid ring destination integration", () => {
     await ready();
 
     act(() => options.onPullOpen?.());
-    const first = view.container.querySelector<HTMLButtonElement>("[data-liquid-option='0']")!;
+    const first = view.container.querySelector<HTMLButtonElement>("[data-dial-item='0']")!;
     expect(first).not.toHaveFocus();
 
     act(() => options.onTap?.());
@@ -285,10 +306,17 @@ describe("the liquid ring destination integration", () => {
     expect(key).toHaveFocus();
   });
 
+  it("brings focus to the key at the top when an arrow is pressed from outside the dial", async () => {
+    const view = fixture(); await ready();
+    act(() => options.onPullOpen?.());
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(view.container.querySelector("[data-dial-item='0']")).toHaveFocus();
+  });
+
   it("exposes the menu state and hides closed destinations from assistive technology", async () => {
     const view = fixture(); await ready();
     const key = screen.getByRole("button", { name: /主要導覽|Main navigation|Navigation/i });
-    const first = view.container.querySelector<HTMLButtonElement>("[data-liquid-option='0']")!;
+    const first = view.container.querySelector<HTMLButtonElement>("[data-dial-item='0']")!;
     const label = first.getAttribute("aria-label")!;
     expect(key).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("button", { name: label })).not.toBeInTheDocument();

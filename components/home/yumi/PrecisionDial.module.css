@@ -1,0 +1,20 @@
+.dial { position:absolute; left:0; top:0; transform:translate(-50%,-50%); pointer-events:none; opacity:0; transition:opacity 240ms ease; }
+.dial[data-enabled=true] { opacity:1; }
+.track { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border:1px solid #ffffff24; border-radius:50%; pointer-events:none; }
+.track svg { width:100%; height:100%; stroke:#ffffff65; stroke-width:1; }
+.index { position:absolute; top:-10px; left:calc(50% - 2px); width:4px; height:9px; border-radius:2px; background:#eed8a1; box-shadow:0 0 12px #e5c27e66; }
+.dial button { position:absolute; left:50%; top:50%; width:84px; padding:0; border:0; background:none; color:#f7f4eb; display:flex; flex-direction:column; align-items:center; gap:7px; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; cursor:pointer; pointer-events:auto; -webkit-tap-highlight-color:transparent; }
+.disc { position:relative; display:grid; place-items:center; width:56px; height:56px; border-radius:50%; border:1px solid #ffffff60; background:linear-gradient(145deg,#ffffff30,#ffffff08 55%,#15181b20); box-shadow:inset 0 1px 2px #ffffff66,0 5px 12px #0002; transition:background 180ms ease,border-color 180ms ease,scale 180ms ease; }
+/* Sizes in rem, so the keys follow the reader's text-size setting (tests/appFontSize). */
+.disc small { position:absolute; top:4px; font-size:0.5rem; line-height:1; opacity:.7; letter-spacing:.12em; }
+.disc svg { margin-top:6px; }
+.disc b { position:absolute; right:-3px; top:-3px; min-width:1.125rem; border-radius:999px; background:#eed8a1; color:#272520; padding:2px 4px; font-size:0.625rem; line-height:1; text-align:center; }
+/* Two lines at most, and never broken inside a word: "Impostazioni" and
+   "Vocabolario" have to fit the 84px caption whole. */
+.label { width:100%; font-family:var(--font-geist-mono),"Noto Sans TC",monospace; font-size:0.6875rem; letter-spacing:.035em; font-weight:600; text-transform:uppercase; text-align:center; line-height:1.25; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; text-shadow:0 1px 3px #0009; }
+.dial button[data-selected=true] .disc { border-color:#f2dfae; background:linear-gradient(145deg,#ead6aa55,#ffffff17); scale:1.06; }
+.dial button[data-selected=true] .label { color:#f2dfae; }
+.dial button:focus-visible { outline:1px solid #f2dfae; outline-offset:5px; border-radius:20px; }
+@media(prefers-reduced-motion:reduce) { .dial,.disc { transition:none; } }
+
+.dial[data-input=pointer] button:focus-visible { outline:none; }
