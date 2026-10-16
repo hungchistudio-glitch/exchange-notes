@@ -23,12 +23,13 @@ const { buildInfoMetadata } = await import("@/lib/info/metadata");
 const { getTranslations, loadTranslations, TRANSLATION_LANGUAGES } = await import(
   "@/lib/i18n"
 );
+const { loadLegalCopy } = await import("@/lib/legal");
 
 describe("metadata for the pages a signed-out reader can open", () => {
   it("titles each page as the page titles itself", async () => {
     const copy = getTranslations("english")!.info;
 
-    for (const page of ["about", "community", "privacy"] as const) {
+    for (const page of ["about", "community", "privacy", "terms"] as const) {
       const metadata = await buildInfoMetadata(page);
       expect(metadata.title).toBe(copy.nav[page]);
       expect(metadata.description).toBeTruthy();
@@ -40,7 +41,9 @@ describe("metadata for the pages a signed-out reader can open", () => {
 
     expect((await buildInfoMetadata("about")).description).toBe(copy.about.tagline);
     expect((await buildInfoMetadata("community")).description).toBe(copy.community.intro);
-    expect((await buildInfoMetadata("privacy")).description).toBe(copy.privacy.intro);
+    const legal = await loadLegalCopy("english");
+    expect((await buildInfoMetadata("privacy")).description).toBe(legal.privacy.intro);
+    expect((await buildInfoMetadata("terms")).description).toBe(legal.terms.intro);
   });
 
   /*

@@ -1,11 +1,5 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("@/components/vocabulary/pet/YumiMark", () => ({
-  default: ({ mood }: { mood: string }) => (
-    <div data-testid="landing-yumi" data-mood={mood} />
-  ),
-}));
 
 vi.mock("@/lib/analytics/track", () => ({
   track: vi.fn(),
@@ -15,6 +9,7 @@ import LandingPage from "@/components/landing/LandingPage";
 import { track } from "@/lib/analytics/track";
 import { setInterfaceLanguage } from "@/lib/appPreferences";
 import * as i18n from "@/lib/i18n";
+import { getInterfaceLanguageMeta } from "@/lib/languages";
 
 describe("the pre-login product tour", () => {
   beforeEach(() => {
@@ -25,9 +20,11 @@ describe("the pre-login product tour", () => {
   it("explains the real product before asking for sign-in", () => {
     render(<LandingPage />);
 
+    // The About page's own first line: what the app is for.
     expect(
       screen.getByRole("heading", {
-        name: "Keep the moment before it disappears.",
+        level: 1,
+        name: "Exchange a phrase. Discover another way of seeing.",
       }),
     ).toBeInTheDocument();
     expect(
@@ -40,34 +37,39 @@ describe("the pre-login product tour", () => {
     ).toBeInTheDocument();
 
     expect(
-      screen.getAllByText("Start journaling — Continue with Google"),
+      screen.getAllByText("Start with one phrase — Continue with Google"),
     ).toHaveLength(2);
     expect(
-      screen.getByText(
-        "Write what you're thinking. Say what you can't quite write. Show Yumi what you're seeing.",
-      ),
+      screen.getByText(/Keep the words that find you/),
     ).toBeInTheDocument();
-    expect(screen.getByText("Write it. · Say it. · Show it.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Free during the beta. No feed, no likes — only the people you choose."),
+    ).toBeInTheDocument();
     expect(track).toHaveBeenCalledWith("landing_view");
-    expect(screen.getByRole("link", { name: "Privacy information" })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
+    expect(screen.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms");
   });
 
   it("offers every interface language before sign-in and changes the whole introduction", async () => {
     render(<LandingPage />);
 
+    // The page's own picker: the note further down has a language view of
+    // its own, with a button that is also called "English".
+    const picker = screen.getByRole("group", { name: "Read this introduction in" });
     for (const name of ["English", "繁體中文", "Español", "Français", "Italiano"]) {
-      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+      expect(within(picker).getByRole("button", { name })).toBeInTheDocument();
     }
 
-    fireEvent.click(screen.getByRole("button", { name: "Español" }));
+    fireEvent.click(within(picker).getByRole("button", { name: "Español" }));
 
     expect(
       await screen.findByRole("heading", {
-        name: "Guarda el momento antes de que desaparezca.",
+        level: 1,
+        name: "Intercambia una frase. Descubre otra forma de ver el mundo.",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getAllByText("Empieza tu diario — Continuar con Google"),
+      screen.getAllByText("Empieza con una frase — Continuar con Google"),
     ).toHaveLength(2);
     expect(document.documentElement).toHaveAttribute("lang", "es");
   });
@@ -92,155 +94,52 @@ describe("the pre-login product tour", () => {
     }
   });
 
-  it("teaches the product as a controllable three-dimensional tour", () => {
+  it("opens the hero on a trial of the app, with no autoplay and no decorative Yumi", () => {
     render(<LandingPage />);
 
-    expect(
-      screen.getByRole("region", {
-        name: "A three-step tour of Exchange Notes",
+    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    const tabs = within(trial).getAllByRole("tab");
+    expect(tabs.map(tab => tab.textContent)).toEqual(["1Keep", "2Understand", "3Exchange", "4Review"]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(within(trial).getByRole("heading", { name: "Keep it with its moment" })).toBeInTheDocument();
+    expect(within(trial).queryByRole("button", { name: /Play tour|Pause tour/ })).not.toBeInTheDocument();
+    // The only 3D Yumi near the top of the page is the film's.
+    expect(trial.querySelector("canvas")).toBeNull();
+  });
+
+  it("shows every reader a phrase from a language that is not their own", async () => {
+    render(<LandingPage />);
+
+    // English readers meet Chinese, marked as Chinese for speech and fonts.
+    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    expect(within(trial).getByText("留白")).toHaveAttribute("lang", "zh-Hant");
+    fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
+    expect(within(trial).getByText("respiro", { selector: "mark" })).toHaveAttribute("lang", "it");
+
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Read this introduction in" })).getByRole("button", {
+        name: "繁體中文",
       }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Capture the moment" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Play tour" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Next step" }));
+    // Traditional Chinese readers meet Italian, and a Spanish friend's word.
+    const zhTrial = await screen.findByRole("region", { name: "用一句話試試看" });
+    expect(within(zhTrial).getAllByText("dolce far niente")[0]).toHaveAttribute("lang", "it");
+    expect(within(zhTrial).getByText("sobremesa", { selector: "mark" })).toHaveAttribute("lang", "es");
+    expect(within(zhTrial).queryByText("留白")).not.toBeInTheDocument();
+  });
 
-    expect(
-      screen.getByRole("heading", { name: "Understand it in five languages" }),
-    ).toBeInTheDocument();
-    for (const language of ["English", "繁體中文", "Español", "Français", "Italiano"]) {
-      expect(screen.getAllByText(language).length).toBeGreaterThanOrEqual(2);
+  it("keeps the journey's phrase foreign and its friend from elsewhere in every language", async () => {
+    const pairs: Record<string, { phrase: string; friendLang: string }> = {};
+    for (const language of i18n.TRANSLATION_LANGUAGES) {
+      const journey = (await i18n.loadTranslations(language)).landing.hero.journey;
+      const ui = getInterfaceLanguageMeta(language).htmlLang;
+      expect(journey.phraseLang.slice(0, 2)).not.toBe(ui.slice(0, 2));
+      expect(journey.exchange.replyLang.slice(0, 2)).not.toBe(ui.slice(0, 2));
+      expect(journey.exchange.reply).toContain(journey.exchange.replyWord);
+      pairs[language] = { phrase: journey.phrase, friendLang: journey.exchange.replyLang };
     }
-
-    fireEvent.click(screen.getByRole("button", { name: "Next step" }));
-    expect(
-      screen.getByRole("heading", { name: "Return when it matters" }),
-    ).toBeInTheDocument();
-  });
-
-  it("stays manual by default and only auto-advances after play is selected", () => {
-    vi.useFakeTimers();
-
-    try {
-      render(<LandingPage />);
-
-      act(() => vi.advanceTimersByTime(13_000));
-      expect(
-        screen.getByRole("heading", { name: "Capture the moment" }),
-      ).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole("button", { name: "Play tour" }));
-      expect(screen.getByRole("button", { name: "Pause tour" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
-
-      act(() => vi.advanceTimersByTime(6_500));
-      expect(
-        screen.getByRole("heading", { name: "Understand it in five languages" }),
-      ).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("supports horizontal touch swipes without stealing vertical scrolling", () => {
-    render(<LandingPage />);
-    const viewport = screen.getByTestId("hero-tour-viewport");
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 1,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 220,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 1,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 130,
-      clientY: 110,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Understand it in five languages" }),
-    ).toBeInTheDocument();
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 2,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 130,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 2,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 145,
-      clientY: 175,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Understand it in five languages" }),
-    ).toBeInTheDocument();
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 3,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 120,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 3,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 210,
-      clientY: 105,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Capture the moment" }),
-    ).toBeInTheDocument();
-  });
-
-  it("lets the focused tour move with arrow keys", () => {
-    render(<LandingPage />);
-    const tour = screen.getByRole("region", {
-      name: "A three-step tour of Exchange Notes",
-    });
-
-    tour.focus();
-    fireEvent.keyDown(tour, { key: "ArrowRight" });
-
-    expect(
-      screen.getByRole("heading", { name: "Understand it in five languages" }),
-    ).toBeInTheDocument();
-  });
-
-  it("introduces voice and camera recognition as first-class capture modes", () => {
-    render(<LandingPage />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Voice" }));
-    expect(
-      screen.getByText("Voice recognized · transcript ready"),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Voice" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Camera" }));
-    expect(screen.getByText("Scene recognized")).toBeInTheDocument();
-    expect(screen.getByText("Ginkgo leaves in evening light")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Camera" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(Object.keys(pairs)).toHaveLength(i18n.TRANSLATION_LANGUAGES.length);
   });
 
   it("switches between the two things the camera can do", () => {
@@ -280,7 +179,7 @@ describe("the pre-login product tour", () => {
     render(<LandingPage />);
 
     const ctas = screen.getAllByText(
-      "Start journaling — Continue with Google",
+      "Start with one phrase — Continue with Google",
     );
     const navigation = screen.getByRole("link", { name: "Start" });
     const entries = [navigation, ...ctas];

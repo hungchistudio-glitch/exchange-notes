@@ -160,10 +160,15 @@ describe("what the heaviest tabs drag in with them", () => {
    * cookie-landing card to look (lib/shop/energy.ts: two event names and a
    * constant, no imports). The card itself and the ledger query load with
    * the app's layout, not with either tab.
+   * Raised home 177 → 179 (2026-10-15): one Yumi (Chi). Both homes hold her
+   * place with components/yumi3d/YumiLoading — a component and its
+   * stylesheet, importing nothing else — instead of the old flat mark. The
+   * mark is still loaded by home's other Yumi drawings, so the two files
+   * are net.
    */
   it.each([
     ["vocabulary", TABS.vocabulary, 162],
-    ["home", TABS.home, 177],
+    ["home", TABS.home, 179],
   ] as const)(
     "keeps %s's static graph inside its ceiling",
     (_tab, entry, ceiling) => {

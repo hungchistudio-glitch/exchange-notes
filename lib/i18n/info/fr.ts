@@ -1,8 +1,8 @@
 import type { InfoCopy } from "./types";
 
 const info: InfoCopy = {
-  nav: { about: "À propos d’Exchange Notes", community: "Communauté et sécurité", privacy: "Informations de confidentialité", contact: "Nous contacter", home: "Retour à l’accueil", back: "Retour à Aide et à propos", related: "Pour aller plus loin" },
-  help: { description: "Découvrez l’idée derrière Exchange Notes, nos principes de partage et le traitement des données. Vous pouvez aussi revoir la visite guidée.", about: "Échangez une phrase. Découvrez un autre regard sur le monde.", community: "Rester curieux et respecter les limites de chacun", privacy: "Comprendre vos données, les services d’IA et vos choix" },
+  nav: { about: "À propos d’Exchange Notes", community: "Communauté et sécurité", privacy: "Politique de confidentialité", terms: "Conditions d’utilisation", contact: "Nous contacter", home: "Retour à l’accueil", back: "Retour à Aide et à propos", related: "Pour aller plus loin" },
+  help: { description: "Découvrez l’idée derrière Exchange Notes, nos principes de partage et le traitement des données. Vous pouvez aussi revoir la visite guidée.", about: "Échangez une phrase. Découvrez un autre regard sur le monde.", community: "Rester curieux et respecter les limites de chacun", privacy: "Comprendre vos données, les services d’IA et vos choix", terms: "L’accord pour utiliser Exchange Notes" },
   about: {
     tagline: "Échangez une phrase. Découvrez un autre regard sur le monde.",
     greeting: "Bonjour, je suis Yumi. Chaque phrase qui reste en mémoire a une histoire. Explorons-la ensemble et écoutons comment les autres la comprennent.",
@@ -33,22 +33,6 @@ const info: InfoCopy = {
       { title: "Vérifier les décisions importantes", body: "La lecture d’un menu ne garantit pas une liste complète des ingrédients ou allergènes ; demandez au restaurant. Pour les décisions médicales, juridiques, de sécurité personnelle ou autres décisions importantes, consultez un professionnel compétent ou une source officielle." },
     ],
     contact: "Écrivez-nous en cas de contenu nuisible ou de problème dans un échange. Décrivez les faits sans joindre d’informations privées inutiles.",
-  },
-  privacy: {
-    intro: "Vos notes contiennent vos expériences et parfois les histoires d’autres personnes. Cette page présente le traitement des données lié aux fonctions actuelles et les choix à votre disposition.",
-    status: "Projet avant publication",
-    notice: "Ces informations sont un projet, et non une politique de confidentialité complète et définitive. L’identité juridique de l’exploitant, les régions desservies, les durées de conservation, les procédures de suppression, l’âge minimum et l’offre du fournisseur d’IA restent à confirmer. Ces éléments et une date d’entrée en vigueur seront ajoutés avant la finalisation pour publication.",
-    sections: [
-      { title: "Les données traitées", body: "Selon les fonctions utilisées, Exchange Notes traite les données de compte et préférences linguistiques, les notes, le vocabulaire, les messages, les résultats d’apprentissage et les textes, images ou sons transmis. Cela permet la connexion, l’enregistrement, la synchronisation, les échanges, la reconnaissance et la traduction. Les rappels et connexions d’appareils nécessitent aussi les informations d’abonnement et de connexion correspondantes." },
-      { title: "IA et autres prestataires", body: "Certaines fonctions utilisent Google Gemini et lui transmettent les textes, contextes de notes, images ou sons concernés. Les comptes et données dans le cloud utilisent Supabase. La reconnaissance vocale peut aussi recourir au navigateur ou au système d’exploitation ; elle ne fonctionne pas nécessairement uniquement sur votre appareil. Les conditions de conservation, d’amélioration des modèles et de contrôle humain doivent encore être confirmées selon l’offre utilisée." },
-      { title: "Partage et liens externes", body: "Lorsque vous envoyez un message ou partagez une note, les destinataires peuvent voir son contenu et les informations de profil associées selon les permissions de la fonction. Ils peuvent garder des copies ou captures ; révoquer l’accès ne garantit pas leur récupération. Les sites externes, notamment les sources d’actualités de Discovery, appliquent leurs propres politiques." },
-      { title: "Autorisations et stockage local", body: "Les cookies et le stockage local servent à la connexion, aux préférences de langue et d’interface et aux caches. Vous pouvez régler l’accès à l’appareil photo, au microphone et aux notifications dans l’appareil ou le navigateur. Le retirer peut affecter ces fonctions, sans supprimer automatiquement les contenus déjà transmis. Se déconnecter ou désinstaller ne supprime pas le compte dans le cloud." },
-      { title: "Conservation et suppression", body: "Les durées de conservation et délais de suppression des comptes, notes, pièces jointes, contenus d’IA, journaux et sauvegardes restent à confirmer. Nous ne pouvons promettre une suppression immédiate ni une absence de conservation. Vous pouvez demander par courriel la suppression de données ou du compte ; son traitement dépend des données, des copies des destinataires et du droit applicable." },
-      { title: "Vos droits", body: "Selon votre lieu de résidence et le droit applicable, vous pouvez disposer de droits d’accès, de rectification, d’effacement, de portabilité, de limitation ou d’opposition au traitement et de retrait du consentement. Contactez-nous ci-dessous ; une vérification appropriée de votre identité peut être nécessaire. Vous pouvez aussi saisir l’autorité de protection des données compétente." },
-      { title: "Régions desservies et sécurité", body: "Nous souhaitons accueillir des personnes de différents pays et régions. La disponibilité dépend des territoires de distribution, des prestataires et du droit applicable. Les données peuvent être traitées à l’étranger ; les lieux et garanties restent à confirmer. Aucun service en ligne ne peut garantir une sécurité absolue. Évitez de transmettre des informations sensibles inutiles." },
-      { title: "Conditions d’accès et mises à jour", body: "L’âge minimum et les conditions d’accès doivent encore être confirmés selon les marchés et les exigences du fournisseur d’IA. Cette page ne signifie pas que le service convient à tous les âges. La politique finale précisera l’exploitant, les bases du traitement, tous les prestataires et les modalités de mise à jour. Les changements importants seront notifiés, avec consentement si nécessaire." },
-    ],
-    contact: "Pour toute question de confidentialité ou demande liée à vos droits ou à une suppression, contactez :",
   },
 };
 export default info;

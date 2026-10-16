@@ -1,0 +1,75 @@
+/* Moved from YumiShop.module.css, unchanged in look; see StationDock.tsx. */
+
+.dock {
+  --dock-top: var(
+    --shop-plinth-top,
+    repeating-radial-gradient(ellipse 50% 50% at 50% 50%, #0000 0 3px, #8a7f6a0d 3px 4px),
+    radial-gradient(ellipse 70% 80% at 50% 30%, #fbf8f1, #e2dccf 55%, #b9b1a1)
+  );
+  --dock-side: var(--shop-plinth-side, linear-gradient(90deg, #7d766a, #d3cdc0 46%, #e8e3d8 54%, #807868));
+  --dock-rim: var(--shop-plinth-rim, #9fdcff);
+  --dock-lights: var(--shop-plinth-lights, #ffc96b);
+  --dock-spot: var(--shop-spot, #e6f6ff40);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The dock's beam from above, over the window and under Yumi. */
+.spotlight {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 34% 78% at 50% -6%, var(--dock-spot) 0%, #0000 70%),
+    radial-gradient(ellipse 30% 9% at 50% 84%, var(--dock-spot) 0%, #0000 100%);
+}
+
+/* A docking pad on a cylinder: a top face, a front band below it with
+   three running lights (Yumi's three fingers), at Yumi's feet. */
+.pedestal {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  bottom: 6%;
+  width: min(62%, 340px);
+  aspect-ratio: 4 / 1.45;
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 16px 18px #0000003d);
+}
+
+.plinthSide {
+  position: absolute;
+  inset: 34.5% 0 0;
+  border-radius: 0 0 50% 50% / 0 0 52.7% 52.7%;
+  background:
+    radial-gradient(circle at 18% 22%, var(--dock-lights) 0 1.5px, #0000 2.6px),
+    radial-gradient(circle at 50% 30%, var(--dock-lights) 0 1.5px, #0000 2.6px),
+    radial-gradient(circle at 82% 22%, var(--dock-lights) 0 1.5px, #0000 2.6px),
+    var(--dock-side);
+}
+
+.plinthTop {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 69%;
+  border-radius: 50%;
+  background: var(--dock-top);
+  box-shadow:
+    inset 0 -2px 0 var(--dock-rim),
+    inset 0 -6px 10px -6px var(--dock-rim),
+    inset 0 1px 0 #ffffff40,
+    0 0 14px -4px var(--dock-rim);
+}
+
+.contactShadow {
+  position: absolute;
+  left: 32%;
+  width: 36%;
+  top: 22%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #0000004d, #00000000);
+}

@@ -10,6 +10,9 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
  */
 export type TranslationLanguage = InterfaceLanguage;
 
+/** One scene of the landing page's YU + MI = Yumi film. */
+export type StoryAct = { name: string; title: string; text: string };
+
 export type TranslationDictionary = {
   info: InfoCopy;
   /**
@@ -88,46 +91,141 @@ export type TranslationDictionary = {
       eyebrow: string;
       title: string;
       intro: string;
-      description: string;
-      mantra: string;
-      modeAriaLabel: string;
+      /** The line under the button: what it costs and what it is not. */
+      promise: string;
+      /** Each trial step's heading and what it is for. */
       tour: {
-        ariaLabel: string;
-        stepLabel: string;
-        previous: string;
-        next: string;
-        pause: string;
-        play: string;
-        goToStep: string;
-        captureTitle: string;
-        captureDescription: string;
-        languagesTitle: string;
-        languagesDescription: string;
-        rememberTitle: string;
-        rememberDescription: string;
+        keepTitle: string;
+        keepDescription: string;
+        understandTitle: string;
+        understandDescription: string;
+        exchangeTitle: string;
+        exchangeDescription: string;
+        reviewTitle: string;
+        reviewDescription: string;
       };
-      write: string;
-      voice: string;
-      camera: string;
+      /**
+       * The hero's trial: the four steps done for real on one phrase, before
+       * sign-in. Interface words only; the phrase in five languages is
+       * content, in lib/landing/trialPhrases.ts.
+       */
+      trial: {
+        title: string;
+        hint: string;
+        stepsLabel: string;
+        tabs: { keep: string; understand: string; exchange: string; review: string };
+        /** {step}. */
+        nextStep: string;
+        keep: { whereLabel: string; save: string; saved: string; update: string };
+        /** remove: {phrase}. */
+        notebook: { title: string; empty: string; remove: string };
+        listen: {
+          play: string;
+          playing: string;
+          voice: string;
+          automatic: string;
+          speed: string;
+          natural: string;
+          slow: string;
+          unsupported: string;
+          /** {language}. */
+          noVoice: string;
+        };
+        compare: { title: string; label: string };
+        exchange: {
+          cardLabel: string;
+          cardFooter: string;
+          copy: string;
+          copied: string;
+          copyFailed: string;
+          share: string;
+          replyTitle: string;
+          /** {word}. */
+          keepWord: string;
+          /** {word}. */
+          keptWord: string;
+        };
+        review: {
+          empty: string;
+          keepAndReview: string;
+          /** {n} and {total}. */
+          progress: string;
+          prompt: string;
+          reveal: string;
+          again: string;
+          gotIt: string;
+          /** What the app's scheduler does with "again": ten minutes. */
+          againResult: string;
+          /** And with a first "good": a day, then longer. */
+          gotItResult: string;
+          next: string;
+          done: string;
+          restart: string;
+        };
+      };
       cta: string;
       ctaLoading: string;
-      preview: {
-        ariaLabel: string;
-        writeEyebrow: string;
-        writeSample: string;
-        writeStatus: string;
-        voiceEyebrow: string;
-        voiceSample: string;
-        voiceStatus: string;
-        cameraEyebrow: string;
-        cameraSubject: string;
-        cameraDescription: string;
-        cameraStatus: string;
-        memoryLinks: string;
-        thought: string;
-        feeling: string;
-        image: string;
+      /**
+       * One phrase's journey, the hero's example. The phrase is in a
+       * language other than the reader's, so every reader meets a foreign
+       * word; each language picks its own.
+       */
+      journey: {
+        phrase: string;
+        /** BCP-47, for the phrase and its reading. */
+        phraseLang: string;
+        reading: string;
+        keep: {
+          /** Where it was met: the trial's editable default. */
+          where: string;
+          whyLabel: string;
+          why: string;
+        };
+        understand: {
+          label: string;
+          meaningLabel: string;
+          meaning: string;
+          toneLabel: string;
+          tone: string;
+          cultureLabel: string;
+          culture: string;
+          equivalentLabel: string;
+          equivalent: string;
+        };
+        exchange: {
+          friend: string;
+          reply: string;
+          replyWord: string;
+          /** BCP-47 for replyWord. */
+          replyLang: string;
+          /** What replyWord means, in the reader's language. */
+          replyMeaning: string;
+          insight: string;
+        };
       };
+    };
+    /** YU + MI = Yumi: the origin film under the hero. */
+    story: {
+      eyebrow: string;
+      title: string;
+      intro: string;
+      ariaLabel: string;
+      play: string;
+      pause: string;
+      replay: string;
+      chaptersLabel: string;
+      /** {n} and {total}. */
+      sceneLabel: string;
+      acts: [StoryAct, StoryAct, StoryAct, StoryAct, StoryAct];
+      tryOn: {
+        title: string;
+        hint: string;
+        takeOff: string;
+        /** {n}. */
+        cookies: string;
+      };
+      endTitle: string;
+      endText: string;
     };
     notes: {
       eyebrow: string;
@@ -137,20 +235,48 @@ export type TranslationDictionary = {
       date: string;
       original: string;
       translation: string;
+      /** BCP-47 for translation (the reader's language, or Chinese for English readers). */
+      translationLang: string;
       privateNote: string;
+      viewLabel: string;
+      viewBoth: string;
+      listen: string;
+      playing: string;
+      listenSentence: string;
+      lookupHint: string;
+      close: string;
+      /**
+       * The word in the note a reader would look up: the one in the line
+       * that is not in their language. `pair` is its counterpart in the
+       * other line.
+       */
+      lookup: { word: string; lang: string; reading: string; meaning: string; pair: string };
     };
     exchange: {
       eyebrow: string;
       title: string;
       description: string;
       previewAriaLabel: string;
-      sender: string;
-      senderCaption: string;
+      you: string;
+      friend: string;
+      /** The note's word, carried on: in a language that is not the reader's. */
       word: string;
+      /** BCP-47 for word. */
+      wordLang: string;
       reading: string;
       meaning: string;
-      receiver: string;
-      receiverCaption: string;
+      /** {friend}. */
+      send: string;
+      /** {friend}. */
+      sent: string;
+      waiting: string;
+      arrived: string;
+      save: string;
+      /** {friend}. */
+      saved: string;
+      again: string;
+      listen: string;
+      playing: string;
     };
     yumi: {
       eyebrow: string;
@@ -159,8 +285,24 @@ export type TranslationDictionary = {
       previewAriaLabel: string;
       message: string;
       translation: string;
+      /** The same word the note and the exchange carry. */
       reviewWord: string;
+      /** BCP-47 for reviewWord. */
+      reviewLang: string;
+      reviewReading: string;
+      reviewMeaning: string;
       reviewHint: string;
+      reveal: string;
+      again: string;
+      gotIt: string;
+      /** What the app's scheduler does with a first "good": a day, then longer. */
+      gotItReaction: string;
+      /** And with "again": ten minutes. */
+      againReaction: string;
+      restart: string;
+      touchHint: string;
+      listen: string;
+      playing: string;
     };
     lens: {
       eyebrow: string;
@@ -168,6 +310,8 @@ export type TranslationDictionary = {
       subtitle: string;
       pickerAriaLabel: string;
       previewAriaLabel: string;
+      listen: string;
+      playing: string;
       cosmicBadge: string;
       menu: {
         label: string;
@@ -182,6 +326,8 @@ export type TranslationDictionary = {
         demoSecondSource: string;
         demoSecondName: string;
         demoSecondPrice: string;
+        demoSecondIpa: string;
+        hint: string;
         demoConfidence: string;
       };
       target: {
@@ -192,7 +338,9 @@ export type TranslationDictionary = {
         detailThree: string;
         demoSelected: string;
         demoCandidate: string;
-        demoResult: string;
+        /** What each of the three frames reads as: the big middle frame first, and chosen. */
+        demoOptions: [string, string, string];
+        hint: string;
       };
     };
     closing: {
@@ -297,7 +445,8 @@ export type TranslationDictionary = {
       title: string;
       subtitle: string;
       googleSubtitle: string;
-      consentNotice: string;
+      /** {terms} and {privacy} become links to those pages. */
+      legalNotice: string;
       googleSubmit: string;
       googleSubmitting: string;
       email: string;
@@ -2198,6 +2347,14 @@ export type TranslationDictionary = {
       logout: string;
       logoutDescription: string;
       logoutConfirm: string;
+      deleteAccount: string;
+      deleteAccountDescription: string;
+      deleteAccountWarning: string;
+      deleteAccountKept: string;
+      deleteAccountUnderstood: string;
+      deleteAccountAction: string;
+      deleteAccountDone: string;
+      deleteAccountError: string;
       photoImageError: string;
       photoSizeError: string;
       photoUpdated: string;

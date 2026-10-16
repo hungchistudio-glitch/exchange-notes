@@ -3,7 +3,7 @@
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import YumiLoading from "@/components/yumi3d/YumiLoading";
 import type { Scene } from "@/lib/shop/atmosphere";
 import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiSceneHandle, YumiView } from "@/lib/yumi3d/scene";
@@ -11,6 +11,7 @@ import { isScrolling } from "@/lib/shop/scrollQuiet";
 import { pauseThumbnails } from "@/lib/yumi3d/thumbnails";
 
 import OrbitalBackdrop from "./OrbitalBackdrop";
+import StationDock from "./StationDock";
 import styles from "./YumiShop.module.css";
 
 /* =========================================================
@@ -277,18 +278,14 @@ export default function ShopStage({
           contact shadow under her (Chi, 2026-10-13). Her live reflection
           was dropped: copying each 3D frame back for it was the costliest
           thing an iPhone did here. */}
-      <div className={styles.spotlight} aria-hidden="true" />
-      <div className={styles.pedestal} aria-hidden="true">
-        <span className={styles.plinthSide} />
-        <span className={styles.plinthTop} />
-        <span className={styles.contactShadow} />
-      </div>
+      <StationDock />
 
-      {!live && (
-        <div className={styles.stageFallback} aria-hidden={!failed}>
-          <ExchangeNotesMark className={styles.stageMark} cosmic={isCosmic} />
-          {failed && <p className={styles.stageNote}>{labels.unavailable}</p>}
-        </div>
+      {/* Only the 3D Yumi stands here. Until she draws the loader holds
+          her place, and on a device without WebGL it stays, still, with the
+          reason under it — never the old flat Yumi (Chi, 2026-10-15). */}
+      <YumiLoading state={live ? "done" : failed ? "unavailable" : "loading"} />
+      {failed && !live && (
+        <p className={styles.stageNote}>{labels.unavailable}</p>
       )}
 
       <canvas

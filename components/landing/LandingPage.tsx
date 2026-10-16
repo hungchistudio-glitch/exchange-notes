@@ -1,29 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Bookmark,
-  Camera,
-  Check,
-  Heart,
-  Image as ImageIcon,
-  Languages,
-  Leaf,
-  Link2,
-  Mic,
-  Pause,
-  PenLine,
-  Play,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Languages } from "lucide-react";
 
 import Link from "next/link";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
-import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
-import YumiMark from "@/components/vocabulary/pet/YumiMark";
+import YumiOriginStory from "@/components/landing/story/YumiOriginStory";
+import HeroTrial from "@/components/landing/trial/HeroTrial";
+import ExchangeShowcase from "@/components/landing/sections/ExchangeShowcase";
+import LensShowcase from "@/components/landing/sections/LensShowcase";
+import NotesShowcase from "@/components/landing/sections/NotesShowcase";
+import YumiShowcase from "@/components/landing/sections/YumiShowcase";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
 import {
@@ -42,7 +29,6 @@ import { markChosenBeforeSignIn } from "@/lib/preferences/pendingChoices";
 import styles from "./LandingPage.module.css";
 
 type LandingCopy = TranslationDictionary["landing"];
-type CaptureMode = "write" | "voice" | "camera";
 
 // Every ordinary entry uses the branded Google button on the login page.
 // The Supabase redirect button is reserved for that page's recovery flow.
@@ -54,7 +40,7 @@ function LandingLoginLink({
 }: {
   label: string;
   analyticsEvent: "landing_primary_cta_click" | "landing_final_cta_click";
-  analyticsSource: "navigation" | "hero" | "final";
+  analyticsSource: "navigation" | "hero" | "story" | "final";
   className: string;
 }) {
   return (
@@ -178,657 +164,11 @@ function SectionHeading({
   );
 }
 
-function MomentPreview({
-  copy,
-  mode,
-  labels,
-}: {
-  copy: LandingCopy["hero"]["preview"];
-  mode: CaptureMode;
-  labels: Record<CaptureMode, string>;
-}) {
-  return (
-    <div
-      className={styles.momentPreview}
-      aria-label={copy.ariaLabel}
-      aria-live="polite"
-    >
-      <div className={styles.momentPreviewHeader}>
-        <span>
-          <Sparkles size={14} aria-hidden="true" /> Yumi
-        </span>
-        <span>{labels[mode]}</span>
-      </div>
-
-      <div className={styles.momentPreviewBody}>
-        {mode === "write" ? (
-          <article className={styles.writePreview}>
-            <div className={styles.previewEyebrow}>
-              <PenLine size={14} aria-hidden="true" /> {copy.writeEyebrow}
-            </div>
-            <p>{copy.writeSample}</p>
-            <span className={styles.recognitionStatus}>
-              <Check size={13} aria-hidden="true" /> {copy.writeStatus}
-            </span>
-          </article>
-        ) : null}
-
-        {mode === "voice" ? (
-          <article className={styles.voicePreview}>
-            <div className={styles.previewEyebrow}>
-              <Mic size={14} aria-hidden="true" /> {copy.voiceEyebrow}
-            </div>
-            <div className={styles.voiceWave} aria-hidden="true">
-              {Array.from({ length: 18 }, (_, index) => (
-                <span key={index} />
-              ))}
-            </div>
-            <p>{copy.voiceSample}</p>
-            <span className={styles.recognitionStatus}>
-              <Sparkles size={13} aria-hidden="true" /> {copy.voiceStatus}
-            </span>
-          </article>
-        ) : null}
-
-        {mode === "camera" ? (
-          <article className={styles.cameraPreview}>
-            <div className={styles.previewEyebrow}>
-              <Camera size={14} aria-hidden="true" /> {copy.cameraEyebrow}
-            </div>
-            <div className={styles.cameraScene} aria-hidden="true">
-              <div className={styles.cameraGlow} />
-              <div className={styles.cameraFocus}>
-                <Leaf size={48} strokeWidth={1.4} />
-              </div>
-              <span className={styles.cameraCornerOne} />
-              <span className={styles.cameraCornerTwo} />
-              <span className={styles.cameraCornerThree} />
-              <span className={styles.cameraCornerFour} />
-            </div>
-            <div className={styles.cameraResult}>
-              <span className={styles.recognitionStatus}>
-                <Sparkles size={13} aria-hidden="true" /> {copy.cameraStatus}
-              </span>
-              <strong>{copy.cameraSubject}</strong>
-              <p>{copy.cameraDescription}</p>
-            </div>
-          </article>
-        ) : null}
-      </div>
-
-      <div className={styles.memoryLinks}>
-        <span className={styles.memoryLinksLabel}>
-          <Link2 size={13} aria-hidden="true" /> {copy.memoryLinks}
-        </span>
-        <div>
-          <span>
-            <PenLine size={12} aria-hidden="true" /> {copy.thought}
-          </span>
-          <span>
-            <Heart size={12} aria-hidden="true" /> {copy.feeling}
-          </span>
-          <span>
-            <ImageIcon size={12} aria-hidden="true" /> {copy.image}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function useReducedMotion() {
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(media.matches);
-
-    update();
-    media.addEventListener("change", update);
-
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  return reducedMotion;
-}
-
-function LanguageOrbitPreview({ ariaLabel }: { ariaLabel: string }) {
-  return (
-    <div className={styles.languageOrbitPreview} aria-label={ariaLabel}>
-      <div className={styles.languageOrbitCore} aria-hidden="true">
-        <Languages size={28} strokeWidth={1.45} />
-        <strong>5</strong>
-      </div>
-      <ul className={styles.languageOrbitList}>
-        {LANGUAGE_OPTIONS.map(({ value, meta }, index) => {
-          const angle = index * (360 / LANGUAGE_OPTIONS.length);
-
-          return (
-            <li
-              key={value}
-              lang={meta.htmlLang}
-              dir={meta.direction}
-              style={{
-                "--orbit-angle": `${angle}deg`,
-                "--orbit-angle-inverse": `${-angle}deg`,
-              } as CSSProperties}
-            >
-              <span aria-hidden="true">{meta.badge}</span>
-              {meta.endonym}
-            </li>
-          );
-        })}
-      </ul>
-      <span className={styles.languageOrbitOne} aria-hidden="true" />
-      <span className={styles.languageOrbitTwo} aria-hidden="true" />
-    </div>
-  );
-}
-
-function MemoryJourneyPreview({ copy }: { copy: LandingCopy }) {
-  return (
-    <div className={styles.memoryJourneyPreview} aria-hidden="true">
-      <article className={styles.memoryJourneyCard}>
-        <PenLine size={18} strokeWidth={1.7} />
-        <span>{copy.notes.eyebrow}</span>
-        <strong>{copy.notes.title}</strong>
-      </article>
-
-      <div className={styles.memoryJourneyPath}>
-        <span />
-        <Sparkles size={17} />
-        <span />
-      </div>
-
-      <article className={styles.memoryJourneyCard}>
-        <Send size={18} strokeWidth={1.7} />
-        <span>{copy.exchange.eyebrow}</span>
-        <strong>{copy.exchange.title}</strong>
-      </article>
-
-      <div className={styles.memoryJourneyYumi}>
-        {/* Illustration inside a diagram rather than the subject of it, so
-            she turns on her own and does not invite a drag that would pull
-            focus from the three cards she sits among. */}
-        <Yumi3DFigure interactive={false} fill={0.4}>
-          <YumiMark
-            mood="curious"
-            isWaking={false}
-            isEating={false}
-            growthStage={0}
-            crownEarned={false}
-          />
-        </Yumi3DFigure>
-      </div>
-    </div>
-  );
-}
-
-function HeroTutorial3D({
-  copy,
-  captureMode,
-  captureLabels,
-  step,
-  onStepChange,
-}: {
-  copy: LandingCopy;
-  captureMode: CaptureMode;
-  captureLabels: Record<CaptureMode, string>;
-  step: number;
-  onStepChange: (step: number) => void;
-}) {
-  const reducedMotion = useReducedMotion();
-  const [paused, setPaused] = useState(true);
-  const swipeStart = useRef<{
-    pointerId: number;
-    x: number;
-    y: number;
-  } | null>(null);
-  const tour = copy.hero.tour;
-  const steps = [
-    {
-      title: tour.captureTitle,
-      description: tour.captureDescription,
-    },
-    {
-      title: tour.languagesTitle,
-      description: tour.languagesDescription,
-    },
-    {
-      title: tour.rememberTitle,
-      description: tour.rememberDescription,
-    },
-  ] as const;
-
-  useEffect(() => {
-    if (paused || reducedMotion) return;
-
-    const timer = window.setInterval(() => {
-      onStepChange((step + 1) % steps.length);
-    }, 6500);
-
-    return () => window.clearInterval(timer);
-  }, [onStepChange, paused, reducedMotion, step, steps.length]);
-
-  function chooseStep(nextStep: number) {
-    setPaused(true);
-    onStepChange((nextStep + steps.length) % steps.length);
-  }
-
-  return (
-    <section
-      className={styles.heroTour}
-      aria-label={tour.ariaLabel}
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === "ArrowLeft") {
-          event.preventDefault();
-          chooseStep(step - 1);
-        }
-
-        if (event.key === "ArrowRight") {
-          event.preventDefault();
-          chooseStep(step + 1);
-        }
-      }}
-    >
-      <div
-        className={styles.heroTourCopy}
-        aria-atomic="true"
-        aria-live={paused ? "polite" : "off"}
-      >
-        <p>
-          {tour.stepLabel
-            .replace("{current}", String(step + 1))
-            .replace("{total}", String(steps.length))}
-        </p>
-        <h2>{steps[step].title}</h2>
-        <span>{steps[step].description}</span>
-      </div>
-
-      <div
-        className={styles.heroTourViewport}
-        data-testid="hero-tour-viewport"
-        onPointerDown={(event) => {
-          if (
-            (event.pointerType !== "touch" && event.pointerType !== "pen") ||
-            !event.isPrimary
-          ) {
-            return;
-          }
-
-          swipeStart.current = {
-            pointerId: event.pointerId,
-            x: event.clientX,
-            y: event.clientY,
-          };
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-        }}
-        onPointerUp={(event) => {
-          const start = swipeStart.current;
-          swipeStart.current = null;
-
-          if (!start || start.pointerId !== event.pointerId) return;
-
-          event.currentTarget.releasePointerCapture?.(event.pointerId);
-
-          const deltaX = event.clientX - start.x;
-          const deltaY = event.clientY - start.y;
-          if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.25) {
-            return;
-          }
-
-          chooseStep(step + (deltaX < 0 ? 1 : -1));
-        }}
-        onPointerCancel={() => {
-          swipeStart.current = null;
-        }}
-      >
-        {steps.map((item, itemIndex) => {
-          const relative = (itemIndex - step + steps.length) % steps.length;
-          const positionClass =
-            relative === 0
-              ? styles.heroTourCardActive
-              : relative === 1
-                ? styles.heroTourCardNext
-                : styles.heroTourCardPrevious;
-
-          return (
-            <div
-              key={item.title}
-              className={`${styles.heroTourCard} ${positionClass}`}
-              aria-hidden={itemIndex !== step}
-            >
-              {itemIndex === 0 ? (
-                <MomentPreview
-                  copy={copy.hero.preview}
-                  mode={captureMode}
-                  labels={captureLabels}
-                />
-              ) : null}
-              {itemIndex === 1 ? (
-                <LanguageOrbitPreview ariaLabel={tour.languagesDescription} />
-              ) : null}
-              {itemIndex === 2 ? <MemoryJourneyPreview copy={copy} /> : null}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className={styles.heroTourControls}>
-        <button
-          type="button"
-          aria-label={tour.previous}
-          onClick={() => chooseStep(step - 1)}
-        >
-          <ArrowLeft size={17} aria-hidden="true" />
-        </button>
-        <div className={styles.heroTourDots}>
-          {steps.map((item, itemIndex) => (
-            <button
-              key={item.title}
-              type="button"
-              aria-current={itemIndex === step ? "step" : undefined}
-              aria-label={tour.goToStep
-                .replace("{step}", String(itemIndex + 1))
-                .replace("{title}", item.title)}
-              onClick={() => chooseStep(itemIndex)}
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          aria-label={tour.next}
-          onClick={() => chooseStep(step + 1)}
-        >
-          <ArrowRight size={17} aria-hidden="true" />
-        </button>
-        {!reducedMotion ? (
-          <button
-            type="button"
-            aria-label={paused ? tour.play : tour.pause}
-            aria-pressed={!paused}
-            onClick={() => setPaused((value) => !value)}
-          >
-            {paused ? (
-              <Play size={16} aria-hidden="true" />
-            ) : (
-              <Pause size={16} aria-hidden="true" />
-            )}
-          </button>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function NotePreview({
-  copy,
-  interfaceLang,
-}: {
-  copy: LandingCopy["notes"];
-  interfaceLang: string;
-}) {
-  return (
-    <div className={styles.notePreview} aria-label={copy.previewAriaLabel}>
-      <div className={styles.noteDate}>{copy.date}</div>
-      <p className={styles.noteText} lang="en">
-        {copy.original}
-      </p>
-      <div className={styles.noteRule} />
-      <p className={styles.noteTextTranslation} lang={interfaceLang}>
-        {copy.translation}
-      </p>
-      <div className={styles.noteFooter}>
-        <Bookmark size={15} aria-hidden="true" />
-        <span>{copy.privateNote}</span>
-      </div>
-    </div>
-  );
-}
-
-function ExchangePreview({ copy }: { copy: LandingCopy["exchange"] }) {
-  return (
-    <div className={styles.exchangePreview} aria-label={copy.previewAriaLabel}>
-      <div className={styles.exchangeStop}>
-        <span className={styles.exchangeDot} aria-hidden="true" />
-        <p>{copy.sender}</p>
-        <span>{copy.senderCaption}</span>
-      </div>
-      <div className={styles.exchangePath} aria-hidden="true">
-        <span />
-      </div>
-      <article className={styles.travelCard}>
-        <Send size={16} aria-hidden="true" />
-        <p lang="zh-Hant">{copy.word}</p>
-        <span>{copy.reading}</span>
-        <small>{copy.meaning}</small>
-      </article>
-      <div
-        className={`${styles.exchangePath} ${styles.exchangePathLast}`}
-        aria-hidden="true"
-      >
-        <span />
-      </div>
-      <div className={styles.exchangeStop}>
-        <span
-          className={`${styles.exchangeDot} ${styles.exchangeDotWarm}`}
-          aria-hidden="true"
-        />
-        <p>{copy.receiver}</p>
-        <span>{copy.receiverCaption}</span>
-      </div>
-    </div>
-  );
-}
-
-function YumiPreview({
-  copy,
-  interfaceLang,
-}: {
-  copy: LandingCopy["yumi"];
-  interfaceLang: string;
-}) {
-  return (
-    <div className={styles.yumiPreview} aria-label={copy.previewAriaLabel}>
-      {/*
-        The one place on this page a stranger can touch her before signing
-        up: turn her, pull her eye, let it snap back. The flat mark is what
-        shows until the engine chunk lands and what stays without WebGL, so
-        the page that has to paint for a stranger never paints a blank box.
-      */}
-      <div className={styles.yumiStage}>
-        <Yumi3DFigure>
-          <YumiMark
-            mood="curious"
-            isWaking={false}
-            isEating={false}
-            growthStage={0}
-            crownEarned={false}
-          />
-        </Yumi3DFigure>
-      </div>
-      <div className={styles.yumiMessage}>
-        <p lang={interfaceLang}>{copy.message}</p>
-        <span lang={interfaceLang === "en" ? "zh-Hant" : "en"}>
-          {copy.translation}
-        </span>
-      </div>
-      <div className={styles.reviewChip}>
-        <span className={styles.reviewWord}>{copy.reviewWord}</span>
-        <span>{copy.reviewHint}</span>
-      </div>
-    </div>
-  );
-}
-
-type LensFeature = "menu" | "target";
-
-/*
- * What the camera does, shown rather than listed.
- *
- * Two features that are both "point it at something", and are otherwise
- * nothing alike: one reads a whole printed document and keeps its shape, the
- * other reads exactly one rectangle out of a crowded frame. They share a
- * panel because a reader deciding whether this app is for them is asking one
- * question — can it read the thing in front of me — and gets both answers.
- *
- * The previews are drawn here rather than borrowed from the real screens.
- * MenuOverlayView and TargetOverlay want a scanned document and a live camera
- * between them, and neither belongs in the bundle of a page that has to paint
- * before anyone has signed in.
- */
-function LensShowcase({ copy }: { copy: LandingCopy["lens"] }) {
-  const [feature, setFeature] = useState<LensFeature>("menu");
-
-  const features: ReadonlyArray<{
-    key: LensFeature;
-    label: string;
-    blurb: string;
-    cosmic?: boolean;
-  }> = [
-    { key: "menu", label: copy.menu.label, blurb: copy.menu.blurb, cosmic: true },
-    { key: "target", label: copy.target.label, blurb: copy.target.blurb },
-  ];
-
-  const details =
-    feature === "menu"
-      ? [copy.menu.detailOne, copy.menu.detailTwo, copy.menu.detailThree]
-      : [copy.target.detailOne, copy.target.detailTwo, copy.target.detailThree];
-
-  return (
-    <div className={styles.lensExperience}>
-      <div
-        className={styles.lensStage}
-        aria-live="polite"
-        aria-label={copy.previewAriaLabel}
-      >
-        {feature === "menu" ? (
-          <MenuScanPreview copy={copy.menu} />
-        ) : (
-          <TargetFocusPreview copy={copy.target} />
-        )}
-      </div>
-
-      <div className={styles.lensPanel}>
-        <div className={styles.lensButtons} aria-label={copy.pickerAriaLabel}>
-          {features.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setFeature(item.key)}
-              aria-pressed={feature === item.key}
-              className={styles.lensButton}
-            >
-              <span className={styles.lensButtonLabel}>
-                {item.label}
-                {item.cosmic && (
-                  <span className={styles.lensCosmicTag}>
-                    {copy.cosmicBadge}
-                  </span>
-                )}
-              </span>
-              <small>{item.blurb}</small>
-            </button>
-          ))}
-        </div>
-
-        <ul className={styles.lensDetails}>
-          {details.map((detail) => (
-            <li key={detail}>{detail}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-/*
- * A menu, read and kept in place.
- *
- * Deliberately shows the printed line above the translation rather than
- * instead of it — that ordering is the feature. The price is repeated exactly
- * as a menu would print it, because "point at this on the real menu" only
- * works if the app did not tidy it into a number.
- */
-function MenuScanPreview({ copy }: { copy: LandingCopy["lens"]["menu"] }) {
-  return (
-    <div className={styles.menuScan}>
-      <div className={`${styles.menuRow} ${styles.menuRowLit}`}>
-        <div>
-          <p className={styles.menuSource} lang="zh-Hant">
-            {copy.demoSource}
-          </p>
-          <p className={styles.menuName}>{copy.demoName}</p>
-          <p className={styles.menuIpa}>{copy.demoIpa}</p>
-        </div>
-        <span className={styles.menuPrice}>{copy.demoPrice}</span>
-      </div>
-
-      <div className={styles.menuRow}>
-        <div>
-          <p className={styles.menuSource} lang="zh-Hant">
-            {copy.demoSecondSource}
-          </p>
-          <p className={styles.menuName}>{copy.demoSecondName}</p>
-        </div>
-        <span className={styles.menuPrice}>{copy.demoSecondPrice}</span>
-      </div>
-
-      <p className={styles.menuConfidence}>{copy.demoConfidence}</p>
-    </div>
-  );
-}
-
-/*
- * A viewfinder with more than one thing in it.
- *
- * The candidates are thin and unfilled and the chosen one is marked at its
- * corners, which is how the real overlay draws them — selection is never
- * carried by colour alone there, and a marketing preview that invented a
- * different rule would be teaching the wrong thing.
- */
-function TargetFocusPreview({
-  copy,
-}: {
-  copy: LandingCopy["lens"]["target"];
-}) {
-  return (
-    <div className={styles.viewfinder}>
-      <span className={`${styles.targetBox} ${styles.targetBoxA}`}>
-        <span className="sr-only">{copy.demoCandidate}</span>
-      </span>
-      <span className={`${styles.targetBox} ${styles.targetBoxB}`}>
-        <span className="sr-only">{copy.demoCandidate}</span>
-      </span>
-
-      <span className={`${styles.targetBox} ${styles.targetChosen}`}>
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <span className={styles.targetTag}>{copy.demoSelected}</span>
-      </span>
-
-      <p className={styles.targetResult}>{copy.demoResult}</p>
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const viewTrackedRef = useRef(false);
-  const [captureMode, setCaptureMode] = useState<CaptureMode>("write");
-  const [tutorialStep, setTutorialStep] = useState(0);
   const { t, language } = useTranslation();
   const copy = t.landing;
   const interfaceLang = getInterfaceLanguageMeta(language).htmlLang;
-  const captureLabels: Record<CaptureMode, string> = {
-    write: copy.hero.write,
-    voice: copy.hero.voice,
-    camera: copy.hero.camera,
-  };
 
   useEffect(() => {
     if (viewTrackedRef.current) return;
@@ -864,35 +204,9 @@ export default function LandingPage() {
             language={language}
           />
           <p className={styles.eyebrow}>{copy.hero.eyebrow}</p>
+          {/* The About page's own first line, which is what this app is for. */}
           <h1 id="landing-hero-title">{copy.hero.title}</h1>
           <p className={styles.heroIntro}>{copy.hero.intro}</p>
-          <p className={styles.heroDescription}>{copy.hero.description}</p>
-          <p className={styles.heroMantra}>{copy.hero.mantra}</p>
-          <div
-            className={styles.captureModes}
-            aria-label={copy.hero.modeAriaLabel}
-          >
-            {(
-              [
-                ["write", PenLine],
-                ["voice", Mic],
-                ["camera", Camera],
-              ] as const
-            ).map(([mode, Icon]) => (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={captureMode === mode}
-                onClick={() => {
-                  setCaptureMode(mode);
-                  setTutorialStep(0);
-                }}
-              >
-                <Icon size={15} strokeWidth={1.8} aria-hidden="true" />
-                {captureLabels[mode]}
-              </button>
-            ))}
-          </div>
           <div className={styles.heroCta}>
             <LandingLoginLink
               label={copy.hero.cta}
@@ -901,15 +215,23 @@ export default function LandingPage() {
               className={styles.primaryButton}
             />
           </div>
+          <p className={styles.heroPromise}>{copy.hero.promise}</p>
         </div>
-        <HeroTutorial3D
-          copy={copy}
-          captureMode={captureMode}
-          captureLabels={captureLabels}
-          step={tutorialStep}
-          onStepChange={setTutorialStep}
-        />
+        <HeroTrial copy={copy.hero} language={language} />
       </section>
+
+      <YumiOriginStory
+        copy={copy.story}
+        language={language}
+        cta={
+          <LandingLoginLink
+            label={copy.hero.cta}
+            analyticsEvent="landing_primary_cta_click"
+            analyticsSource="story"
+            className={styles.primaryButton}
+          />
+        }
+      />
 
       <section
         className={`${styles.storySection} ${styles.storySectionFirst}`}
@@ -921,7 +243,7 @@ export default function LandingPage() {
           title={copy.notes.title}
           description={copy.notes.description}
         />
-        <NotePreview copy={copy.notes} interfaceLang={interfaceLang} />
+        <NotesShowcase copy={copy.notes} />
       </section>
 
       <section
@@ -934,7 +256,7 @@ export default function LandingPage() {
           title={copy.exchange.title}
           description={copy.exchange.description}
         />
-        <ExchangePreview copy={copy.exchange} />
+        <ExchangeShowcase copy={copy.exchange} />
       </section>
 
       <section
@@ -947,7 +269,7 @@ export default function LandingPage() {
           title={copy.yumi.title}
           description={copy.yumi.description}
         />
-        <YumiPreview copy={copy.yumi} interfaceLang={interfaceLang} />
+        <YumiShowcase copy={copy.yumi} interfaceLang={interfaceLang} />
       </section>
 
       <section
@@ -984,7 +306,12 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <span>Exchange Notes</span>
-        <Link href="/privacy">{t.info.nav.privacy}</Link>
+        {/* Google's consent screen links this footer's two pages, and its
+            brand review checks the home page links them back. */}
+        <div className={styles.footerLinks}>
+          <Link href="/privacy">{t.info.nav.privacy}</Link>
+          <Link href="/terms">{t.info.nav.terms}</Link>
+        </div>
         <span>{learningLanguageList()}</span>
       </footer>
     </main>

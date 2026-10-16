@@ -12,7 +12,7 @@ import {
   type CSSProperties,
 } from "react";
 
-import ExchangeNotesMark from "@/components/ui/ExchangeNotesMark";
+import YumiLoading from "@/components/yumi3d/YumiLoading";
 import dynamic from "next/dynamic";
 import CookieTray from "@/components/vocabulary/pet/CookieTray";
 import YumiFeedingFace from "@/components/vocabulary/pet/YumiFeedingFace";
@@ -233,15 +233,15 @@ export default function YumiHomeStage({
    * prop, because the overlay renders this component as its children — it
    * cannot pass anything down without the parent holding the state, and the
    * state is the scene's, not the parent's. "pending" and "failed" both mean
-   * the 2D stage is what the reader sees, and the corner tray is correct for
-   * both.
+   * this stage is what the reader sees — the loader in her place, running
+   * or still — and the corner tray is correct for both.
    */
-  const ringLive =
-    useSyncExternalStore(
-      subscribeToYumiRing,
-      getYumiRingState,
-      getServerYumiRingState,
-    ) === "live";
+  const ringState = useSyncExternalStore(
+    subscribeToYumiRing,
+    getYumiRingState,
+    getServerYumiRingState,
+  );
+  const ringLive = ringState === "live";
 
   const { t, language } = useTranslation();
   const { learningLanguage } = useLearningLanguageContext();
@@ -759,7 +759,19 @@ export default function YumiHomeStage({
             className={styles.mover}
             style={{ transform: `translateX(${roamX}px)` }}
           >
-            <div className={styles.shadow} data-mood={displayMood} aria-hidden="true" />
+            {/*
+              Only the 3D Yumi is ever drawn on this screen. The figure below
+              stays as her anchor (the scene places her from its box) and
+              keeps the moods and the feeding sequence running, but it no
+              longer paints the old flat Yumi: until the scene's first frame
+              — and for good on a device without WebGL — the shared loader
+              holds her place instead (Chi, 2026-10-15). Outside the figure,
+              so her mood animations do not bounce it.
+            */}
+            <YumiLoading
+              className={styles.loading}
+              state={ringState === "failed" ? "unavailable" : "loading"}
+            />
 
             <div
               ref={figureRef}
@@ -783,32 +795,14 @@ export default function YumiHomeStage({
                 if (event.animationName.startsWith("homeWake")) handleWakeEnd();
               }}
             >
-              {displayMood === "dancing" || displayMood === "welcomeBack" ? (
-                <div className={styles.sparkles} aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              ) : null}
-
-              {displayMood === "lonely" ? (
-                <span className={styles.tear} aria-hidden="true" />
-              ) : null}
-
-              <ExchangeNotesMark
-                className={styles.logo}
-                pupilClassName={styles.pupil}
-                upperLidClassName={`yumi-blink-upper ${styles.upperLid}`}
-                lowerLidClassName={`yumi-blink-lower ${styles.lowerLid}`}
-                surfaceColor="#faf7f0"
-                highlightColor="#ffffff"
-              />
-
-              <YumiFeedingFace
-                phase={feeding.phase}
-                targetRef={feedTargetRef}
-              />
+              {/* The mouth's target is what a thrown cookie flies at, so it
+                  stays measurable; the flat mouth itself is not drawn. */}
+              <div className={styles.feedingAnchor}>
+                <YumiFeedingFace
+                  phase={feeding.phase}
+                  targetRef={feedTargetRef}
+                />
+              </div>
             </div>
           </div>
         </div>

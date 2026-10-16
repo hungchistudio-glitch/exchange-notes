@@ -89,6 +89,26 @@ export type YumiSceneOptions = {
 /** The stand's set views. */
 export type YumiView = "front" | "three-quarter" | "side" | "back";
 
+/** Where one of Yumi's two halves is, relative to where it sits in her. */
+export type YumiPartPose = {
+  /** World units, in the plane of the shell. */
+  x: number;
+  y: number;
+  /** Radians, about the axis facing the camera. */
+  rotation: number;
+};
+
+/**
+ * YU and MI, posed apart: the landing page's origin story.
+ *
+ * Yumi is two things that met at exactly the right angle. YU is the shell —
+ * the open C, which turned a quarter is a U — and MI is the band and the
+ * eye, which stood upright is an i with its dot. Apart, each takes its own
+ * pose; with both at zero they are Yumi, and the scene is exactly what it
+ * is without this.
+ */
+export type YumiParts = { yu: YumiPartPose; mi: YumiPartPose };
+
 export type YumiSceneHandle = {
   /** Advance the simulation and draw. Call from one rAF loop. */
   frame(nowMs: number): void;
@@ -135,6 +155,12 @@ export type YumiSceneHandle = {
 
   /** What she has on (lib/shop/catalog.ts). An empty outfit is Yumi as she ships. */
   setOutfit?(outfit: YumiOutfit): void;
+  /**
+   * Pose YU and MI apart, or null to make her one again. While parts are
+   * set, pointer input is ignored and the outfit is hidden: a hat belongs on
+   * Yumi, not on half of her.
+   */
+  setParts?(parts: YumiParts | null): void;
   /** Turn to a set view: eased, or at once. */
   setView?(view: YumiView, immediate?: boolean): void;
   /** Turn her as a drag of that many pixels would, for the arrow keys. */
@@ -279,19 +305,25 @@ export function createYumiScene(
   model.position.y = MODEL_REST_Y;
   scene.add(model);
 
+  /* YU (the shell) and MI (the band and the eye) each have a group of their
+     own. Together, both are identity and change nothing; see setParts. */
+  const yuGroup = new THREE.Group();
+  const miGroup = new THREE.Group();
+  model.add(yuGroup, miGroup);
+
   const shell = new THREE.Mesh(
     new THREE.TorusGeometry(SHELL_RADIUS, TUBE_RADIUS, 28, 200, Math.PI * 2 - GAP_HALF * 2),
     shellMaterial,
   );
   shell.rotation.z = GAP_HALF;
   shell.scale.z = SHELL_DEPTH;
-  model.add(shell);
+  yuGroup.add(shell);
 
   for (const angle of [GAP_HALF, -GAP_HALF]) {
     const cap = new THREE.Mesh(new THREE.SphereGeometry(TUBE_RADIUS, 28, 18), shellMaterial);
     cap.position.set(Math.cos(angle) * SHELL_RADIUS, Math.sin(angle) * SHELL_RADIUS, 0);
     cap.scale.z = SHELL_DEPTH;
-    model.add(cap);
+    yuGroup.add(cap);
   }
 
   /*
@@ -304,15 +336,15 @@ export function createYumiScene(
   armGeometry.translate(0, 0.5, 0);
   const arm = new THREE.Mesh(armGeometry, silverMaterial);
   arm.position.copy(ARM_ROOT);
-  model.add(arm);
+  miGroup.add(arm);
 
   const armCollar = new THREE.Mesh(new THREE.SphereGeometry(ARM_RADIUS * 1.5, 24, 16), silverMaterial);
   armCollar.position.copy(ARM_ROOT);
-  model.add(armCollar);
+  miGroup.add(armCollar);
 
   const eyeGroup = new THREE.Group();
   eyeGroup.position.copy(EYE_REST);
-  model.add(eyeGroup);
+  miGroup.add(eyeGroup);
 
   const eyeBall = new THREE.Mesh(new THREE.SphereGeometry(EYE_RADIUS, 56, 36), eyeMaterial);
 
@@ -352,7 +384,7 @@ export function createYumiScene(
   ]) {
     const seam = new THREE.Mesh(new THREE.SphereGeometry(0.082, 20, 14), accentMaterial);
     seam.position.copy(position);
-    model.add(seam);
+    yuGroup.add(seam);
   }
 
   const outfit = createOutfitRig({ model, eyeGroup, lookGroup, pupil, shellMaterial });
@@ -368,6 +400,7 @@ export function createYumiScene(
   let stretchRatio = 1;
 
   let film: YumiFilmFrame | null = null;
+  let parts: YumiParts | null = null;
   let focusLevel = 0;
   let rotationPaused = false;
   let cosmicWanted = 0;
@@ -662,7 +695,7 @@ export function createYumiScene(
       /* A glass finish is see-through on its own account; the film's fade
          multiplies it rather than replacing it. */
       const finishOpacity = (shellMaterial.userData.finishOpacity as number | undefined) ?? 1;
-      outfit.setVisible(!film || film.actor > 0.98);
+      outfit.setVisible((!film || film.actor > 0.98) && !parts);
       for (const piece of compiling) piece.visible = false;
 
       if (film) {
@@ -737,6 +770,11 @@ export function createYumiScene(
       poseIris();
       outfit.sync();
 
+      yuGroup.position.set(parts?.yu.x ?? 0, parts?.yu.y ?? 0, 0);
+      yuGroup.rotation.z = parts?.yu.rotation ?? 0;
+      miGroup.position.set(parts?.mi.x ?? 0, parts?.mi.y ?? 0, 0);
+      miGroup.rotation.z = parts?.mi.rotation ?? 0;
+
       /* Along the screen's vertical, after the look rotation, so a blink is
          a blink from every angle rather than only from the front. */
       blinkPivot.scale.set(1, Math.max(0.02, blink), 1);
@@ -766,6 +804,14 @@ export function createYumiScene(
 
     setRotationPaused(paused) {
       rotationPaused = paused;
+    },
+    setParts(next) {
+      parts = next;
+      if (next) {
+        dragging = false;
+        orbiting = false;
+        lungePhase = null;
+      }
     },
     setOutfit(next) {
       const added = outfit.apply(next);
@@ -824,7 +870,7 @@ export function createYumiScene(
     },
 
     pointerDown(clientX, clientY) {
-      if (film) return;
+      if (film || parts) return;
       measureCanvas();
       idleSince = performance.now();
       moved = 0;
@@ -848,7 +894,7 @@ export function createYumiScene(
     },
 
     pointerMove(clientX, clientY) {
-      if (film) return;
+      if (film || parts) return;
       measureCanvas();
       const dx = clientX - lastPointer.x;
       const dy = clientY - lastPointer.y;
@@ -894,7 +940,7 @@ export function createYumiScene(
     },
 
     pointerUp() {
-      if (film) return;
+      if (film || parts) return;
       rotation?.release(performance.now(), orbiting && moved >= 6);
       if (dragging) {
         const progress = pullProgress();
@@ -910,7 +956,7 @@ export function createYumiScene(
     },
 
     lungeAt(clientX, clientY) {
-      if (film || dragging || orbiting || lungePhase) return false;
+      if (film || parts || dragging || orbiting || lungePhase) return false;
 
       /* The cookie is a DOM element on the page, so its point is unprojected
          onto the same camera-facing plane through the eye that a finger drags

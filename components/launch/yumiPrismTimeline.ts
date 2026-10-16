@@ -187,8 +187,6 @@ export const PRISM_TRACKS: Record<string, (f: PrismFrame) => Keyframe> = {
   actor: f => ({ opacity: f["--actor-opacity"], transform: `translate3d(0, ${f["--actor-y"]}, 0) scale(${f["--actor-scale"]})` }),
   orbit: f => ({ opacity: f["--orbit-opacity"], transform: `rotate(${f["--orbit-rotation"]})` }),
   sweep: f => ({ opacity: f["--sweep-opacity"], transform: `translate3d(${f["--sweep-x"]}, 0, 0) rotate(-24deg)` }),
-  pupil: f => ({ transform: `scaleY(${value(1 - Number(f["--blink"]))})` }),
-  closedEye: f => ({ opacity: f["--blink"] }),
   wordmark: f => ({ opacity: f["--wordmark-opacity"], transform: `translate3d(0, ${f["--wordmark-y"]}, 0)` }),
   captionRule: f => ({ transform: `scaleX(${f["--rule-scale"]})` }),
   caption: f => ({ opacity: f["--caption-opacity"], transform: `translate3d(0, ${f["--caption-y"]}, 0)` }),

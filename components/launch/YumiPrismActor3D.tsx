@@ -21,10 +21,11 @@ import styles from "./YumiPrismActor3D.module.css";
    pre-lockup look are driven from here, because those are the parts a flat
    lens could fake and a model cannot.
 
-   Until the scene reports itself live the SVG underneath is what shows, and
-   on a device that cannot start WebGL it is what keeps showing. The opening
-   is the first thing a reader ever sees; it does not get to be the thing
-   that fails.
+   Until the scene reports itself live the lens is empty pearl glass, and on
+   a device that cannot start WebGL it stays that way: there is no flat Yumi
+   underneath any more (Chi, 2026-10-15: one Yumi, the 3D one). The halo,
+   the orbit light and the wordmark still make a whole film without her, so
+   the opening never shows a reader a broken frame.
    ========================================================= */
 
 export type YumiPrismActor3DProps = {
@@ -38,7 +39,7 @@ export type YumiPrismActor3DProps = {
    */
   timeRef?: { readonly current: number } | null;
   reduced?: boolean;
-  /** Told once, so the flat lens can step aside rather than double up. */
+  /** Told once, when her first frame is drawn. */
   onLive?: () => void;
 };
 
@@ -109,7 +110,7 @@ export default function YumiPrismActor3D({
         raf = requestAnimationFrame(loop);
       })
       .catch(() => {
-        /* The flat lens is already on screen and correct. */
+        /* No 3D here: the empty lens and the rest of the film stand. */
       });
 
     const onResize = () => handle?.resize();

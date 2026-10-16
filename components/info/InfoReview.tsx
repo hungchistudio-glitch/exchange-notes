@@ -28,7 +28,7 @@ export default function InfoReview() {
   return <>
     <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", padding: "1rem", color: "var(--color-black)", background: "var(--surface)" }}>
       <label>Page <select value={page} onChange={(event) => setPage(event.target.value as InfoPageKind)}>
-        <option value="about">About</option><option value="community">Community</option><option value="privacy">Privacy</option>
+        <option value="about">About</option><option value="community">Community</option><option value="privacy">Privacy</option><option value="terms">Terms</option>
       </select></label>
       <label>Text size <select value={fontSize} onChange={(event) => setFontSize(event.target.value)}>
         <option value="16">100%</option><option value="19">App large</option><option value="32">200%</option>

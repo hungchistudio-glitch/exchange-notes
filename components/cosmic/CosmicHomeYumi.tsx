@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOptionalInterfaceMode } from "@/contexts/InterfaceModeContext";
 import { useWornOutfit } from "@/lib/shop/wornOutfit";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 import { parkYumiScene, relayedOptions, takeParkedYumiScene, type YumiSceneRelay } from "@/lib/yumi3d/sceneCache";
+import YumiLoading from "@/components/yumi3d/YumiLoading";
 import styles from "./CosmicHomeYumi.module.css";
 
-/** Both homes borrow the same scene; the SVG remains the no-WebGL fallback. */
-export default function CosmicHomeYumi({ paused, children }: { paused: boolean; children: ReactNode }) {
+/**
+ * Both homes borrow the same scene. Until it draws, and for good on a device
+ * without WebGL, the shared loader holds her place; no flat Yumi stands in.
+ */
+export default function CosmicHomeYumi({ paused }: { paused: boolean }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mode = useOptionalInterfaceMode();
   const outfit = useWornOutfit();
   const stateRef = useRef({ paused, mode, outfit });
   const [live, setLive] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   useEffect(() => { stateRef.current = { paused, mode, outfit }; }, [paused, mode, outfit]);
 
   useEffect(() => {
@@ -79,7 +84,8 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
       if (cancelled) { if (created && !parked) created.dispose(); return; }
       handle = created;
       if (!handle) {
-        // No WebGL: the SVG deck is already drawn, so the crossing may lift.
+        // No WebGL: the deck around her is drawn, so the crossing may lift.
+        setUnavailable(true);
         stateRef.current.mode?.markHomeModeReady?.("yumi-cosmic", "scene");
         return;
       }
@@ -110,7 +116,8 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
       // frame is drawn, but the class that makes it visible is not committed.
       setLive(true);
     }).catch(() => {
-      // Retain the SVG deck and release the transition even without WebGL.
+      // Release the transition even without WebGL; the still ring stays.
+      if (!cancelled) setUnavailable(true);
       stateRef.current.mode?.markHomeModeReady?.("yumi-cosmic", "scene");
     });
     return () => {
@@ -139,7 +146,7 @@ export default function CosmicHomeYumi({ paused, children }: { paused: boolean; 
   }, [live, waiting, markHomeModeReady]);
 
   return <div className={styles.figure} data-cosmic-yumi-live={live ? "true" : "false"}>
-    <div className={styles.fallback} aria-hidden={live}>{children}</div>
+    <YumiLoading state={live ? "done" : unavailable ? "unavailable" : "loading"} />
     <div ref={hostRef} className={styles.host} />
   </div>;
 }

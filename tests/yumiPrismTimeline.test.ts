@@ -138,10 +138,12 @@ describe("Prism animation tracks", () => {
       const transforms = frames.filter(frame => frame.transform !== undefined).map(frame => frame.transform);
       expect(new Set(transforms).size, name).toBeLessThanOrEqual(1);
     }
-    for (const name of ["orbit", "sweep", "closedEye"]) {
+    for (const name of ["orbit", "sweep"]) {
       expect(tracks[name].every(frame => Number(frame.opacity) === 0), name).toBe(true);
     }
-    expect(tracks.pupil.every(frame => frame.transform === "scaleY(1)")).toBe(true);
+    // The flat lens's eye tracks went with it; the 3D actor blinks itself.
+    expect(tracks.pupil).toBeUndefined();
+    expect(tracks.closedEye).toBeUndefined();
     expect(tracks.captionRule.every(frame => frame.transform === "scaleX(1)")).toBe(true);
     expect(tracks.sceneWash.at(-1)?.opacity).toBe("0");
     expect(tracks.handoffPreview.at(-1)?.opacity).toBe("1");

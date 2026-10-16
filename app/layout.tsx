@@ -42,6 +42,17 @@ export async function generateMetadata(): Promise<Metadata> {
       statusBarStyle: "default",
       title: "Exchange Notes",
     },
+    /*
+     * Google's OAuth brand verification asks for the app's domain to be
+     * verified in Search Console. exchange-notes-app.vercel.app has no DNS
+     * of its own to put a record in, so it is verified as a URL-prefix
+     * property with this tag: set GOOGLE_SITE_VERIFICATION in Vercel to the
+     * token Search Console gives you and redeploy. Unset, nothing is
+     * rendered. See docs/reviews/2026-10-14-google-branding-handoff.md.
+     */
+    verification: process.env.GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+      : undefined,
   };
 }
 

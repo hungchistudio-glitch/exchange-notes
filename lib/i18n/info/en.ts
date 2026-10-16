@@ -1,8 +1,8 @@
 import type { InfoCopy } from "./types";
 
 const info: InfoCopy = {
-  nav: { about: "About Exchange Notes", community: "Community & safety", privacy: "Privacy information", contact: "Contact us", home: "Back to home", back: "Back to Help & About", related: "Keep exploring" },
-  help: { description: "Explore the ideas behind Exchange Notes, our principles for sharing, and how data is handled. You can also take the tour again.", about: "Exchange a phrase. Discover another way of seeing.", community: "Stay curious. Respect each other’s boundaries.", privacy: "Understand your data, AI services, and choices" },
+  nav: { about: "About Exchange Notes", community: "Community & safety", privacy: "Privacy Policy", terms: "Terms of Service", contact: "Contact us", home: "Back to home", back: "Back to Help & About", related: "Keep exploring" },
+  help: { description: "Explore the ideas behind Exchange Notes, our principles for sharing, and how data is handled. You can also take the tour again.", about: "Exchange a phrase. Discover another way of seeing.", community: "Stay curious. Respect each other’s boundaries.", privacy: "Understand your data, AI services, and choices", terms: "The agreement for using Exchange Notes" },
   about: {
     tagline: "Exchange a phrase. Discover another way of seeing.",
     greeting: "Hi, I’m Yumi. Every phrase that stays with you has a story. Let’s explore it together—and listen to how others understand it.",
@@ -33,22 +33,6 @@ const info: InfoCopy = {
       { title: "Check important decisions twice", body: "Menu recognition cannot guarantee complete ingredient or allergen information; ask the restaurant. For medical, legal, personal safety, or other significant decisions, consult an appropriate professional or official source." },
     ],
     contact: "Email us about harmful content or problems with an exchange. Describe what happened without including unnecessary private information.",
-  },
-  privacy: {
-    intro: "Your notes hold personal experiences and may include other people’s stories. This page explains the data handling involved in current features and the choices available to you.",
-    status: "Pre-publication draft",
-    notice: "This is draft privacy information, not a finalized, complete privacy policy. The operator’s legal details, service regions, retention periods, deletion procedures, minimum age, and AI provider plan still need confirmation. These details and an effective date will be added before the policy is finalized for publication.",
-    sections: [
-      { title: "The data we process", body: "Depending on the features you use, Exchange Notes processes account and language preferences, notes, vocabulary, messages, learning records, and text, images, or audio you submit. This supports sign-in, saving, sync, exchanges, recognition, and translation. Enabling reminders or device connections also involves the relevant subscription and connection information." },
-      { title: "AI and other service providers", body: "Some features use Google Gemini and send relevant text, note context, images, or audio to that provider. Accounts and cloud data use Supabase. Speech recognition may also use browser or operating-system providers and should not be assumed to run only on your device. AI retention, model-improvement, and human-review conditions still need to be confirmed against the actual service plan." },
-      { title: "Sharing and external links", body: "When you send a message or share a note, recipients can see its content and associated profile information according to the feature’s permissions. They may keep copies or screenshots; revoking access cannot guarantee recovery of existing copies. External sites, including original Discovery news sources, handle data under their own policies." },
-      { title: "Permissions and local storage", body: "Cookies and local storage support sign-in, language, interface preferences, and caches. You can adjust camera, microphone, and notification permissions in your device or browser settings. Revoking permission can affect those features but does not automatically delete content already submitted. Signing out or uninstalling does not delete a cloud account." },
-      { title: "Retention and deletion", body: "Retention and deletion schedules for accounts, notes, attachments, AI content, logs, and backups are still being confirmed. We cannot promise immediate deletion or zero retention. You can email us below to request data or account deletion; handling depends on the data involved, recipient copies, and applicable law." },
-      { title: "Your rights", body: "Depending on your location and applicable law, you may have rights to access, correct, delete, or obtain a portable copy of data, restrict or object to processing, and withdraw consent. Contact us below; appropriate identity verification may be needed. You may also complain to a data protection authority with jurisdiction." },
-      { title: "Service regions and data security", body: "We aim to serve people across countries and regions. Availability depends on distribution regions, provider support, and applicable law. Data may be processed across borders; specific locations and safeguards still need confirmation. No online service can promise absolute security. Please avoid submitting unnecessary sensitive information." },
-      { title: "Eligibility and future updates", body: "Minimum age and eligibility rules must still be confirmed against service markets and AI provider conditions; this page does not mean the service is suitable for all ages. The final policy will add operator details, processing grounds, the full provider information, and update procedures. Significant changes will be notified, with consent obtained where required." },
-    ],
-    contact: "For privacy questions, data-rights requests, or deletion requests, contact:",
   },
 };
 export default info;

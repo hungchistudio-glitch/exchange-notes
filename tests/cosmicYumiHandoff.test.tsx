@@ -32,7 +32,7 @@ function frame() { act(() => { const pending = frames.splice(0); pending.forEach
 
 describe("one Yumi across the two homes", () => {
   it("adopts the exact canvas and scene, then parks them without disposal or reconstruction", async () => {
-    const view = render(<CosmicHomeYumi paused={false}>Fallback</CosmicHomeYumi>); await ready();
+    const view = render(<CosmicHomeYumi paused={false} />); await ready();
     expect(view.container.querySelector("canvas")).toBe(scene.canvas); expect(create).not.toHaveBeenCalled();
     expect(scene.handle.resetScreenAnchor).toHaveBeenCalledOnce();
     expect(scene.relay.current).toEqual({});
@@ -41,19 +41,19 @@ describe("one Yumi across the two homes", () => {
     if (returned) parkYumiScene(returned);
   });
   it("does not lose a parked scene when unmounted before the ready microtask", async () => {
-    const view = render(<CosmicHomeYumi paused={false}>Fallback</CosmicHomeYumi>); view.unmount(); await ready();
+    const view = render(<CosmicHomeYumi paused={false} />); view.unmount(); await ready();
     const returned = takeParkedYumiScene(); expect(returned?.handle).toBe(scene.handle); expect(scene.handle.dispose).not.toHaveBeenCalled();
     if (returned) parkYumiScene(returned);
   });
   it("pauses rotation and rejects grabs while the console is busy", async () => {
-    const view = render(<CosmicHomeYumi paused={false}>Fallback</CosmicHomeYumi>); await ready(); frame();
+    const view = render(<CosmicHomeYumi paused={false} />); await ready(); frame();
     expect(scene.handle.setRotationPaused).toHaveBeenLastCalledWith(false);
-    view.rerender(<CosmicHomeYumi paused>Fallback</CosmicHomeYumi>); frame();
+    view.rerender(<CosmicHomeYumi paused />); frame();
     expect(scene.handle.setRotationPaused).toHaveBeenLastCalledWith(true);
     fireEvent.pointerDown(scene.canvas, {pointerId:1,button:0,isPrimary:true}); expect(scene.handle.pointerDown).not.toHaveBeenCalled();
   });
   it("cancels an interrupted gesture without completing a tap or leaving a captured pointer", async () => {
-    render(<CosmicHomeYumi paused={false}>Fallback</CosmicHomeYumi>); await ready();
+    render(<CosmicHomeYumi paused={false} />); await ready();
     fireEvent.pointerDown(scene.canvas, {pointerId:3,button:0,isPrimary:true,clientX:30,clientY:40});
     fireEvent.pointerMove(scene.canvas, {pointerId:3,clientX:60,clientY:80});
     fireEvent(window, new Event("blur"));
@@ -61,10 +61,18 @@ describe("one Yumi across the two homes", () => {
     expect(scene.handle.pointerDown).toHaveBeenCalledWith(30,40); expect(scene.handle.pointerMove).toHaveBeenCalledWith(60,80);
     expect(scene.handle.pointerUp).not.toHaveBeenCalled(); expect(scene.handle.pointerCancel).toHaveBeenCalled();
   });
-  it("keeps the SVG fallback when WebGL is unavailable", async () => {
+  it("holds her place with the loader, never a flat Yumi, until she draws", async () => {
+    const view = render(<CosmicHomeYumi paused={false} />);
+    expect(view.container.querySelector("[data-yumi-loading]")).toHaveAttribute("data-yumi-loading","loading");
+    expect(view.container.querySelector("svg")).toBeNull();
+    await ready();
+    expect(view.container.querySelector("[data-yumi-loading]")).toHaveAttribute("data-yumi-loading","done");
+  });
+  it("keeps a still ring, not the old SVG Yumi, when WebGL is unavailable", async () => {
     disposeParkedYumiScene(); create.mockReturnValue(null);
-    const view = render(<CosmicHomeYumi paused={false}><svg aria-label="Fallback Yumi" /></CosmicHomeYumi>); await ready();
+    const view = render(<CosmicHomeYumi paused={false} />); await ready();
     expect(view.container.querySelector("[data-cosmic-yumi-live]")).toHaveAttribute("data-cosmic-yumi-live","false");
-    expect(view.container.querySelector("svg")?.parentElement).toHaveAttribute("aria-hidden","false");
+    expect(view.container.querySelector("[data-yumi-loading]")).toHaveAttribute("data-yumi-loading","unavailable");
+    expect(view.container.querySelector("svg")).toBeNull();
   });
 });

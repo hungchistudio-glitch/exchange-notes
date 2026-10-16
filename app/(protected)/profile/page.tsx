@@ -13,6 +13,7 @@ import {
   LogOut,
   ShoppingBag,
   Smartphone,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -22,6 +23,7 @@ import AppHeader from "@/components/foundation/layout/AppHeader";
 import StatusMessage from "@/components/foundation/feedback/StatusMessage";
 import SettingsRow from "@/components/foundation/rows/SettingsRow";
 import BottomSheet from "@/components/foundation/overlays/BottomSheet";
+import DeleteAccountSheet from "@/components/settings/DeleteAccountSheet";
 import EditProfileSheet from "@/components/settings/EditProfileSheet";
 import ProfileSummaryCard from "@/components/settings/ProfileSummaryCard";
 import SettingsAnchor from "@/components/settings/SettingsAnchor";
@@ -105,6 +107,7 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const [savingLanguage, setSavingLanguage] = useState(false);
@@ -566,6 +569,15 @@ export default function ProfilePage() {
                 onClick={() => setLogoutOpen(true)}
               />
             </SettingsAnchor>
+            <SettingsAnchor id="setting-delete-account">
+              <SettingsRow
+                title={copy.deleteAccount}
+                description={copy.deleteAccountDescription}
+                icon={<Trash2 size={16} strokeWidth={1.8} />}
+                danger
+                onClick={() => setDeleteOpen(true)}
+              />
+            </SettingsAnchor>
           </SettingsSection>
         </div>
       </div>
@@ -585,6 +597,12 @@ export default function ProfilePage() {
           onAvatarChange={setAvatarUrl}
         />
       )}
+
+      <DeleteAccountSheet
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        email={email || copy.accountFallback}
+      />
 
       <BottomSheet
         open={logoutOpen}

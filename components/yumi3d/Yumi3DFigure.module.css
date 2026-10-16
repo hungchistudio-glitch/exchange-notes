@@ -4,12 +4,6 @@
   height: 100%;
 }
 
-/* Hidden rather than unmounted: it holds the box open, so swapping to 3D
-   never changes the layout around her. */
-.replaced {
-  visibility: hidden;
-}
-
 .canvas {
   position: absolute;
   inset: 0;

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 
 import { loadTranslations } from "@/lib/i18n";
+import { loadLegalCopy } from "@/lib/legal";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import { getInterfaceLanguageMeta } from "@/lib/languages";
 import { getServerInterfaceLanguage } from "@/lib/preferences/serverPreferences";
 
-export type InfoPageKind = "about" | "community" | "privacy";
+export type InfoPageKind = "about" | "community" | "privacy" | "terms";
 
 /*
  * Open Graph wants language_TERRITORY with an underscore ("zh_TW", "fr_FR"),
@@ -19,7 +20,7 @@ export function openGraphLocale(language: InterfaceLanguage): string {
 /* =========================================================
    What a link to one of these pages looks like when it leaves the app
 
-   These three are the only routes in Exchange Notes a person can open
+   These four are the only routes in Exchange Notes a person can open
    without an account, which makes them the only ones that are ever pasted
    into a message, indexed, or previewed. They shipped carrying the root
    layout's metadata: every one of them titled "Exchange Notes" and
@@ -37,7 +38,11 @@ export async function buildInfoMetadata(page: InfoPageKind): Promise<Metadata> {
 
   const title = copy.nav[page];
   const description =
-    page === "about" ? copy.about.tagline : copy[page].intro;
+    page === "about"
+      ? copy.about.tagline
+      : page === "community"
+        ? copy.community.intro
+        : (await loadLegalCopy(language))[page].intro;
 
   return {
     title,
