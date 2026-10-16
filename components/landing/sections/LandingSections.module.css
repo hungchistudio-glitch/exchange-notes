@@ -1,0 +1,1036 @@
+/* =========================================================
+   The four sections under the film: Keep, Exchange, Yumi, Lens
+
+   Every preview is flat on the page — no tilt, no ruled lines under the
+   words, no box inside a box — and every control in them works. Colours
+   are the landing page's tokens (LandingPage.module.css, .page), which
+   turn with dark mode, so nothing here has a dark rule of its own except
+   where a wash would otherwise turn muddy.
+   ========================================================= */
+
+/* ------------------------------------------------------------ shared */
+
+.primary,
+.secondary,
+.pill,
+.textButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  padding: 0 16px;
+  transition: opacity 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.primary {
+  border: 1px solid var(--landing-ink);
+  background: var(--landing-ink);
+  color: var(--landing-on-ink);
+}
+
+.primary:hover:not(:disabled) {
+  opacity: 0.86;
+}
+
+.secondary,
+.pill {
+  border: 1px solid var(--landing-line);
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+}
+
+.secondary:hover:not(:disabled),
+.pill:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--landing-amber) 55%, var(--landing-line));
+}
+
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.textButton {
+  min-height: 40px;
+  color: var(--landing-soft);
+  padding: 0 8px;
+}
+
+.textButton:hover {
+  color: var(--landing-ink);
+}
+
+.iconButton {
+  display: inline-grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--landing-line);
+  border-radius: 50%;
+  background: var(--landing-elevated);
+  color: var(--landing-soft);
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--landing-amber) 55%, var(--landing-line));
+  color: var(--landing-ink);
+}
+
+.iconButton[data-playing],
+.pill[data-playing] {
+  border-color: var(--landing-amber);
+  color: var(--landing-amber);
+}
+
+.iconButton:disabled,
+.pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.small {
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.small:empty {
+  display: none;
+}
+
+.hint {
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.hint[data-hidden] {
+  visibility: hidden;
+}
+
+.segmented {
+  display: inline-flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 4px;
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  background: var(--landing-muted-surface);
+  padding: 3px;
+}
+
+.segmented button {
+  min-height: 36px;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: var(--landing-soft);
+  font-size: 0.75rem;
+  font-weight: 650;
+  padding: 0 14px;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+  box-shadow: 0 1px 6px rgba(23, 23, 23, 0.08);
+}
+
+.note button:focus-visible,
+.exchange button:focus-visible,
+.yumi button:focus-visible,
+.lens button:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--landing-amber) 60%, white);
+  outline-offset: 2px;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------ Keep */
+
+/* A page of a notebook: a margin rule on the left, flat on the table. */
+.note {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--landing-line);
+  border-radius: 6px 28px 28px 6px;
+  background:
+    linear-gradient(90deg, transparent 38px, color-mix(in oklab, var(--landing-rose) 34%, transparent) 38px 39px, transparent 39px),
+    var(--landing-card);
+  padding: 28px 30px 26px 62px;
+  box-shadow: 0 24px 60px rgba(42, 37, 29, 0.1);
+}
+
+.noteTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.noteDate {
+  color: var(--landing-faint);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.notePrivate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+}
+
+.noteBody {
+  display: grid;
+  min-height: 9.5rem;
+  align-content: start;
+  gap: 16px;
+}
+
+.noteLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.noteOriginal,
+.noteTranslation {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  line-height: 1.5;
+  animation: rise 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.noteOriginal {
+  flex: 1;
+  font-size: clamp(1.45rem, 2.6vw, 1.95rem);
+  letter-spacing: -0.01em;
+}
+
+.noteTranslation {
+  color: var(--landing-soft);
+  font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+}
+
+.noteRule {
+  width: 32px;
+  height: 1px;
+  background: var(--landing-amber);
+}
+
+/* The word that sent the reader to this note. */
+.lookupWord {
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--landing-amber) 20%, transparent);
+  color: inherit;
+  font: inherit;
+  padding: 0 4px;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--landing-amber) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.18em;
+  transition: background-color 160ms ease;
+}
+
+.lookupWord:hover,
+.lookupWord[aria-expanded="true"] {
+  background: color-mix(in oklab, var(--landing-amber) 34%, transparent);
+}
+
+.pairWord {
+  background: none;
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in oklab, var(--landing-amber) 60%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.pairWord[data-linked] {
+  background: color-mix(in oklab, var(--landing-amber) 14%, transparent);
+  border-radius: 4px;
+}
+
+.lookup {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--landing-line);
+  border-radius: 18px;
+  background: var(--landing-elevated);
+  padding: 14px 16px;
+  animation: rise 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lookupHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.lookupHead strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.lookupHead span {
+  color: var(--landing-faint);
+  font-size: 0.875rem;
+}
+
+.lookup > p {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.lookupActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------ Exchange */
+
+.exchange {
+  display: grid;
+  align-items: start;
+  gap: 14px 0;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  border: 1px solid var(--landing-line);
+  border-radius: 32px;
+  background: var(--landing-card);
+  padding: 22px;
+  box-shadow: 0 28px 70px rgba(42, 37, 29, 0.08);
+}
+
+.pane {
+  display: grid;
+  min-height: 300px;
+  align-content: start;
+  gap: 12px;
+  border: 1px solid var(--landing-line);
+  border-radius: 22px;
+  background: var(--landing-muted-surface);
+  padding: 14px;
+}
+
+.paneHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--landing-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.avatar {
+  display: inline-grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.avatar[data-tone="you"] {
+  background: var(--landing-blue);
+}
+
+.avatar[data-tone="friend"] {
+  background: var(--landing-rose);
+}
+
+.wordCard {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--landing-elevated-line);
+  border-left: 3px solid var(--landing-amber);
+  border-radius: 16px;
+  background: var(--landing-elevated);
+  padding: 12px 12px 14px 14px;
+  box-shadow: 0 10px 24px rgba(42, 37, 29, 0.08);
+}
+
+.wordCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wordCardHead strong {
+  min-width: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.wordCard > span {
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+}
+
+.wordCard > p {
+  margin-top: 4px;
+  color: var(--landing-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.sentNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px dashed var(--landing-line);
+  border-radius: 16px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  padding: 18px 14px;
+  animation: rise 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.waiting {
+  border: 1px dashed var(--landing-line);
+  border-radius: 16px;
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+  padding: 18px 14px;
+}
+
+.arrival {
+  display: grid;
+  gap: 10px;
+  animation: arrive 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The way between the two: a dotted line, and one dot that crosses it
+   when a card is sent. */
+.route {
+  position: relative;
+  align-self: center;
+  height: 2px;
+  margin: 0 6px;
+  background: repeating-linear-gradient(90deg, var(--landing-line) 0 4px, transparent 4px 8px);
+}
+
+.route span {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--landing-amber);
+  opacity: 0;
+}
+
+.exchange[data-stage="sent"] .route span {
+  animation: cross 620ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes cross {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+}
+
+.exchangeFoot {
+  display: flex;
+  min-height: 40px;
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+
+/* ------------------------------------------------------------ Yumi */
+
+.yumi {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  border: 1px solid var(--landing-line);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 50% 22%, color-mix(in oklab, var(--landing-blue) 16%, transparent), transparent 48%),
+    var(--landing-card);
+  padding: 26px 24px 24px;
+  box-shadow: 0 28px 70px rgba(42, 37, 29, 0.08);
+}
+
+.yumiStage {
+  width: 210px;
+  height: 210px;
+}
+
+.touchHint {
+  margin-top: -6px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.bubble {
+  width: min(100%, 400px);
+  border: 1px solid var(--landing-line);
+  border-radius: 22px 22px 22px 6px;
+  background: var(--landing-elevated);
+  padding: 16px 18px;
+}
+
+.bubble p {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.bubble span {
+  display: block;
+  margin-top: 6px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.reviewCard {
+  display: grid;
+  width: min(100%, 400px);
+  min-height: 56px;
+  justify-items: center;
+}
+
+.reviewChip {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: baseline;
+  gap: 10px;
+  border-radius: 999px;
+  background: var(--landing-ink);
+  color: var(--landing-on-ink);
+  font-size: 0.75rem;
+  padding: 12px 20px;
+  transition: transform 160ms ease;
+}
+
+.reviewChip:hover {
+  transform: translateY(-1px);
+}
+
+.reviewChip strong {
+  font-family: "Iowan Old Style", Georgia, serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+.reviewOpen {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+  border: 1px solid var(--landing-line);
+  border-radius: 22px;
+  background: var(--landing-elevated);
+  padding: 16px 18px;
+  animation: rise 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reviewOpen > span {
+  margin-top: -6px;
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+}
+
+.reviewOpen > .primary {
+  justify-self: start;
+}
+
+.reviewMeaning {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  animation: rise 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reviewOpen .textButton {
+  justify-self: start;
+}
+
+/* ------------------------------------------------------------ Lens */
+
+.lens {
+  display: grid;
+  max-width: 980px;
+  margin: 56px auto 0;
+  align-items: start;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+}
+
+/*
+ * The stage holds two quite different previews, so it fixes the height
+ * rather than letting the panel jump as they swap. A toggle that moves the
+ * thing you are about to press is a toggle people stop pressing.
+ */
+.lensStage {
+  display: flex;
+  min-height: 340px;
+  align-items: stretch;
+  border: 1px solid var(--landing-line);
+  border-radius: 26px;
+  background: var(--landing-card);
+  padding: 14px;
+  box-shadow: 0 20px 55px rgba(42, 37, 29, 0.09);
+}
+
+.lensPanel {
+  display: grid;
+  gap: 22px;
+}
+
+.lensButtons {
+  display: grid;
+  gap: 10px;
+}
+
+.lensButton {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--landing-line);
+  border-radius: 18px;
+  background: var(--landing-card);
+  color: var(--landing-soft);
+  padding: 15px 17px;
+  text-align: left;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.lensButton:hover {
+  border-color: color-mix(in oklab, var(--landing-amber) 40%, var(--landing-line));
+}
+
+.lensButtonLabel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 9px;
+  color: var(--landing-ink);
+  font-weight: 600;
+}
+
+.lensButton small {
+  color: var(--landing-faint);
+}
+
+/* Chosen by an edge and a weight of line, not a fill: a full amber wash
+   turned muddy brown on the dark page. */
+.lensButton[aria-pressed="true"] {
+  border-color: var(--landing-amber);
+  box-shadow: inset 3px 0 0 var(--landing-amber), 0 10px 24px rgba(42, 37, 29, 0.07);
+}
+
+/* Names the one feature that only exists in Cosmic Mode, so nobody goes
+   looking for it in the standard app and concludes it is missing. */
+.lensCosmicTag {
+  border: 1px solid color-mix(in oklab, var(--landing-amber) 45%, var(--landing-line));
+  border-radius: 999px;
+  color: var(--landing-amber);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lensDetails {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--landing-soft);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.lensDetails li {
+  position: relative;
+  padding-left: 20px;
+}
+
+.lensDetails li::before {
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 7px;
+  height: 1px;
+  background: var(--landing-amber);
+  content: "";
+}
+
+/* ---- the menu ---- */
+
+.menuScan {
+  display: grid;
+  width: 100%;
+  align-content: space-between;
+  gap: 10px;
+}
+
+.menuList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menuRow {
+  display: grid;
+  align-items: start;
+  gap: 4px 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 10px 12px;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+/* The lit row is the overlay the scanner draws over the photograph: the
+   translation sits on the dish rather than in a list beside it. */
+.menuRow[data-chosen] {
+  border-color: color-mix(in oklab, var(--landing-amber) 60%, transparent);
+  background: color-mix(in oklab, var(--landing-amber) 8%, var(--landing-card));
+}
+
+.menuPick {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  color: inherit;
+  text-align: left;
+}
+
+.menuSource {
+  color: var(--landing-ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.menuName {
+  color: var(--landing-soft);
+  font-size: 0.875rem;
+}
+
+.menuIpa {
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.menuPrice {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.menuRow .iconButton {
+  grid-column: 2;
+  justify-self: end;
+  animation: rise 240ms ease both;
+}
+
+.menuFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  border-top: 1px solid var(--landing-line);
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  padding: 10px 12px 2px;
+}
+
+/* ---- the viewfinder ---- */
+
+.viewfinder {
+  position: relative;
+  width: 100%;
+  min-height: 310px;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 100% at 30% 20%, color-mix(in oklab, var(--landing-amber) 8%, transparent), transparent 60%),
+    var(--landing-muted-surface);
+}
+
+/* Thin, unfilled, and no louder than they need to be — the same restraint
+   the real overlay uses, so this is not teaching a different language. */
+.targetBox {
+  position: absolute;
+  border: 1px solid color-mix(in oklab, var(--landing-ink) 24%, transparent);
+  border-radius: 10px;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.targetBox:hover {
+  border-color: color-mix(in oklab, var(--landing-ink) 45%, transparent);
+}
+
+.targetBox[data-slot="0"] {
+  top: 30%;
+  left: 36%;
+  width: 34%;
+  height: 38%;
+}
+
+.targetBox[data-slot="1"] {
+  top: 10%;
+  left: 7%;
+  width: 24%;
+  height: 28%;
+}
+
+.targetBox[data-slot="2"] {
+  right: 7%;
+  bottom: 22%;
+  width: 22%;
+  height: 26%;
+}
+
+.targetBox[aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--landing-amber) 75%, transparent);
+  background: color-mix(in oklab, var(--landing-amber) 8%, transparent);
+}
+
+/* Corners, so the choice is never carried by colour alone. */
+.targetBox i {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--landing-amber);
+  animation: rise 220ms ease both;
+}
+
+.targetBox i:nth-child(1) {
+  top: -2px;
+  left: -2px;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 6px 0 0 0;
+}
+
+.targetBox i:nth-child(2) {
+  top: -2px;
+  right: -2px;
+  border-bottom: 0;
+  border-left: 0;
+  border-radius: 0 6px 0 0;
+}
+
+.targetBox i:nth-child(3) {
+  bottom: -2px;
+  left: -2px;
+  border-top: 0;
+  border-right: 0;
+  border-radius: 0 0 0 6px;
+}
+
+.targetBox i:nth-child(4) {
+  right: -2px;
+  bottom: -2px;
+  border-top: 0;
+  border-left: 0;
+  border-radius: 0 0 6px 0;
+}
+
+.targetTag {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--landing-amber);
+  color: var(--landing-card);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+.targetResult {
+  position: absolute;
+  bottom: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  background: var(--landing-card);
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  padding: 6px 16px;
+  white-space: nowrap;
+}
+
+.targetHint {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  left: 12px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------ narrow */
+
+@media (max-width: 900px) {
+  .lens {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  /* One row, always: three short names fit at 320px, and if a language's
+     words run longer the row scrolls rather than breaking in two. */
+  .segmented {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .segmented::-webkit-scrollbar {
+    display: none;
+  }
+
+  .segmented button {
+    flex: 1 0 auto;
+    font-size: 0.7rem;
+    padding: 0 10px;
+  }
+
+  .note {
+    border-radius: 6px 22px 22px 6px;
+    padding: 22px 18px 20px 44px;
+    background:
+      linear-gradient(90deg, transparent 26px, color-mix(in oklab, var(--landing-rose) 34%, transparent) 26px 27px, transparent 27px),
+      var(--landing-card);
+  }
+
+  /* Sent and received stack, and the way between them turns downward. */
+  .exchange {
+    grid-template-columns: 1fr;
+    border-radius: 26px;
+    padding: 14px;
+  }
+
+  .pane {
+    min-height: 0;
+  }
+
+  .route {
+    width: 2px;
+    height: 28px;
+    justify-self: center;
+    margin: 0;
+    background: repeating-linear-gradient(180deg, var(--landing-line) 0 4px, transparent 4px 8px);
+  }
+
+  .route span {
+    left: -3px;
+  }
+
+  @keyframes cross {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 0, 0);
+    }
+    20%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate3d(0, 20px, 0);
+    }
+  }
+
+  .yumi {
+    border-radius: 26px;
+    padding: 20px 16px;
+  }
+
+  .yumiStage {
+    width: 170px;
+    height: 170px;
+  }
+
+  .lensStage {
+    min-height: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noteOriginal,
+  .noteTranslation,
+  .lookup,
+  .sentNote,
+  .arrival,
+  .reviewOpen,
+  .reviewMeaning,
+  .menuRow .iconButton,
+  .targetBox i,
+  .exchange[data-stage="sent"] .route span {
+    animation: none;
+  }
+}

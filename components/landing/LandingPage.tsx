@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bookmark, Languages, Send } from "lucide-react";
+import { Languages } from "lucide-react";
 
 import Link from "next/link";
 import ExchangeNotesLogo from "@/components/brand/ExchangeNotesLogo";
 import YumiOriginStory from "@/components/landing/story/YumiOriginStory";
 import HeroTrial from "@/components/landing/trial/HeroTrial";
-import Yumi3DFigure from "@/components/yumi3d/Yumi3DFigure";
+import ExchangeShowcase from "@/components/landing/sections/ExchangeShowcase";
+import LensShowcase from "@/components/landing/sections/LensShowcase";
+import NotesShowcase from "@/components/landing/sections/NotesShowcase";
+import YumiShowcase from "@/components/landing/sections/YumiShowcase";
 import useTranslation from "@/hooks/i18n/useTranslation";
 import { track } from "@/lib/analytics/track";
 import {
@@ -161,251 +164,6 @@ function SectionHeading({
   );
 }
 
-function NotePreview({
-  copy,
-  interfaceLang,
-}: {
-  copy: LandingCopy["notes"];
-  interfaceLang: string;
-}) {
-  return (
-    <div className={styles.notePreview} aria-label={copy.previewAriaLabel}>
-      <div className={styles.noteDate}>{copy.date}</div>
-      <p className={styles.noteText} lang="en">
-        {copy.original}
-      </p>
-      <div className={styles.noteRule} />
-      <p className={styles.noteTextTranslation} lang={interfaceLang}>
-        {copy.translation}
-      </p>
-      <div className={styles.noteFooter}>
-        <Bookmark size={15} aria-hidden="true" />
-        <span>{copy.privateNote}</span>
-      </div>
-    </div>
-  );
-}
-
-function ExchangePreview({ copy }: { copy: LandingCopy["exchange"] }) {
-  return (
-    <div className={styles.exchangePreview} aria-label={copy.previewAriaLabel}>
-      <div className={styles.exchangeStop}>
-        <span className={styles.exchangeDot} aria-hidden="true" />
-        <p>{copy.sender}</p>
-        <span>{copy.senderCaption}</span>
-      </div>
-      <div className={styles.exchangePath} aria-hidden="true">
-        <span />
-      </div>
-      <article className={styles.travelCard}>
-        <Send size={16} aria-hidden="true" />
-        <p lang="zh-Hant">{copy.word}</p>
-        <span>{copy.reading}</span>
-        <small>{copy.meaning}</small>
-      </article>
-      <div
-        className={`${styles.exchangePath} ${styles.exchangePathLast}`}
-        aria-hidden="true"
-      >
-        <span />
-      </div>
-      <div className={styles.exchangeStop}>
-        <span
-          className={`${styles.exchangeDot} ${styles.exchangeDotWarm}`}
-          aria-hidden="true"
-        />
-        <p>{copy.receiver}</p>
-        <span>{copy.receiverCaption}</span>
-      </div>
-    </div>
-  );
-}
-
-function YumiPreview({
-  copy,
-  interfaceLang,
-}: {
-  copy: LandingCopy["yumi"];
-  interfaceLang: string;
-}) {
-  return (
-    <div className={styles.yumiPreview} aria-label={copy.previewAriaLabel}>
-      {/*
-        The one place on this page a stranger can touch her before signing
-        up: turn her, pull her eye, let it snap back. Only the 3D Yumi is
-        ever drawn here; until her chunk lands the box holds the shared
-        loader, so a stranger never meets the old flat Yumi first.
-      */}
-      <div className={styles.yumiStage}>
-        <Yumi3DFigure />
-      </div>
-      <div className={styles.yumiMessage}>
-        <p lang={interfaceLang}>{copy.message}</p>
-        <span lang={interfaceLang === "en" ? "zh-Hant" : "en"}>
-          {copy.translation}
-        </span>
-      </div>
-      <div className={styles.reviewChip}>
-        <span className={styles.reviewWord}>{copy.reviewWord}</span>
-        <span>{copy.reviewHint}</span>
-      </div>
-    </div>
-  );
-}
-
-type LensFeature = "menu" | "target";
-
-/*
- * What the camera does, shown rather than listed.
- *
- * Two features that are both "point it at something", and are otherwise
- * nothing alike: one reads a whole printed document and keeps its shape, the
- * other reads exactly one rectangle out of a crowded frame. They share a
- * panel because a reader deciding whether this app is for them is asking one
- * question — can it read the thing in front of me — and gets both answers.
- *
- * The previews are drawn here rather than borrowed from the real screens.
- * MenuOverlayView and TargetOverlay want a scanned document and a live camera
- * between them, and neither belongs in the bundle of a page that has to paint
- * before anyone has signed in.
- */
-function LensShowcase({ copy }: { copy: LandingCopy["lens"] }) {
-  const [feature, setFeature] = useState<LensFeature>("menu");
-
-  const features: ReadonlyArray<{
-    key: LensFeature;
-    label: string;
-    blurb: string;
-    cosmic?: boolean;
-  }> = [
-    { key: "menu", label: copy.menu.label, blurb: copy.menu.blurb, cosmic: true },
-    { key: "target", label: copy.target.label, blurb: copy.target.blurb },
-  ];
-
-  const details =
-    feature === "menu"
-      ? [copy.menu.detailOne, copy.menu.detailTwo, copy.menu.detailThree]
-      : [copy.target.detailOne, copy.target.detailTwo, copy.target.detailThree];
-
-  return (
-    <div className={styles.lensExperience}>
-      <div
-        className={styles.lensStage}
-        aria-live="polite"
-        aria-label={copy.previewAriaLabel}
-      >
-        {feature === "menu" ? (
-          <MenuScanPreview copy={copy.menu} />
-        ) : (
-          <TargetFocusPreview copy={copy.target} />
-        )}
-      </div>
-
-      <div className={styles.lensPanel}>
-        <div className={styles.lensButtons} aria-label={copy.pickerAriaLabel}>
-          {features.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setFeature(item.key)}
-              aria-pressed={feature === item.key}
-              className={styles.lensButton}
-            >
-              <span className={styles.lensButtonLabel}>
-                {item.label}
-                {item.cosmic && (
-                  <span className={styles.lensCosmicTag}>
-                    {copy.cosmicBadge}
-                  </span>
-                )}
-              </span>
-              <small>{item.blurb}</small>
-            </button>
-          ))}
-        </div>
-
-        <ul className={styles.lensDetails}>
-          {details.map((detail) => (
-            <li key={detail}>{detail}</li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-/*
- * A menu, read and kept in place.
- *
- * Deliberately shows the printed line above the translation rather than
- * instead of it — that ordering is the feature. The price is repeated exactly
- * as a menu would print it, because "point at this on the real menu" only
- * works if the app did not tidy it into a number.
- */
-function MenuScanPreview({ copy }: { copy: LandingCopy["lens"]["menu"] }) {
-  return (
-    <div className={styles.menuScan}>
-      <div className={`${styles.menuRow} ${styles.menuRowLit}`}>
-        <div>
-          <p className={styles.menuSource} lang="zh-Hant">
-            {copy.demoSource}
-          </p>
-          <p className={styles.menuName}>{copy.demoName}</p>
-          <p className={styles.menuIpa}>{copy.demoIpa}</p>
-        </div>
-        <span className={styles.menuPrice}>{copy.demoPrice}</span>
-      </div>
-
-      <div className={styles.menuRow}>
-        <div>
-          <p className={styles.menuSource} lang="zh-Hant">
-            {copy.demoSecondSource}
-          </p>
-          <p className={styles.menuName}>{copy.demoSecondName}</p>
-        </div>
-        <span className={styles.menuPrice}>{copy.demoSecondPrice}</span>
-      </div>
-
-      <p className={styles.menuConfidence}>{copy.demoConfidence}</p>
-    </div>
-  );
-}
-
-/*
- * A viewfinder with more than one thing in it.
- *
- * The candidates are thin and unfilled and the chosen one is marked at its
- * corners, which is how the real overlay draws them — selection is never
- * carried by colour alone there, and a marketing preview that invented a
- * different rule would be teaching the wrong thing.
- */
-function TargetFocusPreview({
-  copy,
-}: {
-  copy: LandingCopy["lens"]["target"];
-}) {
-  return (
-    <div className={styles.viewfinder}>
-      <span className={`${styles.targetBox} ${styles.targetBoxA}`}>
-        <span className="sr-only">{copy.demoCandidate}</span>
-      </span>
-      <span className={`${styles.targetBox} ${styles.targetBoxB}`}>
-        <span className="sr-only">{copy.demoCandidate}</span>
-      </span>
-
-      <span className={`${styles.targetBox} ${styles.targetChosen}`}>
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <i aria-hidden="true" />
-        <span className={styles.targetTag}>{copy.demoSelected}</span>
-      </span>
-
-      <p className={styles.targetResult}>{copy.demoResult}</p>
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const viewTrackedRef = useRef(false);
   const { t, language } = useTranslation();
@@ -485,7 +243,7 @@ export default function LandingPage() {
           title={copy.notes.title}
           description={copy.notes.description}
         />
-        <NotePreview copy={copy.notes} interfaceLang={interfaceLang} />
+        <NotesShowcase copy={copy.notes} />
       </section>
 
       <section
@@ -498,7 +256,7 @@ export default function LandingPage() {
           title={copy.exchange.title}
           description={copy.exchange.description}
         />
-        <ExchangePreview copy={copy.exchange} />
+        <ExchangeShowcase copy={copy.exchange} />
       </section>
 
       <section
@@ -511,7 +269,7 @@ export default function LandingPage() {
           title={copy.yumi.title}
           description={copy.yumi.description}
         />
-        <YumiPreview copy={copy.yumi} interfaceLang={interfaceLang} />
+        <YumiShowcase copy={copy.yumi} interfaceLang={interfaceLang} />
       </section>
 
       <section

@@ -53,11 +53,14 @@ describe("the pre-login product tour", () => {
   it("offers every interface language before sign-in and changes the whole introduction", async () => {
     render(<LandingPage />);
 
+    // The page's own picker: the note further down has a language view of
+    // its own, with a button that is also called "English".
+    const picker = screen.getByRole("group", { name: "Read this introduction in" });
     for (const name of ["English", "繁體中文", "Español", "Français", "Italiano"]) {
-      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+      expect(within(picker).getByRole("button", { name })).toBeInTheDocument();
     }
 
-    fireEvent.click(screen.getByRole("button", { name: "Español" }));
+    fireEvent.click(within(picker).getByRole("button", { name: "Español" }));
 
     expect(
       await screen.findByRole("heading", {
@@ -113,7 +116,11 @@ describe("the pre-login product tour", () => {
     fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
     expect(within(trial).getByText("respiro", { selector: "mark" })).toHaveAttribute("lang", "it");
 
-    fireEvent.click(screen.getByRole("button", { name: "繁體中文" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Read this introduction in" })).getByRole("button", {
+        name: "繁體中文",
+      }),
+    );
 
     // Traditional Chinese readers meet Italian, and a Spanish friend's word.
     const zhTrial = await screen.findByRole("region", { name: "用一句話試試看" });

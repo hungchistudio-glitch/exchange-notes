@@ -235,20 +235,48 @@ export type TranslationDictionary = {
       date: string;
       original: string;
       translation: string;
+      /** BCP-47 for translation (the reader's language, or Chinese for English readers). */
+      translationLang: string;
       privateNote: string;
+      viewLabel: string;
+      viewBoth: string;
+      listen: string;
+      playing: string;
+      listenSentence: string;
+      lookupHint: string;
+      close: string;
+      /**
+       * The word in the note a reader would look up: the one in the line
+       * that is not in their language. `pair` is its counterpart in the
+       * other line.
+       */
+      lookup: { word: string; lang: string; reading: string; meaning: string; pair: string };
     };
     exchange: {
       eyebrow: string;
       title: string;
       description: string;
       previewAriaLabel: string;
-      sender: string;
-      senderCaption: string;
+      you: string;
+      friend: string;
+      /** The note's word, carried on: in a language that is not the reader's. */
       word: string;
+      /** BCP-47 for word. */
+      wordLang: string;
       reading: string;
       meaning: string;
-      receiver: string;
-      receiverCaption: string;
+      /** {friend}. */
+      send: string;
+      /** {friend}. */
+      sent: string;
+      waiting: string;
+      arrived: string;
+      save: string;
+      /** {friend}. */
+      saved: string;
+      again: string;
+      listen: string;
+      playing: string;
     };
     yumi: {
       eyebrow: string;
@@ -257,8 +285,24 @@ export type TranslationDictionary = {
       previewAriaLabel: string;
       message: string;
       translation: string;
+      /** The same word the note and the exchange carry. */
       reviewWord: string;
+      /** BCP-47 for reviewWord. */
+      reviewLang: string;
+      reviewReading: string;
+      reviewMeaning: string;
       reviewHint: string;
+      reveal: string;
+      again: string;
+      gotIt: string;
+      /** What the app's scheduler does with a first "good": a day, then longer. */
+      gotItReaction: string;
+      /** And with "again": ten minutes. */
+      againReaction: string;
+      restart: string;
+      touchHint: string;
+      listen: string;
+      playing: string;
     };
     lens: {
       eyebrow: string;
@@ -266,6 +310,8 @@ export type TranslationDictionary = {
       subtitle: string;
       pickerAriaLabel: string;
       previewAriaLabel: string;
+      listen: string;
+      playing: string;
       cosmicBadge: string;
       menu: {
         label: string;
@@ -280,6 +326,8 @@ export type TranslationDictionary = {
         demoSecondSource: string;
         demoSecondName: string;
         demoSecondPrice: string;
+        demoSecondIpa: string;
+        hint: string;
         demoConfidence: string;
       };
       target: {
@@ -290,7 +338,9 @@ export type TranslationDictionary = {
         detailThree: string;
         demoSelected: string;
         demoCandidate: string;
-        demoResult: string;
+        /** What each of the three frames reads as: the big middle frame first, and chosen. */
+        demoOptions: [string, string, string];
+        hint: string;
       };
     };
     closing: {

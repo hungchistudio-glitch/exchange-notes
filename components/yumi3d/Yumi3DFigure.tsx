@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
@@ -37,6 +37,13 @@ export type Yumi3DFigureProps = {
   onPullOpen?: () => void;
   /** Her radius as a fraction of the box's shorter side. */
   fill?: number;
+  /** Where she looks, -1..1 each way, or null to look where she likes. */
+  gaze?: { x: number; y: number } | null;
+  /**
+   * Shoot her eye at an element and snap it back, once per change of key:
+   * how she takes a cookie, and how she answers a word remembered.
+   */
+  reach?: { key: number; target: RefObject<HTMLElement | null> };
   className?: string;
 };
 
@@ -44,6 +51,8 @@ export default function Yumi3DFigure({
   interactive = true,
   onPullOpen,
   fill = 0.42,
+  gaze = null,
+  reach,
   className,
 }: Yumi3DFigureProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -56,10 +65,21 @@ export default function Yumi3DFigure({
 
   const onPullOpenRef = useRef(onPullOpen);
   const fillRef = useRef(fill);
+  const gazeRef = useRef(gaze);
   useEffect(() => {
     onPullOpenRef.current = onPullOpen;
     fillRef.current = fill;
-  }, [fill, onPullOpen]);
+    gazeRef.current = gaze;
+  }, [fill, gaze, onPullOpen]);
+
+  const reachKey = reach?.key ?? 0;
+  const reachTarget = reach?.target;
+  useEffect(() => {
+    const element = reachTarget?.current;
+    if (!reachKey || !element) return;
+    const rect = element.getBoundingClientRect();
+    sceneRef.current?.lungeAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }, [reachKey, reachTarget]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -95,6 +115,8 @@ export default function Yumi3DFigure({
         size.height / 2,
         Math.min(size.width, size.height) * fillRef.current,
       );
+      // Eased inside the scene, so it is set every frame; null eases home.
+      handle.setGaze?.(gazeRef.current?.x ?? 0, gazeRef.current?.y ?? 0);
       handle.frame(now);
       raf = requestAnimationFrame(loop);
     };

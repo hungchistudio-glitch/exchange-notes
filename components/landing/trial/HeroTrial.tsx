@@ -8,11 +8,9 @@ import {
   RotateCcw,
   Share2,
   Sparkles,
-  Volume2,
   X,
 } from "lucide-react";
 import {
-  useCallback,
   useEffect,
   useId,
   useMemo,
@@ -36,13 +34,19 @@ import {
   type SpeechTag,
 } from "@/lib/languages";
 import {
+  ListenButton as SharedListenButton,
+  speechTagFor,
+  useHydrated,
+  useSpeaker,
+  type Speaker,
+} from "@/components/landing/listen";
+import {
   getDefaultSpeechSettings,
   getInitialVoicesVersion,
   getSpeechSettings,
   getVoicesVersion,
   listClearVoicesForLanguage,
   setSpeechSettings,
-  speak,
   speechSupported,
   stopSpeech,
   subscribeToSpeechSettings,
@@ -91,56 +95,12 @@ type Kept = {
   why?: string;
 };
 
-type Rate = "natural" | "slow";
-const RATES: Record<Rate, number> = { natural: 1, slow: 0.6 };
-
-/** The voice a BCP-47 tag is read in, if the app teaches that language. */
-function speechTagFor(lang: string): SpeechTag | null {
-  const primary = lang.toLowerCase().split("-")[0];
-  const code = LANGUAGE_CODES.find(item =>
-    getLanguage(item).htmlLang.toLowerCase().split("-")[0] === primary,
-  );
-  return code ? getLanguage(code).speechTag : null;
-}
-
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in values ? String(values[key]) : match,
   );
 
-const noSubscription = () => () => undefined;
-
-/** False on the server and in the hydrating render, true after. */
-function useHydrated() {
-  return useSyncExternalStore(noSubscription, () => true, () => false);
-}
-
 // ------------------------------------------------------------- listening
-
-type Speaker = {
-  speakingKey: string | null;
-  rate: Rate;
-  setRate: (rate: Rate) => void;
-  say: (key: string, text: string, speech: SpeechTag) => void;
-};
-
-function useSpeaker(): Speaker {
-  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
-  const [rate, setRate] = useState<Rate>("natural");
-
-  useEffect(() => () => stopSpeech(), []);
-
-  const say = useCallback(
-    (key: string, text: string, speech: SpeechTag) => {
-      setSpeakingKey(key);
-      const done = () => setSpeakingKey(current => (current === key ? null : current));
-      speak(text, speech, { onEnd: done, onError: done }, RATES[rate]);
-    },
-    [rate],
-  );
-
-  return { speakingKey, rate, setRate, say };
-}
 
 /** A region, named in the reader's language: "Taiwan", "台灣". */
 function regionName(voiceLang: string, locale: string) {
@@ -160,30 +120,25 @@ function ListenButton({
   speaker,
   copy,
   label,
-  disabled,
 }: {
   id: string;
   text: string;
   speech: SpeechTag;
   speaker: Speaker;
   copy: TrialCopy["listen"];
-  /** Says what will be heard, where "Listen" alone would not. */
   label?: string;
-  disabled?: boolean;
 }) {
-  const playing = speaker.speakingKey === id;
   return (
-    <button
-      type="button"
+    <SharedListenButton
+      id={id}
+      text={text}
+      speech={speech}
+      speaker={speaker}
+      play={copy.play}
+      playing={copy.playing}
+      label={label}
       className={styles.listen}
-      data-playing={playing || undefined}
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => speaker.say(id, text, speech)}
-    >
-      <Volume2 size={15} aria-hidden="true" />
-      <span>{playing ? copy.playing : copy.play}</span>
-    </button>
+    />
   );
 }
 
@@ -571,7 +526,6 @@ export default function HeroTrial({
                   speaker={speaker}
                   copy={listen}
                   label={`${listen.play}: ${phrase.renderings[compare].text}`}
-                  disabled={hydrated && !speechSupported()}
                 />
               </div>
             </div>
@@ -637,7 +591,6 @@ export default function HeroTrial({
                     speaker={speaker}
                     copy={listen}
                     label={`${listen.play}: ${journey.exchange.replyWord}`}
-                    disabled={hydrated && !speechSupported()}
                   />
                 ) : null}
                 <button
@@ -723,7 +676,6 @@ export default function HeroTrial({
                       speech={current.speech}
                       speaker={speaker}
                       copy={listen}
-                      disabled={hydrated && !speechSupported()}
                     />
                   ) : null}
                   {phase === "recall" ? (
