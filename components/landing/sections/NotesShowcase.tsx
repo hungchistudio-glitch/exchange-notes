@@ -3,14 +3,15 @@
 import { Lock, X } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 
-import { ListenButton, speechTagFor, useSpeaker } from "@/components/landing/listen";
+import { ListenButton, useSpeaker, type Speaker } from "@/components/landing/listen";
 import type { TranslationDictionary } from "@/lib/i18n/types";
+import { NOTE_SAMPLES, noteOriginalFor } from "@/lib/landing/noteSamples";
 import { LANGUAGE_CODES, getLanguage, type LanguageCode } from "@/lib/languages";
+import { stopSpeech } from "@/lib/speech";
 
 import styles from "./LandingSections.module.css";
 
 type NotesCopy = TranslationDictionary["landing"]["notes"];
-type View = "both" | "original" | "translation";
 
 /** The app's language code for a BCP-47 tag ("zh-Hant" → "zh-TW"). */
 export function languageCodeFor(lang: string): LanguageCode {
@@ -21,97 +22,30 @@ export function languageCodeFor(lang: string): LanguageCode {
   );
 }
 
-/**
- * A line of the note with its key word set apart: the word to look up as a
- * button, its counterpart in the other language as a quiet mark.
- */
-function Highlighted({
-  text,
-  word,
-  pair,
-  open,
-  onLookup,
-  lookupId,
-}: {
-  text: string;
-  word: string;
-  pair: string;
-  open: boolean;
-  onLookup: () => void;
-  lookupId: string;
-}): ReactNode {
-  const at = text.indexOf(word);
-  if (at >= 0) {
-    return (
-      <>
-        {text.slice(0, at)}
-        <button
-          type="button"
-          className={styles.lookupWord}
-          aria-expanded={open}
-          aria-controls={lookupId}
-          onClick={onLookup}
-        >
-          {word}
-        </button>
-        {text.slice(at + word.length)}
-      </>
-    );
-  }
-  const pairAt = text.indexOf(pair);
-  if (pairAt >= 0) {
-    return (
-      <>
-        {text.slice(0, pairAt)}
-        <mark className={styles.pairWord} data-linked={open || undefined}>{pair}</mark>
-        {text.slice(pairAt + pair.length)}
-      </>
-    );
-  }
-  return text;
-}
-
 /*
  * A bilingual note, the way the app keeps one.
  *
- * It used to be a picture of a note, turned a degree on the page with ruled
- * lines that ran through its words. Now it does what a note does in the
- * app: it can be read in either language or both (the note's "view in"),
- * the sentence can be heard, and the word that sent the reader to the note
- * can be looked up where it stands — the same word the next two sections
- * send to a friend and bring back for review.
+ * Both lines are always there: the sentence as it was written, and under
+ * it the same sentence in whichever of the five languages the reader picks
+ * — the note's "view in" in the app (Chi, 2026-10-16: keep the pair, let
+ * any of the five languages be chosen beside it, each one heard). Each line
+ * has its own voice, and the word for the feeling in either line can be
+ * opened where it stands for its reading, meaning and sound. It is the same
+ * word the next two sections send to a friend and bring back for review.
  */
 export default function NotesShowcase({ copy }: { copy: NotesCopy }) {
-  const [view, setView] = useState<View>("both");
-  const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState<LanguageCode>(() => languageCodeFor(copy.translationLang));
+  const [open, setOpen] = useState<LanguageCode | null>(null);
   const speaker = useSpeaker();
   const lookupId = useId();
 
-  const originalCode: LanguageCode = "en";
-  const translationCode = languageCodeFor(copy.translationLang);
-  const { lookup } = copy;
-  const lookupSpeech = speechTagFor(lookup.lang);
-  const lookupInOriginal = copy.original.includes(lookup.word);
-  const lookupVisible = view === "both" || (view === "original") === lookupInOriginal;
+  const written = noteOriginalFor(shown);
 
-  const views: Array<{ id: View; label: string }> = [
-    { id: "both", label: copy.viewBoth },
-    // Each language by its own name, as the page's language picker does:
-    // "Traditional Chinese" wrapped the control onto two lines on a phone.
-    { id: "original", label: getLanguage(originalCode).endonym },
-    { id: "translation", label: getLanguage(translationCode).endonym },
-  ];
-
-  const line = (text: string) => (
-    <Highlighted
-      text={text}
-      word={lookup.word}
-      pair={lookup.pair}
-      open={open && lookupVisible}
-      onLookup={() => setOpen(value => !value)}
-      lookupId={lookupId}
-    />
-  );
+  function choose(code: LanguageCode) {
+    stopSpeech();
+    setShown(code);
+    setOpen(null);
+  }
 
   return (
     <div className={styles.note} role="group" aria-label={copy.previewAriaLabel}>
@@ -122,69 +56,153 @@ export default function NotesShowcase({ copy }: { copy: NotesCopy }) {
         </span>
       </div>
 
-      <div className={styles.segmented} role="group" aria-label={copy.viewLabel}>
-        {views.map(item => (
+      <div className={styles.chips} role="group" aria-label={copy.viewLabel}>
+        {LANGUAGE_CODES.map(code => (
           <button
-            key={item.id}
+            key={code}
             type="button"
-            aria-pressed={view === item.id}
-            onClick={() => setView(item.id)}
+            lang={getLanguage(code).htmlLang}
+            aria-pressed={shown === code}
+            onClick={() => choose(code)}
           >
-            {item.label}
+            {getLanguage(code).endonym}
           </button>
         ))}
       </div>
 
       <div className={styles.noteBody}>
-        {view !== "translation" ? (
-          <div className={styles.noteLine}>
-            <p className={styles.noteOriginal} lang="en">{line(copy.original)}</p>
-            <ListenButton
-              id="sentence"
-              text={copy.original}
-              speech={getLanguage(originalCode).speechTag}
-              speaker={speaker}
-              play={copy.listen}
-              playing={copy.playing}
-              label={copy.listenSentence}
-              className={styles.iconButton}
-              iconOnly
-            />
-          </div>
-        ) : null}
-        {view === "both" ? <span className={styles.noteRule} aria-hidden="true" /> : null}
-        {view !== "original" ? (
-          <p className={styles.noteTranslation} lang={copy.translationLang}>{line(copy.translation)}</p>
-        ) : null}
+        <NoteLine
+          code={written}
+          className={styles.noteOriginal}
+          copy={copy}
+          speaker={speaker}
+          open={open}
+          onLookup={setOpen}
+          lookupId={lookupId}
+        />
+        <span className={styles.noteRule} aria-hidden="true" />
+        <NoteLine
+          key={shown}
+          code={shown}
+          className={styles.noteTranslation}
+          copy={copy}
+          speaker={speaker}
+          open={open}
+          onLookup={setOpen}
+          lookupId={lookupId}
+        />
       </div>
 
-      {open && lookupVisible ? (
-        <div id={lookupId} className={styles.lookup}>
-          <div className={styles.lookupHead}>
-            <strong lang={lookup.lang}>{lookup.word}</strong>
-            <span lang={lookup.lang}>{lookup.reading}</span>
-          </div>
-          <p>{lookup.meaning}</p>
-          <div className={styles.lookupActions}>
-            {lookupSpeech ? (
-              <ListenButton
-                id="word"
-                text={lookup.word}
-                speech={lookupSpeech}
-                speaker={speaker}
-                play={copy.listen}
-                playing={copy.playing}
-                className={styles.pill}
-              />
-            ) : null}
-            <button type="button" className={styles.iconButton} aria-label={copy.close} onClick={() => setOpen(false)}>
-              <X size={15} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
+      {open ? (
+        <Lookup code={open} copy={copy} speaker={speaker} id={lookupId} onClose={() => setOpen(null)} />
       ) : (
-        <p className={styles.hint} data-hidden={!lookupVisible || undefined}>{copy.lookupHint}</p>
+        <p className={styles.hint}>{copy.lookupHint}</p>
       )}
+    </div>
+  );
+}
+
+/** One line of the note, its key word a button, with a voice of its own. */
+function NoteLine({
+  code,
+  className,
+  copy,
+  speaker,
+  open,
+  onLookup,
+  lookupId,
+}: {
+  code: LanguageCode;
+  className: string;
+  copy: NotesCopy;
+  speaker: Speaker;
+  open: LanguageCode | null;
+  onLookup: (code: LanguageCode | null) => void;
+  lookupId: string;
+}) {
+  const sample = NOTE_SAMPLES[code];
+  const language = getLanguage(code);
+  const at = sample.sentence.indexOf(sample.word);
+  const isOpen = open === code;
+
+  let body: ReactNode = sample.sentence;
+  if (at >= 0) {
+    body = (
+      <>
+        {sample.sentence.slice(0, at)}
+        <button
+          type="button"
+          className={styles.lookupWord}
+          // The other line's word lights up with it: the same feeling.
+          data-linked={(open !== null && !isOpen) || undefined}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? lookupId : undefined}
+          onClick={() => onLookup(isOpen ? null : code)}
+        >
+          {sample.word}
+        </button>
+        {sample.sentence.slice(at + sample.word.length)}
+      </>
+    );
+  }
+
+  return (
+    <div className={styles.noteLine}>
+      <p className={className} lang={language.htmlLang}>{body}</p>
+      <ListenButton
+        id={`sentence-${code}`}
+        text={sample.sentence}
+        speech={language.speechTag}
+        speaker={speaker}
+        play={copy.listen}
+        playing={copy.playing}
+        label={`${copy.listenSentence}: ${language.endonym}`}
+        className={styles.iconButton}
+        iconOnly
+      />
+    </div>
+  );
+}
+
+function Lookup({
+  code,
+  copy,
+  speaker,
+  id,
+  onClose,
+}: {
+  code: LanguageCode;
+  copy: NotesCopy;
+  speaker: Speaker;
+  id: string;
+  onClose: () => void;
+}) {
+  const sample = NOTE_SAMPLES[code];
+  const language = getLanguage(code);
+  return (
+    <div id={id} className={styles.lookup}>
+      <div className={styles.lookupHead}>
+        <strong lang={language.htmlLang}>{sample.word}</strong>
+        <span lang={language.htmlLang}>{sample.reading}</span>
+      </div>
+      {/* The feeling, said in the reader's own language: the same for every
+          one of the five words. */}
+      <p>{copy.meaning}</p>
+      <div className={styles.lookupActions}>
+        <ListenButton
+          id={`word-${code}`}
+          text={sample.word}
+          speech={language.speechTag}
+          speaker={speaker}
+          play={copy.listen}
+          playing={copy.playing}
+          label={`${copy.listen}: ${sample.word}`}
+          className={styles.pill}
+        />
+        <button type="button" className={styles.iconButton} aria-label={copy.close} onClick={onClose}>
+          <X size={15} aria-hidden="true" />
+        </button>
+      </div>
     </div>
   );
 }

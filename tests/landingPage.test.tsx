@@ -82,7 +82,11 @@ describe("the pre-login product tour", () => {
 
     try {
       render(<LandingPage />);
-      fireEvent.click(screen.getByRole("button", { name: "Français" }));
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Read this introduction in" })).getByRole("button", {
+          name: "Français",
+        }),
+      );
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
         "That language couldn't be loaded. Check your connection and try again.",
