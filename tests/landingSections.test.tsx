@@ -3,9 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ExchangeShowcase from "@/components/landing/sections/ExchangeShowcase";
 import LensShowcase from "@/components/landing/sections/LensShowcase";
-import NotesShowcase from "@/components/landing/sections/NotesShowcase";
+import NotesShowcase, { languageCodeFor } from "@/components/landing/sections/NotesShowcase";
 import YumiShowcase from "@/components/landing/sections/YumiShowcase";
 import { getTranslations } from "@/lib/i18n";
+import { NOTE_SAMPLES, noteOriginalFor } from "@/lib/landing/noteSamples";
 
 const figure = vi.hoisted(() => ({ props: [] as Array<Record<string, unknown>> }));
 
@@ -50,49 +51,74 @@ afterEach(() => {
 const lastSpoken = () => speak.mock.calls.at(-1)![0] as SpeechSynthesisUtterance;
 
 describe("Keep: a bilingual note", () => {
-  it("reads in either language or both, as the note's own view does", () => {
+  it("keeps both lines and shows the second in any of the five languages, each with its own voice", () => {
     render(<NotesShowcase copy={en.notes} />);
-    const view = screen.getByRole("group", { name: en.notes.viewLabel });
+    const languages = screen.getByRole("group", { name: en.notes.viewLabel });
+    expect(within(languages).getAllByRole("button")).toHaveLength(5);
 
-    expect(screen.getByText(/I finally found the word/)).toBeInTheDocument();
+    // An English reader's note opens with its Chinese line.
+    expect(within(languages).getByRole("button", { name: "繁體中文" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/I finally found the word/)).toHaveAttribute("lang", "en");
     expect(screen.getByText(/我終於找到/)).toHaveAttribute("lang", "zh-Hant");
 
-    fireEvent.click(within(view).getByRole("button", { name: "English" }));
-    expect(screen.queryByText(/我終於找到/)).not.toBeInTheDocument();
+    const cases = [
+      ["Español", /Por fin encontré/, "es", "es-ES"],
+      ["Français", /J'ai enfin trouvé/, "fr", "fr-FR"],
+      ["Italiano", /Ho finalmente trovato/, "it", "it-IT"],
+      ["繁體中文", /我終於找到/, "zh-Hant", "zh-TW"],
+    ] as const;
+    for (const [name, sentence, lang, speech] of cases) {
+      fireEvent.click(within(languages).getByRole("button", { name }));
+      // The line as written stays; the second line is the one chosen.
+      expect(screen.getByText(/I finally found the word/)).toBeInTheDocument();
+      expect(screen.getByText(sentence)).toHaveAttribute("lang", lang);
+      fireEvent.click(screen.getByRole("button", { name: `${en.notes.listenSentence}: ${name}` }));
+      expect(lastSpoken().lang).toBe(speech);
+      expect(lastSpoken().text).toMatch(sentence);
+    }
 
-    fireEvent.click(within(view).getByRole("button", { name: "繁體中文" }));
-    expect(screen.queryByText(/I finally found the word/)).not.toBeInTheDocument();
+    // English as the second line puts the Chinese sentence first: never the
+    // same language twice.
+    fireEvent.click(within(languages).getByRole("button", { name: "English" }));
     expect(screen.getByText(/我終於找到/)).toBeInTheDocument();
+    expect(screen.getByText(/I finally found the word/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `${en.notes.listenSentence}: English` }));
+    expect(lastSpoken().lang).toBe("en-US");
   });
 
-  it("looks up the word that is not in the reader's language, where it stands, and reads it aloud", () => {
+  it("opens the word for the feeling in either line, with its reading, meaning and sound", () => {
     render(<NotesShowcase copy={en.notes} />);
 
-    const word = screen.getByRole("button", { name: "苦樂參半" });
-    expect(word).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(word);
-    expect(word).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText(en.notes.lookup.meaning)).toBeInTheDocument();
+    const chinese = screen.getByRole("button", { name: "苦樂參半" });
+    const english = screen.getByRole("button", { name: "bittersweet" });
+    fireEvent.click(chinese);
+    expect(chinese).toHaveAttribute("aria-expanded", "true");
+    expect(english).toHaveAttribute("data-linked", "true");
+    expect(screen.getByText(en.notes.meaning)).toBeInTheDocument();
     expect(screen.getByText("kǔ lè cān bàn")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: en.notes.listen }));
+    fireEvent.click(screen.getByRole("button", { name: `${en.notes.listen}: 苦樂參半` }));
     expect(lastSpoken().text).toBe("苦樂參半");
     expect(lastSpoken().lang).toBe("zh-TW");
 
-    fireEvent.click(screen.getByRole("button", { name: en.notes.listenSentence }));
-    expect(lastSpoken().text).toBe(en.notes.original);
-    expect(lastSpoken().lang).toBe("en-US");
+    fireEvent.click(english);
+    expect(screen.getByText("/ˌbɪtərˈswiːt/")).toBeInTheDocument();
+    expect(chinese).toHaveAttribute("aria-expanded", "false");
 
     fireEvent.click(screen.getByRole("button", { name: en.notes.close }));
-    expect(screen.queryByText(en.notes.lookup.meaning)).not.toBeInTheDocument();
+    expect(screen.queryByText(en.notes.meaning)).not.toBeInTheDocument();
   });
 
-  it("gives a Spanish reader the English word to look up instead", () => {
+  it("closes the word and moves on when another language is chosen", () => {
     const es = getTranslations("spanish")!.landing.notes;
     render(<NotesShowcase copy={es} />);
-    fireEvent.click(screen.getByRole("button", { name: "bittersweet" }));
-    expect(screen.getByText(es.lookup.meaning)).toBeInTheDocument();
-    expect(screen.getByText("agridulce", { selector: "mark" })).toBeInTheDocument();
+    // A Spanish reader opens on Spanish.
+    fireEvent.click(screen.getByRole("button", { name: "agridulce" }));
+    expect(screen.getByText(es.meaning)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Français" }));
+    expect(screen.queryByText(es.meaning)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "doux-amer" }));
+    expect(screen.getByText("/du.za.mɛʁ/")).toBeInTheDocument();
   });
 });
 
@@ -172,16 +198,19 @@ describe("one word through all three", () => {
   it("is the same word in the note, the exchange and the review, in every language", () => {
     for (const language of ["english", "traditional-chinese", "spanish", "french", "italian"] as const) {
       const landing = getTranslations(language)!.landing;
-      const { lookup } = landing.notes;
-      expect(landing.exchange.word, language).toBe(lookup.word);
-      expect(landing.yumi.reviewWord, language).toBe(lookup.word);
-      expect(landing.exchange.meaning, language).toBe(lookup.meaning);
+      const wordLanguage = languageCodeFor(landing.exchange.wordLang);
+      expect(landing.exchange.word, language).toBe(NOTE_SAMPLES[wordLanguage].word);
+      expect(landing.yumi.reviewWord, language).toBe(landing.exchange.word);
+      expect(landing.exchange.meaning, language).toBe(landing.notes.meaning);
+      // And that word is in the note a reader first sees.
+      const shown = languageCodeFor(landing.notes.translationLang);
+      expect([shown, noteOriginalFor(shown)], language).toContain(wordLanguage);
+    }
+  });
 
-      // The word to look up is in one line of the note, its pair in the other.
-      const lines = [landing.notes.original, landing.notes.translation];
-      const at = lines.findIndex(line => line.includes(lookup.word));
-      expect(at, language).toBeGreaterThanOrEqual(0);
-      expect(lines[1 - at], language).toContain(lookup.pair);
+  it("has every sentence carry its own word", () => {
+    for (const sample of Object.values(NOTE_SAMPLES)) {
+      expect(sample.sentence).toContain(sample.word);
     }
   });
 });

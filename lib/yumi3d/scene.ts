@@ -25,6 +25,8 @@ import { createYumiRotation } from "./rotation";
 
 const ARM_ROOT = new THREE.Vector3(-SHELL_RADIUS, 0, 0);
 const EYE_REST = new THREE.Vector3(0.1, 0, 0.05);
+const UP = new THREE.Vector3(0, 1, 0);
+const FORWARD = new THREE.Vector3(0, 0, 1);
 const REST_LENGTH = EYE_REST.clone().sub(ARM_ROOT).length();
 
 /**
@@ -84,6 +86,20 @@ export type YumiSceneOptions = {
   inspect?: boolean;
   /** Cap on device pixels per CSS pixel. The shop's large stand draws at 1.5. */
   maxPixelRatio?: number;
+  /**
+   * The canvas sits in the page and its caller reports size changes (by
+   * resize()). Its bounds are then read on resize and on input, not on every
+   * frame: a layout read per frame is a forced layout per frame whenever
+   * anything else on the page has just changed.
+   */
+  embedded?: boolean;
+  /**
+   * Put her exactly where setScreenAnchor says, every frame, rather than
+   * easing toward it. For a caller that already moves her on a timeline of
+   * its own (the landing page's film): easing on top of eased motion leaves
+   * her trailing the scenery she is meant to be part of.
+   */
+  exactAnchor?: boolean;
 };
 
 /** The stand's set views. */
@@ -112,6 +128,13 @@ export type YumiParts = { yu: YumiPartPose; mi: YumiPartPose };
 export type YumiSceneHandle = {
   /** Advance the simulation and draw. Call from one rAF loop. */
   frame(nowMs: number): void;
+  /**
+   * Resolves once her shaders are compiled. Without it the first frame
+   * compiles them all on the main thread, which on the landing page was a
+   * stall of several hundred milliseconds in the middle of a scroll. Where
+   * the browser can compile in parallel this does not block at all.
+   */
+  ready?(): Promise<void>;
   resize(): void;
   dispose(): void;
 
@@ -251,6 +274,10 @@ export function createYumiScene(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
+  /* Checking each shader's compile and link status asks the GPU and waits
+     for the answer: a stall on every first draw. three.js advises turning it
+     off in production; development keeps it, where a shader error matters. */
+  renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 0.46, 0.1, 100);
@@ -495,7 +522,7 @@ export function createYumiScene(
   }
 
   function pullProgress() {
-    const distance = eyePosition.clone().sub(EYE_REST).length();
+    const distance = eyePosition.distanceTo(EYE_REST);
     return Math.min(1, distance / (MAX_PULL - REST_LENGTH));
   }
 
@@ -531,9 +558,9 @@ export function createYumiScene(
     const steps = 3;
     const step = dt / steps;
     for (let i = 0; i < steps; i += 1) {
-      const toTarget = target.clone().sub(eyePosition);
+      const toTarget = springScratch.copy(target).sub(eyePosition);
       const acceleration = toTarget.multiplyScalar(stiffness)
-        .sub(eyeVelocity.clone().multiplyScalar(DAMPING));
+        .sub(dampingScratch.copy(eyeVelocity).multiplyScalar(DAMPING));
       eyeVelocity.addScaledVector(acceleration, step);
       eyePosition.addScaledVector(eyeVelocity, step);
     }
@@ -574,13 +601,21 @@ export function createYumiScene(
    * Point the arm at the eye, stretch it to reach, and squash the eye along
    * the band so it thins as it is pulled — the whole rubber-band read.
    */
+  /* Scratch for the per-frame pose: nothing below allocates, so a minute
+     of animation is not a minute of garbage for the collector to stop for. */
+  const springScratch = new THREE.Vector3();
+  const dampingScratch = new THREE.Vector3();
+  const rigFromRoot = new THREE.Vector3();
+  const rigDirection = new THREE.Vector3();
+  const irisView = new THREE.Vector3();
+
   function poseRig() {
-    const fromRoot = eyePosition.clone().sub(ARM_ROOT);
+    const fromRoot = rigFromRoot.copy(eyePosition).sub(ARM_ROOT);
     const length = Math.min(fromRoot.length(), MAX_PULL);
-    const direction = fromRoot.clone().normalize();
+    const direction = rigDirection.copy(fromRoot).normalize();
 
     eyeGroup.position.copy(ARM_ROOT).addScaledVector(direction, length);
-    arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    arm.quaternion.setFromUnitVectors(UP, direction);
     arm.scale.set(1, Math.max(0.001, length), 1);
 
     stretchRatio = length / REST_LENGTH;
@@ -590,7 +625,7 @@ export function createYumiScene(
     const along = Math.min(1.5, 0.72 + 0.28 * stretchRatio);
     const across = 1 / Math.sqrt(along);
 
-    eyeGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+    eyeGroup.quaternion.setFromUnitVectors(FORWARD, direction);
     eyeBall.scale.set(across, across, along);
   }
 
@@ -604,7 +639,7 @@ export function createYumiScene(
     const semiSide = EYE_RADIUS * eyeBall.scale.x;
     const semiBand = EYE_RADIUS * eyeBall.scale.z;
 
-    const view = new THREE.Vector3();
+    const view = irisView;
     camera.getWorldPosition(view);
     view.x += gaze.x * 6;
     view.y -= gaze.y * 6;
@@ -616,7 +651,7 @@ export function createYumiScene(
       (view.z * view.z) / (semiBand * semiBand),
     );
 
-    lookGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), view);
+    lookGroup.quaternion.setFromUnitVectors(FORWARD, view);
     lookGroup.scale.setScalar(surface / EYE_RADIUS);
   }
 
@@ -668,9 +703,11 @@ export function createYumiScene(
 
   resize();
 
+  let readyPromise: Promise<void> | null = null;
+
   return {
     frame(nowMs: number) {
-      measureCanvas();
+      if (!options.embedded) measureCanvas();
       const dt = Math.min((nowMs - previous) / 1000, 1 / 30);
       previous = nowMs;
 
@@ -679,7 +716,7 @@ export function createYumiScene(
        * sliding in from the corner on load — and ease every time after,
        * which is the flight out to the ring and back.
        */
-      if (!anchorNow.started) {
+      if (!anchorNow.started || options.exactAnchor) {
         anchorNow.x = anchorWanted.x;
         anchorNow.y = anchorWanted.y;
         anchorNow.r = anchorWanted.r;
@@ -780,6 +817,30 @@ export function createYumiScene(
       blinkPivot.scale.set(1, Math.max(0.02, blink), 1);
 
       renderer.render(scene, camera);
+    },
+
+    ready() {
+      /* Compiled where the browser can do it in parallel, then drawn once:
+         the first draw is also where textures and buffers go up to the GPU
+         and the driver finishes linking, and the caller keeps the canvas
+         hidden until this resolves, so that cost is never a frozen frame
+         anyone sees. */
+      readyPromise ??= renderer
+        .compileAsync(scene, camera)
+        .catch(() => undefined)
+        .then(() => {
+          // Every part, wherever she happens to be: one culled now would
+          // pay all of this on its first real frame instead.
+          const culled: THREE.Object3D[] = [];
+          scene.traverse(object => {
+            if (!object.frustumCulled) return;
+            object.frustumCulled = false;
+            culled.push(object);
+          });
+          renderer.render(scene, camera);
+          for (const object of culled) object.frustumCulled = true;
+        });
+      return readyPromise;
     },
 
     resize,
@@ -957,6 +1018,8 @@ export function createYumiScene(
 
     lungeAt(clientX, clientY) {
       if (film || parts || dragging || orbiting || lungePhase) return false;
+      // An embedded canvas is not measured per frame; this is input, so now.
+      if (options.embedded) measureCanvas();
 
       /* The cookie is a DOM element on the page, so its point is unprojected
          onto the same camera-facing plane through the eye that a finger drags

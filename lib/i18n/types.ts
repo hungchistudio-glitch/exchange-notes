@@ -233,24 +233,21 @@ export type TranslationDictionary = {
       description: string;
       previewAriaLabel: string;
       date: string;
-      original: string;
-      translation: string;
-      /** BCP-47 for translation (the reader's language, or Chinese for English readers). */
+      /**
+       * BCP-47 for the language the note opens in (the reader's own, or
+       * Chinese for English readers). The sentences themselves are content,
+       * in lib/landing/noteSamples.ts.
+       */
       translationLang: string;
       privateNote: string;
       viewLabel: string;
-      viewBoth: string;
       listen: string;
       playing: string;
       listenSentence: string;
       lookupHint: string;
       close: string;
-      /**
-       * The word in the note a reader would look up: the one in the line
-       * that is not in their language. `pair` is its counterpart in the
-       * other line.
-       */
-      lookup: { word: string; lang: string; reading: string; meaning: string; pair: string };
+      /** The feeling the note's word names, in the reader's language. */
+      meaning: string;
     };
     exchange: {
       eyebrow: string;
