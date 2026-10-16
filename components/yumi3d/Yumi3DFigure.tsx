@@ -70,78 +70,118 @@ export default function Yumi3DFigure({
     let raf = 0;
     let cancelled = false;
     let visible = true;
+    let requested = false;
+    let giveUp = 0;
 
     const reduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+    /* The canvas's size, read when it changes rather than every frame: a
+       layout read per frame forces a layout per frame while the page
+       scrolls. */
+    const size = { width: canvas.clientWidth, height: canvas.clientHeight };
+
     /*
-     * Nothing is drawn while she is scrolled away. A WebGL loop running for
-     * a figure nobody is looking at is a phone getting warm for no reason,
-     * and the landing page has two of her.
+     * Nothing is drawn while she is scrolled away: the loop stops, rather
+     * than spinning to skip frames. A WebGL loop running for a figure nobody
+     * is looking at is a phone getting warm for no reason.
      */
+    const loop = (now: number) => {
+      raf = 0;
+      if (cancelled || !handle || !visible) return;
+      handle.setScreenAnchor(
+        size.width / 2,
+        size.height / 2,
+        Math.min(size.width, size.height) * fillRef.current,
+      );
+      handle.frame(now);
+      raf = requestAnimationFrame(loop);
+    };
+    const run = () => {
+      if (!raf && handle && visible && !cancelled) raf = requestAnimationFrame(loop);
+    };
+
+    /*
+     * And she is not made until she is about to be seen: the engine chunk,
+     * a WebGL context and her buffers wait until the box is within a
+     * screen or so, so a page that has her far down does not pay for her
+     * on arrival.
+     */
+    const request = () => {
+      if (requested || cancelled) return;
+      requested = true;
+      giveUp = window.setTimeout(
+        () => setStatus(current => (current === "loading" ? "unavailable" : current)),
+        FIGURE_GIVE_UP_MS,
+      );
+
+      void import("@/lib/yumi3d/scene")
+        .then(({ createYumiScene }) => {
+          if (cancelled) return;
+          handle = createYumiScene(canvas, {
+            reducedMotion: reduced,
+            onPullOpen: () => onPullOpenRef.current?.(),
+          });
+          window.clearTimeout(giveUp);
+          if (!handle) {
+            setStatus("unavailable");
+            return;
+          }
+
+          sceneRef.current = handle;
+          setStatus("live");
+          run();
+        })
+        .catch(() => {
+          window.clearTimeout(giveUp);
+          if (!cancelled) setStatus("unavailable");
+        });
+    };
+
     /* Guarded, because this also renders under a test renderer and on the
        odd browser without it — and "I cannot tell whether she is on screen"
        has to mean "draw her", not "never draw her". */
+    const near =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver(
+            entries => { if (entries.some(entry => entry.isIntersecting)) request(); },
+            { rootMargin: "600px 0px" },
+          );
+    near?.observe(box);
+    if (!near) request();
+
     const observer =
       typeof IntersectionObserver === "undefined"
         ? null
         : new IntersectionObserver(
-            entries => { visible = entries.some(entry => entry.isIntersecting); },
+            entries => {
+              visible = entries.some(entry => entry.isIntersecting);
+              run();
+            },
             { rootMargin: "120px" },
           );
     observer?.observe(box);
 
-    const giveUp = window.setTimeout(
-      () => setStatus(current => (current === "loading" ? "unavailable" : current)),
-      FIGURE_GIVE_UP_MS,
-    );
-
-    void import("@/lib/yumi3d/scene")
-      .then(({ createYumiScene }) => {
-        if (cancelled) return;
-        handle = createYumiScene(canvas, {
-          reducedMotion: reduced,
-          onPullOpen: () => onPullOpenRef.current?.(),
-        });
-        window.clearTimeout(giveUp);
-        if (!handle) {
-          setStatus("unavailable");
-          return;
-        }
-
-        sceneRef.current = handle;
-        setStatus("live");
-
-        const loop = (now: number) => {
-          if (cancelled || !handle) return;
-          if (visible) {
-            const rect = canvas.getBoundingClientRect();
-            handle.setScreenAnchor(
-              rect.width / 2,
-              rect.height / 2,
-              Math.min(rect.width, rect.height) * fillRef.current,
-            );
-            handle.frame(now);
-          }
-          raf = requestAnimationFrame(loop);
-        };
-        raf = requestAnimationFrame(loop);
-      })
-      .catch(() => {
-        window.clearTimeout(giveUp);
-        if (!cancelled) setStatus("unavailable");
-      });
-
-    const onResize = () => handle?.resize();
-    window.addEventListener("resize", onResize);
+    const onResize = () => {
+      size.width = canvas.clientWidth;
+      size.height = canvas.clientHeight;
+      handle?.resize();
+    };
+    const resizer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(onResize);
+    resizer?.observe(canvas);
+    if (!resizer) window.addEventListener("resize", onResize);
 
     return () => {
       cancelled = true;
       window.clearTimeout(giveUp);
       cancelAnimationFrame(raf);
+      near?.disconnect();
       observer?.disconnect();
-      window.removeEventListener("resize", onResize);
+      resizer?.disconnect();
+      if (!resizer) window.removeEventListener("resize", onResize);
       sceneRef.current = null;
       handle?.dispose();
     };

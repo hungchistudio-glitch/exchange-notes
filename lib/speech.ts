@@ -536,6 +536,17 @@ export function listVoicesForLanguage(
   return [...preferred, ...rest];
 }
 
+/**
+ * The voices worth offering a stranger by name: listVoicesForLanguage
+ * without the novelty voices, which a picker would otherwise list beside
+ * the real ones as if they were accents.
+ */
+export function listClearVoicesForLanguage(
+  lang: SpeechLanguage
+): SpeechSynthesisVoice[] {
+  return listVoicesForLanguage(lang).filter((voice) => !isNoveltyVoice(voice));
+}
+
 export type SpeechCallbacks = {
   onStart?: () => void;
   onEnd?: () => void;

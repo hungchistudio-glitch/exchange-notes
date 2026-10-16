@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/analytics/track", () => ({
@@ -91,159 +91,35 @@ describe("the pre-login product tour", () => {
     }
   });
 
-  it("follows one phrase from the moment it was kept to a friend's reading of it", () => {
+  it("opens the hero on a trial of the app, with no autoplay and no decorative Yumi", () => {
     render(<LandingPage />);
 
-    expect(
-      screen.getByRole("region", {
-        name: "One phrase’s journey through Exchange Notes",
-      }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Keep it with its moment" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("The room felt calm, as if it had space to breathe.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Play tour" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Next step" }));
-
-    expect(
-      screen.getByRole("heading", { name: "Understand it with Yumi" }),
-    ).toBeInTheDocument();
-    for (const label of ["Meaning", "Tone", "Culture"]) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-    }
-    expect(screen.getByText("breathing room")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Next step" }));
-    expect(
-      screen.getByRole("heading", { name: "Exchange it, and see it anew" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Giulia · Bologna")).toBeInTheDocument();
-    expect(screen.getByText("Another way of seeing")).toBeInTheDocument();
-  });
-
-  it("stays manual by default and only auto-advances after play is selected", () => {
-    vi.useFakeTimers();
-
-    try {
-      render(<LandingPage />);
-
-      act(() => vi.advanceTimersByTime(13_000));
-      expect(
-        screen.getByRole("heading", { name: "Keep it with its moment" }),
-      ).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole("button", { name: "Play tour" }));
-      expect(screen.getByRole("button", { name: "Pause tour" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
-
-      act(() => vi.advanceTimersByTime(6_500));
-      expect(
-        screen.getByRole("heading", { name: "Understand it with Yumi" }),
-      ).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("supports horizontal touch swipes without stealing vertical scrolling", () => {
-    render(<LandingPage />);
-    const viewport = screen.getByTestId("hero-tour-viewport");
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 1,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 220,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 1,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 130,
-      clientY: 110,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Understand it with Yumi" }),
-    ).toBeInTheDocument();
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 2,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 130,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 2,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 145,
-      clientY: 175,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Understand it with Yumi" }),
-    ).toBeInTheDocument();
-
-    fireEvent.pointerDown(viewport, {
-      pointerId: 3,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 120,
-      clientY: 100,
-    });
-    fireEvent.pointerUp(viewport, {
-      pointerId: 3,
-      pointerType: "touch",
-      isPrimary: true,
-      clientX: 210,
-      clientY: 105,
-    });
-    expect(
-      screen.getByRole("heading", { name: "Keep it with its moment" }),
-    ).toBeInTheDocument();
-  });
-
-  it("lets the focused tour move with arrow keys", () => {
-    render(<LandingPage />);
-    const tour = screen.getByRole("region", {
-      name: "One phrase’s journey through Exchange Notes",
-    });
-
-    tour.focus();
-    fireEvent.keyDown(tour, { key: "ArrowRight" });
-
-    expect(
-      screen.getByRole("heading", { name: "Understand it with Yumi" }),
-    ).toBeInTheDocument();
+    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    const tabs = within(trial).getAllByRole("tab");
+    expect(tabs.map(tab => tab.textContent)).toEqual(["1Keep", "2Understand", "3Exchange", "4Review"]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(within(trial).getByRole("heading", { name: "Keep it with its moment" })).toBeInTheDocument();
+    expect(within(trial).queryByRole("button", { name: /Play tour|Pause tour/ })).not.toBeInTheDocument();
+    // The only 3D Yumi near the top of the page is the film's.
+    expect(trial.querySelector("canvas")).toBeNull();
   });
 
   it("shows every reader a phrase from a language that is not their own", async () => {
     render(<LandingPage />);
 
     // English readers meet Chinese, marked as Chinese for speech and fonts.
-    const english = screen.getAllByText("留白");
-    expect(english[0]).toHaveAttribute("lang", "zh-Hant");
-    const respiro = screen.getByText("respiro", { selector: "mark" });
-    expect(respiro).toHaveAttribute("lang", "it");
+    const trial = screen.getByRole("region", { name: "Try it with one phrase" });
+    expect(within(trial).getByText("留白")).toHaveAttribute("lang", "zh-Hant");
+    fireEvent.click(within(trial).getByRole("tab", { name: /Exchange/ }));
+    expect(within(trial).getByText("respiro", { selector: "mark" })).toHaveAttribute("lang", "it");
 
     fireEvent.click(screen.getByRole("button", { name: "繁體中文" }));
 
     // Traditional Chinese readers meet Italian, and a Spanish friend's word.
-    const italian = await screen.findAllByText("dolce far niente");
-    expect(italian[0]).toHaveAttribute("lang", "it");
-    expect(screen.getByText("sobremesa", { selector: "mark" })).toHaveAttribute("lang", "es");
-    // The sharing section further down keeps its own sample word; the
-    // journey itself has moved on to the reader's foreign phrase.
-    const journey = screen.getByRole("region", { name: "一句話在 Exchange Notes 裡的旅程" });
-    expect(within(journey).queryByText("留白")).not.toBeInTheDocument();
+    const zhTrial = await screen.findByRole("region", { name: "用一句話試試看" });
+    expect(within(zhTrial).getAllByText("dolce far niente")[0]).toHaveAttribute("lang", "it");
+    expect(within(zhTrial).getByText("sobremesa", { selector: "mark" })).toHaveAttribute("lang", "es");
+    expect(within(zhTrial).queryByText("留白")).not.toBeInTheDocument();
   });
 
   it("keeps the journey's phrase foreign and its friend from elsewhere in every language", async () => {

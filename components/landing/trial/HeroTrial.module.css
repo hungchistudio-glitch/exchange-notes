@@ -1,0 +1,748 @@
+/* =========================================================
+   The hero's trial (HeroTrial.tsx)
+
+   One opaque card on the landing page's paper, in its own tokens (they
+   are defined on .page in LandingPage.module.css and turn with dark mode).
+   Nothing here moves on its own: no autoplay, no float, no 3D carousel —
+   a step changes when the reader changes it.
+   ========================================================= */
+
+.trial {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  border: 1px solid var(--landing-line);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 96% 0%, color-mix(in oklab, var(--landing-amber) 12%, transparent), transparent 36%),
+    var(--landing-card);
+  padding: clamp(18px, 2.4vw, 26px);
+  box-shadow: 0 28px 80px rgba(41, 37, 28, 0.11);
+}
+
+.top h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(1.35rem, 2vw, 1.6rem);
+  font-weight: 520;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.top p {
+  margin-top: 4px;
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------ steps */
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  background: var(--landing-muted-surface);
+  padding: 4px;
+}
+
+.tabs button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.tabs button span {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--landing-subtle-fill);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs button:hover {
+  color: var(--landing-ink);
+}
+
+.tabs button[aria-selected="true"] {
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+  box-shadow: 0 2px 10px rgba(23, 23, 23, 0.08);
+}
+
+.tabs button[aria-selected="true"] span {
+  background: var(--landing-amber);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------ panel */
+
+/* Tall enough for the longest step, so changing step does not move the
+   notebook, or the page, under the reader. */
+.panel {
+  display: flex;
+  min-height: 560px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 4px 0;
+}
+
+.panelHead h3 {
+  color: var(--landing-ink);
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.panelHead p {
+  margin-top: 4px;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.phrase {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.phrase strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.phrase span,
+.phraseSmall span {
+  color: var(--landing-faint);
+  font-size: 0.875rem;
+}
+
+.phraseSmall {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.phraseSmall strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+/* ------------------------------------------------------------ keep */
+
+.keep,
+.understand,
+.exchange,
+.review {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field span {
+  color: var(--landing-faint);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--landing-line);
+  border-radius: 14px;
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  padding: 10px 12px;
+  resize: none;
+}
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  border-color: var(--landing-amber);
+  outline: 3px solid color-mix(in oklab, var(--landing-amber) 28%, transparent);
+  outline-offset: 0;
+}
+
+/* ------------------------------------------------------------ buttons */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.primary,
+.secondary,
+.listen,
+.next {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  padding: 0 16px;
+  transition: opacity 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.primary {
+  border: 1px solid var(--landing-ink);
+  background: var(--landing-ink);
+  color: var(--landing-on-ink);
+}
+
+.primary:hover:not(:disabled) {
+  opacity: 0.86;
+}
+
+.secondary,
+.listen {
+  border: 1px solid var(--landing-line);
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+}
+
+.secondary:hover:not(:disabled),
+.listen:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--landing-amber) 55%, var(--landing-line));
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.listen:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.listen[data-playing] {
+  border-color: var(--landing-amber);
+  background: var(--landing-amber-wash);
+}
+
+.listen[data-playing] svg {
+  color: var(--landing-amber);
+}
+
+.next {
+  align-self: flex-end;
+  margin-top: auto;
+  color: var(--landing-soft);
+  padding-inline: 10px;
+}
+
+.next:hover {
+  color: var(--landing-ink);
+}
+
+.status {
+  min-height: 1.4em;
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.status:empty {
+  min-height: 0;
+}
+
+/* ------------------------------------------------------------ voice */
+
+.readingHead {
+  display: grid;
+  gap: 10px;
+}
+
+.voice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.voicePicker {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.voicePicker select {
+  min-width: 0;
+  max-width: min(260px, 52vw);
+  min-height: 40px;
+  border: 1px solid var(--landing-line);
+  border-radius: 12px;
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+}
+
+.speed {
+  display: inline-flex;
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  background: var(--landing-muted-surface);
+  padding: 3px;
+}
+
+.speed button {
+  min-height: 34px;
+  border-radius: 999px;
+  color: var(--landing-soft);
+  font-size: 0.75rem;
+  font-weight: 650;
+  padding: 0 12px;
+}
+
+.speed button[aria-pressed="true"] {
+  background: var(--landing-elevated);
+  color: var(--landing-ink);
+  box-shadow: 0 1px 6px rgba(23, 23, 23, 0.08);
+}
+
+.listenNote {
+  flex-basis: 100%;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------ understand */
+
+.yumiLabel,
+.compareTitle,
+.replyTitle,
+.card figcaption,
+.progressLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--landing-amber);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reading {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--landing-line);
+  padding-top: 12px;
+}
+
+.reading div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 12px;
+}
+
+.reading dt {
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.reading dd {
+  color: var(--landing-ink);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.compare {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--landing-line);
+  border-radius: 20px;
+  background: var(--landing-amber-wash);
+  padding: 14px;
+}
+
+.compareLanguages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.compareLanguages button {
+  min-height: 36px;
+  border: 1px solid var(--landing-line);
+  border-radius: 999px;
+  background: var(--landing-elevated);
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0 12px;
+}
+
+.compareLanguages button[aria-pressed="true"] {
+  border-color: var(--landing-ink);
+  background: var(--landing-ink);
+  color: var(--landing-on-ink);
+}
+
+.rendering {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.rendering strong {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.rendering p {
+  color: var(--landing-soft);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------ exchange */
+
+.card {
+  display: grid;
+  gap: 10px;
+}
+
+.cardFace {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--landing-line);
+  border-left: 3px solid var(--landing-amber);
+  border-radius: 20px;
+  background: var(--landing-elevated);
+  padding: 16px 18px;
+  user-select: text;
+}
+
+.cardWhy {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.cardWhere {
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+}
+
+.cardFooter {
+  margin-top: 4px;
+  color: var(--landing-faint);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+}
+
+.reply {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--landing-line);
+  padding-top: 12px;
+}
+
+.friend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--landing-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.friend span {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--landing-blue);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.reply blockquote {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.reply mark {
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--landing-amber) 22%, transparent);
+  color: inherit;
+  padding: 0 2px;
+}
+
+.insight {
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.insight svg {
+  display: inline;
+  margin-right: 2px;
+  color: var(--landing-amber);
+  vertical-align: -2px;
+}
+
+/* ------------------------------------------------------------ review */
+
+.reviewEmpty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  border: 1px dashed var(--landing-line);
+  border-radius: 20px;
+  color: var(--landing-soft);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  padding: 20px;
+}
+
+.reviewEmpty p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flashcard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--landing-line);
+  border-radius: 22px;
+  background: var(--landing-elevated);
+  padding: 18px;
+}
+
+.flashWord {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: clamp(2rem, 3.6vw, 2.6rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.prompt {
+  color: var(--landing-soft);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.answer {
+  display: grid;
+  gap: 6px;
+  animation: reveal 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.answer > p:first-child[lang] {
+  color: var(--landing-faint);
+  font-size: 0.875rem;
+}
+
+.answerMeaning {
+  color: var(--landing-ink);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.answerEquivalent,
+.answerWhy {
+  color: var(--landing-soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------------------------ notebook */
+
+.notebook {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--landing-line);
+  padding: 12px 4px 0;
+}
+
+.notebookTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--landing-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.notebookTitle span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--landing-subtle-fill);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.notebook ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.notebook li {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--landing-line);
+  border-radius: 14px;
+  background: var(--landing-elevated);
+  padding: 4px 4px 4px 12px;
+  animation: reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.notebook li strong {
+  flex: none;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.notebook li > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--landing-faint);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notebook li button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--landing-faint);
+}
+
+.notebook li button:hover {
+  background: var(--landing-subtle-fill);
+  color: var(--landing-ink);
+}
+
+.notebookEmpty {
+  color: var(--landing-faint);
+  font-size: 0.8125rem;
+}
+
+.trial button:focus-visible,
+.trial select:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--landing-amber) 60%, white);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ phones */
+
+@media (max-width: 620px) {
+  .trial {
+    border-radius: 26px;
+    padding: 16px 14px;
+  }
+
+  .tabs {
+    border-radius: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabs button {
+    border-radius: 14px;
+  }
+
+  .panel {
+    min-height: 0;
+  }
+
+  .reading div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .voicePicker select {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer,
+  .notebook li {
+    animation: none;
+  }
+
+  .tabs button,
+  .primary,
+  .secondary,
+  .listen {
+    transition: none;
+  }
+}

@@ -93,20 +93,75 @@ export type TranslationDictionary = {
       intro: string;
       /** The line under the button: what it costs and what it is not. */
       promise: string;
+      /** Each trial step's heading and what it is for. */
       tour: {
-        ariaLabel: string;
-        stepLabel: string;
-        previous: string;
-        next: string;
-        pause: string;
-        play: string;
-        goToStep: string;
         keepTitle: string;
         keepDescription: string;
         understandTitle: string;
         understandDescription: string;
         exchangeTitle: string;
         exchangeDescription: string;
+        reviewTitle: string;
+        reviewDescription: string;
+      };
+      /**
+       * The hero's trial: the four steps done for real on one phrase, before
+       * sign-in. Interface words only; the phrase in five languages is
+       * content, in lib/landing/trialPhrases.ts.
+       */
+      trial: {
+        title: string;
+        hint: string;
+        stepsLabel: string;
+        tabs: { keep: string; understand: string; exchange: string; review: string };
+        /** {step}. */
+        nextStep: string;
+        keep: { whereLabel: string; save: string; saved: string; update: string };
+        /** remove: {phrase}. */
+        notebook: { title: string; empty: string; remove: string };
+        listen: {
+          play: string;
+          playing: string;
+          voice: string;
+          automatic: string;
+          speed: string;
+          natural: string;
+          slow: string;
+          unsupported: string;
+          /** {language}. */
+          noVoice: string;
+        };
+        compare: { title: string; label: string };
+        exchange: {
+          cardLabel: string;
+          cardFooter: string;
+          copy: string;
+          copied: string;
+          copyFailed: string;
+          share: string;
+          replyTitle: string;
+          /** {word}. */
+          keepWord: string;
+          /** {word}. */
+          keptWord: string;
+        };
+        review: {
+          empty: string;
+          keepAndReview: string;
+          /** {n} and {total}. */
+          progress: string;
+          prompt: string;
+          reveal: string;
+          again: string;
+          gotIt: string;
+          /** What the app's scheduler does with "again": ten minutes. */
+          againResult: string;
+          /** And with a first "good": a day, then longer. */
+          gotItResult: string;
+          next: string;
+          done: string;
+          restart: string;
+        };
       };
       cta: string;
       ctaLoading: string;
@@ -121,13 +176,10 @@ export type TranslationDictionary = {
         phraseLang: string;
         reading: string;
         keep: {
-          label: string;
-          source: string;
+          /** Where it was met: the trial's editable default. */
+          where: string;
           whyLabel: string;
           why: string;
-          write: string;
-          voice: string;
-          camera: string;
         };
         understand: {
           label: string;
@@ -141,13 +193,13 @@ export type TranslationDictionary = {
           equivalent: string;
         };
         exchange: {
-          label: string;
-          sentTo: string;
           friend: string;
           reply: string;
           replyWord: string;
           /** BCP-47 for replyWord. */
           replyLang: string;
+          /** What replyWord means, in the reader's language. */
+          replyMeaning: string;
           insight: string;
         };
       };
