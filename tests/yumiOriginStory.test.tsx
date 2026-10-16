@@ -96,6 +96,49 @@ describe("the film's clock", () => {
     expect(rule("letterbox")).toMatch(/transform: scaleY\(1\.9\);/);
     expect(rule("progress")).toMatch(/transform: scaleX\(0\);/);
   });
+
+  /*
+   * A track hidden outside its acts (so that pressing play does not paint
+   * every layer at its largest zoom at once) must already be invisible
+   * whenever it is hidden; otherwise the hide would cut it off on screen.
+   */
+  it("hides a track only in acts where it is already at opacity 0", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "components/landing/story/YumiOriginStory.module.css"),
+      "utf8",
+    );
+    const block = css.match(/Each track is drawn only[\s\S]*?\*\/\n([\s\S]*?)\{\n  visibility: hidden;/)?.[1];
+    expect(block).toBeTruthy();
+    const ids = STORY_ACTS.map(item => item.id);
+    const opacityAt = (frames: Keyframe[], time: number) => {
+      const keyed = frames.filter(frame => "opacity" in frame);
+      if (!keyed.length) return 1;
+      const at = (frame: Keyframe) => (frame.offset as number) * STORY_DURATION_MS;
+      const after = keyed.findIndex(frame => at(frame) >= time);
+      if (after <= 0) return Number(keyed[Math.max(after, 0)].opacity);
+      const a = keyed[after - 1], b = keyed[after];
+      const t = (time - at(a)) / (at(b) - at(a) || 1);
+      return Number(a.opacity) + (Number(b.opacity) - Number(a.opacity)) * t;
+    };
+    let checked = 0;
+    for (const selector of block!.split(",\n")) {
+      const acts = [...selector.matchAll(/data-act="(\w+)"/g)].map(match => match[1]);
+      const tracks = [...selector.matchAll(/data-track="(\w+)"/g)].map(match => match[1]) as (keyof typeof STORY_TRACKS)[];
+      const hiddenIn = selector.includes(":not(") ? ids.filter(id => !acts.includes(id)) : acts;
+      for (const name of tracks) {
+        for (const act of hiddenIn) {
+          const index = ids.indexOf(act as (typeof ids)[number]);
+          const start = STORY_ACTS[index].start;
+          const end = STORY_ACTS[index + 1]?.start ?? STORY_DURATION_MS;
+          for (let time = start; time <= end; time += 10) {
+            expect(opacityAt(STORY_TRACKS[name], time), `${name} in ${act} at ${time}ms`).toBe(0);
+          }
+          checked += 1;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
 });
 
 describe("YU and MI", () => {

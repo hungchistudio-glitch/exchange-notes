@@ -17,6 +17,7 @@ import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { TranslationDictionary } from "@/lib/i18n/types";
 import { QUIET_SCENE, sceneFor, type Scene } from "@/lib/shop/atmosphere";
 import type { ShopItem, YumiOutfit } from "@/lib/shop/catalog";
+import { prepareWhenIdle } from "@/lib/yumi3d/prepareWhenIdle";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
 
 import {
@@ -328,6 +329,8 @@ export default function YumiOriginStory({
     /** Yumi is drawn, or is not coming: either way the film may begin. */
     let sceneSettled = false;
     let settleTimer = 0;
+    let sceneDone: () => void = () => {};
+    const sceneSettledPromise = new Promise<void>(resolve => { sceneDone = resolve; });
     let pending: YumiSceneHandle | null = null;
     let lastDraw = -Infinity;
     const size = { width: screen.clientWidth, height: screen.clientHeight };
@@ -394,6 +397,7 @@ export default function YumiOriginStory({
       if (sceneSettled) return;
       sceneSettled = true;
       window.clearTimeout(settleTimer);
+      sceneDone();
       tryStart();
     };
 
@@ -406,7 +410,9 @@ export default function YumiOriginStory({
       }
     };
 
-    // Only near the screen: the engine chunk, the catalogue, and a context.
+    // The engine chunk, the catalogue, and a context: made in the quiet after
+    // the page loads (lib/yumi3d/prepareWhenIdle), or on approach if the
+    // reader gets here first.
     const requestScene = () => {
       if (sceneRequested) return;
       sceneRequested = true;
@@ -456,6 +462,10 @@ export default function YumiOriginStory({
           settle();
         });
     };
+    const cancelPrepare = prepareWhenIdle(() => {
+      requestScene();
+      return sceneSettledPromise;
+    });
 
     const near =
       typeof IntersectionObserver === "undefined"
@@ -530,6 +540,8 @@ export default function YumiOriginStory({
 
     return () => {
       disposed = true;
+      cancelPrepare();
+      sceneDone();
       cancelAnimationFrame(raf);
       window.clearTimeout(settleTimer);
       near?.disconnect();
