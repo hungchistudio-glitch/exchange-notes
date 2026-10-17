@@ -10,12 +10,12 @@ import {
   type ReactNode,
 } from "react";
 
-import OrbitalBackdrop, { orbitView } from "@/components/shop/OrbitalBackdrop";
+import OrbitalBackdrop from "@/components/shop/OrbitalBackdrop";
 import StationDock from "@/components/shop/StationDock";
 import YumiLoading from "@/components/yumi3d/YumiLoading";
 import type { InterfaceLanguage } from "@/lib/appPreferences";
 import type { TranslationDictionary } from "@/lib/i18n/types";
-import { QUIET_SCENE, sceneFor, type Scene } from "@/lib/shop/atmosphere";
+import { QUIET_SCENE } from "@/lib/shop/atmosphere";
 import type { ShopItem, YumiOutfit } from "@/lib/shop/catalog";
 import { prepareWhenIdle } from "@/lib/yumi3d/prepareWhenIdle";
 import type { YumiSceneHandle } from "@/lib/yumi3d/scene";
@@ -54,6 +54,47 @@ type StoryCopy = TranslationDictionary["landing"]["story"];
 
 /** A few of the shop's pieces: something to wear, something from Earth. */
 const TRY_ON_IDS = ["monocle", "headphones", "star-pupil", "beret", "bubble-tea"] as const;
+
+/*
+ * The planet's continents and clouds, each painted over its own box only.
+ * As gradients across the whole strip (a strip twice the width of a planet
+ * the size of Station 33's horizon) they were the film's one big paint:
+ * 100ms frames as the planet came into view on a desktop (measured
+ * 2026-10-17), and nothing at all without them.
+ *
+ * In percent of one turn of the planet: centre x and y, half width and half
+ * height, the colour, and where it has faded out.
+ */
+type Blob = [x: number, y: number, rx: number, ry: number, tone: string, fade?: number];
+const LAND: Blob[] = [
+  // A long continent, a broad one with a desert, an island chain, the ice.
+  [9, 34, 7, 15, "#6e9a5c"], [13, 52, 6, 9, "#7fa463"], [16, 66, 5, 8, "#8a9d5f"],
+  [38, 30, 13, 9, "#6f9a5e", 72], [44, 40, 9, 8, "#b5a26f"], [36, 46, 7, 11, "#7aa365"],
+  [62, 62, 3, 3, "#7aa365"], [66, 66, 2.4, 2.4, "#8eaa6c"], [69, 71, 2, 2, "#7aa365"],
+  [82, 22, 10, 7, "#86a768", 72], [86, 34, 6, 10, "#6e9a5c"],
+  [50, 94, 18, 5, "#e9f1f4", 72], [50, 4, 18, 5, "#e9f1f4", 72],
+];
+const CLOUDS: Blob[] = [
+  [16, 22, 18, 4, "rgba(255, 255, 255, 0.85)"], [46, 48, 22, 5, "rgba(255, 255, 255, 0.7)", 72],
+  [70, 30, 14, 3.5, "rgba(255, 255, 255, 0.8)"], [84, 68, 20, 4.5, "rgba(255, 255, 255, 0.65)", 72],
+  [30, 80, 12, 3, "rgba(255, 255, 255, 0.7)"],
+];
+
+/** Two turns side by side, so the strip loops with no seam. */
+function Blobs({ blobs }: { blobs: Blob[] }) {
+  return [0, 50].flatMap(turn => blobs.map(([x, y, rx, ry, tone, fade = 70], index) => (
+    <i
+      key={`${turn}-${index}`}
+      style={{
+        left: `${turn + (x - rx) / 2}%`,
+        top: `${y - ry}%`,
+        width: `${rx}%`,
+        height: `${2 * ry}%`,
+        background: `radial-gradient(closest-side, ${tone}, transparent ${fade}%)`,
+      }}
+    />
+  )));
+}
 
 /** Everything else drifting out there with YU and MI. */
 const MATTER: ReadonlyArray<{
@@ -232,14 +273,6 @@ export default function YumiOriginStory({
   const [yumi, setYumi] = useState<"loading" | "live" | "unavailable">("loading");
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [outfit, setOutfit] = useState<YumiOutfit>({});
-  const [scene, setScene] = useState<Scene>(QUIET_SCENE);
-
-  /* The Earth under Station 33 is in the reader's own time of day, as it is
-     in the shop; the server cannot know it, so it arrives after hydration. */
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setScene(sceneFor("auto", null, new Date()));
-  }, []);
 
   const showTime = useCallback((time: number) => {
     const nextAct = actAt(time);
@@ -632,7 +665,6 @@ export default function YumiOriginStory({
         data-act={STORY_ACTS[act].id}
         data-docked={docked || undefined}
         data-drawn={layersDrawn || undefined}
-        data-earth={orbitView(scene).time}
       >
         <div className={styles.frame}>
           <div ref={screenRef} className={styles.screen}>
@@ -658,22 +690,27 @@ export default function YumiOriginStory({
                   />
                 ))}
               </div>
-              <div data-track="planet" className={styles.planet}>
-                <span className={styles.planetSurface}>
-                  <span className={styles.planetLand} />
-                  <span className={styles.planetClouds} />
-                </span>
-                <span className={styles.planetShade} />
-                <span data-track="planetDusk" className={styles.planetDusk} />
-                <span className={styles.planetAtmosphere} />
-              </div>
-              <div data-track="flare" className={styles.flare} />
               <div data-track="flash" className={styles.flash} />
               <div data-track="ring" className={styles.ring} />
             </div>
 
+            {/* The view from Station 33, and the one Earth in it: the planet
+                she sees far off is the Earth under the station (see globe()
+                in storyTimeline.ts). The window's own Earth is left out; by
+                day, as the planet always is here. */}
             <div data-track="orbit" className={styles.orbit}>
-              <OrbitalBackdrop scene={scene} celebrateKey={0} />
+              <div data-track="station" className={styles.station}>
+                <OrbitalBackdrop scene={QUIET_SCENE} celebrateKey={0} earth={false} />
+              </div>
+              <div data-track="planet" className={styles.planet}>
+                <span className={styles.planetSurface}>
+                  <span className={styles.planetLand}><Blobs blobs={LAND} /></span>
+                  <span className={styles.planetClouds}><Blobs blobs={CLOUDS} /></span>
+                </span>
+                <span className={styles.planetShade} />
+                <span className={styles.planetAtmosphere} />
+                <span data-track="flare" className={styles.flare} />
+              </div>
             </div>
             <div data-track="dock" className={styles.dock}>
               <StationDock />

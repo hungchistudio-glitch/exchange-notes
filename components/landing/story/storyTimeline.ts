@@ -9,11 +9,10 @@ import type { YumiParts } from "@/lib/yumi3d/scene";
    something to wear and a keepsake; and lands on Earth. "Hollywood-level,
    silky."
 
-   Chi (2026-10-17): 33 seconds, the drift shorter, and from the meeting to
-   the planet one continuous shot — no hold after the merge, and the planet
-   not fading up out of nothing. The camera keeps moving out of the flash
-   into the pan, the planet comes in from beyond the frame, and Yumi turns
-   to it before she sets off.
+   Chi (2026-10-17): 33 seconds, one continuous shot from the first frame
+   to the last, silky. Nothing in it comes to rest and starts again, and
+   nothing cross-fades into something else: there is one Earth, seen far off,
+   flown down to, and dived into.
 
    One clock, two kinds of picture:
 
@@ -35,7 +34,9 @@ export const MERGE_AT_MS = 9_000;
 /** Earth has become Station 33's horizon: the descent ends here. */
 export const ARRIVE_AT_MS = 19_000;
 /** Yumi is on the stand; the shop's pieces come up after this. */
-export const DOCKED_AT_MS = 20_600;
+export const DOCKED_AT_MS = 20_400;
+/** The descent to Earth begins. */
+const DESCENT_FROM_MS = 15_400;
 
 export const STORY_ACTS = [
   { id: "drift", start: 0 },
@@ -80,7 +81,7 @@ export function actAt(time: number): number {
  * The moment a still frame of each act should show under reduced motion:
  * late enough that the act has happened, early enough to still be it.
  */
-export const ACT_STILLS_MS = [2_500, 9_800, 16_000, 23_000, 32_500] as const;
+export const ACT_STILLS_MS = [2_500, 9_800, 15_000, 23_000, 32_500] as const;
 
 // ------------------------------------------------------------ easing
 
@@ -88,6 +89,7 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
 const easeOut = (x: number) => 1 - (1 - x) ** 3;
 const easeInQuad = (x: number) => x * x;
+const easeInOutSine = (x: number) => (1 - Math.cos(Math.PI * x)) / 2;
 const lerp = (a: number, b: number, x: number) => a + (b - a) * x;
 
 /** 0..1 across [from, to], eased. */
@@ -175,39 +177,38 @@ export function yumiAt(time: number, portrait = false, reduced = false): StoryYu
   let y = 0.47;
   let gaze: StoryYumi["gaze"] = null;
 
-  // Act III: as its light reaches the edge of the frame she turns to the
-  // planet, and while she is still turning she starts to drift aside.
+  // Acts III and IV: as its light reaches the edge of the frame she turns
+  // to the planet, and while she is still turning she sets off — aside, to
+  // watch it come down, and on round to the middle, where the stand rises
+  // to meet her. One arc from the merge to the dock, never still.
   const turn = span(time, 10_300, 11_500);
-  const toPlanet = span(time, 11_000, 14_000);
-  x = lerp(x, portrait ? 0.5 : 0.36, toPlanet);
-  y = lerp(y, portrait ? 0.62 : 0.5, toPlanet);
-  r = lerp(r, portrait ? 0.15 : 0.17, toPlanet);
+  const way = span(time, 11_000, DOCKED_AT_MS, easeInOutSine);
+  const aside = Math.sin(Math.PI * way);
+  x = lerp(x, 0.5, way) - (portrait ? 0 : 0.14) * aside;
+  y = lerp(y, 0.5, way) + (portrait ? 0.135 : 0) * aside;
+  r = lerp(r, 0.2, way) - (portrait ? 0.05 : 0.03) * aside;
   if (time >= 10_300 && time < DOCKED_AT_MS) {
     /* She watches the planet the whole way down: up at it first, then
        down at the horizon it becomes under the station. */
-    const down = span(time, 16_200, ARRIVE_AT_MS);
+    const down = span(time, DESCENT_FROM_MS, ARRIVE_AT_MS);
     gaze = {
       x: lerp(portrait ? 0.3 : 1, 0, down) * turn,
       y: lerp(portrait ? -1 : -0.25, 0.75, down) * turn,
     };
   }
 
-  // Act IV: the stand rises under her as the descent ends, and she settles
-  // onto it in the middle.
-  const dock = span(time, 19_000, DOCKED_AT_MS);
-  x = lerp(x, 0.5, dock);
-  y = lerp(y, 0.5, dock);
-  r = lerp(r, 0.2, dock);
-
-  // Act V: off the stand, a breath upward, then down through the sky.
+  // Act V: off the stand, a breath upward, then down through the sky. One
+  // arc: she drifts toward where she lands from the moment she leaves, so
+  // the top of the hop is not a stop.
   const lift = span(time, 26_000, 27_400);
   y -= 0.06 * lift;
   // She comes down beside the end card's words (above them on a phone),
   // and once she is down, looks at them.
+  const across = span(time, 26_000, 31_000);
   const fall = span(time, 27_400, 31_000);
-  x = lerp(x, portrait ? 0.5 : 0.68, fall);
+  x = lerp(x, portrait ? 0.5 : 0.68, across);
   y = lerp(y, portrait ? 0.74 : 0.6, fall);
-  r = lerp(r, portrait ? 0.13 : 0.16, fall);
+  r = lerp(r, portrait ? 0.13 : 0.16, across);
   if (time >= 27_400 && time < 31_000) gaze = { x: 0, y: 0.8 };
   const touchdown = span(time, 31_000, 31_500, easeOut) - span(time, 31_500, 32_100);
   y += 0.012 * touchdown;
@@ -228,6 +229,9 @@ const EASE_IN = "cubic-bezier(0.55, 0, 1, 0.45)";
  * Keys at moments in the film, as Web Animation keyframes over the whole
  * duration. A key's easing shapes the stretch that follows it. Every track
  * opens at 0 and closes at the end, holding its first and last values.
+ *
+ * Every key of a track names the same properties: Safari runs an animation
+ * on its compositor, clear of the 3D Yumi's frames, only when it can.
  */
 function track(keys: Key[]): Keyframe[] {
   const sorted = [...keys].sort((a, b) => a[0] - b[0]);
@@ -242,12 +246,22 @@ function track(keys: Key[]): Keyframe[] {
   }));
 }
 
-const t3 = (x: number, y: number, scale = 1) => `translate3d(${x}%, ${y}%, 0) scale(${scale})`;
+/**
+ * Keys along a curve, `frame(p)` at even steps of p from 0 to 1 between two
+ * moments. Between keys an animation moves in straight lines, so a motion no
+ * single easing can draw — a zoom that feels even all the way down, a push
+ * that gathers speed for twelve seconds — is drawn as many short ones.
+ */
+function curve(from: number, to: number, frame: (p: number, time: number) => Keyframe, steps = 24): Key[] {
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const time = from + ((to - from) * i) / steps;
+    return [time, frame(i / steps, time)];
+  });
+}
 
-/* A long, even move with no lurch at either end: the descent. */
-/* It settles completely before the station shows through, so the two
-   rims are one line when they cross. */
-const DESCENT = "cubic-bezier(0.42, 0, 0.08, 1)";
+const t3 = (x: number, y: number, scale = 1) => `translate3d(${x}%, ${y}%, 0) scale(${scale})`;
+const px = (x: number, y: number, scale: number) =>
+  `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(4)})`;
 
 /* Into the merge: slow at first, gathering speed to the punch-in. */
 const PUSH = "cubic-bezier(0.45, 0, 0.85, 0.5)";
@@ -256,67 +270,48 @@ const PUSH = "cubic-bezier(0.45, 0, 0.85, 0.5)";
 const PAN = "cubic-bezier(0.2, 0.55, 0.3, 1)";
 /* The planet's way in: unhurried, settling as the pan does. */
 const PLANET_IN = "cubic-bezier(0.3, 0.2, 0.25, 1)";
-/** Where the planet waits, in its own widths to the right of its place:
- *  past the frame's edge on every screen the film is shown at. */
-export const PLANET_OFFSTAGE = 150;
 
 /** The screen the default keyframes are worked out for (a 2.1:1 desktop
  *  film); the projector replaces them with its own screen's. */
 export const PLANET_REFERENCE = { width: 1100, height: 524 } as const;
 
 /**
- * Where the planet must end so that it lies exactly on Station 33's Earth,
- * as planet-relative percentages and a scale. Everything here mirrors the
- * stylesheet, in units of the screen (W × H):
+ * The one Earth (Chi, 2026-10-17).
  *
- * - the camera is the screen grown 8% on every side, and from 17s on holds
- *   at translate(-5%, -1%) of its own box and scale(1.02) about its centre,
- *   which is the screen's;
- * - the planet is a circle of min(44cqh, 52cqw), its box 14% of the
- *   camera's width from its right and 19% of its height from its top;
- * - the station's Earth (OrbitalBackdrop) is a circle 175% of the window's
- *   width wide, its top at 63% of the window's height, centred.
- *
- * So the planet does not cross-fade into a different Earth in a different
- * place: the camera descends to it, it grows and sinks until its rim is the
- * station's horizon, and then the station is simply there around it.
+ * The planet she sees is Station 33's Earth. Its element is drawn where the
+ * station's horizon is — a circle 175% of the screen's width, its top at
+ * 63% of the height, centred (as OrbitalBackdrop's own Earth) — and it is
+ * only ever made smaller than that, never larger, so it is never a small
+ * picture blown up. Far off it is shrunk to a globe in the upper right
+ * (`globe`: its centre and diameter, for a W × H screen).
  */
-export function planetArrival(width: number, height: number) {
-  const W = width, H = height;
-  const P = Math.min(0.44 * H, 0.52 * W);
-  // Planet centre on the screen, before any transform.
-  const pc = { x: -0.08 * W + 1.16 * W * 0.86 - P / 2, y: -0.08 * H + 1.16 * H * 0.19 + P / 2 };
-  // The camera, held from 17s.
-  const c = { s: 1.02, tx: -0.05 * 1.16 * W, ty: -0.01 * 1.16 * H, ox: W / 2, oy: H / 2 };
-  // The station's Earth.
-  const R = 0.875 * W;
-  const target = { x: W / 2, y: 0.63 * H + R };
-  // Undo the camera: where the planet must be inside it.
-  const inside = {
-    x: c.ox + (target.x - c.ox - c.tx) / c.s,
-    y: c.oy + (target.y - c.oy - c.ty) / c.s,
-  };
-  const round = (value: number) => Math.round(value * 1000) / 1000;
-  return {
-    x: round(((inside.x - pc.x) / P) * 100),
-    y: round(((inside.y - pc.y) / P) * 100),
-    scale: round((2 * R) / (c.s * P)),
-  };
+export function globe(W: number, H: number) {
+  const size = Math.min(0.45 * H, 0.53 * W);
+  return { x: 0.87 * W - size / 2, y: 0.12 * H + size / 2, size };
 }
 
-/** The planet's keyframes, for a screen of this size. */
-export function planetTrack(width: number, height: number): Keyframe[] {
-  const end = planetArrival(width, height);
-  /* It does not fade up in empty space: it is already there, beyond the
-     right edge of the frame, and comes in as the camera pans toward it. */
+/**
+ * The planet's keyframes for a W × H screen: waiting beyond the right edge,
+ * sliding in as the camera pans, then the descent — a zoom toward one point
+ * of it, even all the way down, until it is the station's horizon again and
+ * simply stays.
+ */
+export function planetTrack(W: number, H: number): Keyframe[] {
+  const g = globe(W, H);
+  const far = g.size / (1.75 * W);
+  // From the Earth's own centre to the globe's.
+  const dx = g.x - W / 2;
+  const dy = g.y - (0.63 * H + 0.875 * W);
+  const away = px(dx + 1.5 * g.size, dy + 0.12 * g.size, far * 0.85);
   return track([
-    [0, { opacity: 0, transform: t3(PLANET_OFFSTAGE, 12, 0.85) }],
-    [10_000, { opacity: 0, transform: t3(PLANET_OFFSTAGE, 12, 0.85) }],
-    [10_050, { opacity: 1, transform: t3(PLANET_OFFSTAGE, 12, 0.85) }, PLANET_IN],
-    [15_800, { opacity: 1, transform: t3(0, 0, 1) }],
-    [16_200, { opacity: 1, transform: t3(0, 0, 1) }, DESCENT],
-    [ARRIVE_AT_MS, { opacity: 1, transform: t3(end.x, end.y, end.scale) }, EASE],
-    [ARRIVE_AT_MS + 700, { opacity: 0, transform: t3(end.x, end.y, end.scale) }],
+    [0, { opacity: 0, transform: away }],
+    [10_000, { opacity: 0, transform: away }],
+    [10_050, { opacity: 1, transform: away }, PLANET_IN],
+    ...curve(DESCENT_FROM_MS, ARRIVE_AT_MS, p => {
+      const zoom = far ** (1 - easeInOut(p));
+      const toward = (1 - zoom) / (1 - far);
+      return { opacity: 1, transform: px(dx * toward, dy * toward, zoom) };
+    }),
   ]);
 }
 
@@ -324,13 +319,11 @@ export function planetTrack(width: number, height: number): Keyframe[] {
 export const STORY_TRACKS = {
   /* The camera: one push from the first frame to the meeting, gathering
      speed, and out of it straight into the pan to the planet — never still
-     until the descent. It carries space, the matter, the flash and the
-     planet. */
+     until the descent. It carries space, the matter and the flash. */
   camera: track([
     [0, { transform: t3(0, 0, 1.06) }, PUSH],
     [MERGE_AT_MS, { transform: t3(0, 0, 1.2) }, PAN],
     [17_000, { transform: t3(-5, -1, 1.02) }],
-    [18_500, { transform: t3(-5, -1, 1.02) }],
   ]),
   /* Two depths of stars, drifting at different speeds: parallax. */
   starsFar: track([
@@ -362,45 +355,51 @@ export const STORY_TRACKS = {
     [9_000, { opacity: 0.9, transform: "scale(0.35)" }, EASE_OUT],
     [10_600, { opacity: 0, transform: "scale(3.2)" }],
   ]),
-  /* The planet she sees, rising in from the right; then the descent to it
-     (see planetTrack: the size it ends at depends on the screen's). */
+  /* The one Earth: sliding in from the right, then the descent to it (see
+     planetTrack: where it waits depends on the screen's shape). */
   planet: planetTrack(PLANET_REFERENCE.width, PLANET_REFERENCE.height),
-  /* The planet takes on the light of the Earth it becomes (Station 33 shows
-     the reader's own time of day; the stylesheet sets how dark, and by day
-     not at all). A track of its own rather than a transition, so it is
-     painted once with the planet and never changes layers mid-film. */
-  planetDusk: track([
-    [0, { opacity: 0 }],
-    [17_600, { opacity: 0 }, EASE],
-    [ARRIVE_AT_MS, { opacity: 1 }],
-  ]),
-  /* The sunrise on its rim, gone before the planet starts to move. */
+  /* The sunrise on its rim. It is part of the planet, so it stays on the
+     rim as the planet comes in and starts to grow. */
   flare: track([
     [0, { opacity: 0 }],
-    [12_800, { opacity: 0 }, EASE_OUT],
-    [14_200, { opacity: 0.85 }, EASE],
-    [15_600, { opacity: 0.45 }, EASE],
-    [16_600, { opacity: 0 }],
+    [12_400, { opacity: 0 }, EASE_OUT],
+    [13_800, { opacity: 0.85 }, EASE],
+    [15_200, { opacity: 0.45 }, EASE],
+    [16_400, { opacity: 0 }],
   ]),
-  /* Station 33's window on Earth: in with the dock, and in act V the dive
-     toward the planet below it, until the window is all atmosphere. */
+  /* The window around the Earth: Station 33's stars, sun and glass. It
+     comes up around her over the end of the descent. */
+  station: track([
+    [0, { opacity: 0 }],
+    [18_300, { opacity: 0 }, EASE],
+    [19_300, { opacity: 1 }],
+  ]),
+  /*
+   * The view out of the window, Earth and all: from the moment she arrives,
+   * a push toward Earth so slow it is hardly there while she is on the
+   * stand, gathering into the dive of act V until the window is all
+   * atmosphere. One move, never still.
+   */
   orbit: track([
     [0, { opacity: 0, transform: t3(0, 0, 1) }],
-    /* Still, so the planet can land exactly on its horizon; it shows
-       through over the last of the descent. */
-    [ARRIVE_AT_MS - 200, { opacity: 0, transform: t3(0, 0, 1) }, EASE_OUT],
-    [ARRIVE_AT_MS + 600, { opacity: 1, transform: t3(0, 0, 1) }],
-    [27_000, { opacity: 1, transform: t3(0, 0, 1) }, EASE_IN],
-    [30_400, { opacity: 1, transform: t3(0, -16, 2.7) }, EASE],
-    [31_400, { opacity: 0, transform: t3(0, -20, 3.2) }],
+    [9_950, { opacity: 0, transform: t3(0, 0, 1) }],
+    [10_000, { opacity: 1, transform: t3(0, 0, 1) }],
+    ...curve(ARRIVE_AT_MS, 31_400, (p, time) => {
+      const k = 0.06 * p + 0.94 * p ** 5;
+      return {
+        // Gone into the atmosphere over its last second.
+        opacity: 1 - span(time, 30_400, 31_400),
+        transform: `translate3d(0, ${(-20 * k).toFixed(2)}%, 0) scale(${(3.2 ** k).toFixed(4)})`,
+      };
+    }, 32),
   ]),
-  /* The dock rises under her, and falls away when she leaves. */
-  /* It comes up into the frame from below rather than fading in under her,
-     and is under her shell as she settles. */
+  /* The dock rises under her as the descent settles, and falls away when
+     she leaves. It comes up into the frame from below, under her shell as
+     she settles. */
   dock: track([
     [0, { opacity: 0, transform: t3(0, 130) }],
-    [19_000, { opacity: 0, transform: t3(0, 130) }],
-    [19_050, { opacity: 1, transform: t3(0, 130) }, EASE_OUT],
+    [18_550, { opacity: 0, transform: t3(0, 130) }],
+    [18_600, { opacity: 1, transform: t3(0, 130) }, EASE],
     [DOCKED_AT_MS, { opacity: 1, transform: t3(0, 0) }],
     [26_200, { opacity: 1, transform: t3(0, 0) }, EASE_IN],
     [27_600, { opacity: 0, transform: t3(0, 120) }],

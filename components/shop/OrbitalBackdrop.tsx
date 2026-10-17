@@ -48,10 +48,13 @@ export function orbitView(scene: Scene): OrbitView {
 export default function OrbitalBackdrop({
   scene,
   celebrateKey,
+  earth = true,
 }: {
   scene: Scene;
   /** Changes once per purchase: a ring of sparks from the dock. */
   celebrateKey: number;
+  /** Off where the caller draws the Earth itself (the landing film). */
+  earth?: boolean;
 }) {
   const view = orbitView(scene);
   return (
@@ -70,19 +73,23 @@ export default function OrbitalBackdrop({
       <div className={styles.satellite}><i /></div>
       <div className={styles.meteor} />
 
-      <div className={styles.earth}>
-        <div className={styles.ocean} />
-        <div className={styles.drift}>
-          <div className={styles.land} />
-          <div className={styles.lights} />
-        </div>
-        <div className={styles.cloudDrift}>
-          <div className={styles.clouds} />
-        </div>
-        <div className={styles.flash} />
-        <div className={styles.shade} />
-      </div>
-      <div className={styles.rim} />
+      {earth ? (
+        <>
+          <div className={styles.earth}>
+            <div className={styles.ocean} />
+            <div className={styles.drift}>
+              <div className={styles.land} />
+              <div className={styles.lights} />
+            </div>
+            <div className={styles.cloudDrift}>
+              <div className={styles.clouds} />
+            </div>
+            <div className={styles.flash} />
+            <div className={styles.shade} />
+          </div>
+          <div className={styles.rim} />
+        </>
+      ) : null}
 
       <div className={styles.glass} />
       {celebrateKey > 0 && (

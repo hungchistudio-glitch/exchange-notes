@@ -15,7 +15,7 @@ import {
   LAYERS_DRAWN_AT_MS,
   STORY_TRACKS,
   actAt,
-  planetArrival,
+  globe,
   planetTrack,
   yumiAt,
 } from "@/components/landing/story/storyTimeline";
@@ -93,9 +93,7 @@ describe("the film's clock", () => {
 
     expect(STORY_TRACKS.planet[0]).toMatchObject({ opacity: 0 });
     expect(rule("planet")).toMatch(/opacity: 0;/);
-    expect(rule("planet")).toMatch(/transform: translate3d\(150%, 12%, 0\) scale\(0\.85\);/);
-    expect(STORY_TRACKS.planet[0]).toMatchObject({ transform: "translate3d(150%, 12%, 0) scale(0.85)" });
-    for (const name of ["flash", "ring", "orbit", "dock", "streaks", "sky", "flare"] as const) {
+    for (const name of ["flash", "ring", "orbit", "station", "dock", "streaks", "sky", "flare"] as const) {
       expect(STORY_TRACKS[name][0], name).toMatchObject({ opacity: 0 });
       expect(rule(name), name).toMatch(/opacity: 0;/);
     }
@@ -153,43 +151,65 @@ describe("the film's clock", () => {
         }
       }
     }
-    expect(checked).toBeGreaterThan(20);
+    expect(checked).toBeGreaterThan(15);
+  });
+});
+
+describe("every layer", () => {
+  /* Safari runs a Web Animation on its compositor, clear of the main
+     thread drawing the 3D Yumi, only when its keys are alike. */
+  it("names the same properties in every key of a track", () => {
+    const props = (frame: Keyframe) => Object.keys(frame).filter(key => key !== "offset" && key !== "easing").sort().join();
+    for (const [name, frames] of Object.entries({ ...STORY_TRACKS, planet: planetTrack(358, 448) })) {
+      for (const frame of frames) expect(props(frame), name).toBe(props(frames[0]));
+    }
   });
 });
 
 describe("the descent to Station 33", () => {
-  /* The planet does not cross-fade into a different Earth: it ends exactly on
-     the station's horizon. Re-derive both circles from the stylesheets'
-     numbers and check they coincide, on a desktop and a phone screen. */
-  it.each([[1100, 524], [342, 428], [560, 700]])("lands the planet on the station's Earth on a %ix%i screen", (W, H) => {
-    const end = planetArrival(W, H);
-    const P = Math.min(0.44 * H, 0.52 * W);
-    const pc = { x: -0.08 * W + 1.16 * W * 0.86 - P / 2, y: -0.08 * H + 1.16 * H * 0.19 + P / 2 };
-    const inCamera = { x: pc.x + (end.x / 100) * P, y: pc.y + (end.y / 100) * P };
-    const onScreen = {
-      x: W / 2 + 1.02 * (inCamera.x - W / 2) - 0.05 * 1.16 * W,
-      y: H / 2 + 1.02 * (inCamera.y - H / 2) - 0.01 * 1.16 * H,
-    };
-    const radius = (1.02 * end.scale * P) / 2;
-    expect(radius).toBeCloseTo(0.875 * W, 0);
-    expect(onScreen.x).toBeCloseTo(W / 2, 0);
-    expect(onScreen.y - radius).toBeCloseTo(0.63 * H, 0);
+  /* One Earth: the planet she sees is the Earth under the station. Its box
+     is the station's horizon, it ends the descent exactly there (no
+     transform at all), and far off it is a globe wholly on screen. */
+  const placed = (transform: string, W: number, H: number) => {
+    const [, x, y, scale] = transform.match(/translate3d\((-?[\d.]+)px, (-?[\d.]+)px, 0\) scale\(([\d.]+)\)/)!.map(Number);
+    return { x: W / 2 + x, y: 0.63 * H + 0.875 * W + y, size: 1.75 * W * scale };
+  };
+
+  it.each([[1100, 524], [342, 428], [560, 700]])("flies down to one Earth on a %ix%i screen", (W, H) => {
+    const frames = planetTrack(W, H);
+    expect(frames.at(-1)).toMatchObject({ opacity: 1 });
+    expect(placed(frames.at(-1)!.transform as string, W, H)).toEqual({
+      x: W / 2, y: 0.63 * H + 0.875 * W, size: 1.75 * W,
+    });
+
+    const g = globe(W, H);
+    const far = frames.find(frame => (frame.offset as number) * STORY_DURATION_MS >= 15_400)!;
+    const seen = placed(far.transform as string, W, H);
+    expect(seen.x).toBeCloseTo(g.x, 0);
+    expect(seen.y).toBeCloseTo(g.y, 0);
+    expect(seen.size).toBeCloseTo(g.size, 0);
+    expect(g.x + g.size / 2).toBeLessThan(W);
+    expect(g.y - g.size / 2).toBeGreaterThan(0);
+
+    // The zoom is even: each step of the descent grows it by a ratio that
+    // eases in and out, with no step that jumps.
+    const sizes = frames
+      .filter(frame => (frame.offset as number) * STORY_DURATION_MS >= 15_400)
+      .map(frame => placed(frame.transform as string, W, H).size);
+    const ratios = sizes.slice(1).map((size, i) => Math.log(size / sizes[i]));
+    for (let i = 1; i < ratios.length; i++) expect(Math.abs(ratios[i] - ratios[i - 1])).toBeLessThan(0.05);
   });
 
-  it("checks those numbers against the stylesheets", () => {
+  it("draws the planet exactly where the station's own Earth would be", () => {
     const film = readFileSync(resolve(process.cwd(), "components/landing/story/YumiOriginStory.module.css"), "utf8");
     const shop = readFileSync(resolve(process.cwd(), "components/shop/OrbitalBackdrop.module.css"), "utf8");
-    expect(film).toMatch(/\.camera \{\n  inset: -8%;/);
-    expect(film).toMatch(/\.planet,\n\.flare \{\n  position: absolute;\n  right: 14%;\n  top: 19%;\n  width: min\(44cqh, 52cqw\);/);
+    expect(film).toMatch(/\.planet \{\n  position: absolute;\n  left: -37\.5%;\n  top: 63%;\n  width: 175%;/);
     expect(shop).toMatch(/\.earth \{\n  position: absolute;\n  left: 50%;\n  top: 63%;\n  width: 175%;/);
-    const camera = STORY_TRACKS.camera.filter(frame => (frame.offset as number) * STORY_DURATION_MS >= 17_000);
-    for (const frame of camera) expect(frame.transform).toBe("translate3d(-5%, -1%, 0) scale(1.02)");
   });
 
   it("arrives before the station is fully there, and docks her after", () => {
     expect(STORY_ACTS[3].start).toBeLessThan(ARRIVE_AT_MS);
     expect(ARRIVE_AT_MS).toBeLessThan(DOCKED_AT_MS);
-    expect(planetTrack(342, 428).at(-1)).toMatchObject({ opacity: 0 });
   });
 });
 
