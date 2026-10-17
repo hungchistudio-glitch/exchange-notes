@@ -45,6 +45,21 @@ export function orbitView(scene: Scene): OrbitView {
   return { time, cloud, weather };
 }
 
+/**
+ * A ring of light from the stand and twelve sparks with it: a purchase in
+ * the shop, a new look in the landing film. Centred on its container; a new
+ * key plays it again.
+ */
+export function Burst() {
+  return (
+    <div className={styles.burst} aria-hidden="true">
+      {Array.from({ length: 12 }, (_, i) => (
+        <i key={i} style={{ "--a": `${i * 30}deg` } as CSSProperties} />
+      ))}
+    </div>
+  );
+}
+
 export default function OrbitalBackdrop({
   scene,
   celebrateKey,
@@ -92,13 +107,7 @@ export default function OrbitalBackdrop({
       ) : null}
 
       <div className={styles.glass} />
-      {celebrateKey > 0 && (
-        <div key={celebrateKey} className={styles.burst}>
-          {Array.from({ length: 12 }, (_, i) => (
-            <i key={i} style={{ "--a": `${i * 30}deg` } as CSSProperties} />
-          ))}
-        </div>
-      )}
+      {celebrateKey > 0 && <Burst key={celebrateKey} />}
     </div>
   );
 }

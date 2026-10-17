@@ -1,3 +1,4 @@
+import type { YumiOutfit } from "@/lib/shop/catalog";
 import type { YumiParts } from "@/lib/yumi3d/scene";
 
 /* =========================================================
@@ -64,6 +65,45 @@ export type StoryActId = (typeof STORY_ACTS)[number]["id"];
  * settled and YU, MI and the camera are at their slowest.
  */
 export const LAYERS_DRAWN_AT_MS = 2_000;
+
+/**
+ * Station 33's fitting (Chi, 2026-10-17). On the stand she tries on three
+ * looks of the shop's real pieces by herself, with a little hop as each goes
+ * on, and goes down to Earth in the last. The reader can still try anything
+ * on; their choice takes over from hers.
+ */
+export const STATION_LOOKS: ReadonlyArray<{ at: number; outfit: YumiOutfit }> = [
+  { at: 21_000, outfit: { head: "beret", eyewear: "monocle" } },
+  { at: 22_700, outfit: { head: "headphones", pupil: "star-pupil" } },
+  { at: 24_400, outfit: { head: "beret", mouth: "bubble-tea" } },
+];
+
+/** Which of her looks she has on at a moment of the film; -1 before the first. */
+export function lookAt(time: number): number {
+  let index = -1;
+  for (let i = 0; i < STATION_LOOKS.length; i += 1) {
+    if (time >= STATION_LOOKS[i].at) index = i;
+  }
+  return index;
+}
+
+const NO_OUTFIT: YumiOutfit = {};
+
+/**
+ * What she has on at a moment of the film, unless the reader has picked.
+ *
+ * Her looks from the fitting on. Before that, while YU and MI are still
+ * apart and the scene shows nothing she wears, she has each look on for a
+ * second, unseen: a piece is held back until its shaders are compiled, and
+ * the first time that took long enough for the fitting's first look to go
+ * on bare. By the fitting, every piece is ready.
+ */
+export function outfitAt(time: number): YumiOutfit {
+  const look = lookAt(time);
+  if (look >= 0) return STATION_LOOKS[look].outfit;
+  const rehearsal = STATION_LOOKS[Math.floor(time / 1_000) - 1];
+  return time < MERGE_AT_MS && rehearsal ? rehearsal.outfit : NO_OUTFIT;
+}
 
 /** Where the end card comes up, over the sky. */
 export const END_CARD_AT_MS = 31_200;
@@ -195,6 +235,14 @@ export function yumiAt(time: number, portrait = false, reduced = false): StoryYu
       x: lerp(portrait ? 0.3 : 1, 0, down) * turn,
       y: lerp(portrait ? -1 : -0.25, 0.75, down) * turn,
     };
+  }
+
+  // A hop on the stand for each look: up, the new piece on at the top of it,
+  // and down.
+  if (!reduced) {
+    for (const look of STATION_LOOKS) {
+      y -= 0.03 * Math.sin(Math.PI * span(time, look.at - 320, look.at + 320));
+    }
   }
 
   // Act V: off the stand, a breath upward, then down through the sky. One
